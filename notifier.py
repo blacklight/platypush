@@ -36,9 +36,9 @@ def on_push(data):
     if 'body' not in push:
         return
 
-    body = None
+    body = push['body']
     try:
-        body = json.loads(push['body'])
+        body = json.loads(body)
     except ValueError as e:
         return
 
@@ -66,3 +66,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
