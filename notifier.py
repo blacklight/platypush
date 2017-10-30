@@ -18,6 +18,7 @@ logging.basicConfig(level=logging.INFO)
 hostname = get_hostname()
 
 API_KEY = 'o.EHMMnZneJdpNQv9FSFbyY2busin7floe'
+DEVICE_ID = 'ujBKDt14CaGsjAiAm2WPVA'
 HTTP_PROXY_HOST = None
 HTTP_PROXY_PORT = None
 
