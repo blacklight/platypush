@@ -77,6 +77,7 @@ Usage: {} [-v] [-h]
     -v  Enable debug mode
     -h  Show this help
 '''.format(sys.argv[0]))
+            return
 
     if DEBUG:
         logging.basicConfig(level=logging.DEBUG)
