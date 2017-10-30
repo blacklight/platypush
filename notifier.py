@@ -3,39 +3,44 @@
 import os
 import logging
 import json
+import socket
 import subprocess
+import sys
+import time
+import websocket
 
-from pushbullet import Listener
-from pushbullet import Pushbullet
+from getopt import getopt
 
 __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
 
-def get_hostname():
-    with open('/etc/hostname','r') as fp:
-        return fp.readline().strip()
-
-logging.basicConfig(level=logging.INFO)
-hostname = get_hostname()
-
 API_KEY = 'o.EHMMnZneJdpNQv9FSFbyY2busin7floe'
-DEVICE_ID = 'ujBKDt14CaGsjAiAm2WPVA'
-HTTP_PROXY_HOST = None
-HTTP_PROXY_PORT = None
+DEVICE_ID = socket.gethostname()
+DEBUG = False
 
 
-def on_push(data):
-    global hostname
+def on_open(ws):
+    logging.info('Connection opened')
 
-    if 'type' not in data \
-            or 'push' not in data \
-            or data['type'] != 'push':
+
+def on_close(ws):
+    logging.info('Connection closed')
+
+
+def on_error(ws, error):
+    logging.error(error)
+
+
+def _on_push(ws, data):
+    data = json.loads(data)
+    if data['type'] == 'tickle' and data['subtype'] == 'push':
+        logging.debug('Received push tickle')
+        return
+
+    if data['type'] != 'push':
         return  # Not a push notification
 
     push = data['push']
     logging.debug('Received push: {}'.format(push))
-
-    if 'body' not in push:
-        return
 
     body = push['body']
     try:
@@ -43,26 +48,49 @@ def on_push(data):
     except ValueError as e:
         return
 
-    if 'target' not in body or body['target'] != hostname:
+    if 'target' not in body or body['target'] != DEVICE_ID:
         return  # Not for me
 
-    logging.info('Received message: {}'.format(body))
-    if 'cmd' in body:
-        logging.info('Executing command: {}'.format(body['cmd']))
-        os.system(body['cmd'])
+    logging.info('Received push addressed to me: {}'.format(body))
+    if 'exec' in body:
+        logging.info('Executing command: {}'.format(body['exec']))
+        os.system(body['exec'])
+
+
+def on_push(ws, data):
+    try:
+        _on_push(ws, data)
+    except Error as e:
+        on_error(e)
 
 
 def main():
-    pb = Pushbullet(API_KEY)
+    global DEBUG
 
-    s = Listener(account=pb,
-                 on_push=on_push,
-                 http_proxy_host=HTTP_PROXY_HOST,
-                 http_proxy_port=HTTP_PROXY_PORT)
-    try:
-        s.run_forever()
-    except KeyboardInterrupt:
-        s.close()
+    optlist, args = getopt(sys.argv[1:], 'vh')
+    for opt, arg in optlist:
+        if opt == '-v':
+            DEBUG = True
+        elif opt == '-h':
+            print('''
+Usage: {} [-v] [-h]
+    -v  Enable debug mode
+    -h  Show this help
+'''.format(sys.argv[0]))
+
+    if DEBUG:
+        logging.basicConfig(level=logging.DEBUG)
+        websocket.enableTrace(True)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
+    ws = websocket.WebSocketApp('wss://stream.pushbullet.com/websocket/' +
+                                API_KEY,
+                                on_message = on_push,
+                                on_error = on_error,
+                                on_close = on_close)
+    ws.on_open = on_open
+    ws.run_forever()
 
 
 if __name__ == '__main__':
