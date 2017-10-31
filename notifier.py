@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import importlib
 import os
 import logging
 import json
@@ -9,7 +10,11 @@ import sys
 import time
 import websocket
 
+from threading import Thread
 from getopt import getopt
+
+lib_dir = os.path.dirname(os.path.realpath(__file__)) + os.sep + 'lib'
+sys.path.insert(0, lib_dir)
 
 __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
 
@@ -30,6 +35,26 @@ def on_error(ws, error):
     logging.error(error)
 
 
+def _exec_func(body):
+    module = None
+    try:
+        module = importlib.import_module('plugins.{}'.format(body['plugin']))
+    except ModuleNotFoundError as e:
+        logging.warn('No such plugin: {}'.format(body['plugin']))
+        return
+
+    logging.info('Received push addressed to me: {}'.format(body))
+
+    args = body['args'] if 'args' in body else {}
+    cls = getattr(module, body['plugin'].title() + 'Plugin')
+    instance = cls()
+    out, err = instance.run(args)
+
+    logging.info('Command output: {}'.format(out))
+    if err:
+        logging.warn('Command error: {}'.format(err))
+
+
 def _on_push(ws, data):
     data = json.loads(data)
     if data['type'] == 'tickle' and data['subtype'] == 'push':
@@ -42,6 +67,9 @@ def _on_push(ws, data):
     push = data['push']
     logging.debug('Received push: {}'.format(push))
 
+    if 'body' not in push:
+        return
+
     body = push['body']
     try:
         body = json.loads(body)
@@ -51,17 +79,17 @@ def _on_push(ws, data):
     if 'target' not in body or body['target'] != DEVICE_ID:
         return  # Not for me
 
-    logging.info('Received push addressed to me: {}'.format(body))
-    if 'exec' in body:
-        logging.info('Executing command: {}'.format(body['exec']))
-        os.system(body['exec'])
+    if 'plugin' not in body:
+        return  # No plugin specified
 
+    thread = Thread(target=_exec_func, args=(body,))
+    thread.start()
 
 def on_push(ws, data):
     try:
         _on_push(ws, data)
-    except Error as e:
-        on_error(e)
+    except Exception as e:
+        on_error(ws, e)
 
 
 def main():
