@@ -1,3 +1,5 @@
+#!python
+
 import json
 import os
 import sys
@@ -5,16 +7,8 @@ import yaml
 
 from getopt import getopt
 from pushbullet import Pushbullet
+from runbullet import parse_config_file
 
-def get_config():
-    curdir = os.path.dirname(os.path.realpath(__file__))
-    config_file = curdir + os.sep + 'config.yaml'
-    config = {}
-
-    with open(config_file,'r') as f:
-        config = yaml.load(f)
-
-    return config
 
 def print_usage():
     print ('''Usage: {} [-h|--help] <-t|--target <target name>> <-p|--plugin <plugin name>> payload
@@ -25,7 +19,7 @@ def print_usage():
 '''.format(sys.argv[0]))
 
 def main():
-    config = get_config()
+    config = parse_config_file()
     API_KEY = config['pushbullet']['token']
     pb = Pushbullet(API_KEY)
 

@@ -23,9 +23,9 @@ curdir = os.path.dirname(os.path.realpath(__file__))
 lib_dir = curdir + os.sep + 'lib'
 sys.path.insert(0, lib_dir)
 
-DEVICE_ID = None
 modules = {}
 plugins = {}
+config = {}
 
 
 def on_open(ws):
@@ -56,8 +56,10 @@ def _init_plugin(plugin, reload=False):
     ) + 'Plugin'
 
     if cls_name not in plugins or reload:
+        plugin_conf = config[plugin] if plugin in config else {}
+
         try:
-            plugins[cls_name] = getattr(modules[module_name], cls_name)()
+            plugins[cls_name] = getattr(modules[module_name], cls_name)(plugin_conf)
         except AttributeError as e:
             logging.warn('No such class in {}: {}'.format(
                 module_name, cls_name))
@@ -69,7 +71,7 @@ def _init_plugin(plugin, reload=False):
 def _exec_func(body, retry=True):
     try:
         logging.info('Received push addressed to me: {}'.format(body))
-        args = body['args'] if 'args' in body else {}
+        args = json.loads(body['args']) if 'args' in body else {}
         if 'plugin' not in body:
             logging.warn('No plugin specified')
             return
@@ -105,8 +107,6 @@ def _exec_func(body, retry=True):
 
 
 def _on_push(ws, data):
-    global DEVICE_ID
-
     data = json.loads(data)
     if data['type'] == 'tickle' and data['subtype'] == 'push':
         logging.debug('Received push tickle')
@@ -127,7 +127,7 @@ def _on_push(ws, data):
     except ValueError as e:
         return
 
-    if 'target' not in body or body['target'] != DEVICE_ID:
+    if 'target' not in body or body['target'] != config['device_id']:
         return  # Not for me
 
     if 'plugin' not in body:
@@ -143,11 +143,35 @@ def on_push(ws, data):
         on_error(ws, e)
 
 
-def main():
-    global DEVICE_ID
+def parse_config_file(config_file=None):
+    global config
 
+    if config_file:
+        locations = [config_file]
+    else:
+        locations = [
+            # ./config.yaml
+            os.path.join(curdir, 'config.yaml'),
+            # ~/.config/runbullet/config.yaml
+            os.path.join(os.environ['HOME'], '.config', 'runbullet', 'config.yaml'),
+            # /etc/runbullet/config.yaml
+            os.path.join(os.sep, 'etc', 'runbullet', 'config.yaml'),
+        ]
+
+    config = {}
+    for loc in locations:
+        try:
+            with open(loc,'r') as f:
+                config = yaml.load(f)
+        except FileNotFoundError as e:
+            pass
+
+    return config
+
+
+def main():
     DEBUG = False
-    config_file = curdir + os.sep + 'config.yaml'
+    config_file = None
 
     optlist, args = getopt(sys.argv[1:], 'vh')
     for opt, arg in optlist:
@@ -164,13 +188,10 @@ Usage: {} [-v] [-h] [-c <config_file>]
 '''.format(sys.argv[0]))
             return
 
-    config = {}
-    with open(config_file,'r') as f:
-        config = yaml.load(f)
+    config = parse_config_file(config_file)
 
-    API_KEY = config['pushbullet']['token']
-    DEVICE_ID = config['device_id'] \
-        if 'device_id' in config else socket.gethostname()
+    if 'device_id' not in config:
+        config['device_id'] = socket.gethostname()
 
     if 'debug' in config:
         DEBUG = config['debug']
@@ -182,7 +203,7 @@ Usage: {} [-v] [-h] [-c <config_file>]
         logging.basicConfig(level=logging.INFO)
 
     ws = websocket.WebSocketApp('wss://stream.pushbullet.com/websocket/' +
-                                API_KEY,
+                                config['pushbullet']['token'],
                                 on_message = on_push,
                                 on_error = on_error,
                                 on_close = on_close)

@@ -16,6 +16,24 @@ class MusicMpdPlugin(MusicPlugin):
     def stop(self):
         self.client.stop()
 
+    def next(self):
+        self.client.next()
+
+    def previous(self):
+        self.client.previous()
+
+    def setvol(self, vol):
+        self.client.setvol(vol)
+
+    def add(self, content):
+        self.client.add(content)
+
+    def playlistadd(self, playlist):
+        self.client.playlistadd(playlist)
+
+    def clear(self):
+        self.client.clear()
+
     def status(self):
         return self.client.status()
 
