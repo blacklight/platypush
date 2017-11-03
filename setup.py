@@ -25,7 +25,7 @@ def create_etc_dir():
         else:
             raise
 
-plugins = pkg_files('runbullet/lib/plugins')
+plugins = pkg_files('runbullet/plugins')
 create_etc_dir()
 
 setup(

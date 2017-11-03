@@ -19,13 +19,9 @@ __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
 
 #-----------#
 
-curdir = os.path.dirname(os.path.realpath(__file__))
-lib_dir = curdir + os.sep + 'lib'
-sys.path.insert(0, lib_dir)
-
-modules = {}
-plugins = {}
 config = {}
+modules = {}
+wrkdir = os.path.dirname(os.path.realpath(__file__))
 
 
 def on_open(ws):
@@ -40,42 +36,41 @@ def on_error(ws, error):
     logging.error(error)
 
 
-def _init_plugin(plugin, reload=False):
-    module_name = 'plugins.{}'.format(plugin)
-    if module_name not in modules or reload:
-        try:
-            modules[module_name] = importlib.import_module(module_name)
-        except ModuleNotFoundError as e:
-            logging.warn('No such plugin: {}'.format(plugin))
-            raise RuntimeError(e)
+def _init_plugin(plugin_name, reload=False):
+    global modules
+    global config
+
+    if plugin_name in modules and not reload:
+        return modules[plugin_name]
+
+    try:
+        logging.warn(__package__ + '.plugins.' + plugin_name)
+        module = importlib.import_module(__package__ + '.plugins.' + plugin_name)
+    except ModuleNotFoundError as e:
+        logging.warn('No such plugin: {}'.format(plugin_name))
+        raise RuntimeError(e)
 
     # e.g. plugins.music.mpd main class: MusicMpdPlugin
     cls_name = functools.reduce(
         lambda a,b: a.title() + b.title(),
-        (plugin.title().split('.'))
+        (plugin_name.title().split('.'))
     ) + 'Plugin'
 
-    if cls_name not in plugins or reload:
-        plugin_conf = config[plugin] if plugin in config else {}
+    plugin_conf = config[plugin_name] if plugin_name in config else {}
 
-        try:
-            plugins[cls_name] = getattr(modules[module_name], cls_name)(plugin_conf)
-        except AttributeError as e:
-            logging.warn('No such class in {}: {}'.format(
-                module_name, cls_name))
-            raise RuntimeError(e)
+    try:
+        plugin = getattr(module, cls_name)(plugin_conf)
+        modules[plugin_name] = plugin
+    except AttributeError as e:
+        logging.warn('No such class in {}: {}'.format(
+            plugin_name, cls_name))
+        raise RuntimeError(e)
 
-    return plugins[cls_name]
+    return plugin
 
 
 def _exec_func(body, retry=True):
     args = {}
-    logging.info('Received push addressed to me: {}'.format(body))
-
-    if 'plugin' not in body:
-        logging.warn('No plugin specified')
-        return
-
     plugin_name = body['plugin']
 
     if 'args' in body:
@@ -84,11 +79,11 @@ def _exec_func(body, retry=True):
             else body['args']
 
     try:
-        try:
-            plugin = _init_plugin(plugin_name)
-        except RuntimeError as e:  # Module/class not found
-            return
+        plugin = _init_plugin(plugin_name)
+    except RuntimeError as e:  # Module/class not found
+        return
 
+    try:
         ret = plugin.run(args)
         out = None
         err = None
@@ -113,6 +108,8 @@ def _exec_func(body, retry=True):
 
 
 def _on_push(ws, data):
+    global config
+
     data = json.loads(data)
     if data['type'] == 'tickle' and data['subtype'] == 'push':
         logging.debug('Received push tickle')
@@ -136,8 +133,11 @@ def _on_push(ws, data):
     if 'target' not in body or body['target'] != config['device_id']:
         return  # Not for me
 
+    logging.info('Received push addressed to me: {}'.format(body))
+
     if 'plugin' not in body:
-        return  # No plugin specified
+        logging.warn('No plugin specified')
+        return
 
     thread = Thread(target=_exec_func, args=(body,))
     thread.start()
@@ -157,14 +157,13 @@ def parse_config_file(config_file=None):
     else:
         locations = [
             # ./config.yaml
-            os.path.join(curdir, 'config.yaml'),
+            os.path.join(wrkdir, 'config.yaml'),
             # ~/.config/runbullet/config.yaml
             os.path.join(os.environ['HOME'], '.config', 'runbullet', 'config.yaml'),
             # /etc/runbullet/config.yaml
             os.path.join(os.sep, 'etc', 'runbullet', 'config.yaml'),
         ]
 
-    config = {}
     for loc in locations:
         try:
             with open(loc,'r') as f:
@@ -178,6 +177,9 @@ def parse_config_file(config_file=None):
 def main():
     DEBUG = False
     config_file = None
+
+    plugins_dir = os.path.join(wrkdir, 'plugins')
+    sys.path.insert(0, plugins_dir)
 
     optlist, args = getopt(sys.argv[1:], 'vh')
     for opt, arg in optlist:
