@@ -34,7 +34,7 @@ setup(
     author = "Fabio Manganiello",
     author_email = "info@fabiomanganiello.com",
     description = ("Runbullet service"),
-    license = "BSD",
+    license = "Apache Licence 2.0",
     keywords = "pushbullet notifications automation",
     url = "https://www.fabiomanganiello.com",
     packages = ['runbullet'],
@@ -46,7 +46,7 @@ setup(
     long_description = read('README.md'),
     classifiers = [
         "Topic :: Utilities",
-        "License :: OSI Approved :: BSD License",
+        "License :: OSI Approved :: Apache Licence 2.0",
     ],
     install_requires = [
         'pyyaml'
