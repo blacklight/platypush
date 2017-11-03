@@ -1,0 +1,7 @@
+pushbullet:
+    token: your_pushbullet_token_here
+    device: your_pushbullet_device_here  # Virtual PushBullet device linked to notifier
+
+# device_id: <your_device_id> (default: current hostname)
+# debug: True (default: False)
+
