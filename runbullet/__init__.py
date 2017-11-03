@@ -69,15 +69,21 @@ def _init_plugin(plugin, reload=False):
 
 
 def _exec_func(body, retry=True):
+    args = {}
+    logging.info('Received push addressed to me: {}'.format(body))
+
+    if 'plugin' not in body:
+        logging.warn('No plugin specified')
+        return
+
+    plugin_name = body['plugin']
+
+    if 'args' in body:
+        args = json.loads(body['args']) \
+            if isinstance(body['args'], str) \
+            else body['args']
+
     try:
-        logging.info('Received push addressed to me: {}'.format(body))
-        args = json.loads(body['args']) if 'args' in body else {}
-        if 'plugin' not in body:
-            logging.warn('No plugin specified')
-            return
-
-        plugin_name = body['plugin']
-
         try:
             plugin = _init_plugin(plugin_name)
         except RuntimeError as e:  # Module/class not found
