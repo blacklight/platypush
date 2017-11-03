@@ -3,6 +3,10 @@ import mpd
 from .. import MusicPlugin
 
 class MusicMpdPlugin(MusicPlugin):
+    _requires = [
+        'mpd'
+    ]
+
     def _init(self):
         self.client = mpd.MPDClient(use_unicode=True)
         self.client.connect(self.config['host'], self.config['port'])
