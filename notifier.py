@@ -28,7 +28,7 @@ config = {}
 with open(config_file,'r') as f:
     config = yaml.load(f)
 
-API_KEY = config['pushbullet_token']
+API_KEY = config['pushbullet']['token']
 DEVICE_ID = config['device_id'] \
     if 'device_id' in config else socket.gethostname()
 
