@@ -6,3 +6,4 @@ config.yaml
 build/
 dist/
 *.egg-info/
+package.sh
