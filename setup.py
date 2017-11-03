@@ -34,9 +34,9 @@ setup(
     author = "Fabio Manganiello",
     author_email = "info@fabiomanganiello.com",
     description = ("Runbullet service"),
-    license = "Apache Licence 2.0",
+    license = "MIT",
     keywords = "pushbullet notifications automation",
-    url = "https://www.fabiomanganiello.com",
+    url = "https://github.com/BlackLight/runbullet",
     packages = ['runbullet'],
     package_data = {'': plugins},
     scripts = ['runbullet/bin/pusher', 'runbullet/bin/runbullet'],
@@ -46,7 +46,7 @@ setup(
     long_description = read('README.md'),
     classifiers = [
         "Topic :: Utilities",
-        "License :: OSI Approved :: Apache Licence 2.0",
+        "License :: OSI Approved :: MIT",
     ],
     install_requires = [
         'pyyaml'
