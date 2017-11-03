@@ -73,7 +73,9 @@ class LightBatsignalPlugin(LightPlugin):
 
 6. It's a good practice to define a `status` method in your plugin, which returns a 2-items list like `[output, error]`.
 
-7. Test your new plugin by sending some bullets to it:
+7. Rebuild and reinstall `runbullet` if required and relaunch it.
+
+8. Test your new plugin by sending some bullets to it:
 
 ```shell
 echo '{"on":true}' | pusher --target your_pc --plugin light.batsignal
