@@ -34,6 +34,9 @@ DEVICE_ID = config['device_id'] \
 
 DEBUG = config['debug'] if 'debug' in config else False
 
+modules = {}
+plugins = {}
+
 
 def on_open(ws):
     logging.info('Connection opened')
@@ -48,24 +51,32 @@ def on_error(ws, error):
 
 
 def _exec_func(body):
-    module = None
-    try:
-        module = importlib.import_module('plugins.{}'.format(body['plugin']))
-    except ModuleNotFoundError as e:
-        logging.warn('No such plugin: {}'.format(body['plugin']))
-        return
+    module_name = 'plugins.{}'.format(body['plugin'])
+    if module_name in modules:
+        module = modules[module_name]
+    else:
+        try:
+            module = importlib.import_module(module_name)
+            modules[module_name] = module
+        except ModuleNotFoundError as e:
+            logging.warn('No such plugin: {}'.format(body['plugin']))
+            return
 
     logging.info('Received push addressed to me: {}'.format(body))
 
     args = body['args'] if 'args' in body else {}
-    cls = getattr(
-        module, functools.reduce(
-            lambda a,b: a.title() + b.title(),
-            (body['plugin'].title().split('.'))
-        ) + 'Plugin'
-    )
+    cls_name = functools.reduce(
+        lambda a,b: a.title() + b.title(),
+        (body['plugin'].title().split('.'))
+    ) + 'Plugin'
 
-    instance = cls()
+    if cls_name in plugins:
+        instance = plugins[cls_name]
+    else:
+        cls = getattr(module, cls_name)
+        instance = cls()
+        plugins[cls_name] = cls
+
     out, err = instance.run(args)
 
     logging.info('Command output: {}'.format(out))
