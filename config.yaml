@@ -1,7 +1,0 @@
-pushbullet:
-    token: o.EHMMnZneJdpNQv9FSFbyY2busin7floe
-    device: turing  # Virtual PushBullet device linked to notifier
-
-# device_id: <your_device_id> (default: hostname)
-# debug: True (default: False)
-

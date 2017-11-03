@@ -2,3 +2,4 @@
 *.swp
 *.pyc
 __pycache__
+config.yaml
