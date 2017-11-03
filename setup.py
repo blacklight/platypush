@@ -19,8 +19,9 @@ def create_etc_dir():
     try:
         os.makedirs(path)
     except OSError as e:
-        if isinstance(e, PermissionError) \
-                or e.errno == errno.EEXIST and os.path.isdir(path):
+        if isinstance(e, PermissionError):
+            print('WARNING: Could not create /etc/runbullet')
+        elif e.errno == errno.EEXIST and os.path.isdir(path):
             pass
         else:
             raise
