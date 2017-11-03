@@ -23,6 +23,7 @@ curdir = os.path.dirname(os.path.realpath(__file__))
 lib_dir = curdir + os.sep + 'lib'
 sys.path.insert(0, lib_dir)
 
+DEVICE_ID = None
 modules = {}
 plugins = {}
 
