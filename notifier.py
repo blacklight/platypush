@@ -59,6 +59,7 @@ def _init_plugin(plugin, reload=False):
             logging.warn('No such plugin: {}'.format(plugin))
             raise RuntimeError(e)
 
+    # e.g. plugins.music.mpd base class: MusicMpdPlugin
     cls_name = functools.reduce(
         lambda a,b: a.title() + b.title(),
         (plugin.title().split('.'))
