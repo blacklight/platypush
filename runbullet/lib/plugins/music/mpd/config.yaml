@@ -1,6 +1,0 @@
-host: localhost
-port: 6600
-
-_deps:
-    - python-mpd2
-
