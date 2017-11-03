@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import functools
 import importlib
 import os
 import logging
@@ -57,7 +58,13 @@ def _exec_func(body):
     logging.info('Received push addressed to me: {}'.format(body))
 
     args = body['args'] if 'args' in body else {}
-    cls = getattr(module, body['plugin'].title() + 'Plugin')
+    cls = getattr(
+        module, functools.reduce(
+            lambda a,b: a.title() + b.title(),
+            (body['plugin'].title().split('.'))
+        ) + 'Plugin'
+    )
+
     instance = cls()
     out, err = instance.run(args)
 
