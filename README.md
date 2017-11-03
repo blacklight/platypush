@@ -34,3 +34,48 @@ echo '{"cmd":"scp /home/user/photos/*.jpg backup_host:/mnt/hd/photos"}' | pusher
 echo '{"play":true}' | pusher --target raspberrypi --plugin music.mpd
 ```
 
+Writing your plugins
+--------------------
+
+Writing your own `runbullet` plugin, that would execute your own custom logic whenever a bullet with your plugin name is received, is a very simple task.
+
+1. Create your plugin directory under `runbullet/plugins` (e.g. `light/batsignal`).
+
+2. In the case above, `runbullet.plugins.light.batsignal` will be your package name.
+
+3. Create an `__init__.py` under `runbullet/plugins/light/batsignal`.
+
+4. If your module is `light/batsignal`, then its main class should be named `LightBatsignalPlugin`.
+
+5. The configuration for your module will be read from a section named `light.batsignal` from your `config.yaml`, the attributes are accessible in your class in `self.config`.
+
+The `__init__.py` will look like this:
+
+```python
+from .. import LightPlugin
+
+class LightBatsignalPlugin(LightPlugin):
+    def _init(self):
+        self.batsignal = batsignal.Batsignal(self.config['intensity'])
+
+    def on(self):
+        self.batsignal.on()
+
+    def off(self):
+        self.batsignal.off()
+
+    def toggle(self):
+        self.batsignal.toggle()
+
+    def status(self):
+        return [self.batsignal.status().stdout, self.batsignal.status().stderr]
+```
+
+6. It's a good practice to define a `status` method in your plugin, which returns a 2-items list like `[output, error]`.
+
+7. Test your new plugin by sending some bullets to it:
+
+```shell
+echo '{"on":true}' | pusher --target your_pc --plugin light.batsignal
+```
+
