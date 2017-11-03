@@ -23,17 +23,6 @@ curdir = os.path.dirname(os.path.realpath(__file__))
 lib_dir = curdir + os.sep + 'lib'
 sys.path.insert(0, lib_dir)
 
-config_file = curdir + os.sep + 'config.yaml'
-config = {}
-with open(config_file,'r') as f:
-    config = yaml.load(f)
-
-API_KEY = config['pushbullet']['token']
-DEVICE_ID = config['device_id'] \
-    if 'device_id' in config else socket.gethostname()
-
-DEBUG = config['debug'] if 'debug' in config else False
-
 modules = {}
 plugins = {}
 
@@ -174,7 +163,7 @@ Usage: {} [-v] [-h] [-c <config_file>]
     with open(config_file,'r') as f:
         config = yaml.load(f)
 
-    API_KEY = config['pushbullet_token']
+    API_KEY = config['pushbullet']['token']
     DEVICE_ID = config['device_id'] \
         if 'device_id' in config else socket.gethostname()
 
