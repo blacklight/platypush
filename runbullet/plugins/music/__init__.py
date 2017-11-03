@@ -3,7 +3,7 @@ from .. import Plugin
 class MusicPlugin(Plugin):
     def run(self, args):
         if 'clear' in args and args['clear']:
-            self.add(args['clear'])
+            self.clear()
 
         if 'playlistadd' in args and args['playlistadd']:
             self.playlistadd(args['playlistadd'])
