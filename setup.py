@@ -52,7 +52,7 @@ setup(
     long_description = read('README.md'),
     classifiers = [
         "Topic :: Utilities",
-        "License :: OSI Approved :: MIT",
+        "License :: OSI Approved :: MIT License",
         "Development Status :: 3 - Alpha",
     ],
     install_requires = [
