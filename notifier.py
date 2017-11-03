@@ -9,18 +9,29 @@ import subprocess
 import sys
 import time
 import websocket
+import yaml
 
 from threading import Thread
 from getopt import getopt
 
-lib_dir = os.path.dirname(os.path.realpath(__file__)) + os.sep + 'lib'
-sys.path.insert(0, lib_dir)
-
 __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
 
-API_KEY = 'o.EHMMnZneJdpNQv9FSFbyY2busin7floe'
-DEVICE_ID = socket.gethostname()
-DEBUG = False
+#-----------#
+
+curdir = os.path.dirname(os.path.realpath(__file__))
+lib_dir = curdir + os.sep + 'lib'
+sys.path.insert(0, lib_dir)
+
+config_file = curdir + os.sep + 'config.yaml'
+config = {}
+with open(config_file,'r') as f:
+    config = yaml.load(f)
+
+API_KEY = config['pushbullet_token']
+DEVICE_ID = config['device_id'] \
+    if 'device_id' in config else socket.gethostname()
+
+DEBUG = config['debug'] if 'debug' in config else False
 
 
 def on_open(ws):
@@ -93,19 +104,34 @@ def on_push(ws, data):
 
 
 def main():
-    global DEBUG
+    DEBUG = False
+    config_file = curdir + os.sep + 'config.yaml'
 
     optlist, args = getopt(sys.argv[1:], 'vh')
     for opt, arg in optlist:
+        if opt == '-c':
+            config_file = arg
         if opt == '-v':
             DEBUG = True
         elif opt == '-h':
             print('''
-Usage: {} [-v] [-h]
+Usage: {} [-v] [-h] [-c <config_file>]
     -v  Enable debug mode
     -h  Show this help
+    -c  Path to the configuration file (default: ./config.yaml)
 '''.format(sys.argv[0]))
             return
+
+    config = {}
+    with open(config_file,'r') as f:
+        config = yaml.load(f)
+
+    API_KEY = config['pushbullet_token']
+    DEVICE_ID = config['device_id'] \
+        if 'device_id' in config else socket.gethostname()
+
+    if 'debug' in config:
+        DEBUG = config['debug']
 
     if DEBUG:
         logging.basicConfig(level=logging.DEBUG)
