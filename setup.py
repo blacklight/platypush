@@ -30,16 +30,22 @@ create_etc_dir()
 
 setup(
     name = "runbullet",
-    version = "0.1",
+    version = "0.2.0.dev1",
     author = "Fabio Manganiello",
     author_email = "info@fabiomanganiello.com",
     description = ("Runbullet service"),
     license = "MIT",
+    python_requires = '>= 3',
     keywords = "pushbullet notifications automation",
     url = "https://github.com/BlackLight/runbullet",
     packages = ['runbullet'],
     package_data = {'': plugins},
-    scripts = ['runbullet/bin/pusher', 'runbullet/bin/runbullet'],
+    scripts = ['runbullet/bin/pusher'],
+    entry_points = {
+        'console_scripts': [
+            'runbullet=runbullet:main',
+        ],
+    },
     data_files = [
         ('/etc/runbullet', ['runbullet/config.example.yaml'])
     ],
@@ -47,9 +53,10 @@ setup(
     classifiers = [
         "Topic :: Utilities",
         "License :: OSI Approved :: MIT",
+        "Development Status :: 3 - Alpha",
     ],
     install_requires = [
         'pyyaml'
-    ]
+    ],
 )
 
