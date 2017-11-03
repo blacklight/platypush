@@ -18,7 +18,7 @@ class ShellPlugin(Plugin):
         except subprocess.CalledProcessError as e:
             error = e.output
 
-        return output, error
+        return [output, error]
 
 # vim:sw=4:ts=4:et:
 

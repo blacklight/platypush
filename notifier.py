@@ -50,38 +50,67 @@ def on_error(ws, error):
     logging.error(error)
 
 
-def _exec_func(body):
-    module_name = 'plugins.{}'.format(body['plugin'])
-    if module_name in modules:
-        module = modules[module_name]
-    else:
+def _init_plugin(plugin, reload=False):
+    module_name = 'plugins.{}'.format(plugin)
+    if module_name not in modules or reload:
         try:
-            module = importlib.import_module(module_name)
-            modules[module_name] = module
+            modules[module_name] = importlib.import_module(module_name)
         except ModuleNotFoundError as e:
-            logging.warn('No such plugin: {}'.format(body['plugin']))
-            return
+            logging.warn('No such plugin: {}'.format(plugin))
+            raise RuntimeError(e)
 
-    logging.info('Received push addressed to me: {}'.format(body))
-
-    args = body['args'] if 'args' in body else {}
     cls_name = functools.reduce(
         lambda a,b: a.title() + b.title(),
-        (body['plugin'].title().split('.'))
+        (plugin.title().split('.'))
     ) + 'Plugin'
 
-    if cls_name in plugins:
-        instance = plugins[cls_name]
-    else:
-        cls = getattr(module, cls_name)
-        instance = cls()
-        plugins[cls_name] = cls
+    if cls_name not in plugins or reload:
+        try:
+            plugins[cls_name] = getattr(modules[module_name], cls_name)()
+        except AttributeError as e:
+            logging.warn('No such class in {}: {}'.format(
+                module_name, cls_name))
+            raise RuntimeError(e)
 
-    out, err = instance.run(args)
+    return plugins[cls_name]
 
-    logging.info('Command output: {}'.format(out))
-    if err:
-        logging.warn('Command error: {}'.format(err))
+
+def _exec_func(body, retry=True):
+    try:
+        logging.info('Received push addressed to me: {}'.format(body))
+        args = body['args'] if 'args' in body else {}
+        if 'plugin' not in body:
+            logging.warn('No plugin specified')
+            return
+
+        plugin_name = body['plugin']
+
+        try:
+            plugin = _init_plugin(plugin_name)
+        except RuntimeError as e:  # Module/class not found
+            return
+
+        ret = plugin.run(args)
+        out = None
+        err = None
+
+        if isinstance(ret, list):
+            out = ret[0]
+            err = ret[1] if len(ret) > 1 else None
+        elif ret is not None:
+            out = ret
+
+        if out:
+            logging.info('Command output: {}'.format(out))
+
+        if err:
+            logging.warn('Command error: {}'.format(err))
+    except Exception as e:
+        logging.exception(e)
+        if retry:
+            logging.info('Reloading plugin {} and retrying'.format(plugin_name))
+            _init_plugin(plugin_name, reload=True)
+            _exec_func(body, retry=False)
 
 
 def _on_push(ws, data):
