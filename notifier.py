@@ -105,6 +105,8 @@ def _exec_func(body, retry=True):
 
 
 def _on_push(ws, data):
+    global DEVICE_ID
+
     data = json.loads(data)
     if data['type'] == 'tickle' and data['subtype'] == 'push':
         logging.debug('Received push tickle')
@@ -142,6 +144,8 @@ def on_push(ws, data):
 
 
 def main():
+    global DEVICE_ID
+
     DEBUG = False
     config_file = curdir + os.sep + 'config.yaml'
 
