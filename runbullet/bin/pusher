@@ -11,11 +11,11 @@ from runbullet import parse_config_file
 
 
 def print_usage():
-    print ('''Usage: {} [-h|--help] <-t|--target <target name>> <-p|--plugin <plugin name>> payload
+    print ('''Usage: {} [-h|--help] <-t|--target <target name>> <-a|--action <action name>> payload
     -h, --help:\t\tShow this help and exit
     -t, --target:\tName of the target device/host
-    -p, --plugin:\tPlugin to use (e.g. shell or music.mpd)
-    payload:\t\tArguments to the plugin
+    -a, --action\tAction to run, it includes both the package name and the method (e.g. shell.exec or music.mpd.play)
+    payload:\t\tArguments to the action
 '''.format(sys.argv[0]))
 
 def main():
@@ -34,11 +34,11 @@ def main():
               'your PushBullet account'.format(config['pushbullet']['device']))
         return
 
-    optlist, args = getopt(sys.argv[1:], 'ht:p:',
-                           ['help', 'target=', 'plugin='])
+    optlist, args = getopt(sys.argv[1:], 'ht:a:',
+                           ['help', 'target=', 'action='])
 
     target = None
-    plugin = None
+    action = None
     payload = {}
 
     for opt, arg in optlist:
@@ -47,24 +47,25 @@ def main():
             return
         elif opt == 't' or opt == '--target':
             target = arg
-        elif opt == 'p' or opt == '--plugin':
-            plugin = arg
+        elif opt == 'a' or opt == '--action':
+            action = arg
 
     if len(args):
         payload = json.loads(args[0])
     else:
-        payload = sys.stdin.read()
+        payload = json.loads(sys.stdin.read())
 
-    if not (target and plugin):
+    if not (target and action):
         print_usage()
         return
 
     msg = {
         'target': target,
-        'plugin': plugin,
-        'args': payload,
+        'action': action,
+        **payload,
     }
 
+    print('msg: {}'.format(msg))
     pb.push_note('', json.dumps(msg), device)
 
 

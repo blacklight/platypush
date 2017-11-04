@@ -17,19 +17,19 @@ class SwitchWemoPlugin(SwitchPlugin):
         logging.info('Starting WeMo discovery')
         self.env.discover(seconds=3)
 
-    def on(self, args):
-        switch = self.env.get_switch(args['device'])
-        logging.info('Turning {} on'.format(args['device']))
+    def on(self, device):
+        switch = self.env.get_switch(device)
+        logging.info('Turning {} on'.format(device))
         switch.on()
 
-    def off(self, args):
-        switch = self.env.get_switch(args['device'])
-        logging.info('Turning {} off'.format(args['device']))
+    def off(self, device):
+        switch = self.env.get_switch(device)
+        logging.info('Turning {} off'.format(device))
         switch.off()
 
-    def toggle(self, args):
-        switch = self.env.get_switch(args['device'])
-        logging.info('Toggling {}'.format(args['device']))
+    def toggle(self, device):
+        switch = self.env.get_switch(device)
+        logging.info('Toggling {}'.format(device))
         switch.toggle()
 
     def status(self):

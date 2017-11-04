@@ -71,20 +71,27 @@ def _init_plugin(plugin_name, reload=False):
 
 def _exec_func(body, retry=True):
     args = {}
-    plugin_name = body['plugin']
 
-    if 'args' in body:
-        args = json.loads(body['args']) \
-            if isinstance(body['args'], str) \
-            else body['args']
+    if 'action' not in body:
+        logging.warn('No action specified')
+        return
+
+    target = body.pop('target')
+    tokens = body.pop('action').split('.')
+    module_name = str.join('.', tokens[:-1])
+    method_name = tokens[-1:][0]
+
+    args = json.loads(body) \
+        if isinstance(body, str) \
+        else body
 
     try:
-        plugin = _init_plugin(plugin_name)
+        plugin = _init_plugin(module_name)
     except RuntimeError as e:  # Module/class not found
         return
 
     try:
-        ret = plugin.run(args)
+        ret = plugin.run(method=method_name, **args)
         out = None
         err = None
 
@@ -102,8 +109,8 @@ def _exec_func(body, retry=True):
     except Exception as e:
         logging.exception(e)
         if retry:
-            logging.info('Reloading plugin {} and retrying'.format(plugin_name))
-            _init_plugin(plugin_name, reload=True)
+            logging.info('Reloading plugin {} and retrying'.format(module_name))
+            _init_plugin(module_name, reload=True)
             _exec_func(body, retry=False)
 
 
@@ -134,10 +141,6 @@ def _on_push(ws, data):
         return  # Not for me
 
     logging.info('Received push addressed to me: {}'.format(body))
-
-    if 'plugin' not in body:
-        logging.warn('No plugin specified')
-        return
 
     thread = Thread(target=_exec_func, args=(body,))
     thread.start()
@@ -221,4 +224,7 @@ Usage: {} [-v] [-h] [-c <config_file>]
 
 if __name__ == '__main__':
     main()
+
+
+# vim:sw=4:ts=4:et:
 

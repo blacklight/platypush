@@ -30,9 +30,11 @@ Testing
 Some examples:
 
 ```shell
-echo '{"cmd":"scp /home/user/photos/*.jpg backup_host:/mnt/hd/photos"}' | pusher --target laptop --plugin shell
-echo '{"play":true}' | pusher --target raspberrypi --plugin music.mpd
+echo '{"cmd":"scp /home/user/photos/*.jpg backup_host:/mnt/hd/photos"}' | pusher --target laptop --action shell.exec
+echo '{}' | pusher --target raspberrypi --action music.mpd.play
 ```
+
+The logic to execute is specified by the `--action` option, whose format is `package_name.method_name` (with method_name part of the package main class).
 
 Writing your plugins
 --------------------
@@ -52,11 +54,13 @@ Writing your own `runbullet` plugin, that would execute your own custom logic wh
 The `__init__.py` will look like this:
 
 ```python
+import batman
+
 from .. import LightPlugin
 
 class LightBatsignalPlugin(LightPlugin):
     def _init(self):
-        self.batsignal = batsignal.Batsignal(self.config['intensity'])
+        self.batsignal = batman.Batsignal(self.config['intensity'])
 
     def on(self):
         self.batsignal.on()
@@ -78,6 +82,5 @@ class LightBatsignalPlugin(LightPlugin):
 8. Test your new plugin by sending some bullets to it:
 
 ```shell
-echo '{"on":true}' | pusher --target your_pc --plugin light.batsignal
+echo '{}' | pusher --target your_pc --action light.batsignal.on
 ```
-

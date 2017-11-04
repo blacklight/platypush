@@ -13,8 +13,9 @@ class Plugin(object):
                     pass
 
 
-    def run(self, args):
-        raise NotImplementedError()
+    def run(self, method, *args, **kwargs):
+        res = getattr(self, method)(*args, **kwargs)
+        return res
 
 # vim:sw=4:ts=4:et:
 
