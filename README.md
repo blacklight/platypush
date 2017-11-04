@@ -62,7 +62,10 @@ class LightBatsignalPlugin(LightPlugin):
     def _init(self):
         self.batsignal = batman.Batsignal(self.config['intensity'])
 
-    def on(self):
+    def on(self, urgent=False):
+        if distress:
+            self.batsignal.notify_robin()
+
         self.batsignal.on()
 
     def off(self):
@@ -82,5 +85,6 @@ class LightBatsignalPlugin(LightPlugin):
 8. Test your new plugin by sending some bullets to it:
 
 ```shell
-echo '{}' | pusher --target your_pc --action light.batsignal.on
+pusher --target your_pc --action light.batsignal.on --urgent 1
 ```
+
