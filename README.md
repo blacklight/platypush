@@ -63,7 +63,7 @@ class LightBatsignalPlugin(LightPlugin):
         self.batsignal = batman.Batsignal(self.config['intensity'])
 
     def on(self, urgent=False):
-        if distress:
+        if urgent:
             self.batsignal.notify_robin()
 
         self.batsignal.on()
