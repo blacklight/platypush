@@ -77,7 +77,8 @@ def _exec_func(body, retry=True):
         return
 
     target = body.pop('target')
-    tokens = body.pop('action').split('.')
+    action = body.pop('action')
+    tokens action.split('.')
     module_name = str.join('.', tokens[:-1])
     method_name = tokens[-1:][0]
 
@@ -109,6 +110,9 @@ def _exec_func(body, retry=True):
     except Exception as e:
         logging.exception(e)
         if retry:
+            # Put the action back where it was before retrying
+            body['action'] = action
+
             logging.info('Reloading plugin {} and retrying'.format(module_name))
             _init_plugin(module_name, reload=True)
             _exec_func(body, retry=False)
