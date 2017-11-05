@@ -22,6 +22,27 @@ Edit the file to include:
 
 Each target device is identified by a unique device_id in the messages sent over your account. The device_id is the hostname by default, unless changed in config.yaml.
 
+Available plugins
+-----------------
+
+* `runbullet.plugins.shell`: The simplest and yet most versatile plugin. Executes a remote command on the host identified by the `--target` device_id. Example:
+
+```shell
+pusher --target laptop --action shell.exec --cmd "scp /home/user/photos/*.jpg backup_host:/mnt/hd/photos"
+```
+
+* `runbullet.plugins.switch.wemo`: Controls a WeMo Switch smart switch device. Requires the package `ouimeaux` on the target machine. Example:
+
+```shell
+pusher --target raspberry --action switch.wemo.on
+```
+
+* *TODO* `runbullet.plugins.light.hue`: Controls a Philips Hue smart lights system. Requires the package `phue` on the target machine. Example:
+
+```shell
+pusher --target raspberry --action light.hue.set_scene --scene "Sunset" --group "Living Room"
+```
+
 Testing
 -------
 
@@ -30,8 +51,8 @@ Testing
 Some examples:
 
 ```shell
-echo '{"cmd":"scp /home/user/photos/*.jpg backup_host:/mnt/hd/photos"}' | pusher --target laptop --action shell.exec
-echo '{}' | pusher --target raspberrypi --action music.mpd.play
+pusher --target laptop --action shell.exec --cmd "scp /home/user/photos/*.jpg backup_host:/mnt/hd/photos"
+pusher --target raspberrypi --action music.mpd.play
 ```
 
 The logic to execute is specified by the `--action` option, whose format is `package_name.method_name` (with method_name part of the package main class).
