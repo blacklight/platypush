@@ -78,7 +78,7 @@ def _exec_func(body, retry=True):
 
     target = body.pop('target')
     action = body.pop('action')
-    tokens action.split('.')
+    tokens = action.split('.')
     module_name = str.join('.', tokens[:-1])
     method_name = tokens[-1:][0]
 
