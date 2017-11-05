@@ -22,6 +22,20 @@ Edit the file to include:
 
 Each target device is identified by a unique device_id in the messages sent over your account. The device_id is the hostname by default, unless changed in config.yaml.
 
+Shell interface
+---------------
+
+`runbullet` installs `pusher`, a command-line tool to send PushBullet messages to the connected devices in the format used by runbullet.
+
+Some examples:
+
+```shell
+pusher --target laptop --action shell.exec --cmd "scp /home/user/photos/*.jpg backup_host:/mnt/hd/photos"
+pusher --target raspberrypi --action music.mpd.play
+```
+
+The logic to execute is specified by the `--action` option, whose format is `package_name.method_name` (with method_name part of the package main class).
+
 Available plugins
 -----------------
 
@@ -29,6 +43,20 @@ Available plugins
 
 ```shell
 pusher --target laptop --action shell.exec --cmd "scp /home/user/photos/*.jpg backup_host:/mnt/hd/photos"
+```
+
+* `runbullet.plugins.music.mpd`: Controls the playback on a mpd/mopidy music server. Requires the package `mpd2` on the target machine. Example:
+
+```shell
+pusher --target raspberry --action music.mpd.play
+```
+
+Configure the plugin through an entry like this in your `config.yaml`:
+
+```yaml
+music.mpd:
+    host: your_mpd_host
+    port: 6600
 ```
 
 * `runbullet.plugins.switch.wemo`: Controls a WeMo Switch smart switch device. Requires the package `ouimeaux` on the target machine. Example:
@@ -42,20 +70,6 @@ pusher --target raspberry --action switch.wemo.on
 ```shell
 pusher --target raspberry --action light.hue.set_scene --scene "Sunset" --group "Living Room"
 ```
-
-Testing
--------
-
-`runbullet` installs `pusher`, a command-line tool to send PushBullet messages to the connected devices in the format used by runbullet.
-
-Some examples:
-
-```shell
-pusher --target laptop --action shell.exec --cmd "scp /home/user/photos/*.jpg backup_host:/mnt/hd/photos"
-pusher --target raspberrypi --action music.mpd.play
-```
-
-The logic to execute is specified by the `--action` option, whose format is `package_name.method_name` (with method_name part of the package main class).
 
 Writing your plugins
 --------------------
