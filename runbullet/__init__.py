@@ -69,21 +69,22 @@ def _init_plugin(plugin_name, reload=False):
     return plugin
 
 
-def _exec_func(body, retry=True):
-    args = {}
+def _exec_func(args, retry=True):
+    args = json.loads(args) \
+        if isinstance(args, str) \
+        else args
 
-    if 'action' not in body:
+    if 'action' not in args:
         logging.warn('No action specified')
         return
 
-    action = body.pop('action')
+    if 'target' in args:
+        args.pop('target')
+
+    action = args.pop('action')
     tokens = action.split('.')
     module_name = str.join('.', tokens[:-1])
     method_name = tokens[-1:][0]
-
-    args = json.loads(body) \
-        if isinstance(body, str) \
-        else body
 
     try:
         plugin = _init_plugin(module_name)
@@ -110,11 +111,11 @@ def _exec_func(body, retry=True):
         logging.exception(e)
         if retry:
             # Put the action back where it was before retrying
-            body['action'] = action
+            args['action'] = action
 
             logging.info('Reloading plugin {} and retrying'.format(module_name))
             _init_plugin(module_name, reload=True)
-            _exec_func(body, retry=False)
+            _exec_func(args, retry=False)
 
 
 def _on_push(ws, data):
