@@ -76,7 +76,6 @@ def _exec_func(body, retry=True):
         logging.warn('No action specified')
         return
 
-    target = body.pop('target')
     action = body.pop('action')
     tokens = action.split('.')
     module_name = str.join('.', tokens[:-1])
