@@ -5,8 +5,9 @@ import websocket
 from .. import Backend
 
 class PushbulletBackend(Backend):
-    def _init(self, token):
+    def _init(self, token, device=None):
         self.token = token
+        self.device = device
 
     @staticmethod
     def _on_init(ws):
