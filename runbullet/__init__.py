@@ -4,9 +4,7 @@ import os
 import logging
 import json
 import socket
-import subprocess
 import sys
-import time
 import websocket
 import yaml
 
