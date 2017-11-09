@@ -32,7 +32,7 @@ create_etc_dir()
 
 setup(
     name = "runbullet",
-    version = "0.2.1.dev1",
+    version = "0.2.2.dev1",
     author = "Fabio Manganiello",
     author_email = "info@fabiomanganiello.com",
     description = ("Runbullet service"),
