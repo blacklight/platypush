@@ -2,7 +2,7 @@
 
 import errno
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -27,6 +27,7 @@ def create_etc_dir():
             raise
 
 plugins = pkg_files('runbullet/plugins')
+backend = pkg_files('runbullet/backend')
 create_etc_dir()
 
 setup(
@@ -39,8 +40,9 @@ setup(
     python_requires = '>= 3',
     keywords = "pushbullet notifications automation",
     url = "https://github.com/BlackLight/runbullet",
-    packages = ['runbullet'],
-    package_data = {'': plugins},
+    # packages = ['runbullet'],
+    packages = find_packages(),
+    # package_data = {'': plugins},
     scripts = ['runbullet/bin/pusher'],
     entry_points = {
         'console_scripts': [
@@ -57,7 +59,8 @@ setup(
         "Development Status :: 3 - Alpha",
     ],
     install_requires = [
-        'pyyaml'
+        'pyyaml',
+        'websocket-client',
     ],
 )
 

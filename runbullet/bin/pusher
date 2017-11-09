@@ -21,18 +21,18 @@ def print_usage():
 
 def main():
     config = parse_config_file()
-    API_KEY = config['pushbullet']['token']
+    API_KEY = config['backend.pushbullet']['token']
     pb = Pushbullet(API_KEY)
 
     devices = [
-        _ for _ in pb.devices if _.nickname == config['pushbullet']['device']
+        _ for _ in pb.devices if _.nickname == config['backend.pushbullet']['device']
     ]
 
     if len(devices) > 0:
         device = devices[0]
     else:
         print('Device {} not found - please create a virtual device on ' +
-              'your PushBullet account'.format(config['pushbullet']['device']))
+              'your PushBullet account'.format(config['backend.pushbullet']['device']))
         return
 
     parser = argparse.ArgumentParser()

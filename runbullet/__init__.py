@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import functools
 import importlib
 import os
@@ -12,6 +10,7 @@ import time
 import websocket
 import yaml
 
+from queue import Queue
 from threading import Thread
 from getopt import getopt
 
@@ -24,18 +23,6 @@ modules = {}
 wrkdir = os.path.dirname(os.path.realpath(__file__))
 
 
-def on_open(ws):
-    logging.info('Connection opened')
-
-
-def on_close(ws):
-    logging.info('Connection closed')
-
-
-def on_error(ws, error):
-    logging.error(error)
-
-
 def _init_plugin(plugin_name, reload=False):
     global modules
     global config
@@ -44,7 +31,6 @@ def _init_plugin(plugin_name, reload=False):
         return modules[plugin_name]
 
     try:
-        logging.warn(__package__ + '.plugins.' + plugin_name)
         module = importlib.import_module(__package__ + '.plugins.' + plugin_name)
     except ModuleNotFoundError as e:
         logging.warn('No such plugin: {}'.format(plugin_name))
@@ -70,17 +56,6 @@ def _init_plugin(plugin_name, reload=False):
 
 
 def _exec_func(args, retry=True):
-    args = json.loads(args) \
-        if isinstance(args, str) \
-        else args
-
-    if 'action' not in args:
-        logging.warn('No action specified')
-        return
-
-    if 'target' in args:
-        args.pop('target')
-
     action = args.pop('action')
     tokens = action.split('.')
     module_name = str.join('.', tokens[:-1])
@@ -89,6 +64,7 @@ def _exec_func(args, retry=True):
     try:
         plugin = _init_plugin(module_name)
     except RuntimeError as e:  # Module/class not found
+        logging.exception(e)
         return
 
     try:
@@ -118,42 +94,8 @@ def _exec_func(args, retry=True):
             _exec_func(args, retry=False)
 
 
-def _on_push(ws, data):
-    global config
-
-    data = json.loads(data)
-    if data['type'] == 'tickle' and data['subtype'] == 'push':
-        logging.debug('Received push tickle')
-        return
-
-    if data['type'] != 'push':
-        return  # Not a push notification
-
-    push = data['push']
-    logging.debug('Received push: {}'.format(push))
-
-    if 'body' not in push:
-        return
-
-    body = push['body']
-    try:
-        body = json.loads(body)
-    except ValueError as e:
-        return
-
-    if 'target' not in body or body['target'] != config['device_id']:
-        return  # Not for me
-
-    logging.info('Received push addressed to me: {}'.format(body))
-
-    thread = Thread(target=_exec_func, args=(body,))
-    thread.start()
-
-def on_push(ws, data):
-    try:
-        _on_push(ws, data)
-    except Exception as e:
-        on_error(ws, e)
+def on_msg(msg):
+    Thread(target=_exec_func, args=(msg,)).start()
 
 
 def parse_config_file(config_file=None):
@@ -181,6 +123,35 @@ def parse_config_file(config_file=None):
     return config
 
 
+def get_backends(config):
+    backends = []
+
+    for k in config.keys():
+        if k.startswith('backend.') and (
+                'disabled' not in config[k] or not config[k]['disabled']):
+            module = importlib.import_module(__package__ + '.' + k)
+
+            # e.g. backend.pushbullet main class: PushbulletBackend
+            cls_name = functools.reduce(
+                lambda a,b: a.title() + b.title(),
+                (module.__name__.title().split('.')[2:])
+            ) + 'Backend'
+
+            try:
+                b = getattr(module, cls_name)(config[k])
+                backends.append(b)
+            except AttributeError as e:
+                logging.warn('No such class in {}: {}'.format(
+                    module.__name__, cls_name))
+                raise RuntimeError(e)
+
+    return backends
+
+def get_device_id():
+    global config
+    return config['device_id']
+
+
 def main():
     DEBUG = False
     config_file = None
@@ -204,6 +175,7 @@ Usage: {} [-v] [-h] [-c <config_file>]
             return
 
     config = parse_config_file(config_file)
+    logging.info('Configuration dump: {}'.format(config))
 
     if 'device_id' not in config:
         config['device_id'] = socket.gethostname()
@@ -217,18 +189,21 @@ Usage: {} [-v] [-h] [-c <config_file>]
     else:
         logging.basicConfig(level=logging.INFO)
 
-    ws = websocket.WebSocketApp('wss://stream.pushbullet.com/websocket/' +
-                                config['pushbullet']['token'],
-                                on_message = on_push,
-                                on_error = on_error,
-                                on_close = on_close)
-    ws.on_open = on_open
-    ws.run_forever()
+    mq = Queue()
+    backends = get_backends(config)
 
+    for backend in backends:
+        backend.mq = mq
+        backend.start()
+
+    while True:
+        try:
+            on_msg(mq.get())
+        except KeyboardInterrupt:
+            return
 
 if __name__ == '__main__':
     main()
-
 
 # vim:sw=4:ts=4:et:
 
