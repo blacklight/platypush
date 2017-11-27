@@ -24,6 +24,8 @@ class PushbulletBackend(Backend):
     @staticmethod
     def _on_error(ws, e):
         logging.exception(e)
+        self.ws.close()
+        self._init_socket()
 
     def _on_push(self, data):
         data = json.loads(data) if isinstance(data, str) else push
@@ -45,7 +47,7 @@ class PushbulletBackend(Backend):
 
         self.on_msg(body)
 
-    def run(self):
+    def _init_socket(self):
         self.ws = websocket.WebSocketApp(
             'wss://stream.pushbullet.com/websocket/' + self.token,
             on_open = self._on_init,
@@ -54,6 +56,9 @@ class PushbulletBackend(Backend):
             on_close = self._on_close)
 
         self.ws.backend = self
+
+    def run(self):
+        self.init_socket()
         self.ws.run_forever()
 
 # vim:sw=4:ts=4:et:
