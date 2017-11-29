@@ -37,6 +37,7 @@ class KafkaBackend(Backend):
 
         self._init_producer()
         self.producer.send(self.topic, msg)
+        self.producer.flush()
 
     def run(self):
         self.consumer = KafkaConsumer(self.topic, bootstrap_servers=self.server)

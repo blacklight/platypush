@@ -84,7 +84,7 @@ def main():
     backend = get_backend(config)
     if isinstance(backend, Pushbullet):
         send_pb_message(backend, config['backend.pushbullet']['device'], msg)
-    elif isinstance(backend, Pushbullet):
+    elif isinstance(backend, KafkaBackend):
         send_kafka_message(backend, msg)
 
 
