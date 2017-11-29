@@ -136,7 +136,7 @@ def get_backends(config):
             ) + 'Backend'
 
             # Ignore the pusher attribute here
-            if 'pusher' in config: del config['pusher']
+            if 'pusher' in config[k]: del config[k]['pusher']
 
             try:
                 b = getattr(module, cls_name)(config[k])
