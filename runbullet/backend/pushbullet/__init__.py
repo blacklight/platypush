@@ -62,7 +62,7 @@ class PushbulletBackend(Backend):
         self.ws.backend = self
 
     def run(self):
-        self.init_socket()
+        self._init_socket()
         self.ws.run_forever()
 
 # vim:sw=4:ts=4:et:
