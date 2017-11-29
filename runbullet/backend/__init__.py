@@ -53,6 +53,9 @@ class Backend(Thread):
 
         self.mq.put(msg)
 
+    def send_msg(self, msg):
+        raise NotImplementedError()
+
     def run(self):
         raise NotImplementedError()
 

@@ -1,5 +1,12 @@
-backend.pushbullet:
+backend.kafka:
     disabled: False
+    pusher: True  # The pusher executable will use this backend by default
+    logging: DEBUG
+    server: your_server:9092
+    topic: runbullet
+
+backend.pushbullet:
+    disabled: True
     logging: DEBUG
     token: your_pushbullet_token_here
     device: turing

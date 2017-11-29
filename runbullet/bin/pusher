@@ -9,6 +9,7 @@ import yaml
 
 from pushbullet import Pushbullet
 from runbullet import parse_config_file
+from runbullet.backend.kafka import KafkaBackend
 
 
 def print_usage():
@@ -19,21 +20,41 @@ def print_usage():
     payload:\t\tArguments to the action
 '''.format(sys.argv[0]))
 
-def main():
-    config = parse_config_file()
-    API_KEY = config['backend.pushbullet']['token']
-    pb = Pushbullet(API_KEY)
-
+def get_pb_device_by_name(pb, name):
     devices = [
-        _ for _ in pb.devices if _.nickname == config['backend.pushbullet']['device']
+        _ for _ in pb.devices if _.nickname == name
     ]
 
-    if len(devices) > 0:
-        device = devices[0]
-    else:
+    return devices[0] if devices else None
+
+def send_pb_message(pb, device_name, msg):
+    device = get_pb_device_by_name(pb, name=device_name)
+    if not device:
         print('Device {} not found - please create a virtual device on ' +
               'your PushBullet account'.format(config['backend.pushbullet']['device']))
         return
+
+    pb.push_note('', json.dumps(msg), device)
+
+def send_kafka_message(backend, msg):
+    backend.send_msg(msg)
+
+def get_backend(config):
+    # TODO Refactor this as something better and reuse the same
+    # backend classes from the runbullet consumer module
+    if 'backend.pushbullet' in config \
+            and 'pusher' in config['backend.pushbullet'] \
+            and config['backend.pushbullet']['pusher']:
+        API_KEY = config['backend.pushbullet']['token']
+        return Pushbullet(API_KEY)
+    elif 'backend.kafka' in config \
+            and 'pusher' in config['backend.kafka'] \
+            and config['backend.kafka']['pusher']:
+        c = config['backend.kafka']
+        return KafkaBackend(server=c['server'], topic=c['topic'])
+
+def main():
+    config = parse_config_file()
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--target', '-t', dest='target', required=True,
@@ -59,7 +80,12 @@ def main():
     }
 
     print('msg: {}'.format(msg))
-    pb.push_note('', json.dumps(msg), device)
+
+    backend = get_backend(config)
+    if isinstance(backend, Pushbullet):
+        send_pb_message(backend, config['backend.pushbullet']['device'], msg)
+    elif isinstance(backend, Pushbullet):
+        send_kafka_message(backend, msg)
 
 
 if __name__ == '__main__':

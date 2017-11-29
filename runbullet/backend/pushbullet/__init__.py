@@ -5,7 +5,7 @@ import websocket
 from .. import Backend
 
 class PushbulletBackend(Backend):
-    def _init(self, token, device=None):
+    def _init(self, token, device):
         self.token = token
         self.device = device
 
@@ -28,7 +28,11 @@ class PushbulletBackend(Backend):
         self._init_socket()
 
     def _on_push(self, data):
-        data = json.loads(data) if isinstance(data, str) else push
+        try:
+            data = json.loads(data) if isinstance(data, str) else push
+        except Exception as e:
+            logging.exception(e)
+            return
 
         if data['type'] != 'push':
             return  # Not a push notification
