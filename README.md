@@ -13,6 +13,8 @@ pip install platypush
 ### Manual Installation
 
 ```shell
+git clone https://github.com/BlackLight/platypush
+cd platypush
 python setup.py install
 ```
 
