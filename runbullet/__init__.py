@@ -118,6 +118,10 @@ def parse_config_file(config_file=None):
         except FileNotFoundError as e:
             pass
 
+    for section in config:
+        if 'disabled' in config[section] and config[section]['disabled']:
+            del config[section]
+
     return config
 
 
@@ -125,8 +129,7 @@ def get_backends(config):
     backends = []
 
     for k in config.keys():
-        if k.startswith('backend.') and (
-                'disabled' not in config[k] or not config[k]['disabled']):
+        if k.startswith('backend.'):
             module = importlib.import_module(__package__ + '.' + k)
 
             # e.g. backend.pushbullet main class: PushbulletBackend
