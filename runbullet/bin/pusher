@@ -7,10 +7,10 @@ import re
 import sys
 import yaml
 
-from pushbullet import Pushbullet
 from runbullet import parse_config_file
 from runbullet.backend.kafka import KafkaBackend
 from runbullet.backend.local import LocalBackend
+from runbullet.backend.pushbullet import PushbulletBackend
 
 
 def print_usage():
@@ -29,24 +29,7 @@ def get_pb_device_by_name(pb, name):
 
     return devices[0] if devices else None
 
-def send_pb_message(pb, device_name, msg):
-    device = get_pb_device_by_name(pb, name=device_name)
-    if not device:
-        print('Device {} not found - please create a virtual device on ' +
-              'your PushBullet account'.format(config['backend.pushbullet']['device']))
-        return
-
-    pb.push_note('', json.dumps(msg), device)
-
-def send_kafka_message(backend, msg):
-    backend.send_msg(msg)
-
-def send_local_message(backend, msg):
-    backend.send_msg(msg)
-
 def get_backend(config):
-    # TODO Refactor this as something better and reuse the same
-    # backend classes from the runbullet consumer module
     if 'backend.local' in config \
             and 'pusher' in config['backend.local'] \
             and config['backend.local']['pusher']:
@@ -55,8 +38,8 @@ def get_backend(config):
     elif 'backend.pushbullet' in config \
             and 'pusher' in config['backend.pushbullet'] \
             and config['backend.pushbullet']['pusher']:
-        API_KEY = config['backend.pushbullet']['token']
-        return Pushbullet(API_KEY)
+        c = config['backend.pushbullet']
+        return PushbulletBackend({'token':c['token'], 'device':c['device']})
     elif 'backend.kafka' in config \
             and 'pusher' in config['backend.kafka'] \
             and config['backend.kafka']['pusher']:
@@ -113,13 +96,7 @@ def main():
 
     print('msg: {}'.format(msg))
 
-    if isinstance(backend, Pushbullet):
-        send_pb_message(backend, config['backend.pushbullet']['device'], msg)
-    elif isinstance(backend, KafkaBackend):
-        send_kafka_message(backend, msg)
-    elif isinstance(backend, LocalBackend):
-        send_local_message(backend, msg)
-
+    backend.send_msg(msg)
 
 if __name__ == '__main__':
     main()

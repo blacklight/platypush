@@ -16,7 +16,6 @@ class LocalBackend(Backend):
         if isinstance(msg, dict):
             msg = json.dumps(msg)
         if not isinstance(msg, str):
-            msg = json.dumps(msg)
             raise RuntimeError('Invalid non-JSON message')
 
         msglen = len(msg)+1  # Include \n

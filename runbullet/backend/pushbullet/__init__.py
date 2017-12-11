@@ -2,9 +2,15 @@ import logging
 import json
 import websocket
 
+from pushbullet import Pushbullet
+
 from .. import Backend
 
 class PushbulletBackend(Backend):
+    _requires = [
+        'pushbullet'
+    ]
+
     def _init(self, token, device):
         self.token = token
         self.device = device
@@ -60,6 +66,20 @@ class PushbulletBackend(Backend):
             on_close = self._on_close)
 
         self.ws.backend = self
+
+    def send_msg(self, msg):
+        if isinstance(msg, dict):
+            msg = json.dumps(msg)
+        if not isinstance(msg, str):
+            raise RuntimeError('Invalid non-JSON message')
+
+        pb = Pushbullet(self.token)
+        devices = [dev for dev in pb.devices if dev.nickname == self.device]
+        if not devices:
+            raise RuntimeError('No such device: {}'.format(self.device))
+
+        device = devices[0]
+        pb.push_note('', msg, device)
 
     def run(self):
         self._init_socket()
