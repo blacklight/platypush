@@ -15,6 +15,7 @@ from runbullet.backend.kafka import KafkaBackend
 def print_usage():
     print ('''Usage: {} [-h|--help] <-t|--target <target name>> <-a|--action <action name>> payload
     -h, --help:\t\tShow this help and exit
+    -b, --backend:\tBackend to deliver the message [pushbullet|kafka] (default: whatever specified in your config with pusher=True)
     -t, --target:\tName of the target device/host
     -a, --action\tAction to run, it includes both the package name and the method (e.g. shell.exec or music.mpd.play)
     payload:\t\tArguments to the action
@@ -63,12 +64,29 @@ def main():
     parser.add_argument('--action', '-a', dest='action', required=True,
                         help="Action to execute, as package.method")
 
+    parser.add_argument('--backend', '-b', dest='backend', required=False,
+                        help="Backend to deliver the message " +
+                        "[pushbullet|kafka] (default: whatever specified " +
+                        "in your config with pusher=True)")
+
     opts, args = parser.parse_known_args(sys.argv[1:])
     payload = {}
 
     if len(args) % 2 != 0:
         raise RuntimeError('Odd number of key-value options passed: {}'.
                            format(args))
+
+    if opts.backend:
+        backend_cfg_name = 'backend.' + opts.backend
+        if backend_cfg_name not in config:
+            raise RuntimeError('{} backend specified, but no configuration ' +
+                               'for it available'.format(backend_cfg_name))
+
+        cfg = config[backend_cfg_name]
+        cfg['pusher'] = True
+        config = { backend_cfg_name: cfg }
+
+    backend = get_backend(config)
 
     for i in range(0, len(args), 2):
         payload[re.sub('^-+', '', args[i])] = args[i+1]
@@ -81,7 +99,6 @@ def main():
 
     print('msg: {}'.format(msg))
 
-    backend = get_backend(config)
     if isinstance(backend, Pushbullet):
         send_pb_message(backend, config['backend.pushbullet']['device'], msg)
     elif isinstance(backend, KafkaBackend):
