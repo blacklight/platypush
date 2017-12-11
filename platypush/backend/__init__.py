@@ -1,5 +1,5 @@
 import logging
-import runbullet
+import platypush
 
 from threading import Thread
 
@@ -40,7 +40,7 @@ class Backend(Thread):
                 cls._init(self, **config)
 
     def is_local(self):
-        from runbullet.backend.local import LocalBackend
+        from platypush.backend.local import LocalBackend
         return isinstance(self, LocalBackend)
 
     def on_msg(self, msg):
@@ -48,7 +48,7 @@ class Backend(Thread):
             return  # No target
 
         target = msg.pop('target')
-        if target != runbullet.get_device_id() and not self.is_local():
+        if target != platypush.get_device_id() and not self.is_local():
             return  # Not for me
 
         if 'action' not in msg:

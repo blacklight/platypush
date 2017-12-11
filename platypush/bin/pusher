@@ -7,10 +7,10 @@ import re
 import sys
 import yaml
 
-from runbullet import parse_config_file
-from runbullet.backend.kafka import KafkaBackend
-from runbullet.backend.local import LocalBackend
-from runbullet.backend.pushbullet import PushbulletBackend
+from platypush import parse_config_file
+from platypush.backend.kafka import KafkaBackend
+from platypush.backend.local import LocalBackend
+from platypush.backend.pushbullet import PushbulletBackend
 
 
 def print_usage():

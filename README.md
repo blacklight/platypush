@@ -1,4 +1,4 @@
-Runbullet
+Platypush
 =========
 
 Execute any command or custom complex logic on your devices, wherever they are, using your PushBullet account.
@@ -7,13 +7,13 @@ Installation
 ------------
 
 ```shell
-pip install runbullet
+pip install platypush
 ```
 
 Configuration
 -------------
 
-Copy /etc/runbullet/config.example.yaml to /etc/runbullet/config.yaml (system-wise settings) or ~/.config/runbullet/config.yaml (user-wise settings).
+Copy /etc/platypush/config.example.yaml to /etc/platypush/config.yaml (system-wise settings) or ~/.config/platypush/config.yaml (user-wise settings).
 
 Edit the file to include:
 
@@ -38,7 +38,7 @@ Each target device is identified by a unique device_id in the messages sent over
 Shell interface
 ---------------
 
-`runbullet` installs `pusher`, a command-line tool to send PushBullet messages to the connected devices in the format used by runbullet.
+`platypush` installs `pusher`, a command-line tool to send PushBullet messages to the connected devices in the format used by platypush.
 
 Some examples:
 
@@ -52,13 +52,13 @@ The logic to execute is specified by the `--action` option, whose format is `pac
 Available plugins
 -----------------
 
-* `runbullet.plugins.shell`: The simplest and yet most versatile plugin. Executes a remote command on the host identified by the `--target` device_id. Example:
+* `platypush.plugins.shell`: The simplest and yet most versatile plugin. Executes a remote command on the host identified by the `--target` device_id. Example:
 
 ```shell
 pusher --target laptop --action shell.exec --cmd "scp /home/user/photos/*.jpg backup_host:/mnt/hd/photos"
 ```
 
-* `runbullet.plugins.music.mpd`: Controls the playback on a mpd/mopidy music server. Requires the package `mpd2` on the target machine. Example:
+* `platypush.plugins.music.mpd`: Controls the playback on a mpd/mopidy music server. Requires the package `mpd2` on the target machine. Example:
 
 ```shell
 pusher --target raspberry --action music.mpd.play
@@ -72,13 +72,13 @@ music.mpd:
     port: 6600
 ```
 
-* `runbullet.plugins.switch.wemo`: Controls a WeMo Switch smart switch device. Requires the package `ouimeaux` on the target machine. Example:
+* `platypush.plugins.switch.wemo`: Controls a WeMo Switch smart switch device. Requires the package `ouimeaux` on the target machine. Example:
 
 ```shell
 pusher --target raspberry --action switch.wemo.on
 ```
 
-* `runbullet.plugins.light.hue`: Controls a Philips Hue smart lights system. Requires the package `phue` on the target machine. Example:
+* `platypush.plugins.light.hue`: Controls a Philips Hue smart lights system. Requires the package `phue` on the target machine. Example:
 
 ```shell
 pusher --target raspberry --action light.hue.scene --name "Sunset" --group "Living Room"
@@ -87,13 +87,13 @@ pusher --target raspberry --action light.hue.scene --name "Sunset" --group "Livi
 Writing your plugins
 --------------------
 
-Writing your own `runbullet` plugin, that would execute your own custom logic whenever a bullet with your plugin name is received, is a very simple task.
+Writing your own `platypush` plugin, that would execute your own custom logic whenever a bullet with your plugin name is received, is a very simple task.
 
-1. Create your plugin directory under `runbullet/plugins` (e.g. `light/batsignal`).
+1. Create your plugin directory under `platypush/plugins` (e.g. `light/batsignal`).
 
-2. In the case above, `runbullet.plugins.light.batsignal` will be your package name.
+2. In the case above, `platypush.plugins.light.batsignal` will be your package name.
 
-3. Create an `__init__.py` under `runbullet/plugins/light/batsignal`.
+3. Create an `__init__.py` under `platypush/plugins/light/batsignal`.
 
 4. If your module is `light/batsignal`, then its main class should be named `LightBatsignalPlugin`.
 
@@ -128,7 +128,7 @@ class LightBatsignalPlugin(LightPlugin):
 
 6. It's a good practice to define a `status` method in your plugin, which returns a 2-items list like `[output, error]`.
 
-7. Rebuild and reinstall `runbullet` if required and relaunch it.
+7. Rebuild and reinstall `platypush` if required and relaunch it.
 
 8. Test your new plugin by sending some bullets to it:
 

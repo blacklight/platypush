@@ -105,10 +105,10 @@ def parse_config_file(config_file=None):
         locations = [
             # ./config.yaml
             os.path.join(wrkdir, 'config.yaml'),
-            # ~/.config/runbullet/config.yaml
-            os.path.join(os.environ['HOME'], '.config', 'runbullet', 'config.yaml'),
-            # /etc/runbullet/config.yaml
-            os.path.join(os.sep, 'etc', 'runbullet', 'config.yaml'),
+            # ~/.config/platypush/config.yaml
+            os.path.join(os.environ['HOME'], '.config', 'platypush', 'config.yaml'),
+            # /etc/platypush/config.yaml
+            os.path.join(os.sep, 'etc', 'platypush', 'config.yaml'),
         ]
 
     for loc in locations:
