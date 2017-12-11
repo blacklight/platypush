@@ -1,4 +1,5 @@
 import logging
+import time
 
 from phue import Bridge
 
@@ -68,6 +69,11 @@ class LightHuePlugin(LightPlugin):
             logging.exception(e)
             # Reset bridge connection
             self.bridge = None
+
+            if 'is_retry' not in kwargs:
+                time.sleep(1)
+                self._execute(attr, is_retry=True, *args, **kwargs)
+
             return
 
         lights = []; groups = []
