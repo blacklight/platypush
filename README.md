@@ -17,8 +17,21 @@ Copy /etc/runbullet/config.example.yaml to /etc/runbullet/config.yaml (system-wi
 
 Edit the file to include:
 
+### For the PushBullet backend
+
 * Your PushBullet access token (create one [here](https://www.pushbullet.com/#settings/account));
 * The name of the (virtual) PushBullet device used to listen for events (create one [here](https://www.pushbullet.com/#devices)).
+
+### For the Apache Kafka backend
+
+* The host and port of the Kafka installation
+* The topic that will be used to deliver and process messages
+
+### For the local socket backend
+
+* The name of the local FIFO that will be used to deliver and process messages
+
+### device_id
 
 Each target device is identified by a unique device_id in the messages sent over your account. The device_id is the hostname by default, unless changed in config.yaml.
 
@@ -65,10 +78,10 @@ music.mpd:
 pusher --target raspberry --action switch.wemo.on
 ```
 
-* *TODO* `runbullet.plugins.light.hue`: Controls a Philips Hue smart lights system. Requires the package `phue` on the target machine. Example:
+* `runbullet.plugins.light.hue`: Controls a Philips Hue smart lights system. Requires the package `phue` on the target machine. Example:
 
 ```shell
-pusher --target raspberry --action light.hue.set_scene --scene "Sunset" --group "Living Room"
+pusher --target raspberry --action light.hue.scene --name "Sunset" --group "Living Room"
 ```
 
 Writing your plugins

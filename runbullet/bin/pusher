@@ -10,6 +10,7 @@ import yaml
 from pushbullet import Pushbullet
 from runbullet import parse_config_file
 from runbullet.backend.kafka import KafkaBackend
+from runbullet.backend.local import LocalBackend
 
 
 def print_usage():
@@ -40,10 +41,18 @@ def send_pb_message(pb, device_name, msg):
 def send_kafka_message(backend, msg):
     backend.send_msg(msg)
 
+def send_local_message(backend, msg):
+    backend.send_msg(msg)
+
 def get_backend(config):
     # TODO Refactor this as something better and reuse the same
     # backend classes from the runbullet consumer module
-    if 'backend.pushbullet' in config \
+    if 'backend.local' in config \
+            and 'pusher' in config['backend.local'] \
+            and config['backend.local']['pusher']:
+        c = config['backend.local']
+        return LocalBackend({'fifo': c['fifo']})
+    elif 'backend.pushbullet' in config \
             and 'pusher' in config['backend.pushbullet'] \
             and config['backend.pushbullet']['pusher']:
         API_KEY = config['backend.pushbullet']['token']
@@ -66,8 +75,8 @@ def main():
 
     parser.add_argument('--backend', '-b', dest='backend', required=False,
                         help="Backend to deliver the message " +
-                        "[pushbullet|kafka] (default: whatever specified " +
-                        "in your config with pusher=True)")
+                        "[pushbullet|kafka|local] (default: whatever " +
+                        "specified in your config with pusher=True)")
 
     opts, args = parser.parse_known_args(sys.argv[1:])
     payload = {}
@@ -75,6 +84,11 @@ def main():
     if len(args) % 2 != 0:
         raise RuntimeError('Odd number of key-value options passed: {}'.
                            format(args))
+
+    if opts.target == 'localhost' and 'backend.local' in config:
+        cfg = config['backend.local']
+        cfg['pusher'] = True
+        config = { 'backend.local': cfg }
 
     if opts.backend:
         backend_cfg_name = 'backend.' + opts.backend
@@ -103,6 +117,8 @@ def main():
         send_pb_message(backend, config['backend.pushbullet']['device'], msg)
     elif isinstance(backend, KafkaBackend):
         send_kafka_message(backend, msg)
+    elif isinstance(backend, LocalBackend):
+        send_local_message(backend, msg)
 
 
 if __name__ == '__main__':

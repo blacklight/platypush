@@ -39,12 +39,16 @@ class Backend(Thread):
             if cls is not object and hasattr(cls, '_init'):
                 cls._init(self, **config)
 
+    def is_local(self):
+        from runbullet.backend.local import LocalBackend
+        return isinstance(self, LocalBackend)
+
     def on_msg(self, msg):
         if 'target' not in msg:
             return  # No target
 
         target = msg.pop('target')
-        if target != runbullet.get_device_id():
+        if target != runbullet.get_device_id() and not self.is_local():
             return  # Not for me
 
         if 'action' not in msg:

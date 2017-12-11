@@ -11,6 +11,9 @@ backend.pushbullet:
     token: your_pushbullet_token_here
     device: your_pushbullet_virtual_device_name
 
+backend.local:
+    fifo: /tmp/runbullet.fifo
+
 # device_id: <your_device_id> (default: current hostname)
 # debug: True (default: False)
 
