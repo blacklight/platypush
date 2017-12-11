@@ -46,6 +46,8 @@ class LightHuePlugin(LightPlugin):
             self.bridge = Bridge(self.bridge_address)
             logging.info('Bridge connected')
 
+            self.get_scenes()
+
             # uncomment these lines if you're running huectrl for
             # the first time and you need to pair it to the switch
 
@@ -55,7 +57,11 @@ class LightHuePlugin(LightPlugin):
             logging.info('Bridge already connected')
 
 
-    def _execute(self, setting, *args, **kwargs):
+    def get_scenes(self):
+        scenes = [s.name for s in self.bridge.scenes]
+        # TODO Expand it with custom scenes specified in config.yaml as in #14
+
+    def _execute(self, attr, *args, **kwargs):
         try:
             self.connect()
         except Exception as e:
@@ -75,14 +81,16 @@ class LightHuePlugin(LightPlugin):
             lights = self.lights
             groups = self.groups
 
-        logging.info('[Setting: {}] [Values: {}] [Lights: {}] [Groups: {}]'.
-                     format(setting, args, lights, groups))
+        logging.info('[Attribute: {}] [Values: {}] [Lights: {}] [Groups: {}]'.
+                     format(attr, args, lights, groups))
 
         try:
-            if groups:
-                self.bridge.set_group(groups, setting, *args)
+            if attr == 'scene':
+                self.bridge.run_scene(groups[0], kwargs['name'])
+            elif groups:
+                self.bridge.set_group(groups, attr, *args)
             elif lights:
-                self.bridge.set_light(lights, setting, *args)
+                self.bridge.set_light(lights, attr, *args)
         except Exception as e:
             print(e)
             logging.exception(e)
@@ -96,13 +104,23 @@ class LightHuePlugin(LightPlugin):
         self._execute('on', False, lights=lights, groups=groups)
 
     def bri(self, value, lights=[], groups=[]):
-        self._execute('bri', int(value) % (MAX_BRI+1), lights=lights, groups=groups)
+        self._execute('bri', int(value) % (self.MAX_BRI+1),
+                      lights=lights, groups=groups)
 
     def sat(self, value, lights=[], groups=[]):
-        self._execute('sat', int(value) % (MAX_SAT+1), lights=lights, groups=groups)
+        self._execute('sat', int(value) % (self.MAX_SAT+1),
+                      lights=lights, groups=groups)
 
     def hue(self, value, lights=[], groups=[]):
-        self._execute('hue', int(value) % (MAX_HUE+1), lights=lights, groups=groups)
+        self._execute('hue', int(value) % (self.MAX_HUE+1),
+                      lights=lights, groups=groups)
+
+    def hue(self, value, lights=[], groups=[]):
+        self._execute('hue', int(value) % (self.MAX_HUE+1),
+                      lights=lights, groups=groups)
+
+    def scene(self, name, lights=[], groups=[]):
+        self._execute('scene', name=name, lights=lights, groups=groups)
 
     def status(self):
         return ['']
