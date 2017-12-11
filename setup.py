@@ -40,13 +40,11 @@ setup(
     python_requires = '>= 3',
     keywords = "pushbullet notifications automation",
     url = "https://github.com/BlackLight/platypush",
-    # packages = ['platypush'],
     packages = find_packages(),
-    # package_data = {'': plugins},
-    scripts = ['platypush/bin/pusher'],
     entry_points = {
         'console_scripts': [
             'platypush=platypush:main',
+            'pusher=platypush.pusher:main',
         ],
     },
     data_files = [

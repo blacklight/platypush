@@ -126,7 +126,7 @@ def parse_config_file(config_file=None):
 
 
 def get_backends(config):
-    backends = []
+    backends = {}
 
     for k in config.keys():
         if k.startswith('backend.'):
@@ -143,13 +143,23 @@ def get_backends(config):
 
             try:
                 b = getattr(module, cls_name)(config[k])
-                backends.append(b)
+                name = '.'.join((k.split('.'))[1:])
+                backends[name] = b
             except AttributeError as e:
                 logging.warn('No such class in {}: {}'.format(
                     module.__name__, cls_name))
                 raise RuntimeError(e)
 
     return backends
+
+
+def get_default_pusher_backend(config):
+    backends = ['.'.join((k.split('.'))[1:])
+                for k in config.keys() if k.startswith('backend.')
+                and 'pusher' in config[k] and config[k]['pusher'] is True]
+
+    return backends[0] if backends else None
+
 
 def get_device_id():
     global config
@@ -196,7 +206,7 @@ Usage: {} [-v] [-h] [-c <config_file>]
     mq = Queue()
     backends = get_backends(config)
 
-    for backend in backends:
+    for backend in backends.values():
         backend.mq = mq
         backend.start()
 
