@@ -10,6 +10,12 @@ Installation
 pip install platypush
 ```
 
+### Manual Installation
+
+```shell
+python setup.py install
+```
+
 Configuration
 -------------
 
