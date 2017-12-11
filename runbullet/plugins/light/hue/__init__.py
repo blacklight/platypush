@@ -92,7 +92,6 @@ class LightHuePlugin(LightPlugin):
             elif lights:
                 self.bridge.set_light(lights, attr, *args)
         except Exception as e:
-            print(e)
             logging.exception(e)
             # Reset bridge connection
             self.bridge = None
