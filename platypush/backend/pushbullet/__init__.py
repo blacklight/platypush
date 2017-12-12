@@ -1,19 +1,15 @@
 import logging
 import json
+import requests
 import websocket
-
-from pushbullet import Pushbullet
 
 from .. import Backend
 
 class PushbulletBackend(Backend):
-    _requires = [
-        'pushbullet'
-    ]
-
     def _init(self, token, device):
         self.token = token
-        self.device = device
+        self.device_name = device
+        self.device_id = self.get_device_id()
 
     @staticmethod
     def _on_init(ws):
@@ -67,19 +63,40 @@ class PushbulletBackend(Backend):
 
         self.ws.backend = self
 
+    def get_device_id(self):
+        response = requests.get(
+            u'https://api.pushbullet.com/v2/devices',
+            headers = { 'Access-Token': self.token },
+        ).json()
+
+        devices = [dev for dev in response['devices'] if 'nickname' in dev
+                   and dev['nickname'] == self.device_name]
+
+        if not devices:
+            raise RuntimeError('No such Pushbullet device: {}'
+                               .format(self.device_name))
+
+        return devices[0]['iden']
+
     def send_msg(self, msg):
         if isinstance(msg, dict):
             msg = json.dumps(msg)
         if not isinstance(msg, str):
             raise RuntimeError('Invalid non-JSON message')
 
-        pb = Pushbullet(self.token)
-        devices = [dev for dev in pb.devices if dev.nickname == self.device]
-        if not devices:
-            raise RuntimeError('No such device: {}'.format(self.device))
+        response = requests.post(
+            u'https://api.pushbullet.com/v2/pushes',
+            headers = { 'Access-Token': self.token },
+            json = {
+                'type': 'note',
+                'device_iden': self.device_id,
+                'body': msg,
+            }
+        ).json()
 
-        device = devices[0]
-        pb.push_note('', msg, device)
+        if 'dismissed' not in response or response['dismissed'] is True:
+            raise RuntimeError('Error while pushing the message: {}'.
+                               format(response))
 
     def run(self):
         self._init_socket()

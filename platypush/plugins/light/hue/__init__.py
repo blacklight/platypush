@@ -6,11 +6,6 @@ from phue import Bridge
 from .. import LightPlugin
 
 class LightHuePlugin(LightPlugin):
-    """ Python dependencies """
-    _requires = [
-        'phue'
-    ]
-
     MAX_BRI = 255
     MAX_SAT = 255
     MAX_HUE = 65535

@@ -5,10 +5,6 @@ from ouimeaux.environment import Environment, UnknownDevice
 from .. import SwitchPlugin
 
 class SwitchWemoPlugin(SwitchPlugin):
-    _requires = [
-        'ouimeaux'
-    ]
-
     def _init(self):
         logging.basicConfig(level=logging.INFO)
 
