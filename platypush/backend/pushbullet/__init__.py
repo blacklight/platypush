@@ -101,7 +101,7 @@ class PushbulletBackend(Backend):
     def run(self):
         self._init_socket()
         logging.info('Initialized Pushbullet backend - device_id: {}'
-                     .format(self.device))
+                     .format(self.device_name))
 
         self.ws.run_forever()
 
