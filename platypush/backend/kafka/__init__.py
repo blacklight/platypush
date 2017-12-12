@@ -41,6 +41,9 @@ class KafkaBackend(Backend):
 
     def run(self):
         self.consumer = KafkaConsumer(self.topic, bootstrap_servers=self.server)
+        logging.info('Initialized kafka backend - server: {}, topic: {}'
+                     .format(self.server, self.topic))
+
         for msg in self.consumer:
             self._on_record(msg)
 
