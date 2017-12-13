@@ -2,7 +2,7 @@ import logging
 import json
 
 from ouimeaux.environment import Environment, UnknownDevice
-from platypush.response import Response
+from platypush.message.response import Response
 
 from .. import SwitchPlugin
 

@@ -12,7 +12,8 @@ import yaml
 from queue import Queue
 from threading import Thread
 from getopt import getopt
-from .response import Response
+
+from .message.response import Response
 
 __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
 __version__ = '0.3.2'
@@ -85,8 +86,7 @@ def _exec_func(args, backend=None, retry=True):
             _init_plugin(module_name, reload=True)
             _exec_func(args, backend, retry=False)
     finally:
-        if backend:
-            backend.send_msg({ 'response':str(response) })
+        if backend: backend.send_msg({ 'response':str(response) })
 
 
 def on_msg(msg, backend=None):

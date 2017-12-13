@@ -1,6 +1,6 @@
 import mpd
 
-from platypush.response import Response
+from platypush.message.response import Response
 
 from .. import MusicPlugin
 

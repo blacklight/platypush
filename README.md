@@ -112,7 +112,7 @@ The `__init__.py` will look like this:
 ```python
 import batman
 
-from platypush.response import Response
+from platypush.message.response import Response
 
 from .. import LightPlugin
 
