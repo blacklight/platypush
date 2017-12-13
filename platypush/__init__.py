@@ -163,7 +163,7 @@ def get_default_pusher_backend(config):
 
 def get_device_id():
     global config
-    return config['device_id']
+    return config['device_id'] if 'device_id' in config else None
 
 
 def main():

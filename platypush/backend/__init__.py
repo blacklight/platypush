@@ -1,4 +1,5 @@
 import logging
+import socket
 import platypush
 
 from threading import Thread
@@ -29,6 +30,7 @@ class Backend(Thread):
         self.on_init = on_init
         self.on_close = on_close
         self.on_error = on_error
+        self.device_id = platypush.get_device_id() or socket.gethostname()
 
         Thread.__init__(self)
         logging.basicConfig(level=logging.INFO
@@ -48,7 +50,7 @@ class Backend(Thread):
             return  # No target
 
         target = msg.pop('target')
-        if target != platypush.get_device_id() and not self.is_local():
+        if target != self.device_id and not self.is_local():
             return  # Not for me
 
         if 'action' not in msg:
