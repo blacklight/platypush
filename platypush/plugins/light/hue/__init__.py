@@ -2,6 +2,7 @@ import logging
 import time
 
 from phue import Bridge
+from platypush.response import Response
 
 from .. import LightPlugin
 
@@ -57,19 +58,13 @@ class LightHuePlugin(LightPlugin):
         scenes = [s.name for s in self.bridge.scenes]
         # TODO Expand it with custom scenes specified in config.yaml as in #14
 
-    def _execute(self, attr, *args, **kwargs):
+    def _exec(self, attr, *args, **kwargs):
         try:
             self.connect()
         except Exception as e:
-            logging.exception(e)
             # Reset bridge connection
             self.bridge = None
-
-            if 'is_retry' not in kwargs:
-                time.sleep(1)
-                self._execute(attr, is_retry=True, *args, **kwargs)
-
-            return
+            raise e
 
         lights = []; groups = []
         if 'lights' in kwargs and kwargs['lights']:
@@ -93,37 +88,33 @@ class LightHuePlugin(LightPlugin):
             elif lights:
                 self.bridge.set_light(lights, attr, *args)
         except Exception as e:
-            logging.exception(e)
             # Reset bridge connection
             self.bridge = None
+            raise e
+
+        return Response(output='ok')
 
     def on(self, lights=[], groups=[]):
-        self._execute('on', True, lights=lights, groups=groups)
+        return self._exec('on', True, lights=lights, groups=groups)
 
     def off(self, lights=[], groups=[]):
-        self._execute('on', False, lights=lights, groups=groups)
+        return self._exec('on', False, lights=lights, groups=groups)
 
     def bri(self, value, lights=[], groups=[]):
-        self._execute('bri', int(value) % (self.MAX_BRI+1),
+        return self._exec('bri', int(value) % (self.MAX_BRI+1),
                       lights=lights, groups=groups)
 
     def sat(self, value, lights=[], groups=[]):
-        self._execute('sat', int(value) % (self.MAX_SAT+1),
+        return self._exec('sat', int(value) % (self.MAX_SAT+1),
                       lights=lights, groups=groups)
 
     def hue(self, value, lights=[], groups=[]):
-        self._execute('hue', int(value) % (self.MAX_HUE+1),
-                      lights=lights, groups=groups)
-
-    def hue(self, value, lights=[], groups=[]):
-        self._execute('hue', int(value) % (self.MAX_HUE+1),
+        return self._exec('hue', int(value) % (self.MAX_HUE+1),
                       lights=lights, groups=groups)
 
     def scene(self, name, lights=[], groups=[]):
-        self._execute('scene', name=name, lights=lights, groups=groups)
+        return self._exec('scene', name=name, lights=lights, groups=groups)
 
-    def status(self):
-        return ['']
 
 # vim:sw=4:ts=4:et:
 

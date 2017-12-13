@@ -1,45 +1,47 @@
 import mpd
 
+from platypush.response import Response
+
 from .. import MusicPlugin
 
 class MusicMpdPlugin(MusicPlugin):
-    _requires = [
-        'mpd'
-    ]
-
     def _init(self):
         self.client = mpd.MPDClient(use_unicode=True)
         self.client.connect(self.config['host'], self.config['port'])
 
+    def _exec(self, method, *args, **kwargs):
+        getattr(self.client, method)(*args, **kwargs)
+        return self.status()
+
     def play(self):
-        self.client.play()
+        return self._exec('play')
 
     def pause(self):
-        self.client.pause()
+        return self._exec('pause')
 
     def stop(self):
-        self.client.stop()
+        return self._exec('stop')
 
     def next(self):
-        self.client.next()
+        return self._exec('next')
 
     def previous(self):
-        self.client.previous()
+        return self._exec('previous')
 
     def setvol(self, vol):
-        self.client.setvol(vol)
+        return self._exec('setvol', vol)
 
     def add(self, content):
-        self.client.add(content)
+        return self._exec('add', content)
 
     def playlistadd(self, playlist):
-        self.client.playlistadd(playlist)
+        return self._exec('playlistadd', playlist)
 
     def clear(self):
-        self.client.clear()
+        return self._exec('clear')
 
     def status(self):
-        return self.client.status()
+        return Response(output=self.client.status())
 
 # vim:sw=4:ts=4:et:
 

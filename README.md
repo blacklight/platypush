@@ -112,6 +112,8 @@ The `__init__.py` will look like this:
 ```python
 import batman
 
+from platypush.response import Response
+
 from .. import LightPlugin
 
 class LightBatsignalPlugin(LightPlugin):
@@ -123,22 +125,21 @@ class LightBatsignalPlugin(LightPlugin):
             self.batsignal.notify_robin()
 
         self.batsignal.on()
+        return Response('ok')
 
     def off(self):
         self.batsignal.off()
+        return Response('ok')
 
     def toggle(self):
         self.batsignal.toggle()
+        return Response('ok')
 
-    def status(self):
-        return [self.batsignal.status().stdout, self.batsignal.status().stderr]
 ```
 
-6. It's a good practice to define a `status` method in your plugin, which returns a 2-items list like `[output, error]`.
+6. Rebuild and reinstall `platypush` if required and relaunch it.
 
-7. Rebuild and reinstall `platypush` if required and relaunch it.
-
-8. Test your new plugin by sending some bullets to it:
+7. Test your new plugin by sending some bullets to it:
 
 ```shell
 pusher --target your_pc --action light.batsignal.on --urgent 1

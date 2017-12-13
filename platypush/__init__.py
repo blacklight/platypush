@@ -66,21 +66,11 @@ def _exec_func(args, retry=True):
         return
 
     try:
-        ret = plugin.run(method=method_name, **args)
-        out = None
-        err = None
-
-        if isinstance(ret, list):
-            out = ret[0]
-            err = ret[1] if len(ret) > 1 else None
-        elif ret is not None:
-            out = ret
-
-        if out:
-            logging.info('Command output: {}'.format(out))
-
-        if err:
-            logging.warn('Command error: {}'.format(err))
+        response = plugin.run(method=method_name, **args)
+        if response and response.is_error():
+            logging.warn('Response processed with errors: {}'.format(response))
+        else:
+            logging.info('Processed response: {}'.format(response))
     except Exception as e:
         logging.exception(e)
         if retry:
@@ -122,6 +112,14 @@ def parse_config_file(config_file=None):
         if 'disabled' in config[section] and config[section]['disabled']:
             del config[section]
 
+    if 'logging' not in config:
+        config['logging'] = logging.INFO
+    else:
+        config['logging'] = getattr(logging, config['logging'].upper())
+
+    if 'device_id' not in config:
+        config['device_id'] = socket.gethostname()
+
     return config
 
 
@@ -161,13 +159,18 @@ def get_default_pusher_backend(config):
     return backends[0] if backends else None
 
 
+def get_logging_level():
+    global config
+    return config['logging']
+
+
 def get_device_id():
     global config
     return config['device_id'] if 'device_id' in config else None
 
 
 def main():
-    DEBUG = False
+    debug = False
     config_file = None
 
     plugins_dir = os.path.join(wrkdir, 'plugins')
@@ -178,7 +181,7 @@ def main():
         if opt == '-c':
             config_file = arg
         if opt == '-v':
-            DEBUG = True
+            debug = True
         elif opt == '-h':
             print('''
 Usage: {} [-v] [-h] [-c <config_file>]
@@ -189,19 +192,10 @@ Usage: {} [-v] [-h] [-c <config_file>]
             return
 
     config = parse_config_file(config_file)
+    if debug: config['logging'] = logging.DEBUG
     logging.info('Configuration dump: {}'.format(config))
 
-    if 'device_id' not in config:
-        config['device_id'] = socket.gethostname()
-
-    if 'debug' in config:
-        DEBUG = config['debug']
-
-    if DEBUG:
-        logging.basicConfig(level=logging.DEBUG)
-        websocket.enableTrace(True)
-    else:
-        logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=get_logging_level())
 
     mq = Queue()
     backends = get_backends(config)

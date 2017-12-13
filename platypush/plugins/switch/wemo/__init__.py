@@ -1,35 +1,46 @@
 import logging
+import json
 
 from ouimeaux.environment import Environment, UnknownDevice
+from platypush.response import Response
 
 from .. import SwitchPlugin
 
 class SwitchWemoPlugin(SwitchPlugin):
-    def _init(self):
-        logging.basicConfig(level=logging.INFO)
-
+    def _init(self, discovery_seconds=3):
+        self.discovery_seconds=discovery_seconds
         self.env = Environment()
         self.env.start()
+        self.refresh_devices()
+
+    def refresh_devices(self):
         logging.info('Starting WeMo discovery')
-        self.env.discover(seconds=3)
+        self.env.discover(seconds=self.discovery_seconds)
+        self.devices = self.env.devices
+
+    def _exec(self, method, device, *args, **kwargs):
+        if device not in self.devices:
+            self.refresh_devices()
+
+        if device not in self.devices:
+            raise RuntimeError('Device {} not found'.format(device))
+
+        logging.info('{} -> {}'.format(device, method))
+        dev = self.devices[device]
+        getattr(dev, method)(*args, **kwargs)
+
+        resp = {'device': device, 'state': dev.get_state()}
+        return Response(output=json.dumps(resp))
 
     def on(self, device):
-        switch = self.env.get_switch(device)
-        logging.info('Turning {} on'.format(device))
-        switch.on()
+        return self._exec('on', device)
 
     def off(self, device):
-        switch = self.env.get_switch(device)
-        logging.info('Turning {} off'.format(device))
-        switch.off()
+        return self._exec('off', device)
 
     def toggle(self, device):
-        switch = self.env.get_switch(device)
-        logging.info('Toggling {}'.format(device))
-        switch.toggle()
+        return self._exec('toggle', device)
 
-    def status(self):
-        return ['']
 
 # vim:sw=4:ts=4:et:
 

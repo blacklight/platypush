@@ -1,5 +1,4 @@
 import logging
-import socket
 import platypush
 
 from threading import Thread
@@ -30,7 +29,7 @@ class Backend(Thread):
         self.on_init = on_init
         self.on_close = on_close
         self.on_error = on_error
-        self.device_id = platypush.get_device_id() or socket.gethostname()
+        self.device_id = platypush.get_device_id()
 
         Thread.__init__(self)
         logging.basicConfig(level=logging.INFO
