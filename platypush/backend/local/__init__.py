@@ -8,10 +8,6 @@ from .. import Backend
 class LocalBackend(Backend):
     def _init(self, fifo):
         self.fifo = fifo
-        try: os.mkfifo(self.fifo)
-        except FileExistsError as e: pass
-        logging.info('Initialized local backend on fifo {}'.format(self.fifo))
-
     def send_msg(self, msg):
         if isinstance(msg, dict):
             msg = json.dumps(msg)
@@ -24,6 +20,10 @@ class LocalBackend(Backend):
             f.write(msg)
 
     def run(self):
+        try: os.mkfifo(self.fifo)
+        except FileExistsError as e: pass
+        logging.info('Initialized local backend on fifo {}'.format(self.fifo))
+
         with open(self.fifo, 'rb', 0) as f:
             while True:
                 try:
