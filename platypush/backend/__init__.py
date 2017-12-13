@@ -1,4 +1,5 @@
 import logging
+import sys
 import platypush
 
 from threading import Thread
@@ -32,7 +33,8 @@ class Backend(Thread):
         self.device_id = platypush.get_device_id()
 
         Thread.__init__(self)
-        logging.basicConfig(level=logging.INFO
+
+        logging.basicConfig(stream=sys.stdout, level=platypush.get_logging_level()
                             if 'logging' not in config
                             else getattr(logging, config.pop('logging')))
 

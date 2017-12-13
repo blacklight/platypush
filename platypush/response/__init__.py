@@ -6,7 +6,7 @@ class Response(object):
         self.errors = errors
 
     def __str__(self):
-        return json.dumps({ 'output': self.output, 'error': self.errors })
+        return json.dumps({ 'output': self.output, 'errors': self.errors })
 
     def is_error(self):
         return len(self.errors) != 0

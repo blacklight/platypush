@@ -5,14 +5,17 @@ import logging
 import json
 import socket
 import sys
+import traceback
 import websocket
 import yaml
 
 from queue import Queue
 from threading import Thread
 from getopt import getopt
+from .response import Response
 
 __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
+__version__ = '0.3.2'
 
 #-----------#
 
@@ -53,7 +56,7 @@ def _init_plugin(plugin_name, reload=False):
     return plugin
 
 
-def _exec_func(args, retry=True):
+def _exec_func(args, backend=None, retry=True):
     action = args.pop('action')
     tokens = action.split('.')
     module_name = str.join('.', tokens[:-1])
@@ -72,6 +75,7 @@ def _exec_func(args, retry=True):
         else:
             logging.info('Processed response: {}'.format(response))
     except Exception as e:
+        response = Response(output=None, errors=[e, traceback.format_exc()])
         logging.exception(e)
         if retry:
             # Put the action back where it was before retrying
@@ -79,11 +83,14 @@ def _exec_func(args, retry=True):
 
             logging.info('Reloading plugin {} and retrying'.format(module_name))
             _init_plugin(module_name, reload=True)
-            _exec_func(args, retry=False)
+            _exec_func(args, backend, retry=False)
+    finally:
+        if backend:
+            backend.send_msg({ 'response':str(response) })
 
 
-def on_msg(msg):
-    Thread(target=_exec_func, args=(msg,)).start()
+def on_msg(msg, backend=None):
+    Thread(target=_exec_func, args=(msg,backend)).start()
 
 
 def parse_config_file(config_file=None):
@@ -170,6 +177,8 @@ def get_device_id():
 
 
 def main():
+    print('Starting platypush v.{}'.format(__version__))
+
     debug = False
     config_file = None
 
@@ -193,9 +202,9 @@ Usage: {} [-v] [-h] [-c <config_file>]
 
     config = parse_config_file(config_file)
     if debug: config['logging'] = logging.DEBUG
-    logging.info('Configuration dump: {}'.format(config))
 
-    logging.basicConfig(level=get_logging_level())
+    logging.basicConfig(level=get_logging_level(), stream=sys.stdout)
+    logging.debug('Configuration dump: {}'.format(config))
 
     mq = Queue()
     backends = get_backends(config)
@@ -206,7 +215,7 @@ Usage: {} [-v] [-h] [-c <config_file>]
 
     while True:
         try:
-            on_msg(mq.get())
+            on_msg(mq.get(), backend)
         except KeyboardInterrupt:
             return
 
