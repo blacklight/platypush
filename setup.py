@@ -32,7 +32,7 @@ create_etc_dir()
 
 setup(
     name = "platypush",
-    version = "0.3",
+    version = "0.3.1",
     author = "Fabio Manganiello",
     author_email = "info@fabiomanganiello.com",
     description = ("Platypush service"),
