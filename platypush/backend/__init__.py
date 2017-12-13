@@ -47,10 +47,9 @@ class Backend(Thread):
         return isinstance(self, LocalBackend)
 
     def on_msg(self, msg):
-        if 'target' not in msg:
-            return  # No target
-
+        if 'target' not in msg: return  # No target
         target = msg.pop('target')
+
         if target != self.device_id and not self.is_local():
             return  # Not for me
 

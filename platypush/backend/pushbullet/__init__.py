@@ -1,6 +1,7 @@
 import logging
 import json
 import requests
+import time
 import websocket
 
 from .. import Backend
@@ -9,7 +10,7 @@ class PushbulletBackend(Backend):
     def _init(self, token, device):
         self.token = token
         self.device_name = device
-        self.device_id = self.get_device_id()
+        self.pb_device_id = self.get_device_id()
 
     @staticmethod
     def _on_init(ws):
@@ -29,6 +30,30 @@ class PushbulletBackend(Backend):
         self.ws.close()
         self._init_socket()
 
+    def _get_latest_push(self):
+        t = int(time.time()) - 2
+        try:
+            response = requests.get(
+                u'https://api.pushbullet.com/v2/pushes',
+                headers = { 'Access-Token': self.token },
+                params  = {
+                    'modified_after': str(t),
+                    'active' : 'true',
+                    'limit'  : 1,
+                }
+            )
+
+            response = response.json()
+        except Exception as e:
+            logging.exception(e)
+            raise e
+
+        if 'pushes' in response and response['pushes']:
+            return response['pushes'][0]
+        else:
+            return {}
+
+
     def _on_push(self, data):
         try:
             data = json.loads(data) if isinstance(data, str) else push
@@ -36,20 +61,20 @@ class PushbulletBackend(Backend):
             logging.exception(e)
             return
 
-        if data['type'] != 'push':
+        if data['type'] == 'tickle' and data['subtype'] == 'push':
+            push = self._get_latest_push()
+        elif data['type'] == 'push':
+            push = data['push']
+        else:
             return  # Not a push notification
 
-        push = data['push']
         logging.debug('Received push: {}'.format(push))
 
-        if 'body' not in push:
-            return
+        if 'body' not in push: return
 
         body = push['body']
-        try:
-            body = json.loads(body)
-        except ValueError as e:
-            return
+        try: body = json.loads(body)
+        except ValueError as e: return
 
         self.on_msg(body)
 
@@ -89,7 +114,7 @@ class PushbulletBackend(Backend):
             headers = { 'Access-Token': self.token },
             json = {
                 'type': 'note',
-                'device_iden': self.device_id,
+                'device_iden': self.pb_device_id,
                 'body': msg,
             }
         ).json()
