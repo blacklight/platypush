@@ -27,8 +27,9 @@ class PushbulletBackend(Backend):
     @staticmethod
     def _on_error(ws, e):
         logging.exception(e)
-        self.ws.close()
-        self._init_socket()
+        backend = ws.backend
+        ws.close()
+        backend._init_socket()
 
     def _get_latest_push(self):
         t = int(time.time()) - 2
