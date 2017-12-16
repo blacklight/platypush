@@ -16,7 +16,7 @@ from getopt import getopt
 from .message.response import Response
 
 __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
-__version__ = '0.3.2'
+__version__ = '0.3.3'
 
 #-----------#
 
