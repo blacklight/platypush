@@ -58,6 +58,7 @@ def _init_plugin(plugin_name, reload=False):
 
 
 def _exec_func(args, backend=None, retry=True):
+    origin = args.pop('origin') if 'origin' in args else None
     action = args.pop('action')
     tokens = action.split('.')
     module_name = str.join('.', tokens[:-1])
@@ -79,14 +80,14 @@ def _exec_func(args, backend=None, retry=True):
         response = Response(output=None, errors=[e, traceback.format_exc()])
         logging.exception(e)
         if retry:
-            # Put the action back where it was before retrying
-            args['action'] = action
+            # Put the popped args back where they were before retrying
+            args['action'] = action; args['origin'] = origin
 
             logging.info('Reloading plugin {} and retrying'.format(module_name))
             _init_plugin(module_name, reload=True)
             _exec_func(args, backend, retry=False)
     finally:
-        if backend: backend.send_msg({ 'response':str(response) })
+        if backend: backend.send_response(origin, response)
 
 
 def on_msg(msg, backend=None):

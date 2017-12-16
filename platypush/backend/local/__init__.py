@@ -8,12 +8,9 @@ from .. import Backend
 class LocalBackend(Backend):
     def _init(self, fifo):
         self.fifo = fifo
-    def send_msg(self, msg):
-        if isinstance(msg, dict):
-            msg = json.dumps(msg)
-        if not isinstance(msg, str):
-            raise RuntimeError('Invalid non-JSON message')
 
+    def _send_msg(self, msg):
+        msg = json.dumps(msg)
         msglen = len(msg)+1  # Include \n
         msg = bytearray((str(msglen) + '\n' + msg + '\n').encode('utf-8'))
         with open(self.fifo, 'wb') as f:

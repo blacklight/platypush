@@ -1,3 +1,4 @@
+import json
 import logging
 import sys
 import platypush
@@ -53,6 +54,10 @@ class Backend(Thread):
         if target != self.device_id and not self.is_local():
             return  # Not for me
 
+        if 'response' in msg:
+            logging.info('Received response: {}'.format(msg))
+            return
+
         if 'action' not in msg:
             self.on_error('No action specified: {}'.format(msg))
             return
@@ -60,7 +65,24 @@ class Backend(Thread):
         self.mq.put(msg)
 
     def send_msg(self, msg):
-        raise NotImplementedError()
+        if isinstance(msg, str):
+            msg = json.loads(msg)
+        if not isinstance(msg, dict):
+            raise RuntimeError('send_msg expects either a JSON string or ' +
+                               'a dictionary but received {}'.format(type(msg)))
+
+        msg['origin'] = self.device_id  # To get the response
+
+        self._send_msg(msg)
+
+    def send_response(self, target, response):
+        self.send_msg({
+            'target'     : target,
+            'response'   : {
+                'output' : response.output,
+                'errors' : response.errors,
+            }
+        })
 
     def run(self):
         raise NotImplementedError()

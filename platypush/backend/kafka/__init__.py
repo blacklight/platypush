@@ -9,7 +9,7 @@ class KafkaBackend(Backend):
     def _init(self, server, topic):
         self.server = server
         self.topic_prefix = topic
-        self.topic = topic + '.' + self.device_id
+        self.topic = self._topic_by_device_id(self.device_id)
         self.producer = None
 
     def _on_record(self, record):
@@ -27,18 +27,15 @@ class KafkaBackend(Backend):
         if not self.producer:
             self.producer = KafkaProducer(bootstrap_servers=self.server)
 
-    def send_msg(self, msg):
-        if isinstance(msg, str):
-            msg = json.loads(msg)
-        if isinstance(msg, dict):
-            target = msg['target']
-            msg = json.dumps(msg).encode('utf-8')
-        if not isinstance(msg, bytes):
-            msg = json.dumps(msg)
-            raise RuntimeError('Invalid non-JSON message')
+    def _topic_by_device_id(self, device_id):
+        return '{}.{}'.format(self.topic_prefix, device_id)
+
+    def _send_msg(self, msg):
+        target = msg['target']
+        msg = json.dumps(msg).encode('utf-8')
 
         self._init_producer()
-        self.producer.send(self.topic_prefix + '.' + target, msg)
+        self.producer.send(self._topic_by_device_id(target), msg)
         self.producer.flush()
 
     def run(self):
