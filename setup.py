@@ -65,7 +65,7 @@ setup(
         'Support for Apache Kafka backend': ['kafka-python'],
         'Support for Pushbullet backend': ['requests', 'websocket-client'],
         'Support for Philips Hue plugin': ['phue'],
-        'Support for MPD/Mopidy music server plugin': ['mpd'],
+        'Support for MPD/Mopidy music server plugin': ['python-mpd2'],
         'Support for Belkin WeMo Switch plugin': ['ouimeaux'],
     },
 )
