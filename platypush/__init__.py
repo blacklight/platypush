@@ -57,7 +57,8 @@ def _init_plugin(plugin_name, reload=False):
     return plugin
 
 
-def _exec_func(args, backend=None, retry=True):
+def _exec_func(args, retry=True):
+    backend = args.pop('backend') if 'backend' in args else None
     origin = args.pop('origin') if 'origin' in args else None
     action = args.pop('action')
     tokens = action.split('.')
@@ -81,17 +82,17 @@ def _exec_func(args, backend=None, retry=True):
         logging.exception(e)
         if retry:
             # Put the popped args back where they were before retrying
-            args['action'] = action; args['origin'] = origin
+            args['action'] = action; args['origin'] = origin; args['backend'] = backend
 
             logging.info('Reloading plugin {} and retrying'.format(module_name))
             _init_plugin(module_name, reload=True)
-            _exec_func(args, backend, retry=False)
+            _exec_func(args, retry=False)
     finally:
         if backend: backend.send_response(origin, response)
 
 
-def on_msg(msg, backend=None):
-    Thread(target=_exec_func, args=(msg,backend)).start()
+def on_msg(msg):
+    Thread(target=_exec_func, args=(msg,)).start()
 
 
 def parse_config_file(config_file=None):
@@ -216,7 +217,7 @@ Usage: {} [-v] [-h] [-c <config_file>]
 
     while True:
         try:
-            on_msg(mq.get(), backend)
+            on_msg(mq.get())
         except KeyboardInterrupt:
             return
 

@@ -62,6 +62,7 @@ class Backend(Thread):
             self.on_error('No action specified: {}'.format(msg))
             return
 
+        msg['backend'] = self   # Augment message
         self.mq.put(msg)
 
     def send_msg(self, msg):
@@ -72,7 +73,6 @@ class Backend(Thread):
                                'a dictionary but received {}'.format(type(msg)))
 
         msg['origin'] = self.device_id  # To get the response
-
         self._send_msg(msg)
 
     def send_response(self, target, response):
