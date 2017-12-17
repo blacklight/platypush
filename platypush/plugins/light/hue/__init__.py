@@ -77,9 +77,6 @@ class LightHuePlugin(LightPlugin):
             lights = self.lights
             groups = self.groups
 
-        logging.info('[Attribute: {}] [Values: {}] [Lights: {}] [Groups: {}]'.
-                     format(attr, args, lights, groups))
-
         try:
             if attr == 'scene':
                 self.bridge.run_scene(groups[0], kwargs['name'])

@@ -17,7 +17,7 @@ class Request(Message):
         self.target = target
         self.action = action
         self.origin = origin
-        self.args   = {}
+        self.args   = args
 
     @classmethod
     def build(cls, msg):
