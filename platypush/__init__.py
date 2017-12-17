@@ -2,11 +2,9 @@ import functools
 import importlib
 import os
 import logging
-import json
 import socket
 import sys
 import traceback
-import websocket
 import yaml
 
 from queue import Queue
