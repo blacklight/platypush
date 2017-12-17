@@ -6,11 +6,14 @@ from kafka import KafkaConsumer, KafkaProducer
 from .. import Backend
 
 class KafkaBackend(Backend):
-    def _init(self, server, topic):
+    def __init__(self, server, topic, **kwargs):
+        super().__init__(**kwargs)
+
         self.server = server
         self.topic_prefix = topic
         self.topic = self._topic_by_device_id(self.device_id)
         self.producer = None
+        self._init_producer()
 
     def _on_record(self, record):
         if record.topic != self.topic: return
@@ -31,8 +34,8 @@ class KafkaBackend(Backend):
         return '{}.{}'.format(self.topic_prefix, device_id)
 
     def _send_msg(self, msg):
-        target = msg['target']
-        msg = json.dumps(msg).encode('utf-8')
+        target = msg.target
+        msg = str(msg).encode('utf-8')
 
         self._init_producer()
         self.producer.send(self._topic_by_device_id(target), msg)

@@ -13,6 +13,7 @@ from queue import Queue
 from threading import Thread
 from getopt import getopt
 
+from .message.request import Request
 from .message.response import Response
 
 __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
@@ -57,11 +58,8 @@ def _init_plugin(plugin_name, reload=False):
     return plugin
 
 
-def _exec_func(args, retry=True):
-    backend = args.pop('backend') if 'backend' in args else None
-    origin = args.pop('origin') if 'origin' in args else None
-    action = args.pop('action')
-    tokens = action.split('.')
+def _execute_request(request, retry=True):
+    tokens = request.action.split('.')
     module_name = str.join('.', tokens[:-1])
     method_name = tokens[-1:][0]
 
@@ -72,27 +70,31 @@ def _exec_func(args, retry=True):
         return
 
     try:
-        response = plugin.run(method=method_name, **args)
+        response = plugin.run(method=method_name, **request.args)
         if response and response.is_error():
             logging.warn('Response processed with errors: {}'.format(response))
         else:
             logging.info('Processed response: {}'.format(response))
     except Exception as e:
-        response = Response(output=None, errors=[e, traceback.format_exc()])
+        response = Response(output=None, errors=[str(e), traceback.format_exc()])
         logging.exception(e)
         if retry:
-            # Put the popped args back where they were before retrying
-            args['action'] = action; args['origin'] = origin; args['backend'] = backend
-
             logging.info('Reloading plugin {} and retrying'.format(module_name))
             _init_plugin(module_name, reload=True)
-            _exec_func(args, retry=False)
+            _execute_request(request, retry=False)
     finally:
-        if backend: backend.send_response(origin, response)
+        # Send the response on the backend that received the request
+        if request.backend and request.origin:
+            response.target = request.origin
+            request.backend.send_response(response)
 
 
 def on_msg(msg):
-    Thread(target=_exec_func, args=(msg,)).start()
+    if isinstance(msg, Request):
+        logging.info('Processing request: {}'.format(msg))
+        Thread(target=_execute_request, args=(msg,)).start()
+    elif isinstance(msg, Response):
+        logging.info('Received response: {}'.format(msg))
 
 
 def parse_config_file(config_file=None):
@@ -132,30 +134,31 @@ def parse_config_file(config_file=None):
     return config
 
 
-def get_backends(config):
+def init_backends(config, bus=None):
     backends = {}
 
     for k in config.keys():
-        if k.startswith('backend.'):
-            module = importlib.import_module(__package__ + '.' + k)
+        if not k.startswith('backend.'): continue
 
-            # e.g. backend.pushbullet main class: PushbulletBackend
-            cls_name = functools.reduce(
-                lambda a,b: a.title() + b.title(),
-                (module.__name__.title().split('.')[2:])
-            ) + 'Backend'
+        module = importlib.import_module(__package__ + '.' + k)
 
-            # Ignore the pusher attribute here
-            if 'pusher' in config[k]: del config[k]['pusher']
+        # e.g. backend.pushbullet main class: PushbulletBackend
+        cls_name = functools.reduce(
+            lambda a,b: a.title() + b.title(),
+            (module.__name__.title().split('.')[2:])
+        ) + 'Backend'
 
-            try:
-                b = getattr(module, cls_name)(config[k])
-                name = '.'.join((k.split('.'))[1:])
-                backends[name] = b
-            except AttributeError as e:
-                logging.warn('No such class in {}: {}'.format(
-                    module.__name__, cls_name))
-                raise RuntimeError(e)
+        # Ignore the pusher attribute here
+        if 'pusher' in config[k]: del config[k]['pusher']
+
+        try:
+            b = getattr(module, cls_name)(bus=bus, **config[k])
+            name = '.'.join((k.split('.'))[1:])
+            backends[name] = b
+        except AttributeError as e:
+            logging.warn('No such class in {}: {}'.format(
+                module.__name__, cls_name))
+            raise RuntimeError(e)
 
     return backends
 
@@ -208,16 +211,15 @@ Usage: {} [-v] [-h] [-c <config_file>]
     logging.basicConfig(level=get_logging_level(), stream=sys.stdout)
     logging.debug('Configuration dump: {}'.format(config))
 
-    mq = Queue()
-    backends = get_backends(config)
+    bus = Queue()
+    backends = init_backends(config, bus)
 
     for backend in backends.values():
-        backend.mq = mq
         backend.start()
 
     while True:
         try:
-            on_msg(mq.get())
+            on_msg(bus.get())
         except KeyboardInterrupt:
             return
 

@@ -6,13 +6,16 @@ import time
 from .. import Backend
 
 class LocalBackend(Backend):
-    def _init(self, fifo):
+    def __init__(self, fifo, **kwargs):
+        super().__init__(**kwargs)
+
         self.fifo = fifo
 
     def _send_msg(self, msg):
-        msg = json.dumps(msg)
-        msglen = len(msg)+1  # Include \n
-        msg = bytearray((str(msglen) + '\n' + msg + '\n').encode('utf-8'))
+        msglen = len(str(msg))+1  # Include \n
+
+        # Message format: b"<length>\n<message>\n"
+        msg = bytearray((str(msglen) + '\n' + str(msg) + '\n').encode('utf-8'))
         with open(self.fifo, 'wb') as f:
             f.write(msg)
 

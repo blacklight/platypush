@@ -2,7 +2,8 @@ import argparse
 import re
 import sys
 
-from platypush import get_backends, get_default_pusher_backend, parse_config_file
+from platypush import init_backends, get_default_pusher_backend, parse_config_file
+from platypush.message.request import Request
 
 def print_usage():
     print ('''Usage: {} [-h|--help] <-t|--target <target name>> <-a|--action <action name>> payload
@@ -17,23 +18,21 @@ def print_usage():
 def pusher(target, action, backend=None, **kwargs):
     config = parse_config_file()
 
-    msg = {
-        'target': target,
-        'action': action,
-        **kwargs,
-    }
-
     if target == 'localhost':
         backend = 'local'
     elif not backend:
         backend = get_default_pusher_backend(config)
 
-    backends = get_backends(config)
+    backends = init_backends(config)
     if backend not in backends:
         raise RuntimeError('No such backend configured: {}'.format(backend))
 
     b = backends[backend]
-    b.send_msg(msg)
+    b.send_request({
+        'target' : target,
+        'action' : action,
+        'args'   : kwargs,
+    })
 
 
 def main():
