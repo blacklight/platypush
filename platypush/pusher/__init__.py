@@ -41,6 +41,7 @@ def pusher(target, action, backend=None, config=None, **kwargs):
     b = backends[backend]
     b.start()
     b.send_request(req)
+    os._exit(0)
 
 def main():
     parser = argparse.ArgumentParser()
