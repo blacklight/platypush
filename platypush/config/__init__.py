@@ -76,8 +76,7 @@ class Config(object):
         self.plugins = {}
         for key in self._config.keys():
             if key.startswith('backend.'): continue
-            plugin_name = '.'.join(key.split('.')[1:])
-            self.plugins[plugin_name] = self._config[key]
+            self.plugins[key] = self._config[key]
 
     @staticmethod
     def get_backends():
