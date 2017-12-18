@@ -105,7 +105,7 @@ Writing your own `platypush` plugin, that would execute your own custom logic wh
 
 4. If your module is `light/batsignal`, then its main class should be named `LightBatsignalPlugin`.
 
-5. The configuration for your module will be read from a section named `light.batsignal` from your `config.yaml`, the attributes are accessible in your class in `self.config`.
+5. The configuration for your module will be read from a section named `light.batsignal` from your `config.yaml`. Its values will passed over the plugin constructor arguments.
 
 The `__init__.py` will look like this:
 
@@ -117,23 +117,24 @@ from platypush.message.response import Response
 from .. import LightPlugin
 
 class LightBatsignalPlugin(LightPlugin):
-    def _init(self):
-        self.batsignal = batman.Batsignal(self.config['intensity'])
+    def __init__(self, intensity=100):
+        super().__init__()
+        self.batsignal = batman.Batsignal(intensity)
 
     def on(self, urgent=False):
         if urgent:
             self.batsignal.notify_robin()
 
         self.batsignal.on()
-        return Response('ok')
+        return Response(output='ok')
 
     def off(self):
         self.batsignal.off()
-        return Response('ok')
+        return Response(output='ok')
 
     def toggle(self):
         self.batsignal.toggle()
-        return Response('ok')
+        return Response(output='ok')
 
 ```
 
@@ -143,5 +144,44 @@ class LightBatsignalPlugin(LightPlugin):
 
 ```shell
 pusher --target your_pc --action light.batsignal.on --urgent 1
+```
+
+Writing your backends
+---------------------
+
+You can also write your own backends, where a backend is nothing but a thread that listens for messages on a certain channel and pokes the main app whenever it receives one.
+
+1. Create your backend directory under `platypush/backend` (e.g. `voicemail`)
+
+2. In the case above, `platypush.backend.voicemail` will be your package name.
+
+3. Create an `__init__.py` under `platypush/backend/voicemail`.
+
+4. If your module is `voicemail`, then its main class should be named `VoicemailBackend`.
+
+5. The configuration for your module will be read from a section named `backend.voicemail` from your `config.yaml`. Its values will be passed over the backend constructor arguments.
+
+6. Implement the `run` method. Since a backend is a thread that polls for new messages on a channel, this will be the thread main method. `_send_msg` should call `self.on_msg` at the end to post a new message to the application.
+
+7. Implement the `_send_msg` method. This method will be called whenever the application needs to send a new message through `send_request` and `send_response`. You should never call `_send_msg` directly.
+
+The `__init__.py` will look like this:
+
+```python
+from .. import Backend
+
+class VoicemailBackend(Backend)
+    def __init__(self, phone)
+        super().__init__()
+        self.phone = phone
+        self.voicemail = Voicemail(...)
+
+    def _send_msg(self, msg):
+        self.voicemail.save_msg(msg)
+
+    def run(self):
+        while True:
+            msg = self.voicemail.poll()
+            self.on_msg(msg)
 ```
 

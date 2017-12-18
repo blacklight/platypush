@@ -9,6 +9,7 @@ from platypush.message.request import Request
 def print_usage():
     print ('''Usage: {} [-h|--help] <-t|--target <target name>> <-a|--action <action name>> payload
     -h, --help:\t\tShow this help and exit
+    -c, --config:\tPath to the platypush config.yaml (default: ~/.config/platypush/config.yaml or /etc/platypush/config.yaml)
     -b, --backend:\tBackend to deliver the message [pushbullet|kafka] (default: whatever specified in your config with pusher=True)
     -t, --target:\tName of the target device/host
     -a, --action\tAction to run, it includes both the package name and the method (e.g. shell.exec or music.mpd.play)
