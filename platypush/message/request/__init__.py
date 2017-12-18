@@ -31,6 +31,7 @@ class Request(Message):
             'args'   : msg['args'] if 'args' in msg else {},
         }
 
+        args['id'] = msg['id'] if 'id' in msg else cls._generate_id()
         if 'origin' in msg: args['origin'] = msg['origin']
         return Request(**args)
 

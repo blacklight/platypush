@@ -133,5 +133,10 @@ class Backend(Thread):
         """ Starts the backend thread. To be implemented in the derived classes """
         raise NotImplementedError("run should be implemented in a derived class")
 
+    def stop(self):
+        """ Stops the backend thread (default: do nothing) """
+        pass
+
+
 # vim:sw=4:ts=4:et:
 

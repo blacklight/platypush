@@ -4,6 +4,7 @@ import re
 import signal
 import sys
 
+from platypush.bus import Bus
 from platypush.config import Config
 from platypush.message.request import Request
 from platypush.message.response import Response
@@ -15,12 +16,20 @@ def print_usage():
     -c, --config:\tPath to the platypush config.yaml (default: ~/.config/platypush/config.yaml or /etc/platypush/config.yaml)
     -b, --backend:\tBackend to deliver the message [pushbullet|kafka] (default: whatever specified in your config with pusher=True)
     -t, --target:\tName of the target device/host
+    -T, --timeout:\tThe application will wait for a response for this number of seconds (default: 5 seconds. A zero value means that the application will exit without waiting for a response)
     -a, --action\tAction to run, it includes both the package name and the method (e.g. shell.exec or music.mpd.play)
     payload:\t\tArguments to the action
 '''.format(sys.argv[0]))
 
 
-def pusher(target, action, backend=None, config=None, **kwargs):
+_DEFAULT_TIMEOUT_SEC=5
+
+def pusher(target, action, backend=None, config=None,
+           timeout=_DEFAULT_TIMEOUT_SEC, **kwargs):
+    def on_timeout(signum, frame):
+        raise RuntimeError('Response timed out after {} seconds'.format(
+            timeout))
+
     Config.init(config)
 
     if target == 'localhost':
@@ -34,19 +43,35 @@ def pusher(target, action, backend=None, config=None, **kwargs):
         'args'   : kwargs,
     })
 
-    backends = init_backends()
+    bus = Bus()
+    backends = init_backends(bus=bus)
     if backend not in backends:
         raise RuntimeError('No such backend configured: {}'.format(backend))
 
     b = backends[backend]
     b.start()
     b.send_request(req)
+
+    if timeout:
+        signal.signal(signal.SIGALRM, on_timeout)
+        signal.alarm(timeout)
+
+        response_received = False
+        while not response_received:
+            msg = bus.get()
+            response_received = isinstance(msg, Response) and (
+                hasattr(msg, 'id') and msg.id == req.id)
+
+        signal.alarm(0)
+        print('Response received!')
+
     os._exit(0)
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', '-c', dest='config', required=False,
-                        help="Configuration file path (default: " +
+                        default=None, help="Configuration file path (default: " +
                         "~/.config/platypush/config.yaml or " +
                         "/etc/platypush/config.yaml")
 
@@ -57,9 +82,16 @@ def main():
                         help="Action to execute, as package.method")
 
     parser.add_argument('--backend', '-b', dest='backend', required=False,
-                        help="Backend to deliver the message " +
+                        default=None, help="Backend to deliver the message " +
                         "[pushbullet|kafka|local] (default: whatever " +
                         "specified in your config with pusher=True)")
+
+    parser.add_argument('--timeout', '-T', dest='timeout', required=False,
+                        default=_DEFAULT_TIMEOUT_SEC, help="The application " +
+                        "will wait for a response for this number of seconds " +
+                        "(default: " + str(_DEFAULT_TIMEOUT_SEC) + " seconds. "
+                        "A zero value means that the application " +
+                        " will exit without waiting for a response)")
 
     opts, args = parser.parse_known_args(sys.argv[1:])
 
@@ -72,8 +104,7 @@ def main():
         payload[re.sub('^-+', '', args[i])] = args[i+1]
 
     pusher(target=opts.target, action=opts.action,
-           backend=opts.backend if 'backend' in opts else None,
-           config=opts.config if 'config' in opts else None,
+           backend=opts.backend, config=opts.config, timeout=opts.timeout,
            **payload)
 
 
