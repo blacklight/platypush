@@ -1,10 +1,13 @@
 import argparse
+import os
 import re
+import signal
 import sys
 
 from platypush.config import Config
-from platypush.utils import init_backends
 from platypush.message.request import Request
+from platypush.message.response import Response
+from platypush.utils import init_backends
 
 def print_usage():
     print ('''Usage: {} [-h|--help] <-t|--target <target name>> <-a|--action <action name>> payload
@@ -25,18 +28,19 @@ def pusher(target, action, backend=None, config=None, **kwargs):
     elif not backend:
         backend = Config.get_default_pusher_backend()
 
-    # TODO Initialize a local bus and wait for the response
-    backends = init_backends()
-    if backend not in backends:
-        raise RuntimeError('No such backend configured: {}'.format(backend))
-
-    b = backends[backend]
-    b.send_request({
+    req = Request.build({
         'target' : target,
         'action' : action,
         'args'   : kwargs,
     })
 
+    backends = init_backends()
+    if backend not in backends:
+        raise RuntimeError('No such backend configured: {}'.format(backend))
+
+    b = backends[backend]
+    b.start()
+    b.send_request(req)
 
 def main():
     parser = argparse.ArgumentParser()

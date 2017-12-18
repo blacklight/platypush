@@ -13,7 +13,6 @@ class KafkaBackend(Backend):
         self.topic_prefix = topic
         self.topic = self._topic_by_device_id(self.device_id)
         self.producer = None
-        self._init_producer()
 
     def _on_record(self, record):
         if record.topic != self.topic: return

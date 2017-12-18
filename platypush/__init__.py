@@ -31,8 +31,6 @@ def _execute_request(request, retry=True):
         response = plugin.run(method=method_name, **request.args)
         if response and response.is_error():
             logging.warn('Response processed with errors: {}'.format(response))
-        else:
-            logging.info('Processed response: {}'.format(response))
     except Exception as e:
         response = Response(output=None, errors=[str(e), traceback.format_exc()])
         logging.exception(e)
@@ -43,7 +41,10 @@ def _execute_request(request, retry=True):
     finally:
         # Send the response on the backend that received the request
         if request.backend and request.origin:
+            if request.id: response.id = request.id
             response.target = request.origin
+
+            logging.info('Processing response: {}'.format(response))
             request.backend.send_response(response)
 
 

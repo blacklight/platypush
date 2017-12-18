@@ -2,9 +2,9 @@ import importlib
 import logging
 import sys
 
-from queue import Queue
 from threading import Thread
 
+from platypush.bus import Bus
 from platypush.config import Config
 from platypush.message import Message
 from platypush.message.request import Request
@@ -17,13 +17,13 @@ class Backend(Thread):
         """
         Params:
             bus    -- Reference to the Platypush bus where the requests and the
-                      responses will be posted [Queue]
+                      responses will be posted [Bus]
             kwargs -- key-value configuration for this backend [Dict]
         """
 
         # If no bus is specified, create an internal queue where
         # the received messages will be pushed
-        self.bus = bus if bus else Queue()
+        self.bus = bus if bus else Bus()
         self.device_id = Config.get('device_id')
         self.msgtypes = {}
 

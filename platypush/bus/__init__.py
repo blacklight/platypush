@@ -3,7 +3,7 @@ from queue import Queue
 class Bus(object):
     """ Main local bus where the daemon will listen for new messages """
 
-    def __init__(self, on_msg):
+    def __init__(self, on_msg=None):
         self.bus = Queue()
         self.on_msg = on_msg
 
@@ -13,6 +13,8 @@ class Bus(object):
 
     def loop_forever(self):
         """ Reads messages from the bus """
+        if not self.on_msg: return
+
         while True:
             try:
                 self.on_msg(self.bus.get())
