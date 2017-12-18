@@ -17,6 +17,7 @@ def pusher(target, action, backend=None, config=None,
     def on_timeout(signum, frame):
         raise RuntimeError('Response timed out after {} seconds'.format(
             timeout))
+        os._exit(0)
 
     Config.init(config)
 
