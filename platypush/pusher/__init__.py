@@ -10,18 +10,6 @@ from platypush.message.request import Request
 from platypush.message.response import Response
 from platypush.utils import init_backends
 
-def print_usage():
-    print ('''Usage: {} [-h|--help] <-t|--target <target name>> <-a|--action <action name>> payload
-    -h, --help:\t\tShow this help and exit
-    -c, --config:\tPath to the platypush config.yaml (default: ~/.config/platypush/config.yaml or /etc/platypush/config.yaml)
-    -b, --backend:\tBackend to deliver the message [pushbullet|kafka] (default: whatever specified in your config with pusher=True)
-    -t, --target:\tName of the target device/host
-    -T, --timeout:\tThe application will wait for a response for this number of seconds (default: 5 seconds. A zero value means that the application will exit without waiting for a response)
-    -a, --action\tAction to run, it includes both the package name and the method (e.g. shell.exec or music.mpd.play)
-    payload:\t\tArguments to the action
-'''.format(sys.argv[0]))
-
-
 _DEFAULT_TIMEOUT_SEC=5
 
 def pusher(target, action, backend=None, config=None,
@@ -63,7 +51,7 @@ def pusher(target, action, backend=None, config=None,
                 hasattr(msg, 'id') and msg.id == req.id)
 
         signal.alarm(0)
-        print('Response received!')
+        print(msg)
 
     os._exit(0)
 
