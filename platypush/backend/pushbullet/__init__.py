@@ -4,6 +4,7 @@ import requests
 import time
 import websocket
 
+from platypush.config import Config
 from platypush.message import Message
 
 from .. import Backend

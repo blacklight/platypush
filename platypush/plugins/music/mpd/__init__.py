@@ -5,9 +5,18 @@ from platypush.message.response import Response
 from .. import MusicPlugin
 
 class MusicMpdPlugin(MusicPlugin):
-    def _init(self):
+    def __init__(self, host, port):
+        """
+        Constructor
+        Params:
+            host -- MPD host
+            port -- MPD port
+        """
+
+        self.host = host
+        self.port = port
         self.client = mpd.MPDClient(use_unicode=True)
-        self.client.connect(self.config['host'], self.config['port'])
+        self.client.connect(self.host, self.port)
 
     def _exec(self, method, *args, **kwargs):
         getattr(self.client, method)(*args, **kwargs)

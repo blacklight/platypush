@@ -7,12 +7,24 @@ from platypush.message.response import Response
 from .. import LightPlugin
 
 class LightHuePlugin(LightPlugin):
+    """ Philips Hue lights plugin """
+
     MAX_BRI = 255
     MAX_SAT = 255
     MAX_HUE = 65535
 
-    def _init(self):
-        self.bridge_address = self.config['bridge']
+    def __init__(self, bridge, lights=None, groups=None):
+        """
+        Constructor
+        Params:
+            bridge -- Bridge address or hostname
+            lights -- Lights to be controlled (default: all)
+            groups -- Groups to be controlled (default: all)
+        """
+
+        super().__init__()
+
+        self.bridge_address = bridge
         self.bridge = None
         logging.info('Initializing Hue lights plugin - bridge: "{}"'.
                      format(self.bridge_address))
@@ -20,20 +32,18 @@ class LightHuePlugin(LightPlugin):
         self.connect()
         self.lights = []; self.groups = []
 
-        if 'lights' in self.config:
-            self.lights = self.config['lights']
-        elif 'groups' in self.config:
-            self.groups = self.config['groups']
-            self._expand_groups(self.groups)
+        if lights:
+            self.lights = lights
+        elif groups:
+            self.groups = groups
+            self._expand_groups()
         else:
             self.lights = [l.name for l in self.bridge.lights]
 
         logging.info('Configured lights: "{}"'. format(self.lights))
 
-    def _expand_groups(self, group_names):
-        groups = [g for g in self.bridge.groups
-                if g.name in group_names]
-
+    def _expand_groups(self):
+        groups = [g for g in self.bridge.groups if g.name in self.groups]
         for g in groups:
             self.lights.extend([l.name for l in g.lights])
 

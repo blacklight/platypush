@@ -25,7 +25,7 @@ class Request(Message):
         args = {
             'target' : msg['target'],
             'action' : msg['action'],
-            'args'   : msg['args'],
+            'args'   : msg['args'] if 'args' in msg else {},
         }
 
         if 'origin' in msg: args['origin'] = msg['origin']

@@ -2,7 +2,8 @@ import argparse
 import re
 import sys
 
-from platypush import init_backends, get_default_pusher_backend, parse_config_file
+from platypush.config import Config
+from platypush.utils import init_backends
 from platypush.message.request import Request
 
 def print_usage():
@@ -15,15 +16,16 @@ def print_usage():
 '''.format(sys.argv[0]))
 
 
-def pusher(target, action, backend=None, **kwargs):
-    config = parse_config_file()
+def pusher(target, action, backend=None, config=None, **kwargs):
+    Config.init(config)
 
     if target == 'localhost':
         backend = 'local'
     elif not backend:
-        backend = get_default_pusher_backend(config)
+        backend = Config.get_default_pusher_backend()
 
-    backends = init_backends(config)
+    # TODO Initialize a local bus and wait for the response
+    backends = init_backends()
     if backend not in backends:
         raise RuntimeError('No such backend configured: {}'.format(backend))
 
@@ -37,6 +39,11 @@ def pusher(target, action, backend=None, **kwargs):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--config', '-c', dest='config', required=False,
+                        help="Configuration file path (default: " +
+                        "~/.config/platypush/config.yaml or " +
+                        "/etc/platypush/config.yaml")
+
     parser.add_argument('--target', '-t', dest='target', required=True,
                         help="Destination of the command")
 
@@ -59,11 +66,14 @@ def main():
         payload[re.sub('^-+', '', args[i])] = args[i+1]
 
     pusher(target=opts.target, action=opts.action,
-           backend=opts.backend if 'backend' in opts else None, **payload)
+           backend=opts.backend if 'backend' in opts else None,
+           config=opts.config if 'config' in opts else None,
+           **payload)
 
 
 if __name__ == '__main__':
     main()
+
 
 # vim:sw=4:ts=4:et:
 

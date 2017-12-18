@@ -7,7 +7,9 @@ from platypush.message.response import Response
 from .. import SwitchPlugin
 
 class SwitchWemoPlugin(SwitchPlugin):
-    def _init(self, discovery_seconds=3):
+    def __init__(self, discovery_seconds=3):
+        super().__init__()
+
         self.discovery_seconds=discovery_seconds
         self.env = Environment()
         self.env.start()

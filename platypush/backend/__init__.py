@@ -1,11 +1,11 @@
 import importlib
 import logging
 import sys
-import platypush
 
 from queue import Queue
 from threading import Thread
 
+from platypush.config import Config
 from platypush.message import Message
 from platypush.message.request import Request
 from platypush.message.response import Response
@@ -24,11 +24,11 @@ class Backend(Thread):
         # If no bus is specified, create an internal queue where
         # the received messages will be pushed
         self.bus = bus if bus else Queue()
-        self.device_id = platypush.get_device_id()
+        self.device_id = Config.get('device_id')
         self.msgtypes = {}
 
         Thread.__init__(self)
-        logging.basicConfig(stream=sys.stdout, level=platypush.get_logging_level()
+        logging.basicConfig(stream=sys.stdout, level=Config.get('logging')
                             if 'logging' not in kwargs
                             else getattr(logging, kwargs['logging']))
 
@@ -87,7 +87,7 @@ class Backend(Thread):
 
         logging.debug('Message received on the backend: {}'.format(msg))
         msg.backend = self   # Augment message
-        self.bus.put(msg)
+        self.bus.post(msg)
 
     def send_request(self, request):
         """

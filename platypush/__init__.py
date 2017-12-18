@@ -1,16 +1,13 @@
-import functools
-import importlib
-import os
 import logging
-import socket
 import sys
 import traceback
-import yaml
 
-from queue import Queue
 from threading import Thread
 from getopt import getopt
 
+from .bus import Bus
+from .config import Config
+from .utils import get_or_load_plugin, init_backends
 from .message.request import Request
 from .message.response import Response
 
@@ -19,50 +16,13 @@ __version__ = '0.3.3'
 
 #-----------#
 
-config = {}
-modules = {}
-wrkdir = os.path.dirname(os.path.realpath(__file__))
-
-
-def _init_plugin(plugin_name, reload=False):
-    global modules
-    global config
-
-    if plugin_name in modules and not reload:
-        return modules[plugin_name]
-
-    try:
-        module = importlib.import_module(__package__ + '.plugins.' + plugin_name)
-    except ModuleNotFoundError as e:
-        logging.warn('No such plugin: {}'.format(plugin_name))
-        raise RuntimeError(e)
-
-    # e.g. plugins.music.mpd main class: MusicMpdPlugin
-    cls_name = functools.reduce(
-        lambda a,b: a.title() + b.title(),
-        (plugin_name.title().split('.'))
-    ) + 'Plugin'
-
-    plugin_conf = config[plugin_name] if plugin_name in config else {}
-
-    try:
-        plugin = getattr(module, cls_name)(plugin_conf)
-        modules[plugin_name] = plugin
-    except AttributeError as e:
-        logging.warn('No such class in {}: {}'.format(
-            plugin_name, cls_name))
-        raise RuntimeError(e)
-
-    return plugin
-
-
 def _execute_request(request, retry=True):
     tokens = request.action.split('.')
     module_name = str.join('.', tokens[:-1])
     method_name = tokens[-1:][0]
 
     try:
-        plugin = _init_plugin(module_name)
+        plugin = get_or_load_plugin(module_name)
     except RuntimeError as e:  # Module/class not found
         logging.exception(e)
         return
@@ -78,7 +38,7 @@ def _execute_request(request, retry=True):
         logging.exception(e)
         if retry:
             logging.info('Reloading plugin {} and retrying'.format(module_name))
-            _init_plugin(module_name, reload=True)
+            get_or_load_plugin(module_name, reload=True)
             _execute_request(request, retry=False)
     finally:
         # Send the response on the backend that received the request
@@ -95,131 +55,32 @@ def on_msg(msg):
         logging.info('Received response: {}'.format(msg))
 
 
-def parse_config_file(config_file=None):
-    global config
-
-    if config_file:
-        locations = [config_file]
-    else:
-        locations = [
-            # ./config.yaml
-            os.path.join(wrkdir, 'config.yaml'),
-            # ~/.config/platypush/config.yaml
-            os.path.join(os.environ['HOME'], '.config', 'platypush', 'config.yaml'),
-            # /etc/platypush/config.yaml
-            os.path.join(os.sep, 'etc', 'platypush', 'config.yaml'),
-        ]
-
-    for loc in locations:
-        try:
-            with open(loc,'r') as f:
-                config = yaml.load(f)
-        except FileNotFoundError as e:
-            pass
-
-    for section in config:
-        if 'disabled' in config[section] and config[section]['disabled']:
-            del config[section]
-
-    if 'logging' not in config:
-        config['logging'] = logging.INFO
-    else:
-        config['logging'] = getattr(logging, config['logging'].upper())
-
-    if 'device_id' not in config:
-        config['device_id'] = socket.gethostname()
-
-    return config
-
-
-def init_backends(config, bus=None):
-    backends = {}
-
-    for k in config.keys():
-        if not k.startswith('backend.'): continue
-
-        module = importlib.import_module(__package__ + '.' + k)
-
-        # e.g. backend.pushbullet main class: PushbulletBackend
-        cls_name = functools.reduce(
-            lambda a,b: a.title() + b.title(),
-            (module.__name__.title().split('.')[2:])
-        ) + 'Backend'
-
-        # Ignore the pusher attribute here
-        if 'pusher' in config[k]: del config[k]['pusher']
-
-        try:
-            b = getattr(module, cls_name)(bus=bus, **config[k])
-            name = '.'.join((k.split('.'))[1:])
-            backends[name] = b
-        except AttributeError as e:
-            logging.warn('No such class in {}: {}'.format(
-                module.__name__, cls_name))
-            raise RuntimeError(e)
-
-    return backends
-
-
-def get_default_pusher_backend(config):
-    backends = ['.'.join((k.split('.'))[1:])
-                for k in config.keys() if k.startswith('backend.')
-                and 'pusher' in config[k] and config[k]['pusher'] is True]
-
-    return backends[0] if backends else None
-
-
-def get_logging_level():
-    global config
-    return config['logging']
-
-
-def get_device_id():
-    global config
-    return config['device_id'] if 'device_id' in config else None
-
-
 def main():
     print('Starting platypush v.{}'.format(__version__))
-
-    debug = False
     config_file = None
-
-    plugins_dir = os.path.join(wrkdir, 'plugins')
-    sys.path.insert(0, plugins_dir)
 
     optlist, args = getopt(sys.argv[1:], 'vh')
     for opt, arg in optlist:
         if opt == '-c':
             config_file = arg
-        if opt == '-v':
-            debug = True
         elif opt == '-h':
             print('''
-Usage: {} [-v] [-h] [-c <config_file>]
-    -v  Enable debug mode
+Usage: {} [-h] [-c <config_file>]
     -h  Show this help
     -c  Path to the configuration file (default: ./config.yaml)
 '''.format(sys.argv[0]))
             return
 
-    config = parse_config_file(config_file)
-    if debug: config['logging'] = logging.DEBUG
+    Config.init(config_file)
+    logging.basicConfig(level=Config.get('logging'), stream=sys.stdout)
 
-    logging.basicConfig(level=get_logging_level(), stream=sys.stdout)
-    logging.debug('Configuration dump: {}'.format(config))
-
-    bus = Queue()
-    backends = init_backends(config, bus)
+    bus = Bus(on_msg=on_msg)
+    backends = init_backends(bus)
 
     for backend in backends.values():
         backend.start()
 
-    while True:
-        try:
-            on_msg(bus.get())
-        except KeyboardInterrupt:
-            return
+    bus.loop_forever()
 
 if __name__ == '__main__':
     main()

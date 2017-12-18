@@ -1,23 +1,16 @@
-import os
 import sys
 import logging
 
-from platypush import get_logging_level
+from platypush.config import Config
 from platypush.message.response import Response
 
 class Plugin(object):
-    def __init__(self, config):
-        self.config = config
-        logging.basicConfig(stream=sys.stdout, level=get_logging_level()
-                            if 'logging' not in config
-                            else getattr(logging, config.pop('logging')))
+    """ Base plugin class """
 
-        for cls in reversed(self.__class__.mro()):
-            if cls is not object:
-                try:
-                    cls._init(self)
-                except AttributeError as e:
-                    pass
+    def __init__(self, **kwargs):
+        logging.basicConfig(stream=sys.stdout, level=Config.get('logging')
+                            if 'logging' not in kwargs
+                            else getattr(logging, kwargs['logging']))
 
     def run(self, method, *args, **kwargs):
         return getattr(self, method)(*args, **kwargs)
