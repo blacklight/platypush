@@ -36,10 +36,13 @@ class Daemon(object):
     """ number of executions retries before a request fails """
     n_tries = 2
 
-    def __init__(self, config_file=None):
+    def __init__(self, config_file=None, message_handler=None):
         """ Constructor
         Params:
             config_file -- Configuration file override (default: None)
+            message_handler -- Another function that will receive the messages.
+                If set, Platypush will just act as a message proxy. Useful to
+                embed into other projects, for tests, or for delegating events.
         """
 
         self.config_file = config_file
@@ -66,6 +69,12 @@ class Daemon(object):
             """ on_message closure
             Params:
                 msg -- platypush.message.Message instance """
+
+            if self.message_handler:
+                # Proxy the message
+                self.message_handler(msg)
+                return
+
             if isinstance(msg, Request):
                 logging.info('Processing request: {}'.format(msg))
                 Thread(target=self.run_request(), args=(msg,)).start()
