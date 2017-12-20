@@ -3,18 +3,17 @@ import sys
 import signal
 import logging
 
+from enum import Enum
 from queue import Queue
+
+from platypush.message.event import Event, StopEvent
 
 class Bus(object):
     """ Main local bus where the daemon will listen for new messages """
 
-    """ Number of seconds to wait for any pending threads
-    before the process returns to the OS """
-    _kill_sec_timeout = 5
-
-    def __init__(self, on_msg=None):
+    def __init__(self, on_message=None):
         self.bus = Queue()
-        self.on_msg = on_msg
+        self.on_message = on_message
 
     def post(self, msg):
         """ Sends a message to the bus """
@@ -24,25 +23,24 @@ class Bus(object):
         """ Reads one message from the bus """
         return self.bus.get()
 
-    def loop_forever(self):
-        """ Reads messages from the bus until KeyboardInterrupt """
-        def _on_stop_timeout(signum, frame):
-            logging.warn('Stopping all the active threads after waiting for ' +
-                        '{} seconds'.format(self._kill_sec_timeout))
-            os._exit(1)
+    def poll(self):
+        """
+        Reads messages from the bus until either stop event message or KeyboardInterrupt
+        """
 
-        if not self.on_msg: return
+        if not self.on_message:
+            logging.warning('No message handlers installed, cannot poll')
+            return
 
-        while True:
-            try:
-                self.on_msg(self.get())
-            except KeyboardInterrupt:
-                logging.info('Received keyboard interrupt ' +
-                             '- terminating application')
+        stop=False
+        while not stop:
+            msg = self.get()
+            self.on_message(msg)
 
-                signal.signal(signal.SIGALRM, _on_stop_timeout)
-                signal.alarm(self._kill_sec_timeout)
-                sys.exit(0)
+            if isinstance(msg, StopEvent) and msg.targets_me():
+                logging.info('Received STOP event')
+                stop=True
+
 
 # vim:sw=4:ts=4:et:
 

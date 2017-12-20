@@ -33,7 +33,7 @@ class Request(Message):
 
         args['id'] = msg['id'] if 'id' in msg else cls._generate_id()
         if 'origin' in msg: args['origin'] = msg['origin']
-        return Request(**args)
+        return cls(**args)
 
     @staticmethod
     def _generate_id():

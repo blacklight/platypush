@@ -18,8 +18,9 @@ class PushbulletBackend(Backend):
         self.pb_device_id = self.get_device_id()
 
         self._last_received_msg = {
-            'request': { 'body': None, 'time': None },
-            'response': { 'body': None, 'time': None },
+            'request'  : { 'body': None, 'time': None },
+            'response' : { 'body': None, 'time': None },
+            'event'    : { 'body': None, 'time': None },
         }
 
     def _get_latest_push(self):
@@ -64,51 +65,49 @@ class PushbulletBackend(Backend):
 
         return is_duplicate
 
-    @staticmethod
-    def _on_msg(backend):
+    def on_push(self):
         def _f(ws, data):
             try:
-                data = json.loads(data) if isinstance(data, str) else push
+                try:
+                    data = json.loads(data) if isinstance(data, str) else push
+                except Exception as e:
+                    logging.exception(e)
+                    return
+
+                if data['type'] == 'tickle' and data['subtype'] == 'push':
+                    push = self._get_latest_push()
+                elif data['type'] == 'push':
+                    push = data['push']
+                else: return  # Not a push notification
+
+                logging.debug('Received push: {}'.format(push))
+
+                body = push['body']
+                try: body = json.loads(body)
+                except ValueError as e: return  # Some other non-JSON push
+
+                if not self._should_skip_last_received_msg(body):
+                    self.on_message(body)
             except Exception as e:
                 logging.exception(e)
                 return
 
-            if data['type'] == 'tickle' and data['subtype'] == 'push':
-                push = backend._get_latest_push()
-            elif data['type'] == 'push':
-                push = data['push']
-            else:
-                return  # Not a push notification
-
-            logging.debug('Received push: {}'.format(push))
-
-            if 'body' not in push: return
-
-            body = push['body']
-            try: body = json.loads(body)
-            except ValueError as e: return
-
-            if not backend._should_skip_last_received_msg(body):
-                backend.on_msg(body)
-
         return _f
 
-    @staticmethod
-    def _on_error(backend):
+    def on_error(self):
         def _f(ws, e):
             logging.exception(e)
             logging.info('Restarting PushBullet backend')
             ws.close()
-            backend._init_socket()
+            self._init_socket()
 
         return _f
 
     def _init_socket(self):
         self.ws = websocket.WebSocketApp(
             'wss://stream.pushbullet.com/websocket/' + self.token,
-            # on_message = self._on_msg,
-            on_message = self._on_msg(self),
-            on_error = self._on_error(self))
+            on_message = self.on_push(),
+            on_error = self.on_error())
 
     def get_device_id(self):
         response = requests.get(
@@ -125,7 +124,7 @@ class PushbulletBackend(Backend):
 
         return devices[0]['iden']
 
-    def _send_msg(self, msg):
+    def send_message(self, msg):
         requests.post(
             u'https://api.pushbullet.com/v2/pushes',
             headers = { 'Access-Token': self.token },
@@ -136,7 +135,12 @@ class PushbulletBackend(Backend):
             }
         ).json()
 
+    def on_stop(self):
+        self.ws.close()
+
     def run(self):
+        super().run()
+
         self._init_socket()
         logging.info('Initialized Pushbullet backend - device_id: {}'
                      .format(self.device_name))

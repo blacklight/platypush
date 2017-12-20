@@ -1,100 +1,180 @@
 import argparse
 import os
 import re
-import signal
 import sys
 
 from platypush.bus import Bus
 from platypush.config import Config
 from platypush.message.request import Request
 from platypush.message.response import Response
-from platypush.utils import init_backends
+from platypush.utils import init_backends, set_timeout, clear_timeout
 
-_DEFAULT_TIMEOUT_SEC=5
+class Pusher(object):
+    """
+    Main class to send messages and events to a node
+    """
 
-def pusher(target, action, backend=None, config=None,
-           timeout=_DEFAULT_TIMEOUT_SEC, **kwargs):
-    def on_timeout(signum, frame):
-        raise RuntimeError('Response timed out after {} seconds'.format(
-            timeout))
-        os._exit(0)
+    """ Configuration file path """
+    config_file = None
 
-    Config.init(config)
+    """ Default backend name """
+    backend = None
 
-    if target == 'localhost':
-        backend = 'local'
-    elif not backend:
-        backend = Config.get_default_pusher_backend()
+    """ Pusher local bus. The response will be processed here """
+    bus = None
 
-    req = Request.build({
-        'target' : target,
-        'action' : action,
-        'args'   : kwargs,
-    })
+    """ Configured backends as a name => object map """
+    backends = {}
 
-    bus = Bus()
-    backends = init_backends(bus=bus)
-    if backend not in backends:
-        raise RuntimeError('No such backend configured: {}'.format(backend))
+    """ Default response_wait timeout """
+    default_response_wait_timeout = 5
 
-    b = backends[backend]
-    b.start()
-    b.send_request(req)
 
-    if timeout:
-        signal.signal(signal.SIGALRM, on_timeout)
-        signal.alarm(timeout)
+    def __init__(self, config_file=None, backend=None, on_response=None):
+        """
+        Constructor.
+        Params:
+            config_file -- Path to the configuration file - default:
+                           ~/.config/platypush/config.yaml or
+                           /etc/platypush/config.yaml)
+            backend     -- Name of the backend where pusher will send the
+                           request and wait for the response (kafka
+                           or pushbullet). Default: whatever is specified
+                           with pusher=true in your configuration file
+            on_response -- Method that will be invoked upon response receipt.
+                           Takes a platypush.message.response.Response as arg.
+                           Default: print the response and exit.
+        """
 
+        # Initialize the configuration
+        self.config_file = config_file
+        Config.init(config_file)
+
+        self.on_response = on_response or self.default_on_response()
+        self.backend = backend or Config.get_default_pusher_backend()
+        self.bus = Bus()
+
+
+    @classmethod
+    def parse_build_args(cls, args):
+        """ Parse the recognized options from a list of cmdline arguments """
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--config', '-c', dest='config', required=False,
+                            default=None, help="Configuration file path (default: " +
+                            "~/.config/platypush/config.yaml or " +
+                            "/etc/platypush/config.yaml")
+
+        parser.add_argument('--target', '-t', dest='target', required=True,
+                            help="Destination of the command")
+
+        parser.add_argument('--action', '-a', dest='action', required=True,
+                            help="Action to execute, as package.method")
+
+        parser.add_argument('--backend', '-b', dest='backend', required=False,
+                            default=None, help="Backend to deliver the message " +
+                            "[pushbullet|kafka] (default: whatever " +
+                            "specified in your config with pusher=True)")
+
+        parser.add_argument('--timeout', '-T', dest='timeout', required=False,
+                            default=cls.default_response_wait_timeout, help="The application " +
+                            "will wait for a response for this number of seconds " +
+                            "(default: " + str(cls.default_response_wait_timeout) + " seconds. "
+                            "A zero value means that the application " +
+                            " will exit without waiting for a response)")
+
+        opts, args = parser.parse_known_args(args)
+
+        if len(args) % 2 != 0:
+            raise RuntimeError('Odd number of key-value options passed: {}'.format(args))
+
+        opts.args = {}
+        for i in range(0, len(args), 2):
+            opts.args[re.sub('^-+', '', args[i])] = args[i+1]
+
+        return opts
+
+    def get_backend(self, name):
+        # Lazy init
+        if not self.backends: self.backends = init_backends(bus=self.bus)
+        if name not in self.backends:
+            raise RuntimeError('No such backend configured: {}'.format(name))
+        return self.backends[name]
+
+    def on_timeout(self):
+        """ Default response timeout handle: raise RuntimeError """
+        def _f():
+            raise RuntimeError('Response timed out')
+        return _f
+
+    def default_on_response(self):
+        def _f(response):
+            print('Received response: {}'.format(response))
+            os._exit(0)
+        return _f
+
+    def response_wait(self, request, timeout):
+        # Install the timeout handler
+        set_timeout(seconds=timeout, on_timeout=self.on_timeout())
+
+        # Loop on the bus until you get a response for your request ID
         response_received = False
         while not response_received:
-            msg = bus.get()
-            response_received = isinstance(msg, Response) and (
-                hasattr(msg, 'id') and msg.id == req.id)
+            msg = self.bus.get()
+            response_received = (
+                isinstance(msg, Response) and
+                hasattr(msg, 'id') and
+                msg.id == request.id)
 
-        signal.alarm(0)
-        print(msg)
-
-    os._exit(0)
+        if timeout: clear_timeout()
+        self.on_response(msg)
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config', '-c', dest='config', required=False,
-                        default=None, help="Configuration file path (default: " +
-                        "~/.config/platypush/config.yaml or " +
-                        "/etc/platypush/config.yaml")
+    def push(self, target, action, backend=None, config_file=None,
+            timeout=default_response_wait_timeout, **kwargs):
+        """
+        Sends a message on a backend and optionally waits for an answer.
+        Params:
+            target  -- Target node
+            action  -- Action to be executed in the form plugin.path.method
+                    (e.g. shell.exec or music.mpd.play)
+            backend -- Name of the backend that will process the request and get
+                    the response (e.g. 'pushbullet' or 'kafka') (default: whichever
+                    backend marked as pusher=true in your config.yaml)
+            timeout -- Response receive timeout in seconds
+                    - Pusher Default: 5 seconds
+                    - If timeout == 0 or None: Pusher exits without waiting for a response
+            config_file -- Path to the configuration file to be used (default:
+                        ~/.config/platypush/config.yaml or
+                        /etc/platypush/config.yaml)
+            **kwargs    -- Optional key-valued arguments for the action method
+                        (e.g. cmd='echo ping' or groups="['Living Room']")
+        """
 
-    parser.add_argument('--target', '-t', dest='target', required=True,
-                        help="Destination of the command")
+        def _timeout_hndl(signum, frame):
+            """ Default response timeout handle: raise RuntimeError and exit """
 
-    parser.add_argument('--action', '-a', dest='action', required=True,
-                        help="Action to execute, as package.method")
+        if not backend: backend = self.backend
 
-    parser.add_argument('--backend', '-b', dest='backend', required=False,
-                        default=None, help="Backend to deliver the message " +
-                        "[pushbullet|kafka|local] (default: whatever " +
-                        "specified in your config with pusher=True)")
+        req = Request.build({
+            'target' : target,
+            'action' : action,
+            'args'   : kwargs,
+        })
 
-    parser.add_argument('--timeout', '-T', dest='timeout', required=False,
-                        default=_DEFAULT_TIMEOUT_SEC, help="The application " +
-                        "will wait for a response for this number of seconds " +
-                        "(default: " + str(_DEFAULT_TIMEOUT_SEC) + " seconds. "
-                        "A zero value means that the application " +
-                        " will exit without waiting for a response)")
+        b = self.get_backend(backend)
+        b.start()
+        b.send_request(req)
 
-    opts, args = parser.parse_known_args(sys.argv[1:])
+        if timeout: self.response_wait(request=req, timeout=timeout)
 
-    if len(args) % 2 != 0:
-        raise RuntimeError('Odd number of key-value options passed: {}'.
-                           format(args))
 
-    payload = {}
-    for i in range(0, len(args), 2):
-        payload[re.sub('^-+', '', args[i])] = args[i+1]
+def main(args=sys.argv[1:]):
+    opts = Pusher.parse_build_args(args)
 
-    pusher(target=opts.target, action=opts.action,
-           backend=opts.backend, config=opts.config, timeout=opts.timeout,
-           **payload)
+    pusher = Pusher(config_file=opts.config, backend=opts.backend)
+
+    pusher.push(opts.target, action=opts.action, timeout=opts.timeout,
+                **opts.args)
 
 
 if __name__ == '__main__':

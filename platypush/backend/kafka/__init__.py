@@ -1,11 +1,14 @@
 import logging
 import json
+import time
 
 from kafka import KafkaConsumer, KafkaProducer
 
 from .. import Backend
 
 class KafkaBackend(Backend):
+    _conn_retry_secs = 5
+
     def __init__(self, server, topic, **kwargs):
         super().__init__(**kwargs)
 
@@ -23,7 +26,7 @@ class KafkaBackend(Backend):
             logging.exception(e)
 
         logging.debug('Received message: {}'.format(msg))
-        self.on_msg(msg)
+        self.on_message(msg)
 
     def _init_producer(self):
         if not self.producer:
@@ -32,7 +35,7 @@ class KafkaBackend(Backend):
     def _topic_by_device_id(self, device_id):
         return '{}.{}'.format(self.topic_prefix, device_id)
 
-    def _send_msg(self, msg):
+    def send_message(self, msg):
         target = msg.target
         msg = str(msg).encode('utf-8')
 
@@ -40,13 +43,32 @@ class KafkaBackend(Backend):
         self.producer.send(self._topic_by_device_id(target), msg)
         self.producer.flush()
 
+    def on_stop(self):
+        try:
+            if self.producer:
+                self.producer.flush()
+                self.producer.close()
+
+            if self.consumer:
+                self.consumer.close()
+        except: pass
+
     def run(self):
+        super().run()
+
         self.consumer = KafkaConsumer(self.topic, bootstrap_servers=self.server)
         logging.info('Initialized kafka backend - server: {}, topic: {}'
                      .format(self.server, self.topic))
 
-        for msg in self.consumer:
-            self._on_record(msg)
+        try:
+            for msg in self.consumer:
+                self._on_record(msg)
+                if self.should_stop():
+                    break
+        except ConnectionError:
+            logging.warning('Kafka connection error, retrying in {} seconds'.
+                            format(self._conn_retry_secs))
+            time.sleep(self._conn_retry_secs)
 
 # vim:sw=4:ts=4:et:
 

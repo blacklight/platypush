@@ -36,7 +36,7 @@ class Response(Message):
 
         if 'id' in msg: args['id'] = msg['id']
         if 'origin' in msg: args['origin'] = msg['origin']
-        return Response(**args)
+        return cls(**args)
 
 
     def __str__(self):

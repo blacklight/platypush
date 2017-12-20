@@ -35,10 +35,6 @@ Edit the file to include:
 * The host and port of the Kafka installation
 * The topic that will be used to deliver and process messages
 
-### For the local socket backend
-
-* The name of the local FIFO that will be used to deliver and process messages
-
 ### device_id
 
 Each target device is identified by a unique device_id in the messages sent over your account. The device_id is the hostname by default, unless changed in config.yaml.
@@ -161,9 +157,9 @@ You can also write your own backends, where a backend is nothing but a thread th
 
 5. The configuration for your module will be read from a section named `backend.voicemail` from your `config.yaml`. Its values will be passed over the backend constructor arguments.
 
-6. Implement the `run` method. Since a backend is a thread that polls for new messages on a channel, this will be the thread main method. `_send_msg` should call `self.on_msg` at the end to post a new message to the application.
+6. Implement the `run` method. Since a backend is a thread that polls for new messages on a channel, this will be the thread main method. `send_message` should call `self.on_message` at the end to post a new message to the application.
 
-7. Implement the `_send_msg` method. This method will be called whenever the application needs to send a new message through `send_request` and `send_response`. You should never call `_send_msg` directly.
+7. Implement the `send_message` method. This method will be called whenever the application needs to send a new message through `send_request` and `send_response`. You should never call `send_message` directly.
 
 The `__init__.py` will look like this:
 
@@ -176,12 +172,12 @@ class VoicemailBackend(Backend)
         self.phone = phone
         self.voicemail = Voicemail(...)
 
-    def _send_msg(self, msg):
+    def send_message(self, msg):
         self.voicemail.save_msg(msg)
 
     def run(self):
         while True:
             msg = self.voicemail.poll()
-            self.on_msg(msg)
+            self.on_message(msg)
 ```
 

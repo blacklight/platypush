@@ -38,7 +38,7 @@ class Message(object):
         if isinstance(msg, bytes) or isinstance(msg, bytearray):
             msg = msg.decode('utf-8')
         if isinstance(msg, str):
-            msg = json.loads(msg)
+            msg = json.loads(msg.strip())
 
         assert isinstance(msg, dict)
         return msg
