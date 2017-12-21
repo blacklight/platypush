@@ -42,7 +42,16 @@ def get_or_load_plugin(plugin_name, reload=False):
     return plugin
 
 
-def init_backends(bus=None):
+def init_backends(bus=None, **kwargs):
+    """ Initialize the backend objects based on the configuration and returns
+        a name -> backend_instance map.
+    Params:
+        bus -- If specific (it usually should), the messages processed by the
+            backends will be posted on this bus.
+
+        kwargs -- Any additional key-value parameters required to initialize the backends
+        """
+
     backends = {}
 
     for k in Config.get_backends().keys():
@@ -56,7 +65,7 @@ def init_backends(bus=None):
         ) + 'Backend'
 
         try:
-            b = getattr(module, cls_name)(bus=bus, **cfg)
+            b = getattr(module, cls_name)(bus=bus, **cfg, **kwargs)
             backends[k] = b
         except AttributeError as e:
             logging.warning('No such class in {}: {}'.format(

@@ -1,13 +1,13 @@
 import argparse
-import os
+import logging
 import re
 import sys
 
 from platypush.bus import Bus
 from platypush.config import Config
 from platypush.message.request import Request
-from platypush.message.response import Response
-from platypush.utils import init_backends, set_timeout, clear_timeout
+from platypush.utils import init_backends
+
 
 class Pusher(object):
     """
@@ -49,6 +49,7 @@ class Pusher(object):
         # Initialize the configuration
         self.config_file = config_file
         Config.init(config_file)
+        logging.basicConfig(level=Config.get('logging'), stream=sys.stdout)
 
         self.on_response = on_response or self.default_on_response()
         self.backend = backend or Config.get_default_pusher_backend()
@@ -95,39 +96,18 @@ class Pusher(object):
 
     def get_backend(self, name):
         # Lazy init
-        if not self.backends: self.backends = init_backends(bus=self.bus)
+        if not self.backends:
+            self.backends = init_backends(bus=self.bus)
+
         if name not in self.backends:
             raise RuntimeError('No such backend configured: {}'.format(name))
         return self.backends[name]
 
-    def on_timeout(self):
-        """ Default response timeout handle: raise RuntimeError """
-        def _f():
-            raise RuntimeError('Response timed out')
-        return _f
-
     def default_on_response(self):
         def _f(response):
-            print('Received response: {}'.format(response))
-            os._exit(0)
+            logging.info('Received response: {}'.format(response))
+            # self.backend_instance.stop()
         return _f
-
-    def response_wait(self, request, timeout):
-        # Install the timeout handler
-        set_timeout(seconds=timeout, on_timeout=self.on_timeout())
-
-        # Loop on the bus until you get a response for your request ID
-        response_received = False
-        while not response_received:
-            msg = self.bus.get()
-            response_received = (
-                isinstance(msg, Response) and
-                hasattr(msg, 'id') and
-                msg.id == request.id)
-
-        if timeout: clear_timeout()
-        self.on_response(msg)
-
 
     def push(self, target, action, backend=None, config_file=None,
             timeout=default_response_wait_timeout, **kwargs):
@@ -161,11 +141,9 @@ class Pusher(object):
             'args'   : kwargs,
         })
 
-        b = self.get_backend(backend)
-        b.start()
-        b.send_request(req)
-
-        if timeout: self.response_wait(request=req, timeout=timeout)
+        self.backend_instance = self.get_backend(backend)
+        self.backend_instance.send_request(req, on_response=self.on_response,
+                                           response_timeout=timeout)
 
 
 def main(args=sys.argv[1:]):

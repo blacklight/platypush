@@ -4,12 +4,10 @@ import sys
 import traceback
 
 from threading import Thread
-from getopt import getopt
 
 from .bus import Bus
 from .config import Config
 from .utils import get_or_load_plugin, init_backends, get_module_and_name_from_action
-from .message.event import Event, StopEvent
 from .message.request import Request
 from .message.response import Response
 
@@ -46,6 +44,7 @@ class Daemon(object):
         """
 
         self.config_file = config_file
+        self.message_handler = message_handler
         Config.init(self.config_file)
         logging.basicConfig(level=Config.get('logging'), stream=sys.stdout)
 
@@ -83,21 +82,6 @@ class Daemon(object):
 
         return _f
 
-    def send_response(self, request, response):
-        """ Sends a response back.
-        Params:
-            request  -- The platypush.message.request.Request object
-            response -- The platypush.message.response.Response object """
-
-        if request.backend and request.origin:
-            if request.id: response.id = request.id
-            response.target = request.origin
-
-            logging.info('Processing response: {}'.format(response))
-            request.backend.send_response(response)
-        else:
-            logging.info('Ignoring response as the request has no backend: '
-                         .format(request))
 
     def run_request(self):
         """ Runs a request and returns the response """
@@ -118,8 +102,12 @@ class Daemon(object):
                 # Run the action
                 response = plugin.run(method=method_name, **request.args)
                 if response and response.is_error():
-                    logging.warning('Response processed with errors: {}'.format(response))
-            except Exception as e:  # Retry mechanism
+                    raise RuntimeError('Response processed with errors: {}'.format(response))
+
+                logging.info('Processed response from plugin {}: {}'.
+                                format(plugin, response))
+            except Exception as e:
+                # Retry mechanism
                 response = Response(output=None, errors=[str(e), traceback.format_exc()])
                 logging.exception(e)
                 if n_tries:
@@ -127,8 +115,12 @@ class Daemon(object):
                     get_or_load_plugin(module_name, reload=True)
                     _thread_func(request, n_tries=n_tries-1)
             finally:
-                # Send the response on the backend that received the request
-                self.send_response(request, response)
+                # Send the response on the backend
+                if request.backend and request.origin:
+                    request.backend.send_response(response=response, request=request)
+                else:
+                    logging.info('Dropping response whose request has no ' +
+                                 'origin attached: {}'.format(request))
 
         return _thread_func
 
@@ -137,7 +129,7 @@ class Daemon(object):
         self.bus = Bus(on_message=self.on_message())
 
         # Initialize the backends and link them to the bus
-        self.backends = init_backends(self.bus)
+        self.backends = init_backends(bus=self.bus)
 
         # Start the backend threads
         for backend in self.backends.values():

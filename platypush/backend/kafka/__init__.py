@@ -17,6 +17,8 @@ class KafkaBackend(Backend):
         self.topic = self._topic_by_device_id(self.device_id)
         self.producer = None
 
+        logging.getLogger('kafka').setLevel(logging.ERROR)
+
     def _on_record(self, record):
         if record.topic != self.topic: return
 
@@ -25,7 +27,7 @@ class KafkaBackend(Backend):
         except Exception as e:
             logging.exception(e)
 
-        logging.debug('Received message: {}'.format(msg))
+        logging.debug('Received message on Kafka backend: {}'.format(msg))
         self.on_message(msg)
 
     def _init_producer(self):
@@ -44,14 +46,12 @@ class KafkaBackend(Backend):
         self.producer.flush()
 
     def on_stop(self):
-        try:
-            if self.producer:
-                self.producer.flush()
-                self.producer.close()
+        if self.producer:
+            self.producer.flush()
+            self.producer.close()
 
-            if self.consumer:
-                self.consumer.close()
-        except: pass
+        if self.consumer:
+            self.consumer.close()
 
     def run(self):
         super().run()
@@ -63,8 +63,7 @@ class KafkaBackend(Backend):
         try:
             for msg in self.consumer:
                 self._on_record(msg)
-                if self.should_stop():
-                    break
+                if self.should_stop(): break
         except ConnectionError:
             logging.warning('Kafka connection error, retrying in {} seconds'.
                             format(self._conn_retry_secs))

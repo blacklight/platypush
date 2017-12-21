@@ -80,6 +80,7 @@ class PushbulletBackend(Backend):
                     push = data['push']
                 else: return  # Not a push notification
 
+                if 'body' not in push: return
                 logging.debug('Received push: {}'.format(push))
 
                 body = push['body']

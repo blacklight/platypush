@@ -1,5 +1,7 @@
+import logging
 import inspect
 import json
+
 
 class Message(object):
     """ Message generic class """
@@ -15,7 +17,7 @@ class Message(object):
             for attr in self.__dir__()
             if not attr.startswith('_')
             and not inspect.ismethod(getattr(self, attr))
-        })
+        }).replace('\n', ' ')
 
     def __bytes__(self):
         """
@@ -38,7 +40,10 @@ class Message(object):
         if isinstance(msg, bytes) or isinstance(msg, bytearray):
             msg = msg.decode('utf-8')
         if isinstance(msg, str):
-            msg = json.loads(msg.strip())
+            try:
+                msg = json.loads(msg.strip())
+            except:
+                logging.warning('Invalid JSON message: {}'.format(msg))
 
         assert isinstance(msg, dict)
         return msg
@@ -47,11 +52,15 @@ class Message(object):
     def build(cls, msg):
         """
         Builds a Message object from a dictionary.
-        To be implemented in the derived classes.
         Params:
-            msg -- The message as a key-value dictionary
+            msg -- The message as a key-value dictionary, Message object or JSON string
         """
-        raise RuntimeError('build should be implemented in a derived class')
+        from platypush.utils import get_message_class_by_type
+
+
+        msg = cls.parse(msg)
+        msgtype = get_message_class_by_type(msg['type'])
+        if msgtype != cls: return msgtype.build(msg)
 
 # vim:sw=4:ts=4:et:
 
