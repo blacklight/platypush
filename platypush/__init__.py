@@ -72,7 +72,7 @@ class Daemon(object):
 
             if isinstance(msg, Request):
                 logging.info('Processing request: {}'.format(msg))
-                msg.execute()
+                msg.execute(n_tries=self.n_tries)
 
                 self.processed_requests += 1
                 if self.requests_to_process \
