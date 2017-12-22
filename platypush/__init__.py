@@ -72,58 +72,16 @@ class Daemon(object):
 
             if isinstance(msg, Request):
                 logging.info('Processing request: {}'.format(msg))
-                Thread(target=self.run_request(), args=(msg,)).start()
+                msg.execute()
+
+                self.processed_requests += 1
+                if self.requests_to_process \
+                        and self.processed_requests >= self.requests_to_process:
+                    self.stop_app()
             elif isinstance(msg, Response):
                 logging.info('Received response: {}'.format(msg))
 
         return _f
-
-
-    def run_request(self):
-        """ Runs a request and returns the response """
-        def _thread_func(request, n_tries=self.n_tries):
-            """ Thread closure method
-            Params:
-                request - platypush.message.request.Request object """
-
-            (module_name, method_name) = get_module_and_name_from_action(request.action)
-
-            try:
-                plugin = get_or_load_plugin(module_name)
-            except RuntimeError as e:  # Module/class not found
-                logging.exception(e)
-                return
-
-            try:
-                # Run the action
-                response = plugin.run(method=method_name, **request.args)
-                if response and response.is_error():
-                    raise RuntimeError('Response processed with errors: {}'.format(response))
-
-                logging.info('Processed response from plugin {}: {}'.
-                                format(plugin, response))
-            except Exception as e:
-                # Retry mechanism
-                response = Response(output=None, errors=[str(e), traceback.format_exc()])
-                logging.exception(e)
-                if n_tries:
-                    logging.info('Reloading plugin {} and retrying'.format(module_name))
-                    get_or_load_plugin(module_name, reload=True)
-                    _thread_func(request, n_tries=n_tries-1)
-            finally:
-                # Send the response on the backend
-                if request.backend and request.origin:
-                    request.backend.send_response(response=response, request=request)
-                else:
-                    logging.info('Dropping response whose request has no ' +
-                                 'origin attached: {}'.format(request))
-
-            self.processed_requests += 1
-            if self.requests_to_process \
-                    and self.processed_requests >= self.requests_to_process:
-                self.stop_app()
-
-        return _thread_func
 
 
     def stop_app(self):

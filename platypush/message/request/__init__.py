@@ -1,7 +1,12 @@
 import json
+import logging
 import random
 
+from threading import Thread
+
 from platypush.message import Message
+from platypush.message.response import Response
+from platypush.utils import get_or_load_plugin, get_module_and_name_from_action
 
 class Request(Message):
     """ Request message class """
@@ -16,11 +21,12 @@ class Request(Message):
               args -- Additional arguments for the action [Dict]
         """
 
-        self.id = id if id else self._generate_id()
-        self.target = target
-        self.action = action
-        self.origin = origin
-        self.args   = args
+        self.id      = id if id else self._generate_id()
+        self.target  = target
+        self.action  = action
+        self.origin  = origin
+        self.args    = args
+        self.backend = None
 
     @classmethod
     def build(cls, msg):
@@ -41,6 +47,46 @@ class Request(Message):
         for i in range(0,16):
             id += '%.2x' % random.randint(0, 255)
         return id
+
+    def execute(self, n_tries=1):
+        """
+        Execute this request and returns a Response object
+        Params:
+            n_tries -- Number of tries in case of failure before raising a RuntimeError
+        """
+        def _thread_func():
+            (module_name, method_name) = get_module_and_name_from_action(self.action)
+
+            plugin = get_or_load_plugin(module_name)
+
+            try:
+                # Run the action
+                response = plugin.run(method=method_name, **self.args)
+                print(response)
+                if response and response.is_error():
+                    raise RuntimeError('Response processed with errors: {}'.format(response))
+
+                logging.info('Processed response from plugin {}: {}'.
+                                format(plugin, response))
+            except Exception as e:
+                # Retry mechanism
+                response = Response(output=None, errors=[str(e), traceback.format_exc()])
+                logging.exception(e)
+                if n_tries:
+                    logging.info('Reloading plugin {} and retrying'.format(module_name))
+                    get_or_load_plugin(module_name, reload=True)
+                    n_tries -= 1
+                    _thread_func()
+            finally:
+                # Send the response on the backend
+                if self.backend and self.origin:
+                    self.backend.send_response(response=response, request=self)
+                else:
+                    logging.info('Dropping response whose request has no ' +
+                                 'origin attached: {}'.format(self))
+
+        Thread(target=_thread_func).start()
+
 
     def __str__(self):
         """
