@@ -1,6 +1,9 @@
 Platypush
 =========
 
+[![Build Status](https://travis-ci.org/BlackLight/platypush.svg?branch=master)](https://travis-ci.org/BlackLight/platypush)
+
+
 Execute any command or custom complex logic on your devices, wherever they are, using your PushBullet account.
 
 Installation
