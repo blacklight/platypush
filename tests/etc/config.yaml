@@ -1,0 +1,5 @@
+backend.local:
+    pusher: True
+    request_fifo: /tmp/test-platypush-requests.fifo
+    response_fifo: /tmp/test-platypush-responses.fifo
+
