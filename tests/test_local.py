@@ -1,10 +1,8 @@
 from .context import platypush, config_file, TestTimeoutException
 
-import os
 import sys
 import logging
 import unittest
-import threading
 
 from threading import Thread
 
@@ -14,6 +12,9 @@ from platypush.pusher import Pusher
 from platypush.utils import set_timeout, clear_timeout
 
 class TestLocal(unittest.TestCase):
+    """ Tests the full flow on a local backend by executing a command through
+        the shell.exec plugin and getting the output """
+
     timeout = 5
 
     def setUp(self):
@@ -29,8 +30,8 @@ class TestLocal(unittest.TestCase):
     def on_response(self):
         def _f(response):
             logging.info("Received response: {}".format(response))
+            clear_timeout()
             self.assertEqual(response.output.strip(), 'ping')
-            # os._exit(0)
         return _f
 
     def on_timeout(self, msg):
