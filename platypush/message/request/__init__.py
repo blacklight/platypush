@@ -77,6 +77,7 @@ class Request(Message):
                     get_or_load_plugin(module_name, reload=True)
                     n_tries -= 1
                     _thread_func()
+                    return
             finally:
                 # Send the response on the backend
                 if self.backend and self.origin:
