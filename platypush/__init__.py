@@ -119,7 +119,8 @@ class Daemon(object):
                                  'origin attached: {}'.format(request))
 
             self.processed_requests += 1
-            if self.processed_requests >= self.requests_to_process:
+            if self.requests_to_process \
+                    and self.processed_requests >= self.requests_to_process:
                 self.stop_app()
 
         return _thread_func
