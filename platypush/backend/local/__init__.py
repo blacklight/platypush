@@ -12,8 +12,22 @@ from platypush.message.request import Request
 from platypush.message.response import Response
 
 class LocalBackend(Backend):
-    """ Sends and receive messages on two distinct local FIFOs, one for
-    the requests and one for the responses """
+    """
+    Sends and receive messages on two distinct local FIFOs, one for
+    the requests and one for the responses.
+
+    You can use this backend either to send local commands to push through
+    Pusher (or any other script), or debug. You can even send command on the
+    command line and read the responses in this way:
+
+    # Send the request. Remember: the JSON must be all on one line.
+    $ cat <<EOF > /tmp/platypush-requests.fifo
+	{"type": "request", "target": "node_name", "action": "shell.exec", "args": {"cmd":"echo ping"}, "origin": "node_name", "id": "put_an_id_here"}
+	EOF
+	$ cat /tmp/platypush-responses.fifo
+	ping
+	$
+    """
 
     def __init__(self, request_fifo, response_fifo, **kwargs):
         super().__init__(**kwargs)

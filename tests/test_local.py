@@ -1,5 +1,6 @@
 from .context import platypush, config_file, TestTimeoutException
 
+import os
 import sys
 import logging
 import unittest
@@ -21,6 +22,12 @@ class TestLocal(unittest.TestCase):
         logging.basicConfig(level=logging.INFO, stream=sys.stdout)
         backends = Config.get_backends()
         self.assertTrue('local' in backends)
+
+        try: os.remove(Config.get_backends()['local']['request_fifo'])
+        except FileNotFoundError as e: pass
+
+        try: os.remove(Config.get_backends()['local']['response_fifo'])
+        except FileNotFoundError as e: pass
 
 
     def test_local_shell_exec_flow(self):
