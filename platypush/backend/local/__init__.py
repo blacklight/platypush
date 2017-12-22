@@ -2,10 +2,12 @@ import logging
 import json
 import os
 import time
+import threading
 
 from .. import Backend
 
 from platypush.message import Message
+from platypush.message.event import StopEvent
 from platypush.message.request import Request
 from platypush.message.response import Response
 
@@ -32,6 +34,7 @@ class LocalBackend(Backend):
             else self.request_fifo
 
         msg = '{}\n'.format(str(msg)).encode('utf-8')
+
         with open(fifo, 'wb') as f:
             f.write(msg)
 
@@ -42,14 +45,6 @@ class LocalBackend(Backend):
             msg = f.readline()
 
         return Message.build(msg) if len(msg) else None
-
-
-    def on_stop(self):
-        try: os.remove(self.request_fifo)
-        except: pass
-
-        try: os.remove(self.response_fifo)
-        except: pass
 
 
     def run(self):
@@ -66,8 +61,7 @@ class LocalBackend(Backend):
                 time.sleep(0.2)
                 continue
 
-            # logging.debug('Received message on the local backend: {}'.format(msg))
-            logging.info('Received message on the local backend: {}'.format(msg))
+            logging.debug('Received message on the local backend: {}, thread_id: '.format(msg, self.thread_id))
 
             if self.should_stop(): break
             self.on_message(msg)

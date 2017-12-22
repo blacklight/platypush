@@ -2,10 +2,12 @@ import os
 import sys
 import signal
 import logging
+import threading
 
 from enum import Enum
 from queue import Queue
 
+from platypush.config import Config
 from platypush.message.event import Event, StopEvent
 
 class Bus(object):
@@ -14,6 +16,7 @@ class Bus(object):
     def __init__(self, on_message=None):
         self.bus = Queue()
         self.on_message = on_message
+        self.thread_id = threading.get_ident()
 
     def post(self, msg):
         """ Sends a message to the bus """
@@ -22,6 +25,14 @@ class Bus(object):
     def get(self):
         """ Reads one message from the bus """
         return self.bus.get()
+
+    def stop(self):
+        """ Stops the bus by sending a STOP event """
+        evt = StopEvent(target=Config.get('device_id'),
+                        origin=Config.get('device_id'),
+                        thread_id=self.thread_id)
+
+        self.bus.put(evt)
 
     def poll(self):
         """
@@ -38,7 +49,7 @@ class Bus(object):
             self.on_message(msg)
 
             if isinstance(msg, StopEvent) and msg.targets_me():
-                logging.info('Received STOP event')
+                logging.info('Received STOP event on the bus')
                 stop=True
 
 

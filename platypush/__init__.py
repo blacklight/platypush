@@ -34,17 +34,18 @@ class Daemon(object):
     """ number of executions retries before a request fails """
     n_tries = 2
 
-    def __init__(self, config_file=None, message_handler=None):
+    def __init__(self, config_file=None, requests_to_process=None):
         """ Constructor
         Params:
             config_file -- Configuration file override (default: None)
-            message_handler -- Another function that will receive the messages.
-                If set, Platypush will just act as a message proxy. Useful to
-                embed into other projects, for tests, or for delegating events.
+            requests_to_process -- Exit after processing the specified number
+                                   of requests (default: None, loop forever)
         """
 
         self.config_file = config_file
-        self.message_handler = message_handler
+        self.requests_to_process = requests_to_process
+        self.processed_requests = 0
+
         Config.init(self.config_file)
         logging.basicConfig(level=Config.get('logging'), stream=sys.stdout)
 
@@ -68,11 +69,6 @@ class Daemon(object):
             """ on_message closure
             Params:
                 msg -- platypush.message.Message instance """
-
-            if self.message_handler:
-                # Proxy the message
-                self.message_handler(msg)
-                return
 
             if isinstance(msg, Request):
                 logging.info('Processing request: {}'.format(msg))
@@ -122,7 +118,18 @@ class Daemon(object):
                     logging.info('Dropping response whose request has no ' +
                                  'origin attached: {}'.format(request))
 
+            self.processed_requests += 1
+            if self.processed_requests >= self.requests_to_process:
+                self.stop_app()
+
         return _thread_func
+
+
+    def stop_app(self):
+        for backend in self.backends.values():
+            backend.stop()
+        self.bus.stop()
+
 
     def start(self):
         """ Start the daemon """
@@ -140,9 +147,8 @@ class Daemon(object):
             self.bus.poll()
         except KeyboardInterrupt as e:
             logging.info('SIGINT received, terminating application')
-
-            for backend in self.backends.values():
-                backend.stop()
+        finally:
+            self.stop_app()
 
 
 def main(args=sys.argv[1:]):

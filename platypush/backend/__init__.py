@@ -109,8 +109,8 @@ class Backend(Thread):
                                      **self._get_backend_config(), **self._kwargs)
 
         # Set the response timeout
-        set_timeout(seconds=self._default_response_timeout,
-                    on_timeout=_timeout_hndl)
+        if response_timeout:
+            set_timeout(seconds=response_timeout, on_timeout=_timeout_hndl)
 
         resp_backend.start()
 
@@ -136,7 +136,7 @@ class Backend(Thread):
 
         request.origin = self.device_id
 
-        if on_response and response_timeout:
+        if on_response and response_timeout != 0:
             self._setup_response_handler(request, on_response, response_timeout)
 
         self.send_message(request, **kwargs)
