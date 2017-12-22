@@ -12,7 +12,7 @@ from .message.request import Request
 from .message.response import Response
 
 __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
-__version__ = '0.4'
+__version__ = '0.5'
 
 #-----------#
 
