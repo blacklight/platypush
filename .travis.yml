@@ -1,0 +1,17 @@
+language: python
+python:
+  - "3.4"
+  - "3.5"
+  - "3.6"
+
+install: "pip install -r .travis.requirements"
+
+script: ./run_tests.sh
+
+notifications:
+    email:
+        recipients:
+            - blacklight86@gmail.com
+        on_success: change
+        on_failure: change
+
