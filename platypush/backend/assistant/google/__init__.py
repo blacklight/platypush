@@ -9,7 +9,7 @@ from google.assistant.library import Assistant
 from google.assistant.library.event import EventType
 from google.assistant.library.file_helpers import existing_file
 
-from .. import Backend
+from platypush.backend import Backend
 
 class AssistantGoogleBackend(Backend):
     """ Class for the Google Assistant backend. It creates and event source
