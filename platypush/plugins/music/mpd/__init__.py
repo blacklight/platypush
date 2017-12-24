@@ -26,7 +26,9 @@ class MusicMpdPlugin(MusicPlugin):
         return self._exec('play')
 
     def pause(self):
-        return self._exec('pause')
+        status = self.status().output['state']
+        if status == 'play': return self._exec('pause')
+        else: return self._exec('play')
 
     def stop(self):
         return self._exec('stop')
@@ -39,6 +41,20 @@ class MusicMpdPlugin(MusicPlugin):
 
     def setvol(self, vol):
         return self._exec('setvol', vol)
+
+    def volup(self, delta=10):
+        volume = int(self.status().output['volume'])
+        new_volume = volume+delta
+        if new_volume <= 100:
+            self.setvol(str(new_volume))
+        return self.status()
+
+    def voldown(self, delta=10):
+        volume = int(self.status().output['volume'])
+        new_volume = volume-delta
+        if new_volume >= 0:
+            self.setvol(str(new_volume))
+        return self.status()
 
     def add(self, content):
         return self._exec('add', content)

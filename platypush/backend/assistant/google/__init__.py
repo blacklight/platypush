@@ -33,6 +33,7 @@ class AssistantGoogleBackend(Backend):
         with open(self.credentials_file, 'r') as f:
             self.credentials = google.oauth2.credentials.Credentials(token=None,
                                                                      **json.load(f))
+        logging.info('Initialized Google Assistant backend')
 
     def _process_event(self, event):
         logging.info('Received assistant event: {}'.format(event))

@@ -106,7 +106,7 @@ class Daemon(object):
         self.bus = Bus(on_message=self.on_message())
 
         # Initialize the backends and link them to the bus
-        self.backends = register_backends(bus=self.bus)
+        self.backends = register_backends(bus=self.bus, global_scope=True)
 
         # Start the backend threads
         for backend in self.backends.values():

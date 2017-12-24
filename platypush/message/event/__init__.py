@@ -45,25 +45,24 @@ class Event(Message):
 
     def matches_condition(self, condition):
         """
-        If the event matches an event condition, it will return True and a
-        dictionary containing any parsed arguments, otherwise False and {}
+        If the event matches an event condition, it will return an EventMatchResult
         Params:
             -- condition -- The platypush.event.hook.EventCondition object
         """
 
-        parsed_args = {}
-        if not isinstance(self, condition.type): return [False, parsed_args]
+        result = EventMatchResult(is_match=False)
+        if not isinstance(self, condition.type): return result
 
         for (attr, value) in condition.args.items():
-            # TODO Be more sophisticated, not only simple match options!
             if not hasattr(self.args, attr):
-                return [False, parsed_args]
+                return result
             if isinstance(self.args[attr], str) and not value in self.args[attr]:
-                return [False, parsed_args]
+                return result
             elif self.args[attr] != value:
-                return [False, parsed_args]
+                return result
 
-        return [True, parsed_args]
+        result.is_match = True
+        return result
 
 
     @staticmethod
@@ -90,6 +89,19 @@ class Event(Message):
                 **self.args,
             },
         })
+
+
+class EventMatchResult(object):
+    """ When comparing an event against an event condition, you want to
+        return this object. It contains the match status (True or False),
+        any parsed arguments, and a match_score that identifies how "strong"
+        the match is - in case of multiple event matches, the ones with the
+        highest score will win """
+
+    def __init__(self, is_match, score=1, parsed_args = {}):
+        self.is_match = is_match
+        self.score = score
+        self.parsed_args = parsed_args
 
 
 # XXX Should be a stop Request, not an Event

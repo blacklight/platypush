@@ -120,16 +120,24 @@ class EventHook(object):
         return cls(name=name, condition=condition, actions=actions)
 
 
+    def matches_event(self, event):
+        """ Returns an EventMatchResult object containing the information
+            about the match between the event and this hook """
+
+        return event.matches_condition(self.condition)
+
+
     def run(self, event):
         """ Checks the condition of the hook against a particular event and
             runs the hook actions if the condition is met """
 
-        result = event.matches_condition(self.condition)
-        if result[0]:  # is match
+        result = self.matches_event(event)
+
+        if result.is_match:
             logging.info('Running hook {} triggered by an event'.format(self.name))
 
             for action in self.actions:
-                action.execute(**result[1])
+                action.execute(**result.parsed_args)
 
 
 # vim:sw=4:ts=4:et:

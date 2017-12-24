@@ -1,5 +1,6 @@
-import importlib
 import functools
+import importlib
+import logging
 
 from ..config import Config
 
@@ -9,7 +10,7 @@ backends = {}
 # Map: plugin_name -> plugin_instance
 plugins = {}
 
-def register_backends(bus=None, **kwargs):
+def register_backends(bus=None, global_scope=False, **kwargs):
     """ Initialize the backend objects based on the configuration and returns
         a name -> backend_instance map.
     Params:
@@ -19,7 +20,10 @@ def register_backends(bus=None, **kwargs):
         kwargs -- Any additional key-value parameters required to initialize the backends
         """
 
-    global backends
+    if global_scope:
+        global backends
+    else:
+        backends = {}
 
     for (name, cfg) in Config.get_backends().items():
         module = importlib.import_module('platypush.backend.' + name)
