@@ -1,13 +1,11 @@
 backend.kafka:
     disabled: False
     pusher: True  # The pusher executable will use this backend by default
-    logging: DEBUG
     server: your_server:9092
     topic: platypush
 
 backend.pushbullet:
     disabled: True
-    logging: DEBUG
     token: your_pushbullet_token_here
     device: your_pushbullet_virtual_device_name
 
@@ -16,7 +14,6 @@ backend.local:
     response_fifo: /tmp/platypush-responses.fifo
 
 # device_id: <your_device_id> (default: current hostname)
-# debug: True (default: False)
 
 music.mpd:
     host: localhost
@@ -35,4 +32,37 @@ light.hue:
     #     - Kitchen Table LED Strip
     groups:  # Default groups you want to manage
         - Living Room
+
+# ---
+# --- Event hooks configuration
+# ---
+
+event.hook.AssistantConversationStarted:
+    if:
+        type: platypush.message.event.assistant.ConversationStartEvent
+    then:
+        action: shell.exec
+        args:
+            cmd: 'aplay /path/conv_start.wav'
+
+event.hook.MusicPlayAssistantCommand:
+    if:
+        type: platypush.message.event.assistant.SpeechRecognizedEvent
+        phrase: "play (the)? music"  # Regexes on single terms are supported
+    then:
+        action: music.mpd.play
+
+event.hook.LightsOnAssistantCommand:
+    if:
+        type: platypush.message.event.assistant.SpeechRecognizedEvent
+        phrase: "turn on (the)? lights"
+    then:  # Multiple actions are supported
+        -
+            action: light.hue.on
+            args:
+                groups: Living Room
+        -
+            action: switch.wemo.on
+            args:
+                device: Bulbs
 
