@@ -62,21 +62,23 @@ class Config(object):
         if 'device_id' not in self._config:
             self._config['device_id'] = socket.gethostname()
 
-        self._init_backends()
-        self._init_plugins()
+        self._init_components()
 
-    def _init_backends(self):
+
+    def _init_components(self):
         self.backends = {}
-        for key in self._config.keys():
-            if not key.startswith('backend.'): continue
-            backend_name = '.'.join(key.split('.')[1:])
-            self.backends[backend_name] = self._config[key]
-
-    def _init_plugins(self):
         self.plugins = {}
+        self.event_hooks = {}
+
         for key in self._config.keys():
-            if key.startswith('backend.'): continue
-            self.plugins[key] = self._config[key]
+            if key.startswith('backend.'):
+                backend_name = '.'.join(key.split('.')[1:])
+                self.backends[backend_name] = self._config[key]
+            elif key.startswith('event.hook.'):
+                hook_name = '.'.join(key.split('.')[2:])
+                self.event_hooks[hook_name] = self._config[key]
+            else:
+                self.plugins[key] = self._config[key]
 
     @staticmethod
     def get_backends():
@@ -89,6 +91,12 @@ class Config(object):
         global _default_config_instance
         if _default_config_instance is None: _default_config_instance = Config()
         return _default_config_instance.plugins
+
+    @staticmethod
+    def get_event_hooks():
+        global _default_config_instance
+        if _default_config_instance is None: _default_config_instance = Config()
+        return _default_config_instance.event_hooks
 
     @staticmethod
     def get_default_pusher_backend():

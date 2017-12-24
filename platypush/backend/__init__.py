@@ -57,8 +57,8 @@ class Backend(Thread):
                    dictionary, a platypush.message.Message
                    object, or a string/byte UTF-8 encoded string
         """
-
         msg = Message.build(msg)
+
         if not getattr(msg, 'target') or msg.target != self.device_id:
             return  # Not for me
 
@@ -113,6 +113,24 @@ class Backend(Thread):
             set_timeout(seconds=response_timeout, on_timeout=_timeout_hndl)
 
         resp_backend.start()
+
+
+    def send_event(self, event, **kwargs):
+        """
+        Send an event message on the backend
+        Params:
+            event -- The request, either a dict, a string/bytes UTF-8 JSON,
+                     or a platypush.message.event.Event object.
+        """
+
+        event = Event.build(event)
+        assert isinstance(event, Event)
+
+        event.origin = self.device_id
+        if not hasattr(event, 'target'):
+            event.target = self.device_id
+
+        self.send_message(event, **kwargs)
 
 
     def send_request(self, request, on_response=None,
@@ -189,6 +207,7 @@ class Backend(Thread):
         def _async_stop():
             evt = StopEvent(target=self.device_id, origin=self.device_id,
                             thread_id=self.thread_id)
+
             self.send_message(evt)
             self.on_stop()
 

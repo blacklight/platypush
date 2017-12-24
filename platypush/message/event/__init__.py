@@ -2,27 +2,27 @@ import json
 import random
 import threading
 
-from enum import Enum
-
+from platypush.config import Config
 from platypush.message import Message
+from platypush.utils import get_event_class_by_type
 
 class Event(Message):
     """ Event message class """
 
-    def __init__(self, target, type, origin, id=None, **kwargs):
+    def __init__(self, target=None, origin=None, id=None, **kwargs):
         """
         Params:
             target  -- Target node [String]
-            type    -- Event type [EventType]
             origin  -- Origin node (default: current node) [String]
-                id  -- Event ID (default: auto-generated)
+            id      -- Event ID (default: auto-generated)
             kwargs  -- Additional arguments for the event [kwDict]
         """
 
         self.id = id if id else self._generate_id()
-        self.target = target
-        self.origin = origin
-        self.type = type
+        self.target = target if target else Config.get('device_id')
+        self.origin = origin if origin else Config.get('device_id')
+        self.type = '{}.{}'.format(self.__class__.__module__,
+                                   self.__class__.__name__)
         self.args = kwargs
 
     @classmethod
@@ -32,7 +32,7 @@ class Event(Message):
 
         msg = super().parse(msg)
         event_type = msg['args'].pop('type')
-        event_class = getattr(EventType, event_type).cls
+        event_class = get_event_class_by_type(event_type)
 
         args = {
             'target'   : msg['target'],
@@ -42,6 +42,29 @@ class Event(Message):
 
         args['id'] = msg['id'] if 'id' in msg else cls._generate_id()
         return event_class(**args)
+
+    def matches_condition(self, condition):
+        """
+        If the event matches an event condition, it will return True and a
+        dictionary containing any parsed arguments, otherwise False and {}
+        Params:
+            -- condition -- The platypush.event.hook.EventCondition object
+        """
+
+        parsed_args = {}
+        if not isinstance(self, condition.type): return [False, parsed_args]
+
+        for (attr, value) in condition.args.items():
+            # TODO Be more sophisticated, not only simple match options!
+            if not hasattr(self.args, attr):
+                return [False, parsed_args]
+            if isinstance(self.args[attr], str) and not value in self.args[attr]:
+                return [False, parsed_args]
+            elif self.args[attr] != value:
+                return [False, parsed_args]
+
+        return [True, parsed_args]
+
 
     @staticmethod
     def _generate_id():
@@ -63,12 +86,13 @@ class Event(Message):
             'origin'   : self.origin if hasattr(self, 'origin') else None,
             'id'       : self.id if hasattr(self, 'id') else None,
             'args'     : {
-                'type' : self.type.name,
+                'type' : self.type,
                 **self.args,
             },
         })
 
 
+# XXX Should be a stop Request, not an Event
 class StopEvent(Event):
     """ StopEvent message. When received on a Bus, it will terminate the
     listening thread having the specified ID. Useful to keep listeners in
@@ -85,27 +109,11 @@ class StopEvent(Event):
         """
 
         super().__init__(target=target, origin=origin, id=id,
-                         type=EventType.STOP, thread_id=thread_id, **kwargs)
+                         thread_id=thread_id, **kwargs)
 
     def targets_me(self):
         """ Returns true if the stop event is for the current thread """
         return self.args['thread_id'] == threading.get_ident()
-
-
-class EventType(Enum):
-    """ Event types enum """
-
-    def __new__(cls, *args, **kwds):
-        value = len(cls.__members__) + 1
-        obj = object.__new__(cls)
-        obj._value_ = value
-        return obj
-
-    def __init__(self, label, cls):
-        self.label = label
-        self.cls = cls
-
-    STOP = 'STOP', StopEvent
 
 
 # vim:sw=4:ts=4:et:

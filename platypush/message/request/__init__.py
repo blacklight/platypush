@@ -1,6 +1,9 @@
 import json
 import logging
 import random
+import traceback
+
+from threading import Thread
 
 from threading import Thread
 
@@ -54,7 +57,7 @@ class Request(Message):
         Params:
             n_tries -- Number of tries in case of failure before raising a RuntimeError
         """
-        def _thread_func():
+        def _thread_func(n_tries):
             (module_name, method_name) = get_module_and_name_from_action(self.action)
 
             plugin = get_or_load_plugin(module_name)
@@ -62,7 +65,6 @@ class Request(Message):
             try:
                 # Run the action
                 response = plugin.run(method=method_name, **self.args)
-                print(response)
                 if response and response.is_error():
                     raise RuntimeError('Response processed with errors: {}'.format(response))
 
@@ -75,18 +77,17 @@ class Request(Message):
                 if n_tries:
                     logging.info('Reloading plugin {} and retrying'.format(module_name))
                     get_or_load_plugin(module_name, reload=True)
-                    n_tries -= 1
-                    _thread_func()
+                    _thread_func(n_tries-1)
                     return
             finally:
                 # Send the response on the backend
                 if self.backend and self.origin:
                     self.backend.send_response(response=response, request=self)
                 else:
-                    logging.info('Dropping response whose request has no ' +
-                                 'origin attached: {}'.format(self))
+                    logging.info('Response whose request has no ' +
+                                 'origin attached: {}'.format(response))
 
-        Thread(target=_thread_func).start()
+        Thread(target=_thread_func, args=(n_tries,)).start()
 
 
     def __str__(self):

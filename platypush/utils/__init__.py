@@ -105,6 +105,12 @@ def get_message_class_by_type(msgtype):
     return msgclass
 
 
+def get_event_class_by_type(type):
+    """ Gets an event class by type name """
+    event_module = importlib.import_module('.'.join(type.split('.')[:-1]))
+    return getattr(event_module, type.split('.')[-1])
+
+
 def set_timeout(seconds, on_timeout):
     """
     Set a function to be called if timeout expires without being cleared.

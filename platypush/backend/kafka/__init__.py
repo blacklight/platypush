@@ -46,12 +46,16 @@ class KafkaBackend(Backend):
         self.producer.flush()
 
     def on_stop(self):
-        if self.producer:
-            self.producer.flush()
-            self.producer.close()
+        try:
+            if self.producer:
+                self.producer.flush()
+                self.producer.close()
 
-        if self.consumer:
-            self.consumer.close()
+            if self.consumer:
+                self.consumer.close()
+        except Exception as e:
+            logging.warning('Exception occurred while closing Kafka connection')
+            logging.exception(e)
 
     def run(self):
         super().run()
@@ -64,9 +68,10 @@ class KafkaBackend(Backend):
             for msg in self.consumer:
                 self._on_record(msg)
                 if self.should_stop(): break
-        except ConnectionError:
-            logging.warning('Kafka connection error, retrying in {} seconds'.
+        except Exception as e:
+            logging.warning('Kafka connection error, reconnecting in {} seconds'.
                             format(self._conn_retry_secs))
+            logging.exception(e)
             time.sleep(self._conn_retry_secs)
 
 # vim:sw=4:ts=4:et:

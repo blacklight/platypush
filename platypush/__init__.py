@@ -7,11 +7,13 @@ from threading import Thread
 
 from .bus import Bus
 from .config import Config
+from .event.processor import EventProcessor
 from .utils import get_or_load_plugin, init_backends, get_module_and_name_from_action
+from .message.event import Event, StopEvent
 from .message.request import Request
 from .message.response import Response
 
-__author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
+__author__ = 'Fabio Manganiello <blacklight86@gmail.com>'
 __version__ = '0.5'
 
 #-----------#
@@ -43,6 +45,7 @@ class Daemon(object):
         """
 
         self.config_file = config_file
+        self.event_processor = EventProcessor()
         self.requests_to_process = requests_to_process
         self.processed_requests = 0
 
@@ -80,11 +83,18 @@ class Daemon(object):
                     self.stop_app()
             elif isinstance(msg, Response):
                 logging.info('Received response: {}'.format(msg))
+            elif isinstance(msg, StopEvent) and msg.targets_me():
+                logging.info('Received STOP event: {}'.format(msg))
+                self.stop_app()
+            elif isinstance(msg, Event):
+                logging.info('Received event: {}'.format(msg))
+                self.event_processor.process_event(msg)
 
         return _f
 
 
     def stop_app(self):
+        """ Stops the backends and the bus """
         for backend in self.backends.values():
             backend.stop()
         self.bus.stop()
