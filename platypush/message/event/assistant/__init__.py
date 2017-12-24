@@ -1,5 +1,6 @@
 import re
 
+from platypush.context import get_backend
 from platypush.message.event import Event
 
 class AssistantEvent(Event):
@@ -7,6 +8,7 @@ class AssistantEvent(Event):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._assistant = get_backend('assistant.google')
 
 
 class ConversationStartEvent(AssistantEvent):
@@ -49,7 +51,10 @@ class SpeechRecognizedEvent(AssistantEvent):
                 else:
                     recognized_tokens.pop(0)
 
-        return [len(condition_tokens) == 0, parsed_args]
+        is_match = len(condition_tokens) == 0
+        if is_match and self._assistant: self._assistant.stop_conversation()
+
+        return [is_match, parsed_args]
 
 
 # vim:sw=4:ts=4:et:

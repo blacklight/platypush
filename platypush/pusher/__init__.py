@@ -5,8 +5,8 @@ import sys
 
 from platypush.bus import Bus
 from platypush.config import Config
+from platypush.context import register_backends
 from platypush.message.request import Request
-from platypush.utils import init_backends
 
 
 class Pusher(object):
@@ -97,7 +97,7 @@ class Pusher(object):
     def get_backend(self, name):
         # Lazy init
         if not self.backends:
-            self.backends = init_backends(bus=self.bus)
+            self.backends = register_backends(bus=self.bus)
 
         if name not in self.backends:
             raise RuntimeError('No such backend configured: {}'.format(name))

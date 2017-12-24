@@ -7,8 +7,9 @@ from threading import Thread
 
 from .bus import Bus
 from .config import Config
+from .context import register_backends
 from .event.processor import EventProcessor
-from .utils import get_or_load_plugin, init_backends, get_module_and_name_from_action
+from .utils import get_or_load_plugin, get_module_and_name_from_action
 from .message.event import Event, StopEvent
 from .message.request import Request
 from .message.response import Response
@@ -105,7 +106,7 @@ class Daemon(object):
         self.bus = Bus(on_message=self.on_message())
 
         # Initialize the backends and link them to the bus
-        self.backends = init_backends(bus=self.bus)
+        self.backends = register_backends(bus=self.bus)
 
         # Start the backend threads
         for backend in self.backends.values():

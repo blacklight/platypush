@@ -47,6 +47,10 @@ class AssistantGoogleBackend(Backend):
             self.bus.post(SpeechRecognizedEvent(phrase=phrase))
 
 
+    def stop_conversation(self):
+        if self.assistant: self.assistant.stop_conversation()
+
+
     def send_message(self, msg):
         # Can't send a message on an event source, ignoring
         # TODO Make a class for event sources like these. Event sources
@@ -58,6 +62,7 @@ class AssistantGoogleBackend(Backend):
         super().run()
 
         with Assistant(self.credentials) as assistant:
+            self.assistant = assistant
             for event in assistant.start():
                 self._process_event(event)
 

@@ -42,38 +42,6 @@ def get_or_load_plugin(plugin_name, reload=False):
     return plugin
 
 
-def init_backends(bus=None, **kwargs):
-    """ Initialize the backend objects based on the configuration and returns
-        a name -> backend_instance map.
-    Params:
-        bus -- If specific (it usually should), the messages processed by the
-            backends will be posted on this bus.
-
-        kwargs -- Any additional key-value parameters required to initialize the backends
-        """
-
-    backends = {}
-
-    for k in Config.get_backends().keys():
-        module = importlib.import_module('platypush.backend.' + k)
-        cfg = Config.get_backends()[k]
-
-        # e.g. backend.pushbullet main class: PushbulletBackend
-        cls_name = functools.reduce(
-            lambda a,b: a.title() + b.title(),
-            (module.__name__.title().split('.')[2:])
-        ) + 'Backend'
-
-        try:
-            b = getattr(module, cls_name)(bus=bus, **cfg, **kwargs)
-            backends[k] = b
-        except AttributeError as e:
-            logging.warning('No such class in {}: {}'.format(
-                module.__name__, cls_name))
-            raise RuntimeError(e)
-
-    return backends
-
 def get_module_and_name_from_action(action):
     """ Input  : action=music.mpd.play
         Output : ('music.mpd', 'play') """
