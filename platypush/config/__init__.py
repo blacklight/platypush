@@ -62,14 +62,14 @@ class Config(object):
         if 'device_id' not in self._config:
             self._config['device_id'] = socket.gethostname()
 
+        self.backends = {}
+        self.plugins = {}
+        self.event_hooks = {}
+        self.procedures = {}
         self._init_components()
 
 
     def _init_components(self):
-        self.backends = {}
-        self.plugins = {}
-        self.event_hooks = {}
-
         for key in self._config.keys():
             if key.startswith('backend.'):
                 backend_name = '.'.join(key.split('.')[1:])
@@ -77,6 +77,9 @@ class Config(object):
             elif key.startswith('event.hook.'):
                 hook_name = '.'.join(key.split('.')[2:])
                 self.event_hooks[hook_name] = self._config[key]
+            elif key.startswith('procedure.'):
+                procedure_name = '.'.join(key.split('.')[1:])
+                self.procedures[procedure_name] = self._config[key]
             else:
                 self.plugins[key] = self._config[key]
 
@@ -97,6 +100,12 @@ class Config(object):
         global _default_config_instance
         if _default_config_instance is None: _default_config_instance = Config()
         return _default_config_instance.event_hooks
+
+    @staticmethod
+    def get_procedures():
+        global _default_config_instance
+        if _default_config_instance is None: _default_config_instance = Config()
+        return _default_config_instance.procedures
 
     @staticmethod
     def get_default_pusher_backend():

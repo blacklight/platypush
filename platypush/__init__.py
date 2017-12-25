@@ -9,10 +9,10 @@ from .bus import Bus
 from .config import Config
 from .context import register_backends
 from .event.processor import EventProcessor
-from .utils import get_or_load_plugin, get_module_and_name_from_action
 from .message.event import Event, StopEvent
 from .message.request import Request
 from .message.response import Response
+from .procedure import Procedure
 
 __author__ = 'Fabio Manganiello <blacklight86@gmail.com>'
 __version__ = '0.6'
@@ -75,9 +75,15 @@ class Daemon(object):
                 msg -- platypush.message.Message instance """
 
             if isinstance(msg, Request):
-                logging.info('Processing request: {}'.format(msg))
-                msg.execute(n_tries=self.n_tries)
+                if msg.action.startswith('procedure.'):
+                    logging.info('Executing procedure request: {}'.format(msg))
+                    proc_name = msg.action.split('.')[-1]
+                    proc_config = Config.get_procedures()[proc_name]
+                    msg = Procedure.build(name=proc_name, requests=proc_config, backend=msg.backend, id=msg.id)
+                else:
+                    logging.info('Processing request: {}'.format(msg))
 
+                msg.execute(n_tries=self.n_tries)
                 self.processed_requests += 1
                 if self.requests_to_process \
                         and self.processed_requests >= self.requests_to_process:

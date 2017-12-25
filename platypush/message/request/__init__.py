@@ -5,22 +5,21 @@ import traceback
 
 from threading import Thread
 
-from threading import Thread
-
 from platypush.message import Message
 from platypush.message.response import Response
-from platypush.utils import get_or_load_plugin, get_module_and_name_from_action
+from platypush.utils import get_or_load_plugin, get_module_and_method_from_action
 
 class Request(Message):
     """ Request message class """
 
-    def __init__(self, target, action, origin=None, id=None, args={}):
+    def __init__(self, target, action, origin=None, id=None, backend=None, args={}):
         """
         Params:
             target -- Target node [String]
             action -- Action to be executed (e.g. music.mpd.play) [String]
             origin -- Origin node [String]
                 id -- Message ID, or None to get it auto-generated
+           backend -- Backend connected to the request, where the response will be delivered
               args -- Additional arguments for the action [Dict]
         """
 
@@ -29,7 +28,7 @@ class Request(Message):
         self.action  = action
         self.origin  = origin
         self.args    = args
-        self.backend = None
+        self.backend = backend
 
     @classmethod
     def build(cls, msg):
@@ -58,7 +57,7 @@ class Request(Message):
             n_tries -- Number of tries in case of failure before raising a RuntimeError
         """
         def _thread_func(n_tries):
-            (module_name, method_name) = get_module_and_name_from_action(self.action)
+            (module_name, method_name) = get_module_and_method_from_action(self.action)
 
             plugin = get_or_load_plugin(module_name)
 

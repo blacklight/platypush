@@ -35,14 +35,13 @@ def get_or_load_plugin(plugin_name, reload=False):
         plugin = plugin_class(**plugin_conf)
         modules[plugin_name] = plugin
     except AttributeError as e:
-        logging.warning('No such class in {}: {}'.format(
-            plugin_name, cls_name))
+        logging.warning('No such class in {}: {}'.format(plugin_name, cls_name))
         raise RuntimeError(e)
 
     return plugin
 
 
-def get_module_and_name_from_action(action):
+def get_module_and_method_from_action(action):
     """ Input  : action=music.mpd.play
         Output : ('music.mpd', 'play') """
 
