@@ -1,8 +1,9 @@
 from .context import platypush, config_file, TestTimeoutException
 
+import logging
 import os
 import sys
-import logging
+import time
 import unittest
 
 from threading import Thread
@@ -68,6 +69,8 @@ class TestLocal(unittest.TestCase):
 
         self.receiver = Daemon(config_file=config_file, requests_to_process=1)
         self.receiver.start()
+
+        time.sleep(1)
 
 
 if __name__ == '__main__':
