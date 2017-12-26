@@ -48,6 +48,10 @@ class AssistantGoogleBackend(Backend):
             self.bus.post(SpeechRecognizedEvent(phrase=phrase))
 
 
+    def start_conversation(self):
+        if self.assistant: self.assistant.start_conversation()
+
+
     def stop_conversation(self):
         if self.assistant: self.assistant.stop_conversation()
 
