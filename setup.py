@@ -67,6 +67,7 @@ setup(
         'Support for Philips Hue plugin': ['phue'],
         'Support for MPD/Mopidy music server plugin': ['python-mpd2'],
         'Support for Belkin WeMo Switch plugin': ['ouimeaux'],
+        'Support for text2speech plugin': ['mplayer'],
     },
 )
 
