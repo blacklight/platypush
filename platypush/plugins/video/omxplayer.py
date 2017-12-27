@@ -2,6 +2,7 @@ import json
 import re
 import subprocess
 
+from dbus.exceptions import DBusException
 from omxplayer import OMXPlayer
 
 from platypush.message.response import Response
@@ -18,7 +19,13 @@ class VideoOmxplayerPlugin(Plugin):
                 or resource.startswith('https://www.youtube.com/watch?v='):
             resource = self._get_youtube_content(resource)
 
-        self.player = OMXPlayer(resource, args=self.args)
+        try:
+            self.player = OMXPlayer(resource, args=self.args)
+        except DBusException as e:
+            logging.warning('DBus connection failed: you will probably not ' +
+                            'be able to control the media')
+            logging.exception(e)
+
         return self.status()
 
     def pause(self):
