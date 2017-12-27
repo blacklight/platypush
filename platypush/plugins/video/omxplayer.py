@@ -33,12 +33,12 @@ class VideoOmxplayerPlugin(Plugin):
 
     def voldown(self):
         if self.player:
-            self.player.set_volume(max(-6000, player.set_volume()-1000))
+            self.player.set_volume(max(-6000, self.player.set_volume()-1000))
         return self.status()
 
     def volup(self):
         if self.player:
-            player.set_volume(min(0, player.volume()+1000))
+            self.player.set_volume(min(0, self.player.volume()+1000))
         return self.status()
 
     def back(self):
