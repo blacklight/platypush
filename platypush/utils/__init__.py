@@ -1,44 +1,9 @@
-import functools
 import importlib
 import logging
 import signal
-import time
 
 from platypush.config import Config
 from platypush.message import Message
-
-modules = {}
-
-def get_or_load_plugin(plugin_name, reload=False):
-    global modules
-
-    if plugin_name in modules and not reload:
-        return modules[plugin_name]
-
-    try:
-        module = importlib.import_module('platypush.plugins.' + plugin_name)
-    except ModuleNotFoundError as e:
-        logging.warning('No such plugin: {}'.format(plugin_name))
-        raise RuntimeError(e)
-
-    # e.g. plugins.music.mpd main class: MusicMpdPlugin
-    cls_name = functools.reduce(
-        lambda a,b: a.title() + b.title(),
-        (plugin_name.title().split('.'))
-    ) + 'Plugin'
-
-    plugin_conf = Config.get_plugins()[plugin_name] \
-        if plugin_name in Config.get_plugins() else {}
-
-    try:
-        plugin_class = getattr(module, cls_name)
-        plugin = plugin_class(**plugin_conf)
-        modules[plugin_name] = plugin
-    except AttributeError as e:
-        logging.warning('No such class in {}: {}'.format(plugin_name, cls_name))
-        raise RuntimeError(e)
-
-    return plugin
 
 
 def get_module_and_method_from_action(action):

@@ -51,5 +51,43 @@ def get_backend(name):
     return backends[name]
 
 
+def get_plugin(plugin_name, reload=False):
+    """ Registers a plugin instance by name if not registered already, or
+        returns the registered plugin instance"""
+    global plugins
+
+    if plugin_name in plugins and not reload:
+        return plugins[plugin_name]
+
+    try:
+        plugin = importlib.import_module('platypush.plugins.' + plugin_name)
+    except ModuleNotFoundError as e:
+        logging.warning('No such plugin: {}'.format(plugin_name))
+        raise RuntimeError(e)
+
+    # e.g. plugins.music.mpd main class: MusicMpdPlugin
+    cls_name = functools.reduce(
+        lambda a,b: a.title() + b.title(),
+        (plugin_name.title().split('.'))
+    ) + 'Plugin'
+
+    plugin_conf = Config.get_plugins()[plugin_name] \
+        if plugin_name in Config.get_plugins() else {}
+
+    try:
+        plugin_class = getattr(plugin, cls_name)
+        plugin = plugin_class(**plugin_conf)
+        plugins[plugin_name] = plugin
+    except AttributeError as e:
+        logging.warning('No such class in {}: {}'.format(plugin_name, cls_name))
+        raise RuntimeError(e)
+
+    plugins[plugin_name] = plugin
+    return plugin
+
+def register_plugin(name, plugin, **kwargs):
+    """ Registers a plugin instance by name """
+    global plugins
+
 # vim:sw=4:ts=4:et:
 

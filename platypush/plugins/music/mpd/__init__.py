@@ -22,7 +22,10 @@ class MusicMpdPlugin(MusicPlugin):
         getattr(self.client, method)(*args, **kwargs)
         return self.status()
 
-    def play(self):
+    def play(self, resource=None):
+        if resource:
+            self.clear()
+            self.add(resource)
         return self._exec('play')
 
     def pause(self):
@@ -56,14 +59,20 @@ class MusicMpdPlugin(MusicPlugin):
             self.setvol(str(new_volume))
         return self.status()
 
-    def add(self, content):
-        return self._exec('add', content)
+    def add(self, resource):
+        return self._exec('add', resource)
 
     def playlistadd(self, playlist):
         return self._exec('playlistadd', playlist)
 
     def clear(self):
         return self._exec('clear')
+
+    def forward(self):
+        return self._exec('seekcur', '+15')
+
+    def back(self):
+        return self._exec('seekcur', '-15')
 
     def status(self):
         return Response(output=self.client.status())

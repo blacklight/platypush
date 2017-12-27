@@ -59,7 +59,6 @@ setup(
     install_requires = [
         'pyyaml',
         'requires',
-        'websocket-client',
     ],
     extras_require = {
         'Support for Apache Kafka backend': ['kafka-python'],
@@ -68,6 +67,8 @@ setup(
         'Support for MPD/Mopidy music server plugin': ['python-mpd2'],
         'Support for Belkin WeMo Switch plugin': ['ouimeaux'],
         'Support for text2speech plugin': ['mplayer'],
+        'Support for OMXPlayer plugin': ['omxplayer'],
+        'Support for YouTube in the OMXPlayer plugin': ['youtube-dl'],
     },
 )
 

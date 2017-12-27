@@ -5,9 +5,10 @@ import traceback
 
 from threading import Thread
 
+from platypush.context import get_plugin
 from platypush.message import Message
 from platypush.message.response import Response
-from platypush.utils import get_or_load_plugin, get_module_and_method_from_action
+from platypush.utils import get_module_and_method_from_action
 
 class Request(Message):
     """ Request message class """
@@ -59,7 +60,7 @@ class Request(Message):
         def _thread_func(n_tries):
             (module_name, method_name) = get_module_and_method_from_action(self.action)
 
-            plugin = get_or_load_plugin(module_name)
+            plugin = get_plugin(module_name)
 
             try:
                 # Run the action
@@ -75,7 +76,7 @@ class Request(Message):
                 logging.exception(e)
                 if n_tries:
                     logging.info('Reloading plugin {} and retrying'.format(module_name))
-                    get_or_load_plugin(module_name, reload=True)
+                    get_plugin(module_name, reload=True)
                     _thread_func(n_tries-1)
                     return
             finally:
