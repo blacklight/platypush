@@ -15,7 +15,7 @@ from .message.response import Response
 from .procedure import Procedure
 
 __author__ = 'Fabio Manganiello <blacklight86@gmail.com>'
-__version__ = '0.6.1'
+__version__ = '0.6.2'
 
 #-----------#
 
