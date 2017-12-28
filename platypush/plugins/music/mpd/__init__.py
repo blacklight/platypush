@@ -36,6 +36,11 @@ class MusicMpdPlugin(MusicPlugin):
     def stop(self):
         return self._exec('stop')
 
+    def play_or_stop(self):
+        status = self.status().output['state']
+        if status == 'play': return self._exec('stop')
+        else: return self._exec('play')
+
     def next(self):
         return self._exec('next')
 
