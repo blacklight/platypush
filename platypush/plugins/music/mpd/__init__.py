@@ -67,8 +67,8 @@ class MusicMpdPlugin(MusicPlugin):
     def add(self, resource):
         return self._exec('add', resource)
 
-    def playlistadd(self, playlist):
-        self._exec('playlistadd', playlist)
+    def load(self, playlist):
+        self._exec('load', playlist)
         return self.play()
 
     def clear(self):
