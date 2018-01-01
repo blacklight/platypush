@@ -13,7 +13,7 @@ from platypush.utils import get_module_and_method_from_action
 class Request(Message):
     """ Request message class """
 
-    def __init__(self, target, action, origin=None, id=None, backend=None, args={}):
+    def __init__(self, target, action, origin=None, id=None, backend=None, args=None):
         """
         Params:
             target -- Target node [String]
@@ -28,7 +28,7 @@ class Request(Message):
         self.target  = target
         self.action  = action
         self.origin  = origin
-        self.args    = args
+        self.args    = args if args else {}
         self.backend = backend
 
     @classmethod

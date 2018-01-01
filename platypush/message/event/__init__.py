@@ -1,5 +1,6 @@
 import json
 import random
+import re
 import threading
 
 from platypush.config import Config
@@ -34,35 +35,11 @@ class Event(Message):
         event_type = msg['args'].pop('type')
         event_class = get_event_class_by_type(event_type)
 
-        args = {
-            'target'   : msg['target'],
-            'origin'   : msg['origin'],
-            **(msg['args'] if 'args' in msg else {}),
-        }
-
+        args = msg['args'] if 'args' in msg else {}
         args['id'] = msg['id'] if 'id' in msg else cls._generate_id()
+        args['target'] = msg['target'] if 'target' in msg else Config.get('device_id')
+        args['origin'] = msg['origin'] if 'origin' in msg else Config.get('device_id')
         return event_class(**args)
-
-    def matches_condition(self, condition):
-        """
-        If the event matches an event condition, it will return an EventMatchResult
-        Params:
-            -- condition -- The platypush.event.hook.EventCondition object
-        """
-
-        result = EventMatchResult(is_match=False)
-        if not isinstance(self, condition.type): return result
-
-        for (attr, value) in condition.args.items():
-            if not hasattr(self.args, attr):
-                return result
-            if isinstance(self.args[attr], str) and not value in self.args[attr]:
-                return result
-            elif self.args[attr] != value:
-                return result
-
-        result.is_match = True
-        return result
 
 
     @staticmethod
@@ -72,6 +49,107 @@ class Event(Message):
         for i in range(0,16):
             id += '%.2x' % random.randint(0, 255)
         return id
+
+
+    def matches_condition(self, condition):
+        """
+        If the event matches an event condition, it will return an EventMatchResult
+        Params:
+            -- condition -- The platypush.event.hook.EventCondition object
+        """
+
+        result = EventMatchResult(is_match=False, parsed_args=self.args)
+        match_scores = []
+
+        if not isinstance(self, condition.type): return result
+
+        for (attr, value) in condition.args.items():
+            if attr not in self.args:
+                return result
+
+            if isinstance(self.args[attr], str):
+                arg_result = self._matches_argument(argname=attr, condition_value=value)
+
+                if arg_result.is_match:
+                    match_scores.append(arg_result.score)
+                    for (parsed_arg, parsed_value) in arg_result.parsed_args.items():
+                        result.parsed_args[parsed_arg] = parsed_value
+                else:
+                    return result
+            elif self.args[attr] != value:
+                # TODO proper support for list and dictionary matches
+                return result
+
+        result.is_match = True
+        if match_scores:
+            result.score = sum(match_scores) / float(len(match_scores))
+
+        return result
+
+
+    def _matches_argument(self, argname, condition_value):
+        """
+        Returns an EventMatchResult if the event argument [argname] matches
+        [condition_value].
+
+        - Example:
+            - self.args = {
+                'phrase': 'Hey dude turn on the living room lights'
+            }
+
+            - self._matches_argument(argname='phrase', condition_value='Turn on the $lights lights')
+              will return EventMatchResult(is_match=True, parsed_args={ 'lights': 'living room' })
+
+            - self._matches_argument(argname='phrase', condition_value='Turn off the $lights lights')
+              will return EventMatchResult(is_match=False, parsed_args={})
+        """
+
+        result = EventMatchResult(is_match=False)
+        event_tokens = re.split('\s+', self.args[argname].strip().lower())
+        condition_tokens = re.split('\s+', condition_value.strip().lower())
+
+        while event_tokens and condition_tokens:
+            event_token = event_tokens[0]
+            condition_token = condition_tokens[0]
+
+            if event_token == condition_token:
+                event_tokens.pop(0)
+                condition_tokens.pop(0)
+                result.score += 1
+            elif re.search(condition_token, event_token):
+                # The only supported regex-match as of now is the equivalent of
+                # the maybe operator.
+                # e.g. "turn on (the)? lights" would match both "turn on the lights"
+                # and "turn on lights". In such a case, we just consume the
+                # condition token and proceed forward. TODO add a more
+                # sophisticated regex-match handling
+                condition_tokens.pop(0)
+            else:
+                m = re.match('[^\\\]*\$([\w\d_-]+)', condition_token)
+                if m:
+                    argname = m.group(1)
+                    if argname not in result.parsed_args:
+                        result.parsed_args[argname] = event_token
+                        result.score += 1
+                    else:
+                        result.parsed_args[argname] += ' ' + event_token
+
+
+                    if len(event_tokens) > 1 and len(condition_tokens) > 1 \
+                            and event_tokens[1] == condition_tokens[1]:
+                        # Stop appending tokens to this argument, as the next
+                        # condition will be satisfied as well
+                        condition_tokens.pop(0)
+
+                    event_tokens.pop(0)
+                else:
+                    result.score -= 1
+                    event_tokens.pop(0)
+
+        # It's a match if all the tokens in the condition string have been satisfied
+        result.is_match = len(condition_tokens) == 0
+        return result
+
 
     def __str__(self):
         """
@@ -98,10 +176,10 @@ class EventMatchResult(object):
         the match is - in case of multiple event matches, the ones with the
         highest score will win """
 
-    def __init__(self, is_match, score=1, parsed_args = {}):
+    def __init__(self, is_match, score=0, parsed_args=None):
         self.is_match = is_match
         self.score = score
-        self.parsed_args = parsed_args
+        self.parsed_args = {} if not parsed_args else parsed_args
 
 
 # XXX Should be a stop Request, not an Event

@@ -1,8 +1,9 @@
 import json
 import logging
+import re
 
 from platypush.config import Config
-from platypush.message.event import Event
+from platypush.message.event import Event, EventMatchResult
 from platypush.message.request import Request
 from platypush.utils import get_event_class_by_type
 
@@ -73,10 +74,30 @@ class EventAction(Request):
 
 
     def execute(self, **context):
-        for (key, value) in context.items():
-            self.args[key] = value
+        event_args = context.pop('event').args if 'event' in context else {}
+
+        for (argname, value) in self.args.items():
+            if isinstance(value, str):
+                parsed_value = ''
+                while value:
+                    m = re.match('([^\\\]*)\$([\w\d_-]+)(.*)', value)
+                    if m:
+                        context_argname = m.group(2)
+                        value = m.group(3)
+                        if context_argname in context:
+                            parsed_value += m.group(1) + context[context_argname]
+                        else:
+                            parsed_value += m.group(1) + '$' + m.group(2)
+                    else:
+                        parsed_value += value
+                        value = ''
+
+                value = parsed_value
+
+            self.args[argname] = value
 
         super().execute()
+
 
     @classmethod
     def build(cls, action):
@@ -137,7 +158,7 @@ class EventHook(object):
             logging.info('Running hook {} triggered by an event'.format(self.name))
 
             for action in self.actions:
-                action.execute(**result.parsed_args)
+                action.execute(event=event, **result.parsed_args)
 
 
 # vim:sw=4:ts=4:et:

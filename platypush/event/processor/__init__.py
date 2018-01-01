@@ -1,4 +1,5 @@
 import logging
+import sys
 
 from ..hook import EventHook
 
@@ -22,10 +23,10 @@ class EventProcessor(object):
 
 
     def process_event(self, event):
-        """ Processes an event and runs any matched hooks """
+        """ Processes an event and runs the matched hooks with the highest score """
 
         matched_hooks = []
-        max_score = 0
+        max_score = -sys.maxsize
 
         for hook in self.hooks:
             match = hook.matches_event(event)

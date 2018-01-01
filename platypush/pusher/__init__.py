@@ -65,11 +65,21 @@ class Pusher(object):
                             "~/.config/platypush/config.yaml or " +
                             "/etc/platypush/config.yaml")
 
-        parser.add_argument('--target', '-t', dest='target', required=True,
+        parser.add_argument('--type', '-p', dest='type', required=False,
+                            default='request', help="Type of message to send, request or event")
+
+        parser.add_argument('--target', '-t', dest='target', required=False,
+                            default=Config.get('device_id'),
                             help="Destination of the command")
 
-        parser.add_argument('--action', '-a', dest='action', required=True,
-                            help="Action to execute, as package.method")
+        parser.add_argument('--action', '-a', dest='action', required=False,
+                            default=None, help="Action to execute, as " +
+                            "package.method (e.g. music.mpd.play), if this is a request")
+
+        parser.add_argument('--event', '-e', dest='event', required=False,
+                            default=None, help="Event type, as full " +
+                            "package.class (e.g. " +
+                            "platypush.message.event.ping.PingEvent), if this is an event")
 
         parser.add_argument('--backend', '-b', dest='backend', required=False,
                             default=None, help="Backend to deliver the message " +
@@ -86,7 +96,16 @@ class Pusher(object):
         opts, args = parser.parse_known_args(args)
 
         if len(args) % 2 != 0:
+            parser.print_help()
             raise RuntimeError('Odd number of key-value options passed: {}'.format(args))
+
+        if opts.type == 'request' and not opts.action:
+            parser.print_help()
+            raise RuntimeError('No action provided for the request'.format(args))
+
+        if opts.type == 'event' and not opts.event:
+            parser.print_help()
+            raise RuntimeError('No type provided for the event'.format(args))
 
         opts.args = {}
         for i in range(0, len(args), 2):
@@ -109,7 +128,21 @@ class Pusher(object):
             # self.backend_instance.stop()
         return _f
 
-    def push(self, target, action, backend=None, config_file=None,
+    def send_event(self, target=Config.get('device_id'),
+                   type='platypush.message.event.Event', backend=None, **kwargs):
+        if not backend: backend = self.backend
+
+        self.backend_instance = self.get_backend(backend)
+        self.backend_instance.send_event({
+            'target': target,
+            'args': {
+                'type': type,
+                **kwargs
+            }
+        })
+
+
+    def push(self, target, action, backend=None,
             timeout=default_response_wait_timeout, **kwargs):
         """
         Sends a message on a backend and optionally waits for an answer.
@@ -123,9 +156,6 @@ class Pusher(object):
             timeout -- Response receive timeout in seconds
                     - Pusher Default: 5 seconds
                     - If timeout == 0 or None: Pusher exits without waiting for a response
-            config_file -- Path to the configuration file to be used (default:
-                        ~/.config/platypush/config.yaml or
-                        /etc/platypush/config.yaml)
             **kwargs    -- Optional key-valued arguments for the action method
                         (e.g. cmd='echo ping' or groups="['Living Room']")
         """
@@ -144,19 +174,6 @@ class Pusher(object):
         self.backend_instance = self.get_backend(backend)
         self.backend_instance.send_request(req, on_response=self.on_response,
                                            response_timeout=timeout)
-
-
-def main(args=sys.argv[1:]):
-    opts = Pusher.parse_build_args(args)
-
-    pusher = Pusher(config_file=opts.config, backend=opts.backend)
-
-    pusher.push(opts.target, action=opts.action, timeout=opts.timeout,
-                **opts.args)
-
-
-if __name__ == '__main__':
-    main()
 
 
 # vim:sw=4:ts=4:et:
