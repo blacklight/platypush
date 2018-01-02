@@ -142,7 +142,7 @@ class Pusher(object):
         })
 
 
-    def push(self, target, action, backend=None,
+    def send_request(self, target, action, backend=None,
             timeout=default_response_wait_timeout, **kwargs):
         """
         Sends a message on a backend and optionally waits for an answer.

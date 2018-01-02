@@ -12,7 +12,7 @@ def main(args=sys.argv[1:]):
         print(opts.args)
         pusher.send_event(target=opts.target, type=opts.event, **opts.args)
     else:
-        pusher.push(target=opts.target, action=opts.action, timeout=opts.timeout, **opts.args)
+        pusher.send_request(target=opts.target, action=opts.action, timeout=opts.timeout, **opts.args)
 
 
 main()

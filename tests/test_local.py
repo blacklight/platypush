@@ -52,7 +52,7 @@ class TestLocal(unittest.TestCase):
                             on_response=self.on_response())
 
             logging.info('Sending request')
-            pusher.push(target=Config.get('device_id'), action='shell.exec',
+            pusher.send_request(target=Config.get('device_id'), action='shell.exec',
                         cmd='echo ping', timeout=None)
 
 
