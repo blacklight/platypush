@@ -1,3 +1,4 @@
+import logging
 import re
 
 from platypush.context import get_backend
@@ -8,7 +9,11 @@ class AssistantEvent(Event):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._assistant = get_backend('assistant.google')
+        try:
+            self._assistant = get_backend('assistant.google')
+        except KeyError as e:
+            logging.warning('google.assistant backend not configured/initialized')
+            self._assistant = None
 
 
 class ConversationStartEvent(AssistantEvent):
