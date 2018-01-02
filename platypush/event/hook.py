@@ -69,7 +69,8 @@ class EventAction(Request):
     """ Event hook action class. It is a special type of runnable request
         whose fields can be configured later depending on the event context """
 
-    def __init__(self, target=Config.get('device_id'), action=None, **args):
+    def __init__(self, target=None, action=None, **args):
+        if target is None: target=Config.get('device_id')
         super().__init__(target=target, action=action, **args)
 
 

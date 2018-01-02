@@ -10,11 +10,13 @@ class EventProcessor(object):
     """ Event processor class. Checks an event against the configured
         rules and executes any matching event hooks """
 
-    def __init__(self, hooks=Config.get_event_hooks(), **kwargs):
+    def __init__(self, hooks=None, **kwargs):
         """
         Params:
             hooks -- List of event hooks (default: any entry in the config
             named as event.hook.<hook_name> """
+
+        if hooks is None: hooks = Config.get_event_hooks()
 
         self.hooks = []
         for (name, hook) in hooks.items():
