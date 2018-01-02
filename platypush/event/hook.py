@@ -109,6 +109,7 @@ class EventAction(Request):
             action['target'] = action['origin']
         return super().build(action)
 
+
 class EventHook(object):
     """ Event hook class. It consists of one conditionss and
         one or multiple actions to be executed """
