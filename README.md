@@ -44,7 +44,7 @@ cd platypush
 python setup.py install
 ```
 
-Check `all_requirements.txt` for any extra dependencies you may want to install depending on your configuration. You can also install all the dependencies (may take some time on slow machines) by running `pip install -r all_requirements.txt`.
+Check `requirements.txt` for any extra dependencies you may want to install depending on your configuration. You can also install all the dependencies (may take some time on slow machines) by running `pip install -r requirements.txt`.
 
 After configuring the server, start it by simply running `platypush`.
 
