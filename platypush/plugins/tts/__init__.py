@@ -9,7 +9,12 @@ class TtsPlugin(Plugin):
     """ Default Text-to-Speech plugin. It leverages Google Translate and
         requires mplayer """
 
-    def say(self, phrase, lang='en-gb'):
+    def __init__(self, lang='en-gb'):
+        super().__init__()
+        self.lang=lang
+
+    def say(self, phrase, lang=None):
+        if lang is None: lang=self.lang
         output = None
         errors = []
         cmd = ['mplayer -ao alsa -really-quiet -noconsolecontrols ' +

@@ -1,0 +1,29 @@
+# YAML configuration support
+pyyaml
+requires
+
+# Apache Kafka backend support
+kafka-python
+
+# PushBullet backend support
+websocket-client
+
+# Philips Hue plugin support
+phue
+
+# MPD/Mopidy music server support
+python-mpd2
+
+# Belkin WeMo Switch plugin support
+ouimeaux
+
+# Google Assistant support
+google-assistant-sdk[samples]
+
+# Flic buttons support
+-e git+https://github.com/50ButtonsEach/fliclib-linux-hci
+
+# text2speech plugin: mplayer package
+
+# Video support on RaspberryPi: omxplayer package
+

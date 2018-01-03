@@ -1,3 +1,5 @@
+from .context import platypush
+
 import unittest
 
 from platypush.event.hook import EventHook, EventCondition, EventAction

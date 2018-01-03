@@ -4,7 +4,30 @@ Platypush
 [![Build Status](https://travis-ci.org/BlackLight/platypush.svg?branch=master)](https://travis-ci.org/BlackLight/platypush)
 
 
-Execute any command or custom complex logic on your devices, wherever they are, using your PushBullet account.
+Execute any command or custom complex logic on your devices, wherever they are, using PushBullet, Apache Kafka, or any backend.
+
+Platypush aims to be a general-purpose middleware infrastructure to process any request and run any logic triggered by custom events on a generic network of hosts.
+
+Its development is mainly driven by the necessity of a lightweight infrastructure for running generic triggers and actions in a virtual network, generalizing a bit the idea of an Android app like Tasker or a web service like IFTTT or Microsoft Flow, and turning it into something that anybody can run on their own devices. It's actively being tested on RaspberryPi devices and it has interesting applications when it comes to home automation and IoT, but it should be generic enough to solve most of the automation and information delivery issues in a distributed network.
+
+Architecture
+------------
+
+The base components are:
+
+* __Messages__: _requests_, _responses_ or _events_. The main difference between a request and an event is that the former specifies an explicit action to be executed through a _plugin_ (and the sender will usually wait for a _response_), while an event only notifies that something happened on a connected data source and can either be ignored or trigger some custom actions specified in the configuration.
+
+* The __Bus__: An internal queue where all the other components exchange messages.
+
+* __Backends__: Components that poll other data sources (a local queue, a remote websocket, a Kafka instance, or even a vocal assistant, a programmable button or a sensor) and post either requests or events on the bus when something happens on the data source. Some of them can have a full-duplex integration with the bus, i.e. post requests and events on the bus as they come and deliver responses from the bus back to the sender (examples: PushBullet, Apache Kafka, sockets), while some are pure data sources that will only post events on the bus (examples: sensors, buttons, vocal assistants).
+
+* __Plugins__: Configurable components which expose _actions_ that can be triggered by requests or events. Examples: smart lights, music controls, YouTube or torrentcast features, text-to-speech, generic shell commands, etc.). They would usually deliver output and errors as responses on the bus.
+
+* __Procedures__: Pre-configured lists of actions that can be triggered by requests or events.
+
+* Event __Hooks__: Pre-configured actions that will be executed when certain events are processed. They include:
+    * A _condition_, which can be fuzzly compared against an event. The matching logic will also return a _match score_ if the condition is met. The score is a function of the number of atomic matches (string tokens, scalars, key-values etc.) in the condition that are satisfied by a certain event. If multiple hooks are satisfied by a certain event, the algorithm will only run the ones with the highest score.
+    * One or more _actions_ to be executed in case of event match (e.g. "turn on the lights", "send a Messenger message to my s.o.", "turn on the heating", "play the radio" etc.)
 
 Installation
 ------------
@@ -21,26 +44,159 @@ cd platypush
 python setup.py install
 ```
 
+Check `all_requirements.txt` for any extra dependencies you may want to install depending on your configuration. You can also install all the dependencies (may take some time on slow machines) by running `pip install -r all_requirements.txt`.
+
+After configuring the server, start it by simply running `platypush`.
+
 Configuration
 -------------
 
-Copy /etc/platypush/config.example.yaml to /etc/platypush/config.yaml (system-wise settings) or ~/.config/platypush/config.yaml (user-wise settings).
+Copy `/etc/platypush/config.example.yaml` to `/etc/platypush/config.yaml` (system-wise settings) or `~/.config/platypush/config.yaml` (user-wise settings).
 
-Edit the file to include:
+Some configuration snippets:
 
-### For the PushBullet backend
+### device_id
+
+Each target device is identified by a unique device_id in the messages sent over your account. The device_id is the hostname by default, unless a different value is set in config.yaml at the root level.
+
+### Backends
+
+Platypush comes by default with a [PushBullet](https://www.pushbullet.com/) backend, an [Apache Kafka](https://kafka.apache.org/) backend, and a (quite unstable) local backend based on fifos. Backend configurations start with `backend.` in the `config.yaml`.
+
+#### PushBullet configuration
+
+You will need:
 
 * Your PushBullet access token (create one [here](https://www.pushbullet.com/#settings/account));
 * The name of the (virtual) PushBullet device used to listen for events (create one [here](https://www.pushbullet.com/#devices)).
 
-### For the Apache Kafka backend
+```yaml
+backend.pushbullet:
+    token: PUSHBULLET_TOKEN
+    device: platypush
+```
 
-* The host and port of the Kafka installation
-* The topic that will be used to deliver and process messages
+#### Apache Kafka configuration
 
-### device_id
+This would be a sample snippet for an Apache Kafka configuration:
 
-Each target device is identified by a unique device_id in the messages sent over your account. The device_id is the hostname by default, unless changed in config.yaml.
+```yaml
+backend.kafka:
+    pusher: True   # Default pusher backend
+    server: server:9092  # Kafka server and port
+    topic: platypush  # Topic prefix. Note: platypush will create a topic for each device named <topic>.<device_id>
+```
+
+Note: specifying `pusher: True` on a backend configuration means that that backend will be the default one used to deliver requests or events to other nodes through the `pusher` script, if no `--backend` option is passed.
+
+#### Local backend configuration
+
+```yaml
+backend.local:
+    request_fifo: /tmp/platypush-requests.fifo
+    response_fifo: /tmp/platypush-responses.fifo
+```
+
+#### Google Assistant configuration
+
+Follow the steps on the [Google Assistant SDK](https://github.com/googlesamples/assistant-sdk-python/tree/master/google-assistant-sdk) page and get the assistant sample running on your machine.
+
+Afterwards, you can enable custom speech-triggered actions on Platypush by just enabling the assistant backend:
+
+```yaml
+backend.assistant.google:
+    disabled: False
+```
+
+#### Flic buttons configuration
+
+[Flic buttons](https://flic.io/) are a quite cool and useful accessory. You can pair them with your phone over Bluetooth and they can trigger anything on your device - play music on Spotify, start a timer, trigger a Tasker task, snooze alarms, trigger fake phone calls...
+
+A [beta SDK](https://github.com/50ButtonsEach/fliclib-linux-hci) is available as well that allows you to pair the buttons to any bluetooth device, not necessarily running the Flic app.
+
+Install the SDK and run the `flicd` server on your machine. You can then enable the Flic plugin:
+
+```yaml
+backend.button.flic:
+    server: localhost
+
+```
+
+By the way, the Flic app only supports a maximum of three events per button - short press, long press and double press. With the Platypush plugin you can trigger countless actions by configuring multiple combinations of short and long presses - provided that you can remember them.
+
+### Plugins
+
+A couple of plugins are available out of the box with platypush under `plugins/`. Some of them may require extras Python or system dependencies. Some of the available plugins include:
+
+#### MPD/Mopidy support
+
+[MPD](https://musicpd.org/) is an application that allows to manage and play your music collection through a scalable client/server model. You can have your server running on a machine with a hard drive stuffed with mp3s, and access your collection from anywhere using a big family of compatible command line, graphical, web or mobile clients. [Mopidy](https://www.mopidy.com/) is an evolution of MPD that allows you to access music content from multiple sources through a wide set of plugins - e.g. Spotify, SoundCloud, Deezer, Pandora, TuneIn, Google Music.
+
+Platypush can be a client for your MPD/Mopidy music server, allowing you to search for music, control your queue and the playback upon requests or events.
+
+Configuration:
+
+```yaml
+music.mpd:
+    host: localhost
+    port: 6600
+```
+
+#### Video and media support
+
+Platypush comes with support for video media, including YouTube, local media and torrents (requires [torrentcast](https://www.npmjs.com/package/torrentcast)). It's quite handy to turn a RaspberryPi into a full-blown media server or a Chromecast on steroids, voice controls included.
+
+```yaml
+video.omxplayer:
+    args:
+        - -o
+        - alsa  # or hdmi
+        # ... any other default options for OMXPlayer
+
+video.torrentcast:
+    server: localhost
+    port: 9090
+```
+
+#### Philips Hue lights support
+
+Control your [Philips Hue](https://www2.meethue.com/en-us) lights with custom requests and events triggered by your devices.
+
+```yaml
+light.hue:
+    bridge: bridge_name_or_ip
+    # If no lights or groups to actions are specified in
+    # the action or in the default configuration, all the
+    # lights will be targeted.
+
+    lights:
+        - Hall
+        - Living Room Left
+        - Living Room Right
+        - Garage
+    groups:
+        - Bedroom
+        - Kitchen
+```
+
+#### Belkin WeMo Switch
+
+The [WeMo Switch](http://www.belkin.com/us/p/P-F7C027/) is smart Wi-Fi controlled switch that can automate the control of any electric appliance - fridges, lights, coffee machines...
+
+The Platypush plugin requires `ouimeaux` and will work with no configuration needed.
+
+#### Text-to-Speech support
+
+If `mplayer` is installed, you can trigger a machine to say custom phrases in any language through the `tts` plugin. Quite cool if you want to let your RaspberryPi to automatically read you out loud the news or when you get a notification on your phone.
+
+```yaml
+tts:
+    lang: en-gb  # Default language
+```
+
+#### Shell plugin
+
+You can also run custom shell commands on the target machine through the `shell` plugin, that requires (for now) no configuration.
 
 Shell interface
 ---------------
@@ -56,36 +212,28 @@ pusher --target raspberrypi --action music.mpd.play
 
 The logic to execute is specified by the `--action` option, whose format is `package_name.method_name` (with method_name part of the package main class).
 
-Available plugins
------------------
+Sample requests through Pusher
+------------------------------
 
-* `platypush.plugins.shell`: The simplest and yet most versatile plugin. Executes a remote command on the host identified by the `--target` device_id. Example:
+* `platypush.plugins.shell`:
 
 ```shell
 pusher --target laptop --action shell.exec --cmd "scp /home/user/photos/*.jpg backup_host:/mnt/hd/photos"
 ```
 
-* `platypush.plugins.music.mpd`: Controls the playback on a mpd/mopidy music server. Requires the package `mpd2` on the target machine. Example:
+* `platypush.plugins.music.mpd`:
 
 ```shell
 pusher --target raspberry --action music.mpd.play
 ```
 
-Configure the plugin through an entry like this in your `config.yaml`:
-
-```yaml
-music.mpd:
-    host: your_mpd_host
-    port: 6600
-```
-
-* `platypush.plugins.switch.wemo`: Controls a WeMo Switch smart switch device. Requires the package `ouimeaux` on the target machine. Example:
+* `platypush.plugins.switch.wemo`:
 
 ```shell
 pusher --target raspberry --action switch.wemo.on
 ```
 
-* `platypush.plugins.light.hue`: Controls a Philips Hue smart lights system. Requires the package `phue` on the target machine. Example:
+* `platypush.plugins.light.hue`:
 
 ```shell
 pusher --target raspberry --action light.hue.scene --name "Sunset" --group "Living Room"

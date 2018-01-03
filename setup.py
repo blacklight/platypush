@@ -69,6 +69,8 @@ setup(
         'Support for text2speech plugin': ['mplayer'],
         'Support for OMXPlayer plugin': ['omxplayer'],
         'Support for YouTube in the OMXPlayer plugin': ['youtube-dl'],
+        'Support for Google Assistant': ['google-assistant-sdk[samples]'],
+        'Support for Flic buttons': ['-e git+https://github.com/50ButtonsEach/fliclib-linux-hci']
     },
 )
 
