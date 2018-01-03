@@ -198,6 +198,86 @@ tts:
 
 You can also run custom shell commands on the target machine through the `shell` plugin, that requires (for now) no configuration.
 
+### Procedures
+
+Procedures are sequences of actions that will be executed in parallel or in series (*TODO*) by Platypush. Useful to refactor sequences of repeated actions in your requests or event hooks. Their configuration names start with `procedure.`.
+
+```yaml
+procedure.at_home:
+    -
+        action: tts.say
+        args:
+            phrase: Welcome home, YOUR_NAME
+    -
+        action: light.hue.on
+    -
+        action: switch.wemo.on
+        args:
+            device: Heater
+    -
+        action: music.mpd.play
+        args:
+            resource: spotify:user:you:playlist:your_favourite_playlist
+    -
+        action: shell.exec
+        args:
+            cmd: './bin/sensors_report.sh'
+```
+
+### Event Hooks
+
+Event hooks are one of the most powerful features of Platypush. They are the equivalent of a profile in Tasker, or a recipe in IFTTT. They link events received on the main bus to actions that can be triggered on the local or on a remote node. Events will usually be ignored unless you configured a hook for handling them. Their configuration names start with `event.hook.`.
+
+Some examples:
+
+```yaml
+event.hook.AssistantConversationStarted:
+    if:
+        type: platypush.message.event.assistant.ConversationStartEvent
+    then:
+        -
+            action: shell.exec
+            args:
+                cmd: 'aplay /usr/share/sounds/start.wav'
+
+
+event.hook.LightsSceneAssistantCommand:
+    if:
+        type: platypush.message.event.assistant.SpeechRecognizedEvent
+        # Note: regex support (still quite experimental though) and support for
+        # parsing context variables out of the trigger event, that can be used
+        # in the executed actions. Context variables names start with $
+        # (escape it with \ if you want to use the literal symbol instead).
+        # The context variables already include the variables of the source event,
+        # meaning that you can use $phrase as well in your action for this example.
+        phrase: "set (the)? scene on $name"
+    then:
+        -
+            action: light.hue.scene
+            args:
+                # If you said "set the scene on sunset", $name=sunset
+                name: $name
+
+
+event.hook.NextSongFlicButton:
+    if:
+        type: platypush.message.event.button.flic.FlicButtonEvent
+        btn_addr: 00:11:22:33:44:55
+        sequence:
+            # Lists are supported too
+            - ShortPressEvent
+            - LongPressEvent
+    then:
+        -
+            action: music.mpd.next
+        # You can also specify multiple actions
+        -
+            action: media.ctrl.forward
+        # Or procedures
+        -
+            action: procedure.your_proc
+```
+
 Shell interface
 ---------------
 
@@ -237,6 +317,12 @@ pusher --target raspberry --action switch.wemo.on
 
 ```shell
 pusher --target raspberry --action light.hue.scene --name "Sunset" --group "Living Room"
+```
+
+* `procedure`:
+
+```shell
+pusher --target raspberry --action procedure.at_home
 ```
 
 Writing your plugins
