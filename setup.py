@@ -59,11 +59,10 @@ setup(
     install_requires = [
         'pyyaml',
         'requires',
-        'requests',
     ],
     extras_require = {
         'Support for Apache Kafka backend': ['kafka-python'],
-        'Support for Pushbullet backend': ['websocket-client'],
+        'Support for Pushbullet backend': ['requests', 'websocket-client'],
         'Support for HTTP backend': ['flask'],
         'Support for Philips Hue plugin': ['phue'],
         'Support for MPD/Mopidy music server plugin': ['python-mpd2'],
