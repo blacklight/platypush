@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import re
@@ -71,7 +72,8 @@ class EventAction(Request):
 
     def __init__(self, target=None, action=None, **args):
         if target is None: target=Config.get('device_id')
-        super().__init__(target=target, action=action, **args)
+        args_copy = copy.deepcopy(args)
+        super().__init__(target=target, action=action, **args_copy)
 
 
     def execute(self, **context):
@@ -142,9 +144,9 @@ class EventHook(object):
 
         if 'then' in hook:
             if isinstance(hook['then'], list):
-                actions = [EventAction.build(action) for action in hook['then']]
+                actions = hook['then']
             else:
-                actions = [EventAction.build(hook['then'])]
+                actions = [hook['then']]
 
         return cls(name=name, condition=condition, actions=actions, priority=priority)
 
@@ -166,7 +168,8 @@ class EventHook(object):
             logging.info('Running hook {} triggered by an event'.format(self.name))
 
             for action in self.actions:
-                action.execute(event=event, **result.parsed_args)
+                a = EventAction.build(action)
+                a.execute(event=event, **result.parsed_args)
 
 
 # vim:sw=4:ts=4:et:
