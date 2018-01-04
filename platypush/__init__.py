@@ -75,14 +75,6 @@ class Daemon(object):
                 msg -- platypush.message.Message instance """
 
             if isinstance(msg, Request):
-                if msg.action.startswith('procedure.'):
-                    logging.info('Executing procedure request: {}'.format(msg))
-                    proc_name = msg.action.split('.')[-1]
-                    proc_config = Config.get_procedures()[proc_name]
-                    msg = Procedure.build(name=proc_name, requests=proc_config, backend=msg.backend, id=msg.id)
-                else:
-                    logging.info('Processing request: {}'.format(msg))
-
                 msg.execute(n_tries=self.n_tries)
                 self.processed_requests += 1
                 if self.requests_to_process \

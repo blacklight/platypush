@@ -51,15 +51,33 @@ class Request(Message):
             id += '%.2x' % random.randint(0, 255)
         return id
 
-    def execute(self, n_tries=1):
+
+    def _execute_procedure(self, *args, **kwargs):
+        from config import Config
+
+        logging.info('Executing procedure request: {}'.format(procedure))
+        proc_name = self.action.split('.')[-1]
+        proc_config = Config.get_procedures()[proc_name]
+        proc = Procedure.build(name=proc_name, requests=proc_config, backend=self.backend, id=self.id)
+        proc.execute(*args, **kwargs)
+
+
+    def execute(self, n_tries=1, async=True):
         """
         Execute this request and returns a Response object
         Params:
             n_tries -- Number of tries in case of failure before raising a RuntimeError
+            async   -- If True, the request will be run asynchronously and the
+                       response posted on the bus when available (default),
+                       otherwise the current thread will wait for the response
+                       to be returned synchronously.
         """
-        def _thread_func(n_tries):
-            (module_name, method_name) = get_module_and_method_from_action(self.action)
 
+        def _thread_func(n_tries):
+            if self.action.startswith('procedure.'):
+                return self._execute_procedure(n_tries=n_tries)
+
+            (module_name, method_name) = get_module_and_method_from_action(self.action)
             plugin = get_plugin(module_name)
 
             try:
@@ -80,14 +98,20 @@ class Request(Message):
                     _thread_func(n_tries-1)
                     return
             finally:
-                # Send the response on the backend
-                if self.backend and self.origin:
-                    self.backend.send_response(response=response, request=self)
+                if async:
+                    # Send the response on the backend
+                    if self.backend and self.origin:
+                        self.backend.send_response(response=response, request=self)
+                    else:
+                        logging.info('Response whose request has no ' +
+                                    'origin attached: {}'.format(response))
                 else:
-                    logging.info('Response whose request has no ' +
-                                 'origin attached: {}'.format(response))
+                    return response
 
-        Thread(target=_thread_func, args=(n_tries,)).start()
+        if async:
+            Thread(target=_thread_func, args=(n_tries,)).start()
+        else:
+            return _thread_func(n_tries)
 
 
     def __str__(self):

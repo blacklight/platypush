@@ -43,8 +43,8 @@ setup(
     packages = find_packages(),
     entry_points = {
         'console_scripts': [
-            'platypush=platypush.__main__:main',
-            'pusher=platypush.pusher.__main__:main',
+            'platypush=platypush.__main__',
+            'pusher=platypush.pusher.__main__',
         ],
     },
     data_files = [
@@ -63,6 +63,7 @@ setup(
     extras_require = {
         'Support for Apache Kafka backend': ['kafka-python'],
         'Support for Pushbullet backend': ['requests', 'websocket-client'],
+        'Support for HTTP backend': ['flask'],
         'Support for Philips Hue plugin': ['phue'],
         'Support for MPD/Mopidy music server plugin': ['python-mpd2'],
         'Support for Belkin WeMo Switch plugin': ['ouimeaux'],
@@ -70,7 +71,7 @@ setup(
         'Support for OMXPlayer plugin': ['omxplayer'],
         'Support for YouTube in the OMXPlayer plugin': ['youtube-dl'],
         'Support for Google Assistant': ['google-assistant-sdk[samples]'],
-        'Support for Flic buttons': ['-e git+https://github.com/50ButtonsEach/fliclib-linux-hci']
+        # 'Support for Flic buttons': ['-e git+https://github.com/50ButtonsEach/fliclib-linux-hci']
     },
 )
 

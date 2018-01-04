@@ -8,6 +8,9 @@ kafka-python
 # PushBullet backend support
 websocket-client
 
+# HTTP backend support
+flask
+
 # Philips Hue plugin support
 phue
 
