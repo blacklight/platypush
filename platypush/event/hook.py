@@ -114,13 +114,17 @@ class EventHook(object):
     """ Event hook class. It consists of one conditionss and
         one or multiple actions to be executed """
 
-    def __init__(self, name, condition=None, actions=[]):
+    def __init__(self, name, priority=None, condition=None, actions=[]):
         """ Construtor. Takes a name, a EventCondition object and a list of
-            EventAction objects as input """
+            EventAction objects as input. It may also have a priority attached
+            as a positive number. If multiple hooks match against an event,
+            only the ones that have either the maximum match score or the
+            maximum pre-configured priority will be run. """
 
         self.name = name
         self.condition = EventCondition.build(condition or {})
         self.actions = actions
+        self.priority = priority or 0
 
 
     @classmethod
@@ -134,13 +138,15 @@ class EventHook(object):
 
         condition = EventCondition.build(hook['if']) if 'if' in hook else None
         actions = []
+        priority = hook['priority'] if 'priority' in hook else None
+
         if 'then' in hook:
             if isinstance(hook['then'], list):
                 actions = [EventAction.build(action) for action in hook['then']]
             else:
                 actions = [EventAction.build(hook['then'])]
 
-        return cls(name=name, condition=condition, actions=actions)
+        return cls(name=name, condition=condition, actions=actions, priority=priority)
 
 
     def matches_event(self, event):
