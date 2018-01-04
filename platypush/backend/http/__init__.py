@@ -61,7 +61,7 @@ class HttpBackend(Backend):
         logging.info('Initialized HTTP backend on port {}'.format(self.port))
 
         self.server_proc = Process(target=app.run, kwargs={
-            'debug':True, 'host':'0.0.0.0', 'port':self.port
+            'debug':True, 'host':'0.0.0.0', 'port':self.port, 'use_reloader':False
         })
 
         time.sleep(1)
