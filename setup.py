@@ -43,8 +43,8 @@ setup(
     packages = find_packages(),
     entry_points = {
         'console_scripts': [
-            'platypush=platypush.__main__',
-            'pusher=platypush.pusher.__main__',
+            'platypush=platypush:main',
+            'pusher=platypush.pusher:main',
         ],
     },
     data_files = [

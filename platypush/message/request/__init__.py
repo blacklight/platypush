@@ -53,9 +53,10 @@ class Request(Message):
 
 
     def _execute_procedure(self, *args, **kwargs):
-        from config import Config
+        from platypush.config import Config
+        from platypush.procedure import Procedure
 
-        logging.info('Executing procedure request: {}'.format(procedure))
+        logging.info('Executing procedure request: {}'.format(self.action))
         proc_name = self.action.split('.')[-1]
         proc_config = Config.get_procedures()[proc_name]
         proc = Procedure.build(name=proc_name, requests=proc_config, backend=self.backend, id=self.id)

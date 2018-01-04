@@ -1,11 +1,6 @@
-import sys
+from platypush import main
 
-from platypush import Daemon, __version__
-
-print('Starting platypush v.{}'.format(__version__))
-app = Daemon.build_from_cmdline(sys.argv[1:])
-app.start()
-
+main()
 
 # vim:sw=4:ts=4:et:
 
