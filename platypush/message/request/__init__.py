@@ -1,6 +1,7 @@
 import json
 import logging
 import random
+import re
 import traceback
 
 from threading import Thread
@@ -60,10 +61,44 @@ class Request(Message):
         proc_name = self.action.split('.')[-1]
         proc_config = Config.get_procedures()[proc_name]
         proc = Procedure.build(name=proc_name, requests=proc_config, backend=self.backend, id=self.id)
-        proc.execute(*args, **kwargs)
+        return proc.execute(*args, **kwargs)
 
 
-    def execute(self, n_tries=1, async=True):
+    def _expand_context(self, **context):
+        args = {}
+        for (name, value) in self.args.items():
+            if isinstance(value, str):
+                parsed_value = ''
+                while value:
+                    m = re.match('([^\\\]*)\$([\w\d_-]+)(.*)', value)
+                    if m:
+                        context_name = m.group(2)
+                        value = m.group(3)
+                        if context_name in context:
+                            parsed_value += m.group(1) + context[context_name]
+                        else:
+                            parsed_value += m.group(1) + '$' + m.group(2)
+                    else:
+                        parsed_value += value
+                        value = ''
+
+                value = parsed_value
+
+            args[name] = value
+
+        return args
+
+
+
+    def _send_response(self, response):
+        if self.backend and self.origin:
+            self.backend.send_response(response=response, request=self)
+        else:
+            logging.info('Response whose request has no ' +
+                        'origin attached: {}'.format(response))
+
+
+    def execute(self, n_tries=1, async=True, **context):
         """
         Execute this request and returns a Response object
         Params:
@@ -72,18 +107,28 @@ class Request(Message):
                        response posted on the bus when available (default),
                        otherwise the current thread will wait for the response
                        to be returned synchronously.
+            context -- Key-valued context. Example:
+                context = (group_name='Kitchen lights')
+                request.args:
+                    - group: $group_name  # will be expanded as "Kitchen lights")
         """
 
         def _thread_func(n_tries):
             if self.action.startswith('procedure.'):
-                return self._execute_procedure(n_tries=n_tries)
-
-            (module_name, method_name) = get_module_and_method_from_action(self.action)
-            plugin = get_plugin(module_name)
+                try:
+                    response = self._execute_procedure(n_tries=n_tries)
+                finally:
+                    self._send_response(response)
+                    return response
+            else:
+                (module_name, method_name) = get_module_and_method_from_action(self.action)
+                plugin = get_plugin(module_name)
 
             try:
                 # Run the action
-                response = plugin.run(method=method_name, **self.args)
+                args = self._expand_context(**context)
+                response = plugin.run(method=method_name, **args)
+
                 if response and response.is_error():
                     raise RuntimeError('Response processed with errors: {}'.format(response))
 
@@ -99,15 +144,8 @@ class Request(Message):
                     _thread_func(n_tries-1)
                     return
             finally:
-                if async:
-                    # Send the response on the backend
-                    if self.backend and self.origin:
-                        self.backend.send_response(response=response, request=self)
-                    else:
-                        logging.info('Response whose request has no ' +
-                                    'origin attached: {}'.format(response))
-                else:
-                    return response
+                self._send_response(response)
+                return response
 
         if async:
             Thread(target=_thread_func, args=(n_tries,)).start()

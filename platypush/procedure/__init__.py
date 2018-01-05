@@ -2,6 +2,7 @@ import logging
 
 from ..config import Config
 from ..message.request import Request
+from ..message.response import Response
 
 class Procedure(object):
     """ Procedure class. A procedure is a pre-configured list of requests """
@@ -42,8 +43,18 @@ class Procedure(object):
         """
 
         logging.info('Executing request {}'.format(self.name))
+        context = {}
+        response = Response()
+
         for request in self.requests:
-            request.execute(n_tries)
+            response = request.execute(n_tries, async=False, **context)
+            context = { k:v for (k,v) in response.output.items() } \
+                if isinstance(response.output, dict) else {}
+
+            context['output'] = response.output
+            context['errors'] = response.errors
+
+        return response
 
 
 # vim:sw=4:ts=4:et:

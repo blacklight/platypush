@@ -16,14 +16,25 @@ class Response(Message):
         """
 
         self.target = target
-        self.output = output
-        self.errors = errors
+        self.output = self._parse_msg(output)
+        self.errors = self._parse_msg(errors)
         self.origin = origin
         self.id = id
 
     def is_error(self):
         """ Returns True if the respopnse has errors """
         return len(self.errors) != 0
+
+    @classmethod
+    def _parse_msg(cls, msg):
+        if isinstance(msg, bytes) or isinstance(msg, bytearray):
+            msg = msg.decode('utf-8')
+        if isinstance(msg, str):
+            try: msg = json.loads(msg.strip())
+            except ValueError as e: pass
+
+        return msg
+
 
     @classmethod
     def build(cls, msg):
