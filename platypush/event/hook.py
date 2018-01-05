@@ -28,7 +28,7 @@ def parse(msg):
 class EventCondition(object):
     """ Event hook condition class """
 
-    def __init__(self, type=Event.__class__, **kwargs):
+    def __init__(self, type=Event.__class__, priority=None, **kwargs):
         """
         Rule constructor.
         Params:
@@ -40,6 +40,7 @@ class EventCondition(object):
         self.type = type
         self.args = {}
         self.parsed_args = {}
+        self.priority = priority
 
         for (key, value) in kwargs.items():
             # TODO So far we only allow simple value match. If value is a dict
@@ -127,6 +128,7 @@ class EventHook(object):
         self.condition = EventCondition.build(condition or {})
         self.actions = actions
         self.priority = priority or 0
+        self.condition.priority = self.priority
 
 
     @classmethod
@@ -141,6 +143,7 @@ class EventHook(object):
         condition = EventCondition.build(hook['if']) if 'if' in hook else None
         actions = []
         priority = hook['priority'] if 'priority' in hook else None
+        condition.priority = priority
 
         if 'then' in hook:
             if isinstance(hook['then'], list):

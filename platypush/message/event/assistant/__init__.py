@@ -33,7 +33,7 @@ class SpeechRecognizedEvent(AssistantEvent):
 
     def matches_condition(self, condition):
         result = super().matches_condition(condition)
-        if result.is_match and self._assistant:
+        if result.is_match and self._assistant and not condition.priority:
             self._assistant.stop_conversation()
 
         return result
