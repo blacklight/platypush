@@ -60,7 +60,10 @@ class Request(Message):
         logging.info('Executing procedure request: {}'.format(self.action))
         proc_name = self.action.split('.')[-1]
         proc_config = Config.get_procedures()[proc_name]
-        proc = Procedure.build(name=proc_name, requests=proc_config, backend=self.backend, id=self.id)
+        proc = Procedure.build(name=proc_name, requests=proc_config['actions'],
+                               async=proc_config['async'],
+                               backend=self.backend, id=self.id)
+
         return proc.execute(*args, **kwargs)
 
 

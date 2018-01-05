@@ -78,8 +78,13 @@ class Config(object):
                 hook_name = '.'.join(key.split('.')[2:])
                 self.event_hooks[hook_name] = self._config[key]
             elif key.startswith('procedure.'):
-                procedure_name = '.'.join(key.split('.')[1:])
-                self.procedures[procedure_name] = self._config[key]
+                tokens = key.split('.')
+                async = True if tokens[1] == 'async' else False
+                procedure_name = '.'.join(tokens[2:])
+                self.procedures[procedure_name] = {
+                    'async': async,
+                    'actions': self._config[key]
+                }
             else:
                 self.plugins[key] = self._config[key]
 

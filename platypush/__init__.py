@@ -12,7 +12,7 @@ from .event.processor import EventProcessor
 from .message.event import Event, StopEvent
 from .message.request import Request
 from .message.response import Response
-from .procedure import Procedure
+
 
 __author__ = 'Fabio Manganiello <blacklight86@gmail.com>'
 __version__ = '0.6.5'

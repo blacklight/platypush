@@ -7,14 +7,17 @@ from ..message.response import Response
 class Procedure(object):
     """ Procedure class. A procedure is a pre-configured list of requests """
 
-    def __init__(self, name, requests, backend=None):
+    def __init__(self, name, async, requests, backend=None):
         """
         Params:
             name     -- Procedure name
+            async    -- Whether the actions in the procedure are supposed to
+                        be executed sequentially or in parallel (True or False)
             requests -- List of platylist.message.request.Request objects
         """
 
         self.name     = name
+        self.async    = async
         self.requests = requests
         self.backend  = backend
 
@@ -22,7 +25,7 @@ class Procedure(object):
             req.backend = self.backend
 
     @classmethod
-    def build(cls, name, requests, backend=None, id=None, **kwargs):
+    def build(cls, name, async, requests, backend=None, id=None, **kwargs):
         reqs = []
         for request_config in requests:
             request_config['origin'] = Config.get('device_id')
@@ -33,7 +36,7 @@ class Procedure(object):
             request = Request.build(request_config)
             reqs.append(request)
 
-        return cls(name=name, requests=reqs, backend=backend, **kwargs)
+        return cls(name=name, async=async, requests=reqs, backend=backend, **kwargs)
 
     def execute(self, n_tries=1):
         """
@@ -47,12 +50,15 @@ class Procedure(object):
         response = Response()
 
         for request in self.requests:
-            response = request.execute(n_tries, async=False, **context)
-            context = { k:v for (k,v) in response.output.items() } \
-                if isinstance(response.output, dict) else {}
+            if self.async:
+                request.execute(n_tries, async=True, **context)
+            else:
+                response = request.execute(n_tries, async=False, **context)
+                context = { k:v for (k,v) in response.output.items() } \
+                    if isinstance(response.output, dict) else {}
 
-            context['output'] = response.output
-            context['errors'] = response.errors
+                context['output'] = response.output
+                context['errors'] = response.errors
 
         return response
 
