@@ -77,32 +77,6 @@ class EventAction(Request):
         super().__init__(target=target, action=action, **args_copy)
 
 
-    def execute(self, **context):
-        event_args = context.pop('event').args if 'event' in context else {}
-
-        for (argname, value) in self.args.items():
-            if isinstance(value, str):
-                parsed_value = ''
-                while value:
-                    m = re.match('([^\\\]*)\$([\w\d_-]+)(.*)', value)
-                    if m:
-                        context_argname = m.group(2)
-                        value = m.group(3)
-                        if context_argname in context:
-                            parsed_value += m.group(1) + context[context_argname]
-                        else:
-                            parsed_value += m.group(1) + '$' + m.group(2)
-                    else:
-                        parsed_value += value
-                        value = ''
-
-                value = parsed_value
-
-            self.args[argname] = value
-
-        super().execute()
-
-
     @classmethod
     def build(cls, action):
         action = super().parse(action)

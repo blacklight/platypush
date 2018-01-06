@@ -67,30 +67,43 @@ class Request(Message):
         return proc.execute(*args, **kwargs)
 
 
-    def _expand_context(self, **context):
-        args = {}
-        for (name, value) in self.args.items():
+    def _expand_context(self, event_args=None, **context):
+        if event_args is None: event_args = self.args
+
+        keys = []
+        if isinstance(event_args, dict):
+            keys = event_args.keys()
+        elif isinstance(event_args, list):
+            keys = range(0, len(event_args))
+
+        for key in keys:
+            value = event_args[key]
             if isinstance(value, str):
-                parsed_value = ''
-                while value:
-                    m = re.match('([^\\\]*)\$([\w\d_-]+)(.*)', value)
-                    if m:
-                        context_name = m.group(2)
-                        value = m.group(3)
-                        if context_name in context:
-                            parsed_value += m.group(1) + context[context_name]
-                        else:
-                            parsed_value += m.group(1) + '$' + m.group(2)
-                    else:
-                        parsed_value += value
-                        value = ''
+                value = self._expand_value_from_context(value, **context)
+            elif isinstance(value, dict) or isinstance(value, list):
+                self._expand_context(event_args=value, **context)
 
-                value = parsed_value
+            event_args[key] = value
 
-            args[name] = value
+        return event_args
 
-        return args
 
+    def _expand_value_from_context(self, value, **context):
+        parsed_value = ''
+        while value:
+            m = re.match('([^\\\]*)\$([\w\d_-]+)(.*)', value)
+            if m:
+                context_argname = m.group(2)
+                value = m.group(3)
+                if context_argname in context:
+                    parsed_value += m.group(1) + context[context_argname]
+                else:
+                    parsed_value += m.group(1) + '$' + m.group(2)
+            else:
+                parsed_value += value
+                value = ''
+
+        return parsed_value
 
 
     def _send_response(self, response):
