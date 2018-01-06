@@ -6,6 +6,7 @@ import websocket
 
 from platypush.config import Config
 from platypush.message import Message
+from platypush.message.event.pushbullet import PushbulletEvent
 
 from .. import Backend
 
@@ -68,17 +69,24 @@ class PushbulletBackend(Backend):
     def on_push(self):
         def _f(ws, data):
             try:
+                # Parse the push
                 try:
                     data = json.loads(data) if isinstance(data, str) else push
                 except Exception as e:
                     logging.exception(e)
                     return
 
+                # If it's a push, get it
                 if data['type'] == 'tickle' and data['subtype'] == 'push':
                     push = self._get_latest_push()
                 elif data['type'] == 'push':
                     push = data['push']
                 else: return  # Not a push notification
+
+                # Post an event, useful to react on mobile notifications if
+                # you enabled notification mirroring on your PushBullet app
+                event = PushbulletEvent(**push)
+                self.on_message(event)
 
                 if 'body' not in push: return
                 logging.debug('Received push: {}'.format(push))
