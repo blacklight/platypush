@@ -11,6 +11,9 @@ websocket-client
 # HTTP backend support
 flask
 
+# Database plugin support
+sqlalchemy
+
 # Philips Hue plugin support
 phue
 
