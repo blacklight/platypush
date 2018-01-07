@@ -40,7 +40,7 @@ class EventProcessor(object):
 
                 if hook.priority > max_prio:
                     priority_hooks = set((hook,))
-                elif hook.priority == max_prio:
+                elif hook.priority == max_prio and max_prio > 0:
                     priority_hooks.add(hook)
 
         matched_hooks.update(priority_hooks)
