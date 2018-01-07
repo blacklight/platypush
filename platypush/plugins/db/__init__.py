@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Table, MetaData
 
 from platypush.message.response import Response
 
@@ -33,12 +33,13 @@ class DbPlugin(Plugin):
             return self.engine
 
     def execute(self, statement, engine=None, *args, **kwargs):
-        """ Executes a generic SQL statement """
+        """ Executes a raw SQL statement """
 
         engine = self._get_engine(engine, *args, **kwargs)
 
         with engine.connect() as connection:
             result = connection.execute(statement)
+            connection.commit()
 
         return Response()
 
@@ -65,12 +66,10 @@ class DbPlugin(Plugin):
         engine = self._get_engine(engine, *args, **kwargs)
 
         for record in records:
-            statement = 'INSERT INTO {}({}) VALUES({})'.format \
-                (table, ','.join(record.keys()),
-                 ','.join([ ':' + key for key in record.keys() ]))
-
-            with engine.connect() as connection:
-                connection.execute(statement, **record)
+            metadata = MetaData()
+            table = Table(table, metadata, autoload=True, autoload_with=engine)
+            insert = table.insert().values(**record)
+            engine.execute(insert)
 
         return Response()
 
