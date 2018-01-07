@@ -88,22 +88,33 @@ class Request(Message):
         return event_args
 
 
-    def _expand_value_from_context(self, value, **context):
+    @classmethod
+    def _expand_value_from_context(cls, value, **context):
         parsed_value = ''
         while value:
-            m = re.match('([^\\\]*)\$([\w\d_-]+)(.*)', value)
-            if m:
-                context_argname = m.group(2)
-                value = m.group(3)
+            m = re.match('([^\$]*)(\${\s*(.+?)\s*})(.*)', value)
+            if m and not m.group(1).endswith('\\'):
+                prefix = m.group(1); expr = m.group(2);
+                inner_expr = m.group(3); value = m.group(4)
+
+                m = re.match('([^.\[\]()]+)(.*)', inner_expr)
+                context_argname = m.group(1)
+                path = m.group(2)
+
                 if context_argname in context:
-                    parsed_value += m.group(1) + context[context_argname]
-                else:
-                    parsed_value += m.group(1) + '$' + m.group(2)
+                    try:
+                        context_value = eval("context['{}']{}".format(
+                            context_argname, path if path else ''))
+                    except: context_value = expr
+
+                    parsed_value += prefix + str(context_value)
+                else: parsed_value += prefix + expr
             else:
                 parsed_value += value
                 value = ''
 
-        return parsed_value
+        try: return json.loads(parsed_value)
+        except ValueError as e: return parsed_value
 
 
     def _send_response(self, response):
@@ -126,16 +137,14 @@ class Request(Message):
             context -- Key-valued context. Example:
                 context = (group_name='Kitchen lights')
                 request.args:
-                    - group: $group_name  # will be expanded as "Kitchen lights")
+                    - group: ${group_name}  # will be expanded as "Kitchen lights")
         """
 
         def _thread_func(n_tries):
             if self.action.startswith('procedure.'):
-                try:
-                    response = self._execute_procedure(n_tries=n_tries)
-                finally:
-                    self._send_response(response)
-                    return response
+                response = self._execute_procedure(n_tries=n_tries)
+                self._send_response(response)
+                return response
             else:
                 (module_name, method_name) = get_module_and_method_from_action(self.action)
                 plugin = get_plugin(module_name)

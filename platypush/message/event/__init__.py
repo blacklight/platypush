@@ -97,10 +97,10 @@ class Event(Message):
                 'phrase': 'Hey dude turn on the living room lights'
             }
 
-            - self._matches_argument(argname='phrase', condition_value='Turn on the $lights lights')
+            - self._matches_argument(argname='phrase', condition_value='Turn on the ${lights} lights')
               will return EventMatchResult(is_match=True, parsed_args={ 'lights': 'living room' })
 
-            - self._matches_argument(argname='phrase', condition_value='Turn off the $lights lights')
+            - self._matches_argument(argname='phrase', condition_value='Turn off the ${lights} lights')
               will return EventMatchResult(is_match=False, parsed_args={})
         """
 
@@ -117,15 +117,14 @@ class Event(Message):
                 condition_tokens.pop(0)
                 result.score += 1
             elif re.search(condition_token, event_token):
-                # The only supported regex-match as of now is the equivalent of
-                # the maybe operator.
-                # e.g. "turn on (the)? lights" would match both "turn on the lights"
-                # and "turn on lights". In such a case, we just consume the
-                # condition token and proceed forward. TODO add a more
-                # sophisticated regex-match handling
+                m = re.search('({})'.format(condition_token), event_token)
+                if m.group(1):
+                    event_tokens.pop(0)
+                    result.score += 1
+
                 condition_tokens.pop(0)
             else:
-                m = re.match('[^\\\]*\$([\w\d_-]+)', condition_token)
+                m = re.match('[^\\\]*\${(.+?)}', condition_token)
                 if m:
                     argname = m.group(1)
                     if argname not in result.parsed_args:

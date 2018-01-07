@@ -54,8 +54,10 @@ class Procedure(object):
                 request.execute(n_tries, async=True, **context)
             else:
                 response = request.execute(n_tries, async=False, **context)
-                context = { k:v for (k,v) in response.output.items() } \
-                    if isinstance(response.output, dict) else {}
+
+                if isinstance(response.output, dict):
+                    for (k,v) in response.output.items():
+                        context[k] = v
 
                 context['output'] = response.output
                 context['errors'] = response.errors

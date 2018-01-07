@@ -9,7 +9,7 @@ class TestEventParse(unittest.TestCase):
     def setUp(self):
         self.condition = EventCondition.build({
             'type': 'platypush.message.event.ping.PingEvent',
-            'message': 'This is (the)? answer: $answer'
+            'message': 'This is (the)? answer: ${answer}'
         })
 
     def test_event_parse(self):
