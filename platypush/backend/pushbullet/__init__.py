@@ -25,7 +25,7 @@ class PushbulletBackend(Backend):
         }
 
     def _get_latest_push(self):
-        t = int(time.time()) - 2
+        t = int(time.time()) - 5
         try:
             response = requests.get(
                 u'https://api.pushbullet.com/v2/pushes',
