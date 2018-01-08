@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import random
@@ -68,7 +69,7 @@ class Request(Message):
 
 
     def _expand_context(self, event_args=None, **context):
-        if event_args is None: event_args = self.args
+        if event_args is None: event_args = copy.deepcopy(self.args)
 
         keys = []
         if isinstance(event_args, dict):
@@ -78,8 +79,9 @@ class Request(Message):
 
         for key in keys:
             value = event_args[key]
+
             if isinstance(value, str):
-                value = self._expand_value_from_context(value, **context)
+                value = self.expand_value_from_context(value, **context)
             elif isinstance(value, dict) or isinstance(value, list):
                 self._expand_context(event_args=value, **context)
 
@@ -89,7 +91,7 @@ class Request(Message):
 
 
     @classmethod
-    def _expand_value_from_context(cls, value, **context):
+    def expand_value_from_context(cls, value, **context):
         parsed_value = ''
         while value:
             m = re.match('([^\$]*)(\${\s*(.+?)\s*})(.*)', value)
@@ -107,7 +109,12 @@ class Request(Message):
                             context_argname, path if path else ''))
                     except: context_value = expr
 
-                    parsed_value += prefix + str(context_value)
+                    parsed_value += prefix + (
+                        json.dumps(context_value)
+                        if isinstance(context_value, list)
+                        or isinstance(context_value, dict)
+                        else str(context_value))
+
                 else: parsed_value += prefix + expr
             else:
                 parsed_value += value
