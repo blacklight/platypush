@@ -74,10 +74,14 @@ class Config(object):
 
         for section in file_config:
             if section == 'include':
-                included_config = self._read_config_file(file_config[section])
+                include_files = file_config[section] \
+                    if isinstance(file_config[section], list) \
+                    else [file_config[section]]
 
-                for incl_section in included_config.keys():
-                    config[incl_section] = included_config[incl_section]
+                for include_file in include_files:
+                    included_config = self._read_config_file(include_file)
+                    for incl_section in included_config.keys():
+                        config[incl_section] = included_config[incl_section]
             elif 'disabled' not in file_config[section] \
                     or file_config[section]['disabled'] is False:
                 config[section] = file_config[section]
