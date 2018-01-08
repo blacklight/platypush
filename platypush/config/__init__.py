@@ -46,13 +46,8 @@ class Config(object):
             raise RuntimeError('No config file specified and nothing found in {}'
                                .format(self._cfgfile_locations))
 
-        with open(cfgfile, 'r') as fp:
-            self._config = yaml.load(fp)
-
-        for section in self._config:
-            if 'disabled' in self._config[section] \
-                    and self._config[section]['disabled']:
-                del self._config[section]
+        self._cfgfile = cfgfile
+        self._config = self._read_config_file(self._cfgfile)
 
         if 'logging' not in self._config:
             self._config['logging'] = logging.INFO
@@ -67,6 +62,27 @@ class Config(object):
         self.event_hooks = {}
         self.procedures = {}
         self._init_components()
+
+
+    def _read_config_file(self, cfgfile):
+        if not os.path.isabs(cfgfile):
+            cfgfile = os.path.join(os.path.dirname(self._cfgfile), cfgfile)
+
+        config = {}
+        with open(cfgfile, 'r') as fp:
+            file_config = yaml.load(fp)
+
+        for section in file_config:
+            if section == 'include':
+                included_config = self._read_config_file(file_config[section])
+
+                for incl_section in included_config.keys():
+                    config[incl_section] = included_config[incl_section]
+            elif 'disabled' not in file_config[section] \
+                    or file_config[section]['disabled'] is False:
+                config[section] = file_config[section]
+
+        return config
 
 
     def _init_components(self):
