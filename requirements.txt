@@ -25,9 +25,10 @@ ouimeaux
 
 # Google Assistant support
 google-assistant-sdk[samples]
+google-assistant-library
 
 # Flic buttons support
--e git+https://github.com/50ButtonsEach/fliclib-linux-hci
+git+https://github.com/50ButtonsEach/fliclib-linux-hci
 
 # text2speech plugin: mplayer package
 
