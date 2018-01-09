@@ -20,14 +20,18 @@ class AssistantGoogleBackend(Backend):
 
     def __init__(self, credentials_file=os.path.join(
             os.path.expanduser('~/.config'),
-            'google-oauthlib-tool', 'credentials.json'), **kwargs):
+            'google-oauthlib-tool', 'credentials.json'),
+            device_model_id='Platypush', **kwargs):
         """ Params:
             credentials_file -- Path to the Google OAuth credentials file
                 (default: ~/.config/google-oauthlib-tool/credentials.json)
+            device_model_id  -- Device model ID to use for the assistant
+                (default: Platypush)
         """
 
         super().__init__(**kwargs)
         self.credentials_file = credentials_file
+        self.device_model_id = device_model_id
         self.assistant = None
 
         with open(self.credentials_file, 'r') as f:
@@ -66,7 +70,7 @@ class AssistantGoogleBackend(Backend):
     def run(self):
         super().run()
 
-        with Assistant(self.credentials) as assistant:
+        with Assistant(self.credentials, self.device_model_id) as assistant:
             self.assistant = assistant
             for event in assistant.start():
                 self._process_event(event)
