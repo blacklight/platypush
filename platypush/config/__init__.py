@@ -1,3 +1,4 @@
+import errno
 import logging
 import os
 import socket
@@ -30,6 +31,8 @@ class Config(object):
         os.path.join(os.sep, 'etc', 'platypush', 'config.yaml'),
     ]
 
+    _workdir_location = os.path.join(os.environ['HOME'], '.local', 'share', 'platypush')
+
     def __init__(self, cfgfile=None):
         """
         Constructor. Always use the class as a singleton (i.e. through
@@ -48,6 +51,10 @@ class Config(object):
 
         self._cfgfile = cfgfile
         self._config = self._read_config_file(self._cfgfile)
+
+        if 'workdir' not in self._config:
+            self._config['workdir'] = self._workdir_location
+        mkdir_p(self._config['workdir'])
 
         if 'logging' not in self._config:
             self._config['logging'] = logging.INFO
@@ -181,6 +188,14 @@ class Config(object):
         global _default_config_instance
         if _default_config_instance is None: _default_config_instance = Config()
         _default_config_instance._config[key] = key
+
+
+def mkdir_p(path):
+    try: os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path): pass
+        else: raise
+
 
 # vim:sw=4:ts=4:et:
 
