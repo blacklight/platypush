@@ -11,6 +11,9 @@ websocket-client
 # HTTP backend support
 flask
 
+# HTTP poll backend support
+frozendict
+
 # Database plugin support
 sqlalchemy
 

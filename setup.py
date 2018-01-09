@@ -64,6 +64,7 @@ setup(
         'Support for Apache Kafka backend': ['kafka-python'],
         'Support for Pushbullet backend': ['requests', 'websocket-client'],
         'Support for HTTP backend': ['flask'],
+        'Support for HTTP poll backend': ['frozendict'],
         'Support for database plugin': ['sqlalchemy'],
         'Support for Philips Hue plugin': ['phue'],
         'Support for MPD/Mopidy music server plugin': ['python-mpd2'],
@@ -71,7 +72,7 @@ setup(
         'Support for text2speech plugin': ['mplayer'],
         'Support for OMXPlayer plugin': ['omxplayer'],
         'Support for YouTube in the OMXPlayer plugin': ['youtube-dl'],
-        'Support for Google Assistant': ['google-assistant-sdk[samples]'],
+        'Support for Google Assistant': ['google-assistant-library'],
         # 'Support for Flic buttons': ['git+ssh://git@github.com/50ButtonsEach/fliclib-linux-hci']
     },
 )
