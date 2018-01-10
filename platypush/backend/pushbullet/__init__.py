@@ -48,6 +48,8 @@ class PushbulletBackend(Backend):
             return {}
 
     def _should_skip_last_received_msg(self, msg):
+        if not isinstance(msg, dict): return True  # We received something weird
+
         is_duplicate=False
         last_msg = self._last_received_msg[msg['type']]
 

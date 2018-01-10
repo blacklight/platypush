@@ -1,7 +1,10 @@
+import copy
 import json
 import random
 import re
 import threading
+
+from datetime import date
 
 from platypush.config import Config
 from platypush.message import Message
@@ -157,6 +160,9 @@ class Event(Message):
         the message into a UTF-8 JSON string
         """
 
+        args = copy.deepcopy(self.args)
+        flatten(args)
+
         return json.dumps({
             'type'     : 'event',
             'target'   : self.target,
@@ -164,7 +170,7 @@ class Event(Message):
             'id'       : self.id if hasattr(self, 'id') else None,
             'args'     : {
                 'type' : self.type,
-                **self.args,
+                **args
             },
         })
 
@@ -204,6 +210,21 @@ class StopEvent(Event):
     def targets_me(self):
         """ Returns true if the stop event is for the current thread """
         return self.args['thread_id'] == threading.get_ident()
+
+
+def flatten(args):
+    if isinstance(args, dict):
+        for (key,value) in args.items():
+            if isinstance(value, date):
+                args[key] = value.isoformat()
+            elif isinstance(value, dict) or isinstance(value, list):
+                flatten(args[key])
+    elif isinstance(args, list):
+        for i in range(0,len(args)):
+            if isinstance(args[i], date):
+                args[i] = value.isoformat()
+            elif isinstance(args[i], dict) or isinstance(args[i], list):
+                flatten(args[i])
 
 
 # vim:sw=4:ts=4:et:

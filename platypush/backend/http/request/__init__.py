@@ -1,19 +1,19 @@
 import copy
+import importlib
 import json
 import re
 import requests
 import time
 
+from datetime import date
 from frozendict import frozendict
 from threading import Thread
 
-from platypush.message.response import Response
+from platypush.message.event.http import HttpEvent
 
-class HttpRequest(Thread):
+class HttpRequest(object):
     poll_seconds = 60
     timeout = 5
-    bus = None
-    last_call_timestamp = None
 
 
     class HttpRequestArguments(object):
@@ -24,12 +24,13 @@ class HttpRequest(Thread):
             self.kwargs = kwargs
 
 
-    def __init__(self, args, poll_seconds=None, timeout=None, bus=None, **kwargs):
+    def __init__(self, args, bus=None, poll_seconds=None, timeout=None, **kwargs):
         super().__init__()
 
         self.poll_seconds = poll_seconds or self.poll_seconds
         self.timeout = timeout or self.timeout
-        self.bus = bus or self.bus
+        self.bus = bus
+        self.last_request_timestamp = 0
 
         if isinstance(args, self.HttpRequestArguments):
             self.args = args
@@ -38,14 +39,37 @@ class HttpRequest(Thread):
         else:
             raise RuntimeError('{} is neither a dictionary nor an HttpRequest')
 
+        self.request_args = {
+            'method': self.args.method, 'url': self.args.url, **self.args.kwargs
+        }
+
 
     def execute(self):
-        self.last_call_timestamp = time.time()
+        def _thread_func():
+            is_first_call = self.last_request_timestamp == 0
+            self.last_request_timestamp = time.time()
 
-        method = getattr(requests, self.args.method.lower())
-        response = method(self.args.url, *self.args.args, **self.args.kwargs)
-        response.raise_for_status()
-        return response
+            method = getattr(requests, self.args.method.lower())
+            response = method(self.args.url, *self.args.args, **self.args.kwargs)
+            new_items = self.get_new_items(response)
+
+            if new_items and not is_first_call and self.bus:
+                event = HttpEvent(dict(self), new_items)
+                self.bus.post(event)
+
+            response.raise_for_status()
+
+        Thread(target=_thread_func).start()
+
+
+    def get_new_items(self, response):
+        """ Gets new items out of a response """
+        raise("get_new_items must be implemented in a derived class")
+
+
+    def __iter__(self):
+        for (key, value) in self.request_args.items():
+            yield (key, value)
 
 
 class JsonHttpRequest(HttpRequest):
@@ -55,9 +79,8 @@ class JsonHttpRequest(HttpRequest):
         self.seen_entries = set()
 
 
-    def execute(self):
-        is_first_call = self.last_call_timestamp is None
-        response = super().execute().json()
+    def get_new_items(self, response):
+        response = response.json()
         new_entries = []
 
         if self.path:
