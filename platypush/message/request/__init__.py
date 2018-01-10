@@ -69,7 +69,14 @@ class Request(Message):
 
 
     def _expand_context(self, event_args=None, **context):
+        from platypush.config import Config
+
         if event_args is None: event_args = copy.deepcopy(self.args)
+
+        constants = Config.get_constants()
+        context['constants'] = {}
+        for (name,value) in constants.items():
+            context['constants'][name] = value
 
         keys = []
         if isinstance(event_args, dict):
