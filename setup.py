@@ -73,6 +73,7 @@ setup(
         'Support for OMXPlayer plugin': ['omxplayer'],
         'Support for YouTube in the OMXPlayer plugin': ['youtube-dl'],
         'Support for Google Assistant': ['google-assistant-library'],
+        'Support for most of the HTTP poll backends': ['python-dateutil'],
         # 'Support for Flic buttons': ['git+ssh://git@github.com/50ButtonsEach/fliclib-linux-hci']
     },
 )

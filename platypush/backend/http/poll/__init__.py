@@ -6,6 +6,7 @@ from threading import Thread
 from platypush.bus import Bus
 from platypush.backend import Backend
 from platypush.backend.http.request import HttpRequest
+from platypush.message.request import Request
 
 
 class HttpPollBackend(Backend):

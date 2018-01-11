@@ -39,6 +39,9 @@ class HttpRequest(object):
         else:
             raise RuntimeError('{} is neither a dictionary nor an HttpRequest')
 
+        if 'timeout' not in self.args.kwargs:
+            self.args.kwargs['timeout'] = self.timeout
+
         self.request_args = {
             'method': self.args.method, 'url': self.args.url, **self.args.kwargs
         }
@@ -53,8 +56,13 @@ class HttpRequest(object):
             response = method(self.args.url, *self.args.args, **self.args.kwargs)
             new_items = self.get_new_items(response)
 
-            if new_items and not is_first_call and self.bus:
+            if isinstance(new_items, HttpEvent):
+                event = new_items
+                new_items = event.args['response']
+            else:
                 event = HttpEvent(dict(self), new_items)
+
+            if new_items and not is_first_call and self.bus:
                 self.bus.post(event)
 
             response.raise_for_status()

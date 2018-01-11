@@ -31,9 +31,13 @@ google-assistant-sdk[samples]
 google-assistant-library
 
 # Flic buttons support
-git+https://github.com/50ButtonsEach/fliclib-linux-hci
+# It doesn't come with a pip package nor a setup.py,
+# follow the instructions on github to get the flicd daemon
+# running, set up the buttons you want to use, and then
+# enable backend.button.flic in your configuration.
+# git+https://github.com/50ButtonsEach/fliclib-linux-hci
 
-# text2speech plugin: mplayer package
+# text2speech plugin: mplayer system package
 
-# Video support on RaspberryPi: omxplayer package
+# Video support on RaspberryPi: omxplayer system package
 

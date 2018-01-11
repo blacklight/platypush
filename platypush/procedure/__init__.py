@@ -131,7 +131,6 @@ class LoopProcedure(Procedure):
 
         for item in iterable:
             context[self.iterator_name] = item
-            # print('**** context[{}]: {}, iterable type: {}'.format(self.iterator_name, item, type(iterable)))
             response = super().execute(n_tries, **context)
 
         return response
