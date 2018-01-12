@@ -7,6 +7,7 @@ from platypush.message.event.http.ota.booking import NewReservationEvent
 
 
 class GetReservationUpdates(JsonHttpRequest):
+    """ Gets the reservation updates """
     def __init__(self, hotel_id, token, *args, **kwargs):
         self.hotel_id = hotel_id
         self.token = token

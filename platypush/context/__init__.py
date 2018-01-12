@@ -66,10 +66,10 @@ def get_plugin(plugin_name, reload=False):
         raise RuntimeError(e)
 
     # e.g. plugins.music.mpd main class: MusicMpdPlugin
-    cls_name = functools.reduce(
-        lambda a,b: a.title() + b.title(),
-        (plugin_name.title().split('.'))
-    ) + 'Plugin'
+    cls_name = ''
+    for token in plugin_name.split('.'):
+        cls_name += token.title()
+    cls_name += 'Plugin'
 
     plugin_conf = Config.get_plugins()[plugin_name] \
         if plugin_name in Config.get_plugins() else {}

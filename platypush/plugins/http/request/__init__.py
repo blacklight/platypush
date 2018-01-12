@@ -2,7 +2,7 @@ import requests
 
 from platypush.message.response import Response
 
-from .. import Plugin
+from platypush.plugins import Plugin
 
 class HttpRequestPlugin(Plugin):
     """ Plugin for executing custom HTTP requests """
@@ -13,10 +13,11 @@ class HttpRequestPlugin(Plugin):
         method = getattr(requests, method)
         response = method(url, **kwargs)
         response.raise_for_status()
+        output = response.text
 
-        if output == 'json': return response.json()
-        if output == 'binary': return response.content
-        return Response(output=response.text, errors=[])
+        if output == 'json': output = response.json()
+        if output == 'binary': output = response.content
+        return Response(output=output, errors=[])
 
 
     def get(self, url, **kwargs):
