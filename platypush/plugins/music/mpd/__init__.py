@@ -83,5 +83,9 @@ class MusicMpdPlugin(MusicPlugin):
     def status(self):
         return Response(output=self.client.status())
 
+    def currentsong(self):
+        return Response(output=self.client.currentsong())
+
+
 # vim:sw=4:ts=4:et:
 
