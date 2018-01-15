@@ -76,10 +76,9 @@ class Config(object):
         self.event_hooks = {}
         self.procedures = {}
         self.constants = {}
-        self.cronjobs = []
+        self.cronjobs = {}
 
         self._init_constants()
-        self._init_cronjobs()
         self._init_components()
 
 
@@ -116,6 +115,9 @@ class Config(object):
             elif key.startswith('event.hook.'):
                 hook_name = '.'.join(key.split('.')[2:])
                 self.event_hooks[hook_name] = self._config[key]
+            elif key.startswith('cron.'):
+                cron_name = '.'.join(key.split('.')[1:])
+                self.cronjobs[cron_name] = self._config[key]
             elif key.startswith('procedure.'):
                 tokens = key.split('.')
                 async = True if tokens[1] == 'async' else False
@@ -133,12 +135,6 @@ class Config(object):
 
         for (key,value) in self._default_constants.items():
             self.constants[key] = value
-
-
-    def _init_cronjobs(self):
-        if 'cron' in self._config:
-            for job in self._config['cron']['jobs']:
-                self.cronjobs.append(job)
 
 
     @staticmethod

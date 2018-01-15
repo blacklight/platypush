@@ -11,6 +11,7 @@ class Cronjob(Thread):
     def __init__(self, name, cron_expression, actions, *args, **kwargs):
         super().__init__()
         self.cron_expression = cron_expression
+        self.name = name
         self.actions = []
 
         for action in actions:
@@ -56,15 +57,14 @@ class CronScheduler(Thread):
         super().__init__()
         self.jobs_config = jobs
         logging.info('Cron scheduler initialized with {} jobs'
-                     .format(len(self.jobs_config)))
+                     .format(len(self.jobs_config.keys())))
 
 
     @classmethod
-    def _build_job(cls, job_config):
-        if isinstance(job_config, dict):
-            job = Cronjob(cron_expression=job_config['cron_expression'],
-                            name=job_config['name'],
-                            actions=job_config['actions'])
+    def _build_job(cls, name, config):
+        if isinstance(config, dict):
+            job = Cronjob(name=name, cron_expression=config['cron_expression'],
+                          actions=config['actions'])
 
         assert isinstance(job, Cronjob)
         return job
@@ -74,8 +74,8 @@ class CronScheduler(Thread):
         logging.info('Running cron scheduler')
 
         while True:
-            for job_config in self.jobs_config:
-                job = self._build_job(job_config)
+            for (job_name, job_config) in self.jobs_config.items():
+                job = self._build_job(name=job_name, config=job_config)
                 if job.should_run():
                     job.start()
 
