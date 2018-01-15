@@ -112,7 +112,8 @@ class Daemon(object):
             backend.start()
 
         # Start the cron scheduler
-        CronScheduler(jobs=Config.get_cronjobs()).start()
+        if Config.get_cronjobs():
+            CronScheduler(jobs=Config.get_cronjobs()).start()
 
         # Poll for messages on the bus
         try:
