@@ -32,7 +32,7 @@ create_etc_dir()
 
 setup(
     name = "platypush",
-    version = "0.6.8",
+    version = "0.6.9",
     author = "Fabio Manganiello",
     author_email = "info@fabiomanganiello.com",
     description = ("Platypush service"),
@@ -74,6 +74,7 @@ setup(
         'Support for YouTube in the OMXPlayer plugin': ['youtube-dl'],
         'Support for Google Assistant': ['google-assistant-library'],
         'Support for most of the HTTP poll backends': ['python-dateutil'],
+        'Support for Last.FM scrobbler plugin': ['pylast'],
         # 'Support for Flic buttons': ['git+ssh://git@github.com/50ButtonsEach/fliclib-linux-hci']
     },
 )

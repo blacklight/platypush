@@ -30,6 +30,9 @@ ouimeaux
 google-assistant-sdk[samples]
 google-assistant-library
 
+# Last.FM scrobbler plugin support
+pylast
+
 # Flic buttons support
 # It doesn't come with a pip package nor a setup.py,
 # follow the instructions on github to get the flicd daemon
