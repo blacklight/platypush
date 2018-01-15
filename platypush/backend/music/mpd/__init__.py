@@ -43,7 +43,7 @@ class MusicMpdBackend(Backend):
 
             if 'title' in track and ('artist' not in track
                                         or not track['artist']
-                                        or re.search('^tunein:', track_info['file'])):
+                                        or re.search('^tunein:', track['file'])):
                 m = re.match('^\s*(.+?)\s+-\s+(.*)\s*$', track['title'])
                 if m and m.group(1) and m.group(2):
                     track['artist'] = m.group(1)
