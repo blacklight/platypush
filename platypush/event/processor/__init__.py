@@ -35,6 +35,7 @@ class EventProcessor(object):
             if match.is_match:
                 if match.score > max_score:
                     matched_hooks = set((hook,))
+                    max_score = match.score
                 elif match.score == max_score:
                     matched_hooks.add(hook)
 
