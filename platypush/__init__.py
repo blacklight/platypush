@@ -8,6 +8,7 @@ from threading import Thread
 from .bus import Bus
 from .config import Config
 from .context import register_backends
+from .cron.scheduler import CronScheduler
 from .event.processor import EventProcessor
 from .message.event import Event, StopEvent
 from .message.request import Request
@@ -109,6 +110,9 @@ class Daemon(object):
         # Start the backend threads
         for backend in self.backends.values():
             backend.start()
+
+        # Start the cron scheduler
+        CronScheduler(jobs=Config.get_cronjobs()).start()
 
         # Poll for messages on the bus
         try:

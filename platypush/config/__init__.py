@@ -34,8 +34,8 @@ class Config(object):
     ]
 
     _default_constants = {
-        'today': datetime.date.today().isoformat,
-        'now': datetime.datetime.now().isoformat,
+        'today': datetime.date.today,
+        'now': datetime.datetime.now,
     }
 
     _workdir_location = os.path.join(os.environ['HOME'], '.local', 'share', 'platypush')
@@ -76,8 +76,10 @@ class Config(object):
         self.event_hooks = {}
         self.procedures = {}
         self.constants = {}
+        self.cronjobs = []
 
         self._init_constants()
+        self._init_cronjobs()
         self._init_components()
 
 
@@ -133,6 +135,12 @@ class Config(object):
             self.constants[key] = value
 
 
+    def _init_cronjobs(self):
+        if 'cron' in self._config:
+            for job in self._config['cron']['jobs']:
+                self.cronjobs.append(job)
+
+
     @staticmethod
     def get_backends():
         global _default_config_instance
@@ -175,6 +183,12 @@ class Config(object):
         if name not in _default_config_instance.constants: return None
         value = _default_config_instance.constants[name]
         return value() if callable(value) else value
+
+    @staticmethod
+    def get_cronjobs():
+        global _default_config_instance
+        if _default_config_instance is None: _default_config_instance = Config()
+        return _default_config_instance.cronjobs
 
     @staticmethod
     def get_default_pusher_backend():

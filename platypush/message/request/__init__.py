@@ -1,4 +1,5 @@
 import copy
+import datetime
 import json
 import logging
 import random
@@ -114,6 +115,11 @@ class Request(Message):
                     try:
                         context_value = eval("context['{}']{}".format(
                             context_argname, path if path else ''))
+
+                        if callable(context_value):
+                            context_value = context_value()
+                        if isinstance(context_value, datetime.date):
+                            context_value = context_value.isoformat()
                     except: context_value = expr
 
                     parsed_value += prefix + (
