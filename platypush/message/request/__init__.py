@@ -113,14 +113,19 @@ class Request(Message):
 
                 if context_argname in context:
                     try:
-                        context_value = eval("context['{}']{}".format(
-                            context_argname, path if path else ''))
+                        try:
+                            context_value = eval("context['{}']{}".format(
+                                context_argname, path if path else ''))
+                        except:
+                            context_value = eval(inner_expr)
 
                         if callable(context_value):
                             context_value = context_value()
                         if isinstance(context_value, datetime.date):
                             context_value = context_value.isoformat()
-                    except: context_value = expr
+                    except Exception as e:
+                        logging.exception(e)
+                        context_value = expr
 
                     parsed_value += prefix + (
                         json.dumps(context_value)
@@ -128,7 +133,12 @@ class Request(Message):
                         or isinstance(context_value, dict)
                         else str(context_value))
 
-                else: parsed_value += prefix + expr
+                else:
+                    try:
+                        parsed_value += prefix + eval(inner_expr)
+                    except Exception as e:
+                        logging.exception(e)
+                        parsed_value += prefix + expr
             else:
                 parsed_value += value
                 value = ''
@@ -162,7 +172,8 @@ class Request(Message):
 
         def _thread_func(n_tries):
             if self.action.startswith('procedure.'):
-                response = self._execute_procedure(n_tries=n_tries)
+                context['n_tries'] = n_tries
+                response = self._execute_procedure(**context)
                 self._send_response(response)
                 return response
             else:

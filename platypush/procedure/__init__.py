@@ -78,7 +78,8 @@ class Procedure(object):
         response = Response()
 
         for request in self.requests:
-            response = request.execute(n_tries, async=self.async, **context)
+            context['async'] = self.async; context['n_tries'] = n_tries
+            response = request.execute(**context)
 
             if not self.async:
                 if isinstance(response.output, dict):
@@ -125,13 +126,13 @@ class LoopProcedure(Procedure):
         self.requests = requests
 
 
-    def execute(self, n_tries=1, async=None, **context):
+    def execute(self, async=None, **context):
         iterable = Request.expand_value_from_context(self.iterable, **context)
         response = Response()
 
         for item in iterable:
             context[self.iterator_name] = item
-            response = super().execute(n_tries, **context)
+            response = super().execute(**context)
 
         return response
 

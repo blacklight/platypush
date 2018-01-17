@@ -30,6 +30,9 @@ ouimeaux
 google-assistant-sdk[samples]
 google-assistant-library
 
+# Google APIs general layer support
+google-api-python-client
+
 # Last.FM scrobbler plugin support
 pylast
 
