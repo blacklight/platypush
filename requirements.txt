@@ -17,6 +17,9 @@ frozendict
 # Database plugin support
 sqlalchemy
 
+# Dates support
+python-dateutil
+
 # Philips Hue plugin support
 phue
 
