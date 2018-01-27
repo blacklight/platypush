@@ -14,7 +14,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from platypush.backend.http.request import HttpRequest
 from platypush.config import Config
 from platypush.message.event.http.rss import NewFeedEvent
-from platypush.utils import mkdir_p
 
 Base = declarative_base()
 Session = scoped_session(sessionmaker())
@@ -32,7 +31,7 @@ class GetRssUpdates(HttpRequest):
         self.mercury_api_key = mercury_api_key  # Mercury Reader API used to parse the content of the link
 
         if dbfile: self.dbfile = dbfile
-        mkdir_p(os.path.dirname(self.dbfile))
+        os.makedirs(os.path.expanduser(os.path.dirname(self.dbfile)), exist_ok=True)
 
         self.engine = create_engine('sqlite:///{}'.format(self.dbfile))
         Base.metadata.create_all(self.engine)

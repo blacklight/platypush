@@ -5,8 +5,6 @@ import socket
 import time
 import yaml
 
-from platypush.utils import mkdir_p
-
 
 """ Config singleton instance """
 _default_config_instance = None
@@ -63,7 +61,7 @@ class Config(object):
 
         if 'workdir' not in self._config:
             self._config['workdir'] = self._workdir_location
-        mkdir_p(self._config['workdir'])
+        os.makedirs(self._config['workdir'], exist_ok=True)
 
         if 'logging' not in self._config:
             self._config['logging'] = logging.INFO
