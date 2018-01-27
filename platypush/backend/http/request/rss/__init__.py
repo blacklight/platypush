@@ -78,9 +78,7 @@ class GetRssUpdates(HttpRequest):
         source_record = self._get_or_create_source(session=session)
         session.add(source_record)
         parse_start_time = datetime.datetime.utcnow()
-
         entries = []
-        last_updated_at = source_record.last_updated_at
 
         if source_record.title != feed.feed['title']:
             source_record.title = feed.feed['title']
@@ -88,11 +86,8 @@ class GetRssUpdates(HttpRequest):
         for entry in feed.entries:
             entry_timestamp = datetime.datetime(*entry.published_parsed[:6])
 
-            if last_updated_at is None: last_updated_at = entry_timestamp
             if source_record.last_updated_at is None \
                     or entry_timestamp > source_record.last_updated_at:
-                last_updated_at = max(entry_timestamp, last_updated_at)
-
                 entry.content = self._parse_entry_content(entry.link) \
                     if self.mercury_api_key else None
 
