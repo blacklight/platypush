@@ -1,10 +1,12 @@
 import datetime
-import errno
 import logging
 import os
 import socket
 import time
 import yaml
+
+from platypush.utils import mkdir_p
+
 
 """ Config singleton instance """
 _default_config_instance = None
@@ -236,12 +238,6 @@ class Config(object):
         if _default_config_instance is None: _default_config_instance = Config()
         _default_config_instance._config[key] = key
 
-
-def mkdir_p(path):
-    try: os.makedirs(path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path): pass
-        else: raise
 
 
 # vim:sw=4:ts=4:et:

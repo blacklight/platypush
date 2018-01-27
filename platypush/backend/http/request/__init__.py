@@ -24,12 +24,14 @@ class HttpRequest(object):
             self.kwargs = kwargs
 
 
-    def __init__(self, args, bus=None, poll_seconds=None, timeout=None, **kwargs):
+    def __init__(self, args, bus=None, poll_seconds=None, timeout=None,
+                 skip_first_call=True, **kwargs):
         super().__init__()
 
         self.poll_seconds = poll_seconds or self.poll_seconds
         self.timeout = timeout or self.timeout
         self.bus = bus
+        self.skip_first_call = skip_first_call
         self.last_request_timestamp = 0
 
         if isinstance(args, self.HttpRequestArguments):
@@ -62,8 +64,10 @@ class HttpRequest(object):
             else:
                 event = HttpEvent(dict(self), new_items)
 
-            if new_items and not is_first_call and self.bus:
-                self.bus.post(event)
+            if new_items and self.bus:
+                if not self.skip_first_call or (
+                        self.skip_first_call and not is_first_call):
+                    self.bus.post(event)
 
             response.raise_for_status()
 

@@ -20,6 +20,9 @@ sqlalchemy
 # Dates support
 python-dateutil
 
+# RSS feeds support
+feedparser
+
 # Philips Hue plugin support
 phue
 
