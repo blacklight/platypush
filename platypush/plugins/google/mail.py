@@ -5,8 +5,10 @@ import os
 
 from apiclient import discovery
 
+from email.encoders import encode_base64
+from email.mime.application import MIMEApplication
 from email.mime.audio import MIMEAudio
-from email.mime.base import MIMEBase
+# from email.mime.base import MIMEBase
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -22,35 +24,40 @@ class GoogleMailPlugin(GooglePlugin):
         super().__init__(scopes=self.scopes, *args, **kwargs)
 
 
-    def compose(self, sender, to, subject, body, file=None):
-        message = MIMEMultipart() if file else MIMEText(body)
+    def compose(self, sender, to, subject, body, files=None):
+        message = MIMEMultipart() if files else MIMEText(body)
         message['to'] = to
         message['from'] = sender
         message['subject'] = subject
 
-        if file:
-            msg = MIMEText(body)
-            message.attach(msg)
-            content_type, encoding = mimetypes.guess_type(file)
+        if files:
+            for file in files:
+                msg = MIMEText(body)
+                message.attach(msg)
+                content_type, encoding = mimetypes.guess_type(file)
 
-            if content_type is None or encoding is not None:
-                content_type = 'application/octet-stream'
-            main_type, sub_type = content_type.split('/', 1)
+                if content_type is None or encoding is not None:
+                    content_type = 'application/octet-stream'
 
-            with open(file, 'rb') as fp:
+                main_type, sub_type = content_type.split('/', 1)
+                with open(file, 'rb') as fp: content = fp.read()
+
                 if main_type == 'text':
-                    msg = mimetypes.MIMEText(fp.read(), _subtype=sub_type)
+                    msg = mimetypes.MIMEText(content, _subtype=sub_type)
                 elif main_type == 'image':
-                    msg = MIMEImage(fp.read(), _subtype=sub_type)
+                    msg = MIMEImage(content, _subtype=sub_type)
                 elif main_type == 'audio':
-                    msg = MIMEAudio(fp.read(), _subtype=sub_type)
+                    msg = MIMEAudio(content, _subtype=sub_type)
+                elif main_type == 'application':
+                    msg = MIMEApplication(content, _subtype=sub_type,
+                                          _encoder=encode_base64)
                 else:
                     msg = MIMEBase(main_type, sub_type)
-                    msg.set_payload(fp.read())
+                    msg.set_payload(content)
 
-            filename = os.path.basename(file)
-            msg.add_header('Content-Disposition', 'attachment', filename=filename)
-            message.attach(msg)
+                filename = os.path.basename(file)
+                msg.add_header('Content-Disposition', 'attachment', filename=filename)
+                message.attach(msg)
 
         service = self._get_service()
         body = { 'raw': base64.urlsafe_b64encode(message.as_bytes()).decode() }
