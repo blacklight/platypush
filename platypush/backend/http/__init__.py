@@ -14,9 +14,9 @@ from .. import Backend
 
 class HttpBackend(Backend):
     """ Example interaction with the HTTP backend to make requests:
-        $ curl -XPOST -d "token=your_configured_token" \
-            -d 'msg={"type":"request","target":"volta","action":"tts.say","args": {"phrase":"This is a test"}}' \
-            http://localhost:8008 """
+        $ curl -XPOST -H 'Content-Type: application/json' -H "X-Token: your_token" \
+            -d '{"type":"request","target":"nodename","action":"tts.say","args": {"phrase":"This is a test"}}' \
+            http://localhost:8008/execute """
 
     def __init__(self, port=8008, token=None, **kwargs):
         super().__init__(**kwargs)
@@ -41,14 +41,13 @@ class HttpBackend(Backend):
 
         app = Flask(__name__)
 
-        @app.route('/', methods=['POST'])
+        @app.route('/execute', methods=['POST'])
         def index():
-            args = { k:v for (k,v) in request.form.items() }
+            args = json.loads(request.data.decode('utf-8'))
+            token = request.headers['X-Token'] if 'X-Token' in request.headers else None
+            if token != self.token: abort(401)
 
-            if self.token and ('token' not in args or args['token'] != self.token): abort(401)
-            if 'msg' not in args: abort(400)
-
-            msg = Message.build(args['msg'])
+            msg = Message.build(args)
             logging.info('Received message on the HTTP backend: {}'.format(msg))
 
             if isinstance(msg, Request):
