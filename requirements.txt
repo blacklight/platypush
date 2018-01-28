@@ -23,6 +23,9 @@ python-dateutil
 # RSS feeds support
 feedparser
 
+# PDF generation support
+weasyprint
+
 # Philips Hue plugin support
 phue
 

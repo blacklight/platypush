@@ -67,6 +67,7 @@ setup(
         'Support for HTTP poll backend': ['frozendict'],
         'Support for database plugin': ['sqlalchemy'],
         'Support for RSS feeds': ['feedparser'],
+        'Support for PDF generation': ['weasyprint'],
         'Support for Philips Hue plugin': ['phue'],
         'Support for MPD/Mopidy music server plugin': ['python-mpd2'],
         'Support for Belkin WeMo Switch plugin': ['ouimeaux'],
