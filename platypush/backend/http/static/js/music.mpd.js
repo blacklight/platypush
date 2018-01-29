@@ -112,9 +112,10 @@ $(document).ready(function() {
                     action: 'music.mpd.' + action,
                 },
 
+                onSuccess=undefined,
                 onComplete = function() {
                     $btn.removeAttr('disabled');
-                },
+                }
             );
         });
     };
