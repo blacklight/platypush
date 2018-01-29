@@ -4,7 +4,6 @@ import logging
 import json
 import os
 import time
-import websockets
 
 from threading import Thread
 from multiprocessing import Process
@@ -24,12 +23,14 @@ class HttpBackend(Backend):
             -d '{"type":"request","target":"nodename","action":"tts.say","args": {"phrase":"This is a test"}}' \
             http://localhost:8008/execute """
 
-    def __init__(self, port=8008, websocket_port=8009, token=None, **kwargs):
+    def __init__(self, port=8008, websocket_port=8009, disable_websocket=False,
+                 token=None, **kwargs):
         super().__init__(**kwargs)
         self.port = port
         self.websocket_port = websocket_port
         self.token = token
         self.server_proc = None
+        self.disable_websocket = disable_websocket
         self.websocket_thread = None
         self.active_websockets = set()
 
@@ -47,6 +48,8 @@ class HttpBackend(Backend):
 
 
     def notify_web_clients(self, event):
+        import websockets
+
         async def send_event(websocket):
             await websocket.send(str(event))
 
@@ -110,6 +113,8 @@ class HttpBackend(Backend):
 
 
     def websocket(self):
+        import websockets
+
         async def register_websocket(websocket, path):
             logging.info('New websocket connection from {}'.format(websocket.remote_address[0]))
             self.active_websockets.add(websocket)
@@ -139,13 +144,15 @@ class HttpBackend(Backend):
             'debug':True, 'host':'0.0.0.0', 'port':self.port, 'use_reloader':False
         })
 
-        self.websocket_thread = Thread(target=self.websocket)
         time.sleep(1)
 
         self.server_proc.start()
-        self.websocket_thread.start()
+
+        if not self.disable_websocket:
+            self.websocket_thread = Thread(target=self.websocket)
+            self.websocket_thread.start()
+
         self.server_proc.join()
-        self.websocket_thread.join()
 
 
 # vim:sw=4:ts=4:et:

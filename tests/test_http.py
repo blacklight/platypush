@@ -47,14 +47,12 @@ class TestHttp(unittest.TestCase):
                     on_timeout=self.on_timeout('Receiver response timed out'))
 
         response = requests.post(
-            u'http://localhost:8123/',
-            data  = {
-                'msg': json.dumps({
-                    'type': 'request',
-                    'target': Config.get('device_id'),
-                    'action': 'shell.exec',
-                    'args': { 'cmd':'echo ping' }
-                })
+            u'http://localhost:8123/execute',
+            json  = {
+                'type': 'request',
+                'target': Config.get('device_id'),
+                'action': 'shell.exec',
+                'args': { 'cmd':'echo ping' }
             }
         )
 
