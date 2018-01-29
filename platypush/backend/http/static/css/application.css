@@ -6,9 +6,9 @@ body {
 
 header {
     width: 100%;
-    background: rgba(230,230,220,1);
+    background: rgba(230,230,230,0.6);
     padding: 25px;
-    margin: -10px 10px 20px -10px;
+    margin: -10px 10px 30px -10px;
 }
 
 .logo {
@@ -45,7 +45,8 @@ main {
 
     .track-info {
         text-align: center;
-        margin-bottom: 15px;
+        margin: -20px -20px 15px -20px;
+        padding: 10px 20px;
     }
 
         .track-info > .artist {
