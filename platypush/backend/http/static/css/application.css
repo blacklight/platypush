@@ -6,9 +6,10 @@ body {
 
 header {
     width: 100%;
-    background: rgba(230,230,230,0.6);
+    background: #f4f5f6;
     padding: 25px;
-    margin: -10px 10px 30px -10px;
+    margin: -10px 10px 35px -10px;
+    border-bottom: 1px solid #e1e4e8;
 }
 
 .logo {
