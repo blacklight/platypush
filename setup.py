@@ -63,7 +63,7 @@ setup(
     extras_require = {
         'Support for Apache Kafka backend': ['kafka-python'],
         'Support for Pushbullet backend': ['requests', 'websocket-client'],
-        'Support for HTTP backend': ['flask'],
+        'Support for HTTP backend': ['flask','websockets'],
         'Support for HTTP poll backend': ['frozendict'],
         'Support for database plugin': ['sqlalchemy'],
         'Support for RSS feeds': ['feedparser'],

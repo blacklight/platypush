@@ -1,0 +1,47 @@
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+header {
+    width: 100%;
+    background: rgba(230,230,220,1);
+    padding: 25px;
+    margin: -10px 10px 20px -10px;
+}
+
+.logo {
+    font-size: 25px;
+}
+
+    .logo > .logo-1 {
+        font-weight: bold;
+    }
+
+main {
+    width: 80%;
+    margin: auto;
+}
+
+.tab-content {
+    border: 1px solid #bbb;
+    border-top: 0;
+    padding: 20px;
+    margin: -25px 0 auto 5px;
+}
+
+    .playback-controls {
+        text-align: right;
+    }
+
+    .button[disabled] {
+        background: rgba(240,240,240,1)
+    }
+
+
+    .now-playing > .artist {
+        font-weight: bold;
+        display: block;
+    }
+

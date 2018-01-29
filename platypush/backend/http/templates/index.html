@@ -1,0 +1,57 @@
+<!doctype html>
+<head>
+    <title>Platypush Web Console</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton-tabs.css') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/font-awesome.min.css') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/application.css') }}"></script>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/skeleton-tabs.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/application.js') }}"></script>
+    <script type="text/javascript">
+        window.websocket_port = {% print(websocket_port) %}
+
+        {% if token %}
+            window.token = {% print(token) %}
+        {% else %}
+            window.token = undefined
+        {% endif %}
+    </script>
+</head>
+
+<body>
+    <header>
+        <div class="logo">
+            <span class="logo-1">Platypush</span>
+            <span class="logo-2">Web Panel</span>
+        </div>
+    </header>
+
+    <main>
+        <ul class="tab-nav">
+            {% set first_plugin = True %}
+            {% for plugin in plugins.keys() %}
+                <li>
+                    <a class="button {% print('active' if first_plugin else '') %}" href="#{% print plugin %}">
+                        {% print plugin %}
+                    </a>
+                </li>
+                {% set first_plugin = False %}
+            {% endfor %}
+        </ul>
+
+        <div class="tab-content">
+            {% set first_plugin = True %}
+            {% for plugin, configuration in plugins.items() %}
+                <div class="tab-pane {% print('active' if first_plugin else '') %}" id="{% print plugin %}">
+                    {% include 'plugins/' + plugin + '.html' %}
+                </div>
+                {% set first_plugin = False %}
+            {% endfor %}
+        </div>
+    </main>
+<body>
+

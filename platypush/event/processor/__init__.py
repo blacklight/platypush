@@ -4,6 +4,7 @@ import sys
 from ..hook import EventHook
 
 from platypush.config import Config
+from platypush.context import get_backend
 
 
 class EventProcessor(object):
@@ -24,9 +25,18 @@ class EventProcessor(object):
             self.hooks.append(h)
 
 
+    def notify_web_clients(self, event):
+        backends = Config.get_backends()
+        if 'http' not in backends: return
+
+        backend = get_backend('http')
+        backend.notify_web_clients(event)
+
+
     def process_event(self, event):
         """ Processes an event and runs the matched hooks with the highest score """
 
+        self.notify_web_clients(event)
         matched_hooks = set(); priority_hooks = set()
         max_score = -sys.maxsize; max_prio = 0
 
