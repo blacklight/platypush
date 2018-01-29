@@ -24,24 +24,32 @@ main {
     margin: auto;
 }
 
+    ul.tab-nav {
+        padding-left: 0 !important;  /* Override skeleton-tabs default */
+    }
+
 .tab-content {
     border: 1px solid #bbb;
     border-top: 0;
     padding: 20px;
-    margin: -25px 0 auto 5px;
+    margin-top: -25px;
 }
 
     .playback-controls {
-        text-align: right;
+        text-align: center;
     }
 
     .button[disabled] {
         background: rgba(240,240,240,1)
     }
 
-
-    .now-playing > .artist {
-        font-weight: bold;
-        display: block;
+    .track-info {
+        text-align: center;
+        margin-bottom: 15px;
     }
+
+        .track-info > .artist {
+            font-weight: bold;
+            display: block;
+        }
 

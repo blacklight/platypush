@@ -1,32 +1,34 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/music.mpd.js') }}"></script>
 
 <div class="row">
-    <div class="six columns now-playing">
+    <div class="ten columns offset-by-one track-info">
         <span class="no-track">No media is being played</span>
         <span class="artist"></span>
         <span class="track"></span>
     </div>
 
-    <div class="six columns playback-controls">
-        <button data-action="previous">
-            <i class="fa fa-step-backward"></i>
-        </button>
+    <div class="row">
+        <div class="eight columns offset-by-two playback-controls">
+            <button data-action="previous">
+                <i class="fa fa-step-backward"></i>
+            </button>
 
-        <button data-action="play">
-            <i class="fa fa-play"></i>
-        </button>
+            <button data-action="play">
+                <i class="fa fa-play"></i>
+            </button>
 
-        <button data-action="pause">
-            <i class="fa fa-pause"></i>
-        </button>
+            <button data-action="pause">
+                <i class="fa fa-pause"></i>
+            </button>
 
-        <button data-action="stop">
-            <i class="fa fa-stop"></i>
-        </button>
+            <button data-action="stop">
+                <i class="fa fa-stop"></i>
+            </button>
 
-        <button data-action="next">
-            <i class="fa fa-step-forward"></i>
-        </button>
+            <button data-action="next">
+                <i class="fa fa-step-forward"></i>
+            </button>
+        </div>
     </div>
 </div>
 

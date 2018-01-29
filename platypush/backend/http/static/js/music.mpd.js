@@ -27,7 +27,7 @@ $(document).ready(function() {
 
     var updateControls = function(status, track) {
         var $playbackControls = $('.playback-controls');
-        var $curTrack = $('.now-playing');
+        var $curTrack = $('.track-info');
 
         if (status) {
             switch (status.state.toLowerCase()) {
