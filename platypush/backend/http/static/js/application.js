@@ -3,7 +3,7 @@ $(document).ready(function() {
     var eventListeners = [];
 
     var initWebsocket = function() {
-        websocket = new WebSocket('ws://localhost:' + window.websocket_port);
+        websocket = new WebSocket('ws://' + window.location.hostname + ':' + window.websocket_port);
         websocket.onmessage = function(event) {
             for (var listener of eventListeners) {
                 data = event.data;

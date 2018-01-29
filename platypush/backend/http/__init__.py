@@ -124,7 +124,7 @@ class HttpBackend(Backend):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(
-            websockets.serve(register_websocket, 'localhost', self.websocket_port))
+            websockets.serve(register_websocket, '0.0.0.0', self.websocket_port))
         loop.run_forever()
 
 
