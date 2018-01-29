@@ -41,6 +41,7 @@ setup(
     keywords = "pushbullet notifications automation",
     url = "https://github.com/BlackLight/platypush",
     packages = find_packages(),
+    include_package_data = True,
     entry_points = {
         'console_scripts': [
             'platypush=platypush:main',
