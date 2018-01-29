@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import logging
 import json
 import os
@@ -63,8 +64,9 @@ class HttpBackend(Backend):
 
 
     def webserver(self):
-        template_dir = os.path.join(os.getcwd(),'platypush','backend','http','templates')
-        static_dir = os.path.join(os.getcwd(),'platypush','backend','http','static')
+        basedir = os.path.dirname(inspect.getfile(self.__class__))
+        template_dir = os.path.join(basedir, 'templates')
+        static_dir = os.path.join(basedir, 'static')
         app = Flask(__name__, template_folder=template_dir)
 
         @app.route('/execute', methods=['POST'])
