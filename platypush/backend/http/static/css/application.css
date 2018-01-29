@@ -1,14 +1,13 @@
 body {
     width: 100%;
-    height: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 header {
     width: 100%;
     background: #f4f5f6;
     padding: 25px;
-    margin: -10px 10px 35px -10px;
+    margin: 0px 10px 35px -10px;
     border-bottom: 1px solid #e1e4e8;
 }
 
@@ -20,8 +19,21 @@ header {
         font-weight: bold;
     }
 
+#date-time {
+    text-align: right;
+    padding-right: 30px;
+}
+
+    #date-time > .date {
+        color: #666;
+    }
+
+    #date-time > .time {
+        font-weight: bold;
+    }
+
 main {
-    width: 80%;
+    width: 95%;
     margin: auto;
 }
 
@@ -34,10 +46,13 @@ main {
     border-top: 0;
     padding: 20px;
     margin-top: -25px;
+    border-radius: 0 0 7.5px 7.5px;
 }
 
     .playback-controls {
         text-align: center;
+        border-bottom: 1px solid #e8eaf0;
+        padding-bottom: 12px;
     }
 
     .button[disabled] {
@@ -46,12 +61,37 @@ main {
 
     .track-info {
         text-align: center;
-        margin: -20px -20px 15px -20px;
+        margin: -20px -20px 0 -20px;
         padding: 10px 20px;
     }
 
         .track-info > .artist {
             font-weight: bold;
             display: block;
+        }
+
+#playlist-content {
+    margin-left: 0;
+    width: 78%;
+}
+
+.music-pane {
+    height: 360px;
+    overflow-y: scroll;
+    padding: 15px 15px 0 5px;
+    background: #f8f8f8;
+}
+
+    .music-item {
+        padding: 5px;
+    }
+
+        .music-item:nth-child(odd) {
+            background-color: #f2f2f2;
+        }
+
+        .playlist-track > .track-time {
+            text-align: right;
+            color: #666;
         }
 

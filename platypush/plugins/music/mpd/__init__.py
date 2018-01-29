@@ -86,6 +86,16 @@ class MusicMpdPlugin(MusicPlugin):
     def currentsong(self):
         return Response(output=self.client.currentsong())
 
+    def playlistinfo(self):
+        return Response(output=self.client.playlistinfo())
+
+    def listplaylists(self):
+        return Response(output=sorted(self.client.listplaylists(),
+                                      key=lambda p: p['playlist']))
+
+    def lsinfo(self):
+        return Response(output=self.client.lsinfo())
+
 
 # vim:sw=4:ts=4:et:
 
