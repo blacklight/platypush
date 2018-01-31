@@ -9,7 +9,9 @@
 <div class="playback-controls">
     <div class="row">
         <div class="six columns offset-by-three slider-container" id="track-seeker-container">
-            <input type="range" min="0" id="track-seeker" disabled="disabled" class="slider">
+            <span class="seek-time" id="seek-time-elapsed">-:--</span> &nbsp;
+            <input type="range" min="0" id="track-seeker" disabled="disabled" class="slider" style="width:80%">
+            &nbsp; <span class="seek-time" id="seek-time-length">-:--</span>
         </div>
     </div>
 

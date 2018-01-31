@@ -55,6 +55,10 @@ main {
         padding-bottom: 12px;
     }
 
+        .playback-controls * > button.enabled {
+            color: #59df3e;
+        }
+
     .button[disabled] {
         background: rgba(240,240,240,1)
     }
@@ -96,7 +100,7 @@ main {
         }
 
 #track-seeker-container {
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 #volume-ctrl-container {

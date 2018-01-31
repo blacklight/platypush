@@ -86,6 +86,9 @@ class MusicMpdPlugin(MusicPlugin):
     def clear(self):
         return self._exec('clear')
 
+    def seekcur(self, value):
+        return self._exec('seekcur', value)
+
     def forward(self):
         return self._exec('seekcur', '+15')
 
