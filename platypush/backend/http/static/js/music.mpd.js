@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    var execute = function(request, onSuccess, onComplete) {
+    var execute = function(request, onSuccess, onError, onComplete) {
         request['target'] = 'localhost';
         $.ajax({
             type: 'POST',
@@ -10,6 +10,11 @@ $(document).ready(function() {
             complete: function() {
                 if (onComplete) {
                     onComplete();
+                }
+            },
+            error: function(xhr, status, error) {
+                if (onError) {
+                    onError(xhr, status, error);
                 }
             },
             success: function(response, status, xhr) {
@@ -28,6 +33,7 @@ $(document).ready(function() {
     var updateControls = function(status, track) {
         var $playbackControls = $('.playback-controls');
         var $curTrack = $('.track-info');
+        var $volumeCtrl = $('#volume-ctrl');
 
         if (status) {
             switch (status.state.toLowerCase()) {
@@ -52,6 +58,11 @@ $(document).ready(function() {
                     $curTrack.find('.track').show();
                     $curTrack.find('.no-track').hide();
                     break;
+            }
+
+            if ('volume' in status) {
+                var volume = parseInt(status.volume);
+                $volumeCtrl.val(volume);
             }
         }
 
@@ -183,6 +194,8 @@ $(document).ready(function() {
     var initBindings = function() {
         window.registerEventListener(onEvent);
         var $playbackControls = $('.playback-controls').find('button');
+        var $volumeCtrl = $('#volume-ctrl');
+        var prevVolume;
 
         $playbackControls.on('click', function(evt) {
             var action = $(this).data('action');
@@ -196,8 +209,28 @@ $(document).ready(function() {
                 },
 
                 onSuccess=undefined,
+                onError=undefined,
                 onComplete = function() {
                     $btn.removeAttr('disabled');
+                }
+            );
+        });
+
+        $volumeCtrl.on('mousedown', function(event) {
+            prevVolume = $(this).val();
+        });
+
+        $volumeCtrl.on('mouseup', function(event) {
+            execute(
+                {
+                    type: 'request',
+                    action: 'music.mpd.setvol',
+                    args: { vol: $(this).val() }
+                },
+
+                onSuccess=undefined,
+                onError = function() {
+                    $volumeCtrl.val(prevVolume);
                 }
             );
         });

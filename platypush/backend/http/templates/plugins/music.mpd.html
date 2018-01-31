@@ -6,27 +6,51 @@
     <span class="track"></span>
 </div>
 
-<div class="row playback-controls">
-    <div class="eight columns offset-by-two">
-        <button data-action="previous">
-            <i class="fa fa-step-backward"></i>
-        </button>
+<div class="playback-controls">
+    <div class="row">
+        <div class="six columns offset-by-three slider-container" id="track-seeker-container">
+            <input type="range" min="0" id="track-seeker" disabled="disabled" class="slider">
+        </div>
+    </div>
 
-        <button data-action="play">
-            <i class="fa fa-play"></i>
-        </button>
+    <div class="row">
+        <div class="eight columns offset-by-two">
+            <button data-action="previous">
+                <i class="fa fa-step-backward"></i>
+            </button>
 
-        <button data-action="pause">
-            <i class="fa fa-pause"></i>
-        </button>
+            <button data-action="repeat">
+                <i class="fa fa-repeat"></i>
+            </button>
 
-        <button data-action="stop">
-            <i class="fa fa-stop"></i>
-        </button>
+            <button data-action="play">
+                <i class="fa fa-play"></i>
+            </button>
 
-        <button data-action="next">
-            <i class="fa fa-step-forward"></i>
-        </button>
+            <button data-action="pause">
+                <i class="fa fa-pause"></i>
+            </button>
+
+            <button data-action="stop">
+                <i class="fa fa-stop"></i>
+            </button>
+
+            <button data-action="random">
+                <i class="fa fa-random"></i>
+            </button>
+
+            <button data-action="next">
+                <i class="fa fa-step-forward"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="six columns offset-by-three slider-container" id="volume-ctrl-container">
+            <i class="fa fa-volume-down"></i> &nbsp;
+            <input type="range" min="0" max="100" id="volume-ctrl" class="slider" style="width:90%">
+            &nbsp; <i class="fa fa-volume-up"></i>
+        </div>
     </div>
 </div>
 

@@ -123,7 +123,7 @@ class HttpBackend(Backend):
                 try:
                     waiter = await websocket.ping()
                     await asyncio.wait_for(waiter, timeout=5)
-                    time.sleep(0.1)
+                    time.sleep(1)
                 except (asyncio.TimeoutError, websockets.exceptions.ConnectionClosed) as e:
                     logging.info('Client {} closed connection'.format(websocket.remote_address[0]))
                     self.active_websockets.remove(websocket)

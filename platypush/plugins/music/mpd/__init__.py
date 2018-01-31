@@ -64,6 +64,18 @@ class MusicMpdPlugin(MusicPlugin):
             self.setvol(str(new_volume))
         return self.status()
 
+    def random(self, value=None):
+        if value is None:
+            value = int(self.status().output['random'])
+            value = 1 if value == 0 else 0
+        self.client.random(value)
+
+    def repeat(self, value=None):
+        if value is None:
+            value = int(self.status().output['repeat'])
+            value = 1 if value == 0 else 0
+        self.client.repeat(value)
+
     def add(self, resource):
         return self._exec('add', resource)
 
