@@ -68,13 +68,13 @@ class MusicMpdPlugin(MusicPlugin):
         if value is None:
             value = int(self.status().output['random'])
             value = 1 if value == 0 else 0
-        self.client.random(value)
+        return self._exec('random', value)
 
     def repeat(self, value=None):
         if value is None:
             value = int(self.status().output['repeat'])
             value = 1 if value == 0 else 0
-        self.client.repeat(value)
+        return self._exec('repeat', value)
 
     def add(self, resource):
         return self._exec('add', resource)
