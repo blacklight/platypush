@@ -41,6 +41,9 @@ class MusicMpdPlugin(MusicPlugin):
         if status == 'play': return self._exec('stop')
         else: return self._exec('play')
 
+    def playid(self, track_id):
+        return self._exec('playid', track_id)
+
     def next(self):
         return self._exec('next')
 
@@ -110,6 +113,9 @@ class MusicMpdPlugin(MusicPlugin):
 
     def lsinfo(self):
         return Response(output=self.client.lsinfo())
+
+    def plchanges(self, version):
+        return Response(output=self.client.plchanges(version))
 
 
 # vim:sw=4:ts=4:et:

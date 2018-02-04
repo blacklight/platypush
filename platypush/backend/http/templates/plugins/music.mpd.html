@@ -50,14 +50,25 @@
     <div class="row">
         <div class="eight columns offset-by-two slider-container" id="volume-ctrl-container">
             <i class="fa fa-volume-down"></i> &nbsp;
-            <input type="range" min="0" max="100" id="volume-ctrl" class="slider" style="width:90%">
+            <input type="range" min="0" max="100" id="volume-ctrl" class="slider" style="width:80%">
             &nbsp; <i class="fa fa-volume-up"></i>
         </div>
     </div>
 </div>
 
 <div class="row">
-    <div id="music-browser" class="three columns music-pane"></div>
-    <div id="playlist-content" class="nine columns music-pane"></div>
+    <div id="player-left-side" class="three columns music-pane">
+        <div id="music-browser" class="music-pane"></div>
+    </div>
+    <div id="player-right-side" class="nine columns music-pane">
+        <div class="row">
+            <div id="playlist-controls">
+                <button data-action="clear">
+                    <i class="fa fa-eraser"></i>
+                </button>
+            </div>
+            <div id="playlist-content"></div>
+        </div>
+    </div>
 </div>
 

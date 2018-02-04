@@ -23,6 +23,11 @@ class MusicPauseEvent(MusicEvent):
         super().__init__(*args, **kwargs)
 
 
+class PlaylistChangeEvent(MusicEvent):
+    def __init__(self, changes, status=None, track=None, *args, **kwargs):
+        super().__init__(changes=changes, status=status, track=track, *args, **kwargs)
+
+
 class NewPlayingTrackEvent(MusicEvent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

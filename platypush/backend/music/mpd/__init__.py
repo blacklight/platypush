@@ -4,8 +4,8 @@ import time
 
 from platypush.backend import Backend
 from platypush.context import get_plugin
-from platypush.message.event.music import \
-    MusicPlayEvent, MusicPauseEvent, MusicStopEvent, NewPlayingTrackEvent
+from platypush.message.event.music import MusicPlayEvent, MusicPauseEvent, \
+    MusicStopEvent, NewPlayingTrackEvent, PlaylistChangeEvent
 
 
 class MusicMpdBackend(Backend):
@@ -27,11 +27,13 @@ class MusicMpdBackend(Backend):
         plugin = get_plugin('music.mpd')
         last_state = None
         last_track = None
+        last_playlist = None
 
         while not self.should_stop():
             status = plugin.status().output
-            state = status['state'].lower()
             track = plugin.currentsong().output
+            state = status['state'].lower()
+            playlist = status['playlist']
 
             if state != last_state:
                 if state == 'stop':
@@ -40,6 +42,12 @@ class MusicMpdBackend(Backend):
                     self.bus.post(MusicPauseEvent(status=status, track=track))
                 elif state == 'play':
                     self.bus.post(MusicPlayEvent(status=status, track=track))
+
+            if playlist != last_playlist:
+                if last_playlist:
+                    changes = plugin.plchanges(last_playlist).output
+                    self.bus.post(PlaylistChangeEvent(changes=changes))
+                last_playlist = playlist
 
             if 'title' in track and ('artist' not in track
                                         or not track['artist']
