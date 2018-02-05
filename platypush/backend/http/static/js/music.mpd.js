@@ -1,6 +1,7 @@
 $(document).ready(function() {
     var seekInterval,
-        trackLongPressTimeout,
+        longPressTimeout,
+        curPath = [],
         curTrackUpdateHandler,
         curTrackElapsed = {
             timestamp: null,
@@ -212,16 +213,16 @@ $(document).ready(function() {
 
     var onTrackTouchDown = function(event) {
         var $track = $(this);
-        trackLongPressTimeout = setTimeout(function() {
+        longPressTimeout = setTimeout(function() {
             $track.addClass('selected');
-            clearTimeout(trackLongPressTimeout);
-            trackLongPressTimeout = undefined;
+            clearTimeout(longPressTimeout);
+            longPressTimeout = undefined;
         }, 1000);
     };
 
     var onTrackTouchUp = function(event) {
         var $track = $(this);
-        if (trackLongPressTimeout) {
+        if (longPressTimeout) {
             execute({
                 type: 'request',
                 action: 'music.mpd.playid',
@@ -229,8 +230,8 @@ $(document).ready(function() {
             });
         }
 
-        clearTimeout(trackLongPressTimeout);
-        trackLongPressTimeout = undefined;
+        clearTimeout(longPressTimeout);
+        longPressTimeout = undefined;
     };
 
     var updatePlaylist = function(tracks) {
@@ -288,6 +289,192 @@ $(document).ready(function() {
         );
     };
 
+    var onPlaylistTouchDown = function(event) {
+        var $playlist = $(this);
+        $playlist.addClass('selected');
+
+        longPressTimeout = setTimeout(function() {
+            clearTimeout(longPressTimeout);
+            longPressTimeout = undefined;
+        }, 1000);
+    };
+
+    var onPlaylistTouchUp = function(event) {
+        var $playlist = $(this);
+        if (longPressTimeout) {
+            execute(
+                {
+                    type: 'request',
+                    action: 'music.mpd.clear'
+                },
+
+                onSuccess = function() {
+                    execute(
+                        {
+                            type: 'request',
+                            action: 'music.mpd.load',
+                            args: { playlist: $playlist.data('name') }
+                        }
+                    );
+                }
+            );
+        }
+
+        clearTimeout(longPressTimeout);
+        longPressTimeout = undefined;
+    };
+
+    var onFileTouchDown = function(event) {
+        var $file = $(this);
+        $file.addClass('selected');
+
+        longPressTimeout = setTimeout(function() {
+            clearTimeout(longPressTimeout);
+            longPressTimeout = undefined;
+        }, 1000);
+    };
+
+    var onFileTouchUp = function(event) {
+        var $file = $(this);
+        if (longPressTimeout) {
+            execute(
+                {
+                    type: 'request',
+                    action: 'music.mpd.playlistinfo'
+                },
+
+                onSuccess = function(response) {
+                    var pos = 0;
+                    if (response.response.output.length > 0) {
+                        pos = parseInt(response.response.output.slice(-1)[0].pos) + 1;
+                    }
+
+                    execute(
+                        {
+                            type: 'request',
+                            action: 'music.mpd.add',
+                            args: { resource: $file.data('file') }
+                        },
+
+                        onSuccess = function() {
+                            execute(
+                                {
+                                    type: 'request',
+                                    action: 'music.mpd.play_pos',
+                                    args: { pos: pos }
+                                }
+                            );
+                        }
+                    )
+                }
+            );
+
+            $file.removeClass('selected');
+        }
+
+        clearTimeout(longPressTimeout);
+        longPressTimeout = undefined;
+    };
+
+    var onDirectorySelect = function(event) {
+        var $directory = $(this);
+        execute(
+            {
+                type: 'request',
+                action: 'music.mpd.lsinfo',
+                args: { uri: $directory.data('name') }
+            },
+
+            onSuccess = function(response) {
+                curPath = $directory.data('name').split('/')
+                    .filter(function(term) { return term.length > 0 });
+
+                updateBrowser(response.response.output);
+            }
+        );
+    };
+
+    var updateBrowser = function(items) {
+        var $browserContent = $('#music-browser');
+        var $addButton = $('#browser-controls').find('button[data-action="add"]');
+        var directories = [];
+        var playlists = [];
+        var files = [];
+
+        $browserContent.find('.music-item').remove();
+
+        for (var item of items) {
+            if ('directory' in item) {
+                directories.push(item.directory);
+            } else if ('playlist' in item) {
+                playlists.push(item.playlist);
+            } else if ('file' in item) {
+                files.push(item);
+            }
+        }
+
+        if (curPath.length > 0) {
+            var $parentElement = $('<div></div>')
+                .addClass('browser-directory').addClass('music-item')
+                .addClass('browser-item').addClass('row').data('name', curPath.slice(0, -1).join('/'))
+                .html('<i class="fa fa-folder-open-o"></i> &nbsp; ..');
+
+            $parentElement.on('click touch', onDirectorySelect);
+            $parentElement.appendTo($browserContent);
+            $addButton.removeAttr('disabled');
+        } else {
+            $addButton.attr('disabled', 'disabled');
+        }
+
+        for (var directory of directories.sort()) {
+            var $element = $('<div></div>')
+                .addClass('browser-directory').addClass('music-item')
+                .addClass('browser-item').addClass('row').data('name', directory)
+                .html('<i class="fa fa-folder-open-o"></i> &nbsp; ' + directory.split('/').slice(-1)[0]);
+
+            $element.on('click touch', onDirectorySelect);
+            $element.appendTo($browserContent);
+        }
+
+        for (var playlist of playlists.sort()) {
+            var $element = $('<div></div>')
+                .addClass('browser-playlist').addClass('music-item')
+                .addClass('browser-item').addClass('row').data('name', playlist)
+                .html('<i class="fa fa-list"></i> &nbsp; ' + playlist);
+
+            $element.on('mousedown touchstart', onPlaylistTouchDown);
+            $element.on('mouseup touchend', onPlaylistTouchUp);
+            $element.appendTo($browserContent);
+        }
+
+        files = files.sort(function(a, b) {
+            if (a.artist === b.artist) {
+                if (a.album === b.album) {
+                    return parseInt(a.track) < parseInt(b.track) ? -1 : 1;
+                } else {
+                    return a.album.localeCompare(b.album);
+                }
+            } else {
+                return a.artist.localeCompare(b.artist);
+            }
+        });
+
+        for (var file of files) {
+            var $element = $('<div></div>')
+                .addClass('browser-file').addClass('music-item')
+                .addClass('browser-item').addClass('row')
+                .html('<i class="fa fa-music"></i> &nbsp; ' + file.title);
+
+            for (var prop of Object.keys(file)) {
+                $element.data(prop, file[prop]);
+            }
+
+            $element.on('mousedown touchstart', onFileTouchDown);
+            $element.on('mouseup touchend', onFileTouchUp);
+            $element.appendTo($browserContent);
+        }
+    };
+
     var initBrowser = function() {
         execute(
             {
@@ -296,36 +483,7 @@ $(document).ready(function() {
             },
 
             onSuccess = function(response) {
-                var $browserContent = $('#music-browser');
-                var items = response.response.output;
-                var directories = [];
-                var playlists = [];
-
-                for (var item of items) {
-                    if ('directory' in item) {
-                        directories.push(item.directory);
-                    } else if ('playlist' in item) {
-                        playlists.push(item.playlist);
-                    }
-                }
-
-                for (var directory of directories.sort()) {
-                    var $element = $('<div></div>')
-                        .addClass('browser-directory').addClass('music-item')
-                        .addClass('browser-item').addClass('row')
-                        .html('<i class="fa fa-folder-open-o"></i> &nbsp; ' + directory);
-
-                    $element.appendTo($browserContent);
-                }
-
-                for (var playlist of playlists.sort()) {
-                    var $element = $('<div></div>')
-                        .addClass('browser-playlist').addClass('music-item')
-                        .addClass('browser-item').addClass('row')
-                        .html('<i class="fa fa-music"></i> &nbsp; ' + playlist);
-
-                    $element.appendTo($browserContent);
-                }
+                updateBrowser(response.response.output);
             }
         );
     };
@@ -334,6 +492,7 @@ $(document).ready(function() {
         window.registerEventListener(onEvent);
         var $playbackControls = $('.playback-controls, #playlist-controls').find('button');
         var $playlistContent = $('#playlist-content');
+        var $browserAddBtn = $('#browser-controls').find('button[data-action="add"]');
         var $volumeCtrl = $('#volume-ctrl');
         var $trackSeeker = $('#track-seeker');
         var prevVolume;
@@ -407,6 +566,26 @@ $(document).ready(function() {
                     curTrackElapsed.elapsed = elapsed;
                 }
             );
+        });
+
+        $browserAddBtn.on('click touch', function(event) {
+            var $browserContent = $('#music-browser');
+            var $items = $browserContent.find('.music-item').slice(1, -1);
+            var $selectedItems = $browserContent.find('.music-item.selected');
+
+            if ($selectedItems.length == 0) {
+                $selectedItems = $items;
+            }
+
+            for (var item of $selectedItems) {
+                execute(
+                    {
+                        type: 'request',
+                        action: 'music.mpd.add',
+                        args: { resource: $(item).data('file') }
+                    },
+                );
+            }
         });
     };
 

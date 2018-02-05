@@ -28,6 +28,9 @@ class MusicMpdPlugin(MusicPlugin):
             self.add(resource)
         return self._exec('play')
 
+    def play_pos(self, pos):
+        return self._exec('play', pos)
+
     def pause(self):
         status = self.status().output['state']
         if status == 'play': return self._exec('pause')
@@ -111,8 +114,9 @@ class MusicMpdPlugin(MusicPlugin):
         return Response(output=sorted(self.client.listplaylists(),
                                       key=lambda p: p['playlist']))
 
-    def lsinfo(self):
-        return Response(output=self.client.lsinfo())
+    def lsinfo(self, uri=None):
+        output = self.client.lsinfo(uri) if uri else self.client.lsinfo()
+        return Response(output=output)
 
     def plchanges(self, version):
         return Response(output=self.client.plchanges(version))

@@ -49,6 +49,11 @@ main {
     border-radius: 0 0 7.5px 7.5px;
 }
 
+button[disabled] {
+    color: #bbb;
+    border: 1px solid;
+}
+
     .playback-controls {
         text-align: center;
         border-bottom: 1px solid #e8eaf0;
@@ -83,22 +88,24 @@ main {
     width: 78%;
 }
 
-#playlist-controls {
-    text-align: right;
+#playlist-controls, #browser-controls {
     margin-bottom: 7.5px;
     padding-bottom: 7.5px;
     border-bottom: 1px solid #ddd;
     height: 3.8rem;
 }
 
-#playlist-content {
+#playlist-controls {
+    text-align: right;
+}
+
+#playlist-content, #music-browser {
     height: 32.2rem;
     overflow-y: scroll;
 }
 
 #music-browser {
     padding-top: 0;
-    overflow-y: scroll;
 }
 
 .music-pane {
@@ -109,14 +116,19 @@ main {
 
     .music-item {
         padding: 5px;
+        cursor: pointer;
     }
+
+        .music-item.selected {
+            background-color: #c8ffd0 !important;
+        }
+
+        .music-item:hover {
+            background-color: #daf8e2 !important;
+        }
 
         .music-item:nth-child(odd) {
             background-color: #f2f2f2;
-        }
-
-        .playlist-track {
-            cursor: pointer;
         }
 
             .playlist-track.active {
