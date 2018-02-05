@@ -583,7 +583,7 @@ $(document).ready(function() {
                         type: 'request',
                         action: 'music.mpd.add',
                         args: { resource: $(item).data('file') }
-                    },
+                    }
                 );
             }
         });
