@@ -1,7 +1,8 @@
 $(document).ready(function() {
-    var websocket;
-    var dateTimeInterval;
-    var eventListeners = [];
+    var websocket,
+        dateTimeInterval,
+        websocketReconnectTimeout,
+        eventListeners = [];
 
     var initWebsocket = function() {
         websocket = new WebSocket('ws://' + window.location.hostname + ':' + window.websocket_port);
@@ -14,6 +15,17 @@ $(document).ready(function() {
 
                 listener(data);
             }
+        };
+
+        websocket.onerror = function(event) {
+            console.error(event);
+        };
+
+        websocket.onclose = function(event) {
+            console.log('Websocket closed, code: ' + event.code);
+            websocketReconnectTimeout = setTimeout(function() {
+                initWebsocket();
+            }, 5000);
         };
     };
 
