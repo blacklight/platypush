@@ -17,6 +17,10 @@ $(document).ready(function() {
             }
         };
 
+        websocket.onopen = function(event) {
+            console.log('Websocket connection successful');
+        };
+
         websocket.onerror = function(event) {
             console.error(event);
         };
