@@ -23,6 +23,8 @@ class HttpBackend(Backend):
             -d '{"type":"request","target":"nodename","action":"tts.say","args": {"phrase":"This is a test"}}' \
             http://localhost:8008/execute """
 
+    websocket_ping_tries = 3
+
     def __init__(self, port=8008, websocket_port=8009, disable_websocket=False,
                  token=None, **kwargs):
         super().__init__(**kwargs)
@@ -117,17 +119,29 @@ class HttpBackend(Backend):
 
         async def register_websocket(websocket, path):
             logging.info('New websocket connection from {}'.format(websocket.remote_address[0]))
+            websocket.remaining_ping_tries = self.websocket_ping_tries
             self.active_websockets.add(websocket)
 
             while True:
                 try:
                     waiter = await websocket.ping()
-                    await asyncio.wait_for(waiter, timeout=5)
-                    time.sleep(5)
+                    await asyncio.wait_for(waiter, timeout=3)
+                    time.sleep(3)
                 except (asyncio.TimeoutError, websockets.exceptions.ConnectionClosed) as e:
-                    logging.info('Client {} closed connection'.format(websocket.remote_address[0]))
-                    self.active_websockets.remove(websocket)
-                    break
+                    close = False
+                    if isinstance(e, asyncio.TimeoutError):
+                        websocket.remaining_ping_tries -= 1
+                        if websocket.remaining_ping_tries <= 0:
+                            close = True
+                    else:
+                        close = True
+
+                    if close:
+                        logging.info('Websocket client {} closed connection'
+                                     .format(websocket.remote_address[0]))
+
+                        self.active_websockets.remove(websocket)
+                        break
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)

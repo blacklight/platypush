@@ -242,6 +242,7 @@ $(document).ready(function() {
             var $element = $('<div></div>')
                 .addClass('playlist-track')
                 .addClass('row').addClass('music-item')
+                .data('name', (track.artist || '') + ' ' + (track.title || ''))
                 .data('track-id', parseInt(track.id))
                 .data('pos', parseInt(track.pos))
                 .data('file', track.file);
@@ -396,12 +397,14 @@ $(document).ready(function() {
 
     var updateBrowser = function(items) {
         var $browserContent = $('#music-browser');
+        var $browserFilter = $('#browser-filter');
         var $addButton = $('#browser-controls').find('button[data-action="add"]');
         var directories = [];
         var playlists = [];
         var files = [];
 
         $browserContent.find('.music-item').remove();
+        $browserFilter.text('');
 
         for (var item of items) {
             if ('directory' in item) {
@@ -492,6 +495,9 @@ $(document).ready(function() {
         window.registerEventListener(onEvent);
         var $playbackControls = $('.playback-controls, #playlist-controls').find('button');
         var $playlistContent = $('#playlist-content');
+        var $playlistFilter = $('#playlist-filter');
+        var $browserContent = $('#music-browser');
+        var $browserFilter = $('#browser-filter');
         var $browserAddBtn = $('#browser-controls').find('button[data-action="add"]');
         var $volumeCtrl = $('#volume-ctrl');
         var $trackSeeker = $('#track-seeker');
@@ -569,7 +575,6 @@ $(document).ready(function() {
         });
 
         $browserAddBtn.on('click touch', function(event) {
-            var $browserContent = $('#music-browser');
             var $items = $browserContent.find('.music-item').slice(1, -1);
             var $selectedItems = $browserContent.find('.music-item.selected');
 
@@ -586,6 +591,30 @@ $(document).ready(function() {
                     }
                 );
             }
+        });
+
+        $browserFilter.on('keyup', function(event) {
+            var filterText = $(this).val().trim().toLowerCase();
+            var $browserItems = $browserContent.find('.browser-item');
+            $browserItems.hide();
+
+            var matchedItems = $.grep($browserItems, function(item) {
+                return $(item).data('name').toLowerCase().indexOf(filterText) >= 0;
+            });
+
+            $(matchedItems).show();
+        });
+
+        $playlistFilter.on('keyup', function(event) {
+            var filterText = $(this).val().trim().toLowerCase();
+            var $playlistItems = $playlistContent.find('.playlist-track');
+            $playlistItems.hide();
+
+            var matchedItems = $.grep($playlistItems, function(item) {
+                return $(item).data('name').toLowerCase().indexOf(filterText) >= 0;
+            });
+
+            $(matchedItems).show();
         });
     };
 

@@ -100,12 +100,26 @@ button[disabled] {
 }
 
 #playlist-content, #music-browser {
-    height: 32.2rem;
+    height: 27.2rem;
     overflow-y: scroll;
 }
 
 #music-browser {
     padding-top: 0;
+}
+
+#browser-filter {
+    width: 95%;
+    margin-bottom: 1.5rem;
+}
+
+#playlist-filter-container {
+    height: 5rem;
+}
+
+#playlist-filter {
+    width: 100%;
+    margin-bottom: 1.5rem;
 }
 
 .music-pane {
