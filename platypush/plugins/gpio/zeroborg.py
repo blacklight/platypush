@@ -217,9 +217,8 @@ Command codes can be found at the top of ZeroBorg.py, data is a list of 0 or mor
 
 Under most circumstances you should use the appropriate function instead of RawWrite
         """
-        rawOutput = chr(command)
-        for singleByte in data:
-            rawOutput += chr(singleByte)
+        rawOutput = bytes([command])
+        if data: rawOutput += bytes(data)
         self.i2cWrite.write(rawOutput)
 
 
@@ -240,7 +239,7 @@ Under most circumstances you should use the appropriate function instead of RawR
             rawReply = self.i2cRead.read(length)
             reply = []
             for singleByte in rawReply:
-                reply.append(ord(singleByte))
+                reply.append(singleByte)
             if command == reply[0]:
                 break
             else:
