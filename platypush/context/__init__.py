@@ -61,7 +61,7 @@ def get_plugin(plugin_name, reload=False):
 
     try:
         plugin = importlib.import_module('platypush.plugins.' + plugin_name)
-    except ModuleNotFoundError as e:
+    except ImportError as e:
         logging.warning('No such plugin: {}'.format(plugin_name))
         raise RuntimeError(e)
 

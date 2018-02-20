@@ -20,7 +20,7 @@ def get_message_class_by_type(msgtype):
 
     try:
         module = importlib.import_module('platypush.message.' + msgtype)
-    except ModuleNotFoundError as e:
+    except ImportError as e:
         logging.warning('Unsupported message type {}'.format(msgtype))
         raise RuntimeError(e)
 
