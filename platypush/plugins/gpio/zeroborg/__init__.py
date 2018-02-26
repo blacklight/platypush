@@ -5,6 +5,8 @@ import time
 
 from platypush.message.response import Response
 from platypush.plugins import Plugin
+from platypush.context import get_plugin
+from platypush.config import Config
 
 
 class Direction(enum.Enum):
@@ -12,6 +14,7 @@ class Direction(enum.Enum):
     DIR_DOWN = 'down'
     DIR_LEFT = 'left'
     DIR_RIGHT = 'right'
+    DIR_AUTO = 'auto'
 
 
 class GpioZeroborgPlugin(Plugin):
@@ -37,11 +40,26 @@ class GpioZeroborgPlugin(Plugin):
         self.v_in = v_in
         self.v_out = v_out
         self.max_power = v_out / float(v_in)
+        self.distance_sensor = None
+        self.auto_mode = False
 
         self.zb = ZeroBorg.ZeroBorg()
         self.zb.Init()
         self.zb.SetCommsFailsafe(True)
         self.zb.ResetEpo()
+
+
+    def get_distance(self):
+        if not self.distance_sensor:
+            self.distance_sensor = get_plugin('gpio.sensor.distance')
+
+        if not self.distance_sensor:
+            raise RuntimeError('No gpio.sensor.distance configuration found')
+
+        if self.distance_sensor.get_distance() is None:
+            self.distance_sensor.start()
+
+        return self.distance_sensor.get_distance()
 
 
     def drive(self, direction):
@@ -54,6 +72,22 @@ class GpioZeroborgPlugin(Plugin):
                 left = 0.0
                 right = 0.0
 
+                if self._direction == Direction.DIR_AUTO.value:
+                    self.auto_mode = True
+
+                if self.auto_mode:
+                    distance = None
+                    while distance is None:
+                        distance = self.get_distance()
+
+                    print(distance)
+                    if distance > 200.0:  # distance in mm
+                        self._direction = Direction.DIR_UP.value
+                    else:
+                        self._direction = Direction.DIR_LEFT.value
+
+                    time.sleep(0.1)
+
                 if self._direction == Direction.DIR_UP.value:
                     left = 1.0 + self._power_offsets[Direction.DIR_LEFT][Direction.DIR_UP]
                     right = 1.0 + self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_UP]
@@ -65,14 +99,17 @@ class GpioZeroborgPlugin(Plugin):
                     right = -1.25 - self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_DOWN]
                 elif self._direction == Direction.DIR_RIGHT.value:
                     left = -1.25 - self._power_offsets[Direction.DIR_LEFT][Direction.DIR_DOWN]
-                    right = 2 + self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_UP]
+                    right = 2.0 + self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_UP]
                 elif self._direction is not None:
                     logging.warning('Invalid direction: {}'.format(direction))
+                    self.stop()
 
                 self.zb.SetMotor1(left * self.max_power)
                 self.zb.SetMotor2(left * self.max_power)
                 self.zb.SetMotor3(-right * self.max_power)
                 self.zb.SetMotor4(-right * self.max_power)
+
+            self.auto_mode = False
 
 
         self._drive_thread = threading.Thread(target=_run)
@@ -88,6 +125,10 @@ class GpioZeroborgPlugin(Plugin):
 
         self.zb.MotorsOff()
         self.zb.ResetEpo()
+
+        if self.distance_sensor:
+            self.distance_sensor.stop()
+
         return Response(output={'status':'stopped'})
 
 
