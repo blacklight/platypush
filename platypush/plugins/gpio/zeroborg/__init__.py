@@ -18,16 +18,25 @@ class GpioZeroborgPlugin(Plugin):
     _drive_thread = None
     _can_run = False
     _direction = None
+    _power_offsets = {
+        Direction.DIR_LEFT: {
+            Direction.DIR_UP: 0.242,
+            Direction.DIR_DOWN: 0.285,
+        },
+
+        Direction.DIR_RIGHT: {
+            Direction.DIR_UP: 0,
+            Direction.DIR_DOWN: 0.242,
+        },
+    }
 
 
-    def __init__(self, v_in=8.4, v_out=6.0, left_power_offset=1.242, right_power_offset=1.0):
+    def __init__(self, v_in=8.4, v_out=6.0):
         import platypush.plugins.gpio.zeroborg.lib as ZeroBorg
 
         self.v_in = v_in
         self.v_out = v_out
         self.max_power = v_out / float(v_in)
-        self.left_power_offset = left_power_offset
-        self.right_power_offset = right_power_offset
 
         self.zb = ZeroBorg.ZeroBorg()
         self.zb.Init()
@@ -46,17 +55,17 @@ class GpioZeroborgPlugin(Plugin):
                 right = 0.0
 
                 if self._direction == Direction.DIR_UP.value:
-                    left = 1.0 * self.left_power_offset
-                    right = 1.0 / self.right_power_offset
+                    left = 1.0 + self._power_offsets[Direction.DIR_LEFT][Direction.DIR_UP]
+                    right = 1.0 + self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_UP]
                 elif self._direction == Direction.DIR_DOWN.value:
-                    left = -1.0
-                    right = -1.0
+                    left = -1.0 - self._power_offsets[Direction.DIR_LEFT][Direction.DIR_DOWN]
+                    right = -1.0 - self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_DOWN]
                 elif self._direction == Direction.DIR_LEFT.value:
-                    left = 2.0 * self.left_power_offset
-                    right = -1.0 / self.right_power_offset
+                    left = 2.0 + self._power_offsets[Direction.DIR_LEFT][Direction.DIR_UP]
+                    right = -1.25 - self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_DOWN]
                 elif self._direction == Direction.DIR_RIGHT.value:
-                    left = -1.0 / self.left_power_offset
-                    right = 2.0 * self.right_power_offset
+                    left = -1.25 - self._power_offsets[Direction.DIR_LEFT][Direction.DIR_DOWN]
+                    right = 2 + self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_UP]
                 elif self._direction is not None:
                     logging.warning('Invalid direction: {}'.format(direction))
 
