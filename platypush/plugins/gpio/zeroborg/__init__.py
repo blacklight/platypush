@@ -81,7 +81,7 @@ class GpioZeroborgPlugin(Plugin):
                         distance = self.get_distance()
 
                     print(distance)
-                    if distance > 200.0:  # distance in mm
+                    if distance > 250.0:  # distance in mm
                         self._direction = Direction.DIR_UP.value
                     else:
                         self._direction = Direction.DIR_LEFT.value
