@@ -40,7 +40,6 @@ class GpioZeroborgPlugin(Plugin):
         self.v_in = v_in
         self.v_out = v_out
         self.max_power = v_out / float(v_in)
-        self.distance_sensor = None
         self.auto_mode = False
 
         self.zb = ZeroBorg.ZeroBorg()
@@ -50,16 +49,11 @@ class GpioZeroborgPlugin(Plugin):
 
 
     def get_distance(self):
-        if not self.distance_sensor:
-            self.distance_sensor = get_plugin('gpio.sensor.distance')
-
-        if not self.distance_sensor:
+        distance_sensor = get_plugin('gpio.sensor.distance')
+        if not distance_sensor:
             raise RuntimeError('No gpio.sensor.distance configuration found')
 
-        if self.distance_sensor.get_distance() is None:
-            self.distance_sensor.start()
-
-        return self.distance_sensor.get_distance()
+        return distance_sensor.get_distance()
 
 
     def drive(self, direction):
@@ -125,9 +119,6 @@ class GpioZeroborgPlugin(Plugin):
 
         self.zb.MotorsOff()
         self.zb.ResetEpo()
-
-        if self.distance_sensor:
-            self.distance_sensor.stop()
 
         return Response(output={'status':'stopped'})
 
