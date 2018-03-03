@@ -41,6 +41,7 @@ class GpioZeroborgPlugin(Plugin):
         self.v_out = v_out
         self.max_power = v_out / float(v_in)
         self.auto_mode = False
+        self._direction = None
 
         self.zb = ZeroBorg.ZeroBorg()
         self.zb.Init()
@@ -57,6 +58,8 @@ class GpioZeroborgPlugin(Plugin):
 
 
     def drive(self, direction):
+        prev_direction = self._direction
+
         self._can_run = True
         self._direction = direction.lower()
         logging.info('Received ZeroBorg drive command: {}'.format(direction))
@@ -74,10 +77,11 @@ class GpioZeroborgPlugin(Plugin):
                     while distance is None:
                         distance = self.get_distance()
 
-                    print(distance)
                     if distance > 250.0:  # distance in mm
                         self._direction = Direction.DIR_UP.value
                     else:
+                        logging.info('Physical obstacle detected at {} mm'.
+                                     format(distance))
                         self._direction = Direction.DIR_LEFT.value
 
                     time.sleep(0.1)
@@ -98,10 +102,12 @@ class GpioZeroborgPlugin(Plugin):
                     logging.warning('Invalid direction: {}'.format(direction))
                     self.stop()
 
-                self.zb.SetMotor1(left * self.max_power)
-                self.zb.SetMotor2(left * self.max_power)
-                self.zb.SetMotor3(-right * self.max_power)
-                self.zb.SetMotor4(-right * self.max_power)
+                power = 0.6  # Still debugging the right power range
+
+                self.zb.SetMotor1(power * left * self.max_power)
+                self.zb.SetMotor2(power * left * self.max_power)
+                self.zb.SetMotor3(power * -right * self.max_power)
+                self.zb.SetMotor4(power * -right * self.max_power)
 
             self.auto_mode = False
 
