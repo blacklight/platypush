@@ -23,7 +23,7 @@ class GpioZeroborgPlugin(Plugin):
     _direction = None
     _power_offsets = {
         Direction.DIR_LEFT: {
-            Direction.DIR_UP: 0.242,
+            Direction.DIR_UP: 0.315,
             Direction.DIR_DOWN: 0.285,
         },
 
@@ -76,8 +76,9 @@ class GpioZeroborgPlugin(Plugin):
                     distance = None
                     while distance is None:
                         distance = self.get_distance()
+                        print(distance)
 
-                    if distance > 250.0:  # distance in mm
+                    if distance > 300.0:  # distance in mm
                         self._direction = Direction.DIR_UP.value
                     else:
                         logging.info('Physical obstacle detected at {} mm'.
@@ -93,16 +94,16 @@ class GpioZeroborgPlugin(Plugin):
                     left = -1.0 - self._power_offsets[Direction.DIR_LEFT][Direction.DIR_DOWN]
                     right = -1.0 - self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_DOWN]
                 elif self._direction == Direction.DIR_LEFT.value:
-                    left = 2.0 + self._power_offsets[Direction.DIR_LEFT][Direction.DIR_UP]
-                    right = -1.25 - self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_DOWN]
-                elif self._direction == Direction.DIR_RIGHT.value:
                     left = -1.25 - self._power_offsets[Direction.DIR_LEFT][Direction.DIR_DOWN]
                     right = 2.0 + self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_UP]
+                elif self._direction == Direction.DIR_RIGHT.value:
+                    left = 2.0 + self._power_offsets[Direction.DIR_LEFT][Direction.DIR_UP]
+                    right = -1.25 - self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_DOWN]
                 elif self._direction is not None:
                     logging.warning('Invalid direction: {}'.format(direction))
                     self.stop()
 
-                power = 0.6  # Still debugging the right power range
+                power = 0.75  # Still debugging the right power range
 
                 self.zb.SetMotor1(power * left * self.max_power)
                 self.zb.SetMotor2(power * left * self.max_power)

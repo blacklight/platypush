@@ -1,4 +1,3 @@
-import functools
 import importlib
 import logging
 
@@ -29,10 +28,10 @@ def register_backends(bus=None, global_scope=False, **kwargs):
         module = importlib.import_module('platypush.backend.' + name)
 
         # e.g. backend.pushbullet main class: PushbulletBackend
-        cls_name = functools.reduce(
-            lambda a,b: a.title() + b.title(),
-            (module.__name__.title().split('.')[2:])
-        ) + 'Backend'
+        cls_name = ''
+        for token in module.__name__.title().split('.')[2:]:
+            cls_name += token.title()
+        cls_name += 'Backend'
 
         try:
             b = getattr(module, cls_name)(bus=bus, **cfg, **kwargs)
