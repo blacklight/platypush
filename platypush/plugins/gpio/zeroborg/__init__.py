@@ -87,7 +87,7 @@ class GpioZeroborgPlugin(Plugin):
                         distance = self.get_distance()
                         logging.info('Closest obstacle distance: {} mm'.format(distance))
 
-                    if distance > 300.0:  # distance in mm
+                    if distance > 400.0:  # distance in mm
                         self._direction = Direction.DIR_UP.value
                     else:
                         logging.info('Physical obstacle detected at {} mm'.
