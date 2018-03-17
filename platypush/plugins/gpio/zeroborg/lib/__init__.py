@@ -758,9 +758,9 @@ If True there has been a new IR message which can be read using GetIrMessage().
             i2cRecv = self.RawRead(COMMAND_GET_NEW_IR, I2C_NORM_LEN)
         except KeyboardInterrupt:
             raise
-        except:
+        except Exception as e:
             self.Print('Failed reading new IR message received flag!')
-            return
+            raise e
 
         if i2cRecv[1] == COMMAND_VALUE_OFF:
             return False

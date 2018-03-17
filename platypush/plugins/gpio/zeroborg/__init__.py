@@ -22,20 +22,12 @@ class GpioZeroborgPlugin(Plugin):
     _drive_thread = None
     _can_run = False
     _direction = None
-    _power_offsets = {
-        Direction.DIR_LEFT: {
-            Direction.DIR_UP: 0.325,
-            Direction.DIR_DOWN: 0,
-        },
-
-        Direction.DIR_RIGHT: {
-            Direction.DIR_UP: -0.132,
-            Direction.DIR_DOWN: 0.387,
-        },
-    }
+    _power_offsets = {}
 
 
-    def __init__(self, v_in=8.4, v_out=6.0):
+    def __init__(self, v_in=8.4, v_out=6.0,
+                 power_offset_left_up=0.0, power_offset_right_up=0.0,
+                 power_offset_left_down=0.0, power_offset_right_down=0.0):
         import platypush.plugins.gpio.zeroborg.lib as ZeroBorg
 
         self.v_in = v_in
@@ -43,6 +35,17 @@ class GpioZeroborgPlugin(Plugin):
         self.max_power = v_out / float(v_in)
         self.auto_mode = False
         self._direction = None
+        self._power_offsets = {
+            Direction.DIR_LEFT: {
+                Direction.DIR_UP: power_offset_left_up,
+                Direction.DIR_DOWN: power_offset_left_down,
+            },
+
+            Direction.DIR_RIGHT: {
+                Direction.DIR_UP: power_offset_right_up,
+                Direction.DIR_DOWN: power_offset_right_down,
+            },
+        }
 
         self.zb = ZeroBorg.ZeroBorg()
         self.zb.Init()
@@ -83,9 +86,21 @@ class GpioZeroborgPlugin(Plugin):
 
                 if self.auto_mode:
                     distance = None
+                    last_recorded_distance_timestamp = None
+                    distance_record_timeout = 2.0
+
                     while distance is None:
                         distance = self.get_distance()
                         logging.info('Closest obstacle distance: {} mm'.format(distance))
+
+                        if last_recorded_distance_timestamp and \
+                                time.time() - last_recorded_distance_timestamp > distance_record_timeout:
+                            # Stop the motors if we have been unable
+                            # to access the distance sensor data
+                            self._direction = None
+                            break
+
+                    last_recorded_distance_timestamp = time.time()
 
                     if distance > 400.0:  # distance in mm
                         self._direction = Direction.DIR_UP.value
