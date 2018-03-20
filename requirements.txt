@@ -57,3 +57,6 @@ pylast
 
 # Video support on RaspberryPi: omxplayer system package
 
+# Custom hotword detection: Snowboy
+snowboy
+

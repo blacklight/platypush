@@ -79,6 +79,7 @@ setup(
         'Support for the Google APIs': ['google-api-python-client'],
         'Support for most of the HTTP poll backends': ['python-dateutil'],
         'Support for Last.FM scrobbler plugin': ['pylast'],
+        'Support for custom hotword detection': ['snowboy'],
         # 'Support for Flic buttons': ['git+ssh://git@github.com/50ButtonsEach/fliclib-linux-hci']
     },
 )
