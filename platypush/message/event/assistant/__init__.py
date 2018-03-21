@@ -12,8 +12,11 @@ class AssistantEvent(Event):
         try:
             self._assistant = get_backend('assistant.google')
         except KeyError as e:
-            logging.warning('google.assistant backend not configured/initialized')
-            self._assistant = None
+            try:
+                self._assistant = get_backend('assistant.google.pushtotalk')
+            except KeyError as e:
+                logging.warning('google.assistant backend not configured/initialized')
+                self._assistant = None
 
 
 class ConversationStartEvent(AssistantEvent):

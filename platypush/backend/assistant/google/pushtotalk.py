@@ -159,6 +159,7 @@ class AssistantGooglePushtotalkBackend(Backend):
 
                 logging.info('Assistant conversation triggered')
                 continue_conversation = True
+                user_request = None
 
                 while continue_conversation:
                     (user_request, continue_conversation) = self.assistant.assist()
@@ -243,6 +244,8 @@ class SampleAssistant(object):
                 yield c
             self.conversation_stream.start_playback()
 
+        user_request = None
+
         # This generator yields AssistResponse proto messages
         # received from the gRPC Google Assistant API.
         for resp in self.assistant.Assist(iter_assist_requests(),
@@ -285,7 +288,9 @@ class SampleAssistant(object):
             concurrent.futures.wait(device_actions_futures)
 
         logging.info('Finished playing assistant response.')
-        self.conversation_stream.stop_playback()
+
+        if user_request:
+            self.conversation_stream.stop_playback()
         return (user_request, continue_conversation)
 
     def gen_assist_requests(self):
