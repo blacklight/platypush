@@ -122,18 +122,6 @@ class AssistantGooglePushtotalkBackend(Backend):
 
         self.device_handler = device_helpers.DeviceRequestHandler(self.device_id)
 
-    def _process_event(self, event):
-        logging.info('Received assistant event: {}'.format(event))
-
-        if event.type == EventType.ON_CONVERSATION_TURN_STARTED:
-            self.bus.post(ConversationStartEvent())
-        elif event.type == EventType.ON_CONVERSATION_TURN_FINISHED:
-            self.bus.post(ConversationEndEvent())
-        elif event.type == EventType.ON_RECOGNIZING_SPEECH_FINISHED:
-            phrase = event.args['text'].lower().strip()
-            logging.info('Speech recognized: {}'.format(phrase))
-            self.bus.post(SpeechRecognizedEvent(phrase=phrase))
-
     def start_conversation(self):
         if self.assistant:
             with open(self.conversation_start_fifo, 'w') as f:
@@ -142,9 +130,19 @@ class AssistantGooglePushtotalkBackend(Backend):
     def stop_conversation(self):
         if self.assistant:
             self.conversation_stream.stop_playback()
+            self.bus.post(ConversationEndEvent())
 
     def send_message(self, msg):
         pass
+
+    def on_conversation_start(self):
+        self.bus.post(ConversationStartEvent())
+
+    def on_conversation_end(self):
+        self.bus.post(ConversationEndEvent())
+
+    def on_speech_recognized(self, speech):
+        self.bus.post(SpeechRecognizedEvent(phrase=speech))
 
     def run(self):
         super().run()
@@ -152,20 +150,22 @@ class AssistantGooglePushtotalkBackend(Backend):
         with SampleAssistant(self.lang, self.device_model_id, self.device_id,
                             self.conversation_stream,
                             self.grpc_channel, self.grpc_deadline,
-                            self.device_handler) as self.assistant:
+                            self.device_handler,
+                            on_conversation_start=self.on_conversation_start,
+                            on_conversation_end=self.on_conversation_end,
+                            on_speech_recognized=self.on_speech_recognized) as self.assistant:
             while not self.should_stop():
                 with open(self.conversation_start_fifo, 'r') as f:
                     for line in f: pass
 
-                logging.info('Assistant conversation triggered')
+                logging.info('Received conversation start event')
                 continue_conversation = True
                 user_request = None
 
                 while continue_conversation:
                     (user_request, continue_conversation) = self.assistant.assist()
 
-                    if user_request:
-                        self.bus.post(SpeechRecognizedEvent(phrase=user_request))
+                self.on_conversation_end()
 
 
 class SampleAssistant(object):
@@ -188,11 +188,18 @@ class SampleAssistant(object):
 
     def __init__(self, language_code, device_model_id, device_id,
                  conversation_stream,
-                 channel, deadline_sec, device_handler):
+                 channel, deadline_sec, device_handler,
+                 on_conversation_start=None,
+                 on_conversation_end=None,
+                 on_speech_recognized=None):
         self.language_code = language_code
         self.device_model_id = device_model_id
         self.device_id = device_id
         self.conversation_stream = conversation_stream
+
+        self.on_conversation_start = on_conversation_start
+        self.on_conversation_end = on_conversation_end
+        self.on_speech_recognized = on_speech_recognized
 
         # Opaque blob provided in AssistResponse that,
         # when provided in a follow-up AssistRequest,
@@ -237,6 +244,9 @@ class SampleAssistant(object):
 
         self.conversation_stream.start_recording()
         logging.info('Recording audio request.')
+
+        if self.on_conversation_start:
+            self.on_conversation_start()
 
         def iter_assist_requests():
             for c in self.gen_assist_requests():
@@ -291,6 +301,9 @@ class SampleAssistant(object):
 
         if user_request:
             self.conversation_stream.stop_playback()
+            if self.on_speech_recognized:
+                self.on_speech_recognized(user_request)
+
         return (user_request, continue_conversation)
 
     def gen_assist_requests(self):

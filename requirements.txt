@@ -60,3 +60,6 @@ pylast
 # Custom hotword detection: Snowboy
 snowboy
 
+# Support for the RaspberryPi camera module
+# apt install python3-picamera
+

@@ -646,8 +646,9 @@ Sets the current state of the LED, False for off, True for on
             self.RawWrite(COMMAND_SET_LED, [level])
         except KeyboardInterrupt:
             raise
-        except:
+        except Exception as e:
             self.Print('Failed sending LED state!')
+            self.Print(e)
 
 
     def GetLed(self):
