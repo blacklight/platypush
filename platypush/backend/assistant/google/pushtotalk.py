@@ -299,10 +299,13 @@ class SampleAssistant(object):
 
         logging.info('Finished playing assistant response.')
 
-        if user_request:
+        try:
             self.conversation_stream.stop_playback()
-            if self.on_speech_recognized:
-                self.on_speech_recognized(user_request)
+        except:
+            pass
+
+        if user_request and self.on_speech_recognized:
+            self.on_speech_recognized(user_request)
 
         return (user_request, continue_conversation)
 
