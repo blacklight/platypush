@@ -77,8 +77,31 @@ $(document).ready(function() {
         eventListeners.push(listener);
     };
 
+    var initElements = function() {
+        var $tabItems = $('main').find('.plugin-tab-item');
+        var $tabContents = $('main').find('.plugin-tab-content');
+
+        // Set the active tag on the first plugin tab
+        $tabContents.removeClass('active');
+        $tabContents.first().addClass('active');
+
+        $tabItems.removeClass('active');
+        $tabItems.first().addClass('active');
+
+        $tabItems.on('click', function() {
+            var pluginId = $(this).attr('href').substr(1);
+
+            $tabContents.removeClass('active');
+            $tabContents.filter(function(i, content) {
+                return $(content).attr('id') === pluginId
+            }).addClass('active');
+
+        });
+    };
+
     var init = function() {
         initWebsocket();
+        initElements();
         initDateTime();
     };
 

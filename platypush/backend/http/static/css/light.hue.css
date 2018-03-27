@@ -1,0 +1,81 @@
+#hue-container {
+    background-color: #f8f8f8;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 400;
+    line-height: 38px;
+    letter-spacing: .1rem;
+}
+
+    #hue-container > .columns {
+        margin-left: 0;
+    }
+
+    #hue-container > .three.columns {
+        width: 24%;
+    }
+
+    #hue-container > .six.columns {
+        width: 52%;
+    }
+
+#rooms-list {
+    border-right: 1px solid #e4e4e4;
+}
+
+#lights-list {
+    margin-left: 0;
+    border: 1px solid #e4e4e4;
+    border-radius: 8px;
+}
+
+.hue-section-title {
+    padding: 7.5px;
+    background: #ececec;
+    border: 1px solid #e4e4e4;
+}
+
+.room-item {
+    color: #333;
+    padding: 10px 5px;
+    border-bottom: 1px solid #ddd;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.scene-item {
+    color: #333;
+    padding: 5px 10px;
+    border-bottom: 1px solid #e4e4e4;
+    cursor: pointer;
+}
+
+    .room-item:hover, .light-item:hover, .scene-item:hover {
+        background-color: #daf8e2 !important;
+    }
+
+    .room-item.selected, .light-item.selected, .scene-item.selected {
+        background-color: #c8ffd0 !important;
+    }
+
+.room-lights-item, .room-scenes-item {
+    display: none;
+}
+
+.light-item {
+    color: #333;
+    padding: 20px;
+    cursor: pointer;
+}
+
+    .light-item:not(:last-child) {
+        border-bottom: 1px solid #ddd;
+    }
+
+.light-ctrl-switch-container {
+    float: right;
+    margin-top: -5px;
+}
+

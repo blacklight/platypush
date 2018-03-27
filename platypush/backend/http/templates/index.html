@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/font-awesome.min.css') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/application.css') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toggles.css') }}"></script>
 
     <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/skeleton-tabs.js') }}"></script>
@@ -39,24 +40,21 @@
 
     <main>
         <ul class="tab-nav">
-            {% set first_plugin = True %}
-            {% for plugin in plugins.keys() %}
+            {% for plugin in plugins.keys()|sort() %}
                 <li>
-                    <a class="button {% print('active' if first_plugin else '') %}" href="#{% print plugin %}">
+                    <a class="button plugin-tab-item" href="#{% print plugin %}">
                         {% print plugin %}
                     </a>
                 </li>
-                {% set first_plugin = False %}
             {% endfor %}
         </ul>
 
         <div class="tab-content">
-            {% set first_plugin = True %}
-            {% for plugin, configuration in plugins.items() %}
-                <div class="tab-pane {% print('active' if first_plugin else '') %}" id="{% print plugin %}">
+            {% for plugin in plugins.keys()|sort() %}
+                {% set configuration = plugins[plugin] %}
+                <div class="tab-pane plugin-tab-content" id="{% print plugin %}">
                     {% include 'plugins/' + plugin + '.html' %}
                 </div>
-                {% set first_plugin = False %}
             {% endfor %}
         </div>
     </main>

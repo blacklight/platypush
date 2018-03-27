@@ -65,8 +65,16 @@ class LightHuePlugin(LightPlugin):
 
 
     def get_scenes(self):
-        scenes = [s.name for s in self.bridge.scenes]
-        # TODO Expand it with custom scenes specified in config.yaml as in #14
+        return Response(output=self.bridge.get_scene())
+
+
+    def get_lights(self):
+        return Response(output=self.bridge.get_light())
+
+
+    def get_groups(self):
+        return Response(output=self.bridge.get_group())
+
 
     def _exec(self, attr, *args, **kwargs):
         try:
@@ -80,7 +88,7 @@ class LightHuePlugin(LightPlugin):
         if 'lights' in kwargs and kwargs['lights']:
             lights = kwargs['lights'].split(',') \
                 if isinstance(lights, str) else kwargs['lights']
-        elif 'groups' in kwargs and kwargs['lights']:
+        elif 'groups' in kwargs and kwargs['groups']:
             groups = kwargs['groups'].split(',') \
                 if isinstance(groups, str) else kwargs['groups']
         else:

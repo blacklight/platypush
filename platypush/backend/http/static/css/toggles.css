@@ -1,0 +1,159 @@
+@import url(https://fonts.googleapis.com/css?family=Francois+One);
+@import url(https://fonts.googleapis.com/css?family=PT+Sans);
+@font-face {
+  font-family: 'Audiowide';
+  font-style: normal;
+  font-weight: 400;
+  src: local("Audiowide"), local("Audiowide-Regular"), url(http://themes.googleusercontent.com/static/fonts/audiowide/v2/8XtYtNKEyyZh481XVWfVOj8E0i7KZn-EPnyo3HZu7kw.woff) format("woff"); }
+
+.toggle {
+  display: inline-block;
+  text-align: center;
+  user-select: none; }
+
+.toggle--checkbox {
+  display: none !important; }
+
+.toggle--btn {
+  display: block;
+  margin: 0 auto;
+  font-size: 1.4em;
+  transition: all 350ms ease-in; }
+  .toggle--btn:hover {
+    cursor: pointer; }
+
+.toggle--btn, .toggle--btn:before, .toggle--btn:after,
+.toggle--checkbox,
+.toggle--checkbox:before,
+.toggle--checkbox:after,
+.toggle--feature,
+.toggle--feature:before,
+.toggle--feature:after {
+  transition: all 250ms ease-in; }
+.toggle--btn:before, .toggle--btn:after,
+.toggle--checkbox:before,
+.toggle--checkbox:after,
+.toggle--feature:before,
+.toggle--feature:after {
+  content: '';
+  display: block; }
+
+/* =====================================================
+   Toggle - switch stylee
+   ===================================================== */
+.toggle--switch .toggle--btn {
+  position: relative;
+  width: 120px;
+  height: 44px;
+  font-family: 'PT Sans', Sans Serif;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(90deg, #a4bf4d 0%, #a4bf4d 50%, #ca5046 50%, #ca5046 200%);
+  background-position: -80px 0;
+  background-size: 200% 100%;
+  box-shadow: inset 0 0px 22px -8px #111; }
+  .toggle--switch .toggle--btn, .toggle--switch .toggle--btn:before {
+    border-radius: 4px; }
+  .toggle--switch .toggle--btn:before {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    width: 52px;
+    height: 44px;
+    border: 2px solid #202027;
+    background-image: linear-gradient(90deg, transparent 50%, rgba(255, 255, 255, 0.15) 100%);
+    background-color: #2b2e3a;
+    background-size: 5px 5px;
+    text-indent: -100%; }
+.toggle--switch .toggle--feature {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  height: 44px;
+  text-shadow: 0 1px 2px #666; }
+  .toggle--switch .toggle--feature:before, .toggle--switch .toggle--feature:after {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%); }
+  .toggle--switch .toggle--feature:before {
+    content: attr(data-label-on);
+    left: -60%; }
+  .toggle--switch .toggle--feature:after {
+    content: attr(data-label-off);
+    right: 16%; }
+.toggle--switch .toggle--checkbox:checked + .toggle--btn {
+  background-position: 0 0; }
+  .toggle--switch .toggle--checkbox:checked + .toggle--btn:before {
+    left: calc(100% - 52px); }
+  .toggle--switch .toggle--checkbox:checked + .toggle--btn .toggle--feature:before {
+    left: 20%; }
+  .toggle--switch .toggle--checkbox:checked + .toggle--btn .toggle--feature:after {
+    right: -60%; }
+
+/* ======================================================
+   Push button toggle
+   ====================================================== */
+.toggle--push .toggle--btn {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  background-color: #f9f8f6;
+  border-radius: 50%;
+  box-shadow: 0 5px 10px 0px #333, 0 15px 20px 0px #cccccc; }
+  .toggle--push .toggle--btn, .toggle--push .toggle--btn:before, .toggle--push .toggle--btn:after {
+    transition-duration: 150ms; }
+  .toggle--push .toggle--btn:before {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 22.7272727273px;
+    height: 22.7272727273px;
+    border-radius: 50%;
+    background-color: #38ffa0;
+    box-shadow: inset 0 0 0 5px #ccc, inset 0 0 0 14px #f9f8f6; }
+  .toggle--push .toggle--btn:after {
+    position: absolute;
+    left: 50%;
+    top: 35%;
+    transform: translate(-50%, -50%);
+    width: 4px;
+    height: 12px;
+    background-color: #ccc;
+    box-shadow: 0 0 0 2.5px #f9f8f6; }
+  .toggle--push .toggle--btn:hover:before {
+    box-shadow: inset 0 0 0 5px #b3b3b3, inset 0 0 0 14px #f9f8f6; }
+  .toggle--push .toggle--btn:hover:after {
+    background-color: #b3b3b3; }
+.toggle--push .toggle--checkbox:checked + .toggle--btn {
+  box-shadow: 0 2px 5px 0px gray, 0 15px 20px 0px transparent; }
+  .toggle--push .toggle--checkbox:checked + .toggle--btn:before {
+    box-shadow: inset 0 0 0 5px #38ffa0, inset 0 0 0 14px #f9f8f6; }
+  .toggle--push .toggle--checkbox:checked + .toggle--btn:after {
+    background-color: #38ffa0; }
+
+.toggle--push--glow {
+  background: #111;
+  padding: 50px 0;
+  margin-bottom: -50px; }
+  .toggle--push--glow .toggle--btn {
+    background-color: #dfdfdf;
+    box-shadow: 0 5px 10px 0px #333, 0 0 0 3px #444444, 0 0 8px 2px transparent, 0 0 0 6px #919191; }
+    .toggle--push--glow .toggle--btn:before {
+      box-shadow: inset 0 0 0 5px #aaa, inset 0 0 0 14px #dfdfdf; }
+    .toggle--push--glow .toggle--btn:after {
+      background-color: #aaa;
+      box-shadow: 0 0 0 2.5px #dfdfdf; }
+    .toggle--push--glow .toggle--btn:hover:before {
+      box-shadow: inset 0 0 0 5px #777777, inset 0 0 0 14px #dfdfdf; }
+    .toggle--push--glow .toggle--btn:hover:after {
+      background-color: #777777; }
+  .toggle--push--glow .toggle--checkbox:checked + .toggle--btn {
+    box-shadow: 0 0px 8px 0 #0072ad, 0 0 0 3px #0094e0, 0 0 30px 0 #0094e0, 0 0 0 6px #777777; }
+    .toggle--push--glow .toggle--checkbox:checked + .toggle--btn:before {
+      box-shadow: inset 0 0 0 5px #0094e0, inset 0 0 0 14px #dfdfdf; }
+    .toggle--push--glow .toggle--checkbox:checked + .toggle--btn:after {
+      background-color: #0094e0; }
+
