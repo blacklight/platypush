@@ -74,8 +74,32 @@
         border-bottom: 1px solid #ddd;
     }
 
+.light-item-name {
+    display: inline-block;
+}
+
+.all-lights-item {
+    background-color: #ececec;
+}
+
+    .all-lights-item * > .light-item-name {
+        font-weight: bold;
+    }
+
 .light-ctrl-switch-container {
     float: right;
     margin-top: -5px;
+}
+
+.light-color-selector {
+    display: none;
+    background-color: white;
+    padding: 10px;
+    margin: 10px -10px -10px -10px;
+    border-radius: 10px;
+}
+
+.light-slider {
+    margin-top: 10px;
 }
 
