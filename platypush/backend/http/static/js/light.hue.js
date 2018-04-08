@@ -339,7 +339,7 @@ $(document).ready(function() {
                 args: {}
             };
 
-            args['args'][key] = name;
+            args['args'][key] = [name];
             execute(args, function() {
                 $lightItem.data('on', !isOn);
                 refreshStatus();
