@@ -56,6 +56,29 @@ $(document).ready(function() {
                 action: 'gpio.zeroborg.stop',
             });
         });
+
+        $controlsContainer.on('click touch', '.zb-ctrl-btn[data-action]', function() {
+            console.log('Running ' + $(this).data('action') + ' action');
+
+            if ($(this).data('action') === 'stop') {
+                $controlsContainer.find('.zb-ctrl-btn[data-action=auto]').removeClass('selected');
+
+                execute({
+                    type: 'request',
+                    action: 'gpio.zeroborg.stop',
+                });
+            } else if ($(this).data('action') === 'auto') {
+                $(this).toggleClass('selected');
+
+                execute({
+                    type: 'request',
+                    action: 'gpio.zeroborg.drive',
+                    args: {
+                        direction: 'auto_toggle'
+                    }
+                });
+            }
+        });
     };
 
     var init = function() {
