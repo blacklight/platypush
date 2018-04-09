@@ -13,6 +13,7 @@ header {
 
 .logo {
     font-size: 25px;
+    margin-top: 10px;
 }
 
     .logo > .logo-1 {
@@ -30,6 +31,7 @@ header {
 
     #date-time > .time {
         font-weight: bold;
+        font-size: 30px;
     }
 
 main {
