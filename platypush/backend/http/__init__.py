@@ -125,8 +125,8 @@ class HttpBackend(Backend):
             while True:
                 try:
                     waiter = await websocket.ping()
-                    await asyncio.wait_for(waiter, timeout=3)
-                    time.sleep(3)
+                    await asyncio.wait_for(waiter, timeout=5)
+                    time.sleep(5)
                 except (asyncio.TimeoutError, websockets.exceptions.ConnectionClosed) as e:
                     close = False
                     if isinstance(e, asyncio.TimeoutError):
