@@ -113,7 +113,7 @@ class LightHuePlugin(LightPlugin):
         return self._exec('on', True, lights=lights, groups=groups)
 
     def off(self, lights=[], groups=[]):
-        return self._exec('off', False, lights=lights, groups=groups)
+        return self._exec('on', False, lights=lights, groups=groups)
 
     def bri(self, value, lights=[], groups=[]):
         return self._exec('bri', int(value) % (self.MAX_BRI+1),
