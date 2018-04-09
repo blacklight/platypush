@@ -33,7 +33,7 @@ $(document).ready(function() {
             console.log('Websocket closed, code: ' + event.code);
             websocketReconnectInterval = setInterval(function() {
                 initWebsocket();
-            }, 1000);
+            }, 3000);
         };
     };
 
