@@ -1,7 +1,7 @@
 $(document).ready(function() {
     var websocket,
         dateTimeInterval,
-        websocketReconnectTimeout,
+        websocketReconnectInterval,
         eventListeners = [];
 
     var initWebsocket = function() {
@@ -19,6 +19,10 @@ $(document).ready(function() {
 
         websocket.onopen = function(event) {
             console.log('Websocket connection successful');
+            if (websocketReconnectInterval) {
+                clearInterval(websocketReconnectInterval);
+                websocketReconnectInterval = undefined;
+            }
         };
 
         websocket.onerror = function(event) {
@@ -27,7 +31,7 @@ $(document).ready(function() {
 
         websocket.onclose = function(event) {
             console.log('Websocket closed, code: ' + event.code);
-            websocketReconnectTimeout = setTimeout(function() {
+            websocketReconnectInterval = setInterval(function() {
                 initWebsocket();
             }, 5000);
         };
