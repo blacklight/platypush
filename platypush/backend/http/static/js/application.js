@@ -4,7 +4,7 @@ $(document).ready(function() {
         openedWebsocket,
         dateTimeInterval,
         websocketTimeoutId,
-        websocketReconnectMsecs = 4000,
+        websocketReconnectMsecs = 5000,
         eventListeners = [];
 
     var initWebsocket = function() {
@@ -15,14 +15,14 @@ $(document).ready(function() {
             return;
         }
 
-        pendingConnection = websocket;
+        pendingConnection = true;
 
-        var onWebsocketTimeout = function(sock) {
+        var onWebsocketTimeout = function(self) {
             return function() {
                 console.log('Websocket reconnection timed out, retrying');
                 pendingConnection = false;
-                sock.close();
-                sock.onclose({ code: 1000 });
+                self.close();
+                self.onclose();
             };
         };
 
@@ -65,7 +65,10 @@ $(document).ready(function() {
         };
 
         websocket.onclose = function(event) {
-            console.log('Websocket closed, code: ' + event.code);
+            if (event) {
+                console.log('Websocket closed - code: ' + event.code + ' - reason: ' + event.reason);
+            }
+
             openedWebsocket = undefined;
 
             if (!pendingConnection) {
