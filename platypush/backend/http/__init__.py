@@ -24,6 +24,7 @@ class HttpBackend(Backend):
             http://localhost:8008/execute """
 
     websocket_ping_tries = 3
+    websocket_ping_timeout = 10.0
 
     def __init__(self, port=8008, websocket_port=8009, disable_websocket=False,
                  token=None, **kwargs):
@@ -125,8 +126,8 @@ class HttpBackend(Backend):
             while True:
                 try:
                     waiter = await websocket.ping()
-                    await asyncio.wait_for(waiter, timeout=5)
-                    time.sleep(5)
+                    await asyncio.wait_for(waiter, timeout=self.websocket_ping_timeout)
+                    time.sleep(self.websocket_ping_timeout)
                 except (asyncio.TimeoutError, websockets.exceptions.ConnectionClosed) as e:
                     close = False
                     if isinstance(e, asyncio.TimeoutError):

@@ -1,11 +1,34 @@
 $(document).ready(function() {
     var websocket,
+        pendingConnection = false,
+        openedWebsocket,
         dateTimeInterval,
-        websocketReconnectInterval,
+        websocketTimeoutId,
+        websocketReconnectMsecs = 4000,
         eventListeners = [];
 
     var initWebsocket = function() {
-        websocket = new WebSocket('ws://' + window.location.hostname + ':' + window.websocket_port);
+        try {
+            websocket = new WebSocket('ws://' + window.location.hostname + ':' + window.websocket_port);
+        } catch (err) {
+            websocket = undefined;
+            return;
+        }
+
+        pendingConnection = websocket;
+
+        var onWebsocketTimeout = function(sock) {
+            return function() {
+                console.log('Websocket reconnection timed out, retrying');
+                pendingConnection = false;
+                sock.close();
+                sock.onclose({ code: 1000 });
+            };
+        };
+
+        websocketTimeoutId = setTimeout(
+            onWebsocketTimeout(websocket), websocketReconnectMsecs);
+
         websocket.onmessage = function(event) {
             for (var listener of eventListeners) {
                 data = event.data;
@@ -18,10 +41,22 @@ $(document).ready(function() {
         };
 
         websocket.onopen = function(event) {
+            if (openedWebsocket) {
+                console.log("There's already an opened websocket connection, closing the newly opened one");
+                this.onclose = function() {};
+                this.close();
+            }
+
             console.log('Websocket connection successful');
-            if (websocketReconnectInterval) {
-                clearInterval(websocketReconnectInterval);
-                websocketReconnectInterval = undefined;
+            openedWebsocket = this;
+
+            if (pendingConnection) {
+                pendingConnection = false;
+            }
+
+            if (websocketTimeoutId) {
+                clearInterval(websocketTimeoutId);
+                websocketTimeoutId = undefined;
             }
         };
 
@@ -31,9 +66,12 @@ $(document).ready(function() {
 
         websocket.onclose = function(event) {
             console.log('Websocket closed, code: ' + event.code);
-            websocketReconnectInterval = setInterval(function() {
+            openedWebsocket = undefined;
+
+            if (!pendingConnection) {
+                pendingConnection = true;
                 initWebsocket();
-            }, 3000);
+            }
         };
     };
 
