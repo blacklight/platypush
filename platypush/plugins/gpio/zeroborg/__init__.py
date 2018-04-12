@@ -27,7 +27,9 @@ class GpioZeroborgPlugin(Plugin):
 
     def __init__(self, v_in=8.4, v_out=6.0,
                  power_offset_left_up=0.0, power_offset_right_up=0.0,
-                 power_offset_left_down=0.0, power_offset_right_down=0.0):
+                 power_offset_left_down=0.0, power_offset_right_down=0.0,
+                 power_offset_left_left=0.0, power_offset_left_right=0.0,
+                 power_offset_right_left=0.0, power_offset_right_right=0.0):
         import platypush.plugins.gpio.zeroborg.lib as ZeroBorg
 
         self.v_in = v_in
@@ -39,11 +41,15 @@ class GpioZeroborgPlugin(Plugin):
             Direction.DIR_LEFT: {
                 Direction.DIR_UP: power_offset_left_up,
                 Direction.DIR_DOWN: power_offset_left_down,
+                Direction.DIR_LEFT: power_offset_left_left,
+                Direction.DIR_RIGHT: power_offset_left_right,
             },
 
             Direction.DIR_RIGHT: {
                 Direction.DIR_UP: power_offset_right_up,
                 Direction.DIR_DOWN: power_offset_right_down,
+                Direction.DIR_LEFT: power_offset_right_left,
+                Direction.DIR_RIGHT: power_offset_right_right,
             },
         }
 
@@ -118,11 +124,11 @@ class GpioZeroborgPlugin(Plugin):
                     left = -1.0 - self._power_offsets[Direction.DIR_LEFT][Direction.DIR_DOWN]
                     right = -1.0 - self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_DOWN]
                 elif self._direction == Direction.DIR_LEFT.value:
-                    left = -1.0 - self._power_offsets[Direction.DIR_LEFT][Direction.DIR_DOWN]
-                    right = 1.75 + self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_UP]
+                    left = -0.66 - self._power_offsets[Direction.DIR_LEFT][Direction.DIR_LEFT]
+                    right = 1.32 + self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_LEFT]
                 elif self._direction == Direction.DIR_RIGHT.value:
-                    left = 1.75 + self._power_offsets[Direction.DIR_LEFT][Direction.DIR_UP]
-                    right = -1.0 - self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_DOWN]
+                    left = 1.32 + self._power_offsets[Direction.DIR_LEFT][Direction.DIR_RIGHT]
+                    right = -0.66 - self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_RIGHT]
                 elif self._direction is not None:
                     logging.warning('Invalid direction: {}'.format(direction))
                     self.stop()
