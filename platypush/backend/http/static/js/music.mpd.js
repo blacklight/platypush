@@ -1,6 +1,5 @@
 $(document).ready(function() {
     var seekInterval,
-        longPressTimeout,
         curPath = [],
         curTrackUpdateHandler,
         curTrackElapsed = {
@@ -238,18 +237,13 @@ $(document).ready(function() {
         );
     };
 
-    var onTrackTouchDown = function(event) {
+    var onPlaylistTrackClick = function(event) {
         var $track = $(this);
-        longPressTimeout = setTimeout(function() {
-            $track.addClass('selected');
-            clearTimeout(longPressTimeout);
-            longPressTimeout = undefined;
-        }, 1000);
-    };
 
-    var onTrackTouchUp = function(event) {
-        var $track = $(this);
-        if (longPressTimeout) {
+        if (!$track.hasClass('selected')) {
+            $('.playlist-track').removeClass('selected');
+            $track.addClass('selected');
+        } else {
             execute({
                 type: 'request',
                 action: 'music.mpd.playid',
@@ -293,8 +287,7 @@ $(document).ready(function() {
             $title.appendTo($element);
             $time.appendTo($element);
 
-            $element.on('mousedown touchstart', onTrackTouchDown);
-            $element.on('mouseup touchend', onTrackTouchUp);
+            $element.on('click touch',onPlaylistTrackClick);
             $element.appendTo($playlistContent);
         }
 
