@@ -6,7 +6,16 @@ $(document).ready(function() {
         curTrackElapsed = {
             timestamp: null,
             elapsed: null,
-        };
+        },
+
+        $musicSearchForm = $('#music-search-form'),
+        $musicSearchResults = $('#music-search-results'),
+        $musicSearchResultsContainer = $('#music-search-results-container'),
+        $musicSearchResultsForm = $('#music-search-results-form'),
+        $musicResultsAddBtn = $('#music-results-add'),
+        $musicResultsPlayBtn = $('#music-results-play'),
+        $resetSearchBtn = $('#music-search-reset');
+        $doSearchBtns = $('.do-search-btns');
 
     var execute = function(request, onSuccess, onError, onComplete) {
         request['target'] = 'localhost';
@@ -37,6 +46,24 @@ $(document).ready(function() {
                 }
             },
         });
+    };
+
+    var formatMinutes = function(time) {
+        if (typeof time === 'string') {
+            time = parseInt(time);
+        } else if (isNaN(time)) {
+            console.warn('Unexpected non-numeric value in formatMinutes');
+            console.log(time);
+            return undefined;
+        }
+
+        if (!time) {
+            return '-:--';
+        }
+
+        var minutes = parseInt(time/60);
+        var seconds = time%60;
+        return (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
     };
 
     var updateControls = function(status, track) {
@@ -80,7 +107,7 @@ $(document).ready(function() {
                     $curTrack.find('.track').hide();
                     $curTrack.find('.no-track').show();
 
-                    $trackSeeker.attr('disabled', true);
+                    $trackSeeker.prop('disabled', true);
                     $('.seek-time').text('-:--');
                     break;
 
@@ -91,7 +118,7 @@ $(document).ready(function() {
                     $curTrack.find('.track').show();
                     $curTrack.find('.no-track').hide();
 
-                    $trackSeeker.removeAttr('disabled');
+                    $trackSeeker.prop('disabled', false);
                     $('#seek-time-elapsed').text(elapsed ? elapsed : '-:--');
                     $('#seek-time-length').text(length ? length : '-:--');
                     break;
@@ -103,7 +130,7 @@ $(document).ready(function() {
                     $curTrack.find('.track').show();
                     $curTrack.find('.no-track').hide();
 
-                    $trackSeeker.removeAttr('disabled');
+                    $trackSeeker.prop('disabled', false);
                     $('#seek-time-elapsed').text(elapsed ? elapsed : '-:--');
                     $('#seek-time-length').text(length ? length : '-:--');
 
@@ -424,9 +451,9 @@ $(document).ready(function() {
 
             $parentElement.on('click touch', onDirectorySelect);
             $parentElement.appendTo($browserContent);
-            $addButton.removeAttr('disabled');
+            $addButton.prop('disabled', false);
         } else {
-            $addButton.attr('disabled', 'disabled');
+            $addButton.prop('disabled', true);
         }
 
         for (var directory of directories.sort()) {
@@ -506,7 +533,7 @@ $(document).ready(function() {
         $playbackControls.on('click', function(evt) {
             var action = $(this).data('action');
             var $btn = $(this);
-            $btn.attr('disabled', true);
+            $btn.prop('disabled', true);
 
             execute(
                 {
@@ -520,7 +547,7 @@ $(document).ready(function() {
 
                 onError=undefined,
                 onComplete = function() {
-                    $btn.removeAttr('disabled');
+                    $btn.prop('disabled', false);
                 }
             );
         });
@@ -618,10 +645,237 @@ $(document).ready(function() {
         });
     };
 
+    var initSearch = function() {
+        $musicSearchForm.on('submit', function(event) {
+            var searchData = $(this).serializeArray().reduce(function(obj, item) {
+                var value = item.value.trim();
+                if (value.length > 0) {
+                    obj[item.name] = item.value;
+                }
+
+                return obj;
+            }, {});
+
+            var args = {};
+            var searchFilters = {};
+
+            if ('any' in searchData) {
+                args = {
+                    type: 'any',
+                    filter: searchData.any
+                };
+
+                searchFilters.any = searchData.any;
+            } else {
+                if ('albumartist' in searchData) {
+                    args = {
+                        type: 'albumartist',
+                        filter: searchData.albumartist
+                    };
+
+                    searchFilters.albumartist = searchData.albumartist;
+                }
+
+                if ('album' in searchData) {
+                    args = {
+                        type: 'album',
+                        filter: searchData.album
+                    };
+
+                    searchFilters.album = searchData.album;
+                }
+
+                if ('title' in searchData) {
+                    args = {
+                        type: 'title',
+                        filter: searchData.title
+                    };
+
+                    searchFilters.title = searchData.title;
+                }
+            }
+
+            $(this).find('input').prop('disabled', true);
+
+            execute(
+                {
+                    type: 'request',
+                    action: 'music.mpd.search',
+                    args: args
+                },
+
+                onSuccess = function(response) {
+                    var results = response.response.output;
+                    if (!results) {
+                        return false;
+                    }
+
+                    if (Object.keys(searchFilters).length > 1) {
+                        results = results.filter(function(item) {
+                            return (
+                                ('title' in searchFilters && 'title' in item
+                                    ? item.title.toLowerCase().indexOf(
+                                        searchFilters.title.toLowerCase()) >= 0 : true) &&
+                                ('album' in searchFilters && 'album' in item
+                                    ? item.album.toLowerCase().indexOf(
+                                        searchFilters.album.toLowerCase()) >= 0 : true) &&
+                                ('albumartist' in searchFilters && 'artist' in item
+                                    ? item.artist.toLowerCase().indexOf(
+                                        searchFilters.albumartist.toLowerCase()) >= 0 : true)
+                            );
+                        });
+                    }
+
+                    for (var item of results) {
+                        var $item = $('<div></div>')
+                            .addClass('row').addClass('music-item')
+                            .addClass('music-search-item')
+                            .data('file', item.file);
+
+                        var $artist = $('<div></div>')
+                            .addClass('three columns').addClass('artist')
+                            .addClass('music-search-item-artist')
+
+                        if ('artist' in item) {
+                            $artist.text(item.artist);
+                        } else {
+                            $artist.html('&nbsp;');
+                        }
+
+                        var $title = $('<div></div>')
+                            .addClass('four columns').addClass('title')
+                            .addClass('music-search-item-title');
+
+                        if ('title' in item) {
+                            $title.text(item.title);
+                        } else {
+                            $title.html('&nbsp;');
+                        }
+
+                        var $album = $('<div></div>')
+                            .addClass('four columns').addClass('album')
+                            .addClass('music-search-item-album');
+
+                        if ('album' in item) {
+                            $album.text(item.album);
+                        } else {
+                            $album.html('&nbsp;');
+                        }
+
+                        var $time = $('<div></div>')
+                            .addClass('one column').addClass('time')
+                            .addClass('music-search-item-time')
+                            .text('time' in item ? formatMinutes(item.time) : '-:--');
+
+                        $artist.appendTo($item);
+                        $title.appendTo($item);
+                        $album.appendTo($item);
+                        $time.appendTo($item);
+                        $item.appendTo($musicSearchResults);
+                    }
+                },
+
+                onError = function(xhr, status, error) {
+                    console.error(error);
+                },
+
+                onComplete = function() {
+                    $musicSearchForm.find('input').prop('disabled', false);
+                    $musicSearchForm.hide();
+                    $musicSearchResultsContainer.show();
+                    $musicSearchResultsForm.show();
+                }
+            );
+
+            return false;
+        });
+
+        $resetSearchBtn.on('click', function(event) {
+            $musicSearchResultsForm.hide();
+            $musicSearchResultsContainer.hide();
+            $musicSearchResults.html('');
+            $musicSearchForm.show();
+
+            $musicResultsAddBtn.removeData('file');
+            $musicResultsAddBtn.prop('disabled', true);
+            $musicResultsPlayBtn.removeData('file');
+            $musicResultsPlayBtn.prop('disabled', true);
+        });
+
+        $musicSearchResults.on('click', '.music-search-item', function(event) {
+            var isCurrentlySelected = $(this).hasClass('selected');
+            $('.music-search-item').removeClass('selected');
+
+            if (isCurrentlySelected) {
+                $musicResultsAddBtn.removeData('file');
+                $musicResultsAddBtn.prop('disabled', true);
+                $musicResultsPlayBtn.removeData('file');
+                $musicResultsPlayBtn.prop('disabled', true);
+
+                $(this).removeClass('selected');
+            } else {
+                var file = $(this).data('file');
+
+                $musicResultsAddBtn.data('file', file);
+                $musicResultsAddBtn.prop('disabled', false);
+                $musicResultsPlayBtn.data('file', file);
+                $musicResultsPlayBtn.prop('disabled', false);
+                $(this).addClass('selected');
+            }
+        });
+
+        $musicSearchResultsForm.on('submit', function(event) {
+            return false;
+        });
+
+        $musicResultsAddBtn.on('click', function(event) {
+            var file = $(this).data('file');
+            if (!file) {
+                return false;
+            }
+
+            execute(
+                {
+                    type: 'request',
+                    action: 'music.mpd.add',
+                    args: {
+                        resource: file
+                    }
+                },
+
+                onSuccess = function(response) {
+                    initPlaylist();
+                }
+            );
+        });
+
+        $musicResultsPlayBtn.on('click', function(event) {
+            var file = $(this).data('file');
+            if (!file) {
+                return false;
+            }
+
+            execute(
+                {
+                    type: 'request',
+                    action: 'music.mpd.play',
+                    args: {
+                        resource: file
+                    }
+                },
+
+                onSuccess = function(response) {
+                    initPlaylist();
+                }
+            );
+        });
+    };
+
     var init = function() {
         initStatus();
         initPlaylist();
         initBrowser();
+        initSearch();
         initBindings();
     };
 

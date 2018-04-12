@@ -144,10 +144,32 @@ $(document).ready(function() {
         });
     };
 
+    var initModalOpenBindings = function() {
+        $('body').on('click touch', '[data-modal]', function(event) {
+            var $source = $(event.target);
+            var $modal = $($source.data('modal'));
+            $modal.fadeIn();
+        });
+    };
+
+    var initModalCloseBindings = function() {
+        $('body').on('click touch', '[data-dismiss-modal]', function(event) {
+            var $source = $(event.target);
+            var $modal = $($source.data('dismiss-modal'));
+            $modal.fadeOut();
+        });
+    };
+
+    var initModals = function() {
+        initModalOpenBindings();
+        initModalCloseBindings();
+    };
+
     var init = function() {
         initWebsocket();
         initElements();
         initDateTime();
+        initModals();
     };
 
     window.registerEventListener = registerEventListener;

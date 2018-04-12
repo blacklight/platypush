@@ -1,4 +1,90 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/music.mpd.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/music.mpd.css') }}"></script>
+
+<div id="music-search-modal" class="modal">
+    <div class="modal-container">
+        <div class="modal-header">
+            Search For Music
+        </div>
+
+        <div class="modal-body">
+            <form id="music-search-form" action="#">
+                <div class="row form-row">
+                    <div class="two columns">
+                        <label for="music-search-any">Any</label>
+                    </div>
+                    <div class="ten columns">
+                        <input type="text" name="any">
+                    </div>
+                </div>
+
+                <div class="row form-row">
+                    <div class="two columns">
+                        <label for="music-search-artist">Artist</label>
+                    </div>
+                    <div class="ten columns">
+                        <input type="text" name="albumartist">
+                    </div>
+                </div>
+
+                <div class="row form-row">
+                    <div class="two columns">
+                        <label for="music-search-title">Title</label>
+                    </div>
+                    <div class="ten columns">
+                        <input type="text" name="title">
+                    </div>
+                </div>
+
+                <div class="row form-row">
+                    <div class="two columns">
+                        <label for="music-search-album">Album</label>
+                    </div>
+                    <div class="ten columns">
+                        <input type="text" name="album">
+                    </div>
+                </div>
+
+                <div class="row music-form-bottom">
+                    <div class="six columns offset-by-six do-search-btns">
+                        <input type="button" class="btn-default" data-dismiss-modal="#music-search-modal"
+                            value="Close">
+                        <input type="submit" class="btn-primary" value="Search">
+                    </div>
+                </div>
+            </form>
+
+            <form class="row" id="music-search-results-form">
+                <div class="six columns">
+                    <button class="btn-default" id="music-results-add" disabled="disabled">
+                        <i class="fa fa-plus"></i>
+                    </button>
+                    <button class="btn-default" id="music-results-play" disabled="disabled">
+                        <i class="fa fa-play"></i>
+                    </button>
+                </div>
+
+                <div class="six columns right-side">
+                    <input type="button" class="btn-default"
+                        data-dismiss-modal="#music-search-modal" value="Close">
+                    <input type="button" class="btn-primary"
+                        id="music-search-reset" value="Reset">
+                </div>
+            </form>
+
+            <div id="music-search-results-container" class="row">
+                <div id="music-search-results-head" class="row">
+                    <div class="three columns">Artist</div>
+                    <div class="four columns">Title</div>
+                    <div class="four columns">Album</div>
+                    <div class="one column">Time</div>
+                </div>
+
+                <div id="music-search-results" class="row"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="row track-info">
     <span class="no-track">No media is being played</span>
@@ -62,6 +148,9 @@
             <div id="browser-controls">
                 <button data-action="add">
                     <i class="fa fa-plus"></i>
+                </button>
+                <button data-action="search" data-modal="#music-search-modal">
+                    <i class="fa fa-search"></i>
                 </button>
             </div>
 
