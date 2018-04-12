@@ -866,6 +866,7 @@ $(document).ready(function() {
 
                 onSuccess = function(response) {
                     initPlaylist();
+                    initStatus();
                 }
             );
         });
