@@ -713,15 +713,18 @@ $(document).ready(function() {
                     if (Object.keys(searchFilters).length > 1) {
                         results = results.filter(function(item) {
                             return (
-                                ('title' in searchFilters && 'title' in item
-                                    ? item.title.toLowerCase().indexOf(
-                                        searchFilters.title.toLowerCase()) >= 0 : true) &&
-                                ('album' in searchFilters && 'album' in item
-                                    ? item.album.toLowerCase().indexOf(
-                                        searchFilters.album.toLowerCase()) >= 0 : true) &&
-                                ('albumartist' in searchFilters && 'artist' in item
-                                    ? item.artist.toLowerCase().indexOf(
-                                        searchFilters.albumartist.toLowerCase()) >= 0 : true)
+                                ('title' in searchFilters
+                                    ? (item.title || '').toLowerCase().indexOf(
+                                        searchFilters.title.toLowerCase()) >= 0
+                                    : true) &&
+                                ('album' in searchFilters
+                                    ? (item.album || '').toLowerCase().indexOf(
+                                        searchFilters.album.toLowerCase()) >= 0
+                                    : true) &&
+                                ('albumartist' in searchFilters
+                                    ? (item.artist || '').toLowerCase().indexOf(
+                                        searchFilters.albumartist.toLowerCase()) >= 0
+                                    : true)
                             );
                         });
                     }
