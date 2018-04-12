@@ -667,13 +667,13 @@ $(document).ready(function() {
 
                 searchFilters.any = searchData.any;
             } else {
-                if ('albumartist' in searchData) {
+                if ('title' in searchData) {
                     args = {
-                        type: 'albumartist',
-                        filter: searchData.albumartist
+                        type: 'title',
+                        filter: searchData.title
                     };
 
-                    searchFilters.albumartist = searchData.albumartist;
+                    searchFilters.title = searchData.title;
                 }
 
                 if ('album' in searchData) {
@@ -685,13 +685,13 @@ $(document).ready(function() {
                     searchFilters.album = searchData.album;
                 }
 
-                if ('title' in searchData) {
+                if ('albumartist' in searchData) {
                     args = {
-                        type: 'title',
-                        filter: searchData.title
+                        type: 'albumartist',
+                        filter: searchData.albumartist
                     };
 
-                    searchFilters.title = searchData.title;
+                    searchFilters.albumartist = searchData.albumartist;
                 }
             }
 
