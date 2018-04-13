@@ -68,6 +68,9 @@ class GpioZeroborgPlugin(Plugin):
             elif 'below_threshold_direction' in sensor:
                 direction = sensor['below_threshold_direction']
 
+            logging.info('Sensor: {}\tMeasurement: {}\tDirection: {}'
+                         .format(sensor['plugin'], value, direction))
+
         return direction
 
 
