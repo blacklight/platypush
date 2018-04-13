@@ -37,12 +37,38 @@ class GpioZeroborgPlugin(Plugin):
         self.zb.ResetEpo()
 
 
-    def get_distance(self):
-        distance_sensor = get_plugin('gpio.sensor.distance')
-        if not distance_sensor:
-            raise RuntimeError('No gpio.sensor.distance configuration found')
+    def _get_measurement(self, plugin, timeout):
+        measure_start_time = time.time()
+        value = None
 
-        return distance_sensor.get_distance()
+        while value is None:
+            value = plugin.get_measurement()
+            if time.time() - measure_start_time > timeout:
+                return None
+
+        return value
+
+    def _get_direction_from_sensors(self):
+        if Direction.DIR_AUTO.value not in self.directions:
+            raise RuntimeError("Can't start auto pilot: " +
+                               "no sensor configured in gpio.zeroborg.directions.auto")
+
+        direction = None
+
+        for sensor in self.directions[Direction.DIR_AUTO.value]['sensors']:
+            plugin = get_plugin(sensor['plugin'])
+            if not sensor:
+                raise RuntimeError('No such sensor: ' + sensor['plugin'])
+
+            value = self._get_measurement(plugin=plugin, timeout=sensor['timeout'])
+            threshold = sensor['threshold']
+
+            if value >= threshold and 'above_threshold_direction' in sensor:
+                direction = sensor['above_threshold_direction']
+            elif 'below_threshold_direction' in sensor:
+                direction = sensor['below_threshold_direction']
+
+        return direction
 
 
     def drive(self, direction):
@@ -69,30 +95,7 @@ class GpioZeroborgPlugin(Plugin):
                     self.auto_mode = True
 
                 if self.auto_mode:
-                    distance = None
-                    last_recorded_distance_timestamp = None
-                    distance_record_timeout = 2.0
-
-                    while distance is None:
-                        distance = self.get_distance()
-                        logging.info('Closest obstacle distance: {} mm'.format(distance))
-
-                        if last_recorded_distance_timestamp and \
-                                time.time() - last_recorded_distance_timestamp > distance_record_timeout:
-                            # Stop the motors if we have been unable
-                            # to access the distance sensor data
-                            self._direction = None
-                            break
-
-                    last_recorded_distance_timestamp = time.time()
-
-                    if distance > 400.0:  # distance in mm
-                        self._direction = Direction.DIR_UP.value
-                    else:
-                        logging.info('Physical obstacle detected at {} mm'.
-                                     format(distance))
-                        self._direction = Direction.DIR_LEFT.value
-
+                    self._direction = self._get_direction_from_sensors()
                     time.sleep(0.1)
 
                 motor_1_power = motor_2_power = motor_3_power = motor_4_power = 0.0

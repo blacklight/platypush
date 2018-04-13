@@ -5,11 +5,13 @@ import time
 import RPi.GPIO as gpio
 
 from platypush.message.response import Response
-from platypush.plugins import Plugin
+from platypush.plugins.gpio.sensor import GpioSensorPlugin
 
 
-class GpioSensorDistancePlugin(Plugin):
-    def __init__(self, trigger_pin, echo_pin):
+class GpioSensorDistancePlugin(GpioSensorPlugin):
+    def __init__(self, trigger_pin, echo_pin, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
         self.trigger_pin = trigger_pin
         self.echo_pin = echo_pin
         self._is_probing = False
@@ -20,10 +22,9 @@ class GpioSensorDistancePlugin(Plugin):
 
         logging.info('Resetting trigger sensor on GPIO pin {}'.format(self.trigger_pin))
         gpio.output(self.trigger_pin, False)
-        time.sleep(1)
 
 
-    def get_distance(self):
+    def get_measurement(self):
         gpio.setmode(gpio.BCM)
         gpio.setup(self.trigger_pin, gpio.OUT)
         gpio.setup(self.echo_pin, gpio.IN)
