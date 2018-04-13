@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 import socket
+import sys
 import time
 import yaml
 
@@ -63,10 +64,23 @@ class Config(object):
             self._config['workdir'] = self._workdir_location
         os.makedirs(self._config['workdir'], exist_ok=True)
 
-        if 'logging' not in self._config:
-            self._config['logging'] = logging.INFO
-        else:
-            self._config['logging'] = getattr(logging, self._config['logging'].upper())
+        logging_config = {
+            'level': logging.INFO,
+            'stream': sys.stdout,
+            'format': '%(asctime)-15s|%(levelname)5s|%(name)s|%(message)s',
+        }
+
+        if 'logging' in self._config:
+            for (k,v) in self._config['logging'].items():
+                logging_config[k] = v
+                if k == 'filename':
+                    logfile = os.path.expanduser(v)
+                    logdir = os.path.dirname(logfile)
+                    os.makedirs(logdir, exist_ok=True)
+                    logging_config[k] = logfile
+                    del logging_config['stream']
+
+        self._config['logging'] = logging_config
 
         if 'device_id' not in self._config:
             self._config['device_id'] = socket.gethostname()

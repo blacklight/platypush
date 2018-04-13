@@ -52,7 +52,7 @@ class Daemon(object):
         self.processed_requests = 0
 
         Config.init(self.config_file)
-        logging.basicConfig(level=Config.get('logging'), stream=sys.stdout)
+        logging.basicConfig(**Config.get('logging'))
 
     @classmethod
     def build_from_cmdline(cls, args):
