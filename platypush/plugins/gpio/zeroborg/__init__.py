@@ -22,36 +22,14 @@ class GpioZeroborgPlugin(Plugin):
     _drive_thread = None
     _can_run = False
     _direction = None
-    _power_offsets = {}
 
 
-    def __init__(self, v_in=8.4, v_out=6.0,
-                 power_offset_left_up=0.0, power_offset_right_up=0.0,
-                 power_offset_left_down=0.0, power_offset_right_down=0.0,
-                 power_offset_left_left=0.0, power_offset_left_right=0.0,
-                 power_offset_right_left=0.0, power_offset_right_right=0.0):
+    def __init__(self, directions = {}):
         import platypush.plugins.gpio.zeroborg.lib as ZeroBorg
 
-        self.v_in = v_in
-        self.v_out = v_out
-        self.max_power = v_out / float(v_in)
+        self.directions = directions
         self.auto_mode = False
         self._direction = None
-        self._power_offsets = {
-            Direction.DIR_LEFT: {
-                Direction.DIR_UP: power_offset_left_up,
-                Direction.DIR_DOWN: power_offset_left_down,
-                Direction.DIR_LEFT: power_offset_left_left,
-                Direction.DIR_RIGHT: power_offset_left_right,
-            },
-
-            Direction.DIR_RIGHT: {
-                Direction.DIR_UP: power_offset_right_up,
-                Direction.DIR_DOWN: power_offset_right_down,
-                Direction.DIR_LEFT: power_offset_right_left,
-                Direction.DIR_RIGHT: power_offset_right_right,
-            },
-        }
 
         self.zb = ZeroBorg.ZeroBorg()
         self.zb.Init()
@@ -117,28 +95,19 @@ class GpioZeroborgPlugin(Plugin):
 
                     time.sleep(0.1)
 
-                if self._direction == Direction.DIR_UP.value:
-                    left = 1.0 + self._power_offsets[Direction.DIR_LEFT][Direction.DIR_UP]
-                    right = 1.0 + self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_UP]
-                elif self._direction == Direction.DIR_DOWN.value:
-                    left = -1.0 - self._power_offsets[Direction.DIR_LEFT][Direction.DIR_DOWN]
-                    right = -1.0 - self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_DOWN]
-                elif self._direction == Direction.DIR_LEFT.value:
-                    left = -0.66 - self._power_offsets[Direction.DIR_LEFT][Direction.DIR_LEFT]
-                    right = 1.32 + self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_LEFT]
-                elif self._direction == Direction.DIR_RIGHT.value:
-                    left = 1.32 + self._power_offsets[Direction.DIR_LEFT][Direction.DIR_RIGHT]
-                    right = -0.66 - self._power_offsets[Direction.DIR_RIGHT][Direction.DIR_RIGHT]
-                elif self._direction is not None:
-                    logging.warning('Invalid direction: {}'.format(direction))
-                    self.stop()
+                motor_1_power = motor_2_power = motor_3_power = motor_4_power = 0.0
+                if self._direction in self.directions:
+                    motor_1_power = self.directions[self._direction]['motor_1_power']
+                    motor_2_power = self.directions[self._direction]['motor_2_power']
+                    motor_3_power = self.directions[self._direction]['motor_3_power']
+                    motor_4_power = self.directions[self._direction]['motor_4_power']
+                elif self._direction:
+                    logging.warning('Invalid direction {}, stopping motors'.format(self._direction))
 
-                power = 0.75  # Still debugging the right power range
-
-                self.zb.SetMotor1(power * left * self.max_power)
-                self.zb.SetMotor2(power * left * self.max_power)
-                self.zb.SetMotor3(power * -right * self.max_power)
-                self.zb.SetMotor4(power * -right * self.max_power)
+                self.zb.SetMotor1(motor_1_power)
+                self.zb.SetMotor2(motor_2_power)
+                self.zb.SetMotor3(motor_3_power)
+                self.zb.SetMotor4(motor_4_power)
 
             self.auto_mode = False
 
