@@ -121,21 +121,21 @@ class MusicMpdPlugin(MusicPlugin):
     def plchanges(self, version):
         return Response(output=self.client.plchanges(version))
 
-    def find(self, type, filter, *args, **kwargs):
+    def find(self, filter, *args, **kwargs):
         return Response(
-            output=self.client.find(type, filter, *args, **kwargs))
+            output=self.client.find(*filter, *args, **kwargs))
 
-    def findadd(self, type, filter, *args, **kwargs):
+    def findadd(self, filter, *args, **kwargs):
         return Response(
-            output=self.client.findadd(type, filter, *args, **kwargs))
+            output=self.client.findadd(*filter, *args, **kwargs))
 
-    def search(self, type, filter, *args, **kwargs):
+    def search(self, filter, *args, **kwargs):
         return Response(
-            output=self.client.search(type, filter, *args, **kwargs))
+            output=self.client.search(*filter, *args, **kwargs))
 
-    def searchadd(self, type, filter, *args, **kwargs):
+    def searchadd(self, filter, *args, **kwargs):
         return Response(
-            output=self.client.searchadd(type, filter, *args, **kwargs))
+            output=self.client.searchadd(*filter, *args, **kwargs))
 
 # vim:sw=4:ts=4:et:
 

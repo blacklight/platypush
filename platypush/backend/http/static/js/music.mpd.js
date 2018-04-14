@@ -654,16 +654,14 @@ $(document).ready(function() {
 
             if ('any' in searchData) {
                 args = {
-                    type: 'any',
-                    filter: searchData.any
+                    filter: ['any', searchData.any]
                 };
 
                 searchFilters.any = searchData.any;
             } else {
                 if ('title' in searchData) {
                     args = {
-                        type: 'title',
-                        filter: searchData.title
+                        filter: ['title', searchData.title]
                     };
 
                     searchFilters.title = searchData.title;
@@ -671,8 +669,7 @@ $(document).ready(function() {
 
                 if ('album' in searchData) {
                     args = {
-                        type: 'album',
-                        filter: searchData.album
+                        filter: ['album', searchData.album]
                     };
 
                     searchFilters.album = searchData.album;
@@ -680,8 +677,7 @@ $(document).ready(function() {
 
                 if ('albumartist' in searchData) {
                     args = {
-                        type: 'albumartist',
-                        filter: searchData.albumartist
+                        filter: ['albumartist', searchData.albumartist]
                     };
 
                     searchFilters.albumartist = searchData.albumartist;

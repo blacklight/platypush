@@ -137,7 +137,7 @@ class Event(Message):
                         result.parsed_args[argname] += ' ' + event_token
 
 
-                    if len(condition_tokens) == 1 \
+                    if (len(condition_tokens) == 1 and len(event_tokens) == 1) \
                             or (len(event_tokens) > 1 and len(condition_tokens) > 1 \
                             and event_tokens[1] == condition_tokens[1]):
                         # Stop appending tokens to this argument, as the next
