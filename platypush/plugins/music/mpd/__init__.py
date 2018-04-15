@@ -121,6 +121,20 @@ class MusicMpdPlugin(MusicPlugin):
     def plchanges(self, version):
         return Response(output=self.client.plchanges(version))
 
+    def searchaddplaylist(self, name):
+        playlists = list(map(lambda _: _['playlist'],
+                        filter(lambda playlist:
+                               name.lower() in playlist['playlist'].lower(),
+                               self.client.listplaylists())))
+
+        if len(playlists):
+            self.client.clear()
+            self.client.load(playlists[0])
+            self.client.play()
+            return Response(output={'playlist': playlists[0]})
+
+        return Response(output={})
+
     def find(self, filter, *args, **kwargs):
         return Response(
             output=self.client.find(*filter, *args, **kwargs))
