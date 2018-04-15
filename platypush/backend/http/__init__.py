@@ -24,7 +24,7 @@ class HttpBackend(Backend):
             http://localhost:8008/execute """
 
     websocket_ping_tries = 3
-    websocket_ping_timeout = 10.0
+    websocket_ping_timeout = 60.0
 
     def __init__(self, port=8008, websocket_port=8009, disable_websocket=False,
                  token=None, **kwargs):
