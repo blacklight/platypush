@@ -118,12 +118,12 @@ class Event(Message):
             if event_token == condition_token:
                 event_tokens.pop(0)
                 condition_tokens.pop(0)
-                result.score += 1
+                result.score += 1.5
             elif re.search(condition_token, event_token):
                 m = re.search('({})'.format(condition_token), event_token)
                 if m.group(1):
                     event_tokens.pop(0)
-                    result.score += 1
+                    result.score += 1.25
 
                 condition_tokens.pop(0)
             else:
@@ -132,7 +132,7 @@ class Event(Message):
                     argname = m.group(1)
                     if argname not in result.parsed_args:
                         result.parsed_args[argname] = event_token
-                        result.score += 1
+                        result.score += 1.0
                     else:
                         result.parsed_args[argname] += ' ' + event_token
 
@@ -146,7 +146,7 @@ class Event(Message):
 
                     event_tokens.pop(0)
                 else:
-                    result.score -= 1
+                    result.score -= 1.0
                     event_tokens.pop(0)
 
         # It's a match if all the tokens in the condition string have been satisfied

@@ -130,8 +130,13 @@ class MusicMpdPlugin(MusicPlugin):
             output=self.client.findadd(*filter, *args, **kwargs))
 
     def search(self, filter, *args, **kwargs):
-        return Response(
-            output=self.client.search(*filter, *args, **kwargs))
+        items = self.client.search(*filter, *args, **kwargs)
+
+        # Spotify results first
+        items = sorted(items, key=lambda item:
+                       0 if item['file'].startswith('spotify:') else 1)
+
+        return Response(output=items)
 
     def searchadd(self, filter, *args, **kwargs):
         return Response(
