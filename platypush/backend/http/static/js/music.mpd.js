@@ -649,39 +649,10 @@ $(document).ready(function() {
                 return obj;
             }, {});
 
-            var args = {};
-            var searchFilters = {};
-
-            if ('any' in searchData) {
-                args = {
-                    filter: ['any', searchData.any]
-                };
-
-                searchFilters.any = searchData.any;
-            } else {
-                if ('title' in searchData) {
-                    args = {
-                        filter: ['title', searchData.title]
-                    };
-
-                    searchFilters.title = searchData.title;
-                }
-
-                if ('album' in searchData) {
-                    args = {
-                        filter: ['album', searchData.album]
-                    };
-
-                    searchFilters.album = searchData.album;
-                }
-
-                if ('albumartist' in searchData) {
-                    args = {
-                        filter: ['albumartist', searchData.albumartist]
-                    };
-
-                    searchFilters.albumartist = searchData.albumartist;
-                }
+            var filter = [];
+            for (var searchItem of Object.keys(searchData)) {
+                filter.push(searchItem);
+                filter.push(searchData[searchItem]);
             }
 
             $(this).find('input').prop('disabled', true);
@@ -690,7 +661,9 @@ $(document).ready(function() {
                 {
                     type: 'request',
                     action: 'music.mpd.search',
-                    args: args
+                    args: {
+                        filter: filter
+                    }
                 },
 
                 onSuccess = function(response) {
@@ -699,20 +672,20 @@ $(document).ready(function() {
                         return false;
                     }
 
-                    if (Object.keys(searchFilters).length > 1) {
+                    if (Object.keys(searchData).length > 1) {
                         results = results.filter(function(item) {
                             return (
-                                ('title' in searchFilters
+                                ('title' in searchData
                                     ? (item.title || '').toLowerCase().indexOf(
-                                        searchFilters.title.toLowerCase()) >= 0
+                                        searchData.title.toLowerCase()) >= 0
                                     : true) &&
-                                ('album' in searchFilters
+                                ('album' in searchData
                                     ? (item.album || '').toLowerCase().indexOf(
-                                        searchFilters.album.toLowerCase()) >= 0
+                                        searchData.album.toLowerCase()) >= 0
                                     : true) &&
-                                ('albumartist' in searchFilters
+                                ('albumartist' in searchData
                                     ? (item.artist || '').toLowerCase().indexOf(
-                                        searchFilters.albumartist.toLowerCase()) >= 0
+                                        searchData.albumartist.toLowerCase()) >= 0
                                     : true)
                             );
                         });
