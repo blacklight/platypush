@@ -24,12 +24,12 @@ class MusicMpdBackend(Backend):
     def run(self):
         super().run()
 
-        plugin = get_plugin('music.mpd')
         last_state = None
         last_track = None
         last_playlist = None
 
         while not self.should_stop():
+            plugin = get_plugin('music.mpd')
             status = plugin.status().output
             track = plugin.currentsong().output
             state = status['state'].lower()
