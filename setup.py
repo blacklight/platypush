@@ -80,6 +80,8 @@ setup(
         'Support for most of the HTTP poll backends': ['python-dateutil'],
         'Support for Last.FM scrobbler plugin': ['pylast'],
         'Support for custom hotword detection': ['snowboy'],
+        'Support for GPIO pins access': ['RPi.GPIO'],
+        'Support for MCP3008 analog-to-digital converter plugin': ['adafruit-mcp3008'],
         # 'Support for Flic buttons': ['git+ssh://git@github.com/50ButtonsEach/fliclib-linux-hci']
     },
 )
