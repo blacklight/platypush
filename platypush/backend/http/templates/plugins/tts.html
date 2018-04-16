@@ -1,0 +1,19 @@
+<script type="text/javascript" src="{{ url_for('static', filename='js/tts.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tts.css') }}"></script>
+
+<div class="row" id="tts-container">
+    <form action="#" id="tts-form">
+        <div class="eight columns">
+            <input type="text" name="phrase" placeholder="Text to say">
+        </div>
+        <div class="three columns">
+            <input type="text" name="lang" placeholder="Lang code">
+        </div>
+        <div class="one column">
+            <button type="submit">
+                <i class="fa fa-microphone"></i>
+            </button>
+        </div>
+    </form>
+</div>
+

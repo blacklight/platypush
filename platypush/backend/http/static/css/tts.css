@@ -1,0 +1,9 @@
+#tts-container {
+    max-width: 60em;
+    margin: 3em auto;
+}
+
+    #tts-form input[type=text] {
+        width: 100%;
+    }
+
