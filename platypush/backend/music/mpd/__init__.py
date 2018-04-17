@@ -30,17 +30,21 @@ class MusicMpdBackend(Backend):
         plugin = None
 
         while not self.should_stop():
-            while not plugin:
-                plugin = get_plugin('music.mpd')
-                if not plugin:
+            success = False
+
+            while not success:
+                try:
+                    plugin = get_plugin('music.mpd')
+                    status = plugin.status().output
+                    track = plugin.currentsong().output
+                    state = status['state'].lower()
+                    playlist = status['playlist']
+                    success = True
+                except Exception as e:
+                    logging.exception(e)
                     logging.info('Reloading crashed MPD plugin')
                     plugin = get_plugin('music.mpd', reload=True)
                     time.sleep(self.poll_seconds)
-
-            status = plugin.status().output
-            track = plugin.currentsong().output
-            state = status['state'].lower()
-            playlist = status['playlist']
 
             if state != last_state:
                 if state == 'stop':
