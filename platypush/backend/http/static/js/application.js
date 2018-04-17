@@ -176,3 +176,112 @@ $(document).ready(function() {
     init();
 });
 
+function execute(request, onSuccess, onError, onComplete) {
+    request['target'] = 'localhost';
+    return $.ajax({
+        type: 'POST',
+        url: '/execute',
+        contentType: 'application/json',
+        dataType: 'json',
+        data: JSON.stringify(request),
+        complete: function() {
+            if (onComplete) {
+                onComplete();
+            }
+        },
+        error: function(xhr, status, error) {
+            if (onError) {
+                onError(xhr, status, error);
+            }
+        },
+        success: function(response, status, xhr) {
+            if (onSuccess) {
+                onSuccess(response, status, xhr);
+            }
+        },
+        beforeSend: function(xhr) {
+            if (window.token) {
+                xhr.setRequestHeader('X-Token', window.token);
+            }
+        },
+    });
+}
+
+function createNotification(options) {
+    var $notificationContainer = $('#notification-container');
+    var $notification = $('<div></div>').addClass('notification');
+    var $title = $('<div></div>').addClass('notification-title');
+    var timeout = 'timeout' in options ? options.timeout : 10000;
+
+    if ('title' in options) {
+        $title.text(options.title);
+    }
+
+    var $body = $('<div></div>').addClass('notification-body');
+    var $imgDiv = $('<div></div>').addClass('notification-image').addClass('three columns');
+    var $img = $('<i></i>').addClass('fa fa-bell').addClass('three columns').addClass('notification-image-item');
+    var $text = $('<div></div>').addClass('notification-text').addClass('nine columns')
+
+    if ('image' in options) {
+        $img = $('<img></img>').attr('src', options.image);
+    } else if ('icon' in options) {
+        $img.removeClass('fa-bell').addClass('fa-' + options.icon);
+    }
+
+    if ('text' in options) {
+        $text.text(options.text);
+    } else if ('html' in options) {
+        $text.html(options.html);
+    }
+
+    $img.appendTo($imgDiv);
+    $imgDiv.appendTo($body);
+    $text.appendTo($body);
+
+    var clickHandler;
+    var removeTimeoutId;
+
+    var removeNotification = function() {
+        $notification.fadeOut(300, function() {
+            $notification.remove();
+        });
+    };
+
+    var setRemoveTimeout = function() {
+        if (timeout) {
+            removeTimeoutId = setTimeout(removeNotification, timeout);
+        }
+    };
+
+    setRemoveTimeout();
+
+    if ('onclick' in options) {
+        clickHandler = options.onclick;
+    } else {
+        clickHandler = removeNotification;
+    }
+
+    $notification.on('click', clickHandler);
+    $notification.hover(
+        // on hover start
+        function() {
+            if (removeTimeoutId) {
+                clearTimeout(removeTimeoutId);
+                removeTimeoutId = undefined;
+            }
+        },
+
+        // on hover end
+        function() {
+            if (timeout) {
+                setRemoveTimeout();
+            }
+        }
+    );
+
+    $title.appendTo($notification);
+    $body.appendTo($notification);
+    $notification.prependTo($notificationContainer);
+    $notification.fadeIn();
+}
+

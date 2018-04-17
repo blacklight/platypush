@@ -16,37 +16,6 @@ $(document).ready(function() {
         $resetSearchBtn = $('#music-search-reset');
         $doSearchBtns = $('.do-search-btns');
 
-    var execute = function(request, onSuccess, onError, onComplete) {
-        request['target'] = 'localhost';
-        $.ajax({
-            type: 'POST',
-            url: '/execute',
-            contentType: 'application/json',
-            dataType: 'json',
-            data: JSON.stringify(request),
-            complete: function() {
-                if (onComplete) {
-                    onComplete();
-                }
-            },
-            error: function(xhr, status, error) {
-                if (onError) {
-                    onError(xhr, status, error);
-                }
-            },
-            success: function(response, status, xhr) {
-                if (onSuccess) {
-                    onSuccess(response, status, xhr);
-                }
-            },
-            beforeSend: function(xhr) {
-                if (window.token) {
-                    xhr.setRequestHeader('X-Token', window.token);
-                }
-            },
-        });
-    };
-
     var formatMinutes = function(time) {
         if (typeof time === 'string') {
             time = parseInt(time);
@@ -198,10 +167,17 @@ $(document).ready(function() {
 
     var onEvent = function(event) {
         switch (event.args.type) {
+            case 'platypush.message.event.music.NewPlayingTrackEvent':
+                createNotification({
+                    'icon': 'play',
+                    'html': '<b>' + ('artist' in event.args.track ? event.args.track.artist : '')
+                                  + '</b><br/>'
+                                  + ('title' in event.args.track ? event.args.track.title : '[No name]'),
+                });
+
             case 'platypush.message.event.music.MusicStopEvent':
             case 'platypush.message.event.music.MusicPlayEvent':
             case 'platypush.message.event.music.MusicPauseEvent':
-            case 'platypush.message.event.music.NewPlayingTrackEvent':
                 updateControls(status=event.args.status, track=event.args.track);
                 break;
 

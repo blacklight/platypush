@@ -25,6 +25,9 @@ class HttpBackend(Backend):
 
     websocket_ping_tries = 3
     websocket_ping_timeout = 60.0
+    hidden_plugins = {
+        'assistant.google'
+    }
 
     def __init__(self, port=8008, websocket_port=8009, disable_websocket=False,
                  token=None, **kwargs):
@@ -98,13 +101,17 @@ class HttpBackend(Backend):
         def index():
             configured_plugins = Config.get_plugins()
             enabled_plugins = {}
+            hidden_plugins = {}
 
             for plugin, conf in configured_plugins.items():
                 template_file = os.path.join('plugins', plugin + '.html')
                 if os.path.isfile(os.path.join(template_dir, template_file)):
-                    enabled_plugins[plugin] = conf
+                    if plugin in self.hidden_plugins:
+                        hidden_plugins[plugin] = conf
+                    else:
+                        enabled_plugins[plugin] = conf
 
-            return render_template('index.html', plugins=enabled_plugins,
+            return render_template('index.html', plugins=enabled_plugins, hidden_plugins=hidden_plugins,
                                    token=self.token, websocket_port=self.websocket_port)
 
 

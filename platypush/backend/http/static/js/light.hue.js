@@ -6,37 +6,6 @@ $(document).ready(function() {
         $lightsList = $('#lights-list'),
         $scenesList = $('#scenes-list');
 
-    var execute = function(request, onSuccess, onError, onComplete) {
-        request['target'] = 'localhost';
-        return $.ajax({
-            type: 'POST',
-            url: '/execute',
-            contentType: 'application/json',
-            dataType: 'json',
-            data: JSON.stringify(request),
-            complete: function() {
-                if (onComplete) {
-                    onComplete();
-                }
-            },
-            error: function(xhr, status, error) {
-                if (onError) {
-                    onError(xhr, status, error);
-                }
-            },
-            success: function(response, status, xhr) {
-                if (onSuccess) {
-                    onSuccess(response, status, xhr);
-                }
-            },
-            beforeSend: function(xhr) {
-                if (window.token) {
-                    xhr.setRequestHeader('X-Token', window.token);
-                }
-            },
-        });
-    };
-
     var createPowerToggleElement = function(data) {
         var id = data['type'] + '_' + data['id'];
         var $powerToggle = $('<div></div>').addClass('toggle toggle--push light-ctrl-switch-container');

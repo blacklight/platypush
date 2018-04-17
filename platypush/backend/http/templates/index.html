@@ -57,6 +57,17 @@
                 </div>
             {% endfor %}
         </div>
+
+        <div id="notification-container"></div>
+
+        <div id="hidden-plugins-container">
+            {% for plugin in hidden_plugins.keys()|sort() %}
+                {% set configuration = plugins[plugin] %}
+                <div class="plugin" id="{% print plugin %}">
+                    {% include 'plugins/' + plugin + '.html' %}
+                </div>
+            {% endfor %}
+        </div>
     </main>
 <body>
 
