@@ -74,7 +74,7 @@ setup(
         'Support for Belkin WeMo Switch plugin': ['ouimeaux'],
         'Support for text2speech plugin': ['mplayer'],
         'Support for OMXPlayer plugin': ['omxplayer'],
-        'Support for YouTube in the OMXPlayer plugin': ['youtube-dl'],
+        'Support for YouTube in the OMXPlayer plugin': ['youtube-dl', 'beautifulsoup4'],
         'Support for Google Assistant': ['google-assistant-library'],
         'Support for the Google APIs': ['google-api-python-client'],
         'Support for most of the HTTP poll backends': ['python-dateutil'],

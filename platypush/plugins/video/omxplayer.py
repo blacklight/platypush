@@ -3,6 +3,10 @@ import logging
 import re
 import subprocess
 
+import urllib.request
+import urllib.parse
+
+from bs4 import BeautifulSoup
 from dbus.exceptions import DBusException
 from omxplayer import OMXPlayer
 
@@ -14,6 +18,7 @@ class VideoOmxplayerPlugin(Plugin):
     def __init__(self, args=[], *argv, **kwargs):
         self.args = args
         self.player = None
+        self.videos_queue = []
 
     def play(self, resource):
         if resource.startswith('youtube:') \
@@ -27,6 +32,21 @@ class VideoOmxplayerPlugin(Plugin):
                             'be able to control the media')
             logging.exception(e)
 
+        return self.status()
+
+    def youtube_search_and_play(self, query):
+        query = urllib.parse.quote(query)
+        url = "https://www.youtube.com/results?search_query=" + query
+        response = urllib.request.urlopen(url)
+        html = response.read()
+        soup = BeautifulSoup(html, 'lxml')
+        self.videos_queue = []
+
+        for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
+            if vid['href'].startswith('/watch?v='):
+                self.videos_queue.append('https://www.youtube.com' + vid['href'])
+
+        self.play(self.videos_queue.pop(0))
         return self.status()
 
     def pause(self):
@@ -57,6 +77,16 @@ class VideoOmxplayerPlugin(Plugin):
     def forward(self):
         if self.player:
             self.player.seek(+30)
+        return self.status()
+
+    def next(self):
+        if self.player:
+            self.player.stop()
+            self.player.quit()
+
+        if self.videos_queue:
+            self.play(self.videos_queue.pop(0))
+
         return self.status()
 
     def status(self):
