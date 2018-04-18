@@ -23,7 +23,6 @@ class MediaCtrlPlugin(Plugin):
         self.torrentcast_port = torrentcast_port
         self.url = None
         self.plugin = None
-        self.videos_queue = []
 
     @classmethod
     def _get_type_and_resource_by_url(cls, url):
@@ -100,14 +99,6 @@ class MediaCtrlPlugin(Plugin):
 
     def previous(self):
         if self.plugin: return self.plugin.previous()
-
-        if self.plugin:
-            self.plugin.stop()
-
-        if self.videos_queue:
-            return self.play(self.videos_queue.pop(0))
-
-        return Response(output={'status': 'no media'}, errors = [])
 
 
 # vim:sw=4:ts=4:et:

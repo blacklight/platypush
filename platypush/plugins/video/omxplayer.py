@@ -18,6 +18,7 @@ class VideoOmxplayerPlugin(Plugin):
     def __init__(self, args=[], *argv, **kwargs):
         self.args = args
         self.player = None
+        self.videos_queue = []
 
     def play(self, resource):
         if resource.startswith('youtube:') \
