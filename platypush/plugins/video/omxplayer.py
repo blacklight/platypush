@@ -69,7 +69,9 @@ class VideoOmxplayerPlugin(Plugin):
             self.player.stop()
 
         if self.videos_queue:
-            return self.play(self.videos_queue.pop(0))
+            video = self.videos_queue.pop(0)
+            logging.info('Playing {}'.format(video))
+            return self.play(video)
 
         return Response(output={'status': 'no media'}, errors = [])
 
@@ -100,6 +102,7 @@ class VideoOmxplayerPlugin(Plugin):
                 self.videos_queue.append('https://www.youtube.com' + vid['href'])
 
         url = self.videos_queue.pop(0)
+        logging.info('Playing {}'.format(url))
         return self.play(url)
 
     @classmethod
