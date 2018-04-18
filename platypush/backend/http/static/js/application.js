@@ -4,7 +4,7 @@ $(document).ready(function() {
         openedWebsocket,
         dateTimeInterval,
         websocketTimeoutId,
-        websocketReconnectMsecs = 5000,
+        websocketReconnectMsecs = 30000,
         eventListeners = [];
 
     var initWebsocket = function() {
