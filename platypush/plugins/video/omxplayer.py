@@ -3,6 +3,10 @@ import logging
 import re
 import subprocess
 
+import urllib.request
+import urllib.parse
+
+from bs4 import BeautifulSoup
 from dbus.exceptions import DBusException
 from omxplayer import OMXPlayer
 
@@ -59,6 +63,16 @@ class VideoOmxplayerPlugin(Plugin):
             self.player.seek(+30)
         return self.status()
 
+    def next(self):
+        if self.player:
+            self.player.stop()
+
+        if self.videos_queue:
+            return self.play(self.videos_queue.pop(0))
+
+        return Response(output={'status': 'no media'}, errors = [])
+
+
     def status(self):
         if self.player:
             return Response(output=json.dumps({
@@ -71,6 +85,21 @@ class VideoOmxplayerPlugin(Plugin):
             return Response(output=json.dumps({
                 'status': 'Not initialized'
             }))
+
+    def youtube_search_and_play(self, query):
+        query = urllib.parse.quote(query)
+        url = "https://www.youtube.com/results?search_query=" + query
+        response = urllib.request.urlopen(url)
+        html = response.read()
+        soup = BeautifulSoup(html, 'lxml')
+        self.videos_queue = []
+
+        for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
+            if vid['href'].startswith('/watch?v='):
+                self.videos_queue.append('https://www.youtube.com' + vid['href'])
+
+        url = self.videos_queue.pop(0)
+        return self.play(url)
 
     @classmethod
     def _get_youtube_content(cls, url):
