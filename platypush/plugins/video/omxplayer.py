@@ -25,6 +25,8 @@ class VideoOmxplayerPlugin(Plugin):
                 or resource.startswith('https://www.youtube.com/watch?v='):
             resource = self._get_youtube_content(resource)
 
+        logging.info('Playing {}'.format(resource))
+
         try:
             self.player = OMXPlayer(resource, args=self.args)
         except DBusException as e:
@@ -70,7 +72,6 @@ class VideoOmxplayerPlugin(Plugin):
 
         if self.videos_queue:
             video = self.videos_queue.pop(0)
-            logging.info('Playing {}'.format(video))
             return self.play(video)
 
         return Response(output={'status': 'no media'}, errors = [])
@@ -90,20 +91,26 @@ class VideoOmxplayerPlugin(Plugin):
             }))
 
     def youtube_search_and_play(self, query):
+        self.videos_queue = self.youtube_search(query)
+        url = self.videos_queue.pop(0)
+        logging.info('Playing {}'.format(url))
+        return self.play(url)
+
+    def youtube_search(self, query):
         query = urllib.parse.quote(query)
         url = "https://www.youtube.com/results?search_query=" + query
         response = urllib.request.urlopen(url)
         html = response.read()
         soup = BeautifulSoup(html, 'lxml')
-        self.videos_queue = []
+        results = []
 
         for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
             if vid['href'].startswith('/watch?v='):
-                self.videos_queue.append('https://www.youtube.com' + vid['href'])
+                results.append('https://www.youtube.com' + vid['href'])
 
-        url = self.videos_queue.pop(0)
-        logging.info('Playing {}'.format(url))
-        return self.play(url)
+        logging.info('{} YouTube video results for the search query "{}"'.format(query))
+        return results
+
 
     @classmethod
     def _get_youtube_content(cls, url):
