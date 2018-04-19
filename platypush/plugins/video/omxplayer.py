@@ -11,6 +11,8 @@ from dbus.exceptions import DBusException
 from omxplayer import OMXPlayer
 
 from platypush.message.response import Response
+from platypush.message.event.video import VideoPlayEvent, VideoPauseEvent, \
+    VideoStop, NewPlayingVideoEvent
 
 from .. import Plugin
 
@@ -18,9 +20,11 @@ class VideoOmxplayerPlugin(Plugin):
     def __init__(self, args=[], *argv, **kwargs):
         self.args = args
         self.player = None
+        self.cur_video = None
         self.videos_queue = []
 
     def play(self, resource):
+        self.cur_video = resource
         if resource.startswith('youtube:') \
                 or resource.startswith('https://www.youtube.com/watch?v='):
             resource = self._get_youtube_content(resource)
@@ -29,6 +33,7 @@ class VideoOmxplayerPlugin(Plugin):
 
         try:
             self.player = OMXPlayer(resource, args=self.args)
+            self._init_player_handlers()
         except DBusException as e:
             logging.warning('DBus connection failed: you will probably not ' +
                             'be able to control the media')
@@ -44,6 +49,8 @@ class VideoOmxplayerPlugin(Plugin):
             self.player.stop()
             self.player.quit()
             self.player = None
+
+        self.cur_video = None
         return self.status()
 
     def voldown(self):
@@ -89,6 +96,19 @@ class VideoOmxplayerPlugin(Plugin):
             return Response(output=json.dumps({
                 'status': 'Not initialized'
             }))
+
+    def _init_player_handlers(self):
+        if not self.player:
+            return
+
+        self.player.playEvent += lambda _: \
+            self.bus.post(VideoPlayEvent(video=self.cur_video))
+
+        self.player.pauseEvent += lambda _: \
+            self.bus.post(VideoPauseEvent(video=self.cur_video))
+
+        self.player.stopEvent += lambda _: \
+            self.bus.post(VideoStopEvent())
 
     def youtube_search_and_play(self, query):
         self.videos_queue = self.youtube_search(query)
