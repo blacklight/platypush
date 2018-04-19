@@ -19,7 +19,7 @@ class VideoTorrentcastPlugin(Plugin):
             'http://{}:{}/play/'.format(self.server, self.port),
             data=urllib.parse.urlencode({
                 'url': url
-            })
+            }).encode()
         )
 
         self.playing = True
