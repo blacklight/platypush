@@ -18,7 +18,7 @@ class VideoTorrentcastPlugin(Plugin):
         request = urllib.request.urlopen(
             'http://{}:{}/play/'.format(self.server, self.port),
             data=urllib.parse.urlencode({
-                'url': resource
+                'url': url
             })
         )
 
