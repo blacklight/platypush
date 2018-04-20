@@ -136,7 +136,7 @@ class VideoOmxplayerPlugin(Plugin):
         results = []
 
         for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
-            m = re.match('(/watch?v=.+?)(&.*)', vid['href'])
+            m = re.match('(/watch\?v=.+?)(&.*)', vid['href'])
             if m:
                 results.append('https://www.youtube.com' + m.group(1))
 
