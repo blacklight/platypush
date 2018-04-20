@@ -130,5 +130,10 @@ class MediaCtrlPlugin(Plugin):
         if plugin: return plugin.previous()
 
 
+    def status(self):
+        plugin = self._get_playing_plugin()
+        if plugin: return plugin.status()
+
+
 # vim:sw=4:ts=4:et:
 
