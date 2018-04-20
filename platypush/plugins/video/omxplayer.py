@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 from dbus.exceptions import DBusException
 from omxplayer import OMXPlayer
 
+from platypush.plugins.media import PlayerState
 from platypush.message.response import Response
 from platypush.message.event.video import VideoPlayEvent, VideoPauseEvent, \
     VideoStopEvent, NewPlayingVideoEvent
@@ -20,11 +21,9 @@ class VideoOmxplayerPlugin(Plugin):
     def __init__(self, args=[], *argv, **kwargs):
         self.args = args
         self.player = None
-        self.cur_video = None
         self.videos_queue = []
 
     def play(self, resource):
-        self.cur_video = resource
         if resource.startswith('youtube:') \
                 or resource.startswith('https://www.youtube.com/watch?v='):
             resource = self._get_youtube_content(resource)
@@ -50,7 +49,6 @@ class VideoOmxplayerPlugin(Plugin):
             self.player.quit()
             self.player = None
 
-        self.cur_video = None
         return self.status()
 
     def voldown(self):
@@ -84,17 +82,67 @@ class VideoOmxplayerPlugin(Plugin):
         return Response(output={'status': 'no media'}, errors = [])
 
 
+    def hide_subtitles(self):
+        if self.player: self.player.hide_subtitles()
+        return self.status()
+
+    def hide_video(self):
+        if self.player: self.player.hide_video()
+        return self.status()
+
+    def is_playing(self):
+        if self.player: return self.player.is_playing()
+        else: return False
+
+    def load(self, source, pause=False):
+        if self.player: self.player.load(source, pause)
+        return self.status()
+
+    def metadata(self):
+        if self.player: return Response(output=self.player.metadata())
+        return self.status()
+
+    def mute(self):
+        if self.player: self.player.mute()
+        return self.status()
+
+    def unmute(self):
+        if self.player: self.player.unmute()
+        return self.status()
+
+    def seek(self, relative_position):
+        if self.player: self.player.seek(relative_position)
+        return self.status()
+
+    def set_position(self, position):
+        if self.player: self.player.set_seek(position)
+        return self.status()
+
+    def set_volume(self, volume):
+        if self.player: self.player.set_volume(volume)
+        return self.status()
+
     def status(self):
+        state = PlayerState.STOP.value
+
         if self.player:
+            state = self.player.playback_status().lower()
+            if state == 'playing': state = PlayerState.PLAY.value
+            elif state == 'stopped': state = PlayerState.STOP.value
+            elif state == 'paused': state = PlayerState.PAUSE.value
+
             return Response(output=json.dumps({
                 'source': self.player.get_source(),
-                'status': self.player.playback_status(),
+                'state': state,
                 'volume': self.player.volume(),
                 'elapsed': self.player.position(),
+                'duration': self.player.duration(),
+                'width': self.player.width(),
+                'height': self.player.height(),
             }))
         else:
             return Response(output=json.dumps({
-                'status': 'Not initialized'
+                'state': PlayerState.STOP.value
             }))
 
     def _init_player_handlers(self):
@@ -102,10 +150,10 @@ class VideoOmxplayerPlugin(Plugin):
             return
 
         self.player.playEvent += lambda _: \
-            self.bus.post(VideoPlayEvent(video=self.cur_video))
+            self.bus.post(VideoPlayEvent(video=self.player.get_source())
 
         self.player.pauseEvent += lambda _: \
-            self.bus.post(VideoPauseEvent(video=self.cur_video))
+            self.bus.post(VideoPauseEvent(video=self.player.get_source())
 
         self.player.stopEvent += lambda _: \
             self.bus.post(VideoStopEvent())

@@ -4,6 +4,7 @@ import urllib3
 import urllib.request
 import urllib.parse
 
+from platypush.plugins.media import PlayerState
 from platypush.message.response import Response
 
 from .. import Plugin
@@ -12,7 +13,7 @@ class VideoTorrentcastPlugin(Plugin):
     def __init__(self, server='localhost', port=9090, *args, **kwargs):
         self.server = server
         self.port = port
-        self.playing = False
+        self.state = PlayerState.STOP.value
 
     def play(self, url):
         request = urllib.request.urlopen(
@@ -22,7 +23,7 @@ class VideoTorrentcastPlugin(Plugin):
             }).encode()
         )
 
-        self.playing = True
+        self.state = PlayerState.PLAY.value
         return Response(output=request.read())
 
     def pause(self):
@@ -30,6 +31,7 @@ class VideoTorrentcastPlugin(Plugin):
         request = http.request('POST',
             'http://{}:{}/pause/'.format(self.server, self.port))
 
+        self.state = PlayerState.PAUSE.value
         return Response(output=request.read())
 
     def stop(self):
@@ -37,7 +39,7 @@ class VideoTorrentcastPlugin(Plugin):
         request = http.request('POST',
             'http://{}:{}/stop/'.format(self.server, self.port))
 
-        self.playing = False
+        self.state = PlayerState.STOP.value
         return Response(output=request.read())
 
     def search(self, query):
@@ -74,6 +76,9 @@ class VideoTorrentcastPlugin(Plugin):
     def volup(self): return Response(output='Unsupported method')
     def back(self): return Response(output='Unsupported method')
     def forward(self): return Response(output='Unsupported method')
+
+    def status(self):
+        return Response(output={ 'state': self.state })
 
 
 # vim:sw=4:ts=4:et:

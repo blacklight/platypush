@@ -1,10 +1,9 @@
 import re
 import subprocess
 
-from omxplayer import OMXPlayer
-
 from platypush.context import get_plugin
 from platypush.message.response import Response
+from platypush.plugins.media import PlayerState
 
 from .. import Plugin
 
@@ -18,8 +17,11 @@ class MediaCtrlPlugin(Plugin):
         - spotify:track:track_id [leverages plugins.music.mpd]
     """
 
-    def __init__(self, omxplayer_args=[], torrentcast_port=9090, *args, **kwargs):
-        self.omxplayer_args = omxplayer_args
+    _supported_plugins = {
+        'music.mpd', 'video.omxplayer', 'video.torrentcast'
+    }
+
+    def __init__(self, torrentcast_port=9090, *args, **kwargs):
         self.torrentcast_port = torrentcast_port
         self.url = None
         self.plugin = None
@@ -52,6 +54,25 @@ class MediaCtrlPlugin(Plugin):
         raise RuntimeError('Unknown URL type: {}'.format(url))
 
 
+    def _get_playing_plugin(self):
+        if self.plugin:
+            status = self.plugin.status()
+            if status['state'] == PlayerState.PLAY or state['state'] == PlayerState.PAUSE:
+                return self.plugin
+
+        for plugin in self._supported_plugins:
+            try:
+                player = get_plugin(plugin)
+            except:
+                continue
+
+            status = player.status().output
+            if status['state'] == PlayerState.PLAY.value or status['state'] == PlayerState.PAUSE.value:
+                return player
+
+        return None
+
+
     def play(self, url):
         (type, resource) = self._get_type_and_resource_by_url(url)
         response = Response(output='', errors = [])
@@ -67,38 +88,46 @@ class MediaCtrlPlugin(Plugin):
         return self.plugin.play(resource)
 
     def pause(self):
-        if self.plugin: return self.plugin.pause()
+        plugin = self._get_playing_plugin()
+        if plugin: return plugin.pause()
 
 
     def stop(self):
-        if self.plugin:
-            ret = self.plugin.stop()
+        plugin = self._get_playing_plugin()
+        if plugin:
+            ret = plugin.stop()
             self.plugin = None
             return ret
 
 
     def voldown(self):
-        if self.plugin: return self.plugin.voldown()
+        plugin = self._get_playing_plugin()
+        if plugin: return plugin.voldown()
 
 
     def volup(self):
-        if self.plugin: return self.plugin.volup()
+        plugin = self._get_playing_plugin()
+        if plugin: return plugin.volup()
 
 
     def back(self):
-        if self.plugin: return self.plugin.back()
+        plugin = self._get_playing_plugin()
+        if plugin: return plugin.back()
 
 
     def forward(self):
-        if self.plugin: return self.plugin.forward()
+        plugin = self._get_playing_plugin()
+        if plugin: return plugin.forward()
 
 
     def next(self):
-        if self.plugin: return self.plugin.next()
+        plugin = self._get_playing_plugin()
+        if plugin: return plugin.next()
 
 
     def previous(self):
-        if self.plugin: return self.plugin.previous()
+        plugin = self._get_playing_plugin()
+        if plugin: return plugin.previous()
 
 
 # vim:sw=4:ts=4:et:
