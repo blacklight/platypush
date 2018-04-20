@@ -12,7 +12,7 @@ from omxplayer import OMXPlayer
 
 from platypush.message.response import Response
 from platypush.message.event.video import VideoPlayEvent, VideoPauseEvent, \
-    VideoStop, NewPlayingVideoEvent
+    VideoStopEvent, NewPlayingVideoEvent
 
 from .. import Plugin
 
