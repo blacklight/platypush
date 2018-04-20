@@ -128,7 +128,9 @@ class VideoOmxplayerPlugin(Plugin):
             if vid['href'].startswith('/watch?v='):
                 results.append('https://www.youtube.com' + vid['href'])
 
-        logging.info('{} YouTube video results for the search query "{}"'.format(query))
+        logging.info('{} YouTube video results for the search query "{}"'
+                     .format(len(results), query))
+
         return results
 
 
