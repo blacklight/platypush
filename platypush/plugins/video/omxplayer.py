@@ -150,10 +150,10 @@ class VideoOmxplayerPlugin(Plugin):
             return
 
         self.player.playEvent += lambda _: \
-            self.bus.post(VideoPlayEvent(video=self.player.get_source())
+            self.bus.post(VideoPlayEvent(video=self.player.get_source()))
 
         self.player.pauseEvent += lambda _: \
-            self.bus.post(VideoPauseEvent(video=self.player.get_source())
+            self.bus.post(VideoPauseEvent(video=self.player.get_source()))
 
         self.player.stopEvent += lambda _: \
             self.bus.post(VideoStopEvent())
