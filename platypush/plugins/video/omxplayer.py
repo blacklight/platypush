@@ -112,9 +112,20 @@ class VideoOmxplayerPlugin(Plugin):
 
     def youtube_search_and_play(self, query):
         self.videos_queue = self.youtube_search(query)
-        url = self.videos_queue.pop(0)
-        logging.info('Playing {}'.format(url))
-        return self.play(url)
+        ret = None
+
+        while self.videos_queue:
+            url = self.videos_queue.pop(0)
+            logging.info('Playing {}'.format(url))
+
+            try:
+                ret = self.play(url)
+                break
+            except Exception as e:
+                logging.exception(e)
+                logging.info('YouTube playback error, trying next video')
+
+        return ret
 
     def youtube_search(self, query):
         query = urllib.parse.quote(query)
@@ -125,8 +136,9 @@ class VideoOmxplayerPlugin(Plugin):
         results = []
 
         for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
-            if vid['href'].startswith('/watch?v='):
-                results.append('https://www.youtube.com' + vid['href'])
+            m = re.match('(/watch?v=.+?)(&.*)', vid['href'])
+            if m:
+                results.append('https://www.youtube.com' + m.group(1))
 
         logging.info('{} YouTube video results for the search query "{}"'
                      .format(len(results), query))
