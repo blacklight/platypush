@@ -197,8 +197,7 @@ class Request(Message):
                 if n_tries:
                     logging.info('Reloading plugin {} and retrying'.format(module_name))
                     get_plugin(module_name, reload=True)
-                    _thread_func(n_tries-1)
-                    return
+                    response = _thread_func(n_tries-1)
             finally:
                 self._send_response(response)
                 return response
