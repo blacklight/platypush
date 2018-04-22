@@ -64,7 +64,10 @@ class MediaCtrlPlugin(Plugin):
             try:
                 player = get_plugin(plugin)
             except:
-                continue
+                try:
+                    player = get_plugin(plugin, reload=True)
+                except:
+                    continue
 
             status = player.status().output
             if status['state'] == PlayerState.PLAY.value or status['state'] == PlayerState.PAUSE.value:
@@ -76,13 +79,22 @@ class MediaCtrlPlugin(Plugin):
     def play(self, url):
         (type, resource) = self._get_type_and_resource_by_url(url)
         response = Response(output='', errors = [])
+        plugin_name = None
 
         if type == 'mpd':
-            self.plugin = get_plugin('music.mpd')
+            plugin_name = 'music.mpd'
         elif type == 'youtube:video' or type == 'file':
-            self.plugin = get_plugin('video.omxplayer')
+            plugin_name = 'video.omxplayer'
         elif type == 'torrent':
-            self.plugin = get_plugin('video.torrentcast')
+            plugin_name = 'video.torrentcast'
+
+        if not plugin_name:
+            raise RuntimeError("Unsupported type '{}'".format(type))
+
+        try:
+            self.plugin = get_plugin(plugin_name)
+        except:
+            self.plugin = get_plugin(plugin_name, reload=True)
 
         self.url = resource
         return self.plugin.play(resource)
