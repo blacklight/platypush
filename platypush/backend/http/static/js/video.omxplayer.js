@@ -1,9 +1,10 @@
 $(document).ready(function() {
     var $container = $('#video-container'),
-        $form = $('#video-form');
+        $searchForm = $('#video-search'),
+        $ctrlForm = $('#video-ctrl');
 
     var initBindings = function() {
-        $form.on('submit', function(event) {
+        $searchForm.on('submit', function(event) {
             var formData = $(this).serializeArray().reduce(function(obj, item) {
                 var value = item.value.trim();
                 if (value.length > 0) {
@@ -31,6 +32,18 @@ $(document).ready(function() {
             );
 
             return false;
+        });
+
+        $searchForm.find('button[data-action]').on('click', function(evt) {
+            var action = $(this).data('action');
+            var $btn = $(this);
+
+            execute(
+                {
+                    type: 'request',
+                    action: 'video.omxplayer.' + action,
+                }
+            );
         });
     };
 

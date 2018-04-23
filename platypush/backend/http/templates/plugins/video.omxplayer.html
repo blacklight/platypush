@@ -2,18 +2,48 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/video.omxplayer.css') }}"></script>
 
 <div class="row" id="video-container">
-    <form action="#" id="video-form">
-        <div class="eleven columns">
+    <form action="#" id="video-search">
+        <div class="row">
             <label for="resource">
                 Supported formats: <tt>file://[path]</tt>, <tt>https://www.youtube.com/?v=[video_id]</tt>
             </label>
-            <input type="text" name="resource" placeholder="Video URL">
         </div>
-        <div class="one column">
-            <button type="submit">
-                <i class="fa fa-podcast"></i>
-            </button>
+
+        <div class="row">
+            <div class="eleven columns">
+                <input type="text" name="resource" placeholder="Video URL">
+            </div>
+            <div class="one column">
+                <button type="submit">
+                    <i class="fa fa-podcast"></i>
+                </button>
+            </div>
         </div>
+    </form>
+
+    <form action="#" id="video-ctrl">
+        <div class="row">
+            <div class="ten columns offset-by-one">
+                <button data-action="previous">
+                    <i class="fa fa-step-backward"></i>
+                </button>
+
+                <button data-action="play">
+                    <i class="fa fa-play"></i>
+                </button>
+
+                <button data-action="pause">
+                    <i class="fa fa-pause"></i>
+                </button>
+
+                <button data-action="stop">
+                    <i class="fa fa-stop"></i>
+                </button>
+
+                <button data-action="next">
+                    <i class="fa fa-step-forward"></i>
+                </button>
+            </div>
     </form>
 </div>
 
