@@ -34,7 +34,8 @@ $(document).ready(function() {
             return false;
         });
 
-        $searchForm.find('button[data-action]').on('click', function(evt) {
+        $ctrlForm.on('submit', function() { return false; });
+        $ctrlForm.find('button[data-action]').on('click', function(evt) {
             var action = $(this).data('action');
             var $btn = $(this);
 
