@@ -1,0 +1,19 @@
+<script type="text/javascript" src="{{ url_for('static', filename='js/video.omxplayer.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/video.omxplayer.css') }}"></script>
+
+<div class="row" id="video-container">
+    <form action="#" id="video-form">
+        <div class="eleven columns">
+            <label for="resource">
+                Supported formats: <tt>file://[path]</tt>, <tt>https://www.youtube.com/?v=[video_id]</tt>
+            </label>
+            <input type="text" name="resource" placeholder="Video URL">
+        </div>
+        <div class="one column">
+            <button type="submit">
+                <i class="fa fa-podcast"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
