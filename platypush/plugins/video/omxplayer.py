@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 from dbus.exceptions import DBusException
 from omxplayer import OMXPlayer
 
+from platypush.context import get_bus
 from platypush.plugins.media import PlayerState
 from platypush.message.response import Response
 from platypush.message.event.video import VideoPlayEvent, VideoPauseEvent, \
@@ -158,17 +159,17 @@ class VideoOmxplayerPlugin(Plugin):
 
     def on_play(self):
         def _f(player):
-            self.bus.post(VideoPlayEvent(video=self.player.get_source()))
+            get_bus().post(VideoPlayEvent(video=self.player.get_source()))
         return _f
 
     def on_pause(self):
         def _f(player):
-            self.bus.post(VideoPauseEvent(video=self.player.get_source()))
+            get_bus().post(VideoPauseEvent(video=self.player.get_source()))
         return _f
 
     def on_stop(self):
         def _f(player):
-            self.bus.post(VideoStopEvent())
+            get_bus().post(VideoStopEvent())
         return _f
 
 

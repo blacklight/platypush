@@ -9,6 +9,9 @@ backends = {}
 # Map: plugin_name -> plugin_instance
 plugins = {}
 
+# Reference to the main application bus
+main_bus = None
+
 def register_backends(bus=None, global_scope=False, **kwargs):
     """ Initialize the backend objects based on the configuration and returns
         a name -> backend_instance map.
@@ -18,6 +21,10 @@ def register_backends(bus=None, global_scope=False, **kwargs):
 
         kwargs -- Any additional key-value parameters required to initialize the backends
         """
+
+    global main_bus
+    if bus:
+        main_bus = bus
 
     if global_scope:
         global backends
@@ -83,6 +90,10 @@ def get_plugin(plugin_name, reload=False):
 
     plugins[plugin_name] = plugin
     return plugin
+
+def get_bus():
+    global main_bus
+    return main_bus
 
 def register_plugin(name, plugin, **kwargs):
     """ Registers a plugin instance by name """
