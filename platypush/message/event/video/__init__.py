@@ -4,8 +4,8 @@ from platypush.message.event import Event
 class VideoEvent(Event):
     """ Base class for video events """
 
-    def __init__(self, status, track, *args, **kwargs):
-        super().__init__(*args, status=status, video=video, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class VideoPlayEvent(VideoEvent):
