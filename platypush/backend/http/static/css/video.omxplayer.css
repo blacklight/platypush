@@ -1,6 +1,6 @@
 #video-search {
     max-width: 60em;
-    margin: 3em auto 1em auto;
+    margin: 1em auto;
 }
 
     #video-search input[type=text] {
@@ -10,4 +10,65 @@
 form#video-ctrl {
     text-align: center;
 }
+
+#video-seeker-container {
+    margin-top: 0.5em;
+    margin-bottom: 1em;
+}
+
+#video-volume-ctrl-container {
+    margin-top: 1em;
+}
+
+#video-results {
+    padding: 1.5rem 1.5rem 0 .5rem;
+    background: #f8f8f8;
+}
+
+    .video-result {
+        padding: 5px;
+        letter-spacing: .1rem;
+        line-height: 3.3rem;
+        cursor: pointer;
+    }
+
+        .video-result.selected {
+            background-color: #c8ffd0 !important;
+        }
+
+        .video-result:hover {
+            background-color: #daf8e2 !important;
+        }
+
+        .video-result:nth-child(odd) {
+            background-color: #f2f2f2;
+        }
+
+        .video-result.active {
+            height: 4rem;
+            padding-top: 1.5rem;
+            font-size: 1.7rem;
+            border-radius: 10px;
+            animation: active-track 5s;
+            -moz-animation: active-track 5s infinite;
+            -webkit-animation: active-track 5s infinite;
+        }
+
+            @keyframes active-track {
+                0% { background: #d4ffe3; }
+                50% { background: #9cdfb0; }
+                100% { background: #d4ffe3; }
+            }
+
+            @-moz-keyframes active-track {
+                0% { background: #d4ffe3; }
+                50% { background: #9cdfb0; }
+                100% { background: #d4ffe3; }
+            }
+
+            @-webkit-keyframes active-track {
+                0% { background: #d4ffe3; }
+                50% { background: #9cdfb0; }
+                100% { background: #d4ffe3; }
+            }
 

@@ -4,14 +4,14 @@
 <div class="row" id="video-container">
     <form action="#" id="video-search">
         <div class="row">
-            <label for="resource">
-                Supported formats: <tt>file://[path]</tt>, <tt>https://www.youtube.com/?v=[video_id]</tt>
+            <label for="video-search-text">
+                Supported formats: <tt>file://[path]</tt>, <tt>https://www.youtube.com/?v=[video_id]</tt>, or free text search
             </label>
         </div>
 
         <div class="row">
             <div class="eleven columns">
-                <input type="text" name="resource" placeholder="Video URL">
+                <input type="text" name="video-search-text" placeholder="Search query or video URL">
             </div>
             <div class="one column">
                 <button type="submit">
@@ -22,6 +22,14 @@
     </form>
 
     <form action="#" id="video-ctrl">
+        <!-- <div class="row"> -->
+        <!--     <div class="eight columns offset-by-two slider-container" id="video-seeker-container"> -->
+        <!--         <span class="seek-time" id="video-elapsed">-:--</span>&nbsp; -->
+        <!--         <input type="range" min="0" id="video-seeker" disabled="disabled" class="slider" style="width:75%"> -->
+        <!--         &nbsp;<span class="seek-time" id="video-length">-:--</span> -->
+        <!--     </div> -->
+        <!-- </div> -->
+
         <div class="row">
             <div class="ten columns offset-by-one">
                 <button data-action="previous">
@@ -52,6 +60,19 @@
                     <i class="fa fa-step-forward"></i>
                 </button>
             </div>
+        </div>
+
+        <div class="row">
+            <div class="eight columns offset-by-two slider-container" id="video-volume-ctrl-container">
+                <i class="fa fa-volume-down"></i> &nbsp;
+                <input type="range" min="0" max="100" value="100" id="video-volume-ctrl" class="slider" style="width:80%">
+                &nbsp; <i class="fa fa-volume-up"></i>
+            </div>
+        </div>
     </form>
+
+    <div class="row" id="video-results-container">
+        <div id="video-results"></div>
+    </div>
 </div>
 

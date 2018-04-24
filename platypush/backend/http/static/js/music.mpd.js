@@ -521,26 +521,11 @@ $(document).ready(function() {
             );
         });
 
-        $volumeCtrl.on('mousedown', function(event) {
+        $volumeCtrl.on('mousedown touchstart', function(event) {
             prevVolume = $(this).val();
         });
 
-        $volumeCtrl.on('mouseup', function(event) {
-            execute(
-                {
-                    type: 'request',
-                    action: 'music.mpd.setvol',
-                    args: { vol: $(this).val() }
-                },
-
-                onSuccess=undefined,
-                onError = function() {
-                    $volumeCtrl.val(prevVolume);
-                }
-            );
-        });
-
-        $volumeCtrl.on('mouseup', function(event) {
+        $volumeCtrl.on('mouseup touchend', function(event) {
             execute(
                 {
                     type: 'request',

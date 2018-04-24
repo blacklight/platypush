@@ -30,6 +30,15 @@ class VideoOmxplayerPlugin(Plugin):
 
         logging.info('Playing {}'.format(resource))
 
+        if self.player:
+            try:
+                self.player.stop()
+                self.player = None
+            except Exception as e:
+                logging.exception(e)
+                logging.warning('Unable to stop a previously running instance ' +
+                                'of OMXPlayer, trying to play anyway')
+
         try:
             self.player = OMXPlayer(resource, args=self.args)
             self._init_player_handlers()
@@ -145,29 +154,40 @@ class VideoOmxplayerPlugin(Plugin):
                 'state': PlayerState.STOP.value
             }))
 
+    def on_play(self):
+        def _f(player):
+            self.bus.post(VideoPlayEvent(video=self.player.get_source()))
+        return _f
+
+    def on_pause(self):
+        def _f(player):
+            self.bus.post(VideoPauseEvent(video=self.player.get_source()))
+        return _f
+
+    def on_stop(self):
+        def _f(player):
+            self.bus.post(VideoStopEvent())
+        return _f
+
+
     def _init_player_handlers(self):
         if not self.player:
             return
 
-        self.player.playEvent += lambda _: \
-            self.bus.post(VideoPlayEvent(video=self.player.get_source()))
-
-        self.player.pauseEvent += lambda _: \
-            self.bus.post(VideoPauseEvent(video=self.player.get_source()))
-
-        self.player.stopEvent += lambda _: \
-            self.bus.post(VideoStopEvent())
+        self.player.playEvent += self.on_play()
+        self.player.pauseEvent += self.on_pause()
+        self.player.stopEvent += self.on_stop()
 
     def youtube_search_and_play(self, query):
-        self.videos_queue = self.youtube_search(query)
+        self.videos_queue = self.youtube_search(query).output
         ret = None
 
         while self.videos_queue:
-            url = self.videos_queue.pop(0)
-            logging.info('Playing {}'.format(url))
+            video = self.videos_queue.pop(0)
+            logging.info('Playing "{}" from [{}]'.format(video['url'], video['title']))
 
             try:
-                ret = self.play(url)
+                ret = self.play(video['url'])
                 break
             except Exception as e:
                 logging.exception(e)
@@ -186,12 +206,15 @@ class VideoOmxplayerPlugin(Plugin):
         for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
             m = re.match('(/watch\?v=[^&]+)', vid['href'])
             if m:
-                results.append('https://www.youtube.com' + m.group(1))
+                results.append({
+                    'url': 'https://www.youtube.com' + m.group(1),
+                    'title': vid['title'],
+                })
 
         logging.info('{} YouTube video results for the search query "{}"'
                      .format(len(results), query))
 
-        return results
+        return Response(output=results)
 
 
     @classmethod
