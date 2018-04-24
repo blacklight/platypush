@@ -1,6 +1,6 @@
 #video-search {
     max-width: 60em;
-    margin: 3em auto;
+    margin: 3em auto 1em auto;
 }
 
     #video-search input[type=text] {
