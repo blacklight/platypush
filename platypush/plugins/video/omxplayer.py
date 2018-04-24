@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 import subprocess
 
@@ -19,8 +20,25 @@ from platypush.message.event.video import VideoPlayEvent, VideoPauseEvent, \
 from .. import Plugin
 
 class VideoOmxplayerPlugin(Plugin):
-    def __init__(self, args=[], *argv, **kwargs):
+    video_extensions = {
+        '.avi', '.flv', '.wmv', '.mov', '.mp4', '.m4v', '.mpg', '.mpeg',
+        '.rm', '.swf', '.vob'
+    }
+
+    def __init__(self, args=[], media_dirs=[], *argv, **kwargs):
+        super().__init__(argv, kwargs)
+
         self.args = args
+        self.media_dirs = list(
+            filter(
+                lambda _: os.path.isdir(_),
+                map(
+                    lambda _: os.path.abspath(os.path.expanduser(_)),
+                    media_dirs
+                )
+            )
+        )
+
         self.player = None
         self.videos_queue = []
 
@@ -197,6 +215,36 @@ class VideoOmxplayerPlugin(Plugin):
                 logging.info('YouTube playback error, trying next video')
 
         return ret
+
+    def file_search(self, query):
+        results = []
+        query_tokens = [_.lower() for _ in re.split('\s+', query.trim())]
+
+        for media_dir in self.media_dirs:
+            logging.info('Scanning {} for "{}"'.format(media_dir, query))
+            for path, dirs, files in os.walk(media_dir):
+                for f in files:
+                    is_video = False
+                    for ext in self.video_extensions:
+                        if f.lower().endswith(ext):
+                            is_video = True
+                            break
+
+                    if not is_video:
+                        continue
+
+                    matches_query = True
+                    for token in query_tokens:
+                        if token not in f.lower():
+                            matches_query = False
+                            break
+
+                    if not matches_query:
+                        continue
+
+                    results.append(path + os.sep + f)
+
+        return Response(output=results)
 
     def youtube_search(self, query):
         query = urllib.parse.quote(query)
