@@ -26,7 +26,7 @@ class VideoOmxplayerPlugin(Plugin):
     }
 
     def __init__(self, args=[], media_dirs=[], *argv, **kwargs):
-        super().__init__(argv, kwargs)
+        super().__init__(*argv, **kwargs)
 
         self.args = args
         self.media_dirs = list(
@@ -60,7 +60,7 @@ class VideoOmxplayerPlugin(Plugin):
 
         try:
             self.player = OMXPlayer(resource, args=self.args)
-            # self._init_player_handlers()
+            self._init_player_handlers()
         except DBusException as e:
             logging.warning('DBus connection failed: you will probably not ' +
                             'be able to control the media')
@@ -199,26 +199,32 @@ class VideoOmxplayerPlugin(Plugin):
         self.player.pauseEvent += self.on_pause()
         self.player.stopEvent += self.on_stop()
 
-    def youtube_search_and_play(self, query):
-        self.videos_queue = self.youtube_search(query).output
-        ret = None
+    def search(self, query, types=None, queue_results=False, autoplay=False):
+        results = []
+        if types is None:
+            types = { 'youtube', 'file' }
 
-        while self.videos_queue:
-            video = self.videos_queue.pop(0)
-            logging.info('Playing "{}" from [{}]'.format(video['url'], video['title']))
+        if 'file' in types:
+            file_results = self.file_search(query).output
+            results.extend(file_results)
 
-            try:
-                ret = self.play(video['url'])
-                break
-            except Exception as e:
-                logging.exception(e)
-                logging.info('YouTube playback error, trying next video')
+        if 'youtube' in types:
+            yt_results = self.youtube_search(query).output
+            results.extend(yt_results)
 
-        return ret
+        if results:
+            if queue_results:
+                self.videos_queue = [_['url'] for _ in results]
+                if autoplay:
+                    self.play(self.videos_queue.pop(0))
+            elif autoplay:
+                self.play(results[0]['url'])
+
+        return Response(output=results)
 
     def file_search(self, query):
         results = []
-        query_tokens = [_.lower() for _ in re.split('\s+', query.trim())]
+        query_tokens = [_.lower() for _ in re.split('\s+', query.strip())]
 
         for media_dir in self.media_dirs:
             logging.info('Scanning {} for "{}"'.format(media_dir, query))
@@ -242,11 +248,16 @@ class VideoOmxplayerPlugin(Plugin):
                     if not matches_query:
                         continue
 
-                    results.append(path + os.sep + f)
+                    results.append({
+                        'url': 'file://' + path + os.sep + f,
+                        'title': f,
+                    })
 
         return Response(output=results)
 
     def youtube_search(self, query):
+        logging.info('Searching YouTube for "{}"'.format(query))
+
         query = urllib.parse.quote(query)
         url = "https://www.youtube.com/results?search_query=" + query
         response = urllib.request.urlopen(url)

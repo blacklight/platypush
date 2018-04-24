@@ -45,7 +45,7 @@ $(document).ready(function() {
             } else {
                 request = {
                     type: 'request',
-                    action: 'video.omxplayer.youtube_search',
+                    action: 'video.omxplayer.search',
                     args: { query: resource }
                 };
 
