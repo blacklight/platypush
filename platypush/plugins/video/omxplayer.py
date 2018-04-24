@@ -41,7 +41,7 @@ class VideoOmxplayerPlugin(Plugin):
 
         try:
             self.player = OMXPlayer(resource, args=self.args)
-            self._init_player_handlers()
+            # self._init_player_handlers()
         except DBusException as e:
             logging.warning('DBus connection failed: you will probably not ' +
                             'be able to control the media')
