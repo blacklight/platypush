@@ -128,6 +128,8 @@ class VideoOmxplayerPlugin(Plugin):
         return self.status()
 
     def set_volume(self, volume):
+        # Transform a [0,100] value to an OMXPlayer volume in [-6000,0]
+        volume = 60.0*volume - 6000
         if self.player: self.player.set_volume(volume)
         return self.status()
 
