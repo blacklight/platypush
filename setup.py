@@ -75,6 +75,7 @@ setup(
         'Support for text2speech plugin': ['mplayer'],
         'Support for OMXPlayer plugin': ['omxplayer'],
         'Support for YouTube in the OMXPlayer plugin': ['youtube-dl', 'beautifulsoup4', 'lxml'],
+        'Support for torrents download': ['python-libtorrent'],
         'Support for Google Assistant': ['google-assistant-library'],
         'Support for the Google APIs': ['google-api-python-client'],
         'Support for most of the HTTP poll backends': ['python-dateutil'],

@@ -45,7 +45,7 @@ class VideoTorrentcastPlugin(Plugin):
     def search(self, query):
         request = urllib.request.urlopen(urllib.request.Request(
             'https://api.apidomain.info/list?' + urllib.parse.urlencode({
-                'sort': 'seeds',
+                'sort': 'relevance',
                 'quality': '720p,1080p,3d',
                 'page': 1,
                 'keywords': query,
