@@ -33,7 +33,6 @@ class VideoOmxplayerPlugin(Plugin):
         super().__init__(*argv, **kwargs)
 
         self.args = args
-        self.download_dir = os.path.abspath(os.path.expanduser(download_dir))
         self.media_dirs = set(
             filter(
                 lambda _: os.path.isdir(_),
@@ -44,7 +43,8 @@ class VideoOmxplayerPlugin(Plugin):
             )
         )
 
-        if self.download_dir:
+        if download_dir:
+            self.download_dir = os.path.abspath(os.path.expanduser(download_dir))
             if not os.path.isdir(self.download_dir):
                 raise RuntimeError('download_dir [{}] is not a valid directory'
                                    .format(self.download_dir))
