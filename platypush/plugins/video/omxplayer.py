@@ -379,13 +379,10 @@ class VideoOmxplayerPlugin(Plugin):
             if torrent_file:
                 files = [os.path.join(
                             self.download_dir,
-                            torrent_file.files().file_path(i),
-                            torrent_file.files().file_name(i))
+                            torrent_file.files().file_path(i))
                     for i in range(0, torrent_file.files().num_files())
                     if self._is_video_file(torrent_file.files().file_name(i))
                 ]
-
-                print(files)
 
             self.torrent_state['progress'] = 100 * status.progress
             self.torrent_state['download_rate'] = status.download_rate
