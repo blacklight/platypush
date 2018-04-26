@@ -24,11 +24,11 @@ $(document).ready(function() {
         var $icon = $('<i class="fa"></i>');
 
         if (url.startsWith('file://')) {
-            $icon.addClass('fa-hdd');
+            $icon.addClass('fa-download');
         } else if (url.startsWith('https://www.youtube.com/')) {
             $icon.addClass('fa-youtube');
         } else if (url.startsWith('magnet:?')) {
-            $icon.addClass('fa-wifi');
+            $icon.addClass('fa-film');
         } else {
             $icon.addClass('fa-video');
         }

@@ -33,7 +33,8 @@ form#video-ctrl {
     }
 
     .video-icon-container {
-        margin-right: 1rem;
+        font-size: 2rem;
+        margin-right: 2rem;
     }
 
         .video-result.selected {
