@@ -14,8 +14,28 @@ $(document).ready(function() {
                 .attr('data-url', video['url'])
                 .html('title' in video ? video['title'] : video['url']);
 
+            var $icon = getVideoIconByUrl(video['url']);
+            $icon.prependTo($videoResult);
             $videoResult.appendTo($videoResults);
         }
+    };
+
+    var getVideoIconByUrl = function(url) {
+        var $icon = $('<i class="fa"></i>');
+
+        if (url.startsWith('file://')) {
+            $icon.addClass('fa-hdd');
+        } else if (url.startsWith('https://www.youtube.com/')) {
+            $icon.addClass('fa-youtube');
+        } else if (url.startsWith('magnet:?')) {
+            $icon.addClass('fa-wifi');
+        } else {
+            $icon.addClass('fa-video');
+        }
+
+        var $iconContainer = $('<span></span>').addClass('video-icon-container');
+        $icon.appendTo($iconContainer);
+        return $iconContainer;
     };
 
     var initBindings = function() {

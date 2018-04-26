@@ -32,6 +32,10 @@ form#video-ctrl {
         cursor: pointer;
     }
 
+    .video-icon-container {
+        margin-right: 1rem;
+    }
+
         .video-result.selected {
             background-color: #c8ffd0 !important;
         }
