@@ -7,7 +7,7 @@ import time
 
 from threading import Thread
 from multiprocessing import Process
-from flask import Flask, abort, jsonify, request, render_template, send_from_directory
+from flask import Flask, abort, jsonify, request as http_request, render_template, send_from_directory
 
 from platypush.config import Config
 from platypush.message import Message
@@ -80,8 +80,8 @@ class HttpBackend(Backend):
 
         @app.route('/execute', methods=['POST'])
         def execute():
-            args = json.loads(request.data.decode('utf-8'))
-            token = request.headers['X-Token'] if 'X-Token' in request.headers else None
+            args = json.loads(http_request.data.decode('utf-8'))
+            token = http_request.headers['X-Token'] if 'X-Token' in http_request.headers else None
             if token != self.token: abort(401)
 
             msg = Message.build(args)

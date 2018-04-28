@@ -37,11 +37,6 @@ class RssUpdates(HttpRequest):
 
         os.makedirs(os.path.expanduser(os.path.dirname(self.dbfile)), exist_ok=True)
 
-        self.engine = create_engine('sqlite:///{}'.format(self.dbfile))
-        Base.metadata.create_all(self.engine)
-        Session.configure(bind=self.engine)
-        self._get_or_create_source(session=Session())
-
         if headers is None: headers = {}
         headers['User-Agent'] = self.user_agent
 
@@ -53,7 +48,6 @@ class RssUpdates(HttpRequest):
         }
 
         super().__init__(*args, skip_first_call=False, args=request_args, **kwargs)
-
 
     def _get_or_create_source(self, session):
         record = session.query(FeedSource).filter_by(url=self.url).first()
@@ -79,6 +73,13 @@ class RssUpdates(HttpRequest):
 
 
     def get_new_items(self, response):
+        engine = create_engine('sqlite:///{}'.format(self.dbfile),
+                               connect_args = { 'check_same_thread': False })
+
+        Base.metadata.create_all(engine)
+        Session.configure(bind=engine)
+        self._get_or_create_source(session=Session())
+
         feed = feedparser.parse(response.text)
         session = Session()
         source_record = self._get_or_create_source(session=session)
@@ -97,11 +98,17 @@ class RssUpdates(HttpRequest):
                 datetime.datetime.now().strftime('%d %B %Y, %H:%M')
             )
 
+        logging.info('Parsed {:d} items from RSS feed <{}>'
+                     .format(len(feed.entries), self.url))
+
         for entry in feed.entries:
             entry_timestamp = datetime.datetime(*entry.published_parsed[:6])
 
             if source_record.last_updated_at is None \
                     or entry_timestamp > source_record.last_updated_at:
+                logging.info('Processed new item from RSS feed <{}>: "{}"'
+                             .format(self.url, entry.title))
+
                 if self.mercury_api_key:
                     entry.content = self._parse_entry_content(entry.link)
                 elif hasattr(entry, 'summary'):
