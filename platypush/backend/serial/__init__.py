@@ -15,7 +15,7 @@ class SerialBackend(Backend):
 
     def get_data(self):
         plugin = get_plugin('serial')
-        return plugin.get_data()
+        return plugin.get_data().output
 
     def run(self):
         super().run()
