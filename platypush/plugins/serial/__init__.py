@@ -15,10 +15,10 @@ class SerialPlugin(Plugin):
 
 
     def get_data(self):
-        serial = serial.Serial(self.device, self.baud_rate)
+        ser = serial.Serial(self.device, self.baud_rate)
 
-        try: data = serial.readline().decode('utf-8').strip()
-        finally: serial.close()
+        try: data = ser.readline().decode('utf-8').strip()
+        finally: ser.close()
 
         try: data = json.loads(data)
         except: pass
