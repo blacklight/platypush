@@ -10,7 +10,7 @@ from platypush.plugins.gpio.sensor.mcp3008 import GpioSensorMcp3008Plugin
 class SensorMcp3008Backend(Backend):
     last_measurement = {}
 
-    def __init__(self, poll_seconds=0.25, *args, **kwargs):
+    def __init__(self, poll_seconds, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.poll_seconds = poll_seconds
         logging.info('Initialized MCP3008 analog sensors backend')
