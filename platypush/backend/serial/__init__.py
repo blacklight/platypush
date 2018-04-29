@@ -19,9 +19,7 @@ class SerialBackend(Backend):
 
     def run(self):
         super().run()
-
-        self.serial = serial.Serial(self.device, self.baud_rate)
-        logging.info('Initialized serial backend on device {}'.format(self.device))
+        logging.info('Initialized serial backend')
 
         while not self.should_stop():
             new_data = self.get_data()
