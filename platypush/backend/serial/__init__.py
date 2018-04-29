@@ -24,7 +24,7 @@ class SerialBackend(Backend):
         while not self.should_stop():
             new_data = self.get_data()
             if self.data is None or self.data != new_data:
-                self.bus.post(SerialDataEvent(data=new_data, device=self.device))
+                self.bus.post(SerialDataEvent(data=new_data))
 
             self.data = new_data
 
