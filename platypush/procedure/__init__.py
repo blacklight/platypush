@@ -30,6 +30,7 @@ class Procedure(object):
     def build(cls, name, async, requests, backend=None, id=None, **kwargs):
         reqs = []
         loop_count = 0
+        if_count = 0
 
         for request_config in requests:
             # Check if this request is a for loop
@@ -54,6 +55,25 @@ class Procedure(object):
                                                iterable=iterable)
 
                     reqs.append(loop)
+                    continue
+
+            # Check if this request is an if-else
+            if len(request_config.keys()) >= 1:
+                key = list(request_config.keys())[0]
+                m = re.match('\s*(if)\s+\$\{(.*)\}\s*', key)
+                if m:
+                    if_count += 1
+                    if_name = '{}__if_{}'.format(name, if_count)
+                    condition = m.group(2)
+                    else_branch = request_config['else'] if 'else' in request_config else []
+
+                    if_proc = IfProcedure(name=if_name,
+                                          requests=request_config[key],
+                                          condition=condition,
+                                          else_branch=else_branch,
+                                          backend=backend, id=id)
+
+                    reqs.append(if_proc)
                     continue
 
             request_config['origin'] = Config.get('device_id')
@@ -135,6 +155,76 @@ class LoopProcedure(Procedure):
             response = super().execute(**context)
 
         return response
+
+
+class IfProcedure(Procedure):
+    """
+    Models an if-else construct.
+
+    Example:
+
+        procedure.sync.process_results:
+            -
+                action: http.get
+                args:
+                    url: https://some-service/some/json/endpoint
+                    # Example response: { "sensors": [ {"temperature": 18 } ] }
+            -
+                if ${sensors['temperature'] < 20}:
+                    -
+                        action: shell.exec
+                        args:
+                            cmd: '/path/turn_on_heating.sh'
+                else:
+                    -
+                        action: shell.exec
+                        args:
+                            cmd: '/path/turn_off_heating.sh'
+    """
+
+    context = {}
+
+    def __init__(self, name, condition, requests, else_branch=[], backend=None, id=None, **kwargs):
+        kwargs['async'] = False
+        self.condition = condition
+        self.else_branch = []
+        reqs = []
+
+        for req in requests:
+            req['origin'] = Config.get('device_id')
+            req['id'] = id
+            if 'target' not in req:
+                req['target'] = req['origin']
+
+            reqs.append(Request.build(req))
+
+        for req in else_branch:
+            req['origin'] = Config.get('device_id')
+            req['id'] = id
+            if 'target' not in req:
+                req['target'] = req['origin']
+
+            self.else_branch.append(Request.build(req))
+
+        super(). __init__(name=name, requests=reqs, backend=None, **kwargs)
+
+
+    def execute(self, **context):
+        condition_true = eval(self.condition)
+        response = Response()
+
+        if condition_true:
+            response = super().execute(**context)
+        elif self.else_branch:
+            try:
+                reqs = self.requests
+                self.requests = self.else_branch
+                response = super().execute(**context)
+            finally:
+                self.requests = reqs
+
+        return response
+
 
 # vim:sw=4:ts=4:et:
 
