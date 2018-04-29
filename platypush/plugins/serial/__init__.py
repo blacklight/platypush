@@ -1,4 +1,5 @@
 import json
+import serial
 
 from platypush.message.response import Response
 
