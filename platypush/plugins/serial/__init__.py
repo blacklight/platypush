@@ -23,7 +23,7 @@ class SerialPlugin(Plugin):
         try: data = json.loads(data)
         except: pass
 
-        return Response(data)
+        return Response(output=data)
 
 
 # vim:sw=4:ts=4:et:
