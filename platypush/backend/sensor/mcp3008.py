@@ -39,6 +39,7 @@ class SensorMcp3008Backend(Backend):
             if new_measurement:
                 self.bus.post(SensorDataChangeEvent(sensors=new_measurement))
 
+            self.last_measurement = measurement
             time.sleep(self.poll_seconds)
 
 
