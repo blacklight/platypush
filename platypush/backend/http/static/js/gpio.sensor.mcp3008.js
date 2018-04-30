@@ -8,7 +8,7 @@ $(document).ready(function() {
 
                 for (var sensor of Object.keys(data)) {
                     var $sensor = $container.find('[data-sensor-type=' + sensor + ']');
-                    var $sensorValue;
+                    var $value;
 
                     if ($sensor.length === 0) {
                         $sensor = $('<div></div>')
@@ -19,15 +19,17 @@ $(document).ready(function() {
                             .addClass('sensor-name six columns')
                             .text(sensor);
 
-                        $sensorValue = $('<div></div>')
+                        $value = $('<div></div>')
                             .addClass('sensor-value six columns');
 
+                        $name.appendTo($sensor);
+                        $value.appendTo($sensor);
                         $sensor.appendTo($container);
                     } else {
-                        $sensorValue = $sensor.find('.sensor-value');
+                        $value = $sensor.find('.sensor-value');
                     }
 
-                    $sensorValue.text(data[sensor]);
+                    $value.text(data[sensor]);
                 }
 
                 break;

@@ -1,0 +1,24 @@
+#sensors-container {
+    width: 80%;
+    max-width: 60rem;
+    margin: 3em auto;
+    background: rgba(235,235,235,0.8);
+    padding: 2em;
+    border: 1px solid rgba(220,220,220,1.0);
+    border-radius: 10px;
+}
+
+.sensor-data {
+    text-transform: capitalize;
+}
+
+    .sensor-data:not(:last-child) {
+        margin-bottom: .5rem;
+        padding-bottom: .5rem;
+        border-bottom: 1px solid rgba(220,220,220,1.0);
+    }
+
+.sensor-value {
+    text-align: right;
+}
+
