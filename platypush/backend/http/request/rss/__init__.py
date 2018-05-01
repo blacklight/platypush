@@ -11,6 +11,7 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, \
 
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql.expression import func
 
 from platypush.backend.http.request import HttpRequest
 from platypush.config import Config
@@ -52,11 +53,15 @@ class RssUpdates(HttpRequest):
     def _get_or_create_source(self, session):
         record = session.query(FeedSource).filter_by(url=self.url).first()
         if record is None:
-            record = FeedSource(url=self.url)
+            record = FeedSource(url=self.url, title=self.title)
             session.add(record)
 
         session.commit()
         return record
+
+
+    def _get_latest_update(self, session, source_id):
+        return session.query(func.max(FeedEntry.published)).filter_by(source_id=source_id).scalar()
 
 
     def _parse_entry_content(self, link):
@@ -86,6 +91,7 @@ class RssUpdates(HttpRequest):
         session.add(source_record)
         parse_start_time = datetime.datetime.utcnow()
         entries = []
+        latest_update = self._get_latest_update(session, source_record.id)
 
         if not self.title and 'title' in feed.feed:
             self.title = feed.feed['title']
@@ -104,8 +110,8 @@ class RssUpdates(HttpRequest):
         for entry in feed.entries:
             entry_timestamp = datetime.datetime(*entry.published_parsed[:6])
 
-            if source_record.last_updated_at is None \
-                    or entry_timestamp > source_record.last_updated_at:
+            if latest_update is None \
+                    or entry_timestamp > latest_update:
                 logging.info('Processed new item from RSS feed <{}>: "{}"'
                              .format(self.url, entry.title))
 
