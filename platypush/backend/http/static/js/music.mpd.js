@@ -644,9 +644,9 @@ $(document).ready(function() {
                                     ? (item.album || '').toLowerCase().indexOf(
                                         searchData.album.toLowerCase()) >= 0
                                     : true) &&
-                                ('albumartist' in searchData
+                                ('artist' in searchData
                                     ? (item.artist || '').toLowerCase().indexOf(
-                                        searchData.albumartist.toLowerCase()) >= 0
+                                        searchData.artist.toLowerCase()) >= 0
                                     : true)
                             );
                         });
