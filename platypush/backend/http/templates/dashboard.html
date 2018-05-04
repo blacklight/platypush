@@ -1,0 +1,43 @@
+<!doctype html>
+<head>
+    <title>Platypush Dashboard</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton-tabs.css') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/font-awesome.min.css') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/application.css') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toggles.css') }}"></script>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/skeleton-tabs.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/application.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/assistant.google.js') }}"></script>
+    <script type="text/javascript">
+        window.websocket_port = {% print(websocket_port) %}
+
+        {% if token %}
+            window.token = '{% print(token) %}'
+        {% else %}
+            window.token = undefined
+        {% endif %}
+    </script>
+</head>
+
+<body>
+    <main>
+        {% for widget_name, widget in config['widgets'].items() %}
+            <div class="widget {% print(utils.widget_columns_to_html_class(widget['columns'])) %}
+                    {% print(widget_name) %}"
+                    id="{% print(widget['id'] if 'id' in widget else widget_name) %}">
+                {% with properties=widget %}
+                    {% include 'widgets/' + widget_name + '.html' %}
+                {% endwith %}
+            </div>
+        {% endfor %}
+
+        <div id="notification-container"></div>
+    </main>
+<body>
+

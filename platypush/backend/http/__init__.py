@@ -8,10 +8,12 @@ import time
 from threading import Thread
 from multiprocessing import Process
 from flask import Flask, abort, jsonify, request as http_request, render_template, send_from_directory
+from redis import Redis
 
 from platypush.config import Config
 from platypush.message import Message
 from platypush.message.event import Event
+from platypush.message.event.web.widget import WidgetUpdateEvent
 from platypush.message.request import Request
 
 from .. import Backend
@@ -30,15 +32,19 @@ class HttpBackend(Backend):
     }
 
     def __init__(self, port=8008, websocket_port=8009, disable_websocket=False,
-                 token=None, **kwargs):
+                 redis_queue='platypush_flask_mq', token=None, dashboard={}, **kwargs):
         super().__init__(**kwargs)
+
         self.port = port
         self.websocket_port = websocket_port
+        self.redis_queue = redis_queue
         self.token = token
+        self.dashboard = dashboard
         self.server_proc = None
         self.disable_websocket = disable_websocket
         self.websocket_thread = None
         self.active_websockets = set()
+        self.redis = Redis()
 
 
     def send_message(self, msg):
@@ -60,16 +66,19 @@ class HttpBackend(Backend):
             await websocket.send(str(event))
 
         loop = asyncio.new_event_loop()
-        active_websockets = set()
 
         for websocket in self.active_websockets:
             try:
                 loop.run_until_complete(send_event(websocket))
-                active_websockets.add(websocket)
             except websockets.exceptions.ConnectionClosed:
                 logging.info('Client connection lost')
 
-        self.active_websockets = active_websockets
+
+    def redis_poll(self):
+        while not self.should_stop():
+            msg = self.redis.blpop(self.redis_queue)
+            msg = Message.build(json.loads(msg[1].decode('utf-8')))
+            self.bus.post(msg)
 
 
     def webserver(self):
@@ -77,6 +86,7 @@ class HttpBackend(Backend):
         template_dir = os.path.join(basedir, 'templates')
         static_dir = os.path.join(basedir, 'static')
         app = Flask(__name__, template_folder=template_dir)
+        Thread(target=self.redis_poll).start()
 
         @app.route('/execute', methods=['POST'])
         def execute():
@@ -92,7 +102,7 @@ class HttpBackend(Backend):
                 logging.info('Processing response on the HTTP backend: {}'.format(msg))
                 return str(response)
             elif isinstance(msg, Event):
-                self.bus.post(msg)
+                self.redis.rpush(self.redis_queue, msg)
 
             return jsonify({ 'status': 'ok' })
 
@@ -115,9 +125,22 @@ class HttpBackend(Backend):
                                    token=self.token, websocket_port=self.websocket_port)
 
 
+        @app.route('/widget/<widget>', methods=['POST'])
+        def widget_update(widget):
+            event = WidgetUpdateEvent(
+                widget=widget, **(json.loads(http_request.data.decode('utf-8'))))
+
+            self.redis.rpush(self.redis_queue, event)
+            return jsonify({ 'status': 'ok' })
+
         @app.route('/static/<path>')
         def static_path(path):
             return send_from_directory(static_dir, filename)
+
+        @app.route('/dashboard')
+        def dashboard():
+            return render_template('dashboard.html', config=self.dashboard, utils=HttpUtils,
+                                   token=self.token, websocket_port=self.websocket_port)
 
         return app
 
@@ -176,6 +199,41 @@ class HttpBackend(Backend):
             self.websocket_thread.start()
 
         self.server_proc.join()
+
+
+class HttpUtils(object):
+    @staticmethod
+    def widget_columns_to_html_class(columns):
+        if not isinstance(columns, int):
+            raise RuntimeError('columns should be a number, got "{}"'.format(columns))
+
+        if columns == 1:
+            return 'one column'
+        elif columns == 2:
+            return 'two columns'
+        elif columns == 3:
+            return 'three columns'
+        elif columns == 4:
+            return 'four columns'
+        elif columns == 5:
+            return 'five columns'
+        elif columns == 6:
+            return 'six columns'
+        elif columns == 7:
+            return 'seven columns'
+        elif columns == 8:
+            return 'eight columns'
+        elif columns == 9:
+            return 'nine columns'
+        elif columns == 10:
+            return 'ten columns'
+        elif columns == 11:
+            return 'eleven columns'
+        elif columns == 12:
+            return 'twelve columns'
+        else:
+            raise RuntimeError('Constraint violation: should be 1 <= columns <= 12, ' +
+                               'got columns={}'.format(columns))
 
 
 # vim:sw=4:ts=4:et:

@@ -185,8 +185,6 @@ $(document).ready(function() {
                 updatePlaylist(tracks=event.args.changes);
                 break;
         }
-
-        console.log(event);
     };
 
     var initStatus = function() {

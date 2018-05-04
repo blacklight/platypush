@@ -16,7 +16,7 @@
         window.websocket_port = {% print(websocket_port) %}
 
         {% if token %}
-            window.token = {% print(token) %}
+            window.token = '{% print(token) %}'
         {% else %}
             window.token = undefined
         {% endif %}

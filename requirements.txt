@@ -11,6 +11,7 @@ websocket-client
 # HTTP backend support
 flask
 websockets
+redis
 
 # HTTP poll backend support
 frozendict
