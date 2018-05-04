@@ -1,0 +1,17 @@
+.widget.date-time-weather {
+    text-align: center;
+}
+
+.date-time-weather-container {
+    padding: 2rem;
+}
+
+h1.temperature {
+    font-size: 45px;
+    margin: 4rem;
+}
+
+    .widget.date-time-weather * > .time {
+        font-size: 22px;
+    }
+

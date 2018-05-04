@@ -203,6 +203,11 @@ button[disabled] {
             font-size: 25px;
         }
 
+        #notification-container * > .notification-image img {
+            width: 80%;
+            height: 80%;
+        }
+
 #hidden-plugins-container > .plugin {
     display: none;
 }

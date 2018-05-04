@@ -1,0 +1,17 @@
+body {
+    background: rgba(240,240,245,1.0);
+    font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+#widgets-container {
+    padding: 1em;
+}
+
+.widget {
+    background: white;
+    border-radius: 5px;
+    height: 18em;
+    overflow: hidden;
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
+}
+

@@ -60,14 +60,6 @@ class MusicMpdBackend(Backend):
                     self.bus.post(PlaylistChangeEvent(changes=changes))
                 last_playlist = playlist
 
-            if 'title' in track and ('artist' not in track
-                                        or not track['artist']
-                                        or re.search('^tunein:', track['file'])):
-                m = re.match('^\s*(.+?)\s+-\s+(.*)\s*$', track['title'])
-                if m and m.group(1) and m.group(2):
-                    track['artist'] = m.group(1)
-                    track['title'] = m.group(2)
-
             if state == 'play' and track != last_track:
                 self.bus.post(NewPlayingTrackEvent(status=status, track=track))
 

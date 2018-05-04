@@ -1,0 +1,31 @@
+<script type="text/javascript" src="{{ url_for('static', filename='js/widgets/music.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/widgets/music.css') }}"></script>
+
+<div class="music-container">
+    <div class="track-container">
+        <div class="no-track-info">No media is being played</div>
+        <div class="track-info">
+            <div class="artist" data-bind="artist"></div>
+            <div class="title" data-bind="title"></div>
+        </div>
+    </div>
+
+    <div class="time-container">
+        <div class="row">
+            <div class="time-bar">
+                <div class="elapsed"></div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="six columns">
+                <div class="time-elapsed" data-bind="time-elapsed"></div>
+            </div>
+
+            <div class="six columns">
+                <div class="time-total" data-bind="time-total"></div>
+            </div>
+        </div>
+    </div>
+</div>
+

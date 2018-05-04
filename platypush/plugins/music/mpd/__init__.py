@@ -1,4 +1,5 @@
 import mpd
+import re
 
 from platypush.message.response import Response
 
@@ -105,7 +106,16 @@ class MusicMpdPlugin(MusicPlugin):
         return Response(output=self.client.status())
 
     def currentsong(self):
-        return Response(output=self.client.currentsong())
+        track = self.client.currentsong()
+        if 'title' in track and ('artist' not in track
+                                 or not track['artist']
+                                 or re.search('^tunein:', track['file'])):
+            m = re.match('^\s*(.+?)\s+-\s+(.*)\s*$', track['title'])
+            if m and m.group(1) and m.group(2):
+                track['artist'] = m.group(1)
+                track['title'] = m.group(2)
+
+        return Response(output=track)
 
     def playlistinfo(self):
         return Response(output=self.client.playlistinfo())
