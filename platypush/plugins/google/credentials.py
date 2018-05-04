@@ -24,14 +24,14 @@ def get_credentials_filename(scope):
 def get_credentials(scope):
     credentials_file = get_credentials_filename(scope)
     if not os.path.exists(credentials_file):
-        raise RuntimeError('Credentials file {} not found. Generate it through:\n' +
-                           '\tpython -m platypush.google.credentials "{}"' +
+        raise RuntimeError(('Credentials file {} not found. Generate it through:\n' +
+                           '\tpython -m platypush.plugins.google.credentials "{}" ' +
                            '<path to client_secret.json>\n' +
                            '\t\t[--auth_host_name AUTH_HOST_NAME]\n' +
                            '\t\t[--noauth_local_webserver]\n' +
                            '\t\t[--auth_host_port [AUTH_HOST_PORT [AUTH_HOST_PORT ...]]]\n' +
-                           '\t\t[--logging_level {DEBUG,INFO,WARNING,ERROR,CRITICAL}]\n'.
-                           format(credentials_file, scope_name))
+                           '\t\t[--logging_level [DEBUG,INFO,WARNING,ERROR,CRITICAL]]\n').
+                           format(credentials_file, scope))
 
     store = Storage(credentials_file)
     credentials = store.get()
