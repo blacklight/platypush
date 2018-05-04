@@ -13,3 +13,6 @@ notifications:
         on_success: change
         on_failure: change
 
+services:
+    - redis-server
+
