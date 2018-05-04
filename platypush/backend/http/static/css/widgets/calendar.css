@@ -1,0 +1,30 @@
+.calendar-container {
+    padding: 2rem;
+    overflow: hidden;
+}
+
+    .calendar-container * > .date,
+    .calendar-container * > .time {
+        font-size: 0.9em;
+    }
+
+.calendar-next-event-container {
+    width: 50%;
+    margin: auto;
+    text-align: center;
+}
+
+    .calendar-next-event-container > .summary {
+        font-size: 1.5em;
+        text-transform: uppercase;
+    }
+
+.calendar-events-list-container {
+    margin-top: 2.5rem;
+}
+
+    .calendar-event > .date,
+    .calendar-event > .time {
+        padding-top: .15rem;
+    }
+

@@ -20,7 +20,7 @@ class GoogleCalendarPlugin(GooglePlugin):
         now = datetime.datetime.utcnow().isoformat() + 'Z'
         service = self._get_service()
         result = service.events().list(calendarId='primary', timeMin=now,
-                                       maxResults=10, singleEvents=True,
+                                       maxResults=max_results, singleEvents=True,
                                        orderBy='startTime').execute()
 
         events = result.get('items', [])

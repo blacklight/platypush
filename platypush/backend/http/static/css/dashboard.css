@@ -4,13 +4,13 @@ body {
 }
 
 #widgets-container {
-    padding: 1em;
+    padding: 2em;
 }
 
 .widget {
     background: white;
     border-radius: 5px;
-    height: 18em;
+    height: 25em;
     overflow: hidden;
     box-shadow: 0 2px 2px 0 rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
 }
