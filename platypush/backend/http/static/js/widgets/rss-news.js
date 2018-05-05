@@ -53,13 +53,10 @@ $(document).ready(function() {
         $publishTime.appendTo($article);
 
         if ($newsElement.find('.article').length) {
-            $newsElement.find('.article').fadeOut('slow', function() {
-                $(this).remove();
-                $article.hide().appendTo($newsElement).fadeIn();
-            });
-        } else {
-            $article.hide().appendTo($newsElement).fadeIn();
+            $newsElement.find('.article').remove();
         }
+
+        $article.hide().appendTo($newsElement).fadeIn();
     };
 
     var initWidget = function() {
