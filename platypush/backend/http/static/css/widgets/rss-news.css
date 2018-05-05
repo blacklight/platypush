@@ -1,0 +1,28 @@
+.news-container {
+    position: relative;
+    height: 100%;
+}
+
+    .news-container > .article {
+        width: 80%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+        .news-container > .article > .source {
+            font-weight: bold;
+            margin-bottom: 1rem;
+            font-size: 1.7em;
+        }
+
+        .news-container > .article > .title {
+            font-size: 1.5em;
+        }
+
+        .news-container > .article > .publish-time {
+            margin-top: 1rem;
+            float: right;
+        }
+

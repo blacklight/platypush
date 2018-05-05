@@ -129,6 +129,7 @@ class RssUpdates(HttpRequest):
                     'entry_id': entry.id,
                     'title': entry.title,
                     'link': entry.link,
+                    'summary': entry.summary,
                     'content': entry.content,
                     'source_id': source_record.id,
                     'published': entry_timestamp,
@@ -198,6 +199,7 @@ class FeedEntry(Base):
     source_id = Column(Integer, ForeignKey('FeedSource.id'), nullable=False)
     title = Column(String)
     link = Column(String)
+    summary = Column(String)
     content = Column(String)
     published = Column(DateTime)
 

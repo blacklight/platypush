@@ -1,6 +1,12 @@
+html {
+    min-height: 100%;
+}
+
 body {
     background: rgba(240,240,245,1.0);
-    font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    font-family: Lato;
 }
 
 .widget {
@@ -9,6 +15,6 @@ body {
     border-radius: 5px;
     height: 22.5em;
     overflow: hidden;
-    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
+    box-shadow: 0 3px 3px 0 rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
 }
 

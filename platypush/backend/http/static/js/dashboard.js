@@ -10,11 +10,18 @@ $(document).ready(function() {
         }
     };
 
+    var initDashboard = function() {
+        if ('background_image' in window.config) {
+            $('body').css('background-image', 'url(' + window.config.background_image + ')');
+        }
+    };
+
     var initEvents = function() {
         window.registerEventListener(onEvent);
     };
 
     var init = function() {
+        initDashboard();
         initEvents();
     };
 

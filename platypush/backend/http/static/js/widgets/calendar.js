@@ -24,7 +24,7 @@ $(document).ready(function() {
                 type: 'request',
                 action: 'google.calendar.get_upcoming_events',
                 args: {
-                    max_results: 10,
+                    max_results: 9,
                 }
             },
 

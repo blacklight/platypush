@@ -2,6 +2,7 @@
 <head>
     <title>Platypush Dashboard</title>
 
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Lato" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton-tabs.css') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}"></script>
@@ -25,6 +26,7 @@
             window.token = undefined;
         {% endif %}
 
+        window.config = {{ config | safe }};
         window.widgets = {{ config['widgets'] | safe }};
     </script>
 </head>
