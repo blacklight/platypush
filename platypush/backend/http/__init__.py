@@ -3,6 +3,7 @@ import inspect
 import logging
 import json
 import os
+import re
 import time
 
 from threading import Thread
@@ -234,6 +235,29 @@ class HttpUtils(object):
         else:
             raise RuntimeError('Constraint violation: should be 1 <= columns <= 12, ' +
                                'got columns={}'.format(columns))
+
+    @staticmethod
+    def search_directory(directory, *extensions, recursive=False):
+        files = []
+
+        if recursive:
+            for root, subdirs, files in os.walk(directory):
+                for file in files:
+                    if not extensions or os.path.splitext(file)[1].lower() in extensions:
+                        files.append(os.path.join(root, file))
+        else:
+            for file in os.listdir(directory):
+                if not extensions or os.path.splitext(file)[1].lower() in extensions:
+                    files.append(os.path.join(directory, file))
+
+        return files
+
+    @classmethod
+    def search_web_directory(cls, directory, *extensions):
+        directory = re.sub('^/+', '', directory)
+        basedir = os.path.dirname(inspect.getfile(cls))
+        results = cls.search_directory(os.path.join(basedir, directory), *extensions)
+        return [item[len(basedir):] for item in results]
 
 
 # vim:sw=4:ts=4:et:

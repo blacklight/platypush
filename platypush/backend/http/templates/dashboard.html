@@ -17,20 +17,27 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/pushbullet.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/assistant.google.js') }}"></script>
     <script type="text/javascript">
-        window.websocket_port = {% print(websocket_port) %}
+        window.websocket_port = {% print(websocket_port) %};
 
         {% if token %}
-            window.token = '{% print(token) %}'
+            window.token = '{% print(token) %}';
         {% else %}
-            window.token = undefined
+            window.token = undefined;
         {% endif %}
+
+        window.widgets = {{ config['widgets'] | safe }};
     </script>
 </head>
 
 <body>
     <main>
         <div id="widgets-container">
+            {% set used_columns = [0] %}
             {% for widget_name, widget in config['widgets'].items() %}
+                {% if used_columns[0] % 12 == 0 %}
+                <div class="row">
+                {% endif %}
+
                 <div class="widget {% print(utils.widget_columns_to_html_class(widget['columns'])) %}
                         {% print(widget_name) %}"
                         id="{% print(widget['id'] if 'id' in widget else widget_name) %}">
@@ -38,6 +45,13 @@
                         {% include 'widgets/' + widget_name + '.html' %}
                     {% endwith %}
                 </div>
+
+                {# increment counter #}
+                {% if used_columns.append(used_columns.pop() + widget['columns']) %}{% endif %}
+
+                {% if used_columns[0] % 12 == 0 %}
+                </div>
+                {% endif %}
             {% endfor %}
         </div>
 
