@@ -29,12 +29,12 @@ class RssUpdates(HttpRequest):
     user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'
 
     def __init__(self, url, title=None, headers=None, params=None, max_entries=None,
-                 mercury_api_key=None, digest_format='html', *args, **kwargs):
+                 mercury_api_key=None, digest_format=None, *args, **kwargs):
         self.url = url
         self.title = title
         self.max_entries = max_entries
         self.mercury_api_key = mercury_api_key  # Mercury Reader API used to parse the content of the link
-        self.digest_format = digest_format.lower() if digest_format else 'html'
+        self.digest_format = digest_format.lower() if digest_format else None  # Supported formats: html, pdf
 
         os.makedirs(os.path.expanduser(os.path.dirname(self.dbfile)), exist_ok=True)
 
@@ -149,27 +149,28 @@ class RssUpdates(HttpRequest):
             logging.info('Parsed {} new entries from the RSS feed {}'.format(
                 len(entries), self.title))
 
-            digest_filename = os.path.join(self.workdir, 'cache', '{}_{}.{}'.format(
-                datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
-                self.title, self.digest_format))
+            if self.digest_format:
+                digest_filename = os.path.join(self.workdir, 'cache', '{}_{}.{}'.format(
+                    datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+                    self.title, self.digest_format))
 
-            os.makedirs(os.path.dirname(digest_filename), exist_ok=True)
+                os.makedirs(os.path.dirname(digest_filename), exist_ok=True)
 
-            if self.digest_format == 'html':
-                with open(digest_filename, 'w', encoding='utf-8') as f:
-                    f.write(digest)
-            elif self.digest_format == 'pdf':
-                import weasyprint
-                weasyprint.HTML(string=digest).write_pdf(digest_filename)
-            else:
-                raise RuntimeError('Unsupported format: {}. Supported formats: ' +
-                                   'html or pdf'.format(self.digest_format))
+                if self.digest_format == 'html':
+                    with open(digest_filename, 'w', encoding='utf-8') as f:
+                        f.write(digest)
+                elif self.digest_format == 'pdf':
+                    import weasyprint
+                    weasyprint.HTML(string=digest).write_pdf(digest_filename)
+                else:
+                    raise RuntimeError('Unsupported format: {}. Supported formats: ' +
+                                    'html or pdf'.format(self.digest_format))
 
-            digest_entry = FeedDigest(source_id=source_record.id,
-                                      format=self.digest_format,
-                                      filename=digest_filename)
+                digest_entry = FeedDigest(source_id=source_record.id,
+                                        format=self.digest_format,
+                                        filename=digest_filename)
 
-            session.add(digest_entry)
+                session.add(digest_entry)
 
         session.commit()
 
