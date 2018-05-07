@@ -15,17 +15,19 @@ $(document).ready(function() {
 
     var refreshImage = function() {
         var $oldImg = $imgContainer.find('img');
-        var $newImg = $imgContainer.find('img').clone()
-            .attr('src', images[processedImages++]).css('min-width', '')
-            .hide().appendTo($imgContainer);
-
-        if ($newImg.width() > $newImg.height()) {
-            $newImg.css('min-width', '100%');
-        }
+        var $newImg = $('<img></img>')
+            .attr('src', images[processedImages++])
+            .attr('alt', 'Could not load image')
+            .appendTo('body').hide();
 
         $newImg.on('load', function() {
             $oldImg.remove();
-            $newImg.fadeIn();
+            if ($newImg.width() > $newImg.height()) {
+                $newImg.css('width', '100%');
+            }
+
+            $newImg.css('max-height', '100%');
+            $newImg.remove().appendTo($imgContainer).fadeIn();
         });
 
         if (processedImages == images.length-1) {
