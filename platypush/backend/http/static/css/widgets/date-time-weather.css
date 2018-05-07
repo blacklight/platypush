@@ -21,7 +21,9 @@ h1.temperature {
     .widget.date-time-weather * > .sensors {
         position: absolute;
         bottom: 2rem;
-        width: 100%;
+        width: 90%;
+        margin-left: -2rem;
+        padding-left: 1rem;
     }
 
     .widget.date-time-weather * > .sensor-temperature,
@@ -37,3 +39,4 @@ h1.temperature {
     .widget.date-time-weather * > .sensor-humidity {
         text-align: right;
     }
+
