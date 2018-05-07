@@ -3,6 +3,7 @@ $(document).ready(function() {
         config = window.widgets['rss-news'],
         db = config.db,
         news = [],
+        default_limit = 10,
         cur_article_index = -1;
 
     var getNews = function() {
@@ -15,7 +16,8 @@ $(document).ready(function() {
                     query: "select s.title as source, e.title, e.summary, " +
                         "strftime('%Y-%m-%dT%H:%M:%fZ', e.published) as published " +
                         "from FeedEntry e join FeedSource s " +
-                        "on e.source_id = s.id order by e.published desc limit 10"
+                        "on e.source_id = s.id order by e.published desc limit " +
+                        ('limit' in config ? config.limit : default_limit)
                 }
             },
 
@@ -40,6 +42,7 @@ $(document).ready(function() {
             return;
         }
 
+        var updateNewsList = cur_article_index == news.length-1;
         var nextArticle = news[++cur_article_index % news.length];
         var dt = new Date(nextArticle.published);
         var $article = $('<div></div>').addClass('article');
@@ -57,11 +60,14 @@ $(document).ready(function() {
         }
 
         $article.hide().appendTo($newsElement).fadeIn();
+
+        if (updateNewsList) {
+            getNews();
+        }
     };
 
     var initWidget = function() {
         getNews();
-        setInterval(getNews, 600000);
         setInterval(refreshNews, 15000);
     };
 
