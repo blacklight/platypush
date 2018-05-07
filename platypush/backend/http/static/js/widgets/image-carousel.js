@@ -1,5 +1,6 @@
 $(document).ready(function() {
     var $imgContainer = $('.image-carousel').find('.carousel'),
+        $imgBackground = $('.image-carousel').find('.carousel-background'),
         config = window.widgets['image-carousel'],
         images = config.imageUrls,
         processedImages = 0;
@@ -14,9 +15,10 @@ $(document).ready(function() {
     };
 
     var refreshImage = function() {
+        var nextImage = images[processedImages++];
         var $oldImg = $imgContainer.find('img');
         var $newImg = $('<img></img>')
-            .attr('src', images[processedImages++])
+            .attr('src', nextImage)
             .attr('alt', 'Could not load image')
             .appendTo('body').hide();
 
@@ -24,6 +26,9 @@ $(document).ready(function() {
             $oldImg.remove();
             if ($newImg.width() > $newImg.height()) {
                 $newImg.css('width', '100%');
+                $imgBackground.css('background-image', '');
+            } else {
+                $imgBackground.css('background-image', 'url(' + nextImage + ')');
             }
 
             $newImg.css('max-height', '100%');

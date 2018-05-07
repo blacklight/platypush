@@ -1,15 +1,33 @@
 .carousel {
-    display: flex;
-    justify-content: center;
-    align-items: center;
     overflow: hidden;
-    background-color: black;
     color: #999;
+    position: relative;
+    width: 100%;
+    height: 22.5em;
 }
 
 .carousel > img {
-    flex-shrink: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
     border-radius: 5px;
+    z-index: 2;
+}
+
+.carousel-background {
+    position: absolute;
+    width: 100%;
     height: 22.5em;
+    top: 0;
+    left: 0;
+    background-color: black;
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: blur(10px);
+    z-index: 1;
 }
 
