@@ -16,3 +16,8 @@ h1.temperature {
         font-size: 22px;
     }
 
+    .widget.date-time-weather * > .sensor-temperature,
+    .widget.date-time-weather * > .sensor-humidity {
+        display: none;
+    }
+

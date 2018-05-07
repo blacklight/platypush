@@ -2,17 +2,37 @@ $(document).ready(function() {
     var $widget = $('.widget.date-time-weather'),
         $dateElement = $widget.find('[data-bind=date]'),
         $timeElement = $widget.find('[data-bind=time]'),
+        $sensorTempElement = $widget.find('[data-bind=sensor-temperature]'),
+        $sensorHumidityElement = $widget.find('[data-bind=sensor-humidity]'),
         $forecastElement = $widget.find('[data-bind=forecast]'),
         $tempElement = $widget.find('[data-bind=temperature]');
 
     var onEvent = function(event) {
         if (event.args.type == 'platypush.message.event.weather.NewWeatherConditionEvent') {
             updateTemperature(event.args.temperature);
+        } else if (event.args.type == 'platypush.message.event.sensor.SensorDataChangeEvent') {
+            if ('temperature' in event.args) {
+                updateSensorTemperature(event.args.temperature);
+            }
+
+            if ('humidity' in event.args) {
+                updateSensorHumidity(event.args.humidity);
+            }
         }
     };
 
     var updateTemperature = function(temperature) {
         $tempElement.text(Math.round(temperature));
+    };
+
+    var updateSensorTemperature = function(temperature) {
+        $sensorTempElement.text(Math.round(temperature*10)/10);
+        $sensorTempElement.parent().show();
+    };
+
+    var updateSensorHumidity = function(humidity) {
+        $sensorHumidityElement.text(Math.round(humidity));
+        $sensorHumidityElement.parent().show();
     };
 
     var initEvents = function() {
