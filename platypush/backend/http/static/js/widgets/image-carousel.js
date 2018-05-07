@@ -16,13 +16,11 @@ $(document).ready(function() {
     var refreshImage = function() {
         var $oldImg = $imgContainer.find('img');
         var $newImg = $imgContainer.find('img').clone()
-            .attr('src', images[processedImages++])
+            .attr('src', images[processedImages++]).css('min-width', '')
             .hide().appendTo($imgContainer);
 
         if ($newImg.width() > $newImg.height()) {
             $newImg.css('min-width', '100%');
-        } else {
-            $newImg.css('min-width', '');
         }
 
         $newImg.on('load', function() {
