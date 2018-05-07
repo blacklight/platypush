@@ -108,6 +108,9 @@ class RssUpdates(HttpRequest):
                      .format(len(feed.entries), self.url))
 
         for entry in feed.entries:
+            if not entry.published_parsed:
+                continue
+
             entry_timestamp = datetime.datetime(*entry.published_parsed[:6])
 
             if latest_update is None \
