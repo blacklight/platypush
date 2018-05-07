@@ -1,8 +1,16 @@
 .carousel {
-    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
     background-color: black;
-    background-size: auto 100%;
-    background-position: center;
-    background-repeat: no-repeat;
+    color: #999;
+}
+
+.carousel > img {
+    flex-shrink: 0;
+    max-height: 100%;
+    border-radius: 10px;
+    height: 22.5em;
 }
 

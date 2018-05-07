@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    var $imgElement = $('.image-carousel').find('.carousel'),
+    var $imgContainer = $('.image-carousel').find('.carousel'),
         config = window.widgets['image-carousel'],
         images = config.imageUrls,
         processedImages = 0;
@@ -14,7 +14,22 @@ $(document).ready(function() {
     };
 
     var refreshImage = function() {
-        $imgElement.css('background-image', "url('" + images[processedImages++] + "')");
+        var $oldImg = $imgContainer.find('img');
+        var $newImg = $imgContainer.find('img').clone()
+            .attr('src', images[processedImages++])
+            .hide().appendTo($imgContainer);
+
+        if ($newImg.width() > $newImg.height()) {
+            $newImg.css('min-width', '100%');
+        } else {
+            $newImg.css('min-width', '');
+        }
+
+        $newImg.on('load', function() {
+            $oldImg.remove();
+            $newImg.fadeIn();
+        });
+
         if (processedImages == images.length-1) {
             shuffleImages();
             processedImages = 0;
