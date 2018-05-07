@@ -11,12 +11,16 @@
 
     <div class="forecast" data-bind="forecast"></div>
 
-    <div class="sensor-temperature">
-        Sensor temperature: <span data-bind="sensor-temperature">N/A</span>&deg;
-    </div>
+    <div class="sensors row">
+        <div class="sensor-temperature six columns">
+            <i class="fa fa-thermometer"></i> &nbsp;
+            <span data-bind="sensor-temperature">N/A</span>&deg;
+        </div>
 
-    <div class="sensor-humidity">
-        Sensor humidity: <span data-bind="sensor-humidity">N/A</span>%
+        <div class="sensor-humidity six columns">
+            <i class="fa fa-tint"></i> &nbsp;
+            <span data-bind="sensor-humidity">N/A</span>%
+        </div>
     </div>
 </div>
 

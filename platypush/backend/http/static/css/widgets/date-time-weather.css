@@ -4,6 +4,8 @@
 
 .date-time-weather-container {
     padding: 2rem;
+    position: relative;
+    min-height: 20.5em;
 }
 
 h1.temperature {
@@ -16,8 +18,22 @@ h1.temperature {
         font-size: 22px;
     }
 
+    .widget.date-time-weather * > .sensors {
+        position: absolute;
+        bottom: 2rem;
+        width: 100%;
+    }
+
     .widget.date-time-weather * > .sensor-temperature,
     .widget.date-time-weather * > .sensor-humidity {
         display: none;
+        font-weight: bold;
     }
 
+    .widget.date-time-weather * > .sensor-temperature {
+        text-align: left;
+    }
+
+    .widget.date-time-weather * > .sensor-humidity {
+        text-align: right;
+    }
