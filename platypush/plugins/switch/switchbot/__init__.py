@@ -89,10 +89,11 @@ class SwitchSwitchbotPlugin(SwitchPlugin):
     """
 
     def __init__(self, bt_interface=None, connect_timeout=None,
-                 scan_timeout=None, *args, **kwargs):
+                 scan_timeout=None, devices={}, *args, **kwargs):
         self.bt_interface = bt_interface
         self.connect_timeout = connect_timeout if connect_timeout else 5
         self.scan_timeout = scan_timeout if scan_timeout else 2
+        self.devices = devices
 
 
     def _run(self, device, command=None):

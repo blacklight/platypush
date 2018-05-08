@@ -1,0 +1,29 @@
+#switchbot-container {
+    background-color: #f8f8f8;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 400;
+    line-height: 38px;
+    letter-spacing: .1rem;
+}
+
+.switchbot-device {
+    padding: 1.5em 1em .2em .5em;
+    border-radius: 10px;
+}
+
+    .switchbot-device:nth-of-type(odd) {
+        background-color: #ececec;
+    }
+
+    .switchbot-device:hover {
+        background-color: #daf8e2 !important;
+    }
+
+.toggle-container {
+    text-align: right;
+    padding-right: 1em;
+}
+

@@ -1,0 +1,17 @@
+<script type="text/javascript" src="{{ url_for('static', filename='js/switch.switchbot.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/switch.switchbot.css') }}"></script>
+
+<div id="switchbot-container" class="row">
+    {% for addr, name in configuration['devices'].items() %}
+        <div class="row switchbot-device" data-addr="{{ addr }}">
+            <div class="ten columns name">{{ name }}</div>
+            <div class="two columns toggle-container">
+                <div class="toggle toggle--push switch-ctrl-container">
+                    <label for="{{ addr }}" class="toggle--btn"></label>
+                    <input type="checkbox" name="{{ addr }}" class="toggle--checkbox switch-ctrl">
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
