@@ -20,6 +20,20 @@ class SwitchWemoPlugin(SwitchPlugin):
         self.env.discover(seconds=self.discovery_seconds)
         self.devices = self.env.devices
 
+    def get_devices(self):
+        self.refresh_devices()
+        return Response(
+            output = { 'devices': {
+                name: {
+                    'host': dev.host,
+                    'state': dev.get_state(),
+                    'model': dev.model,
+                    'serialnumber': dev.serialnumber,
+                }
+                for (name, dev) in self.devices.items()
+            } }
+        )
+
     def _exec(self, method, device, *args, **kwargs):
         if device not in self.devices:
             self.refresh_devices()
