@@ -7,8 +7,8 @@ from platypush.message.response import Response
 from .. import SwitchPlugin
 
 class SwitchWemoPlugin(SwitchPlugin):
-    def __init__(self, discovery_seconds=3):
-        super().__init__()
+    def __init__(self, discovery_seconds=3, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.discovery_seconds=discovery_seconds
         self.env = Environment()
@@ -23,15 +23,16 @@ class SwitchWemoPlugin(SwitchPlugin):
     def get_devices(self):
         self.refresh_devices()
         return Response(
-            output = { 'devices': {
-                name: {
+            output = { 'devices': [
+                {
                     'host': dev.host,
+                    'name': dev.name,
                     'state': dev.get_state(),
                     'model': dev.model,
                     'serialnumber': dev.serialnumber,
                 }
                 for (name, dev) in self.devices.items()
-            } }
+            ] }
         )
 
     def _exec(self, method, device, *args, **kwargs):
