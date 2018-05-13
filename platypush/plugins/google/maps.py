@@ -35,13 +35,17 @@ class GoogleMapsPlugin(GooglePlugin):
                     if component_type == 'street_number':
                         address['street_number'] = addr_component['long_name']
                     elif component_type == 'route':
-                        address['street'] = addr_component['long_name']
+                        address['address'] = addr_component['long_name']
                     elif component_type == 'locality':
                         address['locality'] = addr_component['long_name']
                     elif component_type == 'country':
-                        address['country'] = addr_component['short_name']
+                        address['country'] = addr_component['short_name'].lower()
                     elif component_type == 'postal_code':
                         address['postal_code'] = addr_component['long_name']
+
+            if 'address' in address and 'street_number' in address:
+                address['address'] += ' ' + address['street_number']
+                del(address['street_number'])
 
         return Response(output=address)
 
