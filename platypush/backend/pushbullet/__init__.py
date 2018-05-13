@@ -51,7 +51,8 @@ class PushbulletBackend(Backend):
         if not isinstance(msg, dict): return True  # We received something weird
 
         is_duplicate=False
-        last_msg = self._last_received_msg[msg['type']]
+        msgtype = msg['type'] if 'type' in msg else 'notype'
+        last_msg = self._last_received_msg[msgtype]
 
         if last_msg:
             msg = Message.parse(msg)
@@ -62,7 +63,7 @@ class PushbulletBackend(Backend):
                 logging.debug('Ignoring duplicate message received on the socket')
                 is_duplicate = True
 
-        self._last_received_msg[msg['type']] = {
+        self._last_received_msg[msgtype] = {
             'body': msg, 'time': time.time()
         }
 
