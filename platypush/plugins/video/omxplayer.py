@@ -8,7 +8,6 @@ import time
 import urllib.request
 import urllib.parse
 
-from bs4 import BeautifulSoup
 from dbus.exceptions import DBusException
 from omxplayer import OMXPlayer
 
@@ -292,17 +291,20 @@ class VideoOmxplayerPlugin(Plugin):
         query = urllib.parse.quote(query)
         url = "https://www.youtube.com/results?search_query=" + query
         response = urllib.request.urlopen(url)
-        html = response.read()
-        soup = BeautifulSoup(html, 'lxml')
+        html = response.read().decode('utf-8')
         results = []
 
-        for vid in soup.findAll(attrs={'class':'yt-uix-tile-link'}):
-            m = re.match('(/watch\?v=[^&]+)', vid['href'])
+        while html:
+            m = re.search('(<a href="(/watch\?v=.+?)".+?yt-uix-tile-link.+?title="(.+?)".+?>)', html)
             if m:
                 results.append({
-                    'url': 'https://www.youtube.com' + m.group(1),
-                    'title': vid['title'],
+                    'url': 'https://www.youtube.com' + m.group(2),
+                    'title': m.group(3)
                 })
+
+                html = html.split(m.group(1))[1]
+            else:
+                html = ''
 
         logging.info('{} YouTube video results for the search query "{}"'
                      .format(len(results), query))
