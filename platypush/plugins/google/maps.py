@@ -44,7 +44,11 @@ class GoogleMapsPlugin(GooglePlugin):
                         address['postal_code'] = addr_component['long_name']
 
             if 'address' in address and 'street_number' in address:
-                address['address'] += ' ' + address['street_number']
+                address['address'] = '{}{}{}'.format(
+                    (address['address'] or ''),
+                    (' ' if address['street_number'] else ''),
+                    (address['street_number'] or ''))
+
                 del(address['street_number'])
 
         return Response(output=address)

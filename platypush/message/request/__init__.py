@@ -135,7 +135,10 @@ class Request(Message):
 
                 else:
                     try:
-                        parsed_value += prefix + eval(inner_expr)
+                        expanded_expr = eval(inner_expr)
+                        parsed_value += prefix
+                        if expanded_expr is not None:
+                            parsed_value += expanded_expr
                     except Exception as e:
                         logging.exception(e)
                         parsed_value += prefix + expr
