@@ -171,8 +171,10 @@ class RssUpdates(HttpRequest):
                                         filename=digest_filename)
 
                 session.add(digest_entry)
+                logging.info('{} digest ready: {}'.format(self.digest_format, digest_filename))
 
         session.commit()
+        logging.info('Parsing RSS feed {}: completed'.format(self.title))
 
         return NewFeedEvent(request=dict(self), response=entries,
                             source_id=source_record.id, title=self.title,
