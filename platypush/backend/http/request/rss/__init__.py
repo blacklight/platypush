@@ -118,6 +118,8 @@ class RssUpdates(HttpRequest):
                 logging.info('Processed new item from RSS feed <{}>: "{}"'
                              .format(self.url, entry.title))
 
+                entry.summary = entry.summary if hasattr(entry, 'summary') else None
+
                 if self.mercury_api_key:
                     entry.content = self._parse_entry_content(entry.link)
                 elif hasattr(entry, 'summary'):
