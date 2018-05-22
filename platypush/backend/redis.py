@@ -42,8 +42,15 @@ class RedisBackend(Backend):
 
         while not self.should_stop():
             try:
-                msg = self.redis.blpop(self.queue)
-                msg = Message.build(json.loads(msg[1].decode('utf-8')))
+                msg = self.redis.blpop(self.queue)[1].decode('utf-8')
+
+                try:
+                    msg = Message.build(json.loads(msg))
+                except:
+                    import ast
+                    msg = Message.build(ast.literal_eval(msg))
+
+                logging.info('Received message on the Redis backend: {}'.format(msg))
                 self.bus.post(msg)
             except Exception as e:
                 logging.exception(e)
