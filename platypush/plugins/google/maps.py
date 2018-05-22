@@ -33,26 +33,15 @@ class GoogleMapsPlugin(GooglePlugin):
             logging.info('Google Maps geocode response for latlng ({},{}): {}'.
                          format(latitude, longitude, result))
 
+            address['address'] = result['formatted_address']
             for addr_component in result['address_components']:
                 for component_type in addr_component['types']:
-                    if component_type == 'street_number':
-                        address['street_number'] = addr_component['long_name']
-                    elif component_type == 'route':
-                        address['address'] = addr_component['long_name']
-                    elif component_type == 'locality':
+                    if component_type == 'locality':
                         address['locality'] = addr_component['long_name']
                     elif component_type == 'country':
                         address['country'] = addr_component['short_name'].lower()
                     elif component_type == 'postal_code':
                         address['postal_code'] = addr_component['long_name']
-
-            if 'address' in address and 'street_number' in address:
-                address['address'] = '{}{}{}'.format(
-                    (address['address'] or ''),
-                    (' ' if address['street_number'] else ''),
-                    (address['street_number'] or ''))
-
-                del(address['street_number'])
 
         return Response(output=address)
 
