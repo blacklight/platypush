@@ -29,7 +29,7 @@ class SensorLeapBackend(Backend):
                      [25.0, 600.0],    # y axis
                      [-300.0, 300.0],  # z axis
                  ],
-                 position_tolerance=0.2,  # Position variation tolerance in %
+                 position_tolerance=0.0,  # Position variation tolerance in %
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
