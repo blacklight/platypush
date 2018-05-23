@@ -81,6 +81,7 @@ setup(
         'Support for most of the HTTP poll backends': ['python-dateutil'],
         'Support for Last.FM scrobbler plugin': ['pylast'],
         'Support for custom hotword detection': ['snowboy'],
+        'Support for real-time MIDI events': ['rtmidi'],
         'Support for GPIO pins access': ['RPi.GPIO'],
         'Support for MCP3008 analog-to-digital converter plugin': ['adafruit-mcp3008'],
         # 'Support for Leap Motion backend': ['git+ssh://git@github.com:BlackLight/leap-sdk-python3.git', 'redis'],
