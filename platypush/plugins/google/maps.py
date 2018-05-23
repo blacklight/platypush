@@ -33,7 +33,7 @@ class GoogleMapsPlugin(GooglePlugin):
             logging.info('Google Maps geocode response for latlng ({},{}): {}'.
                          format(latitude, longitude, result))
 
-            address['address'] = result['formatted_address']
+            address['address'] = result['formatted_address'].split(',')[0]
             for addr_component in result['address_components']:
                 for component_type in addr_component['types']:
                     if component_type == 'locality':
