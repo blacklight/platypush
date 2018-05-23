@@ -190,8 +190,7 @@ class Backend(Thread):
         Param:
             msg -- The message
         """
-
-        raise NotImplementedError("send_message should be implemented in a derived class")
+        pass
 
 
     def run(self):
