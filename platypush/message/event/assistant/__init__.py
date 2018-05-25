@@ -29,6 +29,11 @@ class ConversationEndEvent(AssistantEvent):
         super().__init__(*args, **kwargs)
 
 
+class ConversationTimeoutEvent(ConversationEndEvent):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 class SpeechRecognizedEvent(AssistantEvent):
     def __init__(self, phrase, *args, **kwargs):
         super().__init__(phrase=phrase, *args, **kwargs)
