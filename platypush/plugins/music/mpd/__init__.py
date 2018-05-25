@@ -37,6 +37,16 @@ class MusicMpdPlugin(MusicPlugin):
         if status == 'play': return self._exec('pause')
         else: return self._exec('play')
 
+    def pause_if_playing(self):
+        status = self.status().output['state']
+        if status == 'play': return self._exec('pause')
+        else: return Response(output={})
+
+    def play_if_paused(self):
+        status = self.status().output['state']
+        if status == 'pause': return self._exec('play')
+        else: return Response(output={})
+
     def stop(self):
         return self._exec('stop')
 
