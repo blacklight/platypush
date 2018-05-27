@@ -3,7 +3,7 @@ import json
 
 from smartcard.CardType import AnyCardType, ATRCardType
 from smartcard.CardRequest import CardRequest
-from smartcard.Exceptions import NoCardException
+from smartcard.Exceptions import NoCardException, CardConnectionException
 from smartcard.util import toHexString
 
 from platypush.backend import Backend
@@ -71,7 +71,7 @@ class ScardBackend(Backend):
                     self.bus.post(SmartCardDetectedEvent(atr=atr, reader=reader))
                     prev_atr = atr
             except Exception as e:
-                if isinstance(e, NoCardException):
+                if isinstance(e, NoCardException) or isinstance(e, CardConnectionException):
                     self.bus.post(SmartCardRemovedEvent(atr=prev_atr, reader=reader))
                 else:
                     logging.exception(e)

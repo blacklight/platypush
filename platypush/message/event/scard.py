@@ -8,7 +8,7 @@ class SmartCardDetectedEvent(Event):
 
 class SmartCardRemovedEvent(Event):
     def __init__(self, atr=None, reader=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(atr=atr, reader=reader, *args, **kwargs)
 
 
 # vim:sw=4:ts=4:et:
