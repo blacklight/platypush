@@ -7,7 +7,7 @@ class SmartCardDetectedEvent(Event):
 
 
 class SmartCardRemovedEvent(Event):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, atr=None, reader=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 

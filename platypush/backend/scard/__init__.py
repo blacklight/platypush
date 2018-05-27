@@ -53,6 +53,8 @@ class ScardBackend(Backend):
                      format(self.ATRs))
 
         prev_atr = None
+        reader = None
+
         while not self.should_stop():
             try:
                 cardrequest = CardRequest(timeout=None, cardType=self.cardtype)
@@ -69,12 +71,12 @@ class ScardBackend(Backend):
                     self.bus.post(SmartCardDetectedEvent(atr=atr, reader=reader))
                     prev_atr = atr
             except Exception as e:
-                prev_atr = None
-
                 if isinstance(e, NoCardException):
-                    self.bus.post(SmartCardRemovedEvent())
+                    self.bus.post(SmartCardRemovedEvent(atr=prev_atr, reader=reader))
                 else:
                     logging.exception(e)
+
+                prev_atr = None
 
 
 # vim:sw=4:ts=4:et:
