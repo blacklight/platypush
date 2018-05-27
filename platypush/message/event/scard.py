@@ -6,5 +6,10 @@ class SmartCardDetectedEvent(Event):
         super().__init__(atr=atr, reader=reader, *args, **kwargs)
 
 
+class SmartCardRemovedEvent(Event):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 # vim:sw=4:ts=4:et:
 
