@@ -7,7 +7,7 @@ from smartcard.Exceptions import NoCardException
 from smartcard.util import toHexString
 
 from platypush.backend import Backend
-from platypush.message.event.scard import SmartCardDetectedEvent
+from platypush.message.event.scard import SmartCardDetectedEvent, SmartCardRemovedEvent
 
 
 class ScardBackend(Backend):
@@ -69,10 +69,12 @@ class ScardBackend(Backend):
                     self.bus.post(SmartCardDetectedEvent(atr=atr, reader=reader))
                     prev_atr = atr
             except Exception as e:
+                prev_atr = None
+
                 if isinstance(e, NoCardException):
-                    prev_atr = None
                     self.bus.post(SmartCardRemovedEvent())
-                logging.exception(e)
+                else:
+                    logging.exception(e)
 
 
 # vim:sw=4:ts=4:et:
