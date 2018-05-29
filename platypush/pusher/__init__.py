@@ -48,8 +48,11 @@ class Pusher(object):
 
         # Initialize the configuration
         self.config_file = config_file
+        log_conf = Config.get('logging')
         Config.init(config_file)
-        logging.basicConfig(level=Config.get('logging'), stream=sys.stdout)
+        logging.basicConfig(level=log_conf['level']
+                            if log_conf and 'level' in log_conf
+                            else logging.info, stream=sys.stdout)
 
         self.on_response = on_response or self.default_on_response()
         self.backend = backend or Config.get_default_pusher_backend()
