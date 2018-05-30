@@ -7,9 +7,10 @@ from apiclient import discovery
 
 from platypush.message.response import Response
 from platypush.plugins.google import GooglePlugin
+from platypush.plugins.calendar import CalendarInterface
 
 
-class GoogleCalendarPlugin(GooglePlugin):
+class GoogleCalendarPlugin(GooglePlugin, CalendarInterface):
     scopes = ['https://www.googleapis.com/auth/calendar.readonly']
 
     def __init__(self, *args, **kwargs):

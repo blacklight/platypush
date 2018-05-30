@@ -85,6 +85,7 @@ setup(
         'Support for GPIO pins access': ['RPi.GPIO'],
         'Support for MCP3008 analog-to-digital converter plugin': ['adafruit-mcp3008'],
         'Support for smart cards detection': ['pyscard'],
+        'Support for ICal calendars': ['icalendar', 'python-dateutil'],
         # 'Support for Leap Motion backend': ['git+ssh://git@github.com:BlackLight/leap-sdk-python3.git', 'redis'],
         # 'Support for Flic buttons': ['git+ssh://git@github.com/50ButtonsEach/fliclib-linux-hci']
     },

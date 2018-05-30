@@ -22,7 +22,7 @@ $(document).ready(function() {
         execute(
             {
                 type: 'request',
-                action: 'google.calendar.get_upcoming_events',
+                action: 'calendar.get_upcoming_events',
                 args: {
                     max_results: 9,
                 }
@@ -30,6 +30,8 @@ $(document).ready(function() {
 
             onSuccess = function(response) {
                 var events = response.response.output;
+                $eventsListContainer.html('');
+
                 for (var i=0; i < events.length; i++) {
                     var event = events[i];
                     var start = new Date('dateTime' in event.start ? event.start.dateTime : event.start.date);
