@@ -22,7 +22,7 @@ from .. import Plugin
 class VideoOmxplayerPlugin(Plugin):
     video_extensions = {
         '.avi', '.flv', '.wmv', '.mov', '.mp4', '.m4v', '.mpg', '.mpeg',
-        '.rm', '.swf', '.vob'
+        '.rm', '.swf', '.vob', '.mkv'
     }
 
     default_torrent_ports = [6881, 6891]
