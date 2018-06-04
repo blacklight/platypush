@@ -66,7 +66,7 @@ $(document).ready(function() {
 
     var initWidget = function() {
         refreshCalendar();
-        setInterval(refreshCalendar, 36000000);
+        setInterval(refreshCalendar, 900000);
     };
 
     var init = function() {
