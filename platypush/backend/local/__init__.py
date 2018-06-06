@@ -1,4 +1,3 @@
-import logging
 import json
 import os
 import time
@@ -10,6 +9,7 @@ from platypush.message import Message
 from platypush.message.event import StopEvent
 from platypush.message.request import Request
 from platypush.message.response import Response
+
 
 class LocalBackend(Backend):
     """
@@ -63,7 +63,7 @@ class LocalBackend(Backend):
 
     def run(self):
         super().run()
-        logging.info('Initialized local backend on {} and {}'.
+        self.logger.info('Initialized local backend on {} and {}'.
                      format(self.request_fifo, self.response_fifo))
 
         while not self.should_stop():
@@ -71,11 +71,11 @@ class LocalBackend(Backend):
                 msg = self._get_next_message()
                 if not msg: continue
             except Exception as e:
-                logging.exception(e)
+                self.logger.exception(e)
                 time.sleep(0.2)
                 continue
 
-            logging.debug('Received message on the local backend: {}, thread_id: '.format(msg, self.thread_id))
+            self.logger.debug('Received message on the local backend: {}, thread_id: '.format(msg, self.thread_id))
 
             if self.should_stop(): break
             self.on_message(msg)

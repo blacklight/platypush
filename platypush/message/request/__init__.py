@@ -13,6 +13,9 @@ from platypush.message import Message
 from platypush.message.response import Response
 from platypush.utils import get_module_and_method_from_action
 
+logger = logging.getLogger(__name__)
+
+
 class Request(Message):
     """ Request message class """
 
@@ -59,7 +62,7 @@ class Request(Message):
         from platypush.config import Config
         from platypush.procedure import Procedure
 
-        logging.info('Executing procedure request: {}'.format(self.action))
+        logger.info('Executing procedure request: {}'.format(self.action))
         proc_name = self.action.split('.')[-1]
         proc_config = Config.get_procedures()[proc_name]
         proc = Procedure.build(name=proc_name, requests=proc_config['actions'],
@@ -120,7 +123,7 @@ class Request(Message):
                     if isinstance(context_value, datetime.date):
                         context_value = context_value.isoformat()
                 except Exception as e:
-                    logging.exception(e)
+                    logger.exception(e)
                     context_value = expr
 
                 parsed_value += prefix + (
@@ -140,7 +143,7 @@ class Request(Message):
         if self.backend and self.origin:
             self.backend.send_response(response=response, request=self)
         else:
-            logging.info('Response whose request has no ' +
+            logger.info('Response whose request has no ' +
                         'origin attached: {}'.format(response))
 
 
@@ -177,14 +180,14 @@ class Request(Message):
                 if response and response.is_error():
                     raise RuntimeError('Response processed with errors: {}'.format(response))
 
-                logging.info('Processed response from plugin {}: {}'.
+                logger.info('Processed response from plugin {}: {}'.
                                 format(plugin, response))
             except Exception as e:
                 # Retry mechanism
                 response = Response(output=None, errors=[str(e), traceback.format_exc()])
-                logging.exception(e)
+                logger.exception(e)
                 if n_tries:
-                    logging.info('Reloading plugin {} and retrying'.format(module_name))
+                    logger.info('Reloading plugin {} and retrying'.format(module_name))
                     get_plugin(module_name, reload=True)
                     response = _thread_func(n_tries-1)
             finally:

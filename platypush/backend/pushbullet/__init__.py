@@ -1,4 +1,3 @@
-import logging
 import json
 import requests
 import time
@@ -9,6 +8,7 @@ from platypush.message import Message
 from platypush.message.event.pushbullet import PushbulletEvent
 
 from .. import Backend
+
 
 class PushbulletBackend(Backend):
     def __init__(self, token, device, **kwargs):
@@ -39,7 +39,7 @@ class PushbulletBackend(Backend):
 
             response = response.json()
         except Exception as e:
-            logging.exception(e)
+            self.logger.exception(e)
             raise e
 
         if 'pushes' in response and response['pushes']:
@@ -59,7 +59,7 @@ class PushbulletBackend(Backend):
                     and time.time() - last_msg['time'] <= 2:
                 # Duplicate message sent on the Pushbullet socket within
                 # two seconds, ignore it
-                logging.debug('Ignoring duplicate message received on the socket')
+                self.logger.debug('Ignoring duplicate message received on the socket')
                 is_duplicate = True
 
         self._last_received_msg[msg['type']] = {
@@ -75,7 +75,7 @@ class PushbulletBackend(Backend):
                 try:
                     data = json.loads(data) if isinstance(data, str) else push
                 except Exception as e:
-                    logging.exception(e)
+                    self.logger.exception(e)
                     return
 
                 # If it's a push, get it
@@ -91,7 +91,7 @@ class PushbulletBackend(Backend):
                 self.on_message(event)
 
                 if 'body' not in push: return
-                logging.debug('Received push: {}'.format(push))
+                self.logger.debug('Received push: {}'.format(push))
 
                 body = push['body']
                 try: body = json.loads(body)
@@ -100,15 +100,15 @@ class PushbulletBackend(Backend):
                 if not self._should_skip_last_received_msg(body):
                     self.on_message(body)
             except Exception as e:
-                logging.exception(e)
+                self.logger.exception(e)
                 return
 
         return _f
 
     def on_error(self):
         def _f(ws, e):
-            logging.exception(e)
-            logging.info('Restarting PushBullet backend')
+            self.logger.exception(e)
+            self.logger.info('Restarting PushBullet backend')
             ws.close()
             self._init_socket()
 
@@ -153,7 +153,7 @@ class PushbulletBackend(Backend):
         super().run()
 
         self._init_socket()
-        logging.info('Initialized Pushbullet backend - device_id: {}'
+        self.logger.info('Initialized Pushbullet backend - device_id: {}'
                      .format(self.device_name))
 
         self.ws.run_forever()

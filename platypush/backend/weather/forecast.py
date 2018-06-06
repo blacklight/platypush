@@ -1,10 +1,10 @@
-import logging
 import time
 
 from platypush.backend import Backend
 from platypush.context import get_plugin
 from platypush.plugins.weather.forecast import WeatherForecastPlugin
 from platypush.message.event.weather import NewWeatherConditionEvent
+
 
 class WeatherForecastBackend(Backend):
     def __init__(self, poll_seconds, **kwargs):
@@ -18,7 +18,7 @@ class WeatherForecastBackend(Backend):
     def run(self):
         super().run()
         weather = get_plugin('weather.forecast')
-        logging.info('Initialized weather forecast backend')
+        self.logger.info('Initialized weather forecast backend')
 
         while not self.should_stop():
             current_weather = weather.get_current_weather().output

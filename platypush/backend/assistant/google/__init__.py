@@ -1,4 +1,3 @@
-import logging
 import json
 import os
 import subprocess
@@ -14,6 +13,7 @@ from platypush.backend import Backend
 from platypush.message.event.assistant import \
     ConversationStartEvent, ConversationEndEvent, ConversationTimeoutEvent, \
     NoResponseEvent, SpeechRecognizedEvent
+
 
 class AssistantGoogleBackend(Backend):
     """ Class for the Google Assistant backend. It creates and event source
@@ -38,10 +38,10 @@ class AssistantGoogleBackend(Backend):
         with open(self.credentials_file, 'r') as f:
             self.credentials = google.oauth2.credentials.Credentials(token=None,
                                                                      **json.load(f))
-        logging.info('Initialized Google Assistant backend')
+        self.logger.info('Initialized Google Assistant backend')
 
     def _process_event(self, event):
-        logging.info('Received assistant event: {}'.format(event))
+        self.logger.info('Received assistant event: {}'.format(event))
 
         if event.type == EventType.ON_CONVERSATION_TURN_STARTED:
             self.bus.post(ConversationStartEvent())
@@ -53,7 +53,7 @@ class AssistantGoogleBackend(Backend):
             self.bus.post(NoResponseEvent())
         elif event.type == EventType.ON_RECOGNIZING_SPEECH_FINISHED:
             phrase = event.args['text'].lower().strip()
-            logging.info('Speech recognized: {}'.format(phrase))
+            self.logger.info('Speech recognized: {}'.format(phrase))
             self.bus.post(SpeechRecognizedEvent(phrase=phrase))
 
 

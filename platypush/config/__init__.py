@@ -72,13 +72,19 @@ class Config(object):
 
         if 'logging' in self._config:
             for (k,v) in self._config['logging'].items():
-                logging_config[k] = v
                 if k == 'filename':
                     logfile = os.path.expanduser(v)
                     logdir = os.path.dirname(logfile)
                     os.makedirs(logdir, exist_ok=True)
-                    logging_config[k] = logfile
+                    v = logfile
                     del logging_config['stream']
+                elif k == 'level':
+                    try:
+                        v = int(v)
+                    except ValueError:
+                        v = getattr(logging, v.upper())
+
+                logging_config[k] = v
 
         self._config['logging'] = logging_config
 

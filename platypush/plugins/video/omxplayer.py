@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import re
 import subprocess
@@ -66,27 +65,27 @@ class VideoOmxplayerPlugin(Plugin):
                 resource = self.videos_queue.pop(0)
             else:
                 error = 'Unable to download torrent {}'.format(resource)
-                logging.warning(error)
+                self.logger.warning(error)
                 return Response(errors=[error])
 
-        logging.info('Playing {}'.format(resource))
+        self.logger.info('Playing {}'.format(resource))
 
         if self.player:
             try:
                 self.player.stop()
                 self.player = None
             except Exception as e:
-                logging.exception(e)
-                logging.warning('Unable to stop a previously running instance ' +
+                self.logger.exception(e)
+                self.logger.warning('Unable to stop a previously running instance ' +
                                 'of OMXPlayer, trying to play anyway')
 
         try:
             self.player = OMXPlayer(resource, args=self.args)
             self._init_player_handlers()
         except DBusException as e:
-            logging.warning('DBus connection failed: you will probably not ' +
+            self.logger.warning('DBus connection failed: you will probably not ' +
                             'be able to control the media')
-            logging.exception(e)
+            self.logger.exception(e)
 
         return self.status()
 
@@ -263,7 +262,7 @@ class VideoOmxplayerPlugin(Plugin):
         query_tokens = [_.lower() for _ in re.split('\s+', query.strip())]
 
         for media_dir in self.media_dirs:
-            logging.info('Scanning {} for "{}"'.format(media_dir, query))
+            self.logger.info('Scanning {} for "{}"'.format(media_dir, query))
             for path, dirs, files in os.walk(media_dir):
                 for f in files:
                     if not self._is_video_file(f):
@@ -286,7 +285,7 @@ class VideoOmxplayerPlugin(Plugin):
         return Response(output=results)
 
     def youtube_search(self, query):
-        logging.info('Searching YouTube for "{}"'.format(query))
+        self.logger.info('Searching YouTube for "{}"'.format(query))
 
         query = urllib.parse.quote(query)
         url = "https://www.youtube.com/results?search_query=" + query
@@ -306,7 +305,7 @@ class VideoOmxplayerPlugin(Plugin):
             else:
                 html = ''
 
-        logging.info('{} YouTube video results for the search query "{}"'
+        self.logger.info('{} YouTube video results for the search query "{}"'
                      .format(len(results), query))
 
         return Response(output=results)
@@ -323,7 +322,7 @@ class VideoOmxplayerPlugin(Plugin):
         return proc.stdout.read().decode("utf-8", "strict")[:-1]
 
     def torrent_search(self, query):
-        logging.info('Searching matching movie torrents for "{}"'.format(query))
+        self.logger.info('Searching matching movie torrents for "{}"'.format(query))
         request = urllib.request.urlopen(urllib.request.Request(
             'https://api.apidomain.info/list?' + urllib.parse.urlencode({
                 'sort': 'relevance',
@@ -358,7 +357,7 @@ class VideoOmxplayerPlugin(Plugin):
         ses.listen_on(*self.torrent_ports)
 
         info = lt.parse_magnet_uri(magnet)
-        logging.info('Downloading "{}" to "{}" from [{}]'
+        self.logger.info('Downloading "{}" to "{}" from [{}]'
                      .format(info['name'], self.download_dir, magnet))
 
         params = {
@@ -392,7 +391,7 @@ class VideoOmxplayerPlugin(Plugin):
             self.torrent_state['num_peers'] = status.num_peers
             self.torrent_state['state'] = status.state
 
-            logging.info(('Torrent download: {:.2f}% complete (down: {:.1f} kb/s ' +
+            self.logger.info(('Torrent download: {:.2f}% complete (down: {:.1f} kb/s ' +
                          'up: {:.1f} kB/s peers: {} state: {})')
                          .format(status.progress * 100,
                                  status.download_rate / 1000,

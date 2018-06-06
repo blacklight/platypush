@@ -1,5 +1,4 @@
 import enum
-import logging
 import threading
 import time
 
@@ -68,7 +67,7 @@ class GpioZeroborgPlugin(Plugin):
             elif 'below_threshold_direction' in sensor:
                 direction = sensor['below_threshold_direction']
 
-            logging.info('Sensor: {}\tMeasurement: {}\tDirection: {}'
+            self.logger.info('Sensor: {}\tMeasurement: {}\tDirection: {}'
                          .format(sensor['plugin'], value, direction))
 
         return direction
@@ -79,7 +78,7 @@ class GpioZeroborgPlugin(Plugin):
 
         self._can_run = True
         self._direction = direction.lower()
-        logging.info('Received ZeroBorg drive command: {}'.format(direction))
+        self.logger.info('Received ZeroBorg drive command: {}'.format(direction))
 
         def _run():
             while self._can_run and self._direction:
@@ -108,7 +107,7 @@ class GpioZeroborgPlugin(Plugin):
                     motor_3_power = self.directions[self._direction]['motor_3_power']
                     motor_4_power = self.directions[self._direction]['motor_4_power']
                 elif self._direction:
-                    logging.warning('Invalid direction {}, stopping motors'.format(self._direction))
+                    self.logger.warning('Invalid direction {}, stopping motors'.format(self._direction))
 
                 self.zb.SetMotor1(motor_1_power)
                 self.zb.SetMotor2(motor_2_power)

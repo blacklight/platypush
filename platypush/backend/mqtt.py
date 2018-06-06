@@ -1,4 +1,3 @@
-import logging
 import json
 
 import paho.mqtt.client as mqtt
@@ -43,7 +42,7 @@ class MqttBackend(Backend):
             except:
                 pass
 
-            logging.info('Received message on the MQTT backend: {}'.format(msg))
+            self.logger.info('Received message on the MQTT backend: {}'.format(msg))
             self.bus.post(msg)
 
         super().run()
@@ -51,7 +50,7 @@ class MqttBackend(Backend):
         client.on_connect = on_connect
         client.on_message = on_message
         client.connect(self.host, self.port, 60)
-        logging.info('Initialized MQTT backend on host {}:{}, topic {}'.
+        self.logger.info('Initialized MQTT backend on host {}:{}, topic {}'.
                      format(self.host, self.port, self.topic))
 
         client.loop_forever()

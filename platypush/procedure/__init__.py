@@ -5,6 +5,9 @@ from ..config import Config
 from ..message.request import Request
 from ..message.response import Response
 
+logger = logging.getLogger(__name__)
+
+
 class Procedure(object):
     """ Procedure class. A procedure is a pre-configured list of requests """
 
@@ -94,7 +97,7 @@ class Procedure(object):
             n_tries -- Number of tries in case of failure before raising a RuntimeError
         """
 
-        logging.info('Executing request {}'.format(self.name))
+        logger.info('Executing request {}'.format(self.name))
         response = Response()
 
         for request in self.requests:

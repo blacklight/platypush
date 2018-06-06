@@ -1,5 +1,3 @@
-import logging
-
 from redis import Redis
 
 from platypush.message.response import Response

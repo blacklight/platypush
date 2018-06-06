@@ -1,6 +1,5 @@
 import dateutil.parser
 import importlib
-import logging
 
 from abc import ABCMeta, abstractmethod
 
@@ -46,7 +45,7 @@ class CalendarPlugin(Plugin, CalendarInterface):
 
         for calendar in calendars:
             if 'type' not in calendar:
-                logging.warning("Invalid calendar with no type specified: {}".format(calendar))
+                self.logger.warning("Invalid calendar with no type specified: {}".format(calendar))
                 continue
 
             cal_type = calendar.pop('type')

@@ -1,4 +1,3 @@
-import logging
 import json
 import time
 
@@ -8,8 +7,6 @@ from threading import Timer
 
 from platypush.backend import Backend
 from platypush.message.event.midi import MidiMessageEvent
-
-logger = logging.getLogger(__name__)
 
 
 class MidiBackend(Backend):
@@ -69,7 +66,7 @@ class MidiBackend(Backend):
     def _on_midi_message(self):
         def flush_midi_message(message):
             def _f():
-                logger.info('Flushing throttled MIDI message {} to the bus'.format(message))
+                self.logger.info('Flushing throttled MIDI message {} to the bus'.format(message))
                 delay = time.time() - self.last_trigger_event_time
                 self.bus.post(MidiMessageEvent(message=message, delay=delay))
             return _f
@@ -83,7 +80,7 @@ class MidiBackend(Backend):
             if self.midi_throttle_time and self.last_trigger_event_time:
                 event_delta = time.time() - self.last_trigger_event_time
                 if event_delta < self.midi_throttle_time:
-                    logger.debug('Skipping throttled message {}'.format(message))
+                    self.logger.debug('Skipping throttled message {}'.format(message))
                     if self.midi_flush_timeout:
                         self.midi_flush_timeout.cancel()
 
@@ -104,14 +101,14 @@ class MidiBackend(Backend):
         super().run()
 
         self.midi.open_port(self.port_number)
-        logger.info('Initialized MIDI backend, listening for events on device {}'.
+        self.logger.info('Initialized MIDI backend, listening for events on device {}'.
                      format(self.device_name))
 
         while not self.should_stop():
             try:
                 time.sleep(1)
             except Exception as e:
-                logging.exception(e)
+                self.logger.exception(e)
 
         if self.midi:
             self.midi.close_port(self.port_number)

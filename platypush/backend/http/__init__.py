@@ -1,6 +1,5 @@
 import asyncio
 import inspect
-import logging
 import json
 import os
 import re
@@ -47,11 +46,11 @@ class HttpBackend(Backend):
 
 
     def send_message(self, msg):
-        logging.warning('Use cURL or any HTTP client to query the HTTP backend')
+        self.logger.warning('Use cURL or any HTTP client to query the HTTP backend')
 
 
     def stop(self):
-        logging.info('Received STOP event on HttpBackend')
+        self.logger.info('Received STOP event on HttpBackend')
 
         if self.server_proc:
             self.server_proc.terminate()
@@ -70,7 +69,7 @@ class HttpBackend(Backend):
             try:
                 loop.run_until_complete(send_event(websocket))
             except websockets.exceptions.ConnectionClosed:
-                logging.info('Client connection lost')
+                self.logger.info('Client connection lost')
 
 
     def redis_poll(self):
@@ -94,11 +93,11 @@ class HttpBackend(Backend):
             if token != self.token: abort(401)
 
             msg = Message.build(args)
-            logging.info('Received message on the HTTP backend: {}'.format(msg))
+            self.logger.info('Received message on the HTTP backend: {}'.format(msg))
 
             if isinstance(msg, Request):
                 response = msg.execute(async=False)
-                logging.info('Processing response on the HTTP backend: {}'.format(msg))
+                self.logger.info('Processing response on the HTTP backend: {}'.format(msg))
                 return str(response)
             elif isinstance(msg, Event):
                 self.redis.rpush(self.redis_queue, msg)
@@ -148,13 +147,13 @@ class HttpBackend(Backend):
         import websockets
 
         async def register_websocket(websocket, path):
-            logging.info('New websocket connection from {}'.format(websocket.remote_address[0]))
+            self.logger.info('New websocket connection from {}'.format(websocket.remote_address[0]))
             self.active_websockets.add(websocket)
 
             try:
                 await websocket.recv()
             except websockets.exceptions.ConnectionClosed:
-                logging.info('Websocket client {} closed connection'.format(websocket.remote_address[0]))
+                self.logger.info('Websocket client {} closed connection'.format(websocket.remote_address[0]))
                 self.active_websockets.remove(websocket)
 
         loop = asyncio.new_event_loop()
@@ -166,7 +165,7 @@ class HttpBackend(Backend):
 
     def run(self):
         super().run()
-        logging.info('Initialized HTTP backend on port {}'.format(self.port))
+        self.logger.info('Initialized HTTP backend on port {}'.format(self.port))
 
         webserver = self.webserver()
         self.server_proc = Process(target=webserver.run, kwargs={

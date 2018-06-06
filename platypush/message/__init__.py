@@ -2,6 +2,8 @@ import logging
 import inspect
 import json
 
+logger = logging.getLogger(__name__)
+
 
 class Message(object):
     """ Message generic class """
@@ -43,7 +45,7 @@ class Message(object):
             try:
                 msg = json.loads(msg.strip())
             except:
-                logging.warning('Invalid JSON message: {}'.format(msg))
+                logger.warning('Invalid JSON message: {}'.format(msg))
 
         assert isinstance(msg, dict)
         return msg

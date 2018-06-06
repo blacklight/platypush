@@ -8,6 +8,8 @@ from platypush.message.event import Event, EventMatchResult
 from platypush.message.request import Request
 from platypush.utils import get_event_class_by_type
 
+logger = logging.getLogger(__name__)
+
 
 def parse(msg):
     """ Builds a dict given another dictionary or
@@ -19,7 +21,7 @@ def parse(msg):
         try:
             msg = json.loads(msg.strip())
         except:
-            logging.warning('Invalid JSON message: {}'.format(msg))
+            logger.warning('Invalid JSON message: {}'.format(msg))
             return None
 
     return msg
@@ -142,7 +144,7 @@ class EventHook(object):
         result = self.matches_event(event)
 
         if result.is_match:
-            logging.info('Running hook {} triggered by an event'.format(self.name))
+            logger.info('Running hook {} triggered by an event'.format(self.name))
 
             for action in self.actions:
                 a = EventAction.build(action)

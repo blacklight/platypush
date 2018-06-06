@@ -4,6 +4,9 @@ import re
 from platypush.context import get_backend
 from platypush.message.event import Event, EventMatchResult
 
+logger = logging.getLogger(__name__)
+
+
 class AssistantEvent(Event):
     """ Base class for assistant events """
 
@@ -15,7 +18,7 @@ class AssistantEvent(Event):
             try:
                 self._assistant = get_backend('assistant.google.pushtotalk')
             except KeyError as e:
-                logging.warning('google.assistant backend not configured/initialized')
+                logger.warning('google.assistant backend not configured/initialized')
                 self._assistant = None
 
 

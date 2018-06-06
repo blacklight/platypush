@@ -10,6 +10,9 @@ from queue import Queue
 from platypush.config import Config
 from platypush.message.event import Event, StopEvent
 
+logger = logging.getLogger(__name__)
+
+
 class Bus(object):
     """ Main local bus where the daemon will listen for new messages """
 
@@ -40,7 +43,7 @@ class Bus(object):
         """
 
         if not self.on_message:
-            logging.warning('No message handlers installed, cannot poll')
+            logger.warning('No message handlers installed, cannot poll')
             return
 
         stop=False
@@ -49,7 +52,7 @@ class Bus(object):
             self.on_message(msg)
 
             if isinstance(msg, StopEvent) and msg.targets_me():
-                logging.info('Received STOP event on the bus')
+                logger.info('Received STOP event on the bus')
                 stop=True
 
 

@@ -1,5 +1,3 @@
-import logging
-
 from sqlalchemy import create_engine, Table, MetaData
 
 from platypush.message.response import Response

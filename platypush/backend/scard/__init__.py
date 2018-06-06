@@ -1,4 +1,3 @@
-import logging
 import json
 
 from smartcard.CardType import AnyCardType, ATRCardType
@@ -49,7 +48,7 @@ class ScardBackend(Backend):
     def run(self):
         super().run()
 
-        logging.info('Initialized smart card reader backend - ATR filter: {}'.
+        self.logger.info('Initialized smart card reader backend - ATR filter: {}'.
                      format(self.ATRs))
 
         prev_atr = None
@@ -65,7 +64,7 @@ class ScardBackend(Backend):
                 atr = toHexString(cardservice.connection.getATR())
 
                 if atr != prev_atr:
-                    logging.info('Smart card detected on reader {}, ATR: {}'.
+                    self.logger.info('Smart card detected on reader {}, ATR: {}'.
                                 format(reader, atr))
 
                     self.bus.post(SmartCardDetectedEvent(atr=atr, reader=reader))
@@ -74,7 +73,7 @@ class ScardBackend(Backend):
                 if isinstance(e, NoCardException) or isinstance(e, CardConnectionException):
                     self.bus.post(SmartCardRemovedEvent(atr=prev_atr, reader=reader))
                 else:
-                    logging.exception(e)
+                    self.logger.exception(e)
 
                 prev_atr = None
 

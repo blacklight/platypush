@@ -1,4 +1,3 @@
-import logging
 import json
 import os
 import subprocess
@@ -37,7 +36,7 @@ class AssistantSnowboyBackend(Backend):
             self.voice_model_file, sensitivity=self.sensitivity,
             audio_gain=self.audio_gain)
 
-        logging.info('Initialized Snowboy hotword detection')
+        self.logger.info('Initialized Snowboy hotword detection')
 
     def send_message(self, msg):
         pass

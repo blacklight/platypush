@@ -1,10 +1,11 @@
-import logging
 import json
+import logging
 import time
 
 from kafka import KafkaConsumer, KafkaProducer
 
 from .. import Backend
+
 
 class KafkaBackend(Backend):
     _conn_retry_secs = 5
@@ -17,6 +18,7 @@ class KafkaBackend(Backend):
         self.topic = self._topic_by_device_id(self.device_id)
         self.producer = None
 
+        # Kafka can be veryyyy noisy
         logging.getLogger('kafka').setLevel(logging.ERROR)
 
     def _on_record(self, record):
@@ -25,9 +27,9 @@ class KafkaBackend(Backend):
         try:
             msg = json.loads(record.value.decode('utf-8'))
         except Exception as e:
-            logging.exception(e)
+            self.logger.exception(e)
 
-        logging.debug('Received message on Kafka backend: {}'.format(msg))
+        self.logger.debug('Received message on Kafka backend: {}'.format(msg))
         self.on_message(msg)
 
     def _init_producer(self):
@@ -54,14 +56,14 @@ class KafkaBackend(Backend):
             if self.consumer:
                 self.consumer.close()
         except Exception as e:
-            logging.warning('Exception occurred while closing Kafka connection')
-            logging.exception(e)
+            self.logger.warning('Exception occurred while closing Kafka connection')
+            self.logger.exception(e)
 
     def run(self):
         super().run()
 
         self.consumer = KafkaConsumer(self.topic, bootstrap_servers=self.server)
-        logging.info('Initialized kafka backend - server: {}, topic: {}'
+        self.logger.info('Initialized kafka backend - server: {}, topic: {}'
                      .format(self.server, self.topic))
 
         try:
@@ -69,9 +71,9 @@ class KafkaBackend(Backend):
                 self._on_record(msg)
                 if self.should_stop(): break
         except Exception as e:
-            logging.warning('Kafka connection error, reconnecting in {} seconds'.
+            self.logger.warning('Kafka connection error, reconnecting in {} seconds'.
                             format(self._conn_retry_secs))
-            logging.exception(e)
+            self.logger.exception(e)
             time.sleep(self._conn_retry_secs)
 
 # vim:sw=4:ts=4:et:

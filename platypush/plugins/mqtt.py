@@ -1,5 +1,3 @@
-import logging
-
 import paho.mqtt.publish as publisher
 
 from platypush.message.response import Response

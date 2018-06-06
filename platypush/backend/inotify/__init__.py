@@ -1,10 +1,10 @@
 import os
-import logging
 import inotify.adapters
 
 from platypush.backend import Backend
 from platypush.message.event.path import PathCreateEvent, PathDeleteEvent, \
     PathOpenEvent, PathModifyEvent, PathPermissionsChangeEvent, PathCloseEvent
+
 
 class InotifyBackend(Backend):
     inotify_watch = None
@@ -34,7 +34,7 @@ class InotifyBackend(Backend):
         for path in self.watch_paths:
             self.inotify_watch.add_watch(path)
 
-        logging.info('Initialized inotify file monitoring backend, monitored resources: {}'
+        self.logger.info('Initialized inotify file monitoring backend, monitored resources: {}'
                      .format(self.watch_paths))
 
         try:

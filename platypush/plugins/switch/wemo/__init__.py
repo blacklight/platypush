@@ -1,4 +1,3 @@
-import logging
 import json
 
 from ouimeaux.environment import Environment, UnknownDevice
@@ -16,7 +15,7 @@ class SwitchWemoPlugin(SwitchPlugin):
         self.refresh_devices()
 
     def refresh_devices(self):
-        logging.info('Starting WeMo discovery')
+        self.logger.info('Starting WeMo discovery')
         self.env.discover(seconds=self.discovery_seconds)
         self.devices = self.env.devices
 
@@ -42,7 +41,7 @@ class SwitchWemoPlugin(SwitchPlugin):
         if device not in self.devices:
             raise RuntimeError('Device {} not found'.format(device))
 
-        logging.info('{} -> {}'.format(device, method))
+        self.logger.info('{} -> {}'.format(device, method))
         dev = self.devices[device]
         getattr(dev, method)(*args, **kwargs)
 

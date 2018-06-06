@@ -67,7 +67,7 @@ class IcalCalendarPlugin(Plugin, CalendarInterface):
                             or not only_participating):
                     events.append(event)
         else:
-            logging.error("HTTP error while getting {}: {}".format(self.url, response))
+            self.logger.error("HTTP error while getting {}: {}".format(self.url, response))
 
         return Response(output=events)
 

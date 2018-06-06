@@ -1,4 +1,3 @@
-import logging
 import time
 
 from platypush.backend import Backend
@@ -13,7 +12,7 @@ class SensorMcp3008Backend(Backend):
     def __init__(self, poll_seconds, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.poll_seconds = poll_seconds
-        logging.info('Initialized MCP3008 analog sensors backend')
+        self.logger.info('Initialized MCP3008 analog sensors backend')
 
 
     def send_message(self, msg):

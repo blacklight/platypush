@@ -1,4 +1,3 @@
-import logging
 import time
 
 import RPi.GPIO as gpio
@@ -28,7 +27,7 @@ class SensorLightBackend(Backend):
 
         gpio.setmode(gpio.BCM)
         gpio.setup(self.pin, gpio.IN)
-        logging.info('Initialized light sensor backend on pin {}'.format(self.pin))
+        self.logger.info('Initialized light sensor backend on pin {}'.format(self.pin))
 
         try:
             while not self.should_stop():

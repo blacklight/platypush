@@ -1,4 +1,3 @@
-import logging
 import struct
 import subprocess
 import time

@@ -1,4 +1,3 @@
-import logging
 import threading
 import time
 
@@ -20,7 +19,7 @@ class GpioSensorDistancePlugin(GpioSensorPlugin):
         gpio.setup(self.trigger_pin, gpio.OUT)
         gpio.setup(self.echo_pin, gpio.IN)
 
-        logging.info('Resetting trigger sensor on GPIO pin {}'.format(self.trigger_pin))
+        self.logger.info('Resetting trigger sensor on GPIO pin {}'.format(self.trigger_pin))
         gpio.output(self.trigger_pin, False)
 
 
@@ -40,7 +39,7 @@ class GpioSensorDistancePlugin(GpioSensorPlugin):
         while gpio.input(self.echo_pin) == 0:
             pulse_on = time.time()
             if pulse_on - pulse_start > 0.5:
-                logging.warning('Distance sensor echo timeout: 0')
+                self.logger.warning('Distance sensor echo timeout: 0')
                 read_timeout = True
                 break
 
@@ -51,7 +50,7 @@ class GpioSensorDistancePlugin(GpioSensorPlugin):
         while gpio.input(self.echo_pin) == 1:
             pulse_off = time.time()
             if pulse_off - pulse_end > 0.5:
-                logging.warning('Distance sensor echo timeout: 1')
+                self.logger.warning('Distance sensor echo timeout: 1')
                 read_timeout = True
                 break
 

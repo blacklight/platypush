@@ -13,6 +13,7 @@ from platypush.message.event import Event, StopEvent
 from platypush.message.request import Request
 from platypush.message.response import Response
 
+
 class Backend(Thread):
     """ Parent class for backends """
 
@@ -33,16 +34,17 @@ class Backend(Thread):
         self.thread_id = None
         self._stop = False
         self._kwargs = kwargs
+        self.logger = logging.getLogger(__name__)
 
         # Internal-only, we set the request context on a backend if that
         # backend is intended to react for a response to a specific request
         self._request_context = kwargs['_req_ctx'] if '_req_ctx' in kwargs \
             else None
 
+        if 'logging' in kwargs:
+            self.logger.setLevel(getattr(logging, kwargs['logging'].upper()))
+
         Thread.__init__(self)
-        logging.basicConfig(stream=sys.stdout, level=Config.get('logging')
-                            if 'logging' not in kwargs
-                            else getattr(logging, kwargs['logging']))
 
 
     def on_message(self, msg):
@@ -62,7 +64,7 @@ class Backend(Thread):
         if not getattr(msg, 'target') or msg.target != self.device_id:
             return  # Not for me
 
-        logging.debug('Message received on the {} backend: {}'.format(
+        self.logger.debug('Message received on the {} backend: {}'.format(
             self.__class__.__name__, msg))
 
         if self._is_expected_response(msg):
@@ -73,7 +75,7 @@ class Backend(Thread):
             return
 
         if isinstance(msg, StopEvent) and msg.targets_me():
-            logging.info('Received STOP event on {}'.format(self.__class__.__name__))
+            self.logger.info('Received STOP event on {}'.format(self.__class__.__name__))
             self._stop = True
         else:
             msg.backend = self   # Augment message to be able to process responses

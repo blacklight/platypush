@@ -20,6 +20,8 @@ __version__ = '0.8'
 
 #-----------#
 
+logger = logging.getLogger(__name__)
+
 class Daemon(object):
     """ Main class for the Platypush daemon """
 
@@ -82,12 +84,12 @@ class Daemon(object):
                         and self.processed_requests >= self.requests_to_process:
                     self.stop_app()
             elif isinstance(msg, Response):
-                logging.info('Received response: {}'.format(msg))
+                logger.info('Received response: {}'.format(msg))
             elif isinstance(msg, StopEvent) and msg.targets_me():
-                logging.info('Received STOP event: {}'.format(msg))
+                logger.info('Received STOP event: {}'.format(msg))
                 self.stop_app()
             elif isinstance(msg, Event):
-                logging.info('Received event: {}'.format(msg))
+                logger.info('Received event: {}'.format(msg))
                 self.event_processor.process_event(msg)
 
         return _f
@@ -119,7 +121,7 @@ class Daemon(object):
         try:
             self.bus.poll()
         except KeyboardInterrupt as e:
-            logging.info('SIGINT received, terminating application')
+            logger.info('SIGINT received, terminating application')
         finally:
             self.stop_app()
 

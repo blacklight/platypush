@@ -1,5 +1,4 @@
 import json
-import logging
 import requests
 
 from platypush.message.response import Response
@@ -30,7 +29,7 @@ class GoogleMapsPlugin(GooglePlugin):
 
         if 'results' in response and response['results']:
             result = response['results'][0]
-            logging.info('Google Maps geocode response for latlng ({},{}): {}'.
+            self.logger.info('Google Maps geocode response for latlng ({},{}): {}'.
                          format(latitude, longitude, result))
 
             address['address'] = result['formatted_address'].split(',')[0]

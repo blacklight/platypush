@@ -1,5 +1,4 @@
 import importlib
-import logging
 
 from enum import Enum
 from threading import Timer
@@ -33,7 +32,7 @@ class ButtonFlicBackend(Backend):
         self._down_pressed_time = None
         self._cur_sequence = []
 
-        logging.info('Initialized Flic buttons backend on {}'.format(self.server))
+        self.logger.info('Initialized Flic buttons backend on {}'.format(self.server))
 
     def _got_button(self):
         def _f(bd_addr):
@@ -53,7 +52,7 @@ class ButtonFlicBackend(Backend):
 
     def _on_btn_timeout(self):
         def _f():
-            logging.info('Flic event triggered from {}: {}'.format(
+            self.logger.info('Flic event triggered from {}: {}'.format(
                 self._btn_addr, self._cur_sequence))
 
             self.bus.post(FlicButtonEvent(

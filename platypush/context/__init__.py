@@ -3,6 +3,8 @@ import logging
 
 from ..config import Config
 
+logger = logging.getLogger(__name__)
+
 # Map: backend_name -> backend_instance
 backends = {}
 
@@ -44,7 +46,7 @@ def register_backends(bus=None, global_scope=False, **kwargs):
             b = getattr(module, cls_name)(bus=bus, **cfg, **kwargs)
             backends[name] = b
         except AttributeError as e:
-            logging.warning('No such class in {}: {}'.format(
+            logger.warning('No such class in {}: {}'.format(
                 module.__name__, cls_name))
             raise RuntimeError(e)
 
@@ -68,7 +70,7 @@ def get_plugin(plugin_name, reload=False):
     try:
         plugin = importlib.import_module('platypush.plugins.' + plugin_name)
     except ImportError as e:
-        logging.warning('No such plugin: {}'.format(plugin_name))
+        logger.warning('No such plugin: {}'.format(plugin_name))
         raise RuntimeError(e)
 
     # e.g. plugins.music.mpd main class: MusicMpdPlugin
@@ -85,7 +87,7 @@ def get_plugin(plugin_name, reload=False):
         plugin = plugin_class(**plugin_conf)
         plugins[plugin_name] = plugin
     except AttributeError as e:
-        logging.warning('No such class in {}: {}'.format(plugin_name, cls_name))
+        logger.warning('No such class in {}: {}'.format(plugin_name, cls_name))
         raise RuntimeError(e)
 
     plugins[plugin_name] = plugin

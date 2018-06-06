@@ -1,4 +1,3 @@
-import logging
 import json
 
 from redis import Redis
@@ -37,7 +36,7 @@ class RedisBackend(Backend):
     def run(self):
         super().run()
 
-        logging.info('Initialized Redis backend on queue {} with arguments {}'.
+        self.logger.info('Initialized Redis backend on queue {} with arguments {}'.
                      format(self.queue, self.redis_args))
 
         while not self.should_stop():
@@ -50,10 +49,10 @@ class RedisBackend(Backend):
                     import ast
                     msg = Message.build(ast.literal_eval(msg))
 
-                logging.info('Received message on the Redis backend: {}'.format(msg))
+                self.logger.info('Received message on the Redis backend: {}'.format(msg))
                 self.bus.post(msg)
             except Exception as e:
-                logging.exception(e)
+                self.logger.exception(e)
 
 
 # vim:sw=4:ts=4:et:

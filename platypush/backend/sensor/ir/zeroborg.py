@@ -1,10 +1,10 @@
-import logging
 import time
 
 import platypush.plugins.gpio.zeroborg.lib as ZeroBorg
 
 from platypush.backend import Backend
 from platypush.message.event.sensor.ir import IrKeyUpEvent, IrKeyDownEvent
+
 
 class SensorIrZeroborgBackend(Backend):
     last_message =None
@@ -15,7 +15,7 @@ class SensorIrZeroborgBackend(Backend):
         self.no_message_timeout = no_message_timeout
         self.zb = ZeroBorg.ZeroBorg()
         self.zb.Init()
-        logging.info('Initialized Zeroborg infrared sensor backend')
+        self.logger.info('Initialized Zeroborg infrared sensor backend')
 
 
     def send_message(self, message):
@@ -31,17 +31,17 @@ class SensorIrZeroborgBackend(Backend):
                 if self.zb.HasNewIrMessage():
                     message = self.zb.GetIrMessage()
                     if message != self.last_message:
-                        logging.info('Received key down event on the IR sensor: {}'.format(message))
+                        self.logger.info('Received key down event on the IR sensor: {}'.format(message))
                         self.bus.post(IrKeyDownEvent(message=message))
 
                     self.last_message = message
                     self.last_message_timestamp = time.time()
             except OSError as e:
-                logging.warning('Failed reading IR sensor status')
+                self.logger.warning('Failed reading IR sensor status')
 
             if self.last_message_timestamp and \
                     time.time() - self.last_message_timestamp > self.no_message_timeout:
-                logging.info('Received key up event on the IR sensor')
+                self.logger.info('Received key up event on the IR sensor')
                 self.bus.post(IrKeyUpEvent(message=self.last_message))
 
                 self.last_message = None

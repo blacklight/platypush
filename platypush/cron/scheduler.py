@@ -7,6 +7,9 @@ from threading import Thread
 
 from platypush.event.hook import EventAction
 
+logger = logging.getLogger(__name__)
+
+
 class Cronjob(Thread):
     def __init__(self, name, cron_expression, actions, *args, **kwargs):
         super().__init__()
@@ -19,13 +22,13 @@ class Cronjob(Thread):
 
 
     def run(self):
-        logging.info('Running cronjob {}'.format(self.name))
+        logger.info('Running cronjob {}'.format(self.name))
         response = None
         context = {}
 
         for action in self.actions:
             response = action.execute(async=False, **context)
-            logging.info('Response from cronjob {}: {}'.format(self.name, response))
+            logger.info('Response from cronjob {}: {}'.format(self.name, response))
 
 
     def should_run(self):
@@ -56,7 +59,7 @@ class CronScheduler(Thread):
     def __init__(self, jobs, *args, **kwargs):
         super().__init__()
         self.jobs_config = jobs
-        logging.info('Cron scheduler initialized with {} jobs'
+        logger.info('Cron scheduler initialized with {} jobs'
                      .format(len(self.jobs_config.keys())))
 
 
@@ -71,7 +74,7 @@ class CronScheduler(Thread):
 
 
     def run(self):
-        logging.info('Running cron scheduler')
+        logger.info('Running cron scheduler')
 
         while True:
             for (job_name, job_config) in self.jobs_config.items():

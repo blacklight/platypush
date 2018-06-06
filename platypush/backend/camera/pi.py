@@ -1,9 +1,9 @@
-import logging
 import socket
 import time
 import picamera
 
 from platypush.backend import Backend
+
 
 class CameraPiBackend(Backend):
     def __init__(self, listen_port, x_resolution=640, y_resolution=480,
@@ -42,7 +42,7 @@ class CameraPiBackend(Backend):
         self.camera.rotation = rotation
         self.camera.crop = crop
 
-        logging.info('Initialized Pi camera backend')
+        self.logger.info('Initialized Pi camera backend')
 
     def send_message(self, msg):
         pass

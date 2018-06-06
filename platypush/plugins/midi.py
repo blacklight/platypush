@@ -1,4 +1,3 @@
-import logging
 import rtmidi
 import time
 
@@ -24,10 +23,10 @@ class MidiPlugin(Plugin):
 
         if available_ports:
             self.midiout.open_port(0)
-            logging.info('Initialized MIDI plugin on port 0')
+            self.logger.info('Initialized MIDI plugin on port 0')
         else:
             self.open_virtual_port(self.device_name)
-            logging.info('Initialized MIDI plugin on virtual device {}'.
+            self.logger.info('Initialized MIDI plugin on virtual device {}'.
                          format(self.device_name))
 
 

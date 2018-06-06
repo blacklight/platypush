@@ -1,4 +1,3 @@
-import logging
 import time
 
 from phue import Bridge
@@ -26,7 +25,7 @@ class LightHuePlugin(LightPlugin):
 
         self.bridge_address = bridge
         self.bridge = None
-        logging.info('Initializing Hue lights plugin - bridge: "{}"'.
+        self.logger.info('Initializing Hue lights plugin - bridge: "{}"'.
                      format(self.bridge_address))
 
         self.connect()
@@ -40,7 +39,7 @@ class LightHuePlugin(LightPlugin):
         else:
             self.lights = [l.name for l in self.bridge.lights]
 
-        logging.info('Configured lights: "{}"'. format(self.lights))
+        self.logger.info('Configured lights: "{}"'. format(self.lights))
 
     def _expand_groups(self):
         groups = [g for g in self.bridge.groups if g.name in self.groups]
@@ -51,7 +50,7 @@ class LightHuePlugin(LightPlugin):
         # Lazy init
         if not self.bridge:
             self.bridge = Bridge(self.bridge_address)
-            logging.info('Bridge connected')
+            self.logger.info('Bridge connected')
 
             self.get_scenes()
 
@@ -61,7 +60,7 @@ class LightHuePlugin(LightPlugin):
             # self.bridge.connect()
             # self.bridge.get_api()
         else:
-            logging.info('Bridge already connected')
+            self.logger.info('Bridge already connected')
 
 
     def get_scenes(self):

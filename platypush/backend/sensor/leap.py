@@ -1,4 +1,3 @@
-import logging
 import time
 
 import Leap
@@ -50,7 +49,7 @@ class SensorLeapBackend(Backend):
                                'device connected and is leapd running?')
 
         controller.add_listener(listener)
-        logging.info('Leap Motion backend initialized')
+        self.logger.info('Leap Motion backend initialized')
 
         try:
             while not self.should_stop():
@@ -71,7 +70,7 @@ class LeapListener(Leap.Listener):
     def send_event(self, event):
         backend = get_backend('redis')
         if not backend:
-            logging.warning('Redis backend not configured, I cannot propagate the following event: {}'.format(event))
+            self.logger.warning('Redis backend not configured, I cannot propagate the following event: {}'.format(event))
             return
 
         backend.send_message(event)
@@ -79,20 +78,20 @@ class LeapListener(Leap.Listener):
 
     def on_init(self, controller):
         self.prev_frame = None
-        logging.info('Leap controller listener initialized')
+        self.logger.info('Leap controller listener initialized')
 
     def on_connect(self, controller):
-        logging.info('Leap controller connected')
+        self.logger.info('Leap controller connected')
         self.prev_frame = None
         self.send_event(LeapConnectEvent())
 
     def on_disconnect(self, controller):
-        logging.info('Leap controller disconnected')
+        self.logger.info('Leap controller disconnected')
         self.prev_frame = None
         self.send_event(LeapDisconnectEvent())
 
     def on_exit(self, controller):
-        logging.info('Leap listener terminated')
+        self.logger.info('Leap listener terminated')
 
     def on_frame(self, controller):
         frame = controller.frame()

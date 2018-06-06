@@ -1,4 +1,3 @@
-import logging
 import json
 import urllib3
 import urllib.request
@@ -62,12 +61,12 @@ class VideoTorrentcastPlugin(Plugin):
     def search_and_play(self, query):
         response = self.search(query)
         if not response.output['MovieList']:
-            logging.info('No torrent results found for {}'.format(query))
+            self.logger.info('No torrent results found for {}'.format(query))
             return Response()
 
         item = response.output['MovieList'][0]
         magnet = item['items'][0]['torrent_magnet']
-        logging.info('Playing torrent "{}" from {}'
+        self.logger.info('Playing torrent "{}" from {}'
                      .format(item['title'], magnet))
 
         return self.play(magnet)

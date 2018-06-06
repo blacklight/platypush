@@ -1,7 +1,6 @@
 import datetime
 import enum
 import feedparser
-import logging
 import os
 import requests
 import time
@@ -68,11 +67,11 @@ class RssUpdates(HttpRequest):
         response = None
 
         try:
-            logging.info('Parsing content for {}'.format(link))
+            self.logger.info('Parsing content for {}'.format(link))
             response = requests.get('https://mercury.postlight.com/parser',
                                     params = {'url': link},
                                     headers = {'x-api-key': self.mercury_api_key })
-        except Exception as e: logging.exception(e)
+        except Exception as e: self.logger.exception(e)
 
         return response.json()['content'] if response and response.ok else None
 
@@ -104,7 +103,7 @@ class RssUpdates(HttpRequest):
                 datetime.datetime.now().strftime('%d %B %Y, %H:%M')
             )
 
-        logging.info('Parsed {:d} items from RSS feed <{}>'
+        self.logger.info('Parsed {:d} items from RSS feed <{}>'
                      .format(len(feed.entries), self.url))
 
         for entry in feed.entries:
@@ -115,7 +114,7 @@ class RssUpdates(HttpRequest):
 
             if latest_update is None \
                     or entry_timestamp > latest_update:
-                logging.info('Processed new item from RSS feed <{}>: "{}"'
+                self.logger.info('Processed new item from RSS feed <{}>: "{}"'
                              .format(self.url, entry.title))
 
                 entry.summary = entry.summary if hasattr(entry, 'summary') else None
@@ -148,7 +147,7 @@ class RssUpdates(HttpRequest):
         digest_filename = None
 
         if entries:
-            logging.info('Parsed {} new entries from the RSS feed {}'.format(
+            self.logger.info('Parsed {} new entries from the RSS feed {}'.format(
                 len(entries), self.title))
 
             if self.digest_format:
@@ -173,10 +172,10 @@ class RssUpdates(HttpRequest):
                                         filename=digest_filename)
 
                 session.add(digest_entry)
-                logging.info('{} digest ready: {}'.format(self.digest_format, digest_filename))
+                self.logger.info('{} digest ready: {}'.format(self.digest_format, digest_filename))
 
         session.commit()
-        logging.info('Parsing RSS feed {}: completed'.format(self.title))
+        self.logger.info('Parsing RSS feed {}: completed'.format(self.title))
 
         return NewFeedEvent(request=dict(self), response=entries,
                             source_id=source_record.id, title=self.title,

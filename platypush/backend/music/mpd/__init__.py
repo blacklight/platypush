@@ -1,4 +1,3 @@
-import logging
 import re
 import time
 
@@ -41,8 +40,8 @@ class MusicMpdBackend(Backend):
                     playlist = status['playlist']
                     success = True
                 except Exception as e:
-                    logging.exception(e)
-                    logging.info('Reloading crashed MPD plugin')
+                    self.logger.exception(e)
+                    self.logger.info('Reloading crashed MPD plugin')
                     plugin = get_plugin('music.mpd', reload=True)
                     time.sleep(self.poll_seconds)
 
