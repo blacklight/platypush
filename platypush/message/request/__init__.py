@@ -100,6 +100,9 @@ class Request(Message):
 
     @classmethod
     def expand_value_from_context(cls, value, **context):
+        for (k, v) in context.items():
+            exec('{}={}'.format(k, v))
+
         parsed_value = ''
         while value:
             m = re.match('([^\$]*)(\${\s*(.+?)\s*})(.*)', value)
@@ -107,41 +110,22 @@ class Request(Message):
                 prefix = m.group(1); expr = m.group(2);
                 inner_expr = m.group(3); value = m.group(4)
 
-                m = re.match('([^.\[\]()]+)(.*)', inner_expr)
-                context_argname = m.group(1)
-                path = m.group(2)
+                try:
+                    context_value = eval(inner_expr)
 
-                if context_argname in context:
-                    try:
-                        try:
-                            context_value = eval("context['{}']{}".format(
-                                context_argname, path if path else ''))
-                        except:
-                            context_value = eval(inner_expr)
+                    if callable(context_value):
+                        context_value = context_value()
+                    if isinstance(context_value, datetime.date):
+                        context_value = context_value.isoformat()
+                except Exception as e:
+                    logging.exception(e)
+                    context_value = expr
 
-                        if callable(context_value):
-                            context_value = context_value()
-                        if isinstance(context_value, datetime.date):
-                            context_value = context_value.isoformat()
-                    except Exception as e:
-                        logging.exception(e)
-                        context_value = expr
-
-                    parsed_value += prefix + (
-                        json.dumps(context_value)
-                        if isinstance(context_value, list)
-                        or isinstance(context_value, dict)
-                        else str(context_value))
-
-                else:
-                    try:
-                        expanded_expr = eval(inner_expr)
-                        parsed_value += prefix
-                        if expanded_expr is not None:
-                            parsed_value += expanded_expr
-                    except Exception as e:
-                        logging.exception(e)
-                        parsed_value += prefix + expr
+                parsed_value += prefix + (
+                    json.dumps(context_value)
+                    if isinstance(context_value, list)
+                    or isinstance(context_value, dict)
+                    else str(context_value))
             else:
                 parsed_value += value
                 value = ''

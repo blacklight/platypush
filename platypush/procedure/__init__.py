@@ -210,6 +210,9 @@ class IfProcedure(Procedure):
 
 
     def execute(self, **context):
+        for (k, v) in context.items():
+            exec('{}={}'.format(k, v))
+
         condition_true = eval(self.condition)
         response = Response()
 
