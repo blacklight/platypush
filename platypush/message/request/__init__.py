@@ -101,6 +101,8 @@ class Request(Message):
     @classmethod
     def expand_value_from_context(cls, value, **context):
         for (k, v) in context.items():
+            if isinstance(v, Message):
+                v = json.loads(str(v))
             exec('{}={}'.format(k, v))
 
         parsed_value = ''
