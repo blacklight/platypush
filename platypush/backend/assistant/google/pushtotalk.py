@@ -82,15 +82,15 @@ class AssistantGooglePushtotalkBackend(Backend):
                 http_request = google.auth.transport.requests.Request()
                 credentials.refresh(http_request)
         except:
-            logger.error('Error loading credentials: %s', e)
-            logger.error('Run google-oauthlib-tool to initialize '
+            self.logger.error('Error loading credentials: %s', e)
+            self.logger.error('Run google-oauthlib-tool to initialize '
                         'new OAuth 2.0 credentials.')
             raise
 
         # Create an authorized gRPC channel.
         self.grpc_channel = google.auth.transport.grpc.secure_authorized_channel(
             credentials, http_request, self.api_endpoint)
-        logger.info('Connecting to %s', self.api_endpoint)
+        self.logger.info('Connecting to %s', self.api_endpoint)
 
         # Configure audio source and sink.
         audio_device = None
@@ -158,7 +158,7 @@ class AssistantGooglePushtotalkBackend(Backend):
                 with open(self.conversation_start_fifo, 'r') as f:
                     for line in f: pass
 
-                logger.info('Received conversation start event')
+                self.logger.info('Received conversation start event')
                 continue_conversation = True
                 user_request = None
 
@@ -228,7 +228,7 @@ class SampleAssistant(object):
     def is_grpc_error_unavailable(e):
         is_grpc_error = isinstance(e, grpc.RpcError)
         if is_grpc_error and (e.code() == grpc.StatusCode.UNAVAILABLE):
-            logger.error('grpc unavailable error: %s', e)
+            self.logger.error('grpc unavailable error: %s', e)
             return True
         return False
 
@@ -243,7 +243,7 @@ class SampleAssistant(object):
         device_actions_futures = []
 
         self.conversation_stream.start_recording()
-        logger.info('Recording audio request.')
+        self.logger.info('Recording audio request.')
 
         if self.on_conversation_start:
             self.on_conversation_start()
@@ -262,27 +262,27 @@ class SampleAssistant(object):
                                           self.deadline):
             assistant_helpers.log_assist_response_without_audio(resp)
             if resp.event_type == self.END_OF_UTTERANCE:
-                logger.info('End of audio request detected')
+                self.logger.info('End of audio request detected')
                 self.conversation_stream.stop_recording()
             if resp.speech_results:
                 user_request = ' '.join(
                     r.transcript for r in resp.speech_results)
 
-                logger.info('Transcript of user request: "%s".', user_request)
-                logger.info('Playing assistant response.')
+                self.logger.info('Transcript of user request: "%s".', user_request)
+                self.logger.info('Playing assistant response.')
             if len(resp.audio_out.audio_data) > 0:
                 self.conversation_stream.write(resp.audio_out.audio_data)
             if resp.dialog_state_out.conversation_state:
                 conversation_state = resp.dialog_state_out.conversation_state
-                logger.debug('Updating conversation state.')
+                self.logger.debug('Updating conversation state.')
                 self.conversation_state = conversation_state
             if resp.dialog_state_out.volume_percentage != 0:
                 volume_percentage = resp.dialog_state_out.volume_percentage
-                logger.info('Setting volume to %s%%', volume_percentage)
+                self.logger.info('Setting volume to %s%%', volume_percentage)
                 self.conversation_stream.volume_percentage = volume_percentage
             if resp.dialog_state_out.microphone_mode == self.DIALOG_FOLLOW_ON:
                 continue_conversation = True
-                logger.info('Expecting follow-on query from user.')
+                self.logger.info('Expecting follow-on query from user.')
             elif resp.dialog_state_out.microphone_mode == self.CLOSE_MICROPHONE:
                 continue_conversation = False
             if resp.device_action.device_request_json:
@@ -294,10 +294,10 @@ class SampleAssistant(object):
                     device_actions_futures.extend(fs)
 
         if len(device_actions_futures):
-            logger.info('Waiting for device executions to complete.')
+            self.logger.info('Waiting for device executions to complete.')
             concurrent.futures.wait(device_actions_futures)
 
-        logger.info('Finished playing assistant response.')
+        self.logger.info('Finished playing assistant response.')
 
         try:
             self.conversation_stream.stop_playback()
@@ -317,7 +317,7 @@ class SampleAssistant(object):
                 conversation_state=b''
             )
         if self.conversation_state:
-            logger.debug('Sending conversation state.')
+            self.logger.debug('Sending conversation state.')
             dialog_state_in.conversation_state = self.conversation_state
         config = embedded_assistant_pb2.AssistConfig(
             audio_in_config=embedded_assistant_pb2.AudioInConfig(
