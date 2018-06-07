@@ -106,7 +106,10 @@ class Request(Message):
         for (k, v) in context.items():
             if isinstance(v, Message):
                 v = json.loads(str(v))
-            exec('{}={}'.format(k, v))
+            try:
+                exec('{}={}'.format(k, v))
+            except:
+                exec('{}="{}"'.format(k, v))
 
         parsed_value = ''
         while value:
