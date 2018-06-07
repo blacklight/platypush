@@ -2,6 +2,8 @@ import enum
 import threading
 import time
 
+import platypush.plugins.gpio.zeroborg.lib as ZeroBorg
+
 from platypush.message.response import Response
 from platypush.plugins import Plugin
 from platypush.context import get_plugin
@@ -23,8 +25,8 @@ class GpioZeroborgPlugin(Plugin):
     _direction = None
 
 
-    def __init__(self, directions = {}):
-        import platypush.plugins.gpio.zeroborg.lib as ZeroBorg
+    def __init__(self, directions = {}, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.directions = directions
         self.auto_mode = False
