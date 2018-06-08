@@ -29,6 +29,8 @@ class RssUpdates(HttpRequest):
 
     def __init__(self, url, title=None, headers=None, params=None, max_entries=None,
                  mercury_api_key=None, digest_format=None, *args, **kwargs):
+        super().__init__(*args, **kargs)
+
         self.url = url
         self.title = title
         self.max_entries = max_entries
