@@ -64,6 +64,7 @@ class AssistantGooglePushtotalkBackend(Backend):
         self.credentials_file = credentials_file
         self.device_config = device_config
         self.conversation_start_fifo = conversation_start_fifo
+        self.assistant = None
 
         try:
             os.mkfifo(self.conversation_start_fifo)
@@ -197,7 +198,7 @@ class SampleAssistant(object):
         self.device_model_id = device_model_id
         self.device_id = device_id
         self.conversation_stream = conversation_stream
-        self.logger = logging.get(__name__)
+        self.logger = logging.getLogger(__name__)
 
         self.on_conversation_start = on_conversation_start
         self.on_conversation_end = on_conversation_end
