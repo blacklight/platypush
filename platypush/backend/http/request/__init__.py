@@ -33,6 +33,7 @@ class HttpRequest(object):
         self.bus = bus
         self.skip_first_call = skip_first_call
         self.last_request_timestamp = 0
+        self.logger = logging.getLogger(__name__)
 
         if isinstance(args, self.HttpRequestArguments):
             self.args = args
