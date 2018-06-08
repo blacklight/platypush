@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import threading
 import time
@@ -196,6 +197,7 @@ class SampleAssistant(object):
         self.device_model_id = device_model_id
         self.device_id = device_id
         self.conversation_stream = conversation_stream
+        self.logger = logging.get(__name__)
 
         self.on_conversation_start = on_conversation_start
         self.on_conversation_end = on_conversation_end
