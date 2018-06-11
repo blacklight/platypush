@@ -29,6 +29,7 @@ class SensorBackend(Backend):
 
     def run(self):
         super().run()
+        self.logger.info('Initialized {} sensor backend'.format(self.__class__.__name__))
 
         while not self.should_stop():
             new_data = self.get_measurement()
