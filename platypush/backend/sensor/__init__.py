@@ -21,7 +21,7 @@ class SensorBackend(Backend):
         """
 
         super().__init__(**kwargs)
-        self.measurement = None
+        self.data = None
         self.thresholds = thresholds
 
     def get_measurement(self):
