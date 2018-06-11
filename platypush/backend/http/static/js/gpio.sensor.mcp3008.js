@@ -4,7 +4,7 @@ $(document).ready(function() {
     var onEvent = function(event) {
         switch (event.args.type) {
             case 'platypush.message.event.sensor.SensorDataChangeEvent':
-                var data = event.args.sensors;
+                var data = event.args.data;
 
                 for (var sensor of Object.keys(data)) {
                     var $sensor = $container.find('[data-sensor-type=' + sensor + ']');
