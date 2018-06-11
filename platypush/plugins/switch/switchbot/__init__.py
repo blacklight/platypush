@@ -100,6 +100,10 @@ class SwitchSwitchbotPlugin(SwitchPlugin):
         errors = []
 
         try:
+            # XXX this requires sudo and it's executed in its own process
+            # because the Switchbot plugin requires root privileges to send
+            # raw bluetooth messages on the interface. Make sure that the user
+            # that runs platypush has the right permissions to run this with sudo
             output = subprocess.check_output((
                 'sudo python3 -m platypush.plugins.switch.switchbot ' +
                 '--device {} ' +
