@@ -1,28 +1,37 @@
+import time
+
 from platypush.backend import Backend
 from platypush.message.event.sensor import SensorDataChangeEvent, \
     SensorDataAboveThresholdEvent, SensorDataBelowThresholdEvent
 
 
 class SensorBackend(Backend):
-    def __init__(self, thresholds=None, *args, **kwargs):
+    def __init__(self, thresholds=None, poll_seconds=None, *args, **kwargs):
         """
-        Thresholds is either a scalr value or a dictionary.
+        Params:
+            -- thresholds: Thresholds can be either a scalr value or a dictionary.
 
-        If set, SensorDataAboveThresholdEvent and SensorDataBelowThresholdEvent
-        events will be triggered whenever the measurement goes above or below
-        that value.
+            If set, SensorDataAboveThresholdEvent and SensorDataBelowThresholdEvent
+            events will be triggered whenever the measurement goes above or
+            below that value.
 
-        Set it as a scalar if your get_measurement() code returns a scalar,
-        as a dictionary if it returns a dictionary of values.
+            Set it as a scalar if your get_measurement() code returns a scalar,
+            as a dictionary if it returns a dictionary of values.
 
-        For instance, if your sensor code returns both humidity and temperature
-        in a format like {'humidity':60.0, 'temperature': 25.0}, you'll want to
-        set up a threshold on temperature with a syntax like {'temperature':20.0}
+            For instance, if your sensor code returns both humidity and
+            temperature in a format like {'humidity':60.0, 'temperature': 25.0},
+            you'll want to set up a threshold on temperature with a syntax like
+            {'temperature':20.0}
+
+            -- poll_seconds: If set, the thread will wait for the specificed
+                number of seconds between a read and the next one.
         """
 
         super().__init__(**kwargs)
+
         self.data = None
         self.thresholds = thresholds
+        self.poll_seconds = poll_seconds
 
     def get_measurement(self):
         raise NotImplementedError('To be implemented in a derived class')
@@ -55,6 +64,9 @@ class SensorBackend(Backend):
                         self.bus.post(SensorDataBelowThresholdEvent(data=new_data))
 
             self.data = new_data
+
+            if self.poll_seconds:
+                time.sleep(self.poll_seconds)
 
 
 # vim:sw=4:ts=4:et:
