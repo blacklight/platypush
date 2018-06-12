@@ -34,6 +34,11 @@ class MqttBackend(Backend):
 
 
     def send_message(self, msg):
+        try:
+            msg = json.loads(msg)
+        except:
+            pass
+
         publisher.single(self.topic, str(msg), hostname=self.host, port=self.port)
 
 
