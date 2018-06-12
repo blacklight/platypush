@@ -15,7 +15,7 @@ $(document).ready(function() {
                 updateSensorTemperature(event.args.data.temperature);
             }
 
-            if ('humidity' in event.args) {
+            if ('humidity' in event.args.data) {
                 updateSensorHumidity(event.args.data.humidity);
             }
         }
