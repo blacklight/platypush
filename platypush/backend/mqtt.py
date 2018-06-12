@@ -5,7 +5,6 @@ import paho.mqtt.publish as publisher
 
 from platypush.backend import Backend
 from platypush.message import Message
-from platypush.context import get_backend
 
 
 class MqttBackend(Backend):
@@ -27,15 +26,10 @@ class MqttBackend(Backend):
         self.port = port
         self.topic = '{}/{}'.format(topic, self.device_id)
 
-        try:
-            self.redis = get_backend('redis')
-        except:
-            self.redis = None
-
 
     def send_message(self, msg):
         try:
-            msg = json.loads(msg)
+            msg = Message.build(json.loads(msg))
         except:
             pass
 
@@ -48,17 +42,11 @@ class MqttBackend(Backend):
 
         def on_message(client, userdata, msg):
             msg = msg.payload.decode('utf-8')
-            try:
-                msg = Message.build(json.loads(msg))
-            except:
-                pass
+            try: msg = Message.build(json.loads(msg))
+            except: pass
 
             self.logger.info('Received message on the MQTT backend: {}'.format(msg))
-
-            if self.redis:
-                self.redis.send_message(msg)
-            else:
-                self.bus.post(msg)
+            self.bus.post(msg)
 
         super().run()
         client = mqtt.Client()
