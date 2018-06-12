@@ -11,12 +11,12 @@ $(document).ready(function() {
         if (event.args.type == 'platypush.message.event.weather.NewWeatherConditionEvent') {
             updateTemperature(event.args.temperature);
         } else if (event.args.type == 'platypush.message.event.sensor.SensorDataChangeEvent') {
-            if ('temperature' in event.args) {
-                updateSensorTemperature(event.args.temperature);
+            if ('temperature' in event.args.data) {
+                updateSensorTemperature(event.args.data.temperature);
             }
 
             if ('humidity' in event.args) {
-                updateSensorHumidity(event.args.humidity);
+                updateSensorHumidity(event.args.data.humidity);
             }
         }
     };
