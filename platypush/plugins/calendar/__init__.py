@@ -62,7 +62,11 @@ class CalendarPlugin(Plugin, CalendarInterface):
             events.extend(calendar.get_upcoming_events().output)
 
         events = sorted(events, key=lambda event:
-                        dateutil.parser.parse(event['start']['dateTime']))[:max_results]
+                        dateutil.parser.parse(
+                            event['start']['dateTime']
+                            if 'dateTime' in event['start']
+                            else event['start']['date'] + 'T00:00:00+00:00'
+                        ))[:max_results]
 
         return Response(output=events)
 
