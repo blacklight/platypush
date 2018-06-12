@@ -1,0 +1,39 @@
+<!doctype html>
+<head>
+    <title>Platypush map service</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/font-awesome.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/application.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toggles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/map.css') }}">
+    <link href='//fonts.googleapis.com/css?family=Open+Sans:300,400,600,700' rel='stylesheet' type='text/css'>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/application.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/map.js') }}"></script>
+
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&v=3.exp&callback=initMap"></script>
+    <script type="text/javascript">
+        window.db_conf = JSON.parse('{{ utils.to_json(config["db"]) | safe }}');
+        window.websocket_port = {{ websocket_port }};
+        window.map_start = "{{ start }}";
+        window.map_end = "{{ end }}";
+
+        {% if token %}
+            window.token = '{{ token }}'
+        {% else %}
+            window.token = undefined
+        {% endif %}
+    </script>
+</head>
+
+<body>
+    <main>
+        <div id="map-container" width="100" height="100">
+            <div id="map"></div>
+        </div>
+    </main>
+<body>
+

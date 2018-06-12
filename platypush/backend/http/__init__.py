@@ -1,4 +1,6 @@
 import asyncio
+import datetime
+import dateutil.parser
 import inspect
 import json
 import os
@@ -30,7 +32,8 @@ class HttpBackend(Backend):
     }
 
     def __init__(self, port=8008, websocket_port=8009, disable_websocket=False,
-                 redis_queue='platypush_flask_mq', token=None, dashboard={}, **kwargs):
+                 redis_queue='platypush_flask_mq', token=None, dashboard={},
+                 maps={}, **kwargs):
         super().__init__(**kwargs)
 
         self.port = port
@@ -38,6 +41,7 @@ class HttpBackend(Backend):
         self.redis_queue = redis_queue
         self.token = token
         self.dashboard = dashboard
+        self.maps = maps
         self.server_proc = None
         self.disable_websocket = disable_websocket
         self.websocket_thread = None
@@ -131,14 +135,75 @@ class HttpBackend(Backend):
             self.redis.rpush(self.redis_queue, event)
             return jsonify({ 'status': 'ok' })
 
-        @app.route('/static/<path>')
+        @app.route('/static/<path>', methods=['GET'])
         def static_path(path):
             return send_from_directory(static_dir, filename)
 
-        @app.route('/dashboard')
+        @app.route('/dashboard', methods=['GET'])
         def dashboard():
             return render_template('dashboard.html', config=self.dashboard, utils=HttpUtils,
                                    token=self.token, websocket_port=self.websocket_port)
+
+        @app.route('/map', methods=['GET'])
+        def map():
+            """
+            Supported values for `start` and `end`:
+                - now
+                - yesterday
+                - -30s (it means '30 seconds ago')
+                - -10m (it means '10 minutes ago')
+                - -24h (it means '24 hours ago')
+                - -7d  (it means '7 days ago')
+                - 2018-06-04T17:39:22.742Z (ISO strings)
+
+            Default: start=yesterday, end=now
+            """
+            def parse_time(time_string):
+                if not time_string:
+                    return None
+
+                now = datetime.datetime.now()
+
+                if time_string == 'now':
+                    return now.isoformat()
+                if time_string == 'yesterday':
+                    return (now - datetime.timedelta(days=1)).isoformat()
+
+                try:
+                    return dateutil.parser.parse(time_string).isoformat()
+                except ValueError:
+                    pass
+
+                m = re.match('([-+]?)(\d+)([dhms])', time_string)
+                if not m:
+                    raise RuntimeError('Invalid time interval string representation: "{}"'.
+                                    format(time_string))
+
+                time_delta = (-1 if m.group(1) == '-' else 1) * int(m.group(2))
+                time_unit = m.group(3)
+
+                if time_unit == 'd':
+                    params = { 'days': time_delta }
+                elif time_unit == 'h':
+                    params = { 'hours': time_delta }
+                elif time_unit == 'm':
+                    params = { 'minutes': time_delta }
+                elif time_unit == 's':
+                    params = { 'seconds': time_delta }
+
+                return (now + datetime.timedelta(**params)).isoformat()
+
+            try:
+                api_key = self.maps['api_key']
+            except KeyError:
+                raise RuntimeError('Google Maps api_key not set in the maps configuration')
+
+            start = parse_time(http_request.args.get('start', default='yesterday'))
+            end = parse_time(http_request.args.get('end', default='now'))
+            return render_template('map.html', config=self.maps,
+                                   utils=HttpUtils, start=start, end=end,
+                                   token=self.token, api_key=api_key,
+                                   websocket_port=self.websocket_port)
 
         return app
 
@@ -239,6 +304,14 @@ class HttpUtils(object):
         basedir = os.path.dirname(inspect.getfile(cls))
         results = cls.search_directory(os.path.join(basedir, directory), *extensions)
         return [item[len(basedir):] for item in results]
+
+    @classmethod
+    def to_json(cls, data):
+        return json.dumps(data)
+
+    @classmethod
+    def from_json(cls, data):
+        return json.loads(data)
 
 
 # vim:sw=4:ts=4:et:

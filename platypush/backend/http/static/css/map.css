@@ -1,0 +1,9 @@
+#map {
+  width: 100%;
+  height: 100%;
+  position: static !important;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
