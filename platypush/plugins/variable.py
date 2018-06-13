@@ -17,7 +17,7 @@ class VariablePlugin(Plugin):
 
     def set(self, name, value):
         self._variables[name] = value
-        return Response(output={'status':'ok'})
+        return Response(output={name: value})
 
     def unset(self, name):
         if name in self._variables:
