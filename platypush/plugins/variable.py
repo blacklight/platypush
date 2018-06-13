@@ -15,9 +15,10 @@ class VariablePlugin(Plugin):
     def get(self, name, default_value=None):
         return Response(output={name: self._variables.get(name, default_value)})
 
-    def set(self, name, value):
-        self._variables[name] = value
-        return Response(output={name: value})
+    def set(self, **kwargs):
+        for (name, value) in kwargs.items():
+            self._variables[name] = value
+        return Response(output=kwargs)
 
     def unset(self, name):
         if name in self._variables:
