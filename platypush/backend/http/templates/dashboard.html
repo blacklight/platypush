@@ -33,6 +33,14 @@
 
 <body>
     <main>
+        <!-- You can send events of type platypush.message.event.web.DashboardIframeUpdateEvent
+             to control what is shown in the optional iframe modal -->
+        <div id="iframe-modal" class="modal">
+            <div class="modal-container">
+                <iframe></iframe>
+            </div>
+        </div>
+
         <div id="widgets-container">
             {% set used_columns = [0] %}
             {% for widget_name, widget in config['widgets'].items() %}

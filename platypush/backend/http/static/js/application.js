@@ -145,7 +145,7 @@ $(document).ready(function() {
     };
 
     var initModalOpenBindings = function() {
-        $('body').on('click touch', '[data-modal]', function(event) {
+        $('body').on('mouseup touchend', '[data-modal]', function(event) {
             var $source = $(event.target);
             var $modal = $($source.data('modal'));
             $modal.fadeIn();
@@ -153,10 +153,19 @@ $(document).ready(function() {
     };
 
     var initModalCloseBindings = function() {
-        $('body').on('click touch', '[data-dismiss-modal]', function(event) {
+        $('body').on('mouseup touchend', '[data-dismiss-modal]', function(event) {
             var $source = $(event.target);
             var $modal = $($source.data('dismiss-modal'));
             $modal.fadeOut();
+        });
+
+        $('body').on('mouseup touchend', function(event) {
+            var $source = $(event.target);
+            if (!$source.parents('.modal').length
+                    && !$source.data('modal')
+                    && !$source.data('dismiss-modal')) {
+                $('.modal').filter(':visible').fadeOut();
+            }
         });
     };
 
