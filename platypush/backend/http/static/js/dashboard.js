@@ -17,6 +17,7 @@ $(document).ready(function() {
 
             if ('timeout' in event.args) {
                 setTimeout(function() {
+                    $iframe.removeAttr('src');
                     $modal.fadeOut();
                 }, parseFloat(event.args.timeout) * 1000);
             }
