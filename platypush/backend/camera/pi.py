@@ -72,7 +72,8 @@ class CameraPiBackend(Backend):
         super().run()
 
         while True:
-            self.start_recording_event.wait()
+            if not self.start_recording_event.is_set():
+                self.start_recording_event.wait()
             self.logger.info('Starting camera recording')
 
             connection = self.server_socket.accept()[0].makefile('wb')
@@ -82,9 +83,11 @@ class CameraPiBackend(Backend):
                 self.stop_recording_event.wait()
                 self.logger.info('Stopping camera recording')
             except ConnectionError as e:
-                pass
+                self.logger.info('Client {} closed connection'.format(connection))
             finally:
-                connection.close()
+                try: connection.close()
+                except: pass
+
                 self.camera.stop_recording()
 
 
