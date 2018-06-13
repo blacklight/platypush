@@ -147,6 +147,13 @@ class HttpBackend(Backend):
         @app.route('/map', methods=['GET'])
         def map():
             """
+            Query parameters:
+                start -- Map timeline start timestamp
+                end   -- Map timeline end timestamp
+                zoom  -- Between 1-20. Set it if you want to override the
+                    Google's API auto-zoom. You may have to set it if you are
+                    trying to embed the map into an iframe
+
             Supported values for `start` and `end`:
                 - now
                 - yesterday
@@ -158,6 +165,7 @@ class HttpBackend(Backend):
 
             Default: start=yesterday, end=now
             """
+
             def parse_time(time_string):
                 if not time_string:
                     return None
@@ -200,9 +208,11 @@ class HttpBackend(Backend):
 
             start = parse_time(http_request.args.get('start', default='yesterday'))
             end = parse_time(http_request.args.get('end', default='now'))
+            zoom = http_request.args.get('zoom', default=None)
+
             return render_template('map.html', config=self.maps,
                                    utils=HttpUtils, start=start, end=end,
-                                   token=self.token, api_key=api_key,
+                                   zoom=zoom, token=self.token, api_key=api_key,
                                    websocket_port=self.websocket_port)
 
         return app

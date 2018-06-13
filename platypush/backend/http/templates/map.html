@@ -21,6 +21,12 @@
         window.map_start = "{{ start }}";
         window.map_end = "{{ end }}";
 
+        {% if zoom %}
+            window.zoom = {{ zoom }};
+        {% else %}
+            window.zoom = undefined;
+        {% endif %}
+
         {% if token %}
             window.token = '{{ token }}'
         {% else %}

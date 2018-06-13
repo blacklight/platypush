@@ -48,7 +48,11 @@ function initMapFromGeopoints(points) {
         // Now fit the map to the newly inclusive bounds
         map.fitBounds(bounds);
         setTimeout(function() {
-            map.setZoom(getBoundsZoomLevel(bounds, $map.children().width(), $map.children().height()));
+            if (window.zoom) {
+                map.setZoom(window.zoom);
+            } else {
+                map.setZoom(getBoundsZoomLevel(bounds, $map.children().width(), $map.children().height()));
+            }
         }, 1000);
 
         google.maps.event.removeListener(listener);
