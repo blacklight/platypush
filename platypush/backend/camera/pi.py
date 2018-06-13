@@ -73,7 +73,7 @@ class CameraPiBackend(Backend):
 
         while True:
             self.start_recording_event.wait()
-            self.logger.start('Starting camera recording')
+            self.logger.info('Starting camera recording')
 
             connection = self.server_socket.accept()[0].makefile('wb')
 
