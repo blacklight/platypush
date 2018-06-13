@@ -79,7 +79,7 @@ class CameraPiBackend(Backend):
 
             try:
                 self.camera.start_recording(connection, format='h264')
-                self.camera.stop_recording_event.wait()
+                self.stop_recording_event.wait()
                 self.logger.info('Stopping camera recording')
             except ConnectionError as e:
                 pass
