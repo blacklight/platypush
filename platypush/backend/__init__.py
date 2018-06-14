@@ -191,7 +191,7 @@ class Backend(Thread):
         backend is configured then it will try to deliver the message to
         other consumers through the configured Redis main queue.
 
-        Param:
+        Params:
             msg -- The message
         """
         try:

@@ -10,6 +10,7 @@ import urllib.parse
 from dbus.exceptions import DBusException
 from omxplayer import OMXPlayer
 
+from platypush.context import get_backend
 from platypush.plugins.media import PlayerState
 from platypush.message.response import Response
 from platypush.message.event.video import VideoPlayEvent, VideoPauseEvent, \
@@ -194,6 +195,18 @@ class VideoOmxplayerPlugin(Plugin):
             return Response(output=json.dumps({
                 'state': PlayerState.STOP.value
             }))
+
+    def send_message(self, msg):
+        try:
+            redis = get_backend('redis')
+            if not redis:
+                raise KeyError()
+        except KeyError:
+            self.logger.warning("Backend {} does not implement send_message " +
+                                "and the fallback Redis backend isn't configured")
+            return
+
+        redis.send_message(msg)
 
     def on_play(self):
         def _f(player):
