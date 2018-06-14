@@ -218,7 +218,10 @@ class IfProcedure(Procedure):
                 exec('{}={}'.format(k, v))
             except:
                 if isinstance(v, str):
-                    exec('{}="{}"'.format(k, re.sub('(^|[^\\\])"', '\1\\"', v)))
+                    try:
+                        exec('{}="{}"'.format(k, re.sub('(^|[^\\\])"', '\1\\"', v)))
+                    except:
+                        pass
 
         condition_true = eval(self.condition)
         response = Response()
