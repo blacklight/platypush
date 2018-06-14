@@ -196,6 +196,8 @@ class Backend(Thread):
         """
         try:
             redis = get_backend('redis')
+            if not redis:
+                raise KeyError()
         except KeyError:
             self.logger.warning("Backend {} does not implement send_message " +
                                 "and the fallback Redis backend isn't configured")
