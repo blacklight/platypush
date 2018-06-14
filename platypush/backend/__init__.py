@@ -34,7 +34,7 @@ class Backend(Thread):
         self.thread_id = None
         self._stop = False
         self._kwargs = kwargs
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         # Internal-only, we set the request context on a backend if that
         # backend is intended to react for a response to a specific request

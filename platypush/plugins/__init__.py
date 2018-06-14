@@ -9,7 +9,7 @@ class Plugin(object):
     """ Base plugin class """
 
     def __init__(self, **kwargs):
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
         if 'logging' in kwargs:
             self.logger.setLevel(getattr(logging, kwargs['logging'].upper()))
 
