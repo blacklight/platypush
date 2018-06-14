@@ -109,7 +109,11 @@ class Request(Message):
             try:
                 exec('{}={}'.format(k, v))
             except:
-                exec('{}="{}"'.format(k, v))
+                if isinstance(v, str):
+                    try:
+                        exec('{}="{}"'.format(k, re.sub('(^|[^\\\])"', '\1\\"', v)))
+                    except:
+                        pass
 
         parsed_value = ''
         while value:
