@@ -7,6 +7,7 @@ from threading import Thread
 
 from platypush.bus import Bus
 from platypush.config import Config
+from platypush.context import get_backend
 from platypush.utils import get_message_class_by_type, set_timeout, clear_timeout
 from platypush.message import Message
 from platypush.message.event import Event, StopEvent
@@ -186,13 +187,21 @@ class Backend(Thread):
     def send_message(self, msg, **kwargs):
         """
         Sends a platypush.message.Message to a node.
-        To be implemented in the derived classes.
-        Always call send_request or send_response instead of send_message directly
+        To be implemented in the derived classes. By default, if the Redis
+        backend is configured then it will try to deliver the message to
+        other consumers through the configured Redis main queue.
 
         Param:
             msg -- The message
         """
-        pass
+        try:
+            redis = get_backend('redis')
+        except KeyError:
+            self.logger.warning("Backend {} does not implement send_message " +
+                                "and the fallback Redis backend isn't configured")
+            return
+
+        redis.send_message(msg)
 
 
     def run(self):
