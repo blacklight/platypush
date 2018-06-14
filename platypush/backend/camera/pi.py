@@ -6,7 +6,6 @@ from threading import Event
 
 from platypush.backend import Backend
 
-
 class CameraPiBackend(Backend):
     def __init__(self, listen_port, x_resolution=640, y_resolution=480,
                  framerate=24, hflip=False, vflip=False,
@@ -14,7 +13,6 @@ class CameraPiBackend(Backend):
                  video_stabilization=False, ISO=0, exposure_compensation=0,
                  exposure_mode='auto', meter_mode='average', awb_mode='auto',
                  image_effect='none', color_effects=None, rotation=0,
-                 start_recording_on_startup=True,
                  crop=(0.0, 0.0, 1.0, 1.0), **kwargs):
         """ See https://www.raspberrypi.org/documentation/usage/camera/python/README.md
             for a detailed reference about the Pi camera options """
@@ -22,7 +20,6 @@ class CameraPiBackend(Backend):
         super().__init__(**kwargs)
 
         self.listen_port = listen_port
-        self.start_recording_on_startup = start_recording_on_startup
         self.server_socket = socket.socket()
         self.server_socket.bind(('0.0.0.0', self.listen_port))
         self.server_socket.listen(0)
@@ -45,11 +42,6 @@ class CameraPiBackend(Backend):
         self.camera.color_effects = color_effects
         self.camera.rotation = rotation
         self.camera.crop = crop
-        self.start_recording_event = Event()
-        self.stop_recording_event = Event()
-
-        if self.start_recording_on_startup:
-            self.start_recording_event.set()
 
         self.logger.info('Initialized Pi camera backend')
 
@@ -58,37 +50,43 @@ class CameraPiBackend(Backend):
         self.camera.capture(image_file)
         self.logger.info('Captured camera snapshot to {}'.format(image_file))
 
-    def start_recording(self):
-        if not self.start_recording_event.is_set():
-            self.start_recording_event.set()
-        self.stop_recording_event.clear()
+    def start_recording(self, video_file=None, format='h264'):
+        self.logger.info('Starting camera recording')
+
+        if video_file:
+            self.camera.start_recording(videofile, format=format)
+        else:
+            connection = self.server_socket.accept()[0].makefile('wb')
+            self.logger.info('Accepted client connection on port {}'.
+                             format(self.listen_port))
+
+            self.camera.start_recording(connection, format=format)
 
     def stop_recording(self):
-        if not self.stop_recording_event.is_set():
-            self.stop_recording_event.set()
-        self.start_recording_event.clear()
+        self.logger.info('Stopping camera recording')
+
+        try:
+            self.camera.stop_recording()
+        except:
+            self.logger.info('No recording currently in progress')
 
     def run(self):
         super().run()
 
         while True:
-            if not self.start_recording_event.is_set():
-                self.start_recording_event.wait()
-            self.logger.info('Starting camera recording')
-
-            connection = self.server_socket.accept()[0].makefile('wb')
+            restart = True
 
             try:
-                self.camera.start_recording(connection, format='h264')
-                self.stop_recording_event.wait()
-                self.logger.info('Stopping camera recording')
-            except ConnectionError as e:
-                self.logger.info('Client {} closed connection'.format(connection))
+                self.start_recording()
+                while True:
+                    self.camera.wait_recording(60)
+            except ConnectionError:
+                self.logger.info('Client closed connection')
             finally:
-                try: connection.close()
-                except: pass
-
-                self.camera.stop_recording()
+                try:
+                    self.stop_recording()
+                except Exception as e:
+                    self.logger.exception(e)
 
 
 # vim:sw=4:ts=4:et:
