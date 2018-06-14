@@ -214,7 +214,11 @@ class IfProcedure(Procedure):
 
     def execute(self, **context):
         for (k, v) in context.items():
-            exec('{}={}'.format(k, v))
+            try:
+                exec('{}={}'.format(k, v))
+            except:
+                if isinstance(v, str):
+                    exec('{}="{}"'.format(k, re.sub('(^|[^\\\])"', '\1\\"', v)))
 
         condition_true = eval(self.condition)
         response = Response()
