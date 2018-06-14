@@ -1,13 +1,26 @@
+import json
 import socket
 import time
 import picamera
 
-from threading import Event
+from enum import Enum
+from redis import Redis
+from threading import Thread
 
 from platypush.backend import Backend
 
 class CameraPiBackend(Backend):
+    class CameraAction(Enum):
+        START_RECORDING = 'START_RECORDING'
+        STOP_RECORDING = 'STOP_RECORDING'
+        TAKE_PICTURE = 'TAKE_PICTURE'
+
+        def __eq__(self, other):
+            return self.value == other
+
     def __init__(self, listen_port, x_resolution=640, y_resolution=480,
+                 redis_queue='platypush_mq_camera',
+                 start_recording_on_startup=True,
                  framerate=24, hflip=False, vflip=False,
                  sharpness=0, contrast=0, brightness=50,
                  video_stabilization=False, ISO=0, exposure_compensation=0,
@@ -42,8 +55,23 @@ class CameraPiBackend(Backend):
         self.camera.color_effects = color_effects
         self.camera.rotation = rotation
         self.camera.crop = crop
+        self.start_recording_on_startup = start_recording_on_startup
+        self.redis = Redis()
+        self.redis_queue = redis_queue
+        self._recording_thread = None
+
+        if self.start_recording_on_startup:
+            self.send_camera_action(self.CameraAction.START_RECORDING)
 
         self.logger.info('Initialized Pi camera backend')
+
+    def send_camera_action(self, action, **kwargs):
+        action = {
+            'action': action.value,
+            **kwargs
+        }
+
+        self.redis.rpush(self.redis_queue, json.dumps(action))
 
     def take_picture(self, image_file):
         self.logger.info('Capturing camera snapshot to {}'.format(image_file))
@@ -51,16 +79,39 @@ class CameraPiBackend(Backend):
         self.logger.info('Captured camera snapshot to {}'.format(image_file))
 
     def start_recording(self, video_file=None, format='h264'):
+        def recording_thread():
+            if video_file:
+                self.camera.start_recording(videofile, format=format)
+                while True:
+                    self.camera.wait_recording(60)
+            else:
+                connection = self.server_socket.accept()[0].makefile('wb')
+                self.logger.info('Accepted client connection on port {}'.
+                                format(self.listen_port))
+
+                try:
+                    self.camera.start_recording(connection, format=format)
+                    while True:
+                        self.camera.wait_recording(60)
+                except ConnectionError:
+                    self.logger.info('Client closed connection')
+                    try:
+                        self.stop_recording()
+                        connection.close()
+                    except:
+                        pass
+
+                    self.send_camera_action(self.CameraAction.START_RECORDING)
+
+            self._recording_thread = None
+
+        if self._recording_thread:
+            self._recording_thread.join()
+
         self.logger.info('Starting camera recording')
+        self._recording_thread = Thread(target=recording_thread)
+        self._recording_thread.start()
 
-        if video_file:
-            self.camera.start_recording(videofile, format=format)
-        else:
-            connection = self.server_socket.accept()[0].makefile('wb')
-            self.logger.info('Accepted client connection on port {}'.
-                             format(self.listen_port))
-
-            self.camera.start_recording(connection, format=format)
 
     def stop_recording(self):
         self.logger.info('Stopping camera recording')
@@ -73,20 +124,15 @@ class CameraPiBackend(Backend):
     def run(self):
         super().run()
 
-        while True:
-            restart = True
+        while not self.should_stop():
+            msg = json.loads(self.redis.blpop(self.redis_queue)[1].decode())
 
-            try:
+            if msg.get('action') == self.CameraAction.START_RECORDING:
                 self.start_recording()
-                while True:
-                    self.camera.wait_recording(60)
-            except ConnectionError:
-                self.logger.info('Client closed connection')
-            finally:
-                try:
-                    self.stop_recording()
-                except Exception as e:
-                    self.logger.exception(e)
+            elif msg.get('action') == self.CameraAction.STOP_RECORDING:
+                self.stop_recording()
+            elif msg.get('action') == self.CameraAction.TAKE_PICTURE:
+                self.take_picture(image_file=msg.get('image_file'))
 
 
 # vim:sw=4:ts=4:et:

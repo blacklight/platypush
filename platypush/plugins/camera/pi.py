@@ -7,17 +7,17 @@ from platypush.plugins import Plugin
 class CameraPiPlugin(Plugin):
     def start_recording(self):
         camera = get_backend('camera.pi')
-        camera.start_recording()
+        camera.send_camera_action(camera.CameraAction.START_RECORDING)
         return Response(output={'status':'ok'})
 
     def stop_recording(self):
         camera = get_backend('camera.pi')
-        camera.stop_recording()
+        camera.send_camera_action(camera.CameraAction.STOP_RECORDING)
         return Response(output={'status':'ok'})
 
     def take_picture(self, image_file):
         camera = get_backend('camera.pi')
-        camera.take_picture(image_file)
+        camera.send_camera_action(camera.CameraAction.TAKE_PICTURE, image_file=image_file)
         return Response(output={'image_file':image_file})
 
 

@@ -60,11 +60,12 @@ setup(
     install_requires = [
         'pyyaml',
         'requires',
+        'redis',
     ],
     extras_require = {
         'Support for Apache Kafka backend': ['kafka-python'],
         'Support for Pushbullet backend': ['requests', 'websocket-client'],
-        'Support for HTTP backend': ['flask','websockets','redis'],
+        'Support for HTTP backend': ['flask','websockets'],
         'Support for HTTP poll backend': ['frozendict'],
         'Support for database plugin': ['sqlalchemy'],
         'Support for RSS feeds': ['feedparser'],
@@ -86,7 +87,7 @@ setup(
         'Support for MCP3008 analog-to-digital converter plugin': ['adafruit-mcp3008'],
         'Support for smart cards detection': ['pyscard'],
         'Support for ICal calendars': ['icalendar', 'python-dateutil'],
-        # 'Support for Leap Motion backend': ['git+ssh://git@github.com:BlackLight/leap-sdk-python3.git', 'redis'],
+        # 'Support for Leap Motion backend': ['git+ssh://git@github.com:BlackLight/leap-sdk-python3.git'],
         # 'Support for Flic buttons': ['git+ssh://git@github.com/50ButtonsEach/fliclib-linux-hci']
     },
 )
