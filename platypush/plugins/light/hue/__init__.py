@@ -118,9 +118,9 @@ class LightHuePlugin(LightPlugin):
             if attr == 'scene':
                 self.bridge.run_scene(groups[0], kwargs.pop('name'))
             elif groups:
-                self.bridge.set_group(groups, attr, *args, **kwargs)
+                self.bridge.set_group(groups, attr)
             elif lights:
-                self.bridge.set_light(lights, attr, *args, **kwargs)
+                self.bridge.set_light(lights, attr)
         except Exception as e:
             # Reset bridge connection
             self.bridge = None
