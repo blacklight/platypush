@@ -97,6 +97,7 @@ class LightHuePlugin(LightPlugin):
     def _exec(self, attr, *args, **kwargs):
         try:
             self.connect()
+            self.stop_animation()
         except Exception as e:
             # Reset bridge connection
             self.bridge = None
@@ -159,11 +160,8 @@ class LightHuePlugin(LightPlugin):
         return self._exec('scene', name=name, lights=lights, groups=groups)
 
     def stop_animation(self):
-        if not self.redis:
-            self.logger.info('No animation is currently running')
-            return
-
-        self.redis.rpush(self.ANIMATION_CTRL_QUEUE_NAME, 'STOP')
+        if self.animation_thread and self.animation_thread.is_alive():
+            self.redis.rpush(self.ANIMATION_CTRL_QUEUE_NAME, 'STOP')
 
     def animate(self, animation, duration=None,
                 hue_range=[0, MAX_HUE], sat_range=[0, MAX_SAT],
@@ -266,9 +264,7 @@ class LightHuePlugin(LightPlugin):
         elif not lights:
             lights = self.lights
 
-        if self.animation_thread and self.animation_thread.is_alive():
-            self.stop_animation()
-
+        self.stop_animation()
         self.animation_thread = Thread(target=_animate_thread, args=(lights,))
         self.animation_thread.start()
         return Response(output='ok')
