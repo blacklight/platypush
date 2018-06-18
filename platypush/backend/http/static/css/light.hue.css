@@ -78,7 +78,7 @@
     display: inline-block;
 }
 
-.all-lights-item {
+.all-lights-item, .animation-item {
     background-color: #ececec;
 }
 
@@ -86,17 +86,39 @@
         font-weight: bold;
     }
 
+    .animation-item * > .light-item-name {
+        font-style: italic;
+    }
+
+.slider-container {
+    padding: 1rem .5rem;
+}
+
+    .slider-container > .columns {
+        line-height: initial;
+    }
+
+    .animation-type-container * > label {
+        line-height: initial;
+        font-weight: 100;
+    }
+
 .light-ctrl-switch-container {
     float: right;
     margin-top: -5px;
 }
 
-.light-color-selector {
+.light-color-selector,
+.animation-selector {
     display: none;
     background-color: white;
     padding: 10px;
     margin: 10px -10px -10px -10px;
     border-radius: 10px;
+}
+
+.animation-container {
+    display: none;
 }
 
 .light-slider {

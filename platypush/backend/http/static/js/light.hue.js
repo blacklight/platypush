@@ -10,7 +10,13 @@ $(document).ready(function() {
         var id = data['type'] + '_' + data['id'];
         var $powerToggle = $('<div></div>').addClass('toggle toggle--push light-ctrl-switch-container');
         var $input = $('<input></input>').attr('type', 'checkbox')
-            .attr('id', id).addClass('toggle--checkbox light-ctrl-switch');
+            .attr('id', id).addClass('toggle--checkbox');
+
+        if (type === 'animation') {
+            $input.addClass('animation-switch');
+        } else {
+            $input.addClass('light-ctrl-switch');
+        }
 
         data = data || {};
         for (var attr of Object.keys(data)) {
@@ -35,7 +41,7 @@ $(document).ready(function() {
 
         if (type === 'light') {
             element = lights[data.id];
-        } else if (type === 'room') {
+        } else if (type === 'room' || type === 'animation') {
             element = groups[data.id];
         } else {
             throw "Unknown type: " + type;
@@ -44,47 +50,264 @@ $(document).ready(function() {
         var $colorSelector = $('<div></div>')
             .addClass('light-color-selector');
 
-        // Hue slider
-        var $hueContainer = $('<div></div>')
-            .addClass('slider-container').addClass('row');
+        if (type === 'animation') {
+            // Animation type selector
+            var $typeContainer = $('<div></div>')
+                .addClass('animation-type-container').addClass('row');
 
-        var $hueText = $('<div></div>').addClass('two columns').text('Hue');
-        var $hueSlider = $('<input></input>').addClass('slider light-slider')
-            .addClass('ten columns').addClass('hue').data('type', type)
-            .attr('type', 'range').attr('min', 0).attr('max', 65535).data('property', 'hue')
-            .data('id', data.id).data('name', element.name).val(type === 'light' ? element.state.hue : 0);
+            var $typeText = $('<div></div>').addClass('two columns').text('Type');
 
-        $hueText.appendTo($hueContainer);
-        $hueSlider.appendTo($hueContainer);
-        $hueContainer.appendTo($colorSelector);
+            // Color transition type
+            var $transitionTypeContainer = $('<div></div>').addClass('five columns');
 
-        // Saturation slider
-        var $satContainer = $('<div></div>')
-            .addClass('slider-container').addClass('row');
+            var $transitionType = $('<input></input>').addClass('animation-type')
+                .addClass('one column').data('type', 'color_transition')
+                .attr('id', 'hue-animation-color-transition').data('name', element.name)
+                .attr('type', 'radio').attr('name', 'animation-type');
 
-        var $satText = $('<div></div>').addClass('two columns').text('Saturation');
-        var $satSlider = $('<input></input>').addClass('slider light-slider')
-            .addClass('ten columns').addClass('sat').data('type', type)
-            .attr('type', 'range').attr('min', 0).attr('max', 255).data('property', 'sat')
-            .data('id', data.id).data('name', element.name).val(type === 'light' ? element.state.sat : 0);
+            var $transitionTypeLabel = $('<label></label>').attr('for', 'hue-animation-color-transition')
+                .addClass('four columns').text('Color transition');
 
-        $satText.appendTo($satContainer);
-        $satSlider.appendTo($satContainer);
-        $satContainer.appendTo($colorSelector);
+            $typeText.appendTo($typeContainer);
 
-        // Brightness slider
-        var $briContainer = $('<div></div>')
-            .addClass('slider-container').addClass('row');
+            $transitionType.appendTo($transitionTypeContainer);
+            $transitionTypeLabel.appendTo($transitionTypeContainer);
+            $transitionTypeContainer.appendTo($typeContainer);
 
-        var $briText = $('<div></div>').addClass('two columns').text('Brightness');
-        var $briSlider = $('<input></input>').addClass('slider light-slider')
-            .addClass('ten columns').addClass('bri').data('type', type)
-            .attr('type', 'range').attr('min', 0).attr('max', 255).data('property', 'bri')
-            .data('id', data.id).data('name', element.name).val(type === 'light' ? element.state.bri : 0);
+            // Blink type
+            var $blinkTypeContainer = $('<div></div>').addClass('five columns');
 
-        $briText.appendTo($briContainer);
-        $briSlider.appendTo($briContainer);
-        $briContainer.appendTo($colorSelector);
+            var $blinkType = $('<input></input>').addClass('animation-type')
+                .addClass('one column').data('type', 'blink')
+                .attr('id', 'hue-animation-blink').data('name', element.name)
+                .attr('type', 'radio').attr('name', 'animation-type');
+
+            var $blinkTypeLabel = $('<label></label>').attr('for', 'hue-animation-blink')
+                .addClass('four columns').text('Blink');
+
+            $blinkType.appendTo($blinkTypeContainer);
+            $blinkTypeLabel.appendTo($blinkTypeContainer);
+            $blinkTypeContainer.appendTo($typeContainer);
+
+            $typeContainer.appendTo($colorSelector);
+
+            // Color transition container
+            var $animationContainer = $('<div></div>')
+                .addClass('animation-container row').data('animation-type', 'color_transition');
+
+            // Hue slider
+            var $hueContainer = $('<div></div>')
+                .addClass('slider-container').addClass('row');
+
+            var defaultHueRange = [0, 65535];
+            var $hueText = $('<div></div>').addClass('two columns').text('Hue range');
+            var $hueSlider = $('<div></div>')
+                .addClass('ten columns').data('animation-property', 'hue_range')
+                .data('id', data.id).val(defaultHueRange).slider({
+                    range: true,
+                    min: 0,
+                    max: 65535,
+                    values: defaultHueRange,
+                    slide: function(event, ui) {
+                        var values = $(event.target).slider("option", "values");
+                        $(this).val(values);
+                    }
+                });
+
+            $hueText.appendTo($hueContainer);
+            $hueSlider.appendTo($hueContainer);
+            $hueContainer.appendTo($animationContainer);
+
+            // Sat slider
+            var $satContainer = $('<div></div>')
+                .addClass('slider-container').addClass('row');
+
+            var defaultSatRange = [155, 255];
+            var $satText = $('<div></div>').addClass('two columns').text('Sat range');
+            var $satSlider = $('<div></div>')
+                .addClass('ten columns').data('animation-property', 'sat_range')
+                .data('id', data.id).val(defaultSatRange).slider({
+                    range: true,
+                    min: 0,
+                    max: 255,
+                    values: defaultSatRange,
+                    slide: function(event, ui) {
+                        var values = $(event.target).slider("option", "values");
+                        $(this).val(values);
+                    }
+                });
+
+            $satText.appendTo($satContainer);
+            $satSlider.appendTo($satContainer);
+            $satContainer.appendTo($animationContainer);
+
+            // Bri slider
+            var $briContainer = $('<div></div>')
+                .addClass('slider-container').addClass('row');
+
+            var defaultBriRange = [240, 255];
+            var $briText = $('<div></div>').addClass('two columns').text('Bri range');
+            var $briSlider = $('<div></div>')
+                .addClass('ten columns').data('animation-property', 'bri_range')
+                .data('id', data.id).val(defaultBriRange).slider({
+                    range: true,
+                    min: 0,
+                    max: 255,
+                    values: defaultBriRange,
+                    slide: function(event, ui) {
+                        var values = $(event.target).slider("option", "values");
+                        $(this).val(values);
+                    }
+                });
+
+            $briText.appendTo($briContainer);
+            $briSlider.appendTo($briContainer);
+            $briContainer.appendTo($animationContainer);
+
+            // Hue step
+            var $hueStepContainer = $('<div></div>')
+                .addClass('slider-container').addClass('row');
+
+            var $hueStepText = $('<div></div>').addClass('two columns').text('Hue step');
+            var $hueStepSlider = $('<input></input>').addClass('slider light-slider')
+                .addClass('ten columns').addClass('hue').data('animation-property', 'hue_step')
+                .attr('type', 'range').attr('min', 0).attr('max', 65535)
+                .data('id', data.id).data('name', element.name).val(1000);
+
+            $hueStepText.appendTo($hueStepContainer);
+            $hueStepSlider.appendTo($hueStepContainer);
+            $hueStepContainer.appendTo($animationContainer);
+
+            // Sat step
+            var $satStepContainer = $('<div></div>')
+                .addClass('slider-container').addClass('row');
+
+            var $satStepText = $('<div></div>').addClass('two columns').text('Sat step');
+            var $satStepSlider = $('<input></input>').addClass('slider light-slider')
+                .addClass('ten columns').addClass('sat').data('animation-property', 'sat_step')
+                .attr('type', 'range').attr('min', 0).attr('max', 255)
+                .data('id', data.id).data('name', element.name).val(2);
+
+            $satStepText.appendTo($satStepContainer);
+            $satStepSlider.appendTo($satStepContainer);
+            $satStepContainer.appendTo($animationContainer);
+
+            // Bri step
+            var $briStepContainer = $('<div></div>')
+                .addClass('slider-container').addClass('row');
+
+            var $briStepText = $('<div></div>').addClass('two columns').text('Bri step');
+            var $briStepSlider = $('<input></input>').addClass('slider light-slider')
+                .addClass('ten columns').addClass('bri').data('animation-property', 'bri_step')
+                .attr('type', 'range').attr('min', 0).attr('max', 255)
+                .data('id', data.id).data('name', element.name).val(1);
+
+            $briStepText.appendTo($briStepContainer);
+            $briStepSlider.appendTo($briStepContainer);
+            $briStepContainer.appendTo($animationContainer);
+
+            // Transition seconds
+            var $transitionContainer = $('<div></div>')
+                .addClass('slider-container').addClass('row');
+
+            var $transitionText = $('<div></div>').addClass('two columns').text('Transition seconds');
+            var $transitionInput = $('<input></input>').data('animation-property', 'transition_seconds')
+                .addClass('two columns pull-right').attr('type', 'text')
+                .data('id', data.id).data('name', element.name).val(1);
+
+            $transitionText.appendTo($transitionContainer);
+            $transitionInput.appendTo($transitionContainer);
+            $transitionContainer.appendTo($animationContainer);
+
+            // Duration seconds
+            var $durationContainer = $('<div></div>')
+                .addClass('slider-container').addClass('row');
+
+            var $durationText = $('<div></div>').addClass('two columns').text('Duration seconds');
+            var $durationInput = $('<input></input>').data('animation-property', 'duration')
+                .addClass('two columns pull-right').attr('type', 'text')
+                .data('id', data.id).data('name', element.name);
+
+            $durationText.appendTo($durationContainer);
+            $durationInput.appendTo($durationContainer);
+            $durationContainer.appendTo($animationContainer);
+
+            $animationContainer.appendTo($colorSelector);
+
+            // Blink animation container
+            $animationContainer = $('<div></div>')
+                .addClass('animation-container row').data('animation-type', 'blink');
+
+            // Transition seconds
+            $transitionContainer = $('<div></div>')
+                .addClass('slider-container').addClass('row');
+
+            $transitionText = $('<div></div>').addClass('two columns').text('Transition seconds');
+            $transitionInput = $('<input></input>').data('animation-property', 'transition_seconds')
+                .addClass('two columns pull-right').attr('type', 'text')
+                .data('id', data.id).data('name', element.name).val(1);
+
+            $transitionText.appendTo($transitionContainer);
+            $transitionInput.appendTo($transitionContainer);
+            $transitionContainer.appendTo($animationContainer);
+
+            // Duration seconds
+            $durationContainer = $('<div></div>').data('animation-property', 'duration')
+                .addClass('slider-container').addClass('row');
+
+            $durationText = $('<div></div>').addClass('two columns').text('Duration seconds');
+            $durationInput = $('<input></input>').data('animation-property', 'duration')
+                .addClass('two columns pull-right').attr('type', 'text')
+                .data('id', data.id).data('name', element.name);
+
+            $durationText.appendTo($durationContainer);
+            $durationInput.appendTo($durationContainer);
+            $durationContainer.appendTo($animationContainer);
+
+            $animationContainer.appendTo($colorSelector);
+        } else {
+            // Hue slider
+            var $hueContainer = $('<div></div>')
+                .addClass('slider-container').addClass('row');
+
+            var $hueText = $('<div></div>').addClass('two columns').text('Hue');
+            var $hueSlider = $('<input></input>').addClass('slider light-slider')
+                .addClass('ten columns').addClass('hue').data('type', type)
+                .attr('type', 'range').attr('min', 0).attr('max', 65535).data('property', 'hue')
+                .data('id', data.id).data('name', element.name).val(type === 'light' ? element.state.hue : 0);
+
+            $hueText.appendTo($hueContainer);
+            $hueSlider.appendTo($hueContainer);
+            $hueContainer.appendTo($colorSelector);
+
+            // Saturation slider
+            var $satContainer = $('<div></div>')
+                .addClass('slider-container').addClass('row');
+
+            var $satText = $('<div></div>').addClass('two columns').text('Saturation');
+            var $satSlider = $('<input></input>').addClass('slider light-slider')
+                .addClass('ten columns').addClass('sat').data('type', type)
+                .attr('type', 'range').attr('min', 0).attr('max', 255).data('property', 'sat')
+                .data('id', data.id).data('name', element.name).val(type === 'light' ? element.state.sat : 0);
+
+            $satText.appendTo($satContainer);
+            $satSlider.appendTo($satContainer);
+            $satContainer.appendTo($colorSelector);
+
+            // Brightness slider
+            var $briContainer = $('<div></div>')
+                .addClass('slider-container').addClass('row');
+
+            var $briText = $('<div></div>').addClass('two columns').text('Brightness');
+            var $briSlider = $('<input></input>').addClass('slider light-slider')
+                .addClass('ten columns').addClass('bri').data('type', type)
+                .attr('type', 'range').attr('min', 0).attr('max', 255).data('property', 'bri')
+                .data('id', data.id).data('name', element.name).val(type === 'light' ? element.state.bri : 0);
+
+            $briText.appendTo($briContainer);
+            $briSlider.appendTo($briContainer);
+            $briContainer.appendTo($colorSelector);
+        }
 
         return $colorSelector;
     };
@@ -94,13 +317,21 @@ $(document).ready(function() {
 
         if (type === 'light') {
             element = lights[id];
-        } else if (type === 'room') {
+        } else if (type === 'room' || type === 'animation') {
             element = groups[id];
         } else {
             throw "Unknown type: " + type;
         }
 
-        var on = type === 'light' ? element.state.on : element.state.any_on;
+        var on;
+        if (type === 'light') {
+            on = element.state.on;
+        } else if (type === 'room') {
+            on = element.state.any_on;
+        } else {
+            on = false;
+        }
+
         var $light = $('<div></div>')
             .addClass('light-item')
             .data('type', type)
@@ -110,14 +341,23 @@ $(document).ready(function() {
 
         if (type === 'room') {
             $light.addClass('all-lights-item');
+        } else if (type === 'animation') {
+            $light.addClass('animation-item');
         }
 
         var $row1 = $('<div></div>').addClass('row');
         var $row2 = $('<div></div>').addClass('row');
 
+        var lightName;
+        switch(type) {
+            case 'light': lightName = element.name; break;
+            case 'room': lightName = 'All Lights'; break;
+            case 'animation': lightName = 'Animate'; break;
+        }
+
         var $lightName = $('<div></div>')
             .addClass('light-item-name')
-            .text(type === 'light' ? element.name : 'All Lights');
+            .text(lightName);
 
         var $powerToggle = createPowerToggleElement({
             type: type,
@@ -174,6 +414,9 @@ $(document).ready(function() {
             }
 
             roomByLight[light] = room;
+
+            var $animation = createLightCtrlElement(type='animation', id=room);
+            $animation.prependTo($roomLights);
 
             var $allLights = createLightCtrlElement(type='room', id=room);
             $allLights.prependTo($roomLights);
@@ -315,6 +558,64 @@ $(document).ready(function() {
             });
         });
 
+        $lightsList.on('click touch', '.animation-switch', function(e) {
+            e.stopPropagation();
+
+            var turnedOn = $(this).prop('checked');
+            var args = {};
+            args['groups'] = $(this).parents('.animation-item').data('name');
+            args['animation'] = $(this).parents('.animation-item')
+                .find('input.animation-type:checked').data('type');
+
+            var $animationCtrl = $(this).parents('.animation-item')
+                .find('.animation-container').filter(
+                    (index, node) => $(node).data('animation-type') === args['animation']
+                );
+
+            var params = $animationCtrl.find('*').filter(
+                (index, node) => $(node).data('animation-property'))
+            .toArray().reduce(
+                (map, input) => {
+                    if ($(input).val().length) {
+                        var val = $(input).val();
+                        val = Array.isArray(val) ? val.map((i) => parseFloat(i)) : parseFloat(val);
+                        map[$(input).data('animation-property')] = val;
+                    }
+
+                    return map
+                }, {}
+            );
+
+            for (var p of Object.keys(params)) {
+                args[p] = params[p];
+            }
+
+            if (turnedOn) {
+                execute(
+                    {
+                        type: 'request',
+                        action: 'light.hue.animate',
+                        args: args,
+                    },
+
+                    onSuccess = function() {
+                        $(this).prop('checked', true);
+                    }
+                );
+            } else {
+                execute(
+                    {
+                        type: 'request',
+                        action: 'light.hue.stop_animation',
+                    },
+
+                    onSuccess = function() {
+                        $(this).prop('checked', false);
+                    }
+                );
+            }
+        });
+
         $lightsList.on('mouseup touchend', '.light-slider', function() {
             var property = $(this).data('property');
             var type = $(this).data('type');
@@ -332,6 +633,16 @@ $(document).ready(function() {
             }
 
             execute(args, refreshStatus);
+        });
+
+        $lightsList.on('click touch', 'input.animation-type', function(e) {
+            var type = $(this).data('type');
+            var $animationContainers = $(this).parents('.animation-item').find('.animation-container')
+            var $animationContainer = $(this).parents('.animation-item').find('.animation-container')
+                .filter(function() { return $(this).data('animationType') === type })
+
+            $animationContainers.hide();
+            $animationContainer.show();
         });
     };
 

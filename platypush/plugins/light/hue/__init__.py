@@ -159,6 +159,9 @@ class LightHuePlugin(LightPlugin):
     def scene(self, name, lights=[], groups=[]):
         return self._exec('scene', name=name, lights=lights, groups=groups)
 
+    def is_animation_running(self):
+        return self.animation_thread is not None
+
     def stop_animation(self):
         if self.animation_thread and self.animation_thread.is_alive():
             self.redis.rpush(self.ANIMATION_CTRL_QUEUE_NAME, 'STOP')
