@@ -108,7 +108,7 @@ class Config(object):
 
         config = {}
         with open(cfgfile, 'r') as fp:
-            file_config = yaml.load(fp)
+            file_config = yaml.safe_load(fp)
 
         for section in file_config:
             if section == 'include':
