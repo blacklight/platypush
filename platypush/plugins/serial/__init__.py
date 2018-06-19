@@ -7,6 +7,15 @@ from .. import Plugin
 
 
 class SerialPlugin(Plugin):
+    """
+    The serial plugin can read data from a serial device, as long as the serial
+    device returns a JSON. You can use this plugin to interact for example with
+    some sensors connected through an Arduino. Just make sure that the code on
+    your serial device returns JSON values. If you're using an Arduino or any
+    ATMega compatible device, take a look at
+    https://github.com/bblanchon/ArduinoJson.
+    """
+
     def __init__(self, device, baud_rate=9600, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -14,14 +23,48 @@ class SerialPlugin(Plugin):
         self.baud_rate = baud_rate
 
 
+    def _read_json(serial_port):
+        n_brackets = 0
+        is_escaped_ch = False
+        parse_start = False
+        output = bytearray()
+
+        while True:
+            ch = bytes([serial_port.read()])
+            if not ch:
+                break
+
+            if ch.decode() == '{' and not is_escaped_ch:
+                parse_start = True
+                n_brackets += 1
+
+            if not parse_start:
+                continue
+
+            output += ch
+
+            if ch.decode() == '}' and not is_escaped_ch:
+                n_brackets -= 1
+                if n_brackets == 0:
+                    break
+
+            is_escaped_ch = ch.decode() == '\\'
+
+        return output.decode().strip()
+
     def get_data(self):
         ser = serial.Serial(self.device, self.baud_rate)
 
-        try: data = ser.readline().decode('utf-8').strip()
-        finally: ser.close()
+        try:
+            data = self._read_json(ser)
+        finally:
+            ser.close()
 
-        try: data = json.loads(data)
-        except: pass
+        try:
+            data = json.loads(data)
+        except:
+            self.logger.warning('Invalid JSON message from {}: {}'.
+                                format(self.device, data))
 
         return Response(output=data)
 
