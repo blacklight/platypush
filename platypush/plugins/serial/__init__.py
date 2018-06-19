@@ -23,14 +23,14 @@ class SerialPlugin(Plugin):
         self.baud_rate = baud_rate
 
 
-    def _read_json(serial_port):
+    def _read_json(self, serial_port):
         n_brackets = 0
         is_escaped_ch = False
         parse_start = False
-        output = bytearray()
+        output = bytes()
 
         while True:
-            ch = bytes([serial_port.read()])
+            ch = serial_port.read()
             if not ch:
                 break
 
