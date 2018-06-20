@@ -52,7 +52,7 @@ class AssistantGoogleBackend(Backend):
             self.bus.post(ConversationTimeoutEvent())
         elif event.type == EventType.ON_NO_RESPONSE:
             self.bus.post(NoResponseEvent())
-        elif event.type == EventType.ON_RENDER_RESPONSE:
+        elif hasattr(EventType, 'ON_RENDER_RESPONSE') and event.type == EventType.ON_RENDER_RESPONSE:
             self.bus.post(ResponseEvent(response_text=event.args.get('text')))
         elif event.type == EventType.ON_RECOGNIZING_SPEECH_FINISHED:
             phrase = event.args['text'].lower().strip()
