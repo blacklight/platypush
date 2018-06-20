@@ -12,7 +12,7 @@ from google.assistant.library.file_helpers import existing_file
 from platypush.backend import Backend
 from platypush.message.event.assistant import \
     ConversationStartEvent, ConversationEndEvent, ConversationTimeoutEvent, \
-    NoResponseEvent, SpeechRecognizedEvent
+    ResponseEvent, NoResponseEvent, SpeechRecognizedEvent
 
 
 class AssistantGoogleBackend(Backend):
@@ -46,11 +46,14 @@ class AssistantGoogleBackend(Backend):
         if event.type == EventType.ON_CONVERSATION_TURN_STARTED:
             self.bus.post(ConversationStartEvent())
         elif event.type == EventType.ON_CONVERSATION_TURN_FINISHED:
-            self.bus.post(ConversationEndEvent())
+            if not event.args.get('with_follow_on_turn'):
+                self.bus.post(ConversationEndEvent())
         elif event.type == EventType.ON_CONVERSATION_TURN_TIMEOUT:
             self.bus.post(ConversationTimeoutEvent())
         elif event.type == EventType.ON_NO_RESPONSE:
             self.bus.post(NoResponseEvent())
+        elif event.type == EventType.ON_RENDER_RESPONSE:
+            self.bus.post(ResponseEvent(response_text=event.args.get('text')))
         elif event.type == EventType.ON_RECOGNIZING_SPEECH_FINISHED:
             phrase = event.args['text'].lower().strip()
             self.logger.info('Speech recognized: {}'.format(phrase))

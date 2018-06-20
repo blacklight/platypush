@@ -37,6 +37,11 @@ class ConversationTimeoutEvent(ConversationEndEvent):
         super().__init__(*args, **kwargs)
 
 
+class ResponseEvent(ConversationEndEvent):
+    def __init__(self, response_text, *args, **kwargs):
+        super().__init__(*args, response_text=response_text, **kwargs)
+
+
 class NoResponseEvent(ConversationEndEvent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
