@@ -20,6 +20,15 @@ $(document).ready(function() {
 
                 break;
 
+            case 'platypush.message.event.assistant.ResponseEvent':
+                createNotification({
+                    'title': 'Assistant response',
+                    'text': event.args.response_text,
+                    'icon': 'volume-up',
+                });
+
+                break;
+
             case 'platypush.message.event.assistant.ConversationEndEvent':
                 break;
         }
