@@ -5,11 +5,13 @@ $(document).ready(function() {
         $sensorTempElement = $widget.find('[data-bind=sensor-temperature]'),
         $sensorHumidityElement = $widget.find('[data-bind=sensor-humidity]'),
         $forecastElement = $widget.find('[data-bind=forecast]'),
-        $tempElement = $widget.find('[data-bind=temperature]');
+        $tempElement = $widget.find('[data-bind=temperature]'),
+        currentIcon = undefined;
 
     var onEvent = function(event) {
         if (event.args.type == 'platypush.message.event.weather.NewWeatherConditionEvent') {
             updateTemperature(event.args.temperature);
+            updateWeatherIcon(event.args.icon);
         } else if (event.args.type == 'platypush.message.event.sensor.SensorDataChangeEvent') {
             if ('temperature' in event.args.data) {
                 updateSensorTemperature(event.args.data.temperature);
@@ -23,6 +25,21 @@ $(document).ready(function() {
 
     var updateTemperature = function(temperature) {
         $tempElement.text(Math.round(temperature));
+    };
+
+    var updateWeatherIcon = function(icon) {
+        var skycons = new Skycons({
+            'color':'#333', 'resizeClear':'true'
+        });
+
+        if (currentIcon) {
+            skycons.set('weather-icon', icon);
+        } else {
+            skycons.add('weather-icon', icon);
+            skycons.play();
+        }
+
+        currentIcon = icon;
     };
 
     var updateSensorTemperature = function(temperature) {
@@ -57,6 +74,7 @@ $(document).ready(function() {
 
             onSuccess = function(response) {
                 updateTemperature(status=response.response.output.temperature);
+                updateWeatherIcon(response.response.output.icon);
             }
         );
     };
