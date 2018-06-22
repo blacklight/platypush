@@ -1,3 +1,7 @@
+"""
+.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
+"""
+
 import datetime
 import dateutil.parser
 import requests
@@ -11,7 +15,15 @@ from platypush.plugins.calendar import CalendarInterface
 
 
 class IcalCalendarPlugin(Plugin, CalendarInterface):
+    """
+    iCal calendars plugin. Interact with remote calendars in iCal format.
+    """
+
     def __init__(self, url, *args, **kwargs):
+        """
+        :param url: iCal URL to parse
+        :type url: str
+        """
         super().__init__(*args, **kwargs)
         self.url = url
 
@@ -46,6 +58,11 @@ class IcalCalendarPlugin(Plugin, CalendarInterface):
 
 
     def get_upcoming_events(self, max_results=10, only_participating=True):
+        """
+        Get the upcoming events. See
+        :func:`~platypush.plugins.calendar.CalendarPlugin.get_upcoming_events`.
+        """
+
         events = []
         response = requests.get(self.url)
 

@@ -15,6 +15,7 @@ class WeatherForecastPlugin(HttpRequestPlugin):
 
     def get_current_weather(self, **kwargs):
         response = self.get(self.url)
+        print(response)
         return Response(output=response.output['currently'])
 
     def get_hourly_forecast(self, **kwargs):

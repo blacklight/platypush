@@ -1,3 +1,7 @@
+"""
+.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
+"""
+
 import dateutil.parser
 import importlib
 
@@ -17,16 +21,21 @@ class CalendarInterface:
 
 class CalendarPlugin(Plugin, CalendarInterface):
     """
-    The CalendarPlugin will allow you to keep track of multiple calendars
-    (Google or iCal URLs) and get joined events from all of them
+    The CalendarPlugin allows you to keep track of multiple calendars (Google or
+    iCal URLs) and get joined events from all of them.
+
+    Requires:
+        * **dateutil** (``pip install python-dateutil``)
     """
 
     def __init__(self, calendars=[], *args, **kwargs):
         """
-        Example calendars format:
+        :param calendars: List of calendars to be queried. Supported types so far: Google Calendar and iCal URLs.
+        :type calendars: list
 
-        ```
-            [
+        Example format::
+
+            calendars = [
                 {
                     "type": "platypush.plugins.google.calendar.GoogleCalendarPlugin"
                 },
@@ -56,6 +65,45 @@ class CalendarPlugin(Plugin, CalendarInterface):
 
 
     def get_upcoming_events(self, max_results=10):
+        """
+        Get a list of upcoming events merging all the available calendars.
+
+        :param max_results: Maximum number of results to be returned (default: 10)
+        :type max_results: int
+
+        :returns: platypush.message.Response -- Response object with the list of events in the Google calendar API format.
+
+        Example::
+
+            output = [
+                {
+                    "id": "123456abcdef",
+                    "kind": "calendar#event",
+                    "status": "confirmed",
+                    "htmlLink": "...",
+                    "created": "2018-06-01T01:23:45.000Z",
+                    "updated": "2018-06-01T01:23:45.000Z",
+                    "creator": {
+                        "email": "...",
+                        "displayName": "...",
+                        "self": true
+                    },
+                    "organizer" {
+                        "email": "...",
+                        "displayName": "...",
+                        "self": true
+                    },
+                    "start": {
+                        "dateTime": "2018-06-02T10:00:00.000Z",
+                    },
+                    "end": {
+                        "dateTime": "2018-06-02T12:00:00.000Z",
+                    },
+                },
+                ...
+            ]
+        """
+
         events = []
 
         for calendar in self.calendars:

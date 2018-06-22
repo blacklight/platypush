@@ -1,3 +1,7 @@
+"""
+.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
+"""
+
 import os
 
 from platypush.plugins import Plugin
@@ -7,6 +11,7 @@ from platypush.plugins.google.credentials import get_credentials
 class GooglePlugin(Plugin):
     """
     Executes calls to the Google APIs using the google-api-python-client.
+    This class is extended by ``GoogleMailPlugin``, ``GoogleCalendarPlugin`` etc.
     In order to use Google services (like GMail, Maps, Calendar etc.) with
     your account you need to:
 
@@ -19,12 +24,23 @@ class GooglePlugin(Plugin):
 
         4. Click on the "Download JSON" icon next to your newly created client ID
 
-        5. Generate a credentials file for the needed scope:
+        5. Generate a credentials file for the needed scope::
 
-            $ python -m platypush.plugins.google.credentials 'https://www.googleapis.com/auth/gmail.compose' ~/client_secret.json
+            python -m platypush.plugins.google.credentials 'https://www.googleapis.com/auth/gmail.compose' ~/client_secret.json
+
+    Requires:
+
+        * **google-api-python-client** (``pip install google-api-python-client``)
     """
 
     def __init__(self, scopes, *args, **kwargs):
+        """
+        Initialized the Google plugin with the required scopes.
+
+        :param scopes: List of required scopes
+        :type scopes: list
+        """
+
         super().__init__(*args, **kwargs)
         self.credentials = {}
 

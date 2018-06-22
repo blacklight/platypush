@@ -1,3 +1,7 @@
+"""
+.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
+"""
+
 import base64
 import datetime
 import httplib2
@@ -11,6 +15,10 @@ from platypush.plugins.calendar import CalendarInterface
 
 
 class GoogleCalendarPlugin(GooglePlugin, CalendarInterface):
+    """
+    Google calendar plugin
+    """
+
     scopes = ['https://www.googleapis.com/auth/calendar.readonly']
 
     def __init__(self, *args, **kwargs):
@@ -18,6 +26,11 @@ class GoogleCalendarPlugin(GooglePlugin, CalendarInterface):
 
 
     def get_upcoming_events(self, max_results=10):
+        """
+        Get the upcoming events. See
+        :func:`~platypush.plugins.calendar.CalendarPlugin.get_upcoming_events`.
+        """
+
         now = datetime.datetime.utcnow().isoformat() + 'Z'
         service = self._get_service()
         result = service.events().list(calendarId='primary', timeMin=now,

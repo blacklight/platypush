@@ -1,3 +1,7 @@
+"""
+.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
+"""
+
 import base64
 import httplib2
 import mimetypes
@@ -18,6 +22,10 @@ from platypush.plugins.google import GooglePlugin
 
 
 class GoogleMailPlugin(GooglePlugin):
+    """
+    GMail plugin. It allows you to programmatically compose and (TODO) get emails
+    """
+
     scopes = ['https://www.googleapis.com/auth/gmail.modify']
 
     def __init__(self, *args, **kwargs):
@@ -25,6 +33,25 @@ class GoogleMailPlugin(GooglePlugin):
 
 
     def compose(self, sender, to, subject, body, files=None):
+        """
+        Compose a message.
+
+        :param sender: Sender email/name
+        :type sender: str
+
+        :param to: Recipient email or comma-separated list of recipient emails
+        :type to: str
+
+        :param subject: Email subject
+        :type subject: str
+
+        :param body: Email body
+        :type body: str
+
+        :param files: Optional list of files to attach
+        :type files: list
+        """
+
         message = MIMEMultipart() if files else MIMEText(body)
         message['to'] = to
         message['from'] = sender
@@ -68,6 +95,9 @@ class GoogleMailPlugin(GooglePlugin):
 
 
     def get_labels(self):
+        """
+        Returns the available labels on the GMail account
+        """
         service = self._get_service()
         results = service.users().labels().list(userId='me').execute()
         labels = results.get('labels', [])

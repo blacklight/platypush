@@ -1,3 +1,7 @@
+"""
+.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
+"""
+
 from sqlalchemy import create_engine, Table, MetaData
 
 from platypush.message.response import Response
@@ -5,20 +9,26 @@ from platypush.message.response import Response
 from .. import Plugin
 
 class DbPlugin(Plugin):
-    """ Database plugin. It allows you to programmatically select, insert,
-        update and delete records on a database backend through requests,
-        procedures and event hooks """
+    """
+    Database plugin. It allows you to programmatically select, insert, update
+    and delete records on a database backend through requests, procedures and
+    event hooks.
+
+    Requires:
+        * **sqlalchemy** (``pip install sqlalchemy``)
+
+    .. todo::
+        Implement ``update`` and ``delete`` methods
+    """
 
     engine = None
 
     def __init__(self, engine=None, *args, **kwargs):
         """
-        Params:
-            engine -- Default SQLAlchemy connection engine string
-            (e.g. sqlite:///:memory: or mysql://user:pass@localhost/test)
-            that will be used. You can override this value in your statement actions
-
-            args, kwargs -- Extra arguments for sqlalchemy.create_engine
+        :param engine: Default SQLAlchemy connection engine string (e.g.  ``sqlite:///:memory:`` or ``mysql://user:pass@localhost/test``) that will be used. You can override the default engine in the db actions.
+        :type engine: str
+        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
         """
 
         self.engine = self._get_engine(engine, *args, **kwargs)
@@ -31,7 +41,23 @@ class DbPlugin(Plugin):
             return self.engine
 
     def execute(self, statement, engine=None, *args, **kwargs):
-        """ Executes a raw SQL statement """
+        """
+        Executes a raw SQL statement.
+
+        .. warning::
+            Avoid calling this method directly if possible.  Use ``insert``,
+            ``update`` and ``delete`` methods instead if possible.  Don't use this
+            method if you need to select records, use the ``select`` method
+            instead, as this method is mostly meant to execute raw SQL without
+            returning anything.
+
+        :param statement: SQL to be executed
+        :type statement: str
+        :param engine: Engine to be used (default: default class engine)
+        :type engine: str
+        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+        """
 
         engine = self._get_engine(engine, *args, **kwargs)
 
@@ -43,7 +69,45 @@ class DbPlugin(Plugin):
 
 
     def select(self, query, engine=None, *args, **kwargs):
-        """ Returns rows (as a list of dicts) given a query """
+        """
+        Returns rows (as a list of hashes) given a query.
+
+        :param query: SQL to be executed
+        :type query: str
+        :param engine: Engine to be used (default: default class engine)
+        :type engine: str
+        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :returns: List of hashes representing the result rows.
+
+        Example:
+
+            Request::
+
+                {
+                    "type": "request",
+                    "target": "your_host",
+                    "action": "db.select",
+                    "args": {
+                        "engine": "sqlite:///:memory:",
+                        "query": "SELECT id, name FROM table"
+                    }
+                }
+
+            Response::
+
+                [
+                    {
+                        "id": 1,
+                        "name": foo
+                    },
+
+                    {
+                        "id": 2,
+                        "name": bar
+                    }
+                ]
+        """
 
         engine = self._get_engine(engine, *args, **kwargs)
 
@@ -59,7 +123,43 @@ class DbPlugin(Plugin):
 
 
     def insert(self, table, records, engine=None, *args, **kwargs):
-        """ Inserts records (as a list of dicts) into a table """
+        """
+        Inserts records (as a list of hashes) into a table.
+
+        :param table: Table name
+        :type table: str
+        :param records: Records to be inserted (as a list of hashes)
+        :type records: list
+        :param engine: Engine to be used (default: default class engine)
+        :type engine: str
+        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+
+        Example:
+
+            Request::
+
+                {
+                    "type": "request",
+                    "target": "your_host",
+                    "action": "db.insert",
+                    "args": {
+                        "table": "table",
+                        "engine": "sqlite:///:memory:",
+                        "records": [
+                            {
+                                "id": 1,
+                                "name": foo
+                            },
+
+                            {
+                                "id": 2,
+                                "name": bar
+                            }
+                        ]
+                    }
+                }
+        """
 
         engine = self._get_engine(engine, *args, **kwargs)
 

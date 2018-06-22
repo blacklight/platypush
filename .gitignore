@@ -9,3 +9,4 @@ dist/
 package.sh
 .pypirc
 platypush/backend/http/static/resources/*
+docs/build

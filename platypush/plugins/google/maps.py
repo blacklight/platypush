@@ -1,3 +1,7 @@
+"""
+.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
+"""
+
 import json
 import requests
 
@@ -6,14 +10,33 @@ from platypush.plugins.google import GooglePlugin
 
 
 class GoogleMapsPlugin(GooglePlugin):
+    """
+    Plugins that provides utilities to interact with Google Maps API services.
+    """
+
     scopes = []
 
     def __init__(self, api_key, *args, **kwargs):
+        """
+        :param api_key: Server-side API key to be used for the requests, get one at https://console.developers.google.com
+        :type api_key: str
+        """
+
         super().__init__(scopes=self.scopes, *args, **kwargs)
         self.api_key = api_key
 
 
     def get_address_from_latlng(self, latitude, longitude):
+        """
+        Get an address information given lat/long
+
+        :param latitude: Latitude
+        :type latitude: float
+
+        :param longitude: Longitude
+        :type longitude: float
+        """
+
         response = requests.get('https://maps.googleapis.com/maps/api/geocode/json',
                                 params = {
                                     'latlng': '{},{}'.format(latitude, longitude),
