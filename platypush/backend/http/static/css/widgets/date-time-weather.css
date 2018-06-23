@@ -8,11 +8,19 @@
     min-height: 20.5em;
 }
 
+#weather-icon {
+    margin-left: 2rem;
+}
+
 h1.temperature {
     font-size: 45px;
     margin: 4rem 2rem;
     font-weight: bold;
 }
+
+    h1.temperature > [data-bind=temperature] {
+        margin-left: -2.5rem;
+    }
 
     .widget.date-time-weather * > .time {
         font-size: 22px;
