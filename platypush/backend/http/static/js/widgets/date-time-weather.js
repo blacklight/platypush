@@ -33,12 +33,11 @@ $(document).ready(function() {
         });
 
         if (currentIcon) {
-            skycons.set('weather-icon', icon);
-        } else {
-            skycons.add('weather-icon', icon);
-            skycons.play();
+            skycons.remove('weather-icon');
         }
 
+        skycons.add('weather-icon', icon);
+        skycons.play();
         currentIcon = icon;
     };
 
