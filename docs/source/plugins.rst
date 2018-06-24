@@ -16,4 +16,14 @@ Plugins
     platypush/plugins/google.mail.rst
     platypush/plugins/google.maps.rst
     platypush/plugins/gpio.rst
+    platypush/plugins/gpio.sensor.rst
+    platypush/plugins/gpio.sensor.distance.rst
+    platypush/plugins/gpio.sensor.mcp3008.rst
+    platypush/plugins/gpio.zeroborg.rst
+    platypush/plugins/http.request.rst
+    platypush/plugins/light.rst
+    platypush/plugins/light.hue.rst
+    platypush/plugins/midi.rst
+    platypush/plugins/mqtt.rst
+    platypush/plugins/music.mpd.rst
 

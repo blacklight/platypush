@@ -1,14 +1,30 @@
 import threading
 import time
 
-import RPi.GPIO as gpio
-
 from platypush.message.response import Response
 from platypush.plugins.gpio.sensor import GpioSensorPlugin
 
 
 class GpioSensorDistancePlugin(GpioSensorPlugin):
+    """
+    You can use this plugin to interact with a distance sensor on your Raspberry
+    Pi (tested with a HC-SR04 ultrasound sensor).
+
+    Requires:
+
+        * ``RPi.GPIO`` (``pip install RPi.GPIO``)
+    """
+
     def __init__(self, trigger_pin, echo_pin, *args, **kwargs):
+        """
+        :param trigger_pin: GPIO PIN where you connected your sensor trigger PIN (the one that triggers the sensor to perform a measurement).
+        :type trigger_pin: int
+
+        :param echo_pin: GPIO PIN where you connected your sensor echo PIN (the one that will listen for the signal to bounce back and therefore trigger the distance calculation).
+        :type echo_pin: int
+        """
+
+        import RPi.GPIO as gpio
         super().__init__(*args, **kwargs)
 
         self.trigger_pin = trigger_pin
@@ -24,6 +40,13 @@ class GpioSensorDistancePlugin(GpioSensorPlugin):
 
 
     def get_measurement(self):
+        """
+        Extends :func:`.GpioSensorPlugin.get_measurement`
+
+        :returns: Distance measurement as a scalar (in mm):
+        """
+
+        import RPi.GPIO as gpio
         gpio.setmode(gpio.BCM)
         gpio.setup(self.trigger_pin, gpio.OUT)
         gpio.setup(self.echo_pin, gpio.IN)

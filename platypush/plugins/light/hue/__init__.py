@@ -12,7 +12,13 @@ from platypush.message.response import Response
 from .. import LightPlugin
 
 class LightHuePlugin(LightPlugin):
-    """ Philips Hue lights plugin """
+    """
+    Philips Hue lights plugin.
+
+    Requires:
+
+        * **phue** (``pip install phue``)
+    """
 
     MAX_BRI = 255
     MAX_SAT = 255
@@ -31,11 +37,14 @@ class LightHuePlugin(LightPlugin):
 
     def __init__(self, bridge, lights=None, groups=None):
         """
-        Constructor
-        Params:
-            bridge -- Bridge address or hostname
-            lights -- Lights to be controlled (default: all)
-            groups -- Groups to be controlled (default: all)
+        :param bridge: Bridge address or hostname
+        :type bridge: str
+
+        :param lights: Default lights to be controlled (default: all)
+        :type lights: list[str]
+
+        :param groups Default groups to be controlled (default: all)
+        :type groups: list[str]
         """
 
         super().__init__()
@@ -66,6 +75,14 @@ class LightHuePlugin(LightPlugin):
             self.lights.extend([l.name for l in g.lights])
 
     def connect(self):
+        """
+        Connect to the configured Hue bridge. If the device hasn't been paired
+        yet, uncomment the ``.connect()`` and ``.get_api()`` lines and retry
+        after clicking the pairing button on your bridge.
+
+        :todo: Support for dynamic retry and better user interaction in case of bridge pairing neeeded.
+        """
+
         # Lazy init
         if not self.bridge:
             self.bridge = Bridge(self.bridge_address)
@@ -83,14 +100,127 @@ class LightHuePlugin(LightPlugin):
 
 
     def get_scenes(self):
+        """
+        Get the available scenes on the devices.
+
+        :returns: The scenes configured on the bridge.
+
+        Example output::
+
+            output = {
+                "scene-id-1": {
+                    "name": "Scene 1",
+                    "lights": [
+                        "1",
+                        "3"
+                    ],
+                    "owner": "owner-id",
+                    "recycle": true,
+                    "locked": false,
+                    "appdata": {},
+                    "picture": "",
+                    "lastupdated": "2018-06-01T00:00:00",
+                    "version": 1
+                },
+                "scene-id-2": {
+                    # ...
+                }
+            }
+        """
+
         return Response(output=self.bridge.get_scene())
 
 
     def get_lights(self):
+        """
+        Get the configured lights.
+
+        :returns: List of available lights as id->dict.
+
+        Example::
+
+            output = {
+                "1": {
+                    "state": {
+                        "on": true,
+                        "bri": 254,
+                        "hue": 1532,
+                        "sat": 215,
+                        "effect": "none",
+                        "xy": [
+                            0.6163,
+                            0.3403
+                        ],
+                        "ct": 153,
+                        "alert": "none",
+                        "colormode": "hs",
+                        "reachable": true
+                    },
+                    "type": "Extended color light",
+                    "name": "Lightbulb 1",
+                    "modelid": "LCT001",
+                    "manufacturername": "Philips",
+                    "uniqueid": "00:11:22:33:44:55:66:77-88",
+                    "swversion": "5.105.0.21169"
+                },
+                "2": {
+                    # ...
+                }
+            }
+        """
+
         return Response(output=self.bridge.get_light())
 
 
     def get_groups(self):
+        """
+        Get the list of configured light groups.
+
+        :returns: List of configured light groups as id->dict.
+
+        Example::
+
+            output = {
+                "1": {
+                    "name": "Living Room",
+                    "lights": [
+                        "16",
+                        "13",
+                        "12",
+                        "11",
+                        "10",
+                        "9",
+                        "1",
+                        "3"
+                    ],
+                    "type": "Room",
+                    "state": {
+                        "all_on": true,
+                        "any_on": true
+                    },
+                    "class": "Living room",
+                    "action": {
+                        "on": true,
+                        "bri": 241,
+                        "hue": 37947,
+                        "sat": 221,
+                        "effect": "none",
+                        "xy": [
+                            0.2844,
+                            0.2609
+                        ],
+                        "ct": 153,
+                        "alert": "none",
+                        "colormode": "hs"
+                    }
+                },
+
+                "2": {
+                    # ...
+                }
+            }
+        """
+
         return Response(output=self.bridge.get_group())
 
 
@@ -129,40 +259,132 @@ class LightHuePlugin(LightPlugin):
         return Response(output='ok')
 
     def set_light(self, light, **kwargs):
+        """
+        Set a light (or lights) property.
+
+        :param light: Light or lights to set. Can be a string representing the light name, a light object, a list of string, or a list of light objects.
+        :param kwargs: key-value list of parameters to set.
+
+        Example call::
+
+            {
+                "type": "request",
+                "target": "hostname",
+                "action": "light.hue.set_light",
+                "args": {
+                    "light": "Bulb 1",
+                    "sat": 255
+                }
+            }
+        """
+
         self.connect()
         self.bridge.set_light(light, **kwargs)
         return Response(output='ok')
 
     def set_group(self, group, **kwargs):
+        """
+        Set a group (or groups) property.
+
+        :param group: Group or groups to set. Can be a string representing the group name, a group object, a list of strings, or a list of group objects.
+        :param kwargs: key-value list of parameters to set.
+
+        Example call::
+
+            {
+                "type": "request",
+                "target": "hostname",
+                "action": "light.hue.set_group",
+                "args": {
+                    "light": "Living Room",
+                    "sat": 255
+                }
+            }
+        """
+
         self.connect()
         self.bridge.set_group(group, **kwargs)
         return Response(output='ok')
 
     def on(self, lights=[], groups=[]):
+        """
+        Turn lights/groups on.
+
+        :param lights: Lights to turn on (names or light objects). Default: plugin default lights
+        :param groups: Groups to turn on (names or group objects). Default: plugin default groups
+        """
+
         return self._exec('on', True, lights=lights, groups=groups)
 
     def off(self, lights=[], groups=[]):
+        """
+        Turn lights/groups off.
+
+        :param lights: Lights to turn off (names or light objects). Default: plugin default lights
+        :param groups: Groups to turn off (names or group objects). Default: plugin default groups
+        """
+
         return self._exec('on', False, lights=lights, groups=groups)
 
     def bri(self, value, lights=[], groups=[]):
+        """
+        Set lights/groups brightness.
+
+        :param lights: Lights to control (names or light objects). Default: plugin default lights
+        :param groups: Groups to control (names or group objects). Default: plugin default groups
+        :param value: Brightness value (range: 0-255)
+        """
+
         return self._exec('bri', int(value) % (self.MAX_BRI+1),
                       lights=lights, groups=groups)
 
     def sat(self, value, lights=[], groups=[]):
+        """
+        Set lights/groups saturation.
+
+        :param lights: Lights to control (names or light objects). Default: plugin default lights
+        :param groups: Groups to control (names or group objects). Default: plugin default groups
+        :param value: Saturation value (range: 0-255)
+        """
+
         return self._exec('sat', int(value) % (self.MAX_SAT+1),
                       lights=lights, groups=groups)
 
     def hue(self, value, lights=[], groups=[]):
+        """
+        Set lights/groups color hue.
+
+        :param lights: Lights to control (names or light objects). Default: plugin default lights
+        :param groups: Groups to control (names or group objects). Default: plugin default groups
+        :param value: Hue value (range: 0-65535)
+        """
+
         return self._exec('hue', int(value) % (self.MAX_HUE+1),
                       lights=lights, groups=groups)
 
     def scene(self, name, lights=[], groups=[]):
+        """
+        Set a scene by name.
+
+        :param lights: Lights to control (names or light objects). Default: plugin default lights
+        :param groups: Groups to control (names or group objects). Default: plugin default groups
+        :param name: Name of the scene
+        """
+
         return self._exec('scene', name=name, lights=lights, groups=groups)
 
     def is_animation_running(self):
+        """
+        :returns: True if there is an animation running, false otherwise.
+        """
+
         return self.animation_thread is not None
 
     def stop_animation(self):
+        """
+        Stop a running animation if any
+        """
+
         if self.animation_thread and self.animation_thread.is_alive():
             self.redis.rpush(self.ANIMATION_CTRL_QUEUE_NAME, 'STOP')
 
@@ -170,6 +392,40 @@ class LightHuePlugin(LightPlugin):
                 hue_range=[0, MAX_HUE], sat_range=[0, MAX_SAT],
                 bri_range=[MAX_BRI-1, MAX_BRI], lights=None, groups=None,
                 hue_step=1000, sat_step=2, bri_step=1, transition_seconds=1.0):
+        """
+        Run a lights animation.
+
+        :param animation: Animation name. Supported types: **color_transition** and **blink**
+        :type animation: str
+
+        :param duration: Animation duration in seconds (default: None, i.e. continue until stop)
+        :type duration: float
+
+        :param hue_range: If you selected a color transition, this will specify the hue range of your color transition. Default: [0, 65535]
+        :type hue_range: list[int]
+
+        :param sat_range: If you selected a color transition, this will specify the saturation range of your color transition. Default: [0, 255]
+        :type sat_range: list[int]
+
+        :param bri_range: If you selected a color transition, this will specify the brightness range of your color transition. Default: [254, 255]
+        :type bri_range: list[int]
+
+        :param lights: Lights to control (names or light objects). Default: plugin default lights
+        :param groups: Groups to control (names or group objects). Default: plugin default groups
+
+        :param hue_step: If you selected a color transition, this will specify by how much the color hue will change between iterations. Default: 1000
+        :type hue_step: int
+
+        :param sat_step: If you selected a color transition, this will specify by how much the saturation will change between iterations. Default: 2
+        :type sat_step: int
+
+        :param bri_step: If you selected a color transition, this will specify by how much the brightness will change between iterations. Default: 1
+        :type bri_step: int
+
+        :param transition_seconds: Time between two transitions or blinks in seconds. Default: 1.0
+        :type treansition_seconds: float
+        """
+
 
         def _initialize_light_attrs(lights):
             if animation == self.Animation.COLOR_TRANSITION:
