@@ -7,6 +7,20 @@ from platypush.message.event.sensor.ir import IrKeyUpEvent, IrKeyDownEvent
 
 
 class SensorIrZeroborgBackend(Backend):
+    """
+    This backend will read for events on the infrared sensor of a ZeroBorg
+    (https://www.piborg.org/motor-control-1135/zeroborg) circuitry for
+    Raspberry Pi. You can see the codes associated to an IR event from any
+    remote by running the scan utility::
+
+        python -m platypush.backend.sensor.ir.zeroborg.scan
+
+    Triggers:
+
+        * :class:`platypush.message.event.sensor.ir.IrKeyDownEvent` when a key is pressed
+        * :class:`platypush.message.event.sensor.ir.IrKeyUpEvent` when a key is released
+    """
+
     last_message =None
     last_message_timestamp = None
 
@@ -16,10 +30,6 @@ class SensorIrZeroborgBackend(Backend):
         self.zb = ZeroBorg.ZeroBorg()
         self.zb.Init()
         self.logger.info('Initialized Zeroborg infrared sensor backend')
-
-
-    def send_message(self, message):
-        pass
 
 
     def run(self):

@@ -20,6 +20,14 @@ class SensorLeapBackend(Backend):
     Also, you'll need the Leap driver and utils installed on your OS (follow
     instructions at https://www.leapmotion.com/setup/) and the `leapd` daemon
     running to recognize your controller.
+
+    Triggers:
+
+        * :class:`platypush.message.event.sensor.leap.LeapFrameEvent` when a new frame is received
+        * :class:`platypush.message.event.sensor.leap.LeapFrameStartEvent` when a new sequence of frame starts
+        * :class:`platypush.message.event.sensor.leap.LeapFrameStopEvent` when a sequence of frame stops
+        * :class:`platypush.message.event.sensor.leap.LeapConnectEvent` when a Leap Motion device is connected
+        * :class:`platypush.message.event.sensor.leap.LeapDisconnectEvent` when a Leap Motion device disconnects
     """
 
     def __init__(self,
@@ -30,6 +38,23 @@ class SensorLeapBackend(Backend):
                  ],
                  position_tolerance=0.0,  # Position variation tolerance in %
                  *args, **kwargs):
+        """
+        :param position_ranges: It specifies how wide the hand space (x, y and z axes) should be in millimiters.
+
+        Default::
+
+            [
+                [-300.0, 300.0],  # x axis
+                [25.0, 600.0],    # y axis
+                [-300.0, 300.0],  # z axis
+            ]
+
+        :type position_ranges: list[list[float]]
+
+        :param position_tolerance: % of change between a frame and the next to really consider the next frame as a new one (default: 0)
+        :type position_tolerance: float
+        """
+
         super().__init__(*args, **kwargs)
 
         self.position_ranges = position_ranges

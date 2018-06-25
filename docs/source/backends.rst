@@ -22,4 +22,9 @@ Backends
     platypush/backend/redis.rst
     platypush/backend/scard.rst
     platypush/backend/sensor.rst
+    platypush/backend/sensor.ir.zeroborg.rst
+    platypush/backend/sensor.leap.rst
+    platypush/backend/sensor.mcp3008.rst
+    platypush/backend/sensor.serial.rst
+    platypush/backend/weather.forecast.rst
 

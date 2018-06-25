@@ -11,7 +11,7 @@ from platypush.plugins import Plugin
 class CameraPiPlugin(Plugin):
     """
     Plugin to control a Pi camera.
-    It acts as a wrapper around the :ref:`platypush.backend.camera.pi` backend
+    It acts as a wrapper around the :mod:`platypush.backend.camera.pi` backend
     to programmatically control the status.
     """
 

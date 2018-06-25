@@ -7,6 +7,18 @@ from platypush.message.event.weather import NewWeatherConditionEvent
 
 
 class WeatherForecastBackend(Backend):
+    """
+    Weather forecast backend - listens and propagates new weather events.
+
+    Triggers:
+
+        * :class:`platypush.message.event.weather.NewWeatherConditionEvent` when there is a weather condition update
+
+    Requires:
+
+        * The :mod:`platypush.plugins.weather.forecast` plugin configured
+    """
+
     def __init__(self, poll_seconds, **kwargs):
         super().__init__(**kwargs)
         self.poll_seconds = poll_seconds
