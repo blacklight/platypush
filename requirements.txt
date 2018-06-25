@@ -65,7 +65,7 @@ snowboy
 # apt install python3-picamera
 
 # Support for torrents download
-python-libtorrent
+# python-libtorrent
 
 # Support for smart cards detection
 pyscard
