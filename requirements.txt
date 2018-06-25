@@ -68,7 +68,7 @@ pylast
 # python-libtorrent
 
 # Support for smart cards detection
-pyscard
+# pyscard
 
 # Support for MCP3008 analog-to-digital converter plugin
 # adafruit-mcp3008
