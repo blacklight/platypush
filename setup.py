@@ -28,7 +28,7 @@ def create_etc_dir():
 
 plugins = pkg_files('platypush/plugins')
 backend = pkg_files('platypush/backend')
-create_etc_dir()
+# create_etc_dir()
 
 setup(
     name = "platypush",
@@ -48,9 +48,9 @@ setup(
             'pusher=platypush.pusher:main',
         ],
     },
-    data_files = [
-        ('/etc/platypush', ['platypush/config.example.yaml'])
-    ],
+    # data_files = [
+    #     ('/etc/platypush', ['platypush/config.example.yaml'])
+    # ],
     long_description = read('README.md'),
     classifiers = [
         "Topic :: Utilities",
