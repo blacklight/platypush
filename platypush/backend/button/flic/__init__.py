@@ -11,13 +11,37 @@ from .fliclib.fliclib import FlicClient, ButtonConnectionChannel, ClickType
 
 
 class ButtonFlicBackend(Backend):
+    """
+    Backend that listen for events from the Flic (https://flic.io/) bluetooth
+    smart buttons.
+
+    Triggers:
+
+        * :class:`platypush.message.event.button.flic.FlicButtonEvent` when a button is pressed. The event will also contain the press sequence (e.g. ``["ShortPressEvent", "LongPressEvent", "ShortPressEvent"]``)
+
+    Requires:
+
+        * **fliclib** (https://github.com/50ButtonsEach/fliclib-linux-hci). For the backend to work properly you need to have the ``flicd`` daemon from the fliclib running, and you have to first pair the buttons with your device using any of the scanners provided by the library.
+    """
+
     _long_press_timeout = 0.3
     _btn_timeout = 0.5
     ShortPressEvent = "ShortPressEvent"
     LongPressEvent = "LongPressEvent"
 
-    def __init__(self, server, long_press_timeout=_long_press_timeout,
+    def __init__(self, server='localhost', long_press_timeout=_long_press_timeout,
                  btn_timeout=_btn_timeout, **kwargs):
+        """
+        :param server: flicd server host (default: localhost)
+        :type server: str
+
+        :param long_press_timeout: How long you should press a button for a press action to be considered "long press" (default: 0.3 secohds)
+        :type long_press_timeout: float
+
+        :param btn_timeout: How long since the last button release before considering the user interaction completed (default: 0.5 seconds)
+        :type btn_timeout: float
+        """
+
         super().__init__(**kwargs)
 
         self.server = server
@@ -87,9 +111,6 @@ class ButtonFlicBackend(Backend):
             self._btn_timer.start()
 
         return _f
-
-    def send_message(self, msg):
-        pass
 
     def run(self):
         super().run()

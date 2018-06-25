@@ -16,16 +16,26 @@ from platypush.message.response import Response
 
 
 class Backend(Thread):
-    """ Parent class for backends """
+    """
+    Parent class for backends.
+
+    A backend is basically a thread that checks for new events on some channel
+    (e.g. a network socket, a queue, some new entries on an API endpoint or an
+    RSS feed, a voice command through an assistant, a new measure from a sensor
+    etc.) and propagates event messages to the main application bus whenever a
+    new event happens. You can then build whichever type of custom logic you
+    want on such events.
+    """
 
     _default_response_timeout = 5
 
     def __init__(self, bus=None, **kwargs):
         """
-        Params:
-            bus    -- Reference to the Platypush bus where the requests and the
-                      responses will be posted [Bus]
-            kwargs -- key-value configuration for this backend [Dict]
+        :param bus: Reference to the bus object to be used in the backend
+        :type bus: platypush.bus.Bus
+
+        :param kwargs: Key-value configuration for the backend
+        :type kwargs: dict
         """
 
         # If no bus is specified, create an internal queue where
@@ -55,11 +65,9 @@ class Backend(Thread):
         It should be called by the derived classes whenever
         a new message should be processed.
 
-        Params:
-            msg -- The message. It can be either a key-value
-                   dictionary, a platypush.message.Message
-                   object, or a string/byte UTF-8 encoded string
+        :param msg: Received message.  It can be either a key-value dictionary, a platypush.message.Message object, or a string/byte UTF-8 encoded string
         """
+
         msg = Message.build(msg)
 
         if not getattr(msg, 'target') or msg.target != self.device_id:
@@ -120,10 +128,9 @@ class Backend(Thread):
 
     def send_event(self, event, **kwargs):
         """
-        Send an event message on the backend
-        Params:
-            event -- The request, either a dict, a string/bytes UTF-8 JSON,
-                     or a platypush.message.event.Event object.
+        Send an event message on the backend.
+
+        :param event: Event to send. It can be a dict, a string/bytes UTF-8 JSON, or a platypush.message.event.Event object.
         """
 
         event = Event.build(event)
@@ -139,17 +146,15 @@ class Backend(Thread):
     def send_request(self, request, on_response=None,
                      response_timeout=_default_response_timeout, **kwargs):
         """
-        Send a request message on the backend
-        Params:
-            request     -- The request, either a dict, a string/bytes UTF-8 JSON,
-                           or a platypush.message.request.Request object.
+        Send a request message on the backend.
 
-            on_response -- Response handler, takes a platypush.message.response.Response
-                           as argument. If set, the method will wait for a
-                           response before exiting (default: None)
-            response_timeout -- If on_response is set, the backend will raise
-                                an exception if the response isn't received
-                                within this number of seconds (default: 5)
+        :param request: The request, either a dict, a string/bytes UTF-8 JSON, or a platypush.message.request.Request object.
+
+        :param on_response: Optional callback that will be called when a response is received. If set, this method will synchronously wait for a response before exiting.
+        :type on_response: function
+
+        :param response_timeout: If on_response is set, the backend will raise an exception if the response isn't received within this number of seconds (default: None)
+        :type response_timeout: float
         """
 
         request = Request.build(request)
@@ -165,12 +170,10 @@ class Backend(Thread):
 
     def send_response(self, response, request, **kwargs):
         """
-        Send a response message on the backend
-        Params:
-            response -- The response, either a dict, a string/bytes UTF-8 JSON,
-                        or a platypush.message.response.Response object
-            request  -- Associated request, used to set the response parameters
-                        that will link them
+        Send a response message on the backend.
+
+        :param response: The response, either a dict, a string/bytes UTF-8 JSON, or a platypush.message.response.Response object
+        :param request: Associated request, used to set the response parameters that will link them
         """
 
         response = Response.build(response)
@@ -191,8 +194,7 @@ class Backend(Thread):
         backend is configured then it will try to deliver the message to
         other consumers through the configured Redis main queue.
 
-        Params:
-            msg -- The message
+        :param msg: The message to send
         """
         try:
             redis = get_backend('redis')

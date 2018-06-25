@@ -5,6 +5,7 @@ Platypush
     :maxdepth: 3
     :caption: Contents:
 
+    backends
     plugins
 
 Indices and tables

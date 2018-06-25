@@ -22,10 +22,30 @@ from .. import Backend
 
 
 class HttpBackend(Backend):
-    """ Example interaction with the HTTP backend to make requests:
-        $ curl -XPOST -H 'Content-Type: application/json' -H "X-Token: your_token" \
-            -d '{"type":"request","target":"nodename","action":"tts.say","args": {"phrase":"This is a test"}}' \
-            http://localhost:8008/execute """
+    """
+    The HTTP backend is a general-purpose web server that you can leverage:
+
+        * To execute Platypush commands via HTTP calls. Example::
+
+            curl -XPOST -H 'Content-Type: application/json' -H "X-Token: your_token" \\
+                -d '{
+                    "type":"request",
+                    "target":"nodename",
+                    "action":"tts.say",
+                    "args": {"phrase":"This is a test"}
+                }' \\
+                http://localhost:8008/execute
+
+        * To interact with your system (and control plugins and backends) through the Platypush web panel, by default available on your web root document. Any plugin that you have configured and available as a panel plugin will appear on the web panel as well as a tab.
+
+        * To display a fullscreen dashboard with your configured widgets, by default available under ``/dashboard``
+
+    Requires:
+
+        * **flask** (``pip install flask``)
+        * **redis** (``pip install redis``)
+        * **websockets** (``pip install websockets``)
+    """
 
     hidden_plugins = {
         'assistant.google'
@@ -34,6 +54,48 @@ class HttpBackend(Backend):
     def __init__(self, port=8008, websocket_port=8009, disable_websocket=False,
                  redis_queue='platypush_flask_mq', token=None, dashboard={},
                  maps={}, **kwargs):
+        """
+        :param port: Listen port for the web server (default: 8008)
+        :type port: int
+
+        :param websocket_port: Listen port for the websocket server (default: 8009)
+        :type websocket_port: int
+
+        :param disable_websocket: Disable the websocket interface (default: False)
+        :type disable_websocket: bool
+
+        :param redis_queue: Name of the Redis queue used to synchronize messages with the web server process (default: ``platypush_flask_mq``)
+        :type redis_queue: str
+
+        :param token: If set (recommended) any interaction with the web server needs to bear an ``X-Token: <token>`` header, or it will fail with a 403: Forbidden
+        :type token: str
+
+        :param dashboard: Set it if you want to use the dashboard service. It will contain the configuration for the widgets to be used (look under ``platypush/backend/http/templates/widgets/`` for the available widgets).
+
+        Example configuration::
+
+            dashboard:
+                background_image: https://site/image.png
+                widgets:                # Each row of the dashboard will have 6 columns
+                    calendar:           # Calendar widget
+                        columns: 6
+                    music:              # Music widget
+                        columns: 3
+                    date-time-weather:  # Date, time and weather widget
+                        columns: 3
+                    image-carousel:     # Image carousel
+                        columns: 6
+                        images_path: /static/resources/Dropbox/Photos/carousel  # Path (relative to ``platypush/backend/http``) containing the carousel pictures
+                        refresh_seconds: 15
+                    rss-news:           # RSS feeds widget
+                        # Requires backend.http.poll to be enabled with some RSS sources and write them to sqlite db
+                        columns: 6
+                        limit: 25
+                        db: "sqlite:////home/blacklight/.local/share/platypush/feeds/rss.db"
+
+        :type dashboard: dict
+        """
+
         super().__init__(**kwargs)
 
         self.port = port
@@ -54,6 +116,7 @@ class HttpBackend(Backend):
 
 
     def stop(self):
+        """ Stop the web server """
         self.logger.info('Received STOP event on HttpBackend')
 
         if self.server_proc:
@@ -62,6 +125,7 @@ class HttpBackend(Backend):
 
 
     def notify_web_clients(self, event):
+        """ Notify all the connected web clients (over websocket) of a new event """
         import websockets
 
         async def send_event(websocket):
@@ -77,6 +141,7 @@ class HttpBackend(Backend):
 
 
     def redis_poll(self):
+        """ Polls for new messages on the internal Redis queue """
         while not self.should_stop():
             msg = self.redis.blpop(self.redis_queue)
             msg = Message.build(json.loads(msg[1].decode('utf-8')))
@@ -84,6 +149,7 @@ class HttpBackend(Backend):
 
 
     def webserver(self):
+        """ Web server main process """
         basedir = os.path.dirname(inspect.getfile(self.__class__))
         template_dir = os.path.join(basedir, 'templates')
         static_dir = os.path.join(basedir, 'static')
@@ -92,6 +158,7 @@ class HttpBackend(Backend):
 
         @app.route('/execute', methods=['POST'])
         def execute():
+            """ Endpoint to execute commands """
             args = json.loads(http_request.data.decode('utf-8'))
             token = http_request.headers['X-Token'] if 'X-Token' in http_request.headers else None
             if token != self.token: abort(401)
@@ -111,6 +178,7 @@ class HttpBackend(Backend):
 
         @app.route('/')
         def index():
+            """ Route to the main web panel """
             configured_plugins = Config.get_plugins()
             enabled_plugins = {}
             hidden_plugins = {}
@@ -129,6 +197,7 @@ class HttpBackend(Backend):
 
         @app.route('/widget/<widget>', methods=['POST'])
         def widget_update(widget):
+            """ ``POST /widget/<widget_id>`` will update the specified widget_id on the dashboard with the specified key-values """
             event = WidgetUpdateEvent(
                 widget=widget, **(json.loads(http_request.data.decode('utf-8'))))
 
@@ -137,10 +206,12 @@ class HttpBackend(Backend):
 
         @app.route('/static/<path>', methods=['GET'])
         def static_path(path):
+            """ Static resources """
             return send_from_directory(static_dir, filename)
 
         @app.route('/dashboard', methods=['GET'])
         def dashboard():
+            """ Route for the fullscreen dashboard """
             return render_template('dashboard.html', config=self.dashboard, utils=HttpUtils,
                                    token=self.token, websocket_port=self.websocket_port)
 
@@ -219,6 +290,7 @@ class HttpBackend(Backend):
 
 
     def websocket(self):
+        """ Websocket main server """
         import websockets
 
         async def register_websocket(websocket, path):

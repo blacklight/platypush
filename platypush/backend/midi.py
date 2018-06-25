@@ -14,22 +14,28 @@ class MidiBackend(Backend):
     This backend will listen for events from a MIDI device and post a
     MidiMessageEvent whenever a new MIDI event happens.
 
-    It requires `rtmidi`, `pip install rtmidi`
+    Triggers:
+
+        * :class:`platypush.message.event.midi.MidiMessageEvent` when a new MIDI event is received
+
+    Requires:
+
+        * **rtmidi** (``pip install rtmidi``)
     """
 
     def __init__(self, device_name=None, port_number=None,
                  midi_throttle_time=None, *args, **kwargs):
         """
-        Params:
-            device_name -- Name of the MIDI device.
-                *N.B.* either `device_name` or `port_number` must be set
-            port_number -- MIDI port number
-                *N.B.* either `device_name` or `port_number` must be set
-            midi_throttle_time -- If set, the MIDI events will be throttled -
-                max one per selected time frame (in seconds). Set this parameter
-                if you want to synchronize MIDI events with plugins that
-                normally operate with a lower throughput.
+        :param device_name: Name of the MIDI device.  *N.B.* either `device_name` or `port_number` must be set
+        :type device_name: str
+
+        :param port_number: MIDI port number
+        :type port_number: int
+
+        :param midi_throttle_time: If set, the MIDI events will be throttled - max one per selected time frame (in seconds). Set this parameter if you want to synchronize MIDI events with plugins that normally operate with a lower throughput.
+        :type midi_throttle_time: int
         """
+
         super().__init__(*args, **kwargs)
 
         if (device_name and port_number is not None) or \

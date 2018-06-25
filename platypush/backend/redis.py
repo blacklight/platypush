@@ -8,20 +8,25 @@ from platypush.message import Message
 
 class RedisBackend(Backend):
     """
-    Backend that reads messages from a configured Redis queue
-    (default: `platypush_bus_mq`) and posts them to the application bus.
-    Very useful when you have plugin whose code is executed in another process
+    Backend that reads messages from a configured Redis queue (default:
+    ``platypush_bus_mq``) and posts them to the application bus.  Very
+    useful when you have plugin whose code is executed in another process
     and can't post events or requests to the application bus.
+
+    Requires:
+
+        * **redis** (``pip install redis``)
     """
 
     def __init__(self, queue='platypush_bus_mq', redis_args={}, *args, **kwargs):
         """
-        Params:
-            queue -- Queue to poll for new messages
-            redis_args -- Arguments that will be passed to the redis-py
-                constructor (e.g. host, port, password),
-                see http://redis-py.readthedocs.io/en/latest/
+        :param queue: Queue name to listen on (default: ``platypush_bus_mq``)
+        :type queue: str
+
+        :param redis_args: Arguments that will be passed to the redis-py constructor (e.g. host, port, password), see http://redis-py.readthedocs.io/en/latest/
+        :type redis_args: dict
         """
+
         super().__init__(*args, **kwargs)
 
         self.queue = queue

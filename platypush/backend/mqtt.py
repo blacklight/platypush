@@ -9,17 +9,26 @@ from platypush.message import Message
 
 class MqttBackend(Backend):
     """
-    Backend that reads messages from a configured MQTT topic
-    (default: `platypush_bus_mq/<device_id>`) and posts them to the application bus.
+    Backend that reads messages from a configured MQTT topic (default:
+    ``platypush_bus_mq/<device_id>``) and posts them to the application bus.
+
+    Requires:
+
+        * **paho-mqtt** (``pip install paho-mqtt``)
     """
 
     def __init__(self, host, port=1883, topic='platypush_bus_mq', *args, **kwargs):
         """
-        Params:
-            host -- MQTT broker host
-            port -- MQTT broker port (default: 1883)
-            topic -- Topic to read messages from (default: platypush_bus_mq/<device_id>)
+        :param host: MQTT broker host
+        :type host: str
+
+        :param port: MQTT broker port (default: 1883)
+        :type port: int
+
+        :param topic: Topic to read messages from (default: ``platypush_bus_mq/<device_id>``)
+        :type topic: str
         """
+
         super().__init__(*args, **kwargs)
 
         self.host = host

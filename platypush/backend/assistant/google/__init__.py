@@ -16,18 +16,35 @@ from platypush.message.event.assistant import \
 
 
 class AssistantGoogleBackend(Backend):
-    """ Class for the Google Assistant backend. It creates and event source
-        that posts recognized phrases on the main bus """
+    """
+    Google Assistant backend.
+
+    It listens for voice commands and post conversation events on the bus.
+
+    Triggers:
+
+        * :class:`platypush.message.event.assistant.ConversationStartEvent` when a new conversation starts
+        * :class:`platypush.message.event.assistant.SpeechRecognizedEvent` when a new voice command is recognized
+        * :class:`platypush.message.event.assistant.NoResponse` when a conversation returned no response
+        * :class:`platypush.message.event.assistant.ResponseEvent` when the assistant is speaking a response
+        * :class:`platypush.message.event.assistant.ConversationTimeoutEvent` when a conversation times out
+        * :class:`platypush.message.event.assistant.ConversationEndEvent` when a new conversation ends
+
+    Requires:
+
+        * **google-assistant-sdk** (``pip install google-assistant-sdk``)
+    """
 
     def __init__(self, credentials_file=os.path.join(
             os.path.expanduser('~/.config'),
             'google-oauthlib-tool', 'credentials.json'),
             device_model_id='Platypush', **kwargs):
-        """ Params:
-            credentials_file -- Path to the Google OAuth credentials file
-                (default: ~/.config/google-oauthlib-tool/credentials.json)
-            device_model_id  -- Device model ID to use for the assistant
-                (default: Platypush)
+        """
+        :param credentials_file: Path to the Google OAuth credentials file (default: ~/.config/google-oauthlib-tool/credentials.json). See https://developers.google.com/assistant/sdk/guides/library/python/embed/install-sample#generate_credentials for how to get your own credentials file.
+        :type credentials_file: str
+
+        :param device_model_id: Device model ID to use for the assistant (default: Platypush)
+        :type device_model_id: str
         """
 
         super().__init__(**kwargs)
@@ -61,19 +78,14 @@ class AssistantGoogleBackend(Backend):
 
 
     def start_conversation(self):
+        """ Starts an assistant conversation """
         if self.assistant: self.assistant.start_conversation()
 
 
     def stop_conversation(self):
+        """ Stops an assistant conversation """
         if self.assistant: self.assistant.stop_conversation()
 
-
-    def send_message(self, msg):
-        # Can't send a message on an event source, ignoring
-        # TODO Make a class for event sources like these. Event sources
-        # would be a subset of the backends which can fire events on the bus
-        # but not receive requests or process responses.
-        pass
 
     def run(self):
         super().run()

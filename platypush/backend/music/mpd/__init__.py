@@ -8,16 +8,33 @@ from platypush.message.event.music import MusicPlayEvent, MusicPauseEvent, \
 
 
 class MusicMpdBackend(Backend):
+    """
+    This backend listens for events on a MPD/Mopidy music server.
+
+    Triggers:
+
+        * :class:`platypush.message.event.music.MusicPlayEvent` if the playback state changed to play
+        * :class:`platypush.message.event.music.MusicPauseEvent` if the playback state changed to pause
+        * :class:`platypush.message.event.music.MusicStopEvent` if the playback state changed to stop
+        * :class:`platypush.message.event.music.NewPlayingTrackEvent` if a new track is being played
+        * :class:`platypush.message.event.music.PlaylistChangeEvent` if the main playlist has changed
+
+    Requires:
+        * **python-mpd2** (``pip install python-mpd2``)
+        * The :mod:`platypush.plugins.music.mpd` plugin to be configured
+    """
+
     def __init__(self, server='localhost', port=6600, poll_seconds=3, **kwargs):
+        """
+        :param poll_seconds: Interval between queries to the server (default: 3 seconds)
+        :type poll_seconds: float
+        """
+
         super().__init__(**kwargs)
 
         self.server = server
         self.port = port
         self.poll_seconds = poll_seconds
-
-
-    def send_message(self, msg):
-        pass
 
 
     def run(self):

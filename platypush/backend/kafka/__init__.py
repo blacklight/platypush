@@ -8,9 +8,26 @@ from .. import Backend
 
 
 class KafkaBackend(Backend):
+    """
+    Backend to interact with an Apache Kafka (https://kafka.apache.org/)
+    streaming platform, send and receive messages.
+
+    Requires:
+
+        * **kafka** (``pip install kafka-python``)
+    """
+
     _conn_retry_secs = 5
 
-    def __init__(self, server, topic, **kwargs):
+    def __init__(self, server, topic='platypush', **kwargs):
+        """
+        :param server: Kafka server
+        :type server: str
+
+        :param topic: (Prefix) topic to listen to (default: platypush). The Platypush device_id (by default the hostname) will be appended to the topic (the real topic name will e.g. be "platypush.my_rpi")
+        :type topic: str
+        """
+
         super().__init__(**kwargs)
 
         self.server = server

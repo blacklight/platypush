@@ -11,22 +11,27 @@ from platypush.message.event.scard import SmartCardDetectedEvent, SmartCardRemov
 
 class ScardBackend(Backend):
     """
-    Generic backend to read smart cards and trigger SmartCardDetectedEvent
-    messages with the card ATR whenever a card is detected. It requires
-    pyscard https://pypi.org/project/pyscard/
+    Generic backend to read smart cards and NFC tags and trigger an event
+    whenever a device is detected.
 
-    Extend this backend to implement more advanced communication with
-    custom smart cards.
+    Extend this backend to implement more advanced communication with custom
+    smart cards.
+
+    Triggers:
+
+        * :class:`platypush.message.event.scard.SmartCardDetectedEvent` when a smart card is detected
+        * :class:`platypush.message.event.scard.SmartCardRemovedEvent` when a smart card is removed
+
+    Requires:
+
+        * **pyscard** (``pip install pyscard``)
     """
 
     def __init__(self, atr=None, *args, **kwargs):
         """
-        Params:
-            atr -- If set, the backend will trigger events only for card(s)
-                with the specified ATR(s). It can be either an ATR string
-                (space-separated hex octects) or a list of ATR strings.
-                Default: none (any card will be detected)
+        :param atr: If set, the backend will trigger events only for card(s) with the specified ATR(s). It can be either an ATR string (space-separated hex octects) or a list of ATR strings.  Default: none (any card will be detected)
         """
+
         super().__init__(*args, **kwargs)
         self.ATRs = []
 

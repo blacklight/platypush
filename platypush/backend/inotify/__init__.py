@@ -7,16 +7,37 @@ from platypush.message.event.path import PathCreateEvent, PathDeleteEvent, \
 
 
 class InotifyBackend(Backend):
+    """
+    (Linux only) This backend will listen for events on the filesystem (whether
+    a file/directory on a watch list is opened, modified, created, deleted,
+    closed or had its permissions changed) and will trigger a relevant event.
+
+    Triggers:
+
+        * :class:`platypush.message.event.path.PathCreateEvent` if a resource is created
+        * :class:`platypush.message.event.path.PathOpenEvent` if a resource is opened
+        * :class:`platypush.message.event.path.PathModifyEvent` if a resource is modified
+        * :class:`platypush.message.event.path.PathPermissionsChangeEvent` if the permissions of a resource are changed
+        * :class:`platypush.message.event.path.PathCloseEvent` if a resource is closed
+        * :class:`platypush.message.event.path.PathDeleteEvent` if a resource is removed
+
+    Requires:
+
+        * **inotify** (``pip install inotify``)
+    """
+
     inotify_watch = None
 
     def __init__(self, watch_paths=[], **kwargs):
+        """
+        :param watch_paths: Filesystem resources to watch for events
+        :type watch_paths: str
+        """
+
         super().__init__(**kwargs)
         self.watch_paths = set(map(
             lambda path: os.path.abspath(os.path.expanduser(path)),
             watch_paths))
-
-    def send_message(self, msg):
-        pass
 
     def _cleanup(self):
         if not self.inotify_watch:

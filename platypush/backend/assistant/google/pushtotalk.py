@@ -25,12 +25,25 @@ from platypush.message.event.assistant import \
 
 
 class AssistantGooglePushtotalkBackend(Backend):
-    """ Google Assistant pushtotalk backend. Instead of listening for
-        the "OK Google" hotword like the assistant.google backend,
-        this implementation programmatically starts a conversation
-        upon start_conversation() method call. Use this backend on
-        devices that don't have an Assistant SDK package (e.g. arm6 devices
-        like the RaspberryPi Zero or the RaspberryPi 1) """
+    """
+    Google Assistant pushtotalk backend. Instead of listening for the "OK
+    Google" hotword like the assistant.google backend, this implementation
+    programmatically starts a conversation upon start_conversation() method
+    call. Use this backend on devices that don't have an Assistant SDK package
+    (e.g. arm6 devices like the RaspberryPi Zero or the RaspberryPi 1).
+
+    Triggers:
+
+        * :class:`platypush.message.event.assistant.ConversationStartEvent` when a new conversation starts
+        * :class:`platypush.message.event.assistant.SpeechRecognizedEvent` when a new voice command is recognized
+        * :class:`platypush.message.event.assistant.ConversationEndEvent` when a new conversation ends
+
+    Requires:
+
+        * **tenacity** (``pip install tenacity``)
+        * **grpc** (``pip install grpc``)
+        * **google-assistant-grpc** (``pip install google-assistant-grpc``)
+    """
 
     api_endpoint = 'embeddedassistant.googleapis.com'
     audio_sample_rate = audio_helpers.DEFAULT_AUDIO_SAMPLE_RATE
@@ -49,13 +62,15 @@ class AssistantGooglePushtotalkBackend(Backend):
             lang='en-US',
             conversation_start_fifo = os.path.join(os.path.sep, 'tmp', 'pushtotalk.fifo'),
             *args, **kwargs):
-        """ Params:
-            credentials_file -- Path to the Google OAuth credentials file
-                (default: ~/.config/google-oauthlib-tool/credentials.json)
-            device_config  -- Path to device_config.json. Register your
-                device and create a project, then run the pushtotalk.py
-                script from googlesamples to create your device_config.json
-            lang -- Assistant language (default: en-US)
+        """
+        :param credentials_file: Path to the Google OAuth credentials file (default: ~/.config/google-oauthlib-tool/credentials.json). See https://developers.google.com/assistant/sdk/guides/library/python/embed/install-sample#generate_credentials for how to get your own credentials file.
+        :type credentials_file: str
+
+        :param device_config: Path to device_config.json. Register your device (see https://developers.google.com/assistant/sdk/guides/library/python/embed/register-device) and create a project, then run the pushtotalk.py script from googlesamples to create your device_config.json
+        :type device_config: str
+
+        :param lang: Assistant language (default: en-US)
+        :type lang: str
         """
 
         super().__init__(*args, **kwargs)
@@ -125,11 +140,13 @@ class AssistantGooglePushtotalkBackend(Backend):
         self.device_handler = device_helpers.DeviceRequestHandler(self.device_id)
 
     def start_conversation(self):
+        """ Start a conversation """
         if self.assistant:
             with open(self.conversation_start_fifo, 'w') as f:
                 f.write('1')
 
     def stop_conversation(self):
+        """ Stop a conversation """
         if self.assistant:
             self.conversation_stream.stop_playback()
             self.bus.post(ConversationEndEvent())
@@ -344,6 +361,7 @@ class SampleAssistant(object):
         for data in self.conversation_stream:
             # Subsequent requests need audio data, but not config.
             yield embedded_assistant_pb2.AssistRequest(audio_in=data)
+
 
 # vim:sw=4:ts=4:et:
 

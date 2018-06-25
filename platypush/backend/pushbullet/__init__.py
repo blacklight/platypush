@@ -11,7 +11,33 @@ from .. import Backend
 
 
 class PushbulletBackend(Backend):
-    def __init__(self, token, device, **kwargs):
+    """
+    This backend will listen for events on a Pushbullet (https://pushbullet.com)
+    channel and propagate them to the bus. This backend is quite useful if you
+    want to synchronize events and actions with your mobile phone (through the
+    Pushbullet app and/or through Tasker), synchronize clipboards, send pictures
+    and files to other devices etc. You can also wrap Platypush messages as JSON
+    into a push body to execute them.
+
+    Triggers:
+
+        * :class:`platypush.message.event.pushbullet` if a new push is received
+
+    Requires:
+
+        * **requests** (``pip install requests``)
+        * **websocket-client** (``pip install websocket-client``)
+    """
+
+    def __init__(self, token, device='Platypush', **kwargs):
+        """
+        :param token: Your Pushbullet API token, see https://docs.pushbullet.com/#authentication
+        :type token: str
+
+        :param device: Name of the virtual device for Platypush (default: Platypush)
+        :type device: str
+        """
+
         super().__init__(**kwargs)
 
         self.token = token
