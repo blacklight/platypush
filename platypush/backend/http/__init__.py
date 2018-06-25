@@ -253,7 +253,7 @@ class HttpBackend(Backend):
                 except ValueError:
                     pass
 
-                m = re.match('([-+]?)(\d+)([dhms])', time_string)
+                m = re.match('([-+]?)([0-9]+)([dhms])', time_string)
                 if not m:
                     raise RuntimeError('Invalid time interval string representation: "{}"'.
                                     format(time_string))
