@@ -1,8 +1,6 @@
 import json
 import time
 
-import rtmidi
-
 from threading import Timer
 
 from platypush.backend import Backend
@@ -36,6 +34,7 @@ class MidiBackend(Backend):
         :type midi_throttle_time: int
         """
 
+        import rtmidi
         super().__init__(*args, **kwargs)
 
         if (device_name and port_number is not None) or \

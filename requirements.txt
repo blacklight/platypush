@@ -59,7 +59,7 @@ pylast
 # Video support on RaspberryPi: omxplayer system package
 
 # Custom hotword detection: Snowboy
-snowboy
+# snowboy
 
 # Support for the RaspberryPi camera module
 # apt install python3-picamera
@@ -71,8 +71,8 @@ snowboy
 pyscard
 
 # Support for MCP3008 analog-to-digital converter plugin
-adafruit-mcp3008
+# adafruit-mcp3008
 
 # Support for real-time MIDI events
-rtmidi
+# rtmidi
 
