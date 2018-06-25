@@ -37,7 +37,6 @@ $(document).ready(function() {
         }
 
         skycons.add('weather-icon', icon);
-        skycons.play();
         currentIcon = icon;
     };
 
