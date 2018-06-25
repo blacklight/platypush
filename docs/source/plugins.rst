@@ -26,4 +26,15 @@ Plugins
     platypush/plugins/midi.rst
     platypush/plugins/mqtt.rst
     platypush/plugins/music.mpd.rst
+    platypush/plugins/pushbullet.rst
+    platypush/plugins/redis.rst
+    platypush/plugins/serial.rst
+    platypush/plugins/shell.rst
+    platypush/plugins/switch.rst
+    platypush/plugins/switch.switchbot.rst
+    platypush/plugins/switch.wemo.rst
+    platypush/plugins/tts.rst
+    platypush/plugins/variable.rst
+    platypush/plugins/video.omxplayer.rst
+    platypush/plugins/weather.forecast.rst
 

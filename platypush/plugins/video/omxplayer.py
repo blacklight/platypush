@@ -19,6 +19,22 @@ from platypush.message.event.video import VideoPlayEvent, VideoPauseEvent, \
 from .. import Plugin
 
 class VideoOmxplayerPlugin(Plugin):
+    """
+    Plugin to control video and media playback on your Raspberry Pi or
+    ARM-compatible device using OMXPlayer.
+
+    It can play local files, remote URLs, YouTube URLs and it supports torrents
+    search, download and play.
+
+    Requires:
+
+        * **omxplayer** installed on your system (see your distro instructions)
+        * **omxplayer-wrapper** (``pip install omxplayer-wrapper``)
+        * **python-libtorrent** (``pip install python-libtorrent``), optional for Torrent support
+        * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
+    """
+
+    """ Supported video extensions """
     video_extensions = {
         '.avi', '.flv', '.wmv', '.mov', '.mp4', '.m4v', '.mpg', '.mpeg',
         '.rm', '.swf', '.vob', '.mkv'
@@ -28,6 +44,20 @@ class VideoOmxplayerPlugin(Plugin):
     torrent_state = {}
 
     def __init__(self, args=[], media_dirs=[], download_dir=None, torrent_ports=[], *argv, **kwargs):
+        """
+        :param args: Arguments that will be passed to the OMXPlayer constructor (e.g. subtitles, volume, start position, window size etc.) see https://github.com/popcornmix/omxplayer#synopsis and http://python-omxplayer-wrapper.readthedocs.io/en/latest/omxplayer/#omxplayer.player.OMXPlayer
+        :type args: list
+
+        :param media_dirs: Directories that will be scanned for media files when a search is performed (default: none)
+        :type media_dirs: list
+
+        :param download_dir: Directory where the videos/torrents will be downloaded (default: none)
+        :type download_dir: str
+
+        :param torrent_ports: Torrent ports to listen on (default: 6881 and 6891)
+        :type torrent_ports: list[int]
+        """
+
         super().__init__(*argv, **kwargs)
 
         self.args = args
@@ -54,6 +84,17 @@ class VideoOmxplayerPlugin(Plugin):
         self.torrent_ports = torrent_ports if torrent_ports else self.default_torrent_ports
 
     def play(self, resource):
+        """
+        Play a resource.
+
+        :param resource: Resource to play. Supported types:
+
+            * Local files (format: ``file://<path>/<file>``)
+            * Remote videos (format: ``https://<url>/<resource>``)
+            * YouTube videos (format: ``https://www.youtube.com/watch?v=<id>``)
+            * Torrents (format: ``magnet:?<magnet_uri>``)
+        """
+
         if resource.startswith('youtube:') \
                 or resource.startswith('https://www.youtube.com/watch?v='):
             resource = self._get_youtube_content(resource)
@@ -90,9 +131,11 @@ class VideoOmxplayerPlugin(Plugin):
         return self.status()
 
     def pause(self):
+        """ Pause the playback """
         if self.player: self.player.play_pause()
 
     def stop(self):
+        """ Stop the playback """
         if self.player:
             self.player.stop()
             self.player.quit()
@@ -101,26 +144,31 @@ class VideoOmxplayerPlugin(Plugin):
         return self.status()
 
     def voldown(self):
+        """ Volume down by 10% """
         if self.player:
             self.player.set_volume(max(-6000, self.player.volume()-1000))
         return self.status()
 
     def volup(self):
+        """ Volume up by 10% """
         if self.player:
             self.player.set_volume(min(0, self.player.volume()+1000))
         return self.status()
 
     def back(self):
+        """ Back by 30 seconds """
         if self.player:
             self.player.seek(-30)
         return self.status()
 
     def forward(self):
+        """ Forward by 30 seconds """
         if self.player:
             self.player.seek(+30)
         return self.status()
 
     def next(self):
+        """ Play the next track/video """
         if self.player:
             self.player.stop()
 
@@ -132,48 +180,103 @@ class VideoOmxplayerPlugin(Plugin):
 
 
     def hide_subtitles(self):
+        """ Hide the subtitles """
         if self.player: self.player.hide_subtitles()
         return self.status()
 
     def hide_video(self):
+        """ Hide the video """
         if self.player: self.player.hide_video()
         return self.status()
 
     def is_playing(self):
+        """
+        :returns: True if it's playing, False otherwise
+        """
+
         if self.player: return self.player.is_playing()
         else: return False
 
-    def load(self, source, pause=False):
-        if self.player: self.player.load(source, pause)
+    def load(self, resource, pause=False):
+        """
+        Load a resource/video in the player.
+
+        :param pause: If set, load the video in paused mode (default: False)
+        :type pause: bool
+        """
+
+        if self.player: self.player.load(resource, pause)
         return self.status()
 
     def metadata(self):
+        """ Get the metadata of the current video """
         if self.player: return Response(output=self.player.metadata())
         return self.status()
 
     def mute(self):
+        """ Mute the player """
         if self.player: self.player.mute()
         return self.status()
 
     def unmute(self):
+        """ Unmute the player """
         if self.player: self.player.unmute()
         return self.status()
 
     def seek(self, relative_position):
+        """
+        Seek backward/forward by the specified number of seconds
+
+        :param relative_position: Number of seconds relative to the current cursor
+        :type relative_position: int
+        """
+
         if self.player: self.player.seek(relative_position)
         return self.status()
 
     def set_position(self, position):
+        """
+        Seek backward/forward to the specified absolute position
+
+        :param position: Number of seconds from the start
+        :type position: int
+        """
+
         if self.player: self.player.set_seek(position)
         return self.status()
 
     def set_volume(self, volume):
+        """
+        Set the volume
+
+        :param volume: Volume value between 0 and 100
+        :type volume: int
+        """
+
         # Transform a [0,100] value to an OMXPlayer volume in [-6000,0]
         volume = 60.0*volume - 6000
         if self.player: self.player.set_volume(volume)
         return self.status()
 
     def status(self):
+        """
+        Get the current player state.
+
+        :returns: A dictionary containing the current state.
+
+        Example::
+
+            output = {
+                "source": "https://www.youtube.com/watch?v=7L9KkZoNZkA",
+                "state": "play",
+                "volume": 80,
+                "elapsed": 123,
+                "duration": 300,
+                "width": 800,
+                "height": 600
+            }
+        """
+
         state = PlayerState.STOP.value
 
         if self.player:
@@ -233,6 +336,22 @@ class VideoOmxplayerPlugin(Plugin):
         self.player.stopEvent += self.on_stop()
 
     def search(self, query, types=None, queue_results=False, autoplay=False):
+        """
+        Perform a video search.
+
+        :param query: Query string, video name or partial name
+        :type query: str
+
+        :param types: Video types to search (default: ``["youtube", "file", "torrent"]``)
+        :type types: list
+
+        :param queue_results: Append the results to the current playing queue (default: False)
+        :type queue_results: bool
+
+        :param autoplay: Play the first result of the search (default: False)
+        :type autoplay: bool
+        """
+
         results = []
         if types is None:
             types = { 'youtube', 'file', 'torrent' }
@@ -360,6 +479,13 @@ class VideoOmxplayerPlugin(Plugin):
         return Response(output=results)
 
     def download_torrent(self, magnet):
+        """
+        Download a torrent to ``download_dir`` by Magnet URI
+
+        :param magnet: Magnet URI
+        :type magnet: str
+        """
+
         import libtorrent as lt
 
         if not self.download_dir:

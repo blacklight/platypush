@@ -6,7 +6,20 @@ from platypush.message.response import Response
 from .. import SwitchPlugin
 
 class SwitchWemoPlugin(SwitchPlugin):
+    """
+    Plugin to control a Belkin WeMo smart switch
+    (https://www.belkin.com/us/Products/home-automation/c/wemo-home-automation/)
+
+    Requires:
+
+        * **ouimeaux** (``pip install ouimeaux``)
+    """
+
     def __init__(self, discovery_seconds=3, *args, **kwargs):
+        """
+        :param discovery_seconds: Discovery time when scanning for devices (default: 3)
+        :type discovery_seconds: int
+        """
         super().__init__(*args, **kwargs)
 
         self.discovery_seconds=discovery_seconds
@@ -15,11 +28,34 @@ class SwitchWemoPlugin(SwitchPlugin):
         self.refresh_devices()
 
     def refresh_devices(self):
+        """ Update the list of available devices """
         self.logger.info('Starting WeMo discovery')
         self.env.discover(seconds=self.discovery_seconds)
         self.devices = self.env.devices
 
     def get_devices(self):
+        """
+        Get the list of available devices
+        :returns: The list of devices.
+
+        Example output::
+
+            output = {
+                "devices": [
+                    {
+                        "host": "192.168.1.123",
+                        "name": "Switch 1",
+                        "state": 1,
+                        "model": "Belkin Plugin Socket 1.0",
+                        "serialnumber": "123456ABCDEF"
+                    },
+
+                    {
+                        # ...
+                    }
+                ]
+            }
+        """
         self.refresh_devices()
         return Response(
             output = { 'devices': [
@@ -49,12 +85,30 @@ class SwitchWemoPlugin(SwitchPlugin):
         return Response(output=json.dumps(resp))
 
     def on(self, device):
+        """
+        Turn a switch on
+
+        :param device: Device name
+        :type device: str
+        """
         return self._exec('on', device)
 
     def off(self, device):
+        """
+        Turn a switch off
+
+        :param device: Device name
+        :type device: str
+        """
         return self._exec('off', device)
 
     def toggle(self, device):
+        """
+        Toggle the state of a switch (on/off)
+
+        :param device: Device name
+        :type device: str
+        """
         return self._exec('toggle', device)
 
 

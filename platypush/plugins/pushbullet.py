@@ -8,7 +8,24 @@ from platypush.plugins import Plugin
 
 
 class PushbulletPlugin(Plugin):
+    """
+    This plugin allows you to send pushes and files to your PushBullet account.
+    Note: This plugin will only work if the :mod:`platypush.backend.pushbullet`
+    backend is configured.
+
+    Requires:
+
+        * **requests** (``pip install requests``)
+    """
+
     def send_push(self, **kwargs):
+        """
+        Send a push.
+
+        :param kwargs: Push arguments, see https://docs.pushbullet.com/#create-push
+        :type kwargs: dict
+        """
+
         pushbullet = get_backend('pushbullet')
         resp = requests.post('https://api.pushbullet.com/v2/ephemerals',
                              data=json.dumps({
@@ -27,6 +44,13 @@ class PushbulletPlugin(Plugin):
 
 
     def send_file(self, filename):
+        """
+        Send a file.
+
+        :param filename: Path to the local file
+        :type filename: str
+        """
+
         pushbullet = get_backend('pushbullet')
         resp = requests.post('https://api.pushbullet.com/v2/upload-request',
                              data=json.dumps({'file_name': os.path.basename(filename)}),

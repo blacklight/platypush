@@ -5,7 +5,20 @@ from platypush.message.response import Response
 from .. import Plugin
 
 class ShellPlugin(Plugin):
+    """
+    Plugin to run custom shell commands.
+    """
+
     def exec(self, cmd):
+        """
+        Execute a command.
+
+        :param cmd: Command to execute
+        :type cmd: str
+
+        :returns: A response object where the ``output`` field will contain the command output as a string, and the ``errors`` field will contain whatever was sent to stderr.
+        """
+
         output = None
         errors = []
 

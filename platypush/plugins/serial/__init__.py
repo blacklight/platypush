@@ -17,6 +17,14 @@ class SerialPlugin(Plugin):
     """
 
     def __init__(self, device, baud_rate=9600, *args, **kwargs):
+        """
+        :param device: Device path (e.g. ``/dev/ttyUSB0`` or ``/dev/ttyACM0``)
+        :type device: str
+
+        :param baud_rate: Serial baud rate (default: 9600)
+        :type baud_rate: int
+        """
+
         super().__init__(*args, **kwargs)
 
         self.device = device
@@ -53,6 +61,10 @@ class SerialPlugin(Plugin):
         return output.decode().strip()
 
     def get_data(self):
+        """
+        Reads JSON data from the serial device and returns it as a message
+        """
+
         ser = serial.Serial(self.device, self.baud_rate)
 
         try:

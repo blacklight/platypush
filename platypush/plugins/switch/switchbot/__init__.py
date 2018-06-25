@@ -80,15 +80,38 @@ class Driver(object):
 
 class SwitchSwitchbotPlugin(SwitchPlugin):
     """
+    Plugin to interact with a Switchbot (https://www.switch-bot.com/) device and
+    programmatically control buttons.
+
     NOTE: since the interaction with the Switchbot requires root privileges
     (in order to scan on the bluetooth interface or setting gattlib in random),
     this plugin just wraps the module into a `sudo` flavor, since running
     Platypush with root privileges should be considered as a very bad idea.
-    Make sure that your user has sudo privileges for running this bit of code.
+    Make sure that your user has sudo privileges for running this plugin.
+
+    Requires:
+
+        * **pybluez** (``pip install pybluez``)
+        * **gattlib** (``pip install gattlib``)
+        * **libboost** (on Debian ```apt-get install libboost-python-dev libboost-thread-dev``)
     """
 
     def __init__(self, bt_interface=None, connect_timeout=None,
                  scan_timeout=None, devices={}, *args, **kwargs):
+        """
+        :param bt_interface: Bluetooth interface to use (e.g. hci0) default: first available one
+        :type bt_interface: str
+
+        :param connecct_timeout: Timeout for the conncection to the Switchbot device - default: None
+        :type connect_timeout: float
+
+        :param scan_timeout: Timeout for the scan operations - default: None
+        :type scan_timeout: float
+
+        :param devices: Devices to control, as a BMAC address -> name map
+        :type devices: dict
+        """
+
         self.bt_interface = bt_interface
         self.connect_timeout = connect_timeout if connect_timeout else 5
         self.scan_timeout = scan_timeout if scan_timeout else 2
@@ -118,15 +141,34 @@ class SwitchSwitchbotPlugin(SwitchPlugin):
 
 
     def press(self, device):
+        """
+        Send a press button command to a device
+
+        :param device: Device name or address
+        :type device: str
+        """
         return self._run(device)
 
     def on(self, device):
+        """
+        Send a press-on button command to a device
+
+        :param device: Device name or address
+        :type device: str
+        """
         return self._run(device, 'on')
 
     def off(self, device):
+        """
+        Send a press-off button command to a device
+
+        :param device: Device name or address
+        :type device: str
+        """
         return self._run(device, 'off')
 
     def scan(self):
+        """ Scan for available Switchbot devices nearby """
         output = None
         errors = []
 
@@ -144,6 +186,7 @@ class SwitchSwitchbotPlugin(SwitchPlugin):
             errors = [e.output.decode('utf-8')]
 
         return Response(output=output, errors=errors)
+
 
 # vim:sw=4:ts=4:et:
 
