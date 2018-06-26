@@ -22,17 +22,15 @@ class SwitchTplinkPlugin(SwitchPlugin):
         :returns: The available device over the network as a
         """
 
-        devices = dict(
-            (ip, {
+        devices = { 'devices': {
+            ip: {
                 'alias': dev.alias,
-                'current_consumption': dev.current_consumption,
+                'current_consumption': dev.current_consumption(),
                 'host': dev.host,
                 'hw_info': dev.hw_info,
                 'on': dev.is_on,
-            })
-
-            for (ip, dev) in self._scan()
-        )
+            } for (ip, dev) in self._scan().items()
+        } }
 
         return Response(output=devices)
 
