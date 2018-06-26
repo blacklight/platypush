@@ -32,6 +32,7 @@ Plugins
     platypush/plugins/shell.rst
     platypush/plugins/switch.rst
     platypush/plugins/switch.switchbot.rst
+    platypush/plugins/switch.tplink.rst
     platypush/plugins/switch.wemo.rst
     platypush/plugins/tts.rst
     platypush/plugins/variable.rst
