@@ -56,7 +56,8 @@ pylast
 
 # text2speech plugin: mplayer system package
 
-# Video support on RaspberryPi: omxplayer system package
+# Video support on RaspberryPi
+omxplayer-wrapper
 
 # Custom hotword detection: Snowboy
 # snowboy
@@ -75,4 +76,23 @@ pylast
 
 # Support for real-time MIDI events
 # rtmidi
+
+# Support for inotify plugin
+inotify
+
+# Support for MQTT
+paho-mqtt
+
+# iCal calendars support
+icalendar
+
+# Serial port support
+pyserial
+
+# Switchbot devices support
+# pybluez
+# gattlib
+
+# Support for TP-Link HS100 and similar smart switches/plugins
+pyHS100
 

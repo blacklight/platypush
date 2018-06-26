@@ -180,6 +180,14 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
+autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
+                        'smartcard',
+                        'Leap',
+                        'oauth2client',
+                        'rtmidi',
+                        'bluetooth',
+                        'gevent.wsgi']
+
 sys.path.insert(0, os.path.abspath('../..'))
 
 def skip(app, what, name, obj, skip, options):
