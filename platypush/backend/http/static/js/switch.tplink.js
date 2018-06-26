@@ -50,11 +50,12 @@ $(document).ready(function() {
         $tplinkContainer.on('click touch', '.switch-ctrl-container', function() {
             var $input = $(this).find('.switch-ctrl');
             var devAddr = $input.data('name');
+            var action = $input.prop('checked') ? 'off' : 'on';
 
             execute(
                 {
                     type: 'request',
-                    action: 'switch.tplink.toggle',
+                    action: 'switch.tplink.' + action,
                     args: { device: devAddr }
                 },
 

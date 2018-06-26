@@ -14,8 +14,37 @@ class SwitchTplinkPlugin(SwitchPlugin):
         * **pyHS100** (``pip install pyHS100``)
     """
 
+    _ip_to_dev = {}
+    _alias_to_dev = {}
+
+
     def _scan(self):
-        return Discover.discover()
+        devices = Discover.discover()
+        self._ip_to_dev = {}
+        self._alias_to_dev = {}
+
+
+        for (ip, dev) in devices.items():
+            self._ip_to_dev[ip] = dev
+            self._alias_to_dev[dev.alias] = dev
+
+        return devices
+
+    def _get_device(self, device, use_cache=True):
+        if not use_cache:
+            self._scan()
+
+        if device in self._ip_to_dev:
+            return self._ip_to_dev[device]
+
+        if device in self._alias_to_dev:
+            return self._alias_to_dev[device]
+
+        if use_cache:
+            return self._get_device(device, use_cache=False)
+        else:
+            raise RuntimeError('Device {} not found'.format(device))
+
 
     def status(self):
         """
@@ -38,15 +67,12 @@ class SwitchTplinkPlugin(SwitchPlugin):
         """
         Turn on a device
 
-        :param device: Device IP or hostname
+        :param device: Device IP, hostname or alias
         :type device: str
         """
 
-        devices = self._scan()
-        if device not in devices:
-            raise RuntimeError('Device {} not found'.format(device))
-
-        devices[device].turn_on()
+        device = self._get_device(device)
+        device.turn_on()
         return Response(output={'status':'on'})
 
 
@@ -54,15 +80,12 @@ class SwitchTplinkPlugin(SwitchPlugin):
         """
         Turn off a device
 
-        :param device: Device IP or hostname
+        :param device: Device IP, hostname or alias
         :type device: str
         """
 
-        devices = self._scan()
-        if device not in devices:
-            raise RuntimeError('Device {} not found'.format(device))
-
-        devices[device].turn_off()
+        device = self._get_device(device)
+        device.turn_off()
         return Response(output={'status':'off'})
 
 
@@ -70,23 +93,18 @@ class SwitchTplinkPlugin(SwitchPlugin):
         """
         Toggle the state of a device (on/off)
 
-        :param device: Device IP or hostname
+        :param device: Device IP, hostname or alias
         :type device: str
         """
 
-        devices = self._scan()
-        if device not in devices:
-            raise RuntimeError('Device {} not found'.format(device))
+        device = self._get_device(device, use_cache=False)
 
-        dev = devices[device]
-        is_on = dev.is_on
-
-        if is_on:
-            dev.turn_off()
+        if device.is_on:
+            device.turn_off()
         else:
-            dev.turn_on()
+            device.turn_on()
 
-        return Response(output={'status': 'off' if is_on else 'on'})
+        return Response(output={'status': 'off' if device.is_off else 'on'})
 
 
 # vim:sw=4:ts=4:et:
