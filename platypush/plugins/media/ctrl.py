@@ -29,8 +29,8 @@ class MediaCtrlPlugin(Plugin):
     @classmethod
     def _get_type_and_resource_by_url(cls, url):
         # MPD/Mopidy media (TODO support more mopidy types)
-        m = re.match('^https://open.spotify.com/([^/]+)/(.*)', url)
-        if m: url = 'spotify:{}:{}'.format(m.group(1), m.group(2))
+        m = re.search('^https://open.spotify.com/([^?]+)', url)
+        if m: url = 'spotify:{}'.format(m.group(1).replace('/', ':'))
         if url.startswith('spotify:') \
                 or url.startswith('tunein:') \
                 or url.startswith('soundcloud:'):
