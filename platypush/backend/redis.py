@@ -48,8 +48,14 @@ class RedisBackend(Backend):
         try:
             msg = Message.build(json.loads(msg))
         except:
-            import ast
-            msg = Message.build(ast.literal_eval(msg))
+            try:
+                import ast
+                msg = Message.build(ast.literal_eval(msg))
+            except:
+                try:
+                    msg = json.loads(msg)
+                except Exception as e:
+                    self.logger.exception(e)
 
         return msg
 
