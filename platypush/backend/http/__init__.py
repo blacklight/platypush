@@ -52,7 +52,7 @@ class HttpBackend(Backend):
     }
 
     def __init__(self, port=8008, websocket_port=8009, disable_websocket=False,
-                 redis_queue='platypush_flask_mq', token=None, dashboard={},
+                 redis_queue='platypush/http', token=None, dashboard={},
                  maps={}, **kwargs):
         """
         :param port: Listen port for the web server (default: 8008)
@@ -64,7 +64,7 @@ class HttpBackend(Backend):
         :param disable_websocket: Disable the websocket interface (default: False)
         :type disable_websocket: bool
 
-        :param redis_queue: Name of the Redis queue used to synchronize messages with the web server process (default: ``platypush_flask_mq``)
+        :param redis_queue: Name of the Redis queue used to synchronize messages with the web server process (default: ``platypush/http``)
         :type redis_queue: str
 
         :param token: If set (recommended) any interaction with the web server needs to bear an ``X-Token: <token>`` header, or it will fail with a 403: Forbidden

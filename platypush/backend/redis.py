@@ -34,8 +34,24 @@ class RedisBackend(Backend):
         self.redis = Redis(**self.redis_args)
 
 
-    def send_message(self, msg):
-        self.redis.rpush(self.queue, msg)
+    def send_message(self, msg, queue_name=None):
+        if queue_name:
+            self.redis.rpush(queue_name, msg)
+        else:
+            self.redis.rpush(self.queue, msg)
+
+
+    def get_message(self, queue_name=None):
+        queue = queue_name or self.queue
+        msg = self.redis.blpop(queue)[1].decode('utf-8')
+
+        try:
+            msg = Message.build(json.loads(msg))
+        except:
+            import ast
+            msg = Message.build(ast.literal_eval(msg))
+
+        return msg
 
 
     def run(self):
@@ -45,19 +61,9 @@ class RedisBackend(Backend):
                      format(self.queue, self.redis_args))
 
         while not self.should_stop():
-            try:
-                msg = self.redis.blpop(self.queue)[1].decode('utf-8')
-
-                try:
-                    msg = Message.build(json.loads(msg))
-                except:
-                    import ast
-                    msg = Message.build(ast.literal_eval(msg))
-
-                self.logger.info('Received message on the Redis backend: {}'.format(msg))
-                self.bus.post(msg)
-            except Exception as e:
-                self.logger.exception(e)
+            msg = self.get_message()
+            self.logger.info('Received message on the Redis backend: {}'.format(msg))
+            self.bus.post(msg)
 
 
 # vim:sw=4:ts=4:et:

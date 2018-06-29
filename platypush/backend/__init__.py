@@ -187,7 +187,7 @@ class Backend(Thread):
         self.send_message(response, **kwargs)
 
 
-    def send_message(self, msg, **kwargs):
+    def send_message(self, msg, queue_name=None, **kwargs):
         """
         Sends a platypush.message.Message to a node.
         To be implemented in the derived classes. By default, if the Redis
@@ -195,7 +195,9 @@ class Backend(Thread):
         other consumers through the configured Redis main queue.
 
         :param msg: The message to send
+        :param queue_name: Send the message on a specific queue (default: the queue_name configured on the Redis backend)
         """
+
         try:
             redis = get_backend('redis')
             if not redis:
@@ -205,7 +207,7 @@ class Backend(Thread):
                                 "and the fallback Redis backend isn't configured")
             return
 
-        redis.send_message(msg)
+        redis.send_message(msg, queue_name=queue_name)
 
 
     def run(self):

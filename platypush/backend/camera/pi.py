@@ -3,16 +3,17 @@ import socket
 import time
 
 from enum import Enum
-from redis import Redis
 from threading import Thread
 
 from platypush.backend import Backend
+from platypush.context import get_backend
 
 class CameraPiBackend(Backend):
     """
     Backend to interact with a Raspberry Pi camera. It can start and stop
     recordings and take pictures. It can be programmatically controlled through
-    the :class:`platypush.plugins.camera.pi` plugin.
+    the :class:`platypush.plugins.camera.pi` plugin. Note that the Redis backend
+    must be configured and running to enable camera control.
 
     Requires:
 
@@ -29,7 +30,7 @@ class CameraPiBackend(Backend):
             return self.value == other
 
     def __init__(self, listen_port, x_resolution=640, y_resolution=480,
-                 redis_queue='platypush_mq_camera',
+                 redis_queue='platypush/camera/pi',
                  start_recording_on_startup=True,
                  framerate=24, hflip=False, vflip=False,
                  sharpness=0, contrast=0, brightness=50,
@@ -72,7 +73,7 @@ class CameraPiBackend(Backend):
         self.camera.rotation = rotation
         self.camera.crop = crop
         self.start_recording_on_startup = start_recording_on_startup
-        self.redis = Redis()
+        self.redis = get_backend('redis')
         self.redis_queue = redis_queue
         self._recording_thread = None
 
@@ -87,7 +88,7 @@ class CameraPiBackend(Backend):
             **kwargs
         }
 
-        self.redis.rpush(self.redis_queue, json.dumps(action))
+        self.redis.send_message(msg=json.dumps(action), queue_name=self.redis_queue)
 
     def take_picture(self, image_file):
         """
@@ -152,14 +153,15 @@ class CameraPiBackend(Backend):
 
         try:
             self.camera.stop_recording()
-        except:
-            self.logger.info('No recording currently in progress')
+        except Exception as e:
+            self.logger.info('Failed to stop recording')
+            self.logger.exception(e)
 
     def run(self):
         super().run()
 
         while not self.should_stop():
-            msg = json.loads(self.redis.blpop(self.redis_queue)[1].decode())
+            msg = self.redis.get_message(self.redis_queue)
 
             if msg.get('action') == self.CameraAction.START_RECORDING:
                 self.start_recording()

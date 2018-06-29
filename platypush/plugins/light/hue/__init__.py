@@ -7,6 +7,7 @@ from redis import Redis
 from redis.exceptions import TimeoutError as QueueTimeoutError
 from phue import Bridge
 
+from platypush.context import get_backend
 from platypush.message.response import Response
 
 from .. import LightPlugin
@@ -513,7 +514,9 @@ class LightHuePlugin(LightPlugin):
             self.animation_thread = None
             self.redis = None
 
-        self.redis = Redis(socket_timeout=transition_seconds)
+        redis_args = get_backend('redis').redis_args
+        redis_args['socket_timeout'] = transition_seconds
+        self.redis = Redis(**redis_args)
 
         if groups:
             groups = [g for g in self.bridge.groups if g.name in groups]
