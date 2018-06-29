@@ -116,7 +116,7 @@ class CameraPiBackend(Backend):
             if video_file:
                 self.camera.start_recording(video_file, format=format)
                 while True:
-                    self.camera.wait_recording(60)
+                    self.camera.wait_recording(2)
             else:
                 connection = self.server_socket.accept()[0].makefile('wb')
                 self.logger.info('Accepted client connection on port {}'.
@@ -125,7 +125,7 @@ class CameraPiBackend(Backend):
                 try:
                     self.camera.start_recording(connection, format=format)
                     while True:
-                        self.camera.wait_recording(60)
+                        self.camera.wait_recording(2)
                 except ConnectionError:
                     self.logger.info('Client closed connection')
                     try:
@@ -138,8 +138,14 @@ class CameraPiBackend(Backend):
 
             self._recording_thread = None
 
+            try:
+                self.camera.stop_recording()
+            except:
+                pass
+
         if self._recording_thread:
-            self._recording_thread.join()
+            self.logger.info('Recording already running')
+            return
 
         self.logger.info('Starting camera recording')
         self._recording_thread = Thread(target=recording_thread)
@@ -154,21 +160,24 @@ class CameraPiBackend(Backend):
         try:
             self.camera.stop_recording()
         except Exception as e:
-            self.logger.info('Failed to stop recording')
+            self.logger.warning('Failed to stop recording')
             self.logger.exception(e)
 
     def run(self):
         super().run()
 
         while not self.should_stop():
-            msg = self.redis.get_message(self.redis_queue)
+            try:
+                msg = self.redis.get_message(self.redis_queue)
 
-            if msg.get('action') == self.CameraAction.START_RECORDING:
-                self.start_recording()
-            elif msg.get('action') == self.CameraAction.STOP_RECORDING:
-                self.stop_recording()
-            elif msg.get('action') == self.CameraAction.TAKE_PICTURE:
-                self.take_picture(image_file=msg.get('image_file'))
+                if msg.get('action') == self.CameraAction.START_RECORDING:
+                    self.start_recording()
+                elif msg.get('action') == self.CameraAction.STOP_RECORDING:
+                    self.stop_recording()
+                elif msg.get('action') == self.CameraAction.TAKE_PICTURE:
+                    self.take_picture(image_file=msg.get('image_file'))
+            except Exception as e:
+                self.logger.exception(e)
 
 
 # vim:sw=4:ts=4:et:
