@@ -118,23 +118,24 @@ class CameraPiBackend(Backend):
                 while True:
                     self.camera.wait_recording(2)
             else:
-                connection = self.server_socket.accept()[0].makefile('wb')
-                self.logger.info('Accepted client connection on port {}'.
-                                format(self.listen_port))
+                while True:
+                    connection = self.server_socket.accept()[0].makefile('wb')
+                    self.logger.info('Accepted client connection on port {}'.
+                                    format(self.listen_port))
 
-                try:
-                    self.camera.start_recording(connection, format=format)
-                    while True:
-                        self.camera.wait_recording(2)
-                except ConnectionError:
-                    self.logger.info('Client closed connection')
                     try:
-                        self.stop_recording()
-                        connection.close()
-                    except:
-                        pass
+                        self.camera.start_recording(connection, format=format)
+                        while True:
+                            self.camera.wait_recording(2)
+                    except ConnectionError:
+                        self.logger.info('Client closed connection')
+                        try:
+                            self.stop_recording()
+                            connection.close()
+                        except:
+                            pass
 
-                    self.send_camera_action(self.CameraAction.START_RECORDING)
+                        self.send_camera_action(self.CameraAction.START_RECORDING)
 
             self._recording_thread = None
 
