@@ -6,6 +6,7 @@ import sys
 import time
 import yaml
 
+from platypush.utils import get_hash
 
 """ Config singleton instance """
 _default_config_instance = None
@@ -18,8 +19,6 @@ class Config(object):
             Config.init()
         - Initialize config from a custom path
             Config.init(config_file_path)
-        - Set a value
-            Config.set('foo', 'bar')
         - Get a value
             Config.get('foo')
     """
@@ -59,6 +58,9 @@ class Config(object):
 
         self._cfgfile = cfgfile
         self._config = self._read_config_file(self._cfgfile)
+
+        if 'token' in self._config:
+            self._config['token_hash'] = get_hash(self._config['token'])
 
         if 'workdir' not in self._config:
             self._config['workdir'] = self._workdir_location
@@ -242,20 +244,7 @@ class Config(object):
         """
         global _default_config_instance
         if _default_config_instance is None: _default_config_instance = Config()
-        return _default_config_instance._config[key]
-
-    @staticmethod
-    def set(key, value):
-        """
-        Sets a config value
-        Params:
-            key   -- Config key to set
-            value -- Value for key
-        """
-        global _default_config_instance
-        if _default_config_instance is None: _default_config_instance = Config()
-        _default_config_instance._config[key] = key
-
+        return _default_config_instance._config.get(key)
 
 
 # vim:sw=4:ts=4:et:

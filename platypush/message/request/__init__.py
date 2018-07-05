@@ -8,10 +8,11 @@ import traceback
 
 from threading import Thread
 
+from platypush.config import Config
 from platypush.context import get_plugin
 from platypush.message import Message
 from platypush.message.response import Response
-from platypush.utils import get_module_and_method_from_action
+from platypush.utils import get_hash, get_module_and_method_from_action
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,8 @@ logger = logging.getLogger(__name__)
 class Request(Message):
     """ Request message class """
 
-    def __init__(self, target, action, origin=None, id=None, backend=None, args=None):
+    def __init__(self, target, action, origin=None, id=None, backend=None,
+                 args=None, token=None):
         """
         Params:
             target -- Target node [String]
@@ -28,6 +30,7 @@ class Request(Message):
                 id -- Message ID, or None to get it auto-generated
            backend -- Backend connected to the request, where the response will be delivered
               args -- Additional arguments for the action [Dict]
+             token -- Authorization token, if required on the server [Str]
         """
 
         self.id      = id if id else self._generate_id()
@@ -36,6 +39,7 @@ class Request(Message):
         self.origin  = origin
         self.args    = args if args else {}
         self.backend = backend
+        self.token   = token
 
     @classmethod
     def build(cls, msg):
@@ -48,6 +52,7 @@ class Request(Message):
 
         args['id'] = msg['id'] if 'id' in msg else cls._generate_id()
         if 'origin' in msg: args['origin'] = msg['origin']
+        if 'token' in msg: args['token'] = msg['token']
         return cls(**args)
 
     @staticmethod
@@ -200,6 +205,12 @@ class Request(Message):
             finally:
                 self._send_response(response)
                 return response
+
+        token_hash = Config.get('token_hash')
+
+        if token_hash:
+            if self.token is None or get_hash(self.token) != token_hash:
+                raise PermissionError()
 
         if async:
             Thread(target=_thread_func, args=(n_tries,)).start()

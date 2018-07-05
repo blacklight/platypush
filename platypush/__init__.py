@@ -78,7 +78,11 @@ class Daemon(object):
                 msg -- platypush.message.Message instance """
 
             if isinstance(msg, Request):
-                msg.execute(n_tries=self.n_tries)
+                try:
+                    msg.execute(n_tries=self.n_tries)
+                except PermissionError:
+                    logger.info('Dropped unauthorized request: {}'.format(msg))
+
                 self.processed_requests += 1
                 if self.requests_to_process \
                         and self.processed_requests >= self.requests_to_process:

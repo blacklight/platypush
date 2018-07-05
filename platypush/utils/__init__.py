@@ -1,4 +1,5 @@
 import errno
+import hashlib
 import importlib
 import logging
 import os
@@ -63,6 +64,10 @@ def set_timeout(seconds, on_timeout):
 def clear_timeout():
     """ Clear any previously set timeout """
     signal.alarm(0)
+
+
+def get_hash(s):
+    return hashlib.sha256(s.encode('utf-8')).hexdigest()
 
 
 # vim:sw=4:ts=4:et:

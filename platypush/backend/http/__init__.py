@@ -180,7 +180,11 @@ class HttpBackend(Backend):
             self.logger.info('Received message on the HTTP backend: {}'.format(msg))
 
             if isinstance(msg, Request):
-                response = msg.execute(async=False)
+                try:
+                    response = msg.execute(async=False)
+                except PermissionError:
+                    abort(401)
+
                 self.logger.info('Processing response on the HTTP backend: {}'.format(msg))
                 return str(response)
             elif isinstance(msg, Event):
