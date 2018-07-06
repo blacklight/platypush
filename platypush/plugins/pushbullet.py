@@ -17,6 +17,9 @@ class PushbulletPlugin(Plugin):
         * **requests** (``pip install requests``)
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     @action
     def send_push(self, **kwargs):
         """

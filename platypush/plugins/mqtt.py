@@ -11,6 +11,9 @@ class MqttPlugin(Plugin):
     with the MQTT protocol, see http://mqtt.org/
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     @action
     def send_message(self, topic, msg, host, port=1883, *args, **kwargs):
         """

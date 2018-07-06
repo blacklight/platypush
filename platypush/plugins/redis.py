@@ -12,6 +12,9 @@ class RedisPlugin(Plugin):
         * **redis** (``pip install redis``)
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     @action
     def send_message(self, queue, msg, *args, **kwargs):
         """
