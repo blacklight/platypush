@@ -474,6 +474,7 @@ class VideoOmxplayerPlugin(Plugin):
 
         return proc.stdout.read().decode("utf-8", "strict")[:-1]
 
+    @action
     def torrent_search(self, query):
         self.logger.info('Searching matching movie torrents for "{}"'.format(query))
         request = urllib.request.urlopen(urllib.request.Request(
