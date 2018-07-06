@@ -12,7 +12,7 @@ class AssistantGooglePlugin(Plugin):
     backend to programmatically control the conversation status.
     """
 
-    def __init__(*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     @action

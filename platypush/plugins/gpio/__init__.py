@@ -16,7 +16,7 @@ class GpioPlugin(Plugin):
         * **RPi.GPIO** (`pip install RPi.GPIO`)
     """
 
-    def __init__(*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     @action

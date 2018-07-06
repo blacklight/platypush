@@ -12,7 +12,7 @@ class AssistantGooglePushtotalkPlugin(Plugin):
     :mod:`platypush.backend.assistant.google.pushtotalk` backend.
     """
 
-    def __init__(*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     @action

@@ -39,7 +39,7 @@ class HttpRequestPlugin(Plugin):
         }
     """
 
-    def __init__(*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def _exec(self, method, url, output='text', **kwargs):
