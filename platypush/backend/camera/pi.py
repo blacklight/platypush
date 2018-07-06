@@ -73,14 +73,10 @@ class CameraPiBackend(Backend):
         self.camera.rotation = rotation
         self.camera.crop = crop
         self.start_recording_on_startup = start_recording_on_startup
-        self.redis = get_backend('redis')
+        self.redis = None
         self.redis_queue = redis_queue
         self._recording_thread = None
 
-        if self.start_recording_on_startup:
-            self.send_camera_action(self.CameraAction.START_RECORDING)
-
-        self.logger.info('Initialized Pi camera backend')
 
     def send_camera_action(self, action, **kwargs):
         action = {
@@ -166,6 +162,14 @@ class CameraPiBackend(Backend):
 
     def run(self):
         super().run()
+
+        if not self.redis:
+            self.redis = get_backend('redis')
+
+        if self.start_recording_on_startup:
+            self.send_camera_action(self.CameraAction.START_RECORDING)
+
+        self.logger.info('Initialized Pi camera backend')
 
         while not self.should_stop():
             try:
