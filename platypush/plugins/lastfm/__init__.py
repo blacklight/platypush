@@ -62,6 +62,7 @@ class LastfmPlugin(Plugin):
         )
 
 
+    @action
     def update_now_playing(self, artist, title, album=None, **kwargs):
         """
         Update the currently playing track
