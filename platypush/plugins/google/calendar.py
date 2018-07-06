@@ -39,7 +39,7 @@ class GoogleCalendarPlugin(GooglePlugin, CalendarInterface):
                                        orderBy='startTime').execute()
 
         events = result.get('items', [])
-        return Response(output=events)
+        return events
 
 
     def _get_service(self, scope=None):
