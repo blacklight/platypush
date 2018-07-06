@@ -65,7 +65,6 @@ class VideoTorrentcastPlugin(Plugin):
         response = self.search(query)
         if not response.output['MovieList']:
             self.logger.info('No torrent results found for {}'.format(query))
-            return Response()
 
         item = response.output['MovieList'][0]
         magnet = item['items'][0]['torrent_magnet']
