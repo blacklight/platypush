@@ -1,9 +1,9 @@
 import json
 
 from ouimeaux.environment import Environment, UnknownDevice
-from platypush.message.response import Response
+from platypush.plugins import action
+from platypush.plugins.switch import SwitchPlugin
 
-from .. import SwitchPlugin
 
 class SwitchWemoPlugin(SwitchPlugin):
     """
@@ -20,8 +20,8 @@ class SwitchWemoPlugin(SwitchPlugin):
         :param discovery_seconds: Discovery time when scanning for devices (default: 3)
         :type discovery_seconds: int
         """
-        super().__init__(*args, **kwargs)
 
+        super().__init__(*args, **kwargs)
         self.discovery_seconds=discovery_seconds
         self.env = Environment()
         self.env.start()
@@ -33,6 +33,7 @@ class SwitchWemoPlugin(SwitchPlugin):
         self.env.discover(seconds=self.discovery_seconds)
         self.devices = self.env.devices
 
+    @action
     def get_devices(self):
         """
         Get the list of available devices
@@ -57,8 +58,8 @@ class SwitchWemoPlugin(SwitchPlugin):
             }
         """
         self.refresh_devices()
-        return Response(
-            output = { 'devices': [
+        return {
+            'devices': [
                 {
                     'host': dev.host,
                     'name': dev.name,
@@ -67,8 +68,8 @@ class SwitchWemoPlugin(SwitchPlugin):
                     'serialnumber': dev.serialnumber,
                 }
                 for (name, dev) in self.devices.items()
-            ] }
-        )
+            ]
+        }
 
     def _exec(self, method, device, *args, **kwargs):
         if device not in self.devices:
@@ -81,9 +82,9 @@ class SwitchWemoPlugin(SwitchPlugin):
         dev = self.devices[device]
         getattr(dev, method)(*args, **kwargs)
 
-        resp = {'device': device, 'state': dev.get_state()}
-        return Response(output=json.dumps(resp))
+        return {'device': device, 'state': dev.get_state()}
 
+    @action
     def on(self, device):
         """
         Turn a switch on
@@ -93,6 +94,7 @@ class SwitchWemoPlugin(SwitchPlugin):
         """
         return self._exec('on', device)
 
+    @action
     def off(self, device):
         """
         Turn a switch off
@@ -102,6 +104,7 @@ class SwitchWemoPlugin(SwitchPlugin):
         """
         return self._exec('off', device)
 
+    @action
     def toggle(self, device):
         """
         Toggle the state of a switch (on/off)

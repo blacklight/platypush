@@ -2,8 +2,7 @@ import enum
 import threading
 import time
 
-from platypush.message.response import Response
-from platypush.plugins import Plugin
+from platypush.plugins import Plugin, action
 from platypush.context import get_plugin
 from platypush.config import Config
 
@@ -95,7 +94,7 @@ class GpioZeroborgPlugin(Plugin):
         value = None
 
         while value is None:
-            value = plugin.get_measurement()
+            value = plugin.get_measurement().output
             if time.time() - measure_start_time > timeout:
                 return None
 
@@ -127,6 +126,7 @@ class GpioZeroborgPlugin(Plugin):
         return direction
 
 
+    @action
     def drive(self, direction):
         """
         Drive the motors in a certain direction.
@@ -184,9 +184,10 @@ class GpioZeroborgPlugin(Plugin):
         self._drive_thread = threading.Thread(target=_run)
         self._drive_thread.start()
 
-        return Response(output={'status': 'running', 'direction': direction})
+        return {'status': 'running', 'direction': direction}
 
 
+    @action
     def stop(self):
         """
         Turns off the motors
@@ -199,7 +200,7 @@ class GpioZeroborgPlugin(Plugin):
         self.zb.MotorsOff()
         self.zb.ResetEpo()
 
-        return Response(output={'status':'stopped'})
+        return {'status':'stopped'}
 
 
 # vim:sw=4:ts=4:et:

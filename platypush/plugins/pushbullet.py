@@ -3,8 +3,7 @@ import os
 import requests
 
 from platypush.context import get_backend
-from platypush.message.response import Response
-from platypush.plugins import Plugin
+from platypush.plugins import Plugin, action
 
 
 class PushbulletPlugin(Plugin):
@@ -18,6 +17,7 @@ class PushbulletPlugin(Plugin):
         * **requests** (``pip install requests``)
     """
 
+    @action
     def send_push(self, **kwargs):
         """
         Send a push.
@@ -40,9 +40,8 @@ class PushbulletPlugin(Plugin):
             raise Exception('Pushbullet push failed with status {}: {}'.
                             format(resp.status_code, resp.json()))
 
-        return Response(output={'status':'ok'})
 
-
+    @action
     def send_file(self, filename):
         """
         Send a file.
@@ -83,11 +82,11 @@ class PushbulletPlugin(Plugin):
             raise Exception('Pushbullet file push failed with status {}'.
                             format(resp.status_code))
 
-        return Response(output={
+        return {
             'filename': r['file_name'],
             'type': r['file_type'],
             'url': r['file_url']
-        })
+        }
 
 
 # vim:sw=4:ts=4:et:

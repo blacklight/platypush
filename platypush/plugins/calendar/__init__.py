@@ -7,8 +7,7 @@ import importlib
 
 from abc import ABCMeta, abstractmethod
 
-from platypush.plugins import Plugin
-from platypush.message.response import Response
+from platypush.plugins import Plugin, action
 
 
 class CalendarInterface:
@@ -64,6 +63,7 @@ class CalendarPlugin(Plugin, CalendarInterface):
             self.calendars.append(getattr(module, class_name)(**calendar))
 
 
+    @action
     def get_upcoming_events(self, max_results=10):
         """
         Get a list of upcoming events merging all the available calendars.
@@ -116,7 +116,7 @@ class CalendarPlugin(Plugin, CalendarInterface):
                             else event['start']['date'] + 'T00:00:00+00:00'
                         ))[:max_results]
 
-        return Response(output=events)
+        return events
 
 
 # vim:sw=4:ts=4:et:

@@ -1,8 +1,8 @@
 import enum
 import time
 
+from platypush.plugins import action
 from platypush.plugins.gpio.sensor import GpioSensorPlugin
-from platypush.message.response import Response
 
 
 class MCP3008Mode(enum.Enum):
@@ -125,6 +125,7 @@ class GpioSensorMcp3008Plugin(GpioSensorPlugin):
         return (value * self.Vdd) / 1023.0 if value is not None else None
 
 
+    @action
     def get_measurement(self):
         """
         Returns a measurement from the sensors connected to the MCP3008 device.
@@ -164,7 +165,7 @@ class GpioSensorMcp3008Plugin(GpioSensorPlugin):
             else:
                 values[i] = value
 
-        return Response(output=values)
+        return values
 
 
 # vim:sw=4:ts=4:et:

@@ -2,8 +2,7 @@ import subprocess
 import urllib.parse
 
 from platypush.message.response import Response
-
-from .. import Plugin
+from platypush.plugins import Plugin, action
 
 class TtsPlugin(Plugin):
     """
@@ -18,6 +17,7 @@ class TtsPlugin(Plugin):
         super().__init__()
         self.lang=lang
 
+    @action
     def say(self, phrase, lang=None):
         """
         Say a phrase
@@ -41,12 +41,10 @@ class TtsPlugin(Plugin):
                 }))]
 
         try:
-            output = subprocess.check_output(
+            return subprocess.check_output(
                 cmd, stderr=subprocess.STDOUT, shell=True).decode('utf-8')
         except subprocess.CalledProcessError as e:
-            errors = [e.output.decode('utf-8')]
-
-        return Response(output=output, errors=errors)
+            raise RuntimeError(e.output.decode('utf-8'))
 
 
 # vim:sw=4:ts=4:et:

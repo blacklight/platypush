@@ -1,9 +1,7 @@
 import pylast
 import time
 
-from platypush.message.response import Response
-
-from .. import Plugin
+from platypush.plugins import Plugin, action
 
 class LastfmPlugin(Plugin):
     """
@@ -42,6 +40,7 @@ class LastfmPlugin(Plugin):
             password_hash = pylast.md5(self.password))
 
 
+    @action
     def scrobble(self, artist, title, album=None, **kwargs):
         """
         Scrobble a track to Last.FM
@@ -61,8 +60,6 @@ class LastfmPlugin(Plugin):
             timestamp = int(time.time()),
         )
 
-        return Response()
-
 
     def update_now_playing(self, artist, title, album=None, **kwargs):
         """
@@ -81,8 +78,6 @@ class LastfmPlugin(Plugin):
             title = title,
             album = album,
         )
-
-        return Response()
 
 
 # vim:sw=4:ts=4:et:

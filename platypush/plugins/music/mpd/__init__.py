@@ -1,9 +1,8 @@
 import mpd
 import re
 
-from platypush.message.response import Response
-
-from .. import MusicPlugin
+from platypush.plugins import action
+from platypush.plugins.music import MusicPlugin
 
 class MusicMpdPlugin(MusicPlugin):
     """
@@ -29,6 +28,7 @@ class MusicMpdPlugin(MusicPlugin):
         :type port: int
         """
 
+        super().__init__()
         self.host = host
         self.port = port
         self.client = mpd.MPDClient(use_unicode=True)
@@ -36,8 +36,9 @@ class MusicMpdPlugin(MusicPlugin):
 
     def _exec(self, method, *args, **kwargs):
         getattr(self.client, method)(*args, **kwargs)
-        return self.status()
+        return self.status().output
 
+    @action
     def play(self, resource=None):
         """
         Play a resource by path/URI
@@ -51,6 +52,7 @@ class MusicMpdPlugin(MusicPlugin):
             self.add(resource)
         return self._exec('play')
 
+    @action
     def play_pos(self, pos):
         """
         Play a track in the current playlist by position number
@@ -61,6 +63,7 @@ class MusicMpdPlugin(MusicPlugin):
 
         return self._exec('play', pos)
 
+    @action
     def pause(self):
         """ Pause playback """
 
@@ -68,31 +71,38 @@ class MusicMpdPlugin(MusicPlugin):
         if status == 'play': return self._exec('pause')
         else: return self._exec('play')
 
+    @action
     def pause_if_playing(self):
         """ Pause playback only if it's playing """
 
         status = self.status().output['state']
-        if status == 'play': return self._exec('pause')
-        else: return Response(output={})
+        if status == 'play':
+            return self._exec('pause')
 
+    @action
     def play_if_paused(self):
         """ Play only if it's paused (resume) """
 
         status = self.status().output['state']
-        if status == 'pause': return self._exec('play')
-        else: return Response(output={})
+        if status == 'pause':
+            return self._exec('play')
 
+    @action
     def stop(self):
         """ Stop playback """
-
         return self._exec('stop')
 
+
+    @action
     def play_or_stop(self):
         """ Play or stop (play state toggle) """
         status = self.status().output['state']
-        if status == 'play': return self._exec('stop')
-        else: return self._exec('play')
+        if status == 'play':
+            return self._exec('stop')
+        else:
+            return self._exec('play')
 
+    @action
     def playid(self, track_id):
         """
         Play a track by ID
@@ -103,14 +113,17 @@ class MusicMpdPlugin(MusicPlugin):
 
         return self._exec('playid', track_id)
 
+    @action
     def next(self):
         """ Play the next track """
         return self._exec('next')
 
+    @action
     def previous(self):
         """ Play the previous track """
         return self._exec('previous')
 
+    @action
     def setvol(self, vol):
         """
         Set the volume
@@ -120,6 +133,7 @@ class MusicMpdPlugin(MusicPlugin):
         """
         return self._exec('setvol', vol)
 
+    @action
     def volup(self, delta=10):
         """
         Turn up the volume
@@ -134,6 +148,7 @@ class MusicMpdPlugin(MusicPlugin):
             self.setvol(str(new_volume))
         return self.status()
 
+    @action
     def voldown(self, delta=10):
         """
         Turn down the volume
@@ -148,6 +163,7 @@ class MusicMpdPlugin(MusicPlugin):
             self.setvol(str(new_volume))
         return self.status()
 
+    @action
     def random(self, value=None):
         """
         Set shuffle mode
@@ -161,6 +177,7 @@ class MusicMpdPlugin(MusicPlugin):
             value = 1 if value == 0 else 0
         return self._exec('random', value)
 
+    @action
     def repeat(self, value=None):
         """
         Set repeat mode
@@ -174,6 +191,7 @@ class MusicMpdPlugin(MusicPlugin):
             value = 1 if value == 0 else 0
         return self._exec('repeat', value)
 
+    @action
     def add(self, resource):
         """
         Add a resource (track, album, artist, folder etc.) to the current playlist
@@ -184,6 +202,7 @@ class MusicMpdPlugin(MusicPlugin):
 
         return self._exec('add', resource)
 
+    @action
     def load(self, playlist):
         """
         Load and play a playlist by name
@@ -195,10 +214,12 @@ class MusicMpdPlugin(MusicPlugin):
         self._exec('load', playlist)
         return self.play()
 
+    @action
     def clear(self):
         """ Clear the current playlist """
         return self._exec('clear')
 
+    @action
     def seekcur(self, value):
         """
         Seek to the specified position
@@ -209,16 +230,19 @@ class MusicMpdPlugin(MusicPlugin):
 
         return self._exec('seekcur', value)
 
+    @action
     def forward(self):
         """ Go forward by 15 seconds """
 
         return self._exec('seekcur', '+15')
 
+    @action
     def back(self):
         """ Go backward by 15 seconds """
 
         return self._exec('seekcur', '-15')
 
+    @action
     def status(self):
         """
         :returns: The current state.
@@ -245,8 +269,9 @@ class MusicMpdPlugin(MusicPlugin):
             }
         """
 
-        return Response(output=self.client.status())
+        return self.client.status()
 
+    @action
     def currentsong(self):
         """
         :returns: The currently played track.
@@ -277,8 +302,9 @@ class MusicMpdPlugin(MusicPlugin):
                 track['artist'] = m.group(1)
                 track['title'] = m.group(2)
 
-        return Response(output=track)
+        return track
 
+    @action
     def playlistinfo(self):
         """
         :returns: The tracks in the current playlist as a list of dicts.
@@ -315,8 +341,9 @@ class MusicMpdPlugin(MusicPlugin):
             ]
         """
 
-        return Response(output=self.client.playlistinfo())
+        return self.client.playlistinfo()
 
+    @action
     def listplaylists(self):
         """
         :returns: The playlists available on the server as a list of dicts.
@@ -338,17 +365,18 @@ class MusicMpdPlugin(MusicPlugin):
             ]
         """
 
-        return Response(output=sorted(self.client.listplaylists(),
-                                      key=lambda p: p['playlist']))
+        return sorted(self.client.listplaylists(), key=lambda p: p['playlist'])
 
+    @action
     def lsinfo(self, uri=None):
         """
         Returns the list of playlists and directories on the server
         """
 
         output = self.client.lsinfo(uri) if uri else self.client.lsinfo()
-        return Response(output=output)
+        return output
 
+    @action
     def plchanges(self, version):
         """
         Show what has changed on the current playlist since a specified playlist
@@ -360,8 +388,9 @@ class MusicMpdPlugin(MusicPlugin):
         :returns: A list of dicts representing the songs being added since the specified version
         """
 
-        return Response(output=self.client.plchanges(version))
+        return self.client.plchanges(version)
 
+    @action
     def searchaddplaylist(self, name):
         """
         Search and add a playlist by (partial or full) name
@@ -379,10 +408,9 @@ class MusicMpdPlugin(MusicPlugin):
             self.client.clear()
             self.client.load(playlists[0])
             self.client.play()
-            return Response(output={'playlist': playlists[0]})
+            return {'playlist': playlists[0]}
 
-        return Response(output={})
-
+    @action
     def find(self, filter, *args, **kwargs):
         """
         Find in the database/library by filter.
@@ -392,9 +420,9 @@ class MusicMpdPlugin(MusicPlugin):
         :returns: list[dict]
         """
 
-        return Response(
-            output=self.client.find(*filter, *args, **kwargs))
+        return self.client.find(*filter, *args, **kwargs)
 
+    @action
     def findadd(self, filter, *args, **kwargs):
         """
         Find in the database/library by filter and add to the current playlist.
@@ -404,9 +432,9 @@ class MusicMpdPlugin(MusicPlugin):
         :returns: list[dict]
         """
 
-        return Response(
-            output=self.client.findadd(*filter, *args, **kwargs))
+        return self.client.findadd(*filter, *args, **kwargs)
 
+    @action
     def search(self, filter, *args, **kwargs):
         """
         Free search by filter.
@@ -422,8 +450,9 @@ class MusicMpdPlugin(MusicPlugin):
         items = sorted(items, key=lambda item:
                        0 if item['file'].startswith('spotify:') else 1)
 
-        return Response(output=items)
+        return items
 
+    @action
     def searchadd(self, filter, *args, **kwargs):
         """
         Free search by filter and add the results to the current playlist.
@@ -433,8 +462,7 @@ class MusicMpdPlugin(MusicPlugin):
         :returns: list[dict]
         """
 
-        return Response(
-            output=self.client.searchadd(*filter, *args, **kwargs))
+        return self.client.searchadd(*filter, *args, **kwargs)
 
 # vim:sw=4:ts=4:et:
 

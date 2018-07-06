@@ -4,9 +4,7 @@
 
 from sqlalchemy import create_engine, Table, MetaData
 
-from platypush.message.response import Response
-
-from .. import Plugin
+from platypush.plugins import Plugin, action
 
 class DbPlugin(Plugin):
     """
@@ -40,6 +38,7 @@ class DbPlugin(Plugin):
         else:
             return self.engine
 
+    @action
     def execute(self, statement, engine=None, *args, **kwargs):
         """
         Executes a raw SQL statement.
@@ -65,9 +64,8 @@ class DbPlugin(Plugin):
             result = connection.execute(statement)
             connection.commit()
 
-        return Response()
 
-
+    @action
     def select(self, query, engine=None, *args, **kwargs):
         """
         Returns rows (as a list of hashes) given a query.
@@ -119,9 +117,10 @@ class DbPlugin(Plugin):
                 for row in result.fetchall()
             ]
 
-        return Response(output=rows)
+        return rows
 
 
+    @action
     def insert(self, table, records, engine=None, *args, **kwargs):
         """
         Inserts records (as a list of hashes) into a table.
@@ -168,8 +167,6 @@ class DbPlugin(Plugin):
             table = Table(table, metadata, autoload=True, autoload_with=engine)
             insert = table.insert().values(**record)
             engine.execute(insert)
-
-        return Response()
 
 
 # vim:sw=4:ts=4:et:

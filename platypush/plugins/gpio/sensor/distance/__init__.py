@@ -1,7 +1,7 @@
 import threading
 import time
 
-from platypush.message.response import Response
+from platypush.plugins import action
 from platypush.plugins.gpio.sensor import GpioSensorPlugin
 
 
@@ -39,6 +39,7 @@ class GpioSensorDistancePlugin(GpioSensorPlugin):
         gpio.output(self.trigger_pin, False)
 
 
+    @action
     def get_measurement(self):
         """
         Extends :func:`.GpioSensorPlugin.get_measurement`

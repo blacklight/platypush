@@ -1,7 +1,6 @@
 from redis import Redis
 
-from platypush.message.response import Response
-from platypush.plugins import Plugin
+from platypush.plugins import Plugin, action
 
 
 class RedisPlugin(Plugin):
@@ -13,6 +12,7 @@ class RedisPlugin(Plugin):
         * **redis** (``pip install redis``)
     """
 
+    @action
     def send_message(self, queue, msg, *args, **kwargs):
         """
         Send a message to a Redis queu.
@@ -32,7 +32,6 @@ class RedisPlugin(Plugin):
 
         redis = Redis(*args, **kwargs)
         redis.rpush(queue, msg)
-        return Response(output={'state': 'ok'})
 
 
 # vim:sw=4:ts=4:et:

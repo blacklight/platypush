@@ -3,10 +3,8 @@ import urllib3
 import urllib.request
 import urllib.parse
 
+from platypush.plugins import Plugin, action
 from platypush.plugins.media import PlayerState
-from platypush.message.response import Response
-
-from .. import Plugin
 
 class VideoTorrentcastPlugin(Plugin):
     def __init__(self, server='localhost', port=9090, *args, **kwargs):
@@ -14,6 +12,7 @@ class VideoTorrentcastPlugin(Plugin):
         self.port = port
         self.state = PlayerState.STOP.value
 
+    @action
     def play(self, url):
         request = urllib.request.urlopen(
             'http://{}:{}/play/'.format(self.server, self.port),
@@ -23,24 +22,27 @@ class VideoTorrentcastPlugin(Plugin):
         )
 
         self.state = PlayerState.PLAY.value
-        return Response(output=request.read())
+        return request.read()
 
+    @action
     def pause(self):
         http = urllib3.PoolManager()
         request = http.request('POST',
             'http://{}:{}/pause/'.format(self.server, self.port))
 
         self.state = PlayerState.PAUSE.value
-        return Response(output=request.read())
+        return request.read()
 
+    @action
     def stop(self):
         http = urllib3.PoolManager()
         request = http.request('POST',
             'http://{}:{}/stop/'.format(self.server, self.port))
 
         self.state = PlayerState.STOP.value
-        return Response(output=request.read())
+        return request.read()
 
+    @action
     def search(self, query):
         request = urllib.request.urlopen(urllib.request.Request(
             'https://api.apidomain.info/list?' + urllib.parse.urlencode({
@@ -56,8 +58,9 @@ class VideoTorrentcastPlugin(Plugin):
         )
 
         results = json.loads(request.read())
-        return Response(output=results)
+        return results
 
+    @action
     def search_and_play(self, query):
         response = self.search(query)
         if not response.output['MovieList']:
@@ -71,13 +74,20 @@ class VideoTorrentcastPlugin(Plugin):
 
         return self.play(magnet)
 
-    def voldown(self): return Response(output='Unsupported method')
-    def volup(self): return Response(output='Unsupported method')
-    def back(self): return Response(output='Unsupported method')
-    def forward(self): return Response(output='Unsupported method')
+    @action
+    def voldown(self): raise NotImplementedError()
 
-    def status(self):
-        return Response(output={ 'state': self.state })
+    @action
+    def volup(self): raise NotImplementedError()
+
+    @action
+    def back(self): raise NotImplementedError()
+
+    @action
+    def forward(self): raise NotImplementedError()
+
+    @action
+    def status(self): return { 'state': self.state }
 
 
 # vim:sw=4:ts=4:et:

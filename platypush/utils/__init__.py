@@ -1,6 +1,8 @@
+import ast
 import errno
 import hashlib
 import importlib
+import inspect
 import logging
 import os
 import signal
@@ -67,7 +69,31 @@ def clear_timeout():
 
 
 def get_hash(s):
+    """ Get the SHA256 hash hexdigest of a string input """
     return hashlib.sha256(s.encode('utf-8')).hexdigest()
+
+
+def get_decorators(cls):
+    target = cls
+    decorators = {}
+
+    def visit_FunctionDef(node):
+        # decorators[node.name] = []
+        for n in node.decorator_list:
+            name = ''
+            if isinstance(n, ast.Call):
+                name = n.func.attr if isinstance(n.func, ast.Attribute) else n.func.id
+            else:
+                name = n.attr if isinstance(n, ast.Attribute) else n.id
+
+            decorators[name] = decorators.get(name, [])
+            # decorators[node.name].append(name)
+            decorators[name].append(node.name)
+
+    node_iter = ast.NodeVisitor()
+    node_iter.visit_FunctionDef = visit_FunctionDef
+    node_iter.visit(ast.parse(inspect.getsource(target)))
+    return decorators
 
 
 # vim:sw=4:ts=4:et:

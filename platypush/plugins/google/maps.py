@@ -5,7 +5,7 @@
 import json
 import requests
 
-from platypush.message.response import Response
+from platypush.plugins import action
 from platypush.plugins.google import GooglePlugin
 
 
@@ -26,6 +26,7 @@ class GoogleMapsPlugin(GooglePlugin):
         self.api_key = api_key
 
 
+    @action
     def get_address_from_latlng(self, latitude, longitude):
         """
         Get an address information given lat/long
@@ -65,7 +66,7 @@ class GoogleMapsPlugin(GooglePlugin):
                     elif component_type == 'postal_code':
                         address['postal_code'] = addr_component['long_name']
 
-        return Response(output=address)
+        return address
 
 
 # vim:sw=4:ts=4:et:

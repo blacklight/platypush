@@ -9,8 +9,7 @@ import pytz
 
 from icalendar import Calendar, Event
 
-from platypush.message.response import Response
-from platypush.plugins import Plugin
+from platypush.plugins import Plugin, action
 from platypush.plugins.calendar import CalendarInterface
 
 
@@ -61,6 +60,7 @@ class IcalCalendarPlugin(Plugin, CalendarInterface):
         }
 
 
+    @action
     def get_upcoming_events(self, max_results=10, only_participating=True):
         """
         Get the upcoming events. See
@@ -90,7 +90,7 @@ class IcalCalendarPlugin(Plugin, CalendarInterface):
         else:
             self.logger.error("HTTP error while getting {}: {}".format(self.url, response))
 
-        return Response(output=events)
+        return events
 
 
 # vim:sw=4:ts=4:et:

@@ -1,9 +1,7 @@
 import json
 import serial
 
-from platypush.message.response import Response
-
-from .. import Plugin
+from platypush.plugins import Plugin, action
 
 
 class SerialPlugin(Plugin):
@@ -60,6 +58,7 @@ class SerialPlugin(Plugin):
 
         return output.decode().strip()
 
+    @action
     def get_data(self):
         """
         Reads JSON data from the serial device and returns it as a message
@@ -78,7 +77,7 @@ class SerialPlugin(Plugin):
             self.logger.warning('Invalid JSON message from {}: {}'.
                                 format(self.device, data))
 
-        return Response(output=data)
+        return data
 
 
 # vim:sw=4:ts=4:et:

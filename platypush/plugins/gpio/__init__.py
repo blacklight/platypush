@@ -5,8 +5,7 @@
 import threading
 import time
 
-from platypush.message.response import Response
-from platypush.plugins import Plugin
+from platypush.plugins import Plugin, action
 
 
 class GpioPlugin(Plugin):
@@ -17,6 +16,10 @@ class GpioPlugin(Plugin):
         * **RPi.GPIO** (`pip install RPi.GPIO`)
     """
 
+    def __init__(*args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @action
     def write(self, pin, val):
         """
         Write a byte value to a pin.
@@ -44,12 +47,13 @@ class GpioPlugin(Plugin):
         gpio.setup(pin, gpio.OUT)
         gpio.output(pin, val)
 
-        return Response(output={
+        return {
             'pin': pin,
             'val': val,
             'method': 'write',
-        })
+        }
 
+    @action
     def read(self, pin):
         """
         Reads a value from a PIN.
@@ -74,11 +78,11 @@ class GpioPlugin(Plugin):
         gpio.setup(pin, gpio.IN)
         val = gpio.input(pin)
 
-        return Response(output={
+        return {
             'pin': pin,
             'val': val,
             'method': 'read',
-        })
+        }
 
 
 # vim:sw=4:ts=4:et:

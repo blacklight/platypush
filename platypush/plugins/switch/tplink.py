@@ -1,6 +1,6 @@
 from pyHS100 import Discover
 
-from platypush.message.response import Response
+from platypush.plugins import action
 from platypush.plugins.switch import SwitchPlugin
 
 
@@ -17,6 +17,8 @@ class SwitchTplinkPlugin(SwitchPlugin):
     _ip_to_dev = {}
     _alias_to_dev = {}
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def _scan(self):
         devices = Discover.discover()
@@ -46,6 +48,7 @@ class SwitchTplinkPlugin(SwitchPlugin):
             raise RuntimeError('Device {} not found'.format(device))
 
 
+    @action
     def status(self):
         """
         :returns: The available device over the network as a
@@ -61,8 +64,9 @@ class SwitchTplinkPlugin(SwitchPlugin):
             } for (ip, dev) in self._scan().items()
         } }
 
-        return Response(output=devices)
+        return devices
 
+    @action
     def on(self, device):
         """
         Turn on a device
@@ -73,9 +77,10 @@ class SwitchTplinkPlugin(SwitchPlugin):
 
         device = self._get_device(device)
         device.turn_on()
-        return Response(output={'status':'on'})
+        return {'status':'on'}
 
 
+    @action
     def off(self, device):
         """
         Turn off a device
@@ -86,9 +91,10 @@ class SwitchTplinkPlugin(SwitchPlugin):
 
         device = self._get_device(device)
         device.turn_off()
-        return Response(output={'status':'off'})
+        return {'status':'off'}
 
 
+    @action
     def toggle(self, device):
         """
         Toggle the state of a device (on/off)
@@ -104,7 +110,7 @@ class SwitchTplinkPlugin(SwitchPlugin):
         else:
             device.turn_on()
 
-        return Response(output={'status': 'off' if device.is_off else 'on'})
+        return {'status': 'off' if device.is_off else 'on'}
 
 
 # vim:sw=4:ts=4:et:

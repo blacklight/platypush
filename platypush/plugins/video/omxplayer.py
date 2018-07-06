@@ -12,11 +12,11 @@ from omxplayer import OMXPlayer
 
 from platypush.context import get_backend
 from platypush.plugins.media import PlayerState
-from platypush.message.response import Response
 from platypush.message.event.video import VideoPlayEvent, VideoPauseEvent, \
     VideoStopEvent, NewPlayingVideoEvent
 
-from .. import Plugin
+from platypush.plugins import Plugin, action
+
 
 class VideoOmxplayerPlugin(Plugin):
     """
@@ -83,6 +83,7 @@ class VideoOmxplayerPlugin(Plugin):
         self.videos_queue = []
         self.torrent_ports = torrent_ports if torrent_ports else self.default_torrent_ports
 
+    @action
     def play(self, resource):
         """
         Play a resource.
@@ -105,9 +106,7 @@ class VideoOmxplayerPlugin(Plugin):
                 self.videos_queue = resources
                 resource = self.videos_queue.pop(0)
             else:
-                error = 'Unable to download torrent {}'.format(resource)
-                self.logger.warning(error)
-                return Response(errors=[error])
+                raise RuntimeError('Unable to download torrent {}'.format(resource))
 
         self.logger.info('Playing {}'.format(resource))
 
@@ -130,10 +129,12 @@ class VideoOmxplayerPlugin(Plugin):
 
         return self.status()
 
+    @action
     def pause(self):
         """ Pause the playback """
         if self.player: self.player.play_pause()
 
+    @action
     def stop(self):
         """ Stop the playback """
         if self.player:
@@ -143,30 +144,35 @@ class VideoOmxplayerPlugin(Plugin):
 
         return self.status()
 
+    @action
     def voldown(self):
         """ Volume down by 10% """
         if self.player:
             self.player.set_volume(max(-6000, self.player.volume()-1000))
         return self.status()
 
+    @action
     def volup(self):
         """ Volume up by 10% """
         if self.player:
             self.player.set_volume(min(0, self.player.volume()+1000))
         return self.status()
 
+    @action
     def back(self):
         """ Back by 30 seconds """
         if self.player:
             self.player.seek(-30)
         return self.status()
 
+    @action
     def forward(self):
         """ Forward by 30 seconds """
         if self.player:
             self.player.seek(+30)
         return self.status()
 
+    @action
     def next(self):
         """ Play the next track/video """
         if self.player:
@@ -176,19 +182,19 @@ class VideoOmxplayerPlugin(Plugin):
             video = self.videos_queue.pop(0)
             return self.play(video)
 
-        return Response(output={'status': 'no media'}, errors = [])
-
-
+    @action
     def hide_subtitles(self):
         """ Hide the subtitles """
         if self.player: self.player.hide_subtitles()
         return self.status()
 
+    @action
     def hide_video(self):
         """ Hide the video """
         if self.player: self.player.hide_video()
         return self.status()
 
+    @action
     def is_playing(self):
         """
         :returns: True if it's playing, False otherwise
@@ -197,6 +203,7 @@ class VideoOmxplayerPlugin(Plugin):
         if self.player: return self.player.is_playing()
         else: return False
 
+    @action
     def load(self, resource, pause=False):
         """
         Load a resource/video in the player.
@@ -208,21 +215,26 @@ class VideoOmxplayerPlugin(Plugin):
         if self.player: self.player.load(resource, pause)
         return self.status()
 
+    @action
     def metadata(self):
         """ Get the metadata of the current video """
-        if self.player: return Response(output=self.player.metadata())
+        if self.player:
+            return self.player.metadata()
         return self.status()
 
+    @action
     def mute(self):
         """ Mute the player """
         if self.player: self.player.mute()
         return self.status()
 
+    @action
     def unmute(self):
         """ Unmute the player """
         if self.player: self.player.unmute()
         return self.status()
 
+    @action
     def seek(self, relative_position):
         """
         Seek backward/forward by the specified number of seconds
@@ -234,6 +246,7 @@ class VideoOmxplayerPlugin(Plugin):
         if self.player: self.player.seek(relative_position)
         return self.status()
 
+    @action
     def set_position(self, position):
         """
         Seek backward/forward to the specified absolute position
@@ -245,6 +258,7 @@ class VideoOmxplayerPlugin(Plugin):
         if self.player: self.player.set_seek(position)
         return self.status()
 
+    @action
     def set_volume(self, volume):
         """
         Set the volume
@@ -258,6 +272,7 @@ class VideoOmxplayerPlugin(Plugin):
         if self.player: self.player.set_volume(volume)
         return self.status()
 
+    @action
     def status(self):
         """
         Get the current player state.
@@ -285,7 +300,7 @@ class VideoOmxplayerPlugin(Plugin):
             elif state == 'stopped': state = PlayerState.STOP.value
             elif state == 'paused': state = PlayerState.PAUSE.value
 
-            return Response(output=json.dumps({
+            return {
                 'source': self.player.get_source(),
                 'state': state,
                 'volume': self.player.volume(),
@@ -293,12 +308,13 @@ class VideoOmxplayerPlugin(Plugin):
                 'duration': self.player.duration(),
                 'width': self.player.width(),
                 'height': self.player.height(),
-            }))
+            }
         else:
-            return Response(output=json.dumps({
+            return {
                 'state': PlayerState.STOP.value
-            }))
+            }
 
+    @action
     def send_message(self, msg):
         try:
             redis = get_backend('redis')
@@ -311,16 +327,19 @@ class VideoOmxplayerPlugin(Plugin):
 
         redis.send_message(msg)
 
+    @action
     def on_play(self):
         def _f(player):
             self.send_message(VideoPlayEvent(video=self.player.get_source()))
         return _f
 
+    @action
     def on_pause(self):
         def _f(player):
             self.send_message(VideoPauseEvent(video=self.player.get_source()))
         return _f
 
+    @action
     def on_stop(self):
         def _f(player):
             self.send_message(VideoStopEvent())
@@ -335,6 +354,7 @@ class VideoOmxplayerPlugin(Plugin):
         self.player.pauseEvent += self.on_pause()
         self.player.stopEvent += self.on_stop()
 
+    @action
     def search(self, query, types=None, queue_results=False, autoplay=False):
         """
         Perform a video search.
@@ -376,7 +396,7 @@ class VideoOmxplayerPlugin(Plugin):
             elif autoplay:
                 self.play(results[0]['url'])
 
-        return Response(output=results)
+        return results
 
     @classmethod
     def _is_video_file(cls, filename):
@@ -388,6 +408,7 @@ class VideoOmxplayerPlugin(Plugin):
 
         return is_video
 
+    @action
     def file_search(self, query):
         results = []
         query_tokens = [_.lower() for _ in re.split('\s+', query.strip())]
@@ -413,8 +434,9 @@ class VideoOmxplayerPlugin(Plugin):
                         'title': f,
                     })
 
-        return Response(output=results)
+        return results
 
+    @action
     def youtube_search(self, query):
         self.logger.info('Searching YouTube for "{}"'.format(query))
 
@@ -439,7 +461,7 @@ class VideoOmxplayerPlugin(Plugin):
         self.logger.info('{} YouTube video results for the search query "{}"'
                      .format(len(results), query))
 
-        return Response(output=results)
+        return results
 
 
     @classmethod
@@ -476,8 +498,9 @@ class VideoOmxplayerPlugin(Plugin):
             for _ in json.loads(request.read())['MovieList']
         ]
 
-        return Response(output=results)
+        return results
 
+    @action
     def download_torrent(self, magnet):
         """
         Download a torrent to ``download_dir`` by Magnet URI
@@ -538,9 +561,10 @@ class VideoOmxplayerPlugin(Plugin):
 
             time.sleep(5)
 
-        return Response(output=files)
+        return files
 
 
+    @action
     def get_torrent_state(self):
         return self.torrent_state
 

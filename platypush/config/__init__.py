@@ -60,6 +60,7 @@ class Config(object):
         self._config = self._read_config_file(self._cfgfile)
 
         if 'token' in self._config:
+            self._config['token'] = self._config['token']
             self._config['token_hash'] = get_hash(self._config['token'])
 
         if 'workdir' not in self._config:

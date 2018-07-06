@@ -2,8 +2,7 @@ import json
 import paho.mqtt.publish as publisher
 
 from platypush.message import Message
-from platypush.message.response import Response
-from platypush.plugins import Plugin
+from platypush.plugins import Plugin, action
 
 
 class MqttPlugin(Plugin):
@@ -12,6 +11,7 @@ class MqttPlugin(Plugin):
     with the MQTT protocol, see http://mqtt.org/
     """
 
+    @action
     def send_message(self, topic, msg, host, port=1883, *args, **kwargs):
         """
         Sends a message to a topic/channel.
@@ -35,7 +35,6 @@ class MqttPlugin(Plugin):
         except: pass
 
         publisher.single(topic, str(msg), hostname=host, port=port)
-        return Response(output={'state': 'ok'})
 
 
 # vim:sw=4:ts=4:et:

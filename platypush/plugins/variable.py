@@ -1,5 +1,4 @@
-from platypush.message.response import Response
-from platypush.plugins import Plugin
+from platypush.plugins import Plugin, action
 
 
 class VariablePlugin(Plugin):
@@ -12,6 +11,7 @@ class VariablePlugin(Plugin):
         super().__init__(*args, **kwargs)
         self._variables = {}
 
+    @action
     def get(self, name, default_value=None):
         """
         Get the value of a variable by name.
@@ -24,8 +24,9 @@ class VariablePlugin(Plugin):
         :returns: A map in the format ``{"<name>":"<value>"}``
         """
 
-        return Response(output={name: self._variables.get(name, default_value)})
+        return {name: self._variables.get(name, default_value)}
 
+    @action
     def set(self, **kwargs):
         """
         Set a variable or a set of variables.
@@ -35,8 +36,9 @@ class VariablePlugin(Plugin):
 
         for (name, value) in kwargs.items():
             self._variables[name] = value
-        return Response(output=kwargs)
+        return kwargs
 
+    @action
     def unset(self, name):
         """
         Unset a variable by name if it's set
@@ -46,9 +48,6 @@ class VariablePlugin(Plugin):
         """
         if name in self._variables:
             del self._variables[name]
-            return Response(output={'status':'ok'})
-        else:
-            return Response(output={'status':'not_found'})
 
 
 # vim:sw=4:ts=4:et:

@@ -1,4 +1,4 @@
-from platypush.plugins import Plugin
+from platypush.plugins import Plugin, action
 
 
 class GpioSensorPlugin(Plugin):
@@ -10,6 +10,7 @@ class GpioSensorPlugin(Plugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    @action
     def get_measurement(self, *args, **kwargs):
         """
         Implemented by the subclasses.
@@ -27,6 +28,7 @@ class GpioSensorPlugin(Plugin):
         """
         raise NotImplementedError('get_measurement should be implemented in a derived class')
 
+    @action
     def get_data(self, *args, **kwargs):
         """
         Alias for ``get_measurement``

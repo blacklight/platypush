@@ -9,7 +9,7 @@ import os
 
 from apiclient import discovery
 
-from platypush.message.response import Response
+from platypush.plugins import action
 from platypush.plugins.google import GooglePlugin
 from platypush.plugins.calendar import CalendarInterface
 
@@ -25,6 +25,7 @@ class GoogleCalendarPlugin(GooglePlugin, CalendarInterface):
         super().__init__(scopes=self.scopes, *args, **kwargs)
 
 
+    @action
     def get_upcoming_events(self, max_results=10):
         """
         Get the upcoming events. See

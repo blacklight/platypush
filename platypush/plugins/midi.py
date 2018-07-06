@@ -1,8 +1,7 @@
 import rtmidi
 import time
 
-from platypush.message.response import Response
-from platypush.plugins import Plugin
+from platypush.plugins import Plugin, action
 
 
 class MidiPlugin(Plugin):
@@ -39,6 +38,7 @@ class MidiPlugin(Plugin):
                          format(self.device_name))
 
 
+    @action
     def send_message(self, values, *args, **kwargs):
         """
         :param values: Values is expected to be a list containing the MIDI command code and the command parameters - see reference at https://ccrma.stanford.edu/~craig/articles/linuxmidi/misc/essenmidi.html
@@ -70,9 +70,9 @@ class MidiPlugin(Plugin):
         """
 
         self.midiout.send_message(values, *args, **kwargs)
-        return Response(output={'status':'ok'})
 
 
+    @action
     def play_note(self, note, velocity, duration=0):
         """
         Play a note with selected velocity and duration.
@@ -96,6 +96,7 @@ class MidiPlugin(Plugin):
             self._played_notes.remove(note)
 
 
+    @action
     def release_note(self, note):
         """
         Release a played note.
@@ -108,6 +109,7 @@ class MidiPlugin(Plugin):
         self._played_notes.remove(note)
 
 
+    @action
     def release_all_notes(self):
         """
         Release all the notes being played.

@@ -86,6 +86,11 @@ class EventAction(Request):
 
         if 'target' not in action:
             action['target'] = action['origin']
+
+        token = Config.get('token')
+        if token:
+            action['token'] = token
+
         return super().build(action)
 
 

@@ -4,9 +4,8 @@ import time
 
 from bluetooth.ble import DiscoveryService, GATTRequester
 
-from platypush.message.response import Response
-
-from .. import SwitchPlugin
+from platypush.plugins import action
+from platypush.plugins.switch import SwitchPlugin
 
 class Scanner(object):
     service_uuid = '1bc5d5a5-0200b89f-e6114d22-000da2cb'
@@ -112,6 +111,7 @@ class SwitchSwitchbotPlugin(SwitchPlugin):
         :type devices: dict
         """
 
+        super().__init__(*args, **kwargs)
         self.bt_interface = bt_interface
         self.connect_timeout = connect_timeout if connect_timeout else 5
         self.scan_timeout = scan_timeout if scan_timeout else 2
@@ -119,15 +119,12 @@ class SwitchSwitchbotPlugin(SwitchPlugin):
 
 
     def _run(self, device, command=None):
-        output = None
-        errors = []
-
         try:
             # XXX this requires sudo and it's executed in its own process
             # because the Switchbot plugin requires root privileges to send
             # raw bluetooth messages on the interface. Make sure that the user
             # that runs platypush has the right permissions to run this with sudo
-            output = subprocess.check_output((
+            return subprocess.check_output((
                 'sudo python3 -m platypush.plugins.switch.switchbot ' +
                 '--device {} ' +
                 ('--interface {} '.format(self.bt_interface) if self.bt_interface else '') +
@@ -135,11 +132,10 @@ class SwitchSwitchbotPlugin(SwitchPlugin):
                 ('--{} '.format(command) if command else '')).format(device),
                 stderr=subprocess.STDOUT, shell=True).decode('utf-8')
         except subprocess.CalledProcessError as e:
-            errors = [e.output.decode('utf-8')]
-
-        return Response(output=output, errors=errors)
+            raise RuntimeError(e.output.decode('utf-8'))
 
 
+    @action
     def press(self, device):
         """
         Send a press button command to a device
@@ -149,6 +145,7 @@ class SwitchSwitchbotPlugin(SwitchPlugin):
         """
         return self._run(device)
 
+    @action
     def on(self, device):
         """
         Send a press-on button command to a device
@@ -158,6 +155,7 @@ class SwitchSwitchbotPlugin(SwitchPlugin):
         """
         return self._run(device, 'on')
 
+    @action
     def off(self, device):
         """
         Send a press-off button command to a device
@@ -167,25 +165,17 @@ class SwitchSwitchbotPlugin(SwitchPlugin):
         """
         return self._run(device, 'off')
 
+    @action
     def scan(self):
         """ Scan for available Switchbot devices nearby """
-        output = None
-        errors = []
-
         try:
-            print('sudo python3 -m platypush.plugins.switch.switchbot --scan ' +
-                ('--interface {} '.format(self.bt_interface) if self.bt_interface else '') +
-                ('--scan-timeout {} '.format(self.scan_timeout) if self.scan_timeout else ''))
-
-            output = subprocess.check_output(
+            return subprocess.check_output(
                 'sudo python3 -m platypush.plugins.switch.switchbot --scan ' +
                 ('--interface {} '.format(self.bt_interface) if self.bt_interface else '') +
                 ('--scan-timeout {} '.format(self.scan_timeout) if self.scan_timeout else ''),
                 stderr=subprocess.STDOUT, shell=True).decode('utf-8')
         except subprocess.CalledProcessError as e:
-            errors = [e.output.decode('utf-8')]
-
-        return Response(output=output, errors=errors)
+            raise RuntimeError(e.output.decode('utf-8'))
 
 
 # vim:sw=4:ts=4:et:

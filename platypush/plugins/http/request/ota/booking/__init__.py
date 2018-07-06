@@ -1,6 +1,7 @@
 import datetime
 import dateutil.parser
 
+from platypush.plugins import action
 from platypush.plugins.http.request import HttpRequestPlugin
 
 class HttpRequestOtaBookingPlugin(HttpRequestPlugin):
@@ -12,6 +13,7 @@ class HttpRequestOtaBookingPlugin(HttpRequestPlugin):
         self.timeout = timeout
 
 
+    @action
     def get_reservations(self, day='today'):
         url = 'https://hub-api.booking.com/v1/hotels/{}/reservations' \
             .format(self.hotel_id)

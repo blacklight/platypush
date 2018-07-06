@@ -1,13 +1,26 @@
 import sys
 import logging
+import traceback
 
 from platypush.config import Config
 from platypush.message.response import Response
+from platypush.utils import get_decorators
 
 
 def action(f):
     def _execute_action(*args, **kwargs):
-        return f(*args, **kwargs)
+        output = None
+        errors = []
+
+        try:
+            output = f(*args, **kwargs)
+        except Exception as e:
+            if isinstance(args[0], Plugin):
+                args[0].logger.exception(e)
+            errors.append(str(e) + '\n' + traceback.format_exc())
+
+        return Response(output=output, errors=errors)
+
     return _execute_action
 
 
@@ -19,7 +32,13 @@ class Plugin(object):
         if 'logging' in kwargs:
             self.logger.setLevel(getattr(logging, kwargs['logging'].upper()))
 
+        self.registered_actions = set(get_decorators(self.__class__).get('action', []))
+
     def run(self, method, *args, **kwargs):
+        if method not in self.registered_actions:
+            raise RuntimeError('{} is not a registered action on {}'.format(
+                method, self.__class__.__name__))
+
         return getattr(self, method)(*args, **kwargs)
 
 

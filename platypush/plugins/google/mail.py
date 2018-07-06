@@ -17,7 +17,7 @@ from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from platypush.message.response import Response
+from platypush.plugins import action
 from platypush.plugins.google import GooglePlugin
 
 
@@ -32,6 +32,7 @@ class GoogleMailPlugin(GooglePlugin):
         super().__init__(scopes=self.scopes, *args, **kwargs)
 
 
+    @action
     def compose(self, sender, to, subject, body, files=None):
         """
         Compose a message.
@@ -91,9 +92,10 @@ class GoogleMailPlugin(GooglePlugin):
         message = (service.users().messages().send(
             userId='me', body=body).execute())
 
-        return Response(output=message)
+        return message
 
 
+    @action
     def get_labels(self):
         """
         Returns the available labels on the GMail account
@@ -101,7 +103,7 @@ class GoogleMailPlugin(GooglePlugin):
         service = self._get_service()
         results = service.users().labels().list(userId='me').execute()
         labels = results.get('labels', [])
-        return Response(output=labels)
+        return labels
 
 
     def _get_service(self):

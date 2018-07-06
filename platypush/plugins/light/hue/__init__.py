@@ -8,9 +8,9 @@ from redis.exceptions import TimeoutError as QueueTimeoutError
 from phue import Bridge
 
 from platypush.context import get_backend
-from platypush.message.response import Response
+from platypush.plugins import action
+from platypush.plugins.light import LightPlugin
 
-from .. import LightPlugin
 
 class LightHuePlugin(LightPlugin):
     """
@@ -75,6 +75,7 @@ class LightHuePlugin(LightPlugin):
         for g in groups:
             self.lights.extend([l.name for l in g.lights])
 
+    @action
     def connect(self):
         """
         Connect to the configured Hue bridge. If the device hasn't been paired
@@ -100,6 +101,7 @@ class LightHuePlugin(LightPlugin):
             self.logger.info('Bridge already connected')
 
 
+    @action
     def get_scenes(self):
         """
         Get the available scenes on the devices.
@@ -129,9 +131,10 @@ class LightHuePlugin(LightPlugin):
             }
         """
 
-        return Response(output=self.bridge.get_scene())
+        return self.bridge.get_scene()
 
 
+    @action
     def get_lights(self):
         """
         Get the configured lights.
@@ -170,9 +173,10 @@ class LightHuePlugin(LightPlugin):
             }
         """
 
-        return Response(output=self.bridge.get_light())
+        return self.bridge.get_light()
 
 
+    @action
     def get_groups(self):
         """
         Get the list of configured light groups.
@@ -222,7 +226,7 @@ class LightHuePlugin(LightPlugin):
             }
         """
 
-        return Response(output=self.bridge.get_group())
+        return self.bridge.get_group()
 
 
     def _exec(self, attr, *args, **kwargs):
@@ -257,8 +261,8 @@ class LightHuePlugin(LightPlugin):
             self.bridge = None
             raise e
 
-        return Response(output='ok')
 
+    @action
     def set_light(self, light, **kwargs):
         """
         Set a light (or lights) property.
@@ -281,8 +285,8 @@ class LightHuePlugin(LightPlugin):
 
         self.connect()
         self.bridge.set_light(light, **kwargs)
-        return Response(output='ok')
 
+    @action
     def set_group(self, group, **kwargs):
         """
         Set a group (or groups) property.
@@ -305,8 +309,8 @@ class LightHuePlugin(LightPlugin):
 
         self.connect()
         self.bridge.set_group(group, **kwargs)
-        return Response(output='ok')
 
+    @action
     def on(self, lights=[], groups=[]):
         """
         Turn lights/groups on.
@@ -317,6 +321,7 @@ class LightHuePlugin(LightPlugin):
 
         return self._exec('on', True, lights=lights, groups=groups)
 
+    @action
     def off(self, lights=[], groups=[]):
         """
         Turn lights/groups off.
@@ -327,6 +332,7 @@ class LightHuePlugin(LightPlugin):
 
         return self._exec('on', False, lights=lights, groups=groups)
 
+    @action
     def bri(self, value, lights=[], groups=[]):
         """
         Set lights/groups brightness.
@@ -339,6 +345,7 @@ class LightHuePlugin(LightPlugin):
         return self._exec('bri', int(value) % (self.MAX_BRI+1),
                       lights=lights, groups=groups)
 
+    @action
     def sat(self, value, lights=[], groups=[]):
         """
         Set lights/groups saturation.
@@ -351,6 +358,7 @@ class LightHuePlugin(LightPlugin):
         return self._exec('sat', int(value) % (self.MAX_SAT+1),
                       lights=lights, groups=groups)
 
+    @action
     def hue(self, value, lights=[], groups=[]):
         """
         Set lights/groups color hue.
@@ -363,6 +371,7 @@ class LightHuePlugin(LightPlugin):
         return self._exec('hue', int(value) % (self.MAX_HUE+1),
                       lights=lights, groups=groups)
 
+    @action
     def scene(self, name, lights=[], groups=[]):
         """
         Set a scene by name.
@@ -374,6 +383,7 @@ class LightHuePlugin(LightPlugin):
 
         return self._exec('scene', name=name, lights=lights, groups=groups)
 
+    @action
     def is_animation_running(self):
         """
         :returns: True if there is an animation running, false otherwise.
@@ -381,6 +391,7 @@ class LightHuePlugin(LightPlugin):
 
         return self.animation_thread is not None
 
+    @action
     def stop_animation(self):
         """
         Stop a running animation if any
@@ -389,6 +400,7 @@ class LightHuePlugin(LightPlugin):
         if self.animation_thread and self.animation_thread.is_alive():
             self.redis.rpush(self.ANIMATION_CTRL_QUEUE_NAME, 'STOP')
 
+    @action
     def animate(self, animation, duration=None,
                 hue_range=[0, MAX_HUE], sat_range=[0, MAX_SAT],
                 bri_range=[MAX_BRI-1, MAX_BRI], lights=None, groups=None,
@@ -529,7 +541,6 @@ class LightHuePlugin(LightPlugin):
         self.stop_animation()
         self.animation_thread = Thread(target=_animate_thread, args=(lights,))
         self.animation_thread.start()
-        return Response(output='ok')
 
 
 # vim:sw=4:ts=4:et:

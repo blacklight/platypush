@@ -3,9 +3,7 @@
 """
 
 from platypush.context import get_backend
-from platypush.message.response import Response
-
-from platypush.plugins import Plugin
+from platypush.plugins import Plugin, action
 
 class AssistantGooglePlugin(Plugin):
     """
@@ -14,21 +12,25 @@ class AssistantGooglePlugin(Plugin):
     backend to programmatically control the conversation status.
     """
 
+    def __init__(*args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @action
     def start_conversation(self):
         """
         Programmatically start a conversation with the assistant
         """
         assistant = get_backend('assistant.google')
         assistant.start_conversation()
-        return Response(output='', errors=[])
 
+    @action
     def stop_conversation(self):
         """
         Programmatically stop a running conversation with the assistant
         """
         assistant = get_backend('assistant.google')
         assistant.stop_conversation()
-        return Response(output='', errors=[])
+
 
 # vim:sw=4:ts=4:et:
 

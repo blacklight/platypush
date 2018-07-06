@@ -1,4 +1,4 @@
-from platypush.message.response import Response
+from platypush.plugins import action
 from platypush.plugins.http.request import HttpRequestPlugin
 
 
@@ -46,6 +46,7 @@ class WeatherForecastPlugin(HttpRequestPlugin):
             format(self.darksky_token, (lat or self.lat), (long or self.long),
                    self.units)
 
+    @action
     def get_current_weather(self, lat=None, long=None, **kwargs):
         """
         Get the current weather.
@@ -83,8 +84,9 @@ class WeatherForecastPlugin(HttpRequestPlugin):
         """
 
         response = self.get(self._get_url(lat, long))
-        return Response(output=response.output['currently'])
+        return response.output['currently']
 
+    @action
     def get_hourly_forecast(self, lat=None, long=None, **kwargs):
         """
         Get the hourly forecast.
@@ -146,8 +148,9 @@ class WeatherForecastPlugin(HttpRequestPlugin):
         """
 
         response = self.get(self._get_url(lat, long))
-        return Response(output=response.output['hourly'])
+        return response.output['hourly']
 
+    @action
     def get_daily_forecast(self, lat=None, long=None, **kwargs):
         """
         Get the daily forecast.
@@ -250,7 +253,7 @@ class WeatherForecastPlugin(HttpRequestPlugin):
         """
 
         response = self.get(self._get_url(lat, long))
-        return Response(output=response.output['daily'])
+        return response.output['daily']
 
 
 # vim:sw=4:ts=4:et:

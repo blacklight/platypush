@@ -2,10 +2,9 @@ import re
 import subprocess
 
 from platypush.context import get_plugin
-from platypush.message.response import Response
 from platypush.plugins.media import PlayerState
 
-from .. import Plugin
+from platypush.plugins import Plugin, action
 
 class MediaCtrlPlugin(Plugin):
     """
@@ -76,9 +75,9 @@ class MediaCtrlPlugin(Plugin):
         return None
 
 
+    @action
     def play(self, url):
         (type, resource) = self._get_type_and_resource_by_url(url)
-        response = Response(output='', errors = [])
         plugin_name = None
 
         if type == 'mpd':
@@ -99,11 +98,13 @@ class MediaCtrlPlugin(Plugin):
         self.url = resource
         return self.plugin.play(resource)
 
+    @action
     def pause(self):
         plugin = self._get_playing_plugin()
         if plugin: return plugin.pause()
 
 
+    @action
     def stop(self):
         plugin = self._get_playing_plugin()
         if plugin:
@@ -112,36 +113,43 @@ class MediaCtrlPlugin(Plugin):
             return ret
 
 
+    @action
     def voldown(self):
         plugin = self._get_playing_plugin()
         if plugin: return plugin.voldown()
 
 
+    @action
     def volup(self):
         plugin = self._get_playing_plugin()
         if plugin: return plugin.volup()
 
 
+    @action
     def back(self):
         plugin = self._get_playing_plugin()
         if plugin: return plugin.back()
 
 
+    @action
     def forward(self):
         plugin = self._get_playing_plugin()
         if plugin: return plugin.forward()
 
 
+    @action
     def next(self):
         plugin = self._get_playing_plugin()
         if plugin: return plugin.next()
 
 
+    @action
     def previous(self):
         plugin = self._get_playing_plugin()
         if plugin: return plugin.previous()
 
 
+    @action
     def status(self):
         plugin = self._get_playing_plugin()
         if plugin: return plugin.status()

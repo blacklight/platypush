@@ -193,7 +193,7 @@ class Request(Message):
                     raise RuntimeError('Response processed with errors: {}'.format(response))
 
                 logger.info('Processed response from plugin {}: {}'.
-                                format(plugin, response))
+                                format(plugin, str(response)))
             except Exception as e:
                 # Retry mechanism
                 response = Response(output=None, errors=[str(e), traceback.format_exc()])

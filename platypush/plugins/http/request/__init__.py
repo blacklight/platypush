@@ -1,8 +1,6 @@
 import requests
 
-from platypush.message.response import Response
-
-from platypush.plugins import Plugin
+from platypush.plugins import Plugin, action
 
 class HttpRequestPlugin(Plugin):
     """
@@ -41,6 +39,9 @@ class HttpRequestPlugin(Plugin):
         }
     """
 
+    def __init__(*args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def _exec(self, method, url, output='text', **kwargs):
         """ Available output types: text (default), json, binary """
 
@@ -51,9 +52,10 @@ class HttpRequestPlugin(Plugin):
 
         if output == 'json': output = response.json()
         if output == 'binary': output = response.content
-        return Response(output=output, errors=[])
+        return output
 
 
+    @action
     def get(self, url, **kwargs):
         """
         Perform a GET request
@@ -68,6 +70,7 @@ class HttpRequestPlugin(Plugin):
         return self._exec(method='get', url=url, **kwargs)
 
 
+    @action
     def post(self, url, **kwargs):
         """
         Perform a POST request
@@ -82,6 +85,7 @@ class HttpRequestPlugin(Plugin):
         return self._exec(method='post', url=url, **kwargs)
 
 
+    @action
     def head(self, url, **kwargs):
         """
         Perform an HTTP HEAD request
@@ -96,6 +100,7 @@ class HttpRequestPlugin(Plugin):
         return self._exec(method='head', url=url, **kwargs)
 
 
+    @action
     def put(self, url, **kwargs):
         """
         Perform a PUT request
@@ -110,6 +115,7 @@ class HttpRequestPlugin(Plugin):
         return self._exec(method='put', url=url, **kwargs)
 
 
+    @action
     def delete(self, url, **kwargs):
         """
         Perform a DELETE request
@@ -124,6 +130,7 @@ class HttpRequestPlugin(Plugin):
         return self._exec(method='delete', url=url, **kwargs)
 
 
+    @action
     def options(self, url, **kwargs):
         """
         Perform an HTTP OPTIONS request
