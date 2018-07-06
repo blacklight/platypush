@@ -29,6 +29,7 @@ class DbPlugin(Plugin):
         :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
         """
 
+        super().__init__()
         self.engine = self._get_engine(engine, *args, **kwargs)
 
 
