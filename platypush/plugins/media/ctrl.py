@@ -21,6 +21,7 @@ class MediaCtrlPlugin(Plugin):
     }
 
     def __init__(self, torrentcast_port=9090, *args, **kwargs):
+        super().__init__()
         self.torrentcast_port = torrentcast_port
         self.url = None
         self.plugin = None
