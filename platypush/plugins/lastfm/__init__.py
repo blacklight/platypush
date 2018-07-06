@@ -28,6 +28,7 @@ class LastfmPlugin(Plugin):
         :type api_key: str
         """
 
+        super().__init__()
         self.api_key = api_key
         self.api_secret = api_secret
         self.username = username
