@@ -116,9 +116,12 @@ class HttpBackend(Backend):
     def _get_redis(self):
         redis_backend = get_backend('redis')
         if not redis_backend:
-            raise RuntimeError('Redis backend not configured')
+            self.logger.warning('Redis backend not configured - some ' +
+                                'web server features may not be working properly')
+            redis_args = {}
+        else:
+            redis_args = redis_backend.redis_args
 
-        redis_args = get_backend('redis').redis_args
         redis = Redis(**redis_args)
         return redis
 

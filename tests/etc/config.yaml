@@ -1,6 +1,3 @@
-backend.redis:
-    disabled: False
-
 backend.http:
     port: 8123
     disable_websocket: True

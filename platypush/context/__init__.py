@@ -56,7 +56,7 @@ def get_backend(name):
     """ Returns the backend instance identified by name if it exists """
 
     global backends
-    return backends[name]
+    return backends.get('name')
 
 
 def get_plugin(plugin_name, reload=False):

@@ -4,3 +4,4 @@ requests
 flask
 redis
 python-dateutil
+websockets
