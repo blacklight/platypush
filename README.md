@@ -5,11 +5,56 @@ Platypush
 [![Documentation Status](https://readthedocs.org/projects/platypush/badge/?version=latest)](https://platypush.readthedocs.io/en/latest/?badge=latest)
 
 
-Execute any command or custom complex logic on your devices, wherever they are, using PushBullet, Apache Kafka, or any backend.
+Imagine Platypush as some kind of [IFTTT](https://ifttt.com) on steroids - or [Tasker](https://tasker.joaoapps.com/), or [Microsoft Flow](https://flow.microsoft.com), or [PushBullet](https://pushbullet.com) on steroids.
+Platypush aims to turn any device in a smart hub that can control things, interact with cloud services and send messages to other devices. It's a general-purpose lightweight platform to process any request and run any logic triggered by custom events.
 
-Platypush aims to be a general-purpose middleware infrastructure to process any request and run any logic triggered by custom events on a generic network of hosts.
+Imagine the ability of running any task you like, or automate any routine you like, on any of your devices. And the flexibility of executing actions through a cloud service, with the power of running them from your laptop, Raspberry Pi, smart home device or smartphone.
 
-Its development is mainly driven by the necessity of a lightweight infrastructure for running generic triggers and actions in a virtual network, generalizing a bit the idea of an Android app like Tasker or a web service like IFTTT or Microsoft Flow, and turning it into something that anybody can run on their own devices. It's actively being tested on RaspberryPi devices and it has interesting applications when it comes to home automation and IoT, but it should be generic enough to solve most of the automation and information delivery issues in a distributed network.
+You can use Platypush to do things like:
+
+- Control your smart home lights
+- Control your favourite music player
+- Interact with your voice assistant
+- Get events from your Google or Facebook calendars
+- Read data from your sensors and trigger custom events whenever they go above or below some custom thresholds
+- Control the motors of your robot
+- Send automated emails
+- Synchronize the clipboards on your devices
+- Control your smart switches
+- Implement custom text-to-speech commands
+- Build any kind of interaction with your Android device using Tasker
+- Play local videos, YouTube videos and torrent links
+- Get weather forecast for your location
+- Build your own web dashboard with calendar, weather, news and music controls (basically, anything that has a Platypush web widget)
+- ...and much more (basically, anything that comes with a [Platypush plugin](https://platypush.readthedocs.io/en/latest/plugins.html))
+
+Imagine the ability of executing all the actions above through messages delivered through:
+
+- A web interface
+- Raw HTTP requests
+- Web sockets
+- [PushBullet](https://pushbullet.com)
+- [Kafka](https://kafka.apache.org)
+- [Redis](https://redis.io)
+- [MQTT](https://mqtt.org)
+- ...amd much more (basically, anything that comes with a [Platypush backend](https://platypush.readthedocs.io/en/latest/backends.html))
+
+Imagine the ability of building custom event hooks to automatically trigger any actions:
+
+- When your voice assistant recognizes some text
+- When you start playing a new song
+- When a new event is added to your calendar
+- When a new article is published on your favourite feed
+- When the weather conditions change
+- When your press a [Flic button](https://flic.io) with a certain pattern
+- When you receive a new push on your Pushbullet account
+- When your GPS signal enters a certain area
+- Whenever a new MIDI event is received (yes, you heard well :) )
+- Whenever a sensor sends new data
+- At a specific date or time
+- ...and so on (basically, anything can send events that can be used to build hooks)
+
+Imagine the ability of running the application, with lots of those bundled features, on any device that can comes with Python (_only compatible with version 3_). Platypush has been designed with performance in mind, it's been heavily tested on slower devices like Raspberry Pis, and it can run the web server features, multiple backends and plugins quite well even on a Raspberry Pi Zero - it's even been tested with some quite impressive performance on an older [Nokia N900](https://en.wikipedia.org/wiki/Nokia_N900), and of course you can run it on any laptop, desktop, server environment. It's been developed mainly with IoT in mind (and some of its features overlap with IoT frameworks like [Mozilla IoT](https://iot.mozilla.com) and [Android Things](https://developer.android.com/things/)), but nothing prevents you from automating any task on any device and environment.
 
 Architecture
 ------------
