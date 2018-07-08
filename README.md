@@ -54,45 +54,10 @@ Imagine the ability of building custom event hooks to automatically trigger any 
 - At a specific date or time
 - ...and so on (basically, anything can send events that can be used to build hooks)
 
-Imagine the ability of running the application, with lots of those bundled features, on any device that can comes with Python (_only compatible with version 3_). Platypush has been designed with performance in mind, it's been heavily tested on slower devices like Raspberry Pis, and it can run the web server features, multiple backends and plugins quite well even on a Raspberry Pi Zero - it's even been tested with some quite impressive performance on an older [Nokia N900](https://en.wikipedia.org/wiki/Nokia_N900), and of course you can run it on any laptop, desktop, server environment. It's been developed mainly with IoT in mind (and some of its features overlap with IoT frameworks like [Mozilla IoT](https://iot.mozilla.com) and [Android Things](https://developer.android.com/things/)), but nothing prevents you from automating any task on any device and environment.
+Imagine the ability of running the application, with lots of those bundled features, on any device that can comes with Python (_only compatible with version 3 and higher_). Platypush has been designed with performance in mind, it's been heavily tested on slower devices like Raspberry Pis, and it can run the web server features, multiple backends and plugins quite well even on a Raspberry Pi Zero - it's even been tested with some quite impressive performance on an older [Nokia N900](https://en.wikipedia.org/wiki/Nokia_N900), and of course you can run it on any laptop, desktop, server environment. It's been developed mainly with IoT in mind (and some of its features overlap with IoT frameworks like [Mozilla IoT](https://iot.mozilla.com) and [Android Things](https://developer.android.com/things/)), but nothing prevents you from automating any task on any device and environment.
 
-Architecture
-------------
+To get started:
 
-The base components are:
-
-* __Messages__: _requests_, _responses_ or _events_. The main difference between a request and an event is that the former specifies an explicit action to be executed through a _plugin_ (and the sender will usually wait for a _response_), while an event only notifies that something happened on a connected data source and can either be ignored or trigger some custom actions specified in the configuration.
-
-* The __Bus__: An internal queue where all the other components exchange messages.
-
-* __Backends__: Components that poll other data sources (a local queue, a remote websocket, a Kafka instance, or even a vocal assistant, a programmable button or a sensor) and post either requests or events on the bus when something happens on the data source. Some of them can have a full-duplex integration with the bus, i.e. post requests and events on the bus as they come and deliver responses from the bus back to the sender (examples: PushBullet, Apache Kafka, sockets), while some are pure data sources that will only post events on the bus (examples: sensors, buttons, vocal assistants).
-
-* __Plugins__: Configurable components which expose _actions_ that can be triggered by requests or events. Examples: smart lights, music controls, YouTube or torrentcast features, text-to-speech, generic shell commands, etc.). They would usually deliver output and errors as responses on the bus.
-
-* __Procedures__: Pre-configured lists of actions that can be triggered by requests or events.
-
-* Event __Hooks__: Pre-configured actions that will be executed when certain events are processed. They include:
-    * A _condition_, which can be fuzzly compared against an event. The matching logic will also return a _match score_ if the condition is met. The score is a function of the number of atomic matches (string tokens, scalars, key-values etc.) in the condition that are satisfied by a certain event. If multiple hooks are satisfied by a certain event, the algorithm will only run the ones with the highest score.
-    * One or more _actions_ to be executed in case of event match (e.g. "turn on the lights", "send a Messenger message to my s.o.", "turn on the heating", "play the radio" etc.)
-
-Installation
-------------
-
-```shell
-pip install platypush
-```
-
-### Manual Installation
-
-```shell
-git clone https://github.com/BlackLight/platypush
-cd platypush
-python setup.py install
-```
-
-Check `requirements.txt` for any extra dependencies you may want to install depending on your configuration. You can also install all the dependencies (may take some time on slow machines) by running `pip install -r requirements.txt`.
-
-After configuring the server, start it by simply running `platypush`.
-
-Check [our wiki](https://github.com/BlackLight/platypush/wiki) for any additional info about [configuration](https://github.com/BlackLight/platypush/wiki/Configuration) together with examples, use the shell interface, or write your own plugins and backend.
+- [Wiki](https://github.com/BlackLight/platypush/wiki) for installation notes, quick start, examples and architecture reference
+- [Read the docs](https://platypush.readthedocs.io/en/latest/) for a complete reference on the available plugins and backends
 
