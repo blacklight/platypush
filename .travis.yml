@@ -16,3 +16,6 @@ notifications:
 services:
     - redis-server
 
+git:
+    submodules: false
+
