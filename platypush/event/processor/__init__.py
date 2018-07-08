@@ -30,7 +30,8 @@ class EventProcessor(object):
         if 'http' not in backends: return
 
         backend = get_backend('http')
-        backend.notify_web_clients(event)
+        if backend:
+            backend.notify_web_clients(event)
 
 
     def process_event(self, event):

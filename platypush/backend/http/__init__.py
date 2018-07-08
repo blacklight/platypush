@@ -9,7 +9,9 @@ import time
 
 from threading import Thread, get_ident
 from multiprocessing import Process
-from flask import Flask, abort, jsonify, request as http_request, render_template, send_from_directory
+from flask import Flask, Response, abort, jsonify, request as http_request, \
+    render_template, send_from_directory
+
 from redis import Redis
 
 from platypush.config import Config
@@ -41,6 +43,11 @@ class HttpBackend(Backend):
 
         * To display a fullscreen dashboard with your configured widgets, by default available under ``/dashboard``
 
+    Note that if you set up a main token, it will be required for any HTTP
+    interaction - either as ``X-Token`` HTTP header, on the query string
+    (attribute name: ``token``), as part of the JSON payload root (attribute
+    name: ``_token``), or via HTTP basic auth (any username works).
+
     Requires:
 
         * **flask** (``pip install flask``)
@@ -53,7 +60,7 @@ class HttpBackend(Backend):
     }
 
     def __init__(self, port=8008, websocket_port=8009, disable_websocket=False,
-                 redis_queue='platypush/http', token=None, dashboard={},
+                 redis_queue='platypush/http', dashboard={},
                  maps={}, **kwargs):
         """
         :param port: Listen port for the web server (default: 8008)
@@ -67,9 +74,6 @@ class HttpBackend(Backend):
 
         :param redis_queue: Name of the Redis queue used to synchronize messages with the web server process (default: ``platypush/http``)
         :type redis_queue: str
-
-        :param token: If set (recommended) any interaction with the web server needs to bear an ``X-Token: <token>`` header, or it will fail with a 403: Forbidden
-        :type token: str
 
         :param dashboard: Set it if you want to use the dashboard service. It will contain the configuration for the widgets to be used (look under ``platypush/backend/http/templates/widgets/`` for the available widgets).
 
@@ -102,7 +106,6 @@ class HttpBackend(Backend):
         self.port = port
         self.websocket_port = websocket_port
         self.redis_queue = redis_queue
-        self.token = token
         self.dashboard = dashboard
         self.maps = maps
         self.server_proc = None
@@ -174,6 +177,39 @@ class HttpBackend(Backend):
             self.bus.post(msg)
 
 
+    @classmethod
+    def _authenticate(cls):
+        return Response('Authentication required', 401,
+                        {'WWW-Authenticate': 'Basic realm="Login required"'})
+
+    @classmethod
+    def _authentication_ok(cls):
+        token = Config.get('token')
+        if not token:
+            return True
+
+        user_token = None
+
+        # Check if
+        if 'X-Token' in http_request.headers:
+            user_token = http_request.headers['X-Token']
+        elif http_request.authorization:
+            # TODO support for user check
+            user_token = http_request.authorization.password
+        elif 'token' in http_request.args:
+            user_token = http_request.args.get('token')
+        else:
+            try:
+                args = json.loads(http_request.data.decode('utf-8'))
+                user_token = args.get('_token')
+            except:
+                pass
+
+        if user_token == token:
+            return True
+
+        return False
+
     def webserver(self):
         """ Web server main process """
         basedir = os.path.dirname(inspect.getfile(self.__class__))
@@ -187,11 +223,17 @@ class HttpBackend(Backend):
         def execute():
             """ Endpoint to execute commands """
             args = json.loads(http_request.data.decode('utf-8'))
-            token = http_request.headers['X-Token'] if 'X-Token' in http_request.headers else None
-            if token != self.token: abort(401)
+            if not self._authentication_ok(): return self._authenticate()
 
+            if '_token' in args:
+                del args['_token']
+
+            args = json.loads(http_request.data.decode('utf-8'))
             msg = Message.build(args)
             self.logger.info('Received message on the HTTP backend: {}'.format(msg))
+
+            if Config.get('token'):
+                msg.token = Config.get('token')
 
             if isinstance(msg, Request):
                 try:
@@ -210,6 +252,8 @@ class HttpBackend(Backend):
         @app.route('/')
         def index():
             """ Route to the main web panel """
+            if not self._authentication_ok(): return self._authenticate()
+
             configured_plugins = Config.get_plugins()
             enabled_plugins = {}
             hidden_plugins = {}
@@ -223,7 +267,7 @@ class HttpBackend(Backend):
                         enabled_plugins[plugin] = conf
 
             return render_template('index.html', plugins=enabled_plugins, hidden_plugins=hidden_plugins,
-                                   token=self.token, websocket_port=self.websocket_port)
+                                   token=Config.get('token'), websocket_port=self.websocket_port)
 
 
         @app.route('/widget/<widget>', methods=['POST'])
@@ -243,8 +287,10 @@ class HttpBackend(Backend):
         @app.route('/dashboard', methods=['GET'])
         def dashboard():
             """ Route for the fullscreen dashboard """
+            if not self._authentication_ok(): return self._authenticate()
+
             return render_template('dashboard.html', config=self.dashboard, utils=HttpUtils,
-                                   token=self.token, websocket_port=self.websocket_port)
+                                   token=Config.get('token'), websocket_port=self.websocket_port)
 
         @app.route('/map', methods=['GET'])
         def map():
@@ -303,6 +349,9 @@ class HttpBackend(Backend):
 
                 return (now + datetime.timedelta(**params)).isoformat()
 
+
+            if not self._authentication_ok(): return self._authenticate()
+
             try:
                 api_key = self.maps['api_key']
             except KeyError:
@@ -314,7 +363,7 @@ class HttpBackend(Backend):
 
             return render_template('map.html', config=self.maps,
                                    utils=HttpUtils, start=start, end=end,
-                                   zoom=zoom, token=self.token, api_key=api_key,
+                                   zoom=zoom, token=Config.get('token'), api_key=api_key,
                                    websocket_port=self.websocket_port)
 
         return app
