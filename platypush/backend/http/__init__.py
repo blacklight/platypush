@@ -13,6 +13,7 @@ from flask import Flask, abort, jsonify, request as http_request, render_templat
 from redis import Redis
 
 from platypush.config import Config
+from platypush.context import get_backend
 from platypush.message import Message
 from platypush.message.event import Event, StopEvent
 from platypush.message.event.web.widget import WidgetUpdateEvent
@@ -109,7 +110,17 @@ class HttpBackend(Backend):
         self.websocket_thread = None
         self.redis_thread = None
         self.active_websockets = set()
-        self.redis = Redis()
+        self.redis = self._get_redis()
+
+
+    def _get_redis(self):
+        redis_backend = get_backend('redis')
+        if not redis_backend:
+            raise RuntimeError('Redis backend not configured')
+
+        redis_args = get_backend('redis').redis_args
+        redis = Redis(**redis_args)
+        return redis
 
 
     def send_message(self, msg):
