@@ -141,7 +141,8 @@ class HttpBackend(Backend):
             stop_evt = StopEvent(target=self.device_id, origin=self.device_id,
                                  thread_id=self.redis_thread.ident)
 
-            self.redis.rpush(self.redis_queue, stop_evt)
+            redis = self._get_redis()
+            redis.rpush(self.redis_queue, stop_evt)
 
         if self.server_proc:
             self.server_proc.terminate()
@@ -167,7 +168,8 @@ class HttpBackend(Backend):
         """ Polls for new messages on the internal Redis queue """
 
         while True:
-            msg = self.redis.blpop(self.redis_queue)
+            redis = self._get_redis()
+            msg = redis.blpop(self.redis_queue)
             msg = Message.build(json.loads(msg[1].decode('utf-8')))
 
             if isinstance(msg, StopEvent) and \
@@ -240,7 +242,8 @@ class HttpBackend(Backend):
                 self.logger.info('Processing response on the HTTP backend: {}'.format(msg))
                 return str(response)
             elif isinstance(msg, Event):
-                self.redis.rpush(self.redis_queue, msg)
+                redis = self._get_redis()
+                redis.rpush(self.redis_queue, msg)
 
             return jsonify({ 'status': 'ok' })
 
@@ -272,7 +275,8 @@ class HttpBackend(Backend):
             event = WidgetUpdateEvent(
                 widget=widget, **(json.loads(http_request.data.decode('utf-8'))))
 
-            self.redis.rpush(self.redis_queue, event)
+            redis = self._get_redis()
+            redis.rpush(self.redis_queue, event)
             return jsonify({ 'status': 'ok' })
 
         @app.route('/static/<path>', methods=['GET'])
