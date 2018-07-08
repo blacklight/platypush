@@ -46,7 +46,7 @@ class HttpBackend(Backend):
     Note that if you set up a main token, it will be required for any HTTP
     interaction - either as ``X-Token`` HTTP header, on the query string
     (attribute name: ``token``), as part of the JSON payload root (attribute
-    name: ``_token``), or via HTTP basic auth (any username works).
+    name: ``token``), or via HTTP basic auth (any username works).
 
     Requires:
 
@@ -201,7 +201,7 @@ class HttpBackend(Backend):
         else:
             try:
                 args = json.loads(http_request.data.decode('utf-8'))
-                user_token = args.get('_token')
+                user_token = args.get('token')
             except:
                 pass
 
@@ -222,11 +222,7 @@ class HttpBackend(Backend):
         @app.route('/execute', methods=['POST'])
         def execute():
             """ Endpoint to execute commands """
-            args = json.loads(http_request.data.decode('utf-8'))
             if not self._authentication_ok(): return self._authenticate()
-
-            if '_token' in args:
-                del args['_token']
 
             args = json.loads(http_request.data.decode('utf-8'))
             msg = Message.build(args)
