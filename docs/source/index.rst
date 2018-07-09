@@ -7,6 +7,7 @@ Platypush
 
     backends
     plugins
+    events
 
 Indices and tables
 ==================

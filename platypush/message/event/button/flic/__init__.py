@@ -2,9 +2,20 @@ from platypush.message.event import Event, EventMatchResult
 
 
 class FlicButtonEvent(Event):
-    """ Flic button event """
+    """
+    Event triggered when a sequence of user short/long presses is detected on a
+    Flic button (https://flic.io).
+    """
 
     def __init__(self, btn_addr, sequence, *args, **kwargs):
+        """
+        :param btn_addr: Physical address of the button that originated the event
+        :type btn_addr: str
+
+        :param sequence: Detected sequence, as a list of Flic button event types (either "ShortPressEvent" or "LongPressEvent")
+        :type sequence: list[str]
+        """
+
         super().__init__(btn_addr=btn_addr, sequence=sequence, *args, **kwargs)
 
 
