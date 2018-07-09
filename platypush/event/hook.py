@@ -147,12 +147,16 @@ class EventHook(object):
             runs the hook actions if the condition is met """
 
         result = self.matches_event(event)
+        token = Config.get('token')
 
         if result.is_match:
             logger.info('Running hook {} triggered by an event'.format(self.name))
 
             for action in self.actions:
                 a = EventAction.build(action)
+                if token:
+                    a.token = token
+
                 a.execute(event=event, **result.parsed_args)
 
 

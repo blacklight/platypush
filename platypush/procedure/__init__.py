@@ -99,8 +99,12 @@ class Procedure(object):
 
         logger.info('Executing request {}'.format(self.name))
         response = Response()
+        token = Config.get('token')
 
         for request in self.requests:
+            if token:
+                request.token = token
+
             context['async'] = self.async; context['n_tries'] = n_tries
             response = request.execute(**context)
 
