@@ -1,6 +1,5 @@
 import subprocess
 
-from platypush.message.response import Response
 from platypush.plugins import Plugin, action
 
 

@@ -1,7 +1,6 @@
 import subprocess
 import urllib.parse
 
-from platypush.message.response import Response
 from platypush.plugins import Plugin, action
 
 class TtsPlugin(Plugin):
