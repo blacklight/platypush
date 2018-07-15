@@ -327,19 +327,16 @@ class VideoOmxplayerPlugin(Plugin):
 
         redis.send_message(msg)
 
-    @action
     def on_play(self):
         def _f(player):
             self.send_message(VideoPlayEvent(video=self.player.get_source()))
         return _f
 
-    @action
     def on_pause(self):
         def _f(player):
             self.send_message(VideoPauseEvent(video=self.player.get_source()))
         return _f
 
-    @action
     def on_stop(self):
         def _f(player):
             self.send_message(VideoStopEvent())

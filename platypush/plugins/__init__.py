@@ -14,6 +14,9 @@ def action(f):
 
         try:
             output = f(*args, **kwargs)
+            if output and isinstance(output, Response):
+                errors = output.errors
+                output = output.output
         except Exception as e:
             if isinstance(args[0], Plugin):
                 args[0].logger.exception(e)
