@@ -49,6 +49,9 @@ class SensorBackend(Backend):
             if self.data is None or self.data != new_data:
                 self.bus.post(SensorDataChangeEvent(data=new_data))
 
+            data_below_threshold = {}
+            data_above_threshold = {}
+
             if self.thresholds:
                 if isinstance(self.thresholds, dict) and isinstance(new_data, dict):
                     for (measure, threshold) in self.thresholds.items():
@@ -57,15 +60,22 @@ class SensorBackend(Backend):
 
                         if new_data[measure] > threshold and (self.data is None or (
                                 measure in self.data and self.data[measure] <= threshold)):
-                            self.bus.post(SensorDataAboveThresholdEvent(data=new_data))
+                            data_above_threshold[measure] = new_data[measure]
                         elif new_data[measure] < threshold and (self.data is None or (
                                 measure in self.data and self.data[measure] >= threshold)):
-                            self.bus.post(SensorDataBelowThresholdEvent(data=new_data))
+                            data_below_threshold[measure] = new_data[measure]
                 else:
                     if new_data > threshold and (self.data is None or self.data <= threshold):
-                        self.bus.post(SensorDataAboveThresholdEvent(data=new_data))
+                        data_above_threshold = new_data
                     elif new_data < threshold and (self.data is None or self.data >= threshold):
-                        self.bus.post(SensorDataBelowThresholdEvent(data=new_data))
+                        data_below_threshold = new_data
+
+            if data_below_threshold:
+                self.bus.post(SensorDataBelowThresholdEvent(data=data_below_threshold))
+
+            if data_above_threshold:
+                self.bus.post(SensorDataAboveThresholdEvent(data=data_above_threshold))
+
 
             self.data = new_data
 
