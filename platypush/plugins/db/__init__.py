@@ -68,7 +68,6 @@ class DbPlugin(Plugin):
 
         with engine.connect() as connection:
             result = connection.execute(statement)
-            connection.commit()
 
 
     @action
