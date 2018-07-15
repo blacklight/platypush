@@ -36,6 +36,14 @@ class DbPlugin(Plugin):
         else:
             return self.engine
 
+    def _build_condition(self, table, column, value):
+        if isinstance(value, str):
+            value = "'{}'".format(value)
+        elif not isinstance(value, int) and not isinstance(value, 'float'):
+            value = "'{}'".format(str(value))
+
+        return eval('table.c.{}=={}'.format(column, value))
+
     @action
     def execute(self, statement, engine=None, *args, **kwargs):
         """
@@ -64,19 +72,23 @@ class DbPlugin(Plugin):
 
 
     @action
-    def select(self, query, engine=None, *args, **kwargs):
+    def select(self, query=None, table=None, filter=None, engine=None, *args, **kwargs):
         """
         Returns rows (as a list of hashes) given a query.
 
         :param query: SQL to be executed
         :type query: str
+        :param filter: Query WHERE filter expressed as a dictionary. This approach is preferred over specifying raw SQL in ``query`` as the latter approach may be prone to SQL injection, unless you need to build some complex SQL logic.
+        :type filter: dict
+        :param table: If you specified a filter instead of a raw query, you'll have to specify the target table
+        :type table: str
         :param engine: Engine to be used (default: default class engine)
         :type engine: str
         :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
         :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
         :returns: List of hashes representing the result rows.
 
-        Example:
+        Examples:
 
             Request::
 
@@ -90,25 +102,46 @@ class DbPlugin(Plugin):
                     }
                 }
 
+            or::
+
+                {
+                    "type": "request",
+                    "target": "your_host",
+                    "action": "db.select",
+                    "args": {
+                        "engine": "sqlite:///:memory:",
+                        "table": "table",
+                        "filter": {"id": 1}
+                    }
+                }
+
             Response::
 
                 [
                     {
                         "id": 1,
                         "name": foo
-                    },
-
-                    {
-                        "id": 2,
-                        "name": bar
                     }
                 ]
         """
 
-        engine = self._get_engine(engine, *args, **kwargs)
+        db = self._get_engine(engine, *args, **kwargs)
 
-        with engine.connect() as connection:
+        if table:
+            metadata = MetaData()
+            table = Table(table, metadata, autoload=True, autoload_with=db)
+            query = table.select()
+
+            if filter:
+                for (k,v) in filter.items():
+                    query = query.where(self._build_condition(table, k, v))
+
+        if query is None:
+            raise RuntimeError('You need to specify either "query", or "table" and "filter"')
+
+        with db.connect() as connection:
             result = connection.execute(query)
+
             columns = result.keys()
             rows = [
                 { columns[i]: row[i] for i in range(0, len(columns)) }
@@ -235,7 +268,7 @@ class DbPlugin(Plugin):
             update = table.update()
 
             for (k,v) in key.items():
-                update = update.where(eval('table.c.{}=={}'.format(k, v)))
+                update = update.where(self._build_condition(table, k, v))
 
             update = update.values(**values)
             engine.execute(update)
@@ -282,7 +315,7 @@ class DbPlugin(Plugin):
             delete = table.delete()
 
             for (k,v) in record.items():
-                delete = delete.where(eval('table.c.{}=={}'.format(k, v)))
+                delete = delete.where(self._build_condition(table, k, v))
 
             engine.execute(delete)
 

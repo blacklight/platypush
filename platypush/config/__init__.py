@@ -67,6 +67,11 @@ class Config(object):
             self._config['workdir'] = self._workdir_location
         os.makedirs(self._config['workdir'], exist_ok=True)
 
+        self._config['db'] = self._config.get('main_db', {
+            'engine': 'sqlite:///' + os.path.join(
+                os.environ['HOME'], '.local', 'share', 'platypush', 'main.db')
+        })
+
         logging_config = {
             'level': logging.INFO,
             'stream': sys.stdout,

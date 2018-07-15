@@ -1,3 +1,5 @@
+from platypush.config import Config
+from platypush.context import get_plugin
 from platypush.plugins import Plugin, action
 
 
@@ -7,9 +9,27 @@ class VariablePlugin(Plugin):
     accessed across your tasks.
     """
 
+    _variable_table_name = 'variable'
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._variables = {}
+        self.db_plugin = get_plugin('db')
+
+        db = Config.get('db')
+        self.db_config = {
+            'engine': db.get('engine'),
+            'args': db.get('args', []),
+            'kwargs': db.get('kwargs', {})
+        }
+
+        self._create_tables()
+        # self._variables = {}
+
+    def _create_tables(self):
+        self.db_plugin.execute("""CREATE TABLE IF NOT EXISTS {}(
+            name varchar(255) not null primary key,
+            value text
+        )""".format(self._variable_table_name))
 
     @action
     def get(self, name, default_value=None):
@@ -24,7 +44,13 @@ class VariablePlugin(Plugin):
         :returns: A map in the format ``{"<name>":"<value>"}``
         """
 
-        return {name: self._variables.get(name, default_value)}
+        rows = self.db_plugin.select(table=self._variable_table_name,
+                                     filter={'name': name},
+                                     engine=self.db_config['engine'],
+                                     *self.db_config['args'],
+                                     **self.db_config['kwargs']).output
+
+        return {name: rows[0]['value'] if rows else None}
 
     @action
     def set(self, **kwargs):
@@ -34,9 +60,18 @@ class VariablePlugin(Plugin):
         :param kwargs: Key-value list of variables to set (e.g. ``foo='bar', answer=42``)
         """
 
-        for (name, value) in kwargs.items():
-            self._variables[name] = value
+        records = [ { 'name': k, 'value': v }
+                   for (k,v) in kwargs.items() ]
+
+        self.db_plugin.insert(table=self._variable_table_name,
+                              records=records, key_columns=['name'],
+                              engine=self.db_config['engine'],
+                              on_duplicate_update=True,
+                              *self.db_config['args'],
+                              **self.db_config['kwargs'])
+
         return kwargs
+
 
     @action
     def unset(self, name):
@@ -46,8 +81,15 @@ class VariablePlugin(Plugin):
         :param name: Name of the variable to remove
         :type name: str
         """
-        if name in self._variables:
-            del self._variables[name]
+
+        records = [ { 'name': name } ]
+
+        self.db_plugin.delete(table=self._variable_table_name,
+                              records=records, engine=self.db_config['engine'],
+                              *self.db_config['args'],
+                              **self.db_config['kwargs'])
+
+        return True
 
 
 # vim:sw=4:ts=4:et:
