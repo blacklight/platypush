@@ -5,8 +5,11 @@ Welcome to the Platypush reference of available plugins, backends and event type
 
 For more information on Platypush please check out:
 
-* The `GitHub page <https://github.com/BlackLight/platypush>` of the project
-* The `online wiki <https://github.com/BlackLight/platypush/wiki>` for quickstart and examples
+* The `GitHub page`_ of the project
+* The `online wiki`_ for quickstart and examples
+
+.. _GitHub page: https://github.com/BlackLight/platypush
+.. _online wiki: https://github.com/BlackLight/platypush/wiki
 
 .. toctree::
     :maxdepth: 3
