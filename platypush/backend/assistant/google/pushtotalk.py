@@ -193,10 +193,8 @@ class SampleAssistant(object):
     Args:
       device_model_id: identifier of the device model.
       device_id: identifier of the registered device instance.
-      conversation_stream(ConversationStream): audio stream
-        for recording query and playing back assistant answer.
-      channel: authorized gRPC channel for connection to the
-        Google Assistant API.
+      conversation_stream(ConversationStream): audio stream for recording query and playing back assistant answer.
+      channel: authorized gRPC channel for connection to the Google Assistant API.
       deadline_sec: gRPC deadline in seconds for Google Assistant API call.
       device_handler: callback for device actions.
     """
