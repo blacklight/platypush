@@ -6,7 +6,6 @@ from platypush.config import Config
 from platypush.message.response import Response
 from platypush.utils import get_decorators
 
-
 def action(f):
     def _execute_action(*args, **kwargs):
         output = None
@@ -24,6 +23,8 @@ def action(f):
 
         return Response(output=output, errors=errors)
 
+    # Propagate the docstring
+    _execute_action.__doc__ = f.__doc__
     return _execute_action
 
 
