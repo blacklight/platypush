@@ -2,9 +2,10 @@ import json
 import serial
 
 from platypush.plugins import Plugin, action
+from platypush.plugins.gpio.sensor import GpioSensorPlugin
 
 
-class SerialPlugin(Plugin):
+class SerialPlugin(GpioSensorPlugin):
     """
     The serial plugin can read data from a serial device, as long as the serial
     device returns a JSON. You can use this plugin to interact for example with
@@ -59,7 +60,7 @@ class SerialPlugin(Plugin):
         return output.decode().strip()
 
     @action
-    def get_data(self):
+    def get_measurement(self):
         """
         Reads JSON data from the serial device and returns it as a message
         """
