@@ -34,7 +34,7 @@ class VideoOmxplayerPlugin(Plugin):
         * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
     """
 
-    """ Supported video extensions """
+    # Supported video extensions
     video_extensions = {
         '.avi', '.flv', '.wmv', '.mov', '.mp4', '.m4v', '.mpg', '.mpeg',
         '.rm', '.swf', '.vob', '.mkv'
