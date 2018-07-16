@@ -31,6 +31,7 @@ class GpioZeroborgPlugin(Plugin):
     def __init__(self, directions = {}, *args, **kwargs):
         """
         :param directions: Configuration for the motor directions. A direction is basically a configuration of the power delivered to each motor to allow whichever object you're controlling (wheels, robotic arms etc.) to move in a certain direction. In my experience the ZeroBorg always needs a bit of calibration, depending on factory defaults and the mechanical properties of the load it controls.
+
         Example configuration that I use to control a simple 4WD robot::
 
             directions = {
