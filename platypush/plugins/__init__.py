@@ -36,7 +36,10 @@ class Plugin(object):
         if 'logging' in kwargs:
             self.logger.setLevel(getattr(logging, kwargs['logging'].upper()))
 
-        self.registered_actions = set(get_decorators(self.__class__).get('action', []))
+        self.registered_actions = set(
+            get_decorators(self.__class__, climb_class_hierarchy=True)
+            .get('action', [])
+        )
 
     def run(self, method, *args, **kwargs):
         if method not in self.registered_actions:

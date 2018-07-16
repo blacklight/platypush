@@ -73,12 +73,16 @@ def get_hash(s):
     return hashlib.sha256(s.encode('utf-8')).hexdigest()
 
 
-def get_decorators(cls):
-    target = cls
+def get_decorators(cls, climb_class_hierarchy=False):
+    """
+    Get the decorators of a class as a {"decorator_name": [list of methods]} dictionary
+    :param climb_class_hierarchy: If set to True (default: False), it will search return the decorators in the parent classes as well
+    :type climb_class_hierarchy: bool
+    """
+
     decorators = {}
 
     def visit_FunctionDef(node):
-        # decorators[node.name] = []
         for n in node.decorator_list:
             name = ''
             if isinstance(n, ast.Call):
@@ -86,13 +90,24 @@ def get_decorators(cls):
             else:
                 name = n.attr if isinstance(n, ast.Attribute) else n.id
 
-            decorators[name] = decorators.get(name, [])
-            # decorators[node.name].append(name)
-            decorators[name].append(node.name)
+            decorators[name] = decorators.get(name, set())
+            decorators[name].add(node.name)
+
+    if climb_class_hierarchy:
+        targets = inspect.getmro(cls)
+    else:
+        targets = [cls]
 
     node_iter = ast.NodeVisitor()
     node_iter.visit_FunctionDef = visit_FunctionDef
-    node_iter.visit(ast.parse(inspect.getsource(target)))
+
+    for target in targets:
+        try:
+            node_iter.visit(ast.parse(inspect.getsource(target)))
+        except TypeError:
+            # Ignore built-in classes
+            pass
+
     return decorators
 
 
