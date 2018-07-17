@@ -1,5 +1,6 @@
 import json
 import serial
+import time
 
 from platypush.plugins import Plugin, action
 from platypush.plugins.gpio.sensor import GpioSensorPlugin
@@ -88,6 +89,7 @@ class SerialPlugin(GpioSensorPlugin):
         try:
             ser = self._get_serial()
         except:
+            time.sleep(1)
             ser = self._get_serial(reset=True)
 
         data = self._read_json(ser)
