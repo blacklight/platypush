@@ -28,6 +28,7 @@ class SerialPlugin(GpioSensorPlugin):
 
         self.device = device
         self.baud_rate = baud_rate
+        self.serial = None
 
 
     def _read_json(self, serial_port):
@@ -59,18 +60,37 @@ class SerialPlugin(GpioSensorPlugin):
 
         return output.decode().strip()
 
+    def _get_serial(self, reset=False):
+        if self.serial:
+            if not reset:
+                return self.serial
+
+            self._close_serial()
+
+        self.serial = serial.Serial(self.device, self.baud_rate)
+        return self.serial
+
+    def _close_serial(self):
+        if self.serial:
+            try:
+                self.serial.close()
+                self.serial = None
+            except Exception as e:
+                self.logger.warning('Error while closing serial communication: {}')
+                self.logger.exception(e)
+
     @action
     def get_measurement(self):
         """
         Reads JSON data from the serial device and returns it as a message
         """
 
-        ser = serial.Serial(self.device, self.baud_rate)
-
         try:
-            data = self._read_json(ser)
-        finally:
-            ser.close()
+            ser = self._get_serial()
+        except:
+            ser = self._get_serial(reset=True)
+
+        data = self._read_json(ser)
 
         try:
             data = json.loads(data)

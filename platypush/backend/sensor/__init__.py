@@ -64,11 +64,6 @@ class SensorBackend(Backend):
                         elif new_data[measure] < threshold and (self.data is None or (
                                 measure in self.data and self.data[measure] >= threshold)):
                             data_below_threshold[measure] = new_data[measure]
-                else:
-                    if new_data > threshold and (self.data is None or self.data <= threshold):
-                        data_above_threshold = new_data
-                    elif new_data < threshold and (self.data is None or self.data >= threshold):
-                        data_below_threshold = new_data
 
             if data_below_threshold:
                 self.bus.post(SensorDataBelowThresholdEvent(data=data_below_threshold))
