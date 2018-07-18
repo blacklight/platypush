@@ -48,10 +48,11 @@ class HttpRequestPlugin(Plugin):
         method = getattr(requests, method)
         response = method(url, **kwargs)
         response.raise_for_status()
-        output = response.text
 
         if output == 'json': output = response.json()
         if output == 'binary': output = response.content
+        else: output = response.text
+
         return output
 
 
