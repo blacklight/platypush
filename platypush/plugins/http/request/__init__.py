@@ -1,5 +1,6 @@
 import requests
 
+from platypush.message import Message
 from platypush.plugins import Plugin, action
 
 class HttpRequestPlugin(Plugin):
@@ -52,6 +53,12 @@ class HttpRequestPlugin(Plugin):
         if output == 'json': output = response.json()
         if output == 'binary': output = response.content
         else: output = response.text
+
+        try:
+            # If the response is a Platypush JSON, extract it
+            output = Message.build(output)
+        except Exception as e:
+            pass
 
         return output
 
