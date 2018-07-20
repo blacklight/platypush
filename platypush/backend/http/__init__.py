@@ -112,8 +112,8 @@ class HttpBackend(Backend):
         self.disable_websocket = disable_websocket
         self.websocket_thread = None
         self.redis_thread = None
+        self.redis = None
         self.active_websockets = set()
-        self.redis = self._get_redis()
 
 
     def _get_redis(self):
@@ -142,7 +142,8 @@ class HttpBackend(Backend):
                                  thread_id=self.redis_thread.ident)
 
             redis = self._get_redis()
-            redis.rpush(self.redis_queue, stop_evt)
+            if redis:
+                redis.rpush(self.redis_queue, stop_evt)
 
         if self.server_proc:
             self.server_proc.terminate()
@@ -169,6 +170,9 @@ class HttpBackend(Backend):
 
         while True:
             redis = self._get_redis()
+            if not redis:
+                continue
+
             msg = redis.blpop(self.redis_queue)
             msg = Message.build(json.loads(msg[1].decode('utf-8')))
 
@@ -243,7 +247,8 @@ class HttpBackend(Backend):
                 return str(response)
             elif isinstance(msg, Event):
                 redis = self._get_redis()
-                redis.rpush(self.redis_queue, msg)
+                if redis:
+                    redis.rpush(self.redis_queue, msg)
 
             return jsonify({ 'status': 'ok' })
 
@@ -276,7 +281,8 @@ class HttpBackend(Backend):
                 widget=widget, **(json.loads(http_request.data.decode('utf-8'))))
 
             redis = self._get_redis()
-            redis.rpush(self.redis_queue, event)
+            if redis:
+                redis.rpush(self.redis_queue, event)
             return jsonify({ 'status': 'ok' })
 
         @app.route('/static/<path>', methods=['GET'])
@@ -392,6 +398,8 @@ class HttpBackend(Backend):
 
     def run(self):
         super().run()
+        os.putenv('FLASK_APP', 'platypush')
+        os.putenv('FLASK_ENV', 'development')
         self.logger.info('Initialized HTTP backend on port {}'.format(self.port))
 
         webserver = self.webserver()
