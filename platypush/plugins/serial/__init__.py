@@ -1,5 +1,6 @@
 import json
 import serial
+import threading
 import time
 
 from platypush.plugins import Plugin, action
@@ -30,6 +31,8 @@ class SerialPlugin(GpioSensorPlugin):
         self.device = device
         self.baud_rate = baud_rate
         self.serial = None
+        self.serial_lock = threading.Lock()
+        self.last_measurement = None
 
 
     def _read_json(self, serial_port):
@@ -86,19 +89,31 @@ class SerialPlugin(GpioSensorPlugin):
         Reads JSON data from the serial device and returns it as a message
         """
 
-        try:
-            ser = self._get_serial()
-        except:
-            time.sleep(1)
-            ser = self._get_serial(reset=True)
-
-        data = self._read_json(ser)
+        data = None
 
         try:
-            data = json.loads(data)
-        except:
-            self.logger.warning('Invalid JSON message from {}: {}'.
-                                format(self.device, data))
+            serial_available = self.serial_lock.acquire(timeout=2)
+            if serial_available:
+                try:
+                    ser = self._get_serial()
+                except:
+                    time.sleep(1)
+                    ser = self._get_serial(reset=True)
+
+                data = self._read_json(ser)
+
+                try:
+                    data = json.loads(data)
+                except:
+                    self.logger.warning('Invalid JSON message from {}: {}'.
+                                        format(self.device, data))
+            else:
+                data = self.last_measurement
+        finally:
+            self.serial_lock.release()
+
+        if data:
+            self.last_measurement = data
 
         return data
 
