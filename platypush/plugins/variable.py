@@ -6,12 +6,24 @@ from platypush.plugins import Plugin, action
 class VariablePlugin(Plugin):
     """
     This plugin allows you to manipulate context variables that can be
-    accessed across your tasks.
+    accessed across your tasks. It requires the :mod:`platypush.plugins.db`
+    plugin to be enabled, as the variables will be stored on a local database
+    for persistency and multi-process sharing purposes.
+
+    Requires:
+
+        * **sqlalchemy** (``pip install sqlalchemy``)
     """
 
     _variable_table_name = 'variable'
 
     def __init__(self, *args, **kwargs):
+        """
+        The plugin will create a table named ``variable`` on the database
+        configured in the :mod:`platypush.plugins.db` plugin. You'll have
+        to specify a default ``engine`` in your ``db`` plugin configuration.
+        """
+
         super().__init__(*args, **kwargs)
         self.db_plugin = get_plugin('db')
 
