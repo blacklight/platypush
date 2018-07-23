@@ -21,7 +21,7 @@ class PushbulletBackend(Backend):
 
     Triggers:
 
-        * :class:`platypush.message.event.pushbullet` if a new push is received
+        * :class:`platypush.message.event.pushbullet.PushbulletEvent` if a new push is received
 
     Requires:
 

@@ -32,7 +32,8 @@ class AssistantGoogleBackend(Backend):
 
     Requires:
 
-        * **google-assistant-sdk** (``pip install google-assistant-sdk``)
+        * **google-assistant-library** (``pip install google-assistant-library``)
+        * **google-assistant-sdk[samples]** (``pip install google-assistant-sdk[samples]``)
     """
 
     def __init__(self, credentials_file=os.path.join(
