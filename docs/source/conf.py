@@ -186,7 +186,11 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'oauth2client',
                         'rtmidi',
                         'bluetooth',
-                        'gevent.wsgi']
+                        'gevent.wsgi',
+                        'Adafruit_IO',
+                        'pyperclip',
+                        'dbus'
+                        ]
 
 sys.path.insert(0, os.path.abspath('../..'))
 
