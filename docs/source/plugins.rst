@@ -5,6 +5,7 @@ Plugins
     :maxdepth: 2
     :caption: Plugins:
 
+    platypush/plugins/adafruit.io.rst
     platypush/plugins/assistant.google.rst
     platypush/plugins/assistant.google.pushtotalk.rst
     platypush/plugins/calendar.rst

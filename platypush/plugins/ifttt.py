@@ -16,31 +16,14 @@ class IftttPlugin(Plugin):
 
         * **requests** (``pip install requests``)
 
-    Some example usages::
+    An example::
 
-        # Execute a GET request on a JSON endpoint
+        # Trigger an IFTTT event named "at_home"
         {
             "type": "request",
-            "action": "http.request.get",
+            "action": "ifttt.trigger_event",
             "args": {
-                "url": "http://remote-host/api/v1/entity",
-                "params": {
-                    "start": "2000-01-01"
-                }
-            }
-        }
-
-        # Execute an action on another Platypush host through HTTP interface
-        {
-            "type": "request",
-            "action": "http.request.post",
-            "args": {
-                "url": "http://remote-host:8008/execute",
-                "json": {
-                    "type": "request",
-                    "target": "remote-host",
-                    "action": "music.mpd.play"
-                }
+                "event_name": "at_home"
             }
         }
     """
