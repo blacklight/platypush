@@ -20,6 +20,11 @@ class FlicButtonEvent(Event):
 
 
     def matches_condition(self, condition):
+        """
+        :param condition: Condition to be checked against, as a sequence of button presses ("ShortPressEvent" and "LongPressEvent")
+        :type condition: list
+        """
+
         result = EventMatchResult(is_match=False)
 
         if not isinstance(self, condition.type) \

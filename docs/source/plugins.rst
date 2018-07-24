@@ -11,6 +11,7 @@ Plugins
     platypush/plugins/calendar.rst
     platypush/plugins/calendar.ical.rst
     platypush/plugins/camera.pi.rst
+    platypush/plugins/clipboard.rst
     platypush/plugins/db.rst
     platypush/plugins/google.rst
     platypush/plugins/google.calendar.rst

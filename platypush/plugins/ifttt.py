@@ -48,7 +48,7 @@ class IftttPlugin(Plugin):
         :param event_name: Name of the event
         :type event_name: str
 
-        :param values: Optional list of values to be passed to the event. By convention IFTTT names the values as ``value1,value2,...`.
+        :param values: Optional list of values to be passed to the event. By convention IFTTT names the values as ``value1,value2,...``.
         :type values: list
         """
 
