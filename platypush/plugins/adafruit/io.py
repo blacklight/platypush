@@ -145,7 +145,7 @@ class AdafruitIoPlugin(Plugin):
 
 
     @action
-    def send_location_data(self, feed, lat, lon, ele=None, value=None):
+    def send_location_data(self, feed, lat, lon, ele, value):
         """
         Send location data to an Adafruit IO feed
 
@@ -161,11 +161,8 @@ class AdafruitIoPlugin(Plugin):
         :param ele: Elevation
         :type ele: float
 
-        :param value: (Optional) value to send
+        :param value: Value to send
         :type value: Numeric or string
-
-        :param enqueue: If throttle_seconds is set, this method by default will append values to the throttling queue to be periodically flushed instead of sending the message directly. In such case, pass enqueue=False to override the behaviour and send the message directly instead.
-        :type enqueue: bool
         """
 
         self.aio.send_location_data(feed=feed, value=value, lat=lat, lon=lon, ele=ele)
