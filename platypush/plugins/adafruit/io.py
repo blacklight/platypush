@@ -145,7 +145,7 @@ class AdafruitIoPlugin(Plugin):
 
 
     @action
-    def send_location_data(self, feed, lat, lon, value=None):
+    def send_location_data(self, feed, lat, lon, ele=None, value=None):
         """
         Send location data to an Adafruit IO feed
 
@@ -158,6 +158,9 @@ class AdafruitIoPlugin(Plugin):
         :param lon: Longitude
         :type lon: float
 
+        :param ele: Elevation
+        :type ele: float
+
         :param value: (Optional) value to send
         :type value: Numeric or string
 
@@ -165,7 +168,7 @@ class AdafruitIoPlugin(Plugin):
         :type enqueue: bool
         """
 
-        self.aio.send_location_data(feed=feed, value=value, lat=lat, lon=lon)
+        self.aio.send_location_data(feed=feed, value=value, lat=lat, lon=lon, ele=ele)
 
     @action
     def receive(self, feed):
