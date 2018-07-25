@@ -3,6 +3,7 @@ import time
 
 from threading import Thread
 from Adafruit_IO import Client
+from Adafruit_IO.errors import ThrottlingError
 
 from platypush.context import get_backend
 from platypush.message import Message
@@ -100,7 +101,11 @@ class AdafruitIoPlugin(Plugin):
 
                     for (feed, values) in data.items():
                         if values:
-                            self.send(feed, values, enqueue=False)
+                            try:
+                                self.send(feed, values, enqueue=False)
+                            except ThrottlingError:
+                                self.logger.warning('Adafruit IO throttling threshold hit, taking a nap before retrying')
+                                time.sleep(self.throttle_seconds)
 
                     data = {}
 
