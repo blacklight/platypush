@@ -95,13 +95,13 @@ class AdafruitIoPlugin(Plugin):
 
                 if data and (last_processed_batch_timestamp is None or
                             time.time() - last_processed_batch_timestamp >= self.throttle_seconds):
+                    last_processed_batch_timestamp = time.time()
                     self.logger.info('Processing feeds batch for Adafruit IO')
 
                     for (feed, values) in data.items():
                         if values:
                             self.send(feed, values, enqueue=False)
 
-                    last_processed_batch_timestamp = time.time()
                     data = {}
 
         return run
