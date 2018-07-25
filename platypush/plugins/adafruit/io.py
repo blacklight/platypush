@@ -1,5 +1,4 @@
 import ast
-import statistics
 import time
 
 from threading import Thread
@@ -100,8 +99,7 @@ class AdafruitIoPlugin(Plugin):
 
                     for (feed, values) in data.items():
                         if values:
-                            value = statistics.mean(values)
-                            self.send(feed, value, enqueue=False)
+                            self.send(feed, values, enqueue=False)
 
                     last_processed_batch_timestamp = time.time()
                     data = {}
@@ -125,7 +123,10 @@ class AdafruitIoPlugin(Plugin):
 
         if not self.throttle_seconds or not enqueue:
             # If no throttling is configured, or enqueue is false then send the value directly to Adafruit
-            self.aio.send(feed, value)
+            if isinstance(value, list):
+                self.aio.send_batch_data(feed, value)
+            else:
+                self.aio.send(feed, value)
         else:
             # Otherwise send it to the Redis queue to be picked up by the throttler thread
             redis = self._get_redis()
