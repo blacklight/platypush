@@ -68,6 +68,31 @@ class GoogleMapsPlugin(GooglePlugin):
 
         return address
 
+    @action
+    def get_elevation_from_latlng(self, latitude, longitude):
+        """
+        Get the elevation in meters of a geo point given lat/long
+
+        :param latitude: Latitude
+        :type latitude: float
+
+        :param longitude: Longitude
+        :type longitude: float
+        """
+
+        response = requests.get('https://maps.googleapis.com/maps/api/elevation/json',
+                                params = {
+                                    'locations': '{},{}'.format(latitude, longitude),
+                                    'key': self.api_key,
+                                }).json()
+
+        elevation = None
+
+        if response.get('results'):
+            elevation = response['results'][0]['elevation']
+
+        return { 'elevation': elevation }
+
 
 # vim:sw=4:ts=4:et:
 
