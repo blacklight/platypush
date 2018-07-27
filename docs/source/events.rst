@@ -10,6 +10,7 @@ Events
     platypush/events/geo.rst
     platypush/events/http.rst
     platypush/events/http.rss.rst
+    platypush/events/kafka.rst
     platypush/events/midi.rst
     platypush/events/music.rst
     platypush/events/path.rst

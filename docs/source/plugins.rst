@@ -24,6 +24,7 @@ Plugins
     platypush/plugins/gpio.zeroborg.rst
     platypush/plugins/http.request.rst
     platypush/plugins/ifttt.rst
+    platypush/plugins/kafka.rst
     platypush/plugins/light.rst
     platypush/plugins/light.hue.rst
     platypush/plugins/midi.rst

@@ -4,7 +4,10 @@ import time
 
 from kafka import KafkaConsumer, KafkaProducer
 
-from .. import Backend
+from platypush.backend import Backend
+from platypush.context import get_plugin
+from platypush.message import Message
+from platypush.message.event.kafka import KafkaMessageEvent
 
 
 class KafkaBackend(Backend):
@@ -19,9 +22,9 @@ class KafkaBackend(Backend):
 
     _conn_retry_secs = 5
 
-    def __init__(self, server, topic='platypush', **kwargs):
+    def __init__(self, server='localhost:9092', topic='platypush', **kwargs):
         """
-        :param server: Kafka server
+        :param server: Kafka server name or address + port (default: ``localhost:9092``)
         :type server: str
 
         :param topic: (Prefix) topic to listen to (default: platypush). The Platypush device_id (by default the hostname) will be appended to the topic (the real topic name will e.g. be "platypush.my_rpi")
@@ -40,29 +43,31 @@ class KafkaBackend(Backend):
 
     def _on_record(self, record):
         if record.topic != self.topic: return
+        msg = record.value.decode('utf-8')
+        is_platypush_message = False
 
         try:
-            msg = json.loads(record.value.decode('utf-8'))
-        except Exception as e:
-            self.logger.exception(e)
+            msg = Message.build(msg)
+            is_platypush_message = True
+        except:
+            pass
 
-        self.logger.debug('Received message on Kafka backend: {}'.format(msg))
-        self.on_message(msg)
+        self.logger.info('Received message on Kafka backend: {}'.format(msg))
 
-    def _init_producer(self):
-        if not self.producer:
-            self.producer = KafkaProducer(bootstrap_servers=self.server)
+        if is_platypush_message:
+            self.on_message(msg)
+        else:
+            self.on_message(KafkaMessageEvent(msg=msg))
 
     def _topic_by_device_id(self, device_id):
         return '{}.{}'.format(self.topic_prefix, device_id)
 
     def send_message(self, msg):
         target = msg.target
-        msg = str(msg).encode('utf-8')
-
-        self._init_producer()
-        self.producer.send(self._topic_by_device_id(target), msg)
-        self.producer.flush()
+        kafka_plugin = get_plugin('kafka')
+        kafka_plugin.send_message(msg=msg,
+                                  topic=self._topic_by_device_id(target),
+                                  server=self.server)
 
     def on_stop(self):
         try:
