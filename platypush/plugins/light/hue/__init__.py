@@ -502,23 +502,27 @@ class LightHuePlugin(LightPlugin):
                         (duration and time.time() - animation_start_time > duration):
                     break
 
-                if animation == self.Animation.COLOR_TRANSITION:
-                    for (light, attrs) in lights.items():
-                        self.logger.info('Setting {} to {}'.format(light, attrs))
-                        self.bridge.set_light(light, attrs)
+                try:
+                    if animation == self.Animation.COLOR_TRANSITION:
+                        for (light, attrs) in lights.items():
+                            self.logger.info('Setting {} to {}'.format(light, attrs))
+                            self.bridge.set_light(light, attrs)
+                            stop_animation = _should_stop()
+                            if stop_animation: break
+                    elif animation == self.Animation.BLINK:
+                        conf = lights[list(lights.keys())[0]]
+                        self.logger.info('Setting lights to {}'.format(conf))
+
+                        if groups:
+                            self.bridge.set_group([g.name for f in groups], conf)
+                        else:
+                            self.bridge.set_light(lights.keys(), conf)
+
                         stop_animation = _should_stop()
                         if stop_animation: break
-                elif animation == self.Animation.BLINK:
-                    conf = lights[list(lights.keys())[0]]
-                    self.logger.info('Setting lights to {}'.format(conf))
-
-                    if groups:
-                        self.bridge.set_group([g.name for f in groups], conf)
-                    else:
-                        self.bridge.set_light(lights.keys(), conf)
-
-                    stop_animation = _should_stop()
-                    if stop_animation: break
+                except Exception as e:
+                    self.logger.warning(e)
+                    time.sleep(2)
 
                 lights = _next_light_attrs(lights)
 
