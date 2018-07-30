@@ -1,6 +1,6 @@
 """
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-.. license:: MIT
+.. license: MIT
 """
 
 import json
@@ -28,12 +28,18 @@ class AssistantGoogleBackend(Backend):
 
     Triggers:
 
-        * :class:`platypush.message.event.assistant.ConversationStartEvent` when a new conversation starts
-        * :class:`platypush.message.event.assistant.SpeechRecognizedEvent` when a new voice command is recognized
-        * :class:`platypush.message.event.assistant.NoResponse` when a conversation returned no response
-        * :class:`platypush.message.event.assistant.ResponseEvent` when the assistant is speaking a response
-        * :class:`platypush.message.event.assistant.ConversationTimeoutEvent` when a conversation times out
-        * :class:`platypush.message.event.assistant.ConversationEndEvent` when a new conversation ends
+        * :class:`platypush.message.event.assistant.ConversationStartEvent` \
+            when a new conversation starts
+        * :class:`platypush.message.event.assistant.SpeechRecognizedEvent` \
+            when a new voice command is recognized
+        * :class:`platypush.message.event.assistant.NoResponse` \
+            when a conversation returned no response
+        * :class:`platypush.message.event.assistant.ResponseEvent` \
+            when the assistant is speaking a response
+        * :class:`platypush.message.event.assistant.ConversationTimeoutEvent` \
+            when a conversation times out
+        * :class:`platypush.message.event.assistant.ConversationEndEvent` \
+            when a new conversation ends
 
     Requires:
 
@@ -47,10 +53,15 @@ class AssistantGoogleBackend(Backend):
                      'google-oauthlib-tool', 'credentials.json'),
                  device_model_id='Platypush', **kwargs):
         """
-        :param credentials_file: Path to the Google OAuth credentials file (default: ~/.config/google-oauthlib-tool/credentials.json). See https://developers.google.com/assistant/sdk/guides/library/python/embed/install-sample#generate_credentials for how to get your own credentials file.
+        :param credentials_file: Path to the Google OAuth credentials file \
+            (default: ~/.config/google-oauthlib-tool/credentials.json). \
+            See https://developers.google.com/assistant/sdk/guides/library/python/embed/install-sample#generate_credentials \
+            for instructions to get your own credentials file.
+
         :type credentials_file: str
 
-        :param device_model_id: Device model ID to use for the assistant (default: Platypush)
+        :param device_model_id: Device model ID to use for the assistant \
+            (default: Platypush)
         :type device_model_id: str
         """
 
@@ -60,8 +71,10 @@ class AssistantGoogleBackend(Backend):
         self.assistant = None
 
         with open(self.credentials_file, 'r') as f:
-            self.credentials = google.oauth2.credentials.Credentials(token=None,
-                                                                     **json.load(f))
+            self.credentials = google.oauth2.credentials.Credentials(
+                token=None,
+                **json.load(f))
+
         self.logger.info('Initialized Google Assistant backend')
 
     def _process_event(self, event):
@@ -76,7 +89,8 @@ class AssistantGoogleBackend(Backend):
             self.bus.post(ConversationTimeoutEvent())
         elif event.type == EventType.ON_NO_RESPONSE:
             self.bus.post(NoResponseEvent())
-        elif hasattr(EventType, 'ON_RENDER_RESPONSE') and event.type == EventType.ON_RENDER_RESPONSE:
+        elif hasattr(EventType, 'ON_RENDER_RESPONSE') and \
+            event.type == EventType.ON_RENDER_RESPONSE:
             self.bus.post(ResponseEvent(response_text=event.args.get('text')))
         elif event.type == EventType.ON_RECOGNIZING_SPEECH_FINISHED:
             phrase = event.args['text'].lower().strip()

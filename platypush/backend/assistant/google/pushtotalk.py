@@ -1,6 +1,6 @@
 """
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-.. license:: MIT
+.. license: MIT
 """
 
 import concurrent
@@ -12,7 +12,8 @@ import grpc
 import google.auth.transport.grpc
 import google.auth.transport.requests
 import google.oauth2.credentials
-from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2, embedded_assistant_pb2_grpc
+from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2, \
+    embedded_assistant_pb2_grpc
 
 import googlesamples.assistant.grpc.audio_helpers as audio_helpers
 import googlesamples.assistant.grpc.device_helpers as device_helpers
@@ -36,9 +37,12 @@ class AssistantGooglePushtotalkBackend(Backend):
 
     Triggers:
 
-        * :class:`platypush.message.event.assistant.ConversationStartEvent` when a new conversation starts
-        * :class:`platypush.message.event.assistant.SpeechRecognizedEvent` when a new voice command is recognized
-        * :class:`platypush.message.event.assistant.ConversationEndEvent` when a new conversation ends
+        * :class:`platypush.message.event.assistant.ConversationStartEvent` \
+            when a new conversation starts
+        * :class:`platypush.message.event.assistant.SpeechRecognizedEvent` \
+            when a new voice command is recognized
+        * :class:`platypush.message.event.assistant.ConversationEndEvent` \
+            when a new conversation ends
 
     Requires:
 
@@ -66,10 +70,16 @@ class AssistantGooglePushtotalkBackend(Backend):
                  conversation_start_fifo=os.path.join(os.path.sep, 'tmp', 'pushtotalk.fifo'),
                  **kwargs):
         """
-        :param credentials_file: Path to the Google OAuth credentials file (default: ~/.config/google-oauthlib-tool/credentials.json). See https://developers.google.com/assistant/sdk/guides/library/python/embed/install-sample#generate_credentials for how to get your own credentials file.
+        :param credentials_file: Path to the Google OAuth credentials file \
+            (default: ~/.config/google-oauthlib-tool/credentials.json). \
+            See https://developers.google.com/assistant/sdk/guides/library/python/embed/install-sample#generate_credentials \
+            for instructions to get your own credentials file.
         :type credentials_file: str
 
-        :param device_config: Path to device_config.json. Register your device (see https://developers.google.com/assistant/sdk/guides/library/python/embed/register-device) and create a project, then run the pushtotalk.py script from googlesamples to create your device_config.json
+        :param device_config: Path to device_config.json. Register your device \
+            (see https://developers.google.com/assistant/sdk/guides/library/python/embed/register-device) \
+            and create a project, then run the pushtotalk.py script from \
+            googlesamples to create your device_config.json
         :type device_config: str
 
         :param lang: Assistant language (default: en-US)
@@ -197,7 +207,8 @@ class SampleAssistant:
     Args:
       device_model_id: identifier of the device model.
       device_id: identifier of the registered device instance.
-      conversation_stream(ConversationStream): audio stream for recording query and playing back assistant answer.
+      conversation_stream(ConversationStream): audio stream for recording \
+          query and playing back assistant answer.
       channel: authorized gRPC channel for connection to the Google Assistant API.
       deadline_sec: gRPC deadline in seconds for Google Assistant API call.
       device_handler: callback for device actions.

@@ -1,6 +1,6 @@
 """
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-.. license:: MIT
+.. license: MIT
 """
 
 import json
@@ -24,7 +24,8 @@ class AssistantSnowboyBackend(Backend):
 
     Triggers:
 
-        * :class:`platypush.message.event.assistant.HotwordDetectedEvent` whenever the hotword has been detected
+        * :class:`platypush.message.event.assistant.HotwordDetectedEvent` \
+            whenever the hotword has been detected
 
     Requires:
 
@@ -34,7 +35,8 @@ class AssistantSnowboyBackend(Backend):
     def __init__(self, voice_model_file, hotword=None, sensitivity=0.5,
                  audio_gain=1.0, **kwargs):
         """
-        :param voice_model_file: Snowboy voice model file - see https://snowboy.kitt.ai/
+        :param voice_model_file: Snowboy voice model file - \
+            see https://snowboy.kitt.ai/
         :type voice_model_file: str
 
         :param hotword: Name of the hotword

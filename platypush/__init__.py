@@ -2,7 +2,7 @@
 Platypush
 
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-.. license:: MIT
+.. license: MIT
 """
 
 import argparse
