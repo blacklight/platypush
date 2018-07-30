@@ -1,3 +1,10 @@
+"""
+Platypush
+
+.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
+.. license:: MIT
+"""
+
 import argparse
 import logging
 import sys
@@ -18,30 +25,29 @@ from .message.response import Response
 __author__ = 'Fabio Manganiello <blacklight86@gmail.com>'
 __version__ = '0.9'
 
-#-----------#
+LOGGER = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
-
-class Daemon(object):
+class Daemon:
     """ Main class for the Platypush daemon """
 
-    """ Configuration file (default: either ~/.config/platypush/config.yaml or
-        /etc/platypush/config.yaml) """
+    # Configuration file (default: either ~/.config/platypush/config.yaml or
+    # /etc/platypush/config.yaml
     config_file = None
 
-    """ Application bus. It's an internal queue where:
-        - backends will post the messages they receive
-        - plugins will post the responses they process """
+    # Application bus. It's an internal queue where:
+    # - backends will post the messages they receive
+    # - plugins will post the responses they process
     bus = None
 
-    """ backend_name => backend_obj map """
+    # backend_name => backend_obj map
     backends = None
 
-    """ number of executions retries before a request fails """
+    # number of executions retries before a request fails
     n_tries = 2
 
     def __init__(self, config_file=None, requests_to_process=None):
-        """ Constructor
+        """
+        Constructor
         Params:
             config_file -- Configuration file override (default: None)
             requests_to_process -- Exit after processing the specified number
@@ -58,7 +64,8 @@ class Daemon(object):
 
     @classmethod
     def build_from_cmdline(cls, args):
-        """ Build the app from command line arguments.
+        """
+        Build the app from command line arguments.
         Params:
             args -- Your sys.argv[1:] [List of strings]
         """
@@ -70,30 +77,34 @@ class Daemon(object):
         return cls(config_file=opts.config)
 
     def on_message(self):
-        """ Default message handler """
+        """
+        Default message handler
+        """
 
         def _f(msg):
-            """ on_message closure
+            """
+            on_message closure
             Params:
-                msg -- platypush.message.Message instance """
+                msg -- platypush.message.Message instance
+            """
 
             if isinstance(msg, Request):
                 try:
                     msg.execute(n_tries=self.n_tries)
                 except PermissionError:
-                    logger.info('Dropped unauthorized request: {}'.format(msg))
+                    LOGGER.info('Dropped unauthorized request: {}'.format(msg))
 
                 self.processed_requests += 1
                 if self.requests_to_process \
                         and self.processed_requests >= self.requests_to_process:
                     self.stop_app()
             elif isinstance(msg, Response):
-                logger.info('Received response: {}'.format(msg))
+                LOGGER.info('Received response: {}'.format(msg))
             elif isinstance(msg, StopEvent) and msg.targets_me():
-                logger.info('Received STOP event: {}'.format(msg))
+                LOGGER.info('Received STOP event: {}'.format(msg))
                 self.stop_app()
             elif isinstance(msg, Event):
-                logger.info('Received event: {}'.format(msg))
+                LOGGER.info('Received event: {}'.format(msg))
                 self.event_processor.process_event(msg)
 
         return _f
@@ -124,17 +135,20 @@ class Daemon(object):
         # Poll for messages on the bus
         try:
             self.bus.poll()
-        except KeyboardInterrupt as e:
-            logger.info('SIGINT received, terminating application')
+        except KeyboardInterrupt:
+            LOGGER.info('SIGINT received, terminating application')
         finally:
             self.stop_app()
 
 
 def main():
+    """
+    Platypush daemon main
+    """
+
     print('Starting platypush v.{}'.format(__version__))
     app = Daemon.build_from_cmdline(sys.argv[1:])
     app.start()
 
 
 # vim:sw=4:ts=4:et:
-

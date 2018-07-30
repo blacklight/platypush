@@ -1,3 +1,8 @@
+"""
+.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
+.. license:: MIT
+"""
+
 import json
 import os
 import subprocess
@@ -57,6 +62,10 @@ class AssistantSnowboyBackend(Backend):
         self.logger.info('Initialized Snowboy hotword detection')
 
     def hotword_detected(self):
+        """
+        Callback called on hotword detection
+        """
+
         def callback():
             self.bus.post(HotwordDetectedEvent(hotword=self.hotword))
         return callback
@@ -67,4 +76,3 @@ class AssistantSnowboyBackend(Backend):
 
 
 # vim:sw=4:ts=4:et:
-

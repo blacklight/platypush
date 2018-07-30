@@ -1,3 +1,8 @@
+"""
+.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
+.. license:: MIT
+"""
+
 import json
 import os
 import subprocess
@@ -36,10 +41,11 @@ class AssistantGoogleBackend(Backend):
         * **google-assistant-sdk[samples]** (``pip install google-assistant-sdk[samples]``)
     """
 
-    def __init__(self, credentials_file=os.path.join(
-            os.path.expanduser('~/.config'),
-            'google-oauthlib-tool', 'credentials.json'),
-            device_model_id='Platypush', **kwargs):
+    def __init__(self,
+                 credentials_file=os.path.join(
+                     os.path.expanduser('~/.config'),
+                     'google-oauthlib-tool', 'credentials.json'),
+                 device_model_id='Platypush', **kwargs):
         """
         :param credentials_file: Path to the Google OAuth credentials file (default: ~/.config/google-oauthlib-tool/credentials.json). See https://developers.google.com/assistant/sdk/guides/library/python/embed/install-sample#generate_credentials for how to get your own credentials file.
         :type credentials_file: str
@@ -80,12 +86,14 @@ class AssistantGoogleBackend(Backend):
 
     def start_conversation(self):
         """ Starts an assistant conversation """
-        if self.assistant: self.assistant.start_conversation()
+        if self.assistant:
+            self.assistant.start_conversation()
 
 
     def stop_conversation(self):
         """ Stops an assistant conversation """
-        if self.assistant: self.assistant.stop_conversation()
+        if self.assistant:
+            self.assistant.stop_conversation()
 
 
     def run(self):
@@ -98,4 +106,3 @@ class AssistantGoogleBackend(Backend):
 
 
 # vim:sw=4:ts=4:et:
-

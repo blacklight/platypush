@@ -1,3 +1,8 @@
+"""
+.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
+.. license:: MIT
+"""
+
 import importlib
 import logging
 import sys

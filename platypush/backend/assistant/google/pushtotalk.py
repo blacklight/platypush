@@ -1,22 +1,24 @@
+"""
+.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
+.. license:: MIT
+"""
+
+import concurrent
 import json
 import logging
 import os
-import threading
-import time
 
 import grpc
 import google.auth.transport.grpc
 import google.auth.transport.requests
 import google.oauth2.credentials
+from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2, embedded_assistant_pb2_grpc
+
 import googlesamples.assistant.grpc.audio_helpers as audio_helpers
 import googlesamples.assistant.grpc.device_helpers as device_helpers
 import googlesamples.assistant.grpc.assistant_helpers as assistant_helpers
 
 from tenacity import retry, stop_after_attempt, retry_if_exception
-from google.assistant.embedded.v1alpha2 import (
-    embedded_assistant_pb2,
-    embedded_assistant_pb2_grpc
-)
 
 
 from platypush.backend import Backend
@@ -53,15 +55,16 @@ class AssistantGooglePushtotalkBackend(Backend):
     audio_flush_size = audio_helpers.DEFAULT_AUDIO_DEVICE_FLUSH_SIZE
     grpc_deadline = 60 * 3 + 5
 
-    def __init__(self, credentials_file=os.path.join(
-                os.path.expanduser('~'), '.config',
-                'google-oauthlib-tool', 'credentials.json'),
-            device_config=os.path.join(
-                os.path.expanduser('~'), '.config', 'googlesamples-assistant',
-                'device_config.json'),
-            lang='en-US',
-            conversation_start_fifo = os.path.join(os.path.sep, 'tmp', 'pushtotalk.fifo'),
-            *args, **kwargs):
+    def __init__(self, *args,
+                 credentials_file=os.path.join(
+                     os.path.expanduser('~'), '.config',
+                     'google-oauthlib-tool', 'credentials.json'),
+                 device_config=os.path.join(
+                     os.path.expanduser('~'), '.config', 'googlesamples-assistant',
+                     'device_config.json'),
+                 lang='en-US',
+                 conversation_start_fifo=os.path.join(os.path.sep, 'tmp', 'pushtotalk.fifo'),
+                 **kwargs):
         """
         :param credentials_file: Path to the Google OAuth credentials file (default: ~/.config/google-oauthlib-tool/credentials.json). See https://developers.google.com/assistant/sdk/guides/library/python/embed/install-sample#generate_credentials for how to get your own credentials file.
         :type credentials_file: str
@@ -98,10 +101,10 @@ class AssistantGooglePushtotalkBackend(Backend):
                                                                     **json.load(f))
                 http_request = google.auth.transport.requests.Request()
                 credentials.refresh(http_request)
-        except:
-            self.logger.error('Error loading credentials: %s', e)
+        except Exception as ex:
+            self.logger.error('Error loading credentials: %s', str(ex))
             self.logger.error('Run google-oauthlib-tool to initialize '
-                        'new OAuth 2.0 credentials.')
+                              'new OAuth 2.0 credentials.')
             raise
 
         # Create an authorized gRPC channel.
@@ -151,43 +154,44 @@ class AssistantGooglePushtotalkBackend(Backend):
             self.conversation_stream.stop_playback()
             self.bus.post(ConversationEndEvent())
 
-    def send_message(self, msg):
-        pass
-
     def on_conversation_start(self):
+        """ Conversation start handler """
         self.bus.post(ConversationStartEvent())
 
     def on_conversation_end(self):
+        """ Conversation end handler """
         self.bus.post(ConversationEndEvent())
 
     def on_speech_recognized(self, speech):
+        """ Speech recognized handler """
         self.bus.post(SpeechRecognizedEvent(phrase=speech))
 
     def run(self):
+        """ Backend executor """
         super().run()
 
         with SampleAssistant(self.lang, self.device_model_id, self.device_id,
-                            self.conversation_stream,
-                            self.grpc_channel, self.grpc_deadline,
-                            self.device_handler,
-                            on_conversation_start=self.on_conversation_start,
-                            on_conversation_end=self.on_conversation_end,
-                            on_speech_recognized=self.on_speech_recognized) as self.assistant:
+                             self.conversation_stream,
+                             self.grpc_channel, self.grpc_deadline,
+                             self.device_handler,
+                             on_conversation_start=self.on_conversation_start,
+                             on_conversation_end=self.on_conversation_end,
+                             on_speech_recognized=self.on_speech_recognized) as self.assistant:
             while not self.should_stop():
                 with open(self.conversation_start_fifo, 'r') as f:
-                    for line in f: pass
+                    f.read()
 
                 self.logger.info('Received conversation start event')
                 continue_conversation = True
-                user_request = None
 
                 while continue_conversation:
                     (user_request, continue_conversation) = self.assistant.assist()
+                    self.logger('User request: {}'.format(user_request))
 
                 self.on_conversation_end()
 
 
-class SampleAssistant(object):
+class SampleAssistant:
     """Sample Assistant that supports conversations and device actions.
 
     Args:
@@ -242,11 +246,14 @@ class SampleAssistant(object):
         if e:
             return False
         self.conversation_stream.close()
+        return True
 
+    @staticmethod
     def is_grpc_error_unavailable(e):
+        """ Returns True if the gRPC is not available """
         is_grpc_error = isinstance(e, grpc.RpcError)
         if is_grpc_error and (e.code() == grpc.StatusCode.UNAVAILABLE):
-            self.logger.error('grpc unavailable error: %s', e)
+            print('grpc unavailable error: {}'.format(e))
             return True
         return False
 
@@ -288,7 +295,7 @@ class SampleAssistant(object):
 
                 self.logger.info('Transcript of user request: "%s".', user_request)
                 self.logger.info('Playing assistant response.')
-            if len(resp.audio_out.audio_data) > 0:
+            if resp.audio_out.audio_data:
                 self.conversation_stream.write(resp.audio_out.audio_data)
             if resp.dialog_state_out.conversation_state:
                 conversation_state = resp.dialog_state_out.conversation_state
@@ -311,7 +318,7 @@ class SampleAssistant(object):
                 if fs:
                     device_actions_futures.extend(fs)
 
-        if len(device_actions_futures):
+        if device_actions_futures:
             self.logger.info('Waiting for device executions to complete.')
             concurrent.futures.wait(device_actions_futures)
 
@@ -319,7 +326,7 @@ class SampleAssistant(object):
 
         try:
             self.conversation_stream.stop_playback()
-        except:
+        except Exception:
             pass
 
         if user_request and self.on_speech_recognized:
@@ -331,12 +338,14 @@ class SampleAssistant(object):
         """Yields: AssistRequest messages to send to the API."""
 
         dialog_state_in = embedded_assistant_pb2.DialogStateIn(
-                language_code=self.language_code,
-                conversation_state=b''
-            )
+            language_code=self.language_code,
+            conversation_state=b''
+        )
+
         if self.conversation_state:
             self.logger.debug('Sending conversation state.')
             dialog_state_in.conversation_state = self.conversation_state
+
         config = embedded_assistant_pb2.AssistConfig(
             audio_in_config=embedded_assistant_pb2.AudioInConfig(
                 encoding='LINEAR16',
@@ -353,6 +362,7 @@ class SampleAssistant(object):
                 device_model_id=self.device_model_id,
             )
         )
+
         # The first AssistRequest must contain the AssistConfig
         # and no audio data.
         yield embedded_assistant_pb2.AssistRequest(config=config)
@@ -362,4 +372,3 @@ class SampleAssistant(object):
 
 
 # vim:sw=4:ts=4:et:
-
