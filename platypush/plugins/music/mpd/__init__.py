@@ -166,9 +166,9 @@ class MusicMpdPlugin(MusicPlugin):
     @action
     def random(self, value=None):
         """
-        Set shuffle mode
+        Set random mode
 
-        :param value: If set, set the random/shuffle state this value (true/false). Default: None (toggle current state)
+        :param value: If set, set the random state this value (true/false). Default: None (toggle current state)
         :type value: bool
         """
 
@@ -190,6 +190,14 @@ class MusicMpdPlugin(MusicPlugin):
             value = int(self.status().output['repeat'])
             value = 1 if value == 0 else 0
         return self._exec('repeat', value)
+
+    @action
+    def shuffle(self):
+        """
+        Shuffles the current playlist
+        """
+
+        return self._exec('shuffle')
 
     @action
     def add(self, resource):
