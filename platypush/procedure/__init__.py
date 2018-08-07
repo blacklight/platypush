@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class Procedure(object):
     """ Procedure class. A procedure is a pre-configured list of requests """
 
-    def __init__(self, name, _async, requests, backend=None):
+    def __init__(self, name, async, requests, backend=None):
         """
         Params:
             name     -- Procedure name
@@ -21,7 +21,7 @@ class Procedure(object):
         """
 
         self.name     = name
-        self._async   = _async
+        self.async    = async
         self.requests = requests
         self.backend  = backend
 
@@ -30,7 +30,7 @@ class Procedure(object):
 
 
     @classmethod
-    def build(cls, name, _async, requests, backend=None, id=None, **kwargs):
+    def build(cls, name, async, requests, backend=None, id=None, **kwargs):
         reqs = []
         loop_count = 0
         if_count = 0
@@ -47,11 +47,11 @@ class Procedure(object):
 
                     # A 'for' loop is synchronous. Declare a 'fork' loop if you
                     # want to process the elements in the iterable in parallel
-                    _async = True if m.group(1) == 'fork' else False
+                    async = True if m.group(1) == 'fork' else False
                     iterator_name = m.group(2)
                     iterable = m.group(3)
 
-                    loop = LoopProcedure.build(name=loop_name, _async=_async,
+                    loop = LoopProcedure.build(name=loop_name, async=async,
                                                requests=request_config[key],
                                                backend=backend, id=id,
                                                iterator_name=iterator_name,
@@ -87,7 +87,7 @@ class Procedure(object):
             request = Request.build(request_config)
             reqs.append(request)
 
-        return cls(name=name, _async=_async, requests=reqs, backend=backend, **kwargs)
+        return cls(name=name, async=async, requests=reqs, backend=backend, **kwargs)
 
 
     def execute(self, n_tries=1, **context):
@@ -105,7 +105,7 @@ class Procedure(object):
             if token:
                 request.token = token
 
-            context['async'] = self._async; context['n_tries'] = n_tries
+            context['async'] = self.async; context['n_tries'] = n_tries
             response = request.execute(**context)
 
             if not self._async:
@@ -145,15 +145,15 @@ class LoopProcedure(Procedure):
 
     context = {}
 
-    def __init__(self, name, iterator_name, iterable, requests, _async=False, backend=None, **kwargs):
-        super(). __init__(name=name, _async=_async, requests=requests, backend=None, **kwargs)
+    def __init__(self, name, iterator_name, iterable, requests, async=False, backend=None, **kwargs):
+        super(). __init__(name=name, async=async, requests=requests, backend=None, **kwargs)
 
         self.iterator_name = iterator_name
         self.iterable = iterable
         self.requests = requests
 
 
-    def execute(self, _async=None, **context):
+    def execute(self, async=None, **context):
         iterable = Request.expand_value_from_context(self.iterable, **context)
         response = Response()
 

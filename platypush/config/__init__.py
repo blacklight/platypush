@@ -148,10 +148,10 @@ class Config(object):
                 self.cronjobs[cron_name] = self._config[key]
             elif key.startswith('procedure.'):
                 tokens = key.split('.')
-                _async = True if tokens[1] == 'async' else False
+                async = True if tokens[1] == 'async' else False
                 procedure_name = '.'.join(tokens[2:])
                 self.procedures[procedure_name] = {
-                    'async': _async,
+                    'async': async,
                     'actions': self._config[key]
                 }
             else:

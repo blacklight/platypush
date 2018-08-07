@@ -239,7 +239,7 @@ class HttpBackend(Backend):
 
             if isinstance(msg, Request):
                 try:
-                    response = msg.execute(_async=False)
+                    response = msg.execute(async=False)
                 except PermissionError:
                     abort(401)
 
