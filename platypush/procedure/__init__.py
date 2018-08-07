@@ -108,7 +108,7 @@ class Procedure(object):
             context['async'] = self.async; context['n_tries'] = n_tries
             response = request.execute(**context)
 
-            if not self._async:
+            if not self.async:
                 if isinstance(response.output, dict):
                     for (k,v) in response.output.items():
                         context[k] = v

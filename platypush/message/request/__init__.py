@@ -159,12 +159,12 @@ class Request(Message):
                         'origin attached: {}'.format(response))
 
 
-    def execute(self, n_tries=1, _async=True, **context):
+    def execute(self, n_tries=1, async=True, **context):
         """
         Execute this request and returns a Response object
         Params:
             n_tries -- Number of tries in case of failure before raising a RuntimeError
-            _async   -- If True, the request will be run asynchronously and the
+            async   -- If True, the request will be run asynchronously and the
                        response posted on the bus when available (default),
                        otherwise the current thread will wait for the response
                        to be returned synchronously.
@@ -212,7 +212,7 @@ class Request(Message):
             if self.token is None or get_hash(self.token) != token_hash:
                 raise PermissionError()
 
-        if _async:
+        if async:
             Thread(target=_thread_func, args=(n_tries,)).start()
         else:
             return _thread_func(n_tries)
