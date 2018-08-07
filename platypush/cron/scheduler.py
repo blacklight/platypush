@@ -27,7 +27,7 @@ class Cronjob(Thread):
         context = {}
 
         for action in self.actions:
-            response = action.execute(async=False, **context)
+            response = action.execute(_async=False, **context)
             logger.info('Response from cronjob {}: {}'.format(self.name, response))
 
 
