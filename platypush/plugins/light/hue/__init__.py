@@ -1,4 +1,5 @@
 import random
+import statistics
 import time
 
 from enum import Enum
@@ -370,6 +371,118 @@ class LightHuePlugin(LightPlugin):
 
         return self._exec('hue', int(value) % (self.MAX_HUE+1),
                       lights=lights, groups=groups)
+
+    @action
+    def delta_bri(self, delta, lights=[], groups=[]):
+        """
+        Change lights/groups brightness by a delta [-100, 100] compared to the current state.
+
+        :param lights: Lights to control (names or light objects). Default: plugin default lights
+        :param groups: Groups to control (names or group objects). Default: plugin default groups
+        :param delta: Brightness delta value (range: -100, 100)
+        """
+
+        bri = 0
+
+        if lights:
+            bri = statistics.mean([
+                light['state']['bri']
+                for light in self.bridge.get_light().values()
+                if light['name'] in lights
+            ])
+        elif groups:
+            bri = statistics.mean([
+                group['action']['bri']
+                for group in self.bridge.get_group().values()
+                if group['name'] in groups
+            ])
+        else:
+            raise RuntimeError('Please specify either a list of lights or groups')
+
+        delta *= (self.MAX_BRI/100)
+        if bri+delta < 0:
+            bri = 0
+        elif bri+delta > self.MAX_BRI:
+            bri = self.MAX_BRI
+        else:
+            bri += delta
+
+        return self._exec('bri', int(bri), lights=lights, groups=groups)
+
+    @action
+    def delta_sat(self, value, lights=[], groups=[]):
+        """
+        Change lights/groups saturation by a delta [-100, 100] compared to the current state.
+
+        :param lights: Lights to control (names or light objects). Default: plugin default lights
+        :param groups: Groups to control (names or group objects). Default: plugin default groups
+        :param delta: Saturation delta value (range: -100, 100)
+        """
+
+        sat = 0
+
+        if lights:
+            sat = statistics.mean([
+                light['state']['sat']
+                for light in self.bridge.get_light().values()
+                if light['name'] in lights
+            ])
+        elif groups:
+            sat = statistics.mean([
+                group['action']['sat']
+                for group in self.bridge.get_group().values()
+                if group['name'] in groups
+            ])
+        else:
+            raise RuntimeError('Please specify either a list of lights or groups')
+
+        delta *= (self.MAX_SAT/100)
+        if sat+delta < 0:
+            sat = 0
+        elif sat+delta > self.MAX_SAT:
+            sat = self.MAX_SAT
+        else:
+            sat += delta
+
+        return self._exec('sat', int(sat), lights=lights, groups=groups)
+
+    @action
+    def delta_hue(self, value, lights=[], groups=[]):
+        """
+        Change lights/groups hue by a delta [-100, 100] compared to the current state.
+
+        :param lights: Lights to control (names or light objects). Default: plugin default lights
+        :param groups: Groups to control (names or group objects). Default: plugin default groups
+        :param delta: Hue delta value (range: -100, 100)
+        """
+
+        hue = 0
+
+        if lights:
+            hue = statistics.mean([
+                light['state']['hue']
+                for light in self.bridge.get_light().values()
+                if light['name'] in lights
+            ])
+        elif groups:
+            hue = statistics.mean([
+                group['action']['hue']
+                for group in self.bridge.get_group().values()
+                if group['name'] in groups
+            ])
+        else:
+            raise RuntimeError('Please specify either a list of lights or groups')
+
+        delta *= (self.MAX_HUE/100)
+        if hue+delta < 0:
+            hue = 0
+        elif hue+delta > self.MAX_HUE:
+            hue = self.MAX_HUE
+        else:
+            hue += delta
+
+        return self._exec('hue', int(hue), lights=lights, groups=groups)
+
 
     @action
     def scene(self, name, lights=[], groups=[]):
