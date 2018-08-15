@@ -397,7 +397,11 @@ class LightHuePlugin(LightPlugin):
                 if group['name'] in groups
             ])
         else:
-            raise RuntimeError('Please specify either a list of lights or groups')
+            bri = statistics.mean([
+                light['state']['bri']
+                for light in self.bridge.get_light().values()
+                if light['name'] in self.lights
+            ])
 
         delta *= (self.MAX_BRI/100)
         if bri+delta < 0:
@@ -434,7 +438,11 @@ class LightHuePlugin(LightPlugin):
                 if group['name'] in groups
             ])
         else:
-            raise RuntimeError('Please specify either a list of lights or groups')
+            sat = statistics.mean([
+                light['state']['sat']
+                for light in self.bridge.get_light().values()
+                if light['name'] in self.lights
+            ])
 
         delta *= (self.MAX_SAT/100)
         if sat+delta < 0:
@@ -471,7 +479,11 @@ class LightHuePlugin(LightPlugin):
                 if group['name'] in groups
             ])
         else:
-            raise RuntimeError('Please specify either a list of lights or groups')
+            hue = statistics.mean([
+                light['state']['hue']
+                for light in self.bridge.get_light().values()
+                if light['name'] in self.lights
+            ])
 
         delta *= (self.MAX_HUE/100)
         if hue+delta < 0:
