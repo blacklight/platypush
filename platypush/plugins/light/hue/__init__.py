@@ -414,7 +414,7 @@ class LightHuePlugin(LightPlugin):
         return self._exec('bri', int(bri), lights=lights, groups=groups)
 
     @action
-    def delta_sat(self, value, lights=[], groups=[]):
+    def delta_sat(self, delta, lights=[], groups=[]):
         """
         Change lights/groups saturation by a delta [-100, 100] compared to the current state.
 
@@ -455,7 +455,7 @@ class LightHuePlugin(LightPlugin):
         return self._exec('sat', int(sat), lights=lights, groups=groups)
 
     @action
-    def delta_hue(self, value, lights=[], groups=[]):
+    def delta_hue(self, delta, lights=[], groups=[]):
         """
         Change lights/groups hue by a delta [-100, 100] compared to the current state.
 
