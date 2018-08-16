@@ -243,20 +243,22 @@ class LightHuePlugin(LightPlugin):
         if 'lights' in kwargs and kwargs['lights']:
             lights = kwargs.pop('lights').split(',').strip() \
                 if isinstance(lights, str) else kwargs.pop('lights')
-        elif 'groups' in kwargs and kwargs['groups']:
+        if 'groups' in kwargs and kwargs['groups']:
             groups = kwargs.pop('groups').split(',').strip() \
                 if isinstance(groups, str) else kwargs.pop('groups')
-        else:
+
+        if not lights and not groups:
             lights = self.lights
             groups = self.groups
 
         try:
             if attr == 'scene':
                 self.bridge.run_scene(groups[0], kwargs.pop('name'))
-            elif groups:
-                self.bridge.set_group(groups, attr, *args)
-            elif lights:
-                self.bridge.set_light(lights, attr, *args)
+            else:
+                if groups:
+                    self.bridge.set_group(groups, attr, *args)
+                if lights:
+                    self.bridge.set_light(lights, attr, *args)
         except Exception as e:
             # Reset bridge connection
             self.bridge = None
@@ -332,6 +334,55 @@ class LightHuePlugin(LightPlugin):
         """
 
         return self._exec('on', False, lights=lights, groups=groups)
+
+    @action
+    def toggle(self, lights=[], groups=[]):
+        """
+        Toggle lights/groups on/off.
+
+        :param lights: Lights to turn off (names or light objects). Default: plugin default lights
+        :param groups: Groups to turn off (names or group objects). Default: plugin default groups
+        """
+
+        lights_on  = []
+        lights_off = []
+        groups_on  = []
+        groups_off = []
+
+        if groups:
+            all_groups = self.bridge.get_group().values()
+
+            groups_on = [
+                group['name'] for group in all_groups
+                if group['name'] in groups and group['state']['any_on'] is True
+            ]
+
+            groups_off = [
+                group['name'] for group in all_groups
+                if group['name'] in groups and group['state']['any_on'] is False
+            ]
+
+        if not groups and not lights:
+            lights = self.lights
+
+        if lights:
+            all_lights = self.bridge.get_light().values()
+
+            lights_on = [
+                light['name'] for light in all_lights
+                if light['name'] in lights and light['state']['on'] is True
+            ]
+
+            lights_off = [
+                light['name'] for light in all_lights
+                if light['name'] in lights and light['state']['on'] is False
+            ]
+
+        if lights_on or groups_on:
+            self._exec('on', False, lights=lights_on, groups=groups_on)
+
+        if lights_off or groups_off:
+            self._exec('on', True, lights=lights_off, groups=groups_off)
 
     @action
     def bri(self, value, lights=[], groups=[]):
