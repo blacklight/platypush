@@ -43,6 +43,51 @@ class MusicPauseEvent(MusicEvent):
         super().__init__(*args, **kwargs)
 
 
+class VolumeChangeEvent(MusicEvent):
+    """
+    Event fired upon volume change
+    """
+
+    def __init__(self, volume, status=None, track=None, *args, **kwargs):
+        super().__init__(volume=volume, status=status, track=track, *args, **kwargs)
+
+
+class PlaybackRepeatModeChangeEvent(MusicEvent):
+    """
+    Event fired upon repeat mode change
+    """
+
+    def __init__(self, state, status=None, track=None, *args, **kwargs):
+        super().__init__(state=state, status=status, track=track, *args, **kwargs)
+
+
+class PlaybackRandomModeChangeEvent(MusicEvent):
+    """
+    Event fired upon random mode change
+    """
+
+    def __init__(self, state, status=None, track=None, *args, **kwargs):
+        super().__init__(state=state, status=status, track=track, *args, **kwargs)
+
+
+class PlaybackConsumeModeChangeEvent(MusicEvent):
+    """
+    Event fired upon consume mode change
+    """
+
+    def __init__(self, state, status=None, track=None, *args, **kwargs):
+        super().__init__(state=state, status=status, track=track, *args, **kwargs)
+
+
+class PlaybackSingleModeChangeEvent(MusicEvent):
+    """
+    Event fired upon single mode change
+    """
+
+    def __init__(self, state, status=None, track=None, *args, **kwargs):
+        super().__init__(state=state, status=status, track=track, *args, **kwargs)
+
+
 class PlaylistChangeEvent(MusicEvent):
     """
     Event fired upon playlist change

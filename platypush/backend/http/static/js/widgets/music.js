@@ -2,6 +2,7 @@ $(document).ready(function() {
     var $widget = $('.widget.music'),
         $trackContainer = $widget.find('.track-container'),
         $timeContainer = $widget.find('.time-container'),
+        $playbackStatusContainer = $widget.find('.playback-status-container'),
         $noTrackElement = $trackContainer.find('.no-track-info'),
         $trackElement = $trackContainer.find('.track-info'),
         $artistElement = $trackElement.find('[data-bind=artist]'),
@@ -9,6 +10,11 @@ $(document).ready(function() {
         $timeElapsedElement = $timeContainer.find('.time-elapsed'),
         $timeTotalElement = $timeContainer.find('.time-total'),
         $elapsedTimeBar = $widget.find('.time-bar > .elapsed'),
+        $volumeElement = $playbackStatusContainer.find('[data-bind=playback-volume]'),
+        $randomElement = $playbackStatusContainer.find('[data-bind=playback-random]'),
+        $repeatElement = $playbackStatusContainer.find('[data-bind=playback-repeat]'),
+        $singleElement = $playbackStatusContainer.find('[data-bind=playback-single]'),
+        $consumeElement = $playbackStatusContainer.find('[data-bind=playback-consume]'),
         timeElapsed,
         timeTotal,
         refreshElapsedInterval;
@@ -29,6 +35,14 @@ $(document).ready(function() {
 
             case 'platypush.message.event.music.MusicStopEvent':
                 refreshStatus(event.args.status);
+                break;
+
+            case 'platypush.message.event.music.VolumeChangeEvent':
+            case 'platypush.message.event.music.PlaybackRepeatModeChangeEvent':
+            case 'platypush.message.event.music.PlaybackRandomModeChangeEvent':
+            case 'platypush.message.event.music.PlaybackConsumeModeChangeEvent':
+            case 'platypush.message.event.music.PlaybackSingleModeChangeEvent':
+                refreshPlaybackStatus(event.args.status);
                 break;
         }
     };
@@ -103,6 +117,32 @@ $(document).ready(function() {
         $titleElement.text(track.title);
     };
 
+    var refreshPlaybackStatus = function(status) {
+        if ('volume' in status) {
+            $volumeElement.text(status.volume + '%');
+        }
+
+        if ('random' in status) {
+            var state = !!parseInt(status.random);
+            $randomElement.text(state ? 'ON' : 'OFF');
+        }
+
+        if ('repeat' in status) {
+            var state = !!parseInt(status.repeat);
+            $repeatElement.text(state ? 'ON' : 'OFF');
+        }
+
+        if ('single' in status) {
+            var state = !!parseInt(status.single);
+            $singleElement.text(state ? 'ON' : 'OFF');
+        }
+
+        if ('consume' in status) {
+            var state = !!parseInt(status.consume);
+            $consumeElement.text(state ? 'ON' : 'OFF');
+        }
+    };
+
     var initWidget = function() {
         $.when(
             execute({ type: 'request', action: 'music.mpd.currentsong' }),
@@ -110,6 +150,7 @@ $(document).ready(function() {
         ).done(function(t, s) {
             refreshTrack(t[0].response.output);
             refreshStatus(s[0].response.output);
+            refreshPlaybackStatus(s[0].response.output);
         });
     };
 

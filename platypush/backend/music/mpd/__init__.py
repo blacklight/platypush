@@ -4,7 +4,9 @@ import time
 from platypush.backend import Backend
 from platypush.context import get_plugin
 from platypush.message.event.music import MusicPlayEvent, MusicPauseEvent, \
-    MusicStopEvent, NewPlayingTrackEvent, PlaylistChangeEvent
+    MusicStopEvent, NewPlayingTrackEvent, PlaylistChangeEvent, VolumeChangeEvent, \
+    PlaybackConsumeModeChangeEvent, PlaybackSingleModeChangeEvent, \
+    PlaybackRepeatModeChangeEvent, PlaybackRandomModeChangeEvent
 
 
 class MusicMpdBackend(Backend):
@@ -40,6 +42,7 @@ class MusicMpdBackend(Backend):
     def run(self):
         super().run()
 
+        last_status = {}
         last_state = None
         last_track = None
         last_playlist = None
@@ -79,6 +82,27 @@ class MusicMpdBackend(Backend):
             if state == 'play' and track != last_track:
                 self.bus.post(NewPlayingTrackEvent(status=status, track=track))
 
+            if last_status.get('volume', None) != status['volume']:
+                self.bus.post(VolumeChangeEvent(
+                    volume=int(status['volume']), status=status, track=track))
+
+            if last_status.get('random', None) != status['random']:
+                self.bus.post(PlaybackRandomModeChangeEvent(
+                    state=bool(int(status['random'])), status=status, track=track))
+
+            if last_status.get('repeat', None) != status['repeat']:
+                self.bus.post(PlaybackRepeatModeChangeEvent(
+                    state=bool(int(status['repeat'])), status=status, track=track))
+
+            if last_status.get('consume', None) != status['consume']:
+                self.bus.post(PlaybackConsumeModeChangeEvent(
+                    state=bool(int(status['consume'])), status=status, track=track))
+
+            if last_status.get('single', None) != status['single']:
+                self.bus.post(PlaybackSingleModeChangeEvent(
+                    state=bool(int(status['single'])), status=status, track=track))
+
+            last_status = status
             last_state = state
             last_track = track
             time.sleep(self.poll_seconds)

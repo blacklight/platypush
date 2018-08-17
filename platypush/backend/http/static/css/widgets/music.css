@@ -1,4 +1,5 @@
 .music-container {
+    position: relative;
     width: inherit;
     height: inherit;
     display: table-cell;
@@ -50,4 +51,18 @@
 .no-track-info {
     font-size: 25px;
 }
+
+.playback-status-container {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    border-top: 1px solid #ddd;
+    padding: 1rem 0;
+    font-size: 1.22rem;
+    color: #757f70;
+}
+
+    .playback-status-container > .playback-status-values {
+        font-weight: bold;
+    }
 
