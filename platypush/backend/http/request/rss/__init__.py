@@ -65,13 +65,30 @@ class RssUpdates(HttpRequest):
 
     def _parse_entry_content(self, link):
         response = None
+        err = None
+        n_tries = 5
 
-        try:
-            self.logger.info('Parsing content for {}'.format(link))
-            response = requests.get('https://mercury.postlight.com/parser',
-                                    params = {'url': link},
-                                    headers = {'x-api-key': self.mercury_api_key })
-        except Exception as e: self.logger.exception(e)
+        for _ in range(0, n_tries):
+            try:
+                self.logger.info('Parsing content for {}'.format(link))
+                response = requests.get('https://mercury.postlight.com/parser',
+                                        params = {'url': link},
+                                        headers = {'x-api-key': self.mercury_api_key })
+            except Exception as e:
+                err = e
+
+            if response.text:
+                err = None
+                break
+            else:
+                time.sleep(1)
+
+        if err:
+            raise err
+
+        if not response.text:
+            raise RuntimeError("No response from Mercury API for URL {} after {} tries"
+                               .format(link, n_tries))
 
         return response.json()['content'] if response and response.ok else None
 
