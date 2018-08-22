@@ -71,8 +71,12 @@ def get_plugin(plugin_name, reload=False):
     global plugins
     global plugins_init_locks
 
-    if plugin_name in plugins and not reload:
-        return plugins[plugin_name]
+    if plugin_name not in plugins_init_locks:
+        plugins_init_locks[plugin_name] = Lock()
+
+    with plugins_init_locks[plugin_name]:
+        if plugin_name in plugins and not reload:
+            return plugins[plugin_name]
 
     try:
         plugin = importlib.import_module('platypush.plugins.' + plugin_name)
@@ -91,13 +95,9 @@ def get_plugin(plugin_name, reload=False):
 
     try:
         plugin_class = getattr(plugin, cls_name)
-        if plugin_name not in plugins_init_locks:
-            plugins_init_locks[plugin_name] = Lock()
 
         with plugins_init_locks[plugin_name]:
             plugin = plugin_class(**plugin_conf)
-
-        plugins[plugin_name] = plugin
     except AttributeError as e:
         logger.warning('No such class in {}: {}'.format(plugin_name, cls_name))
         raise RuntimeError(e)
