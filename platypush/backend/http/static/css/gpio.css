@@ -10,7 +10,7 @@
 }
 
 .gpio-pin {
-    padding: 1.5em 1em .2em .5em;
+    padding: 1.5em 1em;
     border-radius: 10px;
 }
 
@@ -21,4 +21,12 @@
     .gpio-pin:hover {
         background-color: #daf8e2 !important;
     }
+
+.pin-value {
+    text-align: right;
+}
+
+.pin-ctrl {
+    width: 8em;
+}
 
