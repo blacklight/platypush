@@ -97,13 +97,12 @@ def get_plugin(plugin_name, reload=False):
         plugin_class = getattr(plugin, cls_name)
 
         with plugins_init_locks[plugin_name]:
-            plugin = plugin_class(**plugin_conf)
+            plugins[plugin_name] = plugin_class(**plugin_conf)
     except AttributeError as e:
         logger.warning('No such class in {}: {}'.format(plugin_name, cls_name))
         raise RuntimeError(e)
 
-    plugins[plugin_name] = plugin
-    return plugin
+    return plugins[plugin_name]
 
 def get_bus():
     global main_bus
