@@ -1,42 +1,21 @@
 $(document).ready(function() {
-    var $container = $('#sensors-container');
-
-    var createPowerToggleElement = function(pin) {
-        var $powerToggle = $('<div></div>').addClass('toggle toggle--push pin-ctrl-container');
-        var $input = $('<input></input>').attr('type', 'checkbox')
-            .data('number', pin.pin).attr('name', pin.name).addClass('toggle--checkbox pin-ctrl');
-
-        var $label = $('<label></label>').attr('for', pin.name).addClass('toggle--btn');
-
-        $input.appendTo($powerToggle);
-        $label.appendTo($powerToggle);
-
-        if (pin.value > 0) {
-            $input.prop('checked', true);
-        }
-
-        return $powerToggle;
-    };
+    var $container = $('#gpio-container');
 
     var initElements = function() {
         execute({ type: 'request', action: 'gpio.read_all' }, function(data) {
             var response = data.response.output;
 
             for (var pin of response) {
-                var $pin = $('<div></div>')
-                    .addClass('row gpio-pin')
-                    .attr('data-pin-number', pin.pin);
+                var $pin = $('<div></div>').addClass('row gpio-pin').data('pin', pin.pin);
+                var $name = $('<div></div>').addClass('pin-name ten columns').text(pin.name);
+                var $value = $('<div></div>').addClass('pin-value two columns');
+                var $select = $('<select></select>').data('pin', pin.pin).addClass('pin-ctrl');
+                var $option0 = $('<option></option>').attr('name', '0').text('0');
+                var $option1 = $('<option></option>').attr('name', '1').text('1');
 
-                var $name = $('<div></div>')
-                    .addClass('pin-name ten columns')
-                    .text(pin.name);
-
-                var $value = $('<div></div>')
-                    .addClass('pin-value two columns');
-
-                var $toggle = createPowerToggleElement(pin);
-
-                $toggle.appendTo($value);
+                $option0.appendTo($select);
+                $option1.appendTo($select);
+                $select.appendTo($value);
                 $name.appendTo($pin);
                 $value.appendTo($pin);
                 $pin.appendTo($container);
@@ -45,24 +24,18 @@ $(document).ready(function() {
     };
 
     var initBindings = function() {
-        $container.on('click touch', '.pin-ctrl-container', function() {
-            var $input = $(this).find('.pin-ctrl');
-            var pinNumber = $input.data('number');
-            var val = $input.prop('checked') ? 0 : 1;
+        $container.on('change', '.pin-ctrl', function() {
+            var pin = $(this).data('pin');
+            var val = parseInt($(this).val());
 
             execute(
                 {
                     type: 'request',
                     action: 'gpio.write',
                     args: {
-                        pin: pinNumber,
+                        pin: pin,
                         val: val,
                     }
-                },
-
-                onSuccess = function(response) {
-                    var val = response.response.output.val;
-                    $input.prop('checked', val == 0 ? false : true);
                 }
             );
         });
