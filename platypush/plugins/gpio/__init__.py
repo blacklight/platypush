@@ -126,7 +126,7 @@ class GpioPlugin(Plugin):
             raise RuntimeError("No PIN mappings were provided/configured")
 
         values = []
-        for (pin, name) in self.pins_by_number.keys():
+        for (pin, name) in self.pins_by_number.items():
             gpio.setmode(gpio.BCM)
             gpio.setup(pin, gpio.IN)
             val = gpio.input(pin)
