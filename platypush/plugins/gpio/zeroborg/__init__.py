@@ -84,16 +84,11 @@ class GpioZeroborgPlugin(Plugin):
         self.directions = directions
         self.auto_mode = False
         self._direction = None
-        self.zb = None
 
-        if self._init_in_progress.locked():
-            raise RuntimeError("ZeroBorg initialization already in progress")
-
-        with self._init_in_progress:
-            self.zb = ZeroBorg.ZeroBorg()
-            self.zb.Init()
-            self.zb.SetCommsFailsafe(True)
-            self.zb.ResetEpo()
+        self.zb = ZeroBorg.ZeroBorg()
+        self.zb.Init()
+        self.zb.SetCommsFailsafe(True)
+        self.zb.ResetEpo()
 
 
     def _get_measurement(self, plugin, timeout):

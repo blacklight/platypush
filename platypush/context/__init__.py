@@ -1,6 +1,8 @@
 import importlib
 import logging
 
+from threading import Lock
+
 from ..config import Config
 
 logger = logging.getLogger(__name__)
@@ -10,6 +12,10 @@ backends = {}
 
 # Map: plugin_name -> plugin_instance
 plugins = {}
+
+# Map: plugin_name -> init_lock to make sure that a plugin isn't initialized
+# multiple times
+plugins_init_locks = {}
 
 # Reference to the main application bus
 main_bus = None
@@ -63,6 +69,7 @@ def get_plugin(plugin_name, reload=False):
     """ Registers a plugin instance by name if not registered already, or
         returns the registered plugin instance"""
     global plugins
+    global plugins_init_locks
 
     if plugin_name in plugins and not reload:
         return plugins[plugin_name]
@@ -84,7 +91,12 @@ def get_plugin(plugin_name, reload=False):
 
     try:
         plugin_class = getattr(plugin, cls_name)
-        plugin = plugin_class(**plugin_conf)
+        if plugin_name not in plugins_init_locks:
+            plugins_init_locks[plugin_name] = Lock()
+
+        with plugins_init_locks[plugin_name]:
+            plugin = plugin_class(**plugin_conf)
+
         plugins[plugin_name] = plugin
     except AttributeError as e:
         logger.warning('No such class in {}: {}'.format(plugin_name, cls_name))
