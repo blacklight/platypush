@@ -18,23 +18,23 @@ class GpioPlugin(Plugin):
 
     def __init__(self, pins=None, *args, **kwargs):
         """
-        :param pins: Configuration for the GPIO PINs as an pin_number -> name map.
+        :param pins: Configuration for the GPIO PINs as a name -> pin_number map.
         :type pins: dict
 
         Example::
 
             {
-                14: "LED_1",
-                15: "LED_2",
-                16: "MOTOR",
-                17: "SENSOR"
+                "LED_1": 14,
+                "LED_2": 15,
+                "MOTOR": 16,
+                "SENSOR": 17
             }
         """
 
         super().__init__(*args, **kwargs)
-        self.pins_by_number = pins if pins else {}
-        self.pins_by_name = { name:number
-                             for (number, name) in self.pins_by_number.items() }
+        self.pins_by_name = pins if pins else {}
+        self.pins_by_number = { number:name
+                             for (name, number) in self.pins_by_name.items() }
 
     def _get_pin_number(self, pin):
         try:
