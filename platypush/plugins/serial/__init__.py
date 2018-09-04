@@ -117,6 +117,34 @@ class SerialPlugin(GpioSensorPlugin):
 
         return data
 
+    @action
+    def write(self, data):
+        """
+        Writes data to the serial device.
+
+        :param data: Data to send to the serial device
+        :type data: str, bytes or dict. If dict, it will be serialized as JSON.
+        """
+
+        if isinstance(data, dict):
+            data = json.dumps(data)
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+
+        try:
+            serial_available = self.serial_lock.acquire(timeout=2)
+            if serial_available:
+                try:
+                    ser = self._get_serial()
+                except:
+                    time.sleep(1)
+                    ser = self._get_serial(reset=True)
+
+                self.logger.info('Writing {} to {}'.format(data, self.device))
+                ser.write(data)
+        finally:
+            self.serial_lock.release()
+
 
 # vim:sw=4:ts=4:et:
 
