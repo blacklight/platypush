@@ -131,19 +131,15 @@ class SerialPlugin(GpioSensorPlugin):
         if isinstance(data, str):
             data = data.encode('utf-8')
 
-        try:
-            serial_available = self.serial_lock.acquire(timeout=2)
-            if serial_available:
-                try:
-                    ser = self._get_serial()
-                except:
-                    time.sleep(1)
-                    ser = self._get_serial(reset=True)
+        with self.serial_lock:
+            try:
+                ser = self._get_serial()
+            except:
+                time.sleep(1)
+                ser = self._get_serial(reset=True)
 
-                self.logger.info('Writing {} to {}'.format(data, self.device))
-                ser.write(data)
-        finally:
-            self.serial_lock.release()
+            self.logger.info('Writing {} to {}'.format(data, self.device))
+            ser.write(data)
 
 
 # vim:sw=4:ts=4:et:
