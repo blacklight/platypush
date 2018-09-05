@@ -110,7 +110,10 @@ class SerialPlugin(GpioSensorPlugin):
             else:
                 data = self.last_measurement
         finally:
-            self.serial_lock.release()
+            try:
+                self.serial_lock.release()
+            except:
+                pass
 
         if data:
             self.last_measurement = data
@@ -143,7 +146,10 @@ class SerialPlugin(GpioSensorPlugin):
                 self.logger.info('Writing {} to {}'.format(data, self.device))
                 ser.write(data)
         finally:
-            self.serial_lock.release()
+            try:
+                self.serial_lock.release()
+            except:
+                pass
 
 
 # vim:sw=4:ts=4:et:
