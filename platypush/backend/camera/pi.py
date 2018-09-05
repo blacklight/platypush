@@ -125,11 +125,11 @@ class CameraPiBackend(Backend):
                             self.camera.wait_recording(2)
                     except ConnectionError:
                         self.logger.info('Client closed connection')
-                        try:
-                            self.stop_recording()
-                            connection.close()
-                        except:
-                            pass
+                        try: self.stop_recording()
+                        except: pass
+
+                        try: connection.close()
+                        except: pass
 
                         self.send_camera_action(self.CameraAction.START_RECORDING)
 
