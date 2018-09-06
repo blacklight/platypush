@@ -47,10 +47,14 @@ class GpioSensorAccelerometerPlugin(GpioSensorPlugin):
         """
         Extends :func:`.GpioSensorPlugin.get_measurement`
 
-        :returns: The sensor's current position as a list with the three components (x,y,z) in degrees, each between -90 and 90
+        :returns: The sensor's current position as a dictionary with the three components (x,y,z) in degrees, each between -90 and 90
         """
 
-        return [self.sensor.getX()*100, self.sensor.getY()*100, self.sensor.getZ()*100]
+        return {
+            'x': self.sensor.getX()*100,
+            'y': self.sensor.getY()*100,
+            'z': self.sensor.getZ()*100
+        }
 
 
 # vim:sw=4:ts=4:et:
