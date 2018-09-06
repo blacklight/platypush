@@ -16,12 +16,15 @@ class GpioSensorAccelerometerPlugin(GpioSensorPlugin):
         * ``Adafruit_Python_GPIO`` (``pip install Adafruit_Python_GPIO``)
     """
 
-    def __init__(self, g=4, *args, **kwargs):
+    def __init__(self, g=4, precision=None, *args, **kwargs):
         """
         Only LIS3DH in I2C mode is currently supported: https://learn.adafruit.com/assets/59080.
 
         :param g: Accelerometer range as a multiple of G - can be 2G, 4G, 8G or 16G
         :type g: int
+
+        :param precision: If set, the position values will be rounded to the specified number of decimal digits (default: no rounding)
+        :type precision: int
         """
 
         super().__init__(*args, **kwargs)
@@ -38,6 +41,7 @@ class GpioSensorAccelerometerPlugin(GpioSensorPlugin):
         else:
             raise RuntimeError('Invalid G range: {}'.format(g))
 
+        self.precision = precision
         self.sensor = LIS3DH()
         self.sensor.setRange(self.g)
 
@@ -50,11 +54,12 @@ class GpioSensorAccelerometerPlugin(GpioSensorPlugin):
         :returns: The sensor's current position as a dictionary with the three components (x,y,z) in degrees, each between -90 and 90
         """
 
-        return {
-            'x': self.sensor.getX()*100,
-            'y': self.sensor.getY()*100,
-            'z': self.sensor.getZ()*100
-        }
+        values = [
+            (pos*100 if self.precision is None else round(pos*100, self.precision))
+            for pos in (self.sensor.getX(), self.sensor.getY(), self.sensor.getZ())
+        ]
+
+        return { 'x': values[0], 'y': values[1], 'z': values[2] }
 
 
 # vim:sw=4:ts=4:et:
