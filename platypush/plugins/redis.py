@@ -44,10 +44,13 @@ class RedisPlugin(Plugin):
     @action
     def mget(self, keys, *args):
         """
-        :returns: A list of values as specified in `keys` (wraps MGET)
+        :returns: The values specified in keys as a key/value dict (wraps MGET)
         """
 
-        return self._get_redis().mget(keys, *args)[0].decode()
+        return {
+            keys[i]: value.decode()
+            for (i, value) in enumerate(self._get_redis().mget(keys, *args))
+        }
 
     @action
     def mset(self, *args, **kwargs):

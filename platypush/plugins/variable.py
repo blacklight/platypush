@@ -7,12 +7,13 @@ class VariablePlugin(Plugin):
     """
     This plugin allows you to manipulate context variables that can be
     accessed across your tasks. It requires the :mod:`platypush.plugins.db`
-    plugin to be enabled, as the variables will be stored on a local database
-    for persistency and multi-process sharing purposes.
+    and :mod:`platypush.plugins.redis` plugins to be enabled, as the variables
+    will be stored either persisted on a local database or on the local Redis instance.
 
     Requires:
 
         * **sqlalchemy** (``pip install sqlalchemy``)
+        * **redis** (``pip install redis``)
     """
 
     _variable_table_name = 'variable'
@@ -26,6 +27,7 @@ class VariablePlugin(Plugin):
 
         super().__init__(*args, **kwargs)
         self.db_plugin = get_plugin('db')
+        self.redis_plugin = get_plugin('redis')
 
         db = Config.get('db')
         self.db_config = {
@@ -46,7 +48,7 @@ class VariablePlugin(Plugin):
     @action
     def get(self, name, default_value=None):
         """
-        Get the value of a variable by name.
+        Get the value of a variable by name from the local db.
 
         :param name: Variable name
         :type name: str
@@ -67,7 +69,7 @@ class VariablePlugin(Plugin):
     @action
     def set(self, **kwargs):
         """
-        Set a variable or a set of variables.
+        Set a variable or a set of variables on the local db.
 
         :param kwargs: Key-value list of variables to set (e.g. ``foo='bar', answer=42``)
         """
@@ -88,7 +90,7 @@ class VariablePlugin(Plugin):
     @action
     def unset(self, name):
         """
-        Unset a variable by name if it's set
+        Unset a variable by name if it's set on the local db.
 
         :param name: Name of the variable to remove
         :type name: str
@@ -102,6 +104,44 @@ class VariablePlugin(Plugin):
                               **self.db_config['kwargs'])
 
         return True
+
+
+    @action
+    def mget(self, name):
+        """
+        Get the value of a variable by name from Redis.
+
+        :param name: Variable name
+        :type name: str
+
+        :param default_value: What will be returned if the variable is not defined (default: None)
+
+        :returns: A map in the format ``{"<name>":"<value>"}``
+        """
+
+        return self.redis_plugin.mget([name])
+
+    @action
+    def mset(self, **kwargs):
+        """
+        Set a variable or a set of variables on Redis.
+
+        :param kwargs: Key-value list of variables to set (e.g. ``foo='bar', answer=42``)
+        """
+
+        return self.redis_plugin.mset(**kwargs)
+
+
+    @action
+    def munset(self, name):
+        """
+        Unset a Redis variable by name if it's set
+
+        :param name: Name of the variable to remove
+        :type name: str
+        """
+
+        return self.redis_plugin.mset(**{name: None})
 
 
 # vim:sw=4:ts=4:et:
