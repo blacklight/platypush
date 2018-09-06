@@ -15,7 +15,7 @@ class SensorDistanceBackend(SensorBackend):
     def get_measurement(self):
         """ get_measurement implementation """
         plugin = get_plugin('gpio.sensor.distance')
-        return plugin.get_data().output
+        return {"distance": plugin.get_data().output }
 
 
 # vim:sw=4:ts=4:et:
