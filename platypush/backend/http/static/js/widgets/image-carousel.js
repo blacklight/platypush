@@ -32,7 +32,7 @@ $(document).ready(function() {
             }
 
             $newImg.css('max-height', '100%');
-            $newImg.remove().appendTo($imgContainer).fadeIn();
+            $newImg.remove().appendTo($imgContainer).show();
         });
 
         if (processedImages == images.length-1) {

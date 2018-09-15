@@ -59,7 +59,7 @@ $(document).ready(function() {
             $newsElement.find('.article').remove();
         }
 
-        $article.hide().appendTo($newsElement).fadeIn();
+        $article.hide().appendTo($newsElement).show();
 
         if (updateNewsList) {
             getNews();
