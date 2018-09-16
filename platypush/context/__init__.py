@@ -74,9 +74,8 @@ def get_plugin(plugin_name, reload=False):
     if plugin_name not in plugins_init_locks:
         plugins_init_locks[plugin_name] = Lock()
 
-    with plugins_init_locks[plugin_name]:
-        if plugin_name in plugins and not reload:
-            return plugins[plugin_name]
+    if plugin_name in plugins and not reload:
+        return plugins[plugin_name]
 
     try:
         plugin = importlib.import_module('platypush.plugins.' + plugin_name)
