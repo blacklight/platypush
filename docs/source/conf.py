@@ -189,7 +189,8 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'gevent.wsgi',
                         'Adafruit_IO',
                         'pyperclip',
-                        'dbus'
+                        'dbus',
+                        'inputs'
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))

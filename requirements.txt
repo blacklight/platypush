@@ -96,3 +96,6 @@ pyserial
 # Support for TP-Link HS100 and similar smart switches/plugins
 pyHS100
 
+# Support for joystick backend
+inputs
+
