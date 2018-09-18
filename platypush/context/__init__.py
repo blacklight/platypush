@@ -94,12 +94,14 @@ def get_plugin(plugin_name, reload=False):
 
     try:
         plugin_class = getattr(plugin, cls_name)
-
-        with plugins_init_locks[plugin_name]:
-            plugins[plugin_name] = plugin_class(**plugin_conf)
     except AttributeError as e:
         logger.warning('No such class in {}: {}'.format(plugin_name, cls_name))
         raise RuntimeError(e)
+
+    with plugins_init_locks[plugin_name]:
+        if plugins.get(plugin_name) and not reload:
+            return plugins[plugin_name]
+        plugins[plugin_name] = plugin_class(**plugin_conf)
 
     return plugins[plugin_name]
 
