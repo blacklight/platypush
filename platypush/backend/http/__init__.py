@@ -237,6 +237,9 @@ class HttpBackend(Backend):
             if Config.get('token'):
                 msg.token = Config.get('token')
 
+            # TODO planning change to bus message
+            # self.bus.post(msg)
+
             if isinstance(msg, Request):
                 try:
                     response = msg.execute(_async=False)

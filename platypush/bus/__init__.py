@@ -1,10 +1,6 @@
-import os
-import sys
-import signal
 import logging
 import threading
 
-from enum import Enum
 from queue import Queue
 
 from platypush.config import Config
@@ -35,7 +31,7 @@ class Bus(object):
                         origin=Config.get('device_id'),
                         thread_id=self.thread_id)
 
-        self.bus.put(evt)
+        self.post(evt)
 
     def poll(self):
         """

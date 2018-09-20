@@ -13,6 +13,7 @@ import traceback
 from threading import Thread
 
 from .bus import Bus
+# from .bus.redis import RedisBus
 from .config import Config
 from .context import register_backends
 from .cron.scheduler import CronScheduler
