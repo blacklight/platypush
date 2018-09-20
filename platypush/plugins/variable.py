@@ -141,7 +141,16 @@ class VariablePlugin(Plugin):
         :type name: str
         """
 
-        return self.redis_plugin.mset(**{name: None})
+        return self.redis_plugin.delete(name)
+
+
+    @action
+    def expire(self, key, expiration):
+        """
+        Set a variable expiration on Redis
+        """
+
+        return self.redis_plugin.expire(key, expiration)
 
 
 # vim:sw=4:ts=4:et:

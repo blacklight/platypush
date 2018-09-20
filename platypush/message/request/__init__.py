@@ -12,7 +12,7 @@ from platypush.config import Config
 from platypush.context import get_plugin
 from platypush.message import Message
 from platypush.message.response import Response
-from platypush.utils import get_hash, get_module_and_method_from_action
+from platypush.utils import get_hash, get_module_and_method_from_action, get_redis_queue_name_by_message
 
 logger = logging.getLogger(__name__)
 
@@ -152,11 +152,19 @@ class Request(Message):
 
 
     def _send_response(self, response):
+        response = Response.build(response)
+        response.id = self.id
+        response.target = self.origin
+        response.origin = Config.get('device_id')
+
         if self.backend and self.origin:
             self.backend.send_response(response=response, request=self)
         else:
-            logger.info('Response whose request has no ' +
-                        'origin attached: {}'.format(response))
+            redis = get_plugin('redis')
+            if redis:
+                queue_name = get_redis_queue_name_by_message(self)
+                redis.send_message(queue_name, response)
+                redis.expire(queue_name, 60)
 
 
     def execute(self, n_tries=1, _async=True, **context):
@@ -231,6 +239,7 @@ class Request(Message):
             'args'   : self.args,
             'origin' : self.origin if hasattr(self, 'origin') else None,
             'id'     : self.id if hasattr(self, 'id') else None,
+            'token'  : self.token if hasattr(self, 'token') else None,
         })
 
 

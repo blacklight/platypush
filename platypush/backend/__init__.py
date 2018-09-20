@@ -12,7 +12,7 @@ from threading import Thread
 
 from platypush.bus import Bus
 from platypush.config import Config
-from platypush.context import get_backend
+from platypush.context import get_backend, get_plugin
 from platypush.utils import get_message_class_by_type, set_timeout, clear_timeout
 from platypush.message import Message
 from platypush.message.event import Event, StopEvent
@@ -181,13 +181,8 @@ class Backend(Thread):
         :param request: Associated request, used to set the response parameters that will link them
         """
 
-        response = Response.build(response)
         assert isinstance(response, Response)
         assert isinstance(request, Request)
-
-        response.id = request.id
-        response.target = request.origin
-        response.origin = self.device_id
 
         self.send_message(response, **kwargs)
 

@@ -60,5 +60,30 @@ class RedisPlugin(Plugin):
 
         return self._get_redis().mset(*args, **kwargs)
 
+    @action
+    def expire(self, key, expiration):
+        """
+        Set an expiration time in seconds for the specified key
+
+        :param key: Key to set to expire
+        :type key: str
+
+        :param expiration: Expiration timeout (in seconds)
+        :type expiration: int
+        """
+
+        return self._get_redis().expire(key, expiration)
+
+    @action
+    def delete(self, *args):
+        """
+        Delete one or multiple keys
+
+        :param args: Keys to delete
+        """
+
+        return self._get_redis().delete(*args)
+
+
 # vim:sw=4:ts=4:et:
 

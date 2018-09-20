@@ -111,5 +111,14 @@ def get_decorators(cls, climb_class_hierarchy=False):
     return decorators
 
 
+def get_redis_queue_name_by_message(msg):
+    from platypush.message import Message
+
+    if not isinstance(msg, Message):
+        logger.warning('Not a valid message (type: {}): {}'.format(type(msg), msg))
+
+    return 'platypush/responses/{}'.format(msg.id) if msg.id else None
+
+
 # vim:sw=4:ts=4:et:
 

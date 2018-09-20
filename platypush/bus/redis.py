@@ -26,7 +26,10 @@ class RedisBus(Bus):
         """ Reads one message from the Redis queue """
         try:
             msg = self.redis.blpop(self.redis_queue)
-            msg = Message.build(json.loads(msg[1].decode('utf-8')))
+            if msg and msg[1]:
+                msg = Message.build(json.loads(msg[1].decode('utf-8')))
+            else:
+                msg = None
         except Exception as e:
             logger.exception(e)
 

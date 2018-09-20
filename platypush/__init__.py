@@ -13,7 +13,7 @@ import traceback
 from threading import Thread
 
 from .bus import Bus
-# from .bus.redis import RedisBus
+from .bus.redis import RedisBus
 from .config import Config
 from .context import register_backends
 from .cron.scheduler import CronScheduler
@@ -120,7 +120,7 @@ class Daemon:
 
     def start(self):
         """ Start the daemon """
-        self.bus = Bus(on_message=self.on_message())
+        self.bus = RedisBus(on_message=self.on_message())
 
         # Initialize the backends and link them to the bus
         self.backends = register_backends(bus=self.bus, global_scope=True)

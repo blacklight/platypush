@@ -20,6 +20,7 @@ from platypush.message import Message
 from platypush.message.event import Event, StopEvent
 from platypush.message.event.web.widget import WidgetUpdateEvent
 from platypush.message.request import Request
+from platypush.utils import get_redis_queue_name_by_message
 
 from .. import Backend
 
@@ -237,24 +238,23 @@ class HttpBackend(Backend):
             if Config.get('token'):
                 msg.token = Config.get('token')
 
-            # TODO planning change to bus message
-            # self.bus.post(msg)
+            if isinstance(msg, Request):
+                msg.backend = self
+                msg.origin = 'http'
+
+            redis = self._get_redis()
+            self.bus.post(msg)
 
             if isinstance(msg, Request):
-                try:
-                    response = msg.execute(_async=False)
-                except PermissionError:
-                    abort(401)
+                response = redis.blpop(get_redis_queue_name_by_message(msg), timeout=10)
+                if response and response[1]:
+                    response = Message.build(json.loads(response[1].decode('utf-8')))
+                else:
+                    response = None
 
-                self.logger.info('Processing response on the HTTP backend: {}'.format(msg))
-                return str(response)
-            elif isinstance(msg, Event):
-                redis = self._get_redis()
-                if redis:
-                    redis.rpush(self.redis_queue, msg)
-
-            return jsonify({ 'status': 'ok' })
-
+                self.logger.info('Processing response on the HTTP backend: {}'.format(response))
+                if response:
+                    return str(response)
 
         @app.route('/')
         def index():
