@@ -246,7 +246,7 @@ class HttpBackend(Backend):
             self.bus.post(msg)
 
             if isinstance(msg, Request):
-                response = redis.blpop(get_redis_queue_name_by_message(msg), timeout=10)
+                response = redis.blpop(get_redis_queue_name_by_message(msg), timeout=60)
                 if response and response[1]:
                     response = Message.build(json.loads(response[1].decode('utf-8')))
                 else:
