@@ -2,7 +2,6 @@ import importlib
 import logging
 
 from threading import Lock
-from contextlib import contextmanager
 
 from ..config import Config
 
@@ -20,13 +19,6 @@ plugins_init_locks = {}
 
 # Reference to the main application bus
 main_bus = None
-
-@contextmanager
-def acquire_timeout(lock, timeout):
-    acquired = lock.acquire(timeout=timeout)
-    yield acquired
-    if acquired:
-        lock.release()
 
 def register_backends(bus=None, global_scope=False, **kwargs):
     """ Initialize the backend objects based on the configuration and returns
@@ -106,11 +98,7 @@ def get_plugin(plugin_name, reload=False):
         logger.warning('No such class in {}: {}'.format(plugin_name, cls_name))
         raise RuntimeError(e)
 
-    with acquire_timeout(plugins_init_locks[plugin_name], 5) as acquired:
-        if not acquired:
-            logger.warning('Lock expired on get_plugin({}), resetting it'.format(plugin_name))
-            plugins_init_locks[plugin_name] = Lock()
-
+    with plugins_init_locks[plugin_name]:
         if plugins.get(plugin_name) and not reload:
             return plugins[plugin_name]
         plugins[plugin_name] = plugin_class(**plugin_conf)
