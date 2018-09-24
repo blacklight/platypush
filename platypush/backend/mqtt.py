@@ -55,7 +55,7 @@ class MqttBackend(Backend):
             except: pass
 
             self.logger.info('Received message on the MQTT backend: {}'.format(msg))
-            self.bus.post(msg)
+            self.on_message(msg)
 
         super().run()
         client = mqtt.Client()
