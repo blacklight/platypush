@@ -114,7 +114,6 @@ class Daemon:
 
     def stop_app(self):
         """ Stops the backends and the bus """
-        self.bus.post(ApplicationStoppedEvent())
         for backend in self.backends.values():
             backend.stop()
         self.bus.stop()
@@ -143,6 +142,7 @@ class Daemon:
         except KeyboardInterrupt:
             LOGGER.info('SIGINT received, terminating application')
         finally:
+            self.bus.post(ApplicationStoppedEvent())
             self.stop_app()
 
 

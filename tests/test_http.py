@@ -28,12 +28,12 @@ class TestHttp(unittest.TestCase):
 
     def test_request_exec_flow(self):
         self.start_daemon()
-        time.sleep(2)
+        time.sleep(1)
         self.send_request()
 
     def start_daemon(self):
         def _f():
-            self.receiver = Daemon(config_file=config_file, requests_to_process=1)
+            self.receiver = Daemon(config_file=config_file)
             self.receiver.start()
 
         Thread(target=_f).start()

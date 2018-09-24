@@ -169,19 +169,14 @@ class HttpBackend(Backend):
     def redis_poll(self):
         """ Polls for new messages on the internal Redis queue """
 
-        while True:
+        while not self.should_stop():
             redis = self._get_redis()
             if not redis:
                 continue
 
             msg = redis.blpop(self.redis_queue)
             msg = Message.build(json.loads(msg[1].decode('utf-8')))
-
-            if isinstance(msg, StopEvent) and \
-                    msg.args.get('thread_id') == get_ident():
-                break
-
-            self.bus.post(msg)
+            self.on_message(msg)
 
 
     @classmethod
@@ -243,7 +238,7 @@ class HttpBackend(Backend):
                 msg.origin = 'http'
 
             redis = self._get_redis()
-            self.bus.post(msg)
+            self.on_message(msg)
 
             if isinstance(msg, Request):
                 response = redis.blpop(get_redis_queue_name_by_message(msg), timeout=60)
@@ -402,15 +397,13 @@ class HttpBackend(Backend):
     def run(self):
         super().run()
         os.putenv('FLASK_APP', 'platypush')
-        os.putenv('FLASK_ENV', 'development')
+        os.putenv('FLASK_ENV', 'production')
         self.logger.info('Initialized HTTP backend on port {}'.format(self.port))
 
         webserver = self.webserver()
         self.server_proc = Process(target=webserver.run, kwargs={
-            'debug':True, 'host':'0.0.0.0', 'port':self.port, 'use_reloader':False
+            'host':'0.0.0.0', 'port':self.port, 'use_reloader':False
         })
-
-        time.sleep(1)
 
         self.server_proc.start()
 
