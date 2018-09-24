@@ -127,9 +127,12 @@ class VariablePlugin(Plugin):
         Set a variable or a set of variables on Redis.
 
         :param kwargs: Key-value list of variables to set (e.g. ``foo='bar', answer=42``)
+
+        :returns: A map with the set variables
         """
 
-        return self.redis_plugin.mset(**kwargs)
+        self.redis_plugin.mset(**kwargs)
+        return kwargs
 
 
     @action
