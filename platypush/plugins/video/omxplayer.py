@@ -142,6 +142,8 @@ class VideoOmxplayerPlugin(Plugin):
             self.player.quit()
             self.player = None
 
+        return {'status':'stop'}
+
     @action
     def voldown(self):
         """ Volume down by 10% """
