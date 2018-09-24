@@ -19,6 +19,7 @@ from .context import register_backends
 from .cron.scheduler import CronScheduler
 from .event.processor import EventProcessor
 from .message.event import Event, StopEvent
+from .message.event.application import ApplicationStartedEvent, ApplicationStoppedEvent
 from .message.request import Request
 from .message.response import Response
 
@@ -113,6 +114,7 @@ class Daemon:
 
     def stop_app(self):
         """ Stops the backends and the bus """
+        self.bus.post(ApplicationStoppedEvent())
         for backend in self.backends.values():
             backend.stop()
         self.bus.stop()
@@ -132,6 +134,8 @@ class Daemon:
         # Start the cron scheduler
         if Config.get_cronjobs():
             CronScheduler(jobs=Config.get_cronjobs()).start()
+
+        self.bus.post(ApplicationStartedEvent())
 
         # Poll for messages on the bus
         try:
