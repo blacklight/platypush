@@ -238,7 +238,7 @@ class HttpBackend(Backend):
                 msg.origin = 'http'
 
             redis = self._get_redis()
-            self.on_message(msg)
+            self.bus.post(msg)
 
             if isinstance(msg, Request):
                 response = redis.blpop(get_redis_queue_name_by_message(msg), timeout=60)
