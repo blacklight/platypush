@@ -19,6 +19,7 @@ Plugins
     platypush/plugins/google.maps.rst
     platypush/plugins/gpio.rst
     platypush/plugins/gpio.sensor.rst
+    platypush/plugins/gpio.sensor.accelerometer.rst
     platypush/plugins/gpio.sensor.distance.rst
     platypush/plugins/gpio.sensor.mcp3008.rst
     platypush/plugins/gpio.zeroborg.rst

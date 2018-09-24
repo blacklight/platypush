@@ -5,11 +5,13 @@ Events
     :maxdepth: 2
     :caption: Events:
 
+    platypush/events/application.rst
     platypush/events/assistant.rst
     platypush/events/button.flic.rst
     platypush/events/geo.rst
     platypush/events/http.rst
     platypush/events/http.rss.rst
+    platypush/events/joystick.rst
     platypush/events/kafka.rst
     platypush/events/midi.rst
     platypush/events/music.rst
