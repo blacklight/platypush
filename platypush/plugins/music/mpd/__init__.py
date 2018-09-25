@@ -88,6 +88,14 @@ class MusicMpdPlugin(MusicPlugin):
             return self._exec('play')
 
     @action
+    def play_if_paused_or_stopped(self):
+        """ Play only if it's paused or stopped """
+
+        status = self.status().output['state']
+        if status == 'pause' or status == 'stop':
+            return self._exec('play')
+
+    @action
     def stop(self):
         """ Stop playback """
         return self._exec('stop')
