@@ -208,6 +208,15 @@ class MusicMpdPlugin(MusicPlugin):
         :type resource: str
         """
 
+        if isinstance(resource, list):
+            for r in resource:
+                try:
+                    self._exec('add', r)
+                except Exception as e:
+                    self.logger.warning('Could not add {}: {}'.format(r, e))
+
+            return self.status().output
+
         return self._exec('add', resource)
 
     @action
