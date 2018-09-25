@@ -71,7 +71,7 @@ class Request(Message):
         proc_name = self.action.split('.')[-1]
         proc_config = Config.get_procedures()[proc_name]
         proc = Procedure.build(name=proc_name, requests=proc_config['actions'],
-                               _async=proc_config['_async'],
+                               _async=proc_config['_async'], args=self.args,
                                backend=self.backend, id=self.id)
 
         return proc.execute(*args, **kwargs)

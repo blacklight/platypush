@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class Procedure(object):
     """ Procedure class. A procedure is a pre-configured list of requests """
 
-    def __init__(self, name, _async, requests, backend=None):
+    def __init__(self, name, _async, requests, args=None, backend=None):
         """
         Params:
             name     -- Procedure name
@@ -24,13 +24,14 @@ class Procedure(object):
         self._async   = _async
         self.requests = requests
         self.backend  = backend
+        self.args     = args or {}
 
         for req in requests:
             req.backend = self.backend
 
 
     @classmethod
-    def build(cls, name, _async, requests, backend=None, id=None, **kwargs):
+    def build(cls, name, _async, requests, args=None, backend=None, id=None, **kwargs):
         reqs = []
         loop_count = 0
         if_count = 0
@@ -87,7 +88,7 @@ class Procedure(object):
             request = Request.build(request_config)
             reqs.append(request)
 
-        return cls(name=name, _async=_async, requests=reqs, backend=backend, **kwargs)
+        return cls(name=name, _async=_async, requests=reqs, args=args, backend=backend, **kwargs)
 
 
     def execute(self, n_tries=1, **context):
@@ -97,7 +98,13 @@ class Procedure(object):
             n_tries -- Number of tries in case of failure before raising a RuntimeError
         """
 
-        logger.info('Executing request {}'.format(self.name))
+        if self.args:
+            logger.info('Executing procedure {} with arguments {}'.format(self.name, self.args))
+            for (k,v) in self.args.items():
+                context[k] = v
+        else:
+            logger.info('Executing procedure {}'.format(self.name))
+
         response = Response()
         token = Config.get('token')
 
@@ -145,8 +152,8 @@ class LoopProcedure(Procedure):
 
     context = {}
 
-    def __init__(self, name, iterator_name, iterable, requests, _async=False, backend=None, **kwargs):
-        super(). __init__(name=name, _async=_async, requests=requests, backend=None, **kwargs)
+    def __init__(self, name, iterator_name, iterable, requests, _async=False, args=None, backend=None, **kwargs):
+        super(). __init__(name=name, _async=_async, requests=requests, args=args, backend=backend, **kwargs)
 
         self.iterator_name = iterator_name
         self.iterable = iterable
@@ -191,7 +198,7 @@ class IfProcedure(Procedure):
 
     context = {}
 
-    def __init__(self, name, condition, requests, else_branch=[], backend=None, id=None, **kwargs):
+    def __init__(self, name, condition, requests, else_branch=[], args=None, backend=None, id=None, **kwargs):
         kwargs['_async'] = False
         self.condition = condition
         self.else_branch = []
@@ -213,7 +220,7 @@ class IfProcedure(Procedure):
 
             self.else_branch.append(Request.build(req))
 
-        super(). __init__(name=name, requests=reqs, backend=None, **kwargs)
+        super(). __init__(name=name, requests=reqs, args=args, backend=backend, **kwargs)
 
 
     def execute(self, **context):
