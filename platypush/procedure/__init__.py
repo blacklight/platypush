@@ -1,6 +1,7 @@
 import logging
 import re
 
+from queue import LifoQueue
 from ..config import Config
 from ..message.request import Request
 from ..message.response import Response
@@ -31,10 +32,12 @@ class Procedure(object):
 
 
     @classmethod
-    def build(cls, name, _async, requests, args=None, backend=None, id=None, **kwargs):
+    def build(cls, name, _async, requests, args=None, backend=None, id=None, procedure_class=None, **kwargs):
         reqs = []
         loop_count = 0
         if_count = 0
+        if_config = LifoQueue()
+        procedure_class = procedure_class or cls
 
         for request_config in requests:
             # Check if this request is a for loop
@@ -65,20 +68,37 @@ class Procedure(object):
             if len(request_config.keys()) >= 1:
                 key = list(request_config.keys())[0]
                 m = re.match('\s*(if)\s+\$\{(.*)\}\s*', key)
+
                 if m:
                     if_count += 1
                     if_name = '{}__if_{}'.format(name, if_count)
                     condition = m.group(2)
-                    else_branch = []
 
-                    if_proc = IfProcedure.build(name=if_name, _async=False,
-                                                requests=request_config[key],
-                                                condition=condition,
-                                                else_branch=else_branch,
-                                                backend=backend, id=id)
+                    if_config.put({
+                        'name':if_name,
+                        '_async':False,
+                        'requests':request_config[key],
+                        'condition':condition,
+                        'else_branch':[],
+                        'backend':backend,
+                        'id':id,
+                    })
 
-                    reqs.append(if_proc)
                     continue
+
+                if key == 'else':
+                    if if_config.empty():
+                        raise RuntimeError('else statement with no ' +
+                                           'associated if in {}'.format(name))
+
+                    conf = if_config.get()
+                    conf['else_branch'] = request_config[key]
+                    if_config.put(conf)
+
+                if not if_config.empty():
+                    reqs.append(IfProcedure.build(**(if_config.get())))
+                    if key == 'else':
+                        continue
 
             request_config['origin'] = Config.get('device_id')
             request_config['id'] = id
@@ -88,7 +108,10 @@ class Procedure(object):
             request = Request.build(request_config)
             reqs.append(request)
 
-        return cls(name=name, _async=_async, requests=reqs, args=args, backend=backend, **kwargs)
+        if not if_config.empty():
+            reqs.append(IfProcedure.build(**(if_config.get())))
+
+        return procedure_class(name=name, _async=_async, requests=reqs, args=args, backend=backend, **kwargs)
 
 
     def execute(self, n_tries=1, **context):
@@ -197,10 +220,10 @@ class IfProcedure(Procedure):
 
     context = {}
 
-    def __init__(self, name, condition, requests, else_branch=[], args=None, backend=None, id=None, **kwargs):
+    def __init__(self, name, condition, requests, else_branch=None, args=None, backend=None, id=None, **kwargs):
         kwargs['_async'] = False
         self.condition = condition
-        self.else_branch = []
+        self.else_branch = else_branch
         reqs = []
 
         for req in requests:
@@ -214,19 +237,19 @@ class IfProcedure(Procedure):
 
             reqs.append(req)
 
-        for req in else_branch:
-            if isinstance(req, dict):
-                req['origin'] = Config.get('device_id')
-                req['id'] = id
-                if 'target' not in req:
-                    req['target'] = req['origin']
-
-                req = Request.build(req)
-
-            self.else_branch.append(req)
-
         super(). __init__(name=name, requests=reqs, args=args, backend=backend, **kwargs)
 
+    @classmethod
+    def build(cls, name, condition, requests, else_branch=None, args=None, backend=None, id=None, **kwargs):
+        kwargs['_async'] = False
+        if else_branch:
+            else_branch = super().build(name=name+'__else', requests=else_branch,
+                                        args=args, backend=backend, id=id,
+                                        procedure_class=Procedure, **kwargs)
+
+        return super().build(name=name, condition=condition, requests=requests,
+                   else_branch=else_branch, args=args, backend=backend, id=id,
+                   **kwargs)
 
     def execute(self, **context):
         for (k, v) in context.items():
@@ -245,12 +268,7 @@ class IfProcedure(Procedure):
         if condition_true:
             response = super().execute(**context)
         elif self.else_branch:
-            try:
-                reqs = self.requests
-                self.requests = self.else_branch
-                response = super().execute(**context)
-            finally:
-                self.requests = reqs
+            response = self.else_branch.execute(**context)
 
         return response
 
