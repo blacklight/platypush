@@ -69,13 +69,13 @@ class Procedure(object):
                     if_count += 1
                     if_name = '{}__if_{}'.format(name, if_count)
                     condition = m.group(2)
-                    else_branch = request_config['else'] if 'else' in request_config else []
+                    else_branch = []
 
-                    if_proc = IfProcedure(name=if_name,
-                                          requests=request_config[key],
-                                          condition=condition,
-                                          else_branch=else_branch,
-                                          backend=backend, id=id)
+                    if_proc = IfProcedure.build(name=if_name, _async=False,
+                                                requests=request_config[key],
+                                                condition=condition,
+                                                else_branch=else_branch,
+                                                backend=backend, id=id)
 
                     reqs.append(if_proc)
                     continue
@@ -97,7 +97,6 @@ class Procedure(object):
         Params:
             n_tries -- Number of tries in case of failure before raising a RuntimeError
         """
-
         if self.args:
             logger.info('Executing procedure {} with arguments {}'.format(self.name, self.args))
             for (k,v) in self.args.items():
@@ -205,20 +204,26 @@ class IfProcedure(Procedure):
         reqs = []
 
         for req in requests:
-            req['origin'] = Config.get('device_id')
-            req['id'] = id
-            if 'target' not in req:
-                req['target'] = req['origin']
+            if isinstance(req, dict):
+                req['origin'] = Config.get('device_id')
+                req['id'] = id
+                if 'target' not in req:
+                    req['target'] = req['origin']
 
-            reqs.append(Request.build(req))
+                req = Request.build(req)
+
+            reqs.append(req)
 
         for req in else_branch:
-            req['origin'] = Config.get('device_id')
-            req['id'] = id
-            if 'target' not in req:
-                req['target'] = req['origin']
+            if isinstance(req, dict):
+                req['origin'] = Config.get('device_id')
+                req['id'] = id
+                if 'target' not in req:
+                    req['target'] = req['origin']
 
-            self.else_branch.append(Request.build(req))
+                req = Request.build(req)
+
+            self.else_branch.append(req)
 
         super(). __init__(name=name, requests=reqs, args=args, backend=backend, **kwargs)
 
