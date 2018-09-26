@@ -6,6 +6,7 @@ import re
 from platypush.config import Config
 from platypush.message.event import Event, EventMatchResult
 from platypush.message.request import Request
+from platypush.procedure import Procedure
 from platypush.utils import get_event_class_by_type
 
 logger = logging.getLogger(__name__)
@@ -99,8 +100,8 @@ class EventHook(object):
         one or multiple actions to be executed """
 
     def __init__(self, name, priority=None, condition=None, actions=[]):
-        """ Construtor. Takes a name, a EventCondition object and a list of
-            EventAction objects as input. It may also have a priority attached
+        """ Construtor. Takes a name, a EventCondition object and an event action
+            procedure as input. It may also have a priority attached
             as a positive number. If multiple hooks match against an event,
             only the ones that have either the maximum match score or the
             maximum pre-configured priority will be run. """
@@ -132,6 +133,7 @@ class EventHook(object):
             else:
                 actions = [hook['then']]
 
+        actions = Procedure.build(name=name+'__Hook', requests=actions, _async=False)
         return cls(name=name, condition=condition, actions=actions, priority=priority)
 
 
@@ -151,13 +153,8 @@ class EventHook(object):
 
         if result.is_match:
             logger.info('Running hook {} triggered by an event'.format(self.name))
-
-            for action in self.actions:
-                a = EventAction.build(action)
-                if token:
-                    a.token = token
-
-                a.execute(event=event, **result.parsed_args)
+            # TODO here event should actually be event.args
+            self.actions.execute(event=event, **result.parsed_args)
 
 
 # vim:sw=4:ts=4:et:

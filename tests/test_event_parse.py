@@ -2,7 +2,7 @@ from .context import platypush
 
 import unittest
 
-from platypush.event.hook import EventHook, EventCondition, EventAction
+from platypush.event.hook import EventCondition
 from platypush.message.event.ping import PingEvent
 
 class TestEventParse(unittest.TestCase):

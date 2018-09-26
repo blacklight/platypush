@@ -5,7 +5,7 @@ import time
 
 from threading import Thread
 
-from platypush.event.hook import EventAction
+from platypush.procedure import Procedure
 
 logger = logging.getLogger(__name__)
 
@@ -15,20 +15,16 @@ class Cronjob(Thread):
         super().__init__()
         self.cron_expression = cron_expression
         self.name = name
-        self.actions = []
-
-        for action in actions:
-            self.actions.append(EventAction.build(action))
+        self.actions = Procedure.build(name=name+'__Cron', _async=False,
+                                       requests=actions)
 
 
     def run(self):
         logger.info('Running cronjob {}'.format(self.name))
         response = None
         context = {}
-
-        for action in self.actions:
-            response = action.execute(_async=False, **context)
-            logger.info('Response from cronjob {}: {}'.format(self.name, response))
+        response = self.actions.execute(_async=False, **context)
+        logger.info('Response from cronjob {}: {}'.format(self.name, response))
 
 
     def should_run(self):
