@@ -95,10 +95,10 @@ class Procedure(object):
                     conf['else_branch'] = request_config[key]
                     if_config.put(conf)
 
-                if not if_config.empty():
-                    reqs.append(IfProcedure.build(**(if_config.get())))
-                    if key == 'else':
-                        continue
+            if not if_config.empty():
+                reqs.append(IfProcedure.build(**(if_config.get())))
+                if key == 'else':
+                    continue
 
             request_config['origin'] = Config.get('device_id')
             request_config['id'] = id
@@ -108,8 +108,8 @@ class Procedure(object):
             request = Request.build(request_config)
             reqs.append(request)
 
-        if not if_config.empty():
-            reqs.append(IfProcedure.build(**(if_config.get())))
+        for pending_if in if_config.queue:
+            reqs.append(IfProcedure.build(**pending_if))
 
         return procedure_class(name=name, _async=_async, requests=reqs, args=args, backend=backend, **kwargs)
 
