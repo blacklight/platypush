@@ -21,21 +21,20 @@ class PushbulletPlugin(Plugin):
         super().__init__(*args, **kwargs)
 
     @action
-    def send_push(self, **kwargs):
+    def send_note(self, body=None, title=None, **kwargs):
         """
-        Send a push.
+        Send a note push.
 
         :param kwargs: Push arguments, see https://docs.pushbullet.com/#create-push
         :type kwargs: dict
         """
 
         pushbullet = get_backend('pushbullet')
-        resp = requests.post('https://api.pushbullet.com/v2/ephemerals',
-                             data=json.dumps({
-                                 'type':'push',
-                                 'push': kwargs,
-                             }),
-
+        kwargs['body'] = body
+        kwargs['title'] = title
+        kwargs['type'] = 'note'
+        resp = requests.post('https://api.pushbullet.com/v2/pushes',
+                             data=json.dumps(kwargs),
                              headers={'Authorization': 'Bearer ' + pushbullet.token,
                                       'Content-Type': 'application/json'})
 
