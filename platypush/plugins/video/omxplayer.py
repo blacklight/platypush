@@ -487,13 +487,17 @@ class VideoOmxplayerPlugin(Plugin):
             })
         )
 
+        response = request.read()
+        if isinstance(response, bytes):
+            response = response.decode('utf-8')
+
         results = [
             {
                 'url': _['items'][0]['torrent_magnet'],
                 'title': _['title'],
             }
 
-            for _ in json.loads(request.read())['MovieList']
+            for _ in json.loads(response).get('MovieList', [])
         ]
 
         return results
