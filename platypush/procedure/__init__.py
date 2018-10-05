@@ -121,9 +121,11 @@ class Procedure(object):
             n_tries -- Number of tries in case of failure before raising a RuntimeError
         """
         if self.args:
-            logger.info('Executing procedure {} with arguments {}'.format(self.name, self.args))
             for (k,v) in self.args.items():
+                v = Request.expand_value_from_context(v, **context)
+                self.args[k] = v
                 context[k] = v
+            logger.info('Executing procedure {} with arguments {}'.format(self.name, self.args))
         else:
             logger.info('Executing procedure {}'.format(self.name))
 
