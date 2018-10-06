@@ -48,7 +48,7 @@ class RedisPlugin(Plugin):
         """
 
         return {
-            keys[i]: value.decode()
+            keys[i]: value.decode() if value else value
             for (i, value) in enumerate(self._get_redis().mget(keys, *args))
         }
 
