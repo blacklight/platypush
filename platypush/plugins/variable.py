@@ -148,12 +148,18 @@ class VariablePlugin(Plugin):
 
 
     @action
-    def expire(self, key, expiration):
+    def expire(self, name, expire):
         """
         Set a variable expiration on Redis
+
+        :param name: Variable name
+        :type name: str
+
+        :param expire: Expiration time in seconds
+        :type expire: int
         """
 
-        return self.redis_plugin.expire(key, expiration)
+        return self.redis_plugin.expire(name, expire)
 
 
 # vim:sw=4:ts=4:et:
