@@ -1,11 +1,13 @@
 import json
+import time
 
 from platypush.message import Message
 
 class Response(Message):
     """ Response message class """
 
-    def __init__(self, target=None, origin=None, id=None, output=None, errors=[]):
+    def __init__(self, target=None, origin=None, id=None, output=None, errors=[],
+                 timestamp=None):
         """
         Params:
             target -- Target [String]
@@ -13,12 +15,14 @@ class Response(Message):
             output -- Output [String]
             errors -- Errors [List of strings or exceptions]
                 id -- Message ID this response refers to
+         timestamp -- Message timestamp [Float]
         """
 
         self.target = target
         self.output = self._parse_msg(output)
         self.errors = self._parse_msg(errors)
         self.origin = origin
+        self.timestamp = timestamp or time.time()
         self.id = id
 
     def is_error(self):
@@ -45,6 +49,7 @@ class Response(Message):
             'errors' : msg['response']['errors'],
         }
 
+        args['timestamp'] = msg['_timestamp'] if '_timestamp' in msg else time.time()
         if 'id' in msg: args['id'] = msg['id']
         if 'origin' in msg: args['origin'] = msg['origin']
         return cls(**args)
@@ -61,6 +66,7 @@ class Response(Message):
             'type'       : 'response',
             'target'     : self.target if hasattr(self, 'target') else None,
             'origin'     : self.origin if hasattr(self, 'origin') else None,
+            '_timestamp' : self.timestamp,
             'response'   : {
                 'output' : self.output,
                 'errors' : self.errors,

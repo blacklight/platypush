@@ -3,6 +3,7 @@ import json
 import random
 import re
 import threading
+import time
 
 from datetime import date
 
@@ -13,7 +14,7 @@ from platypush.utils import get_event_class_by_type
 class Event(Message):
     """ Event message class """
 
-    def __init__(self, target=None, origin=None, id=None, **kwargs):
+    def __init__(self, target=None, origin=None, id=None, timestamp=None, **kwargs):
         """
         Params:
             target  -- Target node [String]
@@ -28,6 +29,7 @@ class Event(Message):
         self.type = '{}.{}'.format(self.__class__.__module__,
                                    self.__class__.__name__)
         self.args = kwargs
+        self.timestamp = timestamp or time.time()
 
     @classmethod
     def build(cls, msg):
@@ -42,6 +44,7 @@ class Event(Message):
         args['id'] = msg['id'] if 'id' in msg else cls._generate_id()
         args['target'] = msg['target'] if 'target' in msg else Config.get('device_id')
         args['origin'] = msg['origin'] if 'origin' in msg else Config.get('device_id')
+        args['timestamp'] = msg['_timestamp'] if '_timestamp' in msg else time.time()
         return event_class(**args)
 
 
@@ -168,6 +171,7 @@ class Event(Message):
             'target'   : self.target,
             'origin'   : self.origin if hasattr(self, 'origin') else None,
             'id'       : self.id if hasattr(self, 'id') else None,
+            '_timestamp' : self.timestamp,
             'args'     : {
                 'type' : self.type,
                 **args

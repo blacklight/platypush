@@ -1,6 +1,7 @@
 import logging
 import inspect
 import json
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ class Message(object):
         return json.dumps({
             attr: getattr(self, attr)
             for attr in self.__dir__()
-            if not attr.startswith('_')
+            if (attr != '_timestamp' or not attr.startswith('_'))
             and not inspect.ismethod(getattr(self, attr))
         }).replace('\n', ' ')
 
@@ -48,6 +49,10 @@ class Message(object):
                 logger.warning('Invalid JSON message: {}'.format(msg))
 
         assert isinstance(msg, dict)
+
+        if not '_timestamp' in msg:
+            msg['_timestamp'] = time.time()
+
         return msg
 
     @classmethod

@@ -4,6 +4,7 @@ import json
 import logging
 import random
 import re
+import time
 import traceback
 
 from threading import Thread
@@ -21,16 +22,17 @@ class Request(Message):
     """ Request message class """
 
     def __init__(self, target, action, origin=None, id=None, backend=None,
-                 args=None, token=None):
+                 args=None, token=None, timestamp=None):
         """
         Params:
-            target -- Target node [String]
-            action -- Action to be executed (e.g. music.mpd.play) [String]
-            origin -- Origin node [String]
+            target -- Target node [Str]
+            action -- Action to be executed (e.g. music.mpd.play) [Str]
+            origin -- Origin node [Str]
                 id -- Message ID, or None to get it auto-generated
            backend -- Backend connected to the request, where the response will be delivered
               args -- Additional arguments for the action [Dict]
              token -- Authorization token, if required on the server [Str]
+         timestamp -- Message creation timestamp [Float]
         """
 
         self.id      = id if id else self._generate_id()
@@ -40,6 +42,7 @@ class Request(Message):
         self.args    = args if args else {}
         self.backend = backend
         self.token   = token
+        self.timestamp = timestamp or time.time()
 
     @classmethod
     def build(cls, msg):
@@ -51,6 +54,7 @@ class Request(Message):
         }
 
         args['id'] = msg['id'] if 'id' in msg else cls._generate_id()
+        args['timestamp'] = msg['_timestamp'] if '_timestamp' in msg else time.time()
         if 'origin' in msg: args['origin'] = msg['origin']
         if 'token' in msg: args['token'] = msg['token']
         return cls(**args)
@@ -240,6 +244,7 @@ class Request(Message):
             'origin' : self.origin if hasattr(self, 'origin') else None,
             'id'     : self.id if hasattr(self, 'id') else None,
             'token'  : self.token if hasattr(self, 'token') else None,
+            '_timestamp' : self.timestamp,
         })
 
 

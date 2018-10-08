@@ -1,5 +1,6 @@
 import logging
 import threading
+import time
 
 from queue import Queue
 
@@ -11,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 class Bus(object):
     """ Main local bus where the daemon will listen for new messages """
+
+    _MSG_EXPIRY_TIMEOUT = 60.0  # Consider a message on the bus as expired
+                                # after one minute without being picked up
 
     def __init__(self, on_message=None):
         self.bus = Queue()
@@ -45,6 +49,11 @@ class Bus(object):
         stop=False
         while not stop:
             msg = self.get()
+            if msg.timestamp and time.time() - msg.timestamp > self._MSG_EXPIRY_TIMEOUT:
+                logger.info('{} seconds old message on the bus expired, ignoring it: {}'
+                            .format(int(time.time()-msg.timestamp), msg))
+                continue
+
             self.on_message(msg)
 
             if isinstance(msg, StopEvent) and msg.targets_me():
