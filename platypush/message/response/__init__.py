@@ -18,11 +18,11 @@ class Response(Message):
          timestamp -- Message timestamp [Float]
         """
 
+        super().__init__(timestamp=timestamp)
         self.target = target
         self.output = self._parse_msg(output)
         self.errors = self._parse_msg(errors)
         self.origin = origin
-        self.timestamp = timestamp or time.time()
         self.id = id
 
     def is_error(self):

@@ -9,6 +9,9 @@ logger = logging.getLogger(__name__)
 class Message(object):
     """ Message generic class """
 
+    def __init__(self, timestamp=None, *args, **kwargs):
+        self.timestamp = timestamp or time.time()
+
     def __str__(self):
         """
         Overrides the str() operator and converts

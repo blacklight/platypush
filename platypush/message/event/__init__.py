@@ -23,13 +23,13 @@ class Event(Message):
             kwargs  -- Additional arguments for the event [kwDict]
         """
 
+        super().__init__(timestamp=timestamp)
         self.id = id if id else self._generate_id()
         self.target = target if target else Config.get('device_id')
         self.origin = origin if origin else Config.get('device_id')
         self.type = '{}.{}'.format(self.__class__.__module__,
                                    self.__class__.__name__)
         self.args = kwargs
-        self.timestamp = timestamp or time.time()
 
     @classmethod
     def build(cls, msg):

@@ -35,6 +35,8 @@ class Request(Message):
          timestamp -- Message creation timestamp [Float]
         """
 
+        super().__init__(timestamp=timestamp)
+
         self.id      = id if id else self._generate_id()
         self.target  = target
         self.action  = action
@@ -42,7 +44,6 @@ class Request(Message):
         self.args    = args if args else {}
         self.backend = backend
         self.token   = token
-        self.timestamp = timestamp or time.time()
 
     @classmethod
     def build(cls, msg):
