@@ -75,7 +75,7 @@ class AutoremotePlugin(Plugin):
         self.logger.info('Received response from AutoRemote: {}'.format(response.text))
 
     @action
-    def send_notification(self, text, key=None, password=None, title=None,
+    def send_notification(self, text=None, key=None, password=None, title=None,
                           target=None, sender=None, ttl=None, group=None,
                           sound=None, vibration=None, url=None, id=None,
                           action=None, icon=None, led=None, ledon=None,
