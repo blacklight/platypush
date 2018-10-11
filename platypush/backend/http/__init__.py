@@ -20,7 +20,6 @@ from platypush.message import Message
 from platypush.message.event import Event, StopEvent
 from platypush.message.event.web.widget import WidgetUpdateEvent
 from platypush.message.request import Request
-from platypush.utils import get_redis_queue_name_by_message
 
 from .. import Backend
 
@@ -115,19 +114,6 @@ class HttpBackend(Backend):
         self.redis_thread = None
         self.redis = None
         self.active_websockets = set()
-
-
-    def _get_redis(self):
-        redis_backend = get_backend('redis')
-        if not redis_backend:
-            self.logger.warning('Redis backend not configured - some ' +
-                                'web server features may not be working properly')
-            redis_args = {}
-        else:
-            redis_args = redis_backend.redis_args
-
-        redis = Redis(**redis_args)
-        return redis
 
 
     def send_message(self, msg):
@@ -237,16 +223,10 @@ class HttpBackend(Backend):
                 msg.backend = self
                 msg.origin = 'http'
 
-            redis = self._get_redis()
             self.bus.post(msg)
 
             if isinstance(msg, Request):
-                response = redis.blpop(get_redis_queue_name_by_message(msg), timeout=60)
-                if response and response[1]:
-                    response = Message.build(json.loads(response[1].decode('utf-8')))
-                else:
-                    response = None
-
+                response = self.get_message_response(msg)
                 self.logger.info('Processing response on the HTTP backend: {}'.format(response))
                 if response:
                     return str(response)

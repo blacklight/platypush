@@ -18,6 +18,7 @@ from platypush.message import Message
 from platypush.message.event import Event, StopEvent
 from platypush.message.request import Request
 from platypush.message.response import Response
+from platypush.utils import get_redis_queue_name_by_message
 
 
 class Backend(Thread):
@@ -231,6 +232,33 @@ class Backend(Thread):
 
     def should_stop(self):
         return self._stop
+
+    def _get_redis(self):
+        import redis
+
+        redis_backend = get_backend('redis')
+        if not redis_backend:
+            self.logger.warning('Redis backend not configured - some ' +
+                                'web server features may not be working properly')
+            redis_args = {}
+        else:
+            redis_args = redis_backend.redis_args
+
+        redis = redis.Redis(**redis_args)
+        return redis
+
+    def get_message_response(self, msg):
+        try:
+            redis = self._get_redis()
+            response = redis.blpop(get_redis_queue_name_by_message(msg), timeout=60)
+            if response and response[1]:
+                response = Message.build(response[1])
+            else:
+                response = None
+
+            return response
+        except Exception as e:
+            self.logger.error('Error while processing response to {}: {}'.format(msg, str(e)))
 
 
 # vim:sw=4:ts=4:et:
