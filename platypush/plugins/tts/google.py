@@ -1,3 +1,4 @@
+import os
 import subprocess
 import tempfile
 
@@ -17,7 +18,8 @@ class TtsGooglePlugin(Plugin):
         * **mplayer** - see your distribution docs on how to install the mplayer package
     """
 
-    def __init__(self, language='en-US', voice='en-US-Wavenet-C', gender='FEMALE'):
+    def __init__(self, language='en-US', voice='en-US-Wavenet-C',
+                 gender='FEMALE', credentials_file='~/.credentials/platypush/google/platypush-tts.json'):
         """
         :param language: Language code, see https://cloud.google.com/text-to-speech/docs/basics for supported languages
         :type language: str
@@ -27,12 +29,16 @@ class TtsGooglePlugin(Plugin):
 
         :param gender: Voice gender (MALE, FEMALE or NEUTRAL)
         :type gender: str
+
+        :param credentials_file: Where your GCloud credentials for TTS are stored, see https://cloud.google.com/text-to-speech/docs/basics
+        :type credentials_file: str
         """
 
         super().__init__()
         self.language = language
         self.voice = voice
         self.gender = getattr(texttospeech.enums.SsmlVoiceGender, gender.upper())
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.expanduser(credentials_file)
 
     @action
     def say(self, text, language=None, voice=None, gender=None):
