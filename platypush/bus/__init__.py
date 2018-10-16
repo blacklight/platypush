@@ -50,7 +50,7 @@ class Bus(object):
         while not stop:
             msg = self.get()
             if msg.timestamp and time.time() - msg.timestamp > self._MSG_EXPIRY_TIMEOUT:
-                logger.info('{} seconds old message on the bus expired, ignoring it: {}'
+                logger.debug('{} seconds old message on the bus expired, ignoring it: {}'
                             .format(int(time.time()-msg.timestamp), msg))
                 continue
 
