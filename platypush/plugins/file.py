@@ -19,22 +19,33 @@ class FilePlugin(Plugin):
             return f.read()
 
     @action
-    def write(self, filename, content, append=False):
+    def write(self, filename, content):
         """
-        Writes content to a specified filename
+        Writes content to a specified filename. Previous content will be truncated.
 
         :param filename: Path of the file
         :type filename: str
 
         :param content: Content to write
         :type content: str
-
-        :param append: If set, the content will be appended to the file (default: False, truncate file upon write)
-        :type append: bool
         """
 
-        mode = 'a' if append else 'w'
-        with open(filename, mode) as f:
+        with open(filename, 'w') as f:
+            f.write(content)
+
+    @action
+    def append(self, filename, content):
+        """
+        Append content to a specified filename
+
+        :param filename: Path of the file
+        :type filename: str
+
+        :param content: Content to write
+        :type content: str
+        """
+
+        with open(filename, 'a') as f:
             f.write(content)
 
 # vim:sw=4:ts=4:et:
