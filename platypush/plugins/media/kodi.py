@@ -211,6 +211,54 @@ class MediaKodiPlugin(Plugin):
 
         return self._get_kodi().AudioLibrary.Clean()
 
+    @action
+    def quit(self, *args, **kwargs):
+        """
+        Quit the application
+        """
+
+        return self._get_kodi().Application.Quit()
+
+    @action
+    def get_songs(self, *args, **kwargs):
+        """
+        Get the list of songs in the audio library
+        """
+
+        return self._get_kodi().Application.GetSongs()
+
+    @action
+    def get_artists(self, *args, **kwargs):
+        """
+        Get the list of artists in the audio library
+        """
+
+        return self._get_kodi().Application.GetArtists()
+
+    @action
+    def get_albums(self, *args, **kwargs):
+        """
+        Get the list of albums in the audio library
+        """
+
+        return self._get_kodi().Application.GetAlbums()
+
+    @action
+    def set_fullscreen(self, fullscreen, *args, **kwargs):
+        """
+        Set/unset fullscreen mode
+        """
+
+        return self._get_kodi().GUI.SetFullscreen()
+
+    @action
+    def seek(self, position, *args, **kwargs):
+        """
+        Move the cursor to the specified position in seconds
+        """
+
+        return self._get_kodi().Player.Seek(position)
+
 
 # vim:sw=4:ts=4:et:
 
