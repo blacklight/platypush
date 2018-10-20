@@ -51,7 +51,12 @@ class MediaKodiPlugin(Plugin):
 
     @action
     def get_active_players(self):
-        return self._get_kodi().Player.GetActivePlayers()
+        """
+        Get the list of active players
+        """
+
+        result = self._get_kodi().Player.GetActivePlayers()
+        return (result.get('result'), result.get('error'))
 
     @action
     def get_movies(self, *args, **kwargs):
@@ -59,7 +64,8 @@ class MediaKodiPlugin(Plugin):
         Get the list of movies on the Kodi server
         """
 
-        return self._get_kodi().VideoLibrary.GetMovies()
+        result = self._get_kodi().VideoLibrary.GetMovies()
+        return (result.get('result'), result.get('error'))
 
     @action
     def play_pause(self, player_id=None, *args, **kwargs):
@@ -70,7 +76,8 @@ class MediaKodiPlugin(Plugin):
         if not player_id:
             player_id = self._get_player_id()
 
-        return self._get_kodi().Player.PlayPause(playerid=player_id)
+        result = self._get_kodi().Player.PlayPause(playerid=player_id)
+        return (result.get('result'), result.get('error'))
 
     @action
     def stop(self, player_id, *args, **kwargs):
@@ -81,7 +88,8 @@ class MediaKodiPlugin(Plugin):
         if not player_id:
             player_id = self._get_player_id()
 
-        return self._get_kodi().Player.Stop(playerid=player_id)
+        result = self._get_kodi().Player.Stop(playerid=player_id)
+        return (result.get('result'), result.get('error'))
 
     @action
     def notify(self, title, message, *args, **kwargs):
@@ -89,7 +97,8 @@ class MediaKodiPlugin(Plugin):
         Send a notification to the Kodi UI
         """
 
-        return self._get_kodi().GUI.ShowNotification(title=title, message=message)
+        result = self._get_kodi().GUI.ShowNotification(title=title, message=message)
+        return (result.get('result'), result.get('error'))
 
     @action
     def open(self, resource, *args, **kwargs):
@@ -109,7 +118,8 @@ class MediaKodiPlugin(Plugin):
             if youtube_id:
                 resource = 'plugin://plugin.video.youtube/?action=play_video&videoid=' + youtube_id
 
-        return self._get_kodi().Player.Open(item={'file': resource})
+        result = self._get_kodi().Player.Open(item={'file': resource})
+        return (result.get('result'), result.get('error'))
 
     @action
     def left(self, *args, **kwargs):
@@ -117,7 +127,8 @@ class MediaKodiPlugin(Plugin):
         Simulate a left input event
         """
 
-        return self._get_kodi().Input.Left()
+        result = self._get_kodi().Input.Left()
+        return (result.get('result'), result.get('error'))
 
     @action
     def right(self, *args, **kwargs):
@@ -125,7 +136,8 @@ class MediaKodiPlugin(Plugin):
         Simulate a right input event
         """
 
-        return self._get_kodi().Input.Right()
+        result = self._get_kodi().Input.Right()
+        return (result.get('result'), result.get('error'))
 
     @action
     def up(self, *args, **kwargs):
@@ -133,7 +145,8 @@ class MediaKodiPlugin(Plugin):
         Simulate an up input event
         """
 
-        return self._get_kodi().Input.Up()
+        result = self._get_kodi().Input.Up()
+        return (result.get('result'), result.get('error'))
 
     @action
     def down(self, *args, **kwargs):
@@ -141,7 +154,8 @@ class MediaKodiPlugin(Plugin):
         Simulate a down input event
         """
 
-        return self._get_kodi().Input.Down()
+        result = self._get_kodi().Input.Down()
+        return (result.get('result'), result.get('error'))
 
     @action
     def back(self, *args, **kwargs):
@@ -149,7 +163,8 @@ class MediaKodiPlugin(Plugin):
         Simulate a back input event
         """
 
-        return self._get_kodi().Input.Back()
+        result = self._get_kodi().Input.Back()
+        return (result.get('result'), result.get('error'))
 
     @action
     def select(self, *args, **kwargs):
@@ -157,7 +172,8 @@ class MediaKodiPlugin(Plugin):
         Simulate a select input event
         """
 
-        return self._get_kodi().Input.Select()
+        result = self._get_kodi().Input.Select()
+        return (result.get('result'), result.get('error'))
 
     @action
     def send_text(self, text, *args, **kwargs):
@@ -168,10 +184,36 @@ class MediaKodiPlugin(Plugin):
         :type text: str
         """
 
-        return self._get_kodi().Input.SendText(text=text)
+        result = self._get_kodi().Input.SendText(text=text)
+        return (result.get('result'), result.get('error'))
 
     @action
-    def volume(self, volume, *args, **kwargs):
+    def get_volume(self, *args, **kwargs):
+        result = self._get_kodi().Application.GetProperties(
+            properties=['volume'])
+
+        return (result.get('result'), result.get('error'))
+
+    @action
+    def volup(self, *args, **kwargs):
+        """ Volume up by 10% """
+        volume = self._get_kodi().Application.GetProperties(
+            properties=['volume']).get('result', {}).get('volume')
+
+        result = self._get_kodi().Application.SetVolume(volume=min(volume+10, 100))
+        return (result.get('result'), result.get('error'))
+
+    @action
+    def voldown(self, *args, **kwargs):
+        """ Volume down by 10% """
+        volume = self._get_kodi().Application.GetProperties(
+            properties=['volume']).get('result', {}).get('volume')
+
+        result = self._get_kodi().Application.SetVolume(volume=max(volume-10, 0))
+        return (result.get('result'), result.get('error'))
+
+    @action
+    def set_volume(self, volume, *args, **kwargs):
         """
         Set the application volume
 
@@ -179,7 +221,8 @@ class MediaKodiPlugin(Plugin):
         :type volume: int
         """
 
-        return self._get_kodi().Application.SetVolume(volume=volume)
+        result = self._get_kodi().Application.SetVolume(volume=volume)
+        return (result.get('result'), result.get('error'))
 
     @action
     def mute(self, *args, **kwargs):
