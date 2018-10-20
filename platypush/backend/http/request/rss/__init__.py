@@ -132,7 +132,7 @@ class RssUpdates(HttpRequest):
             if latest_update is None \
                     or entry_timestamp > latest_update:
                 self.logger.info('Processed new item from RSS feed <{}>: "{}"'
-                             .format(self.url, entry.title.decode('utf-8')))
+                             .format(self.url, entry.title))
 
                 entry.summary = entry.summary if hasattr(entry, 'summary') else None
 
