@@ -14,8 +14,13 @@ def action(f):
         try:
             output = f(*args, **kwargs)
             if output and isinstance(output, Response):
-                errors = output.errors
+                errors = output.errors \
+                    if isinstance(output.errors, list) else [output.errors]
                 output = output.output
+            elif isinstance(output, tuple) and len(output) == 2:
+                errors = output[1] \
+                    if isinstance(output.errors, list) else [output[1]]
+                output = output[0]
         except Exception as e:
             if isinstance(args[0], Plugin):
                 args[0].logger.exception(e)
