@@ -80,7 +80,7 @@ class MediaKodiPlugin(Plugin):
         return (result.get('result'), result.get('error'))
 
     @action
-    def stop(self, player_id, *args, **kwargs):
+    def stop(self, player_id=None, *args, **kwargs):
         """
         Stop the current media
         """
