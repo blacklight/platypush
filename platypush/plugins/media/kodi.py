@@ -158,7 +158,7 @@ class MediaKodiPlugin(Plugin):
         return (result.get('result'), result.get('error'))
 
     @action
-    def back(self, *args, **kwargs):
+    def back_btn(self, *args, **kwargs):
         """
         Simulate a back input event
         """
@@ -225,20 +225,25 @@ class MediaKodiPlugin(Plugin):
         return (result.get('result'), result.get('error'))
 
     @action
-    def mute(self, *args, **kwargs):
+    def toggle_mute(self, *args, **kwargs):
         """
-        Mute the application
+        Mute/unmute the application
         """
 
-        return self._get_kodi().Application.SetMute(mute=True)
+        muted = self._get_kodi().Application.GetProperties(
+            properties=['muted']).get('result', {}).get('muted')
+
+        result = self._get_kodi().Application.SetMute(mute=not muted)
+        return (result.get('result'), result.get('error'))
 
     @action
-    def unmute(self, *args, **kwargs):
+    def is_muted(self, *args, **kwargs):
         """
-        Unmute the application
+        Return the muted status of the application
         """
 
-        return self._get_kodi().Application.SetMute(mute=False)
+        result = self._get_kodi().Application.GetProperties(properties=['muted'])
+        return (result.get('result'), result.get('error'))
 
     @action
     def scan_video_library(self, *args, **kwargs):
@@ -246,7 +251,8 @@ class MediaKodiPlugin(Plugin):
         Scan the video library
         """
 
-        return self._get_kodi().VideoLibrary.Scan()
+        result = self._get_kodi().VideoLibrary.Scan()
+        return (result.get('result'), result.get('error'))
 
     @action
     def scan_audio_library(self, *args, **kwargs):
@@ -254,7 +260,8 @@ class MediaKodiPlugin(Plugin):
         Scan the audio library
         """
 
-        return self._get_kodi().AudioLibrary.Scan()
+        result = self._get_kodi().AudioLibrary.Scan()
+        return (result.get('result'), result.get('error'))
 
     @action
     def clean_video_library(self, *args, **kwargs):
@@ -262,7 +269,8 @@ class MediaKodiPlugin(Plugin):
         Clean the video library
         """
 
-        return self._get_kodi().VideoLibrary.Clean()
+        result = self._get_kodi().VideoLibrary.Clean()
+        return (result.get('result'), result.get('error'))
 
     @action
     def clean_audio_library(self, *args, **kwargs):
@@ -270,7 +278,8 @@ class MediaKodiPlugin(Plugin):
         Clean the audio library
         """
 
-        return self._get_kodi().AudioLibrary.Clean()
+        result = self._get_kodi().AudioLibrary.Clean()
+        return (result.get('result'), result.get('error'))
 
     @action
     def quit(self, *args, **kwargs):
@@ -278,7 +287,8 @@ class MediaKodiPlugin(Plugin):
         Quit the application
         """
 
-        return self._get_kodi().Application.Quit()
+        result = self._get_kodi().Application.Quit()
+        return (result.get('result'), result.get('error'))
 
     @action
     def get_songs(self, *args, **kwargs):
@@ -286,7 +296,8 @@ class MediaKodiPlugin(Plugin):
         Get the list of songs in the audio library
         """
 
-        return self._get_kodi().Application.GetSongs()
+        result = self._get_kodi().Application.GetSongs()
+        return (result.get('result'), result.get('error'))
 
     @action
     def get_artists(self, *args, **kwargs):
@@ -294,7 +305,8 @@ class MediaKodiPlugin(Plugin):
         Get the list of artists in the audio library
         """
 
-        return self._get_kodi().Application.GetArtists()
+        result = self._get_kodi().Application.GetArtists()
+        return (result.get('result'), result.get('error'))
 
     @action
     def get_albums(self, *args, **kwargs):
@@ -302,15 +314,20 @@ class MediaKodiPlugin(Plugin):
         Get the list of albums in the audio library
         """
 
-        return self._get_kodi().Application.GetAlbums()
+        result = self._get_kodi().Application.GetAlbums()
+        return (result.get('result'), result.get('error'))
 
     @action
-    def set_fullscreen(self, fullscreen, *args, **kwargs):
+    def toggle_fullscreen(self, *args, **kwargs):
         """
         Set/unset fullscreen mode
         """
 
-        return self._get_kodi().GUI.SetFullscreen()
+        fullscreen = self._get_kodi().GUI.GetProperties(
+            properties=['fullscreen']).get('result', {}).get('fullscreen')
+
+        result = self._get_kodi().GUI.SetFullscreen(fullscreen=not fullscreen)
+        return (result.get('result'), result.get('error'))
 
     @action
     def seek(self, position, player_id=None, *args, **kwargs):
@@ -321,7 +338,50 @@ class MediaKodiPlugin(Plugin):
         if not player_id:
             player_id = self._get_player_id()
 
-        return self._get_kodi().Player.Seek(position)
+        result = self._get_kodi().Player.Seek(position)
+        return (result.get('result'), result.get('error'))
+
+    @action
+    def back(self, delta_seconds=60, player_id=None, *args, **kwargs):
+        """
+        Move the player execution backward by delta_seconds
+
+        :param delta_seconds: Backward seek duration (default: 60 seconds)
+        :type delta_seconds: int
+        """
+
+        if not player_id:
+            player_id = self._get_player_id()
+
+        position = self._get_kodi().Player.GetProperties(
+            playerid=player_id, properties=['time']).get('result')
+
+        position = position.get('hours', 0)*3600 + \
+            position.get('minutes', 0)*60 + position.get('seconds', 0)
+
+        result = self._get_kodi().Player.Seek(position+delta_seconds)
+        return (result.get('result'), result.get('error'))
+
+    @action
+    def forward(self, delta_seconds=60, player_id=None, *args, **kwargs):
+        """
+        Move the player execution forward by delta_seconds
+
+        :param delta_seconds: Forward seek duration (default: 60 seconds)
+        :type delta_seconds: int
+        """
+
+        if not player_id:
+            player_id = self._get_player_id()
+
+        position = self._get_kodi().Player.GetProperties(
+            playerid=player_id, properties=['time']).get('result')
+
+        position = position.get('hours', 0)*3600 + \
+            position.get('minutes', 0)*60 + position.get('seconds', 0)
+
+        result = self._get_kodi().Player.Seek(position-delta_seconds)
+        return (result.get('result'), result.get('error'))
 
 
 # vim:sw=4:ts=4:et:
