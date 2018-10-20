@@ -41,6 +41,18 @@ class MediaKodiPlugin(Plugin):
 
         return Kodi(*args)
 
+    def _get_player_id(self):
+        kodi = self._get_kodi()
+        players = kodi.Player.GetActivePlayers().get('result', [])
+        if not players:
+            raise RuntimeError('No players found')
+
+        return players.pop().get('playerid')
+
+    @action
+    def get_active_players(self):
+        return self._get_kodi().Player.GetActivePlayers()
+
     @action
     def get_movies(self, *args, **kwargs):
         """
@@ -50,20 +62,26 @@ class MediaKodiPlugin(Plugin):
         return self._get_kodi().VideoLibrary.GetMovies()
 
     @action
-    def play_pause(self, *args, **kwargs):
+    def play_pause(self, player_id=None, *args, **kwargs):
         """
         Play/pause the current media
         """
 
-        return self._get_kodi().Player.PlayPause()
+        if not player_id:
+            player_id = self._get_player_id()
+
+        return self._get_kodi().Player.PlayPause(playerid=player_id)
 
     @action
-    def stop(self, *args, **kwargs):
+    def stop(self, player_id, *args, **kwargs):
         """
         Stop the current media
         """
 
-        return self._get_kodi().Player.Stop()
+        if not player_id:
+            player_id = self._get_player_id()
+
+        return self._get_kodi().Player.Stop(playerid=player_id)
 
     @action
     def notify(self, title, message, *args, **kwargs):
@@ -252,10 +270,13 @@ class MediaKodiPlugin(Plugin):
         return self._get_kodi().GUI.SetFullscreen()
 
     @action
-    def seek(self, position, *args, **kwargs):
+    def seek(self, position, player_id=None, *args, **kwargs):
         """
         Move the cursor to the specified position in seconds
         """
+
+        if not player_id:
+            player_id = self._get_player_id()
 
         return self._get_kodi().Player.Seek(position)
 
