@@ -19,7 +19,9 @@ def action(f):
                 output = output.output
             elif isinstance(output, tuple) and len(output) == 2:
                 errors = output[1] \
-                    if isinstance(output.errors, list) else [output[1]]
+                    if isinstance(output[1], list) else [output[1]]
+
+                if len(errors) == 1 and errors[0] is None: errors = []
                 output = output[0]
         except Exception as e:
             if isinstance(args[0], Plugin):

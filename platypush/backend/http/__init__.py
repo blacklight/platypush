@@ -141,7 +141,10 @@ class HttpBackend(Backend):
         import websockets
 
         async def send_event(websocket):
-            await websocket.send(str(event))
+            try:
+                await websocket.send(str(event))
+            except Exception as e:
+                self.logger.warning('Error on websocket send_event: {}'.format(e))
 
         loop = asyncio.new_event_loop()
 

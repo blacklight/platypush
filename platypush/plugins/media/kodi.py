@@ -233,7 +233,7 @@ class MediaKodiPlugin(Plugin):
         muted = self._get_kodi().Application.GetProperties(
             properties=['muted']).get('result', {}).get('muted')
 
-        result = self._get_kodi().Application.SetMute(mute=not muted)
+        result = self._get_kodi().Application.SetMute(mute=(not muted))
         return (result.get('result'), result.get('error'))
 
     @action
@@ -326,19 +326,71 @@ class MediaKodiPlugin(Plugin):
         fullscreen = self._get_kodi().GUI.GetProperties(
             properties=['fullscreen']).get('result', {}).get('fullscreen')
 
-        result = self._get_kodi().GUI.SetFullscreen(fullscreen=not fullscreen)
+        result = self._get_kodi().GUI.SetFullscreen(fullscreen=(not fullscreen))
+        return (result.get('result'), result.get('error'))
+
+    @action
+    def toggle_shuffle(self, player_id=None, shuffle=None, *args, **kwargs):
+        """
+        Set/unset shuffle mode
+        """
+
+        if not player_id:
+            player_id = self._get_player_id()
+
+        if shuffle is None:
+            shuffle = self._get_kodi().Player.GetProperties(
+                playerid=player_id,
+                properties=['shuffled']).get('result', {}).get('shuffled')
+
+        result = self._get_kodi().Player.SetShuffle(
+           playerid=player_id,  shuffle=(not shuffle))
+        return (result.get('result'), result.get('error'))
+
+    @action
+    def toggle_repeat(self, player_id=None, repeat=None, *args, **kwargs):
+        """
+        Set/unset repeat mode
+        """
+
+        if not player_id:
+            player_id = self._get_player_id()
+
+        if repeat is None:
+            repeat = self._get_kodi().Player.GetProperties(
+                playerid=player_id,
+                properties=['repeat']).get('result', {}).get('repeat')
+
+        result = self._get_kodi().Player.SetRepeat(
+            playerid=player_id,
+            repeat='off' if repeat in ('one','all') else 'off')
+
         return (result.get('result'), result.get('error'))
 
     @action
     def seek(self, position, player_id=None, *args, **kwargs):
         """
         Move the cursor to the specified position in seconds
+
+        :param position: Seek time in seconds
+        :type position: int
         """
 
         if not player_id:
             player_id = self._get_player_id()
 
-        result = self._get_kodi().Player.Seek(position)
+        hours = int(position/3600)
+        minutes = int((position - hours*3600)/60)
+        seconds = position - hours*3600 - minutes*60
+
+        position = {
+            'hours': hours,
+            'minutes': minutes,
+            'seconds': seconds,
+            'milliseconds': 0,
+        }
+
+        result = self._get_kodi().Player.Seek(playerid=player_id, value=position)
         return (result.get('result'), result.get('error'))
 
     @action
@@ -354,13 +406,12 @@ class MediaKodiPlugin(Plugin):
             player_id = self._get_player_id()
 
         position = self._get_kodi().Player.GetProperties(
-            playerid=player_id, properties=['time']).get('result')
+            playerid=player_id, properties=['time']).get('result', {}).get('time', {})
 
         position = position.get('hours', 0)*3600 + \
-            position.get('minutes', 0)*60 + position.get('seconds', 0)
+            position.get('minutes', 0)*60 + position.get('seconds', 0) - delta_seconds
 
-        result = self._get_kodi().Player.Seek(position+delta_seconds)
-        return (result.get('result'), result.get('error'))
+        return self.seek(player_id=player_id, position=position)
 
     @action
     def forward(self, delta_seconds=60, player_id=None, *args, **kwargs):
@@ -375,13 +426,12 @@ class MediaKodiPlugin(Plugin):
             player_id = self._get_player_id()
 
         position = self._get_kodi().Player.GetProperties(
-            playerid=player_id, properties=['time']).get('result')
+            playerid=player_id, properties=['time']).get('result', {}).get('time', {})
 
         position = position.get('hours', 0)*3600 + \
-            position.get('minutes', 0)*60 + position.get('seconds', 0)
+            position.get('minutes', 0)*60 + position.get('seconds', 0) + delta_seconds
 
-        result = self._get_kodi().Player.Seek(position-delta_seconds)
-        return (result.get('result'), result.get('error'))
+        return self.seek(player_id=player_id, position=position)
 
 
 # vim:sw=4:ts=4:et:
