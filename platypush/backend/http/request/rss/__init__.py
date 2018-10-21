@@ -127,38 +127,42 @@ class RssUpdates(HttpRequest):
             if not entry.published_parsed:
                 continue
 
-            entry_timestamp = datetime.datetime(*entry.published_parsed[:6])
+            try:
+                entry_timestamp = datetime.datetime(*entry.published_parsed[:6])
 
-            if latest_update is None \
-                    or entry_timestamp > latest_update:
-                self.logger.info('Processed new item from RSS feed <{}>: "{}"'
-                             .format(self.url, entry.title))
+                if latest_update is None \
+                        or entry_timestamp > latest_update:
+                    self.logger.info('Processed new item from RSS feed <{}>: "{}"'
+                                .format(self.url, entry.title))
 
-                entry.summary = entry.summary if hasattr(entry, 'summary') else None
+                    entry.summary = entry.summary if hasattr(entry, 'summary') else None
 
-                if self.mercury_api_key:
-                    entry.content = self._parse_entry_content(entry.link)
-                elif hasattr(entry, 'summary'):
-                    entry.content = entry.summary
-                else:
-                    entry.content = None
+                    if self.mercury_api_key:
+                        entry.content = self._parse_entry_content(entry.link)
+                    elif hasattr(entry, 'summary'):
+                        entry.content = entry.summary
+                    else:
+                        entry.content = None
 
-                digest += '<h1 style="page-break-before: always">{}</h1>{}' \
-                    .format(entry.title, entry.content)
+                    digest += '<h1 style="page-break-before: always">{}</h1>{}' \
+                        .format(entry.title, entry.content)
 
-                e = {
-                    'entry_id': entry.id,
-                    'title': entry.title,
-                    'link': entry.link,
-                    'summary': entry.summary,
-                    'content': entry.content,
-                    'source_id': source_record.id,
-                    'published': entry_timestamp,
-                }
+                    e = {
+                        'entry_id': entry.id,
+                        'title': entry.title,
+                        'link': entry.link,
+                        'summary': entry.summary,
+                        'content': entry.content,
+                        'source_id': source_record.id,
+                        'published': entry_timestamp,
+                    }
 
-                entries.append(e)
-                session.add(FeedEntry(**e))
-                if self.max_entries and len(entries) > self.max_entries: break
+                    entries.append(e)
+                    session.add(FeedEntry(**e))
+                    if self.max_entries and len(entries) > self.max_entries: break
+            except Exception as e:
+                self.logger.warning('Exception encountered while parsing RSS ' +
+                                    'RSS feed {}: {}'.format(self.url, str(e)))
 
         source_record.last_updated_at = parse_start_time
         digest_filename = None
