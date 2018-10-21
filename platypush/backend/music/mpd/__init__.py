@@ -62,7 +62,11 @@ class MusicMpdBackend(Backend):
                 except Exception as e:
                     self.logger.exception(e)
                     self.logger.info('Reloading crashed MPD plugin')
-                    plugin = get_plugin('music.mpd', reload=True)
+                    try:
+                        plugin = get_plugin('music.mpd', reload=True)
+                    except:
+                        pass
+
                     time.sleep(self.poll_seconds)
 
             if state != last_state:
