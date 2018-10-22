@@ -64,5 +64,14 @@ class TorrentDownloadCompletedEvent(TorrentEvent):
         super().__init__(*args, **kwargs)
 
 
+class TorrentDownloadStopEvent(TorrentEvent):
+    """
+    Event triggered when a torrent transfer is stopped
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 # vim:sw=4:ts=4:et:
 

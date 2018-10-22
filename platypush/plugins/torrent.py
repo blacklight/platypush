@@ -11,7 +11,7 @@ from platypush.plugins import Plugin, action
 from platypush.message.event.torrent import \
     TorrentDownloadStartEvent, TorrentSeedingStartEvent, \
     TorrentStateChangeEvent, TorrentDownloadProgressEvent, \
-    TorrentDownloadCompletedEvent
+    TorrentDownloadCompletedEvent, TorrentDownloadStopEvent
 
 
 class TorrentPlugin(Plugin):
@@ -178,7 +178,12 @@ class TorrentPlugin(Plugin):
         bus.post(TorrentDownloadStartEvent(**self.torrent_state[torrent]))
         last_status = None
 
-        while (not status.is_seeding):
+        while not status.is_seeding:
+            if not torrent in self.transfers:
+                self.logger.info('Torrent {} has been stopped and removed')
+                bus.post(TorrentDownloadStopEvent(url=torrent))
+                return
+
             if not last_status:
                 bus.post(TorrentSeedingStartEvent(**self.torrent_state[torrent]))
 
@@ -217,7 +222,7 @@ class TorrentPlugin(Plugin):
             try: os.unlink(torrent_file)
             except: pass
 
-        bus.post(TorrentStateChangeEvent(**self.torrent_state[torrent], files=files))
+        bus.post(TorrentDownloadCompletedEvent(**self.torrent_state[torrent], files=files))
         del self.torrent_state[torrent]
         del self.transfers[torrent]
         return files
@@ -234,32 +239,48 @@ class TorrentPlugin(Plugin):
         return self.torrent_state
 
     @action
-    def pause(self, torrent_url):
+    def pause(self, torrent):
         """
         Pause a torrent transfer.
 
-        :param torrent_url: Torrent URL as returned from `get_status()`
-        :type torrent_url: str
+        :param torrent: Torrent URL as returned from `get_status()`
+        :type torrent: str
         """
 
-        if torrent_url not in self.transfers:
-            return (None, "No transfer in progress for {}".format(torrent_url))
+        if torrent not in self.transfers:
+            return (None, "No transfer in progress for {}".format(torrent))
 
-        self.transfers[torrent_url].pause()
+        self.transfers[torrent].pause()
 
     @action
-    def resume(self, torrent_url):
+    def resume(self, torrent):
         """
         Resume a torrent transfer.
 
-        :param torrent_url: Torrent URL as returned from `get_status()`
-        :type torrent_url: str
+        :param torrent: Torrent URL as returned from `get_status()`
+        :type torrent: str
         """
 
-        if torrent_url not in self.transfers:
-            return (None, "No transfer in progress for {}".format(torrent_url))
+        if torrent not in self.transfers:
+            return (None, "No transfer in progress for {}".format(torrent))
 
-        self.transfers[torrent_url].resume()
+        self.transfers[torrent].resume()
+
+    @action
+    def remove(self, torrent):
+        """
+        Stops and removes a torrent transfer.
+
+        :param torrent: Torrent URL as returned from `get_status()`
+        :type torrent: str
+        """
+
+        if torrent not in self.transfers:
+            return (None, "No transfer in progress for {}".format(torrent))
+
+        self.transfers[torrent].pause()
+        del self.torrent_state[torrent]
+        del self.transfers[torrent]
 
     def _generate_rand_filename(self, length=16):
         name = ''
