@@ -16,11 +16,7 @@ from platypush.message.event.torrent import \
 
 class TorrentPlugin(Plugin):
     """
-    Plugin to control video and media playback on your Raspberry Pi or
-    ARM-compatible device using OMXPlayer.
-
-    It can play local files, remote URLs, YouTube URLs and it supports torrents
-    search, download and play.
+    Plugin to search and download torrents.
 
     Requires:
 
@@ -51,7 +47,7 @@ class TorrentPlugin(Plugin):
     @action
     def search(self, query, types=None, queue_results=False, autoplay=False):
         """
-        Perform a video search.
+        Perform a search of video torrents.
 
         :param query: Query string, video name or partial name
         :type query: str

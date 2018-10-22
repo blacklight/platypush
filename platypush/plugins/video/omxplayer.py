@@ -10,7 +10,7 @@ import urllib.parse
 from dbus.exceptions import DBusException
 from omxplayer import OMXPlayer
 
-from platypush.context import get_backend
+from platypush.context import get_backend, get_plugin
 from platypush.plugins.media import PlayerState
 from platypush.message.event.video import VideoPlayEvent, VideoPauseEvent, \
     VideoStopEvent, NewPlayingVideoEvent
@@ -40,10 +40,7 @@ class VideoOmxplayerPlugin(Plugin):
         '.rm', '.swf', '.vob', '.mkv'
     }
 
-    default_torrent_ports = [6881, 6891]
-    torrent_state = {}
-
-    def __init__(self, args=[], media_dirs=[], download_dir=None, torrent_ports=[], *argv, **kwargs):
+    def __init__(self, args=[], media_dirs=[], download_dir=None, *argv, **kwargs):
         """
         :param args: Arguments that will be passed to the OMXPlayer constructor (e.g. subtitles, volume, start position, window size etc.) see https://github.com/popcornmix/omxplayer#synopsis and http://python-omxplayer-wrapper.readthedocs.io/en/latest/omxplayer/#omxplayer.player.OMXPlayer
         :type args: list
@@ -53,9 +50,6 @@ class VideoOmxplayerPlugin(Plugin):
 
         :param download_dir: Directory where the videos/torrents will be downloaded (default: none)
         :type download_dir: str
-
-        :param torrent_ports: Torrent ports to listen on (default: 6881 and 6891)
-        :type torrent_ports: list[int]
         """
 
         super().__init__(*argv, **kwargs)
@@ -81,7 +75,6 @@ class VideoOmxplayerPlugin(Plugin):
 
         self.player = None
         self.videos_queue = []
-        self.torrent_ports = torrent_ports if torrent_ports else self.default_torrent_ports
 
     @action
     def play(self, resource):
@@ -93,15 +86,16 @@ class VideoOmxplayerPlugin(Plugin):
             * Local files (format: ``file://<path>/<file>``)
             * Remote videos (format: ``https://<url>/<resource>``)
             * YouTube videos (format: ``https://www.youtube.com/watch?v=<id>``)
-            * Torrents (format: ``magnet:?<magnet_uri>``)
+            * Torrents (format: Magnet links, Torrent URLs or local Torrent files)
         """
 
         if resource.startswith('youtube:') \
                 or resource.startswith('https://www.youtube.com/watch?v='):
             resource = self._get_youtube_content(resource)
         elif resource.startswith('magnet:?'):
-            response = self.download_torrent(resource)
-            resources = response.output
+            torrents = get_plugin('torrent')
+            response = torrents.download(resource, download_dir=self.download_dir)
+            resources = [f for f in response.output if self._is_video_file(f)]
             if resources:
                 self.videos_queue = resources
                 resource = self.videos_queue.pop(0)
@@ -378,7 +372,8 @@ class VideoOmxplayerPlugin(Plugin):
             results.extend(file_results)
 
         if 'torrent' in types:
-            torrent_results = self.torrent_search(query).output
+            torrents = get_plugin('torrent')
+            torrent_results = torrents.search(query).output
             results.extend(torrent_results)
 
         if 'youtube' in types:
@@ -470,105 +465,6 @@ class VideoOmxplayerPlugin(Plugin):
                                 stdout=subprocess.PIPE)
 
         return proc.stdout.read().decode("utf-8", "strict")[:-1]
-
-    @action
-    def torrent_search(self, query):
-        self.logger.info('Searching matching movie torrents for "{}"'.format(query))
-        request = urllib.request.urlopen(urllib.request.Request(
-            'https://api.apidomain.info/list?' + urllib.parse.urlencode({
-                'sort': 'relevance',
-                'quality': '720p,1080p,3d',
-                'page': 1,
-                'keywords': query,
-            }),
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ' +
-                    '(KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'
-            })
-        )
-
-        response = request.read()
-        if isinstance(response, bytes):
-            response = response.decode('utf-8')
-
-        results = [
-            {
-                'url': _['items'][0]['torrent_magnet'],
-                'title': _['title'],
-            }
-
-            for _ in json.loads(response).get('MovieList', [])
-        ]
-
-        return results
-
-    @action
-    def download_torrent(self, magnet):
-        """
-        Download a torrent to ``download_dir`` by Magnet URI
-
-        :param magnet: Magnet URI
-        :type magnet: str
-        """
-
-        import libtorrent as lt
-
-        if not self.download_dir:
-            raise RuntimeError('No download_dir specified in video.omxplayer configuration')
-
-        ses = lt.session()
-        ses.listen_on(*self.torrent_ports)
-
-        info = lt.parse_magnet_uri(magnet)
-        self.logger.info('Downloading "{}" to "{}" from [{}]'
-                     .format(info['name'], self.download_dir, magnet))
-
-        params = {
-            'save_path': self.download_dir,
-            'storage_mode': lt.storage_mode_t.storage_mode_sparse,
-        }
-
-        transfer = lt.add_magnet_uri(ses, magnet, params)
-        status = transfer.status()
-        files = []
-
-        self.torrent_state = {
-            'url': magnet,
-            'title': info['name'],
-        }
-
-        while (not status.is_seeding):
-            status = transfer.status()
-            torrent_file = transfer.torrent_file()
-            if torrent_file:
-                files = [os.path.join(
-                            self.download_dir,
-                            torrent_file.files().file_path(i))
-                    for i in range(0, torrent_file.files().num_files())
-                    if self._is_video_file(torrent_file.files().file_name(i))
-                ]
-
-            self.torrent_state['progress'] = 100 * status.progress
-            self.torrent_state['download_rate'] = status.download_rate
-            self.torrent_state['upload_rate'] = status.upload_rate
-            self.torrent_state['num_peers'] = status.num_peers
-            self.torrent_state['state'] = status.state
-
-            self.logger.info(('Torrent download: {:.2f}% complete (down: {:.1f} kb/s ' +
-                         'up: {:.1f} kB/s peers: {} state: {})')
-                         .format(status.progress * 100,
-                                 status.download_rate / 1000,
-                                 status.upload_rate / 1000,
-                                 status.num_peers, status.state))
-
-            time.sleep(5)
-
-        return files
-
-
-    @action
-    def get_torrent_state(self):
-        return self.torrent_state
 
 
 # vim:sw=4:ts=4:et:
