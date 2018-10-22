@@ -167,19 +167,19 @@ class TorrentPlugin(Plugin):
         status = transfer.status()
         files = []
 
-        self.torrent_state = {
-            'url': info['url'] or magnet or torrent_file,
+        self.torrent_state[torrent] = {
+            'url': torrent,
             'title': info['name'],
             'trackers': info['trackers'],
             'save_path': info['save_path'],
         }
 
-        bus.post(TorrentDownloadStartEvent(**self.torrent_state))
+        bus.post(TorrentDownloadStartEvent(**self.torrent_state[torrent]))
         last_status = None
 
         while (not status.is_seeding):
             if not last_status:
-                bus.post(TorrentSeedingStartEvent(**self.torrent_state))
+                bus.post(TorrentSeedingStartEvent(**self.torrent_state[torrent]))
 
             status = transfer.status()
             torrent_file = transfer.torrent_file()
@@ -190,17 +190,17 @@ class TorrentPlugin(Plugin):
                     for i in range(0, torrent_file.files().num_files())
                 ]
 
-            self.torrent_state['progress'] = 100 * status.progress
-            self.torrent_state['download_rate'] = status.download_rate
-            self.torrent_state['upload_rate'] = status.upload_rate
-            self.torrent_state['num_peers'] = status.num_peers
-            self.torrent_state['state'] = status.state
+            self.torrent_state[torrent]['progress'] = 100 * status.progress
+            self.torrent_state[torrent]['download_rate'] = status.download_rate
+            self.torrent_state[torrent]['upload_rate'] = status.upload_rate
+            self.torrent_state[torrent]['num_peers'] = status.num_peers
+            self.torrent_state[torrent]['state'] = status.state
 
             if last_status and status.progress != last_status.progress:
-                bus.post(TorrentDownloadProgressEvent(**self.torrent_state))
+                bus.post(TorrentDownloadProgressEvent(**self.torrent_state[torrent]))
 
             if not last_status or status.state != last_status.state:
-                bus.post(TorrentStateChangeEvent(**self.torrent_state))
+                bus.post(TorrentStateChangeEvent(**self.torrent_state[torrent]))
 
             self.logger.info(('Torrent download: {:.2f}% complete (down: {:.1f} kb/s ' +
                          'up: {:.1f} kB/s peers: {} state: {})')
@@ -216,7 +216,8 @@ class TorrentPlugin(Plugin):
             try: os.unlink(torrent_file)
             except: pass
 
-        bus.post(TorrentStateChangeEvent(**self.torrent_state, files=files))
+        bus.post(TorrentStateChangeEvent(**self.torrent_state[torrent], files=files))
+        del self.torrent_state[torrent]
         return files
 
 
