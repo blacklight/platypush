@@ -97,7 +97,7 @@ class VideoOmxplayerPlugin(Plugin):
             response = torrents.download(resource, download_dir=self.download_dir)
             resources = [f for f in response.output if self._is_video_file(f)]
             if resources:
-                self.videos_queue = resources
+                self.videos_queue = sorted(resources)
                 resource = self.videos_queue.pop(0)
             else:
                 raise RuntimeError('Unable to download torrent {}'.format(resource))

@@ -26,6 +26,7 @@ class TorrentPlugin(Plugin):
 
     default_torrent_ports = [6881, 6891]
     torrent_state = {}
+    transfers = {}
 
     def __init__(self, download_dir=None, torrent_ports=[], *argv, **kwargs):
         """
@@ -114,6 +115,7 @@ class TorrentPlugin(Plugin):
             else:
                 raise RuntimeError('download_dir not specified')
 
+        download_dir = os.path.abspath(os.path.expanduser(download_dir))
         os.makedirs(download_dir, exist_ok=True)
         info = {}
         torrent_file = None
@@ -126,13 +128,15 @@ class TorrentPlugin(Plugin):
         elif torrent.startswith('http://') or torrent.startswith('https://'):
             import requests
             response = requests.get(torrent, allow_redirects=True)
-            torrent_file = os.path.join(os.path.expanduser(download_dir),
+            torrent_file = os.path.join(download_dir,
                                         self._generate_rand_filename())
 
             with open(torrent_file, 'wb') as f:
                 f.write(response.content)
         else:
-            torrent_file = os.path.expanduser(torrent)
+            torrent_file = os.path.abspath(os.path.expanduser(torrent))
+            if not os.path.isfile(torrent_file):
+                raise RuntimeError('{} is not a valid torrent file'.format(torrent_file))
 
         if torrent_file:
             file_info = lt.torrent_info(torrent_file)
@@ -163,11 +167,12 @@ class TorrentPlugin(Plugin):
         status = transfer.status()
         files = []
 
+        self.transfers[torrent] = transfer
         self.torrent_state[torrent] = {
             'url': torrent,
             'title': info['name'],
             'trackers': info['trackers'],
-            'save_path': info['save_path'],
+            'save_path': download_dir,
         }
 
         bus.post(TorrentDownloadStartEvent(**self.torrent_state[torrent]))
@@ -214,12 +219,47 @@ class TorrentPlugin(Plugin):
 
         bus.post(TorrentStateChangeEvent(**self.torrent_state[torrent], files=files))
         del self.torrent_state[torrent]
+        del self.transfers[torrent]
         return files
 
 
     @action
     def get_status(self):
+        """
+        Get the status of the current transfers.
+
+        :returns: A dictionary in the format torrent_url -> status
+        """
+
         return self.torrent_state
+
+    @action
+    def pause(self, torrent_url):
+        """
+        Pause a torrent transfer.
+
+        :param torrent_url: Torrent URL as returned from `get_status()`
+        :type torrent_url: str
+        """
+
+        if torrent_url not in self.transfers:
+            return (None, "No transfer in progress for {}".format(torrent_url))
+
+        self.transfers[torrent_url].pause()
+
+    @action
+    def resume(self, torrent_url):
+        """
+        Resume a torrent transfer.
+
+        :param torrent_url: Torrent URL as returned from `get_status()`
+        :type torrent_url: str
+        """
+
+        if torrent_url not in self.transfers:
+            return (None, "No transfer in progress for {}".format(torrent_url))
+
+        self.transfers[torrent_url].resume()
 
     def _generate_rand_filename(self, length=16):
         name = ''
