@@ -132,9 +132,7 @@ class RssUpdates(HttpRequest):
 
                 if latest_update is None \
                         or entry_timestamp > latest_update:
-                    self.logger.info('Processed new item from RSS feed <{}>: "{}"'
-                                .format(self.url, entry.title))
-
+                    self.logger.info('Processed new item from RSS feed <{}>'.format(self.url))
                     entry.summary = entry.summary if hasattr(entry, 'summary') else None
 
                     if self.mercury_api_key:
