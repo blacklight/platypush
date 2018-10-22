@@ -196,7 +196,7 @@ class TorrentPlugin(Plugin):
                     for i in range(0, torrent_file.files().num_files())
                 ]
 
-            self.torrent_state[torrent]['progress'] = 100 * status.progress
+            self.torrent_state[torrent]['progress'] = round(100 * status.progress, 2)
             self.torrent_state[torrent]['download_rate'] = status.download_rate
             self.torrent_state[torrent]['upload_rate'] = status.upload_rate
             self.torrent_state[torrent]['num_peers'] = status.num_peers
