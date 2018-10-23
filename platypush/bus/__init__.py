@@ -54,7 +54,11 @@ class Bus(object):
                             .format(int(time.time()-msg.timestamp), msg))
                 continue
 
-            self.on_message(msg)
+            try:
+                self.on_message(msg)
+            except Exception as e:
+                logger.error('Error on processing message {}'.format(msg))
+                logger.exception(e)
 
             if isinstance(msg, StopEvent) and msg.targets_me():
                 logger.info('Received STOP event on the bus')
