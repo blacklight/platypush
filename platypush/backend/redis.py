@@ -31,19 +31,21 @@ class RedisBackend(Backend):
 
         self.queue = queue
         self.redis_args = redis_args
-        self.redis = Redis(**self.redis_args)
+        self.redis = None
 
+    def _get_redis(self):
+        return Redis(**self.redis_args)
 
     def send_message(self, msg, queue_name=None):
         if queue_name:
-            self.redis.rpush(queue_name, msg)
+            self._get_redis().rpush(queue_name, msg)
         else:
-            self.redis.rpush(self.queue, msg)
+            self._get_redis().rpush(self.queue, msg)
 
 
     def get_message(self, queue_name=None):
         queue = queue_name or self.queue
-        msg = self.redis.blpop(queue)[1].decode('utf-8')
+        msg = self._get_redis().blpop(queue)[1].decode('utf-8')
 
         try:
             msg = Message.build(json.loads(msg))
