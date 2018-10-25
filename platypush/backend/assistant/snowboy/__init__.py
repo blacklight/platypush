@@ -72,7 +72,8 @@ class AssistantSnowboyBackend(Backend):
             self.bus.post(HotwordDetectedEvent(hotword=self.hotword))
         return callback
 
-    def exec(self):
+    def run(self):
+        super().run()
         self.detector.start(self.hotword_detected())
 
 

@@ -81,7 +81,8 @@ class KafkaBackend(Backend):
             self.logger.warning('Exception occurred while closing Kafka connection')
             self.logger.exception(e)
 
-    def exec(self):
+    def run(self):
+        super().run()
 
         self.consumer = KafkaConsumer(self.topic, bootstrap_servers=self.server)
         self.logger.info('Initialized kafka backend - server: {}, topic: {}'

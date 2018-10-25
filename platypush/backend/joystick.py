@@ -29,7 +29,8 @@ class JoystickBackend(Backend):
 
         self.device = device
 
-    def exec(self):
+    def run(self):
+        super().run()
         self.logger.info('Initialized joystick backend on device {}'.format(self.device))
 
         while not self.should_stop():

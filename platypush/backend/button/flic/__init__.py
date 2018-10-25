@@ -112,7 +112,8 @@ class ButtonFlicBackend(Backend):
 
         return _f
 
-    def exec(self):
+    def run(self):
+        super().run()
 
         self.client.handle_events()
 

@@ -31,21 +31,19 @@ class RedisBackend(Backend):
 
         self.queue = queue
         self.redis_args = redis_args
-        self.redis = None
+        self.redis = Redis(**self.redis_args)
 
-    def _get_redis(self):
-        return Redis(**self.redis_args)
 
     def send_message(self, msg, queue_name=None):
         if queue_name:
-            self._get_redis().rpush(queue_name, msg)
+            self.redis.rpush(queue_name, msg)
         else:
-            self._get_redis().rpush(self.queue, msg)
+            self.redis.rpush(self.queue, msg)
 
 
     def get_message(self, queue_name=None):
         queue = queue_name or self.queue
-        msg = self._get_redis().blpop(queue)[1].decode('utf-8')
+        msg = self.redis.blpop(queue)[1].decode('utf-8')
 
         try:
             msg = Message.build(json.loads(msg))
@@ -62,7 +60,8 @@ class RedisBackend(Backend):
         return msg
 
 
-    def exec(self):
+    def run(self):
+        super().run()
 
         self.logger.info('Initialized Redis backend on queue {} with arguments {}'.
                      format(self.queue, self.redis_args))

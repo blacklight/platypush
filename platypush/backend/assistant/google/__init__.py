@@ -110,7 +110,8 @@ class AssistantGoogleBackend(Backend):
             self.assistant.stop_conversation()
 
 
-    def exec(self):
+    def run(self):
+        super().run()
 
         with Assistant(self.credentials, self.device_model_id) as assistant:
             self.assistant = assistant

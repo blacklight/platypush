@@ -175,7 +175,8 @@ class PushbulletBackend(Backend):
     def on_stop(self):
         self.ws.close()
 
-    def exec(self):
+    def run(self):
+        super().run()
 
         self._init_socket()
         self.logger.info('Initialized Pushbullet backend - device_id: {}'

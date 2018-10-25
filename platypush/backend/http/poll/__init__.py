@@ -72,7 +72,8 @@ class HttpPollBackend(Backend):
             self.requests.append(request)
 
 
-    def exec(self):
+    def run(self):
+        super().run()
 
         while not self.should_stop():
             for request in self.requests:

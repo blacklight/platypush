@@ -61,7 +61,8 @@ class LocalBackend(Backend):
         return Message.build(msg) if len(msg) else None
 
 
-    def exec(self):
+    def run(self):
+        super().run()
         self.logger.info('Initialized local backend on {} and {}'.
                      format(self.request_fifo, self.response_fifo))
 

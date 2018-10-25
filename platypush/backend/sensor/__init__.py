@@ -40,7 +40,8 @@ class SensorBackend(Backend):
         """ To be implemented in the derived classes """
         raise NotImplementedError('To be implemented in a derived class')
 
-    def exec(self):
+    def run(self):
+        super().run()
         self.logger.info('Initialized {} sensor backend'.format(self.__class__.__name__))
 
         while not self.should_stop():

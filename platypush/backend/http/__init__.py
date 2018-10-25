@@ -377,7 +377,8 @@ class HttpBackend(Backend):
         loop.run_forever()
 
 
-    def exec(self):
+    def run(self):
+        super().run()
         os.putenv('FLASK_APP', 'platypush')
         os.putenv('FLASK_ENV', 'production')
         self.logger.info('Initialized HTTP backend on port {}'.format(self.port))

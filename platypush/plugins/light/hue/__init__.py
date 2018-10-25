@@ -706,7 +706,7 @@ class LightHuePlugin(LightPlugin):
             self.animation_thread = None
             self.redis = None
 
-        redis_args = get_backend('redis').redis_args.copy()
+        redis_args = get_backend('redis').redis_args
         redis_args['socket_timeout'] = transition_seconds
         self.redis = Redis(**redis_args)
 

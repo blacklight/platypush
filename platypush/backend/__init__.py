@@ -7,7 +7,6 @@ import importlib
 import logging
 import sys
 import threading
-import time
 
 from threading import Thread
 
@@ -35,7 +34,6 @@ class Backend(Thread):
     """
 
     _default_response_timeout = 5
-    _backend_reload_timeout = 10
 
     def __init__(self, bus=None, **kwargs):
         """
@@ -213,38 +211,9 @@ class Backend(Thread):
         redis.send_message(msg, queue_name=queue_name)
 
 
-    def exec(self):
-        """ Backend thread logic. To be implemented in the derived classes """
-        raise RuntimeError('Backend class {} does not implement the exec() method'.
-                           format(self.__class__.__name__))
-
     def run(self):
-        """ Thread runner. It wraps the exec method in a retry block """
-
-        super().run()
+        """ Starts the backend thread. To be implemented in the derived classes """
         self.thread_id = threading.get_ident()
-        error = None
-
-        while not self.should_stop():
-            try:
-                self.exec()
-            except Exception as e:
-                error = e
-
-            if not self.should_stop():
-                if error:
-                    self.logger.error(('Backend {} terminated with an exception, ' +
-                                      'reloading in {} seconds').format(
-                                          self.__class__.__name__,
-                                          self._backend_reload_timeout))
-                    self.logger.exception(error)
-                else:
-                    self.logger.warning(('Backend {} unexpectedly terminated, ' +
-                                        'reloading in {} seconds').format(
-                                            self.__class__.__name__,
-                                            self._backend_reload_timeout))
-
-                time.sleep(self._backend_reload_timeout)
 
     def on_stop(self):
         """ Callback invoked when the process stops """

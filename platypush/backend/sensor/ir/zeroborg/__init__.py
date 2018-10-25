@@ -32,7 +32,9 @@ class SensorIrZeroborgBackend(Backend):
         self.logger.info('Initialized Zeroborg infrared sensor backend')
 
 
-    def exec(self):
+    def run(self):
+        super().run()
+
         while True:
             try:
                 self.zb.GetIrMessage()

@@ -27,7 +27,8 @@ class WeatherForecastBackend(Backend):
     def send_message(self, msg):
         pass
 
-    def exec(self):
+    def run(self):
+        super().run()
         weather = get_plugin('weather.forecast')
         self.logger.info('Initialized weather forecast backend')
 

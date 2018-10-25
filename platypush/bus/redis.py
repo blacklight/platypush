@@ -24,6 +24,8 @@ class RedisBus(Bus):
 
     def get(self):
         """ Reads one message from the Redis queue """
+        msg = None
+
         try:
             msg = self.redis.blpop(self.redis_queue)
             if msg and msg[1]:
