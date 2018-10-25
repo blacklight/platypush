@@ -102,8 +102,7 @@ class MidiBackend(Backend):
         return callback
 
 
-    def run(self):
-        super().run()
+    def exec(self):
 
         self.midi.open_port(self.port_number)
         self.logger.info('Initialized MIDI backend, listening for events on device {}'.

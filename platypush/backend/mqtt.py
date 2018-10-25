@@ -45,7 +45,7 @@ class MqttBackend(Backend):
         publisher.single(self.topic, str(msg), hostname=self.host, port=self.port)
 
 
-    def run(self):
+    def exec(self):
         def on_connect(client, userdata, flags, rc):
             client.subscribe(self.topic)
 
@@ -57,7 +57,6 @@ class MqttBackend(Backend):
             self.logger.info('Received message on the MQTT backend: {}'.format(msg))
             self.on_message(msg)
 
-        super().run()
         client = mqtt.Client()
         client.on_connect = on_connect
         client.on_message = on_message

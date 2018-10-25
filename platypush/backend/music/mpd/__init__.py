@@ -39,8 +39,7 @@ class MusicMpdBackend(Backend):
         self.poll_seconds = poll_seconds
 
 
-    def run(self):
-        super().run()
+    def exec(self):
 
         last_status = {}
         last_state = None

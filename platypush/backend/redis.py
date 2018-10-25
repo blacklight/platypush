@@ -60,8 +60,7 @@ class RedisBackend(Backend):
         return msg
 
 
-    def run(self):
-        super().run()
+    def exec(self):
 
         self.logger.info('Initialized Redis backend on queue {} with arguments {}'.
                      format(self.queue, self.redis_args))

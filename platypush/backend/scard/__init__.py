@@ -50,8 +50,7 @@ class ScardBackend(Backend):
             self.cardtype = AnyCardType()
 
 
-    def run(self):
-        super().run()
+    def exec(self):
 
         self.logger.info('Initialized smart card reader backend - ATR filter: {}'.
                      format(self.ATRs))

@@ -61,9 +61,7 @@ class SensorLeapBackend(Backend):
         self.position_tolerance = position_tolerance
 
 
-    def run(self):
-        super().run()
-
+    def exec(self):
         listener = LeapListener(position_ranges=self.position_ranges,
                                 position_tolerance=self.position_tolerance)
 

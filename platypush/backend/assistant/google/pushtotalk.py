@@ -176,9 +176,8 @@ class AssistantGooglePushtotalkBackend(Backend):
         """ Speech recognized handler """
         self.bus.post(SpeechRecognizedEvent(phrase=speech))
 
-    def run(self):
+    def exec(self):
         """ Backend executor """
-        super().run()
 
         with SampleAssistant(self.lang, self.device_model_id, self.device_id,
                              self.conversation_stream,

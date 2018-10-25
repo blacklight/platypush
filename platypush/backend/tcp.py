@@ -90,9 +90,7 @@ class TcpBackend(Backend):
 
         threading.Thread(target=_f_wrapper).run()
 
-    def run(self):
-        super().run()
-
+    def exec(self):
         serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         serv_sock.bind((self.bind_address, self.port))
 

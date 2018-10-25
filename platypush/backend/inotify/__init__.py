@@ -48,8 +48,7 @@ class InotifyBackend(Backend):
 
         self.inotify_watch = None
 
-    def run(self):
-        super().run()
+    def exec(self):
 
         self.inotify_watch = inotify.adapters.Inotify()
         for path in self.watch_paths:

@@ -160,8 +160,7 @@ class CameraPiBackend(Backend):
             self.logger.warning('Failed to stop recording')
             self.logger.exception(e)
 
-    def run(self):
-        super().run()
+    def exec(self):
 
         if not self.redis:
             self.redis = get_backend('redis')
