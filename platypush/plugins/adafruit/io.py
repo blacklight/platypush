@@ -75,7 +75,7 @@ class AdafruitIoPlugin(Plugin):
     def _get_redis(self):
         from redis import Redis
 
-        redis_args = get_backend('redis').redis_args
+        redis_args = get_backend('redis').redis_args.copy()
         redis_args['socket_timeout'] = 1
         return Redis(**redis_args)
 
