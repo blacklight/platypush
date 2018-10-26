@@ -1,10 +1,12 @@
 import json
+import threading
 
 import paho.mqtt.client as mqtt
 import paho.mqtt.publish as publisher
 
 from platypush.backend import Backend
 from platypush.message import Message
+from platypush.message.request import Request
 
 
 class MqttBackend(Backend):
@@ -44,18 +46,30 @@ class MqttBackend(Backend):
 
         publisher.single(self.topic, str(msg), hostname=self.host, port=self.port)
 
-
     def run(self):
         def on_connect(client, userdata, flags, rc):
             client.subscribe(self.topic)
 
         def on_message(client, userdata, msg):
+            def response_thread(msg):
+                response = self.get_message_response(msg)
+                response_topic = '{}/responses/{}'.format(self.topic, msg.id)
+
+                self.logger.info('Processing response on the MQTT topic {}: {}'.
+                                format(response_topic, response))
+
+                publisher.single(response_topic, str(response),
+                                 hostname=self.host, port=self.port)
+
             msg = msg.payload.decode('utf-8')
             try: msg = Message.build(json.loads(msg))
             except: pass
 
             self.logger.info('Received message on the MQTT backend: {}'.format(msg))
             self.on_message(msg)
+
+            if isinstance(msg, Request):
+                threading.Thread(target=response_thread, args=(msg,)).start()
 
         super().run()
         client = mqtt.Client()

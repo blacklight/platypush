@@ -88,7 +88,7 @@ class TcpBackend(Backend):
             finally:
                 sock.close()
 
-        threading.Thread(target=_f_wrapper).run()
+        threading.Thread(target=_f_wrapper).start()
 
     def run(self):
         super().run()
