@@ -15,7 +15,7 @@ from flask import Flask, Response, abort, jsonify, request as http_request, \
 from redis import Redis
 
 from platypush.config import Config
-from platypush.context import get_backend
+from platypush.context import get_backend, get_or_create_event_loop
 from platypush.message import Message
 from platypush.message.event import Event, StopEvent
 from platypush.message.event.web.widget import WidgetUpdateEvent
@@ -146,7 +146,7 @@ class HttpBackend(Backend):
             except Exception as e:
                 self.logger.warning('Error on websocket send_event: {}'.format(e))
 
-        loop = asyncio.new_event_loop()
+        loop = get_or_create_event_loop()
 
         for websocket in self.active_websockets:
             try:
@@ -370,8 +370,7 @@ class HttpBackend(Backend):
                 self.logger.info('Websocket client {} closed connection'.format(websocket.remote_address[0]))
                 self.active_websockets.remove(websocket)
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        loop = get_or_create_event_loop()
         loop.run_until_complete(
             websockets.serve(register_websocket, '0.0.0.0', self.websocket_port))
         loop.run_forever()

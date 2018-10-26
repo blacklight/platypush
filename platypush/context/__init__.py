@@ -1,3 +1,4 @@
+import asyncio
 import importlib
 import logging
 
@@ -112,6 +113,16 @@ def get_bus():
 def register_plugin(name, plugin, **kwargs):
     """ Registers a plugin instance by name """
     global plugins
+
+def get_or_create_event_loop():
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    return loop
+
 
 # vim:sw=4:ts=4:et:
 
