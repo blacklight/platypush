@@ -6,13 +6,13 @@ Backends
     :caption: Backends:
 
     platypush/backend.rst
-    platypush/backend/assistant.google.rst
     platypush/backend/assistant.google.pushtotalk.rst
+    platypush/backend/assistant.google.rst
     platypush/backend/assistant.snowboy.rst
     platypush/backend/button.flic.rst
     platypush/backend/camera.pi.rst
-    platypush/backend/http.rst
     platypush/backend/http.poll.rst
+    platypush/backend/http.rst
     platypush/backend/inotify.rst
     platypush/backend/kafka.rst
     platypush/backend/midi.rst
@@ -21,11 +21,12 @@ Backends
     platypush/backend/pushbullet.rst
     platypush/backend/redis.rst
     platypush/backend/scard.rst
-    platypush/backend/sensor.rst
     platypush/backend/sensor.accelerometer.rst
     platypush/backend/sensor.ir.zeroborg.rst
     platypush/backend/sensor.leap.rst
     platypush/backend/sensor.mcp3008.rst
+    platypush/backend/sensor.rst
     platypush/backend/sensor.serial.rst
+    platypush/backend/tcp.rst
     platypush/backend/weather.forecast.rst
-
+    platypush/backend/websocket.rst
