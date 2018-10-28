@@ -46,21 +46,12 @@ class TorrentPlugin(Plugin):
             self.download_dir = os.path.abspath(os.path.expanduser(download_dir))
 
     @action
-    def search(self, query, types=None, queue_results=False, autoplay=False):
+    def search(self, query):
         """
         Perform a search of video torrents.
 
         :param query: Query string, video name or partial name
         :type query: str
-
-        :param types: Video types to search (default: ``["youtube", "file", "torrent"]``)
-        :type types: list
-
-        :param queue_results: Append the results to the current playing queue (default: False)
-        :type queue_results: bool
-
-        :param autoplay: Play the first result of the search (default: False)
-        :type autoplay: bool
         """
 
         self.logger.info('Searching matching torrents for "{}"'.format(query))
