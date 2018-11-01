@@ -20,6 +20,7 @@ from platypush.message import Message
 from platypush.message.event import Event, StopEvent
 from platypush.message.event.web.widget import WidgetUpdateEvent
 from platypush.message.request import Request
+from platypush.utils import get_ssl_server_context
 
 from .. import Backend
 
@@ -61,6 +62,7 @@ class HttpBackend(Backend):
 
     def __init__(self, port=8008, websocket_port=8009, disable_websocket=False,
                  redis_queue='platypush/http', dashboard={},
+                 ssl_cert=None, ssl_key=None, ssl_cafile=None, ssl_capath=None,
                  maps={}, **kwargs):
         """
         :param port: Listen port for the web server (default: 8008)
@@ -74,6 +76,18 @@ class HttpBackend(Backend):
 
         :param redis_queue: Name of the Redis queue used to synchronize messages with the web server process (default: ``platypush/http``)
         :type redis_queue: str
+
+        :param ssl_cert: Set it to the path of your certificate file if you want to enable HTTPS (default: None)
+        :type ssl_cert: str
+
+        :param ssl_key: Set it to the path of your key file if you want to enable HTTPS (default: None)
+        :type ssl_key: str
+
+        :param ssl_cafile: Set it to the path of your certificate authority file if you want to enable HTTPS (default: None)
+        :type ssl_cafile: str
+
+        :param ssl_capath: Set it to the path of your certificate authority directory if you want to enable HTTPS (default: None)
+        :type ssl_capath: str
 
         :param dashboard: Set it if you want to use the dashboard service. It will contain the configuration for the widgets to be used (look under ``platypush/backend/http/templates/widgets/`` for the available widgets).
 
@@ -114,6 +128,11 @@ class HttpBackend(Backend):
         self.redis_thread = None
         self.redis = None
         self.active_websockets = set()
+        self.ssl_context = get_ssl_server_context(ssl_cert=ssl_cert,
+                                                  ssl_key=ssl_key,
+                                                  ssl_cafile=ssl_cafile,
+                                                  ssl_capath=ssl_capath) \
+            if ssl_cert else None
 
 
     def send_message(self, msg):
@@ -380,6 +399,13 @@ class HttpBackend(Backend):
         super().run()
         os.putenv('FLASK_APP', 'platypush')
         os.putenv('FLASK_ENV', 'production')
+        kwargs = {
+            'host':'0.0.0.0', 'port':self.port, 'use_reloader':False
+        }
+
+        if self.ssl_context:
+            kwargs['ssl_context'] = self.ssl_context
+
         self.logger.info('Initialized HTTP backend on port {}'.format(self.port))
 
         webserver = self.webserver()
