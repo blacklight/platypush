@@ -380,18 +380,26 @@ class HttpBackend(Backend):
         import websockets
 
         async def register_websocket(websocket, path):
-            self.logger.info('New websocket connection from {}'.format(websocket.remote_address[0]))
+            address = websocket.remote_address[0] if websocket.remote_address \
+                else '<unknown client>'
+
+            self.logger.info('New websocket connection from {}'.format(address))
             self.active_websockets.add(websocket)
 
             try:
                 await websocket.recv()
             except websockets.exceptions.ConnectionClosed:
-                self.logger.info('Websocket client {} closed connection'.format(websocket.remote_address[0]))
+                self.logger.info('Websocket client {} closed connection'.format(address))
                 self.active_websockets.remove(websocket)
+
+        websocket_args = {}
+        if self.ssl_context:
+            websocket_args['ssl'] = self.ssl_context
 
         loop = get_or_create_event_loop()
         loop.run_until_complete(
-            websockets.serve(register_websocket, '0.0.0.0', self.websocket_port))
+            websockets.serve(register_websocket, '0.0.0.0', self.websocket_port,
+                             **websocket_args))
         loop.run_forever()
 
 
