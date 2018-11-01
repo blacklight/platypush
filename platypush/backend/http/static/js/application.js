@@ -9,7 +9,8 @@ $(document).ready(function() {
 
     var initWebsocket = function() {
         try {
-            websocket = new WebSocket('ws://' + window.location.hostname + ':' + window.websocket_port);
+            url_prefix = window.ssl_cert ? 'wss://' : 'ws://';
+            websocket = new WebSocket(url_prefix  + window.location.hostname + ':' + window.websocket_port);
         } catch (err) {
             websocket = undefined;
             return;
