@@ -2,11 +2,14 @@ import sys
 import logging
 import traceback
 
+from functools import wraps
+
 from platypush.config import Config
 from platypush.message.response import Response
 from platypush.utils import get_decorators
 
 def action(f):
+    @wraps(f)
     def _execute_action(*args, **kwargs):
         output = None
         errors = []

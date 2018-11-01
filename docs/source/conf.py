@@ -181,6 +181,8 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 todo_include_todos = True
 
 autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
+                        'google.assistant.embedded',
+                        'tenacity',
                         'smartcard',
                         'Leap',
                         'oauth2client',
@@ -190,7 +192,9 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'Adafruit_IO',
                         'pyperclip',
                         'dbus',
-                        'inputs'
+                        'inputs',
+                        'inotify',
+                        'omxplayer',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))
