@@ -272,7 +272,7 @@ class HttpBackend(Backend):
 
             return render_template('index.html', plugins=enabled_plugins, hidden_plugins=hidden_plugins,
                                    token=Config.get('token'), websocket_port=self.websocket_port,
-                                   has_ssl=self.ssl_cert is not None)
+                                   has_ssl=self.ssl_context is not None)
 
 
         @app.route('/widget/<widget>', methods=['POST'])
