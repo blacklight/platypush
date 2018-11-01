@@ -8,6 +8,7 @@ from platypush.backend import Backend
 from platypush.context import get_plugin, get_or_create_event_loop
 from platypush.message import Message
 from platypush.message.request import Request
+from platypush.utils import get_ssl_server_context
 
 
 class WebsocketBackend(Backend):
@@ -22,8 +23,9 @@ class WebsocketBackend(Backend):
     # Websocket client message recv timeout in seconds
     _websocket_client_timeout = 60
 
-    def __init__(self, port=8765, bind_address='0.0.0.0', ssl_cert=None,
-                 ssl_key=None, client_timeout=_websocket_client_timeout, **kwargs):
+    def __init__(self, port=8765, bind_address='0.0.0.0', ssl_cafile=None,
+                 ssl_capath=None, ssl_cert=None, ssl_key=None,
+                 client_timeout=_websocket_client_timeout, **kwargs):
         """
         :param port: Listen port for the websocket server (default: 8765)
         :type port: int
@@ -37,6 +39,12 @@ class WebsocketBackend(Backend):
         :param ssl_key: Path to the key file if you want to enable SSL (default: None)
         :type ssl_key: str
 
+        :param ssl_cafile: Path to the certificate authority file if required by the SSL configuration (default: None)
+        :type ssl_cafile: str
+
+        :param ssl_capath: Path to the certificate authority directory if required by the SSL configuration (default: None)
+        :type ssl_capath: str
+
         :param client_timeout: Timeout without any messages being received before closing a client connection. A zero timeout keeps the websocket open until an error occurs (default: 60 seconds)
         :type ping_timeout: int
         """
@@ -45,15 +53,13 @@ class WebsocketBackend(Backend):
 
         self.port = port
         self.bind_address = bind_address
-        self.ssl_context = None
         self.client_timeout = client_timeout
 
-        if ssl_cert:
-            self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-            self.ssl_context.load_cert_chain(
-                certfile=os.path.abspath(os.path.expanduser(ssl_cert)),
-                keyfile=os.path.abspath(os.path.expanduser(ssl_key)) if ssl_key else None
-            )
+        self.ssl_context = get_ssl_server_context(ssl_cert=ssl_cert,
+                                                  ssl_key=ssl_key,
+                                                  ssl_cafile=ssl_cafile,
+                                                  ssl_capath=ssl_capath) \
+            if ssl_cert else None
 
     def send_message(self, msg):
         websocket = get_plugin('websocket')

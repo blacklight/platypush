@@ -6,6 +6,7 @@ import inspect
 import logging
 import os
 import signal
+import ssl
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +119,49 @@ def get_redis_queue_name_by_message(msg):
         logger.warning('Not a valid message (type: {}): {}'.format(type(msg), msg))
 
     return 'platypush/responses/{}'.format(msg.id) if msg.id else None
+
+
+def _get_ssl_context(context_type=None, ssl_cert=None, ssl_key=None,
+                     ssl_cafile=None, ssl_capath=None):
+    if not context_type:
+        ssl_context = ssl.create_default_context(cafile=ssl_cafile,
+                                                 capath=ssl_capath)
+    else:
+        ssl_context = ssl.SSLContext(context_type)
+
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+
+    if ssl_cafile or ssl_capath:
+        ssl_context.load_verify_locations(
+            cafile=ssl_cafile, capath=ssl_capath)
+
+    ssl_context.load_cert_chain(
+        certfile=os.path.abspath(os.path.expanduser(ssl_cert)),
+        keyfile=os.path.abspath(os.path.expanduser(ssl_key)) if ssl_key else None
+    )
+
+    return ssl_context
+
+
+def get_ssl_context(ssl_cert=None, ssl_key=None, ssl_cafile=None,
+                    ssl_capath=None):
+    return _get_ssl_context(context_type=None,
+                            ssl_cert=ssl_cert, ssl_key=ssl_key,
+                            ssl_cafile=ssl_cafile, ssl_capath=ssl_capath)
+
+
+def get_ssl_server_context(ssl_cert=None, ssl_key=None, ssl_cafile=None,
+                           ssl_capath=None):
+    return _get_ssl_context(context_type=ssl.PROTOCOL_TLS_SERVER,
+                            ssl_cert=ssl_cert, ssl_key=ssl_key,
+                            ssl_cafile=ssl_cafile, ssl_capath=ssl_capath)
+
+
+def get_ssl_client_context(ssl_cert=None, ssl_key=None, ssl_cafile=None,
+                           ssl_capath=None):
+    return _get_ssl_context(context_type=ssl.PROTOCOL_TLS_CLIENT,
+                            ssl_cert=ssl_cert, ssl_key=ssl_key,
+                            ssl_cafile=ssl_cafile, ssl_capath=ssl_capath)
 
 
 # vim:sw=4:ts=4:et:
