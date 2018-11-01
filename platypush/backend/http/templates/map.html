@@ -18,6 +18,7 @@
     <script type="text/javascript">
         window.db_conf = JSON.parse('{{ utils.to_json(config["db"]) | safe }}');
         window.websocket_port = {{ websocket_port }};
+        window.has_ssl = {% print(has_ssl) %};
         window.map_start = "{{ start }}";
         window.map_end = "{{ end }}";
 

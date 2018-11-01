@@ -19,6 +19,7 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/assistant.google.js') }}"></script>
     <script type="text/javascript">
         window.websocket_port = {% print(websocket_port) %};
+        window.has_ssl = {% print(has_ssl) %};
 
         {% if token %}
             window.token = '{% print(token) %}';
