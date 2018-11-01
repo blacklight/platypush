@@ -21,7 +21,7 @@ class WebsocketPlugin(Plugin):
         super().__init__(*args, **kwargs)
 
     @action
-    def send(self, url, msg, ssl_cert=None, *args, **kwargs):
+    def send(self, url, msg, ssl_cert=None, ssl_key=None, *args, **kwargs):
         """
         Sends a message to a websocket.
 
@@ -32,14 +32,20 @@ class WebsocketPlugin(Plugin):
 
         :param ssl_cert: Path to the SSL certificate to be used, if the SSL connection requires client authentication as well (default: None)
         :type ssl_cert: str
+
+        :param ssl_key: Path to the SSL key to be used, if the SSL connection requires client authentication as well (default: None)
+        :type ssl_key: str
         """
 
         async def send():
             websocket_args = {}
             if ssl_cert:
                 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-                ssl_context.load_cert_chain(os.path.abspath(
-                    os.path.expanduser(ssl_cert)))
+                ssl_context.load_cert_chain(
+                    certfile=os.path.abspath(os.path.expanduser(ssl_cert)),
+                    keyfile=os.path.abspath(os.path.expanduser(ssl_key)) if ssl_key else None
+                )
+
 
             async with websockets.connect(url, **websocket_args) as websocket:
                 try:

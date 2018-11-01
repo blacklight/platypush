@@ -23,7 +23,7 @@ class WebsocketBackend(Backend):
     _websocket_client_timeout = 60
 
     def __init__(self, port=8765, bind_address='0.0.0.0', ssl_cert=None,
-                 client_timeout=_websocket_client_timeout, **kwargs):
+                 ssl_key=None, client_timeout=_websocket_client_timeout, **kwargs):
         """
         :param port: Listen port for the websocket server (default: 8765)
         :type port: int
@@ -31,8 +31,11 @@ class WebsocketBackend(Backend):
         :param bind_address: Bind address for the websocket server (default: 0.0.0.0, listen for any IP connection)
         :type websocket_port: str
 
-        :param ssl_cert: Path to the PEM certificate file if you want to enable SSL (default: None)
+        :param ssl_cert: Path to the certificate file if you want to enable SSL (default: None)
         :type ssl_cert: str
+
+        :param ssl_key: Path to the key file if you want to enable SSL (default: None)
+        :type ssl_key: str
 
         :param client_timeout: Timeout without any messages being received before closing a client connection. A zero timeout keeps the websocket open until an error occurs (default: 60 seconds)
         :type ping_timeout: int
@@ -47,9 +50,10 @@ class WebsocketBackend(Backend):
 
         if ssl_cert:
             self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-            self.ssl_context.load_cert_chain(os.path.abspath(
-                os.path.expanduser(ssl_cert)))
-
+            self.ssl_context.load_cert_chain(
+                certfile=os.path.abspath(os.path.expanduser(ssl_cert)),
+                keyfile=os.path.abspath(os.path.expanduser(ssl_key)) if ssl_key else None
+            )
 
     def send_message(self, msg):
         websocket = get_plugin('websocket')
@@ -57,9 +61,7 @@ class WebsocketBackend(Backend):
 
         if self.ssl_context:
             url = 'wss://localhost:{}'.format(self.port)
-            websocket_args['ssl'] = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-            websocket_args['ssl'].load_cert_chain(os.path.abspath(
-                os.path.expanduser(ssl_cert)))
+            websocket_args['ssl'] = self.ssl_context
         else:
             url = 'ws://localhost:{}'.format(self.port)
 
@@ -89,7 +91,8 @@ class WebsocketBackend(Backend):
 
                     if isinstance(msg, Request):
                         response = self.get_message_response(msg)
-                        assert response is not None
+                        if not response:
+                            return
 
                         self.logger.info('Processing response on the websocket backend: {}'.
                                             format(response))
