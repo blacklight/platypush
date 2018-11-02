@@ -1,3 +1,5 @@
+import os
+
 from platypush.plugins import Plugin, action
 
 
@@ -5,6 +7,10 @@ class FilePlugin(Plugin):
     """
     A plugin for general-purpose file methods
     """
+
+    @classmethod
+    def _get_path(cls, filename):
+        return os.path.abspath(os.path.expanduser(filename))
 
     @action
     def get(self, filename):
@@ -15,7 +21,7 @@ class FilePlugin(Plugin):
         :type filename: str
         """
 
-        with open(filename, 'r') as f:
+        with open(self._get_path(filename), 'r') as f:
             return f.read()
 
     @action
@@ -30,7 +36,7 @@ class FilePlugin(Plugin):
         :type content: str
         """
 
-        with open(filename, 'w') as f:
+        with open(self._get_path(filename), 'w') as f:
             f.write(content)
 
     @action
@@ -45,7 +51,7 @@ class FilePlugin(Plugin):
         :type content: str
         """
 
-        with open(filename, 'a') as f:
+        with open(self._get_path(filename), 'a') as f:
             f.write(content)
 
 # vim:sw=4:ts=4:et:
