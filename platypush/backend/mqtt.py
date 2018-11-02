@@ -1,10 +1,12 @@
 import json
+import os
 import threading
 
 import paho.mqtt.client as mqtt
 import paho.mqtt.publish as publisher
 
 from platypush.backend import Backend
+from platypush.context import get_plugin
 from platypush.message import Message
 from platypush.message.request import Request
 
@@ -19,7 +21,10 @@ class MqttBackend(Backend):
         * **paho-mqtt** (``pip install paho-mqtt``)
     """
 
-    def __init__(self, host, port=1883, topic='platypush_bus_mq', *args, **kwargs):
+    def __init__(self, host, port=1883, topic='platypush_bus_mq', tls_cafile=None,
+                 tls_certfile=None, tls_keyfile=None,
+                 tls_version=None, tls_ciphers=None, username=None,
+                 password=None, *args, **kwargs):
         """
         :param host: MQTT broker host
         :type host: str
@@ -29,6 +34,27 @@ class MqttBackend(Backend):
 
         :param topic: Topic to read messages from (default: ``platypush_bus_mq/<device_id>``)
         :type topic: str
+
+        :param tls_cafile: If TLS/SSL is enabled on the MQTT server and the certificate requires a certificate authority to authenticate it, `ssl_cafile` will point to the provided ca.crt file (default: None)
+        :type tls_cafile: str
+
+        :param tls_certfile: If TLS/SSL is enabled on the MQTT server and a client certificate it required, specify it here (default: None)
+        :type tls_certfile: str
+
+        :param tls_keyfile: If TLS/SSL is enabled on the MQTT server and a client certificate key it required, specify it here (default: None)
+        :type tls_keyfile: str
+
+        :param tls_version: If TLS/SSL is enabled on the MQTT server and it requires a certain TLS version, specify it here (default: None)
+        :type tls_version: str
+
+        :param tls_ciphers: If TLS/SSL is enabled on the MQTT server and an explicit list of supported ciphers is required, specify it here (default: None)
+        :type tls_ciphers: str
+
+        :param username: Specify it if the MQTT server requires authentication (default: None)
+        :type username: str
+
+        :param password: Specify it if the MQTT server requires authentication (default: None)
+        :type password: str
         """
 
         super().__init__(*args, **kwargs)
@@ -36,15 +62,31 @@ class MqttBackend(Backend):
         self.host = host
         self.port = port
         self.topic = '{}/{}'.format(topic, self.device_id)
+        self.username = username
+        self.password = password
+
+        self.tls_cafile = os.path.abspath(os.path.expanduser(tls_cafile)) \
+            if tls_cafile else None
+
+        self.tls_certfile = os.path.abspath(os.path.expanduser(tls_certfile)) \
+            if tls_certfile else None
+
+        self.tls_keyfile = os.path.abspath(os.path.expanduser(tls_keyfile)) \
+            if tls_keyfile else None
+
+        self.tls_version = tls_version
+        self.tls_ciphers = tls_ciphers
 
 
     def send_message(self, msg):
-        try:
-            msg = Message.build(json.loads(msg))
-        except:
-            pass
-
-        publisher.single(self.topic, str(msg), hostname=self.host, port=self.port)
+        client = get_plugin('mqtt')
+        client.send_message(topic=self.topic, msg=msg, host=self.host,
+                            port=self.port, username=self.username,
+                            password=self.password, tls_cafile=self.tls_cafile,
+                            tls_certfile=self.tls_certfile,
+                            tls_keyfile=self.tls_keyfile,
+                            tls_version=self.tls_version,
+                            tls_ciphers=self.tls_ciphers)
 
     def run(self):
         def on_connect(client, userdata, flags, rc):
@@ -58,8 +100,14 @@ class MqttBackend(Backend):
                 self.logger.info('Processing response on the MQTT topic {}: {}'.
                                 format(response_topic, response))
 
-                publisher.single(response_topic, str(response),
-                                 hostname=self.host, port=self.port)
+                client = get_plugin('mqtt')
+                client.send_message(topic=self.topic, msg=msg, host=self.host,
+                                    port=self.port, username=self.username,
+                                    password=self.password, tls_cafile=self.tls_cafile,
+                                    tls_certfile=self.tls_certfile,
+                                    tls_keyfile=self.tls_keyfile,
+                                    tls_version=self.tls_version,
+                                    tls_ciphers=self.tls_ciphers)
 
             msg = msg.payload.decode('utf-8')
             try: msg = Message.build(json.loads(msg))
@@ -75,6 +123,15 @@ class MqttBackend(Backend):
         client = mqtt.Client()
         client.on_connect = on_connect
         client.on_message = on_message
+
+        if self.username and self.password:
+            client.username_pw_set(self.username, self.password)
+
+        if self.tls_cafile:
+            client.tls_set(ca_certs=self.tls_cafile, certfile=self.tls_certfile,
+                           keyfile=self.tls_keyfile, tls_version=self.tls_version,
+                           ciphers=self.tls_ciphers)
+
         client.connect(self.host, self.port, 60)
         self.logger.info('Initialized MQTT backend on host {}:{}, topic {}'.
                      format(self.host, self.port, self.topic))
