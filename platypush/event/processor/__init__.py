@@ -33,6 +33,10 @@ class EventProcessor(object):
         if backend:
             backend.notify_web_clients(event)
 
+        backend = get_backend('websocket')
+        if backend:
+            backend.notify_web_clients(event)
+
 
     def process_event(self, event):
         """ Processes an event and runs the matched hooks with the highest score """

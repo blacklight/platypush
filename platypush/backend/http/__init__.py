@@ -172,6 +172,7 @@ class HttpBackend(Backend):
                 loop.run_until_complete(send_event(websocket))
             except websockets.exceptions.ConnectionClosed:
                 self.logger.info('Client connection lost')
+                self.active_websockets.remove(websocket)
 
 
     def redis_poll(self):
