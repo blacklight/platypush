@@ -101,7 +101,7 @@ class MqttBackend(Backend):
                                 format(response_topic, response))
 
                 client = get_plugin('mqtt')
-                client.send_message(topic=self.topic, msg=msg, host=self.host,
+                client.send_message(topic=self.topic, msg=response, host=self.host,
                                     port=self.port, username=self.username,
                                     password=self.password, tls_cafile=self.tls_cafile,
                                     tls_certfile=self.tls_certfile,

@@ -1,4 +1,5 @@
 import json
+import os
 import paho.mqtt.publish as publisher
 
 from platypush.message import Message
@@ -11,11 +12,60 @@ class MqttPlugin(Plugin):
     with the MQTT protocol, see http://mqtt.org/
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, host=None, port=1883, tls_cafile=None,
+                 tls_certfile=None, tls_keyfile=None,
+                 tls_version=None, tls_ciphers=None, username=None,
+                 password=None, *args, **kwargs):
+        """
+        :param host: If set, MQTT messages will by default routed to this host unless overridden in `send_message` (default: None)
+        :type host: str
+
+        :param port: If a default host is set, specify the listen port (default: 1883)
+        :type port: int
+
+        :param tls_cafile: If a default host is set and requires TLS/SSL, specify the certificate authority file (default: None)
+        :type tls_cafile: str
+
+        :param tls_certfile: If a default host is set and requires TLS/SSL, specify the certificate file (default: None)
+        :type tls_certfile: str
+
+        :param tls_keyfile: If a default host is set and requires TLS/SSL, specify the key file (default: None)
+        :type tls_keyfile: str
+
+        :param tls_version: If a default host is set and requires TLS/SSL, specify the minimum TLS supported version (default: None)
+        :type tls_version: str
+
+        :param tls_ciphers: If a default host is set and requires TLS/SSL, specify the supported ciphers (default: None)
+        :type tls_ciphers: str
+
+        :param username: If a default host is set and requires user authentication, specify the username ciphers (default: None)
+        :type username: str
+
+        :param password: If a default host is set and requires user authentication, specify the password ciphers (default: None)
+        :type password: str
+        """
+
         super().__init__(*args, **kwargs)
 
+        self.host = host
+        self.port = port
+        self.username = username
+        self.password = password
+        self.tls_cafile = os.path.abspath(os.path.expanduser(tls_cafile)) \
+            if tls_cafile else None
+
+        self.tls_certfile = os.path.abspath(os.path.expanduser(tls_certfile)) \
+            if tls_certfile else None
+
+        self.tls_keyfile = os.path.abspath(os.path.expanduser(tls_keyfile)) \
+            if tls_keyfile else None
+
+        self.tls_version = tls_version
+        self.tls_ciphers = tls_ciphers
+
+
     @action
-    def send_message(self, topic, msg, host, port=1883, tls_cafile=None,
+    def send_message(self, topic, msg, host=None, port=1883, tls_cafile=None,
                      tls_certfile=None, tls_keyfile=None,
                      tls_version=None, tls_ciphers=None, username=None,
                      password=None, *args, **kwargs):
@@ -55,27 +105,49 @@ class MqttPlugin(Plugin):
         :type password: str
         """
 
+        if not host and not self.host:
+            raise RuntimeError('No host specified and no default host configured')
+
         publisher_args = {
-            'hostname': host,
-            'port': port,
+            'hostname': host or self.host,
+            'port': port or self.port,
         }
 
-        if username and password:
-            publisher_args['auth'] = {
-                'username': username,
-                'password': password,
-            }
+        if host:
+            if username and password:
+                publisher_args['auth'] = {
+                    'username': username,
+                    'password': password,
+                }
+        else:
+            if self.username and self.password:
+                publisher_args['auth'] = {
+                    'username': username,
+                    'password': password,
+                }
 
-        if tls_cafile:
-            publisher_args['tls'] = { 'ca_certs': tls_cafile }
-            if tls_certfile:
-                publishers_args['tls']['certfile'] = tls_certfile
-            if tls_keyfile:
-                publishers_args['tls']['keyfile'] = tls_keyfile
-            if tls_version:
-                publishers_args['tls']['tls_version'] = tls_version
-            if tls_ciphers:
-                publishers_args['tls']['ciphers'] = tls_ciphers
+        if host:
+            if tls_cafile:
+                publisher_args['tls'] = { 'ca_certs': tls_cafile }
+                if tls_certfile:
+                    publishers_args['tls']['certfile'] = tls_certfile
+                if tls_keyfile:
+                    publishers_args['tls']['keyfile'] = tls_keyfile
+                if tls_version:
+                    publishers_args['tls']['tls_version'] = tls_version
+                if tls_ciphers:
+                    publishers_args['tls']['ciphers'] = tls_ciphers
+        else:
+            if self.tls_cafile:
+                publisher_args['tls'] = { 'ca_certs': self.tls_cafile }
+                if self.tls_certfile:
+                    publishers_args['tls']['certfile'] = self.tls_certfile
+                if self.tls_keyfile:
+                    publishers_args['tls']['keyfile'] = self.tls_keyfile
+                if self.tls_version:
+                    publishers_args['tls']['tls_version'] = self.tls_version
+                if self.tls_ciphers:
+                    publishers_args['tls']['ciphers'] = self.tls_ciphers
 
         try: msg = json.dumps(msg)
         except: pass
