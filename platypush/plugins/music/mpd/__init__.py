@@ -151,9 +151,8 @@ class MusicMpdPlugin(MusicPlugin):
         """
 
         volume = int(self.status().output['volume'])
-        new_volume = volume+delta
-        if new_volume <= 100:
-            self.setvol(str(new_volume))
+        new_volume = min(volume+delta, 100)
+        self.setvol(str(new_volume))
         return self.status()
 
     @action
@@ -166,9 +165,8 @@ class MusicMpdPlugin(MusicPlugin):
         """
 
         volume = int(self.status().output['volume'])
-        new_volume = volume-delta
-        if new_volume >= 0:
-            self.setvol(str(new_volume))
+        new_volume = max(volume-delta, 0)
+        self.setvol(str(new_volume))
         return self.status()
 
     @action
