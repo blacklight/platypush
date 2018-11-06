@@ -79,14 +79,17 @@ class MqttBackend(Backend):
 
 
     def send_message(self, msg):
-        client = get_plugin('mqtt')
-        client.send_message(topic=self.topic, msg=msg, host=self.host,
-                            port=self.port, username=self.username,
-                            password=self.password, tls_cafile=self.tls_cafile,
-                            tls_certfile=self.tls_certfile,
-                            tls_keyfile=self.tls_keyfile,
-                            tls_version=self.tls_version,
-                            tls_ciphers=self.tls_ciphers)
+        try:
+            client = get_plugin('mqtt')
+            client.send_message(topic=self.topic, msg=msg, host=self.host,
+                                port=self.port, username=self.username,
+                                password=self.password, tls_cafile=self.tls_cafile,
+                                tls_certfile=self.tls_certfile,
+                                tls_keyfile=self.tls_keyfile,
+                                tls_version=self.tls_version,
+                                tls_ciphers=self.tls_ciphers)
+        except Exception as e:
+            self.logger.exception(e)
 
     def run(self):
         def on_connect(client, userdata, flags, rc):
@@ -100,21 +103,18 @@ class MqttBackend(Backend):
                 self.logger.info('Processing response on the MQTT topic {}: {}'.
                                 format(response_topic, response))
 
-                client = get_plugin('mqtt')
-                client.send_message(topic=self.topic, msg=response, host=self.host,
-                                    port=self.port, username=self.username,
-                                    password=self.password, tls_cafile=self.tls_cafile,
-                                    tls_certfile=self.tls_certfile,
-                                    tls_keyfile=self.tls_keyfile,
-                                    tls_version=self.tls_version,
-                                    tls_ciphers=self.tls_ciphers)
+                self.send_message(response)
 
             msg = msg.payload.decode('utf-8')
             try: msg = Message.build(json.loads(msg))
             except: pass
 
             self.logger.info('Received message on the MQTT backend: {}'.format(msg))
-            self.on_message(msg)
+
+            try:
+                self.on_message(msg)
+            except Exception as e:
+                self.logger.exception(e)
 
             if isinstance(msg, Request):
                 threading.Thread(target=response_thread, args=(msg,)).start()
