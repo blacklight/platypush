@@ -1,5 +1,6 @@
 import mpd
 import re
+import time
 
 from platypush.plugins import action
 from platypush.plugins.music import MusicPlugin
@@ -292,7 +293,16 @@ class MusicMpdPlugin(MusicPlugin):
             }
         """
 
-        return self.client.status()
+        retries = 0
+        max_retries = 2
+
+        while retries < max_retries:
+            try:
+                return self.client.status()
+            except Exception as e:
+                self.logger.warning('Unable to parse mpd status: {}'.format(e))
+                retries += 1
+                time.sleep(1)
 
     @action
     def currentsong(self):
