@@ -252,7 +252,7 @@ class HttpBackend(Backend):
                 response = self.get_message_response(msg)
                 self.logger.info('Processing response on the HTTP backend: {}'.format(response))
                 if response:
-                    return str(response)
+                    return Response(str(response), mimetype='application/json')
 
         @app.route('/')
         def index():
