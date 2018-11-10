@@ -108,6 +108,7 @@ class MqttBackend(Backend):
             msg = msg.payload.decode('utf-8')
             try: msg = Message.build(json.loads(msg))
             except: pass
+            if not msg: return
 
             self.logger.info('Received message on the MQTT backend: {}'.format(msg))
 
@@ -115,6 +116,7 @@ class MqttBackend(Backend):
                 self.on_message(msg)
             except Exception as e:
                 self.logger.exception(e)
+                return
 
             if isinstance(msg, Request):
                 threading.Thread(target=response_thread, args=(msg,)).start()
