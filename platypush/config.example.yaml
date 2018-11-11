@@ -1,24 +1,36 @@
-backend.kafka:
-    disabled: False
-    pusher: True  # The pusher executable will use this backend by default
-    server: your_server:9092
-    topic: platypush
+# ---
+# --- Platypush sample configuration file.
+# --- All the configuration snippets here can be copied, modified and reused.
+# ---
 
-backend.pushbullet:
-    disabled: True
-    token: your_pushbullet_token_here
-    device: your_pushbullet_virtual_device_name
+# --- You can include configuration from other files through the include section
 
-backend.local:
-    request_fifo: /tmp/platypush-requests.fifo
-    response_fifo: /tmp/platypush-responses.fifo
+include:
+    - include/sensors.yaml
+    - include/media.yaml
+    - include/robot.yaml
 
-# device_id: <your_device_id> (default: current hostname)
+# --- It is recommended to set a main.db to store session variables or general-purpose application data.
+# --- The engine format is specified according to the SQLAlchemy syntax.
 
+main.db:
+    engine: sqlite:////home/user/.local/share/platypush/platypush.db
+
+# --- By default the device_id (used by the system to identify the node) matches the hostname.
+# --- Specify it here if you want to override it.
+
+device_id: my_device_id
+
+# ---
+# --- Plugins configuration
+# ---
+
+# Example mpd/mopidy plugin configuration
 music.mpd:
     host: localhost
     port: 6600
 
+# Example Philips Hue lights configuration
 light.hue:
     bridge: hue  # Bridge IP or hostname
     # lights:  # Default lights you want to manage
@@ -30,8 +42,63 @@ light.hue:
     #     - Living room ceiling left
     #     - Kitchen LED Strip
     #     - Kitchen Table LED Strip
-    groups:  # Default groups you want to manage
-        - Living Room
+    # groups:  # Default groups you want to manage
+    #     - Living Room
+    #     - Hall
+
+# Example Adafruit IO plugin configuration. You can use this plugin to
+# send data to your Adafruit IO feeds and dashboards.
+adafruit.io:
+    username: username
+    key: adafruit_key
+    throttle_seconds: 30   # You can throttle the data being sent to Adafruit to prevent threshold limit hits
+
+# Example of text-to-speech configuration using the Google engine
+tts.google:
+    language: en-US
+
+# Example of text-to-speech configuration using the internal TTS engine
+tts:
+    language: en-US
+
+# If you want to explicitly enable a plugin or backend that requires no configuration (for example if you want
+# to access the web tab of a plugin through the main web panel), then just set disabled: False as its configuration).
+# Example configuration for the WeMo Switch plugin (even if empty, this will make the WeMo Switch web tab pop up)
+switch.wemo:
+    disabled: False
+
+# Example configuration for the TP-Link smart switch devices (even if empty, this will make the WeMo Switch web tab pop up)
+switch.tplink:
+    disabled: False
+
+# Example IFTTT plugin configuration. All you need is your IFTTT API key and start setting up
+# web hooks recipes that can be triggered by Platypush through trigger_event calls.
+ifttt:
+    ifttt_key: your_ifttt_key
+
+# Example configuration for the AutoRemote plugin. If you install and configure AutoRemote on your Android devices
+# you'll be able to send messages and notifications to them through Platypush and build logic on them through Tasker.
+# Each device will have its own unique name and API key.
+autoremote:
+    devices:
+        MyAndroidPhone:
+            key: autoremote_key_1
+        MyAndroidTablet:
+            key: autoremote_key_2
+        MyAndroidTv:
+            key: autoremote_key_3
+
+# ---
+# --- Backends configuration
+# ---
+
+backend.kafka:
+    server: your_server:9092
+    topic: platypush
+
+backend.pushbullet:
+    token: your_pushbullet_token_here
+    device: your_pushbullet_virtual_device_name
 
 # ---
 # --- Event hooks configuration
