@@ -9,7 +9,7 @@ class MediaKodiPlugin(Plugin):
 
     Requires:
 
-        * **kodi-json** (``pip install kodi-rtmidi``)
+        * **kodi-json** (``pip install kodi-json``)
     """
 
     def __init__(self, url, username=None, password=None, *args, **kwargs):

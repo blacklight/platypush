@@ -99,3 +99,12 @@ pyHS100
 # Support for joystick backend
 inputs
 
+# Support for Kodi
+kodi-json
+
+# Support for Plex
+plexapi
+
+# Support for Chromecast
+pychromecast
+

@@ -88,6 +88,9 @@ setup(
         'Support for smart cards detection': ['pyscard'],
         'Support for ICal calendars': ['icalendar', 'python-dateutil'],
         'Support for joystick backend': ['inputs'],
+        'Support for Kodi plugin': ['kodi-json'],
+        'Support for Plex plugin': ['plexapi'],
+        'Support for Chromecast plugin': ['pychromecast'],
         # 'Support for Leap Motion backend': ['git+ssh://git@github.com:BlackLight/leap-sdk-python3.git'],
         # 'Support for Flic buttons': ['git+ssh://git@github.com/50ButtonsEach/fliclib-linux-hci']
     },
