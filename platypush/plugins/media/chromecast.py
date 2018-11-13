@@ -59,7 +59,7 @@ class MediaChromecastPlugin(Plugin):
         } for cc in pychromecast.get_chromecasts() ]
 
 
-    def _get_chromecast(self, chromecast=None):
+    def get_chromecast(self, chromecast=None):
         if not chromecast:
             if not self.chromecast:
                 raise RuntimeError('No Chromecast specified nor default Chromecast configured')
@@ -67,15 +67,11 @@ class MediaChromecastPlugin(Plugin):
 
 
         if chromecast not in self.chromecasts:
-            chromecasts = pychromecast.get_chromecasts()
-            cast = next(cc for cc in pychromecast.get_chromecasts()
+            self.chromecasts = pychromecast.get_chromecasts()
+            cast = next(cc for cc in self.chromecasts
                         if cc.device.friendly_name == chromecast)
-            self.chromecasts[chromecast] = cast
         else:
             cast = self.chromecasts[chromecast]
-
-        if not cast:
-            raise RuntimeError('No such Chromecast: {}'.format(chromecast))
 
         return cast
 
@@ -125,9 +121,11 @@ class MediaChromecastPlugin(Plugin):
         :type subtitle_id: int
         """
 
-        cast = self._get_chromecast(chromecast)
+        cast = self.get_chromecast(chromecast)
         cast.wait()
         mc = cast.media_controller
+        mc.namespace = 'urn:x-cast:com.google.cast.sse'
+
         mc.play_media(media, content_type, title=title, thumb=image_url,
                       current_time=current_time, autoplay=autoplay,
                       stream_type=stream_type, subtitles=subtitles,
@@ -151,7 +149,7 @@ class MediaChromecastPlugin(Plugin):
         :type blocking: bool
         """
 
-        cast = self._get_chromecast(chromecast)
+        cast = self.get_chromecast(chromecast)
         cast.disconnect(timeout=timeout, blocking=blocking)
 
     @action
@@ -169,7 +167,7 @@ class MediaChromecastPlugin(Plugin):
         :type blocking: bool
         """
 
-        cast = self._get_chromecast(chromecast)
+        cast = self.get_chromecast(chromecast)
         cast.join(timeout=timeout, blocking=blocking)
 
     @action
@@ -181,7 +179,7 @@ class MediaChromecastPlugin(Plugin):
         :type chromecast: str
         """
 
-        cast = self._get_chromecast(chromecast)
+        cast = self.get_chromecast(chromecast)
         cast.quit_app()
 
     @action
@@ -193,7 +191,7 @@ class MediaChromecastPlugin(Plugin):
         :type chromecast: str
         """
 
-        cast = self._get_chromecast(chromecast)
+        cast = self.get_chromecast(chromecast)
         cast.reboot()
 
     @action
@@ -208,7 +206,7 @@ class MediaChromecastPlugin(Plugin):
         :type chromecast: str
         """
 
-        cast = self._get_chromecast(chromecast)
+        cast = self.get_chromecast(chromecast)
         cast.set_volume(volume/100)
 
     @action
@@ -223,7 +221,7 @@ class MediaChromecastPlugin(Plugin):
         :type delta: float
         """
 
-        cast = self._get_chromecast(chromecast)
+        cast = self.get_chromecast(chromecast)
         delta /= 100
         cast.volume_up(min(delta, 1))
 
@@ -240,7 +238,7 @@ class MediaChromecastPlugin(Plugin):
         :type delta: float
         """
 
-        cast = self._get_chromecast(chromecast)
+        cast = self.get_chromecast(chromecast)
         delta /= 100
         cast.volume_down(max(delta, 0))
 
@@ -254,7 +252,7 @@ class MediaChromecastPlugin(Plugin):
         :type chromecast: str
         """
 
-        cast = self._get_chromecast(chromecast)
+        cast = self.get_chromecast(chromecast)
         cast.set_volume_muted(not cast.status.volume_muted)
 
 

@@ -1,6 +1,7 @@
 from plexapi.myplex import MyPlexAccount
 from plexapi.video import Movie, Show
 
+from platypush.context import get_plugin
 from platypush.plugins import Plugin, action
 
 
@@ -123,34 +124,68 @@ class MediaPlexPlugin(Plugin):
         ]
 
 
+    def get_chromecast(self, chromecast):
+        from .lib.plexcast import PlexController
+
+        hndl = PlexController()
+        hndl.namespace = 'urn:x-cast:com.google.cast.sse'
+        cast = get_plugin('media.chromecast').get_chromecast(chromecast)
+        cast.register_handler(hndl)
+
+        return (cast, hndl)
+
+
     @action
-    def play(self, client, **kwargs):
+    def play(self, client=None, chromecast=None, **kwargs):
         """
-        Search and play content on a client. If no search filter is specified,
-        a play event will be sent to the specified client.
+        Search and play content on a client or a Chromecast. If no search filter
+        is specified, a play event will be sent to the specified client.
 
         NOTE: Adding and managing play queues through the Plex API isn't fully
         supported yet, therefore in case multiple items are returned from the
         search only the first one will be played.
 
         :param client: Client name
-        :type client str
+        :type client: str
+
+        :param chromecast: Chromecast name
+        :type chromecast: str
 
         :param kwargs: Search filter (e.g. title, section, unwatched, director etc.)
         :type kwargs: dict
         """
 
-        client = plex.client(client)
-        if not kwargs:
-            return client.play()
+        if not client and not chromecast:
+            raise RuntimeError('No client nor chromecast specified')
 
-        results = self.search(**kwargs)
+        if client:
+            client = plex.client(client)
+        elif chromecast:
+            (chromecast, handler) = self.get_chromecast(chromecast)
+
+        if not kwargs:
+            if client:
+                return client.play()
+            elif chromecast:
+                return handler.play()
+
+        if 'section' in kwargs:
+            library = self.plex.library.section(kwargs.pop('section'))
+        else:
+            library = self.plex.library
+
+        results = library.search(**kwargs)
         if not results:
             self.logger.info('No results for {}'.format(kwargs))
             return
 
         item = results[0]
-        client.playMedia(results[0])
+        self.logger.info('Playing {} on {}'.format(item.title, client or chromecast))
+
+        if client:
+            return client.playMedia(item)
+        elif chromecast:
+            return handler.play_media(item, self.plex)
 
 
     @action
@@ -423,6 +458,7 @@ class MediaPlexPlugin(Plugin):
             ]
 
         return _item
+
 
 # vim:sw=4:ts=4:et:
 
