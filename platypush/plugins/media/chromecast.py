@@ -1,4 +1,7 @@
+import re
 import pychromecast
+
+from pychromecast.controllers.youtube import YouTubeController
 
 from platypush.plugins import Plugin, action
 
@@ -6,6 +9,11 @@ from platypush.plugins import Plugin, action
 class MediaChromecastPlugin(Plugin):
     """
     Plugin to interact with Chromecast devices
+
+    Supported formats:
+
+        * YouTube URLs
+        * Plex (through ``media.plex`` plugin, experimental)
 
     Requires:
 
@@ -67,16 +75,19 @@ class MediaChromecastPlugin(Plugin):
 
 
         if chromecast not in self.chromecasts:
-            self.chromecasts = pychromecast.get_chromecasts()
-            cast = next(cc for cc in self.chromecasts
-                        if cc.device.friendly_name == chromecast)
-        else:
-            cast = self.chromecasts[chromecast]
+            self.chromecasts = {
+                cast.device.friendly_name: cast
+                for cast in pychromecast.get_chromecasts()
+            }
 
-        return cast
+            if chromecast not in self.chromecasts:
+                raise RuntimeError('Device {} not found'.format(chromecast))
+
+        return self.chromecasts[chromecast]
+
 
     @action
-    def cast_media(self, media, content_type, chromecast=None, title=None,
+    def cast_media(self, media, content_type=None, chromecast=None, title=None,
                    image_url=None, autoplay=True, current_time=0,
                    stream_type=STREAM_TYPE_BUFFERED, subtitles=None,
                    subtitles_lang='en-US', subtitles_mime='text/vtt',
@@ -121,10 +132,29 @@ class MediaChromecastPlugin(Plugin):
         :type subtitle_id: int
         """
 
+        if not chromecast:
+            chromecast = self.chromecast
+
         cast = self.get_chromecast(chromecast)
         cast.wait()
+
         mc = cast.media_controller
-        mc.namespace = 'urn:x-cast:com.google.cast.sse'
+        yt = self._get_youtube_url(media)
+
+        if yt:
+            self.logger.info('Playing YouTube video {} on {}'.format(
+                yt, chromecast))
+
+            hndl = YouTubeController()
+            cast.register_handler(hndl)
+            hndl.update_screen_id()
+            return hndl.play_video(yt)
+
+        if not content_type:
+            raise RuntimeError('content_type required to process media {}'.
+                               format(media))
+
+        self.logger.info('Playing {} on {}'.format(media, chromecast))
 
         mc.play_media(media, content_type, title=title, thumb=image_url,
                       current_time=current_time, autoplay=autoplay,
@@ -133,6 +163,20 @@ class MediaChromecastPlugin(Plugin):
                       subtitle_id=subtitle_id)
 
         mc.block_until_active()
+
+
+    @classmethod
+    def _get_youtube_url(cls, url):
+        m = re.match('https?://www.youtube.com/watch\?v=([^&]+).*', url)
+        if m:
+            return m.group(1)
+
+        m = re.match('youtube:video:(.*)', url)
+        if m:
+            return m.group(1)
+
+        return None
+
 
     @action
     def disconnect(self, chromecast=None, timeout=None, blocking=True):
