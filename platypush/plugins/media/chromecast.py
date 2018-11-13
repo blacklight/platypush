@@ -179,6 +179,56 @@ class MediaChromecastPlugin(Plugin):
 
 
     @action
+    def play(self, chromecast=None):
+        return self.get_chromecast(chromecast or self.chromecast).play()
+
+
+    @action
+    def pause(self, chromecast=None):
+        return self.get_chromecast(chromecast or self.chromecast).pause()
+
+
+    @action
+    def stop(self, chromecast=None):
+        return self.get_chromecast(chromecast or self.chromecast).stop()
+
+
+    @action
+    def rewind(self, chromecast=None):
+        return self.get_chromecast(chromecast or self.chromecast).rewind()
+
+
+    @action
+    def seek(self, location, chromecast=None):
+        return self.get_chromecast(chromecast or self.chromecast).seek(location)
+
+
+    @action
+    def is_playing(self, chromecast=None):
+        return self.get_chromecast(chromecast or self.chromecast).is_playing
+
+
+    @action
+    def is_paused(self, chromecast=None):
+        return self.get_chromecast(chromecast or self.chromecast).is_paused
+
+
+    @action
+    def enable_subtitle(self, chromecast=None):
+        return self.get_chromecast(chromecast or self.chromecast).enable_subtitle
+
+
+    @action
+    def disable_subtitle(self, chromecast=None):
+        return self.get_chromecast(chromecast or self.chromecast).disable_subtitle
+
+
+    @action
+    def status(self, chromecast=None):
+        return self.get_chromecast(chromecast or self.chromecast).status
+
+
+    @action
     def disconnect(self, chromecast=None, timeout=None, blocking=True):
         """
         Disconnect a Chromecast and wait for it to terminate
