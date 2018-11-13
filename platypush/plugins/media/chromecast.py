@@ -213,6 +213,20 @@ class MediaChromecastPlugin(Plugin):
 
 
     @action
+    def back(self, chromecast=None, delta=30):
+        mc = self.get_chromecast(chromecast or self.chromecast).media_controller
+        if mc.status.current_time:
+            return mc.seek(mc.status.current_time-delta)
+
+
+    @action
+    def forward(self, chromecast=None, delta=30):
+        mc = self.get_chromecast(chromecast or self.chromecast).media_controller
+        if mc.status.current_time:
+            return mc.seek(mc.status.current_time+delta)
+
+
+    @action
     def is_playing(self, chromecast=None):
         return self.get_chromecast(chromecast or self.chromecast).media_controller.is_playing
 
