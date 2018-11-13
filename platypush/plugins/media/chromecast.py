@@ -180,52 +180,61 @@ class MediaChromecastPlugin(Plugin):
 
     @action
     def play(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).play()
+        return self.get_chromecast(chromecast or self.chromecast).media_controller.play()
 
 
     @action
     def pause(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).pause()
+        return self.get_chromecast(chromecast or self.chromecast).media_controller.pause()
+
+
+    @action
+    def toggle_pause(self, chromecast=None):
+        cast = self.get_chromecast(chromecast or self.chromecast)
+        if cast.media_controller.is_paused:
+            return cast.media_controller.play()
+        else:
+            return cast.media_controller.pause()
 
 
     @action
     def stop(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).stop()
+        return self.get_chromecast(chromecast or self.chromecast).media_controller.stop()
 
 
     @action
     def rewind(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).rewind()
+        return self.get_chromecast(chromecast or self.chromecast).media_controller.rewind()
 
 
     @action
     def seek(self, location, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).seek(location)
+        return self.get_chromecast(chromecast or self.chromecast).media_controller.seek(location)
 
 
     @action
     def is_playing(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).is_playing
+        return self.get_chromecast(chromecast or self.chromecast).media_controller.is_playing
 
 
     @action
     def is_paused(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).is_paused
+        return self.get_chromecast(chromecast or self.chromecast).media_controller.is_paused
 
 
     @action
     def enable_subtitle(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).enable_subtitle
+        return self.get_chromecast(chromecast or self.chromecast).media_controller.enable_subtitle()
 
 
     @action
     def disable_subtitle(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).disable_subtitle
+        return self.get_chromecast(chromecast or self.chromecast).media_controller.disable_subtitle()
 
 
     @action
     def status(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).status
+        return self.get_chromecast(chromecast or self.chromecast).media_controller.status
 
 
     @action
