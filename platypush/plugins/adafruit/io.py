@@ -1,5 +1,6 @@
 import ast
 import statistics
+import json
 import time
 
 from threading import Thread, Lock
@@ -141,7 +142,7 @@ class AdafruitIoPlugin(Plugin):
         else:
             # Otherwise send it to the Redis queue to be picked up by the throttler thread
             redis = self._get_redis()
-            redis.rpush(self._DATA_THROTTLER_QUEUE, {feed:value})
+            redis.rpush(self._DATA_THROTTLER_QUEUE, json.dumps({feed:value}))
 
 
     @action

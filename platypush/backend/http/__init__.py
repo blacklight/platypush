@@ -149,7 +149,7 @@ class HttpBackend(Backend):
 
             redis = self._get_redis()
             if redis:
-                redis.rpush(self.redis_queue, stop_evt)
+                redis.rpush(self.redis_queue, str(stop_evt))
 
         if self.server_proc:
             self.server_proc.terminate()
@@ -284,7 +284,7 @@ class HttpBackend(Backend):
 
             redis = self._get_redis()
             if redis:
-                redis.rpush(self.redis_queue, event)
+                redis.rpush(self.redis_queue, str(event))
             return jsonify({ 'status': 'ok' })
 
         @app.route('/static/<path>', methods=['GET'])

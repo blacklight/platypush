@@ -35,6 +35,7 @@ class RedisBackend(Backend):
 
 
     def send_message(self, msg, queue_name=None):
+        msg = str(msg)
         if queue_name:
             self.redis.rpush(queue_name, msg)
         else:
