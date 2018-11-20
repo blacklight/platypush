@@ -103,7 +103,7 @@ inputs
 kodi-json
 
 # Support for Plex
-plexapi
+# plexapi
 
 # Support for Chromecast
 pychromecast
