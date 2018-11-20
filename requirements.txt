@@ -100,11 +100,11 @@ pyHS100
 inputs
 
 # Support for Kodi
-kodi-json
+# kodi-json
 
 # Support for Plex
 # plexapi
 
 # Support for Chromecast
-pychromecast
+# pychromecast
 
