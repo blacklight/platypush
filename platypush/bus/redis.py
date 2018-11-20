@@ -39,7 +39,7 @@ class RedisBus(Bus):
 
     def post(self, msg):
         """ Sends a message to the Redis queue """
-        return self.redis.rpush(self.redis_queue, msg)
+        return self.redis.rpush(self.redis_queue, str(msg))
 
 
 # vim:sw=4:ts=4:et:
