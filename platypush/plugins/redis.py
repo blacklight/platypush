@@ -39,7 +39,7 @@ class RedisPlugin(Plugin):
         """
 
         redis = Redis(*args, **kwargs)
-        redis.rpush(queue, msg)
+        redis.rpush(queue, str(msg))
 
     @action
     def mget(self, keys, *args):
