@@ -38,11 +38,11 @@ python-mpd2
 ouimeaux
 
 # Google Assistant support
-google-assistant-sdk[samples]
-google-assistant-library
+# google-assistant-sdk[samples]
+# google-assistant-library
 
 # Google APIs general layer support
-google-api-python-client
+# google-api-python-client
 
 # Last.FM scrobbler plugin support
 pylast

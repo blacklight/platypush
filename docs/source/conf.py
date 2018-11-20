@@ -182,6 +182,12 @@ todo_include_todos = True
 
 autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'google.assistant.embedded',
+                        'google.assistant.library',
+                        'google.assistant.library.event',
+                        'google.assistant.library.file_helpers',
+                        'google.oauth2.credentials',
+                        'oauth2client',
+                        'apiclient',
                         'tenacity',
                         'smartcard',
                         'Leap',
