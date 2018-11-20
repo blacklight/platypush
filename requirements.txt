@@ -57,7 +57,7 @@ pylast
 # text2speech plugin: mplayer system package
 
 # Video support on RaspberryPi
-omxplayer-wrapper
+# omxplayer-wrapper
 
 # Custom hotword detection: Snowboy
 # snowboy
