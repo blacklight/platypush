@@ -2,6 +2,7 @@ import copy
 import json
 import logging
 import re
+import threading
 
 from platypush.config import Config
 from platypush.message.event import Event, EventMatchResult
@@ -148,13 +149,15 @@ class EventHook(object):
         """ Checks the condition of the hook against a particular event and
             runs the hook actions if the condition is met """
 
+        def _thread_func(result):
+            self.actions.execute(event=event, **result.parsed_args)
+
         result = self.matches_event(event)
         token = Config.get('token')
 
         if result.is_match:
             logger.info('Running hook {} triggered by an event'.format(self.name))
-            # TODO here event should actually be event.args
-            self.actions.execute(event=event, **result.parsed_args)
+            threading.Thread(target=_thread_func, args=(result,)).start()
 
 
 # vim:sw=4:ts=4:et:
