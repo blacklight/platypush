@@ -34,6 +34,16 @@ class WiimoteBackend(Backend):
     _last_btn_event_time = 0
 
 
+    def __init__(self, inactivity_timeout=_inactivity_timeout, *args, **kwargs):
+        """
+        :param inactivity_timeout: Number of seconds elapsed from the last Wiimote action before disconnecting the device (default: 300 seconds)
+        :type inactivity_timeout: float
+        """
+
+        super().__init__(*args, **kwargs)
+        self._inactivity_timeout = inactivity_timeout
+
+
     def get_wiimote(self):
         if not self._wiimote:
             self._wiimote = cwiid.Wiimote()
