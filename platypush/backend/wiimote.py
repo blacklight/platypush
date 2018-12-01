@@ -27,6 +27,8 @@ class WiimoteBackend(Backend):
     """
 
     _wiimote = None
+    _inactivity_timeout = 300
+    _connection_attempts = 0
 
 
     def msg_callback(self):
@@ -87,10 +89,24 @@ class WiimoteBackend(Backend):
         return parsed_state
 
 
+    def close(self):
+        if not self._wiimote:
+            return
+
+        try:
+            self._wiimote.close()
+        except:
+            pass
+
+        self._wiimote = None
+
+
     def run(self):
         super().run()
-        connection_attempts = 0
+
+        self._connection_attempts = 0
         last_state = {}
+        last_btn_event_time = 0
 
         while not self.should_stop():
             try:
@@ -100,17 +116,25 @@ class WiimoteBackend(Backend):
 
                 if changed_state:
                     self.bus.post(WiimoteEvent(**changed_state))
-                connection_attempts = 0
+
+                if 'buttons' in changed_state:
+                    last_btn_event_time = time.time()
+                elif last_state and time.time() - \
+                    last_btn_event_time >= self._inactivity_timeout:
+                    self.logger.info('Wiimote disconnected upon timeout')
+                    self.close()
+
                 last_state = state
                 time.sleep(0.1)
             except RuntimeError as e:
                 if type(e) == RuntimeError and str(e) == 'Error opening wiimote connection':
-                    if connection_attempts == 0:
+                    if self._connection_attempts == 0:
                         self.logger.info('Press 1+2 to pair your WiiMote controller')
                 else:
                     self.logger.exception(e)
-                self._wiimote = None
-                connection_attempts += 1
+
+                self.close()
+                self._connection_attempts += 1
 
 # vim:sw=4:ts=4:et:
 

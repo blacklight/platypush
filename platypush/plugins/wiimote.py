@@ -34,7 +34,7 @@ class WiimotePlugin(Plugin):
         """
         Closes the connection with the WiiMote
         """
-        self._get_wiimote().close()
+        get_backend('wiimote').close()
 
 
     @action
