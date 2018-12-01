@@ -50,3 +50,4 @@ Plugins
     platypush/plugins/video.omxplayer.rst
     platypush/plugins/weather.forecast.rst
     platypush/plugins/websocket.rst
+    platypush/plugins/wiimote.rst

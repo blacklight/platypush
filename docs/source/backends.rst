@@ -30,3 +30,4 @@ Backends
     platypush/backend/tcp.rst
     platypush/backend/weather.forecast.rst
     platypush/backend/websocket.rst
+    platypush/backend/wiimote.rst

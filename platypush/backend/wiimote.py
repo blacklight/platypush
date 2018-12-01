@@ -8,7 +8,9 @@ import time
 
 from platypush.backend import Backend
 from platypush.message import Message
-from platypush.message.event.wiimote import WiimoteEvent
+from platypush.message.event.wiimote import WiimoteEvent, \
+    WiimoteConnectionEvent, WiimoteDisconnectionEvent
+
 from platypush.message.request import Request
 
 
@@ -31,25 +33,14 @@ class WiimoteBackend(Backend):
     _connection_attempts = 0
 
 
-    def msg_callback(self):
-        def _callback(msg_list, timestamp):
-            print(msg_list)
-
-        return _callback
-
     def get_wiimote(self):
         if not self._wiimote:
             self._wiimote = cwiid.Wiimote()
-            self._wiimote.mesg_callback = self.msg_callback()
-            # self._wiimote.enable(cwiid.FLAG_MESG_IFC | cwiid.FLAG_MOTIONPLUS)
             self._wiimote.enable(cwiid.FLAG_MOTIONPLUS)
             self._wiimote.rpt_mode = cwiid.RPT_ACC | cwiid.RPT_BTN | cwiid.RPT_MOTIONPLUS
 
             self.logger.info('WiiMote connected')
-            self._wiimote.led = 1
-            self._wiimote.rumble = True
-            time.sleep(0.5)
-            self._wiimote.rumble = False
+            self.bus.post(WiimoteConnectionEvent())
 
         return self._wiimote
 
@@ -99,6 +90,7 @@ class WiimoteBackend(Backend):
             pass
 
         self._wiimote = None
+        self.bus.post(WiimoteDisconnectionEvent())
 
 
     def run(self):
