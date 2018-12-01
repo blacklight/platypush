@@ -31,6 +31,7 @@ class WiimoteBackend(Backend):
     _wiimote = None
     _inactivity_timeout = 300
     _connection_attempts = 0
+    _last_btn_event_time = 0
 
 
     def get_wiimote(self):
@@ -40,6 +41,7 @@ class WiimoteBackend(Backend):
             self._wiimote.rpt_mode = cwiid.RPT_ACC | cwiid.RPT_BTN | cwiid.RPT_MOTIONPLUS
 
             self.logger.info('WiiMote connected')
+            self._last_btn_event_time = time.time()
             self.bus.post(WiimoteConnectionEvent())
 
         return self._wiimote
@@ -98,7 +100,6 @@ class WiimoteBackend(Backend):
 
         self._connection_attempts = 0
         last_state = {}
-        last_btn_event_time = 0
 
         while not self.should_stop():
             try:
@@ -110,9 +111,9 @@ class WiimoteBackend(Backend):
                     self.bus.post(WiimoteEvent(**changed_state))
 
                 if 'buttons' in changed_state:
-                    last_btn_event_time = time.time()
+                    self._last_btn_event_time = time.time()
                 elif last_state and time.time() - \
-                    last_btn_event_time >= self._inactivity_timeout:
+                    self._last_btn_event_time >= self._inactivity_timeout:
                     self.logger.info('Wiimote disconnected upon timeout')
                     self.close()
 
