@@ -32,21 +32,34 @@ class WiimoteBackend(Backend):
     _inactivity_timeout = 300
     _connection_attempts = 0
     _last_btn_event_time = 0
+    _bdaddr = None
 
 
-    def __init__(self, inactivity_timeout=_inactivity_timeout, *args, **kwargs):
+    def __init__(self, bdaddr=_bdaddr, inactivity_timeout=_inactivity_timeout,
+                 *args, **kwargs):
         """
+        :param bdaddr: If set, connect to this specific Wiimote physical address (example: 00:11:22:33:44:55)
+        :type bdaddr: str
+
         :param inactivity_timeout: Number of seconds elapsed from the last Wiimote action before disconnecting the device (default: 300 seconds)
         :type inactivity_timeout: float
         """
 
         super().__init__(*args, **kwargs)
+        self._bdaddr = bdaddr
         self._inactivity_timeout = inactivity_timeout
 
 
     def get_wiimote(self):
         if not self._wiimote:
-            self._wiimote = cwiid.Wiimote()
+            if self._connection_attempts <= 1:
+                self.logger.info('Press 1+2 on your Wiimote to pair it')
+
+            if self._bdaddr:
+                self._wiimote = cwiid.Wiimote(bdaddr=self._bdaddr)
+            else:
+                self._wiimote = cwiid.Wiimote()
+
             self._wiimote.enable(cwiid.FLAG_MOTIONPLUS)
             self._wiimote.rpt_mode = cwiid.RPT_ACC | cwiid.RPT_BTN | cwiid.RPT_MOTIONPLUS
 
@@ -110,6 +123,7 @@ class WiimoteBackend(Backend):
 
         self._connection_attempts = 0
         last_state = {}
+        self.logger.info('Initialized Wiimote backend')
 
         while not self.should_stop():
             try:
