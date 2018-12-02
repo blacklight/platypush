@@ -52,9 +52,6 @@ class WiimoteBackend(Backend):
 
     def get_wiimote(self):
         if not self._wiimote:
-            if self._connection_attempts <= 1:
-                self.logger.info('Press 1+2 on your Wiimote to pair it')
-
             if self._bdaddr:
                 self._wiimote = cwiid.Wiimote(bdaddr=self._bdaddr)
             else:
