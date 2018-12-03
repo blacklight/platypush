@@ -126,7 +126,10 @@ class Request(Message):
                         pass
 
         parsed_value = ''
-        while value:
+        if not isinstance(value, str):
+            parsed_value = value
+
+        while value and isinstance(value, str):
             m = re.match('([^\$]*)(\${\s*(.+?)\s*})(.*)', value)
             if m and not m.group(1).endswith('\\'):
                 prefix = m.group(1); expr = m.group(2);
