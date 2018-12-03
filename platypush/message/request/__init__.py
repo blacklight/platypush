@@ -156,7 +156,7 @@ class Request(Message):
                 value = ''
 
         try: return json.loads(parsed_value)
-        except ValueError as e: return parsed_value
+        except Exception as e: return parsed_value
 
 
     def _send_response(self, response):
