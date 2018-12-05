@@ -31,7 +31,8 @@ You can use Platypush to do things like:
 Imagine the ability of executing all the actions above through messages delivered through:
 
 - A web interface
-- Raw HTTP requests
+- A JSON-RPC API
+- Raw TCP messages
 - Web sockets
 - [PushBullet](https://pushbullet.com)
 - [Kafka](https://kafka.apache.org)
