@@ -56,22 +56,26 @@ class HttpRequest(object):
             is_first_call = self.last_request_timestamp == 0
             self.last_request_timestamp = time.time()
 
-            method = getattr(requests, self.args.method.lower())
-            response = method(self.args.url, *self.args.args, **self.args.kwargs)
-            new_items = self.get_new_items(response)
+            try:
+                method = getattr(requests, self.args.method.lower())
+                response = method(self.args.url, *self.args.args, **self.args.kwargs)
+                new_items = self.get_new_items(response)
 
-            if isinstance(new_items, HttpEvent):
-                event = new_items
-                new_items = event.args['response']
-            else:
-                event = HttpEvent(dict(self), new_items)
+                if isinstance(new_items, HttpEvent):
+                    event = new_items
+                    new_items = event.args['response']
+                else:
+                    event = HttpEvent(dict(self), new_items)
 
-            if new_items and self.bus:
-                if not self.skip_first_call or (
-                        self.skip_first_call and not is_first_call):
-                    self.bus.post(event)
+                if new_items and self.bus:
+                    if not self.skip_first_call or (
+                            self.skip_first_call and not is_first_call):
+                        self.bus.post(event)
 
-            response.raise_for_status()
+                response.raise_for_status()
+            except Exception as e:
+                self.logger.warning('Encountered an error while retrieving {}: {}'.
+                                    format(self.args.url, str(e)))
 
         Thread(target=_thread_func).start()
 
