@@ -452,7 +452,7 @@ class VideoOmxplayerPlugin(Plugin):
         return [
             {
                 'url': 'https://www.youtube.com/watch?v=' + item['id']['videoId'],
-                'title' item.get('snippet', {}).get('title', '<No Title>'),
+                'title': item.get('snippet', {}).get('title', '<No Title>'),
             }
             for item in get_plugin('google.youtube').search(query=query).output
             if item.get('id', {}).get('kind') == 'youtube#video'
