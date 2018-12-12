@@ -440,13 +440,23 @@ class VideoOmxplayerPlugin(Plugin):
         self.logger.info('Searching YouTube for "{}"'.format(query))
 
         try:
-            return get_plugin('google.youtube').search(query=query)
+            return self._youtube_search_api(query=query)
         except Exception as e:
             self.logger.warning('Unable to load the YouTube plugin, falling ' +
                                 'back to HTML parse method: {}'.format(str(e)))
 
             return self._youtube_search_html_parse(query=query)
 
+
+    def _youtube_search_api(self, query):
+        return [
+            {
+                'url': 'https://www.youtube.com/watch?v=' + item['id']['videoId'],
+                'title' item.get('snippet', {}).get('title', '<No Title>'),
+            }
+            for item in get_plugin('google.youtube').search(query=query).output
+            if item.get('id', {}).get('kind') == 'youtube#video'
+        ]
 
     def _youtube_search_html_parse(self, query):
         query = urllib.parse.quote(query)
