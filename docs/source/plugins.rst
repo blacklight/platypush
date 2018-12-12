@@ -19,6 +19,7 @@ Plugins
     platypush/plugins/google.mail.rst
     platypush/plugins/google.maps.rst
     platypush/plugins/google.rst
+    platypush/plugins/google.youtube.rst
     platypush/plugins/gpio.rst
     platypush/plugins/gpio.sensor.accelerometer.rst
     platypush/plugins/gpio.sensor.distance.rst

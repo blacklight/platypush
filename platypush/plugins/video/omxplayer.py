@@ -7,9 +7,6 @@ import time
 import urllib.request
 import urllib.parse
 
-from dbus.exceptions import DBusException
-from omxplayer import OMXPlayer
-
 from platypush.context import get_backend, get_plugin
 from platypush.plugins.media import PlayerState
 from platypush.message.event.video import VideoPlayEvent, VideoPauseEvent, \
@@ -89,6 +86,8 @@ class VideoOmxplayerPlugin(Plugin):
             * Torrents (format: Magnet links, Torrent URLs or local Torrent files)
         """
 
+        from dbus.exceptions import DBusException
+
         if resource.startswith('youtube:') \
                 or resource.startswith('https://www.youtube.com/watch?v='):
             resource = self._get_youtube_content(resource)
@@ -114,6 +113,7 @@ class VideoOmxplayerPlugin(Plugin):
                                 'of OMXPlayer, trying to play anyway')
 
         try:
+            from omxplayer import OMXPlayer
             self.player = OMXPlayer(resource, args=self.args)
             self._init_player_handlers()
         except DBusException as e:
@@ -430,8 +430,25 @@ class VideoOmxplayerPlugin(Plugin):
 
     @action
     def youtube_search(self, query):
+        """
+        Performs a YouTube search either using the YouTube API (faster and
+        recommended, it requires the :mod:`platypush.plugins.google.youtube`
+        plugin to be configured) or parsing the HTML search results (fallback
+        slower method)
+        """
+
         self.logger.info('Searching YouTube for "{}"'.format(query))
 
+        try:
+            return get_plugin('google.youtube').search(query=query)
+        except Exception as e:
+            self.logger.warning('Unable to load the YouTube plugin, falling ' +
+                                'back to HTML parse method: {}'.format(str(e)))
+
+            return self._youtube_search_html_parse(query=query)
+
+
+    def _youtube_search_html_parse(self, query):
         query = urllib.parse.quote(query)
         url = "https://www.youtube.com/results?search_query=" + query
         response = urllib.request.urlopen(url)
