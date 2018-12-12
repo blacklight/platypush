@@ -64,6 +64,7 @@ class GoogleYoutubePlugin(GooglePlugin, CalendarInterface):
 
         service = self._get_service()
         result = service.search().list(part=parts, q=query, type=types,
+                                       maxResults=max_results,
                                        **kwargs).execute()
 
         events = result.get('items', [])
