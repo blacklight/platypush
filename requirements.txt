@@ -1,6 +1,12 @@
+###
+# Platypush Python requirements
+#
+# Uncomment the lines associated to the optional dependencies that
+# you may want to install to use some particular plugins or backends
+###
+
 # YAML configuration support
 pyyaml
-requires
 
 # Apache Kafka backend support
 kafka-python
@@ -107,4 +113,9 @@ inputs
 
 # Support for Chromecast
 # pychromecast
+
+# Support for sound devices, playback and recording
+# sounddevice
+# soundfile
+# numpy
 

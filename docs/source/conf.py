@@ -203,6 +203,9 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'omxplayer',
                         'plexapi',
                         'cwiid',
+                        'sounddevice',
+                        'soundfile',
+                        'numpy',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))
