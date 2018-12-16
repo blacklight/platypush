@@ -1,3 +1,4 @@
+import base64
 import json
 import serial
 import threading
@@ -17,7 +18,7 @@ class SerialPlugin(GpioSensorPlugin):
     https://github.com/bblanchon/ArduinoJson.
     """
 
-    def __init__(self, device, baud_rate=9600, *args, **kwargs):
+    def __init__(self, device=None, baud_rate=9600, *args, **kwargs):
         """
         :param device: Device path (e.g. ``/dev/ttyUSB0`` or ``/dev/ttyACM0``)
         :type device: str
@@ -64,14 +65,24 @@ class SerialPlugin(GpioSensorPlugin):
 
         return output.decode().strip()
 
-    def _get_serial(self, reset=False):
+    def _get_serial(self, device=None, baud_rate=None, reset=False):
+        if not device:
+            if not self.device:
+                raise RuntimeError('No device specified nor default device configured')
+            device = self.device
+
+        if baud_rate is None:
+            if self.baud_rate is None:
+                raise RuntimeError('No baud_rate specified nor default configured')
+            baud_rate = self.baud_rate
+
         if self.serial:
             if not reset:
                 return self.serial
 
             self._close_serial()
 
-        self.serial = serial.Serial(self.device, self.baud_rate)
+        self.serial = serial.Serial(device, baud_rate)
         return self.serial
 
     def _close_serial(self):
@@ -84,10 +95,26 @@ class SerialPlugin(GpioSensorPlugin):
                 self.logger.exception(e)
 
     @action
-    def get_measurement(self):
+    def get_measurement(self, device=None, baud_rate=None):
         """
         Reads JSON data from the serial device and returns it as a message
+
+        :param device: Device path (default: default configured device)
+        :type device: str
+
+        :param baud_rate: Baud rate (default: default configured baud_rate)
+        :type baud_rate: int
         """
+
+        if not device:
+            if not self.device:
+                raise RuntimeError('No device specified nor default device configured')
+            device = self.device
+
+        if baud_rate is None:
+            if self.baud_rate is None:
+                raise RuntimeError('No baud_rate specified nor default configured')
+            baud_rate = self.baud_rate
 
         data = None
 
@@ -95,10 +122,10 @@ class SerialPlugin(GpioSensorPlugin):
             serial_available = self.serial_lock.acquire(timeout=2)
             if serial_available:
                 try:
-                    ser = self._get_serial()
+                    ser = self._get_serial(device=device)
                 except:
                     time.sleep(1)
-                    ser = self._get_serial(reset=True)
+                    ser = self._get_serial(device=device, reset=True)
 
                 data = self._read_json(ser)
 
@@ -120,14 +147,104 @@ class SerialPlugin(GpioSensorPlugin):
 
         return data
 
+
     @action
-    def write(self, data):
+    def read(self, device=None, baud_rate=None, size=None, end=None):
+        """
+        Reads raw data from the serial device
+
+        :param device: Device to read (default: default configured device)
+        :type device: str
+
+        :param baud_rate: Baud rate (default: default configured baud_rate)
+        :type baud_rate: int
+
+        :param size: Number of bytes to read
+        :type size: int
+
+        :param end: End of message byte or character
+        :type end: int, bytes or str
+        """
+
+        if not device:
+            if not self.device:
+                raise RuntimeError('No device specified nor default device configured')
+            device = self.device
+
+        if baud_rate is None:
+            if self.baud_rate is None:
+                raise RuntimeError('No baud_rate specified nor default configured')
+            baud_rate = self.baud_rate
+
+        if (size is None and end is None) or (size is not None and end is not None):
+            raise RuntimeError('Either size or end must be specified')
+
+        if end and len(end) > 1:
+            raise RuntimeError('The serial end must be a single character, not a string')
+
+        data = bytes()
+
+        try:
+            serial_available = self.serial_lock.acquire(timeout=2)
+            if serial_available:
+                try:
+                    ser = self._get_serial(device=device)
+                except:
+                    time.sleep(1)
+                    ser = self._get_serial(device=device, reset=True)
+
+                if size is not None:
+                    for _ in range(0, size):
+                        data += ser.read()
+                elif end is not None:
+                    if isinstance(end, str):
+                        end = end.encode()
+
+                    ch = None
+                    while ch != end:
+                        ch = ser.read()
+
+                        if ch != end:
+                            data += ch
+            else:
+                self.logger.warning('Serial read timeout')
+        finally:
+            try:
+                self.serial_lock.release()
+            except:
+                pass
+
+        try:
+            data = data.decode()
+        except:
+            data = base64.encodebytes(data)
+
+        return data
+
+    @action
+    def write(self, data, device=None, baud_rate=None):
         """
         Writes data to the serial device.
+
+        :param device: Device to write (default: default configured device)
+        :type device: str
+
+        :param baud_rate: Baud rate (default: default configured baud_rate)
+        :type baud_rate: int
 
         :param data: Data to send to the serial device
         :type data: str, bytes or dict. If dict, it will be serialized as JSON.
         """
+
+        if not device:
+            if not self.device:
+                raise RuntimeError('No device specified nor default device configured')
+            device = self.device
+
+        if baud_rate is None:
+            if self.baud_rate is None:
+                raise RuntimeError('No baud_rate specified nor default configured')
+            baud_rate = self.baud_rate
 
         if isinstance(data, dict):
             data = json.dumps(data)
@@ -138,10 +255,10 @@ class SerialPlugin(GpioSensorPlugin):
             serial_available = self.serial_lock.acquire(timeout=2)
             if serial_available:
                 try:
-                    ser = self._get_serial()
+                    ser = self._get_serial(device=device)
                 except:
                     time.sleep(1)
-                    ser = self._get_serial(reset=True)
+                    ser = self._get_serial(device=device, reset=True)
 
                 self.logger.info('Writing {} to {}'.format(data, self.device))
                 ser.write(data)
