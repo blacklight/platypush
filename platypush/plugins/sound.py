@@ -136,7 +136,7 @@ class SoundPlugin(Plugin):
         completed_callback_event = Event()
         file = os.path.abspath(os.path.expanduser(file))
 
-        if not device:
+        if device is None:
             device = self.output_device
 
         def audio_callback(outdata, frames, time, status):
@@ -261,7 +261,7 @@ class SoundPlugin(Plugin):
         if os.path.isfile(file):
             os.unlink(file)
 
-        if not device:
+        if device is None:
             device = self.input_device
 
         if sample_rate is None:
@@ -361,10 +361,10 @@ class SoundPlugin(Plugin):
         self.playback_paused_changed.clear()
         self.recording_paused_changed.clear()
 
-        if not input_device:
+        if input_device is None:
             input_device = self.input_device
 
-        if not output_device:
+        if output_device is None:
             output_device = self.output_device
 
         if sample_rate is None:
