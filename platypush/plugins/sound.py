@@ -10,8 +10,6 @@ import time
 from enum import Enum
 from threading import Thread, Event, RLock
 
-import sounddevice as sd
-
 from platypush.plugins import Plugin, action
 
 
@@ -114,6 +112,8 @@ class SoundPlugin(Plugin):
 
         """
 
+        import sounddevice as sd
+
         devs = sd.query_devices()
         if category == 'input':
             devs = [d for d in devs if d.get('max_input_channels') > 0]
@@ -140,6 +140,8 @@ class SoundPlugin(Plugin):
         :param bufsize: Size of the audio buffer (default: 20)
         :type bufsize: int
         """
+
+        import sounddevice as sd
 
         if self._get_playback_state() != PlaybackState.STOPPED:
             self.stop_playback()
@@ -267,6 +269,8 @@ class SoundPlugin(Plugin):
         :type subtype: str
         """
 
+        import sounddevice as sd
+
         if self._get_recording_state() != RecordingState.STOPPED:
             self.stop_recording()
             time.sleep(2)
@@ -374,6 +378,8 @@ class SoundPlugin(Plugin):
         :param dtype: Data type for the recording - see `soundfile docs <https://python-sounddevice.readthedocs.io/en/0.3.12/_modules/sounddevice.html#rec>`_ for available types (default: input device default)
         :type dtype: str
         """
+
+        import sounddevice as sd
 
         if self._get_playback_state() != PlaybackState.STOPPED:
             self.stop_playback()
