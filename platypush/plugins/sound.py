@@ -38,8 +38,8 @@ class SoundPlugin(Plugin):
         * **numpy** (``pip install numpy``)
     """
 
-    _DEFAULT_PLAY_BLOCKSIZE = 2048
-    _DEFAULT_PLAY_BUFSIZE = 20
+    _DEFAULT_BLOCKSIZE = 2048
+    _DEFAULT_BUFSIZE = 20
 
     def __init__(self, input_device=None, output_device=None, *args, **kwargs):
         """
@@ -108,8 +108,8 @@ class SoundPlugin(Plugin):
 
 
     @action
-    def play(self, file, device=None, blocksize=_DEFAULT_PLAY_BLOCKSIZE,
-                   bufsize=_DEFAULT_PLAY_BUFSIZE):
+    def play(self, file, device=None, blocksize=_DEFAULT_BLOCKSIZE,
+             bufsize=_DEFAULT_BUFSIZE):
         """
         Plays a sound file (support formats: wav, raw)
 
@@ -220,7 +220,7 @@ class SoundPlugin(Plugin):
 
     @action
     def record(self, file=None, duration=None, device=None, sample_rate=None,
-               latency=0, channels=1, subtype='PCM_24'):
+               blocksize=_DEFAULT_BLOCKSIZE, latency=0, channels=1, subtype='PCM_24'):
         """
         Records audio to a sound file (support formats: wav, raw)
 
@@ -235,6 +235,9 @@ class SoundPlugin(Plugin):
 
         :param sample_rate: Recording sample rate (default: device default rate)
         :type sample_rate: int
+
+        :param blocksize: Audio block size (default: 2048)
+        :type blocksize: int
 
         :param latency: Device latency in seconds (default: 0)
         :type latency: float
@@ -289,7 +292,7 @@ class SoundPlugin(Plugin):
                               channels=channels, subtype=subtype) as f:
                 with sd.InputStream(samplerate=sample_rate, device=device,
                                     channels=channels, callback=audio_callback,
-                                    latency=latency):
+                                    latency=latency, blocksize=blocksize):
                     self.start_recording()
                     self.logger.info('Started recording from device [{}] to [{}]'.
                                     format(device, file))
@@ -302,13 +305,14 @@ class SoundPlugin(Plugin):
                         while self._get_recording_state() == RecordingState.PAUSED:
                             self.recording_paused_changed.wait()
 
-                        if duration is None:
-                            block = q.get()
-                        else:
-                            block = q.get(block=True, timeout=max(0, duration -
-                                        (time.time() - recording_started_time)))
+                        get_args = {
+                            'block': True,
+                            'timeout': max(0, duration - (time.time() -
+                                                          recording_started_time))
+                        } if duration is not None else {}
 
-                        f.write(block)
+                        data = q.get(**get_args)
+                        f.write(data)
 
                 f.flush()
 
@@ -320,7 +324,7 @@ class SoundPlugin(Plugin):
 
     @action
     def recordplay(self, duration=None, input_device=None, output_device=None,
-                   sample_rate=None, blocksize=_DEFAULT_PLAY_BLOCKSIZE,
+                   sample_rate=None, blocksize=_DEFAULT_BLOCKSIZE,
                    latency=0, channels=1, dtype=None):
         """
         Records audio and plays it on an output sound device (audio pass-through)
