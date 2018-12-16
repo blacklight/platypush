@@ -290,7 +290,7 @@ class SoundPlugin(Plugin):
             sample_rate = int(dev_info['default_samplerate'])
 
         if blocksize is None:
-            blocksize = self.output_blocksize
+            blocksize = self.input_blocksize
 
         q = queue.Queue()
 
@@ -362,7 +362,7 @@ class SoundPlugin(Plugin):
         :param sample_rate: Recording sample rate (default: device default rate)
         :type sample_rate: int
 
-        :param blocksize: Audio block size (default: configured maximum value between the configured `input_blocksize` and `output_blocksize` or 2048)
+        :param blocksize: Audio block size (default: configured `output_blocksize` or 2048)
         :type blocksize: int
 
         :param latency: Device latency in seconds (default: 0)
@@ -397,7 +397,7 @@ class SoundPlugin(Plugin):
             sample_rate = int(dev_info['default_samplerate'])
 
         if blocksize is None:
-            blocksize = max(self.input_blocksize, self.output_blocksize)
+            blocksize = self.output_blocksize
 
         def audio_callback(indata, outdata, frames, time, status):
             while self._get_recording_state() == RecordingState.PAUSED:
