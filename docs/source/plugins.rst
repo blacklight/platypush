@@ -39,6 +39,7 @@ Plugins
     platypush/plugins/redis.rst
     platypush/plugins/serial.rst
     platypush/plugins/shell.rst
+    platypush/plugins/sound.rst
     platypush/plugins/switch.rst
     platypush/plugins/switch.switchbot.rst
     platypush/plugins/switch.tplink.rst
