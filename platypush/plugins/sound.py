@@ -126,7 +126,10 @@ class SoundPlugin(Plugin):
         :type bufsize: int
         """
 
-        self.stop_playback()
+        if self._get_playback_state() != PlaybackState.STOPPED:
+            self.stop_playback()
+            time.sleep(2)
+
         self.playback_paused_changed.clear()
 
         q = queue.Queue(maxsize=bufsize)
@@ -243,7 +246,10 @@ class SoundPlugin(Plugin):
         :type subtype: str
         """
 
-        self.stop_recording()
+        if self._get_recording_state() != RecordingState.STOPPED:
+            self.stop_recording()
+            time.sleep(2)
+
         self.recording_paused_changed.clear()
 
         if file:
@@ -310,6 +316,103 @@ class SoundPlugin(Plugin):
             self.logger.warning('Recording timeout: audio callback failed?')
         finally:
             self.stop_recording()
+
+
+    @action
+    def recordplay(self, duration=None, input_device=None, output_device=None,
+                   sample_rate=None, blocksize=_DEFAULT_PLAY_BLOCKSIZE,
+                   latency=0, channels=1, dtype=None):
+        """
+        Records audio and plays it on an output sound device (audio pass-through)
+
+        :param duration: Recording duration in seconds (default: record until stop event)
+        :type duration: float
+
+        :param input_device: Input device (default: default configured device or system default audio input if not configured)
+        :type input_device: int or str
+
+        :param output_device: Output device (default: default configured device or system default audio output if not configured)
+        :type output_device: int or str
+
+        :param sample_rate: Recording sample rate (default: device default rate)
+        :type sample_rate: int
+
+        :param blocksize: Audio block size (default: 2048)
+        :type blocksize: int
+
+        :param latency: Device latency in seconds (default: 0)
+        :type latency: float
+
+        :param channels: Number of channels (default: 1)
+        :type channels: int
+
+        :param dtype: Data type for the recording - see `soundfile docs <https://python-sounddevice.readthedocs.io/en/0.3.12/_modules/sounddevice.html#rec>`_ for available types (default: input device default)
+        :type dtype: str
+        """
+
+        if self._get_playback_state() != PlaybackState.STOPPED:
+            self.stop_playback()
+            time.sleep(2)
+
+        if self._get_recording_state() != RecordingState.STOPPED:
+            self.stop_recording()
+            time.sleep(2)
+
+        self.playback_paused_changed.clear()
+        self.recording_paused_changed.clear()
+
+        if not input_device:
+            input_device = self.input_device
+
+        if not output_device:
+            output_device = self.output_device
+
+        if sample_rate is None:
+            dev_info = sd.query_devices(input_device, 'input')
+            sample_rate = int(dev_info['default_samplerate'])
+
+        def audio_callback(indata, outdata, frames, time, status):
+            while self._get_recording_state() == RecordingState.PAUSED:
+                self.recording_paused_changed.wait()
+
+            if status:
+                self.logger.warning('Recording callback status: {}'.format(
+                    str(status)))
+
+            outdata[:] = indata
+
+
+        try:
+            import soundfile as sf
+            import numpy
+
+            with sd.Stream(samplerate=sample_rate, channels=channels,
+                           blocksize=blocksize, latency=latency,
+                           device=(input_device, output_device),
+                           dtype=dtype, callback=audio_callback):
+                self.start_recording()
+                self.start_playback()
+
+                self.logger.info('Started recording pass-through from device ' +
+                                 '[{}] to device [{}]'.
+                                 format(input_device, output_device))
+
+                recording_started_time = time.time()
+
+                while self._get_recording_state() != RecordingState.STOPPED \
+                        and (duration is None or
+                             time.time() - recording_started_time < duration):
+                    while self._get_recording_state() == RecordingState.PAUSED:
+                        self.recording_paused_changed.wait()
+
+                    time.sleep(0.1)
+
+        except queue.Empty as e:
+            self.logger.warning('Recording timeout: audio callback failed?')
+        finally:
+            self.stop_playback()
+            self.stop_recording()
+
 
     def start_playback(self):
         with self.playback_state_lock:
