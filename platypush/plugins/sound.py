@@ -41,19 +41,35 @@ class SoundPlugin(Plugin):
     _DEFAULT_BLOCKSIZE = 2048
     _DEFAULT_BUFSIZE = 20
 
-    def __init__(self, input_device=None, output_device=None, *args, **kwargs):
+    def __init__(self, input_device=None, output_device=None,
+                 input_blocksize=_DEFAULT_BLOCKSIZE,
+                 output_blocksize=_DEFAULT_BLOCKSIZE,
+                 playback_bufsize=_DEFAULT_BUFSIZE, *args, **kwargs):
         """
         :param input_device: Index or name of the default input device. Use :method:`platypush.plugins.sound.query_devices` to get the available devices. Default: system default
         :type input_device: int or str
 
         :param output_device: Index or name of the default output device. Use :method:`platypush.plugins.sound.query_devices` to get the available devices. Default: system default
         :type output_device: int or str
+
+        :param input_blocksize: Blocksize to be applied to the input device. Try to increase this value if you get input overflow errors while recording. Default: 2048
+        :type input_blocksize: int
+
+        :param output_blocksize: Blocksize to be applied to the output device. Try to increase this value if you get output underflow errors while playing. Default: 2048
+        :type output_blocksize: int
+
+        :param playback_bufsize: Number of audio blocks that will be cached while playing (default: 20)
+        :type playback_bufsize: int
         """
 
         super().__init__(*args, **kwargs)
 
         self.input_device = input_device or 0
         self.output_device = output_device or 0
+        self.input_blocksize = input_blocksize
+        self.output_blocksize = output_blocksize
+        self.playback_bufsize = playback_bufsize
+
         self.playback_state = PlaybackState.STOPPED
         self.playback_state_lock = RLock()
         self.playback_paused_changed = Event()
@@ -108,8 +124,7 @@ class SoundPlugin(Plugin):
 
 
     @action
-    def play(self, file, device=None, blocksize=_DEFAULT_BLOCKSIZE,
-             bufsize=_DEFAULT_BUFSIZE):
+    def play(self, file, device=None, blocksize=None, bufsize=_DEFAULT_BUFSIZE):
         """
         Plays a sound file (support formats: wav, raw)
 
@@ -119,7 +134,7 @@ class SoundPlugin(Plugin):
         :param device: Output device (default: default configured device or system default audio output if not configured)
         :type device: int or str
 
-        :param blocksize: Audio block size (default: 2048)
+        :param blocksize: Audio block size (default: configured `output_blocksize` or 2048)
         :type blocksize: int
 
         :param bufsize: Size of the audio buffer (default: 20)
@@ -129,6 +144,9 @@ class SoundPlugin(Plugin):
         if self._get_playback_state() != PlaybackState.STOPPED:
             self.stop_playback()
             time.sleep(2)
+
+        if blocksize is None:
+            blocksize = self.output_blocksize
 
         self.playback_paused_changed.clear()
 
@@ -220,7 +238,7 @@ class SoundPlugin(Plugin):
 
     @action
     def record(self, file=None, duration=None, device=None, sample_rate=None,
-               blocksize=_DEFAULT_BLOCKSIZE, latency=0, channels=1, subtype='PCM_24'):
+               blocksize=None, latency=0, channels=1, subtype='PCM_24'):
         """
         Records audio to a sound file (support formats: wav, raw)
 
@@ -236,7 +254,7 @@ class SoundPlugin(Plugin):
         :param sample_rate: Recording sample rate (default: device default rate)
         :type sample_rate: int
 
-        :param blocksize: Audio block size (default: 2048)
+        :param blocksize: Audio block size (default: configured `input_blocksize` or 2048)
         :type blocksize: int
 
         :param latency: Device latency in seconds (default: 0)
@@ -270,6 +288,9 @@ class SoundPlugin(Plugin):
         if sample_rate is None:
             dev_info = sd.query_devices(device, 'input')
             sample_rate = int(dev_info['default_samplerate'])
+
+        if blocksize is None:
+            blocksize = self.output_blocksize
 
         q = queue.Queue()
 
@@ -324,8 +345,8 @@ class SoundPlugin(Plugin):
 
     @action
     def recordplay(self, duration=None, input_device=None, output_device=None,
-                   sample_rate=None, blocksize=_DEFAULT_BLOCKSIZE,
-                   latency=0, channels=1, dtype=None):
+                   sample_rate=None, blocksize=None, latency=0, channels=1,
+                   dtype=None):
         """
         Records audio and plays it on an output sound device (audio pass-through)
 
@@ -341,7 +362,7 @@ class SoundPlugin(Plugin):
         :param sample_rate: Recording sample rate (default: device default rate)
         :type sample_rate: int
 
-        :param blocksize: Audio block size (default: 2048)
+        :param blocksize: Audio block size (default: configured maximum value between the configured `input_blocksize` and `output_blocksize` or 2048)
         :type blocksize: int
 
         :param latency: Device latency in seconds (default: 0)
@@ -374,6 +395,9 @@ class SoundPlugin(Plugin):
         if sample_rate is None:
             dev_info = sd.query_devices(input_device, 'input')
             sample_rate = int(dev_info['default_samplerate'])
+
+        if blocksize is None:
+            blocksize = max(self.input_blocksize, self.output_blocksize)
 
         def audio_callback(indata, outdata, frames, time, status):
             while self._get_recording_state() == RecordingState.PAUSED:
