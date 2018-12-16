@@ -52,8 +52,8 @@ class SoundPlugin(Plugin):
 
         super().__init__(*args, **kwargs)
 
-        self.input_device = input_device or 'default'
-        self.output_device = output_device or 'default'
+        self.input_device = input_device or 0
+        self.output_device = output_device or 0
         self.playback_state = PlaybackState.STOPPED
         self.playback_state_lock = RLock()
         self.playback_paused_changed = Event()
