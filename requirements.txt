@@ -21,6 +21,7 @@ redis
 
 # HTTP poll backend support
 frozendict
+requests
 
 # Database plugin support
 sqlalchemy
@@ -41,7 +42,7 @@ phue
 python-mpd2
 
 # Belkin WeMo Switch plugin support
-ouimeaux
+# ouimeaux
 
 # Google Assistant support
 # google-assistant-sdk[samples]
@@ -100,7 +101,7 @@ pyserial
 # gattlib
 
 # Support for TP-Link HS100 and similar smart switches/plugins
-pyHS100
+# pyHS100
 
 # Support for joystick backend
 inputs
