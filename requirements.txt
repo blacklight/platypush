@@ -33,7 +33,7 @@ python-dateutil
 feedparser
 
 # PDF generation support
-weasyprint
+# weasyprint
 
 # Philips Hue plugin support
 phue
