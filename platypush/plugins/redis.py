@@ -1,5 +1,6 @@
 from redis import Redis
 
+from platypush.context import get_backend
 from platypush.plugins import Plugin, action
 
 
@@ -16,6 +17,14 @@ class RedisPlugin(Plugin):
         super().__init__()
         self.args = args
         self.kwargs = kwargs
+
+        if not kwargs:
+            try:
+                redis_backend = get_backend('redis')
+                if redis_backend and redis_backend.redis_args:
+                    self.kwargs = redis_backend.redis_args
+            except:
+                pass
 
     def _get_redis(self):
         return Redis(*self.args, **self.kwargs)
@@ -38,8 +47,12 @@ class RedisPlugin(Plugin):
         :type kwargs: dict
         """
 
-        redis = Redis(*args, **kwargs)
-        redis.rpush(queue, str(msg))
+        if args or kwargs:
+            redis = Redis(*args, **kwargs)
+        else:
+            redis = self._get_redis()
+
+        return redis.rpush(queue, str(msg))
 
     @action
     def mget(self, keys, *args):

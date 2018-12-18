@@ -3,6 +3,7 @@ import json
 from redis import Redis
 
 from platypush.backend import Backend
+from platypush.context import get_plugin
 from platypush.message import Message
 
 
@@ -31,6 +32,15 @@ class RedisBackend(Backend):
 
         self.queue = queue
         self.redis_args = redis_args
+
+        if not redis_args:
+            try:
+                redis_plugin = get_plugin('redis')
+                if redis_plugin and redis_plugin.kwargs:
+                    self.redis_args = redis_plugin.kwargs
+            except:
+                pass
+
         self.redis = Redis(**self.redis_args)
 
 
