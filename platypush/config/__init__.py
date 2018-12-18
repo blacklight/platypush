@@ -83,7 +83,12 @@ class Config(object):
                 if k == 'filename':
                     logfile = os.path.expanduser(v)
                     logdir = os.path.dirname(logfile)
-                    os.makedirs(logdir, exist_ok=True)
+                    try:
+                        os.makedirs(logdir, exist_ok=True)
+                    except Exception as e:
+                        print('Unable to create logs directory {}: {}'.format(
+                            logdir, str(e)))
+
                     v = logfile
                     del logging_config['stream']
                 elif k == 'level':
@@ -111,10 +116,9 @@ class Config(object):
 
 
     def _read_config_file(self, cfgfile):
-        if not os.path.isabs(cfgfile):
-            cfgfile = os.path.join(os.path.dirname(self._cfgfile), cfgfile)
-
+        cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
         config = {}
+
         with open(cfgfile, 'r') as fp:
             file_config = yaml.safe_load(fp)
 
