@@ -54,6 +54,7 @@ class HttpBackend(Backend):
         * **flask** (``pip install flask``)
         * **redis** (``pip install redis``)
         * **websockets** (``pip install websockets``)
+        * **python-dateutil** (``pip install python-dateutil``)
     """
 
     hidden_plugins = {

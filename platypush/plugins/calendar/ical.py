@@ -20,6 +20,7 @@ class IcalCalendarPlugin(Plugin, CalendarInterface):
     Requires:
 
         * **icalendar** (``pip install icalendar``)
+        * **python-dateutil** (``pip install python-dateutil``)
     """
 
     def __init__(self, url, *args, **kwargs):

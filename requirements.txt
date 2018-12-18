@@ -18,6 +18,7 @@ websocket-client
 flask
 websockets
 redis
+python-dateutil
 
 # HTTP poll backend support
 frozendict
