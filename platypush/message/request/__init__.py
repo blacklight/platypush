@@ -49,7 +49,7 @@ class Request(Message):
     def build(cls, msg):
         msg = super().parse(msg)
         args = {
-            'target' : msg['target'],
+            'target' : msg.get('target', Config.get('device_id')),
             'action' : msg['action'],
             'args'   : msg['args'] if 'args' in msg else {},
         }
