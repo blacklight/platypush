@@ -116,7 +116,10 @@ class Config(object):
 
 
     def _read_config_file(self, cfgfile):
-        cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
+        if not os.path.isabs(cfgfile):
+            cfgfile = os.path.join(os.path.expanduser(
+                os.path.dirname(self._cfgfile)), cfgfile)
+
         config = {}
 
         with open(cfgfile, 'r') as fp:
