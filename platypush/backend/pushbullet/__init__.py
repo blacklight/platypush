@@ -1,9 +1,11 @@
+import asyncio
 import json
 import requests
 import time
-import websocket
+import websockets
 
 from platypush.config import Config
+from platypush.context import get_or_create_event_loop
 from platypush.message import Message
 from platypush.message.event.pushbullet import PushbulletEvent
 
@@ -26,7 +28,7 @@ class PushbulletBackend(Backend):
     Requires:
 
         * **requests** (``pip install requests``)
-        * **websocket-client** (``pip install websocket-client``)
+        * **websockets** (``pip install websockets``)
     """
 
     def __init__(self, token, device='Platypush', **kwargs):
@@ -43,6 +45,7 @@ class PushbulletBackend(Backend):
         self.token = token
         self.device_name = device
         self.pb_device_id = self.get_device_id()
+        self.ws = None
 
         self._last_received_msg = {
             'request'  : { 'body': None, 'time': None },
@@ -94,57 +97,78 @@ class PushbulletBackend(Backend):
 
         return is_duplicate
 
-    def on_push(self):
-        def _f(ws, data):
+    def on_push(self, ws, data):
+        try:
+            # Parse the push
             try:
-                # Parse the push
-                try:
-                    data = json.loads(data) if isinstance(data, str) else push
-                except Exception as e:
-                    self.logger.exception(e)
-                    return
-
-                # If it's a push, get it
-                if data['type'] == 'tickle' and data['subtype'] == 'push':
-                    push = self._get_latest_push()
-                elif data['type'] == 'push':
-                    push = data['push']
-                else: return  # Not a push notification
-
-                # Post an event, useful to react on mobile notifications if
-                # you enabled notification mirroring on your PushBullet app
-                event = PushbulletEvent(**push)
-                self.on_message(event)
-
-                if 'body' not in push: return
-                self.logger.debug('Received push: {}'.format(push))
-
-                body = push['body']
-                try: body = json.loads(body)
-                except ValueError as e: return  # Some other non-JSON push
-
-                if not self._should_skip_last_received_msg(body):
-                    self.on_message(body)
+                data = json.loads(data) if isinstance(data, str) else data
             except Exception as e:
                 self.logger.exception(e)
                 return
 
-        return _f
+            # If it's a push, get it
+            if data['type'] == 'tickle' and data['subtype'] == 'push':
+                push = self._get_latest_push()
+            elif data['type'] == 'push':
+                push = data['push']
+            else: return  # Not a push notification
 
-    def on_error(self):
-        def _f(ws, e):
+            # Post an event, useful to react on mobile notifications if
+            # you enabled notification mirroring on your PushBullet app
+            event = PushbulletEvent(**push)
+            self.on_message(event)
+
+            if 'body' not in push: return
+            self.logger.debug('Received push: {}'.format(push))
+
+            body = push['body']
+            try: body = json.loads(body)
+            except ValueError as e: return  # Some other non-JSON push
+
+            if not self._should_skip_last_received_msg(body):
+                self.on_message(body)
+        except Exception as e:
             self.logger.exception(e)
-            self.logger.info('Restarting PushBullet backend')
-            ws.close()
-            self._init_socket()
+            return
 
-        return _f
+    def on_error(self, ws, e):
+        self.logger.exception(e)
+        self.logger.info('Restarting PushBullet backend')
+        ws.close()
+        self._init_socket()
 
     def _init_socket(self):
-        self.ws = websocket.WebSocketApp(
-            'wss://stream.pushbullet.com/websocket/' + self.token,
-            on_message = self.on_push(),
-            on_error = self.on_error())
+        async def pushbullet_client():
+            async with websockets.connect('wss://stream.pushbullet.com/websocket/'
+                                          + self.token) as self.ws:
+                while True:
+                    try:
+                        push = await self.ws.recv()
+                    except Exception as e:
+                        self.on_error(ws, e)
+                        break
+
+                    self.on_push(self.ws, push)
+
+        self.close()
+        loop = get_or_create_event_loop()
+
+        loop.run_until_complete(pushbullet_client())
+        loop.run_forever()
+
+    def create_device(self, name):
+        return requests.post(
+            u'https://api.pushbullet.com/v2/devices',
+            headers = { 'Access-Token': self.token },
+            json = {
+                'nickname': name,
+                'model': 'Platypush virtual device',
+                'manufactorer': 'platypush',
+                'app_version': 8623,
+                'icon': 'system',
+            }
+        ).json()
+
 
     def get_device_id(self):
         response = requests.get(
@@ -155,11 +179,21 @@ class PushbulletBackend(Backend):
         devices = [dev for dev in response['devices'] if 'nickname' in dev
                    and dev['nickname'] == self.device_name]
 
-        if not devices:
-            raise RuntimeError('No such Pushbullet device: {}'
-                               .format(self.device_name))
+        if devices:
+            return devices[0]['iden']
 
-        return devices[0]['iden']
+        try:
+            response = self.create_device(self.device_name)
+            if 'iden' not in response:
+                raise RuntimeError()
+
+            self.logger.info('Created Pushbullet device {}'.format(
+                self.device_name))
+
+            return response['iden']
+        except Exception as e:
+            self.logger.error('Unable to create Pushbillet device {}'.
+                                format(self.device_name))
 
     def send_message(self, msg):
         requests.post(
@@ -172,17 +206,19 @@ class PushbulletBackend(Backend):
             }
         ).json()
 
+    def close(self):
+        if self.ws:
+            self.ws.close()
+
     def on_stop(self):
-        self.ws.close()
+        return self.close()
 
     def run(self):
         super().run()
 
-        self._init_socket()
         self.logger.info('Initialized Pushbullet backend - device_id: {}'
                      .format(self.device_name))
-
-        self.ws.run_forever()
+        self._init_socket()
 
 # vim:sw=4:ts=4:et:
 

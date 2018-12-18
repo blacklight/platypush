@@ -11,9 +11,6 @@ pyyaml
 # Apache Kafka backend support
 kafka-python
 
-# PushBullet backend support
-websocket-client
-
 # HTTP backend support
 flask
 websockets

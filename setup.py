@@ -61,11 +61,12 @@ setup(
     install_requires = [
         'pyyaml',
         'redis',
+        'requests',
     ],
     extras_require = {
         'Support for Apache Kafka backend': ['kafka-python'],
-        'Support for Pushbullet backend': ['requests', 'websocket-client'],
-        'Support for HTTP backend': ['flask','websockets'],
+        'Support for Pushbullet backend': ['requests', 'websockets'],
+        'Support for HTTP backend': ['flask','websockets', 'python-dateutil'],
         'Support for HTTP poll backend': ['frozendict'],
         'Support for database plugin': ['sqlalchemy'],
         'Support for RSS feeds': ['feedparser'],
@@ -93,7 +94,7 @@ setup(
         'Support for Chromecast plugin': ['pychromecast'],
         'Support for sound devices': ['sounddevice', 'soundfile', 'numpy'],
         # 'Support for Leap Motion backend': ['git+ssh://git@github.com:BlackLight/leap-sdk-python3.git'],
-        # 'Support for Flic buttons': ['git+ssh://git@github.com/50ButtonsEach/fliclib-linux-hci']
+        # 'Support for Flic buttons': ['git+https://@github.com/50ButtonsEach/fliclib-linux-hci.git']
     },
 )
 
