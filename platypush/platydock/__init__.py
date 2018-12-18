@@ -92,7 +92,7 @@ def generate_dockerfile(deps, ports, cfgfile, devdir):
     for port in ports:
         content += 'EXPOSE {}\n'.format(port)
 
-    content += '\nCMD ["python", "-m", "platypush"]\n'
+    content += '\nCMD ["python3", "-m", "platypush"]\n'
     dockerfile = os.path.join(devdir, 'Dockerfile')
     print('Generating Dockerfile {}'.format(dockerfile))
 
