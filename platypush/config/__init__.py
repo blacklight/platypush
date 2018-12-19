@@ -39,6 +39,7 @@ class Config(object):
     }
 
     _workdir_location = os.path.join(os.environ['HOME'], '.local', 'share', 'platypush')
+    _included_files = set()
 
     def __init__(self, cfgfile=None):
         """
@@ -134,6 +135,7 @@ class Config(object):
                 for include_file in include_files:
                     if not os.path.isabs(include_file):
                         include_file = os.path.join(cfgfile_dir, include_file)
+                    self._included_files.add(os.path.abspath(include_file))
 
                     included_config = self._read_config_file(include_file)
                     for incl_section in included_config.keys():
