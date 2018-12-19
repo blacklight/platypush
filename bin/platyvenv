@@ -36,6 +36,7 @@ function build {
 
     echo "Parsing configuration file"
     deps=()
+    includes=()
 
     while read -r line; do
         echo $line | egrep '``pip install .+?``' > /dev/null 2>&1
@@ -49,7 +50,7 @@ function build {
 from platypush.config import Config
 from platypush.context import get_plugin, get_backend, register_backends
 
-Config.init('$cfgfile')
+Config.init('`realpath $cfgfile`')
 register_backends()
 backend_config = Config.get_backends()
 
@@ -66,11 +67,23 @@ for name in Config.get_plugins().keys():
 EOF
 )
 
+    while read -r include; do
+        includes+=($include)
+    done <<< $(python <<EOF
+from platypush.config import Config
+from platypush.context import get_plugin, get_backend, register_backends
+
+Config.init('`realpath $cfgfile`')
+
+for include in Config._included_files:
+    print(include)
+EOF
+)
 
     device_id=$(python <<EOF
 from platypush.config import Config
 
-Config.init('$cfgfile')
+Config.init('`realpath $cfgfile`')
 print(Config.get('device_id'))
 EOF
 )
@@ -79,9 +92,19 @@ EOF
     etcdir=$envdir/etc/platypush
 
     echo "Preparing virtual environment for device $device_id"
-    mkdir -p $envdir
-    mkdir -p $etcdir
-    cp $cfgfile $etcdir/config.yaml
+    mkdir -p "$envdir"
+    mkdir -p "$etcdir"
+    srcdir=`dirname "$cfgfile"`
+
+    for ((i=0; $i < ${#includes[@]}; i++)); do
+        incdir=`dirname "${includes[$i]}"`
+        incdir=`realpath --relative-to="$srcdir" "$incdir"`
+        destdir="$etcdir/$incdir"
+        mkdir -p "$destdir"
+        cp "${includes[$i]}" "$destdir"
+    done
+
+    cp "$cfgfile" "$etcdir/config.yaml"
     cfgfile=$etcdir/config.yaml
 
     python3 -m venv $envdir
