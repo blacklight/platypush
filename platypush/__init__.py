@@ -25,7 +25,7 @@ from .message.response import Response
 
 
 __author__ = 'Fabio Manganiello <blacklight86@gmail.com>'
-__version__ = '0.9.2'
+__version__ = '0.9.3'
 
 LOGGER = logging.getLogger(__name__)
 
