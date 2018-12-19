@@ -46,6 +46,7 @@ setup(
         'console_scripts': [
             'platypush=platypush:main',
             'pusher=platypush.pusher:main',
+            'platydock=platypush.platydock:main',
         ],
     },
     # data_files = [
