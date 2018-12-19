@@ -49,6 +49,7 @@ setup(
             'platydock=platypush.platydock:main',
         ],
     },
+    scripts = ['bin/platyvenv'],
     # data_files = [
     #     ('/etc/platypush', ['platypush/config.example.yaml'])
     # ],

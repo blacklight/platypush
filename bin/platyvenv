@@ -1,0 +1,236 @@
+#!/bin/bash
+
+##############################################################################
+# This script allows you to easily manage Platypush instances through Python #
+# virtual environment. You can build environments from a config.yaml file    #
+# and automatically managed the required dependencies, as well as start,     #
+# stop and remove them                                                       #
+#                                                                            #
+# @author: Fabio Manganiello <blacklight86@gmail.com>                        #
+# @licence: MIT                                                              #
+##############################################################################
+
+
+workdir=$HOME/.local/share/platypush/venv
+
+function build {
+    cfgfile=
+
+    while getopts ':c:' opt; do
+        case $opt in
+            c)
+                cfgfile=$OPTARG;;
+            \?)
+                echo "Invalid option: -$OPTARG" >&2
+                exit 1;;
+            :)
+                echo "Option -$OPTARG requires the path to a Platypush configuration file" >&2
+                exit 1;;
+        esac
+    done
+
+    if [ -z "$cfgfile" ]; then
+        echo "Usage: $0 build -c <path-to-platypush-config-file>" >&2
+        exit 1
+    fi
+
+    echo "Parsing configuration file"
+    deps=()
+
+    while read -r line; do
+        echo $line | egrep '``pip install .+?``' > /dev/null 2>&1
+        if (( $? != 0 )); then
+            continue
+        fi
+
+        dep=$(echo $line | sed -r -e 's/.*``pip install (.+?)``.*/\1/')
+        deps+=("$dep")
+    done <<< $(python <<EOF
+from platypush.config import Config
+from platypush.context import get_plugin, get_backend, register_backends
+
+Config.init('$cfgfile')
+register_backends()
+backend_config = Config.get_backends()
+
+for name in Config.get_backends().keys():
+    backend = get_backend(name)
+    print(backend.__doc__)
+
+for name in Config.get_plugins().keys():
+    try:
+        plugin = get_plugin(name)
+        print(plugin.__doc__)
+    except:
+        pass
+EOF
+)
+
+
+    device_id=$(python <<EOF
+from platypush.config import Config
+
+Config.init('$cfgfile')
+print(Config.get('device_id'))
+EOF
+)
+
+    envdir=$workdir/$device_id
+    etcdir=$envdir/etc/platypush
+
+    echo "Preparing virtual environment for device $device_id"
+    mkdir -p $envdir
+    mkdir -p $etcdir
+    cp $cfgfile $etcdir/config.yaml
+    cfgfile=$etcdir/config.yaml
+
+    python3 -m venv $envdir
+    cd $envdir
+    source $envdir/bin/activate
+
+    echo "Installing required dependencies"
+
+    for ((i=0; $i < ${#deps[@]}; i++)); do
+        echo ${deps[$i]}
+    done | sort -u | while read dep; do
+        pip install $dep
+    done
+
+    pip install --upgrade git+https://github.com/BlackLight/platypush.git
+    echo "Platypush virtual environment prepared under $envdir"
+}
+
+function start {
+    if [ -z "$1" ]; then
+        echo "Usage: $0 start <env-name>" >&2
+        exit 1
+    fi
+
+    env=$1
+    envdir=$workdir/$env
+    logsdir=$envdir/var/log/platypush
+    rundir=$envdir/var/run
+    pidfile=$rundir/platypush.pid
+    cfgfile=$envdir/etc/platypush/config.yaml
+
+    if [ ! -d "$envdir" ]; then
+        echo "No such directory: $envdir" >&2
+        exit 1
+    fi
+
+    mkdir -p $logsdir
+    mkdir -p $rundir
+
+    if [[ -f "$pidfile" ]]; then
+        pid=`cat "$pidfile"`
+        if ps -p $pid | grep platypush; then
+            echo "Another instance (PID $pid) is running, please stop that instance first"
+            exit 1
+        fi
+
+        echo "A PID file was found but the process doesn't seem to be running, starting anyway"
+        rm -f "$pidfile"
+    fi
+
+    python3 -m venv $envdir
+    cd $envdir
+    source bin/activate
+    bin/platypush -c "$cfgfile" -P "$pidfile" > $logsdir/stdout.log 2> $logsdir/stderr.log &
+    start_time=`date +'%s'`
+    timeout=30
+
+    while :; do
+        [[ -f "$pidfile" ]] && break
+        now=`date +'%s'`
+        let elapsed=$now-$start_time
+        if (( $elapsed >= $timeout )); then
+            echo "Platypush instance '$env' didn't start within $timeout seconds" >&2
+            exit 1
+        fi
+
+        echo -n '.'
+        sleep 1
+    done
+
+    pid=`cat "$pidfile"`
+    echo
+    echo "Platypush environment $env started with PID $pid, logs dir: $logsdir"
+}
+
+function stop {
+    if [ -z "$1" ]; then
+        echo "Usage: $0 stop <env-name>" >&2
+        exit 1
+    fi
+
+    env=$1
+    envdir=$workdir/$env
+    rundir=$envdir/var/run
+    pidfile=$rundir/platypush.pid
+
+    if [ ! -d "$envdir" ]; then
+        echo "No such directory: $envdir" >&2
+        exit 1
+    fi
+
+    if [[ ! -f "$pidfile" ]]; then
+        echo "No pidfile found for instance "$env""
+        exit 1
+    fi
+
+    pid=`cat "$pidfile"`
+    pids="$pid `ps --no-headers -o pid= --ppid $pid`"
+    kill -9 $pids
+    rm -f "$pidfile"
+    echo "Instance '$env' with PID $pid stopped"
+}
+
+function rme {
+    if [ -z "$1" ]; then
+        echo "Usage: $0 rm <env-name>" >&2
+        exit 1
+    fi
+
+    envdir=$workdir/$1
+    rundir=$envdir/var/run
+    pidfile=$rundir/platypush.pid
+
+    if [ ! -d "$envdir" ]; then
+        echo "No such directory: $envdir" >&2
+        exit 1
+    fi
+
+    if [[ -f "$pidfile" ]]; then
+        if ps -p `cat "$pidfile"` | grep platypush; then
+            echo "Another instance (PID $pidfile) is running, please stop that instance first"
+            exit 1
+        fi
+
+        echo "A PID file was found but the process doesn't seem to be running, removing anyway"
+    fi
+
+    rm -rf "$envdir"
+    echo "$envdir removed"
+}
+
+function usage {
+    echo "Usage: $0 <build|start|stop|rm> [options]" >&2
+    exit 1
+}
+
+if (( $# < 1 )); then
+    usage
+fi
+
+action=$1
+shift
+mkdir -p $workdir
+
+case $action in
+    'build') build $*;;
+    'start') start $*;;
+    'stop') stop $*;;
+    'rm') rme $*;;
+    *) usage;;
+esac
+
