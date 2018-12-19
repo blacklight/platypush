@@ -234,9 +234,8 @@ def rm(args):
     parser.add_argument('image', type=str, help='Platypush image to remove')
     opts, args = parser.parse_known_args(args)
 
-    devdir = os.path.join(workdir, Config.get('device_id'))
     subprocess.call(['docker', 'rmi', 'platypush-{}'.format(opts.image)])
-    subprocess.call(['rm', '-r', 'platypush-{}'.format(opts.image)])
+    subprocess.call(['rm', '-r', os.path.join(workdir, opts.image)])
 
 
 def ls(args):
