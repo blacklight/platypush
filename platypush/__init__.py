@@ -7,6 +7,7 @@ Platypush
 
 import argparse
 import logging
+import os
 import sys
 import traceback
 
@@ -41,20 +42,30 @@ class Daemon:
     # - plugins will post the responses they process
     bus = None
 
+    pidfile = None
+
     # backend_name => backend_obj map
     backends = None
 
     # number of executions retries before a request fails
     n_tries = 2
 
-    def __init__(self, config_file=None, requests_to_process=None):
+    def __init__(self, config_file=None, pidfile=None, requests_to_process=None):
         """
         Constructor
         Params:
             config_file -- Configuration file override (default: None)
+            pidfile -- File where platypush will store its PID upon launch,
+                       useful if you're planning to integrate the application
+                       within a service or a launcher script (default: None)
             requests_to_process -- Exit after processing the specified number
                                    of requests (default: None, loop forever)
         """
+
+        if pidfile:
+            self.pidfile = pidfile
+            with open(self.pidfile, 'w') as f:
+                f.write(os.getpid())
 
         self.config_file = config_file
         self.event_processor = EventProcessor()
@@ -74,9 +85,13 @@ class Daemon:
         parser = argparse.ArgumentParser()
         parser.add_argument('--config', '-c', dest='config', required=False,
                             default=None, help=cls.config_file.__doc__)
+        parser.add_argument('--pidfile', '-P', dest='pidfile', required=False,
+                            default=None, help="File where platypush will " +
+                            "store its PID, useful if you're planning to " +
+                            "integrate it in a service")
 
         opts, args = parser.parse_known_args(args)
-        return cls(config_file=opts.config)
+        return cls(config_file=opts.config, pidfile=opts.pidfile)
 
     def on_message(self):
         """
