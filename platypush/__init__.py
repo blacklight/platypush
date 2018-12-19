@@ -65,7 +65,7 @@ class Daemon:
         if pidfile:
             self.pidfile = pidfile
             with open(self.pidfile, 'w') as f:
-                f.write(os.getpid())
+                f.write(str(os.getpid()))
 
         self.config_file = config_file
         self.event_processor = EventProcessor()
