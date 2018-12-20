@@ -20,7 +20,7 @@ class TorrentPlugin(Plugin):
 
     Requires:
 
-        * **python-libtorrent** (``pip install python-libtorrent``)
+        * **python-libtorrent** (``pip install git+https://github.com/arvidn/libtorrent``)
         * **requests** (``pip install requests``) [optional] for torrent info URL download
     """
 
