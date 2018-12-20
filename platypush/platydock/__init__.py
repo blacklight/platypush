@@ -66,13 +66,25 @@ def generate_dockerfile(deps, ports, cfgfile, devdir):
         RUN mkdir -p /usr/local/share/platypush\n
         ''').lstrip()
 
+    srcdir = os.path.dirname(cfgfile)
     cfgfile_copy = os.path.join(devdir, 'config.yaml')
-    with open(cfgfile) as src_f:
-        with open(cfgfile_copy, 'w') as dest_f:
-            for line in src_f:
-                dest_f.write(line)
+    subprocess.call(['cp', cfgfile, cfgfile_copy])
+    content += 'COPY config.yaml /etc/platypush/\n'
 
-    content += 'COPY config.yaml /etc/platypush/'
+    for include in Config._included_files:
+        incdir = os.path.relpath(os.path.dirname(include), srcdir)
+        destdir = os.path.join(devdir, incdir)
+
+        try:
+            os.makedirs(destdir)
+        except FileExistsError:
+            pass
+
+        subprocess.call(['cp', include, destdir])
+        content += 'RUN mkdir -p /etc/platypush/' + incdir + '\n'
+        content += 'COPY ' + os.path.relpath(include, srcdir) + \
+            ' /etc/platypush/' + incdir + '\n'
+
 
     content += textwrap.dedent(
         '''
