@@ -69,10 +69,21 @@ class IcalCalendarPlugin(Plugin, CalendarInterface):
         """
 
         events = []
-        response = requests.get(self.url)
+        try:
+            response = requests.get(self.url)
+        except Exception as e:
+            self.logger.exception(e)
+            return events
 
         if response.ok:
-            calendar = Calendar.from_ical(response.text)
+            calendar = None
+
+            try:
+                calendar = Calendar.from_ical(response.text)
+            except Exception as e:
+                self.logger.exception(e)
+                return events
+
             for event in calendar.walk():
                 if event.name != 'VEVENT':
                     continue  # Not an event
