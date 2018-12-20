@@ -107,7 +107,8 @@ class CalendarPlugin(Plugin, CalendarInterface):
         events = []
 
         for calendar in self.calendars:
-            events.extend(calendar.get_upcoming_events().output)
+            cal_events = calendar.get_upcoming_events().output or []
+            events.extend(cal_events)
 
         events = sorted(events, key=lambda event:
                         dateutil.parser.parse(
