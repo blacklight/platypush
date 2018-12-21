@@ -62,8 +62,8 @@ class SoundPlugin(Plugin):
 
         super().__init__(*args, **kwargs)
 
-        self.input_device = input_device or 0
-        self.output_device = output_device or 0
+        self.input_device = input_device
+        self.output_device = output_device
         self.input_blocksize = input_blocksize
         self.output_blocksize = output_blocksize
         self.playback_bufsize = playback_bufsize
@@ -74,6 +74,17 @@ class SoundPlugin(Plugin):
         self.recording_state = RecordingState.STOPPED
         self.recording_state_lock = RLock()
         self.recording_paused_changed = Event()
+
+    def _get_default_device(self, category):
+        """
+        Query the default audio devices.
+
+        :param category: Device category to query. Can be either input or output
+        :type category: str
+        """
+
+        import sounddevice as sd
+        return sd.query_hostapis()[0].get('default_' + category.lower() + '_device')
 
     @action
     def query_devices(self, category=None):
@@ -158,6 +169,8 @@ class SoundPlugin(Plugin):
 
         if device is None:
             device = self.output_device
+        if device is None:
+            device = self._get_default_device('output')
 
         def audio_callback(outdata, frames, time, status):
             if self._get_playback_state() == PlaybackState.STOPPED:
@@ -288,6 +301,8 @@ class SoundPlugin(Plugin):
 
         if device is None:
             device = self.input_device
+        if device is None:
+            device = self._get_default_device('input')
 
         if sample_rate is None:
             dev_info = sd.query_devices(device, 'input')
@@ -394,9 +409,13 @@ class SoundPlugin(Plugin):
 
         if input_device is None:
             input_device = self.input_device
+        if input_device is None:
+            input_device = self._get_default_device('input')
 
         if output_device is None:
             output_device = self.output_device
+        if output_device is None:
+            output_device = self._get_default_device('output')
 
         if sample_rate is None:
             dev_info = sd.query_devices(input_device, 'input')
