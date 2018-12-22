@@ -2,6 +2,8 @@
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
 """
 
+import json
+import math
 import os
 import queue
 import tempfile
@@ -25,6 +27,131 @@ class RecordingState(Enum):
     PAUSED='PAUSED'
 
 
+class Sound(object):
+    """
+    Class model a synthetic sound that can be played through the audio device
+    """
+
+    STANDARD_A_FREQUENCY = 440.0
+    STANDARD_A_MIDI_NOTE = 69
+    _DEFAULT_BLOCKSIZE = 2048
+    _DEFAULT_BUFSIZE = 20
+    _DEFAULT_SAMPLERATE = 44100
+
+    midi_note = None
+    frequency = None
+    gain = 1.0
+    duration = None
+
+    def __init__(self, midi_note=midi_note, frequency=None, gain=gain,
+                 duration=duration, A_frequency=STANDARD_A_FREQUENCY):
+        """
+        You can construct a sound either from a MIDI note or a base frequency
+
+        :param midi_note: MIDI note code, see
+            https://newt.phys.unsw.edu.au/jw/graphics/notes.GIF
+        :type midi_note: int
+
+        :param frequency: Sound base frequency in Hz
+        :type frequency: float
+
+        :param gain: Note gain/volume between 0.0 and 1.0 (default: 1.0)
+        :type gain: float
+
+        :param duration: Note duration in seconds. Default: keep until
+            release/pause/stop
+        :type duration: float
+
+        :param A_frequency: Reference A4 frequency (default: 440 Hz)
+        :type A_frequency: float
+        """
+
+        if midi_note and frequency:
+            raise RuntimeError('Please specify either a MIDI note or a base ' +
+                               'frequency')
+
+        # TODO support for multiple notes/frequencies, either for chords or
+        # harmonics
+
+        if midi_note:
+            self.midi_note = midi_note
+            self.frequency = self.note_to_freq(midi_note=midi_note,
+                                               A_frequency=A_frequency)
+        elif frequency:
+            self.frequency = frequency
+            self.midi_note = self.freq_to_note(frequency=frequency,
+                                               A_frequency=A_frequency)
+        else:
+            raise RuntimeError('Please specify either a MIDI note or a base ' +
+                               'frequency')
+
+        self.gain = gain
+        self.duration = duration
+
+    @classmethod
+    def note_to_freq(cls, midi_note, A_frequency=STANDARD_A_FREQUENCY):
+        """
+        Converts a MIDI note to its frequency in Hz
+
+        :param midi_note: MIDI note to convert
+        :type midi_note: int
+
+        :param A_frequency: Reference A4 frequency (default: 440 Hz)
+        :type A_frequency: float
+        """
+
+        return (2.0 ** ((midi_note - cls.STANDARD_A_MIDI_NOTE) / 12.0)) \
+            * A_frequency
+
+    @classmethod
+    def freq_to_note(cls, frequency, A_frequency=STANDARD_A_FREQUENCY):
+        """
+        Converts a frequency in Hz to its closest MIDI note
+
+        :param frequency: Frequency in Hz
+        :type midi_note: float
+
+        :param A_frequency: Reference A4 frequency (default: 440 Hz)
+        :type A_frequency: float
+        """
+
+        # TODO return also the offset in % between the provided frequency
+        # and the standard MIDI note frequency
+        return int(12.0 * math.log(frequency/A_frequency, 2)
+                   + cls.STANDARD_A_MIDI_NOTE)
+
+    def get_wave(self, t_start=0., t_end=0., samplerate=_DEFAULT_SAMPLERATE):
+        """
+        Get the wave binary data associated to this sound
+
+        :param t_start: Start offset for the sine wave in seconds. Default: 0
+        :type t_start: float
+
+        :param t_end: End offset for the sine wave in seconds. Default: 0
+        :type t_end: float
+
+        :param samplerate: Audio sample rate. Default: 44100 Hz
+        :type samplerate: int
+
+        :returns: A numpy.ndarray[n,1] with the raw float values
+        """
+
+        import numpy as np
+        x = np.linspace(t_start, t_end, int((t_end-t_start)*samplerate))
+
+        x = x.reshape(len(x), 1)
+        return self.gain * np.sin(2 * np.pi * self.frequency * x)
+
+
+    def __str__(self):
+        return json.dumps({
+            'midi_note': midi_note,
+            'frequency': frequency,
+            'gain': gain,
+            'duration': duration,
+        })
+
+
 class SoundPlugin(Plugin):
     """
     Plugin to interact with a sound device.
@@ -36,13 +163,10 @@ class SoundPlugin(Plugin):
         * **numpy** (``pip install numpy``)
     """
 
-    _DEFAULT_BLOCKSIZE = 2048
-    _DEFAULT_BUFSIZE = 20
-
     def __init__(self, input_device=None, output_device=None,
-                 input_blocksize=_DEFAULT_BLOCKSIZE,
-                 output_blocksize=_DEFAULT_BLOCKSIZE,
-                 playback_bufsize=_DEFAULT_BUFSIZE, *args, **kwargs):
+                 input_blocksize=Sound._DEFAULT_BLOCKSIZE,
+                 output_blocksize=Sound._DEFAULT_BLOCKSIZE,
+                 playback_bufsize=Sound._DEFAULT_BUFSIZE, *args, **kwargs):
         """
         :param input_device: Index or name of the default input device. Use :method:`platypush.plugins.sound.query_devices` to get the available devices. Default: system default
         :type input_device: int or str
@@ -135,37 +259,73 @@ class SoundPlugin(Plugin):
 
 
     @action
-    def play(self, file, device=None, blocksize=None, bufsize=_DEFAULT_BUFSIZE):
+    def play(self, file=None, sounds=None, device=None, blocksize=None,
+             bufsize=Sound._DEFAULT_BUFSIZE, samplerate=None, channels=None):
         """
-        Plays a sound file (support formats: wav, raw)
+        Plays a sound file (support formats: wav, raw) or a synthetic sound.
 
-        :param file: Sound file
+        :param file: Sound file path. Specify this if you want to play a file
         :type file: str
 
-        :param device: Output device (default: default configured device or system default audio output if not configured)
+        :param sounds: Sounds to play. Specify this if you want to play
+            synthetic sounds. TODO: So far only one single-frequency sound is
+            supported, support for multiple sounds, chords, harmonics and mixed
+            sounds is ont the way.
+        :type sounds: list[Sound]. You can initialize it either from a list
+            of `Sound` objects or from its JSON representation, e.g.:
+
+                [
+                    {
+                        "midi_note": 69,  # 440 Hz A
+                        "gain":      1.0, # Maximum volume
+                        "duration":  1.0  # 1 second or until release/pause/stop
+                    }
+                ]
+
+        :param device: Output device (default: default configured device or
+            system default audio output if not configured)
         :type device: int or str
 
-        :param blocksize: Audio block size (default: configured `output_blocksize` or 2048)
+        :param blocksize: Audio block size (default: configured
+            `output_blocksize` or 2048)
         :type blocksize: int
 
         :param bufsize: Size of the audio buffer (default: 20)
         :type bufsize: int
+
+        :param samplerate: Audio samplerate. Default: audio file samplerate if
+            in file mode, 44100 Hz if in synth mode
+        :type samplerate: int
+
+        :param channels: Number of audio channels. Default: number of channels
+            in the audio file in file mode, 1 if in synth mode
+        :type channels: int
         """
+
+        if not file and not sounds:
+            raise RuntimeError('Please specify either a file to play or a ' +
+                               'list of sound objects')
 
         import sounddevice as sd
 
         if self._get_playback_state() != PlaybackState.STOPPED:
-            self.stop_playback()
-            time.sleep(2)
+            if file:
+                self.logger.info('Stopping playback before playing')
+                self.stop_playback()
+                time.sleep(2)
 
         if blocksize is None:
             blocksize = self.output_blocksize
 
         self.playback_paused_changed.clear()
 
-        q = queue.Queue(maxsize=bufsize)
         completed_callback_event = Event()
-        file = os.path.abspath(os.path.expanduser(file))
+        q = queue.Queue(maxsize=bufsize)
+        f = None
+        t = 0.
+
+        if file:
+            file = os.path.abspath(os.path.expanduser(file))
 
         if device is None:
             device = self.output_device
@@ -182,7 +342,7 @@ class SoundPlugin(Plugin):
             assert frames == blocksize
             if status.output_underflow:
                 self.logger.warning('Output underflow: increase blocksize?')
-                outdata = b'\x00' * len(outdata)
+                outdata = (b'\x00' if file else 0.) * len(outdata)
                 return
 
             assert not status
@@ -195,59 +355,118 @@ class SoundPlugin(Plugin):
 
             if len(data) < len(outdata):
                 outdata[:len(data)] = data
-                outdata[len(data):] = b'\x00' * (len(outdata) - len(data))
-                raise sd.CallbackStop
+                outdata[len(data):] = (b'\x00' if file else 0.) * \
+                    (len(outdata) - len(data))
+
+                # if f:
+                #     raise sd.CallbackStop
             else:
                 outdata[:] = data
 
+
         try:
-            import soundfile as sf
+            if file:
+                import soundfile as sf
+                f = sf.SoundFile(file)
 
-            with sf.SoundFile(file) as f:
-                self.start_playback()
-                self.logger.info('Started playback of [{}] to device [{}]'.
-                                 format(file, device))
+            if not samplerate:
+                samplerate = f.samplerate if f else Sound._DEFAULT_SAMPLERATE
 
-                for _ in range(bufsize):
+            if not channels:
+                channels = f.channels if f else 1
+
+            self.start_playback()
+            self.logger.info('Started playback of {} to device [{}]'.
+                                format(file or sounds, device))
+
+            if sounds:
+                if isinstance(sounds, str):
+                    sounds = json.loads(sounds)
+
+                for i in range(0, len(sounds)):
+                    if isinstance(sounds[i], dict):
+                        sounds[i] = Sound(**(sounds[i]))
+
+            # Audio queue pre-fill loop
+            for _ in range(bufsize):
+                if f:
                     data = f.buffer_read(blocksize, dtype='float32')
                     if not data:
                         break
+                else:
+                    # TODO support for multiple sounds or mixed sounds
+                    sound = sounds[0]
+                    blocktime = float(blocksize / samplerate)
+                    next_t = min(t+blocktime, sound.duration) \
+                        if sound.duration is not None else t+blocktime
 
+                    data = sound.get_wave(t_start=t, t_end=next_t,
+                                          samplerate=samplerate)
+                    t = next_t
+
+                    if sound.duration is not None and t >= sound.duration:
+                        break
+
+                while self._get_playback_state() == PlaybackState.PAUSED:
+                    self.playback_paused_changed.wait()
+
+                if self._get_playback_state() == PlaybackState.STOPPED:
+                    raise sd.CallbackAbort
+
+                q.put_nowait(data)  # Pre-fill the audio queue
+
+            streamtype = sd.RawOutputStream if file else sd.OutputStream
+            stream = streamtype(samplerate=samplerate, blocksize=blocksize,
+                                device=device, channels=channels,
+                                dtype='float32', callback=audio_callback,
+                                finished_callback=completed_callback_event.set)
+
+            with stream:
+                # Timeout set until we expect all the buffered blocks to
+                # be consumed
+                timeout = blocksize * bufsize / samplerate
+
+                while True:
                     while self._get_playback_state() == PlaybackState.PAUSED:
                         self.playback_paused_changed.wait()
+
+                    if f:
+                        data = f.buffer_read(blocksize, dtype='float32')
+                        if not data:
+                            break
+                    else:
+                        # TODO support for multiple sounds or mixed sounds
+                        sound = sounds[0]
+                        blocktime = float(blocksize / samplerate)
+                        next_t = min(t+blocktime, sound.duration) \
+                            if sound.duration is not None else t+blocktime
+
+                        data = sound.get_wave(t_start=t, t_end=next_t,
+                                              samplerate=samplerate)
+                        t = next_t
+
+                        if sound.duration is not None and t >= sound.duration:
+                            break
 
                     if self._get_playback_state() == PlaybackState.STOPPED:
                         raise sd.CallbackAbort
 
-                    q.put_nowait(data)
+                    try:
+                        q.put(data, timeout=timeout)
+                    except queue.Full as e:
+                        if self._get_playback_state() != PlaybackState.PAUSED:
+                            raise e
 
-                stream = sd.RawOutputStream(
-                    samplerate=f.samplerate, blocksize=blocksize,
-                    device=device, channels=f.channels, dtype='float32',
-                    callback=audio_callback,
-                    finished_callback=completed_callback_event.set)
-
-                with stream:
-                    timeout = blocksize * bufsize / f.samplerate
-                    while data:
-                        while self._get_playback_state() == PlaybackState.PAUSED:
-                            self.playback_paused_changed.wait()
-
-                        data = f.buffer_read(blocksize, dtype='float32')
-
-                        if self._get_playback_state() == PlaybackState.STOPPED:
-                            raise sd.CallbackAbort
-
-                        try:
-                            q.put(data, timeout=timeout)
-                        except queue.Full as e:
-                            if self._get_playback_state() != PlaybackState.PAUSED:
-                                raise e
-
-                    completed_callback_event.wait()
+                completed_callback_event.wait()
+                # if sounds:
+                #     sd.wait()
         except queue.Full as e:
             self.logger.warning('Playback timeout: audio callback failed?')
         finally:
+            if f and not f.closed:
+                f.close()
+                f = None
+
             self.stop_playback()
 
 
@@ -297,6 +516,7 @@ class SoundPlugin(Plugin):
                                    dir='')
 
         if os.path.isfile(file):
+            self.logger.info('Removing existing audio file {}'.format(file))
             os.unlink(file)
 
         if device is None:
