@@ -414,6 +414,7 @@ class SoundPlugin(Plugin):
                 q.put_nowait(data)  # Pre-fill the audio queue
 
             streamtype = sd.RawOutputStream if file else sd.OutputStream
+            completed_callback_event = Event()
             stream = streamtype(samplerate=samplerate, blocksize=blocksize,
                                 device=device, channels=channels,
                                 dtype='float32',
