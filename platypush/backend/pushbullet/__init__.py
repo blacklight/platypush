@@ -5,7 +5,7 @@ import time
 import websockets
 
 from platypush.config import Config
-from platypush.context import create_event_loop
+from platypush.context import get_or_create_event_loop
 from platypush.message import Message
 from platypush.message.event.pushbullet import PushbulletEvent
 
@@ -30,6 +30,9 @@ class PushbulletBackend(Backend):
         * **requests** (``pip install requests``)
         * **websockets** (``pip install websockets``)
     """
+
+    _PUSHBULLET_WS_URL = 'wss://stream.pushbullet.com/websocket/'
+    _WS_PING_INTERVAL = 10
 
     def __init__(self, token, device='Platypush', **kwargs):
         """
@@ -133,28 +136,36 @@ class PushbulletBackend(Backend):
 
     def on_error(self, ws, e):
         self.logger.exception(e)
-        self.logger.info('Restarting PushBullet backend')
-        ws.close()
-        self._init_socket()
 
     def _init_socket(self):
         async def pushbullet_client():
-            async with websockets.connect('wss://stream.pushbullet.com/websocket/'
-                                          + self.token) as self.ws:
-                while True:
-                    try:
-                        push = await self.ws.recv()
-                    except Exception as e:
-                        self.on_error(self.ws, e)
-                        break
+            while True:
+                try:
+                    self.logger.info('Connecting to Pushbullet websocket URL {}'
+                                     .format(self._PUSHBULLET_WS_URL))
 
-                    self.on_push(self.ws, push)
+                    async with websockets.connect(self._PUSHBULLET_WS_URL +
+                                                  self.token) as self.ws:
+                        self.logger.info('Connection to Pushbullet successful')
+
+                        while True:
+                            try:
+                                push = await self.ws.recv()
+                            except Exception as e:
+                                self.logger.exception(e)
+                                break
+
+                            self.on_push(self.ws, push)
+                except Exception as e:
+                    self.logger.exception(e)
 
         self.close()
+        loop = None
 
-        loop = create_event_loop()
+        loop = get_or_create_event_loop()
         loop.run_until_complete(pushbullet_client())
         loop.run_forever()
+
 
     def create_device(self, name):
         return requests.post(
