@@ -98,6 +98,7 @@ class PushbulletBackend(Backend):
         return is_duplicate
 
     def on_push(self, ws, data):
+        print('***** {}'.format(data))
         try:
             # Parse the push
             try:
@@ -145,7 +146,7 @@ class PushbulletBackend(Backend):
                     try:
                         push = await self.ws.recv()
                     except Exception as e:
-                        self.on_error(ws, e)
+                        self.on_error(self.ws, e)
                         break
 
                     self.on_push(self.ws, push)
