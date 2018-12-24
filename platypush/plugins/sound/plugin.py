@@ -172,7 +172,8 @@ class SoundPlugin(Plugin):
 
     @action
     def play(self, file=None, sound=None, device=None, blocksize=None,
-             bufsize=Sound._DEFAULT_BUFSIZE, samplerate=None, channels=None):
+             bufsize=Sound._DEFAULT_BUFSIZE, samplerate=None, channels=None,
+             stream_index=None):
         """
         Plays a sound file (support formats: wav, raw) or a synthetic sound.
 
@@ -209,6 +210,11 @@ class SoundPlugin(Plugin):
         :param channels: Number of audio channels. Default: number of channels
             in the audio file in file mode, 1 if in synth mode
         :type channels: int
+
+        :param stream_index: If specified, play to an already active stream
+            index (you can get them through
+            :method:`platypush.plugins.sound.query_active_streams`). Default:
+            creates a new audio stream through PortAudio.
         """
 
         if not file and not sound:
@@ -222,7 +228,6 @@ class SoundPlugin(Plugin):
 
         self.playback_paused_changed.clear()
 
-        stream_index = None
         q = queue.Queue(maxsize=bufsize)
         f = None
         t = 0.
@@ -273,17 +278,23 @@ class SoundPlugin(Plugin):
 
                 q.put_nowait(data)  # Pre-fill the audio queue
 
-            streamtype = sd.RawOutputStream if file else sd.OutputStream
-            completed_callback_event = Event()
-            stream = streamtype(samplerate=samplerate, blocksize=blocksize,
-                                device=device, channels=channels,
-                                dtype='float32',
-                                callback=self._play_audio_callback(
-                                    q=q, blocksize=blocksize,
-                                    streamtype=streamtype),
-                                finished_callback=completed_callback_event.set)
 
-            stream_index = self.start_playback(stream, completed_callback_event)
+            if stream_index is None:
+                completed_callback_event = Event()
+                streamtype = sd.RawOutputStream if file else sd.OutputStream
+                stream = streamtype(samplerate=samplerate, blocksize=blocksize,
+                                    device=device, channels=channels,
+                                    dtype='float32',
+                                    callback=self._play_audio_callback(
+                                        q=q, blocksize=blocksize,
+                                        streamtype=streamtype),
+                                    finished_callback=completed_callback_event.set)
+
+                stream_index = self.start_playback(stream,
+                                                   completed_callback_event)
+            else:
+                stream = self.active_streams[stream_index]
+                completed_callback_event = self.completed_callback_events[stream_index]
 
             with stream:
                 # Timeout set until we expect all the buffered blocks to
@@ -327,7 +338,7 @@ class SoundPlugin(Plugin):
                 f.close()
                 f = None
 
-            self.stop_playback(stream_index)
+            self.stop_playback([stream_index])
 
 
     @action
@@ -533,12 +544,12 @@ class SoundPlugin(Plugin):
         except queue.Empty as e:
             self.logger.warning('Recording timeout: audio callback failed?')
         finally:
-            self.stop_playback(stream_index)
+            self.stop_playback([stream_index])
             self.stop_recording()
 
 
     @action
-    def get_active_streams(self):
+    def query_active_streams(self):
         """
         :returns: A list of active players
         """
@@ -572,7 +583,12 @@ class SoundPlugin(Plugin):
         return stream_index
 
     @action
-    def stop_playback(self, *streams):
+    def stop_playback(self, streams=None):
+        """
+        :param streams: Stream to stop by index (default: all)
+        :type streams: list[int]
+        """
+
         with self.playback_state_lock:
             if not streams:
                 streams = self.active_streams.keys()
