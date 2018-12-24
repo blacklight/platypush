@@ -152,7 +152,9 @@ class PushbulletBackend(Backend):
                             try:
                                 push = await self.ws.recv()
                             except Exception as e:
-                                self.logger.exception(e)
+                                self.logger.warning('Disconnected from ' +
+                                                    'Pushbullet: {}'.
+                                                    format(str(e)))
                                 break
 
                             self.on_push(self.ws, push)
