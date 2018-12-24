@@ -5,7 +5,7 @@ import time
 import websockets
 
 from platypush.config import Config
-from platypush.context import get_or_create_event_loop
+from platypush.context import create_event_loop
 from platypush.message import Message
 from platypush.message.event.pushbullet import PushbulletEvent
 
@@ -98,7 +98,6 @@ class PushbulletBackend(Backend):
         return is_duplicate
 
     def on_push(self, ws, data):
-        print('***** {}'.format(data))
         try:
             # Parse the push
             try:
@@ -152,8 +151,8 @@ class PushbulletBackend(Backend):
                     self.on_push(self.ws, push)
 
         self.close()
-        loop = get_or_create_event_loop()
 
+        loop = create_event_loop()
         loop.run_until_complete(pushbullet_client())
         loop.run_forever()
 
