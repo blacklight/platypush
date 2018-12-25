@@ -199,6 +199,8 @@ class Mix(object):
             is set. Possible values: "``scale``" (scale down the frame to remove
             the clipping) or "``clip``" (saturate the values above/below range).
             Default: "``scale``".
+        :type on_clip: str
+
         :param samplerate: Audio sample rate. Default: 44100 Hz
         :type samplerate: int
 
