@@ -581,6 +581,8 @@ class SoundPlugin(Plugin):
 
         for i, stream in streams.items():
             stream['playback_state'] = self.playback_state[i].name
+            if i in self.stream_mixes:
+                stream['mix'] = list(self.stream_mixes[i])
 
         return streams
 
