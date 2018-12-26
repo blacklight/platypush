@@ -13,8 +13,9 @@ class Sound(object):
 
     STANDARD_A_FREQUENCY = 440.0
     STANDARD_A_MIDI_NOTE = 69
-    _DEFAULT_BLOCKSIZE = 2048
-    _DEFAULT_BUFSIZE = 20
+    _DEFAULT_BLOCKSIZE = 1024
+    _DEFAULT_SYNTH_BUFSIZE = 2
+    _DEFAULT_FILE_BUFSIZE = 20
     _DEFAULT_SAMPLERATE = 44100
 
     midi_note = None
@@ -159,9 +160,11 @@ class Mix(object):
     through an audio stream to an audio device
     """
 
-    _sounds = []
+    _sounds = None
 
     def __init__(self, *sounds):
+        self._sounds = []
+
         for sound in sounds:
             self.add(sound)
 
@@ -233,6 +236,23 @@ class Mix(object):
                                        '"scale" or "clip"')
 
         return wave
+
+
+    def duration(self):
+        """
+        :returns: The duration of the mix in seconds as duration of its longest
+            sample, or None if the mixed sample have no duration set
+        """
+
+        duration = 0
+
+        for sound in self._sounds:
+            if sound.duration is None:
+                return None
+
+            duration = max(duration, sound.duration)
+
+        return duration
 
 
 # vim:sw=4:ts=4:et:

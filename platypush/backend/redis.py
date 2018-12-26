@@ -78,9 +78,13 @@ class RedisBackend(Backend):
                      format(self.queue, self.redis_args))
 
         while not self.should_stop():
-            msg = self.get_message()
-            self.logger.info('Received message on the Redis backend: {}'.format(msg))
-            self.on_message(msg)
+            try:
+                msg = self.get_message()
+                self.logger.info('Received message on the Redis backend: {}'.
+                                 format(msg))
+                self.on_message(msg)
+            except Exception as e:
+                self.logger.exception(e)
 
 
 # vim:sw=4:ts=4:et:
