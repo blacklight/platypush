@@ -56,8 +56,9 @@ class Sound(object):
             release/pause/stop
         :type duration: float
 
-        :param shape: Wave shape. Possible values: "``sin``", "``square``" or
-            "``triang``" (see :class:`WaveSound`). Default: "``sin``"
+        :param shape: Wave shape. Possible values: "``sin``", "``square``",
+            "``sawtooth``" or "``triang``" (see :class:`WaveSound`).
+            Default: "``sin``"
         :type shape: str
 
         :param A_frequency: Reference A4 frequency (default: 440 Hz)
