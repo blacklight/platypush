@@ -2,8 +2,16 @@
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
 """
 
+import enum
 import json
 import math
+
+
+class WaveShape(enum.Enum):
+    SIN='sin'
+    SQUARE='square'
+    SAWTOOTH='sawtooth'
+    TRIANG='triang'
 
 
 class Sound(object):
@@ -23,9 +31,11 @@ class Sound(object):
     phase = 0.0
     gain = 1.0
     duration = None
+    shape = None
 
     def __init__(self, midi_note=midi_note, frequency=None, phase=phase,
-                 gain=gain, duration=duration, A_frequency=STANDARD_A_FREQUENCY):
+                 gain=gain, duration=duration, shape=WaveShape.SIN,
+                 A_frequency=STANDARD_A_FREQUENCY):
         """
         You can construct a sound either from a MIDI note or a base frequency
 
@@ -45,6 +55,10 @@ class Sound(object):
         :param duration: Note duration in seconds. Default: keep until
             release/pause/stop
         :type duration: float
+
+        :param shape: Wave shape. Possible values: "``sin``", "``square``" or
+            "``triang``" (see :class:`WaveSound`). Default: "``sin``"
+        :type shape: str
 
         :param A_frequency: Reference A4 frequency (default: 440 Hz)
         :type A_frequency: float
@@ -69,6 +83,7 @@ class Sound(object):
         self.phase = phase
         self.gain = gain
         self.duration = duration
+        self.shape = WaveShape(shape)
 
     @classmethod
     def note_to_freq(cls, midi_note, A_frequency=STANDARD_A_FREQUENCY):
@@ -122,7 +137,23 @@ class Sound(object):
         x = np.linspace(t_start, t_end, int((t_end-t_start)*samplerate))
 
         x = x.reshape(len(x), 1)
-        return self.gain * np.sin((2*np.pi*self.frequency*x) + np.pi*self.phase)
+
+        if self.shape == WaveShape.SIN or self.shape == WaveShape.SQUARE:
+            wave = np.sin((2*np.pi*self.frequency*x) + np.pi*self.phase)
+
+            if self.shape == WaveShape.SQUARE:
+                wave[wave < 0] = -1
+                wave[wave >= 0] = 1
+        elif self.shape == WaveShape.SAWTOOTH:
+            wave = 2 * (self.frequency*x -
+                        np.floor(0.5 + self.frequency*x))
+        elif self.shape == WaveShape.TRIANG:
+            wave = 2 * np.abs(2 * (self.frequency*x -
+                        np.floor(0.5 + self.frequency*x))) -1
+        else:
+            raise RuntimeError('Unsupported wave shape: {}'.format(self.shape))
+
+        return self.gain * wave
 
 
     def __iter__(self):
