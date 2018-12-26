@@ -214,6 +214,15 @@ class Mix(object):
         self._sounds.append(Sound.build(sound))
 
 
+    def remove(self, sound_index):
+        if sound_index >= len(self._sounds):
+            self.logger.error('No such sound index: {} in mix {}'.format(
+                sound_index, list(self)))
+            return
+
+        self._sounds.pop(sound_index)
+
+
     def get_wave(self, t_start=0., t_end=0., normalize_range=(-1.0, 1.0),
                  on_clip='scale', samplerate=Sound._DEFAULT_SAMPLERATE):
         """

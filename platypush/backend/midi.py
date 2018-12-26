@@ -24,13 +24,19 @@ class MidiBackend(Backend):
     def __init__(self, device_name=None, port_number=None,
                  midi_throttle_time=None, *args, **kwargs):
         """
-        :param device_name: Name of the MIDI device.  *N.B.* either `device_name` or `port_number` must be set
+        :param device_name: Name of the MIDI device.  *N.B.* either
+            `device_name` or `port_number` must be set.
+            Use :method:`platypush.plugins.midi.query_ports` to get the
+            available ports indices and names
         :type device_name: str
 
         :param port_number: MIDI port number
         :type port_number: int
 
-        :param midi_throttle_time: If set, the MIDI events will be throttled - max one per selected time frame (in seconds). Set this parameter if you want to synchronize MIDI events with plugins that normally operate with a lower throughput.
+        :param midi_throttle_time: If set, the MIDI events will be throttled -
+            max one per selected time frame (in seconds). Set this parameter if
+            you want to synchronize MIDI events with plugins that normally
+            operate with a lower throughput.
         :type midi_throttle_time: int
         """
 

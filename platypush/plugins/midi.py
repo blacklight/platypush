@@ -120,5 +120,20 @@ class MidiPlugin(Plugin):
             self.release_note(note)
 
 
+    @action
+    def query_ports(self):
+        """
+        :returns: dict: A list of the available MIDI ports with index and name
+        """
+
+        in_ports = rtmidi.MidiIn().get_ports()
+        out_ports = rtmidi.MidiOut().get_ports()
+
+        return {
+            'in': { i: port for i, port in enumerate(in_ports) },
+            'out': { i: port for i, port in enumerate(out_ports) },
+        }
+
+
 # vim:sw=4:ts=4:et:
 

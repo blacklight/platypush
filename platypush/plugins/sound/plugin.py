@@ -325,7 +325,7 @@ class SoundPlugin(Plugin):
                             if duration is not None else t+blocktime
 
                         data = mix.get_wave(t_start=t, t_end=next_t,
-                                              samplerate=samplerate)
+                                            samplerate=samplerate)
                         t = next_t
 
                         if duration is not None and t >= duration:
@@ -705,6 +705,47 @@ class SoundPlugin(Plugin):
 
         self.logger.info('Recording paused state toggled')
         self.recording_paused_changed.set()
+
+    @action
+    def release(self, stream, index=None, midi_note=None, frequency=None):
+        """
+        Remove a sound from an active stream, either by sound index (use
+            :method:`platypush.sound.plugin.SoundPlugin.query_streams` to get
+            the sounds playing on the active streams), midi_note, frequency
+            or absolute file path.
+
+        :param stream: Stream index
+        :type stream: int
+
+        :param index: Sound index
+        :type index: int
+
+        :param midi_note: MIDI note
+        :type midi_note: int
+
+        :param frequency: Sound frequency
+        :type frequency: float
+        """
+
+        if index is None and midi_note is None and frequency is None:
+            raise RuntimeError('Please specify either a sound index, ' +
+                               'midi_note or frequency to release')
+
+        mix = self.stream_mixes.get(stream)
+        if not mix:
+            raise RuntimeError('No such stream: {}'.format(stream))
+
+        for i, sound in enumerate(mix):
+            if (index is not None and i == index) or \
+                    (midi_note is not None
+                     and sound.get('midi_note') == midi_note) or \
+                    (frequency is not None
+                     and sound.get('frequency') == frequency):
+                if len(list(mix)) == 1:
+                    # Last sound in the mix
+                    self.stop_playback([stream])
+                else:
+                    mix.remove(i)
 
     def _get_playback_state(self, stream_index):
         with self.playback_state_lock:
