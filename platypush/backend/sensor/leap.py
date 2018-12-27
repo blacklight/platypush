@@ -1,5 +1,8 @@
 import time
 
+from threading import Timer
+from multiprocessing import Process
+
 import Leap
 
 from platypush.backend import Backend
@@ -21,6 +24,12 @@ class SensorLeapBackend(Backend):
     instructions at https://www.leapmotion.com/setup/) and the `leapd` daemon
     running to recognize your controller.
 
+    Requires:
+
+        * The Redis backend enabled
+        * The Leap Motion SDK compiled with Python 3 support, see my port at https://github.com:BlackLight/leap-sdk-python3.git
+        * The `leapd` daemon to be running and your Leap Motion connected
+
     Triggers:
 
         * :class:`platypush.message.event.sensor.leap.LeapFrameEvent` when a new frame is received
@@ -30,6 +39,8 @@ class SensorLeapBackend(Backend):
         * :class:`platypush.message.event.sensor.leap.LeapDisconnectEvent` when a Leap Motion device disconnects
     """
 
+    _listener_proc = None
+
     def __init__(self,
                  position_ranges=[
                      [-300.0, 300.0],  # x axis
@@ -37,6 +48,7 @@ class SensorLeapBackend(Backend):
                      [-300.0, 300.0],  # z axis
                  ],
                  position_tolerance=0.0,  # Position variation tolerance in %
+                 frames_throttle_secs=None,
                  *args, **kwargs):
         """
         :param position_ranges: It specifies how wide the hand space (x, y and z axes) should be in millimiters.
@@ -53,52 +65,92 @@ class SensorLeapBackend(Backend):
 
         :param position_tolerance: % of change between a frame and the next to really consider the next frame as a new one (default: 0)
         :type position_tolerance: float
+
+        :param frames_throttle_secs: If set, the frame events will be throttled
+            and pushed to the main queue at the specified rate. Good to set if
+            you want to connect Leap Motion events to actions that have a lower
+            throughput (the Leap Motion can send a lot of frames per second).
+            Default: None (no throttling)
+        :type frames_throttle_secs: float
         """
 
         super().__init__(*args, **kwargs)
 
         self.position_ranges = position_ranges
         self.position_tolerance = position_tolerance
+        self.frames_throttle_secs = frames_throttle_secs
 
 
     def run(self):
         super().run()
 
-        listener = LeapListener(position_ranges=self.position_ranges,
-                                position_tolerance=self.position_tolerance)
+        def _listener_process():
+            listener = LeapListener(position_ranges=self.position_ranges,
+                                    position_tolerance=self.position_tolerance,
+                                    frames_throttle_secs=self.frames_throttle_secs,
+                                    logger=self.logger)
 
-        controller = Leap.Controller()
+            controller = Leap.Controller()
 
-        if not controller:
-            raise RuntimeError('No Leap Motion controller found - is your ' +
-                               'device connected and is leapd running?')
+            if not controller:
+                raise RuntimeError('No Leap Motion controller found - is your ' +
+                                'device connected and is leapd running?')
 
-        controller.add_listener(listener)
-        self.logger.info('Leap Motion backend initialized')
+            controller.add_listener(listener)
+            self.logger.info('Leap Motion backend initialized')
 
-        try:
             while not self.should_stop():
                 time.sleep(0.1)
-        finally:
-            controller.remove_listener(listener)
 
+        time.sleep(1)
+        self._listener_proc = Process(target=_listener_process)
+        self._listener_proc.start()
+        self._listener_proc.join()
+
+
+class LeapFuture(Timer):
+    def __init__(self, seconds, listener, event):
+        self.listener = listener
+        self.event = event
+
+        super().__init__(seconds, self._callback_wrapper())
+
+    def _callback_wrapper(self):
+        def _callback():
+            self.listener._send_event(self.event)
+        return _callback
 
 
 class LeapListener(Leap.Listener):
-    def __init__(self, position_ranges, position_tolerance, *args, **kwargs):
+    def __init__(self, position_ranges, position_tolerance, logger,
+                 frames_throttle_secs=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         self.prev_frame = None
         self.position_ranges = position_ranges
         self.position_tolerance = position_tolerance
+        self.frames_throttle_secs = frames_throttle_secs
+        self.logger = logger
+        self.running_future = None
 
 
-    def send_event(self, event):
+    def _send_event(self, event):
         backend = get_backend('redis')
         if not backend:
             self.logger.warning('Redis backend not configured, I cannot propagate the following event: {}'.format(event))
             return
 
         backend.send_message(event)
+
+
+    def send_event(self, event):
+        if self.frames_throttle_secs:
+            if not self.running_future or not self.running_future.is_alive():
+                self.running_future = LeapFuture(seconds=self.frames_throttle_secs,
+                                                  listener=self, event=event)
+                self.running_future.start()
+        else:
+            self._send_event(event)
 
 
     def on_init(self, controller):

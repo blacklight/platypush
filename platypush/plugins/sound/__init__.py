@@ -155,7 +155,7 @@ class SoundPlugin(Plugin):
                 data = q.get_nowait()
             except queue.Empty:
                 self.logger.warning('Buffer is empty: increase buffersize?')
-                return
+                raise sd.CallbackAbort
 
             if len(data) < len(outdata):
                 outdata[:len(data)] = data
@@ -647,9 +647,12 @@ class SoundPlugin(Plugin):
 
         for i, event in completed_callback_events.items():
             event.wait()
-            del self.completed_callback_events[i]
-            del self.active_streams[i]
-            del self.stream_mixes[i]
+            if i in self.completed_callback_events:
+                del self.completed_callback_events[i]
+            if i in self.active_streams:
+                del self.active_streams[i]
+            if i in self.stream_mixes:
+                del self.stream_mixes[i]
 
         self.logger.info('Playback stopped on streams [{}]'.format(
             ', '.join([str(stream) for stream in
@@ -729,10 +732,6 @@ class SoundPlugin(Plugin):
         :param frequency: Sound frequency
         :type frequency: float
         """
-
-        if sound_index is None and midi_note is None and frequency is None:
-            raise RuntimeError('Please specify either a sound index, ' +
-                               'midi_note or frequency to release')
 
         mixes = {
             i: mix for i, mix in self.stream_mixes.items()
