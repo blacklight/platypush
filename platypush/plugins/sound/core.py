@@ -145,12 +145,11 @@ class Sound(object):
             if self.shape == WaveShape.SQUARE:
                 wave[wave < 0] = -1
                 wave[wave >= 0] = 1
-        elif self.shape == WaveShape.SAWTOOTH:
+        elif self.shape == WaveShape.SAWTOOTH or self.shape == WaveShape.TRIANG:
             wave = 2 * (self.frequency*x -
                         np.floor(0.5 + self.frequency*x))
-        elif self.shape == WaveShape.TRIANG:
-            wave = 2 * np.abs(2 * (self.frequency*x -
-                        np.floor(0.5 + self.frequency*x))) -1
+            if self.shape == WaveShape.TRIANG:
+                wave = 2 * np.abs(wave) - 1
         else:
             raise RuntimeError('Unsupported wave shape: {}'.format(self.shape))
 
