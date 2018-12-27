@@ -155,7 +155,7 @@ class SoundPlugin(Plugin):
                 data = q.get_nowait()
             except queue.Empty:
                 self.logger.warning('Buffer is empty: increase buffersize?')
-                raise sd.CallbackAbort
+                return
 
             if len(data) < len(outdata):
                 outdata[:len(data)] = data
@@ -252,11 +252,12 @@ class SoundPlugin(Plugin):
         if not channels:
             channels = f.channels if f else 1
 
-        self.logger.info('Starting playback of {} to sound device [{}]'.
-                            format(file or sound, device))
-
         if is_new_stream:
             stream_index = self._allocate_stream_index()
+
+        self.logger.info(('Starting playback of {} to sound device [{}] ' +
+                          'on stream [{}]').format(
+                              file or sound, device, stream_index))
 
         if sound:
             mix = self.stream_mixes[stream_index]
@@ -707,18 +708,20 @@ class SoundPlugin(Plugin):
         self.recording_paused_changed.set()
 
     @action
-    def release(self, stream, index=None, midi_note=None, frequency=None):
+    def release(self, stream_index=None,
+                sound_index=None, midi_note=None, frequency=None):
         """
         Remove a sound from an active stream, either by sound index (use
             :method:`platypush.sound.plugin.SoundPlugin.query_streams` to get
             the sounds playing on the active streams), midi_note, frequency
             or absolute file path.
 
-        :param stream: Stream index
-        :type stream: int
+        :param stream_index: Stream index (default: sound removed from all the
+            active streams)
+        :type stream_index: int
 
-        :param index: Sound index
-        :type index: int
+        :param sound_index: Sound index
+        :type sound_index: int
 
         :param midi_note: MIDI note
         :type midi_note: int
@@ -727,25 +730,33 @@ class SoundPlugin(Plugin):
         :type frequency: float
         """
 
-        if index is None and midi_note is None and frequency is None:
+        if sound_index is None and midi_note is None and frequency is None:
             raise RuntimeError('Please specify either a sound index, ' +
                                'midi_note or frequency to release')
 
-        mix = self.stream_mixes.get(stream)
-        if not mix:
-            raise RuntimeError('No such stream: {}'.format(stream))
+        mixes = {
+            i: mix for i, mix in self.stream_mixes.items()
+        } if stream_index is None else {
+            stream_index: self.stream_mixes[stream_index]
+        }
 
-        for i, sound in enumerate(mix):
-            if (index is not None and i == index) or \
-                    (midi_note is not None
-                     and sound.get('midi_note') == midi_note) or \
-                    (frequency is not None
-                     and sound.get('frequency') == frequency):
-                if len(list(mix)) == 1:
-                    # Last sound in the mix
-                    self.stop_playback([stream])
-                else:
-                    mix.remove(i)
+        streams_to_stop = []
+
+        for i, mix in mixes.items():
+            for j, sound in enumerate(mix):
+                if (sound_index is not None and j == sound_index) or \
+                        (midi_note is not None
+                         and sound.get('midi_note') == midi_note) or \
+                        (frequency is not None
+                         and sound.get('frequency') == frequency):
+                    if len(list(mix)) == 1:
+                        # Last sound in the mix
+                        streams_to_stop.append(i)
+                    else:
+                        mix.remove(j)
+
+        if streams_to_stop:
+            self.stop_playback(streams_to_stop)
 
     def _get_playback_state(self, stream_index):
         with self.playback_state_lock:
