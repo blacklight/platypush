@@ -15,6 +15,7 @@ class PushbulletPlugin(Plugin):
     Requires:
 
         * **requests** (``pip install requests``)
+        * The :class:`platypush.backend.pushbullet.Pushbullet` backend enabled
     """
 
     def __init__(self, *args, **kwargs):

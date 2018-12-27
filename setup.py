@@ -66,7 +66,7 @@ setup(
     ],
     extras_require = {
         'Support for Apache Kafka backend': ['kafka-python'],
-        'Support for Pushbullet backend': ['requests', 'websockets'],
+        'Support for Pushbullet backend': ['requests', 'git+https://github.com/rbrcsk/pushbullet.py'],
         'Support for HTTP backend': ['flask','websockets', 'python-dateutil'],
         'Support for HTTP poll backend': ['frozendict'],
         'Support for database plugin': ['sqlalchemy'],
