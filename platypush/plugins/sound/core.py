@@ -160,8 +160,8 @@ class Sound(object):
     def fft(self, t_start=0., t_end=0., samplerate=_DEFAULT_SAMPLERATE,
             freq_range=None, freq_buckets=None):
         """
-        Get the Fourier transform associated to a time-bounded sample of this
-            sound
+        Get the real part of the Fourier transform associated to a time-bounded
+            sample of this sound
 
         :param t_start: Start offset for the wave in seconds. Default: 0
         :type t_start: float
@@ -189,7 +189,8 @@ class Sound(object):
             freq_range = (0, int(samplerate/2))
 
         wave = self.get_wave(t_start=t_start, t_end=t_end, samplerate=samplerate)
-        fft = np.fft.fft(wave.reshape(len(wave)))[freq_range[0]:freq_range[1]]
+        fft = np.fft.fft(wave.reshape(len(wave)))
+        fft = fft.real[freq_range[0]:freq_range[1]]
 
         if freq_buckets is not None:
             fft = np.histogram(fft, bins=freq_buckets)
@@ -321,8 +322,8 @@ class Mix(object):
     def fft(self, t_start=0., t_end=0., samplerate=Sound._DEFAULT_SAMPLERATE,
             freq_range=None, freq_buckets=None):
         """
-        Get the Fourier transform associated to a time-bounded sample of this
-            mix
+        Get the real part of the Fourier transform associated to a time-bounded
+            sample of this mix
 
         :param t_start: Start offset for the wave in seconds. Default: 0
         :type t_start: float
@@ -350,7 +351,8 @@ class Mix(object):
             freq_range = (0, int(samplerate/2))
 
         wave = self.get_wave(t_start=t_start, t_end=t_end, samplerate=samplerate)
-        fft = np.fft.fft(wave.reshape(len(wave)))[freq_range[0]:freq_range[1]]
+        fft = np.fft.fft(wave.reshape(len(wave)))
+        fft = fft.real[freq_range[0]:freq_range[1]]
 
         if freq_buckets is not None:
             fft = np.histogram(fft, bins=freq_buckets)
