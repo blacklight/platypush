@@ -89,10 +89,14 @@ class PushbulletBackend(Backend):
                 self.logger.debug('Received push: {}'.format(push))
 
                 body = push['body']
-                try: body = json.loads(body)
-                except ValueError as e: return  # Some other non-JSON push
+                try:
+                    body = json.loads(body)
+                    self.on_message(body)
+                except Exception as e:
+                    self.logger.debug(('Unexpected message received on the ' +
+                                        'Pushbullet backend: {}. Message: {}')
+                                        .format(str(e), body))
 
-                self.on_message(body)
             except Exception as e:
                 self.logger.exception(e)
                 return
