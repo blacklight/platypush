@@ -39,20 +39,30 @@ class SoundPlugin(Plugin):
         * **numpy** (``pip install numpy``)
     """
 
+    _STREAM_NAME_PREFIX = 'platypush-stream-'
+
     def __init__(self, input_device=None, output_device=None,
                  input_blocksize=Sound._DEFAULT_BLOCKSIZE,
                  output_blocksize=Sound._DEFAULT_BLOCKSIZE, *args, **kwargs):
         """
-        :param input_device: Index or name of the default input device. Use :method:`platypush.plugins.sound.query_devices` to get the available devices. Default: system default
+        :param input_device: Index or name of the default input device. Use
+            :method:`platypush.plugins.sound.query_devices` to get the
+            available devices. Default: system default
         :type input_device: int or str
 
-        :param output_device: Index or name of the default output device. Use :method:`platypush.plugins.sound.query_devices` to get the available devices. Default: system default
+        :param output_device: Index or name of the default output device.
+            Use :method:`platypush.plugins.sound.query_devices` to get the
+            available devices. Default: system default
         :type output_device: int or str
 
-        :param input_blocksize: Blocksize to be applied to the input device. Try to increase this value if you get input overflow errors while recording. Default: 2048
+        :param input_blocksize: Blocksize to be applied to the input device.
+            Try to increase this value if you get input overflow errors while
+            recording. Default: 1024
         :type input_blocksize: int
 
-        :param output_blocksize: Blocksize to be applied to the output device. Try to increase this value if you get output underflow errors while playing. Default: 2048
+        :param output_blocksize: Blocksize to be applied to the output device.
+            Try to increase this value if you get output underflow errors while
+            playing. Default: 1024
         :type output_blocksize: int
         """
 
@@ -71,6 +81,8 @@ class SoundPlugin(Plugin):
         self.recording_state_lock = RLock()
         self.recording_paused_changed = Event()
         self.active_streams = {}
+        self.stream_name_to_index = {}
+        self.stream_index_to_name = {}
         self.completed_callback_events = {}
 
     def _get_default_device(self, category):
@@ -82,7 +94,8 @@ class SoundPlugin(Plugin):
         """
 
         import sounddevice as sd
-        return sd.query_hostapis()[0].get('default_' + category.lower() + '_device')
+        return sd.query_hostapis()[0].get('default_' + category.lower() +
+                                          '_device')
 
     @action
     def query_devices(self, category=None):
@@ -143,19 +156,24 @@ class SoundPlugin(Plugin):
             while self._get_playback_state(stream_index) == PlaybackState.PAUSED:
                 self.playback_paused_changed[stream_index].wait()
 
-            assert frames == blocksize
+            if frames != blocksize:
+                self.logger.warning('Received {} frames, expected blocksize is {}'.
+                                    format(frames, blocksize))
+                return
+
             if status.output_underflow:
                 self.logger.warning('Output underflow: increase blocksize?')
                 outdata = (b'\x00' if is_raw_stream else 0.) * len(outdata)
                 return
 
-            assert not status
+            if status:
+                self.logger.warning('Audio callback failed: {}'.format(status))
 
             try:
                 data = q.get_nowait()
             except queue.Empty:
                 self.logger.warning('Buffer is empty: increase buffersize?')
-                raise sd.CallbackAbort
+                raise sd.CallbackStop
 
             if len(data) < len(outdata):
                 outdata[:len(data)] = data
@@ -169,7 +187,7 @@ class SoundPlugin(Plugin):
 
     @action
     def play(self, file=None, sound=None, device=None, blocksize=None,
-             bufsize=None, samplerate=None, channels=None,
+             bufsize=None, samplerate=None, channels=None, stream_name=None,
              stream_index=None):
         """
         Plays a sound file (support formats: wav, raw) or a synthetic sound.
@@ -213,6 +231,14 @@ class SoundPlugin(Plugin):
             index (you can get them through
             :method:`platypush.plugins.sound.query_streams`). Default:
             creates a new audio stream through PortAudio.
+        :type stream_index: int
+
+        :param stream_name: Name of the stream to play to. If set, the sound
+            will be played to the specified stream name, or a stream with that
+            name will be created. If not set, and ``stream_index`` is not set
+            either, then a new stream will be created on the next available
+            index and named ``platypush-stream-<index>``.
+        :type stream_name: str
         """
 
         if not file and not sound:
@@ -233,8 +259,6 @@ class SoundPlugin(Plugin):
         q = queue.Queue(maxsize=bufsize)
         f = None
         t = 0.
-        is_new_stream = stream_index is None or \
-            self.active_streams.get(stream_index) is None
 
         if file:
             file = os.path.abspath(os.path.expanduser(file))
@@ -252,19 +276,22 @@ class SoundPlugin(Plugin):
         if not channels:
             channels = f.channels if f else 1
 
-        if is_new_stream:
-            stream_index = self._allocate_stream_index()
+        with self.playback_state_lock:
+            stream_index, is_new_stream = self._get_or_allocate_stream_index(
+                stream_index=stream_index, stream_name=stream_name)
+
+            if sound:
+                mix = self.stream_mixes[stream_index]
+                mix.add(sound)
 
         self.logger.info(('Starting playback of {} to sound device [{}] ' +
                           'on stream [{}]').format(
                               file or sound, device, stream_index))
 
-        if sound:
-            mix = self.stream_mixes[stream_index]
-            mix.add(sound)
-
         if not is_new_stream:
             return   # Let the existing callback handle the new mix
+                     # TODO Potential support also for mixed streams with
+                     # multiple sound files and synth sounds?
 
         try:
             # Audio queue pre-fill loop
@@ -582,6 +609,7 @@ class SoundPlugin(Plugin):
 
         for i, stream in streams.items():
             stream['playback_state'] = self.playback_state[i].name
+            stream['name'] = self.stream_index_to_name.get(i)
             if i in self.stream_mixes:
                 stream['mix'] = { j: sound for j, sound in
                                  enumerate(list(self.stream_mixes[i])) }
@@ -589,7 +617,32 @@ class SoundPlugin(Plugin):
         return streams
 
 
-    def _allocate_stream_index(self, completed_callback_event=None):
+    def _get_or_allocate_stream_index(self, stream_index=None, stream_name=None,
+                                      completed_callback_event=None):
+        stream = None
+
+        with self.playback_state_lock:
+            if stream_index is None:
+                if stream_name is not None:
+                    stream_index = self.stream_name_to_index.get(stream_name)
+            else:
+                if stream_name is not None:
+                    raise RuntimeError('Redundant specification of both ' +
+                                       'stream_name and stream_index')
+
+            if stream_index is not None:
+                stream = self.active_streams.get(stream_index)
+
+            if not stream:
+                return (self._allocate_stream_index(stream_name=stream_name,
+                                                   completed_callback_event=
+                                                   completed_callback_event),
+                        True)
+
+            return (stream_index, False)
+
+    def _allocate_stream_index(self, stream_name=None,
+                               completed_callback_event=None):
         stream_index = None
 
         with self.playback_state_lock:
@@ -601,8 +654,13 @@ class SoundPlugin(Plugin):
             if stream_index is None:
                 raise RuntimeError('No stream index available')
 
+            if stream_name is None:
+                stream_name = self._STREAM_NAME_PREFIX + str(stream_index)
+
             self.active_streams[stream_index] = None
             self.stream_mixes[stream_index] = Mix()
+            self.stream_index_to_name[stream_index] = stream_name
+            self.stream_name_to_index[stream_name] = stream_index
             self.completed_callback_events[stream_index] = \
                 completed_callback_event if completed_callback_event else Event()
 
@@ -626,8 +684,8 @@ class SoundPlugin(Plugin):
     @action
     def stop_playback(self, streams=None):
         """
-        :param streams: Streams to stop by index (default: all)
-        :type streams: list[int]
+        :param streams: Streams to stop by index or name (default: all)
+        :type streams: list[int] or list[str]
         """
 
         with self.playback_state_lock:
@@ -637,22 +695,34 @@ class SoundPlugin(Plugin):
             completed_callback_events = {}
 
             for i in streams:
-                if i is None or not (i in self.active_streams):
+                stream = self.active_streams.get(i)
+                if not stream:
+                    i = self.stream_name_to_index.get(i)
+                    stream = self.active_streams.get(i)
+                if not stream:
+                    self.logger.info('No such stream index or name: {}'.
+                                     format(i))
                     continue
 
-                stream = self.active_streams[i]
                 if self.completed_callback_events[i]:
                     completed_callback_events[i] = self.completed_callback_events[i]
                 self.playback_state[i] = PlaybackState.STOPPED
 
         for i, event in completed_callback_events.items():
             event.wait()
+
             if i in self.completed_callback_events:
                 del self.completed_callback_events[i]
             if i in self.active_streams:
                 del self.active_streams[i]
             if i in self.stream_mixes:
                 del self.stream_mixes[i]
+
+            if i in self.stream_index_to_name:
+                name = self.stream_index_to_name[i]
+                del self.stream_index_to_name[i]
+                if name in self.stream_name_to_index:
+                    del self.stream_name_to_index[name]
 
         self.logger.info('Playback stopped on streams [{}]'.format(
             ', '.join([str(stream) for stream in
@@ -671,7 +741,13 @@ class SoundPlugin(Plugin):
                 return
 
             for i in streams:
-                if i is None or not (i in self.active_streams):
+                stream = self.active_streams.get(i)
+                if not stream:
+                    i = self.stream_name_to_index.get(i)
+                    stream = self.active_streams.get(i)
+                if not stream:
+                    self.logger.info('No such stream index or name: {}'.
+                                     format(i))
                     continue
 
                 stream = self.active_streams[i]
@@ -711,7 +787,7 @@ class SoundPlugin(Plugin):
         self.recording_paused_changed.set()
 
     @action
-    def release(self, stream_index=None,
+    def release(self, stream_index=None, stream_name=None,
                 sound_index=None, midi_note=None, frequency=None):
         """
         Remove a sound from an active stream, either by sound index (use
@@ -723,6 +799,10 @@ class SoundPlugin(Plugin):
             active streams)
         :type stream_index: int
 
+        :param stream_name: Stream name (default: sound removed from all the
+            active streams)
+        :type stream_index: str
+
         :param sound_index: Sound index
         :type sound_index: int
 
@@ -732,6 +812,12 @@ class SoundPlugin(Plugin):
         :param frequency: Sound frequency
         :type frequency: float
         """
+
+        if stream_name:
+            if stream_index:
+                raise RuntimeError('stream_index and stream name are ' +
+                                   'mutually exclusive')
+            stream_index = self.stream_name_to_index.get(stream_name)
 
         mixes = {
             i: mix for i, mix in self.stream_mixes.items()

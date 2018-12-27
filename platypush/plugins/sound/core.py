@@ -302,7 +302,7 @@ class Mix(object):
             else:
                 wave += sound_wave
 
-        if normalize_range:
+        if normalize_range and len(wave):
             scale_factor = (normalize_range[1]-normalize_range[0]) / \
                 (wave.max()-wave.min())
 
