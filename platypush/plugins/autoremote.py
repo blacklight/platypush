@@ -12,6 +12,10 @@ class AutoremotePlugin(Plugin):
     Android device that runs AutoRemote (https://joaoapps.com/autoremote/).
     You can also build custom actions to run on your Android device upon
     AutoRemote events using Tasker (https://tasker.joaoapps.com/).
+
+    Requires:
+
+        * **requests** (``pip install requests``)
     """
 
     _AUTOREMOTE_BASE_URL = 'https://autoremotejoaomgcd.appspot.com'
