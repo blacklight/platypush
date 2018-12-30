@@ -117,9 +117,8 @@ class Config(object):
 
 
     def _read_config_file(self, cfgfile):
-        cfgfile_dir = os.path.expanduser(os.path.dirname(self._cfgfile))
-        if not os.path.isabs(cfgfile):
-            cfgfile = os.path.join(cfgfile_dir, os.path.basename(cfgfile))
+        cfgfile_dir = os.path.dirname(os.path.abspath(
+            os.path.expanduser(cfgfile)))
 
         config = {}
 
@@ -135,7 +134,7 @@ class Config(object):
                 for include_file in include_files:
                     if not os.path.isabs(include_file):
                         include_file = os.path.join(cfgfile_dir, include_file)
-                    self._included_files.add(os.path.abspath(include_file))
+                    self._included_files.add(include_file)
 
                     included_config = self._read_config_file(include_file)
                     for incl_section in included_config.keys():

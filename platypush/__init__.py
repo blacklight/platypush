@@ -68,12 +68,12 @@ class Daemon:
                 f.write(str(os.getpid()))
 
         self.config_file = config_file
+        Config.init(self.config_file)
+        logging.basicConfig(**Config.get('logging'))
+
         self.event_processor = EventProcessor()
         self.requests_to_process = requests_to_process
         self.processed_requests = 0
-
-        Config.init(self.config_file)
-        logging.basicConfig(**Config.get('logging'))
 
     @classmethod
     def build_from_cmdline(cls, args):
