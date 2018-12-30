@@ -62,7 +62,7 @@ class HttpBackend(Backend):
     }
 
     def __init__(self, port=8008, websocket_port=8009, disable_websocket=False,
-                 redis_queue='platypush/http', dashboard={},
+                 redis_queue='platypush/http', dashboard={}, resource_dirs={},
                  ssl_cert=None, ssl_key=None, ssl_cafile=None, ssl_capath=None,
                  maps={}, **kwargs):
         """
@@ -90,6 +90,12 @@ class HttpBackend(Backend):
         :param ssl_capath: Set it to the path of your certificate authority directory if you want to enable HTTPS (default: None)
         :type ssl_capath: str
 
+        :param resource_dirs: Static resources directories that will be
+            accessible through ``/resources/<path>``. It is expressed as a map
+            where the key is the relative path under ``/resources`` to expose and
+            the value is the absolute path to expose.
+        :type resource_dirs: dict[str, str]
+
         :param dashboard: Set it if you want to use the dashboard service. It will contain the configuration for the widgets to be used (look under ``platypush/backend/http/templates/widgets/`` for the available widgets).
 
         Example configuration::
@@ -105,7 +111,7 @@ class HttpBackend(Backend):
                         columns: 3
                     image-carousel:     # Image carousel
                         columns: 6
-                        images_path: /static/resources/Dropbox/Photos/carousel  # Path (relative to ``platypush/backend/http``) containing the carousel pictures
+                        images_path: ~/Dropbox/Photos/carousel  # Absolute path (valid as long as it's a subdirectory of one of the available `resource_dirs`)
                         refresh_seconds: 15
                     rss-news:           # RSS feeds widget
                         # Requires backend.http.poll to be enabled with some RSS sources and write them to sqlite db
@@ -128,6 +134,8 @@ class HttpBackend(Backend):
         self.websocket_thread = None
         self.redis_thread = None
         self.redis = None
+        self.resource_dirs = { name: os.path.abspath(
+            os.path.expanduser(d)) for name, d in resource_dirs.items() }
         self.active_websockets = set()
         self.ssl_context = get_ssl_server_context(ssl_cert=ssl_cert,
                                                   ssl_key=ssl_key,
@@ -226,7 +234,6 @@ class HttpBackend(Backend):
         """ Web server main process """
         basedir = os.path.dirname(inspect.getfile(self.__class__))
         template_dir = os.path.join(basedir, 'templates')
-        static_dir = os.path.join(basedir, 'static')
         app = Flask(__name__, template_folder=template_dir)
         self.redis_thread = Thread(target=self.redis_poll)
         self.redis_thread.start()
@@ -288,10 +295,36 @@ class HttpBackend(Backend):
                 redis.rpush(self.redis_queue, str(event))
             return jsonify({ 'status': 'ok' })
 
-        @app.route('/static/<path>', methods=['GET'])
+        @app.route('/resources/<path:path>', methods=['GET'])
         def static_path(path):
             """ Static resources """
-            return send_from_directory(static_dir, filename)
+            base_path = os.path.dirname(path).split('/')
+            while base_path:
+                if os.sep.join(base_path) in self.resource_dirs:
+                    break
+                base_path.pop()
+
+            if not base_path:
+                abort(404)
+
+            base_path = os.sep.join(base_path)
+            real_base_path = self.resource_dirs[base_path]
+            real_path = real_base_path
+
+            file_path = [s for s in
+                         re.sub(r'^{}(.*)$'.format(base_path), '\\1', path) \
+                         .split('/') if s]
+
+            for p in file_path[:-1]:
+                real_path += os.sep + p
+                file_path.pop(0)
+
+            file_path = file_path.pop(0)
+            if not real_path.startswith(real_base_path):
+                # Directory climbing attempt
+                abort(404)
+
+            return send_from_directory(real_path, file_path)
 
         @app.route('/dashboard', methods=['GET'])
         def dashboard():
@@ -482,10 +515,29 @@ class HttpUtils(object):
 
     @classmethod
     def search_web_directory(cls, directory, *extensions):
-        directory = re.sub('^/+', '', directory)
-        basedir = os.path.dirname(inspect.getfile(cls))
-        results = cls.search_directory(os.path.join(basedir, directory), *extensions)
-        return [item[len(basedir):] for item in results]
+        directory = os.path.abspath(os.path.expanduser(directory))
+        resource_dirs = get_backend('http').resource_dirs
+        resource_path = None
+        uri = ''
+
+        for name, resource_path in resource_dirs.items():
+            if directory.startswith(resource_path):
+                subdir = re.sub('^{}(.*)$'.format(resource_path),
+                                '\\1', directory)
+                uri = '/resources/' + name
+                break
+
+        if not uri:
+            raise RuntimeError('Directory {} not found among the available ' +
+                               'static resources on the webserver'.format(
+                                   directory))
+
+        results = [
+            re.sub('^{}(.*)$'.format(resource_path), uri + '\\1', path)
+            for path in cls.search_directory(directory, *extensions)
+        ]
+
+        return results
 
     @classmethod
     def to_json(cls, data):
