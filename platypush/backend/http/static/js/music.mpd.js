@@ -445,6 +445,18 @@ $(document).ready(function() {
         }
 
         files = files.sort(function(a, b) {
+            if ((a.artist && !b.artist) || (a.album && !b.album)) {
+                return -1;
+            }
+
+            if ((!a.artist && b.artist) || (!a.album && b.album)) {
+                return 1;
+            }
+
+            if ((a.artist && b.artist) || (a.album && b.album)) {
+                return 0;
+            }
+
             if (a.artist === b.artist) {
                 if (a.album === b.album) {
                     return parseInt(a.track) < parseInt(b.track) ? -1 : 1;
