@@ -392,6 +392,7 @@ $(document).ready(function() {
             var $room = $('<div></div>')
                 .addClass('room-item')
                 .data('id', room)
+                .data('name', rooms[room].name)
                 .text(rooms[room].name);
 
             var $roomLights = $('<div></div>')
@@ -471,6 +472,8 @@ $(document).ready(function() {
             }
 
             updateRooms(groups);
+        }).then(function() {
+            initBindings();
         });
     };
 
@@ -644,11 +647,17 @@ $(document).ready(function() {
             $animationContainers.hide();
             $animationContainer.show();
         });
+
+        if (window.config.light.hue.default_group) {
+            var $defaultRoomItem = $roomsList.find('.room-item').filter(
+                (i, r) => $(r).data('name') == window.config.light.hue.default_group);
+
+            $defaultRoomItem.click();
+        }
     };
 
     var init = function() {
         initUi();
-        initBindings();
     };
 
     init();
