@@ -19,6 +19,7 @@ from .config import Config
 from .context import register_backends
 from .cron.scheduler import CronScheduler
 from .event.processor import EventProcessor
+from .logger import Logger
 from .message.event import Event, StopEvent
 from .message.event.application import ApplicationStartedEvent, ApplicationStoppedEvent
 from .message.request import Request
@@ -29,6 +30,7 @@ __author__ = 'Fabio Manganiello <blacklight86@gmail.com>'
 __version__ = '0.9.3'
 
 LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.INFO)
 
 class Daemon:
     """ Main class for the Platypush daemon """
@@ -171,6 +173,8 @@ def main():
     Platypush daemon main
     """
 
+    sys.stdout = Logger(LOGGER.info)
+    sys.stderr = Logger(LOGGER.warning)
     print('Starting platypush v.{}'.format(__version__))
     app = Daemon.build_from_cmdline(sys.argv[1:])
     app.start()
