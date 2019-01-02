@@ -98,6 +98,8 @@ class MqttBackend(Backend):
         def on_message(client, userdata, msg):
             def response_thread(msg):
                 response = self.get_message_response(msg)
+                if not response:
+                    return
                 response_topic = '{}/responses/{}'.format(self.topic, msg.id)
 
                 self.logger.info('Processing response on the MQTT topic {}: {}'.
