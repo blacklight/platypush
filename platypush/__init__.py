@@ -138,6 +138,8 @@ class Daemon:
 
     def start(self):
         """ Start the daemon """
+        print('---- Starting platypush v.{}'.format(__version__))
+
         redis_conf = Config.get('backend.redis')
         if redis_conf:
             self.bus = RedisBus(on_message=self.on_message(),
@@ -175,7 +177,6 @@ def main():
 
     sys.stdout = Logger(LOGGER.info)
     sys.stderr = Logger(LOGGER.warning)
-    print('Starting platypush v.{}'.format(__version__))
     app = Daemon.build_from_cmdline(sys.argv[1:])
     app.start()
 
