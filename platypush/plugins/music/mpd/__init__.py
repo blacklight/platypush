@@ -217,6 +217,7 @@ class MusicMpdPlugin(MusicPlugin):
 
         if isinstance(resource, list):
             for r in resource:
+                r = self._parse_resource(r)
                 try:
                     self._exec('add', r)
                 except Exception as e:
@@ -224,7 +225,16 @@ class MusicMpdPlugin(MusicPlugin):
 
             return self.status().output
 
-        return self._exec('add', resource)
+        r = self._parse_resource(resource)
+        return self._exec('add', r)
+
+    @classmethod
+    def _parse_resource(cls, resource):
+        if resource and resource.startswith('spotify:playlist:'):
+            # Old Spotify URI format, convert it to new
+            m = re.match('^spotify:playlist:(.*)$', resource)
+            resource = 'spotify:user:spotify:playlist:' + m.group(1)
+        return resource
 
     @action
     def load(self, playlist):
