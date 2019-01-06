@@ -194,7 +194,8 @@ class Request(Message):
             if self.action.startswith('procedure.'):
                 context['n_tries'] = n_tries
                 response = self._execute_procedure(**context)
-                self._send_response(response)
+                if response is not None:
+                    self._send_response(response)
                 return response
             else:
                 (module_name, method_name) = get_module_and_method_from_action(self.action)

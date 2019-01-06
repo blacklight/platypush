@@ -139,7 +139,7 @@ class Procedure(object):
             context['_async'] = self._async; context['n_tries'] = n_tries
             response = request.execute(**context)
 
-            if not self._async:
+            if not self._async and response:
                 if isinstance(response.output, dict):
                     for (k,v) in response.output.items():
                         context[k] = v
@@ -147,7 +147,7 @@ class Procedure(object):
                 context['output'] = response.output
                 context['errors'] = response.errors
 
-        return response
+        return response or Response()
 
 
 class LoopProcedure(Procedure):
