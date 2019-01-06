@@ -107,7 +107,9 @@ class MusicSnapcastPlugin(Plugin):
         :param port: Snapcast server port (default: default configured port)
         :type port: int
 
-        :returns: dict. Example::
+        :returns: dict. Example:
+
+        .. codeblock:: json
 
             "output": {
                 "groups": [
