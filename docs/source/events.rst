@@ -15,6 +15,7 @@ Events
     platypush/events/kafka.rst
     platypush/events/midi.rst
     platypush/events/music.rst
+    platypush/events/music.snapcast.rst
     platypush/events/path.rst
     platypush/events/ping.rst
     platypush/events/pushbullet.rst

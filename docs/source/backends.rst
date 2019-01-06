@@ -18,6 +18,7 @@ Backends
     platypush/backend/midi.rst
     platypush/backend/mqtt.rst
     platypush/backend/music.mpd.rst
+    platypush/backend/music.snapcast.rst
     platypush/backend/pushbullet.rst
     platypush/backend/redis.rst
     platypush/backend/scard.rst
