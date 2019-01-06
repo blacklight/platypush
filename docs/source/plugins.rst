@@ -35,6 +35,7 @@ Plugins
     platypush/plugins/midi.rst
     platypush/plugins/mqtt.rst
     platypush/plugins/music.mpd.rst
+    platypush/plugins/music.snapcast.rst
     platypush/plugins/pushbullet.rst
     platypush/plugins/redis.rst
     platypush/plugins/serial.rst
