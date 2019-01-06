@@ -2,6 +2,7 @@ import json
 import socket
 import threading
 
+from platypush.context import get_backend
 from platypush.plugins import Plugin, action
 
 
@@ -34,6 +35,9 @@ class MusicSnapcastPlugin(Plugin):
         self._latest_req_id = 0
         self._latest_req_id_lock = threading.RLock()
 
+        backend = get_backend('music.snapcast')
+        self.backend_hosts = backend.hosts if backend else []
+
     def _get_req_id(self):
         with self._latest_req_id_lock:
             self._latest_req_id += 1
@@ -63,8 +67,12 @@ class MusicSnapcastPlugin(Plugin):
             buf += sock.recv(1)
         return json.loads(buf.decode().strip()).get('result')
 
+    def _get_group(self, sock, group):
+        for g in self._status(sock).get('groups', []):
+            if group == g.get('id') or group == g.get('name'):
+                return g
 
-    def _get_group_by_client(self, sock, client):
+    def _get_client(self, sock, client):
         for g in self._status(sock).get('groups', []):
             clients = g.get('clients', [])
 
@@ -73,19 +81,8 @@ class MusicSnapcastPlugin(Plugin):
                         client == c.get('name') or \
                         client == c.get('host', {}).get('name') or \
                         client == c.get('host', {}).get('ip'):
-                    return g
-
-    def _get_group(self, sock, group):
-        for g in self._status(sock).get('groups', []):
-            if group == g.get('id') or group == g.get('name'):
-                return g
-
-    def _get_client(self, sock, client):
-        group = self._get_group_by_client(sock, client)
-        if not group:
-            return None
-        clients = group.get('clients', [])
-        return None if len(clients) == 0 else clients[0]
+                    c['group_id'] = g.get('id')
+                    return c
 
     def _status(self, sock):
         request = {
