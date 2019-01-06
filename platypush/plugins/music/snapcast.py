@@ -70,6 +70,7 @@ class MusicSnapcastPlugin(Plugin):
 
             for c in clients:
                 if client == c.get('id') or \
+                        client == c.get('name') or \
                         client == c.get('host', {}).get('name') or \
                         client == c.get('host', {}).get('ip'):
                     return g
@@ -97,15 +98,21 @@ class MusicSnapcastPlugin(Plugin):
         return self._recv(sock).get('server', {})
 
     @action
-    def status(self, host=None, port=None):
+    def status(self, host=None, port=None, client=None, group=None):
         """
-        Get the status either of a Snapcast server
+        Get the status either of a Snapcast server, client or group
 
         :param host: Snapcast server to query (default: default configured host)
         :type host: str
 
         :param port: Snapcast server port (default: default configured port)
         :type port: int
+
+        :param client: Client ID or name (default: None)
+        :type client: str
+
+        :param group: Group ID or name (default: None)
+        :type group: str
 
         :returns: dict. Example:
 
@@ -195,6 +202,11 @@ class MusicSnapcastPlugin(Plugin):
 
         try:
             sock = self._connect(host or self.host, port or self.port)
+            if client:
+                return self._get_client(sock, client)
+            if group:
+                return self._get_group(sock, group)
+
             return self._status(sock)
         finally:
             try: sock.close()
@@ -478,4 +490,3 @@ class MusicSnapcastPlugin(Plugin):
 
 
 # vim:sw=4:ts=4:et:
-

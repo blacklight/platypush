@@ -20,6 +20,7 @@ class MusicMpdBackend(Backend):
         * :class:`platypush.message.event.music.MusicStopEvent` if the playback state changed to stop
         * :class:`platypush.message.event.music.NewPlayingTrackEvent` if a new track is being played
         * :class:`platypush.message.event.music.PlaylistChangeEvent` if the main playlist has changed
+        * :class:`platypush.message.event.music.VolumeChangeEvent` if the main volume has changed
 
     Requires:
         * **python-mpd2** (``pip install python-mpd2``)
