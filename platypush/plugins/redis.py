@@ -71,7 +71,14 @@ class RedisPlugin(Plugin):
         Set key/values based on mapping (wraps MSET)
         """
 
-        return self._get_redis().mset(*args, **kwargs)
+        try:
+            return self._get_redis().mset(*args, **kwargs)
+        except TypeError:
+            # XXX commit https://github.com/andymccurdy/redis-py/commit/90a52dd5de111f0053bb3ebaa7c78f73a82a1e3e
+            # broke back-compatibility with the previous way of passing
+            # key-value pairs to mset directly on kwargs. This try-catch block
+            # is to support things on all the redis-py versions
+            return self._get_redis().mset(mapping=kwargs)
 
     @action
     def expire(self, key, expiration):
