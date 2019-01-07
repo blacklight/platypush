@@ -55,10 +55,11 @@
 
         <div class="tab-content">
             {% for plugin in plugins.keys()|sort() %}
-                {% set configuration = plugins[plugin] %}
-                <div class="tab-pane plugin-tab-content" id="{% print plugin %}">
-                    {% include 'plugins/' + plugin + '.html' %}
-                </div>
+                {% with configuration=plugins[plugin], utils=utils %}
+                    <div class="tab-pane plugin-tab-content" id="{% print plugin %}">
+                        {% include 'plugins/' + plugin + '.html' %}
+                    </div>
+                {% endwith %}
             {% endfor %}
         </div>
 

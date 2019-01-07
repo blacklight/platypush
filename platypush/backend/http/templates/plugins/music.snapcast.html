@@ -1,0 +1,18 @@
+<script type="text/javascript" src="{{ url_for('static', filename='js/music.snapcast.js') }}"></script>
+<!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/light.hue.css') }}"></script> -->
+
+<script type="text/javascript">
+    window.config = window.config || {};
+    window.config.snapcast_hosts = {};
+
+    hosts = JSON.parse('{{ utils.to_json(utils.get_plugin("music.snapcast").backend_hosts) | safe }}');
+    ports = JSON.parse('{{ utils.to_json(utils.get_plugin("music.snapcast").backend_ports) | safe }}');
+
+    for (var i=0; i < hosts.length; i++) {
+        window.config.snapcast_hosts[hosts[i]] = ports[i];
+    }
+</script>
+
+<div id="snapcast-container" class="row">
+</div>
+
