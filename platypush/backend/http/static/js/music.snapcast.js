@@ -58,18 +58,26 @@ $(document).ready(function() {
                     .addClass('snapcast-group-header');
 
                 var $groupTitle = $('<h2></h2>')
-                    .addClass('eleven columns')
-                    .text(groupName);
+                    .addClass('ten columns');
 
                 var $groupSettings = $('<i></i>')
                     .addClass('snapcast-group-settings')
-                    .addClass('one column')
                     .addClass('fa fa-cog')
                     .data('name', groupName)
                     .data('id', group.id);
 
+                var $groupName = $('<span></span>')
+                    .html('&nbsp; ' + groupName);
+
+                var $groupMuteToggle = createPowerToggleElement({
+                    id: group.id,
+                    on: !group.muted,
+                }).addClass('two columns').addClass('snapcast-group-mute-toggle');
+
+                $groupSettings.appendTo($groupTitle);
+                $groupName.appendTo($groupTitle);
                 $groupTitle.appendTo($groupHeader);
-                $groupSettings.appendTo($groupHeader);
+                $groupMuteToggle.appendTo($groupHeader);
                 $groupHeader.appendTo($group);
 
                 for (var client of group.clients) {
@@ -79,23 +87,33 @@ $(document).ready(function() {
                         .data('name', clientName)
                         .data('id', client.id);
 
-                    var $clientHeader = $('<div></div>').addClass('row')
+                    var $clientRow = $('<div></div>').addClass('row')
                         .addClass('snapcast-client-header');
 
                     var $clientTitle = $('<h3></h3>')
-                        .addClass('eleven columns')
+                        .addClass('three columns')
                         .data('connected', client.connected)
                         .text(clientName);
 
+                    var $volumeSlider = $('<input></input>')
+                        .addClass('slider snapcast-volume-slider')
+                        .addClass('eight columns')
+                        .data('id', client.id)
+                        .attr('type', 'range')
+                        .attr('min', 0).attr('max', 100)
+                        .val(client.config.volume.percent);
+
                     var $clientMuteToggle = createPowerToggleElement({
-                        type: 'client',
                         id: client.id,
                         on: !client.config.volume.muted,
-                    }).addClass('one column');
+                    })
+                        .addClass('one column')
+                        .addClass('snapcast-client-mute-toggle');
 
-                    $clientTitle.appendTo($clientHeader);
-                    $clientMuteToggle.appendTo($clientHeader);
-                    $clientHeader.appendTo($client);
+                    $clientTitle.appendTo($clientRow);
+                    $volumeSlider.appendTo($clientRow);
+                    $clientMuteToggle.appendTo($clientRow);
+                    $clientRow.appendTo($client);
                     $client.appendTo($group);
                 }
 
@@ -106,7 +124,7 @@ $(document).ready(function() {
         }
     };
 
-    var initUi = function() {
+    var redraw = function() {
         var promises = [];
 
         for (var host of Object.keys(window.config.snapcast_hosts)) {
@@ -297,7 +315,7 @@ $(document).ready(function() {
     };
 
     var init = function() {
-        initUi();
+        redraw();
     };
 
     init();
