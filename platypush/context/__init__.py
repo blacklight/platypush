@@ -2,7 +2,7 @@ import asyncio
 import importlib
 import logging
 
-from threading import Lock
+from threading import RLock
 
 from ..config import Config
 
@@ -73,7 +73,7 @@ def get_plugin(plugin_name, reload=False):
     global plugins_init_locks
 
     if plugin_name not in plugins_init_locks:
-        plugins_init_locks[plugin_name] = Lock()
+        plugins_init_locks[plugin_name] = RLock()
 
     if plugin_name in plugins and not reload:
         return plugins[plugin_name]
