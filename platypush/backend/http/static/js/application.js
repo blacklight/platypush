@@ -149,6 +149,12 @@ $(document).ready(function() {
         $('body').on('mouseup touchend', '[data-modal]', function(event) {
             var $source = $(event.target);
             var $modal = $($source.data('modal'));
+            $modal.height($(document).height() + 2);
+
+            var $container = $modal.find('.modal-container');
+            var top = 40 + $(window).scrollTop();
+            $container.css('margin-top', top + 'px');
+
             $modal.fadeIn();
         });
     };
