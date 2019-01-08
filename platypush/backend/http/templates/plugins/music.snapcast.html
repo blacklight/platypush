@@ -18,6 +18,53 @@
         <div class="modal-header"></div>
         <div class="modal-body">
             <form id="snapcast-host-form" class="snapcast-form" action="#">
+                <div class="row snapcast-host-info">
+                    <div class="row">
+                        <div class="three columns info-name">IP Address</div>
+                        <div class="nine columns info-value" data-bind="ip"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="three columns info-name">MAC Address</div>
+                        <div class="nine columns info-value" data-bind="mac"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="three columns info-name">Name</div>
+                        <div class="nine columns info-value" data-bind="name"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="three columns info-name">OS</div>
+                        <div class="nine columns info-value" data-bind="os"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="three columns info-name">Architecture</div>
+                        <div class="nine columns info-value" data-bind="arch"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="three columns info-name">Server Name</div>
+                        <div class="nine columns info-value" data-bind="serverName"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="three columns info-name">Server Version</div>
+                        <div class="nine columns info-value" data-bind="serverVersion"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="three columns info-name">Protocol Version</div>
+                        <div class="nine columns info-value" data-bind="protocolVersion"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="three columns info-name">Control Protocol Version</div>
+                        <div class="nine columns info-value" data-bind="controlProtocolVersion"></div>
+                    </div>
+                </div>
+
                 <div class="row snapcast-form-bottom">
                     <div class="six columns offset-by-six forms-btns">
                         <input type="button" class="btn-default" data-dismiss-modal="#snapcast-host-modal"
@@ -34,7 +81,9 @@
         <div class="modal-header"></div>
         <div class="modal-body">
             <form id="snapcast-group-form" class="snapcast-form" action="#">
-                <div class="row snapcast-group-clients"></div>
+                <div class="row snapcast-group-clients-container">
+                    <div class="row snapcast-group-clients"></div>
+                </div>
                 <div class="row snapcast-form-bottom">
                     <div class="six columns offset-by-six forms-btns">
                         <input type="button" class="btn-default" data-dismiss-modal="#snapcast-group-modal"

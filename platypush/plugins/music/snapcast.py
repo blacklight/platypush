@@ -467,11 +467,13 @@ class MusicSnapcastPlugin(Plugin):
 
         try:
             sock = self._connect(host or self.host, port or self.port)
+            group = self._get_group(sock, group)
             request = {
                 'id': self._get_req_id(),
                 'jsonrpc':'2.0',
                 'method': 'Group.SetClients',
                 'params': {
+                    'id': group['id'],
                     'clients': []
                 }
             }

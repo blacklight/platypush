@@ -78,7 +78,11 @@ $(document).ready(function() {
             var status = statuses[i];
             var host = hosts[i];
             var name = status.server.host.name || status.server.host.ip;
-            serverInfo[host] = status.server;
+            serverInfo[host] = status.server.host;
+            serverInfo[host].serverName = status.server.snapserver.serverName;
+            serverInfo[host].version = status.server.snapserver.version;
+            serverInfo[host].protocolVersion = status.server.snapserver.protocolVersion;
+            serverInfo[host].controlProtocolVersion = status.server.snapserver.controlProtocolVersion;
 
             var $host = $('<div></div>')
                 .addClass('snapcast-host-container')
@@ -284,17 +288,39 @@ $(document).ready(function() {
             });
         });
 
+        $container.on('click touch', '.snapcast-host-settings', function(evt) {
+            var host = $(this).parents('.snapcast-host-container').data('host');
+            var hostName = $(this).parents('.snapcast-host-container').data('name');
+            var $modal = $($(this).data('modal'));
+
+            $modal.find('.modal-header').text(hostName);
+
+            var info = serverInfo[host];
+            var $form = $modal.find('#snapcast-host-form');
+            var $info = $form.find('.snapcast-host-info');
+
+            for (var attr in info) {
+                $info.find('[data-bind=' + attr + ']').text(info[attr]);
+            }
+        });
+
         $container.on('click touch', '.snapcast-group-settings', function(evt) {
             var host = $(this).parents('.snapcast-host-container').data('host');
             var groupId = $(this).parents('.snapcast-group-container').data('id');
             var groupName = $(this).parents('.snapcast-group-container').data('name');
             var $modal = $($(this).data('modal'));
-            var $clients = $(this).parents('.snapcast-host-container').find('.snapcast-client-container');
+            var $form = $modal.find('#snapcast-group-form');
+            var $clients = $(this).parents('.snapcast-host-container')
+                .find('.snapcast-client-container');
+
             var groupClients = $(this).parents('.snapcast-group-container')
                 .find('.snapcast-client-container')
                 .map((i, client) => $(client).data('id'));
 
             var $clientsList = $modal.find('.snapcast-group-clients');
+            $clientsList.html('');
+            $form.data('host', host);
+            $form.data('group', groupId);
             $modal.find('.modal-header').text(groupName);
 
             for (var client of $clients) {
@@ -376,6 +402,7 @@ $(document).ready(function() {
             $form.find('input').prop('disabled', true);
 
             execute(
+                request,
                 (response) => {},
                 (xhr, status, error) => {
                     createNotification({
@@ -385,6 +412,52 @@ $(document).ready(function() {
                 },
                 () => {
                     clearModal();
+                }
+            );
+
+            return false;
+        });
+
+        $('#snapcast-group-form').on('submit', function(evt) {
+            var $form = $(this);
+            var $modal = $form.parents('.modal');
+            var $clientsList = $form.find('.snapcast-group-clients');
+            var $clients = $clientsList.find('input[type=checkbox]:checked');
+            var host = $form.data('host');
+            var groupId = $form.data('group');
+            var clients = [];
+
+            for (var c of $clients) {
+                clients.push($(c).attr('name'));
+            }
+
+            var request = {
+                type: 'request',
+                action: 'music.snapcast.group_set_clients',
+                args: {
+                    host: host,
+                    port: window.config.snapcast_hosts[host],
+                    group: groupId,
+                    clients: clients,
+                },
+            };
+
+            $form.find('input').prop('disabled', true);
+
+            execute(
+                request,
+                (response) => {
+                    redraw();
+                },
+                (xhr, status, error) => {
+                    createNotification({
+                        'icon': 'exclamation',
+                        'text': status + ': ' + error,
+                    });
+                },
+                () => {
+                    $form.find('input').prop('disabled', false);
+                    $modal.fadeOut();
                 }
             );
 

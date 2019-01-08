@@ -82,8 +82,9 @@
         transform: translateY(25%);
     }
 
-    .snapcast-form > .snapcast-client-info {
-        max-width: 70%;
+    .snapcast-form > .snapcast-client-info,
+    .snapcast-form > .snapcast-host-info,
+    .snapcast-form > .snapcast-group-clients-container {
         margin: 1em auto .5em auto;
         padding: 2em;
         background: rgba(240,240,240,0.6);
@@ -91,18 +92,31 @@
         border: .05em solid rgba(225,225,225,1.0)
     }
 
+    .snapcast-form > .snapcast-group-clients-container {
+        max-width: 40em;
+    }
+
+    .snapcast-form > .snapcast-host-info,
+    .snapcast-form > .snapcast-client-info {
+        max-width: 70%;
+    }
+
+        .snapcast-form > .snapcast-host-info > .row,
         .snapcast-form > .snapcast-client-info > .row {
             padding: .2em;
         }
 
+            .snapcast-form > .snapcast-host-info > .row:hover,
             .snapcast-form > .snapcast-client-info > .row:hover {
                 background-color: #daf8e2 !important;
             }
 
+        .snapcast-form > .snapcast-host-info * > .info-name,
         .snapcast-form > .snapcast-client-info * > .info-name {
             font-weight: bold;
         }
 
+        .snapcast-form > .snapcast-host-info * > .info-value,
         .snapcast-form > .snapcast-client-info * > .info-value {
             text-align: right;
         }
@@ -119,4 +133,16 @@
                 color: rgba(200, 44, 23, 1.0);
                 text-align: right;
             }
+
+            .snapcast-form * > .snapcast-group-clients {
+                max-width: 15em;
+                margin: auto;
+                text-align: right;
+            }
+
+                .snapcast-form * > .snapcast-group-clients * > label {
+                    display: inline;
+                    float: right;
+                    width: 80%;
+                }
 
