@@ -1,6 +1,8 @@
 $(document).ready(function() {
     var serverInfo = {},
         clientInfo = {},
+        serverStreams = {},
+        groupStreams = {},
         $container = $('#snapcast-container');
 
     var createPowerToggleElement = function(data) {
@@ -71,6 +73,8 @@ $(document).ready(function() {
         $container.html('');
         serverInfo = {};
         clientInfo = {};
+        serverStreams = {};
+        groupStreams = {};
 
         var hosts = Object.keys(window.config.snapcast_hosts);
 
@@ -78,6 +82,8 @@ $(document).ready(function() {
             var status = statuses[i];
             var host = hosts[i];
             var name = status.server.host.name || status.server.host.ip;
+
+            serverStreams[host] = status.streams;
             serverInfo[host] = status.server.host;
             serverInfo[host].serverName = status.server.snapserver.serverName;
             serverInfo[host].version = status.server.snapserver.version;
@@ -114,6 +120,8 @@ $(document).ready(function() {
 
             for (var group of status.groups) {
                 var groupName = group.name || group.stream_id;
+                groupStreams[group.id] = group.stream_id;
+
                 var $group = $('<div></div>')
                     .addClass('snapcast-group-container')
                     .data('name', groupName)
@@ -336,6 +344,23 @@ $(document).ready(function() {
                 $label.appendTo($row);
                 $row.appendTo($clientsList);
             }
+
+            var $streams = $form.find('.snapcast-group-stream').find('select[name=stream]');
+            $streams.html('');
+
+            for (var stream of serverStreams[host]) {
+                var $option = $('<option></option>').val(stream.id)
+                    .text(stream.id);
+
+                if (stream.id === groupStreams[groupId]) {
+                    $option.prop('selected', true);
+                }
+
+                $option.appendTo($streams);
+            }
+
+            $form.find('.snapcast-group-stream')
+                .find('select[name=stream]').html($streams.html());
         });
 
         $container.on('click touch', '.snapcast-client-settings', function(evt) {
@@ -431,36 +456,48 @@ $(document).ready(function() {
                 clients.push($(c).attr('name'));
             }
 
-            var request = {
-                type: 'request',
-                action: 'music.snapcast.group_set_clients',
-                args: {
-                    host: host,
-                    port: window.config.snapcast_hosts[host],
-                    group: groupId,
-                    clients: clients,
-                },
-            };
+            var streamId = $form.find('.snapcast-group-stream')
+                .find('select[name=stream]').val();
 
-            $form.find('input').prop('disabled', true);
+            var promises = [
+                execute({
+                    type: 'request',
+                    action: 'music.snapcast.group_set_clients',
+                    args: {
+                        host: host,
+                        port: window.config.snapcast_hosts[host],
+                        group: groupId,
+                        clients: clients,
+                    }
+                }),
+                execute({
+                    type: 'request',
+                    action: 'music.snapcast.group_set_stream',
+                    args: {
+                        host: host,
+                        port: window.config.snapcast_hosts[host],
+                        group: groupId,
+                        stream_id: streamId,
+                    }
+                }),
+            ];
 
-            execute(
-                request,
-                (response) => {
-                    redraw();
-                },
+            $.when.apply($, promises)
+            .fail(
                 (xhr, status, error) => {
                     createNotification({
                         'icon': 'exclamation',
                         'text': status + ': ' + error,
                     });
-                },
+                }
+            ).always(
                 () => {
                     $form.find('input').prop('disabled', false);
                     $modal.fadeOut();
                 }
             );
 
+            $form.find('input').prop('disabled', true);
             return false;
         });
     };

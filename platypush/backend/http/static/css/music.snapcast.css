@@ -121,17 +121,22 @@
             text-align: right;
         }
 
+        .snapcast-form > .snapcast-group-stream,
         .snapcast-form > .snapcast-client-delete {
             width: 30%;
             margin: 1em auto 0 auto;
             text-align: center;
         }
 
+            .snapcast-form > .snapcast-group-stream > label,
             .snapcast-form > .snapcast-client-delete > label {
                 display: inline;
                 margin-left: .5em;
-                color: rgba(200, 44, 23, 1.0);
                 text-align: right;
+            }
+
+            .snapcast-form > .snapcast-client-delete > label {
+                color: rgba(200, 44, 23, 1.0);
             }
 
             .snapcast-form * > .snapcast-group-clients {

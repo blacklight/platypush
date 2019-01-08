@@ -493,4 +493,44 @@ class MusicSnapcastPlugin(Plugin):
             except: pass
 
 
+    @action
+    def group_set_stream(self, group, stream_id, host=None, port=None):
+        """
+        Sets the active stream for a group.
+
+        :param group: Group name or ID
+        :type group: str
+
+        :param stream_id: Stream ID
+        :type stream_id: str
+
+        :param host: Snapcast server (default: default configured host)
+        :type host: str
+
+        :param port: Snapcast server port (default: default configured port)
+        :type port: int
+        """
+
+        sock = None
+
+        try:
+            sock = self._connect(host or self.host, port or self.port)
+            group = self._get_group(sock, group)
+            request = {
+                'id': self._get_req_id(),
+                'jsonrpc':'2.0',
+                'method': 'Group.SetStream',
+                'params': {
+                    'id': group['id'],
+                    'stream_id': stream_id,
+                }
+            }
+
+            self._send(sock, request)
+            return self._recv(sock)
+        finally:
+            try: sock.close()
+            except: pass
+
+
 # vim:sw=4:ts=4:et:
