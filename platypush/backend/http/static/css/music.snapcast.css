@@ -1,5 +1,6 @@
 .snapcast-host-container {
     min-width: 40em;
+    max-width: 80em;
     margin: 1em auto;
     background: rgba(245,245,245,0.6);
     border: 1px solid rgba(220,220,220,1.0);
@@ -9,26 +10,113 @@
 .snapcast-host-header {
     border-bottom: 1px solid rgba(220,220,220,1.0);
     font-size: 1em;
+    text-transform: uppercase;
+    padding: 0 .5em;
 }
+
+    .snapcast-host-header h1 {
+        font-size: 1.9em;
+    }
 
 .snapcast-group-header {
-    padding: 0.5em;
+    padding: .5em;
+    margin: 0 1.4em 1.8em .2em;
+    border-bottom: 1px solid #e8e8e8;
 }
 
-    .snapcast-group-settings {
-        text-align: center;
+    .snapcast-settings-btn {
         cursor: pointer;
+        padding: .2em;
     }
+
+        .snapcast-settings-btn:hover {
+            border: .05em solid #e0e0e0;
+            padding: .15em;
+        }
 
     .snapcast-group-header h2 {
         font-size: 1.5em;
+        margin-top: .6em;
     }
 
-.snapcast-client-container {
-    padding: 0 1.4em;
+.snapcast-client-disconnected {
+    color: rgba(0, 0, 0, 0.35);
 }
 
-    .snapcast-client-header h3 {
+.snapcast-client-row {
+    padding: 0 1.4em;
+    margin: 1.5em .5em;
+}
+
+    .snapcast-client-row h3 {
         font-size: 1.2em;
     }
+
+.snapcast-client-mute-toggle {
+    margin-top: -1.2em;
+}
+
+.snapcast-form {
+    margin-bottom: 1rem;
+}
+
+    .snapcast-form * > input[type=text] {
+        width: 100%;
+    }
+
+    .snapcast-form > .row {
+        padding: 0.5rem;
+    }
+
+    .snapcast-form-bottom {
+        text-align: right;
+        margin-top: 2rem;
+        border-top: 1px solid #ddd;
+    }
+
+        .snapcast-form-bottom input {
+            margin-top: 2rem;
+        }
+
+    .snapcast-form * > label {
+        transform: translateY(25%);
+    }
+
+    .snapcast-form > .snapcast-client-info {
+        max-width: 70%;
+        margin: 1em auto .5em auto;
+        padding: 2em;
+        background: rgba(240,240,240,0.6);
+        border-radius: 10px;
+        border: .05em solid rgba(225,225,225,1.0)
+    }
+
+        .snapcast-form > .snapcast-client-info > .row {
+            padding: .2em;
+        }
+
+            .snapcast-form > .snapcast-client-info > .row:hover {
+                background-color: #daf8e2 !important;
+            }
+
+        .snapcast-form > .snapcast-client-info * > .info-name {
+            font-weight: bold;
+        }
+
+        .snapcast-form > .snapcast-client-info * > .info-value {
+            text-align: right;
+        }
+
+        .snapcast-form > .snapcast-client-delete {
+            width: 30%;
+            margin: 1em auto 0 auto;
+            text-align: center;
+        }
+
+            .snapcast-form > .snapcast-client-delete > label {
+                display: inline;
+                margin-left: .5em;
+                color: rgba(200, 44, 23, 1.0);
+                text-align: right;
+            }
 

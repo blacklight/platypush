@@ -129,7 +129,20 @@ class MusicSnapcastBackend(Backend):
 
     def _client(self, host, port):
         def _thread():
-            status = self._status(host, port)
+            status = None
+
+            try:
+                status = self._status(host, port)
+            except Exception as e:
+                self.logger.warning(('Exception while getting the status ' +
+                                     'of the Snapcast server {}:{}: {}').
+                                    format(host, port, str(e)))
+
+                try:
+                    self._disconnect(host, port)
+                    time.sleep(5)
+                except:
+                    pass
 
             while not self.should_stop():
                 try:
