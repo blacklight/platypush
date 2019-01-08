@@ -38,6 +38,8 @@ class MusicSnapcastPlugin(Plugin):
         backend = get_backend('music.snapcast')
         backend_hosts = backend.hosts if backend else [self.host]
         backend_ports = backend.ports if backend else [self.port]
+        self.backend_hosts = backend_hosts
+        self.backend_ports = backend_ports
         self.backend_hosts_json = json.dumps({
             backend_hosts[i]: backend_ports[i]
             for i in range(len(backend_hosts))
