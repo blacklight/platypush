@@ -3,14 +3,7 @@
 
 <script type="text/javascript">
     window.config = window.config || {};
-    window.config.snapcast_hosts = {};
-
-    hosts = JSON.parse('{{ utils.to_json(utils.get_plugin("music.snapcast").backend_hosts) | safe }}');
-    ports = JSON.parse('{{ utils.to_json(utils.get_plugin("music.snapcast").backend_ports) | safe }}');
-
-    for (var i=0; i < hosts.length; i++) {
-        window.config.snapcast_hosts[hosts[i]] = ports[i];
-    }
+    window.config.snapcast_hosts = JSON.parse('{{ utils.get_plugin("music.snapcast").backend_hosts_json | safe }}');
 </script>
 
 <div id="snapcast-host-modal" class="modal snapcast-modal">

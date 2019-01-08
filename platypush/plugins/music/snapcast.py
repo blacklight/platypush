@@ -36,8 +36,12 @@ class MusicSnapcastPlugin(Plugin):
         self._latest_req_id_lock = threading.RLock()
 
         backend = get_backend('music.snapcast')
-        self.backend_hosts = backend.hosts if backend else [self.host]
-        self.backend_ports = backend.ports if backend else [self.port]
+        backend_hosts = backend.hosts if backend else [self.host]
+        backend_ports = backend.ports if backend else [self.port]
+        self.backend_hosts_json = json.dumps({
+            backend_hosts[i]: backend_ports[i]
+            for i in range(len(backend_hosts))
+        })
 
     def _get_req_id(self):
         with self._latest_req_id_lock:
