@@ -13,11 +13,28 @@
     }
 </script>
 
+<div id="snapcast-host-modal" class="modal snapcast-modal">
+    <div class="modal-container">
+        <div class="modal-header"></div>
+        <div class="modal-body">
+            <form id="snapcast-host-form" class="snapcast-form" action="#">
+                <div class="row snapcast-form-bottom">
+                    <div class="six columns offset-by-six forms-btns">
+                        <input type="button" class="btn-default" data-dismiss-modal="#snapcast-host-modal"
+                            value="Close">
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div id="snapcast-group-modal" class="modal snapcast-modal">
     <div class="modal-container">
         <div class="modal-header"></div>
         <div class="modal-body">
             <form id="snapcast-group-form" class="snapcast-form" action="#">
+                <div class="row snapcast-group-clients"></div>
                 <div class="row snapcast-form-bottom">
                     <div class="six columns offset-by-six forms-btns">
                         <input type="button" class="btn-default" data-dismiss-modal="#snapcast-group-modal"

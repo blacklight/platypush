@@ -82,16 +82,31 @@ $(document).ready(function() {
 
             var $host = $('<div></div>')
                 .addClass('snapcast-host-container')
+                .addClass('snapcast-settings-btn')
+                .attr('data-modal', '#snapcast-host-modal')
                 .data('name', name)
                 .data('host', host);
 
-            var $header = $('<div></div>').addClass('row')
+            var $hostHeader = $('<div></div>').addClass('row')
                 .addClass('snapcast-host-header');
 
-            var $title = $('<h1></h1>').text(name);
+            var $hostTitle = $('<h1></h1>')
+                .addClass('snapcast-host-settings')
+                .addClass('snapcast-settings-btn')
+                .attr('data-modal', '#snapcast-host-modal');
 
-            $title.appendTo($header);
-            $header.appendTo($host);
+            var $hostSettings = $('<i></i>')
+                .attr('data-modal', '#snapcast-host-modal')
+                .addClass('fa fa-ellipsis-v');
+
+            var $hostName = $('<span></span>')
+                .attr('data-modal', '#snapcast-host-modal')
+                .html('&nbsp; ' + name);
+
+            $hostSettings.appendTo($hostTitle);
+            $hostName.appendTo($hostTitle);
+            $hostTitle.appendTo($hostHeader);
+            $hostHeader.appendTo($host);
 
             for (var group of status.groups) {
                 var groupName = group.name || group.stream_id;
@@ -274,8 +289,27 @@ $(document).ready(function() {
             var groupId = $(this).parents('.snapcast-group-container').data('id');
             var groupName = $(this).parents('.snapcast-group-container').data('name');
             var $modal = $($(this).data('modal'));
+            var $clients = $(this).parents('.snapcast-host-container').find('.snapcast-client-container');
+            var groupClients = $(this).parents('.snapcast-group-container')
+                .find('.snapcast-client-container')
+                .map((i, client) => $(client).data('id'));
 
+            var $clientsList = $modal.find('.snapcast-group-clients');
             $modal.find('.modal-header').text(groupName);
+
+            for (var client of $clients) {
+                var $row = $('<div></div>').addClass('row');
+                var $input = $('<input></input>').attr('type', 'checkbox')
+                    .attr('name', $(client).data('id'))
+                    .prop('checked', $.inArray($(client).data('id'), groupClients) >= 0);
+                var $label = $('<label></label>')
+                    .attr('for', $(client).data('id'))
+                    .text($(client).data('name'));
+
+                $input.appendTo($row);
+                $label.appendTo($row);
+                $row.appendTo($clientsList);
+            }
         });
 
         $container.on('click touch', '.snapcast-client-settings', function(evt) {
@@ -305,7 +339,6 @@ $(document).ready(function() {
                 $modal.find('form').find('[name=delete]').prop('checked', false);
             };
 
-            console.log($modal);
             clearModal();
         });
 
