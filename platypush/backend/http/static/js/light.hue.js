@@ -6,6 +6,48 @@ $(document).ready(function() {
         $lightsList = $('#lights-list'),
         $scenesList = $('#scenes-list');
 
+    var onEvent = function(event) {
+        switch (event.args.type) {
+            case 'platypush.message.event.light.LightStatusChangeEvent':
+                var $lightsList = $('#lights-list');
+                var $light = $lightsList.find('.light-item').filter(
+                    (i, light) => $(light).data('id') == event.args.light_id
+                );
+
+                var $roomLights = $light.parent('.room-lights-item').find('.light-item').filter(
+                    (i, light) => $(light).data('type') == 'light'
+                );
+
+                var $allLightsItem = $light.parent('.room-lights-item').find('.light-item').filter(
+                    (i, light) => $(light).data('type') == 'room'
+                );
+
+                if ('on' in event.args) {
+                    $light.find('.light-ctrl-switch').prop('checked', event.args.on);
+
+                    if ($roomLights.find('.light-ctrl-switch:checked').length > 0) {
+                        $allLightsItem.find('.light-ctrl-switch').prop('checked', true);
+                    } else {
+                        $allLightsItem.find('.light-ctrl-switch').prop('checked', false);
+                    }
+                }
+
+                if ('bri' in event.args) {
+                    $light.find('.slider.bri').val(event.args.bri);
+                }
+
+                if ('sat' in event.args) {
+                    $light.find('.slider.sat').val(event.args.sat);
+                }
+
+                if ('hue' in event.args) {
+                    $light.find('.slider.hue').val(event.args.hue);
+                }
+
+                break;
+        }
+    };
+
     var createPowerToggleElement = function(data) {
         var id = data['type'] + '_' + data['id'];
         var $powerToggle = $('<div></div>').addClass('toggle toggle--push light-ctrl-switch-container');
@@ -656,8 +698,13 @@ $(document).ready(function() {
         }
     };
 
+    var initEvents = function() {
+        window.registerEventListener(onEvent);
+    };
+
     var init = function() {
         initUi();
+        initEvents();
     };
 
     init();
