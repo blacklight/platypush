@@ -15,6 +15,7 @@ Backends
     platypush/backend/http.rst
     platypush/backend/inotify.rst
     platypush/backend/kafka.rst
+    platypush/backend/light.hue.rst
     platypush/backend/midi.rst
     platypush/backend/mqtt.rst
     platypush/backend/music.mpd.rst

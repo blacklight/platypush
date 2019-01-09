@@ -13,6 +13,7 @@ Events
     platypush/events/http.rst
     platypush/events/joystick.rst
     platypush/events/kafka.rst
+    platypush/events/light.rst
     platypush/events/midi.rst
     platypush/events/music.rst
     platypush/events/music.snapcast.rst
