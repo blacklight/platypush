@@ -50,24 +50,28 @@ class MusicMpdBackend(Backend):
         plugin = None
 
         while not self.should_stop():
-            try:
-                plugin = get_plugin('music.mpd')
-                if not plugin:
-                    raise StopIteration
+            success = False
 
-                status = plugin.status().output
-                if not status or status.get('state') is None:
-                    raise StopIteration
+            while not success:
+                try:
+                    plugin = get_plugin('music.mpd')
+                    if not plugin:
+                        raise StopIteration
 
-                track = plugin.currentsong().output
-                state = status['state'].lower()
-                playlist = status['playlist']
-            except StopIteration:
-                pass
-            except Exception as e:
-                self.logger.debug(e)
-            finally:
-                time.sleep(self.poll_seconds)
+                    status = plugin.status().output
+                    if not status or status.get('state') is None:
+                        raise StopIteration
+
+                    track = plugin.currentsong().output
+                    state = status['state'].lower()
+                    playlist = status['playlist']
+                    success = True
+                except StopIteration:
+                    pass
+                except Exception as e:
+                    self.logger.debug(e)
+                finally:
+                    time.sleep(self.poll_seconds)
 
             if state != last_state:
                 if state == 'stop':
