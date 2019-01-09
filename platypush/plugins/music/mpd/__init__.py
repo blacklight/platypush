@@ -207,7 +207,7 @@ class MusicMpdPlugin(MusicPlugin):
         return self._exec('shuffle')
 
     @action
-    def add(self, resource):
+    def add(self, resource, position=None):
         """
         Add a resource (track, album, artist, folder etc.) to the current playlist
 
@@ -219,14 +219,20 @@ class MusicMpdPlugin(MusicPlugin):
             for r in resource:
                 r = self._parse_resource(r)
                 try:
-                    self._exec('add', r)
+                    if position is None:
+                        self._exec('add', r)
+                    else:
+                        self._exec('addid', r, position)
                 except Exception as e:
                     self.logger.warning('Could not add {}: {}'.format(r, e))
 
             return self.status().output
 
         r = self._parse_resource(resource)
-        return self._exec('add', r)
+
+        if position is None:
+            return self._exec('add', r)
+        return self._exec('addid', r, position)
 
     @classmethod
     def _parse_resource(cls, resource):
