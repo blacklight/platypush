@@ -8,15 +8,16 @@ $(document).ready(function() {
     var createPowerToggleElement = function(data) {
         data = data || {};
 
+        var inputId = data.id + '_' + parseInt(Math.random()*100000);
         var $powerToggle = $('<div></div>').addClass('toggle toggle--push switch-container');
         var $input = $('<input></input>').attr('type', 'checkbox')
-            .attr('id', data.id).addClass('toggle--checkbox');
+            .attr('id', inputId).data('id', data.id).addClass('toggle--checkbox');
 
         for (var attr of Object.keys(data)) {
             $input.data(attr, data[attr]);
         }
 
-        var $label = $('<label></label>').attr('for', data.id).addClass('toggle--btn');
+        var $label = $('<label></label>').attr('for', inputId).addClass('toggle--btn');
 
         $input.appendTo($powerToggle);
         $label.appendTo($powerToggle);
@@ -255,7 +256,7 @@ $(document).ready(function() {
     var initBindings = function() {
         $container.on('click touch', '.toggle--checkbox', function(evt) {
             evt.stopPropagation();
-            var id = $(this).attr('id');
+            var id = $(this).data('id');
             var host = $(this).parents('.snapcast-host-container').data('host');
             var args = {
                 host: host,
