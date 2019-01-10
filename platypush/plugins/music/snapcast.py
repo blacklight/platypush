@@ -2,6 +2,7 @@ import json
 import socket
 import threading
 
+from platypush.config import Config
 from platypush.context import get_backend
 from platypush.plugins import Plugin, action
 
@@ -542,5 +543,69 @@ class MusicSnapcastPlugin(Plugin):
         for i in range(len(self.backend_hosts)):
             hosts[self.backend_hosts[i]] = self.backend_ports[i]
         return hosts
+
+    @action
+    def get_playing_streams(self, exclude_local=True):
+        """
+        Returns the remote streams configured in the `music.snapcast` backend
+        that are currently active and unmuted.
+
+        :param exclude_local: Exclude localhost connections (default: true)
+        :type exclude_local: bool
+
+        :returns: dict with the host->port mapping. Example::
+
+            {
+                "hosts": {
+                    "server_1": 1705,
+                    "server_2": 1705,
+                    "server_3": 1705
+                }
+            }
+        """
+
+        backend_hosts = self.get_backend_hosts().output
+
+        def _worker(host, port):
+            if exclude_local and (host == 'localhost'
+                                  or  host == Config.get('device_id')):
+                del backend_hosts[host]
+                return
+
+            server_status = self.status(host=host, port=port).output
+            client_status = self.status(host=host, port=port,
+                                        client=Config.get('device_id')).output
+
+            if client_status.get('config', {}).get('volume', {}).get('muted'):
+                del backend_hosts[host]
+                return
+
+            group = [g for g in server_status.get('groups', {})
+                     if g.get('id') == client_status.get('group_id')].pop(0)
+
+            if group.get('muted'):
+                del backend_hosts[host]
+                return
+
+            stream = [s for s in server_status.get('streams')
+                      if s.get('id') == group.get('stream_id')].pop(0)
+
+            if stream.get('status') != 'playing':
+                del backend_hosts[host]
+                return
+
+        workers = []
+
+        for host, port in backend_hosts.items():
+            w = threading.Thread(target=_worker, args=(host,port))
+            w.start()
+            workers.append(w)
+
+        while workers:
+            w = workers.pop()
+            w.join()
+
+        return {'hosts': backend_hosts}
+
 
 # vim:sw=4:ts=4:et:
