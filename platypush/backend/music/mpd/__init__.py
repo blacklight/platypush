@@ -66,10 +66,11 @@ class MusicMpdBackend(Backend):
                     state = status['state'].lower()
                     playlist = status['playlist']
                     success = True
-                except StopIteration:
-                    pass
                 except Exception as e:
                     self.logger.debug(e)
+                    if not state: state = last_state
+                    if not playlist: playlist = last_playlist
+                    if not track: track = last_track
                 finally:
                     time.sleep(self.poll_seconds)
 
@@ -83,8 +84,11 @@ class MusicMpdBackend(Backend):
 
             if playlist != last_playlist:
                 if last_playlist:
-                    changes = plugin.plchanges(last_playlist).output
-                    self.bus.post(PlaylistChangeEvent(changes=changes))
+                    # XXX plchanges can become heavy with big playlists,
+                    # PlaylistChangeEvent temporarily disabled
+                    # changes = plugin.plchanges(last_playlist).output
+                    # self.bus.post(PlaylistChangeEvent(changes=changes))
+                    self.bus.post(PlaylistChangeEvent())
                 last_playlist = playlist
 
             if state == 'play' and track != last_track:

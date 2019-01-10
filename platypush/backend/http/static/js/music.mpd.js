@@ -230,6 +230,10 @@ $(document).ready(function() {
     };
 
     var updatePlaylist = function(tracks) {
+        if (tracks == null) {
+            return;
+        }
+
         var $playlistContent = $('#playlist-content');
         $playlistContent.find('.playlist-track').remove();
 

@@ -93,7 +93,7 @@ class PlaylistChangeEvent(MusicEvent):
     Event fired upon playlist change
     """
 
-    def __init__(self, changes, status=None, track=None, *args, **kwargs):
+    def __init__(self, changes=None, status=None, track=None, *args, **kwargs):
         """
         :param changes: List with the tracks being added or removed
         :type changes: list
