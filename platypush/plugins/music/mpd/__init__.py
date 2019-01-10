@@ -32,12 +32,29 @@ class MusicMpdPlugin(MusicPlugin):
         super().__init__()
         self.host = host
         self.port = port
-        self.client = mpd.MPDClient(use_unicode=True)
-        self.client.connect(self.host, self.port)
+        self.client = None
+
+    def _connect(self):
+        if not self.client:
+            self.client = mpd.MPDClient(use_unicode=True)
+            self.client.connect(self.host, self.port)
+        return self.client
 
     def _exec(self, method, *args, **kwargs):
-        getattr(self.client, method)(*args, **kwargs)
-        return self.status().output
+        return_status = kwargs.pop('return_status') \
+            if 'return_status' in kwargs else True
+
+        try:
+            self._connect()
+            response = getattr(self.client, method)(*args, **kwargs)
+            if return_status:
+                return self.status().output
+            return response
+        except Exception as e:
+            self.logger.warning('Exception while executing MPD method {}: {}'.
+                                format(method, str(e)))
+            self.client = None
+            return (None, str(e))
 
     @action
     def play(self, resource=None):
@@ -309,7 +326,14 @@ class MusicMpdPlugin(MusicPlugin):
             }
         """
 
-        return self.client.status()
+        try:
+            self._connect()
+            return self.client.status()
+        except Exception as e:
+            self.logger.warning('Exception while getting MPD status: {}'.
+                                format(str(e)))
+            self.client = None
+            return (None, str(e))
 
     @action
     def currentsong(self):
@@ -333,7 +357,7 @@ class MusicMpdPlugin(MusicPlugin):
             }
         """
 
-        track = self.client.currentsong()
+        track = self._exec('currentsong', return_status=False)
         if 'title' in track and ('artist' not in track
                                  or not track['artist']
                                  or re.search('^tunein:', track['file'])):
@@ -381,7 +405,7 @@ class MusicMpdPlugin(MusicPlugin):
             ]
         """
 
-        return self.client.playlistinfo()
+        return self._exec('playlistinfo', return_status=False)
 
     @action
     def listplaylists(self):
@@ -405,7 +429,8 @@ class MusicMpdPlugin(MusicPlugin):
             ]
         """
 
-        return sorted(self.client.listplaylists(), key=lambda p: p['playlist'])
+        return sorted(self._exec('listplaylists', return_status=False),
+                      key=lambda p: p['playlist'])
 
     @action
     def lsinfo(self, uri=None):
@@ -413,7 +438,8 @@ class MusicMpdPlugin(MusicPlugin):
         Returns the list of playlists and directories on the server
         """
 
-        output = self.client.lsinfo(uri) if uri else self.client.lsinfo()
+        output = self._exec('lsinfo', uri, return_status=False) \
+            if uri else self._exec('lsinfo', return_status=False)
         return output
 
     @action
@@ -428,7 +454,7 @@ class MusicMpdPlugin(MusicPlugin):
         :returns: A list of dicts representing the songs being added since the specified version
         """
 
-        return self.client.plchanges(version)
+        return self._exec('plchanges', version, return_status=False)
 
     @action
     def searchaddplaylist(self, name):
@@ -442,12 +468,12 @@ class MusicMpdPlugin(MusicPlugin):
         playlists = list(map(lambda _: _['playlist'],
                         filter(lambda playlist:
                                name.lower() in playlist['playlist'].lower(),
-                               self.client.listplaylists())))
+                               self._exec('listplaylists', return_status=False))))
 
         if len(playlists):
-            self.client.clear()
-            self.client.load(playlists[0])
-            self.client.play()
+            self._exec('clear')
+            self._exec('load', playlists[0])
+            self._exec('play')
             return {'playlist': playlists[0]}
 
     @action
@@ -460,7 +486,7 @@ class MusicMpdPlugin(MusicPlugin):
         :returns: list[dict]
         """
 
-        return self.client.find(*filter, *args, **kwargs)
+        return self._exec('find', *filter, *args, return_status=False, **kwargs)
 
     @action
     def findadd(self, filter, *args, **kwargs):
@@ -472,7 +498,7 @@ class MusicMpdPlugin(MusicPlugin):
         :returns: list[dict]
         """
 
-        return self.client.findadd(*filter, *args, **kwargs)
+        return self._exec('findadd', *filter, *args, return_status=False, **kwargs)
 
     @action
     def search(self, filter, *args, **kwargs):
@@ -484,7 +510,7 @@ class MusicMpdPlugin(MusicPlugin):
         :returns: list[dict]
         """
 
-        items = self.client.search(*filter, *args, **kwargs)
+        items = self._exec('search', *filter, *args, return_status=False, **kwargs)
 
         # Spotify results first
         items = sorted(items, key=lambda item:
@@ -502,7 +528,7 @@ class MusicMpdPlugin(MusicPlugin):
         :returns: list[dict]
         """
 
-        return self.client.searchadd(*filter, *args, **kwargs)
+        return self._exec('searchadd', *filter, *args, return_status=False, **kwargs)
 
 # vim:sw=4:ts=4:et:
 
