@@ -77,7 +77,7 @@ class HttpRequest(object):
                 self.logger.warning('Encountered an error while retrieving {}: {}'.
                                     format(self.args.url, str(e)))
 
-        Thread(target=_thread_func).start()
+        Thread(target=_thread_func, name='PlatypushHttpPoll').start()
 
 
     def get_new_items(self, response):

@@ -157,7 +157,9 @@ class EventHook(object):
 
         if result.is_match:
             logger.info('Running hook {} triggered by an event'.format(self.name))
-            threading.Thread(target=_thread_func, args=(result,)).start()
+            threading.Thread(target=_thread_func,
+                             name='PlatypushEventHook_' + self.name,
+                             args=(result,)).start()
 
 
 # vim:sw=4:ts=4:et:

@@ -88,7 +88,7 @@ class TcpBackend(Backend):
             finally:
                 sock.close()
 
-        threading.Thread(target=_f_wrapper).start()
+        threading.Thread(target=_f_wrapper, name='PlatypushTCPListener').start()
 
     def run(self):
         super().run()

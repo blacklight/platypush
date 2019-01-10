@@ -198,7 +198,9 @@ class MusicSnapcastBackend(Backend):
             for i, host in enumerate(self.hosts):
                 port = self.ports[i]
                 self._threads[host] = threading.Thread(
-                    target=self._client(host, port))
+                    target=self._client(host, port),
+                    name='PlatypushSnapcastWorker'
+                )
 
                 self._threads[host].start()
 

@@ -44,6 +44,8 @@ class Backend(Thread):
         :type kwargs: dict
         """
 
+        super().__init__(name='PlatypushBackend_' + self.__class__.__name__)
+
         # If no bus is specified, create an internal queue where
         # the received messages will be pushed
         self.bus = bus or Bus()

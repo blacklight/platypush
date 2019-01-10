@@ -455,7 +455,9 @@ class HttpBackend(Backend):
         self.logger.info('Initialized HTTP backend on port {}'.format(self.port))
 
         webserver = self.webserver()
-        self.server_proc = Process(target=webserver.run, kwargs=kwargs)
+        self.server_proc = Process(target=webserver.run,
+                                   name='PlatypushWebServer',
+                                   kwargs=kwargs)
         self.server_proc.start()
 
         if not self.disable_websocket:

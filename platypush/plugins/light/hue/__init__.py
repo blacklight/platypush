@@ -719,7 +719,9 @@ class LightHuePlugin(LightPlugin):
             lights = self.lights
 
         self.stop_animation()
-        self.animation_thread = Thread(target=_animate_thread, args=(lights,))
+        self.animation_thread = Thread(target=_animate_thread,
+                                       name='PlatypushLightHueAnimate',
+                                       args=(lights,))
         self.animation_thread.start()
 
 

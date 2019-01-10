@@ -121,7 +121,9 @@ class MqttBackend(Backend):
                 return
 
             if isinstance(msg, Request):
-                threading.Thread(target=response_thread, args=(msg,)).start()
+                threading.Thread(target=response_thread,
+                                 name='PlatypushMQTTResponseProcessor',
+                                 args=(msg,)).start()
 
         super().run()
         client = mqtt.Client()

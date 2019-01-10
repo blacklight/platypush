@@ -145,7 +145,8 @@ class CameraPiBackend(Backend):
             return
 
         self.logger.info('Starting camera recording')
-        self._recording_thread = Thread(target=recording_thread)
+        self._recording_thread = Thread(target=recording_thread,
+                                        name='PiCameraRecorder')
         self._recording_thread.start()
 
 
