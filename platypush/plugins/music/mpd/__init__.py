@@ -309,16 +309,7 @@ class MusicMpdPlugin(MusicPlugin):
             }
         """
 
-        retries = 0
-        max_retries = 2
-
-        while retries < max_retries:
-            try:
-                return self.client.status()
-            except Exception as e:
-                self.logger.warning('Unable to parse mpd status: {}'.format(e))
-                retries += 1
-                time.sleep(1)
+        return self.client.status()
 
     @action
     def currentsong(self):
