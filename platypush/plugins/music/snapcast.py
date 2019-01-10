@@ -545,12 +545,12 @@ class MusicSnapcastPlugin(Plugin):
         return hosts
 
     @action
-    def get_playing_streams(self, exclude_local=True):
+    def get_playing_streams(self, exclude_local=False):
         """
         Returns the remote streams configured in the `music.snapcast` backend
         that are currently active and unmuted.
 
-        :param exclude_local: Exclude localhost connections (default: true)
+        :param exclude_local: Exclude localhost connections (default: False)
         :type exclude_local: bool
 
         :returns: dict with the host->port mapping. Example::
