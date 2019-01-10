@@ -565,11 +565,11 @@ class MusicSnapcastPlugin(Plugin):
         """
 
         backend_hosts = self.get_backend_hosts().output
+        playing_hosts = {}
 
         def _worker(host, port):
             if exclude_local and (host == 'localhost'
                                   or  host == Config.get('device_id')):
-                del backend_hosts[host]
                 return
 
             server_status = self.status(host=host, port=port).output
@@ -577,22 +577,21 @@ class MusicSnapcastPlugin(Plugin):
                                         client=Config.get('device_id')).output
 
             if client_status.get('config', {}).get('volume', {}).get('muted'):
-                del backend_hosts[host]
                 return
 
             group = [g for g in server_status.get('groups', {})
                      if g.get('id') == client_status.get('group_id')].pop(0)
 
             if group.get('muted'):
-                del backend_hosts[host]
                 return
 
             stream = [s for s in server_status.get('streams')
                       if s.get('id') == group.get('stream_id')].pop(0)
 
             if stream.get('status') != 'playing':
-                del backend_hosts[host]
                 return
+
+            playing_hosts[host] = port
 
         workers = []
 
@@ -605,7 +604,7 @@ class MusicSnapcastPlugin(Plugin):
             w = workers.pop()
             w.join()
 
-        return {'hosts': backend_hosts}
+        return {'hosts': playing_hosts}
 
 
 # vim:sw=4:ts=4:et:
