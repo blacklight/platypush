@@ -9,7 +9,7 @@
 pyyaml
 
 # Support for setting thread/process name
-prctl
+python-prctl
 
 # Apache Kafka backend support
 kafka-python
