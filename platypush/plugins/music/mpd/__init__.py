@@ -360,6 +360,7 @@ class MusicMpdPlugin(MusicPlugin):
         track = self._exec('currentsong', return_status=False)
         if 'title' in track and ('artist' not in track
                                  or not track['artist']
+                                 or re.search('^https?://', track['file'])
                                  or re.search('^tunein:', track['file'])):
             m = re.match('^\s*(.+?)\s+-\s+(.*)\s*$', track['title'])
             if m and m.group(1) and m.group(2):
