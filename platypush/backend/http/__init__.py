@@ -15,7 +15,7 @@ from flask import Flask, Response, abort, jsonify, request as http_request, \
 from redis import Redis
 
 from platypush.config import Config
-from platypush.context import get_backend, get_plugin, get_or_create_event_loop
+from platypush.context import get_backend, get_or_create_event_loop
 from platypush.message import Message
 from platypush.message.event import Event, StopEvent
 from platypush.message.event.web.widget import WidgetUpdateEvent
@@ -548,11 +548,6 @@ class HttpUtils(object):
     @classmethod
     def from_json(cls, data):
         return json.loads(data)
-
-
-    @classmethod
-    def get_plugin(cls, plugin):
-        return get_plugin(plugin)
 
 
 # vim:sw=4:ts=4:et:

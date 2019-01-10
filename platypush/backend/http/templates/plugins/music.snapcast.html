@@ -1,11 +1,6 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/music.snapcast.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/music.snapcast.css') }}"></script>
 
-<script type="text/javascript">
-    window.config = window.config || {};
-    window.config.snapcast_hosts = JSON.parse('{{ utils.get_plugin("music.snapcast").backend_hosts_json | safe }}');
-</script>
-
 <div id="snapcast-host-modal" class="modal snapcast-modal">
     <div class="modal-container">
         <div class="modal-header"></div>

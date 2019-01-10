@@ -225,32 +225,43 @@ $(document).ready(function() {
     };
 
     var redraw = function() {
-        var promises = [];
+        execute(
+            {
+                type: 'request',
+                action: 'music.snapcast.get_backend_hosts',
+            },
 
-        for (var host of Object.keys(window.config.snapcast_hosts)) {
-            promises.push(
-                execute({
-                    type: 'request',
-                    action: 'music.snapcast.status',
-                    args: {
-                        host: host,
-                        port: window.config.snapcast_hosts[host],
+            (response) => {
+                window.config = window.config || {};
+                window.config.snapcast_hosts = response.response.output;
+                var promises = [];
+
+                for (var host of Object.keys(window.config.snapcast_hosts)) {
+                    promises.push(
+                        execute({
+                            type: 'request',
+                            action: 'music.snapcast.status',
+                            args: {
+                                host: host,
+                                port: window.config.snapcast_hosts[host],
+                            }
+                        })
+                    );
+                }
+
+                $.when.apply($, promises)
+                .done(function() {
+                    var statuses = [];
+                    for (var status of arguments) {
+                        statuses.push(status[0].response.output);
                     }
-                })
-            );
-        }
 
-        $.when.apply($, promises)
-        .done(function() {
-            var statuses = [];
-            for (var status of arguments) {
-                statuses.push(status[0].response.output);
+                    update(statuses);
+                }).then(function() {
+                    initBindings();
+                });
             }
-
-            update(statuses);
-        }).then(function() {
-            initBindings();
-        });
+        );
     };
 
     var initBindings = function() {
