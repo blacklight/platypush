@@ -18,7 +18,7 @@ from platypush.message import Message
 from platypush.message.event import Event, StopEvent
 from platypush.message.request import Request
 from platypush.message.response import Response
-from platypush.utils import get_redis_queue_name_by_message
+from platypush.utils import get_redis_queue_name_by_message, set_thread_name
 
 
 class Backend(Thread):
@@ -44,7 +44,8 @@ class Backend(Thread):
         :type kwargs: dict
         """
 
-        super().__init__(name='PlatypushBackend_' + self.__class__.__name__)
+        self._thread_name = 'pp-' + self.__class__.__name__
+        super().__init__(name=self._thread_name)
 
         # If no bus is specified, create an internal queue where
         # the received messages will be pushed
@@ -216,6 +217,7 @@ class Backend(Thread):
     def run(self):
         """ Starts the backend thread. To be implemented in the derived classes """
         self.thread_id = threading.get_ident()
+        set_thread_name(self._thread_name)
 
     def on_stop(self):
         """ Callback invoked when the process stops """

@@ -8,7 +8,7 @@ from platypush.config import Config
 from platypush.message.event import Event, EventMatchResult
 from platypush.message.request import Request
 from platypush.procedure import Procedure
-from platypush.utils import get_event_class_by_type
+from platypush.utils import get_event_class_by_type, set_thread_name
 
 logger = logging.getLogger(__name__)
 
@@ -150,6 +150,7 @@ class EventHook(object):
             runs the hook actions if the condition is met """
 
         def _thread_func(result):
+            set_thread_name('pp-event-' + self.name)
             self.actions.execute(event=event, **result.parsed_args)
 
         result = self.matches_event(event)
@@ -158,7 +159,7 @@ class EventHook(object):
         if result.is_match:
             logger.info('Running hook {} triggered by an event'.format(self.name))
             threading.Thread(target=_thread_func,
-                             name='PlatypushEventHook_' + self.name,
+                             name='pp-event-' + self.name,
                              args=(result,)).start()
 
 

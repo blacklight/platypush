@@ -63,6 +63,7 @@ setup(
         'pyyaml',
         'redis',
         'requests',
+        'prctl',
     ],
     extras_require = {
         'Support for Apache Kafka backend': ['kafka-python'],

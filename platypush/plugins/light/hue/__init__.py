@@ -11,6 +11,7 @@ from phue import Bridge
 from platypush.context import get_backend
 from platypush.plugins import action
 from platypush.plugins.light import LightPlugin
+from platypush.utils import set_thread_name
 
 
 class LightHuePlugin(LightPlugin):
@@ -666,6 +667,7 @@ class LightHuePlugin(LightPlugin):
 
 
         def _animate_thread(lights):
+            set_thread_name('pp-hue-animate')
             self.logger.info('Starting {} animation'.format(
                 animation, (lights or groups)))
 
@@ -720,7 +722,7 @@ class LightHuePlugin(LightPlugin):
 
         self.stop_animation()
         self.animation_thread = Thread(target=_animate_thread,
-                                       name='PlatypushLightHueAnimate',
+                                       name='pp-hue-animate',
                                        args=(lights,))
         self.animation_thread.start()
 

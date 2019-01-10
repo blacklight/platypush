@@ -8,6 +8,9 @@
 # YAML configuration support
 pyyaml
 
+# Support for setting thread/process name
+prctl
+
 # Apache Kafka backend support
 kafka-python
 

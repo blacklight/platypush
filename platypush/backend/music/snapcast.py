@@ -5,6 +5,7 @@ import time
 
 from platypush.backend import Backend
 from platypush.context import get_plugin
+from platypush.utils import set_thread_name
 from platypush.message.event.music.snapcast import ClientVolumeChangeEvent, \
     GroupMuteChangeEvent, ClientConnectedEvent, ClientDisconnectedEvent, \
     ClientLatencyChangeEvent, ClientNameChangeEvent, GroupStreamChangeEvent, \
@@ -129,6 +130,7 @@ class MusicSnapcastBackend(Backend):
 
     def _client(self, host, port):
         def _thread():
+            set_thread_name('pp-snapcast-' + host)
             status = None
 
             try:
@@ -199,7 +201,7 @@ class MusicSnapcastBackend(Backend):
                 port = self.ports[i]
                 self._threads[host] = threading.Thread(
                     target=self._client(host, port),
-                    name='PlatypushSnapcastWorker'
+                    name='pp-snapcast'
                 )
 
                 self._threads[host].start()

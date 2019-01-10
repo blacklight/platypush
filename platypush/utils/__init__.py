@@ -163,6 +163,15 @@ def get_ssl_client_context(ssl_cert=None, ssl_key=None, ssl_cafile=None,
                             ssl_cert=ssl_cert, ssl_key=ssl_key,
                             ssl_cafile=ssl_cafile, ssl_capath=ssl_capath)
 
+def set_thread_name(name):
+    global logger
+
+    try:
+        import prctl
+        prctl.set_name(name)
+    except ImportError:
+        logger.debug('Unable to set thread name: prctl module is missing')
+
 
 # vim:sw=4:ts=4:et:
 

@@ -5,6 +5,7 @@ import threading
 from platypush.backend import Backend
 from platypush.message import Message
 from platypush.message.request import Request
+from platypush.utils import set_thread_name
 
 
 class TcpBackend(Backend):
@@ -83,12 +84,13 @@ class TcpBackend(Backend):
                 sock.send(str(response).encode())
 
         def _f_wrapper():
+            set_thread_name('pp-tcp-listen')
             try:
                 _f()
             finally:
                 sock.close()
 
-        threading.Thread(target=_f_wrapper, name='PlatypushTCPListener').start()
+        threading.Thread(target=_f_wrapper, name='pp-tcp-listen').start()
 
     def run(self):
         super().run()

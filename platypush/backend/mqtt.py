@@ -9,6 +9,7 @@ from platypush.backend import Backend
 from platypush.context import get_plugin
 from platypush.message import Message
 from platypush.message.request import Request
+from platypush.utils import set_thread_name
 
 
 class MqttBackend(Backend):
@@ -97,6 +98,7 @@ class MqttBackend(Backend):
 
         def on_message(client, userdata, msg):
             def response_thread(msg):
+                set_thread_name('pp-mqtt-processor')
                 response = self.get_message_response(msg)
                 if not response:
                     return
@@ -122,7 +124,7 @@ class MqttBackend(Backend):
 
             if isinstance(msg, Request):
                 threading.Thread(target=response_thread,
-                                 name='PlatypushMQTTResponseProcessor',
+                                 name='pp-mqtt-processor',
                                  args=(msg,)).start()
 
         super().run()

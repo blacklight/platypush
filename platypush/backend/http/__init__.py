@@ -20,7 +20,7 @@ from platypush.message import Message
 from platypush.message.event import Event, StopEvent
 from platypush.message.event.web.widget import WidgetUpdateEvent
 from platypush.message.request import Request
-from platypush.utils import get_ssl_server_context
+from platypush.utils import get_ssl_server_context, set_thread_name
 
 from .. import Backend
 
@@ -232,6 +232,8 @@ class HttpBackend(Backend):
 
     def webserver(self):
         """ Web server main process """
+        set_thread_name('pp-web-server')
+
         basedir = os.path.dirname(inspect.getfile(self.__class__))
         template_dir = os.path.join(basedir, 'templates')
         app = Flask(__name__, template_folder=template_dir)
@@ -416,6 +418,7 @@ class HttpBackend(Backend):
     def websocket(self):
         """ Websocket main server """
         import websockets
+        set_thread_name('pp-websocket-server')
 
         async def register_websocket(websocket, path):
             address = websocket.remote_address[0] if websocket.remote_address \
@@ -456,7 +459,7 @@ class HttpBackend(Backend):
 
         webserver = self.webserver()
         self.server_proc = Process(target=webserver.run,
-                                   name='PlatypushWebServer',
+                                   name='pp-web-server',
                                    kwargs=kwargs)
         self.server_proc.start()
 

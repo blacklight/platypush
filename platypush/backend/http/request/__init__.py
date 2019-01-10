@@ -11,6 +11,7 @@ from frozendict import frozendict
 from threading import Thread
 
 from platypush.message.event.http import HttpEvent
+from platypush.utils import set_thread_name
 
 class HttpRequest(object):
     poll_seconds = 60
@@ -53,6 +54,7 @@ class HttpRequest(object):
 
     def execute(self):
         def _thread_func():
+            set_thread_name('pp-http-poll')
             is_first_call = self.last_request_timestamp == 0
             self.last_request_timestamp = time.time()
 
@@ -77,7 +79,7 @@ class HttpRequest(object):
                 self.logger.warning('Encountered an error while retrieving {}: {}'.
                                     format(self.args.url, str(e)))
 
-        Thread(target=_thread_func, name='PlatypushHttpPoll').start()
+        Thread(target=_thread_func, name='pp-http-poll').start()
 
 
     def get_new_items(self, response):

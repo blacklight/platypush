@@ -24,6 +24,7 @@ from .message.event import Event, StopEvent
 from .message.event.application import ApplicationStartedEvent, ApplicationStoppedEvent
 from .message.request import Request
 from .message.response import Response
+from .utils import set_thread_name
 
 
 __author__ = 'Fabio Manganiello <blacklight86@gmail.com>'
@@ -138,6 +139,7 @@ class Daemon:
 
     def start(self):
         """ Start the daemon """
+        set_thread_name('platypush')
         print('---- Starting platypush v.{}'.format(__version__))
 
         redis_conf = Config.get('backend.redis')
