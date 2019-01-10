@@ -231,6 +231,7 @@ $(document).ready(function() {
 
     var updatePlaylist = function(tracks) {
         if (tracks == null) {
+            initPlaylist();
             return;
         }
 
