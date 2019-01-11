@@ -1,6 +1,5 @@
 import json
 
-from ouimeaux.environment import Environment, UnknownDevice
 from platypush.plugins import action
 from platypush.plugins.switch import SwitchPlugin
 
@@ -22,16 +21,22 @@ class SwitchWemoPlugin(SwitchPlugin):
         """
 
         super().__init__(*args, **kwargs)
-        self.discovery_seconds=discovery_seconds
-        self.env = Environment()
-        self.env.start()
-        self.refresh_devices()
+        self.discovery_seconds = discovery_seconds
+        self.env = None
 
-    def refresh_devices(self):
+    def _refresh_devices(self):
         """ Update the list of available devices """
         self.logger.info('Starting WeMo discovery')
+        self._get_environment()
         self.env.discover(seconds=self.discovery_seconds)
         self.devices = self.env.devices
+
+    def _get_environment(self):
+        if not self.env:
+            from ouimeaux.environment import Environment
+            self.env = Environment()
+            self.env.start()
+            self._refresh_devices()
 
     @action
     def get_devices(self):
@@ -57,7 +62,7 @@ class SwitchWemoPlugin(SwitchPlugin):
                 ]
             }
         """
-        self.refresh_devices()
+        self._refresh_devices()
         return {
             'devices': [
                 {
@@ -72,13 +77,16 @@ class SwitchWemoPlugin(SwitchPlugin):
         }
 
     def _exec(self, method, device, *args, **kwargs):
+        self._get_environment()
+
         if device not in self.devices:
-            self.refresh_devices()
+            self._refresh_devices()
 
         if device not in self.devices:
             raise RuntimeError('Device {} not found'.format(device))
 
-        self.logger.info('{} -> {}'.format(device, method))
+        self.logger.info('Executing {} on WeMo device {}'.
+                         format(method, device))
         dev = self.devices[device]
         getattr(dev, method)(*args, **kwargs)
 
