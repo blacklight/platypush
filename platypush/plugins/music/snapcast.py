@@ -49,6 +49,7 @@ class MusicSnapcastPlugin(Plugin):
 
     def _connect(self, host=None, port=None):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.logger.info('Connecting to Snapcast host {}:{}'.format(host, port))
         sock.connect((host or self.host, port or self.port))
         return sock
 
