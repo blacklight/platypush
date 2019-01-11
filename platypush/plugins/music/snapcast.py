@@ -569,30 +569,35 @@ class MusicSnapcastPlugin(Plugin):
         playing_hosts = {}
 
         def _worker(host, port):
-            if exclude_local and (host == 'localhost'
-                                  or  host == Config.get('device_id')):
-                return
+            try:
+                if exclude_local and (host == 'localhost'
+                                    or  host == Config.get('device_id')):
+                    return
 
-            server_status = self.status(host=host, port=port).output
-            client_status = self.status(host=host, port=port,
-                                        client=Config.get('device_id')).output
+                server_status = self.status(host=host, port=port).output
+                client_status = self.status(host=host, port=port,
+                                            client=Config.get('device_id')).output
 
-            if client_status.get('config', {}).get('volume', {}).get('muted'):
-                return
+                if client_status.get('config', {}).get('volume', {}).get('muted'):
+                    return
 
-            group = [g for g in server_status.get('groups', {})
-                     if g.get('id') == client_status.get('group_id')].pop(0)
+                group = [g for g in server_status.get('groups', {})
+                        if g.get('id') == client_status.get('group_id')].pop(0)
 
-            if group.get('muted'):
-                return
+                if group.get('muted'):
+                    return
 
-            stream = [s for s in server_status.get('streams')
-                      if s.get('id') == group.get('stream_id')].pop(0)
+                stream = [s for s in server_status.get('streams')
+                        if s.get('id') == group.get('stream_id')].pop(0)
 
-            if stream.get('status') != 'playing':
-                return
+                if stream.get('status') != 'playing':
+                    return
 
-            playing_hosts[host] = port
+                playing_hosts[host] = port
+            except Exception as e:
+                self.logger.warning(('Error while retrieving the status of ' +
+                                     'Snapcast host at {}:{}: {}').format(
+                                         host, port, str(e)))
 
         workers = []
 
