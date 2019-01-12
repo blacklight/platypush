@@ -171,6 +171,23 @@ class AdafruitIoPlugin(Plugin):
 
         self.aio.send_location_data(feed=feed, value=value, lat=lat, lon=lon, ele=ele)
 
+    @classmethod
+    def _cast_value(cls, value):
+        try: value = float(value)
+        except: pass
+        return value
+
+    def _convert_data_to_dict(self, *data):
+        from Adafruit_IO.model import DATA_FIELDS
+
+        return [
+            {
+                attr: self._cast_value(value) if attr == 'value' else getattr(i, attr)
+                for attr in DATA_FIELDS if getattr(i, attr) is not None
+            } for i in data
+        ]
+
+
     @action
     def receive(self, feed, limit=1):
         """
@@ -182,26 +199,39 @@ class AdafruitIoPlugin(Plugin):
         :param limit: Maximum number of data points to be returned. If None,
             all the values in the feed will be returned. Default: 1 (return most
             recent value)
+        :type limit: int
         """
 
         if limit == 1:
-            value = self.aio.receive(feed).value
+            values = self._convert_data_to_dict(self.aio.receive(feed))
+            return values[0] if values else None
 
-            try: value = float(value)
-            except ValueError: pass
-            return value
-
-        from Adafruit_IO.model import DATA_FIELDS
-
-        values = [
-            {
-                attr: float(getattr(i, attr)) if attr == 'value' else getattr(i, attr)
-                for attr in DATA_FIELDS if getattr(i, attr) is not None
-            }
-            for i in self.aio.data(feed)
-        ]
-
+        values = self._convert_data_to_dict(*self.aio.data(feed))
         return values[:limit] if limit else values
+
+    @action
+    def receive_next(self, feed):
+        """
+        Receive the next unprocessed data point from a feed
+
+        :param feed: Feed name
+        :type feed: str
+        """
+
+        values = self._convert_data_to_dict(self.aio.receive_next(feed))
+        return values[0] if values else None
+
+    @action
+    def receive_previous(self, feed):
+        """
+        Receive the last processed data point from a feed
+
+        :param feed: Feed name
+        :type feed: str
+        """
+
+        values = self._convert_data_to_dict(self.aio.receive_previous(feed))
+        return values[0] if values else None
 
     @action
     def delete(self, feed, data_id):
