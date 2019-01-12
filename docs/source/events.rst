@@ -5,6 +5,7 @@ Events
     :maxdepth: 2
     :caption: Events:
 
+    platypush/events/adafruit.rst
     platypush/events/application.rst
     platypush/events/assistant.rst
     platypush/events/button.flic.rst

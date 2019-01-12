@@ -26,6 +26,7 @@ Plugins
     platypush/plugins/gpio.sensor.mcp3008.rst
     platypush/plugins/gpio.sensor.rst
     platypush/plugins/gpio.zeroborg.rst
+    platypush/plugins/http.request.rss.rst
     platypush/plugins/http.request.rst
     platypush/plugins/ifttt.rst
     platypush/plugins/kafka.rst

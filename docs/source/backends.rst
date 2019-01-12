@@ -6,6 +6,7 @@ Backends
     :caption: Backends:
 
     platypush/backend.rst
+    platypush/backend/adafruit.io.rst
     platypush/backend/assistant.google.pushtotalk.rst
     platypush/backend/assistant.google.rst
     platypush/backend/assistant.snowboy.rst
