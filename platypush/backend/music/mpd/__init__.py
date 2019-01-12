@@ -68,6 +68,7 @@ class MusicMpdBackend(Backend):
                     success = True
                 except Exception as e:
                     self.logger.debug(e)
+                    get_plugin('music.mpd', reload=True)
                     if not state: state = last_state
                     if not playlist: playlist = last_playlist
                     if not track: track = last_track
