@@ -62,6 +62,9 @@ class AdafruitIoPlugin(Plugin):
         """
 
         super().__init__(*args, **kwargs)
+
+        self._username = username
+        self._key = key
         self.aio = Client(username=username, key=key)
         self.throttle_seconds = throttle_seconds
 
@@ -169,24 +172,43 @@ class AdafruitIoPlugin(Plugin):
         self.aio.send_location_data(feed=feed, value=value, lat=lat, lon=lon, ele=ele)
 
     @action
-    def receive(self, feed):
+    def receive(self, feed, limit=1):
         """
-        Receive the most recent value from an Adafruit IO feed and returns it
-        as a scalar (string or number)
+        Receive data from the specified Adafruit IO feed
 
         :param feed: Feed name
         :type feed: str
+
+        :param limit: Maximum number of data points to be returned. If None,
+            all the values in the feed will be returned. Default: 1 (return most
+            recent value)
         """
 
-        value = self.aio.receive(feed).value
+        if limit == 1:
+            value = self.aio.receive(feed).value
 
-        try:
-            value = float(value)
-        except ValueError:
-            pass
+            try: value = float(value)
+            except ValueError: pass
+            return value
 
-        return value
+        values = [i.value for i in self.aio.data(feed)]
+        if limit:
+            return values[-limit:]
+        return values
+
+    @action
+    def delete(self, feed, data_id):
+        """
+        Delete a data point from a feed
+
+        :param feed: Feed name
+        :type feed: str
+
+        :param data_id: Data point ID to remove
+        :type data_id: int
+        """
+
+        self.aio.delete(feed, data_id)
 
 
 # vim:sw=4:ts=4:et:
-
