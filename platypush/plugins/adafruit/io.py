@@ -180,13 +180,13 @@ class AdafruitIoPlugin(Plugin):
     def _convert_data_to_dict(self, *data):
         from Adafruit_IO.model import DATA_FIELDS
 
-        return sorted([
+        return [
             {
                 attr: self._cast_value(getattr(i, attr))
                 if attr == 'value' else getattr(i, attr)
                 for attr in DATA_FIELDS if getattr(i, attr) is not None
             } for i in data
-        ], key=lambda i: i.get('created_epoch'))
+        ]
 
 
     @action
