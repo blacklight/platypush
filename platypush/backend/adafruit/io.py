@@ -61,6 +61,8 @@ class AdafruitIoBackend(Backend):
 
     def on_message(self):
         def _handler(client, feed, data):
+            try: data = float(data)
+            except: pass
             self.bus.post(FeedUpdateEvent(feed=feed, data=data))
         return _handler
 

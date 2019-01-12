@@ -182,7 +182,8 @@ class AdafruitIoPlugin(Plugin):
 
         return [
             {
-                attr: self._cast_value(value) if attr == 'value' else getattr(i, attr)
+                attr: self._cast_value(getattr(i, attr))
+                if attr == 'value' else getattr(i, attr)
                 for attr in DATA_FIELDS if getattr(i, attr) is not None
             } for i in data
         ]
