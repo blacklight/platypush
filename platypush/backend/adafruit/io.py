@@ -49,6 +49,8 @@ class AdafruitIoBackend(Backend):
 
     def on_connect(self):
         def _handler(client):
+            for feed in self.feeds:
+                client.subscribe(feed)
             self.bus.post(ConnectedEvent())
         return _handler
 

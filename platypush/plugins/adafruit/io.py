@@ -191,10 +191,17 @@ class AdafruitIoPlugin(Plugin):
             except ValueError: pass
             return value
 
-        values = [i.value for i in self.aio.data(feed)]
-        if limit:
-            return values[-limit:]
-        return values
+        from Adafruit_IO.model import DATA_FIELDS
+
+        values = [
+            {
+                attr: float(getattr(i, attr)) if attr == 'value' else getattr(i, attr)
+                for attr in DATA_FIELDS if getattr(i, attr) is not None
+            }
+            for i in self.aio.data(feed)
+        ]
+
+        return values[:limit] if limit else values
 
     @action
     def delete(self, feed, data_id):
