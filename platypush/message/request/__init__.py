@@ -112,7 +112,7 @@ class Request(Message):
 
 
     @classmethod
-    def expand_value_from_context(cls, value, **context):
+    def expand_value_from_context(cls, _value, **context):
         for (k, v) in context.items():
             if isinstance(v, Message):
                 v = json.loads(str(v))
@@ -126,14 +126,14 @@ class Request(Message):
                         pass
 
         parsed_value = ''
-        if not isinstance(value, str):
-            parsed_value = value
+        if not isinstance(_value, str):
+            parsed_value = _value
 
-        while value and isinstance(value, str):
-            m = re.match('([^\$]*)(\${\s*(.+?)\s*})(.*)', value)
+        while _value and isinstance(_value, str):
+            m = re.match('([^\$]*)(\${\s*(.+?)\s*})(.*)', _value)
             if m and not m.group(1).endswith('\\'):
                 prefix = m.group(1); expr = m.group(2);
-                inner_expr = m.group(3); value = m.group(4)
+                inner_expr = m.group(3); _value = m.group(4)
 
                 try:
                     context_value = eval(inner_expr)
@@ -152,8 +152,8 @@ class Request(Message):
                     or isinstance(context_value, dict)
                     else str(context_value))
             else:
-                parsed_value += value
-                value = ''
+                parsed_value += _value
+                _value = ''
 
         try: return json.loads(parsed_value)
         except Exception as e: return parsed_value
