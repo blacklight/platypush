@@ -84,13 +84,13 @@ class TcpBackend(Backend):
                 sock.send(str(response).encode())
 
         def _f_wrapper():
-            set_thread_name('pp-tcp-listen')
+            set_thread_name('TCPListener')
             try:
                 _f()
             finally:
                 sock.close()
 
-        threading.Thread(target=_f_wrapper, name='pp-tcp-listen').start()
+        threading.Thread(target=_f_wrapper, name='TCPListener').start()
 
     def run(self):
         super().run()

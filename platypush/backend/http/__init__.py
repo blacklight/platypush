@@ -232,7 +232,7 @@ class HttpBackend(Backend):
 
     def webserver(self):
         """ Web server main process """
-        set_thread_name('pp-web-server')
+        set_thread_name('WebServer')
 
         basedir = os.path.dirname(inspect.getfile(self.__class__))
         template_dir = os.path.join(basedir, 'templates')
@@ -418,7 +418,7 @@ class HttpBackend(Backend):
     def websocket(self):
         """ Websocket main server """
         import websockets
-        set_thread_name('pp-websocket-server')
+        set_thread_name('WebsocketServer')
 
         async def register_websocket(websocket, path):
             address = websocket.remote_address[0] if websocket.remote_address \
@@ -459,7 +459,7 @@ class HttpBackend(Backend):
 
         webserver = self.webserver()
         self.server_proc = Process(target=webserver.run,
-                                   name='pp-web-server',
+                                   name='WebServer',
                                    kwargs=kwargs)
         self.server_proc.start()
 

@@ -44,7 +44,7 @@ class Backend(Thread):
         :type kwargs: dict
         """
 
-        self._thread_name = 'pp-' + self.__class__.__name__
+        self._thread_name = self.__class__.__name__
         super().__init__(name=self._thread_name)
 
         # If no bus is specified, create an internal queue where

@@ -667,7 +667,7 @@ class LightHuePlugin(LightPlugin):
 
 
         def _animate_thread(lights):
-            set_thread_name('pp-hue-animate')
+            set_thread_name('HueAnimate')
             self.logger.info('Starting {} animation'.format(
                 animation, (lights or groups)))
 
@@ -722,7 +722,7 @@ class LightHuePlugin(LightPlugin):
 
         self.stop_animation()
         self.animation_thread = Thread(target=_animate_thread,
-                                       name='pp-hue-animate',
+                                       name='HueAnimate',
                                        args=(lights,))
         self.animation_thread.start()
 

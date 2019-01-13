@@ -130,7 +130,7 @@ class MusicSnapcastBackend(Backend):
 
     def _client(self, host, port):
         def _thread():
-            set_thread_name('pp-snapcast-' + host)
+            set_thread_name('Snapcast-' + host)
             status = None
 
             try:
@@ -201,7 +201,7 @@ class MusicSnapcastBackend(Backend):
                 port = self.ports[i]
                 self._threads[host] = threading.Thread(
                     target=self._client(host, port),
-                    name='pp-snapcast'
+                    name='Snapcast-' + host
                 )
 
                 self._threads[host].start()

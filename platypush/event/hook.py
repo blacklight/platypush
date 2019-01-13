@@ -150,7 +150,7 @@ class EventHook(object):
             runs the hook actions if the condition is met """
 
         def _thread_func(result):
-            set_thread_name('pp-event-' + self.name)
+            set_thread_name('Event-' + self.name)
             self.actions.execute(event=event, **result.parsed_args)
 
         result = self.matches_event(event)
@@ -159,7 +159,7 @@ class EventHook(object):
         if result.is_match:
             logger.info('Running hook {} triggered by an event'.format(self.name))
             threading.Thread(target=_thread_func,
-                             name='pp-event-' + self.name,
+                             name='Event-' + self.name,
                              args=(result,)).start()
 
 
