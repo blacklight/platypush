@@ -20,7 +20,7 @@ class UtilsPlugin(Plugin):
 
     _pending_timeouts = {}
     _pending_intervals = {}
-    _pending_timemouts_lock = threading.RLock()
+    _pending_timeouts_lock = threading.RLock()
     _pending_intervals_lock = threading.RLock()
 
     @action
