@@ -1,5 +1,6 @@
 $(document).ready(function() {
     var seekInterval,
+        longPressTimeout,
         curPath = [],
         curTrackUpdateHandler,
         curTrackElapsed = {
@@ -225,8 +226,10 @@ $(document).ready(function() {
             });
         }
 
-        clearTimeout(longPressTimeout);
-        longPressTimeout = undefined;
+        if (longPressTimeout) {
+            clearTimeout(longPressTimeout);
+            longPressTimeout = undefined;
+        }
     };
 
     var updatePlaylist = function(tracks) {

@@ -308,7 +308,7 @@ $(document).ready(function() {
             });
         });
 
-        $container.on('click touch', '.snapcast-host-settings', function(evt) {
+        $container.on('mousedown touchstart', '.snapcast-host-settings', function(evt) {
             var host = $(this).parents('.snapcast-host-container').data('host');
             var hostName = $(this).parents('.snapcast-host-container').data('name');
             var $modal = $($(this).data('modal'));
@@ -324,7 +324,7 @@ $(document).ready(function() {
             }
         });
 
-        $container.on('click touch', '.snapcast-group-settings', function(evt) {
+        $container.on('mousedown touchstart', '.snapcast-group-settings', function(evt) {
             var host = $(this).parents('.snapcast-host-container').data('host');
             var groupId = $(this).parents('.snapcast-group-container').data('id');
             var groupName = $(this).parents('.snapcast-group-container').data('name');
@@ -375,7 +375,7 @@ $(document).ready(function() {
                 .find('select[name=stream]').html($streams.html());
         });
 
-        $container.on('click touch', '.snapcast-client-settings', function(evt) {
+        $container.on('mousedown touchstart', '.snapcast-client-settings', function(evt) {
             var host = $(this).parents('.snapcast-host-container').data('host');
             var clientId = $(this).parents('.snapcast-client-container').data('id');
             var clientName = $(this).parents('.snapcast-client-container').data('name');

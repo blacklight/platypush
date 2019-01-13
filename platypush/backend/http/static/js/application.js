@@ -4,6 +4,7 @@ $(document).ready(function() {
         openedWebsocket,
         dateTimeInterval,
         websocketTimeoutId,
+        modalFadingInTimeoutId,
         websocketReconnectMsecs = 30000,
         eventListeners = [];
 
@@ -155,6 +156,10 @@ $(document).ready(function() {
             var top = 40 + $(window).scrollTop();
             $container.css('margin-top', top + 'px');
 
+            modalFadingInTimeoutId = setTimeout(function() {
+                modalFadingInTimeoutId = undefined;
+            }, 100);
+
             $modal.fadeIn();
         });
     };
@@ -171,7 +176,9 @@ $(document).ready(function() {
             if (!$source.parents('.modal').length
                     && !$source.data('modal')
                     && !$source.data('dismiss-modal')) {
-                $('.modal').filter(':visible').fadeOut();
+                if (!modalFadingInTimeoutId) {
+                    $('.modal').filter(':visible').fadeOut();
+                }
             }
         });
     };

@@ -18,7 +18,9 @@ class UtilsPlugin(Plugin):
     _interval_hndl_idx = 0
     _interval_hndl_idx_lock = threading.RLock()
 
+    _pending_timeouts = {}
     _pending_intervals = {}
+    _pending_timemouts_lock = threading.RLock()
     _pending_intervals_lock = threading.RLock()
 
     @action
