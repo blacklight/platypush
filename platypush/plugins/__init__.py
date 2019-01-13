@@ -29,7 +29,8 @@ def action(f):
         except Exception as e:
             if isinstance(args[0], Plugin):
                 args[0].logger.exception(e)
-            errors.append(str(e) + '\n' + traceback.format_exc())
+            raise e
+            # errors.append(str(e) + '\n' + traceback.format_exc())
 
         return Response(output=output, errors=errors)
 

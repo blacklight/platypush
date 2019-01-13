@@ -190,7 +190,7 @@ class Request(Message):
                     - group: ${group_name}  # will be expanded as "Kitchen lights")
         """
 
-        def _thread_func(n_tries):
+        def _thread_func(n_tries, errors=None):
             if self.action.startswith('procedure.'):
                 context['n_tries'] = n_tries
                 response = self._execute_procedure(**context)
@@ -207,18 +207,25 @@ class Request(Message):
                 response = plugin.run(method=method_name, **args)
 
                 if response and response.is_error():
-                    raise RuntimeError('Response processed with errors: {}'.format(response))
-
-                logger.info('Processed response from plugin {}: {}'.
-                                format(plugin, str(response)))
+                    logger.warning(('Response processed with errors from ' +
+                                    'action {}.{}: {}').format(
+                                        plugin, self.action, str(response)))
+                else:
+                    logger.info('Processed response from action {}.{}: {}'.
+                                format(plugin, self.action, str(response)))
             except Exception as e:
                 # Retry mechanism
-                response = Response(output=None, errors=[str(e), traceback.format_exc()])
-                logger.exception(e)
-                if n_tries:
+                logger.warning(('Uncaught exception while processing response ' +
+                                'from action {}.{}: {}').format(
+                                    plugin, self.action, str(e)))
+
+                errors = errors or []
+                errors.append(str(e))
+                response = Response(output=None, errors=errors)
+                if n_tries-1 > 0:
                     logger.info('Reloading plugin {} and retrying'.format(module_name))
                     get_plugin(module_name, reload=True)
-                    response = _thread_func(n_tries-1)
+                    response = _thread_func(n_tries=n_tries-1, errors=errors)
             finally:
                 self._send_response(response)
                 return response
