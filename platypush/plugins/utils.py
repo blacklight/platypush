@@ -59,12 +59,16 @@ class UtilsPlugin(Plugin):
                 return (None,
                         "A timeout named '{}' is already awaiting".format(name))
 
-
         procedure = Procedure.build(name=name, requests=actions, _async=False)
         self._pending_timeouts[name] = procedure
 
         def _proc_wrapper(**kwargs):
-            procedure.execute(**kwargs)
+            try:
+                procedure.execute(**kwargs)
+            finally:
+                with self._pending_timeouts_lock:
+                    if name in self._pending_timeouts:
+                        del self._pending_timeouts[name]
 
         with self._pending_timeouts_lock:
             self._pending_timeouts[name] = threading.Timer(seconds,
@@ -78,6 +82,7 @@ class UtilsPlugin(Plugin):
 
         with self._pending_timeouts_lock:
             if name not in self._pending_timeouts:
+                self.logger.debug('{} is not a pending timeout'.format(name))
                 return
             timer = self._pending_timeouts.pop(name)
 
@@ -138,6 +143,7 @@ class UtilsPlugin(Plugin):
 
         with self._pending_intervals_lock:
             if name not in self._pending_intervals:
+                self.logger.debug('{} is not a running interval'.format(name))
                 return
             del self._pending_intervals[name]
 
