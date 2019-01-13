@@ -14,23 +14,17 @@ def action(f):
         output = None
         errors = []
 
-        try:
-            output = f(*args, **kwargs)
-            if output and isinstance(output, Response):
-                errors = output.errors \
-                    if isinstance(output.errors, list) else [output.errors]
-                output = output.output
-            elif isinstance(output, tuple) and len(output) == 2:
-                errors = output[1] \
-                    if isinstance(output[1], list) else [output[1]]
+        output = f(*args, **kwargs)
+        if output and isinstance(output, Response):
+            errors = output.errors \
+                if isinstance(output.errors, list) else [output.errors]
+            output = output.output
+        elif isinstance(output, tuple) and len(output) == 2:
+            errors = output[1] \
+                if isinstance(output[1], list) else [output[1]]
 
-                if len(errors) == 1 and errors[0] is None: errors = []
-                output = output[0]
-        except Exception as e:
-            if isinstance(args[0], Plugin):
-                args[0].logger.exception(e)
-            raise e
-            # errors.append(str(e) + '\n' + traceback.format_exc())
+            if len(errors) == 1 and errors[0] is None: errors = []
+            output = output[0]
 
         return Response(output=output, errors=errors)
 

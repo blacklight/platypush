@@ -215,12 +215,15 @@ class Request(Message):
                                 format(plugin, self.action, str(response)))
             except Exception as e:
                 # Retry mechanism
+                plugin.logger.exception(e)
                 logger.warning(('Uncaught exception while processing response ' +
                                 'from action {}.{}: {}').format(
                                     plugin, self.action, str(e)))
 
                 errors = errors or []
-                errors.append(str(e))
+                if str(e) not in errors:
+                    errors.append(str(e))
+
                 response = Response(output=None, errors=errors)
                 if n_tries-1 > 0:
                     logger.info('Reloading plugin {} and retrying'.format(module_name))
