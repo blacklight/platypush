@@ -63,9 +63,9 @@ setup(
         'pyyaml',
         'redis',
         'requests',
-        'python-prctl',
     ],
     extras_require = {
+        'Support for custom thread and process names': ['python-prctl'],
         'Support for Apache Kafka backend': ['kafka-python'],
         'Support for Pushbullet backend': ['requests', 'pushbullet.py'],
         'Support for HTTP backend': ['flask','websockets', 'python-dateutil'],
