@@ -1,5 +1,6 @@
 import mpd
 import re
+import threading
 import time
 
 from platypush.plugins import action
@@ -19,6 +20,8 @@ class MusicMpdPlugin(MusicPlugin):
 
         * **python-mpd2** (``pip install python-mpd2``)
     """
+
+    _client_lock = RLock()
 
     def __init__(self, host, port=6600):
         """
@@ -46,7 +49,10 @@ class MusicMpdPlugin(MusicPlugin):
 
         try:
             self._connect()
-            response = getattr(self.client, method)(*args, **kwargs)
+            response = None
+            with self._client_lock:
+                response = getattr(self.client, method)(*args, **kwargs)
+
             if return_status:
                 return self.status().output
             return response
@@ -170,8 +176,7 @@ class MusicMpdPlugin(MusicPlugin):
 
         volume = int(self.status().output['volume'])
         new_volume = min(volume+delta, 100)
-        self.setvol(str(new_volume))
-        return self.status()
+        return self.setvol(str(new_volume))
 
     @action
     def voldown(self, delta=10):
@@ -184,8 +189,7 @@ class MusicMpdPlugin(MusicPlugin):
 
         volume = int(self.status().output['volume'])
         new_volume = max(volume-delta, 0)
-        self.setvol(str(new_volume))
-        return self.status()
+        return self.setvol(str(new_volume))
 
     @action
     def random(self, value=None):
@@ -439,9 +443,8 @@ class MusicMpdPlugin(MusicPlugin):
         Returns the list of playlists and directories on the server
         """
 
-        output = self._exec('lsinfo', uri, return_status=False) \
+        return self._exec('lsinfo', uri, return_status=False) \
             if uri else self._exec('lsinfo', return_status=False)
-        return output
 
     @action
     def plchanges(self, version):
