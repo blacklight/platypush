@@ -21,7 +21,7 @@ class MusicMpdPlugin(MusicPlugin):
         * **python-mpd2** (``pip install python-mpd2``)
     """
 
-    _client_lock = RLock()
+    _client_lock = threading.RLock()
 
     def __init__(self, host, port=6600):
         """
