@@ -1,3 +1,4 @@
+import json
 import threading
 import time
 
@@ -64,7 +65,7 @@ class UtilsPlugin(Plugin):
         procedure = Procedure.build(name=name, requests=actions, _async=False)
         self._pending_timeouts[name] = procedure
 
-        def _proc_wrapper(**kwargs):
+        def _proc_wrapper(procedure, **kwargs):
             try:
                 procedure.execute(**kwargs)
             finally:
@@ -75,11 +76,19 @@ class UtilsPlugin(Plugin):
         with self._pending_timeouts_lock:
             self._pending_timeouts[name] = threading.Timer(seconds,
                                                            _proc_wrapper,
+                                                           args=[procedure],
                                                            kwargs=args)
         self._pending_timeouts[name].start()
 
     @action
     def clear_timeout(self, name):
+        """
+        Clear a pending timeout procedure
+
+        :param name: Name of the timeout to clear
+        :type name: str
+        """
+
         timer = None
 
         with self._pending_timeouts_lock:
@@ -90,6 +99,79 @@ class UtilsPlugin(Plugin):
 
         timer.cancel()
 
+    @action
+    def get_timeouts(self):
+        """
+        Get info about the pending timeouts
+
+        :returns: dict. Example::
+
+            {
+                "test_timeout": {
+                    "seconds": 10.0,
+                    "actions": [
+                        {
+                            "action": "action_1",
+                            "args": {
+                                "name_1": "value_1"
+                            }
+                        }
+                    ]
+                },
+                ...
+            }
+
+        """
+
+        response = {}
+
+        for name in self._pending_timeouts.keys():
+            response[name] = self.get_timeout(name).output.get(name)
+        return response
+
+    @action
+    def get_timeout(self, name):
+        """
+        Get info about a pending timeout
+
+        :param name: Name of the timeout to get
+        :type name: str
+
+        :returns: dict. Example::
+
+            {
+                "test_timeout": {
+                    "seconds": 10.0,
+                    "actions": [
+                        {
+                            "action": "action_1",
+                            "args": {
+                                "name_1": "value_1"
+                            }
+                        }
+                    ]
+                }
+            }
+
+        If no such timeout exist with the specified name then the value of the
+        timeout name will be null.
+        """
+
+        response = { name: None }
+
+        with self._pending_timeouts_lock:
+            timer = self._pending_timeouts.get(name)
+            if not timer:
+                return response
+
+            return {
+                name: {
+                    'seconds': timer.interval,
+                    'actions': [
+                        json.loads(str(a)) for a in timer.args[0].requests
+                    ]
+                }
+            }
 
     @action
     def set_interval(self, seconds, actions, name=None, **args):
@@ -125,7 +207,7 @@ class UtilsPlugin(Plugin):
         procedure = Procedure.build(name=name, requests=actions, _async=False)
         self._pending_intervals[name] = procedure
 
-        def _proc_wrapper(**kwargs):
+        def _proc_wrapper(procedure, seconds, **kwargs):
             while True:
                 with self._pending_intervals_lock:
                     if name not in self._pending_intervals:
@@ -136,11 +218,18 @@ class UtilsPlugin(Plugin):
 
         with self._pending_intervals_lock:
             self._pending_intervals[name] = threading.Thread(
-                target=_proc_wrapper, kwargs=args)
+                target=_proc_wrapper, args=[procedure, seconds], kwargs=args)
         self._pending_intervals[name].start()
 
     @action
     def clear_interval(self, name):
+        """
+        Clear a running interval procedure
+
+        :param name: Name of the interval to clear
+        :type name: str
+        """
+
         interval = None
 
         with self._pending_intervals_lock:
@@ -149,5 +238,79 @@ class UtilsPlugin(Plugin):
                 return
             del self._pending_intervals[name]
 
+
+    @action
+    def get_intervals(self):
+        """
+        Get info about the running intervals
+
+        :returns: dict. Example::
+
+            {
+                "test_interval": {
+                    "seconds": 10.0,
+                    "actions": [
+                        {
+                            "action": "action_1",
+                            "args": {
+                                "name_1": "value_1"
+                            }
+                        }
+                    ]
+                },
+                ...
+            }
+
+        """
+
+        response = {}
+
+        for name in self._pending_intervals.keys():
+            response[name] = self.get_interval(name).output.get(name)
+        return response
+
+    @action
+    def get_interval(self, name):
+        """
+        Get info about a running interval
+
+        :param name: Name of the interval to get
+        :type name: str
+
+        :returns: dict. Example::
+
+            {
+                "test_interval": {
+                    "seconds": 10.0,
+                    "actions": [
+                        {
+                            "action": "action_1",
+                            "args": {
+                                "name_1": "value_1"
+                            }
+                        }
+                    ]
+                }
+            }
+
+        If no such interval exist with the specified name then the value of the
+        timeout name will be null.
+        """
+
+        response = { name: None }
+
+        with self._pending_intervals_lock:
+            timer = self._pending_intervals.get(name)
+            if not timer:
+                return response
+
+            return {
+                name: {
+                    'seconds': timer._args[1],
+                    'actions': [
+                        json.loads(str(a)) for a in timer._args[0].requests
+                    ]
+                }
+            }
 
 # vim:sw=4:ts=4:et:

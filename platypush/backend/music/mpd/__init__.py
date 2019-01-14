@@ -53,6 +53,10 @@ class MusicMpdBackend(Backend):
             success = False
 
             while not success:
+                state = None
+                playlist = None
+                track = None
+
                 try:
                     plugin = get_plugin('music.mpd')
                     if not plugin:
