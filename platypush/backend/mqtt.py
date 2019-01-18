@@ -2,9 +2,6 @@ import json
 import os
 import threading
 
-import paho.mqtt.client as mqtt
-import paho.mqtt.publish as publisher
-
 from platypush.backend import Backend
 from platypush.context import get_plugin
 from platypush.message import Message
@@ -65,6 +62,7 @@ class MqttBackend(Backend):
         self.topic = '{}/{}'.format(topic, self.device_id)
         self.username = username
         self.password = password
+        self._client = None
 
         self.tls_cafile = os.path.abspath(os.path.expanduser(tls_cafile)) \
             if tls_cafile else None
@@ -127,25 +125,32 @@ class MqttBackend(Backend):
                                  name='MQTTProcessor',
                                  args=(msg,)).start()
 
+        import paho.mqtt.client as mqtt
+
         super().run()
-        client = mqtt.Client()
-        client.on_connect = on_connect
-        client.on_message = on_message
+        self._client = mqtt.Client()
+        self._client.on_connect = on_connect
+        self._client.on_message = on_message
 
         if self.username and self.password:
-            client.username_pw_set(self.username, self.password)
+            self._client.username_pw_set(self.username, self.password)
 
         if self.tls_cafile:
-            client.tls_set(ca_certs=self.tls_cafile, certfile=self.tls_certfile,
+            self._client.tls_set(ca_certs=self.tls_cafile, certfile=self.tls_certfile,
                            keyfile=self.tls_keyfile, tls_version=self.tls_version,
                            ciphers=self.tls_ciphers)
 
-        client.connect(self.host, self.port, 60)
+        self._client.connect(self.host, self.port, 60)
         self.logger.info('Initialized MQTT backend on host {}:{}, topic {}'.
                      format(self.host, self.port, self.topic))
 
-        client.loop_forever()
+        self._client.loop_forever()
 
+    def stop(self):
+        self.logger.info('Received STOP event on MqttBackend')
+        if self._client:
+            self._client.disconnect()
+            self._client.loop_stop()
+            self._client = None
 
 # vim:sw=4:ts=4:et:
-
