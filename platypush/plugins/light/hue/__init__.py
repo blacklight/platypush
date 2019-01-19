@@ -660,7 +660,7 @@ class LightHuePlugin(LightPlugin):
 
         def _should_stop():
             try:
-                redis = self._get_redis()
+                redis = self._get_redis(transition_seconds)
                 redis.blpop(self.ANIMATION_CTRL_QUEUE_NAME)
                 return True
             except QueueTimeoutError:
@@ -723,10 +723,10 @@ class LightHuePlugin(LightPlugin):
                                        args=(lights,))
         self.animation_thread.start()
 
-    def _get_redis(self):
+    def _get_redis(self, socket_timeout=1.0):
         if not self.redis:
             redis_args = get_backend('redis').redis_args
-            redis_args['socket_timeout'] = transition_seconds
+            redis_args['socket_timeout'] = socket_timeout
             self.redis = Redis(**redis_args)
         return self.redis
 
