@@ -617,6 +617,13 @@ class LightHuePlugin(LightPlugin):
         :type treansition_seconds: float
         """
 
+        if groups:
+            groups = [g for g in self.bridge.groups if g.name in groups]
+            lights = lights or []
+            for g in groups:
+                lights.extend([l.name for l in g.lights])
+        elif not lights:
+            lights = self.lights
 
         def _initialize_light_attrs(lights):
             if animation == self.Animation.COLOR_TRANSITION:
@@ -693,7 +700,7 @@ class LightHuePlugin(LightPlugin):
                         self.logger.debug('Setting lights to {}'.format(conf))
 
                         if groups:
-                            self.bridge.set_group([g.name for f in groups], conf)
+                            self.bridge.set_group([g.name for g in groups], conf)
                         else:
                             self.bridge.set_light(lights.keys(), conf)
 
@@ -708,14 +715,6 @@ class LightHuePlugin(LightPlugin):
             self.logger.info('Stopping animation')
             self.animation_thread = None
             self.redis = None
-
-        if groups:
-            groups = [g for g in self.bridge.groups if g.name in groups]
-            lights = lights or []
-            for g in groups:
-                lights.extend([l.name for l in g.lights])
-        elif not lights:
-            lights = self.lights
 
         self.stop_animation()
         self.animation_thread = Thread(target=_animate_thread,
