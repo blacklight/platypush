@@ -39,7 +39,11 @@ class LightHueBackend(Backend):
 
 
     def _get_lights(self):
-        return get_plugin('light.hue').get_lights().output
+        plugin = get_plugin('light.hue')
+        if not plugin:
+            plugin = get_plugin('light.hue', reload=True)
+
+        return plugin.get_lights().output
 
     def _listener(self):
         def _thread():
