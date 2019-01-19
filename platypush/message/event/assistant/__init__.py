@@ -118,5 +118,59 @@ class HotwordDetectedEvent(AssistantEvent):
         super().__init__(*args, hotword=hotword, **kwargs)
 
 
+class AlertStartedEvent(AssistantEvent):
+    """
+    Event triggered when an alert starts on the assistant
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class AlertEndEvent(AssistantEvent):
+    """
+    Event triggered when an alert ends on the assistant
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class AlarmStartedEvent(AlertStartedEvent):
+    """
+    Event triggered when an alarm starts on the assistant
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class AlarmEndEvent(AlertEndEvent):
+    """
+    Event triggered when an alarm ends on the assistant
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class TimerStartedEvent(AlertStartedEvent):
+    """
+    Event triggered when a timer starts on the assistant
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class TimerEndEvent(AlertEndEvent):
+    """
+    Event triggered when a timer ends on the assistant
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 # vim:sw=4:ts=4:et:
 

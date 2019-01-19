@@ -11,13 +11,15 @@ import time
 import google.oauth2.credentials
 
 from google.assistant.library import Assistant
-from google.assistant.library.event import EventType
+from google.assistant.library.event import EventType, AlertType
 from google.assistant.library.file_helpers import existing_file
 
 from platypush.backend import Backend
 from platypush.message.event.assistant import \
     ConversationStartEvent, ConversationEndEvent, ConversationTimeoutEvent, \
-    ResponseEvent, NoResponseEvent, SpeechRecognizedEvent
+    ResponseEvent, NoResponseEvent, SpeechRecognizedEvent, AlarmStartedEvent, \
+    AlarmEndEvent, TimerStartedEvent, TimerEndEvent, AlertStartedEvent, \
+    AlertEndEvent
 
 
 class AssistantGoogleBackend(Backend):
@@ -40,6 +42,14 @@ class AssistantGoogleBackend(Backend):
             when a conversation times out
         * :class:`platypush.message.event.assistant.ConversationEndEvent` \
             when a new conversation ends
+        * :class:`platypush.message.event.assistant.AlarmStartedEvent` \
+            when an alarm starts
+        * :class:`platypush.message.event.assistant.AlarmEndEvent` \
+            when an alarm ends
+        * :class:`platypush.message.event.assistant.TimerStartedEvent` \
+            when a timer starts
+        * :class:`platypush.message.event.assistant.TimerEndEvent` \
+            when a timer ends
 
     Requires:
 
@@ -96,6 +106,25 @@ class AssistantGoogleBackend(Backend):
             phrase = event.args['text'].lower().strip()
             self.logger.info('Speech recognized: {}'.format(phrase))
             self.bus.post(SpeechRecognizedEvent(phrase=phrase))
+        elif event.type == EventType.ON_ALERT_STARTED:
+            if event.args.get('alert_type') == AlertType.ALARM:
+                self.bus.post(AlarmStartedEvent())
+            elif event.args.get('alert_type') == AlertType.TIMER:
+                self.bus.post(TimerStartedEvent())
+            else:
+                self.bus.post(AlertStartedEvent())
+        elif event.type == EventType.ON_ALERT_FINISHED:
+            if event.args.get('alert_type') == AlertType.ALARM:
+                self.bus.post(AlarmEndEvent())
+            elif event.args.get('alert_type') == AlertType.TIMER:
+                self.bus.post(TimerEndEvent())
+            else:
+                self.bus.post(AlertEndEvent())
+        elif event.type == EventType.ON_ASSISTANT_ERROR:
+            if event.args.get('is_fatal'):
+                self.logger.error('Fatal assistant error, restart the application')
+            else:
+                self.logger.warning('Assistant error')
 
 
     def start_conversation(self):
