@@ -575,7 +575,8 @@ class LightHuePlugin(LightPlugin):
         """
 
         if self.animation_thread and self.animation_thread.is_alive():
-            self.redis.rpush(self.ANIMATION_CTRL_QUEUE_NAME, 'STOP')
+            redis = self._get_redis()
+            redis.rpush(self.ANIMATION_CTRL_QUEUE_NAME, 'STOP')
 
     @action
     def animate(self, animation, duration=None,
@@ -659,7 +660,8 @@ class LightHuePlugin(LightPlugin):
 
         def _should_stop():
             try:
-                self.redis.blpop(self.ANIMATION_CTRL_QUEUE_NAME)
+                redis = self._get_redis()
+                redis.blpop(self.ANIMATION_CTRL_QUEUE_NAME)
                 return True
             except QueueTimeoutError:
                 return False
@@ -707,10 +709,6 @@ class LightHuePlugin(LightPlugin):
             self.animation_thread = None
             self.redis = None
 
-        redis_args = get_backend('redis').redis_args
-        redis_args['socket_timeout'] = transition_seconds
-        self.redis = Redis(**redis_args)
-
         if groups:
             groups = [g for g in self.bridge.groups if g.name in groups]
             lights = lights or []
@@ -724,6 +722,13 @@ class LightHuePlugin(LightPlugin):
                                        name='HueAnimate',
                                        args=(lights,))
         self.animation_thread.start()
+
+    def _get_redis(self):
+        if not self.redis:
+            redis_args = get_backend('redis').redis_args
+            redis_args['socket_timeout'] = transition_seconds
+            self.redis = Redis(**redis_args)
+        return self.redis
 
 
 # vim:sw=4:ts=4:et:
