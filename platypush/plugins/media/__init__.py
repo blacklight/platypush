@@ -22,21 +22,21 @@ class MediaPlugin(Plugin):
 
     # Supported audio extensions
     audio_extensions = {
-        '.3gp', '.aa', '.aac', '.aax', '.act', '.aiff', '.amr', '.ape', '.au',
-        '.awb', '.dct', '.dss', '.dvf', '.flac', '.gsm', '.iklax', '.ivs',
-        '.m4a', '.m4b', '.m4p', '.mmf', '.mp3', '.mpc', '.msv', '.nmf', '.nsf',
-        '.ogg,', '.opus', '.ra,', '.raw', '.sln', '.tta', '.vox', '.wav',
-        '.wma', '.wv', '.webm', '.8svx',
+        '3gp', 'aa', 'aac', 'aax', 'act', 'aiff', 'amr', 'ape', 'au',
+        'awb', 'dct', 'dss', 'dvf', 'flac', 'gsm', 'iklax', 'ivs',
+        'm4a', 'm4b', 'm4p', 'mmf', 'mp3', 'mpc', 'msv', 'nmf', 'nsf',
+        'ogg,', 'opus', 'ra,', 'raw', 'sln', 'tta', 'vox', 'wav',
+        'wma', 'wv', 'webm', '8svx',
     }
 
     # Supported video extensions
     video_extensions = {
-        '.webm', '.mkv', '.flv', '.flv', '.vob', '.ogv', '.ogg', '.drc', '.gif',
-        '.gifv', '.mng', '.avi', '.mts', '.m2ts', '.mov', '.qt', '.wmv', '.yuv',
-        '.rm', '.rmvb', '.asf', '.amv', '.mp4', '.m4p', '.m4v', '.mpg', '.mp2',
-        '.mpeg', '.mpe', '.mpv', '.mpg', '.mpeg', '.m2v', '.m4v', '.svi',
-        '.3gp', '.3g2', '.mxf', '.roq', '.nsv', '.flv', '.f4v', '.f4p', '.f4a',
-        '.f4b',
+        'webm', 'mkv', 'flv', 'flv', 'vob', 'ogv', 'ogg', 'drc', 'gif',
+        'gifv', 'mng', 'avi', 'mts', 'm2ts', 'mov', 'qt', 'wmv', 'yuv',
+        'rm', 'rmvb', 'asf', 'amv', 'mp4', 'm4p', 'm4v', 'mpg', 'mp2',
+        'mpeg', 'mpe', 'mpv', 'mpg', 'mpeg', 'm2v', 'm4v', 'svi',
+        '3gp', '3g2', 'mxf', 'roq', 'nsv', 'flv', 'f4v', 'f4p', 'f4a',
+        'f4b',
     }
 
     def __init__(self, player, media_dirs=[], download_dir=None, *args, **kwargs):
@@ -219,23 +219,11 @@ class MediaPlugin(Plugin):
 
     @classmethod
     def _is_video_file(cls, filename):
-        is_video = False
-        for ext in cls.video_extensions:
-            if filename.lower().endswith(ext):
-                is_video = True
-                break
-
-        return is_video
+        return filename.lower().split('.') in cls.video_extensions
 
     @classmethod
     def _is_audio_file(cls, filename):
-        is_audio = False
-        for ext in cls.audio_extensions:
-            if filename.lower().endswith(ext):
-                is_audio = True
-                break
-
-        return is_audio
+        return filename.lower().split('.') in cls.audio_extensions
 
     @action
     def file_search(self, query):
