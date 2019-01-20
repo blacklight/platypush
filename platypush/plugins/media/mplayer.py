@@ -5,14 +5,14 @@ import time
 
 from platypush.context import get_bus
 from platypush.message.response import Response
-from platypush.plugins.media import PlayerState
+from platypush.plugins.media import PlayerState, MediaPlugin
 from platypush.message.event.media import MediaPlayEvent, MediaPauseEvent, \
     MediaStopEvent, NewPlayingMediaEvent
 
-from platypush.plugins import Plugin, action
+from platypush.plugins import action
 
 
-class MediaMplayerPlugin(Plugin):
+class MediaMplayerPlugin(MediaPlugin):
     """
     Plugin to control MPlayer instances
 
@@ -65,7 +65,7 @@ class MediaMplayerPlugin(Plugin):
         :type args: list
         """
 
-        super().__init__(*argv, **kwargs)
+        super().__init__(player='media.mplayer', *argv, **kwargs)
 
         self.args = args or []
         self._init_mplayer_bin()
@@ -167,10 +167,14 @@ class MediaMplayerPlugin(Plugin):
         elif cmd_name == 'pause':
             bus.post(MediaPauseEvent())
         elif cmd_name == 'quit' or cmd_name == 'stop':
-            bus.post(MediaStopEvent())
             if cmd_name == 'quit':
+                self._mplayer.terminate()
                 self._mplayer.wait()
+                try: self._mplayer.kill()
+                except: pass
                 self._mplayer = None
+
+            bus.post(MediaStopEvent())
 
         if not wait_for_response:
             return
@@ -304,9 +308,10 @@ class MediaMplayerPlugin(Plugin):
             return self.play(video)
 
     @action
-    def hide_subtitles(self):
-        """ Hide the subtitles """
-        return self._exec('sub_visibility', 1)
+    def toggle_subtitles(self):
+        """ Toggle the subtitles visibility """
+        subs = self.get_property('sub_visibility').output.get('sub_visibility')
+        return self._exec('sub_visibility', int(not subs))
 
     @action
     def is_playing(self):
