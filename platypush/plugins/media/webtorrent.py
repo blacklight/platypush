@@ -119,7 +119,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
         return re.sub('\x1b\[((\d+m)|(.{1,2}))', '', line).strip()
 
 
-    def _process_monitor(self, resource, download_dir, player_type, player_args):
+    def _process_monitor(self, resource, download_dir, download_only,
+                         player_type, player_args):
         def _thread():
             if not self._webtorrent_process:
                 return
@@ -191,7 +192,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
             if not output_dir:
                 raise RuntimeError('Could not download torrent')
-            if not media_file or not webtorrent_url:
+            if not download_only and (not media_file or not webtorrent_url):
                 if not media_file:
                     self.logger.warning(
                         'The torrent does not contain any video files')
@@ -203,34 +204,38 @@ class MediaWebtorrentPlugin(MediaPlugin):
                 except: pass
                 return
 
-            # Then wait until we have enough chunks to start the player
-            while True:
-                result = poll.poll(0)
-                if not result:
-                    continue
+            player = None
 
-                if not self._is_process_alive():
-                    break
+            if not download_only:
+                # Wait until we have enough chunks to start the player
+                while True:
+                    result = poll.poll(0)
+                    if not result:
+                        continue
 
-                try:
-                    if os.path.getsize(media_file) > \
-                            self._download_size_before_streaming:
+                    if not self._is_process_alive():
                         break
-                except FileNotFoundError:
-                    continue
 
-            player = get_plugin('media.' + player_type) if player_type \
-                else self._media_plugin
+                    try:
+                        if os.path.getsize(media_file) > \
+                                self._download_size_before_streaming:
+                            break
+                    except FileNotFoundError:
+                        continue
 
-            media = media_file if player.is_local() else webtorrent_url
+                player = get_plugin('media.' + player_type) if player_type \
+                    else self._media_plugin
 
-            self.logger.info(
-                'Starting playback of {} to {} through {}'.format(
-                    media_file, player.__class__.__name__,
-                    webtorrent_url))
+                media = media_file if player.is_local() else webtorrent_url
 
-            player.play(media, **player_args)
-            self.logger.info('Waiting for player to terminate')
+                self.logger.info(
+                    'Starting playback of {} to {} through {}'.format(
+                        media_file, player.__class__.__name__,
+                        webtorrent_url))
+
+                player.play(media, **player_args)
+                self.logger.info('Waiting for player to terminate')
+
             self._wait_for_player(player)
             self.logger.info('Torrent player terminated')
             bus.post(TorrentDownloadCompletedEvent(resource=resource))
@@ -242,16 +247,18 @@ class MediaWebtorrentPlugin(MediaPlugin):
         return _thread
 
     def _wait_for_player(self, player):
-        media_cls = player.__class__.__name__
         stop_evt = None
 
-        if media_cls == 'MediaMplayerPlugin':
-            stop_evt = player._mplayer_stopped_event
-        elif media_cls == 'MediaOmxplayerPlugin':
-            stop_evt = threading.Event()
-            def stop_callback():
-                stop_evt.set()
-            player.add_handler('stop', stop_callback)
+        if player:
+            media_cls = player.__class__.__name__
+
+            if media_cls == 'MediaMplayerPlugin':
+                stop_evt = player._mplayer_stopped_event
+            elif media_cls == 'MediaOmxplayerPlugin':
+                stop_evt = threading.Event()
+                def stop_callback():
+                    stop_evt.set()
+                player.add_handler('stop', stop_callback)
 
         if stop_evt:
             stop_evt.wait()
@@ -270,7 +277,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
 
     @action
-    def play(self, resource, player=None, **player_args):
+    def play(self, resource, player=None, download_only=False, **player_args):
         """
         Download and stream a torrent
 
@@ -307,8 +314,14 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
         threading.Thread(target=self._process_monitor(
             resource=resource, download_dir=download_dir,
-            player_type=player, player_args=player_args)).start()
+            player_type=player, player_args=player_args,
+            download_only=download_only)).start()
         return { 'resource': resource }
+
+
+    @action
+    def download(resource, *args, **kwargs):
+        return self.play(resource, download_only=True, *args, **kwargs)
 
 
     @action
