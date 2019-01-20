@@ -47,6 +47,11 @@ class MediaChromecastPlugin(MediaPlugin):
         Get the list of Chromecast devices
         """
 
+        self.chromecasts.update({
+            cast.device.friendly_name: cast
+            for cast in pychromecast.get_chromecasts()
+        })
+
         return [ {
             'type': cc.cast_type,
             'name': cc.name,
@@ -69,7 +74,7 @@ class MediaChromecastPlugin(MediaPlugin):
                 'volume': round(100*cc.status.volume_level, 2),
                 'muted': cc.status.volume_muted,
             } if cc.status else {}),
-        } for cc in pychromecast.get_chromecasts() ]
+        } for cc in self.chromecasts.values() ]
 
 
     def get_chromecast(self, chromecast=None, n_tries=3):
