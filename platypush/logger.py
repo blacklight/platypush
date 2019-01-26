@@ -5,10 +5,15 @@ class Logger:
         self.level = level
 
     def write(self, message):
+        if message is None:
+            return
+
         if isinstance(message, bytes):
             message = message.decode()
-        if message and message != '\n':
-            self.level(message.rstrip())
+
+        message = message.rstrip()
+        if message and len(message) > 0:
+            self.level(message)
 
     def flush(self):
         pass

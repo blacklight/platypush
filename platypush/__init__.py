@@ -53,7 +53,8 @@ class Daemon:
     # number of executions retries before a request fails
     n_tries = 2
 
-    def __init__(self, config_file=None, pidfile=None, requests_to_process=None):
+    def __init__(self, config_file=None, pidfile=None, requests_to_process=None,
+                 no_capture_stdout=False, no_capture_stderr=False):
         """
         Constructor
         Params:
@@ -63,6 +64,10 @@ class Daemon:
                        within a service or a launcher script (default: None)
             requests_to_process -- Exit after processing the specified number
                                    of requests (default: None, loop forever)
+            no_capture_stdout -- Set to true if you want to disable the stdout
+                                 capture by the logging system
+            no_capture_stderr -- Set to true if you want to disable the stderr
+                                 capture by the logging system
         """
 
         if pidfile:
@@ -74,6 +79,8 @@ class Daemon:
         Config.init(self.config_file)
         logging.basicConfig(**Config.get('logging'))
 
+        self.no_capture_stdout = no_capture_stdout
+        self.no_capture_stderr = no_capture_stderr
         self.event_processor = EventProcessor()
         self.requests_to_process = requests_to_process
         self.processed_requests = 0
@@ -92,9 +99,21 @@ class Daemon:
                             default=None, help="File where platypush will " +
                             "store its PID, useful if you're planning to " +
                             "integrate it in a service")
+        parser.add_argument('--no-capture-stdout', dest='no_capture_stdout',
+                            required=False, action='store_true',
+                            help="Set this flag if you have max stack depth " +
+                            "exceeded errors so stdout won't be captured by " +
+                            "the logging system")
+        parser.add_argument('--no-capture-stderr', dest='no_capture_stderr',
+                            required=False, action='store_true',
+                            help="Set this flag if you have max stack depth " +
+                            "exceeded errors so stderr won't be captured by " +
+                            "the logging system")
 
         opts, args = parser.parse_known_args(args)
-        return cls(config_file=opts.config, pidfile=opts.pidfile)
+        return cls(config_file=opts.config, pidfile=opts.pidfile,
+                   no_capture_stdout=opts.no_capture_stdout,
+                   no_capture_stderr=opts.no_capture_stderr)
 
     def on_message(self):
         """
@@ -139,7 +158,13 @@ class Daemon:
 
     def start(self):
         """ Start the daemon """
+        if not self.no_capture_stdout:
+            sys.stdout = Logger(LOGGER.info)
+        if not self.no_capture_stderr:
+            sys.stderr = Logger(LOGGER.warning)
+
         set_thread_name('platypush')
+
         print('---- Starting platypush v.{}'.format(__version__))
 
         redis_conf = Config.get('backend.redis')
@@ -177,8 +202,6 @@ def main():
     Platypush daemon main
     """
 
-    sys.stdout = Logger(LOGGER.info)
-    sys.stderr = Logger(LOGGER.warning)
     app = Daemon.build_from_cmdline(sys.argv[1:])
     app.start()
 
