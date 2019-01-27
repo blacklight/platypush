@@ -6,7 +6,6 @@ from enum import Enum
 from threading import Thread
 from redis import Redis
 from redis.exceptions import TimeoutError as QueueTimeoutError
-from phue import Bridge
 
 from platypush.context import get_backend
 from platypush.plugins import action
@@ -27,6 +26,8 @@ class LightHuePlugin(LightPlugin):
     MAX_SAT = 255
     MAX_HUE = 65535
     ANIMATION_CTRL_QUEUE_NAME = 'platypush/light/hue/AnimationCtrl'
+    _BRIDGE_RECONNECT_SECONDS = 5
+    _MAX_RECONNECT_TRIES = 5
 
     class Animation(Enum):
         COLOR_TRANSITION = 'color_transition'
@@ -89,16 +90,28 @@ class LightHuePlugin(LightPlugin):
 
         # Lazy init
         if not self.bridge:
-            self.bridge = Bridge(self.bridge_address)
+            from phue import Bridge, PhueRegistrationException
+            success = False
+            n_tries = 0
+
+            while not success:
+                try:
+                    n_tries += 1
+                    self.bridge = Bridge(self.bridge_address)
+                    success = True
+                except PhueRegistrationException as e:
+                    self.logger.warning('Bridge registration error: {}'.
+                                        format(str(e)))
+
+                    if n_tries >= self._MAX_RECONNECT_TRIES:
+                        self.logger.error(('Bridge registration failed after ' +
+                                           '{} attempts').format(n_tries))
+                        break
+
+                    time.sleep(self._BRIDGE_RECONNECT_SECONDS)
+
             self.logger.info('Bridge connected')
-
             self.get_scenes()
-
-            # uncomment these lines if you're running huectrl for
-            # the first time and you need to pair it to the switch
-
-            # self.bridge.connect()
-            # self.bridge.get_api()
         else:
             self.logger.info('Bridge already connected')
 
@@ -731,4 +744,3 @@ class LightHuePlugin(LightPlugin):
 
 
 # vim:sw=4:ts=4:et:
-
