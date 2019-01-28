@@ -103,17 +103,22 @@ class HttpBackend(Backend):
             dashboard:
                 background_image: https://site/image.png
                 widgets:                # Each row of the dashboard will have 6 columns
-                    calendar:           # Calendar widget
+                    -
+                        widget: calendar           # Calendar widget
                         columns: 6
-                    music:              # Music widget
+                    -
+                        widget: music              # Music widget
                         columns: 3
-                    date-time-weather:  # Date, time and weather widget
+                    -
+                        widget: date-time-weather  # Date, time and weather widget
                         columns: 3
-                    image-carousel:     # Image carousel
+                    -
+                        widget: image-carousel     # Image carousel
                         columns: 6
                         images_path: ~/Dropbox/Photos/carousel  # Absolute path (valid as long as it's a subdirectory of one of the available `resource_dirs`)
                         refresh_seconds: 15
-                    rss-news:           # RSS feeds widget
+                    -
+                        widget: rss-news           # RSS feeds widget
                         # Requires backend.http.poll to be enabled with some RSS sources and write them to sqlite db
                         columns: 6
                         limit: 25

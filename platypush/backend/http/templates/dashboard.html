@@ -28,7 +28,7 @@
         {% endif %}
 
         window.config = {{ config | safe }};
-        window.widgets = {{ config['widgets'] | safe }};
+        window.widgets = {{ config['widgets'] | safe }}.reduce(function(map, w) { map[w.widget] = w; return map }, {})
     </script>
 </head>
 
@@ -44,16 +44,16 @@
 
         <div id="widgets-container">
             {% set used_columns = [0] %}
-            {% for widget_name, widget in config['widgets'].items() %}
+            {% for widget in config['widgets'] %}
                 {% if used_columns[0] % 12 == 0 %}
                 <div class="row">
                 {% endif %}
 
                 <div class="widget {% print(utils.widget_columns_to_html_class(widget['columns'])) %}
-                        {% print(widget_name) %}"
-                        id="{% print(widget['id'] if 'id' in widget else widget_name) %}">
+                        {% print(widget['widget']) %}"
+                        id="{% print(widget['id'] if 'id' in widget else widget['widget']) %}">
                     {% with properties=widget %}
-                        {% include 'widgets/' + widget_name + '.html' %}
+                        {% include 'widgets/' + widget['widget'] + '.html' %}
                     {% endwith %}
                 </div>
 
