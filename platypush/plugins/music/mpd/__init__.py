@@ -257,6 +257,9 @@ class MusicMpdPlugin(MusicPlugin):
 
     @classmethod
     def _parse_resource(cls, resource):
+        m = re.search('^https://open.spotify.com/([^?]+)', resource)
+        if m: resource = 'spotify:{}'.format(m.group(1).replace('/', ':'))
+
         if resource and resource.startswith('spotify:playlist:'):
             # Old Spotify URI format, convert it to new
             m = re.match('^spotify:playlist:(.*)$', resource)
