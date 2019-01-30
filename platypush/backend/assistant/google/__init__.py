@@ -79,6 +79,7 @@ class AssistantGoogleBackend(Backend):
         self.credentials_file = credentials_file
         self.device_model_id = device_model_id
         self.assistant = None
+        self._has_error =False
 
         with open(self.credentials_file, 'r') as f:
             self.credentials = google.oauth2.credentials.Credentials(
@@ -102,6 +103,11 @@ class AssistantGoogleBackend(Backend):
         elif hasattr(EventType, 'ON_RENDER_RESPONSE') and \
             event.type == EventType.ON_RENDER_RESPONSE:
             self.bus.post(ResponseEvent(response_text=event.args.get('text')))
+        elif hasattr(EventType, 'ON_RESPONDING_STARTED') and \
+                event.type == EventType.ON_RENDER_RESPONSE and \
+                event.args.get('is_error_response'):
+            self.logger.warning('Assistant response error')
+            self._has_error = True
         elif event.type == EventType.ON_RECOGNIZING_SPEECH_FINISHED:
             phrase = event.args['text'].lower().strip()
             self.logger.info('Speech recognized: {}'.format(phrase))
@@ -121,8 +127,9 @@ class AssistantGoogleBackend(Backend):
             else:
                 self.bus.post(AlertEndEvent())
         elif event.type == EventType.ON_ASSISTANT_ERROR:
+            self._has_error = True
             if event.args.get('is_fatal'):
-                self.logger.error('Fatal assistant error, restart the application')
+                self.logger.error('Fatal assistant error')
             else:
                 self.logger.warning('Assistant error')
 
@@ -142,10 +149,18 @@ class AssistantGoogleBackend(Backend):
     def run(self):
         super().run()
 
-        with Assistant(self.credentials, self.device_model_id) as assistant:
-            self.assistant = assistant
-            for event in assistant.start():
-                self._process_event(event)
+        while not self.should_stop():
+            self._has_error = False
+
+            with Assistant(self.credentials, self.device_model_id) as assistant:
+                self.assistant = assistant
+                for event in assistant.start():
+                    self._process_event(event)
+                    if self._has_error:
+                        self.logger.info('Restarting the assistant after ' +
+                                         'an unrecoverable error')
+                        time.sleep(5)
+                        continue
 
 
 # vim:sw=4:ts=4:et:
