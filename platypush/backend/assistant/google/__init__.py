@@ -104,7 +104,7 @@ class AssistantGoogleBackend(Backend):
             event.type == EventType.ON_RENDER_RESPONSE:
             self.bus.post(ResponseEvent(response_text=event.args.get('text')))
         elif hasattr(EventType, 'ON_RESPONDING_STARTED') and \
-                event.type == EventType.ON_RENDER_RESPONSE and \
+                event.type == EventType.ON_RESPONDING_STARTED and \
                 event.args.get('is_error_response'):
             self.logger.warning('Assistant response error')
             self._has_error = True
