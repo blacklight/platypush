@@ -33,6 +33,7 @@ Plugins
     platypush/plugins/light.hue.rst
     platypush/plugins/light.rst
     platypush/plugins/media.kodi.rst
+    platypush/plugins/media.omxplayer.rst
     platypush/plugins/midi.rst
     platypush/plugins/mqtt.rst
     platypush/plugins/music.mpd.rst
@@ -51,7 +52,6 @@ Plugins
     platypush/plugins/tts.rst
     platypush/plugins/utils.rst
     platypush/plugins/variable.rst
-    platypush/plugins/video.omxplayer.rst
     platypush/plugins/weather.forecast.rst
     platypush/plugins/websocket.rst
     platypush/plugins/wiimote.rst

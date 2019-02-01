@@ -6,6 +6,7 @@ import subprocess
 import urllib.request
 import urllib.parse
 
+from platypush.config import Config
 from platypush.context import get_plugin
 from platypush.plugins import Plugin, action
 
@@ -18,7 +19,16 @@ class PlayerState(enum.Enum):
 class MediaPlugin(Plugin):
     """
     Generic plugin to interact with a media player.
+
+    Requires:
+
+        * A media player installed (supported so far: mplayer, omxplayer)
+        * **python-libtorrent** (``pip install python-libtorrent``), optional for Torrent support
+        * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
     """
+
+    _NOT_IMPLEMENTED_ERR = NotImplementedError(
+        'This method must be implemented in a derived class')
 
     # Supported audio extensions
     audio_extensions = {
@@ -39,13 +49,10 @@ class MediaPlugin(Plugin):
         'f4b',
     }
 
-    def __init__(self, player, media_dirs=[], download_dir=None, *args, **kwargs):
-        """
-        :param player: Name of the player plugin to be used as a backend.
-            Example: 'media.mplayer', 'media.vlc' or 'media.omxplayer'.
-            The plugin needs to be configured as well if required.
-        :type player: str
+    _supported_media_plugins = { 'media.mplayer', 'media.omxplayer' }
 
+    def __init__(self, media_dirs=[], download_dir=None, *args, **kwargs):
+        """
         :param media_dirs: Directories that will be scanned for media files when
             a search is performed (default: none)
         :type media_dirs: list
@@ -57,7 +64,26 @@ class MediaPlugin(Plugin):
 
         super().__init__(*args, **kwargs)
 
-        self._player_name = player
+        player = None
+        player_config = {}
+        for plugin in Config.get_plugins().keys():
+            if plugin in self._supported_media_plugins:
+                player = plugin
+                break
+
+        if not player:
+            raise AttributeError('No media plugin configured')
+
+        media_dirs = media_dirs or player_config.get('media_dirs', [])
+        download_dir = download_dir or player_config.get('download_dir')
+
+        if self.__class__.__name__ == 'MediaPlugin':
+            # Populate this plugin with the actions of the configured player
+            plugin = get_plugin(player)
+            for action in plugin.registered_actions:
+                setattr(self, action, getattr(plugin, action))
+                self.registered_actions.add(action)
+
         self.media_dirs = set(
             filter(
                 lambda _: os.path.isdir(_),
@@ -108,31 +134,31 @@ class MediaPlugin(Plugin):
 
     @action
     def play(self, resource, *args, **kwargs):
-        return get_plugin(self._player_name).play(resource, *args, **kwargs)
+        raise self._NOT_IMPLEMENTED_ERR
 
     @action
     def pause(self, *args, **kwargs):
-        return get_plugin(self._player_name).pause(*args, **kwargs)
+        raise self._NOT_IMPLEMENTED_ERR
 
     @action
     def stop(self, *args, **kwargs):
-        return get_plugin(self._player_name).stop(*args, **kwargs)
+        raise self._NOT_IMPLEMENTED_ERR
 
     @action
     def voldown(self, *args, **kwargs):
-        return get_plugin(self._player_name).voldown(*args, **kwargs)
+        raise self._NOT_IMPLEMENTED_ERR
 
     @action
     def volup(self, *args, **kwargs):
-        return get_plugin(self._player_name).volup(*args, **kwargs)
+        raise self._NOT_IMPLEMENTED_ERR
 
     @action
     def back(self, *args, **kwargs):
-        return get_plugin(self._player_name).back(*args, **kwargs)
+        raise self._NOT_IMPLEMENTED_ERR
 
     @action
     def forward(self, *args, **kwargs):
-        return get_plugin(self._player_name).forward(*args, **kwargs)
+        raise self._NOT_IMPLEMENTED_ERR
 
     @action
     def next(self):
@@ -146,31 +172,31 @@ class MediaPlugin(Plugin):
 
     @action
     def toggle_subtitles(self, *args, **kwargs):
-        return get_plugin(self._player_name).toggle_subtitles(*args, **kwargs)
+        raise self._NOT_IMPLEMENTED_ERR
 
     @action
     def is_playing(self, *args, **kwargs):
-        return get_plugin(self._player_name).is_playing(*args, **kwargs)
+        raise self._NOT_IMPLEMENTED_ERR
 
     @action
     def load(self, resource, *args, **kwargs):
-        return get_plugin(self._player_name).load(resource, *args, **kwargs)
+        raise self._NOT_IMPLEMENTED_ERR
 
     @action
     def mute(self, *args, **kwargs):
-        return get_plugin(self._player_name).mute(*args, **kwargs)
+        raise self._NOT_IMPLEMENTED_ERR
 
     @action
     def seek(self, *args, **kwargs):
-        return get_plugin(self._player_name).seek(*args, **kwargs)
+        raise self._NOT_IMPLEMENTED_ERR
 
     @action
     def set_position(self, *args, **kwargs):
-        return get_plugin(self._player_name).set_position(*args, **kwargs)
+        raise self._NOT_IMPLEMENTED_ERR
 
     @action
     def set_volume(self, volume, *args, **kwargs):
-        return get_plugin(self._player_name).set_volume(volume, *args, **kwargs)
+        raise self._NOT_IMPLEMENTED_ERR
 
     @action
     def search(self, query, types=None, queue_results=False, autoplay=False):
@@ -219,11 +245,11 @@ class MediaPlugin(Plugin):
 
     @classmethod
     def _is_video_file(cls, filename):
-        return filename.lower().split('.') in cls.video_extensions
+        return filename.lower().split('.')[-1] in cls.video_extensions
 
     @classmethod
     def _is_audio_file(cls, filename):
-        return filename.lower().split('.') in cls.audio_extensions
+        return filename.lower().split('.')[-1] in cls.audio_extensions
 
     @action
     def file_search(self, query):

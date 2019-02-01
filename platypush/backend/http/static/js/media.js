@@ -59,13 +59,13 @@ $(document).ready(function() {
 
                 request = {
                     type: 'request',
-                    action: 'video.omxplayer.play',
+                    action: 'media.play',
                     args: { resource: resource }
                 };
             } else {
                 request = {
                     type: 'request',
-                    action: 'video.omxplayer.search',
+                    action: 'media.search',
                     args: { query: resource }
                 };
 
@@ -87,7 +87,7 @@ $(document).ready(function() {
             execute(
                 {
                     type: 'request',
-                    action: 'video.omxplayer.' + action,
+                    action: 'media.' + action,
                 }
             );
         });
@@ -100,7 +100,7 @@ $(document).ready(function() {
             execute(
                 {
                     type: 'request',
-                    action: 'video.omxplayer.set_volume',
+                    action: 'media.set_volume',
                     args: { volume: $(this).val() }
                 },
 
@@ -124,7 +124,7 @@ $(document).ready(function() {
             execute(
                 {
                     type: 'request',
-                    action: 'video.omxplayer.play',
+                    action: 'media.play',
                     args: { resource: $item.data('url') },
                 },
 

@@ -65,14 +65,13 @@ class MediaMplayerPlugin(MediaPlugin):
         :type args: list
         """
 
-        super().__init__(player='media.mplayer', *argv, **kwargs)
+        super().__init__(*argv, **kwargs)
 
         self.args = args or []
         self._init_mplayer_bin()
         self._build_actions()
         self._mplayer = None
         self._mplayer_timeout = mplayer_timeout
-        self._videos_queue = []
 
 
     def _init_mplayer_bin(self, mplayer_bin=None):
@@ -229,6 +228,7 @@ class MediaMplayerPlugin(MediaPlugin):
             MPlayer executable
         :type mplayer_args: list[str]
         """
+        resource = self._get_resource(resource)
         return self._exec('loadfile', resource, mplayer_args=mplayer_args)
 
     @action
@@ -249,63 +249,22 @@ class MediaMplayerPlugin(MediaPlugin):
     @action
     def voldown(self, step=10.0):
         """ Volume down by (default: 10)% """
-        volume = self.get_property('volume').output.get('volume')
-        if volume is None:
-            self.logger.warning('Unable to read volume property')
-            return
-
-        new_volume = max(0, volume-step)
-        return self.set_property('volume', new_volume)
+        return self.step_property('volume', -step)
 
     @action
     def volup(self, step=10.0):
         """ Volume up by (default: 10)% """
-        volume = self.get_property('volume').output.get('volume')
-        if volume is None:
-            self.logger.warning('Unable to read volume property')
-            return
-
-        new_volume = min(100, volume+step)
-        return self.set_property('volume', new_volume)
-
+        return self.step_property('volume', step)
 
     @action
     def back(self, offset=60.0):
         """ Back by (default: 60) seconds """
-        pos = self.get_property('time_pos').output.get('time_pos')
-        if pos is None:
-            self.logger.warning('Unable to read time_pos property')
-            return
-
-        new_pos = max(0, pos-offset)
-        return self.set_property('time_pos', new_pos)
+        return self.step_property('time_pos', -offset)
 
     @action
     def forward(self, offset=60.0):
         """ Forward by (default: 60) seconds """
-        pos = self.get_property('time_pos').output.get('time_pos')
-        if pos is None:
-            self.logger.warning('Unable to read time_pos property')
-            return
-
-        length = self.get_property('length').output.get('length')
-        if length is None:
-            self.logger.warning('Unable to read length property')
-            return
-
-        new_pos = min(length, pos+offset)
-        return self.set_property('time_pos', new_pos)
-
-
-    @action
-    def next(self):
-        """ Play the next item in the queue """
-        if self._mplayer:
-            self.quit()
-
-        if self._videos_queue:
-            video = self._videos_queue.pop(0)
-            return self.play(video)
+        return self.step_property('time_pos', offset)
 
     @action
     def toggle_subtitles(self):
@@ -325,17 +284,12 @@ class MediaMplayerPlugin(MediaPlugin):
         """
         Load a resource/video in the player.
         """
-        return self._exec('loadfile', resource)
+        return self.play('loadfile', resource)
 
     @action
     def mute(self):
         """ Toggle mute state """
-        mute = self.get_property('mute').output.get('mute')
-        if mute is None:
-            self.logger.warning('Unable to read mute property')
-            return
-
-        return self._exec('mute', int(not mute))
+        return self._exec('mute')
 
     @action
     def seek(self, relative_position):
@@ -345,19 +299,7 @@ class MediaMplayerPlugin(MediaPlugin):
         :param relative_position: Number of seconds relative to the current cursor
         :type relative_position: int
         """
-
-        pos = self.get_property('time_pos').output.get('time_pos')
-        if pos is None:
-            self.logger.warning('Unable to read time_pos property')
-            return
-
-        length = self.get_property('length').output.get('length')
-        if length is None:
-            self.logger.warning('Unable to read length property')
-            return
-
-        new_pos = max(0, min(length, pos+offset))
-        return self.set_property('time_pos', new_pos)
+        return self.step_property('time_pos', offset)
 
     @action
     def set_position(self, position):
@@ -367,13 +309,7 @@ class MediaMplayerPlugin(MediaPlugin):
         :param position: Number of seconds from the start
         :type position: int
         """
-
-        length = self.get_property('length').output.get('length')
-        if length is None:
-            self.logger.warning('Unable to read length property')
-            return
-
-        return self.set_property('time_pos', max(0, min(length, position)))
+        return self.set_property('time_pos', position)
 
     @action
     def get_property(self, property, args=None):
@@ -409,6 +345,30 @@ class MediaMplayerPlugin(MediaPlugin):
         response = Response(output={})
 
         result = self._exec('set_property', property, value,
+                            prefix='pausing_keep_force' if property != 'pause'
+                            else None, wait_for_response=True, *args) or {}
+
+        for k, v in result.items():
+            if k == 'ERROR' and v not in response.errors:
+                response.errors.append('{} {}{}: {}'.format(property, value,
+                                                            args, v))
+            else:
+                response.output[k] = v
+
+        return response
+
+    @action
+    def step_property(self, property, value, args=None):
+        """
+        Step a player property (e.g. volume, time_pos etc.). See
+        http://www.mplayerhq.hu/DOCS/tech/slave.txt for a full list of the
+        available steppable properties
+        """
+
+        args = args or []
+        response = Response(output={})
+
+        result = self._exec('step_property', property, value,
                             prefix='pausing_keep_force',
                             wait_for_response=True, *args) or {}
 

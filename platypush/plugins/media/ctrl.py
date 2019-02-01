@@ -10,14 +10,14 @@ class MediaCtrlPlugin(Plugin):
     """
     Wrapper plugin to control audio and video media.
     Examples of supported URL types:
-        - file:///media/movies/Movie.mp4 [requires omxplayer Python support]
-        - youtube:video:poAk9XgK7Cs [requires omxplayer+youtube-dl]
+        - file:///media/movies/Movie.mp4 [requires media plugin enabled]
+        - youtube:video:poAk9XgK7Cs [requires media plugin+youtube-dl]
         - magnet:?torrent_magnet [requires torrentcast]
         - spotify:track:track_id [leverages plugins.music.mpd]
     """
 
     _supported_plugins = {
-        'music.mpd', 'video.omxplayer', 'video.torrentcast'
+        'music.mpd', 'media', 'video.torrentcast'
     }
 
     def __init__(self, torrentcast_port=9090, *args, **kwargs):
@@ -84,7 +84,7 @@ class MediaCtrlPlugin(Plugin):
         if type == 'mpd':
             plugin_name = 'music.mpd'
         elif type == 'youtube:video' or type == 'file':
-            plugin_name = 'video.omxplayer'
+            plugin_name = 'media'
         elif type == 'torrent':
             plugin_name = 'video.torrentcast'
 
