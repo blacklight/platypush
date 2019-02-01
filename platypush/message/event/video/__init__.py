@@ -1,7 +1,8 @@
 from platypush.message.event import Event
+from platypush.message.event.media import MediaEvent
 
 
-class VideoEvent(Event):
+class VideoEvent(MediaEvent):
     """ Base class for video events """
 
     def __init__(self, *args, **kwargs):
@@ -55,4 +56,3 @@ class NewPlayingVideoEvent(VideoEvent):
 
 
 # vim:sw=4:ts=4:et:
-
