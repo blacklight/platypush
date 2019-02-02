@@ -81,10 +81,19 @@ class MediaOmxplayerPlugin(MediaPlugin):
         """ Stop the playback """
         if self._player:
             self._player.stop()
+
+        return {'status':'stop'}
+
+    @action
+    def quit(self):
+        """ Quit the player """
+        if self._player:
+            self._player.stop()
             self._player.quit()
             self._player = None
 
         return {'status':'stop'}
+
 
     @action
     def voldown(self):

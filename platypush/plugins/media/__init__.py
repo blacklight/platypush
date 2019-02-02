@@ -151,6 +151,10 @@ class MediaPlugin(Plugin):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    def quit(self, *args, **kwargs):
+        raise self._NOT_IMPLEMENTED_ERR
+
+    @action
     def voldown(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
