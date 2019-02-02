@@ -330,6 +330,33 @@ class MediaMplayerPlugin(MediaPlugin):
         return self._exec('volume', volume)
 
     @action
+    def status(self):
+        """
+        Get the current player state.
+
+        :returns: A dictionary containing the current state.
+
+        Example::
+
+            output = {
+                "state": "play"  # or "stop" or "pause"
+            }
+        """
+
+        state = { 'state': PlayerState.STOP.value }
+
+        try:
+            paused = self.get_property('pause').output.get('pause')
+            if paused is True:
+                state['state'] = PlayerState.PAUSE.value
+            elif paused is False:
+                state['state'] = PlayerState.PLAY.value
+        except:
+            pass
+        finally:
+            return state
+
+    @action
     def get_property(self, property, args=None):
         """
         Get a player property (e.g. pause, fullscreen etc.). See
