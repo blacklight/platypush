@@ -51,7 +51,8 @@ class MediaPlugin(Plugin):
 
     _supported_media_plugins = { 'media.mplayer', 'media.omxplayer' }
 
-    def __init__(self, media_dirs=[], download_dir=None, *args, **kwargs):
+    def __init__(self, media_dirs=[], download_dir=None, env=None,
+                 *args, **kwargs):
         """
         :param media_dirs: Directories that will be scanned for media files when
             a search is performed (default: none)
@@ -60,6 +61,10 @@ class MediaPlugin(Plugin):
         :param download_dir: Directory where external resources/torrents will be
             downloaded (default: none)
         :type download_dir: str
+
+        :param env: Environment variables key-values to pass to the
+            player executable (e.g. DISPLAY, XDG_VTNR, PULSE_SINK etc.)
+        :type env: dict
         """
 
         super().__init__(*args, **kwargs)
@@ -84,6 +89,7 @@ class MediaPlugin(Plugin):
                 setattr(self, action, getattr(plugin, action))
                 self.registered_actions.add(action)
 
+        self._environment = environment or {}
         self.media_dirs = set(
             filter(
                 lambda _: os.path.isdir(_),
