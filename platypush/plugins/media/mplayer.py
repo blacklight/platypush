@@ -233,6 +233,8 @@ class MediaMplayerPlugin(MediaPlugin):
         :type mplayer_args: list[str]
         """
         resource = self._get_resource(resource)
+        if resource.startswith('file://'):
+            resource = resource[7:]
         return self._exec('loadfile', resource, mplayer_args=mplayer_args)
 
     @action
