@@ -116,7 +116,7 @@ class MediaMplayerPlugin(MediaPlugin):
         if self._env:
             env.update(self._env)
 
-        self._mplayer = subprocess.Popen(args, env=env, shell=True,
+        self._mplayer = subprocess.Popen(args, env=env,
                                          stdin=subprocess.PIPE,
                                          stdout=subprocess.PIPE)
 
