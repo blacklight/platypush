@@ -112,13 +112,15 @@ class MediaMplayerPlugin(MediaPlugin):
             if arg not in args:
                 args.append(arg)
 
-        env = os.environ.copy()
-        if self._env:
-            env.update(self._env)
+        popen_args = {
+            'stdin': subprocess.PIPE,
+            'stdout': subprocess.PIPE,
+        }
 
-        self._mplayer = subprocess.Popen(args, env=env,
-                                         stdin=subprocess.PIPE,
-                                         stdout=subprocess.PIPE)
+        if self._env:
+            popen_args['env'] = self._env
+
+        self._mplayer = subprocess.Popen(args, **popen_args)
 
     def _build_actions(self):
         """ Populates the actions list by introspecting the mplayer executable """
