@@ -253,14 +253,14 @@ class MediaMplayerPlugin(MediaPlugin):
         self._exec('quit')
 
     @action
-    def voldown(self, step=100.0):
+    def voldown(self, step=10.0):
         """ Volume down by (default: 10)% """
-        return self.step_property('volume', -step)
+        return self._exec('volume', -step*10)
 
     @action
-    def volup(self, step=100.0):
+    def volup(self, step=10.0):
         """ Volume up by (default: 10)% """
-        return self.step_property('volume', step)
+        return self._exec('volume', step*10)
 
     @action
     def back(self, offset=60.0):
