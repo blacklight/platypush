@@ -318,6 +318,16 @@ class MediaMplayerPlugin(MediaPlugin):
         return self.set_property('time_pos', position)
 
     @action
+    def set_volume(self, volume):
+        """
+        Set the volume
+
+        :param volume: Volume value between 0 and 100
+        :type volume: float
+        """
+        return self._exec('volume', volume)
+
+    @action
     def get_property(self, property, args=None):
         """
         Get a player property (e.g. pause, fullscreen etc.). See
