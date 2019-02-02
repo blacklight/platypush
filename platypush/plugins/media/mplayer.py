@@ -113,8 +113,8 @@ class MediaMplayerPlugin(MediaPlugin):
                 args.append(arg)
 
         env = os.environ.copy()
-        if self._environment:
-            env.update(self._environment)
+        if self._env:
+            env.update(self._env)
 
         self._mplayer = subprocess.Popen(args, env=env, shell=True,
                                          stdin=subprocess.PIPE,

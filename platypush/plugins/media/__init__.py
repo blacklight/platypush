@@ -89,7 +89,7 @@ class MediaPlugin(Plugin):
                 setattr(self, action, getattr(plugin, action))
                 self.registered_actions.add(action)
 
-        self._environment = environment or {}
+        self._env = env or {}
         self.media_dirs = set(
             filter(
                 lambda _: os.path.isdir(_),
