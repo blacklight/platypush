@@ -124,9 +124,15 @@ class MediaPlugin(Plugin):
                 or resource.startswith('https://www.youtube.com/watch?v='):
             resource = self._get_youtube_content(resource)
         elif resource.startswith('magnet:?'):
+            try:
+                get_plugin('media.webtorrent')
+                return resource  # media.webtorrent will handle this
+            except:
+                pass
+
             torrents = get_plugin('torrent')
-            self.logger.info('Downloading torrent {} to {}'.format(resource,
-                                                                   download_dir))
+            self.logger.info('Downloading torrent {} to {}'.format(
+                resource, self.download_dir))
 
             response = torrents.download(resource, download_dir=self.download_dir)
             resources = [f for f in response.output if self._is_video_file(f)]

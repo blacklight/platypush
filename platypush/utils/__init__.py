@@ -172,6 +172,12 @@ def set_thread_name(name):
     except ImportError:
         logger.debug('Unable to set thread name: prctl module is missing')
 
+def find_bins_in_path(bin_name):
+    return [os.path.join(p, bin_name)
+            for p in os.environ.get('PATH', '').split(':')
+            if os.path.isfile(os.path.join(p, bin_name))
+            and (os.name == 'nt' or
+                 os.access(os.path.join(p, bin_name), os.X_OK))]
+
 
 # vim:sw=4:ts=4:et:
-

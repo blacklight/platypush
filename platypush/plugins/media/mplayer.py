@@ -1,15 +1,17 @@
 import os
 import select
 import subprocess
+import threading
 import time
 
-from platypush.context import get_bus
+from platypush.context import get_bus, get_plugin
 from platypush.message.response import Response
 from platypush.plugins.media import PlayerState, MediaPlugin
 from platypush.message.event.media import MediaPlayEvent, MediaPauseEvent, \
     MediaStopEvent, NewPlayingMediaEvent
 
 from platypush.plugins import action
+from platypush.utils import find_bins_in_path
 
 
 class MediaMplayerPlugin(MediaPlugin):
@@ -77,11 +79,7 @@ class MediaMplayerPlugin(MediaPlugin):
     def _init_mplayer_bin(self, mplayer_bin=None):
         if not mplayer_bin:
             bin_name = 'mplayer.exe' if os.name == 'nt' else 'mplayer'
-            bins = [os.path.join(p, bin_name)
-                    for p in os.environ.get('PATH', '').split(':')
-                    if os.path.isfile(os.path.join(p, bin_name))
-                    and (os.name == 'nt' or
-                         os.access(os.path.join(p, bin_name), os.X_OK))]
+            bins = find_bins_in_path(bin_name)
 
             if not bins:
                 raise RuntimeError('MPlayer executable not specified and not ' +
@@ -121,13 +119,14 @@ class MediaMplayerPlugin(MediaPlugin):
             popen_args['env'] = self._env
 
         self._mplayer = subprocess.Popen(args, **popen_args)
+        threading.Thread(target=self._process_monitor()).start()
 
     def _build_actions(self):
         """ Populates the actions list by introspecting the mplayer executable """
 
         self._actions = {}
         mplayer = subprocess.Popen([self.mplayer_bin, '-input', 'cmdlist'],
-                stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
         def args_pprint(txt):
             lc = txt.lower()
@@ -222,6 +221,17 @@ class MediaMplayerPlugin(MediaPlugin):
         return [ { 'action': action, 'args': self._actions[action] }
                 for action in sorted(self._actions.keys()) ]
 
+    def _process_monitor(self):
+        def _thread():
+            if not self._mplayer:
+                return
+
+            self._mplayer.wait()
+            get_bus().post(MediaStopEvent())
+            self._mplayer = None
+
+        return _thread
+
     @action
     def play(self, resource, mplayer_args=None):
         """
@@ -234,9 +244,14 @@ class MediaMplayerPlugin(MediaPlugin):
             MPlayer executable
         :type mplayer_args: list[str]
         """
+
         resource = self._get_resource(resource)
         if resource.startswith('file://'):
             resource = resource[7:]
+        elif resource.startswith('magnet:?'):
+            torrent_plugin = get_plugin('media.webtorrent')
+            return torrent_plugin.play(resource)
+
         return self._exec('loadfile', resource, mplayer_args=mplayer_args)
 
     @action
@@ -288,11 +303,11 @@ class MediaMplayerPlugin(MediaPlugin):
         return self.get_property('pause').output.get('pause') == False
 
     @action
-    def load(self, resource):
+    def load(self, resource, mplayer_args={}):
         """
         Load a resource/video in the player.
         """
-        return self.play('loadfile', resource)
+        return self.play(resource, mplayer_args=mplayer_args)
 
     @action
     def mute(self):
