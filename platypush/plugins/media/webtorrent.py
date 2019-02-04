@@ -175,7 +175,6 @@ class MediaWebtorrentPlugin(MediaPlugin):
             self._webtorrent_process.wait()
             try: self._webtorrent_process.kill()
             except: pass
-            bus.post(MediaStopEvent())
 
         self._webtorrent_process = None
 

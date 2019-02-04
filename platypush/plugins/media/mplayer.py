@@ -179,8 +179,6 @@ class MediaMplayerPlugin(MediaPlugin):
                 except: pass
                 self._mplayer = None
 
-            bus.post(MediaStopEvent())
-
         if not wait_for_response:
             return
 
