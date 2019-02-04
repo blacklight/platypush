@@ -127,6 +127,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
             state = TorrentState.IDLE
             bus = get_bus()
             webtorrent_url = None
+            output_dir = None
             media_file = None
 
             poll = select.poll()
@@ -156,14 +157,6 @@ class MediaWebtorrentPlugin(MediaPlugin):
                             'downloading: (.+?)$', line, flags=re.IGNORECASE
                         ).group(1))
 
-                    media_files = sorted(find_files_by_ext(
-                        output_dir, *self._media_plugin.video_extensions))
-
-                    if not media_files:
-                        raise RuntimeError('No video files found in {}'.
-                                           format(output_dir))
-
-                    media_file = os.path.join(output_dir, media_files[0])
                 elif 'server running at: ' in line.lower() \
                         and webtorrent_url is None:
                     # Streaming started
@@ -171,6 +164,16 @@ class MediaWebtorrentPlugin(MediaPlugin):
                                                line, flags=re.IGNORECASE).group(1)
                     self.logger.info('Torrent stream started on {}'.format(
                         webtorrent_url))
+
+                if output_dir and not media_file:
+                    media_files = sorted(find_files_by_ext(
+                        output_dir, *self._media_plugin.video_extensions))
+
+                    if media_files:
+                        # TODO support for queueing multiple media
+                        media_file = os.path.join(output_dir, media_files[0])
+                    else:
+                        time.sleep(1)  # Wait before the media file is created
 
                 if state.value <= TorrentState.DOWNLOADING_METADATA.value \
                         and media_file and webtorrent_url:
@@ -182,9 +185,19 @@ class MediaWebtorrentPlugin(MediaPlugin):
                     break
 
 
+            if not output_dir:
+                raise RuntimeError('Could not download torrent')
             if not media_file or not webtorrent_url:
-                raise RuntimeError('The webtorrent process did not ' +
-                                    'provide the required data')
+                if not media_file:
+                    self.logger.warning(
+                        'The torrent does not contain any video files')
+                else:
+                    self.logger.warning('WebTorrent could not start streaming')
+
+                # Keep downloading but don't start the player
+                try: self._webtorrent_process.wait()
+                except: pass
+                return
 
             # Then wait until we have enough chunks to start the player
             while True:
