@@ -180,4 +180,34 @@ def find_bins_in_path(bin_name):
                  os.access(os.path.join(p, bin_name), os.X_OK))]
 
 
+def find_files_by_ext(directory, *exts):
+    """
+    Finds all the files in the given directory with the provided extensions
+    """
+
+    if not exts:
+        raise AttributeError('No extensions provided')
+
+    if not os.path.isdir(directory):
+        raise AttributeError('{} is not a valid directory'.format(directory))
+
+    min_len = len(min(exts, key=len))
+    max_len = len(max(exts, key=len))
+    result = []
+
+    for root, dirs, files in os.walk(directory):
+        for i in range(min_len, max_len+1):
+            result += [f for f in files if f[-i:] in exts]
+
+    return result
+
+
+def is_process_alive(pid):
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
 # vim:sw=4:ts=4:et:

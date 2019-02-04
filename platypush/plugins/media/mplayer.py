@@ -72,8 +72,9 @@ class MediaMplayerPlugin(MediaPlugin):
         self.args = args or []
         self._init_mplayer_bin()
         self._build_actions()
-        self._mplayer = None
+        self._player = None
         self._mplayer_timeout = mplayer_timeout
+        self._mplayer_stopped_event = threading.Event()
         self._is_playing_torrent = False
 
 
@@ -98,9 +99,9 @@ class MediaMplayerPlugin(MediaPlugin):
             self.mplayer_bin = mplayer_bin
 
     def _init_mplayer(self, mplayer_args=None):
-        if self._mplayer:
+        if self._player:
             try:
-                self._mplayer.quit()
+                self._player.quit()
             except:
                 self.logger.debug('Failed to quit mplayer before _exec: {}'.
                                   format(str))
@@ -119,7 +120,7 @@ class MediaMplayerPlugin(MediaPlugin):
         if self._env:
             popen_args['env'] = self._env
 
-        self._mplayer = subprocess.Popen(args, **popen_args)
+        self._player = subprocess.Popen(args, **popen_args)
         threading.Thread(target=self._process_monitor()).start()
 
     def _build_actions(self):
@@ -155,7 +156,7 @@ class MediaMplayerPlugin(MediaPlugin):
         if cmd_name == 'loadfile' or cmd_name == 'loadlist':
             self._init_mplayer(mplayer_args)
         else:
-            if not self._mplayer:
+            if not self._player:
                 self.logger.warning('MPlayer is not running')
 
         cmd = '{}{}{}{}\n'.format(
@@ -163,8 +164,8 @@ class MediaMplayerPlugin(MediaPlugin):
             cmd_name, ' ' if args else '',
             ' '.join(repr(a) for a in args)).encode()
 
-        self._mplayer.stdin.write(cmd)
-        self._mplayer.stdin.flush()
+        self._player.stdin.write(cmd)
+        self._player.stdin.flush()
         bus = get_bus()
 
         if cmd_name == 'loadfile' or cmd_name == 'loadlist':
@@ -173,23 +174,23 @@ class MediaMplayerPlugin(MediaPlugin):
             bus.post(MediaPauseEvent())
         elif cmd_name == 'quit' or cmd_name == 'stop':
             if cmd_name == 'quit':
-                self._mplayer.terminate()
-                self._mplayer.wait()
-                try: self._mplayer.kill()
+                self._player.terminate()
+                self._player.wait()
+                try: self._player.kill()
                 except: pass
-                self._mplayer = None
+                self._player = None
 
         if not wait_for_response:
             return
 
         poll = select.poll()
-        poll.register(self._mplayer.stdout, select.POLLIN)
+        poll.register(self._player.stdout, select.POLLIN)
         last_read_time = time.time()
 
         while time.time() - last_read_time < self._mplayer_timeout:
             result = poll.poll(0)
             if result:
-                line = self._mplayer.stdout.readline().decode()
+                line = self._player.stdout.readline().decode()
                 last_read_time = time.time()
 
                 if line.startswith('ANS_'):
@@ -222,15 +223,17 @@ class MediaMplayerPlugin(MediaPlugin):
 
     def _process_monitor(self):
         def _thread():
-            if not self._mplayer:
+            if not self._player:
                 return
 
-            self._mplayer.wait()
+            self._mplayer_stopped_event.clear()
+            self._player.wait()
             try: self.quit()
             except: pass
 
             get_bus().post(MediaStopEvent())
-            self._mplayer = None
+            self._mplayer_stopped_event.set()
+            self._player = None
 
         return _thread
 

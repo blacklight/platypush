@@ -10,6 +10,15 @@ class TorrentEvent(Event):
         super().__init__(*args, **kwargs)
 
 
+class TorrentDownloadingMetadataEvent(TorrentEvent):
+    """
+    Event triggered upon torrent metadata download start
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 class TorrentDownloadStartEvent(TorrentEvent):
     """
     Event triggered upon torrent download start

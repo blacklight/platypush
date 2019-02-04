@@ -27,6 +27,10 @@ class MediaPlugin(Plugin):
         * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
     """
 
+    # A media plugin can either be local or remote (e.g. control media on
+    # another device)
+    _is_local = True
+
     _NOT_IMPLEMENTED_ERR = NotImplementedError(
         'This method must be implemented in a derived class')
 
@@ -359,6 +363,9 @@ class MediaPlugin(Plugin):
                                 stdout=subprocess.PIPE)
 
         return proc.stdout.read().decode("utf-8", "strict")[:-1]
+
+    def is_local(self):
+        return self._is_local
 
 
 # vim:sw=4:ts=4:et:

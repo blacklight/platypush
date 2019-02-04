@@ -1,3 +1,4 @@
+import enum
 import os
 import re
 import subprocess
@@ -11,6 +12,12 @@ from platypush.message.event.video import VideoPlayEvent, VideoPauseEvent, \
     VideoStopEvent, NewPlayingVideoEvent
 
 from platypush.plugins import action
+
+
+class PlayerEvent(enum.Enum):
+    STOP = 'stop'
+    PLAY = 'play'
+    PAUSE = 'pause'
 
 
 class MediaOmxplayerPlugin(MediaPlugin):
@@ -36,6 +43,7 @@ class MediaOmxplayerPlugin(MediaPlugin):
 
         self.args = args
         self._player = None
+        self._handlers = { e.value: [] for e in PlayerEvent }
 
     @action
     def play(self, resource):
@@ -278,19 +286,36 @@ class MediaOmxplayerPlugin(MediaPlugin):
 
         redis.send_message(msg)
 
+    def add_handler(self, event_type, callback):
+        if event_type not in self._handlers.keys():
+            raise AttributeError('{} is not a valid PlayerEvent type'.
+                                 format(event_type))
+
+        self._handlers[event_type].append(callback)
+
     def on_play(self):
         def _f(player):
-            self.send_message(VideoPlayEvent(video=self._player.get_source()))
+            video = self._player.get_source()
+            self.send_message(VideoPlayEvent(video=video))
+            for callback in self._handlers[PlayerEvent.PLAY.value]:
+                callback(video)
+
         return _f
 
     def on_pause(self):
         def _f(player):
-            self.send_message(VideoPauseEvent(video=self._player.get_source()))
+            video = self._player.get_source()
+            self.send_message(VideoPauseEvent(video=video))
+            for callback in self._handlers[PlayerEvent.PAUSE.value]:
+                callback(video)
+
         return _f
 
     def on_stop(self):
         def _f(player):
             self.send_message(VideoStopEvent())
+            for callback in self._handlers[PlayerEvent.STOP.value]:
+                callback()
         return _f
 
 

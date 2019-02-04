@@ -1,8 +1,9 @@
 import datetime
+import enum
 import os
+import re
 import select
 import subprocess
-import tempfile
 import threading
 import time
 
@@ -11,11 +12,19 @@ from platypush.context import get_bus, get_plugin
 from platypush.message.response import Response
 from platypush.plugins.media import PlayerState, MediaPlugin
 from platypush.message.event.torrent import TorrentDownloadStartEvent, \
-    TorrentDownloadCompletedEvent
+    TorrentDownloadCompletedEvent, TorrentDownloadProgressEvent, \
+    TorrentDownloadingMetadataEvent
 
 from platypush.plugins import action
-from platypush.utils import find_bins_in_path
+from platypush.utils import find_bins_in_path, find_files_by_ext, \
+    is_process_alive
 
+
+class TorrentState(enum.Enum):
+    IDLE = 1
+    DOWNLOADING_METADATA = 2
+    DOWNLOADING = 3
+    DOWNLOADED = 4
 
 class MediaWebtorrentPlugin(MediaPlugin):
     """
@@ -38,7 +47,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
     # Download at least 10 MBs before starting streaming
     _download_size_before_streaming = 10 * 2**20
 
-    def __init__(self, webtorrent_bin=None, *args, **kwargs):
+    def __init__(self, webtorrent_bin=None, webtorrent_port=None, *args,
+                 **kwargs):
         """
         media.webtorrent will use the default media player plugin you have
         configured (e.g. mplayer, omxplayer) to stream the torrent.
@@ -46,10 +56,15 @@ class MediaWebtorrentPlugin(MediaPlugin):
         :param webtorrent_bin: Path to your webtorrent executable. If not set,
             then Platypush will search for the right executable in your PATH
         :type webtorrent_bin: str
+
+        :param webtorrent_port: Port where the webtorrent will be running
+            streaming server will be running (default: 8000)
+        :type webtorrent_port: int
         """
 
         super().__init__(*args, **kwargs)
 
+        self.webtorrent_port = webtorrent_port
         self._init_webtorrent_bin(webtorrent_bin=webtorrent_bin)
         self._init_media_player()
 
@@ -97,38 +112,142 @@ class MediaWebtorrentPlugin(MediaPlugin):
                                     self._supported_media_plugins))
 
 
-    def _process_monitor(self, resource, output_file):
+    def _read_process_line(self):
+        line = self._webtorrent_process.stdout.readline().decode().strip()
+        # Strip output of the colors
+        return re.sub('\x1b\[((\d+m)|(.{1,2}))', '', line).strip()
+
+
+    def _process_monitor(self, resource, download_dir):
         def _thread():
             if not self._webtorrent_process:
                 return
 
+            ######
+            state = TorrentState.IDLE
             bus = get_bus()
-            bus.post(TorrentDownloadStartEvent(resource=resource))
+            webtorrent_url = None
+            media_file = None
 
+            poll = select.poll()
+            poll.register(self._webtorrent_process.stdout, select.POLLIN)
+
+            # First wait for the metadata to be ready and the streaming started
             while True:
+                result = poll.poll(0)
+                if not result:
+                    continue
+
+                if not self._is_process_alive():
+                    break
+
+                line = self._read_process_line()
+
+                if 'fetching torrent metadata from' in line.lower() \
+                        and state == TorrentState.IDLE:
+                    # IDLE -> DOWNLOADING_METADATA
+                    state = TorrentState.DOWNLOADING_METADATA
+                    bus.post(TorrentDownloadingMetadataEvent(resource=resource))
+                elif 'downloading: ' in line.lower() \
+                        and media_file is None:
+                    # Find video files in torrent directory
+                    output_dir = os.path.join(
+                        download_dir, re.search(
+                            'downloading: (.+?)$', line, flags=re.IGNORECASE
+                        ).group(1))
+
+                    media_files = sorted(find_files_by_ext(
+                        output_dir, *self._media_plugin.video_extensions))
+
+                    if not media_files:
+                        raise RuntimeError('No video files found in {}'.
+                                           format(output_dir))
+
+                    media_file = os.path.join(output_dir, media_files[0])
+                elif 'server running at: ' in line.lower() \
+                        and webtorrent_url is None:
+                    # Streaming started
+                    webtorrent_url = re.search('server running at: (.+?)$',
+                                               line, flags=re.IGNORECASE).group(1)
+                    self.logger.info('Torrent stream started on {}'.format(
+                        webtorrent_url))
+
+                if state.value <= TorrentState.DOWNLOADING_METADATA.value \
+                        and media_file and webtorrent_url:
+                    # DOWNLOADING_METADATA -> DOWNLOADING
+                    state = TorrentState.DOWNLOADING
+                    bus.post(TorrentDownloadStartEvent(
+                        resource=resource, media_file=media_file,
+                        stream_url=webtorrent_url))
+                    break
+
+
+            if not media_file or not webtorrent_url:
+                raise RuntimeError('The webtorrent process did not ' +
+                                    'provide the required data')
+
+            # Then wait until we have enough chunks to start the player
+            while True:
+                result = poll.poll(0)
+                if not result:
+                    continue
+
+                if not self._is_process_alive():
+                    break
+
                 try:
-                    if os.path.getsize(output_file) > \
+                    if os.path.getsize(media_file) > \
                             self._download_size_before_streaming:
                         break
                 except FileNotFoundError:
-                    pass
+                    continue
 
-            self._media_plugin.play(output_file)
-            self._webtorrent_process.wait()
+            self.logger.info(
+                'Starting playback of {} to {} through {}'.format(
+                    media_file, self._media_plugin.__class__.__name__,
+                    webtorrent_url))
+
+            media = media_file if self._media_plugin.is_local() \
+                else webtorrent_url
+
+            self._media_plugin.play(media)
+            self.logger.info('Waiting for player to terminate')
+            self._wait_for_player()
+            self.logger.info('Torrent player terminated')
             bus.post(TorrentDownloadCompletedEvent(resource=resource))
-            self._webtorrent_process = None
+
+            try: self.quit()
+            except: pass
+            self.logger.info('WebTorrent process terminated')
 
         return _thread
 
+    def _wait_for_player(self):
+        media_cls = self._media_plugin.__class__.__name__
+        stop_evt = None
 
-    def _get_torrent_download_path(self):
-        if self._media_plugin.download_dir:
-            # TODO set proper file name based on the torrent metadata
-            return os.path.join(self._media_plugin.download_dir,
-                                'torrent_media_' + datetime.datetime.
-                                today().strftime('%Y-%m-%d_%H-%M-%S-%f'))
+        if media_cls == 'MediaMplayerPlugin':
+            stop_evt = self._media_plugin._mplayer_stopped_event
+        elif media_cls == 'MediaOmxplayerPlugin':
+            stop_evt = threading.Event()
+            def stop_callback():
+                stop_evt.set()
+            self._media_plugin.add_handler('stop', stop_callback)
+
+        if stop_evt:
+            stop_evt.wait()
         else:
-            return tempfile.NamedTemporaryFile(delete=False).name
+            # Fallback: wait for the webtorrent process to terminate
+            self._webtorrent_process.wait()
+
+
+    def _get_torrent_download_dir(self):
+        if self._media_plugin.download_dir:
+            return self._media_plugin.download_dir
+        else:
+            d = os.path.join(os.environ['HOME'], 'Downloads')
+            os.makedirs(d, exist_ok=True)
+            return d
 
 
     @action
@@ -148,16 +267,18 @@ class MediaWebtorrentPlugin(MediaPlugin):
                 self.logger.debug('Failed to quit the previous instance: {}'.
                                   format(str))
 
-        output_file = self._get_torrent_download_path()
-        webtorrent_args = [self.webtorrent_bin, '--stdout', resource]
+        download_dir = self._get_torrent_download_dir()
+        webtorrent_args = [self.webtorrent_bin, 'download', '-o', download_dir]
 
-        with open(output_file, 'w') as f:
-            self._webtorrent_process = subprocess.Popen(webtorrent_args,
-                                                        stdout=f)
+        if self.webtorrent_port:
+            webtorrent_args += ['-p', self.webtorrent_port]
 
-            threading.Thread(target=self._process_monitor(
-                resource=resource, output_file=output_file)).start()
+        webtorrent_args += [resource]
+        self._webtorrent_process = subprocess.Popen(webtorrent_args,
+                                                    stdout=subprocess.PIPE)
 
+        threading.Thread(target=self._process_monitor(
+            resource=resource, download_dir=download_dir)).start()
         return { 'resource': resource }
 
 
@@ -169,8 +290,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
     @action
     def quit(self):
         """ Quit the player """
-        if self._webtorrent_process and self._is_process_alive(
-                self._webtorrent_process.pid):
+        if self._is_process_alive():
             self._webtorrent_process.terminate()
             self._webtorrent_process.wait()
             try: self._webtorrent_process.kill()
@@ -186,15 +306,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
         return self.play(resource)
 
     def _is_process_alive(self):
-        if not self._webtorrent_process:
-            return False
-
-        try:
-            os.kill(self._webtorrent_process.pid, 0)
-            return True
-        except OSError:
-            self._webtorrent_process = None
-            return False
+        return is_process_alive(self._webtorrent_process.pid) \
+            if self._webtorrent_process else False
 
     @action
     def status(self):
