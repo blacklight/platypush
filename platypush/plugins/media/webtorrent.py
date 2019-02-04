@@ -169,9 +169,6 @@ class MediaWebtorrentPlugin(MediaPlugin):
     @action
     def quit(self):
         """ Quit the player """
-        if self._media_plugin:
-            self._media_plugin.quit()
-
         if self._webtorrent_process and self._is_process_alive(
                 self._webtorrent_process.pid):
             self._webtorrent_process.terminate()

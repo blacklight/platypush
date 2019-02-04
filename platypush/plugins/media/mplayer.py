@@ -74,6 +74,7 @@ class MediaMplayerPlugin(MediaPlugin):
         self._build_actions()
         self._mplayer = None
         self._mplayer_timeout = mplayer_timeout
+        self._is_playing_torrent = False
 
 
     def _init_mplayer_bin(self, mplayer_bin=None):
@@ -227,6 +228,9 @@ class MediaMplayerPlugin(MediaPlugin):
                 return
 
             self._mplayer.wait()
+            try: self.quit()
+            except: pass
+
             get_bus().post(MediaStopEvent())
             self._mplayer = None
 
@@ -249,14 +253,24 @@ class MediaMplayerPlugin(MediaPlugin):
         if resource.startswith('file://'):
             resource = resource[7:]
         elif resource.startswith('magnet:?'):
+            self._is_playing_torrent = True
             return get_plugin('media.webtorrent').play(resource)
 
+        self._is_playing_torrent = False
         return self._exec('loadfile', resource, mplayer_args=mplayer_args)
 
     @action
     def pause(self):
         """ Toggle the paused state """
         return self._exec('pause')
+
+    def _stop_torrent(self):
+        if self._is_playing_torrent:
+            try:
+                get_plugin('media.webtorrent').quit()
+            except:
+                self.logger.warning('Cannot quit the webtorrent instance: {}'.
+                                    format(str(e)))
 
     @action
     def stop(self):
@@ -266,6 +280,7 @@ class MediaMplayerPlugin(MediaPlugin):
     @action
     def quit(self):
         """ Quit the player """
+        self._stop_torrent()
         self._exec('quit')
 
     @action
