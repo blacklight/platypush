@@ -46,15 +46,6 @@ class TorrentStateChangeEvent(TorrentEvent):
         super().__init__(*args, **kwargs)
 
 
-class TorrentStateChangeEvent(TorrentEvent):
-    """
-    Event triggered upon torrent state change
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
 class TorrentDownloadCompletedEvent(TorrentEvent):
     """
     Event triggered upon torrent state change
@@ -74,4 +65,3 @@ class TorrentDownloadStopEvent(TorrentEvent):
 
 
 # vim:sw=4:ts=4:et:
-

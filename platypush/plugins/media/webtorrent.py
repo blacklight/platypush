@@ -1,14 +1,17 @@
+import datetime
 import os
 import select
 import subprocess
+import tempfile
 import threading
 import time
 
+from platypush.config import Config
 from platypush.context import get_bus, get_plugin
 from platypush.message.response import Response
 from platypush.plugins.media import PlayerState, MediaPlugin
-from platypush.message.event.media import MediaPlayEvent, MediaPauseEvent, \
-    MediaStopEvent, NewPlayingMediaEvent
+from platypush.message.event.torrent import TorrentDownloadStartEvent, \
+    TorrentDownloadCompletedEvent
 
 from platypush.plugins import action
 from platypush.utils import find_bins_in_path
@@ -26,39 +29,19 @@ class MediaWebtorrentPlugin(MediaPlugin):
              ``npm install -g BlackLight/webtorrent-cli`` as my fork contains
              the ``--[player]-args`` options to pass custom arguments to your
              installed player)
+        * A media plugin configured for streaming (e.g. media.mplayer
+            or media.omxplayer)
     """
 
     _supported_media_plugins = { 'media.mplayer', 'media.omxplayer' }
-    _supported_webtorrent_players = {'airplay', 'chromecast', 'mplayer',
-                                     'mpv', 'omxplayer', 'vlc', 'xbmc'}
 
+    # Download at least 10 MBs before starting streaming
+    _download_size_before_streaming = 10 * 2**20
 
-    def __init__(self, player_type=None, player_args=None, webtorrent_bin=None,
-                 *args, **kwargs):
+    def __init__(self, webtorrent_bin=None, *args, **kwargs):
         """
-        Create the webtorrent wrapper
-
-        :param player_type: Player type to be used for streaming. Check
-            https://www.npmjs.com/package/webtorrent for a full list of the
-            supported players. If no player is specified then it will search in
-            your Platypush configuration for any enabled and supported media
-            plugin (either ``media.mplayer`` or ``media.omxplayer``) to
-            configure the streaming player. Currently supported options:
-                - airplay
-                - chromecast
-                - mplayer
-                - mpv
-                - omxlayer
-                - vlc
-                - xbmc
-
-        :type player_type: str
-
-        :param player_args: Extra arguments to pass to the player as a list.
-            For mplayer, vlc, omxplayer and mpv this will be a list of extra
-            arguments to be passed to the executable (e.g. fullscreen, volume,
-            audio sink etc.).
-        :type player_args: list[str]
+        media.webtorrent will use the default media player plugin you have
+        configured (e.g. mplayer, omxplayer) to stream the torrent.
 
         :param webtorrent_bin: Path to your webtorrent executable. If not set,
             then Platypush will search for the right executable in your PATH
@@ -68,11 +51,12 @@ class MediaWebtorrentPlugin(MediaPlugin):
         super().__init__(*args, **kwargs)
 
         self._init_webtorrent_bin(webtorrent_bin=webtorrent_bin)
-        self._init_media_player(player_type=player_type,
-                                player_args=player_args or [])
+        self._init_media_player()
 
 
     def _init_webtorrent_bin(self, webtorrent_bin=None):
+        self._webtorrent_process = None
+
         if not webtorrent_bin:
             bin_name = 'webtorrent.exe' if os.name == 'nt' else 'webtorrent'
             bins = find_bins_in_path(bin_name)
@@ -94,88 +78,58 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
             self.webtorrent_bin = webtorrent_bin
 
-    def _init_media_player(self, player_type, player_args):
-        if player_type is None:
-            media_plugin = None
-            plugin_name = None
+    def _init_media_player(self):
+        self._media_plugin = None
+        plugin_name = None
 
-            for plugin_name in self._supported_media_plugins:
-                try:
-                    media_plugin = get_plugin(plugin_name)
+        for plugin_name in self._supported_media_plugins:
+            try:
+                if Config.get(plugin_name):
+                    self._media_plugin = get_plugin(plugin_name)
                     break
-                except:
-                    pass
-
-            if not media_plugin:
-                raise RuntimeError(('No media player specified and no ' +
-                                    'compatible media plugin configured - ' +
-                                    'supported media plugins: {}').format(
-                                        self._supported_media_plugins))
-
-            self.player_type = plugin_name[len('media.'):]
-            self.player_args = media_plugin.args
-        else:
-            if player_type not in self._supported_webtorrent_players:
-                raise RuntimeError(('{} is not a supported player (supported ' +
-                                    'players: {})').format(
-                                        player_type,
-                                        self._supported_webtorrent_players))
-
-            self.player_type = player_type
-            self.player_args = player_args or []
-
-            if not self.player_args:
-                try:
-                    plugin = get_plugin('media.' + player_type)
-                    self.player_args = plugin.args
-                except:
-                    pass
-
-        self._player = None
-
-
-    def _start_webtorrent(self, resource):
-        if self._player:
-            try:
-                self.quit()
-            except:
-                self.logger.debug('Failed to quit the previous instance: {}'.
-                                  format(str))
-
-        webtorrent_args = [self.webtorrent_bin, '--' + self.player_type,
-                           resource]
-
-        if self.player_args:
-            webtorrent_args += ['--' + self.player_type + "-args='" + \
-                repr(' '.join(self.player_args)) + "'"]
-
-        popen_args = {
-            'stdin': subprocess.PIPE,
-            'stdout': subprocess.PIPE,
-        }
-
-        if self._env:
-            popen_args['env'] = self._env
-        else:
-            try:
-                plugin = get_plugin('media.' + player_type)
-                if plugin._env:
-                    popen_args['env'] = plugin._env
             except:
                 pass
 
-        self._player = subprocess.Popen(webtorrent_args, **popen_args)
+        if not self._media_plugin:
+            raise RuntimeError(('No media player specified and no ' +
+                                'compatible media plugin configured - ' +
+                                'supported media plugins: {}').format(
+                                    self._supported_media_plugins))
 
-    def _process_monitor(self):
+
+    def _process_monitor(self, resource, output_file):
         def _thread():
-            if not self._player:
+            if not self._webtorrent_process:
                 return
 
-            self._player.wait()
-            get_bus().post(MediaStopEvent())
-            self._player = None
+            bus = get_bus()
+            bus.post(TorrentDownloadStartEvent(resource=resource))
+
+            while True:
+                try:
+                    if os.path.getsize(output_file) > \
+                            self._download_size_before_streaming:
+                        break
+                except FileNotFoundError:
+                    pass
+
+            self._media_plugin.play(output_file)
+            self._webtorrent_process.wait()
+            bus.post(TorrentDownloadCompletedEvent(resource=resource))
+            self._webtorrent_process = None
 
         return _thread
+
+
+    def _get_torrent_download_path(self):
+        if self._media_plugin.download_dir:
+            # TODO set proper file name based on the torrent metadata
+            return os.path.join(self._media_plugin.download_dir,
+                                'torrent_media_' + datetime.datetime.
+                                today().strftime('%Y-%m-%d_%H-%M-%S-%f'))
+        else:
+            return tempfile.NamedTemporaryFile(delete=False).name
+
 
     @action
     def play(self, resource):
@@ -187,10 +141,25 @@ class MediaWebtorrentPlugin(MediaPlugin):
         :type resource: str
         """
 
-        self._start_webtorrent(resource)
-        bus = get_bus()
-        bus.post(NewPlayingMediaEvent(resource=resource))
-        threading.Thread(target=self._process_monitor()).start()
+        if self._webtorrent_process:
+            try:
+                self.quit()
+            except:
+                self.logger.debug('Failed to quit the previous instance: {}'.
+                                  format(str))
+
+        output_file = self._get_torrent_download_path()
+        webtorrent_args = [self.webtorrent_bin, '--stdout', resource]
+
+        with open(output_file, 'w') as f:
+            self._webtorrent_process = subprocess.Popen(webtorrent_args,
+                                                        stdout=f)
+
+            threading.Thread(target=self._process_monitor(
+                resource=resource, output_file=output_file)).start()
+
+        return { 'resource': resource }
+
 
     @action
     def stop(self):
@@ -200,14 +169,18 @@ class MediaWebtorrentPlugin(MediaPlugin):
     @action
     def quit(self):
         """ Quit the player """
-        if self._player and self._is_process_alive(self._player.pid):
-            self._player.terminate()
-            self._player.wait()
-            try: self._player.kill()
+        if self._media_plugin:
+            self._media_plugin.quit()
+
+        if self._webtorrent_process and self._is_process_alive(
+                self._webtorrent_process.pid):
+            self._webtorrent_process.terminate()
+            self._webtorrent_process.wait()
+            try: self._webtorrent_process.kill()
             except: pass
             bus.post(MediaStopEvent())
 
-        self._player = None
+        self._webtorrent_process = None
 
     @action
     def load(self, resource):
@@ -217,14 +190,14 @@ class MediaWebtorrentPlugin(MediaPlugin):
         return self.play(resource)
 
     def _is_process_alive(self):
-        if not self._player:
+        if not self._webtorrent_process:
             return False
 
         try:
-            os.kill(self._player.pid, 0)
+            os.kill(self._webtorrent_process.pid, 0)
             return True
         except OSError:
-            self._player = None
+            self._webtorrent_process = None
             return False
 
     @action
@@ -241,9 +214,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
             }
         """
 
-        return {'state': PlayerState.PLAY.value
-                if self._player and self._is_process_alive()
-                else PlayerState.STOP.value}
+        return {'state': self._media_plugin.status()
+                .get('state', PlayerState.STOP.value)}
 
 
 # vim:sw=4:ts=4:et:

@@ -155,7 +155,7 @@ class MediaMplayerPlugin(MediaPlugin):
             self._init_mplayer(mplayer_args)
         else:
             if not self._mplayer:
-                raise RuntimeError('MPlayer is not running')
+                self.logger.warning('MPlayer is not running')
 
         cmd = '{}{}{}{}\n'.format(
             prefix + ' ' if prefix else '',
@@ -249,8 +249,7 @@ class MediaMplayerPlugin(MediaPlugin):
         if resource.startswith('file://'):
             resource = resource[7:]
         elif resource.startswith('magnet:?'):
-            torrent_plugin = get_plugin('media.webtorrent')
-            return torrent_plugin.play(resource)
+            return get_plugin('media.webtorrent').play(resource)
 
         return self._exec('loadfile', resource, mplayer_args=mplayer_args)
 
