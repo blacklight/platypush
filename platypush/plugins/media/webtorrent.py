@@ -238,7 +238,9 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
             self._wait_for_player(player)
             self.logger.info('Torrent player terminated')
-            bus.post(TorrentDownloadCompletedEvent(resource=resource))
+            bus.post(TorrentDownloadCompletedEvent(resource=resource,
+                                                   output_dir=output_dir,
+                                                   media_file=media_file))
 
             try: self.quit()
             except: pass
