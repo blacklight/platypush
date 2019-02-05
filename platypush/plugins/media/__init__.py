@@ -134,7 +134,7 @@ class MediaPlugin(Plugin):
 
         if resource.startswith('youtube:') \
                 or resource.startswith('https://www.youtube.com/watch?v='):
-            if self.__class.__.__name__ != 'MediaChromecastPlugin':
+            if self.__class__.__name__ == 'MediaChromecastPlugin':
                 # The Chromecast has already its way to handle YouTube
                 return resource
 

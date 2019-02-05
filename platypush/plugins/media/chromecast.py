@@ -267,6 +267,11 @@ class MediaChromecastPlugin(MediaPlugin):
 
 
     @action
+    def is_idle(self, chromecast=None):
+        return self.get_chromecast(chromecast or self.chromecast).media_controller.is_idle
+
+
+    @action
     def enable_subtitle(self, chromecast=None):
         return self.get_chromecast(chromecast or self.chromecast).media_controller.enable_subtitle()
 
@@ -278,7 +283,24 @@ class MediaChromecastPlugin(MediaPlugin):
 
     @action
     def status(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).media_controller.status
+        status = self.get_chromecast(chromecast or self.chromecast) \
+            .media_controller.status
+        attrs = [a for a in dir(status) if not a.startswith('_')
+                 and not callable(getattr(status, a))]
+        renamed_attrs = {
+            'player_state': 'state',
+            'volume_level': 'volume',
+            'volume_muted': 'muted',
+        }
+
+        ret = {}
+        for attr in attrs:
+            if attr in renamed_attrs:
+                ret[renamed_attrs[attr]] = getattr(status, attr)
+            else:
+                ret[attr] = getattr(status, attr)
+
+        return ret
 
 
     @action
