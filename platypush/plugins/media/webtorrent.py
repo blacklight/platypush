@@ -17,7 +17,7 @@ from platypush.message.event.torrent import TorrentDownloadStartEvent, \
 
 from platypush.plugins import action
 from platypush.utils import find_bins_in_path, find_files_by_ext, \
-    is_process_alive
+    is_process_alive, get_ip_or_hostname
 
 
 class TorrentState(enum.Enum):
@@ -25,6 +25,7 @@ class TorrentState(enum.Enum):
     DOWNLOADING_METADATA = 2
     DOWNLOADING = 3
     DOWNLOADED = 4
+
 
 class MediaWebtorrentPlugin(MediaPlugin):
     """
@@ -118,7 +119,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
         return re.sub('\x1b\[((\d+m)|(.{1,2}))', '', line).strip()
 
 
-    def _process_monitor(self, resource, download_dir):
+    def _process_monitor(self, resource, download_dir, player_type, player_args):
         def _thread():
             if not self._webtorrent_process:
                 return
@@ -162,6 +163,9 @@ class MediaWebtorrentPlugin(MediaPlugin):
                     # Streaming started
                     webtorrent_url = re.search('server running at: (.+?)$',
                                                line, flags=re.IGNORECASE).group(1)
+                    webtorrent_url = webtorrent_url.replace(
+                        'http://localhost', 'http://' + get_ip_or_hostname())
+
                     self.logger.info('Torrent stream started on {}'.format(
                         webtorrent_url))
 
@@ -215,17 +219,19 @@ class MediaWebtorrentPlugin(MediaPlugin):
                 except FileNotFoundError:
                     continue
 
+            player = get_plugin('media.' + player_type) if player_type \
+                else self._media_plugin
+
+            media = media_file if player.is_local() else webtorrent_url
+
             self.logger.info(
                 'Starting playback of {} to {} through {}'.format(
-                    media_file, self._media_plugin.__class__.__name__,
+                    media_file, player.__class__.__name__,
                     webtorrent_url))
 
-            media = media_file if self._media_plugin.is_local() \
-                else webtorrent_url
-
-            self._media_plugin.play(media)
+            player.play(media, **player_args)
             self.logger.info('Waiting for player to terminate')
-            self._wait_for_player()
+            self._wait_for_player(player)
             self.logger.info('Torrent player terminated')
             bus.post(TorrentDownloadCompletedEvent(resource=resource))
 
@@ -235,17 +241,17 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
         return _thread
 
-    def _wait_for_player(self):
-        media_cls = self._media_plugin.__class__.__name__
+    def _wait_for_player(self, player):
+        media_cls = player.__class__.__name__
         stop_evt = None
 
         if media_cls == 'MediaMplayerPlugin':
-            stop_evt = self._media_plugin._mplayer_stopped_event
+            stop_evt = player._mplayer_stopped_event
         elif media_cls == 'MediaOmxplayerPlugin':
             stop_evt = threading.Event()
             def stop_callback():
                 stop_evt.set()
-            self._media_plugin.add_handler('stop', stop_callback)
+            player.add_handler('stop', stop_callback)
 
         if stop_evt:
             stop_evt.wait()
@@ -264,13 +270,22 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
 
     @action
-    def play(self, resource):
+    def play(self, resource, player=None, **player_args):
         """
         Download and stream a torrent
 
         :param resource: Play a resource, as a magnet link, torrent URL or
             torrent file path
         :type resource: str
+
+        :param player: If set, use this plugin type as a player for the
+            torrent. Supported types: 'mplayer', 'omxplayer', 'chromecast'.
+            If not set, then the default configured media plugin will be used.
+        :type player: str
+
+        :param player_args: Any arguments to pass to the player plugin's
+            play() method
+        :type player_args: dict
         """
 
         if self._webtorrent_process:
@@ -291,7 +306,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
                                                     stdout=subprocess.PIPE)
 
         threading.Thread(target=self._process_monitor(
-            resource=resource, download_dir=download_dir)).start()
+            resource=resource, download_dir=download_dir,
+            player_type=player, player_args=player_args)).start()
         return { 'resource': resource }
 
 

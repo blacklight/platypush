@@ -330,14 +330,14 @@ class MediaMplayerPlugin(MediaPlugin):
         return self._exec('mute')
 
     @action
-    def seek(self, relative_position):
+    def seek(self, position):
         """
         Seek backward/forward by the specified number of seconds
 
         :param relative_position: Number of seconds relative to the current cursor
         :type relative_position: int
         """
-        return self.step_property('time_pos', offset)
+        return self.step_property('time_pos', position)
 
     @action
     def set_position(self, position):

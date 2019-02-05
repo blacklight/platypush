@@ -22,7 +22,7 @@ class MediaPlugin(Plugin):
 
     Requires:
 
-        * A media player installed (supported so far: mplayer, omxplayer)
+        * A media player installed (supported so far: mplayer, omxplayer, chromecast)
         * **python-libtorrent** (``pip install python-libtorrent``), optional for Torrent support
         * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
     """
@@ -53,7 +53,8 @@ class MediaPlugin(Plugin):
         'f4b',
     }
 
-    _supported_media_plugins = { 'media.mplayer', 'media.omxplayer' }
+    _supported_media_plugins = {'media.mplayer', 'media.omxplayer',
+                                'media.chromecast'}
 
     def __init__(self, media_dirs=[], download_dir=None, env=None,
                  *args, **kwargs):
@@ -75,10 +76,17 @@ class MediaPlugin(Plugin):
 
         player = None
         player_config = {}
-        for plugin in Config.get_plugins().keys():
-            if plugin in self._supported_media_plugins:
-                player = plugin
-                break
+
+        if self.__class__.__name__ == 'MediaPlugin':
+            # Abstract class, initialize with the default configured player
+            for plugin in Config.get_plugins().keys():
+                if plugin in self._supported_media_plugins:
+                    player = plugin
+                    if get_plugin(player).is_local():
+                        # Local players have priority as default if configured
+                        break
+        else:
+            player = self  # Derived concrete class
 
         if not player:
             raise AttributeError('No media plugin configured')
@@ -126,6 +134,10 @@ class MediaPlugin(Plugin):
 
         if resource.startswith('youtube:') \
                 or resource.startswith('https://www.youtube.com/watch?v='):
+            if self.__class.__.__name__ != 'MediaChromecastPlugin':
+                # The Chromecast has already its way to handle YouTube
+                return resource
+
             resource = self._get_youtube_content(resource)
         elif resource.startswith('magnet:?'):
             try:

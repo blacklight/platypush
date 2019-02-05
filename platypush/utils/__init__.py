@@ -6,6 +6,7 @@ import inspect
 import logging
 import os
 import signal
+import socket
 import ssl
 
 logger = logging.getLogger(__name__)
@@ -208,6 +209,11 @@ def is_process_alive(pid):
         return True
     except OSError:
         return False
+
+
+def get_ip_or_hostname():
+    ip = socket.gethostbyname(socket.gethostname())
+    return socket.getfqdn() if ip.startswith('127.') else ip
 
 
 # vim:sw=4:ts=4:et:

@@ -3,15 +3,18 @@ import pychromecast
 
 from pychromecast.controllers.youtube import YouTubeController
 
+from platypush.context import get_plugin
 from platypush.plugins import Plugin, action
+from platypush.plugins.media import MediaPlugin
 
 
-class MediaChromecastPlugin(Plugin):
+class MediaChromecastPlugin(MediaPlugin):
     """
     Plugin to interact with Chromecast devices
 
     Supported formats:
 
+        * HTTP media URLs
         * YouTube URLs
         * Plex (through ``media.plex`` plugin, experimental)
 
@@ -32,6 +35,7 @@ class MediaChromecastPlugin(Plugin):
 
         super().__init__(*args, **kwargs)
 
+        self._is_local = False
         self.chromecast = chromecast
         self.chromecasts = {}
 
@@ -67,7 +71,10 @@ class MediaChromecastPlugin(Plugin):
         } for cc in pychromecast.get_chromecasts() ]
 
 
-    def get_chromecast(self, chromecast=None):
+    def get_chromecast(self, chromecast=None, n_tries=3):
+        if isinstance(chromecast, pychromecast.Chromecast):
+            return chromecast
+
         if not chromecast:
             if not self.chromecast:
                 raise RuntimeError('No Chromecast specified nor default Chromecast configured')
@@ -75,10 +82,17 @@ class MediaChromecastPlugin(Plugin):
 
 
         if chromecast not in self.chromecasts:
-            self.chromecasts = {
-                cast.device.friendly_name: cast
-                for cast in pychromecast.get_chromecasts()
-            }
+            casts = {}
+            while n_tries > 0:
+                n_tries -= 1
+                casts.update({
+                    cast.device.friendly_name: cast
+                    for cast in pychromecast.get_chromecasts()
+                })
+
+                if chromecast in casts:
+                    self.chromecasts.update(casts)
+                    break
 
             if chromecast not in self.chromecasts:
                 raise RuntimeError('Device {} not found'.format(chromecast))
@@ -87,7 +101,7 @@ class MediaChromecastPlugin(Plugin):
 
 
     @action
-    def cast_media(self, media, content_type=None, chromecast=None, title=None,
+    def play(self, resource, content_type=None, chromecast=None, title=None,
                    image_url=None, autoplay=True, current_time=0,
                    stream_type=STREAM_TYPE_BUFFERED, subtitles=None,
                    subtitles_lang='en-US', subtitles_mime='text/vtt',
@@ -95,10 +109,10 @@ class MediaChromecastPlugin(Plugin):
         """
         Cast media to a visible Chromecast
 
-        :param media: Media to cast
-        :type media: str
+        :param resource: Media to cast
+        :type resource: str
 
-        :param content_type: Content type
+        :param content_type: Content type as a MIME type string
         :type content_type: str
 
         :param chromecast: Chromecast to cast to. If none is specified, then the default configured Chromecast will be used.
@@ -139,7 +153,7 @@ class MediaChromecastPlugin(Plugin):
         cast.wait()
 
         mc = cast.media_controller
-        yt = self._get_youtube_url(media)
+        yt = self._get_youtube_url(resource)
 
         if yt:
             self.logger.info('Playing YouTube video {} on {}'.format(
@@ -150,13 +164,33 @@ class MediaChromecastPlugin(Plugin):
             hndl.update_screen_id()
             return hndl.play_video(yt)
 
+        resource = self._get_resource(resource)
+        if resource.startswith('magnet:?'):
+            player_args = { 'chromecast': cast }
+            return get_plugin('media.webtorrent').play(resource,
+                                                       player='chromecast',
+                                                       **player_args)
+
+        # Best effort from the extension
+        if not content_type:
+            for ext in self.video_extensions:
+                if ('.' + ext).lower() in resource.lower():
+                    content_type = 'video/' + ext
+                    break
+
+        if not content_type:
+            for ext in self.audio_extensions:
+                if ('.' + ext).lower() in resource.lower():
+                    content_type = 'audio/' + ext
+                    break
+
         if not content_type:
             raise RuntimeError('content_type required to process media {}'.
-                               format(media))
+                               format(resource))
 
-        self.logger.info('Playing {} on {}'.format(media, chromecast))
+        self.logger.info('Playing {} on {}'.format(resource, chromecast))
 
-        mc.play_media(media, content_type, title=title, thumb=image_url,
+        mc.play_media(resource, content_type, title=title, thumb=image_url,
                       current_time=current_time, autoplay=autoplay,
                       stream_type=stream_type, subtitles=subtitles,
                       subtitles_lang=subtitles_lang, subtitles_mime=subtitles_mime,
@@ -177,19 +211,12 @@ class MediaChromecastPlugin(Plugin):
 
         return None
 
-
     @action
-    def play(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).media_controller.play()
-
+    def load(self, *args, **kwargs):
+        return self.play(*args, **kwargs)
 
     @action
     def pause(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).media_controller.pause()
-
-
-    @action
-    def toggle_pause(self, chromecast=None):
         cast = self.get_chromecast(chromecast or self.chromecast)
         if cast.media_controller.is_paused:
             return cast.media_controller.play()
@@ -208,22 +235,25 @@ class MediaChromecastPlugin(Plugin):
 
 
     @action
-    def seek(self, location, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).media_controller.seek(location)
+    def set_position(self, position, chromecast=None):
+        return self.get_chromecast(chromecast or self.chromecast).media_controller.seek(position)
+
+    @action
+    def seek(self, position, chromecast=None):
+        return self.forward(chromecast=chromecast, offset=position)
+
+    @action
+    def back(self, chromecast=None, offset=60):
+        mc = self.get_chromecast(chromecast or self.chromecast).media_controller
+        if mc.status.current_time:
+            return mc.seek(mc.status.current_time-offset)
 
 
     @action
-    def back(self, chromecast=None, delta=30):
+    def forward(self, chromecast=None, offset=60):
         mc = self.get_chromecast(chromecast or self.chromecast).media_controller
         if mc.status.current_time:
-            return mc.seek(mc.status.current_time-delta)
-
-
-    @action
-    def forward(self, chromecast=None, delta=30):
-        mc = self.get_chromecast(chromecast or self.chromecast).media_controller
-        if mc.status.current_time:
-            return mc.seek(mc.status.current_time+delta)
+            return mc.seek(mc.status.current_time+offset)
 
 
     @action
@@ -288,7 +318,7 @@ class MediaChromecastPlugin(Plugin):
         cast.join(timeout=timeout, blocking=blocking)
 
     @action
-    def quit_app(self, chromecast=None):
+    def quit(self, chromecast=None):
         """
         Exits the current app on the Chromecast
 
@@ -327,41 +357,41 @@ class MediaChromecastPlugin(Plugin):
         cast.set_volume(volume/100)
 
     @action
-    def volume_up(self, chromecast=None, delta=10):
+    def volup(self, chromecast=None, step=10):
         """
-        Turn up the Chromecast volume by 10% or delta.
+        Turn up the Chromecast volume by 10% or step.
 
         :param chromecast: Chromecast to cast to. If none is specified, then the default configured Chromecast will be used.
         :type chromecast: str
 
-        :param delta: Volume increment between 0 and 100 (default: 100%)
-        :type delta: float
+        :param step: Volume increment between 0 and 100 (default: 100%)
+        :type step: float
         """
 
         cast = self.get_chromecast(chromecast)
-        delta /= 100
-        cast.volume_up(min(delta, 1))
+        step /= 100
+        cast.volume_up(min(step, 1))
 
 
     @action
-    def volume_down(self, chromecast=None, delta=10):
+    def voldown(self, chromecast=None, step=10):
         """
-        Turn down the Chromecast volume by 10% or delta.
+        Turn down the Chromecast volume by 10% or step.
 
         :param chromecast: Chromecast to cast to. If none is specified, then the default configured Chromecast will be used.
         :type chromecast: str
 
-        :param delta: Volume decrement between 0 and 100 (default: 100%)
-        :type delta: float
+        :param step: Volume decrement between 0 and 100 (default: 100%)
+        :type step: float
         """
 
         cast = self.get_chromecast(chromecast)
-        delta /= 100
-        cast.volume_down(max(delta, 0))
+        step /= 100
+        cast.volume_down(max(step, 0))
 
 
     @action
-    def toggle_mute(self, chromecast=None):
+    def mute(self, chromecast=None):
         """
         Toggle the mute status on the Chromecast
 
@@ -374,4 +404,3 @@ class MediaChromecastPlugin(Plugin):
 
 
 # vim:sw=4:ts=4:et:
-
