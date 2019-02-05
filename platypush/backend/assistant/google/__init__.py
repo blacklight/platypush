@@ -90,6 +90,7 @@ class AssistantGoogleBackend(Backend):
 
     def _process_event(self, event):
         self.logger.info('Received assistant event: {}'.format(event))
+        self._has_error = False
 
         if event.type == EventType.ON_CONVERSATION_TURN_STARTED:
             self.bus.post(ConversationStartEvent())
@@ -107,7 +108,6 @@ class AssistantGoogleBackend(Backend):
                 event.type == EventType.ON_RESPONDING_STARTED and \
                 event.args.get('is_error_response', False) is True:
             self.logger.warning('Assistant response error')
-            self._has_error = True
         elif event.type == EventType.ON_RECOGNIZING_SPEECH_FINISHED:
             phrase = event.args['text'].lower().strip()
             self.logger.info('Speech recognized: {}'.format(phrase))
