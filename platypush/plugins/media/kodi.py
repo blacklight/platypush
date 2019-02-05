@@ -225,7 +225,7 @@ class MediaKodiPlugin(Plugin):
         return (result.get('result'), result.get('error'))
 
     @action
-    def toggle_mute(self, *args, **kwargs):
+    def mute(self, *args, **kwargs):
         """
         Mute/unmute the application
         """
@@ -318,7 +318,7 @@ class MediaKodiPlugin(Plugin):
         return (result.get('result'), result.get('error'))
 
     @action
-    def toggle_fullscreen(self, *args, **kwargs):
+    def fullscreen(self, *args, **kwargs):
         """
         Set/unset fullscreen mode
         """
@@ -330,7 +330,7 @@ class MediaKodiPlugin(Plugin):
         return (result.get('result'), result.get('error'))
 
     @action
-    def toggle_shuffle(self, player_id=None, shuffle=None, *args, **kwargs):
+    def shuffle(self, player_id=None, shuffle=None, *args, **kwargs):
         """
         Set/unset shuffle mode
         """
@@ -348,7 +348,7 @@ class MediaKodiPlugin(Plugin):
         return (result.get('result'), result.get('error'))
 
     @action
-    def toggle_repeat(self, player_id=None, repeat=None, *args, **kwargs):
+    def repeat(self, player_id=None, repeat=None, *args, **kwargs):
         """
         Set/unset repeat mode
         """

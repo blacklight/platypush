@@ -221,7 +221,7 @@ class MediaChromecastPlugin(MediaPlugin):
         cast = self.get_chromecast(chromecast or self.chromecast)
         if cast.media_controller.is_paused:
             return cast.media_controller.play()
-        else:
+        elif cast.media_controller.is_playing:
             return cast.media_controller.pause()
 
 
