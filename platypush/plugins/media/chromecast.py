@@ -1,3 +1,4 @@
+import datetime
 import re
 import pychromecast
 
@@ -295,10 +296,20 @@ class MediaChromecastPlugin(MediaPlugin):
 
         ret = {}
         for attr in attrs:
+            value = getattr(status, attr)
+            if attr == 'volume_level':
+                value *= 100
+            if attr == 'player_state':
+                value = value.lower()
+                if value == 'paused': value = 'pause'
+                if value == 'playing': value = 'play'
+            if isinstance(value, datetime.datetime):
+                value = value.isoformat()
+
             if attr in renamed_attrs:
-                ret[renamed_attrs[attr]] = getattr(status, attr)
+                ret[renamed_attrs[attr]] = value
             else:
-                ret[attr] = getattr(status, attr)
+                ret[attr] = value
 
         return ret
 
