@@ -320,8 +320,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
 
     @action
-    def download(resource, *args, **kwargs):
-        return self.play(resource, download_only=True, *args, **kwargs)
+    def download(resource):
+        return self.play(resource=resource, download_only=True)
 
 
     @action
