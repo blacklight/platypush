@@ -79,7 +79,7 @@ class AssistantGoogleBackend(Backend):
         self.credentials_file = credentials_file
         self.device_model_id = device_model_id
         self.assistant = None
-        self._has_error =False
+        self._has_error = False
 
         with open(self.credentials_file, 'r') as f:
             self.credentials = google.oauth2.credentials.Credentials(
@@ -105,7 +105,7 @@ class AssistantGoogleBackend(Backend):
             self.bus.post(ResponseEvent(response_text=event.args.get('text')))
         elif hasattr(EventType, 'ON_RESPONDING_STARTED') and \
                 event.type == EventType.ON_RESPONDING_STARTED and \
-                event.args.get('is_error_response'):
+                event.args.get('is_error_response', False) is True:
             self.logger.warning('Assistant response error')
             self._has_error = True
         elif event.type == EventType.ON_RECOGNIZING_SPEECH_FINISHED:
