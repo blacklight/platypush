@@ -10,7 +10,7 @@ import urllib.parse
 from platypush.config import Config
 from platypush.context import get_plugin
 from platypush.plugins import Plugin, action
-from platypush.utils import get_ip_or_hostname
+from platypush.utils import get_ip_or_hostname, is_process_alive
 
 class PlayerState(enum.Enum):
     STOP  = 'stop'
@@ -42,8 +42,8 @@ class MediaPlugin(Plugin):
     # Default port for the local resources HTTP streaming service
     _default_streaming_port = 8989
 
-    _local_stream_bin = os.path.join(os.path.dirname(__file__), 'bin',
-                                     'localstream')
+    # setup.py install will place localstream in PATH
+    _local_stream_bin = 'localstream'
 
     _NOT_IMPLEMENTED_ERR = NotImplementedError(
         'This method must be implemented in a derived class')
@@ -360,7 +360,7 @@ class MediaPlugin(Plugin):
 
         self._streaming_proc = subprocess.Popen(
             [self._local_stream_bin, media, str(self._streaming_port)],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
 
         threading.Thread(target=self._streaming_process_monitor(media)).start()
@@ -388,9 +388,24 @@ class MediaPlugin(Plugin):
             if not self._streaming_proc:
                 return
 
+            while True:
+                if not self._streaming_proc or not \
+                        is_process_alive(self._streaming_proc.pid):
+                    break
+
+                line = self._streaming_proc.stdout.readline().decode().strip()
+                if not line:
+                    continue
+
+                if line.startswith('Listening on'):
+                    break
+
+                self.logger.info('Message from streaming service: {}'.format(line))
+
             self._streaming_proc.wait()
             try: self.stop_streaming()
             except: pass
+            self.logger.info('Streaming service terminated')
 
         return _thread
 
