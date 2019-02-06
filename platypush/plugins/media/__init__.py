@@ -141,8 +141,8 @@ class MediaPlugin(Plugin):
         self._videos_queue = []
         self._streaming_port = streaming_port
         self._streaming_proc = None
-        self._streaming_started = Event()
-        self._streaming_ended = Event()
+        self._streaming_started = threading.Event()
+        self._streaming_ended = threading.Event()
 
     def _get_resource(self, resource):
         """
