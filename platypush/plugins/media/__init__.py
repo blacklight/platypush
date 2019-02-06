@@ -367,10 +367,13 @@ class MediaPlugin(Plugin):
                              'terminating it first')
             self.stop_streaming()
 
+        if port is None:
+            port = self._streaming_port
+
         self._streaming_started.clear()
         self._streaming_ended.clear()
         self._streaming_proc = subprocess.Popen(
-            [self._local_stream_bin, media, str(self._streaming_port)],
+            [self._local_stream_bin, media, str(port)],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
 
