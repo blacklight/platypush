@@ -4,7 +4,6 @@ import hashlib
 import importlib
 import inspect
 import logging
-import magic
 import os
 import signal
 import socket
@@ -219,6 +218,7 @@ def get_ip_or_hostname():
 
 
 def get_mime_type(resource):
+    import magic
     if resource.startswith('file://'):
         resource = resource[len('file://'):]
 
