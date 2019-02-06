@@ -67,6 +67,7 @@ class MediaChromecastPlugin(MediaPlugin):
                     'name': cc.app_display_name,
                 },
 
+                'media': self.status(cc.name).output,
                 'is_active_input': cc.status.is_active_input,
                 'is_stand_by': cc.status.is_stand_by,
                 'is_idle': cc.is_idle,

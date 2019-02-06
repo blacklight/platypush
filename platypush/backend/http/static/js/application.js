@@ -32,6 +32,7 @@ $(document).ready(function() {
             onWebsocketTimeout(websocket), websocketReconnectMsecs);
 
         websocket.onmessage = function(event) {
+            console.debug(event);
             for (var listener of eventListeners) {
                 data = event.data;
                 if (typeof event.data === 'string') {
@@ -218,6 +219,12 @@ function execute(request, onSuccess, onError, onComplete) {
             }
         },
         success: function(response, status, xhr) {
+            if ('errors' in response && response.errors.length) {
+                if (onError) {
+                    onError(xhr, '500', response.errors);
+                }
+            }
+
             if (onSuccess) {
                 onSuccess(response, status, xhr);
             }

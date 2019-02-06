@@ -10,13 +10,27 @@
         </div>
 
         <div class="row">
-            <div class="eleven columns">
+            <div class="eleven columns" id="media-search-bar-container">
                 <input type="text" name="video-search-text" placeholder="Search query or video URL">
             </div>
-            <div class="one column">
+            <div class="one columns" id="media-btns-container">
                 <button type="submit">
                     <i class="fa fa-search"></i>
                 </button>
+                <button data-toggle="#media-devices-panel">
+                    <i class="fa fa-tv"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="row" id="media-devices-panel">
+            <div class="row cast-device cast-device-local selected" data-local="local">
+                <div class="two columns">
+                    <i class="fa fa-microchip cast-device-icon"></i>
+                </div>
+                <div class="ten columns">
+                    <span class="cast-device-name">This device</span>
+                </div>
             </div>
         </div>
     </form>
@@ -36,12 +50,8 @@
                     <i class="fa fa-step-backward"></i>
                 </button>
 
-                <button data-action="backward">
+                <button data-action="back">
                     <i class="fa fa-backward"></i>
-                </button>
-
-                <button data-action="play">
-                    <i class="fa fa-play"></i>
                 </button>
 
                 <button data-action="pause">
