@@ -141,6 +141,8 @@ class MediaPlugin(Plugin):
         self._videos_queue = []
         self._streaming_port = streaming_port
         self._streaming_proc = None
+        self._streaming_started = Event()
+        self._streaming_ended = Event()
 
     def _get_resource(self, resource):
         """
@@ -352,22 +354,33 @@ class MediaPlugin(Plugin):
 
 
     @action
-    def start_streaming(self, media):
+    def start_streaming(self, media, port=None):
+        """
+        Starts streaming local media over the specified HTTP port.
+        The stream will be available to HTTP clients on
+        `http://{this-ip}:{port}/media
+
+        :param media: Media to stream
+        """
         if self._streaming_proc:
             self.logger.info('A streaming process is already running, ' +
                              'terminating it first')
             self.stop_streaming()
 
+        self._streaming_started.clear()
+        self._streaming_ended.clear()
         self._streaming_proc = subprocess.Popen(
             [self._local_stream_bin, media, str(self._streaming_port)],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
 
         threading.Thread(target=self._streaming_process_monitor(media)).start()
-        url = 'http://{}:{}/video'.format(get_ip_or_hostname(),
+        url = 'http://{}:{}/media'.format(get_ip_or_hostname(),
                                           self._streaming_port)
 
         self.logger.info('Starting streaming {} on {}'.format(media, url))
+        self._streaming_started.wait()
+        self.logger.info('Started streaming {} on {}'.format(media, url))
         return { 'url': url }
 
     @action
@@ -398,6 +411,7 @@ class MediaPlugin(Plugin):
                     continue
 
                 if line.startswith('Listening on'):
+                    self._streaming_started.set()
                     break
 
                 self.logger.info('Message from streaming service: {}'.format(line))
@@ -405,6 +419,7 @@ class MediaPlugin(Plugin):
             self._streaming_proc.wait()
             try: self.stop_streaming()
             except: pass
+            self._streaming_ended.set()
             self.logger.info('Streaming service terminated')
 
         return _thread

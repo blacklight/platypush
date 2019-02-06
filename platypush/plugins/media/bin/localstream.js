@@ -30,7 +30,7 @@ function parseArgv() {
 
 let args = parseArgv()
 
-app.get('/video', function(req, res) {
+app.get('/media', function(req, res) {
   const path = args.file
   const ext = args.file.split('.').pop()
   const stat = fs.statSync(path)
