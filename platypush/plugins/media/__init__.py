@@ -2,6 +2,7 @@ import enum
 import os
 import re
 import subprocess
+import threading
 
 import urllib.request
 import urllib.parse
@@ -9,6 +10,7 @@ import urllib.parse
 from platypush.config import Config
 from platypush.context import get_plugin
 from platypush.plugins import Plugin, action
+from platypush.utils import get_ip_or_hostname
 
 class PlayerState(enum.Enum):
     STOP  = 'stop'
@@ -25,11 +27,23 @@ class MediaPlugin(Plugin):
         * A media player installed (supported so far: mplayer, omxplayer, chromecast)
         * **python-libtorrent** (``pip install python-libtorrent``), optional for Torrent support
         * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
+
+    To start the local media stream service over HTTP:
+
+        * **nodejs** installed on your system
+        * **express** module (``npm install express``)
+        * **mime-types** module (``npm install mime-types``)
     """
 
     # A media plugin can either be local or remote (e.g. control media on
     # another device)
     _is_local = True
+
+    # Default port for the local resources HTTP streaming service
+    _default_streaming_port = 8989
+
+    _local_stream_bin = os.path.join(os.path.dirname(__file__), 'bin',
+                                     'localstream')
 
     _NOT_IMPLEMENTED_ERR = NotImplementedError(
         'This method must be implemented in a derived class')
@@ -57,7 +71,7 @@ class MediaPlugin(Plugin):
                                 'media.chromecast'}
 
     def __init__(self, media_dirs=[], download_dir=None, env=None,
-                 *args, **kwargs):
+                 streaming_port=_default_streaming_port, *args, **kwargs):
         """
         :param media_dirs: Directories that will be scanned for media files when
             a search is performed (default: none)
@@ -70,6 +84,10 @@ class MediaPlugin(Plugin):
         :param env: Environment variables key-values to pass to the
             player executable (e.g. DISPLAY, XDG_VTNR, PULSE_SINK etc.)
         :type env: dict
+
+        :param streaming_port: Port to be used for streaming local resources
+            over HTTP (default: 8989)
+        :type streaming_port: int
         """
 
         super().__init__(*args, **kwargs)
@@ -121,6 +139,8 @@ class MediaPlugin(Plugin):
             self.media_dirs.add(self.download_dir)
 
         self._videos_queue = []
+        self._streaming_port = streaming_port
+        self._streaming_proc = None
 
     def _get_resource(self, resource):
         """
@@ -331,6 +351,50 @@ class MediaPlugin(Plugin):
             return self._youtube_search_html_parse(query=query)
 
 
+    @action
+    def start_streaming(self, media):
+        if self._streaming_proc:
+            self.logger.info('A streaming process is already running, ' +
+                             'terminating it first')
+            self.stop_streaming()
+
+        self._streaming_proc = subprocess.Popen(
+            [self._local_stream_bin, media, str(self._streaming_port)],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE
+        )
+
+        threading.Thread(target=self._streaming_process_monitor(media)).start()
+        url = 'http://{}:{}/video'.format(get_ip_or_hostname(),
+                                          self._streaming_port)
+
+        self.logger.info('Starting streaming {} on {}'.format(media, url))
+        return { 'url': url }
+
+    @action
+    def stop_streaming(self):
+        if not self._streaming_proc:
+            self.logger.info('No streaming process found')
+            return
+
+        self._streaming_proc.terminate()
+        self._streaming_proc.wait()
+        try: self._streaming_proc.kill()
+        except: pass
+        self._streaming_proc = None
+
+
+    def _streaming_process_monitor(self, media):
+        def _thread():
+            if not self._streaming_proc:
+                return
+
+            self._streaming_proc.wait()
+            try: self.stop_streaming()
+            except: pass
+
+        return _thread
+
+
     def _youtube_search_api(self, query):
         return [
             {
@@ -375,6 +439,7 @@ class MediaPlugin(Plugin):
                                 stdout=subprocess.PIPE)
 
         return proc.stdout.read().decode("utf-8", "strict")[:-1]
+
 
     def is_local(self):
         return self._is_local

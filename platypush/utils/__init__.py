@@ -4,10 +4,12 @@ import hashlib
 import importlib
 import inspect
 import logging
+import magic
 import os
 import signal
 import socket
 import ssl
+import urllib.request
 
 logger = logging.getLogger(__name__)
 
@@ -214,6 +216,18 @@ def is_process_alive(pid):
 def get_ip_or_hostname():
     ip = socket.gethostbyname(socket.gethostname())
     return socket.getfqdn() if ip.startswith('127.') else ip
+
+
+def get_mime_type(resource):
+    if resource.startswith('file://'):
+        resource = resource[len('file://'):]
+
+    if resource.startswith('http://') or resource.startswith('https://'):
+        with urllib.request.urlopen(resource) as response:
+            return response.info().get_content_type()
+    else:
+        mime = magic.Magic(mime=True)
+        return mime.from_file(resource)
 
 
 # vim:sw=4:ts=4:et:

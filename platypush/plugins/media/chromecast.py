@@ -7,6 +7,7 @@ from pychromecast.controllers.youtube import YouTubeController
 from platypush.context import get_plugin
 from platypush.plugins import Plugin, action
 from platypush.plugins.media import MediaPlugin
+from platypush.utils import get_mime_type
 
 
 class MediaChromecastPlugin(MediaPlugin):
@@ -172,28 +173,25 @@ class MediaChromecastPlugin(MediaPlugin):
             return hndl.play_video(yt)
 
         resource = self._get_resource(resource)
+
         if resource.startswith('magnet:?'):
             player_args = { 'chromecast': cast }
             return get_plugin('media.webtorrent').play(resource,
                                                        player='chromecast',
                                                        **player_args)
 
-        # Best effort from the extension
-        if not content_type:
-            for ext in self.video_extensions:
-                if ('.' + ext).lower() in resource.lower():
-                    content_type = 'video/' + ext
-                    break
+        if resource.startswith('file://'):
+            resource = resource[len('file://'):]
 
         if not content_type:
-            for ext in self.audio_extensions:
-                if ('.' + ext).lower() in resource.lower():
-                    content_type = 'audio/' + ext
-                    break
+            content_type = get_mime_type(resource)
 
         if not content_type:
             raise RuntimeError('content_type required to process media {}'.
                                format(resource))
+
+        if os.path.isfile(resource):
+            resource = self.start_streaming(resource).output['url']
 
         self.logger.info('Playing {} on {}'.format(resource, chromecast))
 
