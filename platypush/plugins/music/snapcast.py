@@ -97,7 +97,7 @@ class MusicSnapcastPlugin(Plugin):
         }
 
         self._send(sock, request)
-        return self._recv(sock).get('server', {})
+        return (self._recv(sock) or {}).get('server', {})
 
     @action
     def status(self, host=None, port=None, client=None, group=None):
