@@ -8,9 +8,9 @@ import urllib.request
 import urllib.parse
 
 from platypush.config import Config
-from platypush.context import get_plugin
+from platypush.context import get_plugin, get_backend
 from platypush.plugins import Plugin, action
-from platypush.utils import get_ip_or_hostname, is_process_alive
+
 
 class PlayerState(enum.Enum):
     STOP  = 'stop'
@@ -25,25 +25,18 @@ class MediaPlugin(Plugin):
     Requires:
 
         * A media player installed (supported so far: mplayer, omxplayer, chromecast)
-        * **python-libtorrent** (``pip install python-libtorrent``), optional for Torrent support
+        * The :class:`platypush.plugins.media.webtorrent` plugin for optional torrent support through webtorrent (recommented)
+        * **python-libtorrent** (``pip install python-libtorrent``), optional, for torrent support through the native Python plugin
         * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
+        * **requests** (``pip install requests``), optional, for local files over HTTP streaming supporting
 
-    To start the local media stream service over HTTP:
-
-        * **nodejs** installed on your system
-        * **express** module (``npm install express``)
-        * **mime-types** module (``npm install mime-types``)
+    To start the local media stream service over HTTP you will also need the
+    :class:`platypush.backend.http.HttpBackend` backend enabled.
     """
 
     # A media plugin can either be local or remote (e.g. control media on
     # another device)
     _is_local = True
-
-    # Default port for the local resources HTTP streaming service
-    _default_streaming_port = 8989
-
-    # setup.py install will place localstream in PATH
-    _local_stream_bin = 'localstream'
 
     _NOT_IMPLEMENTED_ERR = NotImplementedError(
         'This method must be implemented in a derived class')
@@ -71,7 +64,7 @@ class MediaPlugin(Plugin):
                                 'media.chromecast'}
 
     def __init__(self, media_dirs=[], download_dir=None, env=None,
-                 streaming_port=_default_streaming_port, *args, **kwargs):
+                 *args, **kwargs):
         """
         :param media_dirs: Directories that will be scanned for media files when
             a search is performed (default: none)
@@ -84,10 +77,6 @@ class MediaPlugin(Plugin):
         :param env: Environment variables key-values to pass to the
             player executable (e.g. DISPLAY, XDG_VTNR, PULSE_SINK etc.)
         :type env: dict
-
-        :param streaming_port: Port to be used for streaming local resources
-            over HTTP (default: 8989)
-        :type streaming_port: int
         """
 
         super().__init__(*args, **kwargs)
@@ -139,10 +128,6 @@ class MediaPlugin(Plugin):
             self.media_dirs.add(self.download_dir)
 
         self._videos_queue = []
-        self._streaming_port = streaming_port
-        self._streaming_proc = None
-        self._streaming_started = threading.Event()
-        self._streaming_ended = threading.Event()
 
     def _get_resource(self, resource):
         """
@@ -354,78 +339,62 @@ class MediaPlugin(Plugin):
 
 
     @action
-    def start_streaming(self, media, port=None):
+    def start_streaming(self, media):
         """
         Starts streaming local media over the specified HTTP port.
         The stream will be available to HTTP clients on
-        `http://{this-ip}:{port}/media
+        `http://{this-ip}:{http_backend_port}/media/<media_id>`
 
         :param media: Media to stream
+        :type media: str
+
+        :returns: dict containing the streaming URL.Example::
+
+            {
+                "id": "0123456abcdef.mp4",
+                "source": "file:///mnt/media/movies/movie.mp4",
+                "mime_type": "video/mp4",
+                "url": "http://192.168.1.2:8008/media/0123456abcdef.mp4"
+            }
         """
-        if self._streaming_proc:
-            self.logger.info('A streaming process is already running, ' +
-                             'terminating it first')
-            self.stop_streaming()
+        import requests
 
-        if port is None:
-            port = self._streaming_port
-
-        self._streaming_started.clear()
-        self._streaming_ended.clear()
-        self._streaming_proc = subprocess.Popen(
-            [self._local_stream_bin, media, str(port)],
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-        )
-
-        threading.Thread(target=self._streaming_process_monitor(media)).start()
-        url = 'http://{}:{}/media'.format(get_ip_or_hostname(),
-                                          self._streaming_port)
-
-        self.logger.info('Starting streaming {} on {}'.format(media, url))
-        self._streaming_started.wait()
-        self.logger.info('Started streaming {} on {}'.format(media, url))
-        return { 'url': url }
-
-    @action
-    def stop_streaming(self):
-        if not self._streaming_proc:
-            self.logger.info('No streaming process found')
+        http = get_backend('http')
+        if not http:
+            self.logger.warning('Unable to stream {}: HTTP backend unavailable'.
+                                format(media))
             return
 
-        self._streaming_proc.terminate()
-        self._streaming_proc.wait()
-        try: self._streaming_proc.kill()
-        except: pass
-        self._streaming_proc = None
+        self.logger.info('Starting streaming {}'.format(media))
+        response = requests.put('{url}/media'.format(url=http.local_base_url),
+                                json = { 'source': media })
 
+        if not response.ok:
+            self.logger.warning('Unable to start streaming: {}'.
+                                format(response.text or response.reason))
+            return
 
-    def _streaming_process_monitor(self, media):
-        def _thread():
-            if not self._streaming_proc:
-                return
+        return response.json()
 
-            while True:
-                if not self._streaming_proc or not \
-                        is_process_alive(self._streaming_proc.pid):
-                    break
+    @action
+    def stop_streaming(self, media_id):
+        import requests
 
-                line = self._streaming_proc.stdout.readline().decode().strip()
-                if not line:
-                    continue
+        http = get_backend('http')
+        if not http:
+            self.logger.warning('Cannot unregister {}: HTTP backend unavailable'.
+                                format(media_id))
+            return
 
-                if line.startswith('Listening on'):
-                    self._streaming_started.set()
-                    break
+        response = requests.delete('{url}/media/{id}'.
+                                   format(url=http.local_base_url, id=media_id))
 
-                self.logger.info('Message from streaming service: {}'.format(line))
+        if not response.ok:
+            self.logger.warning('Unable to unregister media_id {}: {}'.format(
+                media_id, response.reason))
+            return
 
-            self._streaming_proc.wait()
-            try: self.stop_streaming()
-            except: pass
-            self._streaming_ended.set()
-            self.logger.info('Streaming service terminated')
-
-        return _thread
+        return response.json()
 
 
     def _youtube_search_api(self, query):

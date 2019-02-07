@@ -49,8 +49,7 @@ setup(
             'platydock=platypush.platydock:main',
         ],
     },
-    scripts = ['bin/platyvenv', 'platypush/plugins/media/bin/localstream.js',
-               'platypush/plugins/media/bin/localstream'],
+    scripts = ['bin/platyvenv'],
     # data_files = [
     #     ('/etc/platypush', ['platypush/config.example.yaml'])
     # ],

@@ -1,13 +1,14 @@
 import asyncio
 import datetime
 import dateutil.parser
+import hashlib
 import inspect
 import json
 import os
 import re
+import threading
 import time
 
-from threading import Thread, get_ident
 from multiprocessing import Process
 from flask import Flask, Response, abort, jsonify, request as http_request, \
     render_template, send_from_directory
@@ -20,9 +21,11 @@ from platypush.message import Message
 from platypush.message.event import Event, StopEvent
 from platypush.message.event.web.widget import WidgetUpdateEvent
 from platypush.message.request import Request
-from platypush.utils import get_ssl_server_context, set_thread_name
+from platypush.utils import get_ssl_server_context, set_thread_name, \
+    get_ip_or_hostname
 
 from .. import Backend
+from .media.handlers import MediaHandler
 
 
 class HttpBackend(Backend):
@@ -55,15 +58,25 @@ class HttpBackend(Backend):
         * **redis** (``pip install redis``)
         * **websockets** (``pip install websockets``)
         * **python-dateutil** (``pip install python-dateutil``)
+        * **magic** (``pip install python-magic``), optional, for MIME type
+            support if you want to enable media streaming
     """
 
     hidden_plugins = {
         'assistant.google'
     }
 
+    # Default size for the bytes chunk sent over the media streaming infra
+    _DEFAULT_STREAMING_CHUNK_SIZE = 4096
+
+    # Maximum range size to be sent through the media streamer if Range header
+    # is not set
+    _DEFAULT_STREAMING_BLOCK_SIZE = 3145728
+
     def __init__(self, port=8008, websocket_port=8009, disable_websocket=False,
                  redis_queue='platypush/http', dashboard={}, resource_dirs={},
                  ssl_cert=None, ssl_key=None, ssl_cafile=None, ssl_capath=None,
+                 streaming_chunk_size=_DEFAULT_STREAMING_CHUNK_SIZE,
                  maps={}, **kwargs):
         """
         :param port: Listen port for the web server (default: 8008)
@@ -125,12 +138,17 @@ class HttpBackend(Backend):
                         db: "sqlite:////home/blacklight/.local/share/platypush/feeds/rss.db"
 
         :type dashboard: dict
+
+        :param streaming_chunk_size: Size for the chunks of bytes sent over the
+            media streaming infrastructure (default: 4096 bytes)
+        :type streaming_chunk_size: int
         """
 
         super().__init__(**kwargs)
 
         self.port = port
         self.websocket_port = websocket_port
+        self.app = None
         self.redis_queue = redis_queue
         self.dashboard = dashboard
         self.maps = maps
@@ -147,6 +165,15 @@ class HttpBackend(Backend):
                                                   ssl_cafile=ssl_cafile,
                                                   ssl_capath=ssl_capath) \
             if ssl_cert else None
+
+        self.remote_base_url = '{proto}://{host}:{port}'.format(
+            proto=('https' if self.ssl_context else 'http'),
+            host=get_ip_or_hostname(), port=self.port)
+
+        self.local_base_url = '{proto}://localhost:{port}'.format(
+            proto=('https' if self.ssl_context else 'http'), port=self.port)
+
+        self._media_map_lock = threading.RLock()
 
 
     def send_message(self, msg):
@@ -241,8 +268,10 @@ class HttpBackend(Backend):
 
         basedir = os.path.dirname(inspect.getfile(self.__class__))
         template_dir = os.path.join(basedir, 'templates')
+        media_map = {}
         app = Flask(__name__, template_folder=template_dir)
-        self.redis_thread = Thread(target=self.redis_poll)
+
+        self.redis_thread = threading.Thread(target=self.redis_poll)
         self.redis_thread.start()
 
         @app.route('/execute', methods=['POST'])
@@ -334,6 +363,159 @@ class HttpBackend(Backend):
                 abort(404)
 
             return send_from_directory(real_path, file_path)
+
+        def get_media_url(media_id):
+            return '{url}/media/{media_id}'.format(
+                url=self.remote_base_url, media_id=media_id)
+
+        def get_media_id(source):
+            return hashlib.sha1(source.encode()).hexdigest()
+
+        def register_media(source):
+            media_id = get_media_id(source)
+            media_url = get_media_url(media_id)
+
+            with self._media_map_lock:
+                if media_id in media_map:
+                    raise FileExistsError('"{}" is already registered on {}'.
+                                          format(source, media_map[media_id].url))
+
+                media_hndl = MediaHandler.build(source, url=media_url)
+                media_map[media_id] = media_hndl
+
+            self.logger.info('Streaming "{}" on {}'.format(source, media_url))
+            return media_hndl
+
+
+        def unregister_media(source):
+            if source is None:
+                raise KeyError('No media_id specified')
+
+            media_id = get_media_id(source)
+            media_info = {}
+
+            with self._media_map_lock:
+                if media_id not in media_map:
+                    raise FileNotFoundError('{} is not a registered media_id'.
+                                            format(source))
+                media_info = media_map.pop(media_id)
+
+            self.logger.info('Unregistered {} from {}'.format(
+                source, media_info.get('url')))
+
+            return media_info
+
+
+        def stream_media(media_id, request):
+            media_hndl = media_map.get(media_id)
+            if not media_hndl:
+                raise FileNotFoundError('{} is not a registered media_id'.
+                                        format(media_id))
+
+            from_bytes = None
+            to_bytes = None
+            range_hdr = request.headers.get('range')
+            content_length = media_hndl.content_length
+            status_code = 200
+
+            headers = {
+                'Accept-Ranges': 'bytes',
+                'Content-Type': media_hndl.mime_type,
+            }
+
+            if 'download' in request.args:
+                headers['Content-Disposition'] = 'attachment' + \
+                    ('; filename="{}"'.format(media_hndl.filename) if
+                     media_hndl.filename else '')
+
+            if range_hdr:
+                headers['Accept-Ranges'] = 'bytes'
+                from_bytes, to_bytes = range_hdr.replace('bytes=', '').split('-')
+                from_bytes = int(from_bytes)
+
+                if not to_bytes:
+                    to_bytes = content_length-1
+                    # to_bytes = from_bytes + self._DEFAULT_STREAMING_BLOCK_SIZE
+                    content_length -= from_bytes
+                else:
+                    to_bytes = int(to_bytes)
+                    content_length = to_bytes - from_bytes
+
+                status_code = 206
+                headers['Content-Range'] = 'bytes {start}-{end}/{size}'.format(
+                    start=from_bytes, end=to_bytes,
+                    size=media_hndl.content_length)
+            else:
+                from_bytes = 0
+                to_bytes = self._DEFAULT_STREAMING_BLOCK_SIZE
+
+            headers['Content-Length'] = content_length
+
+            return Response(media_hndl.get_data(
+                from_bytes=from_bytes, to_bytes=to_bytes,
+                chunk_size=self._DEFAULT_STREAMING_CHUNK_SIZE),
+                status_code, headers=headers, mimetype=headers['Content-Type'],
+                direct_passthrough=True)
+
+        @app.route('/media', methods=['GET', 'PUT'])
+        def add_or_get_media():
+            """
+            This route can be used by the `media` plugin to add streaming
+            content over HTTP or to get the list of registered streams
+            """
+
+            if http_request.method == 'GET':
+                return jsonify([dict(media) for media in media_map.values()])
+
+            args = {}
+            try:
+                args = json.loads(http_request.data.decode('utf-8'))
+            except:
+                abort(400, 'Invalid JSON request')
+
+            source = args.get('source')
+            if not source:
+                abort(400, 'The request does not contain any source')
+
+            try:
+                media_hndl = register_media(source)
+                return jsonify(dict(media_hndl))
+            except FileExistsError as e:
+                abort(409, str(e))
+            except FileNotFoundError as e:
+                abort(404, str(e))
+            except AttributeError as e:
+                abort(400, str(e))
+            except Exception as e:
+                self.logger.exception(e)
+                abort(500, str(e))
+
+        @app.route('/media/<media_id>', methods=['GET', 'DELETE'])
+        def stream_or_delete_media(media_id):
+            """
+            This route can be used to stream active media points or unregister
+            a mounted media stream
+            """
+
+            # Remove the extension
+            media_id = '.'.join(media_id.split('.')[:-1])
+
+            try:
+                if http_request.method == 'GET':
+                    if media_id is None:
+                        return jsonify(media_map)
+                    else:
+                        return stream_media(media_id, http_request)
+                else:
+                    media_info = unregister_media(media_id)
+                    return jsonify(media_info)
+            except (AttributeError, FileNotFoundError) as e:
+                abort(404, str(e))
+            except KeyError as e:
+                abort(400, str(e))
+            except Exception as e:
+                self.logger.exception(e)
+                abort(500, str(e))
 
         @app.route('/dashboard', methods=['GET'])
         def dashboard():
@@ -448,7 +630,6 @@ class HttpBackend(Backend):
                              **websocket_args))
         loop.run_forever()
 
-
     def run(self):
         super().run()
         os.putenv('FLASK_APP', 'platypush')
@@ -462,14 +643,14 @@ class HttpBackend(Backend):
 
         self.logger.info('Initialized HTTP backend on port {}'.format(self.port))
 
-        webserver = self.webserver()
-        self.server_proc = Process(target=webserver.run,
+        self.app = self.webserver()
+        self.server_proc = Process(target=self.app.run,
                                    name='WebServer',
                                    kwargs=kwargs)
         self.server_proc.start()
 
         if not self.disable_websocket:
-            self.websocket_thread = Thread(target=self.websocket)
+            self.websocket_thread = threading.Thread(target=self.websocket)
             self.websocket_thread.start()
 
         self.server_proc.join()

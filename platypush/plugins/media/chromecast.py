@@ -1,5 +1,4 @@
 import datetime
-import os
 import re
 import pychromecast
 
@@ -181,9 +180,6 @@ class MediaChromecastPlugin(MediaPlugin):
                                                        player='chromecast',
                                                        **player_args)
 
-        if resource.startswith('file://'):
-            resource = resource[len('file://'):]
-
         if not content_type:
             content_type = get_mime_type(resource)
 
@@ -191,8 +187,10 @@ class MediaChromecastPlugin(MediaPlugin):
             raise RuntimeError('content_type required to process media {}'.
                                format(resource))
 
-        if os.path.isfile(resource):
+        if not resource.startswith('http://') and \
+                not resource.startswith('https://'):
             resource = self.start_streaming(resource).output['url']
+            self.logger.info('HTTP media stream started on {}'.format(resource))
 
         self.logger.info('Playing {} on {}'.format(resource, chromecast))
 
