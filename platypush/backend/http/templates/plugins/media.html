@@ -10,26 +10,35 @@
         </div>
 
         <div class="row">
-            <div class="eleven columns" id="media-search-bar-container">
+            <div class="nine columns" id="media-search-bar-container">
                 <input type="text" name="video-search-text" placeholder="Search query or video URL">
             </div>
-            <div class="one columns" id="media-btns-container">
+            <div class="three columns" id="media-btns-container">
                 <button type="submit">
                     <i class="fa fa-search"></i>
                 </button>
-                <button data-toggle="#media-devices-panel">
+                <button data-panel-toggle="#media-devices-panel">
                     <i class="fa fa-tv"></i>
                 </button>
             </div>
         </div>
 
         <div class="row" id="media-devices-panel">
-            <div class="row cast-device cast-device-local selected" data-local="local">
+            <div class="row cast-device cast-device-local selected" data-local="local" data-name="_server">
                 <div class="two columns">
-                    <i class="fa fa-microchip cast-device-icon"></i>
+                    <i class="fa fa-server cast-device-icon"></i>
                 </div>
                 <div class="ten columns">
-                    <span class="cast-device-name">This device</span>
+                    <span class="cast-device-name">{{ request.host_url.split('/')[2].split(':')[0] }}</span>
+                </div>
+            </div>
+
+            <div class="row cast-device cast-device-local" data-browser="browser" data-name="_local">
+                <div class="two columns">
+                    <i class="fa fa-globe cast-device-icon"></i>
+                </div>
+                <div class="ten columns">
+                    <span class="cast-device-name">This browser</span>
                 </div>
             </div>
         </div>

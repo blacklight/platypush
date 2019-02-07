@@ -5,7 +5,7 @@ $(document).ready(function() {
         $volumeCtrl = $('#video-volume-ctrl'),
         $ctrlForm = $('#video-ctrl'),
         $devsPanel = $('#media-devices-panel'),
-        $devsBtn = $('button[data-toggle="#media-devices-panel"]'),
+        $devsBtn = $('button[data-panel-toggle="#media-devices-panel"]'),
         $searchBarContainer = $('#media-search-bar-container'),
         $mediaBtnsContainer = $('#media-btns-container'),
         prevVolume = undefined;
@@ -43,16 +43,90 @@ $(document).ready(function() {
     };
 
     var getSelectedDevice = function() {
-        var device = { isRemote: false, name: undefined };
+        var device = { isBrowser: false, isRemote: false, name: undefined };
         var $remoteDevice = $devsPanel.find('.cast-device.selected')
-            .filter((i, dev) => !$(dev).data('local') && $(dev).data('name'));
+            .filter((i, dev) => !$(dev).data('local') && !$(dev).data('browser')  && $(dev).data('name'));
+        var $browserDevice = $devsPanel.find('.cast-device.selected')
+            .filter((i, dev) => $(dev).data('browser'));
 
         if ($remoteDevice.length) {
             device.isRemote = true;
             device.name = $remoteDevice.data('name');
+        } else if ($browserDevice.length) {
+            device.isBrowser = true;
         }
 
         return device;
+    };
+
+    var startStreamingTorrent = function(torrent) {
+        return new Promise((resolve, reject) => {
+            execute(
+                {
+                    type: 'request',
+                    action: 'media.webtorrent.play',
+                    args: {
+                        resource: torrent,
+                        download_only: true,
+                    }
+                },
+
+                (response) => {
+                    resolve(response.response.output.url);
+                },
+
+                (error) => {
+                    reject(error);
+                }
+            );
+        });
+    };
+
+    var startStreaming = function(media) {
+        if (media.startsWith('magnet:?')) {
+            return new Promise((resolve, reject) => {
+                startStreamingTorrent(media)
+                    .then((url) => { resolve(url); })
+                    .catch((error) => { reject(error); });
+            });
+        }
+
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                type: 'PUT',
+                url: '/media',
+                contentType: 'application/json',
+                data: JSON.stringify({ source: media }),
+
+                complete: (xhr, textStatus) => {
+                    var url;
+                    if (xhr.status == 200) {
+                        url = xhr.responseJSON.url;
+                    } else if (xhr.status == 409) {
+                        // Media mount point already registered
+                        url = xhr.responseText.match(
+                            /.*is already registered on ("|&quot;)(https?:\/\/[^\/]+\/media\/[0-9a-f]+\.[0-9a-z]+)("|&quot;).*/)[2]
+                    }
+
+                    if (url) {
+                        var uri = url.match(/https?:\/\/[^\/]+(\/media\/.*)/)[1]
+                        resolve(uri);
+                    } else {
+                        reject(Error(xhr.responseText));
+                    }
+                },
+            });
+        });
+    };
+
+    var stopStreaming = function(media_id) {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                type: 'DELETE',
+                url: '/media/' + media_id,
+                contentType: 'application/json',
+            });
+        });
     };
 
     var initBindings = function() {
@@ -107,6 +181,10 @@ $(document).ready(function() {
             };
 
             var selectedDevice = getSelectedDevice();
+            if (selectedDevice.isBrowser) {
+                return;  // The in-browser player can be used to control media
+            }
+
             if (selectedDevice.isRemote) {
                 requestArgs.action = 'media.chromecast.' + action;
                 requestArgs.args = { 'chromecast': selectedDevice.name };
@@ -149,19 +227,38 @@ $(document).ready(function() {
                 return false;
             }
 
+            var onVideoLoading = function() {
+                $videoResults.text('Loading video...');
+            };
+
+            var onVideoReady = function() {
+                $videoResults.html(results);
+            };
+
+            var resource = $item.data('url')
             var requestArgs = {
                 type: 'request',
                 action: 'media.play',
-                args: { resource: $item.data('url') },
+                args: { resource: resource },
             };
 
             var selectedDevice = getSelectedDevice();
+            if (selectedDevice.isBrowser) {
+                onVideoLoading();
+
+                startStreaming(resource)
+                    .then((url) => { window.open(url, '_blank'); })
+                    .finally(() => { onVideoReady(); });
+
+                return;
+            }
+
             if (selectedDevice.isRemote) {
                 requestArgs.action = 'media.chromecast.play';
                 requestArgs.args.chromecast = selectedDevice.name;
             }
 
-            $videoResults.text('Loading video...');
+            onVideoLoading();
             execute(
                 requestArgs,
                 function() {
@@ -171,7 +268,7 @@ $(document).ready(function() {
                 },
 
                 function() {
-                    $videoResults.html(results);
+                    onVideoReady();
                 }
             );
         });
@@ -192,11 +289,13 @@ $(document).ready(function() {
                 $curSelected.removeClass('selected');
                 $(this).addClass('selected');
 
-                if (!$(this).data('local')) {
-                    $devsBtn.addClass('remote');
-                } else {
+                if ($(this).data('local') || $(this).data('browser')) {
                     $devsBtn.removeClass('remote');
+                } else {
+                    $devsBtn.addClass('remote');
                 }
+
+                // TODO Logic for switching destination on the fly
             }
 
             $devsPanel.hide();
@@ -215,10 +314,6 @@ $(document).ready(function() {
                 if (!results || results.response.errors.length) {
                     return;
                 }
-
-                $searchBarContainer.removeClass('eleven').addClass('nine');
-                $mediaBtnsContainer.removeClass('one').addClass('three');
-                $devsBtn.show();
 
                 results = results.response.output;
                 for (var cast of results) {

@@ -34,11 +34,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
     Requires:
 
         * **webtorrent** installed on your system (``npm install -g webtorrent``)
-        * **webtorrent-cli** installed on your system
-            (``npm install -g webtorrent-cli`` or better
-             ``npm install -g BlackLight/webtorrent-cli`` as my fork contains
-             the ``--[player]-args`` options to pass custom arguments to your
-             installed player)
+        * **webtorrent-cli** installed on your system (``npm install -g webtorrent-cli``)
         * A media plugin configured for streaming (e.g. media.mplayer
             or media.omxplayer)
     """
@@ -47,6 +43,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
     # Download at least 10 MBs before starting streaming
     _download_size_before_streaming = 10 * 2**20
+
+    _web_stream_ready_timeout = 20
 
     def __init__(self, webtorrent_bin=None, webtorrent_port=None, *args,
                  **kwargs):
@@ -68,6 +66,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
         self.webtorrent_port = webtorrent_port
         self._init_webtorrent_bin(webtorrent_bin=webtorrent_bin)
         self._init_media_player()
+        self._download_started_event = threading.Event()
+        self._torrent_stream_urls = {}
 
 
     def _init_webtorrent_bin(self, webtorrent_bin=None):
@@ -167,6 +167,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
                     webtorrent_url = webtorrent_url.replace(
                         'http://localhost', 'http://' + get_ip_or_hostname())
 
+                    self._torrent_stream_urls[resource] = webtorrent_url
+                    self._download_started_event.set()
                     self.logger.info('Torrent stream started on {}'.format(
                         webtorrent_url))
 
@@ -309,8 +311,9 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
         if self.webtorrent_port:
             webtorrent_args += ['-p', self.webtorrent_port]
-
         webtorrent_args += [resource]
+
+        self._download_started_event.clear()
         self._webtorrent_process = subprocess.Popen(webtorrent_args,
                                                     stdout=subprocess.PIPE)
 
@@ -318,7 +321,26 @@ class MediaWebtorrentPlugin(MediaPlugin):
             resource=resource, download_dir=download_dir,
             player_type=player, player_args=player_args,
             download_only=download_only)).start()
-        return { 'resource': resource }
+
+        stream_url = None
+        player_ready_wait_start = time.time()
+
+        while not stream_url:
+            triggered = self._download_started_event.wait(
+                self._web_stream_ready_timeout)
+
+            if not triggered or time.time() - player_ready_wait_start >= \
+                    self._web_stream_ready_timeout:
+                break
+
+            stream_url = self._torrent_stream_urls.get(resource)
+
+        if not stream_url:
+            return (None, ('The webtorrent process hasn\'t started ' +
+                            'streaming after {} seconds').format(
+                                self._web_stream_ready_timeout))
+
+        return { 'resource': resource, 'url': stream_url }
 
 
     @action

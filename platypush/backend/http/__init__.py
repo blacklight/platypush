@@ -377,7 +377,7 @@ class HttpBackend(Backend):
 
             with self._media_map_lock:
                 if media_id in media_map:
-                    raise FileExistsError('"{}" is already registered on {}'.
+                    raise FileExistsError('"{}" is already registered on "{}"'.
                                           format(source, media_map[media_id].url))
 
                 media_hndl = MediaHandler.build(source, url=media_url)
