@@ -18,27 +18,35 @@
                     <i class="fa fa-search"></i>
                 </button>
                 <button data-panel-toggle="#media-devices-panel">
-                    <i class="fa fa-tv"></i>
+                    <i id="media-devices-panel-icon" class="fa fa-desktop"></i>
                 </button>
             </div>
         </div>
 
         <div class="row" id="media-devices-panel">
-            <div class="row cast-device cast-device-local selected" data-local="local" data-name="_server">
-                <div class="two columns">
-                    <i class="fa fa-server cast-device-icon"></i>
-                </div>
-                <div class="ten columns">
-                    <span class="cast-device-name">{{ request.host_url.split('/')[2].split(':')[0] }}</span>
+            <div class="refresh-devices-container">
+                <div class="row refresh-devices disabled">
+                    <i class="fa fa-retweet"></i>
                 </div>
             </div>
 
-            <div class="row cast-device cast-device-local" data-browser="browser" data-name="_local">
-                <div class="two columns">
-                    <i class="fa fa-globe cast-device-icon"></i>
+            <div class="devices-list">
+                <div class="row cast-device cast-device-local selected" data-local="local" data-name="_server">
+                    <div class="two columns">
+                        <i class="fa fa-desktop cast-device-icon"></i>
+                    </div>
+                    <div class="ten columns">
+                        <span class="cast-device-name">{{ utils.get_config('device_id') }}</span>
+                    </div>
                 </div>
-                <div class="ten columns">
-                    <span class="cast-device-name">This browser</span>
+
+                <div class="row cast-device cast-device-local" data-browser="browser" data-name="_local">
+                    <div class="two columns">
+                        <i class="fa fa-laptop cast-device-icon"></i>
+                    </div>
+                    <div class="ten columns">
+                        <span class="cast-device-name">Browser</span>
+                    </div>
                 </div>
             </div>
         </div>

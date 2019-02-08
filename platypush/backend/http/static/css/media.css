@@ -96,24 +96,44 @@ form#video-ctrl {
     z-index: 10;
     border: 1px solid #d0d0d0;
     border-radius: 5px;
+    min-width: 10em;
 }
 
-    #media-devices-panel .cast-device {
+    #media-devices-panel .refresh-devices-container {
+        position: relative;
+        height: 1em;
+    }
+
+    #media-devices-panel * > .refresh-devices {
+        text-align: right;
+        cursor: pointer;
+        position: absolute;
+        top: -.5rem;
+        right: .5rem;
+    }
+
+    #media-devices-panel * > .cast-device {
         padding: 0.5rem;
         cursor: pointer;
     }
 
-    #media-devices-panel .cast-device-local {
+    #media-devices-panel * > .cast-device-local {
         border-bottom: 1px solid #ddd;
         margin-bottom: 0.25rem;
     }
 
-        #media-devices-panel .cast-device.selected {
+        #media-devices-panel * > .cast-device.selected {
             font-weight: bold;
             color: #34b868;
         }
 
-        #media-devices-panel .cast-device:hover {
+        #media-devices-panel * > .cast-device.disabled,
+        #media-devices-panel * > .refresh-devices.disabled {
+            cursor: default;
+            color: #999 !important;
+        }
+
+        #media-devices-panel * > .cast-device:hover {
             background-color: #daf8e2 !important;
         }
 

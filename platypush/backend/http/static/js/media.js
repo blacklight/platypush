@@ -5,7 +5,10 @@ $(document).ready(function() {
         $volumeCtrl = $('#video-volume-ctrl'),
         $ctrlForm = $('#video-ctrl'),
         $devsPanel = $('#media-devices-panel'),
+        $devsList = $devsPanel.find('.devices-list'),
         $devsBtn = $('button[data-panel-toggle="#media-devices-panel"]'),
+        $devsBtnIcon = $('#media-devices-panel-icon'),
+        $devsRefreshBtn = $devsPanel.find('.refresh-devices'),
         $searchBarContainer = $('#media-search-bar-container'),
         $mediaBtnsContainer = $('#media-btns-container'),
         prevVolume = undefined;
@@ -282,14 +285,19 @@ $(document).ready(function() {
         });
 
         $devsPanel.on('mouseup touchend', '.cast-device', function() {
+            if ($(this).hasClass('disabled')) {
+                return;
+            }
+
             var $devices = $devsPanel.find('.cast-device');
             var $curSelected = $devices.filter((i, d) => $(d).hasClass('selected'));
 
             if ($curSelected.data('name') !== $(this).data('name')) {
                 $curSelected.removeClass('selected');
                 $(this).addClass('selected');
+                $devsBtnIcon.attr('class', $(this).find('.fa').attr('class'));
 
-                if ($(this).data('local') || $(this).data('browser')) {
+                if ($(this).data('browser') || $(this).data('local')) {
                     $devsBtn.removeClass('remote');
                 } else {
                     $devsBtn.addClass('remote');
@@ -301,9 +309,20 @@ $(document).ready(function() {
             $devsPanel.hide();
             $devsBtn.removeClass('selected');
         });
+
+        $devsRefreshBtn.on('click', function() {
+            if ($(this).hasClass('disabled')) {
+                return;
+            }
+
+            $(this).addClass('disabled');
+            initRemoteDevices();
+        });
     };
 
     var initRemoteDevices = function() {
+        $devsList.find('.cast-device[data-remote]').addClass('disabled');
+
         execute(
             {
                 type: 'request',
@@ -311,6 +330,9 @@ $(document).ready(function() {
             },
 
             function(results) {
+                $devsRefreshBtn.removeClass('disabled');
+                $devsList.find('.cast-device[data-remote]').remove();
+
                 if (!results || results.response.errors.length) {
                     return;
                 }
@@ -318,7 +340,8 @@ $(document).ready(function() {
                 results = results.response.output;
                 for (var cast of results) {
                     var $cast = $('<div></div>').addClass('row cast-device')
-                        .addClass('cast-device-' + cast.type).data('name', cast.name);
+                        .addClass('cast-device-' + cast.type).attr('data-remote', true)
+                        .data('name', cast.name);
 
                     var icon = 'question';
                     switch (cast.type) {
@@ -338,7 +361,7 @@ $(document).ready(function() {
 
                     $iconContainer.appendTo($cast);
                     $nameContainer.appendTo($cast);
-                    $cast.appendTo($devsPanel);
+                    $cast.appendTo($devsList);
                 }
             }
         );

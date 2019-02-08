@@ -740,5 +740,9 @@ class HttpUtils(object):
     def from_json(cls, data):
         return json.loads(data)
 
+    @classmethod
+    def get_config(cls, attr):
+        return Config.get(attr)
+
 
 # vim:sw=4:ts=4:et:
