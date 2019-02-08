@@ -265,6 +265,9 @@ class LightHuePlugin(LightPlugin):
             lights = self.lights
             groups = self.groups
 
+        if not self.bridge:
+            self.connect()
+
         try:
             if attr == 'scene':
                 self.bridge.run_scene(groups[0], kwargs.pop('name'))
