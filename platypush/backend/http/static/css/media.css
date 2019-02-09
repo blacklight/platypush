@@ -77,18 +77,12 @@ form#video-ctrl {
                 100% { background: #d4ffe3; }
             }
 
-    button.remote[data-panel-toggle="#media-devices-panel"] {
+    button.remote[data-panel="#media-devices-panel"] {
         color: #34b868;
     }
 
-    button.selected[data-panel-toggle="#media-devices-panel"] {
-        box-shadow: inset 0 2px 0 rgba(0,0,0,0.1),
-                    inset 3px 0 0 rgba(0,0,0,0.1),
-                    inset 0 0 2px rgba(0,0,0,0.1),
-                    inset 0 0 0 1px rgba(0,0,0,0.1);
-    }
-
-#media-devices-panel {
+#media-devices-panel,
+#media-item-panel {
     display: none;
     position: absolute;
     padding: 1rem;
@@ -112,7 +106,8 @@ form#video-ctrl {
         right: .5rem;
     }
 
-    #media-devices-panel * > .cast-device {
+    #media-devices-panel * > .cast-device,
+    #media-item-panel > .media-item-action {
         padding: 0.5rem;
         cursor: pointer;
     }
@@ -128,16 +123,19 @@ form#video-ctrl {
         }
 
         #media-devices-panel * > .cast-device.disabled,
-        #media-devices-panel * > .refresh-devices.disabled {
+        #media-devices-panel * > .refresh-devices.disabled,
+        #media-item-panel > .media-item-action.disabled {
             cursor: default;
             color: #999 !important;
         }
 
-        #media-devices-panel * > .cast-device:hover {
+        #media-devices-panel * > .cast-device:hover,
+        #media-item-panel > .media-item-action:hover {
             background-color: #daf8e2 !important;
         }
 
-        #media-devices-panel * > .cast-device-icon {
+        #media-devices-panel * > .cast-device-icon
+        #media-item-panel > .media-item-item {
             color: #666;
         }
 

@@ -6,12 +6,14 @@ $(document).ready(function() {
         $ctrlForm = $('#video-ctrl'),
         $devsPanel = $('#media-devices-panel'),
         $devsList = $devsPanel.find('.devices-list'),
-        $devsBtn = $('button[data-panel-toggle="#media-devices-panel"]'),
+        $devsBtn = $('button[data-panel="#media-devices-panel"]'),
         $devsBtnIcon = $('#media-devices-panel-icon'),
         $devsRefreshBtn = $devsPanel.find('.refresh-devices'),
         $searchBarContainer = $('#media-search-bar-container'),
         $mediaBtnsContainer = $('#media-btns-container'),
-        prevVolume = undefined;
+        $mediaItemPanel = $('#media-item-panel'),
+        prevVolume = undefined,
+        selectedResource = undefined;
 
     var updateVideoResults = function(videos) {
         $videoResults.html('');
@@ -19,6 +21,7 @@ $(document).ready(function() {
             var $videoResult = $('<div></div>')
                 .addClass('video-result')
                 .attr('data-url', video['url'])
+                .attr('data-panel', '#media-item-panel')
                 .html('title' in video ? video['title'] : video['url']);
 
             var $icon = getVideoIconByUrl(video['url']);
@@ -132,6 +135,67 @@ $(document).ready(function() {
         });
     };
 
+    var play = function(resource) {
+        return new Promise((resolve, reject) => {
+            var results = $videoResults.html();
+            var onVideoLoading = function() {
+                $videoResults.text('Loading video...');
+            };
+
+            var onVideoReady = function() {
+                $videoResults.html(results);
+            };
+
+            var requestArgs = {
+                type: 'request',
+                action: 'media.play',
+                args: { resource: resource },
+            };
+
+            var selectedDevice = getSelectedDevice();
+            if (selectedDevice.isBrowser) {
+                onVideoLoading();
+
+                startStreaming(resource)
+                    .then((url) => {
+                        window.open(url, '_blank');
+                        resolve(url);
+                    })
+                    .catch((xhr, status, error) => {
+                        reject(xhr.responseText);
+                    })
+                    .finally(() => {
+                        onVideoReady();
+                    });
+
+                return;
+            }
+
+            if (selectedDevice.isRemote) {
+                requestArgs.action = 'media.chromecast.play';
+                requestArgs.args.chromecast = selectedDevice.name;
+            }
+
+            onVideoLoading();
+            execute(
+                requestArgs,
+                function(response) {
+                    $videoResults.html(results);
+                    resolve(resource);
+                },
+
+                function(xhr, status, error) {
+                    onVideoReady();
+                    reject(xhr.responseText);
+                }
+            );
+        });
+    };
+
+    var download = function(resource) {
+        // TODO
+    };
+
     var initBindings = function() {
         $searchForm.on('submit', function(event) {
             var $input = $(this).find('input[name=video-search-text]');
@@ -221,66 +285,29 @@ $(document).ready(function() {
             );
         });
 
-        $videoResults.on('click touch', '.video-result', function(evt) {
-            var results = $videoResults.html();
+        $videoResults.on('mousedown touchstart', '.video-result', function() {
+            selectedResource = $(this).data('url');
+        });
+
+        $videoResults.on('mouseup touchend', '.video-result', function(event) {
             var $item = $(this);
-            if (!$item.hasClass('selected')) {
-                $item.siblings().removeClass('selected');
-                $item.addClass('selected');
-                return false;
+            var resource = $item.data('url');
+            if (resource !== selectedResource) {
+                return;  // Did not really click this item
             }
 
-            var onVideoLoading = function() {
-                $videoResults.text('Loading video...');
-            };
+            $item.siblings().removeClass('selected');
+            $item.addClass('selected');
 
-            var onVideoReady = function() {
-                $videoResults.html(results);
-            };
-
-            var resource = $item.data('url')
-            var requestArgs = {
-                type: 'request',
-                action: 'media.play',
-                args: { resource: resource },
-            };
-
-            var selectedDevice = getSelectedDevice();
-            if (selectedDevice.isBrowser) {
-                onVideoLoading();
-
-                startStreaming(resource)
-                    .then((url) => { window.open(url, '_blank'); })
-                    .finally(() => { onVideoReady(); });
-
-                return;
-            }
-
-            if (selectedDevice.isRemote) {
-                requestArgs.action = 'media.chromecast.play';
-                requestArgs.args.chromecast = selectedDevice.name;
-            }
-
-            onVideoLoading();
-            execute(
-                requestArgs,
-                function() {
-                    $videoResults.html(results);
-                    $item.siblings().removeClass('active');
-                    $item.addClass('active');
-                },
-
-                function() {
-                    onVideoReady();
-                }
-            );
+            $mediaItemPanel.css('top', (event.clientY + $(window).scrollTop()) + 'px');
+            $mediaItemPanel.css('left', (event.clientX + $(window).scrollLeft()) + 'px');
+            $mediaItemPanel.data('resource', resource);
         });
 
         $devsBtn.on('click touch', function() {
             $(this).toggleClass('selected');
             $devsPanel.css('top', ($(this).position().top + $(this).outerHeight()) + 'px');
             $devsPanel.css('left', ($(this).position().left) + 'px');
-            $devsPanel.toggle();
             return false;
         });
 
@@ -317,6 +344,26 @@ $(document).ready(function() {
 
             $(this).addClass('disabled');
             initRemoteDevices();
+        });
+
+        $mediaItemPanel.on('click', '[data-action]', function() {
+            if ($(this).hasClass('disabled')) {
+                return;
+            }
+
+            var action = $(this).data('action');
+            var resource = $mediaItemPanel.data('resource');
+            if (!resource) {
+                return;
+            }
+
+            $mediaItemPanel.hide();
+            $mediaItemPanel.find('[data-action]').addClass('disabled');
+
+            eval(action)($mediaItemPanel.data('resource'))
+                .finally(() => {
+                    $mediaItemPanel.find('[data-action]').removeClass('disabled');
+                });
         });
     };
 

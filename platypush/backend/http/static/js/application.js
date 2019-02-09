@@ -184,9 +184,41 @@ $(document).ready(function() {
         });
     };
 
+    var initPanelOpenBindings = function() {
+        $('body').on('mouseup touchend', '[data-panel]', function(event) {
+            var $source = $(event.target);
+            var $panel = $($source.data('panel'));
+            setTimeout(() => {
+                $panel.show();
+            }, 200);
+        });
+    };
+
+    var initPanelCloseBindings = function() {
+        $('body').on('mouseup touchend', function(event) {
+            var $source = $(event.target);
+            if ($source.data('panel') || $source.parents('[data-panel]').length) {
+                var $panel = $source.data('panel') ? $($source.data('panel')) :
+                    $($source.parents('[data-panel]').data('panel'));
+                $panel.toggle();
+                return;
+            }
+
+            if (!$source.parents('.panel').length
+                    && !$source.data('panel')) {
+                $('.panel').filter(':visible').hide();
+            }
+        });
+    };
+
     var initModals = function() {
         initModalOpenBindings();
         initModalCloseBindings();
+    };
+
+    var initPanels = function() {
+        initPanelOpenBindings();
+        initPanelCloseBindings();
     };
 
     var init = function() {
@@ -194,6 +226,7 @@ $(document).ready(function() {
         initElements();
         initDateTime();
         initModals();
+        initPanels();
     };
 
     window.registerEventListener = registerEventListener;
