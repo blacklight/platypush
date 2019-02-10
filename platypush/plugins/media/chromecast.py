@@ -4,10 +4,12 @@ import pychromecast
 
 from pychromecast.controllers.youtube import YouTubeController
 
-from platypush.context import get_plugin
+from platypush.context import get_plugin, get_bus
 from platypush.plugins import Plugin, action
 from platypush.plugins.media import MediaPlugin
 from platypush.utils import get_mime_type
+from platypush.message.event.media import MediaPlayEvent, MediaPlayRequestEvent, \
+    MediaStopEvent, MediaPauseEvent, NewPlayingMediaEvent
 
 
 class MediaChromecastPlugin(MediaPlugin):
@@ -157,6 +159,9 @@ class MediaChromecastPlugin(MediaPlugin):
         if not chromecast:
             chromecast = self.chromecast
 
+        get_bus().post(MediaPlayRequestEvent(resource=resource,
+                                             device=chromecast))
+
         cast = self.get_chromecast(chromecast)
         cast.wait()
 
@@ -197,10 +202,13 @@ class MediaChromecastPlugin(MediaPlugin):
         mc.play_media(resource, content_type, title=title, thumb=image_url,
                       current_time=current_time, autoplay=autoplay,
                       stream_type=stream_type, subtitles=subtitles,
-                      subtitles_lang=subtitles_lang, subtitles_mime=subtitles_mime,
-                      subtitle_id=subtitle_id)
+                      subtitles_lang=subtitles_lang,
+                      subtitles_mime=subtitles_mime, subtitle_id=subtitle_id)
 
         mc.block_until_active()
+        get_bus().post(MediaPlayEvent(resource=resource,
+                                      device=chromecast))
+
 
 
     @classmethod
@@ -223,14 +231,20 @@ class MediaChromecastPlugin(MediaPlugin):
     def pause(self, chromecast=None):
         cast = self.get_chromecast(chromecast or self.chromecast)
         if cast.media_controller.is_paused:
-            return cast.media_controller.play()
+            ret = cast.media_controller.play()
+            get_bus().post(MediaPlayEvent(device=chromecast or self.chromecast))
+            return ret
         elif cast.media_controller.is_playing:
-            return cast.media_controller.pause()
+            ret = cast.media_controller.pause()
+            get_bus().post(MediaPauseEvent(device=chromecast or self.chromecast))
+            return ret
 
 
     @action
     def stop(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).media_controller.stop()
+        ret = self.get_chromecast(chromecast or self.chromecast).media_controller.stop()
+        get_bus().post(MediaStopEvent(device=chromecast or self.chromecast))
+        return ret
 
 
     @action
@@ -276,13 +290,38 @@ class MediaChromecastPlugin(MediaPlugin):
 
 
     @action
-    def enable_subtitle(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).media_controller.enable_subtitle()
+    def list_subtitles(self, chromecast=None):
+        return self.get_chromecast(chromecast or self.chromecast) \
+            .media_controller.subtitle_tracks
 
 
     @action
-    def disable_subtitle(self, chromecast=None):
-        return self.get_chromecast(chromecast or self.chromecast).media_controller.disable_subtitle()
+    def enable_subtitles(self, chromecast=None, track_id=None):
+        mc = self.get_chromecast(chromecast or self.chromecast).media_controller
+        if track_id is not None:
+            return mc.enable_subtitle(track_id)
+        elif mc.subtitle_tracks:
+            return mc.enable_subtitle(mc.subtitle_tracks[0].get('trackId'))
+
+
+    @action
+    def disable_subtitles(self, chromecast=None, track_id=None):
+        mc = self.get_chromecast(chromecast or self.chromecast).media_controller
+        if track_name:
+            return mc.disable_subtitle(track_name)
+        elif mc.current_subtitle_tracks:
+            return mc.disable_subtitle(mc.current_subtitle_tracks[0])
+
+    @action
+    def toggle_subtitles(self, chromecast=None):
+        mc = self.get_chromecast(chromecast or self.chromecast).media_controller
+        all_subs = mc.status.subtitle_tracks
+        cur_subs = mc.status.status.current_subtitle_tracks
+
+        if cur_subs:
+            return self.disable_subtitle(chromecast, cur_subs[0])
+        else:
+            return self.enable_subtitle(chromecast, all_subs[0].get('trackId'))
 
 
     @action

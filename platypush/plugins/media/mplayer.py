@@ -1,14 +1,15 @@
 import os
 import select
 import subprocess
+import tempfile
 import threading
 import time
 
 from platypush.context import get_bus, get_plugin
 from platypush.message.response import Response
 from platypush.plugins.media import PlayerState, MediaPlugin
-from platypush.message.event.media import MediaPlayEvent, MediaPauseEvent, \
-    MediaStopEvent, NewPlayingMediaEvent
+from platypush.message.event.media import MediaPlayEvent, MediaPlayRequestEvent, \
+    MediaPauseEvent, MediaStopEvent, NewPlayingMediaEvent
 
 from platypush.plugins import action
 from platypush.utils import find_bins_in_path
@@ -61,6 +62,9 @@ class MediaMplayerPlugin(MediaPlugin):
         :param mplayer_timeout: Timeout in seconds to wait for more data
             from MPlayer before considering a response ready (default: 0.5 seconds)
         :type mplayer_timeout: float
+
+        :param subtitles: Path to the subtitles file
+        :type subtitles: str
 
         :param args: Default arguments that will be passed to the MPlayer
             executable
@@ -237,18 +241,45 @@ class MediaMplayerPlugin(MediaPlugin):
 
         return _thread
 
+    def _get_subtitles_file(self, subtitles):
+        if not subtitles:
+            return
+
+        if subtitles.startswith('file://'):
+            subtitles = subtitles[len('file://'):]
+        if os.path.isfile(subtitles):
+            return os.path.abspath(subtitles)
+        else:
+            import requests
+            content = requests.get(subtitles).content
+            f = tempfile.NamedTemporaryFile(prefix='media_subs_',
+                                            suffix='.srt', delete=False)
+
+            with f:
+                f.write(content)
+            return f.name
+
+
     @action
-    def play(self, resource, mplayer_args=None):
+    def play(self, resource, subtitles=None, mplayer_args=None):
         """
         Play a resource.
 
         :param resource: Resource to play - can be a local file or a remote URL
         :type resource: str
 
+        :param subtitles: Path to optional subtitle file
+        :type subtitles: str
+
         :param mplayer_args: Extra runtime arguments that will be passed to the
             MPlayer executable
         :type mplayer_args: list[str]
         """
+
+        get_bus().post(MediaPlayRequestEvent(resource=resource))
+        if subtitles:
+            mplayer_args = mplayer_args or []
+            mplayer_args += ['-sub', self._get_subtitles_file(subtitles)]
 
         resource = self._get_resource(resource)
         if resource.startswith('file://'):
@@ -258,12 +289,16 @@ class MediaMplayerPlugin(MediaPlugin):
             return get_plugin('media.webtorrent').play(resource)
 
         self._is_playing_torrent = False
-        return self._exec('loadfile', resource, mplayer_args=mplayer_args)
+        ret = self._exec('loadfile', resource, mplayer_args=mplayer_args)
+        get_bus().post(MediaPlayEvent(resource=resource))
+        return ret
 
     @action
     def pause(self):
         """ Toggle the paused state """
-        return self._exec('pause')
+        ret = self._exec('pause')
+        get_bus().post(MediaPauseEvent())
+        return ret
 
     def _stop_torrent(self):
         if self._is_playing_torrent:
@@ -276,13 +311,15 @@ class MediaMplayerPlugin(MediaPlugin):
     @action
     def stop(self):
         """ Stop the playback """
-        return self._exec('stop')
+        # return self._exec('stop')
+        return self.quit()
 
     @action
     def quit(self):
         """ Quit the player """
         self._stop_torrent()
         self._exec('quit')
+        get_bus().post(MediaStopEvent())
 
     @action
     def voldown(self, step=10.0):
@@ -309,6 +346,12 @@ class MediaMplayerPlugin(MediaPlugin):
         """ Toggle the subtitles visibility """
         subs = self.get_property('sub_visibility').output.get('sub_visibility')
         return self._exec('sub_visibility', int(not subs))
+
+    @action
+    def set_subtitles(self, filename):
+        """ Sets media subtitles from filename """
+        self._exec('sub_visibility', 1)
+        return self._exec('sub_load', filename)
 
     @action
     def is_playing(self):

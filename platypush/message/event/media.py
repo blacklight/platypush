@@ -8,6 +8,20 @@ class MediaEvent(Event):
         super().__init__(*args, **kwargs)
 
 
+class MediaPlayRequestEvent(MediaEvent):
+    """
+    Event triggered when a new media playback request is received
+    """
+
+    def __init__(self, resource=None, *args, **kwargs):
+        """
+        :param resource: File name or URI of the played video
+        :type resource: str
+        """
+
+        super().__init__(*args, resource=resource, **kwargs)
+
+
 class MediaPlayEvent(MediaEvent):
     """
     Event triggered when a new media content is played

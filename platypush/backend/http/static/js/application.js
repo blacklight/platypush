@@ -149,7 +149,7 @@ $(document).ready(function() {
 
     var initModalOpenBindings = function() {
         $('body').on('mouseup touchend', '[data-modal]', function(event) {
-            var $source = $(event.target);
+            var $source = $(this);
             var $modal = $($source.data('modal'));
             $modal.height($(document).height() + 2);
 
@@ -167,13 +167,13 @@ $(document).ready(function() {
 
     var initModalCloseBindings = function() {
         $('body').on('mouseup touchend', '[data-dismiss-modal]', function(event) {
-            var $source = $(event.target);
+            var $source = $(this);
             var $modal = $($source.data('dismiss-modal'));
             $modal.fadeOut();
         });
 
         $('body').on('mouseup touchend', function(event) {
-            var $source = $(event.target);
+            var $source = $(this);
             if (!$source.parents('.modal').length
                     && !$source.data('modal')
                     && !$source.data('dismiss-modal')) {
@@ -186,7 +186,7 @@ $(document).ready(function() {
 
     var initPanelOpenBindings = function() {
         $('body').on('mouseup touchend', '[data-panel]', function(event) {
-            var $source = $(event.target);
+            var $source = $(this);
             var $panel = $($source.data('panel'));
             setTimeout(() => {
                 $panel.show();
@@ -196,7 +196,7 @@ $(document).ready(function() {
 
     var initPanelCloseBindings = function() {
         $('body').on('mouseup touchend', function(event) {
-            var $source = $(event.target);
+            var $source = $(this);
             if ($source.data('panel') || $source.parents('[data-panel]').length) {
                 var $panel = $source.data('panel') ? $($source.data('panel')) :
                     $($source.parents('[data-panel]').data('panel'));
@@ -267,6 +267,21 @@ function execute(request, onSuccess, onError, onComplete) {
                 xhr.setRequestHeader('X-Token', window.token);
             }
         },
+    });
+}
+
+function run(request) {
+    request['type'] = 'request';
+    return new Promise((resolve, reject) => {
+        execute(request,
+            onSuccess = (response) => {
+                resolve(response);
+            },
+
+            onError = (xhr, status, error) => {
+                reject(xhr, status, error);
+            }
+        );
     });
 }
 
@@ -346,5 +361,12 @@ function createNotification(options) {
     $body.appendTo($notification);
     $notification.prependTo($notificationContainer);
     $notification.fadeIn();
+}
+
+function showError(errorMessage) {
+    createNotification({
+        'icon': 'exclamation',
+        'text': errorMessage,
+    });
 }
 

@@ -12,10 +12,49 @@ $(document).ready(function() {
         $searchBarContainer = $('#media-search-bar-container'),
         $mediaBtnsContainer = $('#media-btns-container'),
         $mediaItemPanel = $('#media-item-panel'),
+        $mediaSubtitlesModal = $('#media-subtitles-modal'),
+        $mediaSubtitlesResultsContainer = $mediaSubtitlesModal.find('.media-subtitles-results-container'),
+        $mediaSubtitlesResults = $mediaSubtitlesModal.find('.media-subtitles-results'),
+        $mediaSubtitlesMessage = $mediaSubtitlesModal.find('.media-subtitles-message'),
+        $mediaSearchSubtitles = $ctrlForm.find('[data-modal="#media-subtitles-modal"]'),
         prevVolume = undefined,
         selectedResource = undefined;
 
-    var updateVideoResults = function(videos) {
+    const onEvent = (event) => {
+        switch (event.args.type) {
+            case 'platypush.message.event.media.MediaPlayRequestEvent':
+                createNotification({
+                    'icon': 'stream',
+                    'html': 'Processing media' + ('resource' in event.args
+                        ? ' ' + event.args.resource : ''),
+                });
+                break;
+
+            case 'platypush.message.event.media.MediaPlayEvent':
+                createNotification({
+                    'icon': 'play',
+                    'html': 'Starting media playback' + ('resource' in event.args
+                        ? ' for ' + event.args.resource : ''),
+                });
+                break;
+
+            case 'platypush.message.event.media.MediaPauseEvent':
+                createNotification({
+                    'icon': 'pause',
+                    'html': 'Media playback paused',
+                });
+                break;
+
+            case 'platypush.message.event.media.MediaStopEvent':
+                createNotification({
+                    'icon': 'stop',
+                    'html': 'Media playback stopped',
+                });
+                break;
+        }
+    };
+
+    const updateVideoResults = function(videos) {
         $videoResults.html('');
         for (var video of videos) {
             var $videoResult = $('<div></div>')
@@ -30,7 +69,7 @@ $(document).ready(function() {
         }
     };
 
-    var getVideoIconByUrl = function(url) {
+    const getVideoIconByUrl = function(url) {
         var $icon = $('<i class="fa"></i>');
 
         if (url.startsWith('file://')) {
@@ -48,7 +87,7 @@ $(document).ready(function() {
         return $iconContainer;
     };
 
-    var getSelectedDevice = function() {
+    const getSelectedDevice = function() {
         var device = { isBrowser: false, isRemote: false, name: undefined };
         var $remoteDevice = $devsPanel.find('.cast-device.selected')
             .filter((i, dev) => !$(dev).data('local') && !$(dev).data('browser')  && $(dev).data('name'));
@@ -65,7 +104,7 @@ $(document).ready(function() {
         return device;
     };
 
-    var startStreamingTorrent = function(torrent) {
+    const startStreamingTorrent = function(torrent) {
         return new Promise((resolve, reject) => {
             execute(
                 {
@@ -88,7 +127,7 @@ $(document).ready(function() {
         });
     };
 
-    var startStreaming = function(media) {
+    const startStreaming = function(media) {
         if (media.startsWith('magnet:?')) {
             return new Promise((resolve, reject) => {
                 startStreamingTorrent(media)
@@ -105,17 +144,8 @@ $(document).ready(function() {
                 data: JSON.stringify({ source: media }),
 
                 complete: (xhr, textStatus) => {
-                    var url;
                     if (xhr.status == 200) {
-                        url = xhr.responseJSON.url;
-                    } else if (xhr.status == 409) {
-                        // Media mount point already registered
-                        url = xhr.responseText.match(
-                            /.*is already registered on ("|&quot;)(https?:\/\/[^\/]+\/media\/[0-9a-f]+\.[0-9a-z]+)("|&quot;).*/)[2]
-                    }
-
-                    if (url) {
-                        var uri = url.match(/https?:\/\/[^\/]+(\/media\/.*)/)[1]
+                        var uri = xhr.responseJSON.url.match(/https?:\/\/[^\/]+(\/media\/.*)/)[1]
                         resolve(uri);
                     } else {
                         reject(Error(xhr.responseText));
@@ -125,7 +155,7 @@ $(document).ready(function() {
         });
     };
 
-    var stopStreaming = function(media_id) {
+    const stopStreaming = function(media_id) {
         return new Promise((resolve, reject) => {
             $.ajax({
                 type: 'DELETE',
@@ -135,7 +165,174 @@ $(document).ready(function() {
         });
     };
 
-    var play = function(resource) {
+    const getSubtitles = function(resource) {
+        return new Promise((resolve, reject) => {
+            if (!window.config.media.subtitles) {
+                return;  // media.subtitles plugin not configured
+            }
+
+            run({
+                action: 'media.subtitles.get_subtitles',
+                args: { 'resource': resource }
+            }).then((response) => {
+                resolve(response.response.output);
+            }).catch((error) => {
+                reject(error.message);
+            });
+        });
+    };
+
+    const downloadSubtitles = function(link, mediaResource) {
+        return new Promise((resolve, reject) => {
+            run({
+                action: 'media.subtitles.download',
+                args: {
+                    'link': link,
+                    'media_resource': mediaResource,
+                }
+            }).then((response) => {
+                resolve(response.response.output.filename);
+            }).catch((error) => {
+                reject(error.message);
+            });
+        });
+    };
+
+    const setSubtitles = (filename) => {
+        return new Promise((resolve, reject) => {
+            run({
+                action: 'media.set_subtitles',
+                args: { 'filename': filename }
+            }).then((response) => {
+                resolve(response.response.output);
+            }).catch((error) => {
+                reject(error.message);
+            });
+        });
+    };
+
+    const playOnChromecast = (resource, device, subtitles) => {
+        return new Promise((resolve, reject) => {
+            var requestArgs = {
+                action: 'media.chromecast.play',
+                args: {
+                    'resource': resource,
+                    'chromecast': device,
+                },
+            };
+
+            // TODO support for subtitles on Chromecast through internal streaming server
+
+            run(requestArgs).then((response) => {
+                resolve(response);
+            }).catch((error) => {
+                reject(error.message);
+            });
+        });
+    };
+
+    const playInBrowser = (resource, subtitles) => {
+        return new Promise((resolve, reject) => {
+            // TODO support for subtitles in local player
+
+            startStreaming(resource).then((url) => {
+                window.open(url, '_blank');
+                resolve(url);
+            }).catch((xhr, status, error) => {
+                reject(xhr.responseText);
+            });
+        });
+    };
+
+    const playOnServer = (resource, subtitles) => {
+        return new Promise((resolve, reject) => {
+            var requestArgs = {
+                action: 'media.play',
+                args: { 'resource': resource },
+            };
+
+            if (subtitles) {
+                requestArgs.args.subtitles = subtitles;
+            }
+
+            run(requestArgs).then((response) => {
+                resolve(resource);
+            }).catch((error) => {
+                reject(error.message);
+            });
+        });
+    };
+
+    const _play = (resource, subtitles) => {
+        return new Promise((resolve, reject) => {
+            var playHndl;
+            var selectedDevice = getSelectedDevice();
+
+            if (selectedDevice.isBrowser) {
+                playHndl = playInBrowser(resource, subtitles);
+            } else if (selectedDevice.isRemote) {
+                playHndl = playOnChromecast(resource, selectedDevice.name, subtitles);
+            } else {
+                playHndl = playOnServer(resource, subtitles);
+            }
+
+            playHndl.then((response) => {
+                resolve(resource);
+            }).catch((error) => {
+                showError('Playback error: ' + error.message);
+                reject(error.message);
+            });
+        });
+    };
+
+    const play = (resource) => {
+        return new Promise((resolve, reject) => {
+            var results = $videoResults.html();
+            var onVideoLoading = () => { $videoResults.text('Loading video...'); };
+            var onVideoReady = () => {
+                $videoResults.html(results);
+                resolve(resource);
+            };
+
+            $mediaSearchSubtitles.data('resource', resource);
+            onVideoLoading();
+
+            var subtitlesConf = window.config.media.subtitles;
+
+            // TODO populate the subtitles panel and show the subtitles button
+            if (subtitlesConf && 'language' in subtitlesConf) {
+                tryFetchSubtitles(resource).then((subtitles) => {
+                    if (!subtitles) {
+                        showError('Cannot get subtitles: ' + error);
+                        _play(resource).finally(onVideoReady);
+                    } else {
+                        _play(resource, subtitles).finally(onVideoReady);
+                    }
+                });
+            } else {
+                _play(resource).finally(onVideoReady);
+            }
+        });
+    };
+
+    const tryFetchSubtitles = (resource) => {
+        return new Promise((resolve, reject) => {
+            getSubtitles(resource).then((subs) => {
+                if (!subs) {
+                    resolve();
+                    return;  // No subtitles found
+                }
+
+                downloadSubtitles(subs[0].SubDownloadLink, resource).then((filename) => {
+                    resolve(filename);
+                }).catch((error) => {
+                    resolve();
+                });
+            });
+        });
+    };
+
+    const download = function(resource) {
         return new Promise((resolve, reject) => {
             var results = $videoResults.html();
             var onVideoLoading = function() {
@@ -146,57 +343,24 @@ $(document).ready(function() {
                 $videoResults.html(results);
             };
 
-            var requestArgs = {
-                type: 'request',
-                action: 'media.play',
-                args: { resource: resource },
-            };
-
-            var selectedDevice = getSelectedDevice();
-            if (selectedDevice.isBrowser) {
-                onVideoLoading();
-
-                startStreaming(resource)
-                    .then((url) => {
-                        window.open(url, '_blank');
-                        resolve(url);
-                    })
-                    .catch((xhr, status, error) => {
-                        reject(xhr.responseText);
-                    })
-                    .finally(() => {
-                        onVideoReady();
-                    });
-
-                return;
-            }
-
-            if (selectedDevice.isRemote) {
-                requestArgs.action = 'media.chromecast.play';
-                requestArgs.args.chromecast = selectedDevice.name;
-            }
-
             onVideoLoading();
-            execute(
-                requestArgs,
-                function(response) {
-                    $videoResults.html(results);
-                    resolve(resource);
-                },
-
-                function(xhr, status, error) {
-                    onVideoReady();
+            startStreaming(resource)
+                .then((url) => {
+                    url = url + '?download=1'
+                    window.open(url, '_blank');
+                    resolve(url);
+                })
+                .catch((xhr, status, error) => {
                     reject(xhr.responseText);
-                }
-            );
+                })
+                .finally(() => {
+                    onVideoReady();
+                });
         });
     };
 
-    var download = function(resource) {
-        // TODO
-    };
-
-    var initBindings = function() {
+    const initBindings = function() {
+        window.registerEventListener(onEvent);
         $searchForm.on('submit', function(event) {
             var $input = $(this).find('input[name=video-search-text]');
             var resource = $input.val();
@@ -347,11 +511,12 @@ $(document).ready(function() {
         });
 
         $mediaItemPanel.on('click', '[data-action]', function() {
-            if ($(this).hasClass('disabled')) {
+            var $action = $(this);
+            if ($action.hasClass('disabled')) {
                 return;
             }
 
-            var action = $(this).data('action');
+            var action = $action.data('action');
             var resource = $mediaItemPanel.data('resource');
             if (!resource) {
                 return;
@@ -365,9 +530,65 @@ $(document).ready(function() {
                     $mediaItemPanel.find('[data-action]').removeClass('disabled');
                 });
         });
+
+        $mediaSearchSubtitles.on('mouseup touchend', () => {
+            var resource = $mediaSearchSubtitles.data('resource');
+            if (!resource) {
+                return;
+            }
+
+            $mediaSubtitlesMessage.text('Loading subtitles...');
+            $mediaSubtitlesResults.text('');
+            $mediaSubtitlesMessage.show();
+            $mediaSubtitlesResultsContainer.hide();
+
+            getSubtitles(resource).then((subs) => {
+                if (!subs.length) {
+                    $mediaSubtitlesMessage.text('No subtitles found');
+                    return;
+                }
+
+                for (var sub of subs) {
+                    var flagCode;
+                    if ('ISO639' in sub) {
+                        switch(sub.ISO639) {
+                            case 'en': flagCode = 'gb'; break;
+                            default: flagCode = sub.ISO639; break;
+                        }
+                    }
+
+                    var $subContainer = $('<div></div>').addClass('row media-subtitle-container')
+                        .data('download-link', sub.SubDownloadLink)
+                        .data('resource', resource);
+
+                    var $subFlagIconContainer = $('<div></div>').addClass('one column');
+                    var $subFlagIcon = $('<span></span>')
+                        .addClass(flagCode ? 'flag-icon flag-icon-' + flagCode : (
+                            sub.IsLocal ? 'fa fa-download' : ''))
+                        .text(!(flagCode || sub.IsLocal) ? '?' : '');
+
+                    var $subMovieName = $('<div></div>').addClass('five columns')
+                        .text(sub.MovieName);
+
+                    var $subFileName = $('<div></div>').addClass('six columns')
+                        .text(sub.SubFileName);
+
+                    $subFlagIcon.appendTo($subFlagIconContainer);
+                    $subFlagIconContainer.appendTo($subContainer);
+                    $subMovieName.appendTo($subContainer);
+                    $subFileName.appendTo($subContainer);
+                    $subContainer.appendTo($mediaSubtitlesResults);
+                }
+
+                $mediaSubtitlesMessage.hide();
+                $mediaSubtitlesResultsContainer.show();
+            }).catch((error) => {
+                $mediaSubtitlesMessage.text('Unable to load subtitles: ' + error.message);
+            });
+        });
     };
 
-    var initRemoteDevices = function() {
+    const initRemoteDevices = function() {
         $devsList.find('.cast-device[data-remote]').addClass('disabled');
 
         execute(
@@ -414,7 +635,7 @@ $(document).ready(function() {
         );
     };
 
-    var init = function() {
+    const init = function() {
         initRemoteDevices();
         initBindings();
     };

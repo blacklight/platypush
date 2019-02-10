@@ -46,7 +46,7 @@ class MediaOmxplayerPlugin(MediaPlugin):
         self._handlers = { e.value: [] for e in PlayerEvent }
 
     @action
-    def play(self, resource):
+    def play(self, resource, subtitles=None, *args, **kwargs):
         """
         Play a resource.
 
@@ -57,6 +57,9 @@ class MediaOmxplayerPlugin(MediaPlugin):
             * YouTube videos (format: ``https://www.youtube.com/watch?v=<id>``)
             * Torrents (format: Magnet links, Torrent URLs or local Torrent files)
         """
+
+        if subtitles:
+            args.append('--subtitles', subtitles)
 
         resource = self._get_resource(resource)
         if self._player:

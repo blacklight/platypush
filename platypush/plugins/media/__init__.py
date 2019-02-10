@@ -214,6 +214,10 @@ class MediaPlugin(Plugin):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    def set_subtitles(self, filename, *args, **kwargs):
+        raise self._NOT_IMPLEMENTED_ERR
+
+    @action
     def is_playing(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
@@ -339,7 +343,7 @@ class MediaPlugin(Plugin):
 
 
     @action
-    def start_streaming(self, media):
+    def start_streaming(self, media, download=False):
         """
         Starts streaming local media over the specified HTTP port.
         The stream will be available to HTTP clients on
@@ -347,6 +351,10 @@ class MediaPlugin(Plugin):
 
         :param media: Media to stream
         :type media: str
+
+        :param download: Set to True if you prefer to download the file from
+            the streaming link instead of streaming it
+        :type download: bool
 
         :returns: dict containing the streaming URL.Example::
 
@@ -366,8 +374,9 @@ class MediaPlugin(Plugin):
             return
 
         self.logger.info('Starting streaming {}'.format(media))
-        response = requests.put('{url}/media'.format(url=http.local_base_url),
-                                json = { 'source': media })
+        response = requests.put('{url}/media{download}'.format(
+            url=http.local_base_url, download='?download' if download else ''),
+            json = { 'source': media })
 
         if not response.ok:
             self.logger.warning('Unable to start streaming: {}'.

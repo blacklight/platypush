@@ -1,5 +1,12 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/media.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/media.css') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='flag-icons/css/flag-icon.min.css') }}"></script>
+
+<script type="text/javascript">
+    window.config = window.config || {};
+    window.config.media = window.config.media || {};
+    window.config.media.subtitles = JSON.parse('{{ utils.to_json(utils.get_config("media.subtitles")) | safe }}');
+</script>
 
 <div class="row" id="video-container">
     <form action="#" id="video-search">
@@ -86,6 +93,10 @@
                 <button data-action="next">
                     <i class="fa fa-step-forward"></i>
                 </button>
+
+                <button data-action="subtitles" data-modal="#media-subtitles-modal">
+                    <i class="fa fa-comment"></i>
+                </button>
             </div>
         </div>
 
@@ -111,6 +122,28 @@
                 <i class="fa fa-download"></i>
             </div>
             <div class="ten columns">Download</div>
+        </div>
+    </div>
+
+    <div id="media-subtitles-modal" class="modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                Subtitles results
+            </div>
+
+            <div class="modal-body">
+                <div class="row media-subtitles-results-container">
+                    <div class="row media-subtitles-results-header">
+                        <div class="one column">Lang</div>
+                        <div class="five columns">Movie</div>
+                        <div class="six columns">Subtitles</div>
+                    </div>
+
+                    <div class="row media-subtitles-results">
+                    </div>
+                </div>
+                <div class="row media-subtitles-message">No media selected or playing</div>
+            </div>
         </div>
     </div>
 

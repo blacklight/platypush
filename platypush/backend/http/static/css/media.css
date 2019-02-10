@@ -10,6 +10,9 @@
 form#video-ctrl {
     text-align: center;
 }
+    form#video-ctrl * > button[data-modal="#media-subtitles-modal"] {
+        display: none;
+    }
 
 #video-seeker-container {
     margin-top: 0.5em;
@@ -138,4 +141,40 @@ form#video-ctrl {
         #media-item-panel > .media-item-item {
             color: #666;
         }
+
+    #media-subtitles-modal * > .media-subtitles-results-container {
+        display: none;
+        padding: .75rem;
+    }
+
+    #media-subtitles-modal * > .media-subtitles-results-header {
+        background: #eee;
+        margin-bottom: 1rem;
+        padding: 1rem .25rem;
+        border: 1px solid #ccc;
+    }
+
+    #media-subtitles-modal * > .media-subtitles-results {
+        padding: .75rem;
+    }
+
+    #media-subtitles-modal * > .media-subtitles-message {
+        display: none;
+    }
+
+        #media-subtitles-modal * > .media-subtitle-container {
+            cursor: pointer;
+        }
+
+            #media-subtitles-modal * > .media-subtitle-container:nth-child(odd) {
+                background-color: #f2f2f2;
+            }
+
+            #media-subtitles-modal * > .media-subtitle-container.selected {
+                background-color: #c8ffd0 !important;
+            }
+
+            #media-subtitles-modal * > .media-subtitle-container:hover {
+                background-color: #daf8e2 !important;
+            }
 

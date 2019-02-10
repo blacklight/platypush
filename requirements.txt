@@ -124,3 +124,6 @@ inputs
 # soundfile
 # numpy
 
+# Support for media subtitles
+# git+https://github.com/agonzalezro/python-opensubtitles#egg=python-opensubtitles
+
