@@ -59,7 +59,7 @@ class MusicSnapcastBackend(Backend):
 
 
     def _connect(self, host, port):
-        if host in self._socks:
+        if self._socks.get(host):
             return self._socks[host]
 
         self.logger.debug('Connecting to {}:{}'.format(host, port))
@@ -188,7 +188,12 @@ class MusicSnapcastBackend(Backend):
         }
 
         get_plugin('music.snapcast')._send(sock, request)
-        return self._recv(sock).get('result', {}).get('server', {})
+        try:
+            return self._recv(sock).get('result', {}).get('server', {})
+        except Exception as e:
+            self.logger.warning('Unable to connect to {}:{}: {}'.format(
+                host, port, str(e)))
+            self._socks[hosts] = None
 
     def run(self):
         super().run()
