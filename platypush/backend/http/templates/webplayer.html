@@ -1,0 +1,19 @@
+<script>
+    window.addEventListener('load', () => {
+        var video = document.querySelector('#video');
+        video.addEventListener('load', () => {
+            var tracks = video.textTracks;
+            if (tracks.length) {
+                tracks[0].mode = 'showing';
+            }
+        });
+    }, false);
+</script>
+
+<video id="video" controls autoplay preload="metadata">
+    <source src="{{ media_url }}" type="{{ media_type }}">
+    {% if subtitles_url %}
+    <track label="Subtitles" kind="subtitles" src="{{ subtitles_url }}" default>
+    {% endif %}
+</video>
+

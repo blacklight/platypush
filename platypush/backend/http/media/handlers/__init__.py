@@ -7,7 +7,8 @@ class MediaHandler:
     prefix_handlers = []
 
     def __init__(self, source, filename=None,
-                 mime_type='application/octet-stream', name=None, url=None):
+                 mime_type='application/octet-stream', name=None, url=None,
+                 subtitles=None):
         matched_handlers = [hndl for hndl in self.prefix_handlers
                             if source.startswith(hndl)]
 
@@ -18,10 +19,12 @@ class MediaHandler:
                                       self.prefix_handlers))
 
         self.name = name
+        self.path = None
         self.filename = name
         self.source = source
         self.url = url
         self.mime_type = mime_type
+        self.subtitles = subtitles
         self.content_length = 0
         self._matched_handler = matched_handlers[0]
 
@@ -42,8 +45,15 @@ class MediaHandler:
     def get_data(self, from_bytes=None, to_bytes=None, chunk_size=None):
         raise NotImplementedError()
 
+    def set_subtitles(self, subtitles_file):
+        self.subtitles = subtitles_file
+
+    def remove_subtitles(self):
+        self.subtitles = None
+
     def __iter__(self):
-        for attr in ['name', 'source', 'mime_type', 'url', 'prefix_handlers']:
+        for attr in ['name', 'source', 'mime_type', 'url', 'subtitles',
+                     'prefix_handlers']:
             yield (attr, getattr(self, attr))
 
 

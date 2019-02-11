@@ -50,6 +50,7 @@ $(document).ready(function() {
                     'icon': 'stop',
                     'html': 'Media playback stopped',
                 });
+                $mediaSearchSubtitles.hide();
                 break;
         }
     };
@@ -105,6 +106,7 @@ $(document).ready(function() {
     };
 
     const startStreamingTorrent = function(torrent) {
+        // TODO support for subtitles download on torrent metadata received
         return new Promise((resolve, reject) => {
             execute(
                 {
@@ -127,7 +129,7 @@ $(document).ready(function() {
         });
     };
 
-    const startStreaming = function(media) {
+    const startStreaming = function(media, subtitles) {
         if (media.startsWith('magnet:?')) {
             return new Promise((resolve, reject) => {
                 startStreamingTorrent(media)
@@ -141,12 +143,20 @@ $(document).ready(function() {
                 type: 'PUT',
                 url: '/media',
                 contentType: 'application/json',
-                data: JSON.stringify({ source: media }),
+                data: JSON.stringify({
+                    'source': media,
+                    'subtitles': subtitles,
+                }),
 
                 complete: (xhr, textStatus) => {
                     if (xhr.status == 200) {
                         var uri = xhr.responseJSON.url.match(/https?:\/\/[^\/]+(\/media\/.*)/)[1]
-                        resolve(uri);
+                        var subtitles;
+                        if ('subtitles_url' in xhr.responseJSON) {
+                            subtitles = xhr.responseJSON.subtitles_url.match(/https?:\/\/[^\/]+(\/media\/.*)/)[1]
+                        }
+
+                        resolve(uri, subtitles);
                     } else {
                         reject(Error(xhr.responseText));
                     }
@@ -168,7 +178,7 @@ $(document).ready(function() {
     const getSubtitles = function(resource) {
         return new Promise((resolve, reject) => {
             if (!window.config.media.subtitles) {
-                return;  // media.subtitles plugin not configured
+                resolve();  // media.subtitles plugin not configured
             }
 
             run({
@@ -233,11 +243,9 @@ $(document).ready(function() {
 
     const playInBrowser = (resource, subtitles) => {
         return new Promise((resolve, reject) => {
-            // TODO support for subtitles in local player
-
-            startStreaming(resource).then((url) => {
-                window.open(url, '_blank');
-                resolve(url);
+            startStreaming(resource, subtitles).then((url, subtitles) => {
+                window.open(url + '?webplayer', '_blank');
+                resolve(url, subtitles);
             }).catch((xhr, status, error) => {
                 reject(xhr.responseText);
             });
@@ -299,16 +307,19 @@ $(document).ready(function() {
 
             var subtitlesConf = window.config.media.subtitles;
 
-            // TODO populate the subtitles panel and show the subtitles button
-            if (subtitlesConf && 'language' in subtitlesConf) {
-                tryFetchSubtitles(resource).then((subtitles) => {
-                    if (!subtitles) {
-                        showError('Cannot get subtitles: ' + error);
-                        _play(resource).finally(onVideoReady);
-                    } else {
-                        _play(resource, subtitles).finally(onVideoReady);
-                    }
-                });
+            if (subtitlesConf) {
+                populateSubtitlesModal(resource);
+
+                if ('language' in subtitlesConf) {
+                    tryFetchSubtitles(resource).then((subtitles) => {
+                        if (!subtitles) {
+                            showError('Cannot get subtitles');
+                            _play(resource).finally(onVideoReady);
+                        } else {
+                            _play(resource, subtitles).finally(onVideoReady);
+                        }
+                    });
+                }
             } else {
                 _play(resource).finally(onVideoReady);
             }
@@ -346,7 +357,7 @@ $(document).ready(function() {
             onVideoLoading();
             startStreaming(resource)
                 .then((url) => {
-                    url = url + '?download=1'
+                    url = url + '?download'
                     window.open(url, '_blank');
                     resolve(url);
                 })
@@ -356,6 +367,58 @@ $(document).ready(function() {
                 .finally(() => {
                     onVideoReady();
                 });
+        });
+    };
+
+    const populateSubtitlesModal = (resource) => {
+        $mediaSubtitlesMessage.text('Loading subtitles...');
+        $mediaSubtitlesResults.text('');
+        $mediaSubtitlesMessage.show();
+        $mediaSubtitlesResultsContainer.hide();
+
+        getSubtitles(resource).then((subs) => {
+            if (!subs.length) {
+                $mediaSubtitlesMessage.text('No subtitles found');
+                return;
+            }
+
+            $mediaSearchSubtitles.show();
+            for (var sub of subs) {
+                var flagCode;
+                if ('ISO639' in sub) {
+                    switch(sub.ISO639) {
+                        case 'en': flagCode = 'gb'; break;
+                        default: flagCode = sub.ISO639; break;
+                    }
+                }
+
+                var $subContainer = $('<div></div>').addClass('row media-subtitle-container')
+                    .data('download-link', sub.SubDownloadLink)
+                    .data('resource', resource);
+
+                var $subFlagIconContainer = $('<div></div>').addClass('one column');
+                var $subFlagIcon = $('<span></span>')
+                    .addClass(flagCode ? 'flag-icon flag-icon-' + flagCode : (
+                        sub.IsLocal ? 'fa fa-download' : ''))
+                    .text(!(flagCode || sub.IsLocal) ? '?' : '');
+
+                var $subMovieName = $('<div></div>').addClass('five columns')
+                    .text(sub.MovieName);
+
+                var $subFileName = $('<div></div>').addClass('six columns')
+                    .text(sub.SubFileName);
+
+                $subFlagIcon.appendTo($subFlagIconContainer);
+                $subFlagIconContainer.appendTo($subContainer);
+                $subMovieName.appendTo($subContainer);
+                $subFileName.appendTo($subContainer);
+                $subContainer.appendTo($mediaSubtitlesResults);
+            }
+
+            $mediaSubtitlesMessage.hide();
+            $mediaSubtitlesResultsContainer.show();
+        }).catch((error) => {
+            $mediaSubtitlesMessage.text('Unable to load subtitles: ' + error.message);
         });
     };
 
@@ -531,61 +594,8 @@ $(document).ready(function() {
                 });
         });
 
-        $mediaSearchSubtitles.on('mouseup touchend', () => {
-            var resource = $mediaSearchSubtitles.data('resource');
-            if (!resource) {
-                return;
-            }
-
-            $mediaSubtitlesMessage.text('Loading subtitles...');
-            $mediaSubtitlesResults.text('');
-            $mediaSubtitlesMessage.show();
-            $mediaSubtitlesResultsContainer.hide();
-
-            getSubtitles(resource).then((subs) => {
-                if (!subs.length) {
-                    $mediaSubtitlesMessage.text('No subtitles found');
-                    return;
-                }
-
-                for (var sub of subs) {
-                    var flagCode;
-                    if ('ISO639' in sub) {
-                        switch(sub.ISO639) {
-                            case 'en': flagCode = 'gb'; break;
-                            default: flagCode = sub.ISO639; break;
-                        }
-                    }
-
-                    var $subContainer = $('<div></div>').addClass('row media-subtitle-container')
-                        .data('download-link', sub.SubDownloadLink)
-                        .data('resource', resource);
-
-                    var $subFlagIconContainer = $('<div></div>').addClass('one column');
-                    var $subFlagIcon = $('<span></span>')
-                        .addClass(flagCode ? 'flag-icon flag-icon-' + flagCode : (
-                            sub.IsLocal ? 'fa fa-download' : ''))
-                        .text(!(flagCode || sub.IsLocal) ? '?' : '');
-
-                    var $subMovieName = $('<div></div>').addClass('five columns')
-                        .text(sub.MovieName);
-
-                    var $subFileName = $('<div></div>').addClass('six columns')
-                        .text(sub.SubFileName);
-
-                    $subFlagIcon.appendTo($subFlagIconContainer);
-                    $subFlagIconContainer.appendTo($subContainer);
-                    $subMovieName.appendTo($subContainer);
-                    $subFileName.appendTo($subContainer);
-                    $subContainer.appendTo($mediaSubtitlesResults);
-                }
-
-                $mediaSubtitlesMessage.hide();
-                $mediaSubtitlesResultsContainer.show();
-            }).catch((error) => {
-                $mediaSubtitlesMessage.text('Unable to load subtitles: ' + error.message);
-            });
-        });
+        // $mediaSearchSubtitles.on('mouseup touchend', () => {
+        // });
     };
 
     const initRemoteDevices = function() {

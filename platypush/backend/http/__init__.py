@@ -11,12 +11,12 @@ import time
 
 from multiprocessing import Process
 from flask import Flask, Response, abort, jsonify, request as http_request, \
-    render_template, send_from_directory
+    render_template, send_from_directory, make_response
 
 from redis import Redis
 
 from platypush.config import Config
-from platypush.context import get_backend, get_or_create_event_loop
+from platypush.context import get_backend, get_plugin, get_or_create_event_loop
 from platypush.message import Message
 from platypush.message.event import Event, StopEvent
 from platypush.message.event.web.widget import WidgetUpdateEvent
@@ -371,7 +371,7 @@ class HttpBackend(Backend):
         def get_media_id(source):
             return hashlib.sha1(source.encode()).hexdigest()
 
-        def register_media(source):
+        def register_media(source, subtitles=None):
             media_id = get_media_id(source)
             media_url = get_media_url(media_id)
 
@@ -379,8 +379,10 @@ class HttpBackend(Backend):
                 if media_id in media_map:
                     return media_map[media_id]
 
-                media_hndl = MediaHandler.build(source, url=media_url)
+                media_hndl = MediaHandler.build(source, url=media_url,
+                                                subtitles=subtitles)
                 media_map[media_id] = media_hndl
+                media_hndl.media_id = media_id
 
             self.logger.info('Streaming "{}" on {}'.format(source, media_url))
             return media_hndl
@@ -434,7 +436,6 @@ class HttpBackend(Backend):
 
                 if not to_bytes:
                     to_bytes = content_length-1
-                    # to_bytes = from_bytes + self._DEFAULT_STREAMING_BLOCK_SIZE
                     content_length -= from_bytes
                 else:
                     to_bytes = int(to_bytes)
@@ -450,11 +451,118 @@ class HttpBackend(Backend):
 
             headers['Content-Length'] = content_length
 
-            return Response(media_hndl.get_data(
-                from_bytes=from_bytes, to_bytes=to_bytes,
-                chunk_size=self._DEFAULT_STREAMING_CHUNK_SIZE),
-                status_code, headers=headers, mimetype=headers['Content-Type'],
-                direct_passthrough=True)
+            if 'webplayer' in request.args:
+                return render_template('webplayer.html',
+                                       media_url=media_hndl.url.replace(
+                                           self.remote_base_url, ''),
+                                       media_type=media_hndl.mime_type,
+                                       subtitles_url='/media/subtitles/{}.srt'.
+                                       format(media_id))
+            else:
+                return Response(media_hndl.get_data(
+                    from_bytes=from_bytes, to_bytes=to_bytes,
+                    chunk_size=self._DEFAULT_STREAMING_CHUNK_SIZE),
+                    status_code, headers=headers, mimetype=headers['Content-Type'],
+                    direct_passthrough=True)
+
+
+        def add_subtitles(media_id, req):
+            """
+            This route can be used to download and/or expose subtitles files
+            associated to a media file
+            """
+
+            media_hndl = media_map.get(media_id)
+            if not media_hndl:
+                raise FileNotFoundError('{} is not a registered media_id'.
+                                        format(media_id))
+
+            subfile = None
+            if req.data:
+                try:
+                    subfile = json.loads(req.data.decode('utf-8')) \
+                        .get('filename')
+                    if not subfile:
+                        raise AttributeError
+                except Exception as e:
+                    raise AttributeError(400, 'No filename in the request: {}'
+                                         .format(str(e)))
+
+            if not subfile:
+                if not media_hndl.path:
+                    raise NotImplementedError(
+                        'Subtitles are currently only supported for ' +
+                        'local media files')
+
+                try:
+                    subtitles = get_plugin('media.subtitles').get_subtitles(
+                        media_hndl.path)
+                except Exception as e:
+                    raise RuntimeError('Could not get subtitles: {}'.
+                                       format(str(e)))
+
+                if not subtitles:
+                    raise FileNotFoundError(
+                        'No subtitles found for resource {}'.format(
+                            media_hndl.path))
+
+                subfile = get_plugin('media.subtitles').download(
+                    link=subtitles[0].get('SubDownloadLink'),
+                    media_resource=media_hndl.path).get('filename')
+
+            media_hndl.set_subtitles(subfile)
+            return {
+                'filename': subfile,
+                'url': self.remote_base_url + '/media/subtitles/' + media_id + '.srt',
+            }
+
+        def remove_subtitles(media_id):
+            media_hndl = media_map.get(media_id)
+            if not media_hndl:
+                raise FileNotFoundError('{} is not a registered media_id'.
+                                        format(media_id))
+
+            if not media_hndl.subtitles:
+                raise FileNotFoundError('{} has no subtitles attached'.
+                                        format(media_id))
+
+            media_hndl.remove_subtitles()
+            return {}
+
+
+        @app.route('/media/subtitles/<media_id>.srt', methods=['GET', 'PUT', 'DELETE'])
+        def handle_subtitles(media_id):
+            """
+            This route can be used to download and/or expose subtitle files
+            associated to a media file
+            """
+
+            if http_request.method == 'GET':
+                media_hndl = media_map.get(media_id)
+                if not media_hndl:
+                    abort(404, 'No such media')
+
+                if not media_hndl.subtitles:
+                    abort(404, 'The media has no subtitles attached')
+
+                return send_from_directory(
+                    os.path.dirname(media_hndl.subtitles),
+                    os.path.basename(media_hndl.subtitles),
+                    mimetype='text/vtt')
+
+            try:
+                if http_request.method == 'DELETE':
+                    return jsonify(remove_subtitles(media_id))
+                else:
+                    return jsonify(add_subtitles(media_id, http_request))
+            except FileNotFoundError as e:
+                abort(404, str(e))
+            except AttributeError as e:
+                abort(400, str(e))
+            except NotImplementedError as e:
+                abort(422, str(e))
+            except Exception as e:
+                abort(500, str(e))
 
         @app.route('/media', methods=['GET', 'PUT'])
         def add_or_get_media():
@@ -476,9 +584,14 @@ class HttpBackend(Backend):
             if not source:
                 abort(400, 'The request does not contain any source')
 
+            subtitles = args.get('subtitles')
             try:
-                media_hndl = register_media(source)
-                return jsonify(dict(media_hndl))
+                media_hndl = register_media(source, subtitles)
+                ret = dict(media_hndl)
+                if media_hndl.subtitles:
+                    ret['subtitles_url'] = self.remote_base_url + \
+                        '/media/subtitles/' + media_hndl.media_id + '.srt'
+                return jsonify(ret)
             except FileNotFoundError as e:
                 abort(404, str(e))
             except AttributeError as e:
