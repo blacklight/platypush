@@ -45,27 +45,44 @@ $(document).ready(function() {
         var $repeatBtn = $playbackControls.find('[data-action=repeat]');
         var elapsed; var length;
 
+        var timeToStr = (time) => {
+            return parseInt(parseInt(time)/60) + ':'
+                + (parseInt(time)%60 < 10 ? '0' : '') + (parseInt(time)%60);
+        };
+
         if (status) {
             if (seekInterval) {
                 clearInterval(seekInterval);
             }
 
             if ('time' in status) {
-                var time = status.time.split(':');
-                elapsed = parseInt(parseInt(time[0])/60) + ':'
-                    + (parseInt(time[0])%60 < 10 ? '0' : '') + (parseInt(time[0])%60);
+                var time; var elapsed;
 
-                if (time.length > 1) {
-                    length = parseInt(parseInt(time[1])/60) + ':'
-                        + (parseInt(time[1])%60 < 10 ? '0' : '') + (parseInt(time[1])%60);
+                if (typeof status.time === 'string' && status.time.indexOf(':') > -1) {
+                    // backend.music.mpd time format: "elapsed:total"
+                    [elapsed, time] = status.time.split(':');
+                    elapsed = parseInt(elapsed);
+                    time = parseInt(time);
+                } else {
+                    // backend.music.mopidy time format: integer with elapsed seconds
+                    time = parseInt(status.time);
                 }
 
-                $trackSeeker.val(parseInt(time[0]));
-                $trackSeeker.attr('max', parseInt(time[1]));
-                curTrackElapsed = {
-                    timestamp: new Date().getTime(),
-                    elapsed: parseInt(time[0]),
-                };
+                if (time) {
+                    $trackSeeker.val(time);
+                }
+
+                if (elapsed) {
+                    $trackSeeker.attr('max', elapsed);
+                    curTrackElapsed = {
+                        'timestamp': new Date().getTime(),
+                        'elapsed': elapsed,
+                    };
+                }
+            }
+
+            if ('position' in status) {
+                $trackSeeker.val(parseInt(status.position));
             }
 
             if ('state' in status) {
@@ -187,6 +204,7 @@ $(document).ready(function() {
             case 'platypush.message.event.music.MusicStopEvent':
             case 'platypush.message.event.music.MusicPlayEvent':
             case 'platypush.message.event.music.MusicPauseEvent':
+            case 'platypush.message.event.music.SeekChangeEvent':
                 updateControls(status=event.args.status, track=event.args.track);
                 break;
 

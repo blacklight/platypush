@@ -75,6 +75,9 @@ class MusicMopidyBackend(Backend):
         if pos is not None:
             conv_track['pos'] = pos
 
+        if '__model__' in conv_track:
+            del conv_track['__model__']
+
         return conv_track
 
 
