@@ -109,8 +109,10 @@ class MusicMopidyBackend(Backend):
                     response = response.decode()
                 resp_queue.put(json.loads(response))
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         loop.run_until_complete(get_response())
+        loop.stop()
         return resp_queue.get().get('result')
 
     def _get_tracklist_status(self):
