@@ -131,7 +131,7 @@ class MusicMopidyBackend(Backend):
                 track = self._parse_track(track)
                 if not track:
                     return
-                self.bus.post(MusicPlayEvent(status=status, track=track))
+                self.bus.post(MusicStopEvent(status=status, track=track))
             elif event == 'track_playback_started':
                 track = self._parse_track(track)
                 if not track:
