@@ -105,14 +105,24 @@ $(document).ready(function() {
     };
 
     var refreshStatus = function(status) {
-        setState(state=status.state);
+        if ('state' in status) {
+            setState(state=status.state);
+        }
+
         if ('elapsed' in status) {
             setTrackElapsed(status.elapsed);
+        }
+
+        if ('position' in status) {
+            setTrackElapsed(status.position);
         }
     };
 
     var refreshTrack = function(track) {
-        setTrackTime(track.time);
+        if ('time' in track) {
+            setTrackTime(track.time);
+        }
+
         $artistElement.text(track.artist);
         $titleElement.text(track.title);
     };
