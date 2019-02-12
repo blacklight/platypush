@@ -57,8 +57,12 @@ class MusicMopidyBackend(Backend):
         del conv_track['uri']
 
         if 'artists' in conv_track:
-            conv_track['artist'] = conv_track['artists'][0]
+            conv_track['artist'] = conv_track['artists'][0].get('name')
             del conv_track['artists']
+
+        if 'name' in conv_track:
+            conv_track['title'] = conv_track['name']
+            del conv_track['name']
 
         if 'album' in conv_track:
             conv_track['album'] = conv_track['album']['name']
