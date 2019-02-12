@@ -151,6 +151,7 @@ class MusicMopidyBackend(Backend):
 
                 track['artist'] = m.group(1)
                 track['title'] = m.group(2)
+                track['position'] = 0.0
                 self.bus.post(NewPlayingTrackEvent(status=status, track=track))
             elif event == 'volume_changed':
                 status['volume'] = msg.get('volume')

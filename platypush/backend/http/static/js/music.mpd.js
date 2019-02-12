@@ -46,16 +46,25 @@ $(document).ready(function() {
         var elapsed; var length;
 
         var timeToStr = (time) => {
+            if (typeof time === 'string') {
+                return time;
+            }
+
             return parseInt(parseInt(time)/60) + ':'
                 + (parseInt(time)%60 < 10 ? '0' : '') + (parseInt(time)%60);
         };
 
         if (status) {
-            if (seekInterval) {
-                clearInterval(seekInterval);
+            if ('position' in status) {
+                elapsed = parseInt(status.position);
+                $trackSeeker.val(elapsed);
             }
 
             if ('time' in status) {
+                if (seekInterval) {
+                    clearInterval(seekInterval);
+                }
+
                 if (typeof status.time === 'string' && status.time.indexOf(':') > -1) {
                     // backend.music.mpd time format: "elapsed:total"
                     [elapsed, length] = status.time.split(':');
@@ -65,22 +74,18 @@ $(document).ready(function() {
                     // backend.music.mopidy time format: integer with elapsed seconds
                     length = parseInt(status.time);
                 }
-
-                if (length) {
-                    $trackSeeker.val(length);
-                }
-
-                if (elapsed) {
-                    $trackSeeker.attr('max', elapsed);
-                    curTrackElapsed = {
-                        'timestamp': new Date().getTime(),
-                        'elapsed': elapsed,
-                    };
-                }
             }
 
-            if ('position' in status) {
-                $trackSeeker.val(parseInt(status.position));
+            if (elapsed !== undefined) {
+                $trackSeeker.val(elapsed);
+                curTrackElapsed = {
+                    'timestamp': new Date().getTime(),
+                    'elapsed': elapsed,
+                };
+            }
+
+            if (length !== undefined) {
+                $trackSeeker.attr('max', length);
             }
 
             if ('state' in status) {
@@ -104,8 +109,8 @@ $(document).ready(function() {
                         $curTrack.find('.no-track').hide();
 
                         $trackSeeker.prop('disabled', false);
-                        $('#seek-time-elapsed').text(elapsed ? elapsed : '-:--');
-                        $('#seek-time-length').text(length ? length : '-:--');
+                        $('#seek-time-elapsed').text(elapsed ? timeToStr(elapsed) : '-:--');
+                        $('#seek-time-length').text(length ? timeToStr(length) : '-:--');
                         break;
 
                     case 'play':
@@ -116,8 +121,8 @@ $(document).ready(function() {
                         $curTrack.find('.no-track').hide();
 
                         $trackSeeker.prop('disabled', false);
-                        $('#seek-time-elapsed').text(elapsed ? elapsed : '-:--');
-                        $('#seek-time-length').text(length ? length : '-:--');
+                        $('#seek-time-elapsed').text(elapsed ? timeToStr(elapsed) : '-:--');
+                        $('#seek-time-length').text(length ? timeToStr(length) : '-:--');
 
                         seekInterval = setInterval(function() {
                             var length = parseInt($trackSeeker.attr('max'));
@@ -126,8 +131,8 @@ $(document).ready(function() {
 
                             if (value < length) {
                                 $trackSeeker.val(value);
-                                elapsed = parseInt(value/60) + ':' + (value%60 < 10 ? '0' : '') + (value%60);
-                                $('#seek-time-elapsed').text(elapsed);
+                                elapsed = value;
+                                $('#seek-time-elapsed').text(timeToStr(elapsed));
                             }
                         }, 1000);
                         break;
