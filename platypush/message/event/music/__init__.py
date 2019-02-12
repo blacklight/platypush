@@ -43,6 +43,15 @@ class MusicPauseEvent(MusicEvent):
         super().__init__(*args, **kwargs)
 
 
+class SeekChangeEvent(MusicEvent):
+    """
+    Event fired upon seek change
+    """
+
+    def __init__(self, position, status=None, track=None, *args, **kwargs):
+        super().__init__(position=position, status=status, track=track, *args, **kwargs)
+
+
 class VolumeChangeEvent(MusicEvent):
     """
     Event fired upon volume change
@@ -50,6 +59,15 @@ class VolumeChangeEvent(MusicEvent):
 
     def __init__(self, volume, status=None, track=None, *args, **kwargs):
         super().__init__(volume=volume, status=status, track=track, *args, **kwargs)
+
+
+class MuteChangeEvent(MusicEvent):
+    """
+    Event fired upon mute change
+    """
+
+    def __init__(self, mute, status=None, track=None, *args, **kwargs):
+        super().__init__(mute=mute, status=status, track=track, *args, **kwargs)
 
 
 class PlaybackRepeatModeChangeEvent(MusicEvent):

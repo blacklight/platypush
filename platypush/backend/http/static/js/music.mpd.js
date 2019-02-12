@@ -117,20 +117,26 @@ $(document).ready(function() {
                     break;
             }
 
-            $volumeCtrl.val(parseInt(status.volume));
-
-            var repeat = parseInt(status.repeat);
-            if (repeat) {
-                $repeatBtn.addClass('enabled');
-            } else {
-                $repeatBtn.removeClass('enabled');
+            if ('volume' in status) {
+                $volumeCtrl.val(parseInt(status.volume));
             }
 
-            var random = parseInt(status.random);
-            if (random) {
-                $randomBtn.addClass('enabled');
-            } else {
-                $randomBtn.removeClass('enabled');
+            if ('repeat' in status) {
+                var repeat = parseInt(status.repeat);
+                if (repeat) {
+                    $repeatBtn.addClass('enabled');
+                } else {
+                    $repeatBtn.removeClass('enabled');
+                }
+            }
+
+            if ('random' in status) {
+                var random = parseInt(status.random);
+                if (random) {
+                    $randomBtn.addClass('enabled');
+                } else {
+                    $randomBtn.removeClass('enabled');
+                }
             }
         }
 
