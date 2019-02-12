@@ -68,53 +68,55 @@ $(document).ready(function() {
                 };
             }
 
-            switch (status.state.toLowerCase()) {
-                case 'stop':
-                    $playbackControls.find('button[data-action=pause]').hide();
-                    $playbackControls.find('button[data-action=play]').show();
-                    $curTrack.find('.artist').hide();
-                    $curTrack.find('.track').hide();
-                    $curTrack.find('.no-track').show();
+            if ('state' in status) {
+                switch (status.state.toLowerCase()) {
+                    case 'stop':
+                        $playbackControls.find('button[data-action=pause]').hide();
+                        $playbackControls.find('button[data-action=play]').show();
+                        $curTrack.find('.artist').hide();
+                        $curTrack.find('.track').hide();
+                        $curTrack.find('.no-track').show();
 
-                    $trackSeeker.prop('disabled', true);
-                    $('.seek-time').text('-:--');
-                    break;
+                        $trackSeeker.prop('disabled', true);
+                        $('.seek-time').text('-:--');
+                        break;
 
-                case 'pause':
-                    $playbackControls.find('button[data-action=pause]').hide();
-                    $playbackControls.find('button[data-action=play]').show();
-                    $curTrack.find('.artist').show();
-                    $curTrack.find('.track').show();
-                    $curTrack.find('.no-track').hide();
+                    case 'pause':
+                        $playbackControls.find('button[data-action=pause]').hide();
+                        $playbackControls.find('button[data-action=play]').show();
+                        $curTrack.find('.artist').show();
+                        $curTrack.find('.track').show();
+                        $curTrack.find('.no-track').hide();
 
-                    $trackSeeker.prop('disabled', false);
-                    $('#seek-time-elapsed').text(elapsed ? elapsed : '-:--');
-                    $('#seek-time-length').text(length ? length : '-:--');
-                    break;
+                        $trackSeeker.prop('disabled', false);
+                        $('#seek-time-elapsed').text(elapsed ? elapsed : '-:--');
+                        $('#seek-time-length').text(length ? length : '-:--');
+                        break;
 
-                case 'play':
-                    $playbackControls.find('button[data-action=pause]').show();
-                    $playbackControls.find('button[data-action=play]').hide();
-                    $curTrack.find('.artist').show();
-                    $curTrack.find('.track').show();
-                    $curTrack.find('.no-track').hide();
+                    case 'play':
+                        $playbackControls.find('button[data-action=pause]').show();
+                        $playbackControls.find('button[data-action=play]').hide();
+                        $curTrack.find('.artist').show();
+                        $curTrack.find('.track').show();
+                        $curTrack.find('.no-track').hide();
 
-                    $trackSeeker.prop('disabled', false);
-                    $('#seek-time-elapsed').text(elapsed ? elapsed : '-:--');
-                    $('#seek-time-length').text(length ? length : '-:--');
+                        $trackSeeker.prop('disabled', false);
+                        $('#seek-time-elapsed').text(elapsed ? elapsed : '-:--');
+                        $('#seek-time-length').text(length ? length : '-:--');
 
-                    seekInterval = setInterval(function() {
-                        var length = parseInt($trackSeeker.attr('max'));
-                        var value = parseInt((new Date().getTime() - curTrackElapsed.timestamp)/1000)
-                            + curTrackElapsed.elapsed;
+                        seekInterval = setInterval(function() {
+                            var length = parseInt($trackSeeker.attr('max'));
+                            var value = parseInt((new Date().getTime() - curTrackElapsed.timestamp)/1000)
+                                + curTrackElapsed.elapsed;
 
-                        if (value < length) {
-                            $trackSeeker.val(value);
-                            elapsed = parseInt(value/60) + ':' + (value%60 < 10 ? '0' : '') + (value%60);
-                            $('#seek-time-elapsed').text(elapsed);
-                        }
-                    }, 1000);
-                    break;
+                            if (value < length) {
+                                $trackSeeker.val(value);
+                                elapsed = parseInt(value/60) + ':' + (value%60 < 10 ? '0' : '') + (value%60);
+                                $('#seek-time-elapsed').text(elapsed);
+                            }
+                        }, 1000);
+                        break;
+                }
             }
 
             if ('volume' in status) {
