@@ -87,7 +87,9 @@ class MusicMopidyBackend(Backend):
 
         ws = websocket.create_connection(self.url)
         ws.send(msg)
-        return json.loads(ws.recv()).get('result')
+        response = json.loads(ws.recv()).get('result')
+        ws.close()
+        return response
 
 
     def _get_tracklist_status(self):
@@ -101,21 +103,6 @@ class MusicMopidyBackend(Backend):
             'consume': self._communicate({
                 'method': 'core.tracklist.get_consume'}),
         }
-
-    async def _poll_events(self):
-        import websocket
-
-        try:
-            while not self.should_stop():
-                async with websockets.connect(self.url) as ws:
-                    msg = await ws.recv()
-                    if isinstance(msg, bytes):
-                        msg = msg.decode()
-                self._handle_msg(msg)
-        except Exception as e:
-            self.logger.warning('The Mopidy backend raised an exception')
-            self.logger.exception(e)
-            time.sleep(2)  # Wait a bit before retrying
 
     def _on_msg(self):
         def hndl(msg):
@@ -210,6 +197,8 @@ class MusicMopidyBackend(Backend):
         return hndl
 
     def _connect(self):
+        import websocket
+
         if not self._ws:
             self._ws = websocket.WebSocketApp(self.url,
                                               on_message=self._on_msg(),
