@@ -192,7 +192,7 @@ class MusicMopidyBackend(Backend):
         return hndl
 
     def _on_open(self):
-        def hndl():
+        def hndl(ws):
             self.logger.info('Mopidy websocket connected')
         return hndl
 
