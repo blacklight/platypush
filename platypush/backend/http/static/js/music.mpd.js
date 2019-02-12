@@ -56,20 +56,18 @@ $(document).ready(function() {
             }
 
             if ('time' in status) {
-                var time; var elapsed;
-
                 if (typeof status.time === 'string' && status.time.indexOf(':') > -1) {
                     // backend.music.mpd time format: "elapsed:total"
-                    [elapsed, time] = status.time.split(':');
+                    [elapsed, length] = status.time.split(':');
                     elapsed = parseInt(elapsed);
-                    time = parseInt(time);
+                    length = parseInt(length);
                 } else {
                     // backend.music.mopidy time format: integer with elapsed seconds
-                    time = parseInt(status.time);
+                    length = parseInt(status.time);
                 }
 
-                if (time) {
-                    $trackSeeker.val(time);
+                if (length) {
+                    $trackSeeker.val(length);
                 }
 
                 if (elapsed) {
