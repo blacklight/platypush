@@ -105,7 +105,7 @@ class MusicMopidyBackend(Backend):
         }
 
     def _on_msg(self):
-        def hndl(msg):
+        def hndl(ws, msg):
             msg = json.loads(msg)
             event = msg.get('event')
             if not event:
