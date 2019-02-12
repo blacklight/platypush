@@ -96,6 +96,7 @@ setup(
         'Support for Chromecast plugin': ['pychromecast'],
         'Support for sound devices': ['sounddevice', 'soundfile', 'numpy'],
         'Support for web media subtitles': ['webvtt-py']
+        'Support for mopidy backend': ['websocket-client'],
         # 'Support for Leap Motion backend': ['git+ssh://git@github.com:BlackLight/leap-sdk-python3.git'],
         # 'Support for Flic buttons': ['git+https://@github.com/50ButtonsEach/fliclib-linux-hci.git']
         # 'Support for media subtitles': ['git+https://github.com/agonzalezro/python-opensubtitles#egg=python-opensubtitles']

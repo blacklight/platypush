@@ -128,3 +128,6 @@ inputs
 # git+https://github.com/agonzalezro/python-opensubtitles#egg=python-opensubtitles
 # webvtt-py
 
+# Mopidy backend
+websocket-client
+
