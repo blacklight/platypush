@@ -11,7 +11,7 @@ import time
 
 from multiprocessing import Process
 from flask import Flask, Response, abort, jsonify, request as http_request, \
-    render_template, send_from_directory, make_response
+    render_template, send_from_directory
 
 from redis import Redis
 
@@ -379,8 +379,20 @@ class HttpBackend(Backend):
                 if media_id in media_map:
                     return media_map[media_id]
 
+                subfile = None
+
+                if subtitles:
+                    try:
+                        subfile = get_plugin('media.subtitles').download(
+                            link=subtitles, convert_to_vtt=True
+                        ).output.get('filename')
+                    except Exception as e:
+                        self.logger.warning('Unable to load subtitle {}: {}'
+                                            .format(subtitles, str(e)))
+
                 media_hndl = MediaHandler.build(source, url=media_url,
-                                                subtitles=subtitles)
+                                                subtitles=subfile)
+
                 media_map[media_id] = media_hndl
                 media_hndl.media_id = media_id
 
@@ -456,8 +468,9 @@ class HttpBackend(Backend):
                                        media_url=media_hndl.url.replace(
                                            self.remote_base_url, ''),
                                        media_type=media_hndl.mime_type,
-                                       subtitles_url='/media/subtitles/{}.srt'.
-                                       format(media_id))
+                                       subtitles_url='/media/subtitles/{}.vtt'.
+                                       format(media_id) if media_hndl.subtitles
+                                       else None)
             else:
                 return Response(media_hndl.get_data(
                     from_bytes=from_bytes, to_bytes=to_bytes,
@@ -508,12 +521,13 @@ class HttpBackend(Backend):
 
                 subfile = get_plugin('media.subtitles').download(
                     link=subtitles[0].get('SubDownloadLink'),
-                    media_resource=media_hndl.path).get('filename')
+                    media_resource=media_hndl.path,
+                    convert_to_vtt=True).get('filename')
 
             media_hndl.set_subtitles(subfile)
             return {
                 'filename': subfile,
-                'url': self.remote_base_url + '/media/subtitles/' + media_id + '.srt',
+                'url': self.remote_base_url + '/media/subtitles/' + media_id + '.vtt',
             }
 
         def remove_subtitles(media_id):
@@ -530,7 +544,7 @@ class HttpBackend(Backend):
             return {}
 
 
-        @app.route('/media/subtitles/<media_id>.srt', methods=['GET', 'PUT', 'DELETE'])
+        @app.route('/media/subtitles/<media_id>.vtt', methods=['GET', 'POST', 'DELETE'])
         def handle_subtitles(media_id):
             """
             This route can be used to download and/or expose subtitle files
@@ -590,7 +604,7 @@ class HttpBackend(Backend):
                 ret = dict(media_hndl)
                 if media_hndl.subtitles:
                     ret['subtitles_url'] = self.remote_base_url + \
-                        '/media/subtitles/' + media_hndl.media_id + '.srt'
+                        '/media/subtitles/' + media_hndl.media_id + '.vtt'
                 return jsonify(ret)
             except FileNotFoundError as e:
                 abort(404, str(e))
@@ -754,6 +768,7 @@ class HttpBackend(Backend):
         self.logger.info('Initialized HTTP backend on port {}'.format(self.port))
 
         self.app = self.webserver()
+        self.app.debug = False
         self.server_proc = Process(target=self.app.run,
                                    name='WebServer',
                                    kwargs=kwargs)

@@ -208,11 +208,11 @@ class Request(Message):
 
                 if response and response.is_error():
                     logger.warning(('Response processed with errors from ' +
-                                    'action {}.{}: {}').format(
-                                        plugin, self.action, str(response)))
+                                    'action {}: {}').format(
+                                        self.action, str(response)))
                 else:
-                    logger.info('Processed response from action {}.{}: {}'.
-                                format(plugin, self.action, str(response)))
+                    logger.info('Processed response from action {}: {}'.
+                                format(self.action, str(response)))
             except Exception as e:
                 # Retry mechanism
                 plugin.logger.exception(e)

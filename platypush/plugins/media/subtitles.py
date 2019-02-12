@@ -2,6 +2,7 @@ import gzip
 import os
 import requests
 import tempfile
+import threading
 
 from platypush.message.response import Response
 from platypush.plugins import Plugin, action
@@ -15,6 +16,7 @@ class MediaSubtitlesPlugin(Plugin):
     Requires:
 
         * **python-opensubtitles** (``pip install -e 'git+https://github.com/agonzalezro/python-opensubtitles#egg=python-opensubtitles'``)
+        * **webvtt** (``pip install webvtt-py``), optional, to convert srt subtitles into vtt format ready for web streaming
         * **requests** (``pip install requests``)
     """
 
@@ -39,6 +41,7 @@ class MediaSubtitlesPlugin(Plugin):
         self._ost = OpenSubtitles()
         self._token = self._ost.login(username, password)
         self.languages = []
+        self._file_lock = threading.RLock()
 
         if language:
             if isinstance(language, str):
@@ -116,7 +119,7 @@ class MediaSubtitlesPlugin(Plugin):
 
 
     @action
-    def download(self, link, media_resource=None, path=None):
+    def download(self, link, media_resource=None, path=None, convert_to_vtt=False):
         """
         Downloads a subtitle link (.srt/.vtt file or gzip/zip OpenSubtitles
         archive link) to the specified directory
@@ -132,6 +135,10 @@ class MediaSubtitlesPlugin(Plugin):
             media local file then the subtitles will be saved in the same folder
         :type media_resource: str
 
+        :param convert_to_vtt: If set to True, then the downloaded subtitles
+            will be converted to VTT format (default: no conversion)
+        :type convert_to_vtt: bool
+
         :returns: dict. Format::
 
             {
@@ -142,6 +149,8 @@ class MediaSubtitlesPlugin(Plugin):
         if link.startswith('file://'):
             link = link[len('file://'):]
         if os.path.isfile(link):
+            if convert_to_vtt:
+                link = self.to_vtt(link).output
             return { 'filename': link }
 
         gzip_content = requests.get(link).content
@@ -166,11 +175,33 @@ class MediaSubtitlesPlugin(Plugin):
         try:
             with f:
                 f.write(gzip.decompress(gzip_content))
+            if convert_to_vtt:
+                path = self.to_vtt(path).output
         except Exception as e:
             os.unlink(path)
             raise e
 
         return { 'filename': path }
+
+    @action
+    def to_vtt(self, filename):
+        """
+        Get the VTT content given an SRT file. Will return the original content if
+        the file is already in VTT format.
+        """
+
+        if filename.lower().endswith('.vtt'):
+            return filename
+
+        import webvtt
+
+        with self._file_lock:
+            try:
+                webvtt.read(filename)
+                return filename
+            except Exception as e:
+                webvtt.from_srt(filename).save()
+                return '.'.join(filename.split('.')[:-1]) + '.vtt'
 
 
 # vim:sw=4:ts=4:et:

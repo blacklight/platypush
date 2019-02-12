@@ -354,6 +354,14 @@ class MediaMplayerPlugin(MediaPlugin):
         return self._exec('sub_load', filename)
 
     @action
+    def remove_subtitles(self, index=None):
+        """ Removes the subtitle specified by the index (default: all) """
+        if index is None:
+            return self._exec('sub_remove')
+        else:
+            return self._exec('sub_remove', index)
+
+    @action
     def is_playing(self):
         """
         :returns: True if it's playing, False otherwise

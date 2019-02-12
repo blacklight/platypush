@@ -53,8 +53,9 @@ class MediaHandler:
 
     def __iter__(self):
         for attr in ['name', 'source', 'mime_type', 'url', 'subtitles',
-                     'prefix_handlers']:
-            yield (attr, getattr(self, attr))
+                     'prefix_handlers', 'media_id']:
+            if hasattr(self, attr):
+                yield (attr, getattr(self, attr))
 
 
 

@@ -1,16 +1,18 @@
 <script>
     window.addEventListener('load', () => {
-        var video = document.querySelector('#video');
-        video.addEventListener('load', () => {
-            var tracks = video.textTracks;
-            if (tracks.length) {
-                tracks[0].mode = 'showing';
-            }
+        var video = document.querySelector('#video-player');
+        video.addEventListener('loadedmetadata', () => {
+            video.play();
         });
+
+        var tracks = video.textTracks;
+        if (tracks.length) {
+            tracks[0].mode = 'showing';
+        }
     }, false);
 </script>
 
-<video id="video" controls autoplay preload="metadata">
+<video id="video-player" controls autoplay preload="metadata" width="100%" height="100%">
     <source src="{{ media_url }}" type="{{ media_type }}">
     {% if subtitles_url %}
     <track label="Subtitles" kind="subtitles" src="{{ subtitles_url }}" default>

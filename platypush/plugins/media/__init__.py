@@ -218,6 +218,10 @@ class MediaPlugin(Plugin):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    def remove_subtitles(self, *args, **kwargs):
+        raise self._NOT_IMPLEMENTED_ERR
+
+    @action
     def is_playing(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
