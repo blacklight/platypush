@@ -133,7 +133,9 @@ class MusicMopidyBackend(Backend):
                 if not track:
                     return
                 self.bus.post(MusicPlayEvent(status=status, track=track))
-            elif event == 'track_playback_ended':
+            elif event == 'track_playback_ended' or (
+                event == 'playback_state_changed'
+                and msg.get('new_state') == 'stopped'):
                 status['state'] = 'stop'
                 track = self._parse_track(track)
                 if not track:
