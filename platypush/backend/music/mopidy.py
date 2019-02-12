@@ -143,6 +143,10 @@ class MusicMopidyBackend(Backend):
                 track = self._parse_track(track)
                 if not track:
                     return
+
+                status['state'] = 'play'
+                status['position'] = 0.0
+                status['time'] = track.get('time')
                 self.bus.post(NewPlayingTrackEvent(status=status, track=track))
             elif event == 'stream_title_changed':
                 m = re.match('^\s*(.+?)\s+-\s+(.*)\s*$', msg.get('title', ''))
@@ -151,7 +155,8 @@ class MusicMopidyBackend(Backend):
 
                 track['artist'] = m.group(1)
                 track['title'] = m.group(2)
-                track['position'] = 0.0
+                status['state'] = 'play'
+                status['position'] = 0.0
                 self.bus.post(NewPlayingTrackEvent(status=status, track=track))
             elif event == 'volume_changed':
                 status['volume'] = msg.get('volume')

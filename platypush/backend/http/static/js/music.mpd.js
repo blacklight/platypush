@@ -4,8 +4,8 @@ $(document).ready(function() {
         curPath = [],
         curTrackUpdateHandler,
         curTrackElapsed = {
-            timestamp: null,
-            elapsed: null,
+            timestamp: undefined,
+            elapsed: undefined,
         },
 
         $musicSearchForm = $('#music-search-form'),
@@ -125,6 +125,10 @@ $(document).ready(function() {
                         $('#seek-time-length').text(length ? timeToStr(length) : '-:--');
 
                         seekInterval = setInterval(function() {
+                            if (curTrackElapsed.elapsed === undefined) {
+                                return;
+                            }
+
                             var length = parseInt($trackSeeker.attr('max'));
                             var value = parseInt((new Date().getTime() - curTrackElapsed.timestamp)/1000)
                                 + curTrackElapsed.elapsed;
@@ -169,7 +173,7 @@ $(document).ready(function() {
             var updatePlayingTrack = function(track) {
                 return function() {
                     var $curTrack = $playlistContent.find('.playlist-track').filter(
-                        function() { return $(this).data('pos') == track.pos });
+                        function() { return $(this).data('file') === track.file });
 
                     if ($curTrack.length === 0) {
                         return;

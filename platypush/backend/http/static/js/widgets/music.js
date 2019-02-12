@@ -105,20 +105,26 @@ $(document).ready(function() {
     };
 
     var refreshStatus = function(status) {
+        if (!status) {
+            return;
+        }
+
         if ('state' in status) {
             setState(state=status.state);
         }
 
         if ('elapsed' in status) {
             setTrackElapsed(status.elapsed);
-        }
-
-        if ('position' in status) {
+        } else if ('position' in status) {
             setTrackElapsed(status.position);
         }
     };
 
     var refreshTrack = function(track) {
+        if (!track) {
+            return;
+        }
+
         if ('time' in track) {
             setTrackTime(track.time);
         }
