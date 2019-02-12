@@ -131,7 +131,7 @@ $(document).ready(function() {
         });
     };
 
-    const startStreaming = function(media, subtitles) {
+    const startStreaming = function(media, subtitles, relativeURIs) {
         if (media.startsWith('magnet:?')) {
             return new Promise((resolve, reject) => {
                 startStreamingTorrent(media)
@@ -148,21 +148,29 @@ $(document).ready(function() {
                 data: JSON.stringify({
                     'source': media,
                     'subtitles': subtitles,
-                }),
+                })
+            }).done((response) => {
+                var url = response.url;
+                var subs;
+                if ('subtitles_url' in response) {
+                    subs = response.subtitles_url;
+                }
 
-                complete: (xhr, textStatus) => {
-                    if (xhr.status == 200) {
-                        var uri = xhr.responseJSON.url.match(/https?:\/\/[^\/]+(\/media\/.*)/)[1]
-                        var subtitles;
-                        if ('subtitles_url' in xhr.responseJSON) {
-                            subtitles = xhr.responseJSON.subtitles_url.match(/https?:\/\/[^\/]+(\/media\/.*)/)[1]
-                        }
-
-                        resolve(uri, subtitles);
-                    } else {
-                        reject(xhr.responseText);
+                if (relativeURIs) {
+                    url = url.match(/https?:\/\/[^\/]+(\/media\/.*)/)[1];
+                    if (subs) {
+                        subs = subs.match(/https?:\/\/[^\/]+(\/media\/.*)/)[1];
                     }
-                },
+                }
+
+                var ret = { 'url': url, 'subtitles': undefined };
+                if (subs) {
+                    ret.subtitles = subs;
+                }
+
+                resolve(ret);
+            }).fail((xhr) => {
+                reject(xhr.responseText);
             });
         });
     };
@@ -229,33 +237,43 @@ $(document).ready(function() {
             var requestArgs = {
                 action: 'media.chromecast.play',
                 args: {
-                    'resource': resource,
                     'chromecast': device,
                 },
             };
 
-            // TODO support for subtitles on Chromecast through internal streaming server
+            startStreaming(resource, subtitles).then((response) => {
+                requestArgs.args.resource = response.url;
+                // XXX subtitles currently break the Chromecast playback,
+                // see https://github.com/balloob/pychromecast/issues/74
+                // if (response.subtitles) {
+                //     requestArgs.args.subtitles = response.subtitles;
+                // }
 
-            run(requestArgs).then((response) => {
-                resolve(response);
+                return run(requestArgs);
+            }).then((response) => {
+                if ('subtitles' in requestArgs) {
+                    resolve(requestArgs.args.resource, requestArgs.args.subtitles);
+                } else {
+                    resolve(requestArgs.args.resource);
+                }
             }).catch((error) => {
-                reject(error.message);
+                reject(error);
             });
         });
     };
 
     const playInBrowser = (resource, subtitles) => {
         return new Promise((resolve, reject) => {
-            startStreaming(resource, subtitles).then((url, subtitles) => {
+            startStreaming(resource, subtitles, true).then((response) => {
                 browserVideoWindow = window.open(
-                    url + '?webplayer', '_blank');
+                    response.url + '?webplayer', '_blank');
 
                 browserVideoWindow.addEventListener('load', () => {
                     browserVideoElement = browserVideoWindow.document
                         .querySelector('#video-player');
                 });
 
-                resolve(url, subtitles);
+                resolve(response.url, response.subtitles);
             }).catch((error) => {
                 reject(error);
             });
@@ -357,9 +375,9 @@ $(document).ready(function() {
             };
 
             onVideoLoading();
-            startStreaming(resource)
-                .then((url) => {
-                    url = url + '?download'
+            startStreaming(resource, undefined, true)
+                .then((response) => {
+                    var url = response.url + '?download'
                     window.open(url, '_blank');
                     resolve(url);
                 })
@@ -470,12 +488,7 @@ $(document).ready(function() {
             run({
                 action: 'media.remove_subtitles'
             }).then((response) => {
-                return run({
-                    action: 'media.set_subtitles',
-                    args: {
-                        'filename': subtitles,
-                    }
-                })
+                return setSubtitles(subtitles);
             }).then((response) => {
                 resolve(response);
             }).catch((error) => {
@@ -693,6 +706,7 @@ $(document).ready(function() {
 
             onSuccess = function(results) {
                 $devsList.find('.cast-device[data-remote]').remove();
+                $devsRefreshBtn.removeClass('disabled');
 
                 if (!results || results.response.errors.length) {
                     return;
