@@ -38,12 +38,12 @@ class MusicMopidyBackend(Backend):
         * Mopidy installed and the HTTP service enabled
     """
 
-    def __init__(self, server='localhost', port=6680, **kwargs):
+    def __init__(self, host='localhost', port=6680, **kwargs):
         super().__init__(**kwargs)
 
-        self.server = server
+        self.host = host
         self.port = int(port)
-        self.url = 'ws://{}:{}/mopidy/ws'.format(server, port)
+        self.url = 'ws://{}:{}/mopidy/ws'.format(host, port)
         self._msg_id = 0
         self._latest_status = self._get_tracklist_status()
 
@@ -132,7 +132,7 @@ class MusicMopidyBackend(Backend):
             return
 
         status = {}
-        track = event.get('tl_track', {})
+        track = msg.get('tl_track', {})
 
         if event == 'track_playback_paused':
             status['state'] = 'pause'
@@ -158,7 +158,7 @@ class MusicMopidyBackend(Backend):
                 return
             self.bus.post(NewPlayingTrackEvent(status=status, track=track))
         elif event == 'stream_title_changed':
-            m = re.match('^\s*(.+?)\s+-\s+(.*)\s*$', event.get('title', ''))
+            m = re.match('^\s*(.+?)\s+-\s+(.*)\s*$', msg.get('title', ''))
             if not m:
                 return
 
@@ -198,6 +198,8 @@ class MusicMopidyBackend(Backend):
 
     def run(self):
         super().run()
+        self.logger.info('Started Mopidy events backend on {}:{}'.format(
+            self.host, self.port))
 
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
