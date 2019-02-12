@@ -159,8 +159,8 @@ class MusicMopidyBackend(Backend):
                                             status=status, track=track))
             elif event == 'tracklist_changed':
                 tracklist = [self._parse_track(t, pos=i)
-                            for i, t in self._communicate({
-                                'method': 'core.tracklist.get_tl_tracks' })]
+                            for i, t in enumerate(self._communicate({
+                                'method': 'core.tracklist.get_tl_tracks' }))]
 
                 self.bus.post(PlaylistChangeEvent(changes=tracklist))
             elif event == 'options_changed':
