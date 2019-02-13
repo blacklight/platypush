@@ -169,7 +169,7 @@ class MusicMopidyBackend(Backend):
                 self.bus.post(MuteChangeEvent(mute=status['mute'],
                                             status=status, track=track))
             elif event == 'seeked':
-                status['position'] = msg.get('time_position')
+                status['position'] = msg.get('time_position')/1000
                 self.bus.post(SeekChangeEvent(position=status['position'],
                                             status=status, track=track))
             elif event == 'tracklist_changed':
