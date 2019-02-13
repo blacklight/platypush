@@ -241,8 +241,8 @@ $(document).ready(function() {
                 },
             };
 
-            startStreaming(resource, subtitles).then((response) => {
-                requestArgs.args.resource = response.url;
+            startStreaming(resource, subtitles).then((url) => {
+                requestArgs.args.resource = url;
                 // XXX subtitles currently break the Chromecast playback,
                 // see https://github.com/balloob/pychromecast/issues/74
                 // if (response.subtitles) {
