@@ -93,6 +93,16 @@ def get_plugin(plugin_name, reload=False):
     plugin_conf = Config.get_plugins()[plugin_name] \
         if plugin_name in Config.get_plugins() else {}
 
+    if 'disabled' in plugin_conf:
+        if plugin_conf['disabled'] is True:
+            return None
+        del plugin_conf['disabled']
+
+    if 'enabled' in plugin_conf:
+        if plugin_conf['enabled'] is False:
+            return None
+        del plugin_conf['enabled']
+
     try:
         plugin_class = getattr(plugin, cls_name)
     except AttributeError as e:
