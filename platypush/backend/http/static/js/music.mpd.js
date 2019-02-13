@@ -63,6 +63,7 @@ $(document).ready(function() {
             if ('time' in status) {
                 if (seekInterval) {
                     clearInterval(seekInterval);
+                    seekInterval = undefined;
                 }
 
                 if (typeof status.time === 'string' && status.time.indexOf(':') > -1) {
@@ -98,6 +99,11 @@ $(document).ready(function() {
                         $curTrack.find('.no-track').show();
 
                         $trackSeeker.prop('disabled', true);
+                        if (seekInterval) {
+                            clearInterval(seekInterval);
+                            seekInterval = undefined;
+                        }
+
                         $('.seek-time').text('-:--');
                         break;
 
