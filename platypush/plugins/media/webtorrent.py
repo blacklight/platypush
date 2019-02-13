@@ -44,7 +44,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
     # Download at least 10 MBs before starting streaming
     _download_size_before_streaming = 10 * 2**20
 
-    _web_stream_ready_timeout = 20
+    _web_stream_ready_timeout = 120
 
     def __init__(self, webtorrent_bin=None, webtorrent_port=None, *args,
                  **kwargs):
