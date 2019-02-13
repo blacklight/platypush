@@ -43,7 +43,7 @@ class MusicMpdPlugin(MusicPlugin):
             self.client.connect(self.host, self.port)
         return self.client
 
-    def _exec(self, method, *args, **kwargs):
+    def _exec(self, method, n_tries=2, *args, **kwargs):
         return_status = kwargs.pop('return_status') \
             if 'return_status' in kwargs else True
 
@@ -60,7 +60,12 @@ class MusicMpdPlugin(MusicPlugin):
             self.logger.warning('Exception while executing MPD method {}: {}'.
                                 format(method, str(e)))
             self.client = None
-            return (None, str(e))
+
+            if n_tries > 0:
+                return self._exec(method, n_tries=n_tries-1,
+                                  return_status=return_status, *args, **kwargs)
+            else:
+                return (None, str(e))
 
     @action
     def play(self, resource=None):
