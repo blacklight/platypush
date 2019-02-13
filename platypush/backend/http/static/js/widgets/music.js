@@ -90,6 +90,11 @@ $(document).ready(function() {
             refreshElapsedInterval = undefined;
         }
 
+        if (time === undefined) {
+            $timeElapsedElement.text('-:--');
+            return;
+        }
+
         timeElapsed = parseInt(time);
         $timeElapsedElement.text(secondsToTimeString(timeElapsed));
 
@@ -111,6 +116,9 @@ $(document).ready(function() {
 
         if ('state' in status) {
             setState(state=status.state);
+            if (status.state === 'stop') {
+                setTrackElapsed();
+            }
         }
 
         if ('elapsed' in status) {
