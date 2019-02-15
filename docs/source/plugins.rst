@@ -34,6 +34,8 @@ Plugins
     platypush/plugins/light.rst
     platypush/plugins/media.kodi.rst
     platypush/plugins/media.omxplayer.rst
+    platypush/plugins/media.subtitles.rst
+    platypush/plugins/media.webtorrent.rst
     platypush/plugins/midi.rst
     platypush/plugins/mqtt.rst
     platypush/plugins/music.mpd.rst
