@@ -13,6 +13,13 @@ from enum import Enum
 from threading import Thread, Event, RLock
 
 from .core import Sound, Mix
+
+from platypush.context import get_bus
+from platypush.message.event.sound import SoundPlaybackStartedEvent, \
+    SoundPlaybackPausedEvent, SoundPlaybackStoppedEvent, \
+    SoundRecordingStartedEvent, SoundRecordingPausedEvent, \
+    SoundRecordingStoppedEvent
+
 from platypush.plugins import Plugin, action
 
 
@@ -31,6 +38,15 @@ class RecordingState(Enum):
 class SoundPlugin(Plugin):
     """
     Plugin to interact with a sound device.
+
+    Triggers:
+
+        * :class:`platypush.message.event.sound.SoundPlaybackStartedEvent` on playback start
+        * :class:`platypush.message.event.sound.SoundPlaybackStoppedEvent` on playback stop
+        * :class:`platypush.message.event.sound.SoundPlaybackPausedEvent` on playback pause
+        * :class:`platypush.message.event.sound.SoundRecordingStartedEvent` on recording start
+        * :class:`platypush.message.event.sound.SoundRecordingStoppedEvent` on recording stop
+        * :class:`platypush.message.event.sound.SoundRecordingPausedEvent` on recording pause
 
     Requires:
 
@@ -384,13 +400,13 @@ class SoundPlugin(Plugin):
 
 
     @action
-    def record(self, file=None, duration=None, device=None, sample_rate=None,
+    def record(self, outfile=None, duration=None, device=None, sample_rate=None,
                blocksize=None, latency=0, channels=1, subtype='PCM_24'):
         """
         Records audio to a sound file (support formats: wav, raw)
 
-        :param file: Sound file (default: the method will create a temporary file with the recording)
-        :type file: str
+        :param outfile: Sound file (default: the method will create a temporary file with the recording)
+        :type outfile: str
 
         :param duration: Recording duration in seconds (default: record until stop event)
         :type duration: float
@@ -414,81 +430,90 @@ class SoundPlugin(Plugin):
         :type subtype: str
         """
 
-        import sounddevice as sd
+        def recording_thread(outfile, duration, device, sample_rate, blocksize,
+                             latency, channels, subtype):
+            import sounddevice as sd
 
-        self.recording_paused_changed.clear()
+            self.recording_paused_changed.clear()
 
-        if file:
-            file = os.path.abspath(os.path.expanduser(file))
-        else:
-            file = tempfile.mktemp(prefix='platypush_recording_', suffix='.wav',
-                                   dir='')
+            if outfile:
+                outfile = os.path.abspath(os.path.expanduser(outfile))
+            else:
+                outfile = tempfile.NamedTemporaryFile(
+                    prefix='recording_', suffix='.wav', delete=False,
+                    dir=tempfile.gettempdir()).name
 
-        if os.path.isfile(file):
-            self.logger.info('Removing existing audio file {}'.format(file))
-            os.unlink(file)
+            if os.path.isfile(outfile):
+                self.logger.info('Removing existing audio file {}'.format(outfile))
+                os.unlink(outfile)
 
-        if device is None:
-            device = self.input_device
-        if device is None:
-            device = self._get_default_device('input')
+            if device is None:
+                device = self.input_device
+            if device is None:
+                device = self._get_default_device('input')
 
-        if sample_rate is None:
-            dev_info = sd.query_devices(device, 'input')
-            sample_rate = int(dev_info['default_samplerate'])
+            if sample_rate is None:
+                dev_info = sd.query_devices(device, 'input')
+                sample_rate = int(dev_info['default_samplerate'])
 
-        if blocksize is None:
-            blocksize = self.input_blocksize
+            if blocksize is None:
+                blocksize = self.input_blocksize
 
-        q = queue.Queue()
+            q = queue.Queue()
 
-        def audio_callback(indata, frames, time, status):
-            while self._get_recording_state() == RecordingState.PAUSED:
-                self.recording_paused_changed.wait()
+            def audio_callback(indata, frames, time, status):
+                while self._get_recording_state() == RecordingState.PAUSED:
+                    self.recording_paused_changed.wait()
 
-            if status:
-                self.logger.warning('Recording callback status: {}'.format(
-                    str(status)))
+                if status:
+                    self.logger.warning('Recording callback status: {}'.format(
+                        str(status)))
 
-            q.put(indata.copy())
+                q.put(indata.copy())
 
 
-        try:
-            import soundfile as sf
-            import numpy
+            try:
+                import soundfile as sf
+                import numpy
 
-            with sf.SoundFile(file, mode='x', samplerate=sample_rate,
-                              channels=channels, subtype=subtype) as f:
-                with sd.InputStream(samplerate=sample_rate, device=device,
-                                    channels=channels, callback=audio_callback,
-                                    latency=latency, blocksize=blocksize):
-                    self.start_recording()
-                    self.logger.info('Started recording from device [{}] to [{}]'.
-                                    format(device, file))
+                with sf.SoundFile(outfile, mode='x', samplerate=sample_rate,
+                                channels=channels, subtype=subtype) as f:
+                    with sd.InputStream(samplerate=sample_rate, device=device,
+                                        channels=channels, callback=audio_callback,
+                                        latency=latency, blocksize=blocksize):
+                        self.start_recording()
+                        get_bus().post(SoundRecordingStartedEvent(filename=outfile))
+                        self.logger.info('Started recording from device [{}] to [{}]'.
+                                        format(device, outfile))
 
-                    recording_started_time = time.time()
+                        recording_started_time = time.time()
 
-                    while self._get_recording_state() != RecordingState.STOPPED \
-                            and (duration is None or
-                                 time.time() - recording_started_time < duration):
-                        while self._get_recording_state() == RecordingState.PAUSED:
-                            self.recording_paused_changed.wait()
+                        while self._get_recording_state() != RecordingState.STOPPED \
+                                and (duration is None or
+                                    time.time() - recording_started_time < duration):
+                            while self._get_recording_state() == RecordingState.PAUSED:
+                                self.recording_paused_changed.wait()
 
-                        get_args = {
-                            'block': True,
-                            'timeout': max(0, duration - (time.time() -
-                                                          recording_started_time))
-                        } if duration is not None else {}
+                            get_args = {
+                                'block': True,
+                                'timeout': max(0, duration - (time.time() -
+                                                            recording_started_time))
+                            } if duration is not None else {}
 
-                        data = q.get(**get_args)
-                        f.write(data)
+                            data = q.get(**get_args)
+                            f.write(data)
 
-                f.flush()
+                    f.flush()
 
-        except queue.Empty as e:
-            self.logger.warning('Recording timeout: audio callback failed?')
-        finally:
-            self.stop_recording()
+            except queue.Empty as e:
+                self.logger.warning('Recording timeout: audio callback failed?')
+            finally:
+                self.stop_recording()
+                get_bus().post(SoundRecordingStoppedEvent(filename=outfile))
+
+        Thread(target=recording_thread, args=(
+            outfile, duration, device, sample_rate, blocksize, latency, channels,
+            subtype)).start()
 
 
     @action
