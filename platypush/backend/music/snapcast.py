@@ -31,10 +31,11 @@ class MusicSnapcastBackend(Backend):
     """
 
     _DEFAULT_SNAPCAST_PORT = 1705
+    _DEFAULT_POLL_SECONDS = 5   # Poll servers each 5 seconds
     _SOCKET_EOL = '\r\n'.encode()
 
     def __init__(self, hosts=['localhost'], ports=[_DEFAULT_SNAPCAST_PORT],
-                 *args, **kwargs):
+                 poll_seconds=_DEFAULT_POLL_SECONDS, *args, **kwargs):
         """
         :param hosts: List of Snapcast server names or IPs to monitor (default:
             `['localhost']`
@@ -43,12 +44,17 @@ class MusicSnapcastBackend(Backend):
         :param ports: List of control ports for the configured Snapcast servers
             (default: `[1705]`)
         :type ports: list[int]
+
+        :param poll_seconds: How often the backend will poll remote servers for
+            status updated (default: 5 seconds)
+        :type poll_seconds: float
         """
 
         super().__init__(*args, **kwargs)
 
         self.hosts = hosts[:]
         self.ports = ports[:]
+        self.poll_seconds = poll_seconds
         self._socks = {}
         self._threads = {}
         self._statuses = {}
@@ -142,7 +148,7 @@ class MusicSnapcastBackend(Backend):
 
                 try:
                     self._disconnect(host, port)
-                    time.sleep(5)
+                    time.sleep(self.poll_seconds)
                 except:
                     pass
 
@@ -168,9 +174,10 @@ class MusicSnapcastBackend(Backend):
 
                     try:
                         self._disconnect(host, port)
-                        time.sleep(5)
                     except:
                         pass
+                    finally:
+                        time.sleep(self.poll_seconds)
 
         return _thread
 
