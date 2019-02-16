@@ -31,7 +31,7 @@ class MusicSnapcastBackend(Backend):
     """
 
     _DEFAULT_SNAPCAST_PORT = 1705
-    _DEFAULT_POLL_SECONDS = 5   # Poll servers each 5 seconds
+    _DEFAULT_POLL_SECONDS = 10   # Poll servers each 10 seconds
     _SOCKET_EOL = '\r\n'.encode()
 
     def __init__(self, hosts=['localhost'], ports=[_DEFAULT_SNAPCAST_PORT],
@@ -46,7 +46,7 @@ class MusicSnapcastBackend(Backend):
         :type ports: list[int]
 
         :param poll_seconds: How often the backend will poll remote servers for
-            status updated (default: 5 seconds)
+            status updated (default: 10 seconds)
         :type poll_seconds: float
         """
 
