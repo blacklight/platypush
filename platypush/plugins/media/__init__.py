@@ -1,5 +1,6 @@
 import enum
 import os
+import queue
 import re
 import subprocess
 import threading
@@ -62,6 +63,9 @@ class MediaPlugin(Plugin):
 
     _supported_media_plugins = {'media.mplayer', 'media.omxplayer',
                                 'media.chromecast'}
+
+    _supported_media_types = ['file', 'torrent', 'youtube']
+    _default_search_timeout = 60  # 60 seconds
 
     def __init__(self, media_dirs=[], download_dir=None, env=None,
                  *args, **kwargs):
@@ -246,7 +250,8 @@ class MediaPlugin(Plugin):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
-    def search(self, query, types=None, queue_results=False, autoplay=False):
+    def search(self, query, types=None, queue_results=False, autoplay=False,
+               search_timeout=_default_search_timeout):
         """
         Perform a video search.
 
@@ -261,24 +266,40 @@ class MediaPlugin(Plugin):
 
         :param autoplay: Play the first result of the search (default: False)
         :type autoplay: bool
+
+        :param search_timeout: Search timeout (default: 60 seconds)
+        :type search_timeout: float
         """
 
-        results = []
+        results = {}
+        results_queues = {}
+        worker_threads = {}
+
         if types is None:
-            types = { 'youtube', 'file', 'torrent' }
+            types = self._supported_media_types
 
-        if 'file' in types:
-            file_results = self.file_search(query).output
-            results.extend(file_results)
+        for media_type in types:
+            results[media_type] = []
+            results_queues[media_type] = queue.Queue()
+            search_hndl = self._get_search_handler_by_type(media_type)
+            worker_threads[media_type] = threading.Thread(
+                target=self._search_worker(query=query, search_hndl=search_hndl,
+                                           results_queue=results_queues[media_type]))
+            worker_threads[media_type].start()
 
-        if 'torrent' in types:
-            torrents = get_plugin('torrent')
-            torrent_results = torrents.search(query).output
-            results.extend(torrent_results)
+        for media_type in types:
+            try:
+                results[media_type].extend(
+                    results_queues[media_type].get(timeout=search_timeout))
+            except queue.Empty:
+                self.logger.warning('Search for "{}" media type {} timed out'.
+                                    format(query, media_type))
 
-        if 'youtube' in types:
-            yt_results = self.youtube_search(query).output
-            results.extend(yt_results)
+        flattened_results = []
+        for media_type in self._supported_media_types:
+            if media_type in results:
+                flattened_results += results[media_type]
+        results = flattened_results
 
         if results:
             if queue_results:
@@ -290,6 +311,24 @@ class MediaPlugin(Plugin):
 
         return results
 
+    def _search_worker(self, query, search_hndl, results_queue):
+        def thread():
+            results_queue.put(search_hndl.search(query))
+        return thread
+
+    def _get_search_handler_by_type(self, search_type):
+        if search_type == 'file':
+            from .search import LocalMediaSearcher
+            return LocalMediaSearcher(self.media_dirs)
+        if search_type == 'torrent':
+            from .search import TorrentMediaSearcher
+            return TorrentMediaSearcher()
+        if search_type == 'youtube':
+            from .search import YoutubeMediaSearcher
+            return YoutubeMediaSearcher()
+
+        self.logger.warning('Unsupported search type: {}'.format(search_type))
+
     @classmethod
     def _is_video_file(cls, filename):
         return filename.lower().split('.')[-1] in cls.video_extensions
@@ -297,61 +336,6 @@ class MediaPlugin(Plugin):
     @classmethod
     def _is_audio_file(cls, filename):
         return filename.lower().split('.')[-1] in cls.audio_extensions
-
-    @action
-    def file_search(self, query):
-        try:
-            from .local import LocalMediaSearcher
-            return LocalMediaSearcher(self.media_dirs).search(query)
-        except Exception as e:
-            self.logger.warning('Could not load the local file indexer: {}. '.
-                                format(str(e)) + 'Falling back to directory scan')
-
-        results = []
-        query_tokens = [_.lower() for _ in re.split('\s+', query.strip())]
-
-        for media_dir in self.media_dirs:
-            self.logger.info('Scanning {} for "{}"'.format(media_dir, query))
-            for path, dirs, files in os.walk(media_dir):
-                for f in files:
-                    if not self._is_video_file(f) and not self._is_audio_file(f):
-                        continue
-
-                    matches_query = True
-                    for token in query_tokens:
-                        if token not in f.lower():
-                            matches_query = False
-                            break
-
-                    if not matches_query:
-                        continue
-
-                    results.append({
-                        'url': 'file://' + path + os.sep + f,
-                        'title': f,
-                    })
-
-        return results
-
-    @action
-    def youtube_search(self, query):
-        """
-        Performs a YouTube search either using the YouTube API (faster and
-        recommended, it requires the :mod:`platypush.plugins.google.youtube`
-        plugin to be configured) or parsing the HTML search results (fallback
-        slower method)
-        """
-
-        self.logger.info('Searching YouTube for "{}"'.format(query))
-
-        try:
-            return self._youtube_search_api(query=query)
-        except Exception as e:
-            self.logger.warning('Unable to load the YouTube plugin, falling ' +
-                                'back to HTML parse method: {}'.format(str(e)))
-
-            return self._youtube_search_html_parse(query=query)
-
 
     @action
     def start_streaming(self, media, download=False):

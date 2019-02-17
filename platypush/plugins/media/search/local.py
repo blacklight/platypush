@@ -1,5 +1,4 @@
 import datetime
-import logging
 import os
 import re
 import time
@@ -13,11 +12,12 @@ from sqlalchemy.sql.expression import func
 
 from platypush.config import Config
 from platypush.plugins.media import MediaPlugin
+from platypush.plugins.media.search import MediaSearcher
 
 Base = declarative_base()
 Session = scoped_session(sessionmaker())
 
-class LocalMediaSearcher:
+class LocalMediaSearcher(MediaSearcher):
     """
     This class will search for media in the local configured directories. It
     will index the media files for a faster search, it will detect which
@@ -32,7 +32,7 @@ class LocalMediaSearcher:
     _filename_separators = '[.,_\-@()\[\]\{\}\s\'\"]+'
 
     def __init__(self, dirs, *args, **kwargs):
-        self.logger = logging.getLogger(self.__class__.__name__)
+        super().__init__()
         self.dirs = dirs
         db_dir = os.path.join(Config.get('workdir'), 'media')
         os.makedirs(db_dir, exist_ok=True)
