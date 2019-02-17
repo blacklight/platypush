@@ -254,7 +254,7 @@ class MediaFile(Base):
     id = Column(Integer, primary_key=True)
     directory_id = Column(Integer, ForeignKey(
         'MediaDirectory.id', ondelete='CASCADE'), nullable=False)
-    path = Column(String, nullable=False)
+    path = Column(String, nullable=False, unique=True)
     indexed_at = Column(DateTime)
 
     @classmethod
