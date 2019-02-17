@@ -339,7 +339,7 @@ $(document).ready(function() {
             if (subtitlesConf) {
                 populateSubtitlesModal(resource).then((subs) => {
                     if ('language' in subtitlesConf) {
-                        if (subs) {
+                        if (subs && sub.length) {
                             downloadSubtitles(subs[0].SubDownloadLink, resource).then((subtitles) => {
                                 _play(resource, subtitles).finally(onVideoReady);
                                 resolve(resource, subtitles);
@@ -398,7 +398,7 @@ $(document).ready(function() {
             $mediaSubtitlesResultsContainer.hide();
 
             getSubtitles(resource).then((subs) => {
-                if (!subs) {
+                if (!subs || !subs.length) {
                     $mediaSubtitlesMessage.text('No subtitles found');
                     resolve();
                 }
