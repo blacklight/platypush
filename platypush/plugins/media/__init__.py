@@ -300,6 +300,13 @@ class MediaPlugin(Plugin):
 
     @action
     def file_search(self, query):
+        try:
+            from .local import LocalMediaSearcher
+            return LocalMediaSearcher(self.media_dirs).search(query)
+        except Exception as e:
+            self.logger.warning('Could not load the local file indexer: {}. '.
+                                format(str(e)) + 'Falling back to directory scan')
+
         results = []
         query_tokens = [_.lower() for _ in re.split('\s+', query.strip())]
 
