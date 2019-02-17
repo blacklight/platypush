@@ -210,12 +210,12 @@ class LocalMediaSearcher:
             query_tokens = [_.lower() for _ in re.split(
                 self._filename_separators, query.strip())]
 
-            for file_record in session.query(MediaFile). \
+            for file_record in session.query(MediaFile.path). \
                     join(MediaFileToken). \
                     join(MediaToken). \
                     filter(MediaToken.token.in_(query_tokens)). \
-                    group_by(MediaFile.id). \
-                    order_by(func.count(MediaFileToken.token_id)):
+                    group_by(MediaFile.path). \
+                    order_by(func.count(MediaFileToken.token_id).desc()):
                 results[file_record.path] = {
                     'url': 'file://' + file_record.path,
                     'title': os.path.basename(file_record.path),
