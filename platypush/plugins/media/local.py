@@ -129,7 +129,7 @@ class LocalMediaSearcher:
             self.logger.info('Directory {} is no longer accessible, removing it'.
                              format(media_dir))
             session.query(MediaDirectory) \
-                .filter(MediaDirectory.path=media_dir).delete()
+                .filter(MediaDirectory.path==media_dir).delete()
             return
 
         stored_file_records = {
