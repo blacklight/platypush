@@ -125,6 +125,13 @@ class LocalMediaSearcher:
         if not dir_record:
             dir_record = self._get_or_create_dir_entry(session, media_dir)
 
+        if not os.path.isdir(media_dir):
+            self.logger.info('Directory {} is no longer accessible, removing it'.
+                             format(media_dir))
+            session.query(MediaDirectory). \
+                filter(MediaDirectory.path=media_dir).delete()
+            return
+
         stored_file_records = {
             f.path: f for f in self._get_file_records(dir_record, session) }
 
