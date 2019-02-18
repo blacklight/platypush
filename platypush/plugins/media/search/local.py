@@ -129,7 +129,8 @@ class LocalMediaSearcher(MediaSearcher):
             self.logger.info('Directory {} is no longer accessible, removing it'.
                              format(media_dir))
             session.query(MediaDirectory) \
-                .filter(MediaDirectory.path==media_dir).delete()
+                .filter(MediaDirectory.path==media_dir) \
+                .delete(synchronize_session='fetch')
             return
 
         stored_file_records = {
@@ -177,7 +178,7 @@ class LocalMediaSearcher(MediaSearcher):
 
             session.query(MediaFile).filter(MediaFile.id.in_(
                 [ record.id for record in stored_file_records.values() ]
-            )).delete()
+            )).delete(synchronize_session='fetch')
 
         dir_record.last_indexed_at = datetime.datetime.now()
         self.logger.info('Scanned {} in {} seconds'.format(
