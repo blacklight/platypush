@@ -39,7 +39,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
             or media.omxplayer)
     """
 
-    _supported_media_plugins = { 'media.mplayer', 'media.omxplayer' }
+    _supported_media_plugins = {'media.mplayer', 'media.omxplayer',
+                                'media.webtorrent'}
 
     # Download at least 10 MBs before starting streaming
     _download_size_before_streaming = 10 * 2**20
@@ -258,6 +259,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
             if media_cls == 'MediaMplayerPlugin':
                 stop_evt = player._mplayer_stopped_event
+            elif media_cls == 'MediaMpvPlugin':
+                stop_evt = player._mpv_stopped_event
             elif media_cls == 'MediaOmxplayerPlugin':
                 stop_evt = threading.Event()
                 def stop_callback():

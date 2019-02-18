@@ -131,3 +131,6 @@ inputs
 # Mopidy backend
 websocket-client
 
+# mpv player plugin
+python-mpv
+

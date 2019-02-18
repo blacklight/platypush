@@ -25,7 +25,7 @@ class MediaPlugin(Plugin):
 
     Requires:
 
-        * A media player installed (supported so far: mplayer, omxplayer, chromecast)
+        * A media player installed (supported so far: mplayer, mpv, omxplayer, chromecast)
         * The :class:`platypush.plugins.media.webtorrent` plugin for optional torrent support through webtorrent (recommented)
         * **python-libtorrent** (``pip install python-libtorrent``), optional, for torrent support through the native Python plugin
         * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
@@ -62,7 +62,7 @@ class MediaPlugin(Plugin):
     }
 
     _supported_media_plugins = {'media.mplayer', 'media.omxplayer',
-                                'media.chromecast'}
+                                'media.mpv', 'media.chromecast'}
 
     _supported_media_types = ['file', 'torrent', 'youtube']
     _default_search_timeout = 60  # 60 seconds
@@ -145,8 +145,9 @@ class MediaPlugin(Plugin):
 
         if resource.startswith('youtube:') \
                 or resource.startswith('https://www.youtube.com/watch?v='):
-            if self.__class__.__name__ == 'MediaChromecastPlugin':
-                # The Chromecast has already its way to handle YouTube
+            if self.__class__.__name__ == 'MediaChromecastPlugin' or \
+                    self.__class__.__name__ == 'MediaMpvPlugin':
+                # The Chromecast and mpv have already their way to handle YouTube
                 return resource
 
             resource = self._get_youtube_content(resource)
@@ -449,6 +450,25 @@ class MediaPlugin(Plugin):
 
     def is_local(self):
         return self._is_local
+
+
+    def get_subtitles_file(self, subtitles):
+        if not subtitles:
+            return
+
+        if subtitles.startswith('file://'):
+            subtitles = subtitles[len('file://'):]
+        if os.path.isfile(subtitles):
+            return os.path.abspath(subtitles)
+        else:
+            import requests
+            content = requests.get(subtitles).content
+            f = tempfile.NamedTemporaryFile(prefix='media_subs_',
+                                            suffix='.srt', delete=False)
+
+            with f:
+                f.write(content)
+            return f.name
 
 
 # vim:sw=4:ts=4:et:

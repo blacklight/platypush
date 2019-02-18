@@ -241,24 +241,6 @@ class MediaMplayerPlugin(MediaPlugin):
 
         return _thread
 
-    def _get_subtitles_file(self, subtitles):
-        if not subtitles:
-            return
-
-        if subtitles.startswith('file://'):
-            subtitles = subtitles[len('file://'):]
-        if os.path.isfile(subtitles):
-            return os.path.abspath(subtitles)
-        else:
-            import requests
-            content = requests.get(subtitles).content
-            f = tempfile.NamedTemporaryFile(prefix='media_subs_',
-                                            suffix='.srt', delete=False)
-
-            with f:
-                f.write(content)
-            return f.name
-
 
     @action
     def play(self, resource, subtitles=None, mplayer_args=None):
@@ -279,7 +261,7 @@ class MediaMplayerPlugin(MediaPlugin):
         get_bus().post(MediaPlayRequestEvent(resource=resource))
         if subtitles:
             mplayer_args = mplayer_args or []
-            mplayer_args += ['-sub', self._get_subtitles_file(subtitles)]
+            mplayer_args += ['-sub', self.get_subtitles_file(subtitles)]
 
         resource = self._get_resource(resource)
         if resource.startswith('file://'):
