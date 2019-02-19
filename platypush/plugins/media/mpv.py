@@ -88,7 +88,7 @@ class MediaMpvPlugin(MediaPlugin):
             elif evt == Event.UNPAUSE:
                 bus.post(MediaPlayEvent(resource=self._get_current_resource()))
             elif evt == Event.END_FILE or evt == Event.SHUTDOWN:
-                playback_rebounced = playback_rebounce_event.wait(timeout=1)
+                playback_rebounced = playback_rebounce_event.wait(timeout=2)
                 if playback_rebounced:
                     playback_rebounce_event.clear()
                     return
