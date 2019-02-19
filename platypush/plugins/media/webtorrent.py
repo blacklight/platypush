@@ -42,8 +42,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
     _supported_media_plugins = {'media.mplayer', 'media.omxplayer',
                                 'media.mpv', 'media.webtorrent'}
 
-    # Download at least 10 MBs before starting streaming
-    _download_size_before_streaming = 10 * 2**20
+    # Download at least 15 MBs before starting streaming
+    _download_size_before_streaming = 15 * 2**20
 
     _web_stream_ready_timeout = 120
 
