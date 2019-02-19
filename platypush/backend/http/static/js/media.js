@@ -339,7 +339,7 @@ $(document).ready(function() {
             if (subtitlesConf) {
                 populateSubtitlesModal(resource).then((subs) => {
                     if ('language' in subtitlesConf) {
-                        if (subs && sub.length) {
+                        if (subs && subs.length) {
                             downloadSubtitles(subs[0].SubDownloadLink, resource).then((subtitles) => {
                                 _play(resource, subtitles).finally(onVideoReady);
                                 resolve(resource, subtitles);
