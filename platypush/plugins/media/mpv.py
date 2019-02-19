@@ -84,9 +84,9 @@ class MediaMpvPlugin(MediaPlugin):
                 bus.post(MediaPauseEvent(resource=self._get_current_resource()))
             elif evt == Event.UNPAUSE:
                 bus.post(MediaPlayEvent(resource=self._get_current_resource()))
-            elif evt == Event.END_FILE or evt == Event.SHUTDOWN:
-                if evt == Event.SHUTDOWN:
-                    self._player = None
+            # elif evt == Event.END_FILE or evt == Event.SHUTDOWN:
+            elif evt == Event.SHUTDOWN:
+                self._player = None
                 self._mpv_stopped_event.set()
                 bus.post(MediaStopEvent())
         return callback
