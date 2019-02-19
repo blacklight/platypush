@@ -67,6 +67,8 @@ class MediaMpvPlugin(MediaPlugin):
         self._player.register_event_callback(self._event_callback())
 
     def _event_callback(self):
+        playback_rebounce_event = threading.Event()
+
         def callback(event):
             from mpv import MpvEventID as Event
             self.logger.info('Received mpv event: {}'.format(event))
@@ -76,7 +78,8 @@ class MediaMpvPlugin(MediaPlugin):
                 return
 
             bus = get_bus()
-            if evt == Event.FILE_LOADED:
+            if evt == Event.FILE_LOADED or evt == Event.START_FILE:
+                playback_rebounce_event.set()
                 self._mpv_stopped_event.clear()
                 bus.post(NewPlayingMediaEvent(resource=self._get_current_resource()))
                 bus.post(MediaPlayEvent(resource=self._get_current_resource()))
@@ -84,9 +87,14 @@ class MediaMpvPlugin(MediaPlugin):
                 bus.post(MediaPauseEvent(resource=self._get_current_resource()))
             elif evt == Event.UNPAUSE:
                 bus.post(MediaPlayEvent(resource=self._get_current_resource()))
-            # elif evt == Event.END_FILE or evt == Event.SHUTDOWN:
-            elif evt == Event.SHUTDOWN:
-                self._player = None
+            elif evt == Event.END_FILE or evt == Event.SHUTDOWN:
+                playback_rebounce_event.clear()
+                playback_rebounced = playback_rebounce_event.wait(timeout=1)
+                if playback_rebounced:
+                    return
+
+                if evt == Event.SHUTDOWN:
+                    self._player = None
                 self._mpv_stopped_event.set()
                 bus.post(MediaStopEvent())
         return callback
