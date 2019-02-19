@@ -43,18 +43,12 @@ class MediaMpvPlugin(MediaPlugin):
 
         self._player = None
         self._is_playing_torrent = False
-        self._mpv_stopped_event = threading.Event()
+        self._playback_rebounce_event = threading.Event()
+        self._on_stop_callbacks = []
 
 
     def _init_mpv(self, args=None):
         import mpv
-
-        if self._player:
-            try:
-                self.quit()
-            except Exception as e:
-                self.logger.debug('Failed to quit mpv before play: {}'.
-                                  format(str(e)))
 
         mpv_args = self.args.copy()
         if args:
@@ -67,10 +61,10 @@ class MediaMpvPlugin(MediaPlugin):
         self._player.register_event_callback(self._event_callback())
 
     def _event_callback(self):
-        playback_rebounce_event = threading.Event()
-
         def callback(event):
             from mpv import MpvEventID as Event
+            from mpv import MpvEventEndFile as EndFile
+
             self.logger.info('Received mpv event: {}'.format(event))
 
             evt = event.get('event_id')
@@ -79,23 +73,29 @@ class MediaMpvPlugin(MediaPlugin):
 
             bus = get_bus()
             if evt == Event.FILE_LOADED or evt == Event.START_FILE:
-                playback_rebounce_event.set()
-                self._mpv_stopped_event.clear()
+                self._playback_rebounce_event.set()
                 bus.post(NewPlayingMediaEvent(resource=self._get_current_resource()))
                 bus.post(MediaPlayEvent(resource=self._get_current_resource()))
+            elif evt == Event.PLAYBACK_RESTART:
+                self._playback_rebounce_event.set()
+                pass
             elif evt == Event.PAUSE:
                 bus.post(MediaPauseEvent(resource=self._get_current_resource()))
             elif evt == Event.UNPAUSE:
                 bus.post(MediaPlayEvent(resource=self._get_current_resource()))
-            elif evt == Event.SHUTDOWN:
-                playback_rebounced = playback_rebounce_event.wait(timeout=2)
+            elif evt == Event.SHUTDOWN or (
+                evt == Event.END_FILE and event.get('event', {}).get('reason')
+                in [EndFile.EOF_OR_INIT_FAILURE, EndFile.ABORTED, EndFile.QUIT]):
+                playback_rebounced = self._playback_rebounce_event.wait(timeout=0.5)
                 if playback_rebounced:
-                    playback_rebounce_event.clear()
+                    self._playback_rebounce_event.clear()
                     return
 
                 self._player = None
-                self._mpv_stopped_event.set()
                 bus.post(MediaStopEvent())
+
+                for callback in self._on_stop_callbacks:
+                    callback()
         return callback
 
     def _get_youtube_link(self, resource):
@@ -143,6 +143,7 @@ class MediaMpvPlugin(MediaPlugin):
             args['sub_file'] = self.get_subtitles_file(subtitles)
 
         resource = self._get_resource(resource)
+
         if resource.startswith('file://'):
             resource = resource[7:]
         elif resource.startswith('magnet:?'):
@@ -396,6 +397,9 @@ class MediaMpvPlugin(MediaPlugin):
             'state': (PlayerState.PAUSE.value if self._player.pause else
                       PlayerState.PLAY.value),
         }
+
+    def on_stop(self, callback):
+        self._on_stop_callbacks.append(callback)
 
     def _get_current_resource(self):
         if not self._player or not self._player.stream_path:

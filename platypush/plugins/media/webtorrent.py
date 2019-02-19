@@ -236,6 +236,10 @@ class MediaWebtorrentPlugin(MediaPlugin):
                         media_file, player.__class__.__name__,
                         webtorrent_url))
 
+                subfile = self.get_subtitles(media)
+                if subfile:
+                    player_args['subtitles'] = subfile
+
                 player.play(media, **player_args)
                 self.logger.info('Waiting for player to terminate')
 
@@ -260,7 +264,10 @@ class MediaWebtorrentPlugin(MediaPlugin):
             if media_cls == 'MediaMplayerPlugin':
                 stop_evt = player._mplayer_stopped_event
             elif media_cls == 'MediaMpvPlugin':
-                stop_evt = player._mpv_stopped_event
+                stop_evt = threading.Event()
+                def stop_callback():
+                    stop_evt.set()
+                player.on_stop(stop_callback)
             elif media_cls == 'MediaOmxplayerPlugin':
                 stop_evt = threading.Event()
                 def stop_callback():
@@ -282,6 +289,24 @@ class MediaWebtorrentPlugin(MediaPlugin):
             os.makedirs(d, exist_ok=True)
             return d
 
+    def get_subtitles(self, filepath):
+        try:
+            plugin = get_plugin('media.subtitles')
+            if not plugin or not plugin.languages:
+                return
+
+            subs = plugin.get_subtitles(filepath).output
+            if not subs:
+                return
+
+            sub = plugin.download_subtitles(subs[0]['SubDownloadLink'],
+                                            filepath).output
+
+            if sub:
+                return sub['filename']
+        except Exception as e:
+            self.logger.warning('Could not get subtitles for {}: {}'.format(
+                filepath, str(e)))
 
     @action
     def play(self, resource, player=None, download_only=False, **player_args):
