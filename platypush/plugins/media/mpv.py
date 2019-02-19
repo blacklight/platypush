@@ -317,7 +317,7 @@ class MediaMpvPlugin(MediaPlugin):
         if not self._player:
             return (None, 'No mpv instance is running')
 
-        for k,v in props:
+        for k,v in props.items():
             setattr(self._player, k, v)
         return props
 
