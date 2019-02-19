@@ -69,7 +69,7 @@ class MediaMpvPlugin(MediaPlugin):
     def _event_callback(self):
         def callback(event):
             from mpv import MpvEventID as Event
-            self.logger.debug('Received mpv event: {}'.format(event))
+            self.logger.info('Received mpv event: {}'.format(event))
 
             evt = event.get('event_id')
             if not evt:
