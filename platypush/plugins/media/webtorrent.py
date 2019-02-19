@@ -40,7 +40,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
     """
 
     _supported_media_plugins = {'media.mplayer', 'media.omxplayer',
-                                'media.webtorrent'}
+                                'media.mpv', 'media.webtorrent'}
 
     # Download at least 10 MBs before starting streaming
     _download_size_before_streaming = 10 * 2**20
@@ -51,7 +51,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
                  **kwargs):
         """
         media.webtorrent will use the default media player plugin you have
-        configured (e.g. mplayer, omxplayer) to stream the torrent.
+        configured (e.g. mplayer, omxplayer, mpv) to stream the torrent.
 
         :param webtorrent_bin: Path to your webtorrent executable. If not set,
             then Platypush will search for the right executable in your PATH
@@ -293,7 +293,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
         :type resource: str
 
         :param player: If set, use this plugin type as a player for the
-            torrent. Supported types: 'mplayer', 'omxplayer', 'chromecast'.
+            torrent. Supported types: 'mplayer', 'omxplayer', 'chromecast', 'mpv'.
             If not set, then the default configured media plugin will be used.
         :type player: str
 
