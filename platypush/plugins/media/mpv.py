@@ -60,7 +60,7 @@ class MediaMpvPlugin(MediaPlugin):
         if args:
             mpv_args.update(args)
 
-        for k,v in self._env:
+        for k,v in self._env.items():
             os.environ[k] = v
 
         self._player = mpv.MPV(**mpv_args)
