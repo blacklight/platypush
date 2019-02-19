@@ -187,7 +187,7 @@ $(document).ready(function() {
 
     const getSubtitles = function(resource) {
         return new Promise((resolve, reject) => {
-            if (!window.config.media.subtitles) {
+            if (!window.config.media.subtitles || resource.startsWith('magnet:?')) {
                 resolve();  // media.subtitles plugin not configured
             }
 
@@ -440,7 +440,7 @@ $(document).ready(function() {
                 $mediaSubtitlesResultsContainer.show();
                 resolve(subs);
             }).catch((error) => {
-                $mediaSubtitlesMessage.text('Unable to load subtitles: ' + error.message);
+                $mediaSubtitlesMessage.text('Unable to load subtitles: ' + error);
                 reject(error);
             });
         });
