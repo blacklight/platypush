@@ -54,6 +54,33 @@ class MediaPauseEvent(MediaEvent):
         super().__init__(*args, **kwargs)
 
 
+class MediaSeekEvent(MediaEvent):
+    """
+    Event triggered when the time position in the media changes
+    """
+
+    def __init__(self, position, *args, **kwargs):
+        super().__init__(*args, position=position, **kwargs)
+
+
+class MediaVolumeChangedEvent(MediaEvent):
+    """
+    Event triggered when the media volume changes
+    """
+
+    def __init__(self, volume, *args, **kwargs):
+        super().__init__(*args, volume=volume, **kwargs)
+
+
+class MediaMuteChangedEvent(MediaEvent):
+    """
+    Event triggered when the media is muted/unmuted
+    """
+
+    def __init__(self, mute, *args, **kwargs):
+        super().__init__(*args, mute=mute, **kwargs)
+
+
 class NewPlayingMediaEvent(MediaEvent):
     """
     Event triggered when a new media source is being played

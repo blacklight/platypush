@@ -39,8 +39,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
             or media.omxplayer)
     """
 
-    _supported_media_plugins = {'media.mplayer', 'media.omxplayer',
-                                'media.mpv', 'media.webtorrent'}
+    _supported_media_plugins = {'media.mplayer', 'media.omxplayer', 'media.mpv',
+                                'media.vlc', 'media.webtorrent'}
 
     # Download at least 15 MBs before starting streaming
     _download_size_before_streaming = 15 * 2**20
@@ -263,7 +263,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
             if media_cls == 'MediaMplayerPlugin':
                 stop_evt = player._mplayer_stopped_event
-            elif media_cls == 'MediaMpvPlugin':
+            elif media_cls == 'MediaMpvPlugin' or media_cls == 'MediaVlcPlugin':
                 stop_evt = threading.Event()
                 def stop_callback():
                     stop_evt.set()
@@ -318,7 +318,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
         :type resource: str
 
         :param player: If set, use this plugin type as a player for the
-            torrent. Supported types: 'mplayer', 'omxplayer', 'chromecast', 'mpv'.
+            torrent. Supported types: 'mplayer', 'vlc', 'omxplayer', 'chromecast', 'mpv'.
             If not set, then the default configured media plugin will be used.
         :type player: str
 

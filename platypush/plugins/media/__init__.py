@@ -25,7 +25,7 @@ class MediaPlugin(Plugin):
 
     Requires:
 
-        * A media player installed (supported so far: mplayer, mpv, omxplayer, chromecast)
+        * A media player installed (supported so far: mplayer, vlc, mpv, omxplayer, chromecast)
         * The :class:`platypush.plugins.media.webtorrent` plugin for optional torrent support through webtorrent (recommented)
         * **python-libtorrent** (``pip install python-libtorrent``), optional, for torrent support through the native Python plugin
         * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
@@ -61,8 +61,8 @@ class MediaPlugin(Plugin):
         'f4b',
     }
 
-    _supported_media_plugins = {'media.mplayer', 'media.omxplayer',
-                                'media.mpv', 'media.chromecast'}
+    _supported_media_plugins = {'media.mplayer', 'media.omxplayer', 'media.mpv',
+                                'media.vlc', 'media.chromecast'}
 
     _supported_media_types = ['file', 'torrent', 'youtube']
     _default_search_timeout = 60  # 60 seconds
@@ -131,6 +131,7 @@ class MediaPlugin(Plugin):
 
             self.media_dirs.add(self.download_dir)
 
+        self._is_playing_torrent = False
         self._videos_queue = []
 
     def _get_resource(self, resource):
@@ -170,6 +171,14 @@ class MediaPlugin(Plugin):
                 raise RuntimeError('Unable to download torrent {}'.format(resource))
 
         return resource
+
+    def _stop_torrent(self):
+        if self._is_playing_torrent:
+            try:
+                get_plugin('media.webtorrent').quit()
+            except:
+                self.logger.warning('Cannot quit the webtorrent instance: {}'.
+                                    format(str(e)))
 
     @action
     def play(self, resource, *args, **kwargs):

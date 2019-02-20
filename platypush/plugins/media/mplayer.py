@@ -282,14 +282,6 @@ class MediaMplayerPlugin(MediaPlugin):
         get_bus().post(MediaPauseEvent())
         return ret
 
-    def _stop_torrent(self):
-        if self._is_playing_torrent:
-            try:
-                get_plugin('media.webtorrent').quit()
-            except:
-                self.logger.warning('Cannot quit the webtorrent instance: {}'.
-                                    format(str(e)))
-
     @action
     def stop(self):
         """ Stop the playback """
