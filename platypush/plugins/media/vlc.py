@@ -21,26 +21,25 @@ class MediaVlcPlugin(MediaPlugin):
         * **vlc** executable on your system
     """
 
-    _default_vlc_args = []
-
-    def __init__(self, args=None, *argv, **kwargs):
+    def __init__(self, *args, fullscreen=False, volume=100, **kwargs):
         """
         Create the vlc wrapper.
 
-        :param args: Default arguments that will be passed to the vlc executable
-            as a list. See `vlc --help` for available options.
-        :type args: list[str]
+        :param fullscreen: Set to True if you want media files to be opened in
+            fullscreen by default (can be overridden by `.play()`) (default: False)
+        :type fullscreen: bool
+
+        :param volume: Default media volume (default: 100)
+        :type volume: int
         """
 
-        super().__init__(*argv, **kwargs)
-
-        self.args = self._default_vlc_args
-        if args:
-            self.args.update(args)
+        super().__init__(*args, **kwargs)
 
         self._player = None
         self._playback_rebounce_event = threading.Event()
         self._latest_seek = None
+        self._default_fullscreen = fullscreen
+        self._default_volume = volume
         self._on_stop_callbacks = []
 
 
@@ -58,21 +57,17 @@ class MediaVlcPlugin(MediaPlugin):
             'MediaPlayerAudioVolume',
         ] if hasattr(vlc.EventType, evt)]
 
-    def _init_vlc(self, resource, *args):
+    def _init_vlc(self, resource):
         import vlc
 
         if self._player:
             self._player.stop()
             self._player = None
 
-        vlc_args = self.args.copy()
-        if args:
-            vlc_args.update(args)
-
         for k,v in self._env.items():
             os.environ[k] = v
 
-        self._player = vlc.MediaPlayer(resource, *vlc_args)
+        self._player = vlc.MediaPlayer(resource)
 
         for evt in self._watched_event_types():
             self._player.event_manager().event_attach(
@@ -92,6 +87,7 @@ class MediaVlcPlugin(MediaPlugin):
                 event.type == EventType.MediaPlayerEndReached:
                 bus.post(MediaStopEvent())
                 if self._player:
+                    self._player.release()
                     self._player = None
                 self._latest_seek = None
                 for callback in self._on_stop_callbacks:
@@ -119,7 +115,7 @@ class MediaVlcPlugin(MediaPlugin):
 
 
     @action
-    def play(self, resource, subtitles=None, *args):
+    def play(self, resource, subtitles=None, fullscreen=None, volume=None):
         """
         Play a resource.
 
@@ -129,9 +125,13 @@ class MediaVlcPlugin(MediaPlugin):
         :param subtitles: Path to optional subtitle file
         :type subtitles: str
 
-        :param args: Extra runtime arguments that will be passed to the
-            vlc executable as a list
-        :type args: list[str]
+        :param fullscreen: Set to explicitly enable/disable fullscreen (default:
+            `fullscreen` configured value or False)
+        :type fullscreen: bool
+
+        :param volume: Set to explicitly set the playback volume (default:
+            `volume` configured value or 100)
+        :type fullscreen: bool
         """
 
         get_bus().post(MediaPlayRequestEvent(resource=resource))
@@ -143,7 +143,7 @@ class MediaVlcPlugin(MediaPlugin):
             self._is_playing_torrent = True
             return get_plugin('media.webtorrent').play(resource)
 
-        self._init_vlc(resource, *args)
+        self._init_vlc(resource)
         if subtitles:
             if subtitles.startswith('file://'):
                 subtitles = subtitles[len('file://'):]
@@ -151,6 +151,14 @@ class MediaVlcPlugin(MediaPlugin):
 
         self._is_playing_torrent = False
         self._player.play()
+
+        if fullscreen or self._default_fullscreen:
+            self.set_fullscreen(True)
+
+        if volume is not None or self._default_volume is not None:
+            self.set_volume(volume if volume is not None
+                            else self._default_volume)
+
         return self.status()
 
 
@@ -172,9 +180,7 @@ class MediaVlcPlugin(MediaPlugin):
         if not self._player:
             return (None, 'No vlc instance is running')
 
-        # XXX the .stop() call hangs for some reason
         self._player.stop()
-        self._player.release()
         return { 'state': PlayerState.STOP.value }
 
     @action
@@ -279,6 +285,13 @@ class MediaVlcPlugin(MediaPlugin):
         if not self._player:
             return (None, 'No vlc instance is running')
         self._player.toggle_fullscreen()
+
+    @action
+    def set_fullscreen(self, fullscreen=True):
+        """ Set fullscreen mode """
+        if not self._player:
+            return (None, 'No vlc instance is running')
+        self._player.set_fullscreen(fullscreen)
 
     @action
     def set_subtitles(self, filename):
