@@ -27,6 +27,7 @@ Events
     platypush/events/sensor.light.rst
     platypush/events/sensor.rst
     platypush/events/serial.rst
+    platypush/events/sound.rst
     platypush/events/torrent.rst
     platypush/events/video.rst
     platypush/events/weather.rst

@@ -33,8 +33,15 @@ Plugins
     platypush/plugins/light.hue.rst
     platypush/plugins/light.rst
     platypush/plugins/media.kodi.rst
+    platypush/plugins/media.mplayer.rst
+    platypush/plugins/media.mpv.rst
     platypush/plugins/media.omxplayer.rst
+    platypush/plugins/media.search.__init__.rst
+    platypush/plugins/media.search.local.rst
+    platypush/plugins/media.search.torrent.rst
+    platypush/plugins/media.search.youtube.rst
     platypush/plugins/media.subtitles.rst
+    platypush/plugins/media.vlc.rst
     platypush/plugins/media.webtorrent.rst
     platypush/plugins/midi.rst
     platypush/plugins/mqtt.rst
