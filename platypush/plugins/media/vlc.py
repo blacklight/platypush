@@ -37,12 +37,10 @@ class MediaVlcPlugin(MediaPlugin):
         :type volume: int
         """
 
-        import vlc
-
         super().__init__(*argv, **kwargs)
 
         self._args = args or []
-        self._instance = vlc.Instance(*self._args)
+        self._instance = None
         self._player = None
         self._latest_seek = None
         self._default_fullscreen = fullscreen
@@ -65,18 +63,28 @@ class MediaVlcPlugin(MediaPlugin):
         ] if hasattr(vlc.EventType, evt)]
 
     def _init_vlc(self, resource):
-        if self._player:
-            self._player.stop()
-            self._player = None
+        import vlc
+        self._reset_state()
 
         for k,v in self._env.items():
             os.environ[k] = v
 
+        self._instance = vlc.Instance(*self._args)
         self._player = self._instance.media_player_new(resource)
 
         for evt in self._watched_event_types():
             self._player.event_manager().event_attach(
                 eventtype=evt, callback=self._event_callback())
+
+    def _reset_state(self):
+        self._latest_seek = None
+        if self._player:
+            self._player.release()
+            self._player = None
+
+        if self._instance:
+            self._instance.release()
+            self._instance = None
 
     def _event_callback(self):
         def callback(event):
@@ -90,11 +98,8 @@ class MediaVlcPlugin(MediaPlugin):
                 bus.post(MediaPauseEvent())
             elif event.type == EventType.MediaPlayerStopped or \
                 event.type == EventType.MediaPlayerEndReached:
+                self._reset_state()
                 bus.post(MediaStopEvent())
-                if self._player:
-                    self._player.release()
-                    self._player = None
-                self._latest_seek = None
                 for callback in self._on_stop_callbacks:
                     callback()
             elif event.type == EventType.MediaPlayerTitleChanged:
