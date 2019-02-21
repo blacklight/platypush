@@ -152,7 +152,7 @@ class MediaVlcPlugin(MediaPlugin):
         if subtitles:
             if subtitles.startswith('file://'):
                 subtitles = subtitles[len('file://'):]
-            self._player.set_subtitle_file(subtitles)
+            self._player.video_set_subtitle_file(subtitles)
 
         self._is_playing_torrent = False
         self._player.play()
