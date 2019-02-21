@@ -21,9 +21,13 @@ class MediaVlcPlugin(MediaPlugin):
         * **vlc** executable on your system
     """
 
-    def __init__(self, *args, fullscreen=False, volume=100, **kwargs):
+    def __init__(self, args=None, fullscreen=False, volume=100, *argv, **kwargs):
         """
         Create the vlc wrapper.
+
+        :param args: List of extra arguments to pass to the VLC executable (e.g.
+            ``['--sub-language=en', '--snapshot-path=/mnt/snapshots']``)
+        :type args: list[str]
 
         :param fullscreen: Set to True if you want media files to be opened in
             fullscreen by default (can be overridden by `.play()`) (default: False)
@@ -33,10 +37,13 @@ class MediaVlcPlugin(MediaPlugin):
         :type volume: int
         """
 
-        super().__init__(*args, **kwargs)
+        import vlc
 
+        super().__init__(*argv, **kwargs)
+
+        self._args = args or []
+        self._instance = vlc.Instance(*self._args)
         self._player = None
-        self._playback_rebounce_event = threading.Event()
         self._latest_seek = None
         self._default_fullscreen = fullscreen
         self._default_volume = volume
@@ -58,8 +65,6 @@ class MediaVlcPlugin(MediaPlugin):
         ] if hasattr(vlc.EventType, evt)]
 
     def _init_vlc(self, resource):
-        import vlc
-
         if self._player:
             self._player.stop()
             self._player = None
@@ -67,7 +72,7 @@ class MediaVlcPlugin(MediaPlugin):
         for k,v in self._env.items():
             os.environ[k] = v
 
-        self._player = vlc.MediaPlayer(resource)
+        self._player = self._instance.media_player_new(resource)
 
         for evt in self._watched_event_types():
             self._player.event_manager().event_attach(
