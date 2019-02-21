@@ -173,7 +173,7 @@ $(document).ready(function() {
         });
 
         $('body').on('mouseup touchend', function(event) {
-            var $source = $(this);
+            var $source = $(event.target);
             if (!$source.parents('.modal').length
                     && !$source.data('modal')
                     && !$source.data('dismiss-modal')) {
@@ -196,7 +196,7 @@ $(document).ready(function() {
 
     var initPanelCloseBindings = function() {
         $('body').on('mouseup touchend', function(event) {
-            var $source = $(this);
+            var $source = $(event.target);
             if ($source.data('panel') || $source.parents('[data-panel]').length) {
                 var $panel = $source.data('panel') ? $($source.data('panel')) :
                     $($source.parents('[data-panel]').data('panel'));
