@@ -57,7 +57,7 @@ class MediaCtrlPlugin(Plugin):
     def _get_playing_plugin(self):
         if self.plugin:
             status = self.plugin.status()
-            if status['state'] == PlayerState.PLAY or state['state'] == PlayerState.PAUSE:
+            if status['state'] == PlayerState.PLAY.value or state['state'] == PlayerState.PAUSE.value:
                 return self.plugin
 
         for plugin in self._supported_plugins:
