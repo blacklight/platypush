@@ -6,4 +6,4 @@
 	url = https://github.com/BlackLight/platypush.wiki.git
 [submodule "platypush/backend/http/static/flag-icons"]
 	path = platypush/backend/http/static/flag-icons
-	url = git@github.com:lipis/flag-icon-css.git
+	url = https://github.com/lipis/flag-icon-css.git
