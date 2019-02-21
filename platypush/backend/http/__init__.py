@@ -152,8 +152,8 @@ class HttpBackend(Backend):
         self.redis_queue = redis_queue
         self.dashboard = dashboard
         self.maps = maps
-        self.server_proc = None
         self.disable_websocket = disable_websocket
+        self.webserver_thread = None
         self.websocket_thread = None
         self.redis_thread = None
         self.redis = None
@@ -192,9 +192,12 @@ class HttpBackend(Backend):
             if redis:
                 redis.rpush(self.redis_queue, str(stop_evt))
 
-        if self.server_proc:
-            self.server_proc.terminate()
-            self.server_proc.join()
+        if self.app:
+            stop_func = request.environ.get('werkzeug.server.shutdown')
+            if stop_func is None:
+                self.logger.warning('Werkzeug server not running')
+                return
+            stop_func()
 
     def notify_web_clients(self, event):
         """ Notify all the connected web clients (over websocket) of a new event """
@@ -755,11 +758,17 @@ class HttpBackend(Backend):
         loop.run_forever()
 
     def run(self):
+        def server_thread(**kwargs):
+            self.app = self.webserver()
+            self.app.debug = False
+            self.app.run(**kwargs)
+
         super().run()
         os.putenv('FLASK_APP', 'platypush')
         os.putenv('FLASK_ENV', 'production')
         kwargs = {
-            'host':'0.0.0.0', 'port':self.port, 'use_reloader':False
+            'host':'0.0.0.0', 'port':self.port,
+            'use_reloader':False, 'threaded':True,
         }
 
         if self.ssl_context:
@@ -767,18 +776,15 @@ class HttpBackend(Backend):
 
         self.logger.info('Initialized HTTP backend on port {}'.format(self.port))
 
-        self.app = self.webserver()
-        self.app.debug = False
-        self.server_proc = Process(target=self.app.run,
-                                   name='WebServer',
-                                   kwargs=kwargs)
-        self.server_proc.start()
+        self.webserver_thread = threading.Thread(target=server_thread(**kwargs),
+                                         name='WebServer')
+        self.webserver_thread.start()
 
         if not self.disable_websocket:
             self.websocket_thread = threading.Thread(target=self.websocket)
             self.websocket_thread.start()
 
-        self.server_proc.join()
+        self.webserver_thread.join()
 
 
 class HttpUtils(object):
