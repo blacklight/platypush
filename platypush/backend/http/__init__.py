@@ -4,7 +4,7 @@ import threading
 from multiprocessing import Process
 
 from platypush.backend import Backend
-from platypush.backend.http.app import app
+from platypush.backend.http.app import application
 from platypush.context import get_or_create_event_loop
 from platypush.utils import get_ssl_server_context, set_thread_name
 
@@ -208,7 +208,7 @@ class HttpBackend(Backend):
             if self.ssl_context:
                 kwargs['ssl_context'] = self.ssl_context
 
-            app.run(**kwargs)
+            application.run(**kwargs)
 
         return proc
 
