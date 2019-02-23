@@ -217,9 +217,7 @@ class Request(Message):
                 # Retry mechanism
                 plugin.logger.exception(e)
                 logger.warning(('Uncaught exception while processing response ' +
-                                'from action [{}] from plugin {}: {}').format(
-                                    self.action, plugin.__class__.__name__,
-                                    str(e)))
+                                'from action [{}]: {}').format(self.action, str(e)))
 
                 errors = errors or []
                 if str(e) not in errors:

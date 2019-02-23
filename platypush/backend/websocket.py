@@ -8,6 +8,7 @@ from platypush.backend import Backend
 from platypush.context import get_plugin, get_or_create_event_loop
 from platypush.message import Message
 from platypush.message.request import Request
+from platypush.message.response import Response
 from platypush.utils import get_ssl_server_context
 
 
@@ -23,8 +24,11 @@ class WebsocketBackend(Backend):
     # Websocket client message recv timeout in seconds
     _websocket_client_timeout = 0
 
-    def __init__(self, port=8765, bind_address='0.0.0.0', ssl_cafile=None,
-                 ssl_capath=None, ssl_cert=None, ssl_key=None,
+    # Default websocket service port
+    _default_websocket_port = 8765
+
+    def __init__(self, port=_default_websocket_port, bind_address='0.0.0.0',
+                 ssl_cafile=None, ssl_capath=None, ssl_cert=None, ssl_key=None,
                  client_timeout=_websocket_client_timeout, **kwargs):
         """
         :param port: Listen port for the websocket server (default: 8765)
@@ -116,26 +120,22 @@ class WebsocketBackend(Backend):
                     self.on_message(msg)
 
                     if isinstance(msg, Request):
-                        response = self.get_message_response(msg)
-                        if not response:
-                            return
-
+                        response = self.get_message_response(msg) or Response()
                         self.logger.info('Processing response on the websocket backend: {}'.
-                                            format(response))
+                                         format(response))
 
                         await websocket.send(str(response))
 
+            except websockets.exceptions.ConnectionClosed as e:
+                self.active_websockets.remove(websocket)
+                self.logger.debug('Websocket client {} closed connection'.
+                                  format(websocket.remote_address[0]))
+            except asyncio.TimeoutError as e:
+                self.active_websockets.remove(websocket)
+                self.logger.debug('Websocket connection to {} timed out'.
+                                  format(websocket.remote_address[0]))
             except Exception as e:
-                if isinstance(e, websockets.exceptions.ConnectionClosed):
-                    self.active_websockets.remove(websocket)
-                    self.logger.debug('Websocket client {} closed connection'.
-                                    format(websocket.remote_address[0]))
-                elif isinstance(e, asyncio.TimeoutError):
-                    self.active_websockets.remove(websocket)
-                    self.logger.debug('Websocket connection to {} timed out'.
-                                    format(websocket.remote_address[0]))
-                else:
-                    self.logger.exception(e)
+                self.logger.exception(e)
 
         self.logger.info('Initialized websocket backend on port {}, bind address: {}'.
                          format(self.port, self.bind_address))

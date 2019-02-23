@@ -255,7 +255,7 @@ class Backend(Thread):
         try:
             redis = self._get_redis()
             response = redis.blpop(get_redis_queue_name_by_message(msg), timeout=60)
-            if response and response[1]:
+            if response and len(response) > 1:
                 response = Message.build(response[1])
             else:
                 response = None
