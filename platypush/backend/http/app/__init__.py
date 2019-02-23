@@ -21,4 +21,8 @@ for route in get_routes():
     app.register_blueprint(route)
 
 
+if __name__ == '__main__':
+    app.run()
+
+
 # vim:sw=4:ts=4:et:

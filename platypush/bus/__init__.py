@@ -37,6 +37,16 @@ class Bus(object):
 
         self.post(evt)
 
+    def _msg_executor(self, msg):
+        def executor():
+            try:
+                self.on_message(msg)
+            except Exception as e:
+                logger.error('Error on processing message {}'.format(msg))
+                logger.exception(e)
+
+        return executor
+
     def poll(self):
         """
         Reads messages from the bus until either stop event message or KeyboardInterrupt
@@ -54,11 +64,7 @@ class Bus(object):
                             .format(int(time.time()-msg.timestamp), msg))
                 continue
 
-            try:
-                self.on_message(msg)
-            except Exception as e:
-                logger.error('Error on processing message {}'.format(msg))
-                logger.exception(e)
+            threading.Thread(target=self._msg_executor(msg)).start()
 
             if isinstance(msg, StopEvent) and msg.targets_me():
                 logger.info('Received STOP event on the bus')
@@ -66,4 +72,3 @@ class Bus(object):
 
 
 # vim:sw=4:ts=4:et:
-
