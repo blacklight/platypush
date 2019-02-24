@@ -4,16 +4,18 @@ import re
 from flask import Blueprint, abort, send_from_directory
 
 from platypush.config import Config
-from platypush.backend.http.app import template_folder
+from platypush.backend.http.app import template_folder, base_folder
 from platypush.backend.http.app.utils import authenticate, authentication_ok, \
     send_message
 
 
 resources = Blueprint('resources', __name__, template_folder=template_folder)
+favicon = Blueprint('favicon', __name__, template_folder=template_folder)
 
 # Declare routes list
 __routes__ = [
     resources,
+    favicon,
 ]
 
 @resources.route('/resources/<path:path>', methods=['GET'])
@@ -50,6 +52,13 @@ def resources_path(path):
         abort(404)
 
     return send_from_directory(real_path, file_path)
+
+
+@favicon.route('/favicon.ico', methods=['GET'])
+def favicon():
+    """ favicon.ico icon """
+    return send_from_directory(os.path.join(base_folder, 'static', 'resources'),
+                               'favicon.ico')
 
 
 # vim:sw=4:ts=4:et:
