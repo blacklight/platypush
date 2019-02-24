@@ -58,6 +58,9 @@ class HttpBackend(Backend):
     Base command to run the web server over uwsgi::
 
         uwsgi --http :8008 --module platypush.backend.http.uwsgi --master --processes 4 --threads 4
+
+    Bear in mind that the main webapp is defined in ``platypush.backend.http.app:application``
+    and the WSGI startup script is stored under ``platypush/backend/http/uwsgi.py``.
     """
 
     _DEFAULT_HTTP_PORT = 8008
