@@ -48,6 +48,16 @@ class HttpBackend(Backend):
         * **python-dateutil** (``pip install python-dateutil``)
         * **magic** (``pip install python-magic``), optional, for MIME type
             support if you want to enable media streaming
+        * **uwsgi** (``pip install uwsgi`` plus uwsgi server installed on your
+            system if required) - optional but recommended. By default the
+            Platypush web server will run in a process spawned on the fly by
+            the HTTP backend. However, being a Flask app, it will serve clients
+            in a single thread and won't support many features of a full-blown
+            web server.
+
+    Base command to run the web server over uwsgi::
+
+        uwsgi --http :8008 --module platypush.backend.http.uwsgi --master --processes 4 --threads 4
     """
 
     _DEFAULT_HTTP_PORT = 8008
@@ -57,7 +67,7 @@ class HttpBackend(Backend):
                  websocket_port=_DEFAULT_WEBSOCKET_PORT,
                  disable_websocket=False, dashboard={}, resource_dirs={},
                  ssl_cert=None, ssl_key=None, ssl_cafile=None, ssl_capath=None,
-                 maps={}, **kwargs):
+                 maps={}, run_externally=False, **kwargs):
         """
         :param port: Listen port for the web server (default: 8008)
         :type port: int
@@ -115,6 +125,11 @@ class HttpBackend(Backend):
                         db: "sqlite:////home/blacklight/.local/share/platypush/feeds/rss.db"
 
         :type dashboard: dict
+
+        :param run_externally: If set, then the HTTP backend will not directly
+            spawn the web server. Set this option if you plan to run the webapp
+            in a separate web server (recommended), like uwsgi or uwsgi+nginx.
+        :type run_externally: bool
         """
 
         super().__init__(**kwargs)
@@ -129,6 +144,7 @@ class HttpBackend(Backend):
         self.resource_dirs = { name: os.path.abspath(
             os.path.expanduser(d)) for name, d in resource_dirs.items() }
         self.active_websockets = set()
+        self.run_externally = run_externally
         self.ssl_context = get_ssl_server_context(ssl_cert=ssl_cert,
                                                   ssl_key=ssl_key,
                                                   ssl_cafile=ssl_cafile,
@@ -215,17 +231,18 @@ class HttpBackend(Backend):
 
     def run(self):
         super().run()
-
-        self.server_proc = Process(target=self._start_web_server(),
-                                   name='WebServer')
-        self.server_proc.start()
+        self.logger.info('Initializing HTTP backend on port {}'.format(self.port))
 
         if not self.disable_websocket:
+            self.logger.info('Initializing websocket interface')
             self.websocket_thread = threading.Thread(target=self.websocket)
             self.websocket_thread.start()
 
-        self.logger.info('Initialized HTTP backend on port {}'.format(self.port))
-        self.server_proc.join()
+        if not self.run_externally:
+            self.server_proc = Process(target=self._start_web_server(),
+                                       name='WebServer')
+            self.server_proc.start()
+            self.server_proc.join()
 
 
 # vim:sw=4:ts=4:et:

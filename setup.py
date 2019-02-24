@@ -70,6 +70,7 @@ setup(
         'Support for Pushbullet backend': ['requests', 'pushbullet.py'],
         'Support for HTTP backend': ['flask','websockets', 'python-dateutil'],
         'Support for HTTP poll backend': ['frozendict'],
+        'Support for external web server': ['uwsgi'],
         'Support for database plugin': ['sqlalchemy'],
         'Support for RSS feeds': ['feedparser'],
         'Support for PDF generation': ['weasyprint'],

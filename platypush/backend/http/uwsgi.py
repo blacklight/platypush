@@ -1,8 +1,8 @@
 """
-uWSGI webapp startup script
+uWSGI webapp entry point
 """
 
-from . import application
+from platypush.backend.http.app import application
 
 if __name__ == '__main__':
     application.run()
