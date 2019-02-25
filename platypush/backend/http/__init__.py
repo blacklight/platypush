@@ -1,4 +1,5 @@
 import os
+import subprocess
 import threading
 
 from multiprocessing import Process
@@ -70,7 +71,7 @@ class HttpBackend(Backend):
                  websocket_port=_DEFAULT_WEBSOCKET_PORT,
                  disable_websocket=False, dashboard={}, resource_dirs={},
                  ssl_cert=None, ssl_key=None, ssl_cafile=None, ssl_capath=None,
-                 maps={}, run_externally=False, **kwargs):
+                 maps={}, run_externally=False, uwsgi_args=None, **kwargs):
         """
         :param port: Listen port for the web server (default: 8008)
         :type port: int
@@ -133,6 +134,21 @@ class HttpBackend(Backend):
             spawn the web server. Set this option if you plan to run the webapp
             in a separate web server (recommended), like uwsgi or uwsgi+nginx.
         :type run_externally: bool
+
+        :param uwsgi_args: If ``run_externally`` is set and you would like the
+            HTTP backend to directly spawn and control the uWSGI application
+            server instance, then pass the list of uWSGI arguments through
+            this parameter. Some examples include::
+
+                # Start uWSGI instance listening on HTTP port 8008 with 4
+                # processes
+                ['--plugin', 'python', '--http-socket', ':8008', '--master', '--processes', '4']
+
+                # Start uWSGI instance listening on uWSGI socket on port 3031.
+                # You can then use another full-blown web server, like nginx
+                # or Apache, to communicate with the uWSGI instance
+                ['--plugin', 'python', '--socket', '127.0.0.1:3031', '--master', '--processes', '4']
+        :type uwsgi_args: list[str]
         """
 
         super().__init__(**kwargs)
@@ -148,11 +164,16 @@ class HttpBackend(Backend):
             os.path.expanduser(d)) for name, d in resource_dirs.items() }
         self.active_websockets = set()
         self.run_externally = run_externally
+        self.uwsgi_args = uwsgi_args or []
         self.ssl_context = get_ssl_server_context(ssl_cert=ssl_cert,
                                                   ssl_key=ssl_key,
                                                   ssl_cafile=ssl_cafile,
                                                   ssl_capath=ssl_capath) \
             if ssl_cert else None
+
+        if self.uwsgi_args:
+            self.uwsgi_args = [str(_) for _ in self.uwsgi_args] + \
+                ['--module', 'platypush.backend.http.uwsgi', '--enable-threads']
 
 
     def send_message(self, msg):
@@ -164,8 +185,12 @@ class HttpBackend(Backend):
         self.logger.info('Received STOP event on HttpBackend')
 
         if self.server_proc:
-            self.server_proc.terminate()
-            self.server_proc.join()
+            if isinstance(self.server_proc, subprocess.Popen):
+                self.server_proc.kill()
+                self.server_proc.wait()
+            else:
+                self.server_proc.terminate()
+                self.server_proc.join()
 
     def notify_web_clients(self, event):
         """ Notify all the connected web clients (over websocket) of a new event """
@@ -217,6 +242,7 @@ class HttpBackend(Backend):
 
     def _start_web_server(self):
         def proc():
+            self.logger.info('Starting local web server on port {}'.format(self.port))
             kwargs = {
                 'host': '0.0.0.0',
                 'port': self.port,
@@ -234,7 +260,6 @@ class HttpBackend(Backend):
 
     def run(self):
         super().run()
-        self.logger.info('Initializing HTTP backend on port {}'.format(self.port))
 
         if not self.disable_websocket:
             self.logger.info('Initializing websocket interface')
@@ -246,6 +271,10 @@ class HttpBackend(Backend):
                                        name='WebServer')
             self.server_proc.start()
             self.server_proc.join()
+        elif self.uwsgi_args:
+            uwsgi_cmd = ['uwsgi'] + self.uwsgi_args
+            self.logger.info
+            self.server_proc = subprocess.Popen(uwsgi_cmd)
 
 
 # vim:sw=4:ts=4:et:
