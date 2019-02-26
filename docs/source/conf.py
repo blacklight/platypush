@@ -206,6 +206,7 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'sounddevice',
                         'soundfile',
                         'numpy',
+                        'cv2',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))

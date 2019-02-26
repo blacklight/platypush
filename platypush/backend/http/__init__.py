@@ -172,8 +172,13 @@ class HttpBackend(Backend):
             if ssl_cert else None
 
         if self.uwsgi_args:
+<<<<<<< HEAD
             self.uwsgi_args = [str(_) for _ in self.uwsgi_args] + \
                 ['--module', 'platypush.backend.http.uwsgi', '--enable-threads']
+=======
+            self.uwsgi_args = ['--plugins', 'python3', '--enable-threads'] + \
+                self.uwsgi_args + ['--module', 'platypush.backend.http.uwsgi']
+>>>>>>> Added camera plugin over cv2
 
 
     def send_message(self, msg):
