@@ -9,6 +9,7 @@ Events
     platypush/events/application.rst
     platypush/events/assistant.rst
     platypush/events/button.flic.rst
+    platypush/events/camera.rst
     platypush/events/geo.rst
     platypush/events/http.rss.rst
     platypush/events/http.rst
