@@ -11,6 +11,7 @@ Plugins
     platypush/plugins/autoremote.rst
     platypush/plugins/calendar.ical.rst
     platypush/plugins/calendar.rst
+    platypush/plugins/camera.rst
     platypush/plugins/camera.pi.rst
     platypush/plugins/clipboard.rst
     platypush/plugins/db.rst
@@ -36,7 +37,6 @@ Plugins
     platypush/plugins/media.mplayer.rst
     platypush/plugins/media.mpv.rst
     platypush/plugins/media.omxplayer.rst
-    platypush/plugins/media.search.__init__.rst
     platypush/plugins/media.search.local.rst
     platypush/plugins/media.search.torrent.rst
     platypush/plugins/media.search.youtube.rst

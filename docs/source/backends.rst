@@ -12,9 +12,6 @@ Backends
     platypush/backend/assistant.snowboy.rst
     platypush/backend/button.flic.rst
     platypush/backend/camera.pi.rst
-    platypush/backend/http.media.handlers.file.rst
-    platypush/backend/http.media.handlers.__init__.rst
-    platypush/backend/http.media.__init__.rst
     platypush/backend/http.poll.rst
     platypush/backend/http.rst
     platypush/backend/inotify.rst
