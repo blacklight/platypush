@@ -46,7 +46,7 @@ class CameraPlugin(Plugin):
     _max_stored_frames = 100
 
     def __init__(self, device_id=0, frames_dir=_default_frames_dir,
-                 warmup_frames=_default_warmup_frames,
+                 warmup_frames=_default_warmup_frames, video_type=0,
                  sleep_between_frames=_default_sleep_between_frames,
                  max_stored_frames=_max_stored_frames,
                  color_transform=_default_color_transform, *args, **kwargs):
@@ -66,6 +66,12 @@ class CameraPlugin(Plugin):
             (default: 5 but you may want to calibrate this parameter for your
             camera)
         :type warmup_frames: int
+
+        :param video_type: Default video type to use when exporting captured
+            frames to camera (default: 0, infers the type from the video file
+            extension). See https://docs.opencv.org/4.0.1/dd/d9e/classcv_1_1VideoWriter.html#afec93f94dc6c0b3e28f4dd153bc5a7f0
+            for a reference on the supported types (e.g. 'MJPEG', 'XVID', 'H264' etc')
+        :type video_type: str or int
 
         :param sleep_between_frames: If set, the process will sleep for the
             specified amount of seconds between two frames when recording
@@ -89,6 +95,9 @@ class CameraPlugin(Plugin):
         self.default_device_id = device_id
         self.frames_dir = os.path.abspath(os.path.expanduser(frames_dir))
         self.warmup_frames = warmup_frames
+        self.video_type = cv2.VideoWriter_fourcc(*video_type) \
+            if isinstance(video_type, str) else video_type
+
         self.sleep_between_frames = sleep_between_frames
         self.max_stored_frames = max_stored_frames
         self.color_transform = color_transform
@@ -171,7 +180,7 @@ class CameraPlugin(Plugin):
             os.unlink(f)
 
 
-    def _make_video_file(self, frames_dir, video_file):
+    def _make_video_file(self, frames_dir, video_file, video_type):
         files = self._get_stored_frames_files(frames_dir)
         if not files:
             self.logger.warning('No frames found in {}'.format(frames_dir))
@@ -180,7 +189,7 @@ class CameraPlugin(Plugin):
         frame = cv2.imread(files[0])
         height, width, layers = frame.shape
         fps = self._get_avg_fps(frames_dir)
-        video = cv2.VideoWriter(video_file, 0, fps, (width, height))
+        video = cv2.VideoWriter(video_file, video_type, fps, (width, height))
 
         for f in files:
             video.write(cv2.imread(f))
@@ -192,7 +201,7 @@ class CameraPlugin(Plugin):
 
     def _recording_thread(self, duration, video_file, image_file, device_id,
                           frames_dir, n_frames, sleep_between_frames,
-                          max_stored_frames, color_transform):
+                          max_stored_frames, color_transform, video_type):
         device = self._devices[device_id]
         color_transform = getattr(cv2, self.color_transform)
 
@@ -248,7 +257,8 @@ class CameraPlugin(Plugin):
                 self.logger.info('Writing frames to video file {}'.
                                  format(video_file))
                 self._make_video_file(frames_dir=frames_dir,
-                                      video_file=video_file)
+                                      video_file=video_file,
+                                      video_type=video_type)
                 self.logger.info('Video file {}: rendering completed'.
                                  format(video_file))
 
@@ -256,9 +266,10 @@ class CameraPlugin(Plugin):
 
 
     @action
-    def start_recording(self, duration=None, video_file=None, device_id=None,
-                        frames_dir=None, sleep_between_frames=None,
-                        max_stored_frames=None, color_transform=None):
+    def start_recording(self, duration=None, video_file=None, video_type=None,
+                        device_id=None, frames_dir=None,
+                        sleep_between_frames=None, max_stored_frames=None,
+                        color_transform=None):
         """
         Start recording
 
@@ -268,6 +279,9 @@ class CameraPlugin(Plugin):
 
         :param video_file: If set, the stream will be recorded to the specified
             video file (default: None)
+        :type video_file: str
+
+        :param video_type: Overrides the default configured ``video_type``
         :type video_file: str
 
         :param device_id, frames_dir, sleep_between_frames, max_stored_frames: Set
@@ -288,6 +302,12 @@ class CameraPlugin(Plugin):
         color_transform = color_transform if color_transform \
             is not None else self.color_transform
 
+        if video_type is not None:
+            video_type = cv2.VideoWriter_fourcc(*video_type.upper()) \
+                if isinstance(video_type, str) else video_type
+        else:
+            video_type = self.video_type
+
         self._init_device(device_id)
         self.register_handler(CameraRecordingStartedEvent, on_recording_started)
 
@@ -300,6 +320,7 @@ class CameraPlugin(Plugin):
         self._recording_threads[device_id] = threading.Thread(
             target=self._recording_thread(duration=duration,
                                           video_file=video_file,
+                                          video_type=video_type,
                                           image_file=None, device_id=device_id,
                                           frames_dir=frames_dir, n_frames=None,
                                           sleep_between_frames=sleep_between_frames,
@@ -349,7 +370,7 @@ class CameraPlugin(Plugin):
         self.register_handler(CameraPictureTakenEvent, on_picture_taken)
         self._recording_threads[device_id] = threading.Thread(
             target=self._recording_thread(duration=None, video_file=None,
-                                          image_file=image_file,
+                                          image_file=image_file, video_type=None,
                                           device_id=device_id, frames_dir=None,
                                           n_frames=warmup_frames,
                                           sleep_between_frames=None,
