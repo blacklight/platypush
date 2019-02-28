@@ -3,6 +3,12 @@ import threading
 
 
 class EventGenerator(object):
+    """
+    Abstract class for event generators. It allows to fire events to the bus and
+    trigger/register/unregister custom callback handlers associated to event
+    types. Both plugins and backends extend this class.
+    """
+
     def __init__(self, *args, **kwargs):
         self._event_handlers = {}   # Event type => callback map
 
