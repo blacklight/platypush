@@ -9,10 +9,9 @@ import cv2
 from datetime import datetime
 
 from platypush.config import Config
-from platypush.context import get_bus
 from platypush.message.event.camera import CameraRecordingStartedEvent, \
     CameraRecordingStoppedEvent, CameraVideoRenderedEvent, \
-    CameraPictureTakenEvent
+    CameraPictureTakenEvent, CameraEvent
 
 from platypush.plugins import Plugin, action
 
@@ -123,7 +122,7 @@ class CameraPlugin(Plugin):
         if device_id in self._devices:
             self._devices[device_id].release()
             del self._devices[device_id]
-            get_bus().post(CameraRecordingStoppedEvent(device_id=device_id))
+            self.fire_event(CameraRecordingStoppedEvent(device_id=device_id))
 
 
     def _store_frame_to_file(self, frame, frames_dir, image_file):
@@ -135,9 +134,6 @@ class CameraPlugin(Plugin):
                 frames_dir, datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f.jpg'))
 
         cv2.imwrite(filepath, frame)
-
-        if image_file:
-            get_bus().post(CameraPictureTakenEvent(filename=image_file))
         return filepath
 
 
@@ -189,7 +185,8 @@ class CameraPlugin(Plugin):
         for f in files:
             video.write(cv2.imread(f))
         video.release()
-        get_bus().post(CameraVideoRenderedEvent(filename=video_file))
+
+        self.fire_event(CameraVideoRenderedEvent(filename=video_file))
         shutil.rmtree(frames_dir, ignore_errors=True)
 
 
@@ -215,7 +212,7 @@ class CameraPlugin(Plugin):
             if frames_dir:
                 evt_args['frames_dir'] = frames_dir
 
-            get_bus().post(CameraRecordingStartedEvent(**evt_args))
+            self.fire_event(CameraRecordingStartedEvent(**evt_args))
 
             while self._is_recording[device_id].is_set():
                 if duration and time.time() - recording_started_time >= duration \
@@ -241,6 +238,10 @@ class CameraPlugin(Plugin):
                     time.sleep(sleep_between_frames)
 
             self._release_device(device_id, wait_thread_termination=False)
+
+            if image_file:
+                self.fire_event(CameraPictureTakenEvent(filename=image_file))
+
             self.logger.info('Recording terminated')
 
             if video_file:
@@ -273,6 +274,10 @@ class CameraPlugin(Plugin):
             these parameters if you want to override the default configured ones.
         """
 
+        recording_started = threading.Event()
+        def on_recording_started(event):
+            recording_started.set()
+
         device_id = device_id if device_id is not None else self.default_device_id
         frames_dir = os.path.abspath(os.path.expanduser(frames_dir)) \
             if frames_dir is not None else self.frames_dir
@@ -284,6 +289,7 @@ class CameraPlugin(Plugin):
             is not None else self.color_transform
 
         self._init_device(device_id)
+        self.register_handler(CameraRecordingStartedEvent, on_recording_started)
 
         frames_dir = os.path.join(frames_dir, str(device_id))
         if video_file:
@@ -302,6 +308,9 @@ class CameraPlugin(Plugin):
 
         self._recording_threads[device_id].start()
         self._is_recording[device_id].set()
+
+        recording_started.wait()
+        self.unregister_handler(CameraRecordingStartedEvent, on_recording_started)
         return { 'path': video_file if video_file else frames_dir }
 
     @action
@@ -325,6 +334,10 @@ class CameraPlugin(Plugin):
         :param device_id, warmup_frames, color_transform: Overrides the configured default parameters
         """
 
+        picture_taken = threading.Event()
+        def on_picture_taken(event):
+            picture_taken.set()
+
         image_file = os.path.abspath(os.path.expanduser(image_file))
         device_id = device_id if device_id is not None else self.default_device_id
         warmup_frames = warmup_frames if warmup_frames is not None else \
@@ -333,6 +346,7 @@ class CameraPlugin(Plugin):
             is not None else self.color_transform
 
         self._init_device(device_id)
+        self.register_handler(CameraPictureTakenEvent, on_picture_taken)
         self._recording_threads[device_id] = threading.Thread(
             target=self._recording_thread(duration=None, video_file=None,
                                           image_file=image_file,
@@ -344,6 +358,9 @@ class CameraPlugin(Plugin):
 
         self._recording_threads[device_id].start()
         self._is_recording[device_id].set()
+
+        picture_taken.wait()
+        self.unregister_handler(CameraPictureTakenEvent, on_picture_taken)
         return { 'path': image_file }
 
 

@@ -14,6 +14,7 @@ from platypush.bus import Bus
 from platypush.config import Config
 from platypush.context import get_backend, get_plugin
 from platypush.utils import get_message_class_by_type, set_timeout, clear_timeout
+from platypush.event import EventGenerator
 from platypush.message import Message
 from platypush.message.event import Event, StopEvent
 from platypush.message.request import Request
@@ -21,7 +22,7 @@ from platypush.message.response import Response
 from platypush.utils import get_redis_queue_name_by_message, set_thread_name
 
 
-class Backend(Thread):
+class Backend(Thread, EventGenerator):
     """
     Parent class for backends.
 
@@ -45,7 +46,8 @@ class Backend(Thread):
         """
 
         self._thread_name = self.__class__.__name__
-        super().__init__(name=self._thread_name)
+        EventGenerator.__init__(self)
+        Thread.__init__(self, name=self._thread_name)
 
         # If no bus is specified, create an internal queue where
         # the received messages will be pushed
@@ -266,4 +268,3 @@ class Backend(Thread):
 
 
 # vim:sw=4:ts=4:et:
-

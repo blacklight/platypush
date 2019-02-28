@@ -1,10 +1,13 @@
+import inspect
 import sys
 import logging
+import threading
 import traceback
 
 from functools import wraps
 
 from platypush.config import Config
+from platypush.event import EventGenerator
 from platypush.message.response import Response
 from platypush.utils import get_decorators
 
@@ -33,10 +36,12 @@ def action(f):
     return _execute_action
 
 
-class Plugin(object):
+class Plugin(EventGenerator):
     """ Base plugin class """
 
     def __init__(self, **kwargs):
+        super().__init__()
+
         self.logger = logging.getLogger(self.__class__.__name__)
         if 'logging' in kwargs:
             self.logger.setLevel(getattr(logging, kwargs['logging'].upper()))
@@ -45,6 +50,7 @@ class Plugin(object):
             get_decorators(self.__class__, climb_class_hierarchy=True)
             .get('action', [])
         )
+
 
     def run(self, method, *args, **kwargs):
         if method not in self.registered_actions:
@@ -55,4 +61,3 @@ class Plugin(object):
 
 
 # vim:sw=4:ts=4:et:
-
