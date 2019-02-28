@@ -273,10 +273,10 @@ class MusicMpdPlugin(MusicPlugin):
         if resource.startswith('spotify:'):
             resource = resource.split('?')[0]
 
-        if resource.startswith('spotify:playlist:'):
+        m = re.match('spotify:user:[^:]+:playlist:(.+?)')
+        if m:
             # Old Spotify URI format, convert it to new
-            m = re.match('^spotify:playlist:(.*)$', resource)
-            resource = 'spotify:user:spotify:playlist:' + m.group(1)
+            resource = 'spotify:playlist:' + m.group(1)
         return resource
 
     @action
