@@ -142,6 +142,10 @@ $(document).ready(function() {
     };
 
     var refreshPlaybackStatus = function(status) {
+        if (!status) {
+            return;
+        }
+
         if ('volume' in status) {
             $volumeElement.text(status.volume + '%');
         }
