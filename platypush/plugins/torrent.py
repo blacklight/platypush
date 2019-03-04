@@ -72,14 +72,24 @@ class TorrentPlugin(Plugin):
         if isinstance(response, bytes):
             response = response.decode('utf-8')
 
-        return [
-            {
-                'url': _['items'][0]['torrent_magnet'],
-                'title': _['title'],
-            }
+        results = []
 
-            for _ in json.loads(response).get('MovieList', [])
-        ]
+        for result in json.loads(response).get('MovieList', []):
+            torrent = sorted(result['items'], key=lambda _:
+                             _['torrent_seeds'] + _['torrent_peers'])[-1]
+            results.append({
+                'title': result['title'],
+                'url': torrent['torrent_magnet'],
+                'file': torrent['file'],
+                'size': torrent['size_bytes'],
+                'language': torrent.get('language'),
+                'quality': torrent.get('quality'),
+                'torrent_url': torrent['torrent_url'],
+                'torrent_seeds': torrent['torrent_seeds'],
+                'torrent_peers': torrent['torrent_peers'],
+            })
+
+        return results
 
     @action
     def download(self, torrent, download_dir=None):
