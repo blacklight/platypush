@@ -63,18 +63,22 @@ class Response(Message):
         the message into a UTF-8 JSON string
         """
 
-        return json.dumps({
+        response_dict = {
             'id'         : self.id,
             'type'       : 'response',
             'target'     : self.target if hasattr(self, 'target') else None,
             'origin'     : self.origin if hasattr(self, 'origin') else None,
             '_timestamp' : self.timestamp,
-            '_disable_logging' : self.disable_logging,
             'response'   : {
                 'output' : self.output,
                 'errors' : self.errors,
             },
-        })
+        }
+
+        if self.disable_logging:
+            response_dict['_disable_logging'] = self.disable_logging
+
+        return json.dumps(response_dict)
 
 
 # vim:sw=4:ts=4:et:
