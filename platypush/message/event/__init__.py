@@ -14,7 +14,14 @@ from platypush.utils import get_event_class_by_type
 class Event(Message):
     """ Event message class """
 
-    def __init__(self, target=None, origin=None, id=None, timestamp=None, **kwargs):
+    # If this class property is set to false then the logging of these events
+    # will be disabled. Logging is usually disabled for events with a very
+    # high frequency that would otherwise pollute the logs e.g. camera capture
+    # events
+    disable_logging = False
+
+    def __init__(self, target=None, origin=None, id=None, timestamp=None,
+                 disable_logging=disable_logging, **kwargs):
         """
         Params:
             target  -- Target node [String]
@@ -30,6 +37,7 @@ class Event(Message):
         self.type = '{}.{}'.format(self.__class__.__module__,
                                    self.__class__.__name__)
         self.args = kwargs
+        self.disable_logging = disable_logging
 
     @classmethod
     def build(cls, msg):

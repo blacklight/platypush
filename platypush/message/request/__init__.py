@@ -210,7 +210,7 @@ class Request(Message):
                     logger.warning(('Response processed with errors from ' +
                                     'action {}: {}').format(
                                         self.action, str(response)))
-                else:
+                elif not response.disable_logging:
                     logger.info('Processed response from action {}: {}'.
                                 format(self.action, str(response)))
             except Exception as e:

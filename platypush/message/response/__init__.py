@@ -7,7 +7,7 @@ class Response(Message):
     """ Response message class """
 
     def __init__(self, target=None, origin=None, id=None, output=None, errors=[],
-                 timestamp=None):
+                 timestamp=None, disable_logging=False):
         """
         Params:
             target -- Target [String]
@@ -24,6 +24,7 @@ class Response(Message):
         self.errors = self._parse_msg(errors)
         self.origin = origin
         self.id = id
+        self.disable_logging = disable_logging
 
     def is_error(self):
         """ Returns True if the respopnse has errors """
@@ -50,6 +51,7 @@ class Response(Message):
         }
 
         args['timestamp'] = msg['_timestamp'] if '_timestamp' in msg else time.time()
+        args['disable_logging'] = msg.get('_disable_logging', False)
         if 'id' in msg: args['id'] = msg['id']
         if 'origin' in msg: args['origin'] = msg['origin']
         return cls(**args)
@@ -67,11 +69,12 @@ class Response(Message):
             'target'     : self.target if hasattr(self, 'target') else None,
             'origin'     : self.origin if hasattr(self, 'origin') else None,
             '_timestamp' : self.timestamp,
+            '_disable_logging' : self.disable_logging,
             'response'   : {
                 'output' : self.output,
                 'errors' : self.errors,
             },
         })
 
-# vim:sw=4:ts=4:et:
 
+# vim:sw=4:ts=4:et:

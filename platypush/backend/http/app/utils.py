@@ -4,7 +4,8 @@ import logging
 import os
 import sys
 
-from flask import Response
+from functools import wraps
+from flask import request, Response
 from redis import Redis
 
 # NOTE: The HTTP service will *only* work on top of a Redis bus. The default
@@ -82,11 +83,21 @@ def send_message(msg):
 
     if isinstance(msg, Request):
         response = get_message_response(msg)
-        logger().info('Processing response on the HTTP backend: {}'.
-                      format(response))
+        logger().debug('Processing response on the HTTP backend: {}'.
+                       format(response))
 
         return response
 
+def send_request(action, **kwargs):
+    msg = {
+        'type': 'request',
+        'action': action
+    }
+
+    if kwargs:
+        msg['args'] = kwargs
+
+    return send_message(msg)
 
 def authenticate():
     return Response('Authentication required', 401,
@@ -123,13 +134,19 @@ def get_routes():
     routes_dir = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), 'routes')
     routes = []
+    base_module = '.'.join(__name__.split('.')[:-1])
 
     for path, dirs, files in os.walk(routes_dir):
         for f in files:
             if f.endswith('.py'):
-                sys.path.insert(0, path)
+                mod_name = '.'.join(
+                    (base_module + '.' + os.path.join(path, f).replace(
+                        os.path.dirname(__file__), '')[1:] \
+                        .replace(os.sep, '.')).split('.') \
+                    [:(-2 if f == '__init__.py' else -1)])
+
                 try:
-                    mod = importlib.import_module('.'.join(f.split('.')[:-1]))
+                    mod = importlib.import_module(mod_name)
                     if hasattr(mod, '__routes__'):
                         routes.extend(mod.__routes__)
                 except Exception as e:
@@ -150,6 +167,14 @@ def get_remote_base_url():
     return '{proto}://{host}:{port}'.format(
         proto=('https' if http_conf.get('ssl_cert') else 'http'),
         host=get_ip_or_hostname(), port=get_http_port())
+
+
+def authenticate_user(route):
+    @wraps(route)
+    def authenticated_route(*args, **kwargs):
+        if not authentication_ok(request): return authenticate()
+        return route(*args, **kwargs)
+    return authenticated_route
 
 
 # vim:sw=4:ts=4:et:

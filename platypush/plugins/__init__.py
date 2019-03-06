@@ -14,22 +14,24 @@ from platypush.utils import get_decorators
 def action(f):
     @wraps(f)
     def _execute_action(*args, **kwargs):
-        output = None
-        errors = []
+        response = Response()
+        result = f(*args, **kwargs)
 
-        output = f(*args, **kwargs)
-        if output and isinstance(output, Response):
-            errors = output.errors \
-                if isinstance(output.errors, list) else [output.errors]
-            output = output.output
-        elif isinstance(output, tuple) and len(output) == 2:
-            errors = output[1] \
-                if isinstance(output[1], list) else [output[1]]
+        if result and isinstance(result, Response):
+            result.errors = result.errors \
+                if isinstance(result.errors, list) else [result.errors]
+            response = result
+        elif isinstance(result, tuple) and len(result) == 2:
+            response.errors = result[1] \
+                if isinstance(result[1], list) else [result[1]]
 
-            if len(errors) == 1 and errors[0] is None: errors = []
-            output = output[0]
+            if len(response.errors) == 1 and response.errors[0] is None:
+                response.errors = []
+            response.output = result[0]
+        else:
+            response = Response(output=result, errors=[])
 
-        return Response(output=output, errors=errors)
+        return response
 
     # Propagate the docstring
     _execute_action.__doc__ = f.__doc__

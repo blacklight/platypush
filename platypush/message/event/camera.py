@@ -44,4 +44,18 @@ class CameraPictureTakenEvent(CameraEvent):
         super().__init__(*args, filename=filename, **kwargs)
 
 
+class CameraFrameCapturedEvent(CameraEvent):
+    """
+    Event triggered when a camera frame has been captured
+    """
+
+    disable_logging = True
+
+    def __init__(self, filename=None, *args, **kwargs):
+        super().__init__(*args, filename=filename,
+                         disable_logging=kwargs.pop('disable_logging')
+                         if 'disable_logging' in kwargs else self.disable_logging,
+                         **kwargs)
+
+
 # vim:sw=4:ts=4:et:
