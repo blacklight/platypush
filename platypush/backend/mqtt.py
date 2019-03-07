@@ -116,9 +116,10 @@ class MqttBackend(Backend):
             client.connect(host, port, 60)
             client.loop_forever()
 
-        def on_connect(topic):
+        def on_connect(topics):
             def handler(client, userdata, flags, rc):
-                client.subscribe(topic)
+                for topic in topics:
+                    client.subscribe(topic)
             return handler
 
         def on_message(client, userdata, msg):
@@ -135,18 +136,18 @@ class MqttBackend(Backend):
         for i, listener in enumerate(listeners_conf):
             host = listener.get('host')
             port = listener.get('port', self._default_mqtt_port)
-            topic = listener.get('topic')
+            topics = listener.get('topics')
             username = listener.get('username')
             password = listener.get('password')
             tls_cafile = listener.get('tls_cafile')
 
-            if not host or not topic:
-                self.logger.warning('No host nor topic specified for listener ' +
-                                    'n.{}'.format(i+1))
+            if not host or not topics:
+                self.logger.warning('No host nor list of topics specified for ' +
+                                    'listener n.{}'.format(i+1))
                 continue
 
             client = mqtt.Client()
-            client.on_connect = on_connect(topic)
+            client.on_connect = on_connect(topics)
             client.on_message = on_message
 
             if username and password:
