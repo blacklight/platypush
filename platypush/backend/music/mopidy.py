@@ -44,8 +44,13 @@ class MusicMopidyBackend(Backend):
         self.port = int(port)
         self.url = 'ws://{}:{}/mopidy/ws'.format(host, port)
         self._msg_id = 0
-        self._latest_status = self._get_tracklist_status()
         self._ws = None
+        self._latest_status = {}
+
+        try:
+            self._latest_status = self._get_tracklist_status()
+        except Exception as e:
+            self.logger.warning('Unable to get mopidy status: {}'.format(str(e)))
 
     def _parse_track(self, track, pos=None):
         if not track:
@@ -178,13 +183,13 @@ class MusicMopidyBackend(Backend):
                 self.bus.post(PlaylistChangeEvent(changes=tracklist))
             elif event == 'options_changed':
                 new_status = self._get_tracklist_status()
-                if new_status['random'] != self._latest_status['random']:
+                if new_status['random'] != self._latest_status.get('random'):
                     self.bus.post(PlaybackRandomModeChangeEvent(state=new_status['random']))
-                if new_status['repeat'] != self._latest_status['repeat']:
+                if new_status['repeat'] != self._latest_status('repeat'):
                     self.bus.post(PlaybackRepeatModeChangeEvent(state=new_status['repeat']))
-                if new_status['single'] != self._latest_status['single']:
+                if new_status['single'] != self._latest_status('single'):
                     self.bus.post(PlaybackSingleModeChangeEvent(state=new_status['single']))
-                if new_status['consume'] != self._latest_status['consume']:
+                if new_status['consume'] != self._latest_status('consume'):
                     self.bus.post(PlaybackConsumeModeChangeEvent(state=new_status['consume']))
 
                 self._latest_status = new_status
