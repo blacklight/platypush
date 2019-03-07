@@ -55,7 +55,11 @@ class PushbulletBackend(Backend):
         self.pb = Pushbullet(token)
         self.pb_device_id = self.get_device_id()
         self.listener = None
-        self.device = self.pb.get_device(self.device_name)
+
+        try:
+            self.device = self.pb.get_device(self.device_name)
+        except:
+            self.device = self.pb.new_device(self.device_name)
 
 
     def _get_latest_push(self):
