@@ -53,7 +53,6 @@ class PushbulletBackend(Backend):
         self.proxy_host = proxy_host
         self.proxy_port = proxy_port
         self.pb = Pushbullet(token)
-        self.pb_device_id = self.get_device_id()
         self.listener = None
 
         try:
@@ -61,6 +60,7 @@ class PushbulletBackend(Backend):
         except:
             self.device = self.pb.new_device(self.device_name)
 
+        self.pb_device_id = self.get_device_id()
 
     def _get_latest_push(self):
         t = int(time.time()) - 5
