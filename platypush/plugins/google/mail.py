@@ -87,7 +87,7 @@ class GoogleMailPlugin(GooglePlugin):
                 msg.add_header('Content-Disposition', 'attachment', filename=filename)
                 message.attach(msg)
 
-        service = self._get_service()
+        service = self.get_service('gmail', 'v1')
         body = { 'raw': base64.urlsafe_b64encode(message.as_bytes()).decode() }
         message = (service.users().messages().send(
             userId='me', body=body).execute())
@@ -100,18 +100,10 @@ class GoogleMailPlugin(GooglePlugin):
         """
         Returns the available labels on the GMail account
         """
-        service = self._get_service()
+        service = self.get_service('gmail', 'v1')
         results = service.users().labels().list(userId='me').execute()
         labels = results.get('labels', [])
         return labels
 
 
-    def _get_service(self):
-        scope = self.scopes[0]
-        credentials = self.credentials[scope]
-        http = credentials.authorize(httplib2.Http())
-        return discovery.build('gmail', 'v1', http=http, cache_discovery=False)
-
-
 # vim:sw=4:ts=4:et:
-

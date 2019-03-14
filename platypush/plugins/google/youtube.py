@@ -4,10 +4,7 @@
 
 import base64
 import datetime
-import httplib2
 import os
-
-from apiclient import discovery
 
 from platypush.plugins import action
 from platypush.plugins.google import GooglePlugin
@@ -62,7 +59,7 @@ class GoogleYoutubePlugin(GooglePlugin, CalendarInterface):
         if isinstance(types, list):
             types = ','.join(types)
 
-        service = self._get_service()
+        service = self.get_service('youtube', 'v3')
         result = service.search().list(part=parts, q=query, type=types,
                                        maxResults=max_results,
                                        **kwargs).execute()
@@ -71,14 +68,4 @@ class GoogleYoutubePlugin(GooglePlugin, CalendarInterface):
         return events
 
 
-    def _get_service(self, scope=None):
-        if scope is None:
-            scope = self.scopes[0]
-
-        credentials = self.credentials[scope]
-        http = credentials.authorize(httplib2.Http())
-        return discovery.build('youtube', 'v3', http=http, cache_discovery=False)
-
-
 # vim:sw=4:ts=4:et:
-

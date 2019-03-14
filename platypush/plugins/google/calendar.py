@@ -4,10 +4,7 @@
 
 import base64
 import datetime
-import httplib2
 import os
-
-from apiclient import discovery
 
 from platypush.plugins import action
 from platypush.plugins.google import GooglePlugin
@@ -33,22 +30,13 @@ class GoogleCalendarPlugin(GooglePlugin, CalendarInterface):
         """
 
         now = datetime.datetime.utcnow().isoformat() + 'Z'
-        service = self._get_service()
+        service = self.get_service('calendar', 'v3')
         result = service.events().list(calendarId='primary', timeMin=now,
                                        maxResults=max_results, singleEvents=True,
                                        orderBy='startTime').execute()
 
         events = result.get('items', [])
         return events
-
-
-    def _get_service(self, scope=None):
-        if scope is None:
-            scope = self.scopes[0]
-
-        credentials = self.credentials[scope]
-        http = credentials.authorize(httplib2.Http())
-        return discovery.build('calendar', 'v3', http=http, cache_discovery=False)
 
 
 # vim:sw=4:ts=4:et:

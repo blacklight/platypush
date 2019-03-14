@@ -33,7 +33,7 @@ class GooglePlugin(Plugin):
         * **google-api-python-client** (``pip install google-api-python-client``)
     """
 
-    def __init__(self, scopes, *args, **kwargs):
+    def __init__(self, scopes=None, *args, **kwargs):
         """
         Initialized the Google plugin with the required scopes.
 
@@ -42,11 +42,25 @@ class GooglePlugin(Plugin):
         """
 
         super().__init__(*args, **kwargs)
-        self.credentials = {}
+        self._scopes = scopes or []
 
-        for scope in scopes:
-            self.credentials[scope] = get_credentials(scope)
+        scopes = ' '.join(sorted(self._scopes))
+        self.credentials = {
+            scopes: get_credentials(scopes)
+        }
+
+
+    def get_service(self, service, version, scopes=None):
+        import httplib2
+        from apiclient import discovery
+
+        if scopes is None:
+            scopes = getattr(self, 'scopes') if hasattr(self, 'scopes') else []
+
+        scopes = ' '.join(sorted(scopes))
+        credentials = self.credentials[scopes]
+        http = credentials.authorize(httplib2.Http())
+        return discovery.build(service, version, http=http, cache_discovery=False)
 
 
 # vim:sw=4:ts=4:et:
-
