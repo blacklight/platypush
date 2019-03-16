@@ -1,0 +1,9 @@
+#!python3
+
+from platypush import main
+
+if __name__ == '__main__':
+    main()
+
+
+# vim:sw=4:ts=4:et:
