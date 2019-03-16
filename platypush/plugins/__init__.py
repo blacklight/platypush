@@ -1,12 +1,7 @@
-import inspect
-import sys
 import logging
-import threading
-import traceback
 
 from functools import wraps
 
-from platypush.config import Config
 from platypush.event import EventGenerator
 from platypush.message.response import Response
 from platypush.utils import get_decorators
