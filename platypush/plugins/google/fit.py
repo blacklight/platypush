@@ -1,5 +1,3 @@
-from apiclient import discovery
-
 from platypush.plugins import action
 from platypush.plugins.google import GooglePlugin
 
@@ -38,7 +36,7 @@ class GoogleFitPlugin(GooglePlugin):
         return sources['dataSource']
 
     @action
-    def get_data(self, data_source_id, user_id=None):
+    def get_data(self, data_source_id, user_id=None, limit=None):
         """
         Get raw data for the specified data_source_id
 
@@ -47,9 +45,42 @@ class GoogleFitPlugin(GooglePlugin):
         """
 
         service = self.get_service(service='fitness', version='v1')
-        return service.users().dataSources().dataPointChanges() \
-            .list(dataSourceId=data_source_id, userId=user_id or self.user_id) \
-            .execute().get('insertedDataPoint', [])
+        kwargs = {
+            'dataSourceId': data_source_id,
+            'userId': user_id or self.user_id,
+        }
+
+        if limit:
+            kwargs['limit'] = limit
+        data_points = []
+
+        for data_point in service.users().dataSources().dataPointChanges(). \
+                list(**kwargs).execute().get('insertedDataPoint', []):
+            data_point['startTime'] = float(data_point.pop('startTimeNanos'))/1e9
+            data_point['endTime'] = float(data_point.pop('endTimeNanos'))/1e9
+            data_point['modifiedTime'] = float(data_point.pop('modifiedTimeMillis'))/1e6
+            values = []
+
+            for value in data_point.pop('value'):
+                if value.get('intVal') is not None:
+                    value = value['intVal']
+                elif value.get('fpVal') is not None:
+                    value = value['fpVal']
+                elif value.get('stringVal') is not None:
+                    value = value['stringVal']
+                elif value.get('mapVal'):
+                    value = {
+                        v['key']: v['value'].get(
+                            'intVal', v['value'].get(
+                                'fpVal', v['value'].get('stringVal')))
+                        for v in value['mapVal'] }
+
+                values.append(value)
+
+            data_point['values'] = values
+            data_points.append(data_point)
+
+        return data_points
 
 
 # vim:sw=4:ts=4:et:
