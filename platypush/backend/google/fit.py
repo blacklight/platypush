@@ -61,9 +61,9 @@ class GoogleFitBackend(Backend):
                                    get(self._last_timestamp_varname).output.
                                    get(self._last_timestamp_varname) or 0)
 
-            for data_source in self.data_sources:
-                new_last_timestamp = last_timestamp
+            new_last_timestamp = last_timestamp
 
+            for data_source in self.data_sources:
                 for dp in get_plugin('google.fit').get_data(
                         user_id=self.user_id, data_source_id=data_source).output:
                     dp_time = dp.pop('startTime', 0)
@@ -82,10 +82,9 @@ class GoogleFitBackend(Backend):
                                for k,v in dp.items() }
                         ))
 
-                        if dp_time > new_last_timestamp:
-                            new_last_timestamp = dp_time
+                    new_last_timestamp = max(dp_time, new_last_timestamp)
 
-                last_timestamp = new_last_timestamp
+            last_timestamp = new_last_timestamp
 
             get_plugin('variable').set(**{
                 self._last_timestamp_varname: last_timestamp})
