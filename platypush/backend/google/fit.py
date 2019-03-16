@@ -3,6 +3,7 @@ import time
 from platypush.backend import Backend
 from platypush.context import get_plugin
 from platypush.message.event.google.fit import GoogleFitEvent
+from platypush.utils import camel_case_to_snake_case
 
 
 class GoogleFitBackend(Backend):
@@ -58,22 +59,28 @@ class GoogleFitBackend(Backend):
         while not self.should_stop():
             last_timestamp = float(get_plugin('variable').
                                    get(self._last_timestamp_varname).output.
-                                   get(self._last_timestamp_varname)) or 0
+                                   get(self._last_timestamp_varname) or 0)
 
             for data_source in self.data_sources:
                 new_last_timestamp = last_timestamp
 
                 for dp in get_plugin('google.fit').get_data(
                         user_id=self.user_id, data_source_id=data_source).output:
-                    dp_time = dp.get('startTime', 0)
+                    dp_time = dp.pop('startTime', 0)
+                    if 'dataSourceId' in dp:
+                        del dp['dataSourceId']
+
                     if  dp_time > last_timestamp:
                         self.bus.post(GoogleFitEvent(
                             user_id=self.user_id, data_source_id=data_source,
-                            data_type=dp.get('dataTypeName'),
-                            start_time=dp.get('startTime'),
-                            end_time=dp.get('endTime'),
-                            modified_time=dp.get('modifiedTime'),
-                            values=dp.get('values')))
+                            data_type=dp.pop('dataTypeName'),
+                            start_time=dp_time,
+                            end_time=dp.pop('endTime'),
+                            modified_time=dp.pop('modifiedTime'),
+                            values=dp.pop('values'),
+                            **{ camel_case_to_snake_case(k): v
+                               for k,v in dp.items() }
+                        ))
 
                         if dp_time > new_last_timestamp:
                             new_last_timestamp = dp_time

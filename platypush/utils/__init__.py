@@ -5,6 +5,7 @@ import importlib
 import inspect
 import logging
 import os
+import re
 import signal
 import socket
 import ssl
@@ -228,6 +229,10 @@ def get_mime_type(resource):
     else:
         mime = magic.Magic(mime=True)
         return mime.from_file(resource)
+
+def camel_case_to_snake_case(string):
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', string)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
 # vim:sw=4:ts=4:et:
