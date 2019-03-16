@@ -11,3 +11,4 @@ package.sh
 platypush/backend/http/static/resources/*
 docs/build
 .idea/
+config
