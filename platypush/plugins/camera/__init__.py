@@ -167,7 +167,7 @@ class CameraPlugin(Plugin):
                 self.logger.info('A recording thread is running, waiting for termination')
                 if self._recording_threads[device_id].is_alive():
                     self._recording_threads[device_id].join()
-            del self._recording_threads[device_id]
+                del self._recording_threads[device_id]
 
         if device_id in self._devices:
             self._devices[device_id].release()
