@@ -106,7 +106,7 @@ class Config(object):
 
         if 'environment' in self._config:
             for k,v in self._config['environment']:
-                os.environ[k] = v
+                os.environ[k] = str(v)
 
         self.backends = {}
         self.plugins = {}
