@@ -105,7 +105,7 @@ class Config(object):
             self._config['device_id'] = socket.gethostname()
 
         if 'environment' in self._config:
-            for k,v in self._config['environment']:
+            for k,v in self._config['environment'].items():
                 os.environ[k] = str(v)
 
         self.backends = {}
