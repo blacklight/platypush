@@ -162,20 +162,21 @@ class CameraPlugin(Plugin):
         if device_id in self._is_recording:
             self._is_recording[device_id].clear()
 
-        if wait_thread_termination and device_id in self._recording_threads:
-            self.logger.info('A recording thread is running, waiting for termination')
-            if self._recording_threads[device_id].is_alive():
-                self._recording_threads[device_id].join()
+        if device_id in self._recording_threads:
+            if wait_thread_termination:
+                self.logger.info('A recording thread is running, waiting for termination')
+                if self._recording_threads[device_id].is_alive():
+                    self._recording_threads[device_id].join()
             del self._recording_threads[device_id]
 
         if device_id in self._devices:
             self._devices[device_id].release()
             del self._devices[device_id]
             self.fire_event(CameraRecordingStoppedEvent(device_id=device_id))
+            self.logger.info("Device {} released".format(device_id))
 
         if device_id in self._recording_info:
             del self._recording_info[device_id]
-            self.logger.info("Device {} released".format(device_id))
 
 
     def _store_frame_to_file(self, frame, frames_dir, image_file):
@@ -282,8 +283,8 @@ class CameraPlugin(Plugin):
                 frame = cv2.cvtColor(frame, color_transform)
 
                 if rotate:
+                    rows, cols = frame.shape
                     if not rotation_matrix:
-                        rows, cols = frame.shape
                         rotation_matrix = cv2.getRotationMatrix2D(
                             (cols/2, rows/2), rotate, 1)
 
@@ -296,7 +297,7 @@ class CameraPlugin(Plugin):
                     scale_x = scale_x or 1
                     scale_y = scale_y or 1
                     frame = cv2.resize(frame, None, fx=scale_x, fy=scale_y,
-                                       interpolation = cv.INTER_CUBIC)
+                                       interpolation = cv2.INTER_CUBIC)
 
                 self._store_frame_to_file(frame=frame, frames_dir=frames_dir,
                                           image_file=image_file)
