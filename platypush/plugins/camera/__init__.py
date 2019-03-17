@@ -136,6 +136,10 @@ class CameraPlugin(Plugin):
         self._recording_threads = {}    # device_id => Thread map
         self._recording_info = {}   # device_id => recording info map
 
+        # Temporary workaround for bug on OpenCV >= 3.4.2 that doesn't
+        # properly release the device, see https://github.com/opencv/opencv/issues/12301#issuecomment-415801564
+        if tuple(map(int, cv2.__version__.split('.'))) >= (3, 4, 2):
+            os.environ['OPENCV_VIDEOIO_PRIORITY_MSMF'] = '0'
 
     def _init_device(self, device_id, frames_dir=None, **info):
         self._release_device(device_id)
@@ -172,6 +176,7 @@ class CameraPlugin(Plugin):
 
         if device_id in self._recording_info:
             del self._recording_info[device_id]
+            self.logger.info("Device {} released".format(device_id))
 
 
     def _store_frame_to_file(self, frame, frames_dir, image_file):
