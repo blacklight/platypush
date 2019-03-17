@@ -270,7 +270,7 @@ class CameraPlugin(Plugin):
 
             self.fire_event(CameraRecordingStartedEvent(**evt_args))
 
-            while self._is_recording[device_id].is_set():
+            while device_id in self._is_recording and self._is_recording[device_id].is_set():
                 if duration and time.time() - recording_started_time >= duration \
                         or n_frames and captured_frames >= n_frames:
                     break
