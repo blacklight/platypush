@@ -3,7 +3,6 @@ import logging
 import os
 import socket
 import sys
-import time
 import yaml
 
 from platypush.utils import get_hash
@@ -104,6 +103,10 @@ class Config(object):
 
         if 'device_id' not in self._config:
             self._config['device_id'] = socket.gethostname()
+
+        if 'environment' in self._config:
+            for k,v in self._config['environment']:
+                os.environ[k] = v
 
         self.backends = {}
         self.plugins = {}
