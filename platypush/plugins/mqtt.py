@@ -130,24 +130,24 @@ class MqttPlugin(Plugin):
             if tls_cafile:
                 publisher_args['tls'] = { 'ca_certs': tls_cafile }
                 if tls_certfile:
-                    publishers_args['tls']['certfile'] = tls_certfile
+                    publisher_args['tls']['certfile'] = tls_certfile
                 if tls_keyfile:
-                    publishers_args['tls']['keyfile'] = tls_keyfile
+                    publisher_args['tls']['keyfile'] = tls_keyfile
                 if tls_version:
-                    publishers_args['tls']['tls_version'] = tls_version
+                    publisher_args['tls']['tls_version'] = tls_version
                 if tls_ciphers:
-                    publishers_args['tls']['ciphers'] = tls_ciphers
+                    publisher_args['tls']['ciphers'] = tls_ciphers
         else:
             if self.tls_cafile:
                 publisher_args['tls'] = { 'ca_certs': self.tls_cafile }
                 if self.tls_certfile:
-                    publishers_args['tls']['certfile'] = self.tls_certfile
+                    publisher_args['tls']['certfile'] = self.tls_certfile
                 if self.tls_keyfile:
-                    publishers_args['tls']['keyfile'] = self.tls_keyfile
+                    publisher_args['tls']['keyfile'] = self.tls_keyfile
                 if self.tls_version:
-                    publishers_args['tls']['tls_version'] = self.tls_version
+                    publisher_args['tls']['tls_version'] = self.tls_version
                 if self.tls_ciphers:
-                    publishers_args['tls']['ciphers'] = self.tls_ciphers
+                    publisher_args['tls']['ciphers'] = self.tls_ciphers
 
         try: msg = json.dumps(msg)
         except: pass
