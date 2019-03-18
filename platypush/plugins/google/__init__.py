@@ -44,10 +44,13 @@ class GooglePlugin(Plugin):
         super().__init__(*args, **kwargs)
         self._scopes = scopes or []
 
-        scopes = ' '.join(sorted(self._scopes))
-        self.credentials = {
-            scopes: get_credentials(scopes)
-        }
+        if self._scopes:
+            scopes = ' '.join(sorted(self._scopes))
+            self.credentials = {
+                scopes: get_credentials(scopes)
+            }
+        else:
+            self.credentials = {}
 
 
     def get_service(self, service, version, scopes=None):
