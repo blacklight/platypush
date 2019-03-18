@@ -56,21 +56,23 @@ class GoogleFitBackend(Backend):
         self.logger.info('Started Google Fit backend on data sources {}'.format(
             self.data_sources))
 
-        while not self.should_stop():
-            last_timestamp = float(get_plugin('variable').
-                                   get(self._last_timestamp_varname).output.
-                                   get(self._last_timestamp_varname) or 0)
+        last_timestamp = float(get_plugin('variable').
+                                get(self._last_timestamp_varname).output.
+                                get(self._last_timestamp_varname) or 0)
 
+        while not self.should_stop():
             new_last_timestamp = last_timestamp
 
             for data_source in self.data_sources:
-                for dp in get_plugin('google.fit').get_data(
-                        user_id=self.user_id, data_source_id=data_source).output:
+                data_points = get_plugin('google.fit').get_data(
+                    user_id=self.user_id, data_source_id=data_source).output
+
+                for dp in data_points:
                     dp_time = dp.pop('startTime', 0)
                     if 'dataSourceId' in dp:
                         del dp['dataSourceId']
 
-                    if  dp_time > last_timestamp:
+                    if dp_time > last_timestamp:
                         self.bus.post(GoogleFitEvent(
                             user_id=self.user_id, data_source_id=data_source,
                             data_type=dp.pop('dataTypeName'),
