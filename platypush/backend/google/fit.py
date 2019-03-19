@@ -62,8 +62,11 @@ class GoogleFitBackend(Backend):
 
         while not self.should_stop():
             new_last_timestamp = last_timestamp
+            self.logger.info('Scanning fit data source, last seen timestamp: {}'.
+                             format(last_timestamp))
 
             for data_source in self.data_sources:
+                data_source_last_timestamp = 0
                 data_points = get_plugin('google.fit').get_data(
                     user_id=self.user_id, data_source_id=data_source).output
 
@@ -85,6 +88,12 @@ class GoogleFitBackend(Backend):
                         ))
 
                     new_last_timestamp = max(dp_time, new_last_timestamp)
+                    data_source_last_timestamp = max(dp_time, data_source_last_timestamp)
+
+                self.logger.info('Got {} entries from data source {}, last timestamp: {}'.
+                                 format(len(data_points), data_source,
+                                        data_source_last_timestamp))
+
 
             last_timestamp = new_last_timestamp
 
