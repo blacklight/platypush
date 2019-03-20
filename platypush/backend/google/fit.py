@@ -66,40 +66,45 @@ class GoogleFitBackend(Backend):
             self.logger.info('Scanning fit data source, last seen timestamp: {}'.
                              format(str(datetime.datetime.fromtimestamp(last_timestamp))))
 
-            for data_source in self.data_sources:
-                data_source_last_timestamp = 0
-                data_points = get_plugin('google.fit').get_data(
-                    user_id=self.user_id, data_source_id=data_source).output
+            try:
+                for data_source in self.data_sources:
+                    data_source_last_timestamp = 0
+                    data_points = get_plugin('google.fit').get_data(
+                        user_id=self.user_id, data_source_id=data_source).output
 
-                for dp in data_points:
-                    dp_time = dp.pop('startTime', 0)
-                    if 'dataSourceId' in dp:
-                        del dp['dataSourceId']
+                    for dp in data_points:
+                        dp_time = dp.pop('startTime', 0)
+                        if 'dataSourceId' in dp:
+                            del dp['dataSourceId']
 
-                    if dp_time > last_timestamp:
-                        self.bus.post(GoogleFitEvent(
-                            user_id=self.user_id, data_source_id=data_source,
-                            data_type=dp.pop('dataTypeName'),
-                            start_time=dp_time,
-                            end_time=dp.pop('endTime'),
-                            modified_time=dp.pop('modifiedTime'),
-                            values=dp.pop('values'),
-                            **{ camel_case_to_snake_case(k): v
-                               for k,v in dp.items() }
-                        ))
+                        if dp_time > last_timestamp:
+                            self.bus.post(GoogleFitEvent(
+                                user_id=self.user_id, data_source_id=data_source,
+                                data_type=dp.pop('dataTypeName'),
+                                start_time=dp_time,
+                                end_time=dp.pop('endTime'),
+                                modified_time=dp.pop('modifiedTime'),
+                                values=dp.pop('values'),
+                                **{ camel_case_to_snake_case(k): v
+                                for k,v in dp.items() }
+                            ))
 
-                    new_last_timestamp = max(dp_time, new_last_timestamp)
-                    data_source_last_timestamp = max(dp_time, data_source_last_timestamp)
+                        new_last_timestamp = max(dp_time, new_last_timestamp)
+                        data_source_last_timestamp = max(dp_time, data_source_last_timestamp)
 
-                self.logger.info('Got {} entries from data source {}, last timestamp: {}'.
-                                 format(len(data_points), data_source,
-                                        str(datetime.datetime.fromtimestamp(data_source_last_timestamp))))
+                    self.logger.info('Got {} entries from data source {}, last timestamp: {}'.
+                                    format(len(data_points), data_source,
+                                            str(datetime.datetime.fromtimestamp(data_source_last_timestamp))))
+                    last_timestamp = new_last_timestamp
+
+                    get_plugin('variable').set(**{
+                        self._last_timestamp_varname: last_timestamp})
+            except Exception as e:
+                self.logger.warning('Exception while processing Fit data')
+                self.logger.exception(e)
+                continue
 
 
-            last_timestamp = new_last_timestamp
-
-            get_plugin('variable').set(**{
-                self._last_timestamp_varname: last_timestamp})
             time.sleep(self.poll_seconds)
 
 
