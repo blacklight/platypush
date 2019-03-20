@@ -4,10 +4,6 @@ import shutil
 import threading
 import time
 
-# Temporary workaround for bug on OpenCV >= 3.4.2 that doesn't
-# properly release the device, see https://github.com/opencv/opencv/issues/12301#issuecomment-415801564
-os.environ['OPENCV_VIDEOIO_PRIORITY_MSMF'] = '0'
-
 import cv2
 
 from datetime import datetime
