@@ -94,7 +94,6 @@ $(document).ready(function() {
             var $host = $('<div></div>')
                 .addClass('snapcast-host-container')
                 .addClass('snapcast-settings-btn')
-                .attr('data-modal', '#snapcast-host-modal')
                 .data('name', name)
                 .data('host', host);
 
@@ -103,8 +102,7 @@ $(document).ready(function() {
 
             var $hostTitle = $('<h1></h1>')
                 .addClass('snapcast-host-settings')
-                .addClass('snapcast-settings-btn')
-                .attr('data-modal', '#snapcast-host-modal');
+                .addClass('snapcast-settings-btn');
 
             var $hostSettings = $('<i></i>')
                 .attr('data-modal', '#snapcast-host-modal')
@@ -134,7 +132,6 @@ $(document).ready(function() {
                 var $groupTitle = $('<h2></h2>')
                     .addClass('snapcast-group-settings')
                     .addClass('snapcast-settings-btn')
-                    .attr('data-modal', '#snapcast-group-modal')
                     .addClass('eleven columns');
 
                 var $groupSettings = $('<i></i>')
@@ -181,7 +178,6 @@ $(document).ready(function() {
                     var $clientTitle = $('<h3></h3>')
                         .addClass('snapcast-settings-btn')
                         .addClass('snapcast-client-settings')
-                        .attr('data-modal', '#snapcast-client-modal')
                         .addClass('two columns');
 
                     var $clientSettings = $('<i></i>')
