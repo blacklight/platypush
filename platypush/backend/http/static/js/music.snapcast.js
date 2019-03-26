@@ -102,17 +102,13 @@ $(document).ready(function() {
 
             var $hostTitle = $('<h1></h1>')
                 .addClass('snapcast-host-settings')
-                .addClass('snapcast-settings-btn');
-
-            var $hostSettings = $('<i></i>')
-                .attr('data-modal', '#snapcast-host-modal')
-                .addClass('fa fa-ellipsis-v');
+                .addClass('snapcast-settings-btn')
+                .attr('data-modal', '#snapcast-host-modal');
 
             var $hostName = $('<span></span>')
                 .attr('data-modal', '#snapcast-host-modal')
-                .html('&nbsp; ' + name);
+                .text(name);
 
-            $hostSettings.appendTo($hostTitle);
             $hostName.appendTo($hostTitle);
             $hostTitle.appendTo($hostHeader);
             $hostHeader.appendTo($host);
@@ -132,15 +128,9 @@ $(document).ready(function() {
                 var $groupTitle = $('<h2></h2>')
                     .addClass('snapcast-group-settings')
                     .addClass('snapcast-settings-btn')
-                    .addClass('eleven columns');
-
-                var $groupSettings = $('<i></i>')
                     .attr('data-modal', '#snapcast-group-modal')
-                    .addClass('fa fa-ellipsis-v');
-
-                var $groupName = $('<span></span>')
-                    .attr('data-modal', '#snapcast-group-modal')
-                    .html('&nbsp; ' + groupName);
+                    .addClass('eleven columns')
+                    .text(groupName);
 
                 var $groupMuteToggle = createPowerToggleElement({
                     id: group.id,
@@ -149,8 +139,6 @@ $(document).ready(function() {
                     .addClass('snapcast-mute-toggle')
                     .addClass('snapcast-group-mute-toggle');
 
-                $groupSettings.appendTo($groupTitle);
-                $groupName.appendTo($groupTitle);
                 $groupTitle.appendTo($groupHeader);
                 $groupMuteToggle.appendTo($groupHeader);
                 $groupHeader.appendTo($group);
@@ -178,15 +166,9 @@ $(document).ready(function() {
                     var $clientTitle = $('<h3></h3>')
                         .addClass('snapcast-settings-btn')
                         .addClass('snapcast-client-settings')
-                        .addClass('two columns');
-
-                    var $clientSettings = $('<i></i>')
                         .attr('data-modal', '#snapcast-client-modal')
-                        .addClass('fa fa-ellipsis-v');
-
-                    var $clientName = $('<span></span>')
-                        .attr('data-modal', '#snapcast-client-modal')
-                        .html('&nbsp; ' + clientName);
+                        .addClass('two columns')
+                        .text(clientName);
 
                     var $volumeSlider = $('<input></input>')
                         .addClass('slider snapcast-volume-slider')
@@ -204,8 +186,6 @@ $(document).ready(function() {
                         .addClass('snapcast-mute-toggle')
                         .addClass('snapcast-client-mute-toggle');
 
-                    $clientSettings.appendTo($clientTitle);
-                    $clientName.appendTo($clientTitle);
                     $clientTitle.appendTo($clientRow);
                     $volumeSlider.appendTo($clientRow);
                     $clientMuteToggle.appendTo($clientRow);
