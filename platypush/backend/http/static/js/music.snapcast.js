@@ -93,7 +93,6 @@ $(document).ready(function() {
 
             var $host = $('<div></div>')
                 .addClass('snapcast-host-container')
-                .addClass('snapcast-settings-btn')
                 .data('name', name)
                 .data('host', host);
 
