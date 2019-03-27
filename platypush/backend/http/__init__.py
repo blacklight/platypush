@@ -204,7 +204,8 @@ class HttpBackend(Backend):
 
         loop = get_or_create_event_loop()
 
-        for websocket in self.active_websockets:
+        websockets = self.active_websockets.copy()
+        for websocket in websockets:
             try:
                 loop.run_until_complete(send_event(websocket))
             except websockets.exceptions.ConnectionClosed:
