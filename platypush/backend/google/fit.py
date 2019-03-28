@@ -73,7 +73,7 @@ class GoogleFitBackend(Backend):
                     new_data_points = 0
 
                     for dp in data_points:
-                        dp_time = dp.pop('modifiedTime', 0)
+                        dp_time = dp.pop('endTime', 0)
                         if 'dataSourceId' in dp:
                             del dp['dataSourceId']
 
@@ -82,8 +82,8 @@ class GoogleFitBackend(Backend):
                                 user_id=self.user_id, data_source_id=data_source,
                                 data_type=dp.pop('dataTypeName'),
                                 start_time=dp.pop('startTime'),
-                                end_time=dp.pop('endTime'),
-                                modified_time=dp_time,
+                                end_time=dp_time,
+                                modified_time=dp.pop('modifiedTime'),
                                 values=dp.pop('values'),
                                 **{camel_case_to_snake_case(k): v
                                     for k, v in dp.items()}
