@@ -61,8 +61,9 @@ class HttpWebpagePlugin(Plugin):
             raise RuntimeError("Unable to parse content for {}: {}".format(url, response.reason))
 
         title = response.json()['title']
-        content = '<h1>{title}</h1>{content}'.\
-            format(title=title, content=response.json()['content'])
+        content = '<body style="{body_style}"><h1>{title}</h1>{content}</body>'.\
+            format(title=title, content=response.json()['content'],
+                   body_style='font-size: 15px; font-family: Verdana, Geneva, sans-serif')
 
         if not outfile:
             return {
