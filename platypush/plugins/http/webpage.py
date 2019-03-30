@@ -63,7 +63,7 @@ class HttpWebpagePlugin(Plugin):
         title = response.json()['title']
         content = '<body style="{body_style}"><h1>{title}</h1>{content}</body>'.\
             format(title=title, content=response.json()['content'],
-                   body_style='font-size: 15px; font-family: Verdana, Geneva, sans-serif')
+                   body_style='font-size: 20px; font-family: Verdana, Geneva, sans-serif')
 
         if not outfile:
             return {
