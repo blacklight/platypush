@@ -46,6 +46,9 @@ class HttpRequestPlugin(Plugin):
     def _exec(self, method, url, output='text', **kwargs):
         """ Available output types: text (default), json, binary """
 
+        if 'username' in kwargs and 'password' in kwargs:
+            kwargs['auth'] = (kwargs.pop('username'), kwargs.pop('password'))
+
         method = getattr(requests, method)
         response = method(url, **kwargs)
         response.raise_for_status()
