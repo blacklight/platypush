@@ -54,6 +54,7 @@ class HttpWebpagePlugin(Plugin):
         if not self.mercury_api_key:
             raise RuntimeError("mercury_api_key not set")
 
+        self.logger.info('Parsing URL {}'.format(url))
         response = requests.get('https://mercury.postlight.com/parser',
                                 params={'url': url},
                                 headers={'x-api-key': self.mercury_api_key})
