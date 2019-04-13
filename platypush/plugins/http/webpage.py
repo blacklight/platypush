@@ -61,6 +61,9 @@ class HttpWebpagePlugin(Plugin):
         if not response or not response.ok:
             raise RuntimeError("Unable to parse content for {}: {}".format(url, response.reason))
 
+        if not len(response.text):
+            raise RuntimeError("Empty response from Mercury API for URL {}".format(url))
+
         self.logger.info('Got response from Mercury API: {}'.format(response.json()))
         title = response.json().get('title', 'No_title_{}'.format(int(time.time())))
         content = '<body style="{body_style}"><h1>{title}</h1>{content}</body>'.\
