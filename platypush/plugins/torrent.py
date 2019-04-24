@@ -26,7 +26,12 @@ class TorrentPlugin(Plugin):
     """
 
     default_torrent_ports = [6881, 6891]
-    supported_categories = ['movies', 'tv', 'anime']
+    supported_categories = {
+        'movies': 'https://movies-v2.api-fetch.website/movies/1',
+        'tv': 'https://tv-v2.api-fetch.website/tv/1',
+        'anime': 'https://anime.api-fetch.website/anime/1',
+    }
+
     torrent_state = {}
     transfers = {}
 
@@ -50,7 +55,7 @@ class TorrentPlugin(Plugin):
     def _search_all(self, query, *args, **kwargs):
         results = {
             category: []
-            for category in self.supported_categories
+            for category in self.supported_categories.keys()
         }
 
         def worker(category):
@@ -58,7 +63,7 @@ class TorrentPlugin(Plugin):
 
         workers = [
             threading.Thread(target=worker, kwargs={'category': category})
-            for category in self.supported_categories
+            for category in self.supported_categories.keys()
         ]
 
         for worker in workers:
@@ -93,12 +98,12 @@ class TorrentPlugin(Plugin):
 
         if category not in self.supported_categories:
             raise RuntimeError('Unsupported category {}. Supported category: {}'.
-                               format(category, self.supported_categories))
+                               format(category, self.supported_categories.keys()))
 
         self.logger.info('Searching {} torrents for "{}"'.format(category, query))
         url = 'https://{category}-v2.api-fetch.website/{category}/1'.format(category=category)
         request = urllib.request.urlopen(urllib.request.Request(
-            url + '?' + urllib.parse.urlencode({
+            self.supported_categories[category] + '?' + urllib.parse.urlencode({
                 'sort': 'relevance',
                 'keywords': query,
             }),
