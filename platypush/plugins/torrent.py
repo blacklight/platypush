@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import threading
 import time
 
 import urllib.request
@@ -46,8 +47,33 @@ class TorrentPlugin(Plugin):
         if download_dir:
             self.download_dir = os.path.abspath(os.path.expanduser(download_dir))
 
+    def _search_all(self, query, *args, **kwargs):
+        results = {
+            category: []
+            for category in self.supported_categories
+        }
+
+        def worker(category):
+            results[category] = self.search(query, category=category, *args, **kwargs).output
+
+        workers = [
+            threading.Thread(target=worker, kwargs={'category': category})
+            for category in self.supported_categories
+        ]
+
+        for worker in workers:
+            worker.start()
+
+        for worker in workers:
+            worker.join()
+
+        ret = []
+        for (category, items) in results.items():
+            ret += items
+        return ret
+
     @action
-    def search(self, query, category='movies', language=None):
+    def search(self, query, category=None, language=None):
         """
         Perform a search of video torrents.
 
@@ -55,12 +81,15 @@ class TorrentPlugin(Plugin):
         :type query: str
 
         :param category: Category to search. Supported types: "movies", "tv", "anime".
-            Default: "movies"
+            Default: None (search all categories)
         :type category: str
 
         :param language: Language code for the results - example: "en" (default: None, no filter)
         :type language: str
         """
+
+        if not category:
+            return self._search_all(query, language=language)
 
         if category not in self.supported_categories:
             raise RuntimeError('Unsupported category {}. Supported category: {}'.
@@ -86,8 +115,9 @@ class TorrentPlugin(Plugin):
         return sorted([
             {
                 'imdb_id': result.get('imdb_id'),
-                'title': '{title} [{language}][{quality}]'.format(
-                    title=result.get('title'), language=lang, quality=quality),
+                'type': category,
+                'title': '{title} [{category}][{language}][{quality}]'.format(
+                    title=result.get('title'), language=lang, quality=quality, category=category),
                 'year': result.get('year'),
                 'synopsis': result.get('synopsis'),
                 'trailer': result.get('trailer'),
