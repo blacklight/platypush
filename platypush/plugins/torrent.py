@@ -28,8 +28,8 @@ class TorrentPlugin(Plugin):
     default_torrent_ports = [6881, 6891]
     supported_categories = {
         'movies': 'https://movies-v2.api-fetch.website/movies/1',
-        'tv': 'https://tv-v2.api-fetch.website/tv/1',
-        'anime': 'https://anime.api-fetch.website/anime/1',
+        'tv': 'https://tv-v2.api-fetch.website/shows/1',
+        'anime': 'https://anime.api-fetch.website/animes/1',
     }
 
     torrent_state = {}
