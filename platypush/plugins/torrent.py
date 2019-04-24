@@ -25,6 +25,7 @@ class TorrentPlugin(Plugin):
     """
 
     default_torrent_ports = [6881, 6891]
+    supported_categories = ['movies', 'tv', 'anime']
     torrent_state = {}
     transfers = {}
 
@@ -46,25 +47,35 @@ class TorrentPlugin(Plugin):
             self.download_dir = os.path.abspath(os.path.expanduser(download_dir))
 
     @action
-    def search(self, query):
+    def search(self, query, category='movies', language=None):
         """
         Perform a search of video torrents.
 
         :param query: Query string, video name or partial name
         :type query: str
+
+        :param category: Category to search. Supported types: "movies", "tv", "anime".
+            Default: "movies"
+        :type category: str
+
+        :param language: Language code for the results - example: "en" (default: None, no filter)
+        :type language: str
         """
 
-        self.logger.info('Searching matching torrents for "{}"'.format(query))
+        if category not in self.supported_categories:
+            raise RuntimeError('Unsupported category {}. Supported category: {}'.
+                               format(category, self.supported_categories))
+
+        self.logger.info('Searching {} torrents for "{}"'.format(category, query))
+        url = 'https://{category}-v2.api-fetch.website/{category}/1'.format(category=category)
         request = urllib.request.urlopen(urllib.request.Request(
-            'https://api.apidomain.info/list?' + urllib.parse.urlencode({
+            url + '?' + urllib.parse.urlencode({
                 'sort': 'relevance',
-                'quality': '720p,1080p,3d',
-                'page': 1,
                 'keywords': query,
             }),
-            headers = {
+            headers={
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 ' +
-                    '(KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'
+                              '(KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36'
             })
         )
 
@@ -72,24 +83,26 @@ class TorrentPlugin(Plugin):
         if isinstance(response, bytes):
             response = response.decode('utf-8')
 
-        results = []
-
-        for result in json.loads(response).get('MovieList', []):
-            torrent = sorted(result['items'], key=lambda _:
-                             _['torrent_seeds'] + _['torrent_peers'])[-1]
-            results.append({
-                'title': result['title'],
-                'url': torrent['torrent_magnet'],
-                'file': torrent['file'],
-                'size': torrent['size_bytes'],
-                'language': torrent.get('language'),
-                'quality': torrent.get('quality'),
-                'torrent_url': torrent['torrent_url'],
-                'torrent_seeds': torrent['torrent_seeds'],
-                'torrent_peers': torrent['torrent_peers'],
-            })
-
-        return results
+        return sorted([
+            {
+                'imdb_id': result.get('imdb_id'),
+                'title': '{title} [{language}][{quality}]'.format(
+                    title=result.get('title'), language=lang, quality=quality),
+                'year': result.get('year'),
+                'synopsis': result.get('synopsis'),
+                'trailer': result.get('trailer'),
+                'language': lang,
+                'quality': quality,
+                'size': item.get('size'),
+                'seeds': item.get('seed'),
+                'peers': item.get('peer'),
+                'url': item.get('url'),
+            }
+            for result in (json.loads(response) or [])
+            for (lang, items) in result.get('torrents', {}).items()
+            if not language or language == lang
+            for (quality, item) in items.items()
+        ], key=lambda _: _.get('seeds'), reverse=True)
 
     @action
     def download(self, torrent, download_dir=None):
