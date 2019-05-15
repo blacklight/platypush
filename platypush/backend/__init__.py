@@ -3,23 +3,22 @@
 .. license: MIT
 """
 
-import importlib
 import logging
-import sys
 import threading
 
 from threading import Thread
 
 from platypush.bus import Bus
 from platypush.config import Config
-from platypush.context import get_backend, get_plugin
-from platypush.utils import get_message_class_by_type, set_timeout, clear_timeout
+from platypush.context import get_backend
+from platypush.utils import set_timeout, clear_timeout, \
+    get_redis_queue_name_by_message, set_thread_name
+
 from platypush.event import EventGenerator
 from platypush.message import Message
 from platypush.message.event import Event, StopEvent
 from platypush.message.request import Request
 from platypush.message.response import Response
-from platypush.utils import get_redis_queue_name_by_message, set_thread_name
 
 
 class Backend(Thread, EventGenerator):
@@ -64,10 +63,9 @@ class Backend(Thread, EventGenerator):
             else None
 
         if 'logging' in kwargs:
-            self.logger.setLevel(getattr(logging, kwargs['logging'].upper()))
+            self.logger.setLevel(getattr(logging, kwargs.get('logging').upper()))
 
         Thread.__init__(self)
-
 
     def on_message(self, msg):
         """
@@ -76,7 +74,8 @@ class Backend(Thread, EventGenerator):
         It should be called by the derived classes whenever
         a new message should be processed.
 
-        :param msg: Received message.  It can be either a key-value dictionary, a platypush.message.Message object, or a string/byte UTF-8 encoded string
+        :param msg: Received message.  It can be either a key-value dictionary, a platypush.message.Message object,
+            or a string/byte UTF-8 encoded string
         """
 
         msg = Message.build(msg)

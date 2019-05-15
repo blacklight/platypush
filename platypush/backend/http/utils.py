@@ -83,6 +83,9 @@ class HttpUtils(object):
 
     @classmethod
     def to_json(cls, data):
+        if isinstance(data, type({}.keys())):
+            # Convert dict_keys to list before serializing
+            data = list(data)
         return json.dumps(data)
 
     @classmethod

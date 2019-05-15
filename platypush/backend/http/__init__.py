@@ -25,7 +25,9 @@ class HttpBackend(Backend):
                 }' \\
                 http://localhost:8008/execute
 
-        * To interact with your system (and control plugins and backends) through the Platypush web panel, by default available on your web root document. Any plugin that you have configured and available as a panel plugin will appear on the web panel as well as a tab.
+        * To interact with your system (and control plugins and backends) through the Platypush web panel,
+          by default available on your web root document. Any plugin that you have configured and available as a panel
+          plugin will appear on the web panel as well as a tab.
 
         * To display a fullscreen dashboard with your configured widgets, by default available under ``/dashboard``
 
@@ -69,9 +71,9 @@ class HttpBackend(Backend):
 
     def __init__(self, port=_DEFAULT_HTTP_PORT,
                  websocket_port=_DEFAULT_WEBSOCKET_PORT,
-                 disable_websocket=False, dashboard={}, resource_dirs={},
+                 disable_websocket=False, dashboard=None, resource_dirs=None,
                  ssl_cert=None, ssl_key=None, ssl_cafile=None, ssl_capath=None,
-                 maps={}, run_externally=False, uwsgi_args=None, **kwargs):
+                 maps=None, run_externally=False, uwsgi_args=None, **kwargs):
         """
         :param port: Listen port for the web server (default: 8008)
         :type port: int
@@ -88,10 +90,12 @@ class HttpBackend(Backend):
         :param ssl_key: Set it to the path of your key file if you want to enable HTTPS (default: None)
         :type ssl_key: str
 
-        :param ssl_cafile: Set it to the path of your certificate authority file if you want to enable HTTPS (default: None)
+        :param ssl_cafile: Set it to the path of your certificate authority file if you want to enable HTTPS
+            (default: None)
         :type ssl_cafile: str
 
-        :param ssl_capath: Set it to the path of your certificate authority directory if you want to enable HTTPS (default: None)
+        :param ssl_capath: Set it to the path of your certificate authority directory if you want to enable HTTPS
+            (default: None)
         :type ssl_capath: str
 
         :param resource_dirs: Static resources directories that will be
@@ -100,7 +104,8 @@ class HttpBackend(Backend):
             the value is the absolute path to expose.
         :type resource_dirs: dict[str, str]
 
-        :param dashboard: Set it if you want to use the dashboard service. It will contain the configuration for the widgets to be used (look under ``platypush/backend/http/templates/widgets/`` for the available widgets).
+        :param dashboard: Set it if you want to use the dashboard service. It will contain the configuration for the
+            widgets to be used (look under ``platypush/backend/http/templates/widgets/`` for the available widgets).
 
         Example configuration::
 
@@ -119,14 +124,15 @@ class HttpBackend(Backend):
                     -
                         widget: image-carousel     # Image carousel
                         columns: 6
-                        images_path: ~/Dropbox/Photos/carousel  # Absolute path (valid as long as it's a subdirectory of one of the available `resource_dirs`)
+                        # Absolute path (valid as long as it's a subdirectory of one of the available `resource_dirs`)
+                        images_path: ~/Dropbox/Photos/carousel
                         refresh_seconds: 15
                     -
                         widget: rss-news           # RSS feeds widget
                         # Requires backend.http.poll to be enabled with some RSS sources and write them to sqlite db
                         columns: 6
                         limit: 25
-                        db: "sqlite:////home/blacklight/.local/share/platypush/feeds/rss.db"
+                        db: "sqlite:////home/user/.local/share/platypush/feeds/rss.db"
 
         :type dashboard: dict
 
@@ -155,13 +161,18 @@ class HttpBackend(Backend):
 
         self.port = port
         self.websocket_port = websocket_port
-        self.dashboard = dashboard
-        self.maps = maps
+        self.dashboard = dashboard or {}
+        self.maps = maps or {}
         self.server_proc = None
         self.disable_websocket = disable_websocket
         self.websocket_thread = None
-        self.resource_dirs = { name: os.path.abspath(
-            os.path.expanduser(d)) for name, d in resource_dirs.items() }
+
+        if resource_dirs:
+            self.resource_dirs = {name: os.path.abspath(
+                os.path.expanduser(d)) for name, d in resource_dirs.items()}
+        else:
+            self.resource_dirs = {}
+
         self.active_websockets = set()
         self.run_externally = run_externally
         self.uwsgi_args = uwsgi_args or []
@@ -175,10 +186,8 @@ class HttpBackend(Backend):
             self.uwsgi_args = [str(_) for _ in self.uwsgi_args] + \
                 ['--module', 'platypush.backend.http.uwsgi', '--enable-threads']
 
-
-    def send_message(self, msg):
+    def send_message(self, msg, **kwargs):
         self.logger.warning('Use cURL or any HTTP client to query the HTTP backend')
-
 
     def on_stop(self):
         """ On backend stop """
@@ -196,22 +205,21 @@ class HttpBackend(Backend):
         """ Notify all the connected web clients (over websocket) of a new event """
         import websockets
 
-        async def send_event(websocket):
+        async def send_event(ws):
             try:
-                await websocket.send(str(event))
+                await ws.send(str(event))
             except Exception as e:
                 self.logger.warning('Error on websocket send_event: {}'.format(e))
 
         loop = get_or_create_event_loop()
 
-        websockets = self.active_websockets.copy()
-        for websocket in websockets:
+        wss = self.active_websockets.copy()
+        for websocket in wss:
             try:
                 loop.run_until_complete(send_event(websocket))
             except websockets.exceptions.ConnectionClosed:
                 self.logger.info('Client connection lost')
                 self.active_websockets.remove(websocket)
-
 
     def websocket(self):
         """ Websocket main server """
@@ -222,7 +230,7 @@ class HttpBackend(Backend):
             address = websocket.remote_address[0] if websocket.remote_address \
                 else '<unknown client>'
 
-            self.logger.info('New websocket connection from {}'.format(address))
+            self.logger.info('New websocket connection from {} on path {}'.format(address, path))
             self.active_websockets.add(websocket)
 
             try:
@@ -258,7 +266,6 @@ class HttpBackend(Backend):
 
         return proc
 
-
     def run(self):
         super().run()
 
@@ -274,8 +281,11 @@ class HttpBackend(Backend):
             self.server_proc.join()
         elif self.uwsgi_args:
             uwsgi_cmd = ['uwsgi'] + self.uwsgi_args
-            self.logger.info
+            self.logger.info('Starting uWSGI with arguments {}'.format(uwsgi_cmd))
             self.server_proc = subprocess.Popen(uwsgi_cmd)
+        else:
+            raise EnvironmentError('The web server is configured to be launched externally but ' +
+                                   'no uwsgi_args were provide')
 
 
 # vim:sw=4:ts=4:et:
