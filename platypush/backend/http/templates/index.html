@@ -3,26 +3,36 @@
     <title>Platypush Web Console</title>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton-tabs.css') }}">
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton-tabs.css') }}"> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/font-awesome.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/application.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/toggles.css') }}">
-    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
 
-    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-ui-1.12.1.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/skeleton-tabs.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/vue.js') }}"></script>
+    <!--<script type="text/javascript" src="{{ url_for('static', filename='js/vue.min.js') }}"></script>-->
+
+    <!-- <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script> -->
+    <!-- <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-ui-1.12.1.min.js') }}"></script> -->
+    <!-- <script type="text/javascript" src="{{ url_for('static', filename='js/skeleton-tabs.js') }}"></script> -->
+
     <script type="text/javascript" src="{{ url_for('static', filename='js/application.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/pushbullet.js') }}"></script>
+    <!-- <script type="text/javascript" src="{{ url_for('static', filename='js/pushbullet.js') }}"></script> -->
     <script type="text/javascript">
-        window.websocket_port = {% print(websocket_port) %}
-        window.has_ssl = {% print('true' if has_ssl else 'false') %};
+        if (!window.config) {
+            window.config = {};
+        }
+
+        window.config = { ...window.config,
+            websocket_port: {% print(websocket_port) %},
+            has_ssl: {% print('true' if has_ssl else 'false') %},
+            plugins: JSON.parse('{% print(utils.to_json(plugins))|safe %}'),
+        };
 
         {% if token %}
-            window.token = '{% print(token) %}'
+            window.config.token = '{% print(token) %}';
         {% else %}
-            window.token = undefined
+            window.config.token = undefined;
         {% endif %}
     </script>
 </head>
@@ -42,37 +52,24 @@
         </div>
     </header>
 
-    <main>
-        <ul class="tab-nav">
-            {% for plugin in plugins.keys()|sort() %}
-                <li>
-                    <a class="button plugin-tab-item" href="#{% print plugin %}">
-                        {% print plugin %}
-                    </a>
-                </li>
-            {% endfor %}
-        </ul>
+    <nav>
+        {% for plugin in plugins.keys()|sort() %}
+        <a href="#{% print plugin %}">
+            {% print plugin %}
+        </a>
+        {% endfor %}
+    </nav>
 
-        <div class="tab-content">
+    <main>
+        <div id="app">
             {% for plugin in plugins.keys()|sort() %}
                 {% with configuration=plugins[plugin], utils=utils %}
-                    <div class="tab-pane plugin-tab-content" id="{% print plugin %}">
-                        {% include 'plugins/' + plugin + '.html' %}
+                    <div class="tab-pane plugin-tab-content" id="{% print plugin %}-container">
+                        {% include 'panel/' + plugin + '/index.html' %}
                     </div>
                 {% endwith %}
             {% endfor %}
         </div>
-
-        <div id="notification-container"></div>
-
-        <div id="hidden-plugins-container">
-            {% for plugin in hidden_plugins.keys()|sort() %}
-                {% set configuration = plugins[plugin] %}
-                <div class="plugin" id="{% print plugin %}">
-                    {% include 'plugins/' + plugin + '.html' %}
-                </div>
-            {% endfor %}
-        </div>
     </main>
-<body>
+</body>
 

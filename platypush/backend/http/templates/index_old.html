@@ -1,0 +1,78 @@
+<!doctype html>
+<head>
+    <title>Platypush Web Console</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton-tabs.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/font-awesome.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/application.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toggles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/jquery-ui.css') }}">
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-ui-1.12.1.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/skeleton-tabs.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/application.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/pushbullet.js') }}"></script>
+    <script type="text/javascript">
+        window.websocket_port = {% print(websocket_port) %};
+        window.has_ssl = {% print('true' if has_ssl else 'false') %};
+
+        {% if token %}
+            window.token = '{% print(token) %}'
+        {% else %}
+            window.token = undefined
+        {% endif %}
+    </script>
+</head>
+
+<body>
+    <header>
+        <div class="row">
+            <div class="logo nine columns">
+                <span class="logo-1">Platypush</span>
+                <span class="logo-2">Web Panel</span>
+            </div>
+
+            <div id="date-time" class="three columns">
+                <div class="date"></div>
+                <div class="time"></div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <ul class="tab-nav">
+            {% for plugin in plugins.keys()|sort() %}
+                <li>
+                    <a class="button plugin-tab-item" href="#{% print plugin %}">
+                        {% print plugin %}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <div class="tab-content">
+            {% for plugin in plugins.keys()|sort() %}
+                {% with configuration=plugins[plugin], utils=utils %}
+                    <div class="tab-pane plugin-tab-content" id="{% print plugin %}">
+                        {% include 'plugins/' + plugin + '.html' %}
+                    </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+
+        <div id="notification-container"></div>
+
+        <div id="hidden-plugins-container">
+            {% for plugin in hidden_plugins.keys()|sort() %}
+                {% set configuration = plugins[plugin] %}
+                <div class="plugin" id="{% print plugin %}">
+                    {% include 'plugins/' + plugin + '.html' %}
+                </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+
