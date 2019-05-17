@@ -21,7 +21,13 @@ def execute():
     """ Endpoint to execute commands """
     if not authentication_ok(request): return authenticate()
 
-    msg = json.loads(request.data.decode('utf-8'))
+    try:
+        msg = json.loads(request.data.decode('utf-8'))
+    except Exception as e:
+        logger().error('Unable to parse JSON from request {}: {}'.format(
+            request.data, str(e)))
+        abort(400, str(e))
+
     logger().info('Received message on the HTTP backend: {}'.format(msg))
 
     try:
