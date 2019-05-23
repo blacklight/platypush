@@ -1,0 +1,28 @@
+<script type="text/x-template" id="tmpl-light-hue-group">
+    <div class="group">
+        <div v-text="name" @click="$emit('set-selected')"></div>
+    </div>
+</script>
+
+<script type="text/x-template" id="tmpl-light-hue-group-controller">
+    <div class="group-controller">
+        <div class="row vertical-center">
+            <div class="col-10" @click="propertiesCollapsedToggled">All Lights</div>
+            <div class="col-2 pull-right">
+                <toggle-switch v-model="value.state.any_on" :glow="true" @toggled="toggled"></toggle-switch>
+            </div>
+        </div>
+        <div class="row">
+            <light-hue-property-selector
+                    v-model="properties"
+                    :class="{hidden: collapsed}"
+                    @bri-changed="briChanged"
+                    @color-changed="colorChanged"
+                    @ct-changed="ctChanged">
+            </light-hue-property-selector>
+        </div>
+    </div>
+</script>
+
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/light.hue/groups.js') }}"></script>
+

@@ -24,29 +24,39 @@ def index():
     if not authentication_ok(request):
         return authenticate()
 
-    # These plugins have their own template file but won't be shown as a tab in
-    # the web panel. This is usually the case for plugins that only include JS
-    # code but no template content.
-    _hidden_plugins = {
-        'assistant.google'
-    }
-
     configured_plugins = Config.get_plugins()
-    enabled_plugins = {}
-    hidden_plugins = {}
+    enabled_templates = {}
+    enabled_scripts = {}
+    enabled_styles = {}
+
+    js_folder = os.path.abspath(
+        os.path.join(template_folder, '..', 'static', 'js'))
+    style_folder = os.path.abspath(
+        os.path.join(template_folder, '..', 'static', 'css', 'dist'))
 
     for plugin, conf in configured_plugins.items():
-        template_file = os.path.join('panel', plugin, 'index.html')
-        if os.path.isfile(os.path.join(template_folder, template_file)):
-            if plugin in _hidden_plugins:
-                hidden_plugins[plugin] = conf
-            else:
-                enabled_plugins[plugin] = conf
+        template_file = os.path.join(
+            template_folder, 'plugins', plugin, 'index.html')
+
+        script_file = os.path.join(js_folder, 'plugins', plugin, 'index.js')
+        style_file = os.path.join(style_folder, 'webpanel', 'plugins', plugin+'.css')
+
+        if os.path.isfile(template_file):
+            conf['_template_file'] = '/' + '/'.join(template_file.split(os.sep)[-3:])
+            enabled_templates[plugin] = conf
+
+        if os.path.isfile(script_file):
+            conf['_script_file'] = '/'.join(script_file.split(os.sep)[-4:])
+            enabled_scripts[plugin] = conf
+
+        if os.path.isfile(style_file):
+            conf['_style_file'] = 'css/dist/' + style_file[len(style_folder)+1:]
+            enabled_styles[plugin] = conf
 
     http_conf = Config.get('backend.http')
-    return render_template('index.html', plugins=enabled_plugins,
-                           hidden_plugins=hidden_plugins, utils=HttpUtils,
-                           token=Config.get('token'),
+    return render_template('index.html', templates=enabled_templates,
+                           scripts=enabled_scripts, styles=enabled_styles,
+                           utils=HttpUtils, token=Config.get('token'),
                            websocket_port=get_websocket_port(),
                            has_ssl=http_conf.get('ssl_cert') is not None)
 

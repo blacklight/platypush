@@ -1,0 +1,107 @@
+@import 'common/vars';
+@import 'common/layout';
+@import 'webpanel/plugins/light.hue/vars';
+
+.light-hue-container {
+    display: flex;
+    color: $default-fg-2;
+    font-weight: 400;
+    line-height: 3.8rem;
+    letter-spacing: .1rem;
+
+    .groups,
+    .scenes,
+    .units {
+        &:not(:last-child) {
+            border-right: $default-border-2;
+        }
+
+        .title {
+            padding: .75rem;
+            background: $default-bg;
+            border-bottom: $default-border-2;
+
+            &:last-child {
+                border-radius: 0 1rem 0 0;
+            }
+        }
+
+        .group,
+        .scene,
+        .unit,
+        .group-controller {
+            padding: 1rem;
+            cursor: pointer;
+
+            &:hover {
+                background: $hover-bg;
+            }
+
+            &:not(:last-child) {
+                border-bottom: $default-border-2;
+            }
+
+            &:not(.hidden) {
+                .row {
+                    width: 100%;
+                }
+            }
+
+            * > .properties {
+                margin: 1.5rem auto;
+                padding: 1.5rem;
+                font-weight: 100;
+                border: $default-border-2;
+                border-radius: 1.5rem;
+                background: $light-hue-properties-bg;
+                box-shadow: $light-hue-properties-shadow;
+
+                .slider-container {
+                    @extend .vertical-center;
+                    margin: 1rem auto;
+                }
+
+                * > .fa {
+                    font-size: 3rem;
+                }
+
+                * > .color-logo {
+                    width: 2rem;
+                    height: 2rem;
+                    border-radius: 1rem;
+                }
+
+                * > .color-logo-red { background-color: red; }
+                * > .color-logo-green { background-color: green; }
+                * > .color-logo-blue { background-color: blue; }
+            }
+
+            &:hover {
+                * > .properties {
+                    background: $light-hue-properties-hover-bg;
+                }
+            }
+        }
+
+        .group {
+            text-transform: uppercase;
+        }
+
+        .group-controller {
+            font-weight: 600;
+        }
+    }
+
+    .groups {
+        .title {
+            border-radius: 1rem 0 0 0;
+        }
+    }
+
+    .units {
+        .title {
+            border-radius: 0 1rem 0 0;
+        }
+    }
+}
+

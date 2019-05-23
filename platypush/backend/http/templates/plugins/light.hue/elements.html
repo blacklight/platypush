@@ -1,0 +1,51 @@
+<script type="text/x-template" id="tmpl-light-hue-property-selector">
+    <div class="properties color-properties">
+        <div class="row slider-container red-properties" v-if="value.xy">
+            <div class="col-2">
+                <div class="color-logo color-logo-red"></div>
+            </div>
+            <div class="slider-container col-10">
+                <input class="slider red" type="range" min="0" max="255" v-model="rgb[0]" @change="changed">
+            </div>
+        </div>
+
+        <div class="row slider-container green-properties" v-if="value.xy">
+            <div class="col-2">
+                <div class="color-logo color-logo-green"></div>
+            </div>
+            <div class="slider-container col-10">
+                <input class="slider green" type="range" min="0" max="255" v-model="rgb[1]" @change="changed">
+            </div>
+        </div>
+
+        <div class="row slider-container blue-properties" v-if="value.xy">
+            <div class="col-2">
+                <div class="color-logo color-logo-blue"></div>
+            </div>
+            <div class="slider-container col-10">
+                <input class="slider blue" type="range" min="0" max="255" v-model="rgb[2]" @change="changed">
+            </div>
+        </div>
+
+        <div class="row slider-container bri-properties" v-if="value.bri !== undefined">
+            <div class="col-2">
+                <i class="fa fa-lightbulb-o"></i>
+            </div>
+            <div class="slider-container col-10">
+                <input class="slider bri" type="range" min="0" max="255" v-model="value.bri" @change="changed">
+            </div>
+        </div>
+
+        <div class="row slider-container ct-properties" v-if="value.ct !== undefined">
+            <div class="col-2">
+                <i class="fa fa-thermometer"></i>
+            </div>
+            <div class="slider-container col-10">
+                <input class="slider ct" type="range" min="0" max="255" v-model="value.ct" @change="changed">
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/light.hue/elements.js') }}"></script>
+

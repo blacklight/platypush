@@ -1,0 +1,23 @@
+@mixin appearance($value) {
+    -webkit-appearance: $value;
+    -ms-appearance: $value;
+    -o-appearance: $value;
+    -ms-appearance: $value;
+    appearance: $value;
+}
+
+@mixin transition($value) {
+    -webkit-transition: $value;
+    -ms-transition: $value;
+    -o-transition: $value;
+    -ms-transition: $value;
+    transition: $value;
+}
+
+@mixin box-shadow($value) {
+    -webkit-box-shadow: $value;
+    -o-box-shadow: $value;
+    -ms-box-shadow: $value;
+    box-shadow: $value;
+}
+

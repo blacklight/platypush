@@ -1,0 +1,36 @@
+.modal {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 999;
+    background-color: rgba(10,10,10,0.85);
+}
+
+    .modal-container {
+        margin: 5% auto auto auto;
+        width: 70%;
+        background: white;
+        border-radius: 10px;
+    }
+
+        .modal-header {
+            border-bottom: 1px solid #ccc;
+            margin: 0.5rem auto;
+            padding: 0.5rem;
+            text-align: center;
+            background-color: $modal-bg;
+            border-radius: 10px 10px 0 0;
+            text-transform: uppercase;
+            letter-spacing: .1rem;
+            line-height: 38px;
+        }
+
+        .modal-body {
+            padding: 2.5rem 2rem 1.5rem 2rem;
+        }
+
+
