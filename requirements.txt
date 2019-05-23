@@ -135,3 +135,6 @@ websocket-client
 # mpv player plugin
 python-mpv
 
+# SCSS/SASS to CSS compiler for web pages style
+pyScss
+

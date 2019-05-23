@@ -1,0 +1,69 @@
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/light.hue/converter.js') }}"></script>
+
+{% include 'plugins/light.hue/elements.html' %}
+{% include 'plugins/light.hue/groups.html' %}
+{% include 'plugins/light.hue/scenes.html' %}
+{% include 'plugins/light.hue/units.html' %}
+
+<script type="text/x-template" id="tmpl-light-hue">
+    <div class="row light-hue-container">
+        <div class="groups col-no-margin-3 col-s-12">
+            <div class="title">Rooms</div>
+            <light-hue-group
+                    v-for="(group, id) in groups"
+                    :key="id"
+                    :id="id"
+                    :name="group.name"
+                    :class="{selected: selectedGroup == id}"
+                    @set-selected="selectedGroup = id">
+            </light-hue-group>
+        </div>
+
+        <div class="scenes col-no-margin-3 col-s-12">
+            <div class="title">Scenes</div>
+            <light-hue-scene
+                    v-for="(scene, id) in scenes"
+                    :key="id"
+                    :id="id"
+                    :name="scene.name"
+                    :class="{hidden: !(selectedGroup in scene.groups), selected: selectedScene == id}"
+                    @input="selectScene">
+            </light-hue-scene>
+        </div>
+
+        <div class="units col-no-margin-6 col-s-12">
+            <div class="title">Lights</div>
+            <light-hue-group-controller
+                    v-if="selectedGroup"
+                    v-model="groups[selectedGroup]"
+                    :id="selectedGroup"
+                    :groups="groups"
+                    :collapsed="!(selectedProperties.type == 'group' && selectedProperties.id == selectedGroup)"
+                    @properties-collapsed-toggled="collapsedToggled"
+                    @input="updatedGroup">
+            </light-hue-group-controller>
+
+            <light-hue-unit
+                    v-for="(light, id) in lights"
+                    v-model="light.state"
+                    :key="id"
+                    :id="id"
+                    :name="light.name"
+                    :config="light.config"
+                    :capabilities="light.capabilities"
+                    :modelid="light.modelid"
+                    :manufacturername="light.manufacturername"
+                    :swupdate="light.swupdate"
+                    :swversion="light.swversion"
+                    :uniqueid="light.uniqueid"
+                    :type="light.type"
+                    :productname="light.productname"
+                    :collapsed="!(selectedProperties.type == 'unit' && selectedProperties.id == id)"
+                    :class="{hidden: !(selectedGroup in light.groups)}"
+                    @input="onUnitInput"
+                    @properties-collapsed-toggled="collapsedToggled">
+            </light-hue-unit>
+        </div>
+    </div>
+</script>
+

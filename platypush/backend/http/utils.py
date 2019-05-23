@@ -96,5 +96,9 @@ class HttpUtils(object):
     def get_config(cls, attr):
         return Config.get(attr)
 
+    @classmethod
+    def plugin_name_to_tag(cls, module_name):
+        return module_name.replace('.','-')
+
 
 # vim:sw=4:ts=4:et:

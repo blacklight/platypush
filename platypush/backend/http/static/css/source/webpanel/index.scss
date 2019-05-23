@@ -1,0 +1,32 @@
+@import 'common/vars';
+
+@import 'common/mixins';
+@import 'common/layout';
+@import 'common/elements';
+@import 'common/modal';
+@import 'common/notification';
+
+@import 'header';
+@import 'nav';
+
+body {
+    width: 100%;
+    overflow-x: hidden;
+    font-family: $default-font-family;
+}
+
+main {
+    margin: auto;
+}
+
+a {
+    color: $default-link-fg;
+}
+
+.plugin-container {
+    border: $default-border-2;
+    border-radius: 1rem;
+    margin: 1.5rem;
+    box-shadow: 8px 8px 6px -1px rgba(187,187,187,0.75);
+}
+

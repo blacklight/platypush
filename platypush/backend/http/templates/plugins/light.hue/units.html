@@ -1,0 +1,22 @@
+<script type="text/x-template" id="tmpl-light-hue-unit">
+    <div class="unit">
+        <div class="row vertical-center">
+            <div class="name col-10" v-text="name" @click="propertiesCollapsedToggled"></div>
+            <div class="col-2 pull-right">
+                <toggle-switch v-model="value.on" @toggled="toggled"></toggle-switch>
+            </div>
+        </div>
+        <div class="row">
+            <light-hue-property-selector
+                v-model="value"
+                :class="{hidden: collapsed}"
+                @bri-changed="briChanged"
+                @color-changed="colorChanged"
+                @ct-changed="ctChanged">
+            </light-hue-property-selector>
+        </div>
+    </div>
+</script>
+
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/light.hue/units.js') }}"></script>
+

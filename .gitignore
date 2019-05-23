@@ -12,3 +12,4 @@ platypush/backend/http/static/resources/*
 docs/build
 .idea/
 config
+platypush/backend/http/static/css/*/.sass-cache/

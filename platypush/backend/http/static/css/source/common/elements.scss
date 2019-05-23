@@ -1,0 +1,19 @@
+//// General purpose classes /////
+.hidden {
+    display: none !important;
+}
+
+.selected {
+    background: $selected-bg;
+}
+
+.pull-right {
+    text-align: right !important;
+}
+
+//// UI elements definitions /////
+
+@import 'common/elements/button';
+@import 'common/elements/switch';
+@import 'common/elements/slider';
+

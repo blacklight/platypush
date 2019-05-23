@@ -1,75 +1,73 @@
 <!doctype html>
 <head>
-    <title>Platypush Web Console</title>
+    <title>Platypush Web Panel</title>
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
-    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton-tabs.css') }}"> -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/font-awesome.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/application.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/toggles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dist/webpanel.css') }}">
 
-    <script type="text/javascript" src="{{ url_for('static', filename='js/vue.js') }}"></script>
-    <!--<script type="text/javascript" src="{{ url_for('static', filename='js/vue.min.js') }}"></script>-->
+    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/vue.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/axios.min.js') }}"></script>
 
-    <!-- <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script> -->
-    <!-- <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-ui-1.12.1.min.js') }}"></script> -->
-    <!-- <script type="text/javascript" src="{{ url_for('static', filename='js/skeleton-tabs.js') }}"></script> -->
+    <script type="text/javascript" src="{{ url_for('static', filename='js/api.js') }}"></script>
 
-    <script type="text/javascript" src="{{ url_for('static', filename='js/application.js') }}"></script>
-    <!-- <script type="text/javascript" src="{{ url_for('static', filename='js/pushbullet.js') }}"></script> -->
+    {% for style in styles.values() %}
+    <link rel="stylesheet" href="{{ url_for('static', filename=style['_style_file']) }}">
+    {% endfor %}
+
     <script type="text/javascript">
         if (!window.config) {
             window.config = {};
         }
 
         window.config = { ...window.config,
-            websocket_port: {% print(websocket_port) %},
+            websocket_port: {{ websocket_port }},
             has_ssl: {% print('true' if has_ssl else 'false') %},
-            plugins: JSON.parse('{% print(utils.to_json(plugins))|safe %}'),
+            templates: JSON.parse('{% print(utils.to_json(templates))|safe %}'),
+            scripts: JSON.parse('{% print(utils.to_json(scripts))|safe %}'),
         };
 
         {% if token %}
-            window.config.token = '{% print(token) %}';
+            window.config.token = '{{ token }}';
         {% else %}
             window.config.token = undefined;
         {% endif %}
     </script>
+
+    {% include 'elements.html' %}
 </head>
 
 <body>
-    <header>
-        <div class="row">
-            <div class="logo nine columns">
-                <span class="logo-1">Platypush</span>
-                <span class="logo-2">Web Panel</span>
+    <div id="app">
+        {% include 'header.html' %}
+
+        {% with plugins=templates.keys() %}
+            {% include 'nav.html' %}
+        {% endwith %}
+
+        <main>
+            <div class="plugins-container">
+                {% for plugin, conf in templates.items() %}
+                    {% with configuration=templates[plugin], utils=utils %}
+                        {% include conf['_template_file'] %}
+                        <plugin tag="{{ utils.plugin_name_to_tag(plugin) }}"
+                                :config="{{ conf }}" :class="{hidden: '{{ plugin }}' != selectedPlugin}"/>
+                    {% endwith %}
+                {% endfor %}
             </div>
+        </main>
+    </div>
 
-            <div id="date-time" class="three columns">
-                <div class="date"></div>
-                <div class="time"></div>
-            </div>
-        </div>
-    </header>
+    {% include 'plugins/template.html' %}
 
-    <nav>
-        {% for plugin in plugins.keys()|sort() %}
-        <a href="#{% print plugin %}">
-            {% print plugin %}
-        </a>
-        {% endfor %}
-    </nav>
+    {% for script in scripts.values() %}
+    <script type="text/javascript" src="{{ url_for('static', filename=script['_script_file']) }}"></script>
+    {% endfor %}
 
-    <main>
-        <div id="app">
-            {% for plugin in plugins.keys()|sort() %}
-                {% with configuration=plugins[plugin], utils=utils %}
-                    <div class="tab-pane plugin-tab-content" id="{% print plugin %}-container">
-                        {% include 'panel/' + plugin + '/index.html' %}
-                    </div>
-                {% endwith %}
-            {% endfor %}
-        </div>
-    </main>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/elements.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/application.js') }}"></script>
 </body>
 

@@ -2,10 +2,67 @@
 
 import errno
 import os
+import distutils.cmd
+from distutils.command.build import build
 from setuptools import setup, find_packages
 
-def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+class WebBuildCommand(distutils.cmd.Command):
+    """
+    Custom command to build the web files
+    """
+
+    description = 'Build components and styles for the web pages'
+    user_options = []
+
+    @staticmethod
+    def generate_css_files():
+        from scss import Compiler
+
+        print('Building CSS files')
+        base_path = path(os.path.join('platypush','backend','http','static','css'))
+        input_path = path(os.path.join(base_path,'source'))
+        output_path = path(os.path.join(base_path,'dist'))
+
+        for root, dirs, files in os.walk(input_path):
+            scss_file = os.path.join(root, 'index.scss')
+            if os.path.isfile(scss_file):
+                css_path = os.path.split(scss_file[len(input_path):])[0][1:] + '.css'
+                css_dir = os.path.join(output_path, os.path.dirname(css_path))
+                css_file = os.path.join(css_dir, os.path.basename(css_path))
+
+                os.makedirs(css_dir, exist_ok=True)
+                print('\tGenerating CSS {scss} -> {css}'.format(scss=scss_file, css=css_file))
+
+                with open(css_file, 'w') as f:
+                    css_content = Compiler(output_style='compressed', search_path=[root, input_path]).compile(scss_file)
+                    f.write(css_content)
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        self.generate_css_files()
+
+
+
+class BuildCommand(build):
+    def run(self):
+        build.run(self)
+        self.run_command('web_build')
+
+
+def path(fname=''):
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), fname))
+
+
+def readfile(fname):
+    with open(path(fname)) as f:
+        return f.read()
+
 
 def pkg_files(dir):
     paths = []
@@ -13,6 +70,7 @@ def pkg_files(dir):
         for file in files:
             paths.append(os.path.join('..', path, file))
     return paths
+
 
 def create_etc_dir():
     path = '/etc/platypush'
@@ -26,6 +84,7 @@ def create_etc_dir():
         else:
             raise
 
+
 plugins = pkg_files('platypush/plugins')
 backend = pkg_files('platypush/backend')
 # create_etc_dir()
@@ -37,8 +96,8 @@ setup(
     author_email = "info@fabiomanganiello.com",
     description = ("Platypush service"),
     license = "MIT",
-    python_requires = '>= 3',
-    keywords = "pushbullet notifications automation",
+    python_requires = '>= 3.5',
+    keywords = "home-automation iot mqtt websockets redis dashboard notificaions",
     url = "https://github.com/BlackLight/platypush",
     packages = find_packages(),
     include_package_data = True,
@@ -50,10 +109,14 @@ setup(
         ],
     },
     scripts = ['bin/platyvenv'],
+    cmdclass = {
+        'web_build': WebBuildCommand,
+        'build': BuildCommand,
+    },
     # data_files = [
     #     ('/etc/platypush', ['platypush/config.example.yaml'])
     # ],
-    long_description = read('README.md'),
+    long_description = readfile('README.md'),
     classifiers = [
         "Topic :: Utilities",
         "License :: OSI Approved :: MIT License",
@@ -99,6 +162,7 @@ setup(
         'Support for web media subtitles': ['webvtt-py'],
         'Support for mopidy backend': ['websocket-client'],
         'Support for mpv player plugin': ['python-mpv'],
+        'Support for compiling SASS/SCSS styles to CSS': ['pyScss'],
         # 'Support for Leap Motion backend': ['git+ssh://git@github.com:BlackLight/leap-sdk-python3.git'],
         # 'Support for Flic buttons': ['git+https://@github.com/50ButtonsEach/fliclib-linux-hci.git']
         # 'Support for media subtitles': ['git+https://github.com/agonzalezro/python-opensubtitles#egg=python-opensubtitles']

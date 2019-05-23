@@ -1,0 +1,49 @@
+//// Common defaults
+$default-bg: #f4f5f6 !default;
+$default-fg: black !default;
+$default-fg-2: #333333 !default;
+
+$default-font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif !default;
+$default-border: 1px solid #e1e4e8 !default;
+$default-border-2: 1px solid #dddddd !default;
+$default-bottom: $default-border !default;
+$default-link-fg: #5f7869 !default;
+
+$selected-bg: #c8ffd0 !default;
+$hover-bg: #def6ea !default;
+$header-bg: $default_bg !default;
+$nav-bg: #e8e8e8 !default;
+$nav-fg: $default-link-fg;
+$modal-bg: #f0f0f0 !default;
+
+//// Switch element
+$switch-bg-1: #f9f8f6 !default;
+$switch-bg-2: #38ffa0 !default;
+$switch-bg-3: #cccccc !default;
+$switch-bg-hover: #b3b3b3 !default;
+$switch-bg-checked: #38ffa0 !default;
+$switch-bg-glow-1: #111111 !default;
+$switch-bg-glow-2: #ffffff !default;
+$switch-bg-glow-3: #aaaaaa !default;
+$switch-bg-glow-hover: #ffffff !default;
+$switch-bg-glow-checked: #00e094 !default;
+
+$switch-shadow-1: 0 5px 10px 0px #333, 0 15px 20px 0px #cccccc !default;
+$switch-shadow-2: inset 0 0 0 5px #ccc, inset 0 0 0 14px #f9f8f6 !default;
+$switch-shadow-3: 0 0 0 2.5px #f9f8f6 !default;
+$switch-shadow-hover: inset 0 0 0 5px #b3b3b3, inset 0 0 0 14px #f9f8f6 !default;
+$switch-shadow-checked-1: 0 2px 5px 0px gray, 0 15px 20px 0px transparent !default;
+$switch-shadow-checked-2: inset 0 0 0 5px #38ffa0, inset 0 0 0 14px #f9f8f6 !default;
+$switch-shadow-glow-1: 0 5px 10px 0 #aaa, 0 0 0 3px #bbb, 0 0 8px 2px transparent, 0 0 0 6px #eee !default;
+$switch-shadow-glow-2: inset 0 0 0 5px #aaa, inset 0 0 0 14px #fff !default;
+$switch-shadow-glow-hover: inset 0 0 0 5px #fff, inset 0 0 0 14px #fff !default;
+$switch-shadow-glow-checked-1: 0 0px 8px 0 #00ad72, 0 0 0 3px #00e094, 0 0 30px 0 #00e094, 0 0 0 6px #fff !default;
+$switch-shadow-glow-checked-2: inset 0 0 0 5px #00e094, inset 0 0 0 14px #fff !default;
+
+//// Slier element
+$slider-bg: #e4e4e4 !default;
+$slider-thumb-bg: #4caf50 !default;
+
+//// Header style
+$header-bottom: $default-bottom;
+
