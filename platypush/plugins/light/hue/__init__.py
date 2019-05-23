@@ -621,7 +621,6 @@ class LightHuePlugin(LightPlugin):
 
         return self._exec('hue', int(hue), lights=lights, groups=groups, **kwargs)
 
-
     @action
     def scene(self, name, lights=None, groups=None, **kwargs):
         """
