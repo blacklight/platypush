@@ -121,8 +121,33 @@ Vue.component('light-hue', {
             );
 
             this.selectedScene = event.id;
-            for (const light of Object.values(this.scenes[this.selectedScene].lights)) {
-                this.lights[light].state.on = true;
+            groups = {}
+
+            for (const lightId of Object.values(this.scenes[this.selectedScene].lights)) {
+                this.lights[lightId].state.on = true;
+
+                for (const [groupId, group] of Object.entries(this.lights[lightId].groups)) {
+                    if (!(group.id in groups)) {
+                        groups[groupId] = {
+                            any_on: true,
+                            all_on: group.state.all_on,
+                            lights: [],
+                        }
+                    }
+
+                    groups[groupId].lights.push(lightId)
+                    if (groups[groupId].lights.length == Object.values(group.lights).length) {
+                        groups[groupId].all_on = true;
+                    }
+                }
+            }
+
+            for (const [id, group] of Object.entries(groups)) {
+                this.groups[id].state = {
+                    ...group.state,
+                    any_on: group.any_on,
+                    any_off: group.any_off,
+                }
             }
         },
 
