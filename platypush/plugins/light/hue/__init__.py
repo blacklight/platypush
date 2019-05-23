@@ -55,8 +55,7 @@ class LightHuePlugin(LightPlugin):
 
         self.bridge_address = bridge
         self.bridge = None
-        self.logger.info('Initializing Hue lights plugin - bridge: "{}"'.
-                     format(self.bridge_address))
+        self.logger.info('Initializing Hue lights plugin - bridge: "{}"'.format(self.bridge_address))
 
         self.connect()
         self.lights = []; self.groups = []
@@ -85,7 +84,7 @@ class LightHuePlugin(LightPlugin):
         yet, uncomment the ``.connect()`` and ``.get_api()`` lines and retry
         after clicking the pairing button on your bridge.
 
-        :todo: Support for dynamic retry and better user interaction in case of bridge pairing neeeded.
+        :todo: Support for dynamic retry and better user interaction in case of bridge pairing needed.
         """
 
         # Lazy init
@@ -114,7 +113,6 @@ class LightHuePlugin(LightPlugin):
             self.get_scenes()
         else:
             self.logger.info('Bridge already connected')
-
 
     @action
     def get_scenes(self):
@@ -147,7 +145,6 @@ class LightHuePlugin(LightPlugin):
         """
 
         return self.bridge.get_scene()
-
 
     @action
     def get_lights(self):
@@ -189,7 +186,6 @@ class LightHuePlugin(LightPlugin):
         """
 
         return self.bridge.get_light()
-
 
     @action
     def get_groups(self):
@@ -243,7 +239,6 @@ class LightHuePlugin(LightPlugin):
 
         return self.bridge.get_group()
 
-
     def _exec(self, attr, *args, **kwargs):
         try:
             self.connect()
@@ -280,7 +275,6 @@ class LightHuePlugin(LightPlugin):
             # Reset bridge connection
             self.bridge = None
             raise e
-
 
     @action
     def set_light(self, light, **kwargs):
@@ -331,7 +325,7 @@ class LightHuePlugin(LightPlugin):
         self.bridge.set_group(group, **kwargs)
 
     @action
-    def on(self, lights=[], groups=[], **kwargs):
+    def on(self, lights=None, groups=None, **kwargs):
         """
         Turn lights/groups on.
 
@@ -339,10 +333,14 @@ class LightHuePlugin(LightPlugin):
         :param groups: Groups to turn on (names or group objects). Default: plugin default groups
         """
 
+        if groups is None:
+            groups = []
+        if lights is None:
+            lights = []
         return self._exec('on', True, lights=lights, groups=groups, **kwargs)
 
     @action
-    def off(self, lights=[], groups=[], **kwargs):
+    def off(self, lights=None, groups=None, **kwargs):
         """
         Turn lights/groups off.
 
@@ -350,10 +348,14 @@ class LightHuePlugin(LightPlugin):
         :param groups: Groups to turn off (names or group objects). Default: plugin default groups
         """
 
+        if groups is None:
+            groups = []
+        if lights is None:
+            lights = []
         return self._exec('on', False, lights=lights, groups=groups, **kwargs)
 
     @action
-    def toggle(self, lights=[], groups=[], **kwargs):
+    def toggle(self, lights=None, groups=None, **kwargs):
         """
         Toggle lights/groups on/off.
 
@@ -361,6 +363,10 @@ class LightHuePlugin(LightPlugin):
         :param groups: Groups to turn off (names or group objects). Default: plugin default groups
         """
 
+        if groups is None:
+            groups = []
+        if lights is None:
+            lights = []
         lights_on  = []
         lights_off = []
         groups_on  = []
@@ -402,7 +408,7 @@ class LightHuePlugin(LightPlugin):
             self._exec('on', True, lights=lights_off, groups=groups_off, **kwargs)
 
     @action
-    def bri(self, value, lights=[], groups=[], **kwargs):
+    def bri(self, value, lights=None, groups=None, **kwargs):
         """
         Set lights/groups brightness.
 
@@ -411,11 +417,15 @@ class LightHuePlugin(LightPlugin):
         :param value: Brightness value (range: 0-255)
         """
 
+        if groups is None:
+            groups = []
+        if lights is None:
+            lights = []
         return self._exec('bri', int(value) % (self.MAX_BRI+1),
                           lights=lights, groups=groups, **kwargs)
 
     @action
-    def sat(self, value, lights=[], groups=[], **kwargs):
+    def sat(self, value, lights=None, groups=None, **kwargs):
         """
         Set lights/groups saturation.
 
@@ -424,11 +434,15 @@ class LightHuePlugin(LightPlugin):
         :param value: Saturation value (range: 0-255)
         """
 
+        if groups is None:
+            groups = []
+        if lights is None:
+            lights = []
         return self._exec('sat', int(value) % (self.MAX_SAT+1),
-                      lights=lights, groups=groups, **kwargs)
+                          lights=lights, groups=groups, **kwargs)
 
     @action
-    def hue(self, value, lights=[], groups=[], **kwargs):
+    def hue(self, value, lights=None, groups=None, **kwargs):
         """
         Set lights/groups color hue.
 
@@ -437,11 +451,43 @@ class LightHuePlugin(LightPlugin):
         :param value: Hue value (range: 0-65535)
         """
 
+        if groups is None:
+            groups = []
+        if lights is None:
+            lights = []
         return self._exec('hue', int(value) % (self.MAX_HUE+1),
-                      lights=lights, groups=groups, **kwargs)
+                          lights=lights, groups=groups, **kwargs)
 
     @action
-    def delta_bri(self, delta, lights=[], groups=[], **kwargs):
+    def xy(self, value, lights=None, groups=None, **kwargs):
+        """
+        Set lights/groups XY colors.
+
+        :param value: xY value
+        :type value: list[float] containing the two values
+        """
+        if groups is None:
+            groups = []
+        if lights is None:
+            lights = []
+        return self._exec('xy', value, lights=lights, groups=groups, **kwargs)
+
+    @action
+    def ct(self, value, lights=None, groups=None, **kwargs):
+        """
+        Set lights/groups color temperature.
+
+        :param value: Temperature value (range: 0-255)
+        :type value: int
+        """
+        if groups is None:
+            groups = []
+        if lights is None:
+            lights = []
+        return self._exec('ct', value, lights=lights, groups=groups, **kwargs)
+
+    @action
+    def delta_bri(self, delta, lights=None, groups=None, **kwargs):
         """
         Change lights/groups brightness by a delta [-100, 100] compared to the current state.
 
@@ -450,6 +496,10 @@ class LightHuePlugin(LightPlugin):
         :param delta: Brightness delta value (range: -100, 100)
         """
 
+        if groups is None:
+            groups = []
+        if lights is None:
+            lights = []
         bri = 0
 
         if lights:
@@ -482,7 +532,7 @@ class LightHuePlugin(LightPlugin):
         return self._exec('bri', int(bri), lights=lights, groups=groups, **kwargs)
 
     @action
-    def delta_sat(self, delta, lights=[], groups=[], **kwargs):
+    def delta_sat(self, delta, lights=None, groups=None, **kwargs):
         """
         Change lights/groups saturation by a delta [-100, 100] compared to the current state.
 
@@ -491,6 +541,10 @@ class LightHuePlugin(LightPlugin):
         :param delta: Saturation delta value (range: -100, 100)
         """
 
+        if groups is None:
+            groups = []
+        if lights is None:
+            lights = []
         sat = 0
 
         if lights:
@@ -523,7 +577,7 @@ class LightHuePlugin(LightPlugin):
         return self._exec('sat', int(sat), lights=lights, groups=groups, **kwargs)
 
     @action
-    def delta_hue(self, delta, lights=[], groups=[], **kwargs):
+    def delta_hue(self, delta, lights=None, groups=None, **kwargs):
         """
         Change lights/groups hue by a delta [-100, 100] compared to the current state.
 
@@ -532,6 +586,10 @@ class LightHuePlugin(LightPlugin):
         :param delta: Hue delta value (range: -100, 100)
         """
 
+        if groups is None:
+            groups = []
+        if lights is None:
+            lights = []
         hue = 0
 
         if lights:
@@ -565,7 +623,7 @@ class LightHuePlugin(LightPlugin):
 
 
     @action
-    def scene(self, name, lights=[], groups=[], **kwargs):
+    def scene(self, name, lights=None, groups=None, **kwargs):
         """
         Set a scene by name.
 
@@ -574,6 +632,10 @@ class LightHuePlugin(LightPlugin):
         :param name: Name of the scene
         """
 
+        if groups is None:
+            groups = []
+        if lights is None:
+            lights = []
         return self._exec('scene', name=name, lights=lights, groups=groups, **kwargs)
 
     @action
@@ -596,8 +658,8 @@ class LightHuePlugin(LightPlugin):
 
     @action
     def animate(self, animation, duration=None,
-                hue_range=[0, MAX_HUE], sat_range=[0, MAX_SAT],
-                bri_range=[MAX_BRI-1, MAX_BRI], lights=None, groups=None,
+                hue_range=None, sat_range=None,
+                bri_range=None, lights=None, groups=None,
                 hue_step=1000, sat_step=2, bri_step=1, transition_seconds=1.0):
         """
         Run a lights animation.
@@ -608,31 +670,39 @@ class LightHuePlugin(LightPlugin):
         :param duration: Animation duration in seconds (default: None, i.e. continue until stop)
         :type duration: float
 
-        :param hue_range: If you selected a color transition, this will specify the hue range of your color transition. Default: [0, 65535]
+        :param hue_range: If you selected a color transition, this will specify the hue range of your color transition.
+            Default: [0, 65535]
         :type hue_range: list[int]
 
-        :param sat_range: If you selected a color transition, this will specify the saturation range of your color transition. Default: [0, 255]
+        :param sat_range: If you selected a color transition, this will specify the saturation range of your color
+            transition. Default: [0, 255]
         :type sat_range: list[int]
 
-        :param bri_range: If you selected a color transition, this will specify the brightness range of your color transition. Default: [254, 255]
-        :type bri_range: list[int]
+        :param bri_range: If you selected a color transition, this will specify the brightness range of your color
+            transition. Default: [254, 255] :type bri_range: list[int]
 
         :param lights: Lights to control (names or light objects). Default: plugin default lights
         :param groups: Groups to control (names or group objects). Default: plugin default groups
 
-        :param hue_step: If you selected a color transition, this will specify by how much the color hue will change between iterations. Default: 1000
-        :type hue_step: int
+        :param hue_step: If you selected a color transition, this will specify by how much the color hue will change
+            between iterations. Default: 1000 :type hue_step: int
 
-        :param sat_step: If you selected a color transition, this will specify by how much the saturation will change between iterations. Default: 2
-        :type sat_step: int
+        :param sat_step: If you selected a color transition, this will specify by how much the saturation will change
+            between iterations. Default: 2 :type sat_step: int
 
-        :param bri_step: If you selected a color transition, this will specify by how much the brightness will change between iterations. Default: 1
-        :type bri_step: int
+        :param bri_step: If you selected a color transition, this will specify by how much the brightness will change
+            between iterations. Default: 1 :type bri_step: int
 
         :param transition_seconds: Time between two transitions or blinks in seconds. Default: 1.0
-        :type treansition_seconds: float
+        :type transition_seconds: float
         """
 
+        if bri_range is None:
+            bri_range = [self.MAX_BRI - 1, self.MAX_BRI]
+        if sat_range is None:
+            sat_range = [0, self.MAX_SAT]
+        if hue_range is None:
+            hue_range = [0, self.MAX_HUE]
         if groups:
             groups = [g for g in self.bridge.groups if g.name in groups]
             lights = lights or []
@@ -659,6 +729,9 @@ class LightHuePlugin(LightPlugin):
             if animation == self.Animation.COLOR_TRANSITION:
                 for (light, attrs) in lights.items():
                     for (attr, value) in attrs.items():
+                        attr_range = [0,0]
+                        attr_step = 0
+
                         if attr == 'hue':
                             attr_range = hue_range
                             attr_step = hue_step
@@ -688,7 +761,6 @@ class LightHuePlugin(LightPlugin):
                 return True
             except QueueTimeoutError:
                 return False
-
 
         def _animate_thread(lights):
             set_thread_name('HueAnimate')
@@ -744,6 +816,10 @@ class LightHuePlugin(LightPlugin):
             redis_args['socket_timeout'] = socket_timeout
             self.redis = Redis(**redis_args)
         return self.redis
+
+    def status(self):
+        # TODO
+        pass
 
 
 # vim:sw=4:ts=4:et:
