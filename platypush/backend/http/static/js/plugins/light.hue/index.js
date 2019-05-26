@@ -107,7 +107,7 @@ Vue.component('light-hue', {
                     light.state.on = event.state.all_on;
                 }
 
-                for (const attr in ['bri', 'xy', 'ct']) {
+                for (const attr in ['hue', 'sat', 'bri', 'xy', 'ct']) {
                     if (attr in event.state) {
                         light.state[attr] = event.state[attr];
                     }
@@ -180,19 +180,49 @@ Vue.component('light-hue', {
         onUnitInput: function(event) {
             var groups = this.lights[event.id].groups;
             for (const [groupId, group] of Object.entries(groups)) {
-                if (event.on) {
+                if (event.on === true) {
                     this.groups[groupId].state.any_on = true;
                     this.groups[groupId].state.all_on = Object.values(group.lights).filter((l) => l.state.on).length === Object.values(group.lights).length;
-                } else {
+                } else if (event.on === false) {
                     this.groups[groupId].state.all_on = false;
                     this.groups[groupId].state.any_on = Object.values(group.lights).filter((l) => l.state.on).length > 0;
                 }
+            }
+
+            for (var attr of ['on', 'hue', 'sat', 'bri', 'xy', 'ct']) {
+                if (attr in event) {
+                    this.lights[event.id].state[attr] = event[attr];
+                }
+            }
+        },
+
+        eventHandler: function(event) {
+            if ('light_id' in event) {
+                this.onUnitInput({
+                    ...event,
+                    id: event.light_id,
+                });
+            } else if ('group_id' in event) {
+                var args = {
+                    id: event.group_id,
+                    state: {
+                        ...event,
+                    },
+                };
+
+                if ('on' in event) {
+                    args.state.any_on = event.on;
+                    args.state.all_on = event.on;
+                }
+
+                this.updatedGroup(args);
             }
         },
     },
 
     created: function() {
         this.refresh();
+        registerEventHandler(this.eventHandler, 'platypush.message.event.light.LightStatusChangeEvent');
     },
 });
 

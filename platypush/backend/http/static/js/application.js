@@ -45,6 +45,8 @@ var app = new Vue({
         setInterval(() => {
             self.now = new Date();
         }, 1000)
+
+        initEvents();
     },
     updated: function() {},
     destroyed: function() {},
