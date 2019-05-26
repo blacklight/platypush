@@ -4,6 +4,7 @@
 {% include 'plugins/light.hue/groups.html' %}
 {% include 'plugins/light.hue/scenes.html' %}
 {% include 'plugins/light.hue/units.html' %}
+{% include 'plugins/light.hue/animations.html' %}
 
 <script type="text/x-template" id="tmpl-light-hue">
     <div class="row light-hue-container">
@@ -33,6 +34,7 @@
 
         <div class="units col-no-margin-6 col-s-12">
             <div class="title">Lights</div>
+
             <light-hue-group-controller
                     v-if="selectedGroup"
                     v-model="groups[selectedGroup]"
@@ -42,6 +44,16 @@
                     @properties-collapsed-toggled="collapsedToggled"
                     @input="updatedGroup">
             </light-hue-group-controller>
+
+            <light-hue-animations-container
+                    v-if="selectedGroup"
+                    :group-id="selectedGroup"
+                    :animation="animations.groups[selectedGroup]"
+                    :collapsed="!(selectedProperties.type == 'animation' && selectedProperties.id == selectedGroup)"
+                    @animations-collapsed-toggled="collapsedToggled"
+                    @animation-started="startedAnimation"
+                    @animation-stopped="stoppedAnimation">
+            </light-hue-animations-container>
 
             <light-hue-unit
                     v-for="(light, id) in lights"

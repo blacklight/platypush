@@ -70,12 +70,26 @@ class LightHuePlugin(LightPlugin):
 
         self.redis = None
         self.animation_thread = None
+        self.animations = {}
+        self._init_animations()
         self.logger.info('Configured lights: "{}"'. format(self.lights))
 
     def _expand_groups(self):
         groups = [g for g in self.bridge.groups if g.name in self.groups]
         for g in groups:
-            self.lights.extend([l.name for l in g.lights])
+            for l in g.lights:
+                self.lights += [l.name]
+
+    def _init_animations(self):
+        self.animations = {
+            'groups': {},
+            'lights': {},
+        }
+
+        for g in self.bridge.groups:
+            self.animations['groups'][g.group_id] = None
+        for l in self.bridge.lights:
+            self.animations['lights'][l.light_id] = None
 
     @action
     def connect(self):
@@ -238,6 +252,36 @@ class LightHuePlugin(LightPlugin):
         """
 
         return self.bridge.get_group()
+
+    @action
+    def get_animations(self):
+        """
+        Get the list of running light animations.
+
+        :returns: A dictionary with the following structure:
+
+            {
+                "groups": {
+                    "id_1": {
+                        "type": "color_transition",
+                        "hue_range": [0,65535],
+                        "sat_range": [0,255],
+                        "bri_range": [0,255],
+                        "hue_step": 10,
+                        "sat_step": 10,
+                        "bri_step": 2,
+                        "transition_seconds": 2
+                    },
+                    ...
+                },
+                "lights": {
+                    "id_1": { ... },
+                    ...
+                }
+            }
+        """
+
+        return self.animations
 
     def _exec(self, attr, *args, **kwargs):
         try:
@@ -654,6 +698,7 @@ class LightHuePlugin(LightPlugin):
         if self.animation_thread and self.animation_thread.is_alive():
             redis = self._get_redis()
             redis.rpush(self.ANIMATION_CTRL_QUEUE_NAME, 'STOP')
+            self._init_animations()
 
     @action
     def animate(self, animation, duration=None,
@@ -669,27 +714,27 @@ class LightHuePlugin(LightPlugin):
         :param duration: Animation duration in seconds (default: None, i.e. continue until stop)
         :type duration: float
 
-        :param hue_range: If you selected a color transition, this will specify the hue range of your color transition.
+        :param hue_range: If you selected a color color_transition.html, this will specify the hue range of your color color_transition.html.
             Default: [0, 65535]
         :type hue_range: list[int]
 
-        :param sat_range: If you selected a color transition, this will specify the saturation range of your color
-            transition. Default: [0, 255]
+        :param sat_range: If you selected a color color_transition.html, this will specify the saturation range of your color
+            color_transition.html. Default: [0, 255]
         :type sat_range: list[int]
 
-        :param bri_range: If you selected a color transition, this will specify the brightness range of your color
-            transition. Default: [254, 255] :type bri_range: list[int]
+        :param bri_range: If you selected a color color_transition.html, this will specify the brightness range of your color
+            color_transition.html. Default: [254, 255] :type bri_range: list[int]
 
-        :param lights: Lights to control (names or light objects). Default: plugin default lights
-        :param groups: Groups to control (names or group objects). Default: plugin default groups
+        :param lights: Lights to control (names, IDs or light objects). Default: plugin default lights
+        :param groups: Groups to control (names, IDs or group objects). Default: plugin default groups
 
-        :param hue_step: If you selected a color transition, this will specify by how much the color hue will change
+        :param hue_step: If you selected a color color_transition.html, this will specify by how much the color hue will change
             between iterations. Default: 1000 :type hue_step: int
 
-        :param sat_step: If you selected a color transition, this will specify by how much the saturation will change
+        :param sat_step: If you selected a color color_transition.html, this will specify by how much the saturation will change
             between iterations. Default: 2 :type sat_step: int
 
-        :param bri_step: If you selected a color transition, this will specify by how much the brightness will change
+        :param bri_step: If you selected a color color_transition.html, this will specify by how much the brightness will change
             between iterations. Default: 1 :type bri_step: int
 
         :param transition_seconds: Time between two transitions or blinks in seconds. Default: 1.0
@@ -703,12 +748,33 @@ class LightHuePlugin(LightPlugin):
         if hue_range is None:
             hue_range = [0, self.MAX_HUE]
         if groups:
-            groups = [g for g in self.bridge.groups if g.name in groups]
+            groups = [g for g in self.bridge.groups if g.name in groups or g.group_id in groups]
             lights = lights or []
             for g in groups:
                 lights.extend([l.name for l in g.lights])
-        elif not lights:
+        elif lights:
+            lights = [l.name for l in self.bridge.lights if l.name in lights or l.light_id in lights]
+        else:
             lights = self.lights
+
+        info = {
+            'type': animation,
+            'duration': duration,
+            'hue_range': hue_range,
+            'sat_range': sat_range,
+            'bri_range': bri_range,
+            'hue_step': hue_step,
+            'sat_step': sat_step,
+            'bri_step': bri_step,
+            'transition_seconds': transition_seconds,
+        }
+
+        for g in groups:
+            self.animations['groups'][g.group_id] = info
+
+        for l in self.bridge.lights:
+            if l.name in lights:
+                self.animations['lights'][l.light_id] = info
 
         def _initialize_light_attrs(lights):
             if animation == self.Animation.COLOR_TRANSITION:

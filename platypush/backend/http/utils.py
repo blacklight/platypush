@@ -3,6 +3,8 @@ import os
 import re
 
 from platypush.config import Config
+from platypush.backend.http.app import template_folder
+
 
 class HttpUtils(object):
     @staticmethod
@@ -99,6 +101,20 @@ class HttpUtils(object):
     @classmethod
     def plugin_name_to_tag(cls, module_name):
         return module_name.replace('.','-')
+
+    @classmethod
+    def find_templates_in_dir(cls, directory):
+        return [
+            os.path.join(directory, file)
+            for root, path, files in os.walk(os.path.abspath(os.path.join(template_folder, directory)))
+            for file in files
+            if file.endswith('.html') or file.endswith('.htm')
+        ]
+
+    @classmethod
+    def readfile(cls, file):
+        with open(file) as f:
+            return f.read()
 
 
 # vim:sw=4:ts=4:et:

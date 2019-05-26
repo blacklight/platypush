@@ -29,8 +29,11 @@ $widths: (
     }
 
     @if $i < 12 {
-        .col-offset-#{$i} {
-             margin-left: (8.66666666667%*$i);
+        .col-offset-#{$i}:first-child {
+             margin-left: (8.66666666667%*$i) !important;
+        }
+        .col-offset-#{$i}:not(first-child) {
+             margin-left: 4% + (8.66666666667%*$i) !important;
         }
     }
 }

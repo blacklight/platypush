@@ -1,0 +1,73 @@
+<script type="text/x-template" id="tmpl-light-hue-animation-color_transition">
+    <div class="animation">
+        <div class="row">
+            <div class="col-4">Hue range</div>
+            <div class="col-8">
+                <range-slider min="0" max="65535" v-model="value.hue_range" @changed="hueRangeChanged"></range-slider>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-4">Sat range</div>
+            <div class="col-8">
+                <range-slider min="0" max="255" v-model="value.sat_range" @changed="satRangeChanged"></range-slider>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-4">Bri range</div>
+            <div class="col-8">
+                <range-slider min="0" max="255" v-model="value.bri_range" @changed="briRangeChanged"></range-slider>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-4">Hue step</div>
+            <div class="col-8 slider-container">
+                <input class="slider" type="range" :min="hueStepRange[0]" :max="hueStepRange[1]" step="1"
+                       v-model="value.hue_step">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-4">Sat step</div>
+            <div class="col-8 slider-container">
+                <input class="slider" type="range" :min="satStepRange[0]" :max="satStepRange[1]" step="1"
+                       v-model="value.sat_step">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-4">Bri step</div>
+            <div class="col-8 slider-container">
+                <input class="slider" type="range" step="1" :min="briStepRange[0]" :max="briStepRange[1]"
+                       v-model="value.bri_step">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-4">Transition</div>
+            <div class="col-2">
+                <input type="text" v-model="value.transition_seconds">
+            </div>
+            <div class="col-6 slider-container">
+                <input class="slider" type="range" :min="transitionSecondsRange[0]" :max="transitionSecondsRange[1]"
+                       v-model="value.transition_seconds" @input="onTransitionSecondsChange" placeholder="secs">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-4">Duration</div>
+            <div class="col-2">
+                <input type="text" v-model="value.duration" @input="onDurationChanged">
+            </div>
+            <div class="col-6 slider-container">
+                <input class="slider" type="range" step="1" :min="durationRange[0]" :max="durationRange[1]" placeholder="secs"
+                       :class="{disabled: value.duration == undefined}" v-model="value.duration" @input="onDurationChanged">
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/light.hue/animations/color_transition.js') }}"></script>
+

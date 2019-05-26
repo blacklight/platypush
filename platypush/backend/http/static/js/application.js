@@ -35,11 +35,17 @@ var app = new Vue({
         return {
             config: window.config,
             selectedPlugin: undefined,
+            now: new Date(),
         };
     },
 
     mounted: function() {},
-    created: function() {},
+    created: function() {
+        const self = this;
+        setInterval(() => {
+            self.now = new Date();
+        }, 1000)
+    },
     updated: function() {},
     destroyed: function() {},
 });

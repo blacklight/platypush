@@ -1,0 +1,41 @@
+{% with templates = utils.find_templates_in_dir('plugins/light.hue/animations') %}
+    {% for template in templates %}
+        {% include template %}
+    {% endfor %}
+{% endwith %}
+
+<script type="text/x-template" id="tmpl-light-hue-animations-container">
+    <div class="animations">
+        <div class="row vertical-center">
+            <div class="col-10 caption" @click="animationsCollapsedToggled">Animate</div>
+            <div class="col-2 pull-right">
+                <toggle-switch :glow="true" :value="animation != null" @toggled="toggled"></toggle-switch>
+            </div>
+        </div>
+        <div class="row" :class="{hidden: collapsed}">
+            <div class="row">
+                {% with templates = utils.find_templates_in_dir('plugins/light.hue/animations') %}
+                    <select name="animation-type" v-model="selectedAnimation"
+                            v-if="{{ templates|length }} > 0">
+                        {% for template_file in templates %}
+                            {% with name = template_file.split('/')[-1].split('.')[0] %}
+                                <option value="{{ name }}">{{ name }}</option>
+                            {% endwith %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {% for template_file in templates %}
+                    {% with name = template_file.split('/')[-1].split('.')[0] %}
+                        <div class="animation-container" :class="{hidden: selectedAnimation != '{{name}}'}">
+                            <component :is="'light-hue-animation-{{ name }}'" ref="{{ name }}"></component>
+                        </div>
+                    {% endwith %}
+                {% endfor %}
+            {% endwith %}
+        </div>
+    </div>
+</script>
+
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/light.hue/animations.js') }}"></script>
+

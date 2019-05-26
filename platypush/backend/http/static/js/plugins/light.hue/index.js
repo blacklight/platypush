@@ -6,6 +6,7 @@ Vue.component('light-hue', {
             groups: {},
             lights: {},
             scenes: {},
+            animations: {},
             selectedGroup: undefined,
             selectedScene: undefined,
             selectedProperties: {
@@ -89,8 +90,10 @@ Vue.component('light-hue', {
             const getLights = request('light.hue.get_lights');
             const getGroups = request('light.hue.get_groups');
             const getScenes = request('light.hue.get_scenes');
+            const getAnimations = request('light.hue.get_animations');
 
-            [this.lights, this.groups, this.scenes] = await Promise.all([getLights, getGroups, getScenes]);
+            [this.lights, this.groups, this.scenes, this.animations] = await Promise.all(
+                [getLights, getGroups, getScenes, getAnimations]);
 
             this._prepareGroups();
             this._prepareScenes();
@@ -110,6 +113,14 @@ Vue.component('light-hue', {
                     }
                 }
             }
+        },
+
+        startedAnimation: function(value) {
+            this.animations.groups[this.selectedGroup] = value;
+        },
+
+        stoppedAnimation: function() {
+            this.animations.groups[this.selectedGroup] = undefined;
         },
 
         selectScene: async function(event) {

@@ -2,7 +2,6 @@ import os
 
 from flask import Flask
 
-from platypush.backend.http.utils import HttpUtils
 from platypush.backend.http.app.utils import get_routes
 
 
