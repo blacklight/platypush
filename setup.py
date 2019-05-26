@@ -2,6 +2,7 @@
 
 import errno
 import os
+import re
 import distutils.cmd
 from distutils.command.build import build
 from setuptools import setup, find_packages
@@ -15,8 +16,8 @@ class WebBuildCommand(distutils.cmd.Command):
     description = 'Build components and styles for the web pages'
     user_options = []
 
-    @staticmethod
-    def generate_css_files():
+    @classmethod
+    def generate_css_files(cls):
         from scss import Compiler
 
         print('Building CSS files')
@@ -36,7 +37,12 @@ class WebBuildCommand(distutils.cmd.Command):
 
                 with open(css_file, 'w') as f:
                     css_content = Compiler(output_style='compressed', search_path=[root, input_path]).compile(scss_file)
+                    css_content = cls._fix_css4_vars(css_content)
                     f.write(css_content)
+
+    @staticmethod
+    def _fix_css4_vars(css):
+        return re.sub(r'var\("--([^"]+)"\)', r'var(--\1)', css)
 
     def initialize_options(self):
         pass

@@ -6,11 +6,6 @@
     border-radius: 5px;
     background: $slider-bg;
     outline: none;
-    opacity: 0.7;
-
-    &:hover {
-        opacity: 1;
-    }
 
     &::-webkit-slider-thumb {
         -webkit-appearance: none;
@@ -24,6 +19,10 @@
 
     &[disabled]::-webkit-slider-thumb {
         display: none;
+    }
+
+    &.disabled {
+        opacity: 0.3;
     }
 
     &::-moz-range-thumb {

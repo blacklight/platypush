@@ -1,0 +1,8 @@
+<script type="text/x-template" id="tmpl-range-slider">
+    <div class="input-range-container">
+        <input type="range" class="slider" multiple="multiple" :value="value" :min="min" :max="max" @input="changed">
+    </div>
+</script>
+
+<script type="application/javascript" src="{{ url_for('static', filename='js/elements/range-slider.js') }}"></script>
+

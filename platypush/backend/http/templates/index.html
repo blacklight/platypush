@@ -42,7 +42,7 @@
 
 <body>
     <div id="app">
-        {% include 'header.html' %}
+        {# include 'header.html' #}
 
         {% with plugins=templates.keys() %}
             {% include 'nav.html' %}
@@ -67,7 +67,6 @@
     <script type="text/javascript" src="{{ url_for('static', filename=script['_script_file']) }}"></script>
     {% endfor %}
 
-    <script type="text/javascript" src="{{ url_for('static', filename='js/elements.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/application.js') }}"></script>
 </body>
 

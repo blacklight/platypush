@@ -1,0 +1,28 @@
+<script type="text/x-template" id="tmpl-light-hue-animation-blink">
+    <div class="animation">
+        <div class="row">
+            <div class="col-4">Transition</div>
+            <div class="col-2">
+                <input type="text" v-model="value.transition_seconds">
+            </div>
+            <div class="col-6 slider-container">
+                <input class="slider" type="range" :min="transitionSecondsRange[0]" :max="transitionSecondsRange[1]"
+                       v-model="value.transition_seconds" @input="onTransitionSecondsChange" placeholder="secs">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-4">Duration</div>
+            <div class="col-2">
+                <input type="text" v-model="value.duration" @input="onDurationChanged">
+            </div>
+            <div class="col-6 slider-container">
+                <input class="slider" type="range" step="1" :min="durationRange[0]" :max="durationRange[1]" placeholder="secs"
+                       :class="{disabled: value.duration == undefined}" v-model="value.duration" @input="onDurationChanged">
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/light.hue/animations/blink.js') }}"></script>
+

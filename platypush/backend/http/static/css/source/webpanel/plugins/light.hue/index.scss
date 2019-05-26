@@ -9,6 +9,16 @@
     line-height: 3.8rem;
     letter-spacing: .1rem;
 
+    %panel {
+        margin: 1.5rem auto;
+        padding: 1.5rem;
+        font-weight: 100;
+        border: $default-border-2;
+        border-radius: 1.5rem;
+        background: $light-hue-properties-bg;
+        box-shadow: $light-hue-properties-shadow;
+    }
+
     .groups,
     .scenes,
     .units {
@@ -29,6 +39,7 @@
         .group,
         .scene,
         .unit,
+        .animations,
         .group-controller {
             padding: 1rem;
             cursor: pointer;
@@ -48,13 +59,7 @@
             }
 
             * > .properties {
-                margin: 1.5rem auto;
-                padding: 1.5rem;
-                font-weight: 100;
-                border: $default-border-2;
-                border-radius: 1.5rem;
-                background: $light-hue-properties-bg;
-                box-shadow: $light-hue-properties-shadow;
+                @extend %panel;
 
                 .slider-container {
                     @extend .vertical-center;
@@ -89,6 +94,54 @@
 
         .group-controller {
             font-weight: 600;
+        }
+
+        .animations {
+            .row {
+                .caption {
+                    font-style: italic;
+                }
+
+                .animation-container {
+                    @extend %panel;
+                    cursor: auto;
+
+                    .animation {
+                        .row {
+                            padding: 1rem .3333rem;
+                            &:hover {
+                                background: $hover-bg;
+                                border-radius: 1.5rem;
+
+                                * > input[type=range] {
+                                    background: $slider-hover-on-hover-bg;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                select[name=animation-type] {
+                    width: 100%;
+                }
+            }
+
+            * > .input-range-container {
+                margin-top: 1rem;
+                margin-bottom: -1rem;
+            }
+
+            * > input[type="text"] {
+                width: 100%;
+            }
+
+            &:hover {
+                .row {
+                    .animation-container {
+                        background: $light-hue-properties-hover-bg;
+                    }
+                }
+            }
         }
     }
 
