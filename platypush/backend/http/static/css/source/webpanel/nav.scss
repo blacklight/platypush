@@ -1,5 +1,10 @@
 nav {
     margin-bottom: 1.2rem;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 10;
+    opacity: 0.9;
 
     ul {
         position: relative;
