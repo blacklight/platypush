@@ -1,0 +1,41 @@
+<script type="text/x-template" id="tmpl-notifications">
+    <div id="notifications">
+        <notification v-for="(notification, id, index) in notifications"
+                      :key="index"
+                      :id="id"
+                      :text="notification.text"
+                      :html="notification.html"
+                      :title="notification.title"
+                      :link="notification.link"
+                      :image="notification.image"
+                      :warning="notification.warning"
+                      :error="notification.error"
+                      @clicked="destroy">
+        </notification>
+    </div>
+</script>
+
+<script type="text/x-template" id="tmpl-notification">
+    <div class="notification fade-in" :class="{warning: warning, error: error}"
+         @mouseover="mousein" @mouseleave="mouseout" @click="clicked">
+        <div class="title" v-if="title" v-text="title"></div>
+        <div class="body">
+            <div class="image col-3" v-if="image || warning || error">
+                <div class="row">
+                    <img :src="image.src" v-if="image && image.src">
+                    <i :class="['fa', 'fa-' + image.icon]" :style="image.color ? '--color: ' + image.color : ''"
+                       v-else-if="image && image.icon"></i>
+                    <i class="fa fa-exclamation" v-else-if="warning"></i>
+                    <i class="fa fa-times" v-else-if="error"></i>
+                </div>
+            </div>
+            <div class="text col-9" v-if="text && !!image" v-text="text"></div>
+            <div class="text col-9" v-if="html && !!image" v-html="html"></div>
+            <div class="text row horizontal-center" v-if="text && !image" v-text="text"></div>
+            <div class="text row horizontal-center" v-if="html && !image" v-html="html"></div>
+        </div>
+    </div>
+</script>
+
+<notifications ref="notifications"></notifications>
+

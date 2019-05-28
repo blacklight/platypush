@@ -19,6 +19,27 @@ $nav-date-time-shadow: 2px 2px 2px #ccc !default;
 
 $modal-bg: #f0f0f0 !default;
 
+//// Animations defaults
+$transition-duration: .5s !default;
+$fade-transition-duration: .5s !default;
+$fade-in-transition-duration: $fade-transition-duration !default;
+$fade-out-transition-duration: $fade-transition-duration !default;
+
+//// Notifications
+$notification-bg: rgba(185, 255, 193, 0.85) !default;
+$notification-hover-bg: rgba(160,245,178,0.9) !default;
+$notification-warning-bg: rgba(228, 255, 78, 0.85) !default;
+$notification-warning-hover-bg: rgba(218, 245, 68, 0.9) !default;
+$notification-error-bg: rgba(255, 100, 100, 0.85) !default;
+$notification-error-hover-bg: rgba(245, 90, 90, 0.9) !default;
+$notification-border: 1px solid rgba(109, 205, 134, 0.62) !default;
+$notification-warning-border: 1px solid rgba(205, 205, 109, 0.62) !default;
+$notification-error-border: 1px solid rgba(205, 109, 109, 0.62) !default;
+$notification-title-border: 1px solid rgba(83, 158, 102, 0.43) !default;
+$notification-icon-color: black !default;
+$notification-warning-icon-color: #662 !default;
+$notification-error-icon-color: #8b0000 !default;
+
 //// Switch element
 $switch-bg-1: #f9f8f6 !default;
 $switch-bg-2: #38ffa0 !default;

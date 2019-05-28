@@ -86,3 +86,10 @@ $widths: (
     align-items: center;
 }
 
+.horizontal-center {
+    display: flex;
+    justify-content: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+

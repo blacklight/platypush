@@ -22,12 +22,21 @@ function execute(request) {
                 if (!response.errors.length) {
                     resolve(response.output);
                 } else {
-                    // TODO Handle error
-                    reject(response.errors[0]);
+                    const error = response.errors[0];
+                    createNotification({
+                        text: error,
+                        error: true,
+                    });
+
+                    reject(error);
                 }
             })
             .catch((error) => {
-                // TODO Handle error
+                createNotification({
+                    text: error,
+                    error: true,
+                });
+
                 reject(error);
             });
     });
