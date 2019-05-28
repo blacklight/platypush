@@ -1,0 +1,73 @@
+#notifications {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 25em;
+
+    .notification {
+        background: $notification-bg;
+        border: $notification-border;
+        border-radius: .5rem;
+        margin-bottom: 1rem;
+        margin-right: 1rem;
+        cursor: pointer;
+
+        &:hover {
+            background: $notification-hover-bg;
+            &.warning { background: $notification-warning-hover-bg; }
+            &.error { background: $notification-error-hover-bg; }
+        }
+
+        &.warning {
+            background: $notification-warning-bg;
+            border: $notification-warning-border;
+            .image { --color: $notification-warning-icon-color; }
+        }
+
+        &.error {
+            background: $notification-error-bg;
+            border: $notification-error-border;
+            .image { --color: $notification-error-icon-color; }
+        }
+
+        .title {
+            border-bottom: $notification-title-border;
+            padding: .4rem;
+            text-transform: uppercase;
+            line-height: 3rem;
+            letter-spacing: .1rem;
+        }
+
+        .body {
+            @extend .vertical-center;
+            height: 6em;
+            overflow: hidden;
+            padding-bottom: 1rem;
+            letter-spacing: .05rem;
+        }
+
+        .image {
+            height: 100%;
+            text-align: center;
+            --color: $notification-icon-color;
+
+            .row {
+                @extend .vertical-center;
+                @extend .horizontal-center;
+                width: 100%;
+                height: 100%;
+
+                .fa {
+                    font-size: 2.5rem;
+                    color: var(--color);
+                }
+
+                img {
+                    width: 80%;
+                    height: 80%;
+                }
+            }
+        }
+    }
+}
+

@@ -26,7 +26,7 @@ Vue.component('plugin', {
 });
 
 // Declaration of the main vue app
-var app = new Vue({
+window.vm = new Vue({
     el: '#app',
     // Override {{ }} delimiters to prevent clash with Flask templates
     delimiters: ['[[',']]'],
