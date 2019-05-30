@@ -7,27 +7,34 @@
 @import 'common/modal';
 @import 'common/notifications';
 
-@import 'header';
 @import 'nav';
 
 body {
     width: 100%;
     overflow-x: hidden;
     font-family: $default-font-family;
+    font-size: $default-font-size;
+}
+
+body::-webkit-scrollbar {
+    width: 1em;
+}
+
+body::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+}
+
+body::-webkit-scrollbar-thumb {
+    background-color: darkgrey;
+    outline: 1px solid slategrey;
 }
 
 main {
-    margin: 6rem auto;
+    padding: 4.9rem 0;
+    margin: 0;
 }
 
 a {
     color: $default-link-fg;
-}
-
-.plugin-container {
-    border: $default-border-2;
-    border-radius: 1rem;
-    margin: 1.5rem;
-    box-shadow: 8px 8px 6px -1px rgba(187,187,187,0.75);
 }
 

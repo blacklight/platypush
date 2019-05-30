@@ -185,11 +185,11 @@ class MusicMopidyBackend(Backend):
                 new_status = self._get_tracklist_status()
                 if new_status['random'] != self._latest_status.get('random'):
                     self.bus.post(PlaybackRandomModeChangeEvent(state=new_status['random']))
-                if new_status['repeat'] != self._latest_status('repeat'):
+                if new_status['repeat'] != self._latest_status['repeat']:
                     self.bus.post(PlaybackRepeatModeChangeEvent(state=new_status['repeat']))
-                if new_status['single'] != self._latest_status('single'):
+                if new_status['single'] != self._latest_status['single']:
                     self.bus.post(PlaybackSingleModeChangeEvent(state=new_status['single']))
-                if new_status['consume'] != self._latest_status('consume'):
+                if new_status['consume'] != self._latest_status['consume']:
                     self.bus.post(PlaybackConsumeModeChangeEvent(state=new_status['consume']))
 
                 self._latest_status = new_status

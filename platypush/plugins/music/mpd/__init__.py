@@ -37,37 +37,50 @@ class MusicMpdPlugin(MusicPlugin):
         self.port = port
         self.client = None
 
-    def _connect(self):
-        if not self.client:
-            self.client = mpd.MPDClient(use_unicode=True)
-            self.client.connect(self.host, self.port)
-        return self.client
+    def _connect(self, n_tries=2):
+        with self._client_lock:
+            if self.client:
+                return
+
+            error = None
+            while n_tries > 0:
+                try:
+                    n_tries -= 1
+                    self.client = mpd.MPDClient(use_unicode=True)
+                    self.client.connect(self.host, self.port)
+                    return self.client
+                except Exception as e:
+                    error = e
+                    self.logger.warning('Connection exception: {}{}'.
+                                        format(str(e), (': Retrying' if n_tries > 0 else '')))
+                    time.sleep(0.5)
+
+        self.client = None
+        raise error
 
     def _exec(self, method, *args, **kwargs):
-        n_tries = int(kwargs.pop('n_tries')) if 'n_tries' in kwargs else 1
+        error = None
+        n_tries = int(kwargs.pop('n_tries')) if 'n_tries' in kwargs else 2
         return_status = kwargs.pop('return_status') \
             if 'return_status' in kwargs else True
 
-        try:
-            self._connect()
-            response = None
-            with self._client_lock:
-                response = getattr(self.client, method)(*args, **kwargs)
+        while n_tries > 0:
+            try:
+                self._connect()
+                n_tries -= 1
+                with self._client_lock:
+                    response = getattr(self.client, method)(*args, **kwargs)
 
-            if return_status:
-                return self.status().output
-            return response
-        except Exception as e:
-            self.logger.warning('Exception while executing MPD method {}: {}'.
-                                format(method, str(e)))
-            self.client = None
+                if return_status:
+                    return self.status().output
+                return response
+            except Exception as e:
+                error = str(e)
+                self.logger.warning('Exception while executing MPD method {}: {}'.
+                                    format(method, error))
+                self.client = None
 
-            if n_tries > 0:
-                kwargs['return_status'] = return_status
-                kwargs['n_tries'] = n_tries-1
-                return self._exec(method, *args, **kwargs)
-            else:
-                return (None, str(e))
+        return None, error
 
     @action
     def play(self, resource=None):
@@ -346,14 +359,21 @@ class MusicMpdPlugin(MusicPlugin):
             }
         """
 
-        try:
-            self._connect()
-            return self.client.status()
-        except Exception as e:
-            self.logger.warning('Exception while getting MPD status: {}'.
-                                format(str(e)))
-            self.client = None
-            return (None, str(e))
+        n_tries = 2
+        error = None
+
+        while n_tries > 0:
+            try:
+                n_tries -= 1
+                self._connect()
+                return self.client.status()
+            except Exception as e:
+                error = e
+                self.logger.warning('Exception while getting MPD status: {}'.
+                                    format(str(e)))
+                self.client = None
+
+        return None, error
 
     @action
     def currentsong(self):

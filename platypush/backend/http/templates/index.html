@@ -40,25 +40,31 @@
     </script>
 
     {% include 'elements.html' %}
+
+    {% for plugin, conf in templates.items() %}
+        {% with configuration=templates[plugin] %}
+            {% include conf['_template_file'] %}
+        {% endwith %}
+    {% endfor %}
+
+    {% for script in scripts.values() %}
+    <script type="text/javascript" src="{{ url_for('static', filename=script['_script_file']) }}"></script>
+    {% endfor %}
 </head>
 
 <body>
     <div id="app">
-        {# include 'header.html' #}
-
         {% with plugins=templates.keys() %}
             {% include 'nav.html' %}
         {% endwith %}
 
         <main>
             <div class="plugins-container">
-                {% for plugin, conf in templates.items() %}
-                    {% with configuration=templates[plugin], utils=utils %}
-                        {% include conf['_template_file'] %}
-                        <plugin tag="{{ utils.plugin_name_to_tag(plugin) }}"
-                                :config="{{ conf }}" :class="{hidden: '{{ plugin }}' != selectedPlugin}"/>
-                    {% endwith %}
-                {% endfor %}
+                <plugin v-for="(conf, plugin) in {{ utils.to_json(templates) }}"
+                        :tag="plugin.replace('.', '-')"
+                        :key="plugin"
+                        :config="conf"
+                        :class="{hidden: plugin != selectedPlugin}"/>
             </div>
         </main>
 
@@ -66,10 +72,6 @@
     </div>
 
     {% include 'plugins/template.html' %}
-
-    {% for script in scripts.values() %}
-    <script type="text/javascript" src="{{ url_for('static', filename=script['_script_file']) }}"></script>
-    {% endfor %}
 
     <script type="text/javascript" src="{{ url_for('static', filename='js/application.js') }}"></script>
 </body>

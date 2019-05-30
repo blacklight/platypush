@@ -1,7 +1,11 @@
 //// Common defaults
-$default-bg: #f4f5f6 !default;
+$default-bg: white !default;
+$default-bg-2: #f4f5f6 !default;
+$default-bg-3: #f1f3f2 !default;
+$default-bg-4: #edf0ee !default;
 $default-fg: black !default;
 $default-fg-2: #333333 !default;
+$default-font-size: 1.5rem !default;
 
 $default-font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif !default;
 $default-border: 1px solid #e1e4e8 !default;
@@ -9,6 +13,7 @@ $default-border-2: 1px solid #dddddd !default;
 $default-bottom: $default-border !default;
 $default-link-fg: #5f7869 !default;
 
+$font-size: $default-font-size !default;
 $selected-bg: #c8ffd0 !default;
 $hover-bg: #def6ea !default;
 $header-bg: $default_bg !default;
@@ -26,12 +31,12 @@ $fade-in-transition-duration: $fade-transition-duration !default;
 $fade-out-transition-duration: $fade-transition-duration !default;
 
 //// Notifications
-$notification-bg: rgba(185, 255, 193, 0.85) !default;
-$notification-hover-bg: rgba(160,245,178,0.9) !default;
-$notification-warning-bg: rgba(228, 255, 78, 0.85) !default;
-$notification-warning-hover-bg: rgba(218, 245, 68, 0.9) !default;
-$notification-error-bg: rgba(255, 100, 100, 0.85) !default;
-$notification-error-hover-bg: rgba(245, 90, 90, 0.9) !default;
+$notification-bg: rgba(185, 255, 193, 0.9) !default;
+$notification-hover-bg: rgba(160,245,178,0.95) !default;
+$notification-warning-bg: rgba(228, 255, 78, 0.9) !default;
+$notification-warning-hover-bg: rgba(218, 245, 68, 0.95) !default;
+$notification-error-bg: rgba(255, 100, 100, 0.9) !default;
+$notification-error-hover-bg: rgba(245, 90, 90, 0.95) !default;
 $notification-border: 1px solid rgba(109, 205, 134, 0.62) !default;
 $notification-warning-border: 1px solid rgba(205, 205, 109, 0.62) !default;
 $notification-error-border: 1px solid rgba(205, 109, 109, 0.62) !default;

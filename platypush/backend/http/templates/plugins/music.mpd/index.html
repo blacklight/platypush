@@ -1,0 +1,88 @@
+{% include 'plugins/music.mpd/browser.html' %}
+
+<script type="text/x-template" id="tmpl-music-mpd">
+    <div class="row music-mpd-container">
+        <div class="row panels">
+            <div class="col-no-margin-l-3 s-hidden m-hidden browser">
+                <music-mpd-browser-item
+                        v-for="item in browserItems"
+                        :key="item.type + '-' + item.name"
+                        :type="item.type"
+                        :name="item.name">
+                </music-mpd-browser-item>
+            </div>
+
+            <div class="col-no-margin-s-12 col-no-margin-m-12 col-no-margin-l-9 playlist">
+                <div class="row track item"
+                     v-for="track in playlist">
+                    <div class="col-5 artist" v-text="track.artist"></div>
+                    <div class="col-5 title" v-text="track.title"></div>
+                    <div class="col-2 pull-right duration" v-text="convertTime(track.time)"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row controls">
+            <div class="col-3 track-container">
+                <div class="track-info" v-if="status.state == 'play' || status.state == 'pause'">
+                    <div class="row artist" v-text="track.artist"></div>
+                    <div class="row title" v-text="track.title"></div>
+                </div>
+            </div>
+
+            <div class="col-6 playback-controls">
+                <div class="row">
+                    <button @click="previous">
+                        <i class="fa fa-step-backward"></i>
+                    </button>
+                    <button @click="playPause">
+                        <i class="fa fa-pause" v-if="status.state == 'play'"></i>
+                        <i class="fa fa-play" v-else></i>
+                    </button>
+                    <button @click="stop" v-if="status.state != 'stop'">
+                        <i class="fa fa-stop"></i>
+                    </button>
+                    <button @click="next">
+                        <i class="fa fa-step-forward"></i>
+                    </button>
+                </div>
+
+                <div class="row">
+                    <span class="elapsed-time" v-text="status.elapsed && status.state != 'stop' ? convertTime(status.elapsed) : '-:--'"></span>
+                    <input type="range"
+                           class="slider seek-slider"
+                           v-model="status.elapsed"
+                           min="0"
+                           :max="track.time"
+                           :disabled="!track.time || status.state == 'stop'"
+                           @input="seek">
+                    <span class="total-time" v-text="track.time && status.state != 'stop' ? convertTime(track.time) : '-:--'"></span>
+                </div>
+            </div>
+
+            <div class="col-3 pull-right">
+                <div class="row">
+                    <button @click="random" :class="{enabled: status.random}">
+                        <i class="fa fa-random"></i>
+                    </button>
+                    <button @click="repeat" :class="{enabled: status.repeat}">
+                        <i class="fa fa-repeat"></i>
+                    </button>
+                </div>
+
+                <div class="row volume-container">
+                    <button disabled>
+                        <i class="fa fa-volume-up"></i>
+                    </button>
+                    <input type="range"
+                           class="slider volume-slider"
+                           min="0"
+                           max="100"
+                           v-model="status.volume"
+                           @input="volume">
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+

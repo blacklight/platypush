@@ -8,6 +8,8 @@
     font-weight: 400;
     line-height: 3.8rem;
     letter-spacing: .1rem;
+    border-bottom: $default-border-2;
+    border-radius: 0 0 1em 1em;
 
     %panel {
         margin: 1.5rem auto;
@@ -28,7 +30,7 @@
 
         .title {
             padding: .75rem;
-            background: $default-bg;
+            background: $default-bg-2;
             border-bottom: $default-border-2;
 
             &:last-child {

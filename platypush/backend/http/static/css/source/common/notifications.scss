@@ -3,6 +3,7 @@
     bottom: 0;
     right: 0;
     width: 25em;
+    z-index: 1000;
 
     .notification {
         background: $notification-bg;

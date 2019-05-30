@@ -1,0 +1,13 @@
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/music.mpd/browser.js') }}"></script>
+
+<script type="text/x-template" id="tmpl-music-mpd-browser-item">
+    <div class="row item">
+        <div class="col-1 icon">
+            <i class="fa fa-folder" v-if="type == 'directory'"></i>
+            <i class="fa fa-list" v-else-if="type == 'playlist'"></i>
+        </div>
+
+        <div class="col-11 name" v-text="name"></div>
+    </div>
+</script>
+

@@ -1,0 +1,162 @@
+@import 'common/vars';
+@import 'common/layout';
+@import 'webpanel/plugins/music.mpd/vars';
+
+// background-image: linear-gradient(to right bottom, rgb(123, 84, 30), rgb(0, 0, 0)), linear-gradient(transparent, rgb(0, 0, 0) 70%);
+
+.music-mpd-container {
+    line-height: 3rem;
+    letter-spacing: .03rem;
+    overflow: hidden;
+
+    * > .item {
+        cursor: pointer;
+        border-radius: 1rem;
+        padding: .5rem;
+
+        &:nth-child(odd) { background: rgba(255, 255, 255, 0.0); }
+        &:nth-child(even) { background: $default-bg-3; }
+
+        .artist {
+            font-size: $artist-font-size;
+        }
+    }
+
+    * > .duration {
+        color: $duration-color;
+        font-size: $duration-font-size;
+    }
+
+    .panels {
+        display: flex;
+
+        .browser, .playlist {
+            height: 100vh - 16rem;
+            overflow: auto;
+        }
+
+        .browser {
+            background: $browser-panel-bg;
+            border-right: $default-border-2;
+            padding: .3rem 1rem 6rem 1rem;
+            font-size: $browser-font-size;
+
+            .item {
+                background: none;
+            }
+
+            .fa {
+                color: #666;
+            }
+        }
+
+        .playlist {
+            padding: .5rem 1rem 6rem 1rem;
+        }
+    }
+
+    .controls {
+        @extend .vertical-center;
+        position: fixed;
+        width: 100%;
+        min-height: 6rem;
+        bottom: 0;
+        border-top: $default-border-2;
+        padding: 1rem;
+        background: $control-panel-bg;
+        box-shadow: $control-panel-shadow;
+        z-index: 2;
+
+        .track-container {
+            @extend .vertical-center;
+            line-height: 2.6rem;
+
+            .track-info {
+                .artist {
+                    font-weight: bold;
+                }
+            }
+        }
+
+        .playback-controls {
+            .row {
+                @extend .vertical-center;
+                justify-content: center;
+            }
+
+        }
+
+        * > button {
+            border: 0;
+            padding: 0 1.5rem;
+
+            &.enabled {
+                color: $button-enabled-color;
+            }
+
+            &:hover {
+                .fa {
+                    color: $button-hover-color;
+                }
+            }
+
+            .fa-play, .fa-pause  {
+                color: $button-hover-color;
+                font-size: $font-size * 2;
+                margin-top: .3rem;
+
+                &:hover {
+                    color: $play-button-hover-color;
+                }
+            }
+        }
+
+        .pull-right {
+            padding-right: 2.5rem;
+            button {
+                &:not(last-child) {
+                    padding: 0 .7rem;
+                }
+
+                &:last-child {
+                    padding: 0;
+                }
+            }
+
+            .volume-container {
+                button {
+                    padding: 0 .3rem 0 0;
+                    background: none;
+                }
+            }
+        }
+
+        * > .seek-slider {
+            width: 75%;
+        }
+
+        * > .volume-slider {
+            width: 75%;
+            margin-right: 1rem;
+        }
+
+        * > .elapsed-time,
+        * > .total-time {
+            font-size: $control-time-font-size;
+            color: $control-time-color;
+        }
+
+        * > .elapsed-time {
+            margin-right: 1.5rem;
+        }
+
+        * > .total-time {
+            margin-left: 1.5rem;
+        }
+    }
+
+    * > .item:hover {
+        background: $hover-bg !important;
+    }
+}
+

@@ -4,7 +4,7 @@ nav {
     top: 0;
     width: 100%;
     z-index: 10;
-    opacity: 0.9;
+    opacity: 0.95;
 
     ul {
         position: relative;
@@ -23,9 +23,9 @@ nav {
             margin: 0;
             text-transform: uppercase;
             letter-spacing: .1rem;
+            border-radius: 2rem;
 
             &:hover {
-                border-radius: 2rem;
                 background: $hover-bg;
                 letter-spacing: .4rem;
             }

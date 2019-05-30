@@ -6,18 +6,9 @@
                     {{ plugin }}
                 </a>
             </li>
-            <span class="decorator" v-if="'{{ plugin }}' == selectedPlugin"></span>
         {% endfor %}
 
-        <li>
-            <a href="#{{ plugin }}">Test tab 2</a>
-        </li>
-        <li>
-            <a href="#{{ plugin }}">Test tab 3</a>
-        </li>
-
         <div class="date-time pull-right">
-            <!--<div class="date" v-text="now.toDateString().substring(0,10)"></div>-->
             <div class="time" v-text="now.toTimeString().substring(0,8)"></div>
         </div>
     </ul>
