@@ -1,0 +1,12 @@
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/music.mpd/playlist.js') }}"></script>
+
+<script type="text/x-template" id="tmpl-music-mpd-playlist-item">
+    <div class="row item"
+            :class="{selected: selected, active: active}"
+            @click="$emit('input', track)">
+        <div class="col-5 artist" v-text="track.artist"></div>
+        <div class="col-5 title" v-text="track.title"></div>
+        <div class="col-2 pull-right duration" v-text="$parent.convertTime(track.time)"></div>
+    </div>
+</script>
+

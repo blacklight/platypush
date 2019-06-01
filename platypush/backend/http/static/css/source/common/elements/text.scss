@@ -1,0 +1,24 @@
+@import 'common/vars';
+
+.input-icon {
+    position: absolute;
+    min-width: 3rem;
+    padding: 1rem;
+    color: $text-icon-color;
+}
+
+input[type=text] {
+    &:hover {
+        border: $border-hover;
+    }
+
+    &:focus {
+        border: $border-focus;
+        box-shadow: $text-shadow;
+    }
+
+    &.with-icon {
+        padding-left: 3rem;
+    }
+}
+

@@ -10,6 +10,7 @@ $default-font-size: 1.5rem !default;
 $default-font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif !default;
 $default-border: 1px solid #e1e4e8 !default;
 $default-border-2: 1px solid #dddddd !default;
+$default-border-3: 1px solid #cccccc !default;
 $default-bottom: $default-border !default;
 $default-link-fg: #5f7869 !default;
 
@@ -69,12 +70,23 @@ $switch-shadow-glow-hover: inset 0 0 0 5px #fff, inset 0 0 0 14px #fff !default;
 $switch-shadow-glow-checked-1: 0 0px 8px 0 #00ad72, 0 0 0 3px #00e094, 0 0 30px 0 #00e094, 0 0 0 6px #fff !default;
 $switch-shadow-glow-checked-2: inset 0 0 0 5px #00e094, inset 0 0 0 14px #fff !default;
 
-//// Slier element
+//// Slider element
 $slider-bg: #e4e4e4 !default;
 $slider-thumb-bg: rgba(0,215,80,1.0) !default;
 $slider-thumb-disabled-bg: rgba(0,215,80,0.3) !default;
 $slider-hover-on-hover-bg: #d2d2d2 !default;
+$slider-progress-bg: rgba(0,215,80,0.2) !default;
+
+//// Input element
+$text-icon-color: #888;
+$border-focus: 1px solid rgba(127, 216, 95, 0.83);
+$border-hover: 1px solid rgba(159, 180, 152, 0.83);
+$text-shadow: 2px 2px 2px #d4d4d4;
 
 //// Header style
 $header-bottom: $default-bottom;
+
+//// Dropdown element
+$dropdown-bg: rgba(241,243,242,0.9) !default;
+$dropdown-shadow: 1px 1px 1px #bbb;
 

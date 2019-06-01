@@ -1,0 +1,20 @@
+@import 'common/vars';
+
+.dropdown {
+    position: absolute;
+    background: $default-bg-3;
+    border-radius: .75rem;
+    border: $default-border-3;
+    box-shadow: $dropdown-shadow;
+    min-width: 15rem;
+
+    .item {
+        margin: 0 !important;
+        padding: 1rem;
+
+        .icon {
+            margin: 0 .75rem;
+        }
+    }
+}
+

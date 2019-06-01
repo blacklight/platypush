@@ -248,12 +248,18 @@ class MusicMpdPlugin(MusicPlugin):
         return self._exec('shuffle')
 
     @action
-    def add(self, resource, position=None):
+    def add(self, resource, queue=False, position=None):
         """
         Add a resource (track, album, artist, folder etc.) to the current playlist
 
         :param resource: Resource path or URI
         :type resource: str
+
+        :param queue: If true then the tracks will be queued after the currently playing track (default: False)
+        :type queue: bool
+
+        :param position: Position where the track(s) will be inserted if queue is false (default: end of the playlist)
+        :type position: int
         """
 
         if isinstance(resource, list):
@@ -272,8 +278,31 @@ class MusicMpdPlugin(MusicPlugin):
         r = self._parse_resource(resource)
 
         if position is None:
-            return self._exec('add', r)
+            return self._exec('insert' if queue else 'add', r)
         return self._exec('addid', r, position)
+
+    @action
+    def delete(self, positions):
+        """
+        Delete the playlist item(s) in the specified position(s).
+
+        :param positions: Positions of the tracks to be removed
+        :type positions: list[int]
+        """
+        return self._exec('delete', *positions)
+
+    @action
+    def move(self, from_pos, to_pos):
+        """
+        Move the playlist item in position <from_pos> to position <to_pos>
+
+        :param from_pos: Track current position
+        :type from_pos: int
+
+        :param to_pos: Track new position
+        :type to_pos: int
+        """
+        return self._exec('move', from_pos, to_pos)
 
     @classmethod
     def _parse_resource(cls, resource):

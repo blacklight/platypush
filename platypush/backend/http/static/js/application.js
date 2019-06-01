@@ -48,6 +48,7 @@ window.vm = new Vue({
 
         initEvents();
     },
+
     updated: function() {},
     destroyed: function() {},
 });

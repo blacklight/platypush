@@ -1,3 +1,5 @@
+@import 'common/mixins';
+
 .slider {
     @include appearance(none);
     @include transition(opacity .2s);
@@ -7,29 +9,40 @@
     background: $slider-bg;
     outline: none;
 
-    &::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
+    &::-webkit-slider-thumb,
+    &::-moz-range-thumb {
+        @include appearance(none);
         width: 25px;
         height: 25px;
         border-radius: 50%;
+        border: 0;
         background: $slider-thumb-bg;
         cursor: pointer;
     }
 
-    &[disabled]::-webkit-slider-thumb {
+    &[disabled]::-webkit-slider-thumb,
+    &[disabled]::-moz-range-thumb {
         display: none;
+        width: 0;
     }
 
     &.disabled {
         opacity: 0.3;
     }
 
-    &::-moz-range-thumb {
-        width: 25px;
-        height: 25px;
-        background: $slider-thumb-bg;
-        cursor: pointer;
+    &::-moz-range-track {
+        @include appearance(none);
+    }
+
+    &::-webkit-progress-value,
+    &::-moz-range-progress {
+        background: $slider-progress-bg;
+        height: 15px;
+    }
+
+    &[disabled]::-webkit-progress-value,
+    &[disabled]::-moz-range-progress {
+        background: none;
     }
 }
 

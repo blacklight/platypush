@@ -1,8 +1,7 @@
 @import 'common/vars';
+@import 'common/mixins';
 @import 'common/layout';
 @import 'webpanel/plugins/music.mpd/vars';
-
-// background-image: linear-gradient(to right bottom, rgb(123, 84, 30), rgb(0, 0, 0)), linear-gradient(transparent, rgb(0, 0, 0) 70%);
 
 .music-mpd-container {
     line-height: 3rem;
@@ -10,12 +9,16 @@
     overflow: hidden;
 
     * > .item {
+        display: flex;
+        align-items: center;
         cursor: pointer;
         border-radius: 1rem;
         padding: .5rem;
 
         &:nth-child(odd) { background: rgba(255, 255, 255, 0.0); }
         &:nth-child(even) { background: $default-bg-3; }
+        &:hover { background: $hover-bg !important; }
+        &.selected { background: $selected-bg; }
 
         .artist {
             font-size: $artist-font-size;
@@ -25,6 +28,24 @@
     * > .duration {
         color: $duration-color;
         font-size: $duration-font-size;
+    }
+
+    * > button {
+        border: 0;
+
+        &:disabled {
+            background: none;
+        }
+
+        &.enabled {
+            color: $button-enabled-color;
+        }
+
+        &:hover {
+            .fa {
+                opacity: 0.75;
+            }
+        }
     }
 
     .panels {
@@ -43,6 +64,9 @@
 
             .item {
                 background: none;
+                &:nth-of-type(2) {
+                    margin-top: 4.5rem;
+                }
             }
 
             .fa {
@@ -50,8 +74,72 @@
             }
         }
 
+        .browser,
         .playlist {
+            position: relative;   // For the dropdown menu
             padding: .5rem 1rem 6rem 1rem;
+
+            .browser-controls,
+            .playlist-controls {
+                position: fixed;
+                height: 5rem;
+                background: $playlist-controls-bg;
+                border-bottom: $playlist-controls-border;
+                margin: -.5rem 0 0 -1rem;
+                padding: .5rem;
+
+                input[type=text] {
+                    width: 100%;
+                    border-radius: 5rem;
+                }
+
+                * > button {
+                    border: 0;
+                    padding: 0 1.5rem;
+
+                    &:disabled {
+                        background: none;
+                    }
+
+                    &.enabled {
+                        color: $button-enabled-color;
+                    }
+
+                    .fa-search {
+                        color: $button-hover-color;
+                    }
+                }
+
+                button {
+                    padding: 0 .75rem;
+
+                }
+            }
+
+            .spacer {
+                height: 5rem;
+            }
+
+            .empty {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                font-size: 5rem;
+                color: $empty-playlist-color;
+                text-shadow: $empty-playlist-shadow;
+            }
+
+            .item {
+                &.active {
+                    height: 4rem;
+                    @include animation(active-track 5s infinite);
+                }
+
+                &:first-child {
+                    margin-top: 4.5rem;
+                }
+            }
         }
     }
 
@@ -59,7 +147,6 @@
         @extend .vertical-center;
         position: fixed;
         width: 100%;
-        min-height: 6rem;
         bottom: 0;
         border-top: $default-border-2;
         padding: 1rem;
@@ -78,35 +165,31 @@
             }
         }
 
+        button {
+            &:hover {
+                .fa {
+                    color: $button-hover-color;
+                }
+            }
+        }
+
         .playback-controls {
             .row {
                 @extend .vertical-center;
                 justify-content: center;
             }
 
-        }
+            button {
+                padding: 0 1.5rem;
 
-        * > button {
-            border: 0;
-            padding: 0 1.5rem;
-
-            &.enabled {
-                color: $button-enabled-color;
-            }
-
-            &:hover {
-                .fa {
+                .fa-play, .fa-pause  {
                     color: $button-hover-color;
-                }
-            }
+                    font-size: $font-size * 2;
+                    margin-top: .3rem;
 
-            .fa-play, .fa-pause  {
-                color: $button-hover-color;
-                font-size: $font-size * 2;
-                margin-top: .3rem;
-
-                &:hover {
-                    color: $play-button-hover-color;
+                    &:hover {
+                        color: $play-button-hover-color;
+                    }
                 }
             }
         }
@@ -154,9 +237,26 @@
             margin-left: 1.5rem;
         }
     }
-
-    * > .item:hover {
-        background: $hover-bg !important;
-    }
 }
 
+#music-mpd-playlist-dropdown {
+    width: 20rem;
+}
+
+@keyframes active-track {
+    0% { background: $active-track-bg-1; }
+    50% { background: $active-track-bg-2; }
+    100% { background: $active-track-bg-1; }
+}
+
+@-moz-keyframes active-track {
+    0% { background: $active-track-bg-1; }
+    50% { background: $active-track-bg-2; }
+    100% { background: $active-track-bg-1; }
+}
+
+@-webkit-keyframes active-track {
+    0% { background: $active-track-bg-1; }
+    50% { background: $active-track-bg-2; }
+    100% { background: $active-track-bg-1; }
+}
