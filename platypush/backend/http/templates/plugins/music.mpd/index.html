@@ -5,58 +5,84 @@
     <div class="row music-mpd-container">
         <div class="row panels">
             <!-- Browser section -->
-            <div class="col-no-margin-l-3 col-no-margin-m-4 s-hidden browser">
-                <div class="col-s-12 col-m-4 col-l-3 browser-controls">
-                    <div class="col-8 filter-container">
+            <div class="col-no-margin-l-3 col-no-margin-m-3 s-hidden panel browser">
+                <div class="col-s-12 col-no-margin-m-3 col-no-margin-l-3 browser-controls">
+                    <div class="col-7 filter-container">
                         <i class="fa fa-filter input-icon"></i>
                         <input type="text" class="with-icon" v-model="browserFilter">
                     </div>
-                    <div class="col-4 buttons pull-right">
-                        <button title="Add to queue">
-                            <i class="fa fa-plus"></i>
-                        </button>
-                        <button title="Remove tracks" v-if="selectionMode.playlist"
-                                :disabled="Object.keys(selectedPlaylistItems).length === 0"
-                                @click="del">
-                            <i class="fa fa-trash"></i>
-                        </button>
+                    <div class="col-5 buttons pull-right">
                         <button :class="{enabled: selectionMode.browser}"
                                 :title="selectionMode.browser ? 'End selection' : 'Start selection'"
                                 @click="toggleBrowserSelectionMode">
-                            <i class="fa fa-check-square"></i>
+                            <i class="fa fa-check"></i>
+                        </button>
+                        <button title="Select all"
+                                @click="browserSelectAll">
+                            <i class="fa fa-check-double"></i>
                         </button>
                     </div>
                 </div>
+
+                <dropdown id="music-mpd-browser-dropdown"
+                          v-if="browserItems.length > 0"
+                          ref="browserDropdown"
+                          :items="browserDropdownItems">
+                </dropdown>
+
+                <div class="spacer"></div>
+
+                <music-mpd-browser-item
+                        v-if="browserPath.length > 0"
+                        key=".."
+                        id="directory:.."
+                        type="directory"
+                        name=".."
+                        :selected="'directory:..' in selectedBrowserItems"
+                        @input="onBrowserItemClick">
+                </music-mpd-browser-item>
 
                 <music-mpd-browser-item
                         v-for="item in browserItems"
                         v-if="matchesBrowserFilter(item)"
-                        :key="item.type + '-' + item.name"
+                        :key="item.id"
+                        :id="item.id"
                         :type="item.type"
-                        :name="item.name">
+                        :name="item.name"
+                        :file="item.file"
+                        :time="item.time"
+                        :artist="item.artist"
+                        :title="item.title"
+                        :date="item.date"
+                        :track="item.track"
+                        :genre="item.genre"
+                        :lastModified="item['last-modified']"
+                        :albumUri="item['x-albumuri']"
+                        :selected="item.id in selectedBrowserItems"
+                        @input="onBrowserItemClick">
                 </music-mpd-browser-item>
             </div>
 
             <!-- Playlist section -->
-            <div class="col-s-12 col-no-margin-m-8 col-no-margin-l-9 playlist">
+            <div class="col-s-12 col-no-margin-m-9 col-no-margin-l-9 panel playlist">
                 <div class="row empty" v-if="playlist.length === 0">
                     <i class="fa fa-list"></i>
                 </div>
 
-                <div class="col-s-12 col-m-8 col-l-9 playlist-controls" v-else>
-                    <div class="col-8 filter-container">
+                <div class="col-s-12 col-m-9 col-l-9 playlist-controls" v-else>
+                    <div class="col-7 filter-container">
                         <i class="fa fa-filter input-icon"></i>
                         <input type="text" class="with-icon" v-model="playlistFilter">
                     </div>
-                    <div class="col-4 buttons pull-right">
+                    <div class="col-5 buttons pull-right">
                         <button title="Search">
                             <i class="fa fa-search"></i>
                         </button>
-                        <button title="Add item">
+                        <button title="Add item" @click="addToPlaylistPrompt">
                             <i class="fa fa-plus"></i>
                         </button>
                         <button title="Save playlist" v-if="playlist.length">
-                            <i class="fa fa-save"></i>
+                            <i class="fa fa-save" @click="savePlaylistPrompt"></i>
                         </button>
                         <button title="Swap tracks"
                                 v-if="selectionMode.playlist && playlist.length > 1"
@@ -64,15 +90,14 @@
                                 @click="swap">
                             <i class="fa fa-retweet"></i>
                         </button>
-                        <button title="Remove tracks" v-if="selectionMode.playlist"
-                                :disabled="Object.keys(selectedPlaylistItems).length === 0"
-                                @click="del">
-                            <i class="fa fa-trash"></i>
-                        </button>
                         <button :class="{enabled: selectionMode.playlist}"
                                 :title="selectionMode.playlist ? 'End selection' : 'Start selection'"
                                 @click="togglePlaylistSelectionMode">
-                            <i class="fa fa-check-square"></i>
+                            <i class="fa fa-check"></i>
+                        </button>
+                        <button title="Select all"
+                                @click="playlistSelectAll">
+                            <i class="fa fa-check-double"></i>
                         </button>
                         <button title="Clear playlist" @click="clear">
                             <i class="fa fa-ban"></i>
@@ -141,11 +166,17 @@
 
             <div class="col-3 pull-right">
                 <div class="row">
+                    <button @click="single" :class="{enabled: status.single}" title="Toggle single mode">
+                        <i class="fa fa-chess-pawn"></i>
+                    </button>
+                    <button @click="consume" :class="{enabled: status.consume}" title="Toggle consume mode">
+                        <i class="fa fa-utensils"></i>
+                    </button>
                     <button @click="random" :class="{enabled: status.random}" title="Toggle shuffle">
                         <i class="fa fa-random"></i>
                     </button>
                     <button @click="repeat" :class="{enabled: status.repeat}" title="Toggle repeat">
-                        <i class="fa fa-repeat"></i>
+                        <i class="fa fa-redo"></i>
                     </button>
                 </div>
 

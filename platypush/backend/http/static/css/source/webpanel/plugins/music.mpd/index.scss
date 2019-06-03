@@ -18,7 +18,7 @@
         &:nth-child(odd) { background: rgba(255, 255, 255, 0.0); }
         &:nth-child(even) { background: $default-bg-3; }
         &:hover { background: $hover-bg !important; }
-        &.selected { background: $selected-bg; }
+        &.selected { background: $selected-bg !important; }
 
         .artist {
             font-size: $artist-font-size;
@@ -38,7 +38,8 @@
         }
 
         &.enabled {
-            color: $button-enabled-color;
+            color: $button-enabled-color !important;
+            .fa { color: $button-enabled-color !important; }
         }
 
         &:hover {
@@ -51,8 +52,11 @@
     .panels {
         display: flex;
 
+        .spacer {
+            height: 5rem;
+        }
+
         .browser, .playlist {
-            height: 100vh - 16rem;
             overflow: auto;
         }
 
@@ -64,9 +68,6 @@
 
             .item {
                 background: none;
-                &:nth-of-type(2) {
-                    margin-top: 4.5rem;
-                }
             }
 
             .fa {
@@ -116,10 +117,6 @@
                 }
             }
 
-            .spacer {
-                height: 5rem;
-            }
-
             .empty {
                 display: flex;
                 align-items: center;
@@ -134,10 +131,6 @@
                 &.active {
                     height: 4rem;
                     @include animation(active-track 5s infinite);
-                }
-
-                &:first-child {
-                    margin-top: 4.5rem;
                 }
             }
         }
@@ -239,7 +232,7 @@
     }
 }
 
-#music-mpd-playlist-dropdown {
+.dropdown {
     width: 20rem;
 }
 

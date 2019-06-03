@@ -1,7 +1,7 @@
 <script type="application/javascript" src="{{ url_for('static', filename='js/plugins/music.mpd/playlist.js') }}"></script>
 
 <script type="text/x-template" id="tmpl-music-mpd-playlist-item">
-    <div class="row item"
+    <div class="row item playlist-item"
             :class="{selected: selected, active: active}"
             @click="$emit('input', track)">
         <div class="col-5 artist" v-text="track.artist"></div>

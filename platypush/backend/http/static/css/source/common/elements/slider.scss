@@ -9,7 +9,17 @@
     background: $slider-bg;
     outline: none;
 
-    &::-webkit-slider-thumb,
+    // Cursed be thy name Chrome for forcing designers to this hysterical redundancy
+    &::-webkit-slider-thumb {
+        @include appearance(none);
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        border: 0;
+        background: $slider-thumb-bg;
+        cursor: pointer;
+    }
+
     &::-moz-range-thumb {
         @include appearance(none);
         width: 25px;
@@ -20,27 +30,36 @@
         cursor: pointer;
     }
 
-    &[disabled]::-webkit-slider-thumb,
+    &[disabled]::-webkit-slider-thumb {
+        display: none;
+        width: 0;
+    }
+
     &[disabled]::-moz-range-thumb {
         display: none;
         width: 0;
     }
 
-    &.disabled {
-        opacity: 0.3;
-    }
+    &.disabled { opacity: 0.3; }
 
     &::-moz-range-track {
         @include appearance(none);
     }
 
-    &::-webkit-progress-value,
+    &::-webkit-progress-value {
+        background: $slider-progress-bg;
+        height: 15px;
+    }
+
     &::-moz-range-progress {
         background: $slider-progress-bg;
         height: 15px;
     }
 
-    &[disabled]::-webkit-progress-value,
+    &[disabled]::-webkit-progress-value {
+        background: none;
+    }
+
     &[disabled]::-moz-range-progress {
         background: none;
     }

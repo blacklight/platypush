@@ -100,5 +100,20 @@ function openDropdown(element) {
     document.addEventListener('click', clickHndl);
     element.className = element.className.split(' ').filter(c => c !== 'hidden').join(' ');
     openedDropdown = element;
+
+    const maxLeft = Math.min(window.innerWidth, element.parentElement.clientWidth) + element.parentElement.scrollLeft;
+    const maxTop = Math.min(window.innerHeight, element.parentElement.clientHeight) + element.parentElement.scrollTop;
+
+    if (element.parentElement.offsetLeft + element.offsetLeft + parseFloat(getComputedStyle(element).width) >= maxLeft) {
+        if (parseFloat(element.style.left) - parseFloat(getComputedStyle(element).width) >= 0) {
+            element.style.left = (parseFloat(element.style.left) - parseFloat(getComputedStyle(element).width)) + 'px';
+        }
+    }
+
+    if (element.parentElement.offsetTop + element.offsetTop + parseFloat(getComputedStyle(element).height) >= maxTop) {
+        if (parseFloat(element.style.top) - parseFloat(getComputedStyle(element).height) >= 0) {
+            element.style.top = (parseFloat(element.style.top) - parseFloat(getComputedStyle(element).height)) + 'px';
+        }
+    }
 }
 

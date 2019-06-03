@@ -226,6 +226,34 @@ class MusicMpdPlugin(MusicPlugin):
         return self._exec('random', value)
 
     @action
+    def consume(self, value=None):
+        """
+        Set consume mode
+
+        :param value: If set, set the consume state this value (true/false). Default: None (toggle current state)
+        :type value: bool
+        """
+
+        if value is None:
+            value = int(self.status().output['consume'])
+            value = 1 if value == 0 else 0
+        return self._exec('consume', value)
+
+    @action
+    def single(self, value=None):
+        """
+        Set single mode
+
+        :param value: If set, set the consume state this value (true/false). Default: None (toggle current state)
+        :type value: bool
+        """
+
+        if value is None:
+            value = int(self.status().output['single'])
+            value = 1 if value == 0 else 0
+        return self._exec('single', value)
+
+    @action
     def repeat(self, value=None):
         """
         Set repeat mode
@@ -248,17 +276,24 @@ class MusicMpdPlugin(MusicPlugin):
         return self._exec('shuffle')
 
     @action
-    def add(self, resource, queue=False, position=None):
+    def save(self, name):
+        """
+        Save the current tracklist to a new playlist with the specified name
+
+        :param name: Name of the playlist
+        :type name: str
+        """
+        return self._exec('save', name)
+
+    @action
+    def add(self, resource, position=None):
         """
         Add a resource (track, album, artist, folder etc.) to the current playlist
 
         :param resource: Resource path or URI
         :type resource: str
 
-        :param queue: If true then the tracks will be queued after the currently playing track (default: False)
-        :type queue: bool
-
-        :param position: Position where the track(s) will be inserted if queue is false (default: end of the playlist)
+        :param position: Position where the track(s) will be inserted (default: end of the playlist)
         :type position: int
         """
 
@@ -278,7 +313,7 @@ class MusicMpdPlugin(MusicPlugin):
         r = self._parse_resource(resource)
 
         if position is None:
-            return self._exec('insert' if queue else 'add', r)
+            return self._exec('add', r)
         return self._exec('addid', r, position)
 
     @action
@@ -288,8 +323,30 @@ class MusicMpdPlugin(MusicPlugin):
 
         :param positions: Positions of the tracks to be removed
         :type positions: list[int]
+
+        :return: The modified playlist
         """
-        return self._exec('delete', *positions)
+
+        for pos in sorted(positions, key=int, reverse=True):
+            self._exec('delete', pos)
+        return self.playlistinfo()
+
+    @action
+    def rm(self, playlist):
+        """
+        Permanently remove playlist(s) by name
+
+        :param playlist: Name or list of playlist names to remove
+        :type playlist: str or list[str]
+        """
+
+        if isinstance(playlist, str):
+            playlist = [playlist]
+        elif not isinstance(playlist, list):
+            raise RuntimeError('Invalid type for playlist: {}'.format(type(playlist)))
+
+        for p in playlist:
+            self._exec('rm', p)
 
     @action
     def move(self, from_pos, to_pos):
