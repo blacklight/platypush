@@ -178,8 +178,13 @@ Vue.component('music-mpd', {
                     text: 'Remove',
                     icon: 'trash',
                     click: async function() {
+                        if (!confirm('Are you sure you want to remove the selected playlist' +
+                                (Object.values(self.selectedBrowserItems).length > 1 ? 's' : '') + '?')) {
+                            return;
+                        }
+
                         const items = Object.values(self.selectedBrowserItems);
-                        await self.rm(playlists);
+                        await self.rm(items);
                         self.selectedBrowserItems = {};
                     },
                 });
@@ -499,7 +504,7 @@ Vue.component('music-mpd', {
                 return;
             }
 
-            let status = await request('music.mpd.rm', {resource: items.map(_ => _.name)});
+            let status = await request('music.mpd.rm', {playlist: items.map(_ => _.name)});
             this._parseStatus(status);
 
             items = await request('music.mpd.lsinfo', {uri: this.browserPath.join('/')});
