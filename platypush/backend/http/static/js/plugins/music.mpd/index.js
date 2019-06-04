@@ -17,6 +17,11 @@ Vue.component('music-mpd', {
                 browser: false,
             },
 
+            moveMode: {
+                playlist: false,
+                editor: false,
+            },
+
             selectedPlaylistItems: {},
             selectedBrowserItems: {},
 
@@ -45,24 +50,29 @@ Vue.component('music-mpd', {
                 });
             }
 
-            items.push(
-                {
-                    text: 'Add to playlist',
-                    icon: 'list',
-                },
-                {
+            items.push({
+                text: 'Add to playlist',
+                icon: 'list',
+            });
+
+            if (Object.keys(this.selectedPlaylistItems).length < this.playlist.length) {
+                items.push({
                     text: 'Move',
                     icon: 'retweet',
-                },
-                {
-                    text: 'Remove from queue',
-                    icon: 'trash',
-                    click: async function() {
-                        await self.del();
-                        self.selectedPlaylistItems = {};
+                    click: function() {
+                        self.moveMode.playlist = true;
                     },
+                });
+            }
+
+            items.push({
+                text: 'Remove from queue',
+                icon: 'trash',
+                click: async function() {
+                    await self.del();
+                    self.selectedPlaylistItems = {};
                 },
-            );
+            });
 
             if (Object.keys(this.selectedPlaylistItems).length === 1) {
                 items.push({
@@ -473,10 +483,8 @@ Vue.component('music-mpd', {
             this._parsePlaylist(playlist);
         },
 
-        load: async function(item) {
-            let status = await request('music.mpd.load', {playlist:item});
-            this._parseStatus(status);
-
+        load: async function(item, play=false) {
+            await request('music.mpd.load', {playlist:item, play:play});
             let playlist = await request('music.mpd.playlistinfo');
             this._parsePlaylist(playlist);
         },
@@ -509,6 +517,16 @@ Vue.component('music-mpd', {
 
             items = await request('music.mpd.lsinfo', {uri: this.browserPath.join('/')});
             this._parseBrowserItems(items);
+        },
+
+        move: async function(fromPos, toPos, updateChanges=true) {
+            let status = await request('music.mpd.move', {from_pos: fromPos, to_pos: toPos});
+
+            if (updateChanges) {
+                this._parseStatus(status);
+                const playlist = await request('music.mpd.playlistinfo');
+                this._parsePlaylist(playlist);
+            }
         },
 
         swap: async function() {
@@ -693,13 +711,24 @@ Vue.component('music-mpd', {
                 this.browserFilter.toLocaleLowerCase().split(' ').filter(_ => _.length > 0).join(' ')) >= 0;
         },
 
-        onPlaylistItemClick: function(track) {
+        onPlaylistItemClick: async function(track) {
             if (this.selectionMode.playlist) {
                 if (track.pos in this.selectedPlaylistItems) {
                     Vue.delete(this.selectedPlaylistItems, track.pos);
                 } else {
                     Vue.set(this.selectedPlaylistItems, track.pos, track);
                 }
+            } else if (this.moveMode.playlist) {
+                var fromPos = Object.values(this.selectedPlaylistItems).map(_ => _.pos);
+                var toPos = track.pos;
+                this.moveMode.playlist = false;
+
+                const promises = fromPos.map((pos,i) => this.move(pos, toPos+i, false));
+                await Promise.all(promises);
+                this.selectedPlaylistItems = {};
+
+                const playlist = await request('music.mpd.playlistinfo');
+                this._parsePlaylist(playlist);
             } else if (track.pos in this.selectedPlaylistItems) {
                 Vue.delete(this.selectedPlaylistItems, track.pos);
             } else {

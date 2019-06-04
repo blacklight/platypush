@@ -15,6 +15,11 @@ Vue.component('music-mpd-playlist-item', {
             type: Boolean,
             default: false,
         },
+
+        move: {
+            type: Boolean,
+            default: false,
+        },
     },
 });
 

@@ -2,7 +2,7 @@
 
 <script type="text/x-template" id="tmpl-music-mpd-playlist-item">
     <div class="row item playlist-item"
-            :class="{selected: selected, active: active}"
+            :class="{selected: selected, active: active, move: move}"
             @click="$emit('input', track)">
         <div class="col-5 artist" v-text="track.artist"></div>
         <div class="col-5 title" v-text="track.title"></div>

@@ -120,6 +120,7 @@
                         :track="item"
                         :active="track.file && status.state !== 'stop' && item.file === track.file"
                         :selected="item.pos in selectedPlaylistItems"
+                        :move="moveMode.playlist"
                         :ref="track.file && status.state !== 'stop' && item.file === track.file ? 'activePlaylistTrack' : undefined"
                         @input="onPlaylistItemClick">
                 </music-mpd-playlist-item>
@@ -167,7 +168,7 @@
             <div class="col-3 pull-right">
                 <div class="row">
                     <button @click="single" :class="{enabled: status.single}" title="Toggle single mode">
-                        <i class="fa fa-chess-pawn"></i>
+                        <i class="fa fa-bullseye"></i>
                     </button>
                     <button @click="consume" :class="{enabled: status.consume}" title="Toggle consume mode">
                         <i class="fa fa-utensils"></i>

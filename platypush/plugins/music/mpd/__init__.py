@@ -379,16 +379,21 @@ class MusicMpdPlugin(MusicPlugin):
         return resource
 
     @action
-    def load(self, playlist):
+    def load(self, playlist, play=True):
         """
         Load and play a playlist by name
 
         :param playlist: Playlist name
         :type playlist: str
+
+        :param play: Start playback after loading the playlist (default: True)
+        :type play: bool
         """
 
-        self._exec('load', playlist)
-        return self.play()
+        ret = self._exec('load', playlist)
+        if play:
+            self.play()
+        return ret
 
     @action
     def clear(self):

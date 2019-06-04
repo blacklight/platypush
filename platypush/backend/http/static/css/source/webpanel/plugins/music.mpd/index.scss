@@ -132,6 +132,13 @@
                     height: 4rem;
                     @include animation(active-track 5s infinite);
                 }
+
+                &.move:hover {
+                    background: $move-mode-track-bg !important;
+                    border-top: $move-mode-track-border;
+                    border-bottom: $move-mode-track-border;
+                    cursor: move;
+                }
             }
         }
     }
