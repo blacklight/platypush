@@ -23,8 +23,6 @@ $nav-bg: #e8e8e8 !default;
 $nav-fg: $default-link-fg;
 $nav-date-time-shadow: 2px 2px 2px #ccc !default;
 
-$modal-bg: #f0f0f0 !default;
-
 //// Animations defaults
 $transition-duration: .5s !default;
 $fade-transition-duration: .5s !default;
@@ -88,5 +86,10 @@ $header-bottom: $default-bottom;
 
 //// Dropdown element
 $dropdown-bg: rgba(241,243,242,0.9) !default;
-$dropdown-shadow: 1px 1px 1px #bbb;
+$dropdown-shadow: 1px 1px 1px #bbb !default;
+
+//// Modal element
+$modal-header-bg: #f0f0f0 !default;
+$modal-header-border: 1px solid #ccc !default;
+$modal-body-bg: white !default;
 

@@ -1,0 +1,13 @@
+<script type="text/x-template" id="tmpl-modal">
+    <div class="modal-container fade-in" :id="id" :class="{hidden: !value}" :style="{'--z-index': zIndex}" @click="modalClose">
+        <div class="modal" :style="{'--width':width, '--height':height}">
+            <div class="header" v-text="title" v-if="title" @click="modalClicked"></div>
+            <div class="body" @click="modalClicked">
+                <slot></slot>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="application/javascript" src="{{ url_for('static', filename='js/elements/modal.js') }}"></script>
+

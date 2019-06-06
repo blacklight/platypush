@@ -8,6 +8,8 @@
 }
 
 input[type=text] {
+    border-radius: 5rem;
+
     &:hover {
         border: $border-hover;
     }

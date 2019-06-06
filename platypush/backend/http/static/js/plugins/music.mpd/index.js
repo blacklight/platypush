@@ -1,6 +1,7 @@
 Vue.component('music-mpd', {
     template: '#tmpl-music-mpd',
     props: ['config'],
+    mixins: [utils],
     data: function() {
         return {
             track: {},
@@ -20,6 +21,11 @@ Vue.component('music-mpd', {
             moveMode: {
                 playlist: false,
                 editor: false,
+            },
+
+            infoItem: {},
+            modalVisible: {
+                info: false,
             },
 
             selectedPlaylistItems: {},
@@ -78,6 +84,10 @@ Vue.component('music-mpd', {
                 items.push({
                     text: 'View track info',
                     icon: 'info',
+                    click: async function() {
+                        self.infoItem = Object.values(self.selectedPlaylistItems)[0];
+                        self.modalVisible.info = true;
+                    },
                 });
             }
 
@@ -103,7 +113,7 @@ Vue.component('music-mpd', {
             if (Object.keys(this.selectedBrowserItems).length === 1) {
                 items.push(
                     {
-                        text: 'Add and play',
+                        text: 'Play',
                         icon: 'play',
                         click: async function() {
                             const item = Object.values(self.selectedBrowserItems)[0];
@@ -338,28 +348,6 @@ Vue.component('music-mpd', {
                     });
                 }
             }
-        },
-
-        convertTime: function(time) {
-            time = parseFloat(time);   // Normalize strings
-            var t = {};
-            t.h = '' + parseInt(time/3600);
-            t.m = '' + parseInt(time/60 - t.h*60);
-            t.s = '' + parseInt(time - t.m*60);
-
-            for (var attr of ['m','s']) {
-                if (parseInt(t[attr]) < 10) {
-                    t[attr] = '0' + t[attr];
-                }
-            }
-
-            var ret = [];
-            if (parseInt(t.h)) {
-                ret.push(t.h);
-            }
-
-            ret.push(t.m, t.s);
-            return ret.join(':');
         },
 
         previous: async function() {
@@ -697,18 +685,16 @@ Vue.component('music-mpd', {
             if (this.playlistFilter.length === 0)
                 return true;
 
-            return [track.artist || '', track.title || '', track.album || '']
-                .join(' ').toLocaleLowerCase().indexOf(
-                    this.playlistFilter.split(' ').filter(_ => _.length > 0).map(_ => _.toLocaleLowerCase()).join(' ')
-                ) >= 0;
+            const filter = this.playlistFilter.split(' ').filter(_ => _.length > 0).map(_ => _.toLocaleLowerCase()).join(' ');
+            return [track.artist || '', track.title || '', track.album || ''].join(' ').toLocaleLowerCase().indexOf() >= 0;
         },
 
         matchesBrowserFilter: function(item) {
             if (this.browserFilter.length === 0)
                 return true;
 
-            return item.name.toLocaleLowerCase().indexOf(
-                this.browserFilter.toLocaleLowerCase().split(' ').filter(_ => _.length > 0).join(' ')) >= 0;
+            const filter = this.browserFilter.toLocaleLowerCase().split(' ').filter(_ => _.length > 0).join(' ');
+            return item.name.toLocaleLowerCase().indexOf(filter) >= 0;
         },
 
         onPlaylistItemClick: async function(track) {

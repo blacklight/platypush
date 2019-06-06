@@ -29,21 +29,6 @@ Vue.component('dropdown', {
 
 var openedDropdown;
 
-var _parseElement = function(element) {
-    if (element instanceof Object) {
-        if (element.$el) {
-            element = element.$el;
-        }
-    } else if (element instanceof String || typeof(element) === 'string') {
-        element = document.getElementById(element);
-    } else {
-        console.error('Got unexpected type ' + typeof(element) + ' for dropdown element');
-        return;
-    }
-
-    return element;
-};
-
 var clickHndl = function(event) {
     if (!openedDropdown) {
         return;
@@ -53,7 +38,7 @@ var clickHndl = function(event) {
 
     while (element) {
         if (element == openedDropdown) {
-            return;  // TODO dropdown click
+            return;
         }
 
         element = element.parentElement;
@@ -78,7 +63,7 @@ function closeDropdown() {
 }
 
 function openDropdown(element) {
-    element = _parseElement(element);
+    element = parseElement(element);
     if (!element) {
         console.error('Invalid dropdown element');
         return;

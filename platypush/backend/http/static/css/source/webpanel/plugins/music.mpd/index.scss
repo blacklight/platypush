@@ -49,96 +49,97 @@
         }
     }
 
+    .spacer {
+        height: 5rem;
+    }
+
     .panels {
         display: flex;
+    }
 
-        .spacer {
+    .browser, .playlist {
+        overflow: auto;
+    }
+
+    .browser {
+        background: $browser-panel-bg;
+        border-right: $default-border-2;
+        padding: .3rem 1rem 6rem 1rem;
+        font-size: $browser-font-size;
+
+        .item {
+            background: none;
+        }
+
+        .fa {
+            color: #666;
+        }
+    }
+
+    .browser,
+    .search,
+    .playlist {
+        position: relative;   // For the dropdown menu
+        padding: .5rem 1rem 6rem 1rem;
+
+        .browser-controls,
+        .results-controls,
+        .playlist-controls {
+            position: fixed;
             height: 5rem;
+            background: $playlist-controls-bg;
+            border-bottom: $playlist-controls-border;
+            margin: -.5rem 0 0 -1rem;
+            padding: .5rem;
+
+            input[type=text] {
+                width: 100%;
+            }
+
+            * > button {
+                border: 0;
+                padding: 0 1.5rem;
+
+                &:disabled {
+                    background: none;
+                }
+
+                &.enabled {
+                    color: $button-enabled-color;
+                }
+
+                .fa-search {
+                    color: $button-hover-color;
+                }
+            }
+
+            button {
+                padding: 0 .75rem;
+
+            }
         }
 
-        .browser, .playlist {
-            overflow: auto;
+        .empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-size: 5rem;
+            color: $empty-playlist-color;
+            text-shadow: $empty-playlist-shadow;
         }
 
-        .browser {
-            background: $browser-panel-bg;
-            border-right: $default-border-2;
-            padding: .3rem 1rem 6rem 1rem;
-            font-size: $browser-font-size;
-
-            .item {
-                background: none;
+        .item {
+            &.active {
+                height: 4rem;
+                @include animation(active-track 5s infinite);
             }
 
-            .fa {
-                color: #666;
-            }
-        }
-
-        .browser,
-        .playlist {
-            position: relative;   // For the dropdown menu
-            padding: .5rem 1rem 6rem 1rem;
-
-            .browser-controls,
-            .playlist-controls {
-                position: fixed;
-                height: 5rem;
-                background: $playlist-controls-bg;
-                border-bottom: $playlist-controls-border;
-                margin: -.5rem 0 0 -1rem;
-                padding: .5rem;
-
-                input[type=text] {
-                    width: 100%;
-                    border-radius: 5rem;
-                }
-
-                * > button {
-                    border: 0;
-                    padding: 0 1.5rem;
-
-                    &:disabled {
-                        background: none;
-                    }
-
-                    &.enabled {
-                        color: $button-enabled-color;
-                    }
-
-                    .fa-search {
-                        color: $button-hover-color;
-                    }
-                }
-
-                button {
-                    padding: 0 .75rem;
-
-                }
-            }
-
-            .empty {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                height: 100%;
-                font-size: 5rem;
-                color: $empty-playlist-color;
-                text-shadow: $empty-playlist-shadow;
-            }
-
-            .item {
-                &.active {
-                    height: 4rem;
-                    @include animation(active-track 5s infinite);
-                }
-
-                &.move:hover {
-                    background: $move-mode-track-bg !important;
-                    border-top: $move-mode-track-border;
-                    border-bottom: $move-mode-track-border;
-                    cursor: move;
-                }
+            &.move:hover {
+                background: $move-mode-track-bg !important;
+                border-top: $move-mode-track-border;
+                border-bottom: $move-mode-track-border;
+                cursor: move;
             }
         }
     }
@@ -237,10 +238,112 @@
             margin-left: 1.5rem;
         }
     }
+
+    .search {
+        --width: 90vw;
+        position: relative;
+        padding: 0;
+
+        form {
+            margin-bottom: 0;
+
+            .row {
+                padding: .5rem;
+            }
+
+            .footer {
+                padding-top: 1.5rem;
+                margin-top: 1.5rem;
+                border-top: $search-modal-footer-border;
+
+                .left {
+                    display: flex;
+                    justify-content: left;
+                }
+            }
+
+            button, input[type=submit] {
+                border-radius: 5rem;
+            }
+        }
+
+        .dropdown {
+            z-index: 503;
+        }
+
+        .results-controls {
+            position: fixed;
+            padding: 0;
+            margin: -2.45rem auto 0 -2rem;
+            border-bottom: $default-border-2;
+            width: var(--width);
+            height: 3em;
+            display: flex;
+            align-items: center;
+            z-index: 502;
+        }
+
+        .results {
+            padding-top: 2.7rem;
+        }
+
+        form, .results {
+            position: relative;
+        }
+    }
 }
 
 .dropdown {
     width: 20rem;
+}
+
+#music-mpd-info {
+    .modal {
+        .body {
+            .row {
+                margin: .5rem;
+                padding: .5rem;
+                border-bottom: $info-modal-row-border;
+
+                &:hover {
+                    border-radius: 1rem;
+                    background: $hover-bg;
+                }
+
+                .attr {
+                    color: $info-modal-attr-color;
+                }
+
+                .value {
+                    text-align: right;
+                }
+            }
+        }
+    }
+}
+
+@media #{map-get($widths, 's')} {
+    #music-mpd-info {
+        .modal {
+            width: 80vw;
+        }
+    }
+}
+
+@media #{map-get($widths, 'm')} {
+    #music-mpd-info {
+        .modal {
+            width: 70vw;
+        }
+    }
+}
+
+@media #{map-get($widths, 'l')} {
+    #music-mpd-info {
+        .modal {
+            width: 45vw;
+        }
+    }
 }
 
 @keyframes active-track {
@@ -260,3 +363,4 @@
     50% { background: $active-track-bg-2; }
     100% { background: $active-track-bg-1; }
 }
+

@@ -1,5 +1,6 @@
 Vue.component('music-mpd-playlist-item', {
     template: '#tmpl-music-mpd-playlist-item',
+    mixins: [utils],
     props: {
         track: {
             type: Object,

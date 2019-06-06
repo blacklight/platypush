@@ -4,9 +4,11 @@
     <div class="row item playlist-item"
             :class="{selected: selected, active: active, move: move}"
             @click="$emit('input', track)">
-        <div class="col-5 artist" v-text="track.artist"></div>
-        <div class="col-5 title" v-text="track.title"></div>
-        <div class="col-2 pull-right duration" v-text="$parent.convertTime(track.time)"></div>
+        <div class="col-5 artist" v-text="track.artist" v-if="track.artist"></div>
+        <div class="col-5 artist empty" v-else>[No Artist]</div>
+
+        <div class="col-5 title" v-text="track.title || track.file"></div>
+        <div class="col-2 pull-right duration" v-text="convertTime(track.time)"></div>
     </div>
 </script>
 
