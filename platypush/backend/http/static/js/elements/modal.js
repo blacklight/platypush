@@ -69,6 +69,28 @@ Vue.component('modal', {
             this.prevValue = this.value;
         }
 
+        if (this.value) {
+            // Make sure that a newly opened or visible+updated modal always comes to the front
+            const myZIndex = parseInt(getComputedStyle(this.$el).zIndex);
+            var maxZIndex = myZIndex;
+            var outermostModals = [];
+
+            for (const modal of document.querySelectorAll('.modal-container:not(.hidden)')) {
+                const zIndex = parseInt(getComputedStyle(modal).zIndex);
+
+                if (zIndex > maxZIndex) {
+                    maxZIndex = zIndex;
+                    outermostModals = [modal];
+                } else if (zIndex == maxZIndex) {
+                    outermostModals.push(modal);
+                }
+            }
+
+            if (outermostModals.indexOf(this.$el) < 0 || outermostModals.length > 1) {
+                this.$el.style.zIndex = maxZIndex+1;
+            }
+        }
+
         if (this.value && this.timeout && !this.timeoutId) {
             var handler = (self) => {
                 return () => {

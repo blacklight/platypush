@@ -46,14 +46,39 @@ Vue.component('music-mpd', {
             var items = [];
 
             if (Object.keys(this.selectedPlaylistItems).length === 1) {
+                const track = Object.values(this.selectedPlaylistItems)[0];
+
                 items.push({
-                    text: 'Play',
-                    icon: 'play',
-                    click: async function() {
-                        await self.playpos();
-                        self.selectedPlaylistItems = {};
-                    },
-                });
+                        text: 'Play',
+                        icon: 'play',
+                        click: async function() {
+                            await self.playpos();
+                            self.selectedPlaylistItems = {};
+                        },
+                    }
+                );
+
+                if (track.artist && track.artist.length) {
+                    items.push({
+                        text: 'View artist',
+                        icon: 'user',
+                        click: async function() {
+                            await self.searchArtist(track);
+                            self.selectedPlaylistItems = {};
+                        }
+                    });
+                }
+
+                if (track.album && track.album.length) {
+                    items.push({
+                        text: 'View album',
+                        icon: 'compact-disc',
+                        click: async function() {
+                            await self.searchAlbum(track);
+                            self.selectedPlaylistItems = {};
+                        },
+                    });
+                }
             }
 
             items.push({
@@ -85,8 +110,7 @@ Vue.component('music-mpd', {
                     text: 'View track info',
                     icon: 'info',
                     click: async function() {
-                        self.infoItem = Object.values(self.selectedPlaylistItems)[0];
-                        self.modalVisible.info = true;
+                        await self.info(Object.values(self.selectedPlaylistItems)[0]);
                     },
                 });
             }
@@ -111,6 +135,8 @@ Vue.component('music-mpd', {
             }
 
             if (Object.keys(this.selectedBrowserItems).length === 1) {
+                const item = Object.values(this.selectedBrowserItems)[0];
+
                 items.push(
                     {
                         text: 'Play',
@@ -169,6 +195,28 @@ Vue.component('music-mpd', {
                         },
                     }
                 );
+
+                if (item.artist && item.artist.length) {
+                    items.push({
+                        text: 'View artist',
+                        icon: 'user',
+                        click: async function() {
+                            await self.searchArtist(item);
+                            self.selectedPlaylistItems = {};
+                        }
+                    });
+                }
+
+                if (item.album && item.album.length) {
+                    items.push({
+                        text: 'View album',
+                        icon: 'compact-disc',
+                        click: async function() {
+                            await self.searchAlbum(item);
+                            self.selectedPlaylistItems = {};
+                        },
+                    });
+                }
             }
 
             items.push(
@@ -547,6 +595,41 @@ Vue.component('music-mpd', {
             this._parseBrowserItems(items);
         },
 
+        info: async function(item) {
+            var info = item;
+
+            if (typeof(item) === 'string') {
+                item = await request('music.mpd.search', {filter: {file: info}});
+            }
+
+            this.infoItem = item;
+            this.modalVisible.info = true;
+        },
+
+        searchArtist: async function(item) {
+            await this.search({artist: item.artist});
+        },
+
+        searchAlbum: async function(item) {
+            var query = {};
+
+            if (item['x-albumuri']) {
+                query.file = item['x-albumuri'];
+            } else {
+                query.artist = item.albumartist || item.artist;
+                query.album = item.album;
+            }
+
+            await this.search(query);
+        },
+
+        search: async function(query) {
+            this.$refs.search.resetQuery();
+            this.$refs.search.query = query;
+            this.$refs.search.visible = true;
+            await this.$refs.search.search();
+        },
+
         onNewPlayingTrack: async function(event) {
             var previousTrack = {
                 file: this.track.file,
@@ -791,7 +874,21 @@ Vue.component('music-mpd', {
         scrollToActiveTrack: function() {
             if (this.$refs.activePlaylistTrack && this.$refs.activePlaylistTrack.length) {
                 this.$refs.activePlaylistTrack[0].$el.scrollIntoView({behavior: 'smooth'});
+            } else {
+                return;
             }
+
+            const self = this;
+            setTimeout(() => {
+                var parent = self.$refs.activePlaylistTrack[0].$el.parentElement;
+                if (parent.clientHeight + parent.scrollTop < parent.scrollHeight) {
+                    if (parent.scrollTop-50 > 0) {
+                        parent.scrollTop -= 50;
+                    } else {
+                        parent.scrollTop = 0;
+                    }
+                }
+            }, 750);
         },
 
         addToPlaylistPrompt: async function() {

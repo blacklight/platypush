@@ -5,13 +5,14 @@ Vue.component('music-mpd-search', {
         return {
             visible: false,
             showResults: false,
-            results: false,
+            results: [],
             filter: '',
             selectionMode: false,
             selectedItems: {},
 
             query: {
                 any: '',
+                file: '',
                 artist: '',
                 title: '',
                 album: '',
@@ -66,9 +67,36 @@ Vue.component('music-mpd-search', {
             );
 
             if (Object.keys(this.selectedItems).length === 1) {
+                const item = Object.values(this.selectedItems)[0];
+
+                if (item.artist && item.artist.length) {
+                    items.push({
+                        text: 'View artist',
+                        icon: 'user',
+                        click: async function() {
+                            await self.mpd.searchArtist(item);
+                            self.selectedItems = {};
+                        }
+                    });
+                }
+
+                if (item.album && item.album.length) {
+                    items.push({
+                        text: 'View album',
+                        icon: 'compact-disc',
+                        click: async function() {
+                            await self.mpd.searchAlbum(item);
+                            self.selectedItems = {};
+                        },
+                    });
+                }
+
                 items.push({
                     text: 'View info',
                     icon: 'info',
+                    click: function() {
+                        self.$emit('info', item);
+                    },
                 });
             }
 
@@ -86,7 +114,9 @@ Vue.component('music-mpd-search', {
                 return items;
             }, []);
 
+            this.results = [];
             var results = await request('music.mpd.search', {filter: filter});
+
             this.results = results.sort((a,b) => {
                 const tokenize = (t) => {
                     return ''.concat(t.artist || '', '-', t.album || '', '-', t.disc || '', '-', t.track || '', t.title || '').toLocaleLowerCase();
@@ -135,10 +165,17 @@ Vue.component('music-mpd-search', {
             this.selectionMode = true;
 
             for (var item of this.results) {
-                this.selectedItems[item.id] = item;
+                this.selectedItems[item.file] = item;
             }
 
             openDropdown(this.$refs.dropdown.$el);
+        },
+
+        resetQuery: function() {
+            this.filter = '';
+            for (const attr of Object.keys(this.query)) {
+                this.query[attr] = '';
+            }
         },
     },
 });

@@ -4,10 +4,19 @@
     <modal id="music-mpd-search-modal" title="Search" v-model="visible"
            :width="showResults ? '90vw' : 'initial'" ref="modal"
            @open="$refs.form.querySelector('input[type=text]:first-child').focus()">
+        <dropdown id="music-mpd-search-dropdown"
+                  v-if="results.length > 0"
+                  ref="dropdown"
+                  :items="dropdownItems">
+        </dropdown>
+
         <div class="search">
             <form ref="form" @submit.prevent="search" :class="{hidden: showResults}">
                 <div class="row">
-                    <input type="text" v-model.lazy.trim="query.any" placeholder="Free-text search">
+                    <input type="text" v-model.lazy.trim="query.any" placeholder="Any field">
+                </div>
+                <div class="row">
+                    <input type="text" v-model.lazy.trim="query.file" placeholder="Filename or URI">
                 </div>
                 <div class="row">
                     <input type="text" v-model.lazy.trim="query.artist" placeholder="Artist">
@@ -55,12 +64,6 @@
                     </button>
                 </div>
             </div>
-
-            <dropdown id="music-mpd-search-dropdown"
-                      v-if="results.length > 0"
-                      ref="dropdown"
-                      :items="dropdownItems">
-            </dropdown>
 
             <div class="results" :class="{hidden: !showResults}">
                 <div class="no-results" v-if="results.length === 0">No results</div>

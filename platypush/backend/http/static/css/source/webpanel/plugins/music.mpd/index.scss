@@ -21,13 +21,13 @@
         &.selected { background: $selected-bg !important; }
 
         .artist {
-            font-size: $artist-font-size;
+            font-size: .9em;
         }
     }
 
     * > .duration {
         color: $duration-color;
-        font-size: $duration-font-size;
+        font-size: .7em;
     }
 
     * > button {
@@ -65,7 +65,7 @@
         background: $browser-panel-bg;
         border-right: $default-border-2;
         padding: .3rem 1rem 6rem 1rem;
-        font-size: $browser-font-size;
+        font-size: .9em;
 
         .item {
             background: none;
@@ -163,6 +163,15 @@
                 .artist {
                     font-weight: bold;
                 }
+
+                a {
+                    color: initial;
+                    text-decoration: none;
+
+                    &:hover {
+                        color: $track-info-hover-color;
+                    }
+                }
             }
         }
 
@@ -226,8 +235,8 @@
 
         * > .elapsed-time,
         * > .total-time {
-            font-size: $control-time-font-size;
-            color: $control-time-color;
+            font-size: .7em;
+            color: .7em;
         }
 
         * > .elapsed-time {
@@ -265,10 +274,6 @@
             button, input[type=submit] {
                 border-radius: 5rem;
             }
-        }
-
-        .dropdown {
-            z-index: 503;
         }
 
         .results-controls {
@@ -319,6 +324,12 @@
                 }
             }
         }
+    }
+}
+
+#music-mpd-search-modal {
+    .dropdown {
+        z-index: 503;
     }
 }
 
