@@ -130,6 +130,12 @@
         }
 
         .item {
+            .empty {
+                font-size: 1em;
+                display: block;
+                height: auto;
+            }
+
             &.active {
                 height: 4rem;
                 @include animation(active-track 5s infinite);
@@ -141,6 +147,24 @@
                 border-bottom: $move-mode-track-border;
                 cursor: move;
             }
+        }
+    }
+
+    .playlist-add {
+        .playlist-add-controls {
+            background: $playlist-controls-bg;
+            border-bottom: $playlist-controls-border;
+            border-radius: 0;
+            box-shadow: $filter-bar-shadow;
+            margin: -2.5rem -2rem 0 -2rem;
+            padding: .5rem;
+        }
+
+        .playlists-container {
+            max-height: 70vh;
+            overflow: auto;
+            margin: 0 -2rem;
+            padding: 1rem;
         }
     }
 
@@ -296,10 +320,14 @@
             position: relative;
         }
     }
-}
 
-.dropdown {
-    width: 20rem;
+    .dropdown {
+        width: 20rem;
+    }
+
+    .filter-container {
+        position: relative;
+    }
 }
 
 #music-mpd-info {
@@ -330,6 +358,12 @@
 #music-mpd-search-modal {
     .dropdown {
         z-index: 503;
+    }
+}
+
+#music-mpd-playlist-add {
+    .modal {
+        min-width: 50rem;
     }
 }
 

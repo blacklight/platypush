@@ -8,8 +8,10 @@ Vue.component('music-mpd', {
             status: {},
             timer: null,
             playlist: [],
+            playlists: [],
             playlistFilter: '',
             browserFilter: '',
+            playlistAddFilter: '',
             browserPath: [],
             browserItems: [],
 
@@ -26,9 +28,12 @@ Vue.component('music-mpd', {
             infoItem: {},
             modalVisible: {
                 info: false,
+                playlistAdd: false,
             },
 
+            addToPlaylistItems: [],
             selectedPlaylistItems: {},
+            selectedPlaylistAddItems: {},
             selectedBrowserItems: {},
 
             syncTime: {
@@ -84,6 +89,12 @@ Vue.component('music-mpd', {
             items.push({
                 text: 'Add to playlist',
                 icon: 'list',
+                click: async function() {
+                    self.addToPlaylistItems = Object.values(self.selectedPlaylistItems).map(_ => _.file);
+                    self.selectedPlaylistItems = {};
+                    self.modalVisible.playlistAdd = true;
+                    await self.listplaylists();
+                },
             });
 
             if (Object.keys(this.selectedPlaylistItems).length < this.playlist.length) {
@@ -233,6 +244,21 @@ Vue.component('music-mpd', {
                 },
             );
 
+            if (Object.values(this.selectedBrowserItems).filter(_ => _.type === 'file').length === Object.values(this.selectedBrowserItems).length) {
+                items.push(
+                    {
+                        text: 'Add to playlist',
+                        icon: 'list',
+                        click: async function() {
+                            self.addToPlaylistItems = Object.keys(self.selectedBrowserItems);
+                            self.modalVisible.playlistAdd = true;
+                            await self.listplaylists();
+                            self.selectedBrowserItems = {};
+                        },
+                    },
+                );
+            }
+
             if (Object.keys(this.selectedBrowserItems).length === 1
                     && Object.values(this.selectedBrowserItems)[0].type === 'playlist') {
                 items.push({
@@ -263,6 +289,9 @@ Vue.component('music-mpd', {
                 items.push({
                     text: 'View info',
                     icon: 'info',
+                    click: async function() {
+                        await self.info(Object.values(self.selectedBrowserItems)[0].name);
+                    },
                 });
             }
 
@@ -338,7 +367,7 @@ Vue.component('music-mpd', {
             }
 
             for (const [attr, value] of Object.entries(track)) {
-                if (['id','pos','time'].indexOf(attr) >= 0) {
+                if (['id','pos','time','track','disc'].indexOf(attr) >= 0) {
                     Vue.set(this.track, attr, parseInt(value));
                 } else {
                     Vue.set(this.track, attr, value);
@@ -355,7 +384,7 @@ Vue.component('music-mpd', {
 
             for (var track of playlist) {
                 for (const [attr, value] of Object.entries(track)) {
-                    if (['time','pos','id'].indexOf(attr) >= 0) {
+                    if (['time','pos','id','track','disc'].indexOf(attr) >= 0) {
                         track[attr] = parseInt(value);
                     } else {
                         track[attr] = value;
@@ -599,7 +628,8 @@ Vue.component('music-mpd', {
             var info = item;
 
             if (typeof(item) === 'string') {
-                item = await request('music.mpd.search', {filter: {file: info}});
+                var items = await request('music.mpd.search', {filter: ['file', info]});
+                item = items.length ? items[0] : {file: info};
             }
 
             this.infoItem = item;
@@ -628,6 +658,42 @@ Vue.component('music-mpd', {
             this.$refs.search.query = query;
             this.$refs.search.visible = true;
             await this.$refs.search.search();
+        },
+
+        listplaylists: async function() {
+            this.playlists = [];
+            let playlists = await request('music.mpd.listplaylists');
+
+            for (const p of playlists) {
+                this.playlists.push(p);
+            }
+        },
+
+        playlistadd: async function(items=[], playlists=[]) {
+            if (!playlists.length) {
+                if (this.modalVisible.playlistAdd) {
+                    playlists = Object.keys(this.selectedPlaylistAddItems);
+                }
+            }
+
+            if (!items.length) {
+                items = this.addToPlaylistItems;
+            }
+
+            if (!items.length || !playlists.length) {
+                return;
+            }
+
+            var promises = [];
+            for (const playlist of playlists) {
+                promises.push(request('music.mpd.playlistadd', {
+                    name: playlist, uri: items.map(_ => typeof(_) === 'object' ? _.file : _)
+                }));
+            }
+
+            await Promise.all(promises);
+            this.modalVisible.playlistAdd = false;
+            this.addToPlaylistItems = [];
         },
 
         onNewPlayingTrack: async function(event) {
@@ -777,7 +843,15 @@ Vue.component('music-mpd', {
                 return true;
 
             const filter = this.browserFilter.toLocaleLowerCase().split(' ').filter(_ => _.length > 0).join(' ');
-            return item.name.toLocaleLowerCase().indexOf(filter) >= 0;
+            return (item.artist || '').concat(item.name).toLocaleLowerCase().indexOf(filter) >= 0;
+        },
+
+        matchesPlaylistAddFilter: function(item) {
+            if (this.playlistAddFilter.length === 0)
+                return true;
+
+            const filter = this.playlistAddFilter.toLocaleLowerCase().split(' ').filter(_ => _.length > 0).join(' ');
+            return (item.playlist || '').toLocaleLowerCase().indexOf(filter) >= 0;
         },
 
         onPlaylistItemClick: async function(track) {
@@ -828,6 +902,14 @@ Vue.component('music-mpd', {
                 this.selectedBrowserItems = {};
                 Vue.set(this.selectedBrowserItems, item.id, item);
                 openDropdown(this.$refs.browserDropdown.$el);
+            }
+        },
+
+        onPlaylistAddItemClick: function(playlist) {
+            if (playlist.playlist in this.selectedPlaylistAddItems) {
+                Vue.delete(this.selectedPlaylistAddItems, playlist.playlist);
+            } else {
+                Vue.set(this.selectedPlaylistAddItems, playlist.playlist, playlist);
             }
         },
 

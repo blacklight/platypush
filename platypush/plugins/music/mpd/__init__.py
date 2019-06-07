@@ -565,6 +565,24 @@ class MusicMpdPlugin(MusicPlugin):
                       key=lambda p: p['playlist'])
 
     @action
+    def playlistadd(self, name, uri):
+        """
+        Add one or multiple resources to a playlist.
+
+        :param name: Playlist name
+        :type name: str
+
+        :param uri: URI or path of the resource(s) to be added
+        :type uri: str or list[str]
+        """
+
+        if isinstance(uri, str):
+            uri = [uri]
+
+        for res in uri:
+            self._exec('playlistadd', name, res)
+
+    @action
     def lsinfo(self, uri=None):
         """
         Returns the list of playlists and directories on the server

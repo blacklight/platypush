@@ -55,6 +55,36 @@
             </div>
         </modal>
 
+        <modal id="music-mpd-playlist-add" title="Add to playlist" v-model="modalVisible.playlistAdd" ref="modalPlaylistAdd">
+            <div class="playlist-add">
+                <div class="playlist-add-controls">
+                    <div class="row">
+                        <div class="col-7 filter-container">
+                            <i class="fa fa-filter input-icon"></i>
+                            <input type="text" class="with-icon" v-model="playlistAddFilter">
+                        </div>
+                        <div class="col-5 pull-right">
+                            <button class="btn-primary" type="button"
+                                    @click="playlistadd"
+                                    :disabled="Object.keys(selectedPlaylistAddItems).length === 0">
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="playlists-container">
+                    <div class="item"
+                        :class="{selected: p.playlist in selectedPlaylistAddItems}"
+                        v-for="p in playlists"
+                        v-if="matchesPlaylistAddFilter(p)"
+                        v-text="p.playlist"
+                        @click="onPlaylistAddItemClick(p)">
+                    </div>
+                </div>
+            </div>
+        </modal>
+
         <div class="row panels">
             <!-- Browser section -->
             <div class="col-no-margin-l-3 col-no-margin-m-3 s-hidden panel browser">

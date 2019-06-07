@@ -66,6 +66,21 @@ Vue.component('music-mpd-search', {
                 },
             );
 
+            if (Object.values(this.selectedItems).filter(_ => _.time != null).length === Object.values(this.selectedItems).length) {
+                items.push(
+                    {
+                        text: 'Add to playlist',
+                        icon: 'list',
+                        click: async function() {
+                            self.mpd.addToPlaylistItems = Object.values(self.selectedItems).map(_ => _.file);
+                            self.mpd.modalVisible.playlistAdd = true;
+                            await self.mpd.listplaylists();
+                            self.selectedItems = {};
+                        },
+                    },
+                );
+            }
+
             if (Object.keys(this.selectedItems).length === 1) {
                 const item = Object.values(this.selectedItems)[0];
 
@@ -118,11 +133,17 @@ Vue.component('music-mpd-search', {
             var results = await request('music.mpd.search', {filter: filter});
 
             this.results = results.sort((a,b) => {
-                const tokenize = (t) => {
-                    return ''.concat(t.artist || '', '-', t.album || '', '-', t.disc || '', '-', t.track || '', t.title || '').toLocaleLowerCase();
-                };
-
-                return tokenize(a).localeCompare(tokenize(b));
+                if (a.artist != b.artist)
+                    return (a.artist || '').localeCompare(b.artist || '');
+                if (a.album != b.album)
+                    return (a.album || '').localeCompare(b.album || '');
+                if (a.track != b.track)
+                    return parseInt(a.track || 0) > parseInt(b.track || 0);
+                if (a.title != b.title)
+                    return (a.title || '').localeCompare(b.title || '');
+                if (a.file != b.file)
+                    return (a.file || '').localeCompare(b.file || '');
+                return 0;
             });
 
             this.showResults = true;
@@ -176,6 +197,16 @@ Vue.component('music-mpd-search', {
             for (const attr of Object.keys(this.query)) {
                 this.query[attr] = '';
             }
+        },
+
+        resetForm: function() {
+            this.resetQuery();
+            this.showResults = false;
+            var self = this;
+
+            setTimeout(() => {
+                self.$refs.form.querySelector('input[type=text]:first-child').focus()
+            }, 100)
         },
     },
 });
