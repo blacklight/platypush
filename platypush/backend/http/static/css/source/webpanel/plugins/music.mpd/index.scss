@@ -76,6 +76,30 @@
         }
     }
 
+    %ctrl-button {
+        border: 0;
+        padding: 0 1.5rem;
+
+        &:disabled {
+            background: none;
+        }
+
+        &.enabled {
+            color: $button-enabled-color;
+        }
+
+        .fa-search {
+            color: $button-hover-color;
+        }
+    }
+
+    %move {
+        background: $move-mode-track-bg !important;
+        border-top: $move-mode-track-border;
+        border-bottom: $move-mode-track-border;
+        cursor: move;
+    }
+
     .browser,
     .search,
     .playlist {
@@ -97,25 +121,11 @@
             }
 
             * > button {
-                border: 0;
-                padding: 0 1.5rem;
-
-                &:disabled {
-                    background: none;
-                }
-
-                &.enabled {
-                    color: $button-enabled-color;
-                }
-
-                .fa-search {
-                    color: $button-hover-color;
-                }
+                @extend %ctrl-button;
             }
 
             button {
                 padding: 0 .75rem;
-
             }
         }
 
@@ -142,15 +152,14 @@
             }
 
             &.move:hover {
-                background: $move-mode-track-bg !important;
-                border-top: $move-mode-track-border;
-                border-bottom: $move-mode-track-border;
-                cursor: move;
+                @extend %move;
             }
         }
     }
 
-    .playlist-add {
+    .playlist-add,
+    .editor {
+        .editor-controls,
         .playlist-add-controls {
             background: $playlist-controls-bg;
             border-bottom: $playlist-controls-border;
@@ -160,11 +169,34 @@
             padding: .5rem;
         }
 
+        input[type=text] {
+            width: 100%;
+        }
+
+        button {
+            @extend %ctrl-button;
+            padding: 0 .75rem;
+        }
+
+        .editor-container,
         .playlists-container {
-            max-height: 70vh;
             overflow: auto;
             margin: 0 -2rem;
             padding: 1rem;
+        }
+
+        .playlists-container {
+            max-height: 70vh;
+        }
+
+        .editor-container {
+            max-height: 65vh;
+
+            .item {
+                &.move:hover {
+                    @extend %move;
+                }
+            }
         }
     }
 
@@ -355,7 +387,8 @@
     }
 }
 
-#music-mpd-search-modal {
+#music-mpd-search-modal,
+#music-mpd-playlist-edit {
     .dropdown {
         z-index: 503;
     }
@@ -364,6 +397,12 @@
 #music-mpd-playlist-add {
     .modal {
         min-width: 50rem;
+    }
+}
+
+#music-mpd-playlist-edit {
+    .modal {
+        min-width: 80rem;
     }
 }
 

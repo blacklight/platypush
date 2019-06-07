@@ -6,9 +6,7 @@
 
 <script type="text/x-template" id="tmpl-music-mpd">
     <div class="row music-mpd-container">
-        <music-mpd-search ref="search"
-                          @info="info"
-                          :mpd="this">
+        <music-mpd-search ref="search" @info="info" :mpd="this">
         </music-mpd-search>
 
         <modal id="music-mpd-info" title="Info" v-model="modalVisible.info" ref="modal">
@@ -33,9 +31,9 @@
                     <div class="col-8 value" v-text="infoItem.album"></div>
                 </div>
 
-                <div class="row" v-if="infoItem.year">
-                    <div class="col-4 attr">Year</div>
-                    <div class="col-8 value" v-text="infoItem.year"></div>
+                <div class="row" v-if="infoItem.year || infoItem.date">
+                    <div class="col-4 attr">Date</div>
+                    <div class="col-8 value" v-text="infoItem.year || infoItem.date"></div>
                 </div>
 
                 <div class="row" v-if="infoItem.disc">
@@ -81,6 +79,57 @@
                         v-text="p.playlist"
                         @click="onPlaylistAddItemClick(p)">
                     </div>
+                </div>
+            </div>
+        </modal>
+
+        <modal id="music-mpd-playlist-edit" title="Edit/view playlist" v-model="modalVisible.editor" ref="modalEditor">
+            <div class="editor">
+                <div class="editor-controls">
+                    <div class="row">
+                        <div class="col-7 filter-container">
+                            <i class="fa fa-filter input-icon"></i>
+                            <input type="text" class="with-icon" v-model="editorFilter">
+                        </div>
+                        <div class="col-5 pull-right">
+                            <button title="Add item" @click="addToPlaylistEditorPrompt">
+                                <i class="fa fa-plus"></i>
+                            </button>
+                            <button title="Rename playlist" @click="rename">
+                                <i class="fa fa-edit"></i>
+                            </button>
+                            <button :class="{enabled: selectionMode.editor}"
+                                    :title="selectionMode.editor ? 'End selection' : 'Start selection'"
+                                    @click="toggleEditorSelectionMode">
+                                <i class="fa fa-check"></i>
+                            </button>
+                            <button title="Select all"
+                                    @click="editorSelectAll">
+                                <i class="fa fa-check-double"></i>
+                            </button>
+                            <button title="Clear playlist" @click="playlistclear">
+                                <i class="fa fa-ban"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="editor-container">
+                    <dropdown id="music-mpd-editor-dropdown"
+                              v-if="selectedPlaylist.items"
+                              ref="editorDropdown"
+                              :items="editorDropdownItems">
+                    </dropdown>
+
+                    <music-mpd-playlist-item
+                            v-for="item in selectedPlaylist.items"
+                            v-if="matchesEditorFilter(item)"
+                            :key="item.pos"
+                            :track="item"
+                            :selected="item.pos in selectedEditorItems"
+                            :move="moveMode.editor"
+                            @input="onEditorItemClick">
+                    </music-mpd-playlist-item>
                 </div>
             </div>
         </modal>

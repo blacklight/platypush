@@ -30,7 +30,8 @@
 
                 <div class="footer">
                     <div class="left col-6">
-                        <button class="btn-default" v-if="results.length" @click="$event.preventDefault(); showResults = true" title="Show results">
+                        <button class="btn-default" type="button" v-if="results.length"
+                                @click="$event.preventDefault(); showResults = true" title="Show results">
                             <i class="fa fa-list"></i>
                         </button>
                     </div>

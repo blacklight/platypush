@@ -34,10 +34,6 @@ class MusicPlugin(Plugin):
         raise NotImplementedError()
 
     @action
-    def playlistadd(self, playlist):
-        raise NotImplementedError()
-
-    @action
     def clear(self):
         raise NotImplementedError()
 

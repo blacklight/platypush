@@ -565,6 +565,26 @@ class MusicMpdPlugin(MusicPlugin):
                       key=lambda p: p['playlist'])
 
     @action
+    def listplaylist(self, name):
+        """
+        List the items in the specified playlist (without metadata)
+
+        :param name: Name of the playlist
+        :type name: str
+        """
+        return self._exec('listplaylist', name, return_status=False)
+
+    @action
+    def listplaylistinfo(self, name):
+        """
+        List the items in the specified playlist (with metadata)
+
+        :param name: Name of the playlist
+        :type name: str
+        """
+        return self._exec('listplaylistinfo', name, return_status=False)
+
+    @action
     def playlistadd(self, name, uri):
         """
         Add one or multiple resources to a playlist.
@@ -581,6 +601,65 @@ class MusicMpdPlugin(MusicPlugin):
 
         for res in uri:
             self._exec('playlistadd', name, res)
+
+    @action
+    def playlistdelete(self, name, pos):
+        """
+        Remove one or multiple tracks from a playlist.
+
+        :param name: Playlist name
+        :type name: str
+
+        :param pos: Position or list of positions to remove
+        :type pos: int or list[int]
+        """
+
+        if isinstance(pos, str):
+            pos = int(pos)
+        if isinstance(pos, int):
+            pos = [pos]
+
+        for p in pos:
+            self._exec('playlistdelete', name, p)
+
+    @action
+    def playlistmove(self, name, from_pos, to_pos):
+        """
+        Change the position of a track in the specified playlist
+
+        :param name: Playlist name
+        :type name: str
+
+        :param from_pos: Original track position
+        :type from_pos: int
+
+        :param to_pos: New track position
+        :type to_pos: int
+        """
+        self._exec('playlistmove', name, from_pos, to_pos)
+
+    @action
+    def playlistclear(self, name):
+        """
+        Clears all the elements from the specified playlist
+
+        :param name: Playlist name
+        :type name: str
+        """
+        self._exec('playlistclear', name)
+
+    @action
+    def rename(self, name, new_name):
+        """
+        Rename a playlist
+
+        :param name: Original playlist name
+        :type name: str
+
+        :param new_name: New playlist name
+        :type name: str
+        """
+        self._exec('rename', name, new_name)
 
     @action
     def lsinfo(self, uri=None):

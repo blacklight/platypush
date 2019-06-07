@@ -12,12 +12,14 @@ Vue.component('music-mpd', {
             playlistFilter: '',
             browserFilter: '',
             playlistAddFilter: '',
+            editorFilter: '',
             browserPath: [],
             browserItems: [],
 
             selectionMode: {
                 playlist: false,
                 browser: false,
+                editor: false,
             },
 
             moveMode: {
@@ -28,12 +30,15 @@ Vue.component('music-mpd', {
             infoItem: {},
             modalVisible: {
                 info: false,
+                editor: false,
                 playlistAdd: false,
             },
 
             addToPlaylistItems: [],
+            selectedPlaylist: {},
             selectedPlaylistItems: {},
             selectedPlaylistAddItems: {},
+            selectedEditorItems: {},
             selectedBrowserItems: {},
 
             syncTime: {
@@ -213,7 +218,7 @@ Vue.component('music-mpd', {
                         icon: 'user',
                         click: async function() {
                             await self.searchArtist(item);
-                            self.selectedPlaylistItems = {};
+                            self.selectedBrowserItems = {};
                         }
                     });
                 }
@@ -224,7 +229,7 @@ Vue.component('music-mpd', {
                         icon: 'compact-disc',
                         click: async function() {
                             await self.searchAlbum(item);
-                            self.selectedPlaylistItems = {};
+                            self.selectedBrowserItems = {};
                         },
                     });
                 }
@@ -264,6 +269,13 @@ Vue.component('music-mpd', {
                 items.push({
                     text: 'Edit',
                     icon: 'pen',
+                    click: async function() {
+                        const item = Object.values(self.selectedBrowserItems)[0];
+                        self.selectedPlaylist.name = item.name;
+                        await self.refreshSelectedPlaylist();
+                        self.modalVisible.editor = true;
+                        self.selectedBrowserItems = {};
+                    },
                 });
             }
 
@@ -291,6 +303,124 @@ Vue.component('music-mpd', {
                     icon: 'info',
                     click: async function() {
                         await self.info(Object.values(self.selectedBrowserItems)[0].name);
+                    },
+                });
+            }
+
+            return items;
+        },
+
+        editorDropdownItems: function() {
+            var self = this;
+            var items = [];
+
+            if (Object.keys(this.selectedEditorItems).length === 1) {
+                const item = Object.values(this.selectedEditorItems)[0];
+
+                items.push(
+                    {
+                        text: 'Play',
+                        icon: 'play',
+                        click: async function() {
+                            await self.add(item.file, position=0);
+                            await self.playpos(0);
+                            self.selectedEditorItems = {};
+                        },
+                    },
+                    {
+                        text: 'Replace and play',
+                        icon: 'play',
+                        click: async function() {
+                            await self.clear();
+                            await self.add(item.file, position=0);
+                            await self.playpos(0);
+                            self.selectedEditorItems = {};
+                        },
+                    }
+                );
+
+                if (item.artist && item.artist.length) {
+                    items.push({
+                        text: 'View artist',
+                        icon: 'user',
+                        click: async function() {
+                            await self.searchArtist(item);
+                            self.selectedEditorItems = {};
+                        }
+                    });
+                }
+
+                if (item.album && item.album.length) {
+                    items.push({
+                        text: 'View album',
+                        icon: 'compact-disc',
+                        click: async function() {
+                            await self.searchAlbum(item);
+                            self.selectedEditorItems = {};
+                        },
+                    });
+                }
+            }
+
+            items.push(
+                {
+                    text: 'Add to queue',
+                    icon: 'plus',
+                    click: async function() {
+                        const items = Object.values(self.selectedEditorItems);
+                        const promises = items.map(item => self.add(item.file));
+
+                        await Promise.all(promises);
+                        self.selectedEditorItems = {};
+                    },
+                },
+                {
+                    text: 'Add to playlist',
+                    icon: 'list',
+                    click: async function() {
+                        self.addToPlaylistItems = Object.keys(self.selectedEditorItems);
+                        self.modalVisible.playlistAdd = true;
+                        await self.listplaylists();
+                        self.selectedEditorItems = {};
+                    },
+                }
+            );
+
+            if (Object.keys(this.selectedEditorItems).length < this.selectedPlaylist.items.length) {
+                items.push({
+                    text: 'Move',
+                    icon: 'retweet',
+                    click: function() {
+                        self.moveMode.editor = true;
+                    },
+                });
+            }
+
+            items.push(
+                {
+                    text: 'Remove',
+                    icon: 'trash',
+                    click: async function() {
+                        if (!confirm('Are you sure you want to remove the selected track' +
+                                (Object.values(self.selectedEditorItems).length > 1 ? 's' : '') + ' from the playlist?')) {
+                            return;
+                        }
+
+                        const items = Object.values(self.selectedEditorItems);
+                        await self.playlistdelete(items.map(_ => _.pos));
+                        self.selectedEditorItems = {};
+                    },
+                }
+            );
+
+            if (Object.keys(this.selectedEditorItems).length === 1) {
+                const item = Object.values(self.selectedEditorItems)[0];
+
+                items.push({
+                    text: 'View info',
+                    icon: 'info',
+                    click: async function() {
+                        await self.info(item.file);
                     },
                 });
             }
@@ -594,6 +724,14 @@ Vue.component('music-mpd', {
             }
         },
 
+        playlistmove: async function(fromPos, toPos) {
+            if (!this.selectedPlaylist.name) {
+                return;
+            }
+
+            await request('music.mpd.playlistmove', {name: this.selectedPlaylist.name, from_pos: fromPos, to_pos: toPos});
+        },
+
         swap: async function() {
             if (Object.keys(this.selectedPlaylistItems).length !== 2) {
                 return;
@@ -669,6 +807,14 @@ Vue.component('music-mpd', {
             }
         },
 
+        listplaylist: async function(name) {
+            return await request('music.mpd.listplaylist', {name: name});
+        },
+
+        listplaylistinfo: async function(name) {
+            return await request('music.mpd.listplaylistinfo', {name: name});
+        },
+
         playlistadd: async function(items=[], playlists=[]) {
             if (!playlists.length) {
                 if (this.modalVisible.playlistAdd) {
@@ -694,6 +840,50 @@ Vue.component('music-mpd', {
             await Promise.all(promises);
             this.modalVisible.playlistAdd = false;
             this.addToPlaylistItems = [];
+        },
+
+        playlistdelete: async function(items=[]) {
+            if (!items.length) {
+                items = Object.keys(this.selectedEditorItems);
+            }
+
+            if (!items.length || !this.selectedPlaylist.name) {
+                return;
+            }
+
+            await request('music.mpd.playlistdelete', {name: this.selectedPlaylist.name, pos: items});
+            await this.refreshSelectedPlaylist();
+        },
+
+        playlistclear: async function() {
+            if (!confirm('Are you sure that you want to clear this playlist? This operation is NOT REVERSIBLE')) {
+                return;
+            }
+
+            await request('music.mpd.playlistclear', {name: this.selectedPlaylist.name});
+            await this.refreshSelectedPlaylist();
+        },
+
+        rename: async function() {
+            if (!this.selectedPlaylist.name) {
+                return;
+            }
+
+            var newName = prompt('New name for the playlist', this.selectedPlaylist.name);
+            if (!newName.length) {
+                return;
+            }
+
+            await request('music.mpd.rename', {name: this.selectedPlaylist.name, new_name: newName});
+            await this.listplaylists();
+
+            for (var item of this.browserItems) {
+                if (item.type === 'playlist' && item.name === this.selectedPlaylist.name) {
+                    item.name = newName;
+                }
+            }
+
+            this.selectedPlaylist.name = newName;
         },
 
         onNewPlayingTrack: async function(event) {
@@ -835,7 +1025,15 @@ Vue.component('music-mpd', {
                 return true;
 
             const filter = this.playlistFilter.split(' ').filter(_ => _.length > 0).map(_ => _.toLocaleLowerCase()).join(' ');
-            return [track.artist || '', track.title || '', track.album || ''].join(' ').toLocaleLowerCase().indexOf() >= 0;
+            return [track.artist || '', track.title || '', track.album || ''].join(' ').toLocaleLowerCase().indexOf(filter) >= 0;
+        },
+
+        matchesEditorFilter: function(track) {
+            if (this.editorFilter.length === 0)
+                return true;
+
+            const filter = this.editorFilter.split(' ').filter(_ => _.length > 0).map(_ => _.toLocaleLowerCase()).join(' ');
+            return [track.artist || '', track.title || '', track.album || ''].join(' ').toLocaleLowerCase().indexOf(filter) >= 0;
         },
 
         matchesBrowserFilter: function(item) {
@@ -878,6 +1076,30 @@ Vue.component('music-mpd', {
                 this.selectedPlaylistItems = {};
                 Vue.set(this.selectedPlaylistItems, track.pos, track);
                 openDropdown(this.$refs.playlistDropdown.$el);
+            }
+        },
+
+        onEditorItemClick: async function(track) {
+            if (this.selectionMode.editor) {
+                if (track.pos in this.selectedEditorItems) {
+                    Vue.delete(this.selectedEditorItems, track.pos);
+                } else {
+                    Vue.set(this.selectedEditorItems, track.pos, track);
+                }
+            } else if (this.moveMode.editor) {
+                var fromPos = Object.values(this.selectedEditorItems).map(_ => _.pos);
+                var toPos = track.pos;
+                this.moveMode.editor = false;
+
+                const promises = fromPos.map((pos,i) => this.playlistmove(pos, toPos+i));
+                await Promise.all(promises);
+                await this.refreshSelectedPlaylist();
+            } else if (track.pos in this.selectedEditorItems) {
+                Vue.delete(this.selectedEditorItems, track.pos);
+            } else {
+                this.selectedEditorItems = {};
+                Vue.set(this.selectedEditorItems, track.pos, track);
+                openDropdown(this.$refs.editorDropdown.$el);
             }
         },
 
@@ -940,6 +1162,14 @@ Vue.component('music-mpd', {
             this.selectionMode.browser = !this.selectionMode.browser;
         },
 
+        toggleEditorSelectionMode: function() {
+            if (this.selectionMode.editor && Object.keys(this.selectedEditorItems).length) {
+                openDropdown(this.$refs.editorDropdown.$el);
+            }
+
+            this.selectionMode.editor = !this.selectionMode.editor;
+        },
+
         browserSelectAll: function() {
             this.selectedBrowserItems = {};
             this.selectionMode.browser = true;
@@ -951,6 +1181,17 @@ Vue.component('music-mpd', {
             }
 
             openDropdown(this.$refs.browserDropdown.$el);
+        },
+
+        editorSelectAll: function() {
+            this.selectedEditorItems = {};
+            this.selectionMode.editor = true;
+
+            for (var item of this.selectedPlaylist.items) {
+                Vue.set(this.selectedEditorItems, item.pos, item);
+            }
+
+            openDropdown(this.$refs.editorDropdown.$el);
         },
 
         scrollToActiveTrack: function() {
@@ -979,7 +1220,17 @@ Vue.component('music-mpd', {
                 return;
             }
 
-            this.add(resource);
+            await this.add(resource);
+        },
+
+        addToPlaylistEditorPrompt: async function() {
+            var resource = prompt('Path or URI of the resource to add');
+            if (!resource.length) {
+                return;
+            }
+
+            await request('music.mpd.playlistadd', {name: this.selectedPlaylist.name, uri: resource});
+            await this.refreshSelectedPlaylist();
         },
 
         savePlaylistPrompt: async function() {
@@ -993,6 +1244,18 @@ Vue.component('music-mpd', {
 
             let items = await request('music.mpd.lsinfo', {uri: this.browserPath.join('/')});
             this._parseBrowserItems(items);
+        },
+
+        refreshSelectedPlaylist: async function() {
+            if (!this.selectedPlaylist.name) {
+                return;
+            }
+
+            let items = (await this.listplaylistinfo(this.selectedPlaylist.name)).map((_, i) => {
+                return { ..._, pos: i }
+            });
+
+            Vue.set(this.selectedPlaylist, 'items', items);
         },
     },
 
