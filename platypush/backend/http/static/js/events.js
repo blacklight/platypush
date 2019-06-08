@@ -117,3 +117,13 @@ function registerEventHandler(handler, ...events) {
     }
 }
 
+function onReady(handler) {
+    if (document.readyState === "complete" || document.readyState === "loaded") {
+        handler();
+    } else {
+        document.addEventListener("DOMContentLoaded", () => {
+            handler();
+        }, false);
+    }
+}
+

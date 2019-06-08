@@ -16,8 +16,17 @@
         width: var(--width);
         height: var(--height);
 
-        div:first-child { border-radius: 1rem 1rem 0 0; }
-        div:last-child { border-radius: 0 0 1rem 1rem; }
+        .header {
+            border-radius: 1rem 1rem 0 0;
+        }
+
+        .body:first-child {
+            border-radius: 1rem;
+        }
+
+        .body:not(first-child) {
+            border-radius: 0 0 1rem 1rem;
+        }
 
         .header {
             border-bottom: $modal-header-border;
