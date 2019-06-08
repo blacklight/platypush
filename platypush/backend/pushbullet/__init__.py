@@ -65,7 +65,8 @@ class PushbulletBackend(Backend):
     def _get_latest_push(self):
         t = int(time.time()) - 5
         pushes = self.pb.get_pushes(modified_after=str(t), limit=1)
-        return pushes[0]
+        if pushes:
+            return pushes[0]
 
     def on_push(self):
         def callback(data):
@@ -83,6 +84,9 @@ class PushbulletBackend(Backend):
                 elif data['type'] == 'push':
                     push = data['push']
                 else: return  # Not a push notification
+
+                if not push:
+                    return
 
                 # Post an event, useful to react on mobile notifications if
                 # you enabled notification mirroring on your PushBullet app

@@ -32,11 +32,10 @@
         }
 
         .title {
-            border-bottom: $notification-title-border;
             padding: .4rem;
-            text-transform: uppercase;
             line-height: 3rem;
             letter-spacing: .1rem;
+            font-weight: bold;
         }
 
         .body {
