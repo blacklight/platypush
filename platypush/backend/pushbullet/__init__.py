@@ -1,12 +1,9 @@
 import json
-import requests
 import time
 
 from pushbullet import Pushbullet, Listener
 
 from platypush.backend import Backend
-from platypush.config import Config
-from platypush.message import Message
 from platypush.message.event.pushbullet import PushbulletEvent
 
 
@@ -115,9 +112,8 @@ class PushbulletBackend(Backend):
         try:
             return self.pb.get_device(self.device_name).device_iden
         except Exception as e:
-            device = self.pb.new_device(name, model='Platypush virtual device',
-                                        manufactorer='platypush',
-                                        app_version=8623, icon='system')
+            device = self.pb.new_device(self.device_name, model='Platypush virtual device',
+                                        manufacturer='platypush', icon='system')
 
             self.logger.info('Created Pushbullet device {}'.format(
                 self.device_name))
