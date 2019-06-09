@@ -1,0 +1,34 @@
+{% include 'plugins/music.snapcast/group.html' %}
+
+<script type="text/x-template" id="tmpl-music-snapcast-host">
+    <div class="host">
+        <div class="head">
+            <div class="col-11 name"
+                 @click="bus.$emit('modal-show', {type:'host', host:server.host.name})">
+                <i class="icon fa fa-server"></i>
+                {% raw %}{{ server.host.name }}{% endraw %}
+            </div>
+            <div class="col-1 buttons pull-right">
+                <button type="button" @click="collapsed = !collapsed">
+                    <i class="icon fa" :class="{'fa-chevron-up': !collapsed, 'fa-chevron-down': collapsed}"></i>
+                </button>
+            </div>
+        </div>
+
+        <music-snapcast-group
+                v-for="group in groups"
+                v-if="!collapsed"
+                :key="group.id"
+                :id="group.id"
+                :name="group.name"
+                :bus="bus"
+                :server="server.host"
+                :muted="group.muted"
+                :clients="group.clients"
+                :stream="streams[group.stream_id]">
+        </music-snapcast-group>
+    </div>
+</script>
+
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/music.snapcast/host.js') }}"></script>
+

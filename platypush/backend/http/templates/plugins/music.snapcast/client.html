@@ -1,0 +1,16 @@
+<script type="text/x-template" id="tmpl-music-snapcast-client">
+    <div class="client" :class="{offline: !connected}">
+        <div class="col-s-3 col-m-2 col-l-2 name" v-text="host.name"
+             @click="bus.$emit('modal-show', {type:'client', client:id, group:groupId, host:server.name})">
+        </div>
+        <div class="slider-container col-s-7 col-m-8 col-l-9">
+            <input class="slider" type="range" min="0" max="100" :value="config.volume.percent" @change="volumeChanged">
+        </div>
+        <div class="col-s-2 col-m-2 col-l-1 switch pull-right">
+            <toggle-switch :value="!config.volume.muted" @toggled="muteToggled"></toggle-switch>
+        </div>
+    </div>
+</script>
+
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/music.snapcast/client.js') }}"></script>
+

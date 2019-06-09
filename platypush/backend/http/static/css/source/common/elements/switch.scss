@@ -12,7 +12,7 @@
     display: inline-block;
     text-align: center;
     user-select: none;
-    padding-top: 1rem;
+    padding: .5rem 0;
 
     input[type=checkbox] {
         display: none !important;
@@ -39,7 +39,7 @@
         border-radius: 50%;
         box-shadow: $switch-shadow-1;
         display: block;
-        margin: 0 auto;
+        margin: .5rem auto 0 auto;
         font-size: 1.4em;
         transition: all 350ms ease-in;
 
