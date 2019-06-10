@@ -34,7 +34,7 @@ class MusicSnapcastBackend(Backend):
     _DEFAULT_POLL_SECONDS = 10   # Poll servers each 10 seconds
     _SOCKET_EOL = '\r\n'.encode()
 
-    def __init__(self, hosts=['localhost'], ports=[_DEFAULT_SNAPCAST_PORT],
+    def __init__(self, hosts=None, ports=None,
                  poll_seconds=_DEFAULT_POLL_SECONDS, *args, **kwargs):
         """
         :param hosts: List of Snapcast server names or IPs to monitor (default:
@@ -51,6 +51,11 @@ class MusicSnapcastBackend(Backend):
         """
 
         super().__init__(*args, **kwargs)
+
+        if ports is None:
+            ports = [self._DEFAULT_SNAPCAST_PORT]
+        if hosts is None:
+            hosts = ['localhost']
 
         self.hosts = hosts[:]
         self.ports = ports[:]
@@ -123,10 +128,10 @@ class MusicSnapcastBackend(Backend):
         elif msg.get('method') == 'Group.OnStreamChanged':
             group_id = msg.get('params', {}).get('id')
             stream_id = msg.get('params', {}).get('stream_id')
-            evt = GroupStreamChangeEvent(host=host, group=group, stream=stream)
+            evt = GroupStreamChangeEvent(host=host, group=group_id, stream=stream_id)
         elif msg.get('method') == 'Stream.OnUpdate':
-            stream_id = msg.get('params', {}).get('stream_id')
             stream = msg.get('params', {}).get('stream')
+            stream_id = stream.get('id')
             evt = StreamUpdateEvent(host=host, stream_id=stream_id, stream=stream)
         elif msg.get('method') == 'Server.OnUpdate':
             server = msg.get('params', {}).get('server')
@@ -137,10 +142,9 @@ class MusicSnapcastBackend(Backend):
     def _client(self, host, port):
         def _thread():
             set_thread_name('Snapcast-' + host)
-            status = None
 
             try:
-                status = self._status(host, port)
+                self._status(host, port)
             except Exception as e:
                 self.logger.warning(('Exception while getting the status ' +
                                      'of the Snapcast server {}:{}: {}').
@@ -200,7 +204,7 @@ class MusicSnapcastBackend(Backend):
         except Exception as e:
             self.logger.warning('Unable to connect to {}:{}: {}'.format(
                 host, port, str(e)))
-            self._socks[hosts] = None
+            self._socks[host] = None
 
     def run(self):
         super().run()

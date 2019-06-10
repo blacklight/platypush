@@ -5,7 +5,7 @@
         <div class="head">
             <div class="col-10 name"
                  @click="bus.$emit('modal-show', {type:'group', group:id, host:server.name})">
-                <i class="icon fa fa-network-wired"></i>
+                <i class="icon fa" :class="{'fa-play': stream.status === 'playing', 'fa-stop': stream.status !== 'playing'}"></i>
                 {% raw %}{{  name || stream.id || id }}{% endraw %}
             </div>
             <div class="col-2 switch pull-right">

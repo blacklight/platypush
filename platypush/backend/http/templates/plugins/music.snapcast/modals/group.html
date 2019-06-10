@@ -1,0 +1,56 @@
+<music-snapcast-group-info :info="modal.group.info" inline-template>
+    <div class="info">
+        <div class="section clients" v-if="Object.keys(info.clients).length > 0">
+            <div class="title">Clients</div>
+            <div class="row" ref="groupClients" v-for="client in info.clients">
+                <input type="checkbox"
+                       @input="onClientUpdate"
+                       class="client"
+                       :id="'snapcast-client-' + client.id"
+                       :value="client.id"
+                       :disabled="loading"
+                       :checked="client.id in info.group.clients">
+                <label :for="'snapcast-client-' + client.id" v-text="client.host.name"></label>
+            </div>
+        </div>
+
+        <div class="section streams" v-if="info.group.stream_id">
+            <div class="title">Stream</div>
+            <div class="row">
+                <div class="label col-3">ID</div>
+                <div class="value col-9">
+                    <select @input="onStreamUpdate" :disabled="loading" ref="streamSelect">
+                        <option
+                                @input="onStreamUpdate"
+                                v-for="stream in info.streams"
+                                v-text="info.streams[info.group.stream_id].id"
+                                :name="stream.id"
+                                :selected="stream.id === info.group.stream_id">
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="label col-3">Status</div>
+                <div class="value col-9" v-text="info.streams[info.group.stream_id].status"></div>
+            </div>
+
+            <div class="row" v-if="info.streams[info.group.stream_id].uri.host">
+                <div class="label col-3">Host</div>
+                <div class="value col-9" v-text="info.streams[info.group.stream_id].uri.host"></div>
+            </div>
+
+            <div class="row">
+                <div class="label col-3">Path</div>
+                <div class="value col-9" v-text="info.streams[info.group.stream_id].uri.path"></div>
+            </div>
+
+            <div class="row">
+                <div class="label col-3">URI</div>
+                <div class="value col-9" v-text="info.streams[info.group.stream_id].uri.raw"></div>
+            </div>
+        </div>
+    </div>
+</music-snapcast-group-info>
+

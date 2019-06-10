@@ -32,6 +32,35 @@ Vue.component('music-snapcast-client', {
 });
 
 Vue.component('music-snapcast-client-info', {
-    props: ['info'],
+    props: {
+        info: { type: Object }
+    },
+
+    data: function() {
+        return {
+            loading: false,
+        };
+    },
+
+    methods: {
+        deleteClient: async function(event) {
+            if (!confirm('Are you SURE that you want to remove this client?')) {
+                return;
+            }
+
+            this.loading = true;
+            await request('music.snapcast.delete_client', {
+                client: this.info.id,
+                host: this.info.server.host.name,
+                port: this.info.server.host.port,
+            });
+
+            this.loading = false;
+            createNotification({
+                text: 'Snapcast client successfully removed',
+                image: { icon: 'check' }
+            });
+        },
+    },
 });
 

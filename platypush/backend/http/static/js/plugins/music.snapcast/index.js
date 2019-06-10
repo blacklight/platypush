@@ -4,6 +4,7 @@ Vue.component('music-snapcast', {
     data: function() {
         return {
             hosts: {},
+            ports: {},
             modal: {
                 host: {
                     visible: false,
@@ -24,6 +25,31 @@ Vue.component('music-snapcast', {
     },
 
     methods: {
+        _parseServerStatus: function(status) {
+            status.server.host.port = this.ports[status.server.host.name];
+            var groups = {};
+
+            for (const group of status.groups) {
+                var clients = {};
+                for (const client of group.clients) {
+                    clients[client.id] = client;
+                }
+
+                group.clients = clients;
+                groups[group.id] = group;
+            }
+
+            status.groups = groups;
+            var streams = {};
+
+            for (const stream of status.streams) {
+                streams[stream.id] = stream;
+            }
+
+            status.streams = streams;
+            Vue.set(this.hosts, status.server.host.name, status);
+        },
+
         refresh: async function() {
             let hosts = await request('music.snapcast.get_backend_hosts');
             let promises = Object.keys(hosts).map(
@@ -34,28 +60,8 @@ Vue.component('music-snapcast', {
             this.hosts = {};
 
             for (const status of statuses) {
-                status.server.host.port = hosts[status.server.host.name];
-                var groups = {};
-
-                for (const group of status.groups) {
-                    var clients = {};
-                    for (const client of group.clients) {
-                        clients[client.id] = client;
-                    }
-
-                    group.clients = clients;
-                    groups[group.id] = group;
-                }
-
-                status.groups = groups;
-                var streams = {};
-
-                for (const stream of status.streams) {
-                    streams[stream.id] = stream;
-                }
-
-                status.streams = streams;
-                Vue.set(this.hosts, status.server.host.name, status);
+                this.ports[status.server.host.name] = hosts[status.server.host.name];
+                this._parseServerStatus(status);
             }
         },
 
@@ -72,11 +78,11 @@ Vue.component('music-snapcast', {
         },
 
         onServerUpdate: function(event) {
-            this.refresh();
+            this._parseServerStatus(event.server);
         },
 
         onStreamUpdate: function(event) {
-            this.streams[event.stream_id] = event.stream;
+            this.hosts[event.host].streams[event.stream.id] = event.stream;
         },
 
         onClientVolumeChange: function(event) {
@@ -103,10 +109,21 @@ Vue.component('music-snapcast', {
                     this.modal[event.type].info = this.hosts[event.host];
                     break;
                 case 'group':
-                    this.modal[event.type].info = this.hosts[event.host].groups[event.group];
+                    this.modal[event.type].info.server = this.hosts[event.host].server;
+                    this.modal[event.type].info.group = this.hosts[event.host].groups[event.group];
+                    this.modal[event.type].info.streams = this.hosts[event.host].streams;
+                    this.modal[event.type].info.clients = {};
+
+                    for (const group of Object.values(this.hosts[event.host].groups)) {
+                        for (const client of Object.values(group.clients)) {
+                            this.modal[event.type].info.clients[client.id] = client;
+                        }
+                    }
+
                     break;
                 case 'client':
                     this.modal[event.type].info = this.hosts[event.host].groups[event.group].clients[event.client];
+                    this.modal[event.type].info.server = this.hosts[event.host].server;
                     break;
             }
 

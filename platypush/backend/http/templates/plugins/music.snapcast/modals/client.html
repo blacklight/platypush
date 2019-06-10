@@ -1,0 +1,76 @@
+<music-snapcast-client-info :info="modal.client.info" inline-template>
+    <div class="info">
+        <div class="row">
+            <div class="label col-3">ID</div>
+            <div class="value col-9" v-text="info.id"></div>
+        </div>
+
+        <div class="row" v-if="info.config.name.length || info.host.name">
+            <div class="label col-3">Name</div>
+            <div class="value col-9" v-text="info.config.name.length || info.host.name"></div>
+        </div>
+
+        <div class="row">
+            <div class="label col-3">Connected</div>
+            <div class="value col-9" v-text="info.connected"></div>
+        </div>
+
+        <div class="row">
+            <div class="label col-3">Volume</div>
+            <div class="value col-9">{% raw %}{{ info.config.volume.percent }}%{% endraw %}</div>
+        </div>
+
+        <div class="row">
+            <div class="label col-3">Muted</div>
+            <div class="value col-9" v-text="info.config.volume.muted"></div>
+        </div>
+
+        <div class="row">
+            <div class="label col-3">Latency</div>
+            <div class="value col-9" v-text="info.config.latency"></div>
+        </div>
+
+        <div class="row" v-if="info.host.ip && info.host.ip.length">
+            <div class="label col-3">IP Address</div>
+            <div class="value col-9" v-text="info.host.ip"></div>
+        </div>
+
+        <div class="row" v-if="info.host.mac && info.host.mac.length">
+            <div class="label col-3">MAC Address</div>
+            <div class="value col-9" v-text="info.host.mac"></div>
+        </div>
+
+        <div class="row" v-if="info.host.os && info.host.os.length">
+            <div class="label col-3">OS</div>
+            <div class="value col-9" v-text="info.host.os"></div>
+        </div>
+
+        <div class="row" v-if="info.host.arch && info.host.arch.length">
+            <div class="label col-3">Architecture</div>
+            <div class="value col-9" v-text="info.host.arch"></div>
+        </div>
+
+        <div class="row">
+            <div class="label col-3">Client name</div>
+            <div class="value col-9" v-text="info.snapclient.name"></div>
+        </div>
+
+        <div class="row">
+            <div class="label col-3">Client version</div>
+            <div class="value col-9" v-text="info.snapclient.version"></div>
+        </div>
+
+        <div class="row">
+            <div class="label col-3">Protocol version</div>
+            <div class="value col-9" v-text="info.snapclient.protocolVersion"></div>
+        </div>
+
+        <div class="row buttons">
+            <button type="button" class="delete" :disabled="loading" @click="deleteClient">
+                <i class="fa fa-trash"></i>
+                &nbsp; Delete client
+            </button>
+        </div>
+    </div>
+</music-snapcast-client-info>
+

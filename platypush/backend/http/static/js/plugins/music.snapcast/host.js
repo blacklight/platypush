@@ -15,6 +15,8 @@ Vue.component('music-snapcast-host', {
 });
 
 Vue.component('music-snapcast-host-info', {
-    props: ['info'],
+    props: {
+        info: { type: Object }
+    },
 });
 
