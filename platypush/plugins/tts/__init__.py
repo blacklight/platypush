@@ -17,17 +17,17 @@ class TtsPlugin(Plugin):
         self.lang=lang
 
     @action
-    def say(self, phrase, lang=None):
+    def say(self, text, language=None):
         """
         Say a phrase
 
-        :param phrase: Phrase to say
-        :type phrase: str
+        :param text: Phrase to say
+        :type text: str
 
-        :param lang: Language code
-        :type lang: str
+        :param language: Language code
+        :type language: str
         """
-        if lang is None: lang=self.lang
+        if language is None: language=self.lang
         output = None
         errors = []
         cmd = ['mplayer -ao alsa -really-quiet -noconsolecontrols ' +
@@ -35,8 +35,8 @@ class TtsPlugin(Plugin):
                .format(urllib.parse.urlencode({
                    'ie'     : 'UTF-8',
                    'client' : 'tw-ob',
-                   'tl'     : lang,
-                   'q'      : phrase,
+                   'tl'     : language,
+                   'q'      : text,
                 }))]
 
         try:

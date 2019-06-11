@@ -18,7 +18,7 @@ class TtsGooglePlugin(Plugin):
         * **mplayer** - see your distribution docs on how to install the mplayer package
     """
 
-    def __init__(self, language='en-US', voice='en-US-Wavenet-C',
+    def __init__(self, language='en-US', voice=None,
                  gender='FEMALE', credentials_file='~/.credentials/platypush/google/platypush-tts.json'):
         """
         :param language: Language code, see https://cloud.google.com/text-to-speech/docs/basics for supported languages
@@ -37,8 +37,33 @@ class TtsGooglePlugin(Plugin):
         super().__init__()
         self.language = language
         self.voice = voice
+
+        self.language = self._parse_language(language)
+        self.voice = self._parse_voice(self.language, voice)
         self.gender = getattr(texttospeech.enums.SsmlVoiceGender, gender.upper())
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.expanduser(credentials_file)
+
+    def _parse_language(self, language):
+        if language is None:
+            language = self.language or 'en-US'
+
+        if len(language) == 2:
+            language = language.lower()
+            if language == 'en':
+                language = 'en-US'
+            else:
+                language += '-' + language.upper()
+
+        return language
+
+    @staticmethod
+    def _parse_voice(language, voice):
+        if voice is not None:
+            return voice
+
+        if language == 'en-US':
+            return language + '-Wavenet-C'
+        return language + '-Wavenet-A'
 
     @action
     def say(self, text, language=None, voice=None, gender=None):
@@ -61,16 +86,13 @@ class TtsGooglePlugin(Plugin):
         client = texttospeech.TextToSpeechClient()
         synthesis_input = texttospeech.types.SynthesisInput(text=text)
 
-        if language is None:
-            language = self.language
+        language = self._parse_language(language)
+        voice = self._parse_voice(language, voice)
 
         if gender is None:
             gender = self.gender
         else:
             gender = getattr(texttospeech.enums.SsmlVoiceGender, gender.upper())
-
-        if voice is None:
-            voice = self.voice
 
         voice = texttospeech.types.VoiceSelectionParams(
             language_code=language, ssml_gender=gender,

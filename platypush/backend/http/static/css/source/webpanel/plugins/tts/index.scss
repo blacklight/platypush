@@ -1,0 +1,32 @@
+@import 'common/vars';
+
+.tts-container {
+    max-width: 80rem;
+    min-height: 10rem;
+    margin: 3rem auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: $default-border-2;
+    border-radius: 3rem;
+
+    form {
+        margin: 0;
+        width: 90%;
+
+        input[type=text] {
+            width: 100%;
+        }
+
+        button {
+            border-radius: 5rem;
+        }
+
+        input, button {
+            &:hover {
+                border-color: $default-hover-fg;
+            }
+        }
+    }
+}
+
