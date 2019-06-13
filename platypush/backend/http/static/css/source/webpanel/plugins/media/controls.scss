@@ -1,0 +1,87 @@
+.media-plugin {
+    .controls {
+        @extend .vertical-center;
+        width: 100%;
+        border-top: $default-border-2;
+        box-shadow: $control-panel-shadow;
+        flex: 0 0 $control-panel-height;
+
+        .item-container {
+            @extend .vertical-center;
+            padding-left: 1rem;
+            line-height: 2.6rem;
+        }
+
+        button {
+            &:hover {
+                .fa {
+                    color: $button-hover-color;
+                }
+            }
+        }
+
+        .playback-controls {
+            .row {
+                @extend .vertical-center;
+                justify-content: center;
+            }
+
+            button {
+                padding: 0 1.5rem;
+
+                .fa-play, .fa-pause  {
+                    color: $button-hover-color;
+                    font-size: $font-size * 2;
+                    margin-top: .3rem;
+
+                    &:hover {
+                        color: $play-button-hover-color;
+                    }
+                }
+            }
+        }
+
+        .pull-right {
+            button {
+                &:not(last-child) {
+                    padding: 0 .7rem;
+                }
+
+                &:last-child {
+                    padding: 0;
+                }
+            }
+
+            .volume-container {
+                button {
+                    padding: 0 .3rem 0 0;
+                    background: none;
+                }
+            }
+        }
+
+        .seek-slider {
+            width: 75%;
+        }
+
+        .volume-slider {
+            width: 75%;
+            margin-right: 1rem;
+        }
+
+        .elapsed-time,
+        .total-time {
+            font-size: .7em;
+            color: .7em;
+        }
+
+        .elapsed-time {
+            margin-right: 1.5rem;
+        }
+
+        .total-time {
+            margin-left: 1.5rem;
+        }
+    }
+}
+

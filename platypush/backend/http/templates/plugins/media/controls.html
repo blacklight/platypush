@@ -1,0 +1,44 @@
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/controls.js') }}"></script>
+
+<script type="text/x-template" id="tmpl-media-controls">
+    <div class="controls">
+        <div class="col-3 item-container">
+            <div class="item-info">
+                <span v-text="item.name"></span>
+            </div>
+        </div>
+
+        <div class="col-6 playback-controls">
+            <div class="row">
+                <button>
+                    <i class="fa fa-play"></i>
+                </button>
+                <button>
+                    <i class="fa fa-stop"></i>
+                </button>
+            </div>
+
+            <div class="row">
+                <span class="elapsed-time" v-text="'-:--'"></span>
+                <input type="range"
+                       class="slider seek-slider"
+                       min="0"
+                       max="100">
+                <span class="total-time" v-text="'-:--'"></span>
+            </div>
+        </div>
+
+        <div class="col-3 pull-right">
+            <div class="row volume-container">
+                <button disabled>
+                    <i class="fa fa-volume-up"></i>
+                </button>
+                <input type="range"
+                       class="slider volume-slider"
+                       min="0"
+                       max="100">
+            </div>
+        </div>
+    </div>
+</script>
+

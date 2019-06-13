@@ -58,6 +58,7 @@ def index():
                            scripts=enabled_scripts, styles=enabled_styles,
                            utils=HttpUtils, token=Config.get('token'),
                            websocket_port=get_websocket_port(),
+                           plugins=Config.get_plugins(), backends=Config.get_backends(),
                            has_ssl=http_conf.get('ssl_cert') is not None)
 
 

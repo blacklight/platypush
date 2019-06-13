@@ -1,0 +1,22 @@
+.media-plugin {
+    .devices {
+        display: inline-block;
+
+        button {
+            padding: .5rem;
+        }
+
+        .dropdown {
+            .item {
+                display: flex;
+                align-items: center;
+                cursor: pointer;
+
+                &:hover {
+                    background: $hover-bg
+                }
+            }
+        }
+    }
+}
+

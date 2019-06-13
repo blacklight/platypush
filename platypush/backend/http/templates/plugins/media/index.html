@@ -1,0 +1,22 @@
+{% include 'plugins/media/search.html' %}
+{% include 'plugins/media/controls.html' %}
+{% include 'plugins/media/results.html' %}
+{% include 'plugins/media/item.html' %}
+
+<script type="text/x-template" id="tmpl-media">
+    <div class="plugin media-plugin">
+        <media-search :bus="bus"
+                      :supportedTypes="types">
+        </media-search>
+
+        <media-results :bus="bus"
+                       :loading="loading.results"
+                       :results="results">
+        </media-results>
+
+        <media-controls :bus="bus"
+                        :item="currentItem">
+        </media-controls>
+    </div>
+</script>
+

@@ -5,7 +5,7 @@
 {% include 'plugins/music.mpd/search.html' %}
 
 <script type="text/x-template" id="tmpl-music-mpd">
-    <div class="row music-mpd-container">
+    <div class="row plugin music-mpd-container">
         <music-mpd-search ref="search" @info="info" :mpd="this">
         </music-mpd-search>
 
@@ -136,8 +136,8 @@
 
         <div class="row panels">
             <!-- Browser section -->
-            <div class="col-no-margin-l-3 col-no-margin-m-3 s-hidden panel browser">
-                <div class="col-s-12 col-no-margin-m-3 col-no-margin-l-3 browser-controls">
+            <div class="s-hidden panel browser">
+                <div class="browser-controls">
                     <div class="col-7 filter-container">
                         <i class="fa fa-filter input-icon"></i>
                         <input type="text" class="with-icon" v-model="browserFilter">
@@ -155,48 +155,48 @@
                     </div>
                 </div>
 
-                <dropdown id="music-mpd-browser-dropdown"
-                          v-if="browserItems.length > 0"
-                          ref="browserDropdown"
-                          :items="browserDropdownItems">
-                </dropdown>
+                <div class="results">
+                    <dropdown id="music-mpd-browser-dropdown"
+                              v-if="browserItems.length > 0"
+                              ref="browserDropdown"
+                              :items="browserDropdownItems">
+                    </dropdown>
 
-                <div class="spacer"></div>
+                    <music-mpd-browser-item
+                            v-if="browserPath.length > 0"
+                            key=".."
+                            id="directory:.."
+                            type="directory"
+                            name=".."
+                            :selected="'directory:..' in selectedBrowserItems"
+                            @input="onBrowserItemClick">
+                    </music-mpd-browser-item>
 
-                <music-mpd-browser-item
-                        v-if="browserPath.length > 0"
-                        key=".."
-                        id="directory:.."
-                        type="directory"
-                        name=".."
-                        :selected="'directory:..' in selectedBrowserItems"
-                        @input="onBrowserItemClick">
-                </music-mpd-browser-item>
-
-                <music-mpd-browser-item
-                        v-for="item in browserItems"
-                        v-if="matchesBrowserFilter(item)"
-                        :key="item.id"
-                        :id="item.id"
-                        :type="item.type"
-                        :name="item.name"
-                        :file="item.file"
-                        :time="item.time"
-                        :artist="item.artist"
-                        :title="item.title"
-                        :date="item.date"
-                        :track="item.track"
-                        :genre="item.genre"
-                        :lastModified="item['last-modified']"
-                        :albumUri="item['x-albumuri']"
-                        :selected="item.id in selectedBrowserItems"
-                        @input="onBrowserItemClick">
-                </music-mpd-browser-item>
+                    <music-mpd-browser-item
+                            v-for="item in browserItems"
+                            v-if="matchesBrowserFilter(item)"
+                            :key="item.id"
+                            :id="item.id"
+                            :type="item.type"
+                            :name="item.name"
+                            :file="item.file"
+                            :time="item.time"
+                            :artist="item.artist"
+                            :title="item.title"
+                            :date="item.date"
+                            :track="item.track"
+                            :genre="item.genre"
+                            :lastModified="item['last-modified']"
+                            :albumUri="item['x-albumuri']"
+                            :selected="item.id in selectedBrowserItems"
+                            @input="onBrowserItemClick">
+                    </music-mpd-browser-item>
+                </div>
             </div>
 
             <!-- Playlist section -->
-            <div class="col-s-12 col-no-margin-m-9 col-no-margin-l-9 panel playlist">
-                <div class="col-s-12 col-m-9 col-l-9 playlist-controls">
+            <div class="panel playlist">
+                <div class="playlist-controls">
                     <div class="col-7 filter-container">
                         <i class="fa fa-filter input-icon"></i>
                         <input type="text" class="with-icon" v-model="playlistFilter">
@@ -232,29 +232,29 @@
                     </div>
                 </div>
 
-                <div class="row empty" v-if="playlist.length === 0">
-                    <i class="fa fa-list"></i>
+                <div class="results">
+                    <div class="row empty" v-if="playlist.length === 0">
+                        <i class="fa fa-list"></i>
+                    </div>
+
+                    <dropdown id="music-mpd-playlist-dropdown"
+                              v-if="playlist.length > 0"
+                              ref="playlistDropdown"
+                              :items="playlistDropdownItems">
+                    </dropdown>
+
+                    <music-mpd-playlist-item
+                            v-for="item in playlist"
+                            v-if="matchesPlaylistFilter(item)"
+                            :key="item.pos"
+                            :track="item"
+                            :active="track.file && status.state !== 'stop' && item.file === track.file"
+                            :selected="item.pos in selectedPlaylistItems"
+                            :move="moveMode.playlist"
+                            :ref="track.file && status.state !== 'stop' && item.file === track.file ? 'activePlaylistTrack' : undefined"
+                            @input="onPlaylistItemClick">
+                    </music-mpd-playlist-item>
                 </div>
-
-                <div class="spacer"></div>
-
-                <dropdown id="music-mpd-playlist-dropdown"
-                          v-if="playlist.length > 0"
-                          ref="playlistDropdown"
-                          :items="playlistDropdownItems">
-                </dropdown>
-
-                <music-mpd-playlist-item
-                        v-for="item in playlist"
-                        v-if="matchesPlaylistFilter(item)"
-                        :key="item.pos"
-                        :track="item"
-                        :active="track.file && status.state !== 'stop' && item.file === track.file"
-                        :selected="item.pos in selectedPlaylistItems"
-                        :move="moveMode.playlist"
-                        :ref="track.file && status.state !== 'stop' && item.file === track.file ? 'activePlaylistTrack' : undefined"
-                        @input="onPlaylistItemClick">
-                </music-mpd-playlist-item>
             </div>
         </div>
 

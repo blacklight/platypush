@@ -1,0 +1,30 @@
+@import 'common/vars';
+@import 'common/mixins';
+@import 'common/layout';
+@import 'common/animations';
+
+@import 'webpanel/plugins/media/vars';
+@import 'webpanel/plugins/media/search';
+@import 'webpanel/plugins/media/devices';
+@import 'webpanel/plugins/media/results';
+@import 'webpanel/plugins/media/controls';
+
+.media-plugin {
+    display: flex;
+    flex-direction: column;
+    height: inherit;
+    letter-spacing: .03rem;
+
+    input[type=text] {
+        width: 100%;
+
+        &:hover {
+            border-color: $default-hover-fg;
+        }
+    }
+
+    button {
+        border: 0;
+    }
+}
+

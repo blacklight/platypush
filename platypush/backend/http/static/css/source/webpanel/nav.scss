@@ -1,10 +1,13 @@
+:root {
+    --nav-height: $nav-height;
+}
+
 nav {
-    margin-bottom: 1.2rem;
-    position: fixed;
-    top: 0;
     width: 100%;
-    z-index: 10;
-    opacity: 0.95;
+    height: var(--nav-height);
+    margin-bottom: $nav-margin;
+    flex: 0 1 auto;
+    z-index: 2;
 
     ul {
         position: relative;

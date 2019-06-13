@@ -23,15 +23,20 @@ $selected-bg: #c8ffd0 !default;
 $hover-bg: #def6ea !default;
 $header-bg: $default_bg !default;
 
+$nav-height: 4.5rem !default;
 $nav-bg: #e8e8e8 !default;
 $nav-fg: $default-link-fg;
-$nav-date-time-shadow: 2px 2px 2px #ccc !default;
+$nav-margin: .2rem;
+$nav-date-time-shadow: .2rem .2rem .2rem #ccc !default;
 
 //// Animations defaults
 $transition-duration: .5s !default;
-$fade-transition-duration: .5s !default;
+$fade-transition-duration: $transition-duration !default;
+$roll-transition-duration: $transition-duration !default;
 $fade-in-transition-duration: $fade-transition-duration !default;
 $fade-out-transition-duration: $fade-transition-duration !default;
+$roll-in-transition-duration: $roll-transition-duration !default;
+$roll-out-transition-duration: $roll-transition-duration !default;
 
 //// Notifications
 $notification-bg: rgba(185, 255, 193, 0.9) !default;

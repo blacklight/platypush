@@ -25,7 +25,7 @@ class WebBuildCommand(distutils.cmd.Command):
         input_path = path(os.path.join(base_path,'source'))
         output_path = path(os.path.join(base_path,'dist'))
 
-        for root, dirs, files in os.walk(input_path):
+        for root, dirs, files in os.walk(input_path, followlinks=True):
             scss_file = os.path.join(root, 'index.scss')
             if os.path.isfile(scss_file):
                 css_path = os.path.split(scss_file[len(input_path):])[0][1:] + '.css'

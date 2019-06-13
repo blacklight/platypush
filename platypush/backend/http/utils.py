@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import re
 
@@ -7,6 +8,8 @@ from platypush.backend.http.app import template_folder
 
 
 class HttpUtils(object):
+    log = logging.getLogger(__name__)
+
     @staticmethod
     def widget_columns_to_html_class(columns):
         if not isinstance(columns, int):
@@ -85,10 +88,18 @@ class HttpUtils(object):
 
     @classmethod
     def to_json(cls, data):
+        def json_parse(x):
+            if type(x) == __import__('datetime').timedelta:
+                return x.days * 24 * 60 * 60 + x.seconds + x.microseconds / 1e6
+
+            # Ignore non-serializable attributes
+            cls.log.warning('Non-serializable attribute type "{}": {}'.format(type(x), x))
+            return None
+
         if isinstance(data, type({}.keys())):
             # Convert dict_keys to list before serializing
             data = list(data)
-        return json.dumps(data)
+        return json.dumps(data, default=json_parse)
 
     @classmethod
     def from_json(cls, data):

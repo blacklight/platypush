@@ -1,13 +1,12 @@
 .fade-in {
     --duration: $fade-in-transition-duration;
-    opacity: 1;
-    animation-name: fadeInOpacity;
-    animation-iteration-count: 1;
+    animation-name: fadeIn;
     animation-timing-function: ease-in;
     animation-duration: var(--duration);
+    animation-fill-mode:both;
 }
 
-@keyframes fadeInOpacity {
+@keyframes fadeIn {
     0% {
         opacity: 0;
     }
@@ -16,22 +15,22 @@
     }
 }
 
-.fade-out {
-    --duration: $fade-out-transition-duration;
-    opacity: 1;
-    animation-name: fadeOutOpacity;
-    animation-iteration-count: 1;
-    animation-timing-function: ease-out;
+.roll-in {
+    --duration: $roll-in-transition-duration;
+    animation-name: rollIn;
+    animation-timing-function: ease-in;
     animation-duration: var(--duration);
+    animation-fill-mode:both;
 }
 
-@keyframes fadeOutOpacity {
+@keyframes rollIn {
     0% {
-        opacity: 1;
+        opacity: 0;
+        transform:translateX(-100%);
     }
     100% {
-        opacity: 0;
-        display: none;
+        opacity: 1;
+        transform:translateX(0);
     }
 }
 

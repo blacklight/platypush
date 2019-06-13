@@ -27,10 +27,14 @@
 
         window.config = { ...window.config,
             websocket_port: {{ websocket_port }},
-            has_ssl: {% print('true' if has_ssl else 'false') %},
-            templates: JSON.parse('{% print(utils.to_json(templates))|safe %}'),
-            scripts: JSON.parse('{% print(utils.to_json(scripts))|safe %}'),
+            has_ssl: {{ 'true' if has_ssl else 'false' }},
+            templates: JSON.parse('{{ utils.to_json(templates)|safe }}'),
+            scripts: JSON.parse('{{ utils.to_json(scripts)|safe }}'),
         };
+
+
+        var __plugins__ = JSON.parse('{{ utils.to_json(plugins)|safe }}');
+        var __backends__ = JSON.parse('{{ utils.to_json(backends)|safe }}');
 
         {% if token %}
             window.config.token = '{{ token }}';

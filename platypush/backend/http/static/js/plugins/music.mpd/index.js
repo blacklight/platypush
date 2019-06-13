@@ -468,8 +468,8 @@ Vue.component('music-mpd', {
                 }
             };
 
-            adjust(this)();
-            setInterval(adjust(this), 2000);
+            // adjust(this)();
+            // setInterval(adjust(this), 2000);
         },
 
         _parseStatus: async function(status) {
@@ -1200,18 +1200,6 @@ Vue.component('music-mpd', {
             } else {
                 return;
             }
-
-            const self = this;
-            setTimeout(() => {
-                var parent = self.$refs.activePlaylistTrack[0].$el.parentElement;
-                if (parent.clientHeight + parent.scrollTop < parent.scrollHeight) {
-                    if (parent.scrollTop-50 > 0) {
-                        parent.scrollTop -= 50;
-                    } else {
-                        parent.scrollTop = 0;
-                    }
-                }
-            }, 750);
         },
 
         addToPlaylistPrompt: async function() {

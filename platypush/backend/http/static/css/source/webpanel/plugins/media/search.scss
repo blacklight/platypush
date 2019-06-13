@@ -1,0 +1,53 @@
+.media-plugin {
+    .search {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        background: $default-bg-3;
+        border-bottom: $default-border-3;
+
+        input[type=text] {
+            width: 80%;
+            max-width: 600px;
+        }
+
+        [type=submit] {
+            color: $default-hover-fg;
+            font-size: 1.2em;
+
+            &:hover {
+                border: $default-border-2;
+                border-radius: 5rem;
+            }
+        }
+
+        .types {
+            .type {
+                display: inline-block;
+                padding: 1rem 1rem 0 1rem;
+            }
+
+            label {
+                display: inline-block;
+                font-weight: normal;
+                margin: 0;
+            }
+        }
+
+        button {
+            padding: 0 2rem;
+            border: 0;
+
+            &:hover {
+                color: $default-hover-fg;
+            }
+        }
+
+        form {
+            width: 100%;
+            margin: 0;
+            padding: 1rem 0;
+        }
+    }
+}
+

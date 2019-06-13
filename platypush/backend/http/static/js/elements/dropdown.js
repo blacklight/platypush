@@ -100,5 +100,13 @@ function openDropdown(element) {
             element.style.top = (parseFloat(element.style.top) - parseFloat(getComputedStyle(element).height)) + 'px';
         }
     }
+
+    if (parseFloat(element.style.left) < 0) {
+        element.style.left = 0;
+    }
+
+    if (parseFloat(element.style.top) < 0) {
+        element.style.top = 0;
+    }
 }
 

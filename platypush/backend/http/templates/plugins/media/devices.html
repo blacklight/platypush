@@ -1,0 +1,13 @@
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/devices.js') }}"></script>
+
+<script type="text/x-template" id="tmpl-media-devices">
+    <div class="devices">
+        <button type="button" title="Select target player" @click="openDevicesMenu">
+            <i class="fa fa-podcast"></i>
+        </button>
+
+        <dropdown ref="menu" :items="dropdownItems">
+        </dropdown>
+    </div>
+</script>
+

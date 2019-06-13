@@ -11,17 +11,42 @@
 
 body {
     width: 100%;
+    height: 100%;
+    margin: 0;
     overflow-x: hidden;
     font-family: $default-font-family;
     font-size: $default-font-size;
 }
 
-main {
-    padding: 4.9rem 0;
-    margin: 0;
-}
+#app {
+    display: flex;
+    flex-flow: column;
+    height: 100%;
 
-a {
-    color: $default-link-fg;
+    main {
+        margin: 0;
+        flex: 1 1 auto;
+        overflow: hidden;
+
+        // nav height hardcoded, calc won't support either CSS4 nor SASS vars
+        height: calc(100vh - 4.8rem);
+
+        .plugins-container {
+            height: inherit;
+
+            .plugin-container {
+                overflow: auto;
+                height: inherit;
+
+                .plugin {
+                    overflow: auto;
+                }
+            }
+        }
+    }
+
+    a {
+        color: $default-link-fg;
+    }
 }
 

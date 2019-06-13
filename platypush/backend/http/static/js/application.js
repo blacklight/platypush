@@ -39,7 +39,6 @@ window.vm = new Vue({
         };
     },
 
-    mounted: function() {},
     created: function() {
         const self = this;
         setInterval(() => {
@@ -48,8 +47,5 @@ window.vm = new Vue({
 
         initEvents();
     },
-
-    updated: function() {},
-    destroyed: function() {},
 });
 

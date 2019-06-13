@@ -1,0 +1,7 @@
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/index.js') }}"></script>
+{% include 'plugins/media/index.html' %}
+
+<script type="text/x-template" id="tmpl-media-mplayer">
+    <media :config="config" player="mplayer"></media>
+</script>
+
