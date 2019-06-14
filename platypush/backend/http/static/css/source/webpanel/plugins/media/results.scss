@@ -1,6 +1,6 @@
 .media-plugin {
     .results {
-        @include calc(100% - 16rem);
+        @include calc(height, '100% - 16rem');
         overflow: auto;
 
         .empty {

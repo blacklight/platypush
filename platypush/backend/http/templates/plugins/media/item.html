@@ -2,6 +2,7 @@
 
 <script type="text/x-template" id="tmpl-media-item">
     <div class="media-item">
+        <i :class="'fa fa-' + item.handler.icon" v-if="item.handler.length">&nbsp; </i>
         <span v-text="item.title"></span>
     </div>
 </script>

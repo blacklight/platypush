@@ -3,6 +3,10 @@
 {% include 'plugins/media/results.html' %}
 {% include 'plugins/media/item.html' %}
 
+{% for script in utils.search_directory(static_folder + '/js/plugins/media/handlers', 'js', recursive=True) %}
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/handlers/' + script) }}"></script>
+{% endfor %}
+
 <script type="text/x-template" id="tmpl-media">
     <div class="plugin media-plugin">
         <media-search :bus="bus"

@@ -29,7 +29,7 @@ body {
         overflow: hidden;
 
         // nav height hardcoded, calc won't support either CSS4 nor SASS vars
-        @include (height, 100vh - 4.8rem);
+        @include calc(height, '100vh - 4.8rem');
 
         .plugins-container {
             height: inherit;

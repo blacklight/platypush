@@ -61,7 +61,7 @@
         flex-direction: row;
         flex: 0 1 auto;
         order: 0;
-        @include calc(height, 100% - 10.1rem);
+        @include calc(height, '100% - 10.1rem');
     }
 
     .browser {
@@ -109,7 +109,7 @@
     .playlist {
         .results {
             position: relative;   // For the dropdown menu
-            @include calc(height, 100% - 5.1rem);
+            @include calc(height, '100% - 5.1rem');
             overflow: auto;
         }
 
@@ -353,7 +353,7 @@
         }
 
         .results {
-            @include calc(height, 100% - 4.7rem);
+            @include calc(height, '100% - 4.7rem');
         }
     }
 

@@ -2,7 +2,7 @@ import os
 
 from flask import Blueprint, request, render_template
 
-from platypush.backend.http.app import template_folder
+from platypush.backend.http.app import template_folder, static_folder
 from platypush.backend.http.app.utils import authenticate, authentication_ok, \
     get_websocket_port
 
@@ -58,6 +58,7 @@ def index():
                            scripts=enabled_scripts, styles=enabled_styles,
                            utils=HttpUtils, token=Config.get('token'),
                            websocket_port=get_websocket_port(),
+                           template_folder=template_folder, static_folder=static_folder,
                            plugins=Config.get_plugins(), backends=Config.get_backends(),
                            has_ssl=http_conf.get('ssl_cert') is not None)
 

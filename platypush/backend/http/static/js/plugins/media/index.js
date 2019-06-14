@@ -1,3 +1,6 @@
+// Will be filled by dynamically loading handler scripts
+var mediaHandlers = {};
+
 Vue.component('media', {
     template: '#tmpl-media',
     props: ['config','player'],
@@ -14,11 +17,7 @@ Vue.component('media', {
 
     computed: {
         types: function() {
-            return {
-                file: {},
-                torrent: {},
-                youtube: {},
-            };
+            return mediaHandlers;
         },
     },
 
@@ -32,6 +31,17 @@ Vue.component('media', {
 
         onResultsReady: function(results) {
             this.loading.results = false;
+
+            for (var i=0; i < results.length; i++) {
+                results[i].handler = {};
+
+                for (const hndl of Object.values(mediaHandlers)) {
+                    if (hndl.matchesUrl(results[i].url)) {
+                        results[i].handler = hndl;
+                    }
+                }
+            }
+
             this.results = results;
         },
     },
