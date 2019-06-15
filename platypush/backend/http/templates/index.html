@@ -9,17 +9,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/all.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dist/webpanel.css') }}">
 
-    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/vue.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/axios.min.js') }}"></script>
-
-    <script type="text/javascript" src="{{ url_for('static', filename='js/api.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/events.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/notifications.js') }}"></script>
-
-    {% for style in styles.values() %}
-    <link rel="stylesheet" href="{{ url_for('static', filename=style['_style_file']) }}">
-    {% endfor %}
-
     <script type="text/javascript">
         if (!window.config) {
             window.config = {};
@@ -42,6 +31,17 @@
             window.config.token = undefined;
         {% endif %}
     </script>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/vue.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/axios.min.js') }}"></script>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/events.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+
+    {% for style in styles.values() %}
+    <link rel="stylesheet" href="{{ url_for('static', filename=style['_style_file']) }}">
+    {% endfor %}
 
     {% include 'elements.html' %}
 
