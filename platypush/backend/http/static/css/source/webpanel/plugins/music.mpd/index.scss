@@ -64,7 +64,7 @@
         @include calc(height, '100% - 10.1rem');
 
         .panel {
-            height: inherit;
+            height: 100%;
         }
     }
 
