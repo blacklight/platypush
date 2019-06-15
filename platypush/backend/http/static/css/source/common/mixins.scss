@@ -30,8 +30,8 @@
 }
 
 @mixin calc($property, $expression) {
-    #{$property}: -webkit-calc(#{$expression});
-    #{$property}: -moz-calc(#{$expression});
-    #{$property}: calc(#{$expression});
+    #{$property}: -webkit-calc( #{$expression} );
+    #{$property}: -moz-calc( #{$expression} );
+    #{$property}: calc( #{$expression} );
 }
 
