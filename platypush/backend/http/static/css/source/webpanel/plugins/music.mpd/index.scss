@@ -62,6 +62,10 @@
         flex: 0 1 auto;
         order: 0;
         @include calc(height, '100% - 10.1rem');
+
+        .panel {
+            height: inherit;
+        }
     }
 
     .browser {
