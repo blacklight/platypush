@@ -52,10 +52,10 @@ class MusicSnapcastBackend(Backend):
 
         super().__init__(*args, **kwargs)
 
-        if ports is None:
-            ports = [self._DEFAULT_SNAPCAST_PORT]
         if hosts is None:
             hosts = ['localhost']
+        if ports is None:
+            ports = [self._DEFAULT_SNAPCAST_PORT]
 
         self.hosts = hosts[:]
         self.ports = ports[:]
@@ -130,8 +130,8 @@ class MusicSnapcastBackend(Backend):
             stream_id = msg.get('params', {}).get('stream_id')
             evt = GroupStreamChangeEvent(host=host, group=group_id, stream=stream_id)
         elif msg.get('method') == 'Stream.OnUpdate':
+            stream_id = msg.get('params', {}).get('stream_id')
             stream = msg.get('params', {}).get('stream')
-            stream_id = stream.get('id')
             evt = StreamUpdateEvent(host=host, stream_id=stream_id, stream=stream)
         elif msg.get('method') == 'Server.OnUpdate':
             server = msg.get('params', {}).get('server')
