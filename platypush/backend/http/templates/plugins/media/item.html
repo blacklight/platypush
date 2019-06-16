@@ -1,8 +1,10 @@
 <script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/item.js') }}"></script>
 
 <script type="text/x-template" id="tmpl-media-item">
-    <div class="media-item">
-        <i :class="'fa fa-' + item.handler.icon" v-if="item.handler.length">&nbsp; </i>
+    <div class="media-item"
+         :class="{selected: selected, active: active}"
+         @click="onClick">
+        <i :class="item.handler.iconClass" v-if="Object.keys(item.handler).length">&nbsp; </i>
         <span v-text="item.title"></span>
     </div>
 </script>

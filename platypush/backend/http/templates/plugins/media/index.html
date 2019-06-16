@@ -10,11 +10,14 @@
 <script type="text/x-template" id="tmpl-media">
     <div class="plugin media-plugin">
         <media-search :bus="bus"
+                      :playerPlugin="player"
                       :supportedTypes="types">
         </media-search>
 
         <media-results :bus="bus"
-                       :loading="loading.results"
+                       :currentItem="currentItem"
+                       :searching="loading.results"
+                       :loading="loading.media"
                        :results="results">
         </media-results>
 

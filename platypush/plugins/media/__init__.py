@@ -176,7 +176,7 @@ class MediaPlugin(Plugin):
         if self._is_playing_torrent:
             try:
                 get_plugin('media.webtorrent').quit()
-            except:
+            except Exception as e:
                 self.logger.warning('Cannot quit the webtorrent instance: {}'.
                                     format(str(e)))
 
@@ -305,9 +305,13 @@ class MediaPlugin(Plugin):
                                     format(query, media_type))
 
         flattened_results = []
+
         for media_type in self._supported_media_types:
             if media_type in results:
+                for result in results[media_type]:
+                    result['type'] = media_type
                 flattened_results += results[media_type]
+
         results = flattened_results
 
         if results:

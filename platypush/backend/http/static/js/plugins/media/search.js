@@ -3,6 +3,7 @@ Vue.component('media-search', {
     props: {
         bus: { type: Object },
         supportedTypes: { type: Object },
+        playerPlugin: { type: String },
     },
 
     data: function() {

@@ -4,6 +4,16 @@
 
         button {
             padding: .5rem;
+            margin-right: .5rem;
+
+            &.selected {
+                background: initial;
+                color: $default-hover-fg;
+
+                &:hover {
+                    color: $default-hover-fg-2;
+                }
+            }
         }
 
         .dropdown {
@@ -11,6 +21,11 @@
                 display: flex;
                 align-items: center;
                 cursor: pointer;
+
+                .text {
+                    text-align: left;
+                    margin-left: 2rem;
+                }
 
                 &:hover {
                     background: $hover-bg

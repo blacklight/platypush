@@ -1,8 +1,25 @@
 mediaHandlers.torrent = {
-    icon: 'magnet',
+    iconClass: 'fa fa-magnet',
 
-    matchesUrl: function(url) {
-        return url.startsWith('magnet:?') || url.endsWith('.torrent');
-    },
+    actions: [
+        {
+            text: 'Play',
+            icon: 'play',
+            action: 'play',
+        },
+
+        {
+            text: 'Download',
+            icon: 'download',
+            action: function(item) {
+            },
+        },
+
+        {
+            text: 'View info',
+            icon: 'info',
+            action: 'info',
+        },
+    ],
 };
 

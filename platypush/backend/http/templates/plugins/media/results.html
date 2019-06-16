@@ -2,17 +2,25 @@
 
 <script type="text/x-template" id="tmpl-media-results">
     <div class="results">
-        <div class="empty" v-if="loading || !results.length">
-            <div class="loading" v-if="loading">Loading</div>
+        <div class="empty" v-if="searching || loading || !results.length">
+            <div class="searching" v-if="searching">Searching</div>
+            <div class="loading" v-else-if="loading">Loading</div>
             <div class="no-results" v-else-if="!results.length">No results</div>
         </div>
 
         <media-item v-for="item in results"
                     :key="item.url"
                     :bus="bus"
+                    :selected="Object.keys(selectedItem).length > 0 && item.url === selectedItem.url"
+                    :active="Object.keys(currentItem).length > 0 && item.url === currentItem.url"
                     :item="item"
                     v-else>
         </media-item>
+
+        <dropdown id="media-item-dropdown"
+                  ref="mediaItemDropdown"
+                  :items="mediaItemDropdownItems">
+        </dropdown>
     </div>
 </script>
 

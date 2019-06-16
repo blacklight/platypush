@@ -5,7 +5,7 @@ Vue.component('media-controls', {
         item: {
             type: Object,
             default: () => {},
-        }
+        },
     },
 
     methods: {

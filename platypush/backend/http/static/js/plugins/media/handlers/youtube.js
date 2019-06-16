@@ -1,10 +1,25 @@
 mediaHandlers.youtube = {
-    icon: 'youtube',
+    iconClass: 'fab fa-youtube',
 
-    matchesUrl: function(url) {
-        return url.startsWith('https://youtube.com/watch?v=') ||
-            url.startsWith('https://www.youtube.com/watch?v=') ||
-            url.startsWith('https://youtu.be/');
-    },
+    actions: [
+        {
+            text: 'Play',
+            icon: 'play',
+            action: 'play',
+        },
+
+        {
+            text: 'Download',
+            icon: 'download',
+            action: function(item) {
+            },
+        },
+
+        {
+            text: 'View info',
+            icon: 'info',
+            action: 'info',
+        },
+    ],
 };
 

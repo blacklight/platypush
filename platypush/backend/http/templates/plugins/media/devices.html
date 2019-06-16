@@ -2,8 +2,12 @@
 
 <script type="text/x-template" id="tmpl-media-devices">
     <div class="devices">
-        <button type="button" title="Select target player" @click="openDevicesMenu">
-            <i class="fa fa-podcast"></i>
+        <button type="button"
+                class="devices"
+                :class="{selected: selectedDevice.type !== 'local'}"
+                :title="'Play on ' + (selectedDevice.name || '')"
+                @click="openDevicesMenu">
+            <i class="fa" :class="'fa-' + (selectedDevice.icon || '')"></i>
         </button>
 
         <dropdown ref="menu" :items="dropdownItems">

@@ -15,6 +15,24 @@
     height: inherit;
     letter-spacing: .03rem;
 
+    .dropdown {
+        z-index: $devices-dropdown-z-index;
+
+        .item {
+            display: flex;
+            align-item: center;
+            cursor: pointer;
+
+            .text {
+                margin-left: 1rem;
+            }
+
+            &:hover {
+                background: $hover-bg;
+            }
+        }
+    }
+
     input[type=text] {
         width: 100%;
 

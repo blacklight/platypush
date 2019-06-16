@@ -1,8 +1,26 @@
 mediaHandlers.file = {
-    icon: 'hdd',
+    iconClass: 'fa fa-hdd',
 
-    matchesUrl: function(url) {
-        return url.startsWith('file:///') || url.startsWith('/');
-    },
+    actions: [
+        {
+            text: 'Play',
+            icon: 'play',
+            action: 'play',
+        },
+
+        {
+            text: 'Download',
+            icon: 'download',
+            action: function(item, bus) {
+                bus.$emit('download', item);
+            },
+        },
+
+        {
+            text: 'View info',
+            icon: 'info',
+            action: 'info',
+        },
+    ],
 };
 
