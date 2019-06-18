@@ -5,15 +5,14 @@
 import datetime
 import dateutil.parser
 import requests
-import pytz
 
-from icalendar import Calendar, Event
+from icalendar import Calendar
 
 from platypush.plugins import Plugin, action
 from platypush.plugins.calendar import CalendarInterface
 
 
-class IcalCalendarPlugin(Plugin, CalendarInterface):
+class CalendarIcalPlugin(Plugin, CalendarInterface):
     """
     iCal calendars plugin. Interact with remote calendars in iCal format.
 
@@ -67,6 +66,8 @@ class IcalCalendarPlugin(Plugin, CalendarInterface):
         Get the upcoming events. See
         :func:`~platypush.plugins.calendar.CalendarPlugin.get_upcoming_events`.
         """
+
+        import pytz
 
         events = []
         try:
