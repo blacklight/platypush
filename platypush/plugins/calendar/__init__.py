@@ -27,7 +27,7 @@ class CalendarPlugin(Plugin, CalendarInterface):
         * **dateutil** (``pip install python-dateutil``)
     """
 
-    def __init__(self, calendars=[], *args, **kwargs):
+    def __init__(self, calendars=None, *args, **kwargs):
         """
         :param calendars: List of calendars to be queried. Supported types so far: Google Calendar and iCal URLs.
         :type calendars: list
@@ -49,6 +49,9 @@ class CalendarPlugin(Plugin, CalendarInterface):
         """
 
         super().__init__(*args, **kwargs)
+
+        if calendars is None:
+            calendars = []
         self.calendars = []
 
         for calendar in calendars:
