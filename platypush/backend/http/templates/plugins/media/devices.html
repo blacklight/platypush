@@ -1,13 +1,18 @@
 <script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/devices.js') }}"></script>
 
+{% for script in utils.search_directory(static_folder + '/js/plugins/media/players', 'js', recursive=True) %}
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/players/' + script) }}"></script>
+{% endfor %}
+
 <script type="text/x-template" id="tmpl-media-devices">
     <div class="devices">
         <button type="button"
                 class="devices"
-                :class="{selected: selectedDevice.type !== 'local'}"
+                :class="{selected: selectedDevice.type !== 'local' && selectedDevice.type !== 'browser'}"
                 :title="'Play on ' + (selectedDevice.name || '')"
                 @click="openDevicesMenu">
-            <i class="fa" :class="'fa-' + (selectedDevice.icon || '')"></i>
+            <i class="fa" :class="'fa-' + (selectedDevice.icon || '')" v-if="selectedDevice.icon"></i>
+            <i :class="selectedDevice.iconClass" v-else-if="selectedDevice.iconClass"></i>
         </button>
 
         <dropdown ref="menu" :items="dropdownItems">

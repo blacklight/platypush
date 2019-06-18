@@ -45,14 +45,35 @@ class MediaChromecastPlugin(MediaPlugin):
 
 
     @action
-    def get_chromecasts(self):
+    def get_chromecasts(self, tries=2, retry_wait=10, timeout=60,
+                        blocking=True, callback=None):
         """
         Get the list of Chromecast devices
+
+        :param tries: Number of retries (default: 2)
+        :type tries: int
+
+        :param retry_wait: Number of seconds between retries (default: 10 seconds)
+        :type retry_wait: int
+
+        :param timeout: Timeout before failing the call (default: 60 seconds)
+        :type timeout: int
+
+        :param blocking: If true, then the function will block until all the Chromecast
+            devices have been scanned. If false, then the provided callback function will be
+            invoked when a new device is discovered
+        :type blocking: bool
+
+        :param callback: If blocking is false, then you can provide a callback function that
+            will be invoked when a new device is discovered
+        :type callback: func
         """
 
         self.chromecasts.update({
             cast.device.friendly_name: cast
-            for cast in pychromecast.get_chromecasts()
+            for cast in pychromecast.get_chromecasts(tries=tries, retry_wait=retry_wait,
+                                                     timeout=timeout, blocking=blocking,
+                                                     callback=callback)
         })
 
         return [ {
@@ -81,7 +102,7 @@ class MediaChromecastPlugin(MediaPlugin):
         } for cc in self.chromecasts.values() ]
 
 
-    def get_chromecast(self, chromecast=None, n_tries=3):
+    def get_chromecast(self, chromecast=None, n_tries=2):
         if isinstance(chromecast, pychromecast.Chromecast):
             return chromecast
 
@@ -307,8 +328,8 @@ class MediaChromecastPlugin(MediaPlugin):
     @action
     def disable_subtitles(self, chromecast=None, track_id=None):
         mc = self.get_chromecast(chromecast or self.chromecast).media_controller
-        if track_name:
-            return mc.disable_subtitle(track_name)
+        if track_id:
+            return mc.disable_subtitle(track_id)
         elif mc.current_subtitle_tracks:
             return mc.disable_subtitle(mc.current_subtitle_tracks[0])
 
@@ -319,9 +340,9 @@ class MediaChromecastPlugin(MediaPlugin):
         cur_subs = mc.status.status.current_subtitle_tracks
 
         if cur_subs:
-            return self.disable_subtitle(chromecast, cur_subs[0])
+            return self.disable_subtitles(chromecast, cur_subs[0])
         else:
-            return self.enable_subtitle(chromecast, all_subs[0].get('trackId'))
+            return self.enable_subtitles(chromecast, all_subs[0].get('trackId'))
 
 
     @action

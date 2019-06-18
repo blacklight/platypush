@@ -11,6 +11,12 @@
     .item {
         margin: 0 !important;
         padding: 1rem;
+        cursor: pointer;
+
+        &.disabled {
+            color: $dropdown-disabled-color;
+            cursor: initial;
+        }
 
         .icon {
             margin: 0 .75rem;

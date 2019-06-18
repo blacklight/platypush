@@ -20,11 +20,16 @@
             .item {
                 display: flex;
                 align-items: center;
-                cursor: pointer;
 
                 .text {
                     text-align: left;
                     margin-left: 2rem;
+                }
+
+                &:first-child {
+                    border-bottom: $default-border-3;
+                    color: $devices-dropdown-refresh-fg;
+                    font-size: .8em;
                 }
 
                 &:hover {

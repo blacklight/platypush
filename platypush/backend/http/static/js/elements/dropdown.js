@@ -18,7 +18,7 @@ Vue.component('dropdown', {
 
     methods: {
         clicked: function(item) {
-            if (item.click) {
+            if (item.click && !item.disabled) {
                 item.click();
             }
 
@@ -35,7 +35,6 @@ var clickHndl = function(event) {
     }
 
     var element = event.target;
-
     while (element) {
         if (element == openedDropdown) {
             return;
