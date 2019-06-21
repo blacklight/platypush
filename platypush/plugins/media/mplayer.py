@@ -322,7 +322,7 @@ class MediaMplayerPlugin(MediaPlugin):
         return self._exec('sub_visibility', int(not subs))
 
     @action
-    def set_subtitles(self, filename):
+    def set_subtitles(self, filename, **args):
         """ Sets media subtitles from filename """
         self._exec('sub_visibility', 1)
         return self._exec('sub_load', filename)
@@ -343,10 +343,12 @@ class MediaMplayerPlugin(MediaPlugin):
         return self.get_property('pause').output.get('pause') == False
 
     @action
-    def load(self, resource, mplayer_args={}):
+    def load(self, resource, mplayer_args=None, **kwargs):
         """
         Load a resource/video in the player.
         """
+        if mplayer_args is None:
+            mplayer_args = {}
         return self.play(resource, mplayer_args=mplayer_args)
 
     @action

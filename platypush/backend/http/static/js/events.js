@@ -38,7 +38,12 @@ function initEvents() {
         event = event.data;
 
         if (typeof event === 'string') {
-            event = JSON.parse(event);
+            try {
+                event = JSON.parse(event);
+            } catch (e) {
+                console.warn('Received invalid non-JSON event');
+                console.warn(event);
+            }
         }
 
         if (event.type !== 'event') {

@@ -1,23 +1,54 @@
-mediaPlayers.chromecast = {
-    iconClass: function(item) {
-        if (item.type === 'audio') {
-            return 'fa fa-volume-up';
-        } else {
-            return 'fab fa-chromecast';
-        }
+MediaPlayers.chromecast = Vue.extend({
+    props: {
+        type: {
+            type: String,
+            default: 'chromecast',
+        },
+
+        accepts: {
+            type: Object,
+            default: () => {
+                return {
+                    youtube: true,
+                };
+            },
+        },
+
+        device: {
+            type: null,
+            address: null,
+            port: null,
+            uuid: null,
+            status: {},
+            name: '',
+            model_name: null,
+        },
     },
 
-    scan: async function() {
-        return await request('media.chromecast.get_chromecasts');
+    computed: {
+        name: function() {
+            return this.device.name;
+        },
+
+        iconClass: function() {
+            return this.device.type === 'audio' ? 'fa fa-volume-up' : 'fab fa-chromecast';
+        },
     },
 
-    status: function(device) {
-    },
+    methods: {
+        scan: async function() {
+            return await request('media.chromecast.get_chromecasts');
+        },
 
-    play: function(item) {
-    },
+        status: async function() {
+            return {};
+        },
 
-    stop: function() {
+        play: async function(item) {
+        },
+
+        stop: async function() {
+        },
     },
-};
+});
 

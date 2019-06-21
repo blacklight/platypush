@@ -1,25 +1,45 @@
-mediaHandlers.torrent = {
-    iconClass: 'fa fa-magnet',
+MediaHandlers.torrent = Vue.extend({
+    props: {
+        bus: { type: Object },
+        iconClass: {
+            type: String,
+            default: 'fa fa-magnet',
+        },
+    },
 
-    actions: [
-        {
-            text: 'Play',
-            icon: 'play',
-            action: 'play',
+    computed: {
+        dropdownItems: function() {
+            return [
+                {
+                    text: 'Play',
+                    icon: 'play',
+                    action: this.play,
+                },
+
+                {
+                    text: 'Download',
+                    icon: 'download',
+                    action: this.download,
+                },
+
+                {
+                    text: 'View info',
+                    icon: 'info',
+                    action: this.info,
+                },
+            ];
+        },
+    },
+
+    methods: {
+        play: function(item) {
         },
 
-        {
-            text: 'Download',
-            icon: 'download',
-            action: function(item) {
-            },
+        download: function(item) {
         },
 
-        {
-            text: 'View info',
-            icon: 'info',
-            action: 'info',
+        info: function(item) {
         },
-    ],
-};
+    },
+});
 

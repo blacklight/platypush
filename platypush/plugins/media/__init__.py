@@ -3,6 +3,7 @@ import os
 import queue
 import re
 import subprocess
+import tempfile
 import threading
 
 import urllib.request
@@ -14,9 +15,10 @@ from platypush.plugins import Plugin, action
 
 
 class PlayerState(enum.Enum):
-    STOP  = 'stop'
-    PLAY  = 'play'
+    STOP = 'stop'
+    PLAY = 'play'
     PAUSE = 'pause'
+    IDLE = 'idle'
 
 
 class MediaPlugin(Plugin):
@@ -26,8 +28,8 @@ class MediaPlugin(Plugin):
     Requires:
 
         * A media player installed (supported so far: mplayer, vlc, mpv, omxplayer, chromecast)
-        * The :class:`platypush.plugins.media.webtorrent` plugin for optional torrent support through webtorrent (recommented)
-        * **python-libtorrent** (``pip install python-libtorrent``), optional, for torrent support through the native Python plugin
+        * The :class:`platypush.plugins.media.webtorrent` plugin for optional torrent support through webtorrent (recommended)
+        * **python-libtorrent** (``pip install python-libtorrent``), optional, for torrent support over native library
         * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
         * **requests** (``pip install requests``), optional, for local files over HTTP streaming supporting
 
@@ -67,7 +69,7 @@ class MediaPlugin(Plugin):
     _supported_media_types = ['file', 'torrent', 'youtube']
     _default_search_timeout = 60  # 60 seconds
 
-    def __init__(self, media_dirs=[], download_dir=None, env=None,
+    def __init__(self, media_dirs=None, download_dir=None, env=None,
                  *args, **kwargs):
         """
         :param media_dirs: Directories that will be scanned for media files when
@@ -83,8 +85,10 @@ class MediaPlugin(Plugin):
         :type env: dict
         """
 
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
+        if media_dirs is None:
+            media_dirs = []
         player = None
         player_config = {}
 
@@ -108,9 +112,9 @@ class MediaPlugin(Plugin):
         if self.__class__.__name__ == 'MediaPlugin':
             # Populate this plugin with the actions of the configured player
             plugin = get_plugin(player)
-            for action in plugin.registered_actions:
-                setattr(self, action, getattr(plugin, action))
-                self.registered_actions.add(action)
+            for act in plugin.registered_actions:
+                setattr(self, act, getattr(plugin, act))
+                self.registered_actions.add(act)
 
         self._env = env or {}
         self.media_dirs = set(
@@ -215,8 +219,7 @@ class MediaPlugin(Plugin):
     @action
     def next(self):
         """ Play the next item in the queue """
-        if self.player:
-            self.player.stop()
+        self.stop()
 
         if self._videos_queue:
             video = self._videos_queue.pop(0)
@@ -255,7 +258,7 @@ class MediaPlugin(Plugin):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
-    def set_volume(self, volume, *args, **kwargs):
+    def set_volume(self, volume):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
@@ -324,7 +327,8 @@ class MediaPlugin(Plugin):
 
         return results
 
-    def _search_worker(self, query, search_hndl, results_queue):
+    @staticmethod
+    def _search_worker(query, search_hndl, results_queue):
         def thread():
             results_queue.put(search_hndl.search(query))
         return thread
@@ -384,12 +388,12 @@ class MediaPlugin(Plugin):
         self.logger.info('Starting streaming {}'.format(media))
         response = requests.put('{url}/media{download}'.format(
             url=http.local_base_url, download='?download' if download else ''),
-            json = { 'source': media })
+            json={'source': media})
 
         if not response.ok:
             self.logger.warning('Unable to start streaming: {}'.
                                 format(response.text or response.reason))
-            return
+            return None, (response.text or response.reason)
 
         return response.json()
 
@@ -413,8 +417,8 @@ class MediaPlugin(Plugin):
 
         return response.json()
 
-
-    def _youtube_search_api(self, query):
+    @staticmethod
+    def _youtube_search_api(query):
         return [
             {
                 'url': 'https://www.youtube.com/watch?v=' + item['id']['videoId'],
@@ -448,7 +452,6 @@ class MediaPlugin(Plugin):
 
         return results
 
-
     @classmethod
     def _get_youtube_content(cls, url):
         m = re.match('youtube:video:(.*)', url)
@@ -459,12 +462,11 @@ class MediaPlugin(Plugin):
 
         return proc.stdout.read().decode("utf-8", "strict")[:-1]
 
-
     def is_local(self):
         return self._is_local
 
-
-    def get_subtitles_file(self, subtitles):
+    @staticmethod
+    def get_subtitles_file(subtitles):
         if not subtitles:
             return
 

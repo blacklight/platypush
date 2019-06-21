@@ -2,7 +2,7 @@ Vue.component('media-controls', {
     template: '#tmpl-media-controls',
     props: {
         bus: { type: Object },
-        item: {
+        status: {
             type: Object,
             default: () => {},
         },

@@ -1,26 +1,46 @@
-mediaHandlers.file = {
-    iconClass: 'fa fa-hdd',
+MediaHandlers.file = Vue.extend({
+    props: {
+        bus: { type: Object },
+        iconClass: {
+            type: String,
+            default: 'fa fa-hdd',
+        },
+    },
 
-    actions: [
-        {
-            text: 'Play',
-            icon: 'play',
-            action: 'play',
+    computed: {
+        dropdownItems: function() {
+            return [
+                {
+                    text: 'Play',
+                    icon: 'play',
+                    action: this.play,
+                },
+
+                {
+                    text: 'Download',
+                    icon: 'download',
+                    action: this.download,
+                },
+
+                {
+                    text: 'View info',
+                    icon: 'info',
+                    action: this.info,
+                },
+            ];
+        },
+    },
+
+    methods: {
+        play: function(item) {
+            this.bus.$emit('play', item);
         },
 
-        {
-            text: 'Download',
-            icon: 'download',
-            action: function(item, bus) {
-                bus.$emit('download', item);
-            },
+        download: function(item) {
         },
 
-        {
-            text: 'View info',
-            icon: 'info',
-            action: 'info',
+        info: function(item) {
         },
-    ],
-};
+    },
+});
 

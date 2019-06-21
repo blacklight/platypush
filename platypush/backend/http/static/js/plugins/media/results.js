@@ -14,12 +14,15 @@ Vue.component('media-results', {
             type: Array,
             default: () => [],
         },
+        status: {
+            type: Object,
+            default: () => {},
+        },
     },
 
     data: function() {
         return {
             selectedItem: {},
-            currentItem: {},
         };
     },
 
@@ -31,16 +34,12 @@ Vue.component('media-results', {
 
             const self = this;
 
-            return this.selectedItem.handler.actions.map(action => {
+            return this.selectedItem.handler.dropdownItems.map(item => {
                 return {
-                    text: action.text,
-                    icon: action.icon,
+                    text: item.text,
+                    icon: item.icon,
                     click: function() {
-                        if (action.action instanceof Function) {
-                            action.action(self.selectedItem, self.bus);
-                        } else if (typeof(action.action) === 'string') {
-                            self[action.action](self.selectedItem);
-                        }
+                        item.action(self.selectedItem);
                     },
                 };
             });

@@ -1,3 +1,8 @@
+import logging
+
+from .file import FileHandler
+
+
 class MediaHandler:
     """
     Abstract class to manage media handlers that can be streamed over the HTTP
@@ -20,14 +25,13 @@ class MediaHandler:
 
         self.name = name
         self.path = None
-        self.filename = name
+        self.filename = filename
         self.source = source
         self.url = url
         self.mime_type = mime_type
         self.subtitles = subtitles
         self.content_length = 0
         self._matched_handler = matched_handlers[0]
-
 
     @classmethod
     def build(cls, source, *args, **kwargs):
@@ -37,6 +41,7 @@ class MediaHandler:
             try:
                 return hndl_class(source, *args, **kwargs)
             except Exception as e:
+                logging.exception(e)
                 errors[hndl_class.__name__] = str(e)
 
         raise AttributeError(('The source {} has no handlers associated. ' +
@@ -56,10 +61,6 @@ class MediaHandler:
                      'prefix_handlers', 'media_id']:
             if hasattr(self, attr):
                 yield (attr, getattr(self, attr))
-
-
-
-from .file import FileHandler
 
 
 __all__ = ['MediaHandler', 'FileHandler']

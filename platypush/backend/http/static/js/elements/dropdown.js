@@ -22,14 +22,16 @@ Vue.component('dropdown', {
                 item.click();
             }
 
-            closeDropdown();
+            if (!item.preventClose) {
+                closeDropdown();
+            }
         },
     },
 });
 
-var openedDropdown;
+let openedDropdown;
 
-var clickHndl = function(event) {
+let clickHndl = function(event) {
     if (!openedDropdown) {
         return;
     }

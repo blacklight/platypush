@@ -17,6 +17,8 @@
         }
 
         .dropdown {
+            white-space: nowrap;
+
             .item {
                 display: flex;
                 align-items: center;

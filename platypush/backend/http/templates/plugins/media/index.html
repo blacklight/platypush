@@ -9,20 +9,29 @@
 
 <script type="text/x-template" id="tmpl-media">
     <div class="plugin media-plugin">
-        <media-search :bus="bus"
-                      :playerPlugin="player"
-                      :supportedTypes="types">
-        </media-search>
+        <div class="search">
+            <div class="col-11">
+                <media-search :bus="bus"
+                              :supportedTypes="types">
+                </media-search>
+            </div>
+
+            <div class="col-1 pull-right">
+                <media-devices :bus="bus"
+                               :localPlayer="player">
+                </media-devices>
+            </div>
+        </div>
 
         <media-results :bus="bus"
-                       :currentItem="currentItem"
+                       :status="selectedDevice && status[selectedDevice.type] && status[selectedDevice.type][selectedDevice.name] ? status[selectedDevice.type][selectedDevice.name] : {}"
                        :searching="loading.results"
                        :loading="loading.media"
                        :results="results">
         </media-results>
 
         <media-controls :bus="bus"
-                        :item="currentItem">
+                        :status="selectedDevice && status[selectedDevice.type] && status[selectedDevice.type][selectedDevice.name] ? status[selectedDevice.type][selectedDevice.name] : {}">
         </media-controls>
     </div>
 </script>

@@ -1,5 +1,4 @@
 import ast
-import errno
 import hashlib
 import importlib
 import inspect
@@ -130,9 +129,7 @@ def _get_ssl_context(context_type=None, ssl_cert=None, ssl_key=None,
         ssl_context = ssl.create_default_context(cafile=ssl_cafile,
                                                  capath=ssl_capath)
     else:
-        ssl_context = ssl.SSLContext(context_type)
-
-    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 
     if ssl_cafile or ssl_capath:
         ssl_context.load_verify_locations(
@@ -227,8 +224,9 @@ def get_mime_type(resource):
         with urllib.request.urlopen(resource) as response:
             return response.info().get_content_type()
     else:
-        mime = magic.Magic(mime=True)
-        return mime.from_file(resource)
+        mime = magic.detect_from_filename(resource)
+        if mime:
+            return mime.mime_type
 
 def camel_case_to_snake_case(string):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', string)

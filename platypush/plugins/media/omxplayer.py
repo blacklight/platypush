@@ -174,7 +174,7 @@ class MediaOmxplayerPlugin(MediaPlugin):
         :type pause: bool
         """
 
-        if self._player: self._player.load(resource, pause)
+        if self._player: self._player.load(resource, )
         return self.status()
 
     @action

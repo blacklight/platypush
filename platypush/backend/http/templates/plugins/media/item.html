@@ -4,7 +4,7 @@
     <div class="media-item"
          :class="{selected: selected, active: active}"
          @click="onClick">
-        <i :class="item.handler.iconClass" v-if="Object.keys(item.handler).length">&nbsp; </i>
+        <i class="icon" :class="item.handler.iconClass" v-if="item.handler">&nbsp; </i>
         <span v-text="item.title"></span>
     </div>
 </script>

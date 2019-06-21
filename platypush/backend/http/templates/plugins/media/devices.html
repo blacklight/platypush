@@ -10,7 +10,8 @@
                 class="devices"
                 :class="{selected: selectedDevice.type !== 'local' && selectedDevice.type !== 'browser'}"
                 :title="'Play on ' + (selectedDevice.name || '')"
-                @click="openDevicesMenu">
+                @click="openDevicesMenu"
+                v-if="selectedDevice">
             <i class="fa" :class="'fa-' + (selectedDevice.icon || '')" v-if="selectedDevice.icon"></i>
             <i :class="selectedDevice.iconClass" v-else-if="selectedDevice.iconClass"></i>
         </button>

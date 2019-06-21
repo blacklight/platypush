@@ -13,13 +13,13 @@ class MediaPlayRequestEvent(MediaEvent):
     Event triggered when a new media playback request is received
     """
 
-    def __init__(self, resource=None, *args, **kwargs):
+    def __init__(self, resource=None, title=None, *args, **kwargs):
         """
         :param resource: File name or URI of the played video
         :type resource: str
         """
 
-        super().__init__(*args, resource=resource, **kwargs)
+        super().__init__(*args, resource=resource, title=title, **kwargs)
 
 
 class MediaPlayEvent(MediaEvent):
@@ -27,13 +27,13 @@ class MediaPlayEvent(MediaEvent):
     Event triggered when a new media content is played
     """
 
-    def __init__(self, resource=None, *args, **kwargs):
+    def __init__(self, resource=None, title=None, *args, **kwargs):
         """
         :param resource: File name or URI of the played video
         :type resource: str
         """
 
-        super().__init__(*args, resource=resource, **kwargs)
+        super().__init__(*args, resource=resource, title=title, **kwargs)
 
 
 class MediaStopEvent(MediaEvent):
@@ -88,8 +88,8 @@ class NewPlayingMediaEvent(MediaEvent):
 
     def __init__(self, resource=None, *args, **kwargs):
         """
-        :param video: File name or URI of the played resource
-        :type video: str
+        :param resource: File name or URI of the played resource
+        :type resource: str
         """
 
         super().__init__(*args, resource=resource, **kwargs)

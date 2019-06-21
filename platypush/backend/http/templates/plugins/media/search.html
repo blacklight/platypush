@@ -3,40 +3,29 @@
 <script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/search.js') }}"></script>
 
 <script type="text/x-template" id="tmpl-media-search">
-    <div class="search">
-        <form @submit.prevent="search">
-            <div class="row">
-                <div class="col-11 query-container">
-                    <button type="button" title="Media type filter" class="filter" @click="showFilter = !showFilter">
-                        <i class="fa fa-filter"></i>
-                    </button>
+    <form @submit.prevent="search">
+        <div class="row">
+            <button type="button" title="Media type filter" class="filter" @click="showFilter = !showFilter">
+                <i class="fa fa-filter"></i>
+            </button>
 
-                    <input type="text" name="query" v-model.lazy.trim="query"
-                           :disabled="searching" placeholder="Search query or video URL">
+            <input type="text" name="query" v-model.lazy.trim="query"
+                   :disabled="searching" placeholder="Search query or video URL">
 
-                    <button type="submit" :disabled="searching" title="Search">
-                        <i class="fa fa-search"></i>
-                    </button>
-                </div>
+            <button type="submit" :disabled="searching" title="Search">
+                <i class="fa fa-search"></i>
+            </button>
+        </div>
 
-                <div class="col-1 pull-right">
-                    <media-devices
-                            :bus="bus"
-                            :playerPlugin="playerPlugin">
-                    </media-devices>
-                </div>
+        <div class="row types fade-in" :class="{hidden: !showFilter}">
+            <div class="type" v-for="config,type in types">
+                <input type="checkbox"
+                       name="type"
+                       :id="'media-type-' + type"
+                       v-model.lazy="types[type]">
+                <label :for="'media-type-' + type" v-text="type"></label>
             </div>
-
-            <div class="row types fade-in" :class="{hidden: !showFilter}">
-                <div class="type" v-for="config,type in types">
-                    <input type="checkbox"
-                           name="type"
-                           :id="'media-type-' + type"
-                           v-model.lazy="types[type]">
-                    <label :for="'media-type-' + type" v-text="type"></label>
-                </div>
-            </div>
-        </form>
-    </div>
+        </div>
+    </form>
 </script>
 

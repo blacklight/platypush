@@ -23,7 +23,8 @@ class FileHandler(MediaHandler):
 
         self.mime_type = get_mime_type(source)
         if self.mime_type[:5] not in ['video', 'audio', 'image']:
-            raise AttributeError('{} is not a valid media file'.format(source))
+            raise AttributeError('{} is not a valid media file (detected format: {})'.
+                                 format(source, self.mime_type))
 
         self.extension = mimetypes.guess_extension(self.mime_type)
         if self.url:

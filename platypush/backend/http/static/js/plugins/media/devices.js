@@ -1,11 +1,11 @@
 // Will be filled by dynamically loading device scripts
-var mediaPlayers = {};
+const MediaPlayers = {};
 
 Vue.component('media-devices', {
     template: '#tmpl-media-devices',
     props: {
         bus: { type: Object },
-        playerPlugin: { type: String },
+        localPlayer: { type: String },
     },
 
     data: function() {
@@ -24,59 +24,38 @@ Vue.component('media-devices', {
                     text: 'Refresh',
                     type: 'refresh',
                     icon: 'sync-alt',
-                },
-                {
-                    name: this.playerPlugin,
-                    text: this.playerPlugin,
-                    type: 'local',
-                    icon: 'desktop',
-                },
-                {
-                    name: 'browser',
-                    text: 'Browser',
-                    type: 'browser',
-                    icon: 'laptop',
+                    preventClose: true,
                 },
             ];
         },
 
         dropdownItems: function() {
-            const items = this.staticItems.concat(
-                this.devices.map(dev => {
-                    return {
-                        name: dev.name,
-                        text: dev.name,
-                        type: dev.__type__,
-                        icon: dev.icon,
-                        iconClass: dev.iconClass,
-                        device: dev,
-                    };
-                })
-            );
-
             const self = this;
-
-            const onClick = (item) => {
+            const onClick = (menuItem) => {
                 return () => {
                     if (self.loading) {
                         return;
                     }
 
-                    self.selectDevice(item);
+                    self.selectDevice(menuItem.device);
                 };
             };
 
-            for (var i=0; i < items.length; i++) {
-                if (items[i].type === 'refresh') {
-                    items[i].click = this.refreshDevices;
-                } else {
-                    items[i].click = onClick(items[i]);
-                }
-
-                items[i].disabled = this.loading;
-            }
-
-            return items;
+            return self.staticItems.concat(
+                self.devices.map($dev => {
+                    return {
+                        name: $dev.name,
+                        text: $dev.text || $dev.name,
+                        icon: $dev.icon,
+                        iconClass: $dev.iconClass,
+                        device: $dev,
+                    };
+                })
+            ).map(item => {
+                item.click = item.type === 'refresh' ? self.refreshDevices : onClick(item);
+                item.disabled = self.loading;
+                return item;
+            });
         },
     },
 
@@ -87,39 +66,67 @@ Vue.component('media-devices', {
             }
 
             this.loading = true;
-            var devices;
+            const self = this;
 
             try {
-                const promises = Object.entries(mediaPlayers).map((p) => {
-                    const player = p[0];
-                    const handler = p[1];
+                const promises = Object.entries(MediaPlayers).map((p) => {
+                    const playerType = p[0];
+                    const Player = p[1];
 
                     return new Promise((resolve, reject) => {
-                        handler.scan().then(devs => {
-                            for (var i=0; i < devs.length; i++) {
-                                devs[i].__type__ = player;
+                        const player = new Player();
 
-                                if (handler.icon) {
-                                    devs[i].icon = handler.icon instanceof Function ? handler.icon(devs[i]) : handler.icon;
-                                } else if (handler.iconClass) {
-                                    devs[i].iconClass = handler.iconClass instanceof Function ? handler.iconClass(devs[i]) : handler.iconClass;
-                                }
-                            }
+                        if (player.scan) {
+                            player.scan().then(devs => {
+                                resolve(devs.map(device => {
+                                    const handler = new Player();
+                                    handler.device = device;
+                                    return handler;
+                                }));
+                            });
 
-                            resolve(devs);
-                        });
+                            return;
+                        }
+
+                        if (player.type === 'local') {
+                            player.device = {
+                                plugin: self.localPlayer,
+                            };
+                        } else {
+                            player.device = {};
+                        }
+
+                        resolve([player]);
                     });
                 });
 
                 this.devices = (await Promise.all(promises)).reduce((list, devs) => {
-                    for (const d of devs) {
-                        list.push(d);
-                    }
+                    return [...list, ...devs];
+                }, []).sort((a,b) => {
+                    if (a.type === 'local')
+                        return -1;
+                    if (b.type === 'local')
+                        return 1;
+                    if (a.type === 'browser')
+                        return -1;
+                    if (b.type === 'browser')
+                        return 1;
+                    if (a.type !== b.type)
+                        return b.type.localeCompare(a);
+                    return b.name.localeCompare(a);
+                });
 
-                    return list;
-                }, []);
+                this.devices.forEach(dev => {
+                    dev.status().then(status => {
+                        self.bus.$emit('status-update', {
+                            device: dev,
+                            status: status,
+                        });
+                    });
+                });
             } finally {
                 this.loading = false;
+                this.selectDevice(this.devices.filter(_ => _.type === 'local')[0]);
             }
         },
 
@@ -134,7 +141,6 @@ Vue.component('media-devices', {
     },
 
     created: function() {
-        this.selectDevice(this.dropdownItems.filter(_ => _.type === 'local')[0]);
         this.refreshDevices();
     },
 });

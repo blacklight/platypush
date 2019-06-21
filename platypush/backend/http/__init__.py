@@ -186,6 +186,9 @@ class HttpBackend(Backend):
             self.uwsgi_args = [str(_) for _ in self.uwsgi_args] + \
                 ['--module', 'platypush.backend.http.uwsgi', '--enable-threads']
 
+        self.local_base_url = '{proto}://localhost:{port}'.\
+            format(proto=('https' if ssl_cert else 'http'), port=self.port)
+
     def send_message(self, msg, **kwargs):
         self.logger.warning('Use cURL or any HTTP client to query the HTTP backend')
 

@@ -11,8 +11,8 @@
         <media-item v-for="item in results"
                     :key="item.url"
                     :bus="bus"
-                    :selected="Object.keys(selectedItem).length > 0 && item.url === selectedItem.url"
-                    :active="Object.keys(currentItem).length > 0 && item.url === currentItem.url"
+                    :selected="item.url && item.url === selectedItem.url"
+                    :active="item.url && item.url === status.url"
                     :item="item"
                     v-else>
         </media-item>

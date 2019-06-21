@@ -1,4 +1,3 @@
-import datetime
 import enum
 import os
 import re
@@ -9,18 +8,16 @@ import time
 
 from platypush.config import Config
 from platypush.context import get_bus, get_plugin
-from platypush.message.response import Response
 from platypush.plugins.media import PlayerState, MediaPlugin
 from platypush.message.event.torrent import TorrentDownloadStartEvent, \
-    TorrentDownloadCompletedEvent, TorrentDownloadProgressEvent, \
-    TorrentDownloadingMetadataEvent
+    TorrentDownloadCompletedEvent, TorrentDownloadingMetadataEvent
 
 from platypush.plugins import action
 from platypush.utils import find_bins_in_path, find_files_by_ext, \
     is_process_alive, get_ip_or_hostname
 
 
-class TorrentState(enum.Enum):
+class TorrentState(enum.IntEnum):
     IDLE = 1
     DOWNLOADING_METADATA = 2
     DOWNLOADING = 3
@@ -35,8 +32,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
         * **webtorrent** installed on your system (``npm install -g webtorrent``)
         * **webtorrent-cli** installed on your system (``npm install -g webtorrent-cli``)
-        * A media plugin configured for streaming (e.g. media.mplayer
-            or media.omxplayer)
+        * A media plugin configured for streaming (e.g. media.mplayer, media.vlc, media.mpv or media.omxplayer)
     """
 
     _supported_media_plugins = {'media.mplayer', 'media.omxplayer', 'media.mpv',
@@ -65,15 +61,13 @@ class MediaWebtorrentPlugin(MediaPlugin):
         super().__init__(*args, **kwargs)
 
         self.webtorrent_port = webtorrent_port
+        self._webtorrent_process = None
         self._init_webtorrent_bin(webtorrent_bin=webtorrent_bin)
         self._init_media_player()
         self._download_started_event = threading.Event()
         self._torrent_stream_urls = {}
 
-
     def _init_webtorrent_bin(self, webtorrent_bin=None):
-        self._webtorrent_process = None
-
         if not webtorrent_bin:
             bin_name = 'webtorrent.exe' if os.name == 'nt' else 'webtorrent'
             bins = find_bins_in_path(bin_name)
@@ -97,7 +91,6 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
     def _init_media_player(self):
         self._media_plugin = None
-        plugin_name = None
 
         for plugin_name in self._supported_media_plugins:
             try:
@@ -113,12 +106,10 @@ class MediaWebtorrentPlugin(MediaPlugin):
                                 'supported media plugins: {}').format(
                                     self._supported_media_plugins))
 
-
     def _read_process_line(self):
         line = self._webtorrent_process.stdout.readline().decode().strip()
         # Strip output of the colors
-        return re.sub('\x1b\[((\d+m)|(.{1,2}))', '', line).strip()
-
+        return re.sub('\x1b\[(([0-9]+m)|(.{1,2}))', '', line).strip()
 
     def _process_monitor(self, resource, download_dir, download_only,
                          player_type, player_args):
@@ -192,7 +183,6 @@ class MediaWebtorrentPlugin(MediaPlugin):
                         stream_url=webtorrent_url))
                     break
 
-
             if not output_dir:
                 raise RuntimeError('Could not download torrent')
             if not download_only and (not media_file or not webtorrent_url):
@@ -265,11 +255,13 @@ class MediaWebtorrentPlugin(MediaPlugin):
                 stop_evt = player._mplayer_stopped_event
             elif media_cls == 'MediaMpvPlugin' or media_cls == 'MediaVlcPlugin':
                 stop_evt = threading.Event()
+
                 def stop_callback():
                     stop_evt.set()
                 player.on_stop(stop_callback)
             elif media_cls == 'MediaOmxplayerPlugin':
                 stop_evt = threading.Event()
+
                 def stop_callback():
                     stop_evt.set()
                 player.add_handler('stop', stop_callback)
@@ -279,7 +271,6 @@ class MediaWebtorrentPlugin(MediaPlugin):
         else:
             # Fallback: wait for the webtorrent process to terminate
             self._webtorrent_process.wait()
-
 
     def _get_torrent_download_dir(self):
         if self._media_plugin.download_dir:
@@ -325,14 +316,18 @@ class MediaWebtorrentPlugin(MediaPlugin):
         :param player_args: Any arguments to pass to the player plugin's
             play() method
         :type player_args: dict
+
+        :param download_only: If false then it will start streaming the torrent on the local player once the
+            download starts, otherwise it will just download it (default: false)
+        :type download_only: bool
         """
 
         if self._webtorrent_process:
             try:
                 self.quit()
-            except:
+            except Exception as e:
                 self.logger.debug('Failed to quit the previous instance: {}'.
-                                  format(str))
+                                  format(str(e)))
 
         download_dir = self._get_torrent_download_dir()
         webtorrent_args = [self.webtorrent_bin, 'download', '-o', download_dir]
@@ -365,16 +360,14 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
         if not stream_url:
             return (None, ('The webtorrent process hasn\'t started ' +
-                            'streaming after {} seconds').format(
-                                self._web_stream_ready_timeout))
+                           'streaming after {} seconds').format(
+                self._web_stream_ready_timeout))
 
-        return { 'resource': resource, 'url': stream_url }
-
+        return {'resource': resource, 'url': stream_url}
 
     @action
     def download(self, resource):
         return self.play(resource, download_only=True)
-
 
     @action
     def stop(self):
@@ -393,7 +386,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
         self._webtorrent_process = None
 
     @action
-    def load(self, resource):
+    def load(self, resource, **kwargs):
         """
         Load a torrent resource in the player.
         """
@@ -417,8 +410,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
             }
         """
 
-        return {'state': self._media_plugin.status()
-                .get('state', PlayerState.STOP.value)}
+        return {'state': self._media_plugin.status().get('state', PlayerState.STOP.value)}
 
 
 # vim:sw=4:ts=4:et:

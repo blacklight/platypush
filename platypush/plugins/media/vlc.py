@@ -1,6 +1,4 @@
 import os
-import re
-import threading
 
 from platypush.context import get_bus, get_plugin
 from platypush.plugins.media import PlayerState, MediaPlugin
@@ -232,8 +230,8 @@ class MediaVlcPlugin(MediaPlugin):
         """
         Seek backward/forward by the specified number of seconds
 
-        :param relative_position: Number of seconds relative to the current cursor
-        :type relative_position: int
+        :param position: Number of seconds relative to the current cursor
+        :type position: int
         """
         if not self._player:
             return (None, 'No vlc instance is running')
@@ -304,7 +302,7 @@ class MediaVlcPlugin(MediaPlugin):
         self._player.set_fullscreen(fullscreen)
 
     @action
-    def set_subtitles(self, filename):
+    def set_subtitles(self, filename, **args):
         """ Sets media subtitles from filename """
         if not self._player:
             return (None, 'No vlc instance is running')
