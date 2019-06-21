@@ -224,7 +224,13 @@ def get_mime_type(resource):
         with urllib.request.urlopen(resource) as response:
             return response.info().get_content_type()
     else:
-        mime = magic.detect_from_filename(resource)
+        if hasattr(magic, 'detect_from_filename'):
+            mime = magic.detect_from_filename(resource)
+        elif hasattr(magic, 'from_file'):
+            mime = magic.from_file(resource, mime=True)
+        else:
+            raise RuntimeError('The installed magic version provides neither detect_from_filename nor from_file')
+
         if mime:
             return mime.mime_type
 
