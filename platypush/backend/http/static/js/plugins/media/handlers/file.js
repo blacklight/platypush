@@ -17,6 +17,12 @@ MediaHandlers.file = Vue.extend({
                 },
 
                 {
+                    text: 'Play with subtitles',
+                    iconClass: 'fas fa-closed-captioning',
+                    action: this.searchSubtiles,
+                },
+
+                {
                     text: 'Download',
                     icon: 'download',
                     action: this.download,
@@ -40,6 +46,9 @@ MediaHandlers.file = Vue.extend({
         },
 
         info: function(item) {
+        },
+
+        searchSubtitles: function(item) {
         },
     },
 });

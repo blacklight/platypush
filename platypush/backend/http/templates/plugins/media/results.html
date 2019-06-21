@@ -1,7 +1,7 @@
 <script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/results.js') }}"></script>
 
 <script type="text/x-template" id="tmpl-media-results">
-    <div class="results">
+    <div class="results" :class="{resize: resize}">
         <div class="empty" v-if="searching || loading || !results.length">
             <div class="searching" v-if="searching">Searching</div>
             <div class="loading" v-else-if="loading">Loading</div>
@@ -12,7 +12,7 @@
                     :key="item.url"
                     :bus="bus"
                     :selected="item.url && item.url === selectedItem.url"
-                    :active="item.url && item.url === status.url"
+                    :active="(status.state === 'play' || status.state === 'pause') && item.url && item.url === status.url"
                     :item="item"
                     v-else>
         </media-item>

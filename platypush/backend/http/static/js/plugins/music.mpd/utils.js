@@ -5,7 +5,7 @@ var utils = {
             var t = {};
             t.h = '' + parseInt(time/3600);
             t.m = '' + parseInt(time/60 - t.h*60);
-            t.s = '' + parseInt(time - t.m*60);
+            t.s = '' + parseInt(time - (t.h*3600 + t.m*60));
 
             for (var attr of ['m','s']) {
                 if (parseInt(t[attr]) < 10) {

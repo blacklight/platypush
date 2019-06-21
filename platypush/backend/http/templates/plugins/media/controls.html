@@ -9,22 +9,28 @@
         </div>
 
         <div class="col-6 playback-controls">
-            <div class="row">
-                <button>
+            <div class="row buttons">
+                <button v-if="status.state === 'pause'" @click="bus.$emit('pause')">
                     <i class="fa fa-play"></i>
                 </button>
-                <button>
+                <button v-if="status.state === 'play'" @click="bus.$emit('pause')">
+                    <i class="fa fa-pause"></i>
+                </button>
+                <button v-if="status.state === 'play' || status.state === 'pause'" @click="bus.$emit('stop')">
                     <i class="fa fa-stop"></i>
                 </button>
             </div>
 
-            <div class="row">
-                <span class="elapsed-time" v-text="'-:--'"></span>
+            <div class="row position">
+                <span class="elapsed-time" v-text="status.position ? convertTime(status.position) : '-:--'"></span>
                 <input type="range"
+                       v-model="status.position"
+                       @input="bus.$emit('seek', $event.target.value)"
                        class="slider seek-slider"
+                       :disabled="!status.seekable || !status.duration"
                        min="0"
-                       max="100">
-                <span class="total-time" v-text="'-:--'"></span>
+                       :max="status.duration || 0">
+                <span class="total-time" v-text="status.duration ? convertTime(status.duration) : '-:--'"></span>
             </div>
         </div>
 
@@ -34,9 +40,11 @@
                     <i class="fa fa-volume-up"></i>
                 </button>
                 <input type="range"
+                       v-model="status.volume"
+                       @input="bus.$emit('volume', $event.target.value)"
                        class="slider volume-slider"
                        min="0"
-                       max="100">
+                       :max="status.volume_max || 100">
             </div>
         </div>
     </div>

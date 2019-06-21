@@ -1,9 +1,37 @@
 // Will be filled by dynamically loading media type handler scripts
 const MediaHandlers = {};
 
+const mediaUtils = {
+    methods: {
+        convertTime: function(time) {
+            time = parseFloat(time);   // Normalize strings
+            var t = {};
+            t.h = '' + parseInt(time/3600);
+            t.m = '' + parseInt(time/60 - t.h*60);
+            t.s = '' + parseInt(time - (t.h*3600 + t.m*60));
+
+            for (var attr of ['m','s']) {
+                if (parseInt(t[attr]) < 10) {
+                    t[attr] = '0' + t[attr];
+                }
+            }
+
+            var ret = [];
+            if (parseInt(t.h)) {
+                ret.push(t.h);
+            }
+
+            ret.push(t.m, t.s);
+            return ret.join(':');
+        },
+    },
+};
+
 Vue.component('media', {
     template: '#tmpl-media',
     props: ['config','player'],
+    mixins: [mediaUtils],
+
     data: function() {
         return {
             bus: new Vue({}),
@@ -54,6 +82,38 @@ Vue.component('media', {
             });
         },
 
+        pause: async function() {
+            let status = await this.selectedDevice.pause();
+            this.onStatusUpdate({
+                device: this.selectedDevice,
+                status: status,
+            });
+        },
+
+        stop: async function() {
+            let status = await this.selectedDevice.stop();
+            this.onStatusUpdate({
+                device: this.selectedDevice,
+                status: status,
+            });
+        },
+
+        seek: async function(position) {
+            let status = await this.selectedDevice.seek(position);
+            this.onStatusUpdate({
+                device: this.selectedDevice,
+                status: status,
+            });
+        },
+
+        setVolume: async function(volume) {
+            let status = await this.selectedDevice.setVolume(volume);
+            this.onStatusUpdate({
+                device: this.selectedDevice,
+                status: status,
+            });
+        },
+
         info: function(item) {
             // TODO
             console.log(item);
@@ -78,29 +138,21 @@ Vue.component('media', {
             Vue.set(this.status[dev.type], dev.name, status);
         },
 
-        onNewPlayingMedia: function(event) {
-            console.log('NEW MEDIA');
-            console.log(event);
-        },
+        onMediaEvent: async function(event) {
+            let status = await request(event.plugin + '.status');
 
-        onMediaPlay: function(event) {
-            console.log('PLAY');
-            console.log(event);
-        },
+            if (event.resource) {
+                event.url = event.resource;
+                delete event.resource;
+            }
 
-        onMediaPause: function(event) {
-            console.log('PAUSE');
-            console.log(event);
-        },
+            if (event.plugin.startsWith('media.'))
+                event.plugin = event.plugin.substr(6);
 
-        onMediaStop: function(event) {
-            console.log('STOP');
-            console.log(event);
-        },
-
-        onMediaSeek: function(event) {
-            console.log('SEEK');
-            console.log(event);
+            if (this.status[event.player] && this.status[event.player][event.plugin])
+                this.status[event.player][event.plugin] = status;
+            else if (this.status[event.plugin] && this.status[event.plugin][event.player])
+                this.status[event.plugin][event.player] = status;
         },
     },
 
@@ -112,13 +164,18 @@ Vue.component('media', {
             MediaHandlers[type].bus = this.bus;
         }
 
-        registerEventHandler(this.onNewPlayingMedia, 'platypush.message.event.media.NewPlayingMediaEvent');
-        registerEventHandler(this.onMediaPlay, 'platypush.message.event.media.MediaPlayEvent');
-        registerEventHandler(this.onMediaPause, 'platypush.message.event.media.MediaPauseEvent');
-        registerEventHandler(this.onMediaStop, 'platypush.message.event.media.MediaStopEvent');
-        registerEventHandler(this.onMediaSeek, 'platypush.message.event.media.MediaSeekEvent');
+        registerEventHandler(this.onMediaEvent,
+            'platypush.message.event.media.NewPlayingMediaEvent',
+            'platypush.message.event.media.MediaPlayEvent',
+            'platypush.message.event.media.MediaPauseEvent',
+            'platypush.message.event.media.MediaStopEvent',
+            'platypush.message.event.media.MediaSeekEvent');
 
         this.bus.$on('play', this.play);
+        this.bus.$on('pause', this.pause);
+        this.bus.$on('stop', this.stop);
+        this.bus.$on('seek', this.seek);
+        this.bus.$on('volume', this.setVolume);
         this.bus.$on('info', this.info);
         this.bus.$on('selected-device', this.selectDevice);
         this.bus.$on('results-loading', this.onResultsLoading);

@@ -1,8 +1,19 @@
+@import 'common/animations';
+
 .media-plugin {
     .results {
-        @include calc(height, '100% - 16rem');
         position: relative;   // For the dropdown menu
         overflow: auto;
+        @include calc(height, '100%');
+
+        &.resize {
+            @include calc(height, '100% - 16rem');
+        }
+
+        .active {
+            @extend .active-glow;
+            height: 4rem;
+        }
 
         .empty {
             height: 100%;

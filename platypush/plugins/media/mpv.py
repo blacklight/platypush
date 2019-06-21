@@ -59,6 +59,11 @@ class MediaMpvPlugin(MediaPlugin):
         self._player = mpv.MPV(**mpv_args)
         self._player.register_event_callback(self._event_callback())
 
+    @staticmethod
+    def _post_event(evt_type, **evt):
+        bus = get_bus()
+        bus.post(evt_type(player='local', plugin='media.mpv', **evt))
+
     def _event_callback(self):
         def callback(event):
             from mpv import MpvEventID as Event
@@ -70,17 +75,15 @@ class MediaMpvPlugin(MediaPlugin):
             if not evt:
                 return
 
-            bus = get_bus()
             if (evt == Event.FILE_LOADED or evt == Event.START_FILE) and self._get_current_resource():
                 self._playback_rebounce_event.set()
-                bus.post(NewPlayingMediaEvent(resource=self._get_current_resource(), title=self._player.filename))
-                bus.post(MediaPlayEvent(resource=self._get_current_resource(), title=self._player.filename))
+                self._post_event(NewPlayingMediaEvent, resource=self._get_current_resource(), title=self._player.filename)
             elif evt == Event.PLAYBACK_RESTART:
                 self._playback_rebounce_event.set()
             elif evt == Event.PAUSE:
-                bus.post(MediaPauseEvent(resource=self._get_current_resource(), title=self._player.filename))
+                self._post_event(MediaPauseEvent, resource=self._get_current_resource(), title=self._player.filename)
             elif evt == Event.UNPAUSE:
-                bus.post(MediaPlayEvent(resource=self._get_current_resource(), title=self._player.filename))
+                self._post_event(MediaPlayEvent, resource=self._get_current_resource(), title=self._player.filename)
             elif evt == Event.SHUTDOWN or (
                 evt == Event.END_FILE and event.get('event', {}).get('reason')
                 in [EndFile.EOF_OR_INIT_FAILURE, EndFile.ABORTED, EndFile.QUIT]):
@@ -90,12 +93,12 @@ class MediaMpvPlugin(MediaPlugin):
                     return
 
                 self._player = None
-                bus.post(MediaStopEvent())
+                self._post_event(MediaStopEvent)
 
                 for callback in self._on_stop_callbacks:
                     callback()
             elif evt == Event.SEEK:
-                bus.post(MediaSeekEvent(position=self._player.playback_time))
+                self._post_event(MediaSeekEvent, position=self._player.playback_time)
 
         return callback
 
@@ -210,7 +213,7 @@ class MediaMpvPlugin(MediaPlugin):
 
         volume = max(0, min([self._player.volume_max, volume]))
         self._player.volume = volume
-        return {'volume': volume}
+        return self.status()
 
     @action
     def seek(self, position):
@@ -382,31 +385,18 @@ class MediaMpvPlugin(MediaPlugin):
             return {'state': PlayerState.STOP.value}
 
         return {
-            'alang': getattr(self._player, 'alang'),
             'aspect': getattr(self._player, 'aspect'),
             'audio': getattr(self._player, 'audio'),
             'audio_bitrate': getattr(self._player, 'audio_bitrate'),
-            'audio_buffer': getattr(self._player, 'audio_buffer'),
             'audio_channels': getattr(self._player, 'audio_channels'),
-            'audio_client_name': getattr(self._player, 'audio_client_name'),
-            'audio_codec': getattr(self._player, 'audio_codec'),
-            'audio_codec_name': getattr(self._player, 'audio_codec_name'),
+            'audio_codec': getattr(self._player, 'audio_codec_name'),
             'audio_delay': getattr(self._player, 'audio_delay'),
-            'audio_device': getattr(self._player, 'audio_device'),
-            'audio_device_list': getattr(self._player, 'audio_device_list'),
-            'audio_exclusive': getattr(self._player, 'audio_exclusive'),
+            'audio_output': getattr(self._player, 'current_ao'),
             'audio_file_paths': getattr(self._player, 'audio_file_paths'),
             'audio_files': getattr(self._player, 'audio_files'),
-            'audio_format': getattr(self._player, 'audio_format'),
-            'audio_out_params': getattr(self._player, 'audio_out_params'),
             'audio_params': getattr(self._player, 'audio_params'),
-            'audio_mixer_device': getattr(self._player, 'alsa_mixer_device'),
-            'audio_mixer_index': getattr(self._player, 'alsa_mixer_index'),
-            'audio_mixer_name': getattr(self._player, 'alsa_mixer_name'),
-            'autosub': getattr(self._player, 'autosub'),
+            'audio_mixer': getattr(self._player, 'alsa_mixer_device'),
             'autosync': getattr(self._player, 'autosync'),
-            'background': getattr(self._player, 'background'),
-            'border': getattr(self._player, 'border'),
             'brightness': getattr(self._player, 'brightness'),
             'chapter': getattr(self._player, 'chapter'),
             'chapter_list': getattr(self._player, 'chapter_list'),
@@ -416,13 +406,11 @@ class MediaMpvPlugin(MediaPlugin):
             'clock': getattr(self._player, 'clock'),
             'cookies': getattr(self._player, 'cookies'),
             'cookies_file': getattr(self._player, 'cookies_file'),
-            'current_ao': getattr(self._player, 'current_ao'),
-            'current_vo': getattr(self._player, 'current_vo'),
             'delay': getattr(self._player, 'delay'),
-            'display_names': getattr(self._player, 'display_names'),
-            'end': getattr(self._player, 'end'),
-            'endpos': getattr(self._player, 'endpos'),
-            'eof_reached': getattr(self._player, 'eof_reached'),
+            'displays': getattr(self._player, 'display_names'),
+            'duration': getattr(self._player, 'playback_time', 0) +
+                        getattr(self._player, 'playtime_remaining', 0)
+            if getattr(self._player, 'playtime_remaining') else None,
             'file_format': getattr(self._player, 'file_format'),
             'filename': getattr(self._player, 'filename'),
             'file_size': getattr(self._player, 'file_size'),
@@ -432,11 +420,8 @@ class MediaMpvPlugin(MediaPlugin):
             'height': getattr(self._player, 'height'),
             'idle': getattr(self._player, 'idle'),
             'idle_active': getattr(self._player, 'idle_active'),
-            'length': getattr(self._player, 'playback_time', 0) + getattr(self._player, 'playtime_remaining', 0)
-                      if getattr(self._player, 'playtime_remaining') else None,
             'loop': getattr(self._player, 'loop'),
-            'media_title': getattr(self._player, 'loop'),
-            'mpv_configuration': getattr(self._player, 'mpv_configuration'),
+            'media_title': getattr(self._player, 'media_title'),
             'mpv_version': getattr(self._player, 'mpv_version'),
             'mute': getattr(self._player, 'mute'),
             'name': getattr(self._player, 'name'),
@@ -464,17 +449,8 @@ class MediaMpvPlugin(MediaPlugin):
             'sub_paths': getattr(self._player, 'sub_paths'),
             'sub_text': getattr(self._player, 'sub_text'),
             'subdelay': getattr(self._player, 'subdelay'),
-            'terminal': getattr(self._player, 'terminal'),
             'time_start': getattr(self._player, 'time_start'),
             'title': getattr(self._player, 'filename'),
-            'tv_alsa': getattr(self._player, 'tv_alsa'),
-            'tv_audio': getattr(self._player, 'tv_audio'),
-            'tv_audiorate': getattr(self._player, 'tv_audiorate'),
-            'tv_channels': getattr(self._player, 'tv_channels'),
-            'tv_device': getattr(self._player, 'tv_device'),
-            'tv_height': getattr(self._player, 'tv_height'),
-            'tv_volume': getattr(self._player, 'tv_volume'),
-            'tv_width': getattr(self._player, 'tv_width'),
             'url': self._get_current_resource(),
             'user_agent': getattr(self._player, 'user_agent'),
             'video': getattr(self._player, 'video'),
@@ -482,19 +458,18 @@ class MediaMpvPlugin(MediaPlugin):
             'video_align_y': getattr(self._player, 'video_align_y'),
             'video_aspect': getattr(self._player, 'video_aspect'),
             'video_bitrate': getattr(self._player, 'video_bitrate'),
+            'video_output': getattr(self._player, 'current_vo'),
             'video_codec': getattr(self._player, 'video_codec'),
             'video_format': getattr(self._player, 'video_format'),
             'video_params': getattr(self._player, 'video_params'),
             'video_sync': getattr(self._player, 'video_sync'),
             'video_zoom': getattr(self._player, 'video_zoom'),
-            'vlang': getattr(self._player, 'vlang'),
             'volume': getattr(self._player, 'volume'),
             'volume_max': getattr(self._player, 'volume_max'),
             'width': getattr(self._player, 'width'),
             'window_minimized': getattr(self._player, 'window_minimized'),
             'window_scale': getattr(self._player, 'window_scale'),
             'working_directory': getattr(self._player, 'working_directory'),
-            'ytdl': getattr(self._player, 'ytdl'),
         }
 
     def on_stop(self, callback):

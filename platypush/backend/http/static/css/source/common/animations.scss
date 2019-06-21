@@ -34,3 +34,13 @@
     }
 }
 
+.active-glow {
+    @include animation(active-glow 5s infinite);
+}
+
+@keyframes active-glow {
+    0% { background: $active-glow-bg-1; }
+    50% { background: $active-glow-bg-2; }
+    100% { background: $active-glow-bg-1; }
+}
+

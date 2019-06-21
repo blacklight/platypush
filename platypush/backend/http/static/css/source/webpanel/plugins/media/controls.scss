@@ -10,6 +10,11 @@
             @extend .vertical-center;
             padding-left: 1rem;
             line-height: 2.6rem;
+
+            .item-info {
+                font-size: 1.15em;
+                letter-spacing: .02em;
+            }
         }
 
         button {
@@ -24,6 +29,10 @@
             .row {
                 @extend .vertical-center;
                 justify-content: center;
+            }
+
+            .position {
+                margin-top: .75em;
             }
 
             button {

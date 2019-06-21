@@ -1,6 +1,8 @@
 @import 'common/vars';
 @import 'common/mixins';
 @import 'common/layout';
+@import 'common/animations';
+
 @import 'webpanel/plugins/music.mpd/vars';
 
 .music-mpd-container {
@@ -155,7 +157,7 @@
 
             &.active {
                 height: 4rem;
-                @include animation(active-track 5s infinite);
+                @extend .active-glow;
             }
 
             &.move:hover {
@@ -447,23 +449,5 @@
             width: 45vw;
         }
     }
-}
-
-@keyframes active-track {
-    0% { background: $active-track-bg-1; }
-    50% { background: $active-track-bg-2; }
-    100% { background: $active-track-bg-1; }
-}
-
-@-moz-keyframes active-track {
-    0% { background: $active-track-bg-1; }
-    50% { background: $active-track-bg-2; }
-    100% { background: $active-track-bg-1; }
-}
-
-@-webkit-keyframes active-track {
-    0% { background: $active-track-bg-1; }
-    50% { background: $active-track-bg-2; }
-    100% { background: $active-track-bg-1; }
 }
 

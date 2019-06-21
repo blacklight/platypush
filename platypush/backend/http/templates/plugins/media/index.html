@@ -27,11 +27,13 @@
                        :status="selectedDevice && status[selectedDevice.type] && status[selectedDevice.type][selectedDevice.name] ? status[selectedDevice.type][selectedDevice.name] : {}"
                        :searching="loading.results"
                        :loading="loading.media"
+                       :resize="selectedDevice && status[selectedDevice.type] && status[selectedDevice.type][selectedDevice.name] && (status[selectedDevice.type][selectedDevice.name].state === 'play' || status[selectedDevice.type][selectedDevice.name].state === 'pause')"
                        :results="results">
         </media-results>
 
         <media-controls :bus="bus"
-                        :status="selectedDevice && status[selectedDevice.type] && status[selectedDevice.type][selectedDevice.name] ? status[selectedDevice.type][selectedDevice.name] : {}">
+                        :status="selectedDevice && status[selectedDevice.type] && status[selectedDevice.type][selectedDevice.name] ? status[selectedDevice.type][selectedDevice.name] : {}"
+                        v-if="selectedDevice && status[selectedDevice.type] && status[selectedDevice.type][selectedDevice.name] && (status[selectedDevice.type][selectedDevice.name].state === 'play' || status[selectedDevice.type][selectedDevice.name].state === 'pause')">
         </media-controls>
     </div>
 </script>

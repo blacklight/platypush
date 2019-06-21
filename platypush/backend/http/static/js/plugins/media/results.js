@@ -18,6 +18,10 @@ Vue.component('media-results', {
             type: Object,
             default: () => {},
         },
+        resize: {
+            type: Boolean,
+            default: false,
+        },
     },
 
     data: function() {
@@ -38,6 +42,7 @@ Vue.component('media-results', {
                 return {
                     text: item.text,
                     icon: item.icon,
+                    iconClass: item.iconClass,
                     click: function() {
                         item.action(self.selectedItem);
                     },

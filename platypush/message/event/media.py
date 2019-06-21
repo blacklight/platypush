@@ -4,8 +4,8 @@ from platypush.message.event import Event
 class MediaEvent(Event):
     """ Base class for media events """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, player=None, plugin=None, *args, **kwargs):
+        super().__init__(player=player, plugin=plugin, *args, **kwargs)
 
 
 class MediaPlayRequestEvent(MediaEvent):
@@ -13,13 +13,13 @@ class MediaPlayRequestEvent(MediaEvent):
     Event triggered when a new media playback request is received
     """
 
-    def __init__(self, resource=None, title=None, *args, **kwargs):
+    def __init__(self, player=None, plugin=None, resource=None, title=None, *args, **kwargs):
         """
         :param resource: File name or URI of the played video
         :type resource: str
         """
 
-        super().__init__(*args, resource=resource, title=title, **kwargs)
+        super().__init__(*args, player=player, plugin=plugin, resource=resource, title=title, **kwargs)
 
 
 class MediaPlayEvent(MediaEvent):
@@ -27,13 +27,13 @@ class MediaPlayEvent(MediaEvent):
     Event triggered when a new media content is played
     """
 
-    def __init__(self, resource=None, title=None, *args, **kwargs):
+    def __init__(self, player=None, plugin=None, resource=None, title=None, *args, **kwargs):
         """
         :param resource: File name or URI of the played video
         :type resource: str
         """
 
-        super().__init__(*args, resource=resource, title=title, **kwargs)
+        super().__init__(*args, player=player, plugin=plugin, resource=resource, title=title, **kwargs)
 
 
 class MediaStopEvent(MediaEvent):
@@ -41,8 +41,8 @@ class MediaStopEvent(MediaEvent):
     Event triggered when a media is stopped
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, player=None, plugin=None, *args, **kwargs):
+        super().__init__(*args, player=player, plugin=plugin, **kwargs)
 
 
 class MediaPauseEvent(MediaEvent):
@@ -50,8 +50,8 @@ class MediaPauseEvent(MediaEvent):
     Event triggered when a media playback is paused
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, player=None, plugin=None, *args, **kwargs):
+        super().__init__(*args, player=player, plugin=plugin, **kwargs)
 
 
 class MediaSeekEvent(MediaEvent):
@@ -59,8 +59,8 @@ class MediaSeekEvent(MediaEvent):
     Event triggered when the time position in the media changes
     """
 
-    def __init__(self, position, *args, **kwargs):
-        super().__init__(*args, position=position, **kwargs)
+    def __init__(self, position, player=None, plugin=None, *args, **kwargs):
+        super().__init__(*args, player=player, plugin=plugin, position=position, **kwargs)
 
 
 class MediaVolumeChangedEvent(MediaEvent):
@@ -68,8 +68,8 @@ class MediaVolumeChangedEvent(MediaEvent):
     Event triggered when the media volume changes
     """
 
-    def __init__(self, volume, *args, **kwargs):
-        super().__init__(*args, volume=volume, **kwargs)
+    def __init__(self, volume, player=None, plugin=None, *args, **kwargs):
+        super().__init__(*args, player=player, plugin=plugin, volume=volume, **kwargs)
 
 
 class MediaMuteChangedEvent(MediaEvent):
@@ -77,8 +77,8 @@ class MediaMuteChangedEvent(MediaEvent):
     Event triggered when the media is muted/unmuted
     """
 
-    def __init__(self, mute, *args, **kwargs):
-        super().__init__(*args, mute=mute, **kwargs)
+    def __init__(self, mute, player=None, plugin=None, *args, **kwargs):
+        super().__init__(*args, player=player, plugin=plugin, mute=mute, **kwargs)
 
 
 class NewPlayingMediaEvent(MediaEvent):
@@ -86,13 +86,13 @@ class NewPlayingMediaEvent(MediaEvent):
     Event triggered when a new media source is being played
     """
 
-    def __init__(self, resource=None, *args, **kwargs):
+    def __init__(self, player=None, plugin=None, resource=None, *args, **kwargs):
         """
         :param resource: File name or URI of the played resource
         :type resource: str
         """
 
-        super().__init__(*args, resource=resource, **kwargs)
+        super().__init__(*args, player=player, plugin=plugin, resource=resource, **kwargs)
 
 
 # vim:sw=4:ts=4:et:

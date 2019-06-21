@@ -67,7 +67,7 @@ MediaPlayers.local = Vue.extend({
             );
         },
 
-        volume: async function(volume) {
+        setVolume: async function(volume) {
             return await request(
                 this.pluginPrefix.concat('.set_volume'),
                 {volume: volume}
