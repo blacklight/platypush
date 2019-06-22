@@ -129,9 +129,17 @@ Vue.component('media', {
             this.selectedDevice = device;
         },
 
+        syncPosition: function(status) {
+            status._syncTime = {
+                timestamp: new Date(),
+                position: status.position,
+            };
+        },
+
         onStatusUpdate: function(event) {
             const dev = event.device;
             const status = event.status;
+            this.syncPosition(status);
 
             if (!this.status[dev.type])
                 Vue.set(this.status, dev.type, {});
@@ -140,6 +148,7 @@ Vue.component('media', {
 
         onMediaEvent: async function(event) {
             let status = await request(event.plugin + '.status');
+            this.syncPosition(status);
 
             if (event.resource) {
                 event.url = event.resource;
@@ -150,9 +159,20 @@ Vue.component('media', {
                 event.plugin = event.plugin.substr(6);
 
             if (this.status[event.player] && this.status[event.player][event.plugin])
-                this.status[event.player][event.plugin] = status;
+                Vue.set(this.status[event.player], event.plugin, status);
             else if (this.status[event.plugin] && this.status[event.plugin][event.player])
-                this.status[event.plugin][event.player] = status;
+                Vue.set(this.status[event.plugin], event.player, status);
+        },
+
+        timerFunc: function() {
+            for (const [playerType, players] of Object.entries(this.status)) {
+                for (const [playerName, status] of Object.entries(players)) {
+                    if (status.state === 'play' && !isNaN(status.position) && status._syncTime) {
+                        status.position = status._syncTime.position +
+                            ((new Date()).getTime()/1000) - (status._syncTime.timestamp.getTime()/1000);
+                    }
+                }
+            }
         },
     },
 
@@ -181,6 +201,8 @@ Vue.component('media', {
         this.bus.$on('results-loading', this.onResultsLoading);
         this.bus.$on('results-ready', this.onResultsReady);
         this.bus.$on('status-update', this.onStatusUpdate);
+
+        setInterval(this.timerFunc, 1000);
     },
 });
 

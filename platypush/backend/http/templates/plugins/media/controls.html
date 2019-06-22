@@ -27,7 +27,7 @@
                        v-model="status.position"
                        @input="bus.$emit('seek', $event.target.value)"
                        class="slider seek-slider"
-                       :disabled="!status.seekable || !status.duration"
+                       :disabled="!status.seekable"
                        min="0"
                        :max="status.duration || 0">
                 <span class="total-time" v-text="status.duration ? convertTime(status.duration) : '-:--'"></span>
