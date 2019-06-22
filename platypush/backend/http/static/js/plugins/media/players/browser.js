@@ -21,7 +21,7 @@ MediaPlayers.browser = Vue.extend({
 
         iconClass: {
             type: String,
-            default: 'fa fa-laptop',
+            default: 'fa fa-browser',
         },
     },
 

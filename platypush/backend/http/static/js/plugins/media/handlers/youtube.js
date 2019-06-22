@@ -32,6 +32,15 @@ MediaHandlers.youtube = Vue.extend({
     },
 
     methods: {
+        matchesUrl: function(url) {
+            return !!(url.match('^https?://(www\.)?youtube.com/') || url.match('^https?://youtu.be/'));
+        },
+
+        getMetadata: function(url) {
+            // TODO
+            return {};
+        },
+
         play: function(item) {
         },
 

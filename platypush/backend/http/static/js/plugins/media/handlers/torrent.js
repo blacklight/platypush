@@ -32,6 +32,19 @@ MediaHandlers.torrent = Vue.extend({
     },
 
     methods: {
+        matchesUrl: function(url) {
+            return !!(
+                url.match('^magnet:?') ||
+                url.match('^https?://.*\.torrent$') ||
+                url.match('^(file://)?/.*\.torrent$')
+            );
+        },
+
+        getMetadata: function(url) {
+            // TODO
+            return {};
+        },
+
         play: function(item) {
         },
 

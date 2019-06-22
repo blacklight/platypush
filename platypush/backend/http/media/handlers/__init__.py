@@ -1,8 +1,5 @@
 import logging
 
-from .file import FileHandler
-
-
 class MediaHandler:
     """
     Abstract class to manage media handlers that can be streamed over the HTTP
@@ -62,6 +59,8 @@ class MediaHandler:
             if hasattr(self, attr):
                 yield (attr, getattr(self, attr))
 
+
+from .file import FileHandler
 
 __all__ = ['MediaHandler', 'FileHandler']
 

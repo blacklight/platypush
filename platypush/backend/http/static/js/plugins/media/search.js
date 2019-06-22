@@ -19,10 +19,31 @@ Vue.component('media-search', {
     },
 
     methods: {
-        search: async function(event) {
-            const types = Object.entries(this.types).filter(t => t[1]).map(t => t[0]);
-            var results = [];
+        isUrl: function(query) {
+            const match = query.match('^([^:]+)://');
+            if (match) {
+                let protocol = match[1];
+                if (protocol === 'https')
+                    protocol = 'http';
 
+                return protocol;
+            }
+        },
+
+        search: async function(event) {
+            const types = Object.entries(this.types).filter(t => t[0] !== 'generic' && t[1]).map(t => t[0]);
+            const protocol = this.isUrl(this.query);
+
+            if (protocol) {
+                this.bus.$emit('results-ready', [{
+                    type: protocol,
+                    url: this.query,
+                }]);
+
+                return;
+            }
+
+            var results = [];
             this.searching = true;
             this.bus.$emit('results-loading');
 

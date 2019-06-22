@@ -38,6 +38,17 @@ MediaHandlers.file = Vue.extend({
     },
 
     methods: {
+        matchesUrl: function(url) {
+            return !!url.match('^(file://)?/');
+        },
+
+        getMetadata: function(url) {
+            return {
+                url: url,
+                title: url.split('/').pop(),
+            };
+        },
+
         play: function(item) {
             this.bus.$emit('play', item);
         },
@@ -49,6 +60,25 @@ MediaHandlers.file = Vue.extend({
         },
 
         searchSubtitles: function(item) {
+        },
+    },
+});
+
+MediaHandlers.generic = MediaHandlers.file.extend({
+    props: {
+        bus: { type: Object },
+        iconClass: {
+            type: String,
+            default: 'fa fa-globe',
+        },
+    },
+
+    methods: {
+        getMetadata: function(url) {
+            return {
+                url: url,
+                title: url,
+            };
         },
     },
 });

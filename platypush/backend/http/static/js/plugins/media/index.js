@@ -60,13 +60,29 @@ Vue.component('media', {
         },
 
         onResultsReady: function(results) {
-            this.loading.results = false;
+            for (const result of results) {
+                if (result.type && MediaHandlers[result.type]) {
+                    result.handler = MediaHandlers[result.type];
+                } else {
+                    result.type = 'generic';
+                    result.handler = MediaHandlers.generic;
 
-            for (var i=0; i < results.length; i++) {
-                results[i].handler = MediaHandlers[results[i].type];
+                    for (const [handlerType, handler] of Object.entries(MediaHandlers)) {
+                        if (handler.matchesUrl && handler.matchesUrl(result.url)) {
+                            result.type = handlerType;
+                            result.handler = handler;
+                            break;
+                        }
+                    }
+                }
+
+                Object.entries(result.handler.getMetadata(result.url)).forEach(entry => {
+                    Vue.set(result, entry[0], entry[1]);
+                });
             }
 
             this.results = results;
+            this.loading.results = false;
         },
 
         play: async function(item) {
