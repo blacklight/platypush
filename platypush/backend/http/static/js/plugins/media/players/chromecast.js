@@ -10,6 +10,7 @@ MediaPlayers.chromecast = Vue.extend({
             default: () => {
                 return {
                     youtube: true,
+                    generic: true,
                 };
             },
         },

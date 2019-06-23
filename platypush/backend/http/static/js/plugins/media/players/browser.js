@@ -10,6 +10,7 @@ MediaPlayers.browser = Vue.extend({
             default: () => {
                 return {
                     youtube: true,
+                    generic: true,
                 };
             },
         },

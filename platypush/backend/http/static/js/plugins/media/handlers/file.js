@@ -23,7 +23,7 @@ MediaHandlers.file = Vue.extend({
                 },
 
                 {
-                    text: 'Download',
+                    text: 'Download (on client)',
                     icon: 'download',
                     action: this.download,
                 },
@@ -42,21 +42,46 @@ MediaHandlers.file = Vue.extend({
             return !!url.match('^(file://)?/');
         },
 
-        getMetadata: function(url) {
-            return {
-                url: url,
-                title: url.split('/').pop(),
-            };
+        getMetadata: async function(item, onlyBase=false) {
+            if (typeof item === 'string') {
+                item = {
+                    url: item,
+                };
+            }
+
+            if (!item.path)
+                item.path = item.url.startsWith('file://') ? item.url.substr(7) : item.url;
+
+            if (!item.title)
+                item.title = item.path.split('/').pop();
+
+            if (!item.size && !onlyBase)
+                item.size = await request('file.getsize', {filename: item.path});
+
+            if (!item.duration && !onlyBase)
+                item.duration = await request('media.get_media_file_duration', {filename: item.path});
+
+            return item;
         },
 
         play: function(item) {
             this.bus.$emit('play', item);
         },
 
-        download: function(item) {
+        download: async function(item) {
+            this.bus.$on('streaming-started', (media) => {
+                if (media.resource === item.url) {
+                    this.bus.$off('streaming-started');
+                    window.open(media.url + '?download', '_blank');
+                }
+            });
+
+            this.bus.$emit('start-streaming', item.url);
         },
 
-        info: function(item) {
+        info: async function(item) {
+            this.bus.$emit('info-loading');
+            this.bus.$emit('info', (await this.getMetadata(item)));
         },
 
         searchSubtitles: function(item) {
@@ -74,11 +99,15 @@ MediaHandlers.generic = MediaHandlers.file.extend({
     },
 
     methods: {
-        getMetadata: function(url) {
+        getMetadata: async function(url) {
             return {
                 url: url,
                 title: url,
             };
+        },
+
+        info: async function(item) {
+            this.bus.$emit('info', (await this.getMetadata(item)));
         },
     },
 });

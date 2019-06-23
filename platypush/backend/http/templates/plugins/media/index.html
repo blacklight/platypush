@@ -2,6 +2,8 @@
 {% include 'plugins/media/controls.html' %}
 {% include 'plugins/media/results.html' %}
 {% include 'plugins/media/item.html' %}
+{% include 'plugins/media/info.html' %}
+
 
 {% for script in utils.search_directory(static_folder + '/js/plugins/media/handlers', 'js', recursive=True) %}
 <script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/handlers/' + script) }}"></script>
@@ -35,6 +37,11 @@
                         :status="selectedDevice && status[selectedDevice.type] && status[selectedDevice.type][selectedDevice.name] ? status[selectedDevice.type][selectedDevice.name] : {}"
                         v-if="selectedDevice && status[selectedDevice.type] && status[selectedDevice.type][selectedDevice.name] && (status[selectedDevice.type][selectedDevice.name].state === 'play' || status[selectedDevice.type][selectedDevice.name].state === 'pause')">
         </media-controls>
+
+        <modal id="media-info" title="Media info" v-model="infoModal.visible" ref="modalInfo">
+            <div class="loading" v-if="infoModal.loading">Loading</div>
+            <media-info :bus="bus" :item="infoModal.item" v-else></media-info>
+        </modal>
     </div>
 </script>
 

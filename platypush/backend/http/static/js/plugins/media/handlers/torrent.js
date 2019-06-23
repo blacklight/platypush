@@ -17,7 +17,7 @@ MediaHandlers.torrent = Vue.extend({
                 },
 
                 {
-                    text: 'Download',
+                    text: 'Download (on server)',
                     icon: 'download',
                     action: this.download,
                 },

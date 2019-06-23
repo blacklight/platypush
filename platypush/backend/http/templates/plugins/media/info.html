@@ -1,0 +1,26 @@
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/info.js') }}"></script>
+
+<script type="text/x-template" id="tmpl-media-info">
+    <div class="info-container">
+        <div class="row">
+            <div class="col-3 attr">URL</div>
+            <div class="col-9 value" v-text="item.url"></div>
+        </div>
+
+        <div class="row" v-if="item.title">
+            <div class="col-3 attr">Title</div>
+            <div class="col-9 value" v-text="item.title"></div>
+        </div>
+
+        <div class="row" v-if="item.duration">
+            <div class="col-3 attr">Duration</div>
+            <div class="col-9 value" v-text="convertTime(item.duration)"></div>
+        </div>
+
+        <div class="row" v-if="item.size">
+            <div class="col-3 attr">Size</div>
+            <div class="col-9 value" v-text="convertSize(item.size)"></div>
+        </div>
+    </div>
+</script>
+

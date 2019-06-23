@@ -1,0 +1,24 @@
+.media-plugin {
+    .info-container {
+        .row {
+            display: flex;
+            align-items: center;
+            padding: .75em .5em;
+            border-bottom: $default-border-2;
+
+            &:hover {
+                background: $hover-bg;
+                border-radius: 1em;
+            }
+
+            .attr {
+                font-size: 1.1em;
+            }
+
+            .value {
+                text-align: right;
+            }
+        }
+    }
+}
+

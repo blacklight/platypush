@@ -2,16 +2,11 @@
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
 """
 
-import base64
-import datetime
-import os
-
 from platypush.plugins import action
 from platypush.plugins.google import GooglePlugin
-from platypush.plugins.calendar import CalendarInterface
 
 
-class GoogleYoutubePlugin(GooglePlugin, CalendarInterface):
+class GoogleYoutubePlugin(GooglePlugin):
     """
     YouTube plugin
     """
@@ -24,31 +19,33 @@ class GoogleYoutubePlugin(GooglePlugin, CalendarInterface):
     # See https://developers.google.com/youtube/v3/getting-started#resources
     _default_types = ['video']
 
-
     def __init__(self, *args, **kwargs):
         super().__init__(scopes=self.scopes, *args, **kwargs)
-
 
     @action
     def search(self, parts=None, query='', types=None, max_results=25, **kwargs):
         """
         Search for YouTube content.
 
-        :param parts: List of parts to get (default: snippet). See the `YouTube API documentation <https://developers.google.com/youtube/v3/getting-started#part>`_.
+        :param parts: List of parts to get (default: snippet). See the `YouTube API documentation
+            <https://developers.google.com/youtube/v3/getting-started#part>`_.
         :type parts: list[str] or str
 
         :param query: Query string (default: empty string)
         :type query: str
 
-        :param types: List of types to retrieve (default: video). See the `YouTube API documentation <https://developers.google.com/youtube/v3/getting-started#resources>`_.
+        :param types: List of types to retrieve (default: video). See the `YouTube API documentation
+            <https://developers.google.com/youtube/v3/getting-started#resources>`_.
         :type types: list[str] or str
 
         :param max_results: Maximum number of items that will be returned (default: 25).
         :type max_results: int
 
-        :param kwargs: Any extra arguments that will be transparently passed to the YouTube API, see the `YouTube API documentation <https://developers.google.com/youtube/v3/docs/search/list#parameters>`_.
+        :param kwargs: Any extra arguments that will be transparently passed to the YouTube API, see the
+            `YouTube API documentation <https://developers.google.com/youtube/v3/docs/search/list#parameters>`_.
 
-        :return: A list of YouTube resources, see the `YouTube API documentation <https://developers.google.com/youtube/v3/docs/search#resource>`_.
+        :return: A list of YouTube resources, see the `YouTube API documentation
+            <https://developers.google.com/youtube/v3/docs/search#resource>`_.
         """
 
         parts = parts or self._default_parts[:]

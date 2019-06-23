@@ -54,5 +54,12 @@ class FilePlugin(Plugin):
         with open(self._get_path(filename), 'a') as f:
             f.write(content)
 
+    @action
+    def getsize(self, filename):
+        """
+        Get the size of the specified filename in bytes
+        """
+        return os.path.getsize(filename)
+
 # vim:sw=4:ts=4:et:
 

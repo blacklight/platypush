@@ -43,14 +43,15 @@ class LocalMediaSearcher(MediaSearcher):
         if not self._db_engine:
             self._db_engine = create_engine(
                 'sqlite:///{}'.format(self.db_file),
-                connect_args = { 'check_same_thread': False })
+                connect_args = {'check_same_thread': False})
 
             Base.metadata.create_all(self._db_engine)
             Session.configure(bind=self._db_engine)
 
         return Session()
 
-    def _get_or_create_dir_entry(self, session, path):
+    @staticmethod
+    def _get_or_create_dir_entry(session, path):
         record = session.query(MediaDirectory).filter_by(path=path).first()
         if record is None:
             record = MediaDirectory.build(path=path)
@@ -103,12 +104,10 @@ class LocalMediaSearcher(MediaSearcher):
         return session.query(MediaToken).filter(
             MediaToken.token.in_(tokens)).all()
 
-
     @classmethod
     def _get_file_records(cls, dir_record, session):
         return session.query(MediaFile).filter_by(
             directory_id=dir_record.id).all()
-
 
     def scan(self, media_dir, session=None, dir_record=None):
         """
@@ -186,8 +185,7 @@ class LocalMediaSearcher(MediaSearcher):
 
         session.commit()
 
-
-    def search(self, query):
+    def search(self, query, **kwargs):
         """
         Searches in the configured media directories given a query. It uses the
         built-in SQLite index if available. If any directory has changed since
@@ -216,10 +214,12 @@ class LocalMediaSearcher(MediaSearcher):
                     join(MediaToken). \
                     filter(MediaToken.token.in_(query_tokens)). \
                     group_by(MediaFile.path). \
-                    order_by(func.count(MediaFileToken.token_id).desc()):
+                    having(func.count(MediaFileToken.token_id) >= len(query_tokens)):
+                    # order_by(func.count(MediaFileToken.token_id).desc()):
                 results[file_record.path] = {
                     'url': 'file://' + file_record.path,
                     'title': os.path.basename(file_record.path),
+                    'size': os.path.getsize(file_record.path)
                 }
 
         return results.values()

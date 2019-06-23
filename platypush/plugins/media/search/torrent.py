@@ -8,7 +8,7 @@ class TorrentMediaSearcher(MediaSearcher):
         torrents = get_plugin('torrent')
         if not torrents:
             raise RuntimeError('Torrent plugin not available/configured')
-        return torrents.search(query).output
+        return torrents.search(query, ).output
 
 
 

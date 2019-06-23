@@ -1,4 +1,5 @@
 import enum
+import functools
 import os
 import queue
 import re
@@ -28,10 +29,12 @@ class MediaPlugin(Plugin):
     Requires:
 
         * A media player installed (supported so far: mplayer, vlc, mpv, omxplayer, chromecast)
-        * The :class:`platypush.plugins.media.webtorrent` plugin for optional torrent support through webtorrent (recommended)
+        * The :class:`platypush.plugins.media.webtorrent` plugin for optional torrent support through webtorrent
+            (recommended)
         * **python-libtorrent** (``pip install python-libtorrent``), optional, for torrent support over native library
         * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
         * **requests** (``pip install requests``), optional, for local files over HTTP streaming supporting
+        * **ffmpeg**,optional, to get media files metadata
 
     To start the local media stream service over HTTP you will also need the
     :class:`platypush.backend.http.HttpBackend` backend enabled.
@@ -154,12 +157,12 @@ class MediaPlugin(Plugin):
                 # The Chromecast has already its native way to handle YouTube
                 return resource
 
-            resource = self._get_youtube_content(resource)
+            resource = self.get_youtube_url(resource).output
         elif resource.startswith('magnet:?'):
             try:
                 get_plugin('media.webtorrent')
                 return resource  # media.webtorrent will handle this
-            except:
+            except Exception:
                 pass
 
             torrents = get_plugin('torrent')
@@ -448,19 +451,48 @@ class MediaPlugin(Plugin):
                 html = ''
 
         self.logger.info('{} YouTube video results for the search query "{}"'
-                     .format(len(results), query))
+                         .format(len(results), query))
 
         return results
 
-    @classmethod
-    def _get_youtube_content(cls, url):
+    @action
+    def get_youtube_url(self, url):
         m = re.match('youtube:video:(.*)', url)
-        if m: url = 'https://www.youtube.com/watch?v={}'.format(m.group(1))
+        if m:
+            url = 'https://www.youtube.com/watch?v={}'.format(m.group(1))
 
-        proc = subprocess.Popen(['youtube-dl','-f','best', '-g', url],
-                                stdout=subprocess.PIPE)
-
+        proc = subprocess.Popen(['youtube-dl', '-f', 'best', '-g', url], stdout=subprocess.PIPE)
         return proc.stdout.read().decode("utf-8", "strict")[:-1]
+
+    @action
+    def get_youtube_info(self, url):
+        m = re.match('youtube:video:(.*)', url)
+        if m:
+            url = 'https://www.youtube.com/watch?v={}'.format(m.group(1))
+
+        proc = subprocess.Popen(['youtube-dl', '-j', url], stdout=subprocess.PIPE)
+        return proc.stdout.read().decode("utf-8", "strict")[:-1]
+
+    @action
+    def get_media_file_duration(self, filename):
+        """
+        Get the duration of a media file in seconds. Requires ffmpeg
+        """
+
+        if filename.startswith('file://'):
+            filename = filename[7:]
+
+        result = subprocess.Popen(["ffprobe", filename], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        return functools.reduce(
+            lambda t, t_i: t + t_i,
+            [float(t) * pow(60, i) for (i, t) in enumerate(re.search(
+                '^Duration:\s*([^,]+)', [x.decode()
+                                         for x in result.stdout.readlines()
+                                         if "Duration" in x.decode()]
+                    .pop().strip()
+            ).group(1).split(':')[::-1])]
+        )
 
     def is_local(self):
         return self._is_local

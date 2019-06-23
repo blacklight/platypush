@@ -11,6 +11,7 @@ MediaPlayers.local = Vue.extend({
                 return {
                     file: true,
                     youtube: true,
+                    generic: true,
                 };
             },
         },

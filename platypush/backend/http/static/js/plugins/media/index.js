@@ -24,6 +24,16 @@ const mediaUtils = {
             ret.push(t.m, t.s);
             return ret.join(':');
         },
+
+        convertSize: function(size) {
+            size = parseInt(size);   // Normalize strings
+
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let s=size, i=0;
+
+            for (; s > 1024 && i < units.length; i++, s = parseInt(s/1024));
+            return (size / Math.pow(2, 10*i)).toFixed(2) + ' ' + units[i];
+        },
     },
 };
 
@@ -38,9 +48,16 @@ Vue.component('media', {
             results: [],
             status: {},
             selectedDevice: {},
+
             loading: {
                 results: false,
                 media: false,
+            },
+
+            infoModal: {
+                visible: false,
+                loading: false,
+                item: {},
             },
         };
     },
@@ -52,14 +69,11 @@ Vue.component('media', {
     },
 
     methods: {
-        refresh: async function() {
-        },
-
         onResultsLoading: function() {
             this.loading.results = true;
         },
 
-        onResultsReady: function(results) {
+        onResultsReady: async function(results) {
             for (const result of results) {
                 if (result.type && MediaHandlers[result.type]) {
                     result.handler = MediaHandlers[result.type];
@@ -76,7 +90,7 @@ Vue.component('media', {
                     }
                 }
 
-                Object.entries(result.handler.getMetadata(result.url)).forEach(entry => {
+                Object.entries(await result.handler.getMetadata(result, onlyBase=true)).forEach(entry => {
                     Vue.set(result, entry[0], entry[1]);
                 });
             }
@@ -131,14 +145,31 @@ Vue.component('media', {
         },
 
         info: function(item) {
-            // TODO
-            console.log(item);
+            for (const [attr, value] of Object.entries(item)) {
+                Vue.set(this.infoModal.item, attr, value);
+            }
+
+            this.infoModal.loading = false;
+            this.infoModal.visible = true;
+        },
+
+        infoLoading: function() {
+            this.infoModal.loading = true;
+            this.infoModal.visible = true;
         },
 
         startStreaming: async function(item) {
-            return await request('media.start_streaming', {
-                media: item.url,
+            const resource = item instanceof Object ? item.url : item;
+            const ret = await request('media.start_streaming', {
+                media: resource,
             });
+
+            this.bus.$emit('streaming-started', {
+                url: ret.url,
+                resource: resource,
+            });
+
+            return ret;
         },
 
         selectDevice: async function(device) {
@@ -199,8 +230,6 @@ Vue.component('media', {
     },
 
     created: function() {
-        this.refresh();
-
         for (const [type, Handler] of Object.entries(MediaHandlers)) {
             MediaHandlers[type] = new Handler();
             MediaHandlers[type].bus = this.bus;
@@ -219,10 +248,12 @@ Vue.component('media', {
         this.bus.$on('seek', this.seek);
         this.bus.$on('volume', this.setVolume);
         this.bus.$on('info', this.info);
+        this.bus.$on('info-loading', this.infoLoading);
         this.bus.$on('selected-device', this.selectDevice);
         this.bus.$on('results-loading', this.onResultsLoading);
         this.bus.$on('results-ready', this.onResultsReady);
         this.bus.$on('status-update', this.onStatusUpdate);
+        this.bus.$on('start-streaming', this.startStreaming);
 
         setInterval(this.timerFunc, 1000);
     },

@@ -60,14 +60,6 @@ Vue.component('media-results', {
             this.selectedItem = item;
             openDropdown(this.$refs.mediaItemDropdown);
         },
-
-        play: function(item) {
-            this.bus.$emit('play', item);
-        },
-
-        info: function(item) {
-            this.bus.$emit('info', item);
-        },
     },
 
     created: function() {
