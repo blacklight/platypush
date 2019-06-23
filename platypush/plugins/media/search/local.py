@@ -215,7 +215,6 @@ class LocalMediaSearcher(MediaSearcher):
                     filter(MediaToken.token.in_(query_tokens)). \
                     group_by(MediaFile.path). \
                     having(func.count(MediaFileToken.token_id) >= len(query_tokens)):
-                    # order_by(func.count(MediaFileToken.token_id).desc()):
                 results[file_record.path] = {
                     'url': 'file://' + file_record.path,
                     'title': os.path.basename(file_record.path),
