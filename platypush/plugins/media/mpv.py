@@ -230,7 +230,7 @@ class MediaMpvPlugin(MediaPlugin):
         pos = min(self._player.time_pos+self._player.time_remaining,
                   max(0, position))
         self._player.time_pos = pos
-        return {'position': pos}
+        return self.status()
 
     @action
     def back(self, offset=60.0):
@@ -271,6 +271,16 @@ class MediaMpvPlugin(MediaPlugin):
     def toggle_subtitles(self, visible=None):
         """ Toggle the subtitles visibility """
         return self.toggle_property('sub_visibility')
+
+    @action
+    def add_subtitles(self, filename):
+        """ Add a subtitles file """
+        return self._player.sub_add(filename)
+
+    @action
+    def remove_subtitles(self, sub_id):
+        """ Remove a subtitles track by id """
+        return self._player.sub_remove(sub_id)
 
     @action
     def toggle_fullscreen(self, fullscreen=None):
@@ -385,91 +395,29 @@ class MediaMpvPlugin(MediaPlugin):
             return {'state': PlayerState.STOP.value}
 
         return {
-            'aspect': getattr(self._player, 'aspect'),
-            'audio': getattr(self._player, 'audio'),
-            'audio_bitrate': getattr(self._player, 'audio_bitrate'),
             'audio_channels': getattr(self._player, 'audio_channels'),
             'audio_codec': getattr(self._player, 'audio_codec_name'),
-            'audio_delay': getattr(self._player, 'audio_delay'),
-            'audio_output': getattr(self._player, 'current_ao'),
-            'audio_file_paths': getattr(self._player, 'audio_file_paths'),
-            'audio_files': getattr(self._player, 'audio_files'),
-            'audio_params': getattr(self._player, 'audio_params'),
-            'audio_mixer': getattr(self._player, 'alsa_mixer_device'),
-            'autosync': getattr(self._player, 'autosync'),
-            'brightness': getattr(self._player, 'brightness'),
-            'chapter': getattr(self._player, 'chapter'),
-            'chapter_list': getattr(self._player, 'chapter_list'),
-            'chapter_metadata': getattr(self._player, 'chapter_metadata'),
-            'chapters': getattr(self._player, 'chapters'),
-            'chapters_file': getattr(self._player, 'chapters_file'),
-            'clock': getattr(self._player, 'clock'),
-            'cookies': getattr(self._player, 'cookies'),
-            'cookies_file': getattr(self._player, 'cookies_file'),
             'delay': getattr(self._player, 'delay'),
-            'displays': getattr(self._player, 'display_names'),
             'duration': getattr(self._player, 'playback_time', 0) +
                         getattr(self._player, 'playtime_remaining', 0)
             if getattr(self._player, 'playtime_remaining') else None,
-            'file_format': getattr(self._player, 'file_format'),
             'filename': getattr(self._player, 'filename'),
             'file_size': getattr(self._player, 'file_size'),
-            'font': getattr(self._player, 'font'),
-            'fps': getattr(self._player, 'fps'),
             'fullscreen': getattr(self._player, 'fs'),
-            'height': getattr(self._player, 'height'),
-            'idle': getattr(self._player, 'idle'),
-            'idle_active': getattr(self._player, 'idle_active'),
-            'loop': getattr(self._player, 'loop'),
-            'media_title': getattr(self._player, 'media_title'),
-            'mpv_version': getattr(self._player, 'mpv_version'),
             'mute': getattr(self._player, 'mute'),
             'name': getattr(self._player, 'name'),
             'pause': getattr(self._player, 'pause'),
             'percent_pos': getattr(self._player, 'percent_pos'),
-            'playlist': getattr(self._player, 'playlist'),
-            'playlist_pos': getattr(self._player, 'playlist_pos'),
             'position': getattr(self._player, 'playback_time'),
-            'quiet': getattr(self._player, 'quiet'),
-            'really_quiet': getattr(self._player, 'really_quiet'),
-            'saturation': getattr(self._player, 'saturation'),
-            'screen': getattr(self._player, 'screen'),
-            'screenshot_directory': getattr(self._player, 'screenshot_directory'),
-            'screenshot_format': getattr(self._player, 'screenshot_format'),
-            'screenshot_template': getattr(self._player, 'screenshot_template'),
             'seekable': getattr(self._player, 'seekable'),
-            'seeking': getattr(self._player, 'seeking'),
-            'shuffle': getattr(self._player, 'shuffle'),
-            'speed': getattr(self._player, 'speed'),
             'state': (PlayerState.PAUSE.value if self._player.pause else PlayerState.PLAY.value),
-            'stream_pos': getattr(self._player, 'stream_pos'),
-            'sub': getattr(self._player, 'sub'),
-            'sub_file_paths': getattr(self._player, 'sub_file_paths'),
-            'sub_files': getattr(self._player, 'sub_files'),
-            'sub_paths': getattr(self._player, 'sub_paths'),
-            'sub_text': getattr(self._player, 'sub_text'),
-            'subdelay': getattr(self._player, 'subdelay'),
-            'time_start': getattr(self._player, 'time_start'),
-            'title': getattr(self._player, 'filename'),
+            'title': getattr(self._player, 'media_title') or getattr(self._player, 'filename'),
             'url': self._get_current_resource(),
-            'user_agent': getattr(self._player, 'user_agent'),
-            'video': getattr(self._player, 'video'),
-            'video_align_x': getattr(self._player, 'video_align_x'),
-            'video_align_y': getattr(self._player, 'video_align_y'),
-            'video_aspect': getattr(self._player, 'video_aspect'),
-            'video_bitrate': getattr(self._player, 'video_bitrate'),
-            'video_output': getattr(self._player, 'current_vo'),
             'video_codec': getattr(self._player, 'video_codec'),
             'video_format': getattr(self._player, 'video_format'),
-            'video_params': getattr(self._player, 'video_params'),
-            'video_sync': getattr(self._player, 'video_sync'),
-            'video_zoom': getattr(self._player, 'video_zoom'),
             'volume': getattr(self._player, 'volume'),
             'volume_max': getattr(self._player, 'volume_max'),
             'width': getattr(self._player, 'width'),
-            'window_minimized': getattr(self._player, 'window_minimized'),
-            'window_scale': getattr(self._player, 'window_scale'),
-            'working_directory': getattr(self._player, 'working_directory'),
         }
 
     def on_stop(self, callback):

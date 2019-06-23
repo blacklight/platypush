@@ -116,13 +116,11 @@ def get_plugin(plugin_name, reload=False):
 
     return plugins[plugin_name]
 
+
 def get_bus():
     global main_bus
     return main_bus
 
-def register_plugin(name, plugin, **kwargs):
-    """ Registers a plugin instance by name """
-    global plugins
 
 def get_or_create_event_loop():
     try:
@@ -135,4 +133,3 @@ def get_or_create_event_loop():
 
 
 # vim:sw=4:ts=4:et:
-

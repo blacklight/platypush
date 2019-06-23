@@ -1,7 +1,6 @@
 import os
 import select
 import subprocess
-import tempfile
 import threading
 import time
 
@@ -28,24 +27,6 @@ class MediaMplayerPlugin(MediaPlugin):
 
     _mplayer_bin_default_args = ['-slave', '-quiet', '-idle', '-input',
                                  'nodefault-bindings', '-noconfig', 'all']
-
-    _mplayer_properties = [
-        'osdlevel', 'speed', 'loop', 'pause', 'filename', 'path', 'demuxer',
-        'stream_pos', 'stream_start', 'stream_end', 'stream_length',
-        'stream_time_pos', 'titles', 'chapter', 'chapters', 'angle', 'length',
-        'percent_pos', 'time_pos', 'metadata', 'metadata', 'volume', 'balance',
-        'mute', 'audio_delay', 'audio_format', 'audio_codec', 'audio_bitrate',
-        'samplerate', 'channels', 'switch_audio', 'switch_angle',
-        'switch_title', 'capturing', 'fullscreen', 'deinterlace', 'ontop',
-        'rootwin', 'border', 'framedropping', 'gamma', 'brightness', 'contrast',
-        'saturation', 'hue', 'panscan', 'vsync', 'video_format', 'video_codec',
-        'video_bitrate', 'width', 'height', 'fps', 'aspect', 'switch_video',
-        'switch_program', 'sub', 'sub_source', 'sub_file', 'sub_vob',
-        'sub_demux', 'sub_delay', 'sub_pos', 'sub_alignment', 'sub_visibility',
-        'sub_forced_only', 'sub_scale', 'tv_brightness', 'tv_contrast',
-        'tv_saturation', 'tv_hue', 'teletext_page', 'teletext_subpage',
-        'teletext_mode', 'teletext_format',
-    ]
 
     def __init__(self, mplayer_bin=None,
                  mplayer_timeout=_mplayer_default_communicate_timeout,
@@ -74,13 +55,13 @@ class MediaMplayerPlugin(MediaPlugin):
         super().__init__(*argv, **kwargs)
 
         self.args = args or []
-        self._init_mplayer_bin()
+        self._init_mplayer_bin(mplayer_bin=mplayer_bin)
         self._build_actions()
         self._player = None
         self._mplayer_timeout = mplayer_timeout
         self._mplayer_stopped_event = threading.Event()
+        self._status_lock = threading.Lock()
         self._is_playing_torrent = False
-
 
     def _init_mplayer_bin(self, mplayer_bin=None):
         if not mplayer_bin:
@@ -105,10 +86,10 @@ class MediaMplayerPlugin(MediaPlugin):
     def _init_mplayer(self, mplayer_args=None):
         if self._player:
             try:
-                self._player.quit()
-            except:
+                self._player.terminate()
+            except Exception as e:
                 self.logger.debug('Failed to quit mplayer before _exec: {}'.
-                                  format(str))
+                                  format(str(e)))
 
         mplayer_args = mplayer_args or []
         args = [self.mplayer_bin] + self._mplayer_bin_default_args
@@ -137,7 +118,7 @@ class MediaMplayerPlugin(MediaPlugin):
         def args_pprint(txt):
             lc = txt.lower()
             if lc[0] == '[':
-                return '%s=None'%lc[1:-1]
+                return '%s=None' % lc[1:-1]
             return lc
 
         while True:
@@ -170,18 +151,19 @@ class MediaMplayerPlugin(MediaPlugin):
 
         self._player.stdin.write(cmd)
         self._player.stdin.flush()
-        bus = get_bus()
 
         if cmd_name == 'loadfile' or cmd_name == 'loadlist':
-            bus.post(NewPlayingMediaEvent(resource=args[0]))
+            self._post_event(NewPlayingMediaEvent, resource=args[0])
         elif cmd_name == 'pause':
-            bus.post(MediaPauseEvent())
+            self._post_event(MediaPauseEvent)
         elif cmd_name == 'quit' or cmd_name == 'stop':
             if cmd_name == 'quit':
                 self._player.terminate()
                 self._player.wait()
-                try: self._player.kill()
-                except: pass
+                try:
+                    self._player.kill()
+                except Exception:
+                    pass
                 self._player = None
 
         if not wait_for_response:
@@ -200,12 +182,17 @@ class MediaMplayerPlugin(MediaPlugin):
                 if line.startswith('ANS_'):
                     k, v = tuple(line[4:].split('='))
                     v = v.strip()
-                    if v == 'yes': v = True
-                    elif v == 'no': v = False
+                    if v == 'yes':
+                        v = True
+                    elif v == 'no':
+                        v = False
 
-                    try: v = eval(v)
-                    except: pass
-                    response = { k: v }
+                    try:
+                        v = eval(v)
+                    except Exception:
+                        pass
+
+                    response = {k: v}
 
         return response
 
@@ -222,8 +209,8 @@ class MediaMplayerPlugin(MediaPlugin):
 
     @action
     def list_actions(self):
-        return [ { 'action': action, 'args': self._actions[action] }
-                for action in sorted(self._actions.keys()) ]
+        return [{'action': a, 'args': self._actions[a]}
+                for a in sorted(self._actions.keys())]
 
     def _process_monitor(self):
         def _thread():
@@ -232,15 +219,21 @@ class MediaMplayerPlugin(MediaPlugin):
 
             self._mplayer_stopped_event.clear()
             self._player.wait()
-            try: self.quit()
-            except: pass
+            try:
+                self.quit()
+            except Exception:
+                pass
 
-            get_bus().post(MediaStopEvent())
+            self._post_event(MediaStopEvent)
             self._mplayer_stopped_event.set()
             self._player = None
 
         return _thread
 
+    @staticmethod
+    def _post_event(evt_type, **evt):
+        bus = get_bus()
+        bus.post(evt_type(player='local', plugin='media.mplayer', **evt))
 
     @action
     def play(self, resource, subtitles=None, mplayer_args=None):
@@ -258,7 +251,7 @@ class MediaMplayerPlugin(MediaPlugin):
         :type mplayer_args: list[str]
         """
 
-        get_bus().post(MediaPlayRequestEvent(resource=resource))
+        self._post_event(MediaPlayRequestEvent, resource=resource)
         if subtitles:
             mplayer_args = mplayer_args or []
             mplayer_args += ['-sub', self.get_subtitles_file(subtitles)]
@@ -271,76 +264,86 @@ class MediaMplayerPlugin(MediaPlugin):
             return get_plugin('media.webtorrent').play(resource)
 
         self._is_playing_torrent = False
-        ret = self._exec('loadfile', resource, mplayer_args=mplayer_args)
-        get_bus().post(MediaPlayEvent(resource=resource))
-        return ret
+        self._exec('loadfile', resource, mplayer_args=mplayer_args)
+        self._post_event(MediaPlayEvent, resource=resource)
+        return self.status()
 
     @action
     def pause(self):
         """ Toggle the paused state """
-        ret = self._exec('pause')
-        get_bus().post(MediaPauseEvent())
-        return ret
+        self._exec('pause')
+        self._post_event(MediaPauseEvent)
+        return self.status()
 
     @action
     def stop(self):
         """ Stop the playback """
         # return self._exec('stop')
-        return self.quit()
+        self.quit()
+        return self.status()
 
     @action
     def quit(self):
         """ Quit the player """
         self._stop_torrent()
         self._exec('quit')
-        get_bus().post(MediaStopEvent())
+        self._post_event(MediaStopEvent)
+        return self.status()
 
     @action
     def voldown(self, step=10.0):
         """ Volume down by (default: 10)% """
-        return self._exec('volume', -step*10)
+        self._exec('volume', -step * 10)
+        return self.status()
 
     @action
     def volup(self, step=10.0):
         """ Volume up by (default: 10)% """
-        return self._exec('volume', step*10)
+        self._exec('volume', step * 10)
+        return self.status()
 
     @action
     def back(self, offset=60.0):
         """ Back by (default: 60) seconds """
-        return self.step_property('time_pos', -offset)
+        self.step_property('time_pos', -offset)
+        return self.status()
 
     @action
     def forward(self, offset=60.0):
         """ Forward by (default: 60) seconds """
-        return self.step_property('time_pos', offset)
+        self.step_property('time_pos', offset)
+        return self.status()
 
     @action
     def toggle_subtitles(self):
         """ Toggle the subtitles visibility """
         subs = self.get_property('sub_visibility').output.get('sub_visibility')
-        return self._exec('sub_visibility', int(not subs))
+        self._exec('sub_visibility', int(not subs))
+        return self.status()
 
     @action
-    def set_subtitles(self, filename, **args):
+    def add_subtitles(self, filename, **args):
         """ Sets media subtitles from filename """
         self._exec('sub_visibility', 1)
-        return self._exec('sub_load', filename)
+        self._exec('sub_load', filename)
+        return self.status()
 
     @action
     def remove_subtitles(self, index=None):
         """ Removes the subtitle specified by the index (default: all) """
         if index is None:
-            return self._exec('sub_remove')
+            self._exec('sub_remove')
         else:
-            return self._exec('sub_remove', index)
+            self._exec('sub_remove', index)
+
+        return self.status()
 
     @action
     def is_playing(self):
         """
         :returns: True if it's playing, False otherwise
         """
-        return self.get_property('pause').output.get('pause') == False
+        return self.get_property('pause').output.get('pause') is False
 
     @action
     def load(self, resource, mplayer_args=None, **kwargs):
@@ -354,17 +357,19 @@ class MediaMplayerPlugin(MediaPlugin):
     @action
     def mute(self):
         """ Toggle mute state """
-        return self._exec('mute')
+        self._exec('mute')
+        return self.status()
 
     @action
     def seek(self, position):
         """
         Seek backward/forward by the specified number of seconds
 
-        :param relative_position: Number of seconds relative to the current cursor
-        :type relative_position: int
+        :param position: Number of seconds relative to the current cursor
+        :type position: int
         """
-        return self.step_property('time_pos', position)
+        self.step_property('time_pos', position)
+        return self.status()
 
     @action
     def set_position(self, position):
@@ -374,7 +379,8 @@ class MediaMplayerPlugin(MediaPlugin):
         :param position: Number of seconds from the start
         :type position: int
         """
-        return self.set_property('time_pos', position)
+        self.set_property('time_pos', position)
+        return self.status()
 
     @action
     def set_volume(self, volume):
@@ -384,7 +390,8 @@ class MediaMplayerPlugin(MediaPlugin):
         :param volume: Volume value between 0 and 100
         :type volume: float
         """
-        return self._exec('volume', volume)
+        self._exec('volume', volume)
+        return self.status()
 
     @action
     def status(self):
@@ -400,18 +407,38 @@ class MediaMplayerPlugin(MediaPlugin):
             }
         """
 
-        state = { 'state': PlayerState.STOP.value }
+        if not self._player:
+            return {'state': PlayerState.STOP.value}
 
-        try:
-            paused = self.get_property('pause').output.get('pause')
-            if paused is True:
-                state['state'] = PlayerState.PAUSE.value
-            elif paused is False:
-                state['state'] = PlayerState.PLAY.value
-        except:
-            pass
-        finally:
-            return state
+        status = {}
+        props = {
+            'duration': 'length',
+            'filename': 'filename',
+            'fullscreen': 'fullscreen',
+            'mute': 'mute',
+            'name': 'filename',
+            'path': 'path',
+            'pause': 'pause',
+            'percent_pos': 'percent_pos',
+            'position': 'time_pos',
+            'title': 'filename',
+            'volume': 'volume',
+        }
+
+        with self._status_lock:
+            for prop, player_prop in props.items():
+                value = self.get_property(player_prop).output
+                if value is not None:
+                    status[prop] = value.get(player_prop)
+
+        status['seekable'] = True if status['duration'] is not None else False
+        status['state'] = PlayerState.PAUSE.value if status['pause'] else PlayerState.PLAY.value
+
+        if status['path']:
+            status['url'] = ('file://' if os.path.isfile(status['path']) else '') + status['path']
+
+        status['volume_max'] = 100
+        return status
 
     @action
     def get_property(self, property, args=None):
@@ -482,6 +509,5 @@ class MediaMplayerPlugin(MediaPlugin):
                 response.output[k] = v
 
         return response
-
 
 # vim:sw=4:ts=4:et:

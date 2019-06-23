@@ -141,8 +141,14 @@ Vue.component('media', {
             });
         },
 
-        selectDevice: function(device) {
+        selectDevice: async function(device) {
             this.selectedDevice = device;
+            let status = await this.selectedDevice.status();
+
+            this.onStatusUpdate({
+                device: this.selectedDevice,
+                status: status,
+            });
         },
 
         syncPosition: function(status) {

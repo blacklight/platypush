@@ -62,7 +62,7 @@ MediaPlayers.local = Vue.extend({
 
         seek: async function(position) {
             return await request(
-                this.pluginPrefix.concat('.seek'),
+                this.pluginPrefix.concat('.set_position'),
                 {position: position},
             );
         },
