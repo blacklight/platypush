@@ -15,6 +15,13 @@ MediaPlayers.browser = Vue.extend({
             },
         },
 
+        subFormats: {
+            type: Array,
+            default: () => {
+                return ['vtt'];
+            },
+        },
+
         name: {
             type: String,
             default: 'Browser',

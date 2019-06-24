@@ -384,7 +384,7 @@ class MediaVlcPlugin(MediaPlugin):
         else:
             status['state'] = PlayerState.STOP.value
 
-        status['url'] = self._player.get_media().get_mrl() if self._player.get_media() else None
+        status['url'] = urllib.parse.unquote(self._player.get_media().get_mrl()) if self._player.get_media() else None
         status['position'] = float(self._player.get_time()/1000) if self._player.get_time() is not None else None
 
         media = self._player.get_media()
@@ -393,7 +393,7 @@ class MediaVlcPlugin(MediaPlugin):
         status['seekable'] = status['duration'] is not None
         status['fullscreen'] = self._player.get_fullscreen()
         status['mute'] = self._player.audio_get_mute()
-        status['path'] = urllib.parse.unquote(status['url'])
+        status['path'] = status['url']
         status['pause'] = status['state'] == PlayerState.PAUSE.value
         status['percent_pos'] = self._player.get_position()*100
         status['filename'] = urllib.parse.unquote(status['url']).split('/')[-1]

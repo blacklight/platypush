@@ -16,6 +16,13 @@ MediaPlayers.local = Vue.extend({
             },
         },
 
+        subFormats: {
+            type: Array,
+            default: () => {
+                return ['srt'];
+            },
+        },
+
         device: {
             type: Object,
             default: () => {
@@ -46,10 +53,10 @@ MediaPlayers.local = Vue.extend({
             return await request(this.pluginPrefix.concat('.status'));
         },
 
-        play: async function(resource) {
+        play: async function(resource, subtitles=undefined) {
             return await request(
                 this.pluginPrefix.concat('.play'),
-                {resource: resource}
+                {resource: resource, subtitles: subtitles}
             );
         },
 

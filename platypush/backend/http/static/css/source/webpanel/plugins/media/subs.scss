@@ -1,0 +1,60 @@
+.media-plugin {
+    #media-subs {
+        .body {
+            padding: 0;
+        }
+    }
+
+    .subs-container {
+        .loading, .no-results {
+            display: flex;
+            align-items: center;
+            padding: 3rem;
+            font-size: 1.5em;
+        }
+
+        .subs {
+            .list {
+                max-height: 50vh;
+                overflow: auto;
+            }
+
+            .sub {
+                display: flex;
+                align-items: center;
+                padding: .75em .5em;
+                border-bottom: $default-border-2;
+                cursor: pointer;
+
+                &:nth-child(odd) { background: rgba(255, 255, 255, 0.0); }
+                &:nth-child(even) { background: $default-bg-3; }
+                &.selected { background: $selected-bg; }
+
+                &:hover {
+                    background: $hover-bg;
+                    border-radius: 1em;
+                }
+            }
+
+            .controls {
+                position: relative;
+                padding: 1.5rem 0;
+                height: $subs-control-height;
+
+                button {
+                    position: absolute;
+                    right: 0;
+                    margin-right: 1rem;
+                    border: $default-border-2;
+                    box-shadow: $btn-default-shadow;
+
+                    &:hover:not([disabled]) {
+                        box-shadow: $btn-hover-default-shadow;
+                        color: $default-hover-fg;
+                    }
+                }
+            }
+        }
+    }
+}
+

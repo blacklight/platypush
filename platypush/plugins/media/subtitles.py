@@ -4,9 +4,8 @@ import requests
 import tempfile
 import threading
 
-from platypush.message.response import Response
 from platypush.plugins import Plugin, action
-from platypush.utils import find_files_by_ext, get_mime_type
+from platypush.utils import find_files_by_ext
 
 
 class MediaSubtitlesPlugin(Plugin):
@@ -20,7 +19,7 @@ class MediaSubtitlesPlugin(Plugin):
         * **requests** (``pip install requests``)
     """
 
-    def __init__(self, username, password, language=None, *args, **kwargs):
+    def __init__(self, username, password, language=None, **kwargs):
         """
         :param username: Your OpenSubtitles username
         :type username: str
@@ -36,7 +35,7 @@ class MediaSubtitlesPlugin(Plugin):
 
         from pythonopensubtitles.opensubtitles import OpenSubtitles
 
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
         self._ost = OpenSubtitles()
         self._token = self._ost.login(username, password)
@@ -51,7 +50,6 @@ class MediaSubtitlesPlugin(Plugin):
             else:
                 raise AttributeError('{} is neither a string nor a list'.format(
                     language))
-
 
     @action
     def get_subtitles(self, resource, language=None):
@@ -73,7 +71,7 @@ class MediaSubtitlesPlugin(Plugin):
 
         resource = os.path.abspath(os.path.expanduser(resource))
         if not os.path.isfile(resource):
-            return (None, '{} is not a valid file'.format(resource))
+            return None, '{} is not a valid file'.format(resource)
 
         file = resource
         cwd = os.getcwd()
@@ -117,7 +115,6 @@ class MediaSubtitlesPlugin(Plugin):
         finally:
             os.chdir(cwd)
 
-
     @action
     def download(self, link, media_resource=None, path=None, convert_to_vtt=False):
         """
@@ -151,10 +148,9 @@ class MediaSubtitlesPlugin(Plugin):
         if os.path.isfile(link):
             if convert_to_vtt:
                 link = self.to_vtt(link).output
-            return { 'filename': link }
+            return {'filename': link}
 
         gzip_content = requests.get(link).content
-        f = None
 
         if not path and media_resource:
             if media_resource.startswith('file://'):
@@ -181,7 +177,7 @@ class MediaSubtitlesPlugin(Plugin):
             os.unlink(path)
             raise e
 
-        return { 'filename': path }
+        return {'filename': path}
 
     @action
     def to_vtt(self, filename):
@@ -199,7 +195,7 @@ class MediaSubtitlesPlugin(Plugin):
             try:
                 webvtt.read(filename)
                 return filename
-            except Exception as e:
+            except Exception:
                 webvtt.from_srt(filename).save()
                 return '.'.join(filename.split('.')[:-1]) + '.vtt'
 

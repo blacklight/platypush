@@ -15,6 +15,13 @@ MediaPlayers.chromecast = Vue.extend({
             },
         },
 
+        subFormats: {
+            type: Array,
+            default: () => {
+                return ['vtt'];
+            },
+        },
+
         device: {
             type: null,
             address: null,

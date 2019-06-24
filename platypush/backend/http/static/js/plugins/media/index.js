@@ -59,6 +59,10 @@ Vue.component('media', {
                 loading: false,
                 item: {},
             },
+
+            subsModal: {
+                visible: false,
+            },
         };
     },
 
@@ -104,8 +108,9 @@ Vue.component('media', {
                 item = await this.startStreaming(item.url);
             }
 
-            let status = await this.selectedDevice.play(item.url);
+            let status = await this.selectedDevice.play(item.url, item.subtitles);
 
+            this.subsModal.visible = false;
             this.onStatusUpdate({
                 device: this.selectedDevice,
                 status: status,
@@ -170,6 +175,14 @@ Vue.component('media', {
             });
 
             return ret;
+        },
+
+        searchSubs: function(item) {
+            if (typeof item === 'string')
+                item = {url: item};
+
+            this.subsModal.visible = true;
+            this.$refs.subs.search(item);
         },
 
         selectDevice: async function(device) {
@@ -254,6 +267,7 @@ Vue.component('media', {
         this.bus.$on('results-ready', this.onResultsReady);
         this.bus.$on('status-update', this.onStatusUpdate);
         this.bus.$on('start-streaming', this.startStreaming);
+        this.bus.$on('search-subs', this.searchSubs);
 
         setInterval(this.timerFunc, 1000);
     },

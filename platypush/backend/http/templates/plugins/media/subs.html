@@ -1,0 +1,34 @@
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/subs.js') }}"></script>
+
+<script type="text/x-template" id="tmpl-media-subs">
+    <div class="subs-container">
+        <div class="loading" v-if="loading">Loading</div>
+        <div class="no-results" v-else-if="!Object.keys(items).length">No results</div>
+
+        <div class="subs" v-else>
+            <div class="list">
+                <div class="sub"
+                     :class="{selected: selectedItem && selectedItem.SubDownloadLink === item.SubDownloadLink}"
+                     @click="selectedItem = item"
+                     v-for="item in items"
+                     :key="item.SubDownloadLink">
+                    <div class="col-1 icon">
+                        <i class="fa fa-hdd" v-if="item.IsLocal"></i>
+                        <i :class="'flag-icon flag-icon-' + item.ISO639" v-else></i>
+                    </div>
+                    <div class="col-11 title" v-text="item.SubFileName"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button type="button"
+                        class="btn-default"
+                        @click="play"
+                        :disabled="!selectedItem">
+                    Select and play
+                </button>
+            </div>
+        </div>
+    </div>
+</script>
+

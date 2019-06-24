@@ -3,11 +3,13 @@
 {% include 'plugins/media/results.html' %}
 {% include 'plugins/media/item.html' %}
 {% include 'plugins/media/info.html' %}
-
+{% include 'plugins/media/subs.html' %}
 
 {% for script in utils.search_directory(static_folder + '/js/plugins/media/handlers', 'js', recursive=True) %}
 <script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/handlers/' + script) }}"></script>
 {% endfor %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='flag-icons/css/flag-icon.css') }}">
 
 <script type="text/x-template" id="tmpl-media">
     <div class="plugin media-plugin">
@@ -38,9 +40,16 @@
                         v-if="selectedDevice && status[selectedDevice.type] && status[selectedDevice.type][selectedDevice.name] && (status[selectedDevice.type][selectedDevice.name].state === 'play' || status[selectedDevice.type][selectedDevice.name].state === 'pause')">
         </media-controls>
 
-        <modal id="media-info" title="Media info" v-model="infoModal.visible" ref="modalInfo">
+        <modal id="media-info" title="Media info" v-model="infoModal.visible">
             <div class="loading" v-if="infoModal.loading">Loading</div>
             <media-info :bus="bus" :item="infoModal.item" v-else></media-info>
+        </modal>
+
+        <modal id="media-subs" title="Subtitles" v-model="subsModal.visible">
+            <media-subs :bus="bus"
+                        :subFormats="selectedDevice ? selectedDevice.subFormats : []"
+                        ref="subs">
+            </media-subs>
         </modal>
     </div>
 </script>

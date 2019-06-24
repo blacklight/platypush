@@ -19,7 +19,7 @@ MediaHandlers.file = Vue.extend({
                 {
                     text: 'Play with subtitles',
                     iconClass: 'fas fa-closed-captioning',
-                    action: this.searchSubtiles,
+                    action: this.searchSubtitles,
                 },
 
                 {
@@ -84,8 +84,23 @@ MediaHandlers.file = Vue.extend({
             this.bus.$emit('info', (await this.getMetadata(item)));
         },
 
-        searchSubtitles: function(item) {
+        infoLoad: function(url) {
+            if (!this.matchesUrl(url))
+                return;
+
+            this.info(url);
         },
+
+        searchSubtitles: function(item) {
+            this.bus.$emit('search-subs', item);
+        },
+    },
+
+    created: function() {
+        const self = this;
+        setTimeout(() => {
+            self.infoLoadWatch = self.bus.$on('info-load', this.infoLoad);
+        }, 1000);
     },
 });
 
