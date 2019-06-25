@@ -4,7 +4,7 @@
     <div class="controls">
         <div class="col-3 item-container">
             <div class="item-info">
-                <span v-text="status.title"
+                <span v-text="status.title || status.url"
                       @click="bus.$emit('info-load', status.url)"
                       v-if="status.title"></span>
             </div>

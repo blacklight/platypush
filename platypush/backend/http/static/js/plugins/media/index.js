@@ -110,6 +110,9 @@ Vue.component('media', {
 
             let status = await this.selectedDevice.play(item.url, item.subtitles);
 
+            if (item.title)
+                status.title = item.title;
+
             this.subsModal.visible = false;
             this.onStatusUpdate({
                 device: this.selectedDevice,
@@ -207,6 +210,10 @@ Vue.component('media', {
             const status = event.status;
             this.syncPosition(status);
 
+            if (status.state !== 'stop' && this.status[dev.type] && this.status[dev.type][dev.name]) {
+                status.title = status.title || this.status[dev.type][dev.name].title;
+            }
+
             if (!this.status[dev.type])
                 Vue.set(this.status, dev.type, {});
             Vue.set(this.status[dev.type], dev.name, status);
@@ -224,10 +231,20 @@ Vue.component('media', {
             if (event.plugin.startsWith('media.'))
                 event.plugin = event.plugin.substr(6);
 
-            if (this.status[event.player] && this.status[event.player][event.plugin])
-                Vue.set(this.status[event.player], event.plugin, status);
-            else if (this.status[event.plugin] && this.status[event.plugin][event.player])
-                Vue.set(this.status[event.plugin], event.player, status);
+            var type, player;
+            if (this.status[event.player] && this.status[event.player][event.plugin]) {
+                type = event.player;
+                player = event.plugin;
+            } else if (this.status[event.plugin] && this.status[event.plugin][event.player]) {
+                type = event.plugin;
+                player = event.player;
+            }
+
+            if (status.state !== 'stop') {
+                status.title = status.title || this.status[type][player].title;
+            }
+
+            Vue.set(this.status[type], player, status);
         },
 
         timerFunc: function() {

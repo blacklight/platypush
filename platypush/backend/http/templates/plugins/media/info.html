@@ -4,12 +4,34 @@
     <div class="info-container">
         <div class="row">
             <div class="col-3 attr">URL</div>
-            <div class="col-9 value" v-text="item.url"></div>
+            <div class="col-9 value">
+                <a :href="item.url" v-text="item.url" target="_blank"></a>
+            </div>
         </div>
 
         <div class="row" v-if="item.title">
             <div class="col-3 attr">Title</div>
             <div class="col-9 value" v-text="item.title"></div>
+        </div>
+
+        <div class="row" v-if="item.description">
+            <div class="col-3 attr">Description</div>
+            <div class="col-9 value" v-text="item.description"></div>
+        </div>
+
+        <div class="row" v-if="item.channelTitle">
+            <div class="col-3 attr">Channel</div>
+            <div class="col-9 value">
+                <a :href="'https://www.youtube.com/channel/' + item.channelId" v-if="item.channelId" target="_blank">
+                    {% raw %}{{ item.channelTitle }}{% endraw %}
+                </a>
+                <span v-text="item.channelTitle" v-else></span>
+            </div>
+        </div>
+
+        <div class="row" v-if="item.publishedAt">
+            <div class="col-3 attr">Published</div>
+            <div class="col-9 value" v-text="new Date(item.publishedAt).toDateString()"></div>
         </div>
 
         <div class="row" v-if="item.duration">

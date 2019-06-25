@@ -5,8 +5,12 @@
 {% include 'plugins/media/info.html' %}
 {% include 'plugins/media/subs.html' %}
 
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/handlers/base.js') }}"></script>
+
 {% for script in utils.search_directory(static_folder + '/js/plugins/media/handlers', 'js', recursive=True) %}
+    {% if script != 'base.js' %}
 <script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/handlers/' + script) }}"></script>
+    {% endif %}
 {% endfor %}
 
 <link rel="stylesheet" href="{{ url_for('static', filename='flag-icons/css/flag-icon.css') }}">

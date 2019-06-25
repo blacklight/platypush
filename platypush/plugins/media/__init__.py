@@ -3,6 +3,7 @@ import functools
 import os
 import queue
 import re
+import requests
 import subprocess
 import tempfile
 import threading
@@ -80,7 +81,7 @@ class MediaPlugin(Plugin):
         :type media_dirs: list
 
         :param download_dir: Directory where external resources/torrents will be
-            downloaded (default: none)
+            downloaded (default: ~/Downloads)
         :type download_dir: str
 
         :param env: Environment variables key-values to pass to the
@@ -110,7 +111,6 @@ class MediaPlugin(Plugin):
             raise AttributeError('No media plugin configured')
 
         media_dirs = media_dirs or player_config.get('media_dirs', [])
-        download_dir = download_dir or player_config.get('download_dir')
 
         if self.__class__.__name__ == 'MediaPlugin':
             # Populate this plugin with the actions of the configured player
@@ -130,14 +130,14 @@ class MediaPlugin(Plugin):
             )
         )
 
-        if download_dir:
-            self.download_dir = os.path.abspath(os.path.expanduser(download_dir))
-            if not os.path.isdir(self.download_dir):
-                raise RuntimeError('download_dir [{}] is not a valid directory'
-                                   .format(self.download_dir))
+        self.download_dir = os.path.abspath(os.path.expanduser(
+            download_dir or player_config.get('download_dir') or
+            os.path.join((os.environ['HOME'] or self._env.get('HOME') or '/'), 'Downloads')))
 
-            self.media_dirs.add(self.download_dir)
+        if not os.path.isdir(self.download_dir):
+            os.makedirs(self.download_dir, exist_ok=True)
 
+        self.media_dirs.add(self.download_dir)
         self._is_playing_torrent = False
         self._videos_queue = []
 
@@ -494,6 +494,30 @@ class MediaPlugin(Plugin):
             ).group(1).split(':')[::-1])]
         )
 
+    @action
+    def download(self, url, filename=None, directory=None):
+        """
+        Download a media URL
+
+        :param url: Media URL
+        :param filename: Media filename (default: URL filename)
+        :param directory: Destination directory (default: download_dir)
+        :return: The absolute path to the downloaded file
+        """
+
+        if not filename:
+            filename = url.split('/')[-1]
+        if not directory:
+            directory = self.download_dir
+
+        path = os.path.join(directory, filename)
+        content = requests.get(url).content
+
+        with open(path, 'wb') as f:
+            f.write(content)
+
+        return path
+
     def is_local(self):
         return self._is_local
 
@@ -507,7 +531,6 @@ class MediaPlugin(Plugin):
         if os.path.isfile(subtitles):
             return os.path.abspath(subtitles)
         else:
-            import requests
             content = requests.get(subtitles).content
             f = tempfile.NamedTemporaryFile(prefix='media_subs_',
                                             suffix='.srt', delete=False)

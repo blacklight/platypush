@@ -1,4 +1,10 @@
 .media-plugin {
+    #media-info {
+        .modal {
+            max-width: 90%;
+        }
+    }
+
     .info-container {
         .row {
             display: flex;

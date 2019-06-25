@@ -278,7 +278,7 @@ class MediaOmxplayerPlugin(MediaPlugin):
 
             return {
                 'duration': self._player.duration(),
-                'filename': urllib.parse.unquote(self._player.get_source()).split('/')[-1],
+                'filename': urllib.parse.unquote(self._player.get_source()).split('/')[-1] if self._player.get_source().startswith('file://') else None,
                 'fullscreen': self._player.fullscreen(),
                 'mute': self._player._is_muted,
                 'path': self._player.get_source(),
@@ -286,7 +286,7 @@ class MediaOmxplayerPlugin(MediaPlugin):
                 'position': self._player.position(),
                 'seekable': self._player.can_seek(),
                 'state': state,
-                'title': urllib.parse.unquote(self._player.get_source()).split('/')[-1],
+                'title': urllib.parse.unquote(self._player.get_source()).split('/')[-1] if self._player.get_source().startswith('file://') else None,
                 'url': self._player.get_source(),
                 'volume': self._player.volume(),
                 'volume_max': 100,

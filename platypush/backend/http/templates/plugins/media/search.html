@@ -18,11 +18,11 @@
         </div>
 
         <div class="row types fade-in" :class="{hidden: !showFilter}">
-            <div class="type" v-for="config,type in types">
+            <div class="type" v-for="config,type in searchTypes">
                 <input type="checkbox"
                        name="type"
                        :id="'media-type-' + type"
-                       v-model.lazy="types[type]">
+                       v-model.lazy="searchTypes[type]">
                 <label :for="'media-type-' + type" v-text="type"></label>
             </div>
         </div>

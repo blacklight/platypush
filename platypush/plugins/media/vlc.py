@@ -45,6 +45,8 @@ class MediaVlcPlugin(MediaPlugin):
         self._default_fullscreen = fullscreen
         self._default_volume = volume
         self._on_stop_callbacks = []
+        self._title = None
+        self._filename = None
 
     @classmethod
     def _watched_event_types(cls):
@@ -76,6 +78,9 @@ class MediaVlcPlugin(MediaPlugin):
 
     def _reset_state(self):
         self._latest_seek = None
+        self._title = None
+        self._filename = None
+
         if self._player:
             self._player.release()
             self._player = None
@@ -105,8 +110,12 @@ class MediaVlcPlugin(MediaPlugin):
                 for cbk in self._on_stop_callbacks:
                     cbk()
             elif event.type == EventType.MediaPlayerTitleChanged:
+                self._filename = event.u.filename
+                self._title = event.u.new_title
                 self._post_event(NewPlayingMediaEvent, resource=event.u.new_title)
             elif event.type == EventType.MediaPlayerMediaChanged:
+                self._filename = event.u.filename
+                self._title = event.u.new_title
                 self._post_event(NewPlayingMediaEvent, resource=event.u.filename)
             elif event.type == EventType.MediaPlayerLengthChanged:
                 self._post_event(NewPlayingMediaEvent, resource=self._get_current_resource())
@@ -396,8 +405,8 @@ class MediaVlcPlugin(MediaPlugin):
         status['path'] = status['url']
         status['pause'] = status['state'] == PlayerState.PAUSE.value
         status['percent_pos'] = self._player.get_position()*100
-        status['filename'] = urllib.parse.unquote(status['url']).split('/')[-1]
-        status['title'] = status['filename']
+        status['filename'] = self._filename
+        status['title'] = self._title
         status['volume'] = self._player.audio_get_volume()
         status['volume_max'] = 100
 

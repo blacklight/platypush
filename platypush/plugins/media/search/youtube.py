@@ -1,11 +1,12 @@
 import re
-import urllib
+import urllib.parse
+import urllib.request
 
 from platypush.context import get_plugin
 from platypush.plugins.media.search import MediaSearcher
 
 class YoutubeMediaSearcher(MediaSearcher):
-    def search(self, query):
+    def search(self, query, **kwargs):
         """
         Performs a YouTube search either using the YouTube API (faster and
         recommended, it requires the :mod:`platypush.plugins.google.youtube`
@@ -23,11 +24,12 @@ class YoutubeMediaSearcher(MediaSearcher):
 
             return self._youtube_search_html_parse(query=query)
 
-    def _youtube_search_api(self, query):
+    @staticmethod
+    def _youtube_search_api(query):
         return [
             {
                 'url': 'https://www.youtube.com/watch?v=' + item['id']['videoId'],
-                'title': item.get('snippet', {}).get('title', '<No Title>'),
+                **item.get('snippet', {}),
             }
             for item in get_plugin('google.youtube').search(query=query).output
             if item.get('id', {}).get('kind') == 'youtube#video'
@@ -53,7 +55,7 @@ class YoutubeMediaSearcher(MediaSearcher):
                 html = ''
 
         self.logger.info('{} YouTube video results for the search query "{}"'
-                     .format(len(results), query))
+                         .format(len(results), query))
 
         return results
 

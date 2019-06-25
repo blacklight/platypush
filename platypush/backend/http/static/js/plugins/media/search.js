@@ -15,6 +15,12 @@ Vue.component('media-search', {
                 obj[type] = true;
                 return obj;
             }, {}),
+
+            searchTypes: Object.keys(this.supportedTypes).reduce((obj, type) => {
+                if (type !== 'generic' && type !== 'base')
+                    obj[type] = true;
+                return obj;
+            }, {}),
         };
     },
 
@@ -31,7 +37,7 @@ Vue.component('media-search', {
         },
 
         search: async function(event) {
-            const types = Object.entries(this.types).filter(t => t[0] !== 'generic' && t[1]).map(t => t[0]);
+            const types = Object.entries(this.searchTypes).filter(t => t[1]).map(t => t[0]);
             const protocol = this.isUrl(this.query);
 
             if (protocol) {
