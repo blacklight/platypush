@@ -53,10 +53,10 @@ MediaPlayers.local = Vue.extend({
             return await request(this.pluginPrefix.concat('.status'));
         },
 
-        play: async function(resource, subtitles=undefined) {
+        play: async function(item, subtitles=undefined) {
             return await request(
                 this.pluginPrefix.concat('.play'),
-                {resource: resource, subtitles: subtitles}
+                {resource: item.url, subtitles: subtitles}
             );
         },
 

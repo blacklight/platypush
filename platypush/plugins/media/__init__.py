@@ -358,7 +358,7 @@ class MediaPlugin(Plugin):
         return filename.lower().split('.')[-1] in cls.audio_extensions
 
     @action
-    def start_streaming(self, media, download=False):
+    def start_streaming(self, media, subtitles=None, download=False):
         """
         Starts streaming local media over the specified HTTP port.
         The stream will be available to HTTP clients on
@@ -366,6 +366,9 @@ class MediaPlugin(Plugin):
 
         :param media: Media to stream
         :type media: str
+
+        :param subtitles: Path or URL to the subtitles track to be used
+        :type subtitles: str
 
         :param download: Set to True if you prefer to download the file from
             the streaming link instead of streaming it
@@ -391,7 +394,7 @@ class MediaPlugin(Plugin):
         self.logger.info('Starting streaming {}'.format(media))
         response = requests.put('{url}/media{download}'.format(
             url=http.local_base_url, download='?download' if download else ''),
-            json={'source': media})
+            json={'source': media, 'subtitles': subtitles})
 
         if not response.ok:
             self.logger.warning('Unable to start streaming: {}'.

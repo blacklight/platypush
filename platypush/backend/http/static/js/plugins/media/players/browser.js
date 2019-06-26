@@ -38,7 +38,14 @@ MediaPlayers.browser = Vue.extend({
             return {};
         },
 
-        play: async function(item) {
+        play: async function(item, subtitles) {
+            let url = item.url;
+            if (item.source && item.source.startsWith('file://'))
+                url += '?webplayer'
+
+            let playerWindow = window.open(url, '_blank');
+            console.log(playerWindow);
+            return {};
         },
 
         stop: async function() {

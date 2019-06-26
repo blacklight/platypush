@@ -105,10 +105,10 @@ Vue.component('media', {
 
         play: async function(item) {
             if (!this.selectedDevice.accepts[item.type]) {
-                item = await this.startStreaming(item.url);
+                item = await this.startStreaming(item);
             }
 
-            let status = await this.selectedDevice.play(item.url, item.subtitles);
+            let status = await this.selectedDevice.play(item, item.subtitles);
 
             if (item.title)
                 status.title = item.title;
@@ -167,14 +167,24 @@ Vue.component('media', {
         },
 
         startStreaming: async function(item) {
-            const resource = item instanceof Object ? item.url : item;
+            if (typeof item === 'string')
+                item = {url: item};
+
             const ret = await request('media.start_streaming', {
-                media: resource,
+                media: item.url,
+                subtitles: item.subtitles,
             });
+
+            const hostRegex = /^(https?:\/\/[^:/]+(:[0-9]+)?\/?)/;
+            const baseURL = window.location.href.match(hostRegex)[1];
+
+            ret.url = ret.url.replace(hostRegex, baseURL);
+            if (ret.subtitles_url)
+                ret.subtitles_url = ret.subtitles_url.replace(hostRegex, baseURL);
 
             this.bus.$emit('streaming-started', {
                 url: ret.url,
-                resource: resource,
+                resource: item.url,
             });
 
             return ret;
