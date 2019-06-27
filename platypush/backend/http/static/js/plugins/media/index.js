@@ -48,6 +48,7 @@ Vue.component('media', {
             results: [],
             status: {},
             selectedDevice: {},
+            deviceHandlers: {},
 
             loading: {
                 results: false,
@@ -175,19 +176,13 @@ Vue.component('media', {
                 subtitles: item.subtitles,
             });
 
-            const hostRegex = /^(https?:\/\/[^:/]+(:[0-9]+)?\/?)/;
-            const baseURL = window.location.href.match(hostRegex)[1];
-
-            ret.url = ret.url.replace(hostRegex, baseURL);
-            if (ret.subtitles_url)
-                ret.subtitles_url = ret.subtitles_url.replace(hostRegex, baseURL);
-
             this.bus.$emit('streaming-started', {
                 url: ret.url,
                 resource: item.url,
+                subtitles_url: ret.subtiles_url,
             });
 
-            return ret;
+            return {...item, ...ret};
         },
 
         searchSubs: function(item) {
@@ -209,6 +204,9 @@ Vue.component('media', {
         },
 
         syncPosition: function(status) {
+            if (!status)
+                return;
+
             status._syncTime = {
                 timestamp: new Date(),
                 position: status.position,
@@ -227,27 +225,41 @@ Vue.component('media', {
             if (!this.status[dev.type])
                 Vue.set(this.status, dev.type, {});
             Vue.set(this.status[dev.type], dev.name, status);
+
+            if (!this.deviceHandlers[dev.type])
+                Vue.set(this.deviceHandlers, dev.type, {});
+            Vue.set(this.deviceHandlers[dev.type], dev.name, dev);
         },
 
         onMediaEvent: async function(event) {
-            let status = await request(event.plugin + '.status');
+            var type, player;
+            const plugin = event.plugin.replace(/^media\./, '');
+
+            if (this.status[event.player] && this.status[event.player][plugin]) {
+                type = event.player;
+                player = plugin;
+            } else if (this.status[plugin] && this.status[plugin][event.player]) {
+                type = plugin;
+                player = event.player;
+            }
+
+            var handler;
+            if (this.deviceHandlers[event.player] && this.deviceHandlers[event.player][plugin]) {
+                handler = this.deviceHandlers[event.player][plugin];
+            } else if (this.deviceHandlers[plugin] && this.deviceHandlers[plugin][event.player]) {
+                handler = this.deviceHandlers[plugin][event.player];
+            } else {
+                // No handlers
+                console.warn('No handlers found for device type '.concat(event.plugin, ' and player ', event.player));
+                return;
+            }
+
+            let status = await handler.status(event.player);
             this.syncPosition(status);
 
             if (event.resource) {
                 event.url = event.resource;
                 delete event.resource;
-            }
-
-            if (event.plugin.startsWith('media.'))
-                event.plugin = event.plugin.substr(6);
-
-            var type, player;
-            if (this.status[event.player] && this.status[event.player][event.plugin]) {
-                type = event.player;
-                player = event.plugin;
-            } else if (this.status[event.plugin] && this.status[event.plugin][event.player]) {
-                type = event.plugin;
-                player = event.player;
             }
 
             if (status.state !== 'stop') {

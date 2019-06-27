@@ -40,15 +40,16 @@ MediaPlayers.browser = Vue.extend({
 
         play: async function(item, subtitles) {
             let url = item.url;
-            if (item.source && item.source.startsWith('file://'))
-                url += '?webplayer'
 
-            let playerWindow = window.open(url, '_blank');
-            console.log(playerWindow);
+            if (item.source && !item.source.match('https?://')) {
+                // Non-HTTP resource streamed over HTTP
+                const hostRegex = /^(https?:\/\/[^:/]+(:[0-9]+)?\/?)/;
+                const baseURL = window.location.href.match(hostRegex)[1];
+                url = url.replace(hostRegex, baseURL) + '?webplayer';
+            }
+
+            window.open(url, '_blank');
             return {};
-        },
-
-        stop: async function() {
         },
     },
 });

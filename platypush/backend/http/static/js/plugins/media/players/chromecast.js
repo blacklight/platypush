@@ -48,14 +48,40 @@ MediaPlayers.chromecast = Vue.extend({
             return await request('media.chromecast.get_chromecasts');
         },
 
-        status: async function() {
-            return {};
+        status: async function(device) {
+            return await request('media.chromecast.status', {chromecast: device || this.device.name});
         },
 
         play: async function(item) {
+            return await request('media.chromecast.play', {
+                resource: item.url,
+                chromecast: this.device.name,
+                title: item.title || item.url,
+                subtitles: item.subtitles_url,
+                content_type: item.mime_type,
+            });
+        },
+
+        pause: async function() {
+            return await request('media.chromecast.pause', {chromecast: this.device.name});
         },
 
         stop: async function() {
+            return await request('media.chromecast.stop', {chromecast: this.device.name});
+        },
+
+        seek: async function(position) {
+            return await request('media.chromecast.set_position', {
+                position: position,
+                chromecast: this.device.name,
+            });
+        },
+
+        setVolume: async function(volume) {
+            return await request('media.chromecast.set_volume', {
+                volume: volume,
+                chromecast: this.device.name,
+            });
         },
     },
 });

@@ -366,7 +366,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
         return {'resource': resource, 'url': stream_url}
 
     @action
-    def download(self, resource):
+    def download(self, resource, **kwargs):
         return self.play(resource, download_only=True)
 
     @action
