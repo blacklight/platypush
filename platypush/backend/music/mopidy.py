@@ -1,7 +1,5 @@
 import json
-import queue
 import re
-import threading
 import time
 
 from platypush.backend import Backend
@@ -12,6 +10,7 @@ from platypush.message.event.music import MusicPlayEvent, MusicPauseEvent, \
     MuteChangeEvent, SeekChangeEvent
 
 
+# noinspection PyUnusedLocal
 class MusicMopidyBackend(Backend):
     """
     This backend listens for events on a Mopidy music server streaming port.
@@ -33,7 +32,7 @@ class MusicMopidyBackend(Backend):
         * :class:`platypush.message.event.music.SeekChangeEvent` if a track seek event occurs
 
     Requires:
-        * **websockets** (``pip install websockets``)
+        * **websocket-client** (``pip install websocket-client``)
         * Mopidy installed and the HTTP service enabled
     """
 
@@ -52,7 +51,8 @@ class MusicMopidyBackend(Backend):
         except Exception as e:
             self.logger.warning('Unable to get mopidy status: {}'.format(str(e)))
 
-    def _parse_track(self, track, pos=None):
+    @staticmethod
+    def _parse_track(track, pos=None):
         if not track:
             return {}
 
@@ -85,7 +85,6 @@ class MusicMopidyBackend(Backend):
 
         return conv_track
 
-
     def _communicate(self, msg):
         import websocket
 
@@ -102,7 +101,6 @@ class MusicMopidyBackend(Backend):
         response = json.loads(ws.recv()).get('result')
         ws.close()
         return response
-
 
     def _get_tracklist_status(self):
         return {
@@ -139,8 +137,8 @@ class MusicMopidyBackend(Backend):
                     return
                 self.bus.post(MusicPlayEvent(status=status, track=track))
             elif event == 'track_playback_ended' or (
-                event == 'playback_state_changed'
-                and msg.get('new_state') == 'stopped'):
+                    event == 'playback_state_changed'
+                    and msg.get('new_state') == 'stopped'):
                 status['state'] = 'stop'
                 track = self._parse_track(track)
                 self.bus.post(MusicStopEvent(status=status, track=track))
@@ -170,15 +168,15 @@ class MusicMopidyBackend(Backend):
             elif event == 'mute_changed':
                 status['mute'] = msg.get('mute')
                 self.bus.post(MuteChangeEvent(mute=status['mute'],
-                                            status=status, track=track))
+                                              status=status, track=track))
             elif event == 'seeked':
                 status['position'] = msg.get('time_position')/1000
                 self.bus.post(SeekChangeEvent(position=status['position'],
-                                            status=status, track=track))
+                                              status=status, track=track))
             elif event == 'tracklist_changed':
                 tracklist = [self._parse_track(t, pos=i)
-                            for i, t in enumerate(self._communicate({
-                                'method': 'core.tracklist.get_tl_tracks' }))]
+                             for i, t in enumerate(self._communicate({
+                                'method': 'core.tracklist.get_tl_tracks'}))]
 
                 self.bus.post(PlaylistChangeEvent(changes=tracklist))
             elif event == 'options_changed':

@@ -9,7 +9,7 @@ MediaPlayers.kodi = Vue.extend({
             type: Object,
             default: () => {
                 return {
-                    url: undefined,
+                    host: undefined,
                 };
             },
         },
@@ -18,6 +18,8 @@ MediaPlayers.kodi = Vue.extend({
             type: Object,
             default: () => {
                 return {
+                    file: true,
+                    generic: true,
                     youtube: true,
                 };
             },
@@ -30,50 +32,54 @@ MediaPlayers.kodi = Vue.extend({
     },
 
     computed: {
-        host: function() {
-            if (!this.device.url) {
-                return;
-            }
-
-            return this.device.url.match(/^https?:\/\/([^:]+):(\d+).*$/)[1];
-        },
-
         name: function() {
-            return this.host;
-        },
-
-        port: function() {
-            if (!this.device.url) {
-                return;
-            }
-
-            return parseInt(this.device.url.match(/^https?:\/\/([^:]+):(\d+).*$/)[2]);
+            return this.device.host;
         },
 
         text: function() {
-            return 'Kodi '.concat('[', this.host, ']');
+            return 'Kodi '.concat('[', this.device.host, ']');
         },
     },
 
     methods: {
         scan: async function() {
-            if (!('media.kodi' in __plugins__)) {
+            const plugin = __plugins__['media.kodi'];
+            if (!plugin) {
                 return [];
             }
 
-            return [
-                { url: __plugins__['media.kodi'].url }
-            ];
+            return [{ host: plugin.host }];
         },
 
         status: async function() {
-            return {};
+            return await request('media.kodi.status');
         },
 
         play: async function(item) {
+            return await request('media.kodi.play', {
+                resource: item.url,
+                subtitles: item.subtitles_url,
+            });
+        },
+
+        pause: async function() {
+            return await request('media.kodi.pause');
         },
 
         stop: async function() {
+            return await request('media.kodi.stop');
+        },
+
+        seek: async function(position) {
+            return await request('media.kodi.set_position', {
+                position: position,
+            });
+        },
+
+        setVolume: async function(volume) {
+            return await request('media.kodi.set_volume', {
+                volume: volume,
+            });
         },
     },
 });
