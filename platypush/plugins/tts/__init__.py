@@ -3,6 +3,7 @@ import urllib.parse
 
 from platypush.plugins import Plugin, action
 
+
 class TtsPlugin(Plugin):
     """
     Default Text-to-Speech plugin. It leverages Google Translate.
@@ -28,15 +29,13 @@ class TtsPlugin(Plugin):
         :type language: str
         """
         if language is None: language=self.lang
-        output = None
-        errors = []
         cmd = ['mplayer -ao alsa -really-quiet -noconsolecontrols ' +
                '"http://translate.google.com/translate_tts?{}"'
                .format(urllib.parse.urlencode({
-                   'ie'     : 'UTF-8',
-                   'client' : 'tw-ob',
-                   'tl'     : language,
-                   'q'      : text,
+                   'ie': 'UTF-8',
+                   'client': 'tw-ob',
+                   'tl': language,
+                   'q': text,
                 }))]
 
         try:

@@ -48,7 +48,6 @@ class Plugin(EventGenerator):
             .get('action', [])
         )
 
-
     def run(self, method, *args, **kwargs):
         if method not in self.registered_actions:
             raise RuntimeError('{} is not a registered action on {}'.format(

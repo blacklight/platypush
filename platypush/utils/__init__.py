@@ -12,6 +12,7 @@ import urllib.request
 
 logger = logging.getLogger(__name__)
 
+
 def get_module_and_method_from_action(action):
     """ Input  : action=music.mpd.play
         Output : ('music.mpd', 'play') """
@@ -19,7 +20,7 @@ def get_module_and_method_from_action(action):
     tokens = action.split('.')
     module_name = str.join('.', tokens[:-1])
     method_name = tokens[-1:][0]
-    return (module_name, method_name)
+    return module_name, method_name
 
 
 def get_message_class_by_type(msgtype):
@@ -47,6 +48,32 @@ def get_event_class_by_type(type):
     """ Gets an event class by type name """
     event_module = importlib.import_module('.'.join(type.split('.')[:-1]))
     return getattr(event_module, type.split('.')[-1])
+
+
+def get_plugin_module_by_name(plugin_name):
+    """ Gets the module of a plugin by name (e.g. "music.mpd" or "media.vlc") """
+
+    module_name = 'platypush.plugins.' + plugin_name
+    try:
+        return importlib.import_module('platypush.plugins.' + plugin_name)
+    except ImportError as e:
+        logger.error('Cannot import {}: {}'.format(module_name, str(e)))
+        return None
+
+
+def get_plugin_class_by_name(plugin_name):
+    """ Gets the class of a plugin by name (e.g. "music.mpd" or "media.vlc") """
+
+    module = get_plugin_module_by_name(plugin_name)
+    if not module:
+        return
+
+    class_name = getattr(module, ''.join([_.capitalize() for _ in plugin_name.split('.')]) + 'Plugin')
+    try:
+        return getattr(module, ''.join([_.capitalize() for _ in plugin_name.split('.')]) + 'Plugin')
+    except Exception as e:
+        logger.error('Cannot import class {}: {}'.format(class_name, str(e)))
+        return None
 
 
 def set_timeout(seconds, on_timeout):

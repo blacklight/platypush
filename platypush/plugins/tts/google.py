@@ -6,6 +6,7 @@ from google.cloud import texttospeech
 
 from platypush.plugins import Plugin, action
 
+
 class TtsGooglePlugin(Plugin):
     """
     Advanced text-to-speech engine that leverages the Google Cloud TTS API.

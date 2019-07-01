@@ -6,6 +6,7 @@ import time
 from platypush.plugins import action
 from platypush.plugins.music import MusicPlugin
 
+
 class MusicMpdPlugin(MusicPlugin):
     """
     This plugin allows you to interact with an MPD/Mopidy music server.  MPD

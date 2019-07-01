@@ -29,7 +29,7 @@ class MusicSnapcastPlugin(Plugin):
         :type port: int
         """
 
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
         self.host = host
         self.port = port

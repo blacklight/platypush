@@ -8,10 +8,10 @@ from Adafruit_IO import Client
 from Adafruit_IO.errors import ThrottlingError
 
 from platypush.context import get_backend
-from platypush.message import Message
 from platypush.plugins import Plugin, action
 
-data_throttler_lock = Lock()
+data_throttler_lock = None
+
 
 class AdafruitIoPlugin(Plugin):
     """
@@ -49,7 +49,7 @@ class AdafruitIoPlugin(Plugin):
 
     _DATA_THROTTLER_QUEUE = 'platypush/adafruit.io'
 
-    def __init__(self, username, key, throttle_seconds=None, *args, **kwargs):
+    def __init__(self, username, key, throttle_seconds=None, **kwargs):
         """
         :param username: Your Adafruit username
         :type username: str
@@ -57,32 +57,38 @@ class AdafruitIoPlugin(Plugin):
         :param key: Your Adafruit IO key
         :type key: str
 
-        :param throttle_seconds: If set, then instead of sending the values directly over ``send`` the plugin will first collect all the samples within the specified period and then dispatch them to Adafruit IO. You may want to set it if you have data sources providing a lot of data points and you don't want to hit the throttling limitations of Adafruit.
+        :param throttle_seconds: If set, then instead of sending the values directly over ``send`` the plugin will
+            first collect all the samples within the specified period and then dispatch them to Adafruit IO.
+            You may want to set it if you have data sources providing a lot of data points and you don't want to hit
+            the throttling limitations of Adafruit.
         :type throttle_seconds: float
         """
 
-        super().__init__(*args, **kwargs)
+        global data_throttler_lock
+        super().__init__(**kwargs)
 
         self._username = username
         self._key = key
         self.aio = Client(username=username, key=key)
         self.throttle_seconds = throttle_seconds
 
+        if not data_throttler_lock:
+            data_throttler_lock = Lock()
+
         if self.throttle_seconds and not data_throttler_lock.locked():
-            redis = self._get_redis()
+            self._get_redis()
             self.logger.info('Starting Adafruit IO throttler thread')
             data_throttler_lock.acquire(False)
             self.data_throttler = Thread(target=self._data_throttler())
             self.data_throttler.start()
 
-
-    def _get_redis(self):
+    @staticmethod
+    def _get_redis():
         from redis import Redis
 
         redis_args = get_backend('redis').redis_args
         redis_args['socket_timeout'] = 1
         return Redis(**redis_args)
-
 
     def _data_throttler(self):
         from redis.exceptions import TimeoutError as QueueTimeoutError
@@ -104,7 +110,7 @@ class AdafruitIoPlugin(Plugin):
                         pass
 
                     if data and (last_processed_batch_timestamp is None or
-                                time.time() - last_processed_batch_timestamp >= self.throttle_seconds):
+                                 time.time() - last_processed_batch_timestamp >= self.throttle_seconds):
                         last_processed_batch_timestamp = time.time()
                         self.logger.info('Processing feeds batch for Adafruit IO')
 
@@ -115,7 +121,8 @@ class AdafruitIoPlugin(Plugin):
                                 try:
                                     self.send(feed, value, enqueue=False)
                                 except ThrottlingError:
-                                    self.logger.warning('Adafruit IO throttling threshold hit, taking a nap before retrying')
+                                    self.logger.warning('Adafruit IO throttling threshold hit, taking a nap ' +
+                                                        'before retrying')
                                     time.sleep(self.throttle_seconds)
 
                         data = {}
@@ -135,7 +142,9 @@ class AdafruitIoPlugin(Plugin):
         :param value: Value to send
         :type value: Numeric or string
 
-        :param enqueue: If throttle_seconds is set, this method by default will append values to the throttling queue to be periodically flushed instead of sending the message directly. In such case, pass enqueue=False to override the behaviour and send the message directly instead.
+        :param enqueue: If throttle_seconds is set, this method by default will append values to the throttling queue
+            to be periodically flushed instead of sending the message directly. In such case, pass enqueue=False to
+            override the behaviour and send the message directly instead.
         :type enqueue: bool
         """
 
@@ -145,8 +154,7 @@ class AdafruitIoPlugin(Plugin):
         else:
             # Otherwise send it to the Redis queue to be picked up by the throttler thread
             redis = self._get_redis()
-            redis.rpush(self._DATA_THROTTLER_QUEUE, json.dumps({feed:value}))
-
+            redis.rpush(self._DATA_THROTTLER_QUEUE, json.dumps({feed: value}))
 
     @action
     def send_location_data(self, feed, lat, lon, ele, value):
@@ -169,12 +177,19 @@ class AdafruitIoPlugin(Plugin):
         :type value: Numeric or string
         """
 
-        self.aio.send_location_data(feed=feed, value=value, lat=lat, lon=lon, ele=ele)
+        self.aio.send_data(feed=feed, value=value, metadata={
+            'lat': lat,
+            'lon': lon,
+            'ele': ele,
+        })
 
     @classmethod
     def _cast_value(cls, value):
-        try: value = float(value)
-        except: pass
+        try:
+            value = float(value)
+        except ValueError:
+            pass
+
         return value
 
     def _convert_data_to_dict(self, *data):
@@ -187,7 +202,6 @@ class AdafruitIoPlugin(Plugin):
                 for attr in DATA_FIELDS if getattr(i, attr) is not None
             } for i in data
         ]
-
 
     @action
     def receive(self, feed, limit=1):
@@ -243,7 +257,7 @@ class AdafruitIoPlugin(Plugin):
         :type feed: str
 
         :param data_id: Data point ID to remove
-        :type data_id: int
+        :type data_id: str
         """
 
         self.aio.delete(feed, data_id)
