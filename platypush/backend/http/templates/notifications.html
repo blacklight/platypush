@@ -25,6 +25,8 @@
                     <img :src="image.src" v-if="image && image.src">
                     <i :class="['fa', 'fa-' + image.icon]" :style="image.color ? '--color: ' + image.color : ''"
                        v-else-if="image && image.icon"></i>
+                    <i :class="image.iconClass" :style="image.color ? '--color: ' + image.color : ''"
+                       v-else-if="image && image.iconClass"></i>
                     <i class="fa fa-exclamation" v-else-if="warning"></i>
                     <i class="fa fa-times" v-else-if="error"></i>
                 </div>

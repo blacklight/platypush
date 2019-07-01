@@ -1,0 +1,40 @@
+.media-plugin {
+    #media-torrents {
+        .modal {
+            width: 90%;
+
+            .body {
+                padding: 0;
+                text-align: center;
+
+                .head {
+                    font-weight: bold;
+                    padding: .5rem 0 2.5rem 0;
+                    background: $torrents-head-bg;
+                    border-bottom: $default-border-3;
+                }
+
+                .transfers-container {
+                    margin: 0;
+                    width: 100%;
+                }
+
+                .transfer {
+                    display: flex;
+                    padding: 1.5rem;
+                    cursor: pointer;
+
+                    &:nth-child(odd) { background: rgba(255,255,255,0.0); }
+                    &:nth-child(even) { background: $default-bg-3; }
+                    &.selected { background: $selected-bg; }
+
+                    &:hover {
+                        background: $hover-bg;
+                        border-radius: .5rem;
+                    }
+                }
+            }
+        }
+    }
+}
+

@@ -1,4 +1,4 @@
-function execute(request) {
+function execute(request, timeout=30000) {
     var additionalPayload = {};
 
     if (!('target' in request) || !request['target']) {
@@ -13,6 +13,10 @@ function execute(request) {
         additionalPayload.headers = {
             'X-Token': window.config.token
         };
+    }
+
+    if (timeout) {
+        additionalPayload.timeout = timeout;
     }
 
     return new Promise((resolve, reject) => {
@@ -42,7 +46,7 @@ function execute(request) {
     });
 }
 
-function request(action, args={}) {
+function request(action, args={}, timeout=30000) {
     return execute({
         type: 'request',
         action: action,

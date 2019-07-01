@@ -4,6 +4,7 @@
 {% include 'plugins/media/item.html' %}
 {% include 'plugins/media/info.html' %}
 {% include 'plugins/media/subs.html' %}
+{% include 'plugins/media/torrents.html' %}
 
 <script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/handlers/base.js') }}"></script>
 
@@ -18,13 +19,20 @@
 <script type="text/x-template" id="tmpl-media">
     <div class="plugin media-plugin">
         <div class="search">
-            <div class="col-11">
+            <div class="col-10">
                 <media-search :bus="bus"
                               :supportedTypes="types">
                 </media-search>
             </div>
 
-            <div class="col-1 pull-right">
+            <div class="col-2 top-buttons">
+                <button type="button"
+                        v-if="torrentsDownloading"
+                        @click="torrentModal.visible = !torrentModal.visible"
+                        title="Show torrents progress">
+                    <i class="fa fa-download"></i>
+                </button>
+
                 <media-devices :bus="bus"
                                :localPlayer="player">
                 </media-devices>
@@ -54,6 +62,13 @@
                         :subFormats="selectedDevice ? selectedDevice.subFormats : []"
                         ref="subs">
             </media-subs>
+        </modal>
+
+        <modal id="media-torrents" title="Torrents progress" v-model="torrentModal.visible">
+            <media-torrents :bus="bus"
+                            :torrents="torrentModal.items"
+                            ref="torrents">
+            </media-torrents>
         </modal>
     </div>
 </script>

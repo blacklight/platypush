@@ -159,9 +159,6 @@ class MediaVlcPlugin(MediaPlugin):
 
         if resource.startswith('file://'):
             resource = resource[len('file://'):]
-        elif resource.startswith('magnet:?'):
-            self._is_playing_torrent = True
-            return get_plugin('media.webtorrent').play(resource)
 
         self._init_vlc(resource)
         if subtitles:
@@ -169,7 +166,6 @@ class MediaVlcPlugin(MediaPlugin):
                 subtitles = subtitles[len('file://'):]
             self._player.video_set_subtitle_file(subtitles)
 
-        self._is_playing_torrent = False
         self._player.play()
 
         if fullscreen or self._default_fullscreen:

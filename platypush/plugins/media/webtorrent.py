@@ -10,7 +10,7 @@ from platypush.config import Config
 from platypush.context import get_bus, get_plugin
 from platypush.plugins.media import PlayerState, MediaPlugin
 from platypush.message.event.torrent import TorrentDownloadStartEvent, \
-    TorrentDownloadCompletedEvent, TorrentDownloadingMetadataEvent
+    TorrentDownloadCompletedEvent, TorrentDownloadedMetadataEvent
 
 from platypush.plugins import action
 from platypush.utils import find_bins_in_path, find_files_by_ext, \
@@ -142,7 +142,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
                         and state == TorrentState.IDLE:
                     # IDLE -> DOWNLOADING_METADATA
                     state = TorrentState.DOWNLOADING_METADATA
-                    bus.post(TorrentDownloadingMetadataEvent(resource=resource))
+                    bus.post(TorrentDownloadedMetadataEvent(resource=resource))
                 elif 'downloading: ' in line.lower() \
                         and media_file is None:
                     # Find video files in torrent directory

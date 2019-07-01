@@ -5,7 +5,7 @@ import time
 from queue import Queue
 
 from platypush.config import Config
-from platypush.message.event import Event, StopEvent
+from platypush.message.event import StopEvent
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +13,7 @@ logger = logging.getLogger(__name__)
 class Bus(object):
     """ Main local bus where the daemon will listen for new messages """
 
-    _MSG_EXPIRY_TIMEOUT = 60.0  # Consider a message on the bus as expired
-                                # after one minute without being picked up
+    _MSG_EXPIRY_TIMEOUT = 60.0  # Consider a message on the bus as expired after one minute without being picked up
 
     def __init__(self, on_message=None):
         self.bus = Queue()
@@ -56,19 +55,19 @@ class Bus(object):
             logger.warning('No message handlers installed, cannot poll')
             return
 
-        stop=False
+        stop = False
         while not stop:
             msg = self.get()
             if msg.timestamp and time.time() - msg.timestamp > self._MSG_EXPIRY_TIMEOUT:
-                logger.debug('{} seconds old message on the bus expired, ignoring it: {}'
-                            .format(int(time.time()-msg.timestamp), msg))
+                logger.debug('{} seconds old message on the bus expired, ignoring it: {}'.
+                             format(int(time.time()-msg.timestamp), msg))
                 continue
 
             threading.Thread(target=self._msg_executor(msg)).start()
 
             if isinstance(msg, StopEvent) and msg.targets_me():
                 logger.info('Received STOP event on the bus')
-                stop=True
+                stop = True
 
 
 # vim:sw=4:ts=4:et:

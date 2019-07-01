@@ -61,7 +61,6 @@ class MediaMplayerPlugin(MediaPlugin):
         self._mplayer_timeout = mplayer_timeout
         self._mplayer_stopped_event = threading.Event()
         self._status_lock = threading.Lock()
-        self._is_playing_torrent = False
 
     def _init_mplayer_bin(self, mplayer_bin=None):
         if not mplayer_bin:
@@ -259,11 +258,7 @@ class MediaMplayerPlugin(MediaPlugin):
         resource = self._get_resource(resource)
         if resource.startswith('file://'):
             resource = resource[7:]
-        elif resource.startswith('magnet:?'):
-            self._is_playing_torrent = True
-            return get_plugin('media.webtorrent').play(resource)
 
-        self._is_playing_torrent = False
         self._exec('loadfile', resource, mplayer_args=mplayer_args)
         self._post_event(MediaPlayEvent, resource=resource)
         return self.status()

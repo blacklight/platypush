@@ -11,12 +11,17 @@
 
         <div class="row" v-if="item.title">
             <div class="col-3 attr">Title</div>
-            <div class="col-9 value" v-text="item.title"></div>
+            <div class="col-9 value">
+                <a :href="'https://imdb.com/title/' + item.imdb_id" v-if="item.imdb_id" target="_blank">
+                    {% raw %}{{ item.title }}{% endraw %}
+                </a>
+                <span v-text="item.title" v-else></span>
+            </div>
         </div>
 
-        <div class="row" v-if="item.description">
+        <div class="row" v-if="item.description || item.synopsis">
             <div class="col-3 attr">Description</div>
-            <div class="col-9 value" v-text="item.description"></div>
+            <div class="col-9 value" v-text="item.description || item.synopsis"></div>
         </div>
 
         <div class="row" v-if="item.channelTitle">
@@ -42,6 +47,16 @@
         <div class="row" v-if="item.size">
             <div class="col-3 attr">Size</div>
             <div class="col-9 value" v-text="convertSize(item.size)"></div>
+        </div>
+
+        <div class="row" v-if="item.peers != null || item.num_peers != null">
+            <div class="col-3 attr">Peers</div>
+            <div class="col-9 value" v-text="item.peers || item.num_peers"></div>
+        </div>
+
+        <div class="row" v-if="item.seeds != null">
+            <div class="col-3 attr">Seeds</div>
+            <div class="col-9 value" v-text="item.seeds"></div>
         </div>
     </div>
 </script>

@@ -46,11 +46,6 @@
         @include appearance(none);
     }
 
-    &::-webkit-progress-value {
-        background: $slider-progress-bg;
-        height: 15px;
-    }
-
     &::-moz-range-progress {
         background: $slider-progress-bg;
         height: 15px;

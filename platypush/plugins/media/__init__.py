@@ -30,8 +30,6 @@ class MediaPlugin(Plugin):
     Requires:
 
         * A media player installed (supported so far: mplayer, vlc, mpv, omxplayer, chromecast)
-        * The :class:`platypush.plugins.media.webtorrent` plugin for optional torrent support through webtorrent
-            (recommended)
         * **python-libtorrent** (``pip install python-libtorrent``), optional, for torrent support over native library
         * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
         * **requests** (``pip install requests``), optional, for local files over HTTP streaming supporting
@@ -138,8 +136,15 @@ class MediaPlugin(Plugin):
             os.makedirs(self.download_dir, exist_ok=True)
 
         self.media_dirs.add(self.download_dir)
-        self._is_playing_torrent = False
         self._videos_queue = []
+
+    @staticmethod
+    def _torrent_event_handler(evt_queue):
+        def handler(event):
+            # More than 5% of the torrent has been downloaded
+            if event.args.get('progress', 0) > 5 and event.args.get('files'):
+                evt_queue.put(event.args['files'])
+        return handler
 
     def _get_resource(self, resource):
         """
@@ -159,33 +164,28 @@ class MediaPlugin(Plugin):
 
             resource = self.get_youtube_url(resource).output
         elif resource.startswith('magnet:?'):
-            try:
-                get_plugin('media.webtorrent')
-                return resource  # media.webtorrent will handle this
-            except Exception:
-                pass
-
-            torrents = get_plugin('torrent')
             self.logger.info('Downloading torrent {} to {}'.format(
                 resource, self.download_dir))
+            torrents = get_plugin('torrent')
 
-            response = torrents.download(resource, download_dir=self.download_dir)
-            resources = [f for f in response.output if self._is_video_file(f)]
+            evt_queue = queue.Queue()
+            torrents.download(resource, download_dir=self.download_dir, _async=True, is_media=True,
+                              event_hndl=self._torrent_event_handler(evt_queue))
+
+            resources = [f for f in evt_queue.get()]
+
             if resources:
                 self._videos_queue = sorted(resources)
                 resource = self._videos_queue.pop(0)
             else:
-                raise RuntimeError('Unable to download torrent {}'.format(resource))
+                raise RuntimeError('No media file found in torrent {}'.format(resource))
 
         return resource
 
-    def _stop_torrent(self):
-        if self._is_playing_torrent:
-            try:
-                get_plugin('media.webtorrent').quit()
-            except Exception as e:
-                self.logger.warning('Cannot quit the webtorrent instance: {}'.
-                                    format(str(e)))
+    @staticmethod
+    def _stop_torrent():
+        torrents = get_plugin('torrent')
+        torrents.quit()
 
     @action
     def play(self, resource, *args, **kwargs):
@@ -492,8 +492,7 @@ class MediaPlugin(Plugin):
             [float(t) * pow(60, i) for (i, t) in enumerate(re.search(
                 '^Duration:\s*([^,]+)', [x.decode()
                                          for x in result.stdout.readlines()
-                                         if "Duration" in x.decode()]
-                    .pop().strip()
+                                         if "Duration" in x.decode()].pop().strip()
             ).group(1).split(':')[::-1])]
         )
 

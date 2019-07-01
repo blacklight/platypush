@@ -1,0 +1,31 @@
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/media/torrents.js') }}"></script>
+
+<script type="text/x-template" id="tmpl-media-torrents">
+    <div class="transfers-container">
+        <div class="head">
+            <div class="col-4">Name</div>
+            <div class="col-2">State</div>
+            <div class="col-2">Progress</div>
+            <div class="col-2">Size</div>
+            <div class="col-2">DL rate</div>
+        </div>
+
+        <div class="transfers">
+            <div class="transfer"
+                 :class="{selected: selectedItem && torrent.url === selectedItem.url}"
+                 @click="openDropdown(torrent)"
+                 v-for="torrent in torrents"
+                 :key="torrent.url">
+                <div class="col-4 name" v-text="torrent.name || torrent.url"></div>
+                <div class="col-2 state" v-text="torrent.paused ? 'paused' : torrent.torrentState"></div>
+                <div class="col-2 progress">{% raw %}{{ torrent.progress + '%' }}{% endraw %}</div>
+                <div class="col-2 size" v-text="convertSize(torrent.size)"></div>
+                <div class="col-2 rate">{% raw %}{{ convertSize(torrent.download_rate) + '/s' }}{% endraw %}</div>
+            </div>
+        </div>
+
+        <dropdown ref="menu" :items="dropdownItems">
+        </dropdown>
+    </div>
+</script>
+

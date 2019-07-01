@@ -103,10 +103,10 @@ MediaHandlers.generic = MediaHandlers.file.extend({
     },
 
     methods: {
-        getMetadata: async function(url) {
+        getMetadata: async function(item) {
             return {
-                url: url,
-                title: url,
+                url: item.url,
+                title: item.url,
             };
         },
     },

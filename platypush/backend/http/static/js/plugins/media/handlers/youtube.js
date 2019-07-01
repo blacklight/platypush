@@ -41,7 +41,7 @@ MediaHandlers.youtube = MediaHandlers.base.extend({
             return !!(url.match('^https?://(www\.)?youtube.com/') || url.match('^https?://youtu.be/') || url.match('^https?://.*googlevideo.com/'));
         },
 
-        getMetadata: function(url) {
+        getMetadata: function(item) {
             return {};
         },
 

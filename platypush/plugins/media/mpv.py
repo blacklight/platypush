@@ -2,7 +2,7 @@ import os
 import re
 import threading
 
-from platypush.context import get_bus, get_plugin
+from platypush.context import get_bus
 from platypush.plugins.media import PlayerState, MediaPlugin
 from platypush.message.event.media import MediaPlayEvent, MediaPlayRequestEvent, \
     MediaPauseEvent, MediaStopEvent, NewPlayingMediaEvent, MediaSeekEvent
@@ -42,7 +42,6 @@ class MediaMpvPlugin(MediaPlugin):
             self.args.update(args)
 
         self._player = None
-        self._is_playing_torrent = False
         self._playback_rebounce_event = threading.Event()
         self._on_stop_callbacks = []
 
@@ -53,7 +52,7 @@ class MediaMpvPlugin(MediaPlugin):
         if args:
             mpv_args.update(args)
 
-        for k,v in self._env.items():
+        for k, v in self._env.items():
             os.environ[k] = v
 
         self._player = mpv.MPV(**mpv_args)
@@ -77,7 +76,8 @@ class MediaMpvPlugin(MediaPlugin):
 
             if (evt == Event.FILE_LOADED or evt == Event.START_FILE) and self._get_current_resource():
                 self._playback_rebounce_event.set()
-                self._post_event(NewPlayingMediaEvent, resource=self._get_current_resource(), title=self._player.filename)
+                self._post_event(NewPlayingMediaEvent, resource=self._get_current_resource(),
+                                 title=self._player.filename)
             elif evt == Event.PLAYBACK_RESTART:
                 self._playback_rebounce_event.set()
             elif evt == Event.PAUSE:
@@ -85,8 +85,8 @@ class MediaMpvPlugin(MediaPlugin):
             elif evt == Event.UNPAUSE:
                 self._post_event(MediaPlayEvent, resource=self._get_current_resource(), title=self._player.filename)
             elif evt == Event.SHUTDOWN or (
-                evt == Event.END_FILE and event.get('event', {}).get('reason')
-                in [EndFile.EOF_OR_INIT_FAILURE, EndFile.ABORTED, EndFile.QUIT]):
+                evt == Event.END_FILE and event.get('event', {}).get('reason') in
+                    [EndFile.EOF_OR_INIT_FAILURE, EndFile.ABORTED, EndFile.QUIT]):
                 playback_rebounced = self._playback_rebounce_event.wait(timeout=0.5)
                 if playback_rebounced:
                     self._playback_rebounce_event.clear()
@@ -95,8 +95,8 @@ class MediaMpvPlugin(MediaPlugin):
                 self._player = None
                 self._post_event(MediaStopEvent)
 
-                for callback in self._on_stop_callbacks:
-                    callback()
+                for cbk in self._on_stop_callbacks:
+                    cbk()
             elif evt == Event.SEEK:
                 self._post_event(MediaSeekEvent, position=self._player.playback_time)
 
@@ -111,7 +111,8 @@ class MediaMpvPlugin(MediaPlugin):
 
         for regex in regexes:
             m = re.search(regex, resource)
-            if m: return base_url + m.group(2)
+            if m:
+                return base_url + m.group(2)
         return None
 
     @action
@@ -149,14 +150,11 @@ class MediaMpvPlugin(MediaPlugin):
 
         if resource.startswith('file://'):
             resource = resource[7:]
-        elif resource.startswith('magnet:?'):
-            self._is_playing_torrent = True
-            return get_plugin('media.webtorrent').play(resource)
         else:
             yt_resource = self._get_youtube_link(resource)
-            if yt_resource: resource = yt_resource
+            if yt_resource:
+                resource = yt_resource
 
-        self._is_playing_torrent = False
         self._player.play(resource)
         return self.status()
 
@@ -283,7 +281,7 @@ class MediaMpvPlugin(MediaPlugin):
         return self._player.sub_remove(sub_id)
 
     @action
-    def toggle_fullscreen(self, fullscreen=None):
+    def toggle_fullscreen(self):
         """ Toggle the fullscreen mode """
         return self.toggle_property('fullscreen')
 
@@ -296,14 +294,14 @@ class MediaMpvPlugin(MediaPlugin):
         :param property: Property to toggle
         """
         if not self._player:
-            return (None, 'No mpv instance is running')
+            return None, 'No mpv instance is running'
 
         if not hasattr(self._player, property):
             self.logger.warning('No such mpv property: {}'.format(property))
 
         value = not getattr(self._player, property)
         setattr(self._player, property, value)
-        return { property: value }
+        return {property: value}
 
     @action
     def get_property(self, property):
@@ -312,7 +310,7 @@ class MediaMpvPlugin(MediaPlugin):
         ``man mpv`` for a full list of the available properties
         """
         if not self._player:
-            return (None, 'No mpv instance is running')
+            return None, 'No mpv instance is running'
         return getattr(self._player, property)
 
     @action
@@ -325,7 +323,7 @@ class MediaMpvPlugin(MediaPlugin):
         :type props: dict
         """
         if not self._player:
-            return (None, 'No mpv instance is running')
+            return None, 'No mpv instance is running'
 
         for k,v in props.items():
             setattr(self._player, k, v)
@@ -340,7 +338,7 @@ class MediaMpvPlugin(MediaPlugin):
     def remove_subtitles(self):
         """ Removes (hides) the subtitles """
         if not self._player:
-            return (None, 'No mpv instance is running')
+            return None, 'No mpv instance is running'
         self._player.sub_visibility = False
 
     @action
@@ -368,7 +366,7 @@ class MediaMpvPlugin(MediaPlugin):
             return (None, 'No mpv instance is running')
         mute = not self._player.mute
         self._player.mute = mute
-        return { 'muted': mute }
+        return {'muted': mute}
 
     @action
     def set_position(self, position):

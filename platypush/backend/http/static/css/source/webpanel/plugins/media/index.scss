@@ -10,6 +10,7 @@
 @import 'webpanel/plugins/media/controls';
 @import 'webpanel/plugins/media/info';
 @import 'webpanel/plugins/media/subs';
+@import 'webpanel/plugins/media/torrents';
 
 .media-plugin {
     display: flex;
@@ -49,6 +50,11 @@
     .icon {
         color: $result-item-icon;
         margin-right: .5em;
+    }
+
+    .top-buttons {
+        text-align: right;
+        float: right;
     }
 }
 

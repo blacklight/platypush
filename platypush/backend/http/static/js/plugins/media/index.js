@@ -61,6 +61,11 @@ Vue.component('media', {
                 item: {},
             },
 
+            torrentModal: {
+                visible: false,
+                items: {},
+            },
+
             subsModal: {
                 visible: false,
             },
@@ -70,6 +75,10 @@ Vue.component('media', {
     computed: {
         types: function() {
             return MediaHandlers;
+        },
+
+        torrentsDownloading: function() {
+            return Object.entries(this.torrentModal.items).length > 0;
         },
     },
 
@@ -154,10 +163,7 @@ Vue.component('media', {
         },
 
         info: function(item) {
-            for (const [attr, value] of Object.entries(item)) {
-                Vue.set(this.infoModal.item, attr, value);
-            }
-
+            Vue.set(this.infoModal, 'item', item);
             this.infoModal.loading = false;
             this.infoModal.visible = true;
         },
@@ -211,6 +217,14 @@ Vue.component('media', {
                 timestamp: new Date(),
                 position: status.position,
             };
+        },
+
+        torrentStatusUpdate: function(torrents) {
+            Vue.set(this.torrentModal, 'items', {});
+
+            for (const [url, torrent] of Object.entries(torrents)) {
+                Vue.set(this.torrentModal.items, url, torrent);
+            }
         },
 
         onStatusUpdate: function(event) {
@@ -307,6 +321,7 @@ Vue.component('media', {
         this.bus.$on('status-update', this.onStatusUpdate);
         this.bus.$on('start-streaming', this.startStreaming);
         this.bus.$on('search-subs', this.searchSubs);
+        this.bus.$on('torrent-status-update', this.torrentStatusUpdate);
 
         setInterval(this.timerFunc, 1000);
     },
