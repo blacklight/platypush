@@ -53,7 +53,7 @@ Vue.component('sensors', {
         onSensorEvent: function(event) {
             const data = event.data;
             for (const [name, value] of Object.entries(data)) {
-                this.metrics[name] = value;
+                Vue.set(this.metrics, name, value);
             }
         },
     },
