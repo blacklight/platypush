@@ -41,13 +41,13 @@ Vue.component('sensors', {
                 });
             });
 
-            this.metrics = (await Promise.all(promises)).reduce((obj, metrics) => {
+            Vue.set(this, 'metrics', (await Promise.all(promises)).reduce((obj, metrics) => {
                 for (const [name, value] of Object.entries(metrics)) {
                     obj[name] = value;
                 }
 
                 return obj;
-            }, {});
+            }, {}));
         },
 
         onSensorEvent: function(event) {
