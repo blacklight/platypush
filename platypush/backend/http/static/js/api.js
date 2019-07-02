@@ -1,4 +1,4 @@
-function execute(request, timeout=30000) {
+function execute(request, timeout=60000) {
     var additionalPayload = {};
 
     if (!('target' in request) || !request['target']) {
@@ -46,7 +46,7 @@ function execute(request, timeout=30000) {
     });
 }
 
-function request(action, args={}, timeout=30000) {
+function request(action, args={}, timeout=60000) {
     return execute({
         type: 'request',
         action: action,
