@@ -17,14 +17,13 @@ class SwitchTplinkPlugin(SwitchPlugin):
     _ip_to_dev = {}
     _alias_to_dev = {}
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def _scan(self):
         devices = Discover.discover()
         self._ip_to_dev = {}
         self._alias_to_dev = {}
-
 
         for (ip, dev) in devices.items():
             self._ip_to_dev[ip] = dev
@@ -47,27 +46,8 @@ class SwitchTplinkPlugin(SwitchPlugin):
         else:
             raise RuntimeError('Device {} not found'.format(device))
 
-
     @action
-    def status(self):
-        """
-        :returns: The available device over the network as a
-        """
-
-        devices = { 'devices': {
-            ip: {
-                'alias': dev.alias,
-                'current_consumption': dev.current_consumption(),
-                'host': dev.host,
-                'hw_info': dev.hw_info,
-                'on': dev.is_on,
-            } for (ip, dev) in self._scan().items()
-        } }
-
-        return devices
-
-    @action
-    def on(self, device):
+    def on(self, device, **kwargs):
         """
         Turn on a device
 
@@ -77,11 +57,10 @@ class SwitchTplinkPlugin(SwitchPlugin):
 
         device = self._get_device(device)
         device.turn_on()
-        return {'status':'on'}
-
+        return self.status(device)
 
     @action
-    def off(self, device):
+    def off(self, device, **kwargs):
         """
         Turn off a device
 
@@ -91,11 +70,10 @@ class SwitchTplinkPlugin(SwitchPlugin):
 
         device = self._get_device(device)
         device.turn_off()
-        return {'status':'off'}
-
+        return self.status(device)
 
     @action
-    def toggle(self, device):
+    def toggle(self, device, **kwargs):
         """
         Toggle the state of a device (on/off)
 
@@ -103,15 +81,36 @@ class SwitchTplinkPlugin(SwitchPlugin):
         :type device: str
         """
 
-        device = self._get_device(device, use_cache=False)
+        device = self._get_device(device)
 
         if device.is_on:
             device.turn_off()
         else:
             device.turn_on()
 
-        return {'status': 'off' if device.is_off else 'on'}
+        return {
+            'current_consumption': device.current_consumption(),
+            'id': device.host,
+            'ip': device.host,
+            'host': device.host,
+            'hw_info': device.hw_info,
+            'name': device.alias,
+            'on': device.is_on,
+        }
+
+    @property
+    def devices(self):
+        return [
+            {
+                'current_consumption': dev.current_consumption(),
+                'id': ip,
+                'ip': ip,
+                'host': dev.host,
+                'hw_info': dev.hw_info,
+                'name': dev.alias,
+                'on': dev.is_on,
+            } for (ip, dev) in self._scan().items()
+        ]
 
 
 # vim:sw=4:ts=4:et:
-

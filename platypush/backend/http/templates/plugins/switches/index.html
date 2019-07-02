@@ -1,0 +1,27 @@
+<script type="text/x-template" id="tmpl-switches">
+    <div class="switches-root" ref="root"></div>
+</script>
+
+<script type="text/x-template" id="tmpl-switch-type">
+    <div class="switch-root" ref="root">
+        <div class="head" v-text="name.split('.').pop()"></div>
+
+        <div class="switches">
+            <switch-device :device="device"
+                           v-for="device in devices"
+                           :key="device.name"
+                           :bus="bus">
+            </switch-device>
+        </div>
+    </div>
+</script>
+
+<script type="text/x-template" id="tmpl-switch-device">
+    <div class="device">
+        <div class="col-10 name" v-text="device.name"></div>
+        <div class="col-2 toggle">
+            <toggle-switch :value="device.on" @toggled="bus.$emit('switch-toggled', {type: device.type, device: device.id})"></toggle-switch>
+        </div>
+    </div>
+</script>
+
