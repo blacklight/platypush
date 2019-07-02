@@ -50,7 +50,7 @@ Vue.component('sensors', {
 
             Vue.set(this, 'metrics', (await Promise.all(promises)).reduce((obj, metrics) => {
                 if (!metrics)
-                    return;
+                    return obj;
 
                 for (const [name, value] of Object.entries(metrics)) {
                     obj[name] = value;
