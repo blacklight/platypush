@@ -1,16 +1,16 @@
 <script type="text/x-template" id="tmpl-sensors">
     <div class="sensors">
         <div class="head">
-            <button type="button" @click="refresh">
+            <button type="button" title="Refresh measurements" @click="refresh">
                 <i class="fa fa-sync"></i>
             </button>
         </div>
 
         <div class="body">
-            <sensor-metric v-for="metric in metrics"
-                           :key="metric.name"
-                           :name="metric.name"
-                           :value="metric.value">
+            <sensor-metric v-for="value, name in metrics"
+                           :key="name"
+                           :name="name"
+                           :value="value">
             </sensor-metric>
         </div>
     </div>

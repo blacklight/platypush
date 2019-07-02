@@ -9,5 +9,29 @@
             &:hover { background: $hover-bg; }
         }
     }
+
+    .body {
+        display: flex;
+        flex-direction: column;
+        border: $default-border-3;
+        border-radius: 2rem;
+        margin: 2rem auto;
+        width: 80%;
+
+        .metric {
+            padding: 2rem;
+            border-bottom: $default-border-3;
+            border-radius: 2rem;
+
+            &:nth-child(odd) { background: rgba(255, 255, 255, 0.0); }
+            &:nth-child(even) { background: $default-bg-3; }
+            &:hover { background: $hover-bg; }
+
+            .value {
+                text-align: right;
+                font-weight: bold;
+            }
+        }
+    }
 }
 
