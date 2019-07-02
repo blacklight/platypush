@@ -57,8 +57,8 @@ Vue.component('sensors', {
     },
 
     mounted: function() {
-        this.refresh();
         registerEventHandler(this.onSensorEvent, 'platypush.message.event.sensor.SensorDataChangeEvent');
+        this.refresh();
     },
 });
 

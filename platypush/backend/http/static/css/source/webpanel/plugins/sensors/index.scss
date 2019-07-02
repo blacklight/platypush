@@ -1,5 +1,13 @@
 @import 'common/vars';
 
 .sensors {
+    .head {
+        text-align: right;
+
+        button {
+            border: 0;
+            &:hover { background: $hover-bg; }
+        }
+    }
 }
 
