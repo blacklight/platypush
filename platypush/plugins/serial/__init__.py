@@ -4,10 +4,11 @@ import serial
 import threading
 import time
 
-from platypush.plugins import Plugin, action
+from platypush.plugins import action
 from platypush.plugins.gpio.sensor import GpioSensorPlugin
 
 
+# noinspection PyBroadException
 class SerialPlugin(GpioSensorPlugin):
     """
     The serial plugin can read data from a serial device, as long as the serial
@@ -35,8 +36,8 @@ class SerialPlugin(GpioSensorPlugin):
         self.serial_lock = threading.Lock()
         self.last_measurement = None
 
-
-    def _read_json(self, serial_port):
+    @staticmethod
+    def _read_json(serial_port):
         n_brackets = 0
         is_escaped_ch = False
         parse_start = False
@@ -122,10 +123,10 @@ class SerialPlugin(GpioSensorPlugin):
             serial_available = self.serial_lock.acquire(timeout=2)
             if serial_available:
                 try:
-                    ser = self._get_serial(device=device)
+                    ser = self._get_serial(device=device, baud_rate=baud_rate)
                 except:
                     time.sleep(1)
-                    ser = self._get_serial(device=device, reset=True)
+                    ser = self._get_serial(device=device, baud_rate=baud_rate, reset=True)
 
                 data = self._read_json(ser)
 
@@ -146,7 +147,6 @@ class SerialPlugin(GpioSensorPlugin):
             self.last_measurement = data
 
         return data
-
 
     @action
     def read(self, device=None, baud_rate=None, size=None, end=None):
@@ -179,7 +179,7 @@ class SerialPlugin(GpioSensorPlugin):
         if (size is None and end is None) or (size is not None and end is not None):
             raise RuntimeError('Either size or end must be specified')
 
-        if end and len(end) > 1:
+        if end and isinstance(end, str) and len(end) > 1:
             raise RuntimeError('The serial end must be a single character, not a string')
 
         data = bytes()
@@ -188,10 +188,10 @@ class SerialPlugin(GpioSensorPlugin):
             serial_available = self.serial_lock.acquire(timeout=2)
             if serial_available:
                 try:
-                    ser = self._get_serial(device=device)
+                    ser = self._get_serial(device=device, baud_rate=baud_rate)
                 except:
                     time.sleep(1)
-                    ser = self._get_serial(device=device, reset=True)
+                    ser = self._get_serial(device=device, baud_rate=baud_rate, reset=True)
 
                 if size is not None:
                     for _ in range(0, size):
@@ -255,10 +255,10 @@ class SerialPlugin(GpioSensorPlugin):
             serial_available = self.serial_lock.acquire(timeout=2)
             if serial_available:
                 try:
-                    ser = self._get_serial(device=device)
+                    ser = self._get_serial(device=device, baud_rate=baud_rate)
                 except:
                     time.sleep(1)
-                    ser = self._get_serial(device=device, reset=True)
+                    ser = self._get_serial(device=device, baud_rate=baud_rate, reset=True)
 
                 self.logger.info('Writing {} to {}'.format(data, self.device))
                 ser.write(data)
@@ -270,4 +270,3 @@ class SerialPlugin(GpioSensorPlugin):
 
 
 # vim:sw=4:ts=4:et:
-

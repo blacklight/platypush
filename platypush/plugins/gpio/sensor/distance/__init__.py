@@ -1,4 +1,3 @@
-import threading
 import time
 
 from platypush.plugins import action

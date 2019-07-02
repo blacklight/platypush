@@ -1,5 +1,4 @@
 import enum
-import time
 
 from platypush.plugins import action
 from platypush.plugins.gpio.sensor import GpioSensorPlugin
@@ -105,14 +104,13 @@ class GpioSensorMcp3008Plugin(GpioSensorPlugin):
         self.channels = channels if channels else {}
         self.mcp = None
 
-
     def _get_mcp(self):
         import Adafruit_GPIO.SPI as SPI
         import Adafruit_MCP3008
 
         if self.mode == MCP3008Mode.SOFTWARE:
             self.mcp = Adafruit_MCP3008.MCP3008(clk=self.CLK, cs=self.CS,
-                                           miso=self.MISO, mosi=self.MOSI)
+                                                miso=self.MISO, mosi=self.MOSI)
         elif self.mode == MCP3008Mode.HARDWARE:
             self.mcp = Adafruit_MCP3008.MCP3008(spi=SPI.SpiDev(self.spi_port, self.spi_device))
         else:
@@ -120,10 +118,8 @@ class GpioSensorMcp3008Plugin(GpioSensorPlugin):
 
         return self.mcp
 
-
     def _convert_to_voltage(self, value):
         return (value * self.Vdd) / 1023.0 if value is not None else None
-
 
     @action
     def get_measurement(self):
@@ -169,4 +165,3 @@ class GpioSensorMcp3008Plugin(GpioSensorPlugin):
 
 
 # vim:sw=4:ts=4:et:
-

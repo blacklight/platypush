@@ -42,11 +42,7 @@ class SensorLeapBackend(Backend):
     _listener_proc = None
 
     def __init__(self,
-                 position_ranges=[
-                     [-300.0, 300.0],  # x axis
-                     [25.0, 600.0],    # y axis
-                     [-300.0, 300.0],  # z axis
-                 ],
+                 position_ranges=None,
                  position_tolerance=0.0,  # Position variation tolerance in %
                  frames_throttle_secs=None,
                  *args, **kwargs):
@@ -76,10 +72,16 @@ class SensorLeapBackend(Backend):
 
         super().__init__(*args, **kwargs)
 
+        if position_ranges is None:
+            position_ranges = [
+                [-300.0, 300.0],  # x axis
+                [25.0, 600.0],  # y axis
+                [-300.0, 300.0],  # z axis
+            ]
+
         self.position_ranges = position_ranges
         self.position_tolerance = position_tolerance
         self.frames_throttle_secs = frames_throttle_secs
-
 
     def run(self):
         super().run()
@@ -123,8 +125,8 @@ class LeapFuture(Timer):
 
 class LeapListener(Leap.Listener):
     def __init__(self, position_ranges, position_tolerance, logger,
-                 frames_throttle_secs=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+                 frames_throttle_secs=None):
+        super().__init__()
 
         self.prev_frame = None
         self.position_ranges = position_ranges
@@ -133,25 +135,23 @@ class LeapListener(Leap.Listener):
         self.logger = logger
         self.running_future = None
 
-
     def _send_event(self, event):
         backend = get_backend('redis')
         if not backend:
-            self.logger.warning('Redis backend not configured, I cannot propagate the following event: {}'.format(event))
+            self.logger.warning('Redis backend not configured, I cannot propagate the following event: {}'.
+                                format(event))
             return
 
         backend.send_message(event)
-
 
     def send_event(self, event):
         if self.frames_throttle_secs:
             if not self.running_future or not self.running_future.is_alive():
                 self.running_future = LeapFuture(seconds=self.frames_throttle_secs,
-                                                  listener=self, event=event)
+                                                 listener=self, event=event)
                 self.running_future.start()
         else:
             self._send_event(event)
-
 
     def on_init(self, controller):
         self.prev_frame = None
@@ -216,7 +216,7 @@ class LeapListener(Leap.Listener):
         ]
 
     def _normalize_position(self, position):
-        # Normalize absolute position onto a semisphere centered in (0,0)
+        # Normalize absolute position onto a hemisphere centered in (0,0)
         # having x_range = z_range = [-100, 100], y_range = [0, 100]
 
         return [
@@ -225,12 +225,14 @@ class LeapListener(Leap.Listener):
             self._scale_scalar(value=position[2], range=self.position_ranges[2], new_range=[-100.0, 100.0]),
         ]
 
+    @staticmethod
+    def _scale_scalar(value, range, new_range):
+        if value < range[0]:
+            value=range[0]
+        if value > range[1]:
+            value=range[1]
 
-    def _scale_scalar(self, value, range, new_range):
-        if value < range[0]: value=range[0]
-        if value > range[1]: value=range[1]
         return ((new_range[1]-new_range[0])/(range[1]-range[0]))*(value-range[0]) + new_range[0]
-
 
     def _position_changed(self, old_position, new_position):
         return (
@@ -240,4 +242,3 @@ class LeapListener(Leap.Listener):
 
 
 # vim:sw=4:ts=4:et:
-

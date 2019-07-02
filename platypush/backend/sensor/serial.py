@@ -13,10 +13,9 @@ class SensorSerialBackend(SensorBackend):
     """
 
     def get_measurement(self):
-        """ Implemnetation of ``get_measurement`` """
+        """ Implementation of ``get_measurement`` """
         plugin = get_plugin('serial')
         return plugin.get_data().output
 
 
 # vim:sw=4:ts=4:et:
-

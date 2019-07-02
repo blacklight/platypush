@@ -20,4 +20,3 @@ class SensorMcp3008Backend(SensorBackend):
 
 
 # vim:sw=4:ts=4:et:
-
