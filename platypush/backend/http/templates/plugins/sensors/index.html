@@ -9,7 +9,7 @@
         <div class="body">
             <sensor-metric v-for="value, name in metrics"
                            :key="name"
-                           :name="name"
+                           :name="name[0].toUpperCase() + name.slice(1)"
                            :value="value">
             </sensor-metric>
         </div>

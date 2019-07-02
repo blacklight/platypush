@@ -13,14 +13,13 @@
     .body {
         display: flex;
         flex-direction: column;
-        border: $default-border-3;
-        border-radius: 2rem;
         margin: 2rem auto;
         width: 80%;
 
         .metric {
+            margin-bottom: .75rem;
             padding: 2rem;
-            border-bottom: $default-border-3;
+            border: $default-border-3;
             border-radius: 2rem;
 
             &:nth-child(odd) { background: rgba(255, 255, 255, 0.0); }
