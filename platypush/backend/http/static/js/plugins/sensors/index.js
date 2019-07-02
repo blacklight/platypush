@@ -35,6 +35,13 @@ Vue.component('sensors', {
 
             const promises = this.config.plugins.map(plugin => {
                 return new Promise((resolve, reject) => {
+                    if (plugin === 'serial') {
+                        // Don't refresh reads over the serial port,
+                        // as it might mess up any data transfer already in progress
+                        resolve();
+                        return;
+                    }
+
                     request(plugin + '.get_measurement').then(metrics => {
                         resolve(metrics);
                     });
@@ -42,6 +49,9 @@ Vue.component('sensors', {
             });
 
             Vue.set(this, 'metrics', (await Promise.all(promises)).reduce((obj, metrics) => {
+                if (!metrics)
+                    return;
+
                 for (const [name, value] of Object.entries(metrics)) {
                     obj[name] = value;
                 }
