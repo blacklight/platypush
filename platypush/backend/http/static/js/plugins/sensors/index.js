@@ -5,9 +5,12 @@ Vue.component('sensor-metric', {
             type: Object,
         },
 
-        device: {
-            type: Object,
-            default: () => {},
+        name: {
+            type: String,
+        },
+
+        value: {
+            type: [String, Number, Object, Boolean, Array],
         },
     },
 });
