@@ -1,0 +1,48 @@
+@import 'common/vars';
+
+.widget .date-time-weather {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 1rem;
+
+    .date {
+        font-size: 1.15em;
+        height: 8%;
+    }
+
+    .time {
+        font-size: 1.7em;
+        height: 11%;
+    }
+
+    .weather {
+        height: 40%;
+        display: flex;
+        align-items: center;
+
+        .temperature {
+            font-size: 2em;
+            margin-left: 1rem;
+        }
+    }
+
+    .summary {
+        height: 28%;
+    }
+
+    .sensors {
+        width: 100%;
+        height: 13%;
+
+        .sensor {
+            padding: 0 1rem;
+        }
+
+        .humidity {
+            text-align: right;
+        }
+    }
+}
+

@@ -45,8 +45,6 @@ Vue.component('music-mpd', {
                 timestamp: null,
                 elapsed: null,
             },
-
-            newTrackLock: false,
         };
     },
 
@@ -467,9 +465,6 @@ Vue.component('music-mpd', {
                     }
                 }
             };
-
-            // adjust(this)();
-            // setInterval(adjust(this), 2000);
         },
 
         _parseStatus: async function(status) {

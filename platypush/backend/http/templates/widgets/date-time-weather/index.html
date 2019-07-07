@@ -1,0 +1,39 @@
+<script type="text/javascript" src="{{ url_for('static', filename='js/widgets/date-time-weather/skycons.js') }}"></script>
+
+<script type="text/x-template" id="tmpl-widget-date-time-weather">
+    <div class="date-time-weather">
+        <div class="date" v-text="formatDate(now)"></div>
+        <div class="time" v-text="formatTime(now)"></div>
+
+        <h1 class="weather">
+            <canvas id="weather-icon" width="50" height="50"></canvas> &nbsp;
+            <span class="temperature" v-if="weather">
+                {% raw %}
+                    {{ Math.round(parseFloat(weather.temperature)) + '&deg;' }}
+                {% endraw %}
+            </span>
+        </h1>
+
+        <div class="summary" v-if="weather && weather.summary" v-text="weather.summary"></div>
+
+        <div class="sensors" v-if="Object.keys(sensors).length">
+            <div class="sensor temperature col-6" v-if="sensors.temperature">
+                <i class="fas fa-thermometer-half"></i> &nbsp;
+                <span class="temperature">
+                    {% raw %}
+                        {{ parseFloat(sensors.temperature).toFixed(1) + '&deg;'}}
+                    {% endraw %}
+                </span>
+            </div>
+
+            <div class="sensor humidity col-6" v-if="sensors.humidity">
+                <i class="fa fa-tint"></i> &nbsp;
+                <span class="humidity">
+                    {% raw %}
+                        {{ parseFloat(sensors.humidity).toFixed(1) + '%'}}
+                    {% endraw %}
+                </span>
+            </div>
+        </div>
+    </div>
+</script>

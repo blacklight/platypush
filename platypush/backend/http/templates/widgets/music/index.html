@@ -1,0 +1,44 @@
+<script type="text/x-template" id="tmpl-widget-music">
+    <div class="music">
+        <div class="track">
+            <div class="unknown" v-if="!status">[Unknown state]</div>
+            <div class="no-track" v-if="status && status.state === 'stop'">No media is being played</div>
+            <div class="artist" v-if="status && status.state !== 'stop' && track && track.artist" v-text="track.artist"></div>
+            <div class="title" v-if="status && status.state !== 'stop' && track && track.title" v-text="track.title"></div>
+        </div>
+
+        <div class="time"  v-if="status && status.state === 'play'">
+            <div class="row">
+                <div class="progress-bar">
+                    <div class="elapsed" :style="{width: track.time ? 100*(status.elapsed/track.time) + '%' : '100%'}"></div>
+                    <div class="total"></div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-6 time-elapsed" v-text="convertTime(status.elapsed)"></div>
+                <div class="col-6 time-total" v-if="track.time" v-text="convertTime(track.time)"></div>
+            </div>
+        </div>
+
+        <div class="playback-status" v-if="status">
+            <div class="status-property col-4">
+                <i class="fa fa-volume-up"></i>&nbsp; <span v-text="status.volume + '%'"></span>
+            </div>
+
+            <div class="status-property col-2">
+                <i class="fas fa-random" :class="{active: status.random}"></i>
+            </div>
+            <div class="status-property col-2">
+                <i class="fas fa-redo" :class="{active: status.repeat}"></i>
+            </div>
+            <div class="status-property col-2">
+                <i class="fa fa-bullseye" :class="{active: status.single}"></i>
+            </div>
+            <div class="status-property col-2">
+                <i class="fa fa-utensils" :class="{active: status.consume}"></i>
+            </div>
+        </div>
+    </div>
+</script>
+

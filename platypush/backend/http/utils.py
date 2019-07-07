@@ -13,35 +13,16 @@ class HttpUtils(object):
     @staticmethod
     def widget_columns_to_html_class(columns):
         if not isinstance(columns, int):
-            raise RuntimeError('columns should be a number, got "{}"'.format(columns))
+            try:
+                columns = int(columns)
+            except ValueError:
+                raise RuntimeError('columns should be a number, got {} ({})'.format(type(columns), columns))
 
-        if columns == 1:
-            return 'one column'
-        elif columns == 2:
-            return 'two columns'
-        elif columns == 3:
-            return 'three columns'
-        elif columns == 4:
-            return 'four columns'
-        elif columns == 5:
-            return 'five columns'
-        elif columns == 6:
-            return 'six columns'
-        elif columns == 7:
-            return 'seven columns'
-        elif columns == 8:
-            return 'eight columns'
-        elif columns == 9:
-            return 'nine columns'
-        elif columns == 10:
-            return 'ten columns'
-        elif columns == 11:
-            return 'eleven columns'
-        elif columns == 12:
-            return 'twelve columns'
-        else:
-            raise RuntimeError('Constraint violation: should be 1 <= columns <= 12, ' +
-                               'got columns={}'.format(columns))
+        if 1 <= columns <= 12:
+            return 'col-{}'.format(columns)
+
+        raise RuntimeError('Constraint violation: should be 1 <= columns <= 12, ' +
+                           'got columns={}'.format(columns))
 
     @staticmethod
     def search_directory(directory, *extensions, recursive=False):
@@ -127,5 +108,8 @@ class HttpUtils(object):
         with open(file) as f:
             return f.read()
 
+    @classmethod
+    def isfile(cls, file):
+        return os.path.isfile(file)
 
 # vim:sw=4:ts=4:et:

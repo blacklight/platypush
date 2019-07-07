@@ -2,6 +2,7 @@ import json
 import threading
 import time
 
+from platypush.backend.http.utils import HttpUtils
 from platypush.plugins import Plugin, action
 from platypush.procedure import Procedure
 
@@ -312,5 +313,14 @@ class UtilsPlugin(Plugin):
                     ]
                 }
             }
+
+    @action
+    def search_directory(self, directory, extensions, recursive=False):
+        return HttpUtils.search_directory(directory, recursive=recursive, *extensions)
+
+    @action
+    def search_web_directory(self, directory, extensions):
+        return HttpUtils.search_web_directory(directory, *extensions)
+
 
 # vim:sw=4:ts=4:et:

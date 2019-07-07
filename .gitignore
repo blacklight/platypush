@@ -13,3 +13,4 @@ docs/build
 .idea/
 config
 platypush/backend/http/static/css/*/.sass-cache/
+.vscode

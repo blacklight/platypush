@@ -1,0 +1,49 @@
+@import 'common/vars';
+
+@import 'common/mixins';
+@import 'common/layout';
+@import 'common/elements';
+@import 'common/animations';
+@import 'common/modal';
+@import 'common/notifications';
+
+$background-image: url('/img/dashboard-background.jpg') !default;
+$background-color: white !default;
+$font-family: Lato !default;
+
+html {
+    min-height: 100%;
+}
+
+body {
+    --background-image: $background-image;
+    --background-color: $background-color;
+
+    background-image: var(--background-image);
+    background-color: var(--background-color);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    font-family: $font-family;
+}
+
+main {
+    display: flex;
+    flex-flow: column;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+
+    .widgets-row {
+        margin: 2em 1em;
+        display: flex;
+    }
+
+    .widget {
+        background: $background-color;
+        border-radius: 5px;
+        height: 22.5em;
+        overflow: hidden;
+        box-shadow: 0 3px 3px 0 rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
+    }
+}
+

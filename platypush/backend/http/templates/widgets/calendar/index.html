@@ -1,0 +1,15 @@
+<script type="text/x-template" id="tmpl-widget-calendar">
+    <div class="calendar">
+        <div class="event upcoming-event" v-if="events.length > 0">
+            <div class="date" v-text="formatDate(events[0].start)"></div>
+            <div class="summary" v-text="events[0].summary"></div>
+            <div class="time">{% raw %}{{ formatTime(events[0].start) }} - {{ formatTime(events[0].end) }}{% endraw %}</div>
+        </div>
+
+        <div class="event" v-for="event in events.slice(1)" v-if="events.length > 1" :key="event.id">
+            <div class="date col-2" v-text="formatDate(event.start)"></div>
+            <div class="time col-2" v-text="formatTime(event.start)"></div>
+            <div class="summary col-8" v-text="event.summary"></div>
+        </div>
+    </div>
+</script>

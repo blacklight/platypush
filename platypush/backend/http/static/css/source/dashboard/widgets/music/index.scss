@@ -1,0 +1,92 @@
+@import 'common/vars';
+
+$progress-bar-bg: #ddd;
+$playback-status-color: #757f70;
+
+.widget .music {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+
+    .track {
+        text-align: center;
+
+        .unknown,
+        .no-track {
+            font-size: 1.5em;
+        }
+
+        .artist {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: .25em;
+        }
+
+        .title {
+            font-size: 1.25em;
+        }
+    }
+
+    .time {
+        width: 100%;
+        margin-top: .75em;
+
+        .row {
+            padding: 0 .5em;
+        }
+
+        .time-total {
+            text-align: right;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 1em;
+            position: relative;
+            margin-bottom: .75em;
+
+            .total {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                top: 0;
+                background: $progress-bar-bg;
+                border-radius: 5rem;
+            }
+
+            .elapsed {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                top: 0;
+                background: $selected-bg;
+                border-radius: 5rem;
+                z-index: 1;
+            }
+        }
+    }
+
+    .playback-status {
+        position: absolute;
+        bottom: 0;
+        border-top: $default-border-2;
+        color: $playback-status-color;
+        width: 100%;
+        height: 2em;
+
+        .status-property {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .active {
+            color: $default-hover-fg;
+        }
+    }
+}
+

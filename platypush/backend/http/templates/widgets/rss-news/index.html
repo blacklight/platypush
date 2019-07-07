@@ -1,0 +1,9 @@
+<script type="text/x-template" id="tmpl-widget-rss-news">
+    <div class="rss-news">
+        <div class="article" v-if="currentArticle">
+            <div class="source" v-text="currentArticle.source"></div>
+            <div class="title" v-text="currentArticle.title"></div>
+            <div class="published" v-text="new Date(currentArticle.published).toDateString() + ', ' + new Date(currentArticle.published).toTimeString().substring(0,5)"></div>
+        </div>
+    </div>
+</script>

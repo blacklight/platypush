@@ -1,0 +1,6 @@
+<script type="text/x-template" id="tmpl-widget">
+    <div class="widget" :class="'col-' + config.columns">
+        <component :is="tag" :config="config"></component>
+    </div>
+</script>
+

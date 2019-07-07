@@ -1,72 +1,107 @@
 <!doctype html>
 <head>
     <title>Platypush Dashboard</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Lato" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton-tabs.css') }}"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/font-awesome.min.css') }}"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/application.css') }}"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/toggles.css') }}"></script>
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Lato">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/skeleton.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='font-awesome/css/all.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/dist/dashboard.css') }}">
 
-    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.3.1.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/skeleton-tabs.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/application.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/pushbullet.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/assistant.google.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/vue.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/axios.min.js') }}"></script>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/events.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/plugins/pushbullet/index.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/plugins/assistant.google/index.js') }}"></script>
+
     <script type="text/javascript">
-        window.websocket_port = {% print(websocket_port) %};
-        window.has_ssl = {% print('true' if has_ssl else 'false') %};
+        if (!window.config) {
+            window.config = {};
+        }
+
+        window.config = { ...window.config,
+            websocket_port: {{ websocket_port }},
+            has_ssl: {{ 'true' if has_ssl else 'false' }},
+            templates: JSON.parse('{{ utils.to_json(templates)|safe }}'),
+            scripts: JSON.parse('{{ utils.to_json(scripts)|safe }}'),
+        };
 
         {% if token %}
-            window.token = '{% print(token) %}';
+            window.config.token = '{{ token }}';
         {% else %}
-            window.token = undefined;
+            window.config.token = undefined;
         {% endif %}
 
-        window.config = {{ config | safe }};
-        window.widgets = {{ config['widgets'] | safe }}.reduce(function(map, w) { map[w.widget] = w; return map }, {})
+        window.config.dashboard = {{ config | safe }};
+        window.config.widgets = {{ config['widgets'] | safe }}.reduce(function(map, w) { map[w.widget] = w; return map }, {})
     </script>
+
+    {% include 'elements.html' %}
+
+    {% for widget in config['widgets'] %}
+        {% with name = widget['widget'] %}
+            {% include 'widgets/' + name + '/index.html' %}
+
+            {% with js_file = static_folder + '/js/widgets/' + name + '/index.js' %}
+                {% if utils.isfile(js_file) %}
+                    <script type="text/javascript" src="{{ url_for('static', filename='js/widgets/' + name + '/index.js') }}"></script>
+                {% endif %}
+            {% endwith %}
+
+            {% with css_file = static_folder + '/css/dist/dashboard/widgets/' + name + '.css' %}
+                {% if utils.isfile(css_file) %}
+                    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/dist/dashboard/widgets/' + name + '.css') }}">
+                {% endif %}
+            {% endwith %}
+        {% endwith %}
+    {% endfor %}
 </head>
 
 <body>
-    <main>
-        <!-- You can send events of type platypush.message.event.web.DashboardIframeUpdateEvent
-             to control what is shown in the optional iframe modal -->
-        <div id="iframe-modal" class="modal">
-            <div class="modal-container">
-                <iframe></iframe>
-            </div>
-        </div>
+    <div id="app">
+        <main>
+            <!-- You can send events of type platypush.message.event.web.DashboardIframeUpdateEvent
+                 to control what is shown in the optional iframe modal -->
+            <modal id="iframe-modal" v-model="iframeModal.visible">
+                <iframe ref="iframeModal"></iframe>
+            </modal>
 
-        <div id="widgets-container">
-            {% set used_columns = [0] %}
-            {% for widget in config['widgets'] %}
-                {% if used_columns[0] % 12 == 0 %}
-                <div class="row">
-                {% endif %}
+            <div id="widgets-container">
+                {% set used_columns = [0] %}
+                {% for widget in config['widgets'] %}
+                    {% with name = widget['widget'] %}
+                        {% if used_columns[0] % 12 == 0 %}
+                            <div class="widgets-row">
+                        {% endif %}
 
-                <div class="widget {% print(utils.widget_columns_to_html_class(widget['columns'])) %}
-                        {% print(widget['widget']) %}"
-                        id="{% print(widget['id'] if 'id' in widget else widget['widget']) %}">
-                    {% with properties=widget %}
-                        {% include 'widgets/' + widget['widget'] + '.html' %}
+                        {% with properties=widget %}
+                            <widget :tag="'{{ name }}'.replace('.', '-')"
+                                    key="{{ name }}"
+                                    :config="{{ widget | safe }}">
+                            </widget>
+                        {% endwith %}
+
+                        {# increment counter #}
+                        {% if used_columns.append(used_columns.pop() + widget['columns']) %}{% endif %}
+
+                        {% if used_columns[0] % 12 == 0 %}
+                            </div>
+                        {% endif %}
                     {% endwith %}
-                </div>
+                {% endfor %}
+            </div>
 
-                {# increment counter #}
-                {% if used_columns.append(used_columns.pop() + widget['columns']) %}{% endif %}
+            {% include 'notifications.html' %}
+        </main>
+    </div>
 
-                {% if used_columns[0] % 12 == 0 %}
-                </div>
-                {% endif %}
-            {% endfor %}
-        </div>
+    {% include 'widgets/template.html' %}
 
-        <div id="notification-container"></div>
-    </main>
-<body>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
 
