@@ -16,23 +16,24 @@ $playback-status-color: #757f70;
 
         .unknown,
         .no-track {
-            font-size: 1.7em;
+            font-size: 2em;
         }
 
         .artist {
-            font-size: 1.7em;
+            font-size: 1.9em;
             font-weight: bold;
             margin-bottom: .25em;
         }
 
         .title {
-            font-size: 1.6em;
+            font-size: 1.8em;
         }
     }
 
     .time {
         width: 100%;
-        margin-top: .75em;
+        margin-top: 1em;
+        font-size: 1.2em;
 
         .row {
             padding: 0 .5em;

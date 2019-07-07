@@ -29,7 +29,7 @@ Vue.component('image-carousel', {
             if (this.$refs.img.width > this.$refs.img.height) {
                 this.$refs.img.style.width = 'auto';
 
-                if ((this.$refs.img.width / this.$refs.img.height) >= 4/3) {
+                if ((this.$refs.img.width / this.$refs.img.height) >= 1.25) {
                     this.$refs.img.style.width = '100%';
                 }
 
