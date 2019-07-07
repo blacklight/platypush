@@ -25,10 +25,9 @@ Vue.component('image-carousel', {
 
         onNewImage: function() {
             this.$refs.background.style['background-image'] = 'url(' + this.currentImage + ')';
+            this.$refs.img.style.width = 'auto';
 
             if (this.$refs.img.width > this.$refs.img.height) {
-                this.$refs.img.style.width = 'auto';
-
                 if ((this.$refs.img.width / this.$refs.img.height) >= 1.25) {
                     this.$refs.img.style.width = '100%';
                 }
