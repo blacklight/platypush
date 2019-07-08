@@ -133,8 +133,12 @@ inputs
 websocket-client
 
 # mpv player plugin
-python-mpv
+# python-mpv
 
 # SCSS/SASS to CSS compiler for web pages style
 pyScss
+
+# Support for NFC tags
+# nfcpy >= 1.0
+# ndef
 

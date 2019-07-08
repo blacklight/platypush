@@ -5,7 +5,6 @@ import logging
 import random
 import re
 import time
-import traceback
 
 from threading import Thread
 
@@ -37,36 +36,31 @@ class Request(Message):
 
         super().__init__(timestamp=timestamp)
 
-        self.id      = id if id else self._generate_id()
-        self.target  = target
-        self.action  = action
-        self.origin  = origin
-        self.args    = args if args else {}
+        self.id = id if id else self._generate_id()
+        self.target = target
+        self.action = action
+        self.origin = origin
+        self.args = args if args else {}
         self.backend = backend
-        self.token   = token
+        self.token = token
 
     @classmethod
     def build(cls, msg):
         msg = super().parse(msg)
-        args = {
-            'target' : msg.get('target', Config.get('device_id')),
-            'action' : msg['action'],
-            'args'   : msg['args'] if 'args' in msg else {},
-        }
+        args = {'target': msg.get('target', Config.get('device_id')), 'action': msg['action'],
+                'args': msg.get('args', {}), 'id': msg['id'] if 'id' in msg else cls._generate_id(),
+                'timestamp': msg['_timestamp'] if '_timestamp' in msg else time.time()}
 
-        args['id'] = msg['id'] if 'id' in msg else cls._generate_id()
-        args['timestamp'] = msg['_timestamp'] if '_timestamp' in msg else time.time()
         if 'origin' in msg: args['origin'] = msg['origin']
         if 'token' in msg: args['token'] = msg['token']
         return cls(**args)
 
     @staticmethod
     def _generate_id():
-        id = ''
-        for i in range(0,16):
-            id += '%.2x' % random.randint(0, 255)
-        return id
-
+        _id = ''
+        for i in range(0, 16):
+            _id += '%.2x' % random.randint(0, 255)
+        return _id
 
     def _execute_procedure(self, *args, **kwargs):
         from platypush.config import Config
@@ -80,7 +74,6 @@ class Request(Message):
                                backend=self.backend, id=self.id)
 
         return proc.execute(*args, **kwargs)
-
 
     def _expand_context(self, event_args=None, **context):
         from platypush.config import Config
@@ -110,7 +103,6 @@ class Request(Message):
 
         return event_args
 
-
     @classmethod
     def expand_value_from_context(cls, _value, **context):
         for (k, v) in context.items():
@@ -130,10 +122,12 @@ class Request(Message):
             parsed_value = _value
 
         while _value and isinstance(_value, str):
-            m = re.match('([^\$]*)(\${\s*(.+?)\s*})(.*)', _value)
+            m = re.match('([^$]*)(\${\s*(.+?)\s*})(.*)', _value)
             if m and not m.group(1).endswith('\\'):
-                prefix = m.group(1); expr = m.group(2);
-                inner_expr = m.group(3); _value = m.group(4)
+                prefix = m.group(1)
+                expr = m.group(2)
+                inner_expr = m.group(3)
+                _value = m.group(4)
 
                 try:
                     context_value = eval(inner_expr)
@@ -155,9 +149,10 @@ class Request(Message):
                 parsed_value += _value
                 _value = ''
 
-        try: return json.loads(parsed_value)
-        except Exception as e: return parsed_value
-
+        try:
+            return json.loads(parsed_value)
+        except:
+            return parsed_value
 
     def _send_response(self, response):
         response = Response.build(response)
@@ -174,7 +169,6 @@ class Request(Message):
                 redis.send_message(queue_name, response)
                 redis.expire(queue_name, 60)
 
-
     def execute(self, n_tries=1, _async=True, **context):
         """
         Execute this request and returns a Response object
@@ -190,44 +184,48 @@ class Request(Message):
                     - group: ${group_name}  # will be expanded as "Kitchen lights")
         """
 
-        def _thread_func(n_tries, errors=None):
+        def _thread_func(_n_tries, errors=None):
+            response = None
+
             if self.action.startswith('procedure.'):
-                context['n_tries'] = n_tries
+                context['n_tries'] = _n_tries
                 response = self._execute_procedure(**context)
                 if response is not None:
                     self._send_response(response)
                 return response
             else:
-                (module_name, method_name) = get_module_and_method_from_action(self.action)
+                action = self.expand_value_from_context(self.action, **context)
+                (module_name, method_name) = get_module_and_method_from_action(action)
                 plugin = get_plugin(module_name)
 
             try:
                 # Run the action
                 args = self._expand_context(**context)
+                args = self.expand_value_from_context(args, **context)
                 response = plugin.run(method=method_name, **args)
 
                 if response and response.is_error():
                     logger.warning(('Response processed with errors from ' +
                                     'action {}: {}').format(
-                                        self.action, str(response)))
+                        action, str(response)))
                 elif not response.disable_logging:
                     logger.info('Processed response from action {}: {}'.
-                                format(self.action, str(response)))
+                                format(action, str(response)))
             except Exception as e:
                 # Retry mechanism
                 plugin.logger.exception(e)
                 logger.warning(('Uncaught exception while processing response ' +
-                                'from action [{}]: {}').format(self.action, str(e)))
+                                'from action [{}]: {}').format(action, str(e)))
 
                 errors = errors or []
                 if str(e) not in errors:
                     errors.append(str(e))
 
                 response = Response(output=None, errors=errors)
-                if n_tries-1 > 0:
+                if _n_tries-1 > 0:
                     logger.info('Reloading plugin {} and retrying'.format(module_name))
                     get_plugin(module_name, reload=True)
-                    response = _thread_func(n_tries=n_tries-1, errors=errors)
+                    response = _thread_func(_n_tries=_n_tries - 1, errors=errors)
             finally:
                 self._send_response(response)
                 return response
@@ -243,7 +241,6 @@ class Request(Message):
         else:
             return _thread_func(n_tries)
 
-
     def __str__(self):
         """
         Overrides the str() operator and converts
@@ -251,16 +248,15 @@ class Request(Message):
         """
 
         return json.dumps({
-            'type'   : 'request',
-            'target' : self.target,
-            'action' : self.action,
-            'args'   : self.args,
-            'origin' : self.origin if hasattr(self, 'origin') else None,
-            'id'     : self.id if hasattr(self, 'id') else None,
-            'token'  : self.token if hasattr(self, 'token') else None,
-            '_timestamp' : self.timestamp,
+            'type': 'request',
+            'target': self.target,
+            'action': self.action,
+            'args': self.args,
+            'origin': self.origin if hasattr(self, 'origin') else None,
+            'id': self.id if hasattr(self, 'id') else None,
+            'token': self.token if hasattr(self, 'token') else None,
+            '_timestamp': self.timestamp,
         })
 
 
 # vim:sw=4:ts=4:et:
-
