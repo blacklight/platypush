@@ -18,7 +18,7 @@ Vue.component('rss-news', {
                     query: "select s.title as source, e.title, e.summary, " +
                     "strftime('%Y-%m-%dT%H:%M:%fZ', e.published) as published " +
                     "from FeedEntry e join FeedSource s " +
-                    "on e.source_id = s.id order by e.published limit " +
+                    "on e.source_id = s.id order by e.published desc limit " +
                     ('limit' in this.config ? this.config.limit : 10)
                 });
 
