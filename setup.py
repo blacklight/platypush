@@ -123,6 +123,7 @@ setup(
     #     ('/etc/platypush', ['platypush/config.example.yaml'])
     # ],
     long_description = readfile('README.md'),
+    long_description_content_type = 'text/markdown',
     classifiers = [
         "Topic :: Utilities",
         "License :: OSI Approved :: MIT License",
