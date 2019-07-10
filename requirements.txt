@@ -12,7 +12,7 @@ pyyaml
 # python-prctl
 
 # Apache Kafka backend support
-kafka-python
+# kafka-python
 
 # Pushbullet backend support
 git+https://github.com/rbrcsk/pushbullet.py
@@ -22,6 +22,7 @@ flask
 websockets
 redis
 python-dateutil
+tz
 #uwsgi
 
 # HTTP poll backend support
@@ -31,33 +32,30 @@ requests
 # Database plugin support
 sqlalchemy
 
-# Dates support
-python-dateutil
-
 # RSS feeds support
-feedparser
+# feedparser
 
 # PDF generation support
 # weasyprint
 
 # Philips Hue plugin support
-phue
+# phue
 
 # MPD/Mopidy music server support
-python-mpd2
+# python-mpd2
 
 # Belkin WeMo Switch plugin support
 # ouimeaux
 
 # Google Assistant support
-# google-assistant-sdk[samples]
+# google-assistant-sdk
 # google-assistant-library
 
 # Google APIs general layer support
 # google-api-python-client
 
 # Last.FM scrobbler plugin support
-pylast
+# pylast
 
 # Flic buttons support
 # It doesn't come with a pip package nor a setup.py,
@@ -90,16 +88,16 @@ pylast
 # rtmidi
 
 # Support for inotify plugin
-inotify
+# inotify
 
 # Support for MQTT
 paho-mqtt
 
 # iCal calendars support
-icalendar
+# icalendar
 
 # Serial port support
-pyserial
+# pyserial
 
 # Switchbot devices support
 # pybluez
@@ -109,7 +107,7 @@ pyserial
 # pyHS100
 
 # Support for joystick backend
-inputs
+# inputs
 
 # Support for Kodi
 # kodi-json
@@ -126,7 +124,7 @@ inputs
 # numpy
 
 # Support for media subtitles
-# git+https://github.com/agonzalezro/python-opensubtitles#egg=python-opensubtitles
+# git+https://github.com/agonzalezro/python-opensubtitles
 # webvtt-py
 
 # Mopidy backend
