@@ -27,6 +27,7 @@ const Assistant = Vue.extend({
             responseText: '',
             phrase: '',
             visible: false,
+            hideTimeout: undefined,
 
             state: {
                 listening: false,
@@ -51,11 +52,21 @@ const Assistant = Vue.extend({
             this.reset();
             this.state.listening = true;
             this.visible = true;
+
+            if (this.hideTimeout) {
+                clearTimeout(this.hideTimeout);
+                this.hideTimeout = undefined;
+            }
         },
 
         conversationEnd: function() {
-            this.reset();
-            this.visible = false;
+            const self = this;
+
+            this.hideTimeout = setTimeout(() => {
+                this.reset();
+                self.visible = false;
+                self.hideTimeout = undefined;
+            }, 4000);
         },
 
         speechRecognized: function(event) {
@@ -86,7 +97,6 @@ const Assistant = Vue.extend({
 
         registerHandlers: function() {
             registerEventHandler(this.conversationStart, 'platypush.message.event.assistant.ConversationStartEvent');
-            registerEventHandler(this.conversationStart, 'platypush.message.event.assistant.HotwordDetectedEvent');
             registerEventHandler(this.alertOn, 'platypush.message.event.assistant.AlertStartedEvent');
             registerEventHandler(this.alertOff, 'platypush.message.event.assistant.AlertEndEvent');
             registerEventHandler(this.speechRecognized, 'platypush.message.event.assistant.SpeechRecognizedEvent');

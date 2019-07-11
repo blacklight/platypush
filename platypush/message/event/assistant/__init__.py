@@ -118,6 +118,15 @@ class HotwordDetectedEvent(AssistantEvent):
         super().__init__(*args, hotword=hotword, **kwargs)
 
 
+class VolumeChangedEvent(AssistantEvent):
+    """
+    Event triggered when the volume of the assistant changes
+    """
+
+    def __init__(self, volume, *args, **kwargs):
+        super().__init__(*args, volume=volume, **kwargs)
+
+
 class AlertStartedEvent(AssistantEvent):
     """
     Event triggered when an alert starts on the assistant

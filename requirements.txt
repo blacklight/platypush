@@ -54,7 +54,9 @@ sqlalchemy
 # Google APIs general layer support
 # google-api-python-client
 # oauth2client
-# google-cloud
+
+# Google text-to-speech API support
+# google-cloud-texttospeech
 
 # Last.FM scrobbler plugin support
 # pylast
