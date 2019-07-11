@@ -138,7 +138,7 @@ class SampleAssistant(object):
             if resp.speech_results:
                 self.detected_speech = ' '.join(
                     r.transcript.strip() for r in resp.speech_results
-                    if len(r).strip()).strip()
+                    if len(r.transcript.strip())).strip()
 
                 logging.info('Transcript of user request: "%s".', self.detected_speech)
             if len(resp.audio_out.audio_data) > 0:
