@@ -104,10 +104,13 @@ class AssistantSnowboyBackend(Backend):
                 raise AttributeError('Duplicate model key {}'.format(name))
 
             model_file = conf.get('voice_model_file')
+            detect_sound = conf.get('detect_sound')
+
             if not model_file:
                 raise AttributeError('No voice_model_file specified for model {}'.format(name))
 
             model_file = os.path.abspath(os.path.expanduser(model_file))
+            detect_sound = os.path.abspath(os.path.expanduser(detect_sound))
             assistant_plugin_name = conf.get('assistant_plugin')
 
             if not os.path.isfile(model_file):
@@ -116,7 +119,7 @@ class AssistantSnowboyBackend(Backend):
             self.models[name] = {
                 'voice_model_file': model_file,
                 'sensitivity': conf.get('sensitivity', 0.5),
-                'detect_sound': conf.get('detect_sound'),
+                'detect_sound': detect_sound,
                 'assistant_plugin': get_plugin(assistant_plugin_name) if assistant_plugin_name else None,
                 'assistant_language': conf.get('assistant_language'),
             }
