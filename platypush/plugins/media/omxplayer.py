@@ -111,14 +111,14 @@ class MediaOmxplayerPlugin(MediaPlugin):
     def voldown(self):
         """ Volume down by 10% """
         if self._player:
-            self._player.set_volume(max(-6000, self._player.volume()-1000))
+            self._player.set_volume(max(0, self._player.volume()-0.1))
         return self.status()
 
     @action
     def volup(self):
         """ Volume up by 10% """
         if self._player:
-            self._player.set_volume(min(0, self._player.volume()+1000))
+            self._player.set_volume(min(1, self._player.volume()+0.1))
         return self.status()
 
     @action
@@ -229,7 +229,7 @@ class MediaOmxplayerPlugin(MediaPlugin):
         """
 
         if self._player:
-            self._player.set_seek(position)
+            self._player.seek(position)
         return self.status()
 
     @action
@@ -241,10 +241,8 @@ class MediaOmxplayerPlugin(MediaPlugin):
         :type volume: int
         """
 
-        # Transform a [0,100] value to an OMXPlayer volume in [-6000,0]
-        volume = 60.0*volume - 6000
         if self._player:
-            self._player.set_volume(volume)
+            self._player.set_volume(volume/100)
         return self.status()
 
     @action
@@ -254,16 +252,22 @@ class MediaOmxplayerPlugin(MediaPlugin):
 
         :returns: A dictionary containing the current state.
 
-        Example::
+        Format::
 
             output = {
-                "source": "https://www.youtube.com/watch?v=7L9KkZoNZkA",
-                "state": "play",
-                "volume": 80,
-                "elapsed": 123,
-                "duration": 300,
-                "width": 800,
-                "height": 600
+                "duration": Duration in seconds,
+                "filename": Media filename,
+                "fullscreen": true or false,
+                "mute": true or false,
+                "path": Media path
+                "pause": true or false,
+                "position": Position in seconds
+                "seekable": true or false
+                "state": play, pause or stop
+                "title": Media title
+                "url": Media url
+                "volume": Volume between 0 and 100
+                "volume_max": 100,
             }
         """
 
@@ -283,12 +287,12 @@ class MediaOmxplayerPlugin(MediaPlugin):
                 'mute': self._player._is_muted,
                 'path': self._player.get_source(),
                 'pause': state == PlayerState.PAUSE.value,
-                'position': self._player.position(),
+                'position': max(0, self._player.position()),
                 'seekable': self._player.can_seek(),
                 'state': state,
                 'title': urllib.parse.unquote(self._player.get_source()).split('/')[-1] if self._player.get_source().startswith('file://') else None,
                 'url': self._player.get_source(),
-                'volume': self._player.volume(),
+                'volume': self._player.volume() * 100,
                 'volume_max': 100,
             }
         else:
