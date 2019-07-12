@@ -115,6 +115,7 @@ class SampleAssistant(object):
         if self.on_conversation_start:
             self.on_conversation_start()
 
+        self.play_response = True
         logging.info('Recording audio request.')
 
         def iter_log_assist_requests():
@@ -132,7 +133,6 @@ class SampleAssistant(object):
                 logging.info('End of audio request detected.')
                 logging.info('Stopping recording.')
                 self.conversation_stream.stop_recording()
-                self.play_response = True
 
                 if self.detected_speech and self.on_speech_recognized:
                     self.on_speech_recognized(self.detected_speech)
@@ -151,8 +151,10 @@ class SampleAssistant(object):
                         self.conversation_stream.start_playback()
                         logging.info('Playing assistant response.')
 
-                if self.play_response:
+                if self.play_response and self.conversation_stream.playing:
                     self.conversation_stream.write(resp.audio_out.audio_data)
+                elif self.conversation_stream.playing:
+                    self.conversation_stream.stop_playback()
             if resp.dialog_state_out.conversation_state:
                 conversation_state = resp.dialog_state_out.conversation_state
                 logging.debug('Updating conversation state.')

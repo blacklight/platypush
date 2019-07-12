@@ -146,21 +146,21 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
     def on_conversation_start(self):
         """ Conversation start handler """
         def handler():
-            get_bus().post(ConversationStartEvent(assistant=self.assistant))
+            get_bus().post(ConversationStartEvent())
 
         return handler
 
     def on_conversation_end(self):
         """ Conversation end handler """
         def handler(with_follow_on_turn):
-            get_bus().post(ConversationEndEvent(with_follow_on_turn=with_follow_on_turn, assistant=self.assistant))
+            get_bus().post(ConversationEndEvent(with_follow_on_turn=with_follow_on_turn))
 
         return handler
 
     def on_speech_recognized(self):
         """ Speech recognized handler """
         def handler(phrase):
-            get_bus().post(SpeechRecognizedEvent(phrase=phrase, assistant=self.assistant))
+            get_bus().post(SpeechRecognizedEvent(phrase=phrase))
             self.interactions.append({'request': phrase})
 
         return handler
@@ -168,14 +168,14 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
     def on_volume_changed(self):
         """ Volume changed event """
         def handler(volume):
-            get_bus().post(VolumeChangedEvent(volume=volume, assistant=self.assistant))
+            get_bus().post(VolumeChangedEvent(volume=volume))
 
         return handler
 
     def on_response(self):
         """ Response handler """
         def handler(response):
-            get_bus().post(ResponseEvent(response_text=response, assistant=self.assistant))
+            get_bus().post(ResponseEvent(response_text=response))
 
             if not self.interactions:
                 self.interactions.append({'response': response})
@@ -243,8 +243,13 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
     def stop_conversation(self):
         """ Stop a conversation """
         if self.assistant:
-            self.conversation_stream.stop_playback()
-            get_bus().post(ConversationEndEvent(assistant=self.assistant))
+            self.assistant.play_response = False
+
+            if self.conversation_stream:
+                self.conversation_stream.stop_playback()
+                self.conversation_stream.stop_recording()
+
+            get_bus().post(ConversationEndEvent())
 
 
 # vim:sw=4:ts=4:et:

@@ -22,7 +22,7 @@ class AssistantEvent(Event):
                 self._assistant = get_plugin('assistant.google.pushtotalk')
 
             if not self._assistant:
-                logger.warning('google.assistant not configured/initialized')
+                logger.warning('Assistant plugin/backend not configured/initialized')
                 self._assistant = None
 
 class ConversationStartEvent(AssistantEvent):
@@ -85,13 +85,13 @@ class SpeechRecognizedEvent(AssistantEvent):
     Event triggered when a speech is recognized
     """
 
-    def __init__(self, phrase, *args, assistant=None, **kwargs):
+    def __init__(self, phrase, *args, **kwargs):
         """
         :param phrase: Recognized user phrase
         :type phrase: str
         """
 
-        super().__init__(*args, phrase=phrase, assistant=assistant, **kwargs)
+        super().__init__(*args, phrase=phrase, **kwargs)
         self.recognized_phrase = phrase.strip().lower()
 
         if not self._assistant and assistant:
@@ -106,9 +106,7 @@ class SpeechRecognizedEvent(AssistantEvent):
         result = super().matches_condition(condition)
 
         if result.is_match and self._assistant and 'phrase' in condition.args:
-            if hasattr(self._assistant, 'play_response'):
-                self._assistant.play_response = False
-            elif hasattr(self._assistant, 'stop_conversation'):
+            if self._assistant:
                 self._assistant.stop_conversation()
 
         return result
