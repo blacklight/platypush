@@ -6,6 +6,7 @@
 import json
 import os
 import subprocess
+import threading
 import time
 
 from platypush.backend import Backend
@@ -110,8 +111,10 @@ class AssistantSnowboyBackend(Backend):
                 raise AttributeError('No voice_model_file specified for model {}'.format(name))
 
             model_file = os.path.abspath(os.path.expanduser(model_file))
-            detect_sound = os.path.abspath(os.path.expanduser(detect_sound))
             assistant_plugin_name = conf.get('assistant_plugin')
+
+            if detect_sound:
+                detect_sound = os.path.abspath(os.path.expanduser(detect_sound))
 
             if not os.path.isfile(model_file):
                 raise FileNotFoundError('Voice model file {} does not exist or it not a regular file'.format(model_file))
@@ -128,13 +131,16 @@ class AssistantSnowboyBackend(Backend):
         """
         Callback called on hotword detection
         """
+        try:
+            import snowboydecoder
+        except ImportError:
+            import snowboy.snowboydecoder as snowboydecoder
+
+
+        def sound_thread(sound):
+            snowboydecoder.play_audio_file(sound)
 
         def callback():
-            try:
-                import snowboydecoder
-            except ImportError:
-                import snowboy.snowboydecoder as snowboydecoder
-
             self.bus.post(HotwordDetectedEvent(hotword=hotword))
             model = self.models[hotword]
 
@@ -143,7 +149,7 @@ class AssistantSnowboyBackend(Backend):
             assistant_language = model.get('assistant_language')
 
             if detect_sound:
-                snowboydecoder.play_audio_file(detect_sound)
+                threading.Thread(target=sound_thread, args=(detect_sound,)).start()
 
             if assistant_plugin:
                 assistant_plugin.start_conversation(language=assistant_language)
@@ -158,7 +164,7 @@ class AssistantSnowboyBackend(Backend):
     def run(self):
         super().run()
         self.detector.start(detected_callback=[
-            lambda: self.hotword_detected(hotword)
+            self.hotword_detected(hotword)
             for hotword in self.models.keys()
         ])
 
