@@ -235,7 +235,12 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
             continue_conversation = True
 
             while continue_conversation:
-                continue_conversation = self.assistant.assist()
+                try:
+                    continue_conversation = self.assistant.assist()
+                except Exception as e:
+                    self.logger.warning('Unhandled assistant exception: {}'.format(str(e)))
+                    self.logger.exception(e)
+                    self._init_assistant()
 
         return self.interactions
 
