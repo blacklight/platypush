@@ -8,7 +8,7 @@ class AssistantPlugin(ABC, Plugin):
     """
 
     @abstractmethod
-    def start_conversation(self, *args, **kwargs):
+    def start_conversation(self, *args, language=None, **kwargs):
         raise NotImplementedError
 
     @abstractmethod

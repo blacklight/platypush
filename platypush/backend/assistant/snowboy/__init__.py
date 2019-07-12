@@ -50,30 +50,30 @@ class AssistantSnowboyBackend(Backend):
     or train/download other models from https://snowboy.kitt.ai.
     """
 
-    def __init__(self, voice_model_file, hotword=None, sensitivity=0.5,
-                 audio_gain=1.0, assistant_plugin=None, **kwargs):
+    def __init__(self, models, audio_gain=1.0, **kwargs):
         """
-        :param voice_model_file: Snowboy voice model file - \
-            see https://snowboy.kitt.ai/
-        :type voice_model_file: str
+        :param models: Map (name -> configuration) of voice models to be used by
+            the assistant.  See https://snowboy.kitt.ai/ for training/downloading
+            models. Sample format::
 
-        :param hotword: Name of the hotword
-        :type hotword: str
+                ok_google:    # Hotword model name
+                    voice_model_file: /path/models/OK Google.pmdl  # Voice model file location
+                    sensitivity: 0.5            # Model sensitivity, between 0 and 1 (default: 0.5)
+                    assistant_plugin: assistant.google.pushtotalk  # When the hotword is detected trigger the Google push-to-talk assistant plugin (optional)
+                    assistant_language: en-US   # The assistant will conversate in English when this hotword is detected (optional)
+                    detect_sound: /path/to/bell.wav   # Sound file to be played when the hotword is detected (optional)
 
-        :param sensitivity: Hotword recognition sensitivity, between 0 and 1.
-            Default: 0.5.
-        :type sensitivity: float
+                ciao_google:  # Hotword model name
+                    voice_model_file: /path/models/Ciao Google.pmdl  # Voice model file location
+                    sensitivity: 0.5            # Model sensitivity, between 0 and 1 (default: 0.5)
+                    assistant_plugin: assistant.google.pushtotalk    # When the hotword is detected trigger the Google push-to-talk assistant plugin (optional)
+                    assistant_language: it-IT   # The assistant will conversate in Italian when this hotword is detected (optional)
+                    detect_sound: /path/to/bell.wav   # Sound file to be played when the hotword is detected (optional)
 
-        :param audio_gain: Audio gain, between 0 and 1
+        :type models: dict
+
+        :param audio_gain: Audio gain, between 0 and 1. Default: 1
         :type audio_gain: float
-
-        :param assistant_plugin: By default Snowboy fires a
-            :class:`platypush.message.event.assistant.HotwordDetectedEvent` event
-            whenever the hotword is detected. You can also pass the plugin name of
-            a :class:`platypush.plugins.assistant.AssistantPlugin` instance
-            (for example ``assistant.google.pushtotalk``). If set, then the
-            assistant plugin will be invoked to start a conversation.
-        :type assistant_plugin: str
         """
 
         try:
@@ -82,29 +82,68 @@ class AssistantSnowboyBackend(Backend):
             import snowboy.snowboydecoder as snowboydecoder
 
         super().__init__(**kwargs)
-        self.voice_model_file = os.path.abspath(os.path.expanduser(voice_model_file))
-        self.hotword = hotword
-        self.sensitivity = sensitivity
+
+        self.models = {}
+        self._init_models(models)
         self.audio_gain = audio_gain
-        self.assistant_plugin = assistant_plugin
 
         self.detector = snowboydecoder.HotwordDetector(
-            self.voice_model_file, sensitivity=self.sensitivity,
+            [model['voice_model_file'] for model in self.models.values()],
+            sensitivity=[model['sensitivity'] for model in self.models.values()],
             audio_gain=self.audio_gain)
 
-        self.logger.info('Initialized Snowboy hotword detection')
+        self.logger.info('Initialized Snowboy hotword detection with {} voice model configurations'.format(len(self.models)))
 
-    def hotword_detected(self):
+    def _init_models(self, models):
+        if not models:
+            raise AttributeError('Please specify at least one voice model')
+
+        self.models = {}
+        for name, conf in models.items():
+            if name in self.models:
+                raise AttributeError('Duplicate model key {}'.format(name))
+
+            model_file = conf.get('voice_model_file')
+            if not model_file:
+                raise AttributeError('No voice_model_file specified for model {}'.format(name))
+
+            model_file = os.path.abspath(os.path.expanduser(model_file))
+            assistant_plugin_name = conf.get('assistant_plugin')
+
+            if not os.path.isfile(model_file):
+                raise FileNotFoundError('Voice model file {} does not exist or it not a regular file'.format(model_file))
+
+            self.models[name] = {
+                'voice_model_file': model_file,
+                'sensitivity': conf.get('sensitivity', 0.5),
+                'detect_sound': conf.get('detect_sound'),
+                'assistant_plugin': get_plugin(assistant_plugin_name) if assistant_plugin_name else None,
+                'assistant_language': conf.get('assistant_language'),
+            }
+
+    def hotword_detected(self, hotword):
         """
         Callback called on hotword detection
         """
 
         def callback():
-            self.bus.post(HotwordDetectedEvent(hotword=self.hotword))
+            try:
+                import snowboydecoder
+            except ImportError:
+                import snowboy.snowboydecoder as snowboydecoder
 
-            if self.assistant_plugin:
-                # Trigger assistant conversation
-                get_plugin(self.assistant_plugin).start_conversation()
+            self.bus.post(HotwordDetectedEvent(hotword=hotword))
+            model = self.models[hotword]
+
+            detect_sound = model.get('detect_sound')
+            assistant_plugin = model.get('assistant_plugin')
+            assistant_language = model.get('assistant_language')
+
+            if detect_sound:
+                snowboydecoder.play_audio_file(detect_sound)
+
+            if assistant_plugin:
+                assistant_plugin.start_conversation(language=assistant_language)
 
         return callback
 
@@ -115,7 +154,10 @@ class AssistantSnowboyBackend(Backend):
 
     def run(self):
         super().run()
-        self.detector.start(self.hotword_detected())
+        self.detector.start(detected_callback=[
+            lambda: self.hotword_detected(hotword)
+            for hotword in self.models.keys()
+        ])
 
 
 # vim:sw=4:ts=4:et:
