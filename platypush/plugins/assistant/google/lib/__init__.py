@@ -59,6 +59,7 @@ class SampleAssistant(object):
         self.device_id = device_id
         self.conversation_stream = conversation_stream
         self.display = display
+        self.play_response = True
 
         # Opaque blob provided in AssistResponse that,
         # when provided in a follow-up AssistRequest,
@@ -131,6 +132,7 @@ class SampleAssistant(object):
                 logging.info('End of audio request detected.')
                 logging.info('Stopping recording.')
                 self.conversation_stream.stop_recording()
+                self.play_response = True
 
                 if self.detected_speech and self.on_speech_recognized:
                     self.on_speech_recognized(self.detected_speech)
@@ -144,9 +146,13 @@ class SampleAssistant(object):
             if len(resp.audio_out.audio_data) > 0:
                 if not self.conversation_stream.playing:
                     self.conversation_stream.stop_recording()
-                    self.conversation_stream.start_playback()
-                    logging.info('Playing assistant response.')
-                self.conversation_stream.write(resp.audio_out.audio_data)
+
+                    if self.play_response:
+                        self.conversation_stream.start_playback()
+                        logging.info('Playing assistant response.')
+
+                if self.play_response:
+                    self.conversation_stream.write(resp.audio_out.audio_data)
             if resp.dialog_state_out.conversation_state:
                 conversation_state = resp.dialog_state_out.conversation_state
                 logging.debug('Updating conversation state.')

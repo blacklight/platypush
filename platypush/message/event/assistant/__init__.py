@@ -10,17 +10,20 @@ logger = logging.getLogger(__name__)
 class AssistantEvent(Event):
     """ Base class for assistant events """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, assistant=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        try:
+
+        if assistant:
+            self._assistant = assistant
+        else:
             self._assistant = get_backend('assistant.google')
-        except KeyError:
-            try:
+
+            if not self._assistant:
                 self._assistant = get_plugin('assistant.google.pushtotalk')
-            except Exception:
+
+            if not self._assistant:
                 logger.warning('google.assistant not configured/initialized')
                 self._assistant = None
-
 
 class ConversationStartEvent(AssistantEvent):
     """
@@ -82,14 +85,17 @@ class SpeechRecognizedEvent(AssistantEvent):
     Event triggered when a speech is recognized
     """
 
-    def __init__(self, phrase, *args, **kwargs):
+    def __init__(self, phrase, *args, assistant=None, **kwargs):
         """
         :param phrase: Recognized user phrase
         :type phrase: str
         """
 
-        super().__init__(phrase=phrase, *args, **kwargs)
+        super().__init__(*args, phrase=phrase, assistant=assistant, **kwargs)
         self.recognized_phrase = phrase.strip().lower()
+
+        if not self._assistant and assistant:
+            self._assistant = assistant
 
     def matches_condition(self, condition):
         """
@@ -98,8 +104,12 @@ class SpeechRecognizedEvent(AssistantEvent):
         """
 
         result = super().matches_condition(condition)
+
         if result.is_match and self._assistant and 'phrase' in condition.args:
-            self._assistant.stop_conversation()
+            if hasattr(self._assistant, 'play_response'):
+                self._assistant.play_response = False
+            elif hasattr(self._assistant, 'stop_conversation'):
+                self._assistant.stop_conversation()
 
         return result
 
@@ -182,4 +192,3 @@ class TimerEndEvent(AlertEndEvent):
 
 
 # vim:sw=4:ts=4:et:
-

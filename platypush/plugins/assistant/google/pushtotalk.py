@@ -146,21 +146,21 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
     def on_conversation_start(self):
         """ Conversation start handler """
         def handler():
-            get_bus().post(ConversationStartEvent())
+            get_bus().post(ConversationStartEvent(assistant=self.assistant))
 
         return handler
 
     def on_conversation_end(self):
         """ Conversation end handler """
         def handler(with_follow_on_turn):
-            get_bus().post(ConversationEndEvent(with_follow_on_turn=with_follow_on_turn))
+            get_bus().post(ConversationEndEvent(with_follow_on_turn=with_follow_on_turn, assistant=self.assistant))
 
         return handler
 
     def on_speech_recognized(self):
         """ Speech recognized handler """
         def handler(phrase):
-            get_bus().post(SpeechRecognizedEvent(phrase=phrase))
+            get_bus().post(SpeechRecognizedEvent(phrase=phrase, assistant=self.assistant))
             self.interactions.append({'request': phrase})
 
         return handler
@@ -168,19 +168,26 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
     def on_volume_changed(self):
         """ Volume changed event """
         def handler(volume):
-            get_bus().post(VolumeChangedEvent(volume=volume))
+            get_bus().post(VolumeChangedEvent(volume=volume, assistant=self.assistant))
 
         return handler
 
     def on_response(self):
         """ Response handler """
         def handler(response):
-            get_bus().post(ResponseEvent(response_text=response))
+            get_bus().post(ResponseEvent(response_text=response, assistant=self.assistant))
 
             if not self.interactions:
                 self.interactions.append({'response': response})
             else:
                 self.interactions[-1]['response'] = response
+
+        return handler
+
+    def on_device_action(self):
+        """ Device action handler """
+        def handler(request):
+            self.logger.info('Received request: {}'.format(request))
 
         return handler
 
@@ -219,7 +226,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
                              display=None,
                              channel=self.grpc_channel,
                              deadline_sec=self.grpc_deadline,
-                             device_handler=None,
+                             device_handler=self.on_device_action(),
                              on_conversation_start=self.on_conversation_start(),
                              on_conversation_end=self.on_conversation_end(),
                              on_volume_changed=self.on_volume_changed(),
@@ -237,7 +244,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         """ Stop a conversation """
         if self.assistant:
             self.conversation_stream.stop_playback()
-            get_bus().post(ConversationEndEvent())
+            get_bus().post(ConversationEndEvent(assistant=self.assistant))
 
 
 # vim:sw=4:ts=4:et:
