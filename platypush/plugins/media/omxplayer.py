@@ -92,17 +92,21 @@ class MediaOmxplayerPlugin(MediaPlugin):
 
     @action
     def stop(self):
-        """ Stop the playback """
-        if self._player:
-            self._player.stop()
-        return {'status': 'stop'}
+        """ Stop the playback (same as quit) """
+        return self.quit()
 
     @action
     def quit(self):
         """ Quit the player """
+        from omxplayer.player import OMXPlayerDeadError
+
         if self._player:
-            self._player.stop()
-            self._player.quit()
+            try:
+                self._player.stop()
+                self._player.quit()
+            except OMXPlayerDeadError:
+                pass
+
             self._player = None
 
         return {'status': 'stop'}
@@ -271,34 +275,43 @@ class MediaOmxplayerPlugin(MediaPlugin):
             }
         """
 
-        if self._player:
-            state = self._player.playback_status().lower()
-            if state == 'playing':
-                state = PlayerState.PLAY.value
-            elif state == 'stopped':
-                state = PlayerState.STOP.value
-            elif state == 'paused':
-                state = PlayerState.PAUSE.value
+        from omxplayer.player import OMXPlayerDeadError
 
-            return {
-                'duration': self._player.duration(),
-                'filename': urllib.parse.unquote(self._player.get_source()).split('/')[-1] if self._player.get_source().startswith('file://') else None,
-                'fullscreen': self._player.fullscreen(),
-                'mute': self._player._is_muted,
-                'path': self._player.get_source(),
-                'pause': state == PlayerState.PAUSE.value,
-                'position': max(0, self._player.position()),
-                'seekable': self._player.can_seek(),
-                'state': state,
-                'title': urllib.parse.unquote(self._player.get_source()).split('/')[-1] if self._player.get_source().startswith('file://') else None,
-                'url': self._player.get_source(),
-                'volume': self._player.volume() * 100,
-                'volume_max': 100,
-            }
-        else:
+        if not self._player:
             return {
                 'state': PlayerState.STOP.value
             }
+
+        try:
+            state = self._player.playback_status().lower()
+        except OMXPlayerDeadError:
+            self._player = None
+            return {
+                'state': PlayerState.STOP.value
+            }
+
+        if state == 'playing':
+            state = PlayerState.PLAY.value
+        elif state == 'stopped':
+            state = PlayerState.STOP.value
+        elif state == 'paused':
+            state = PlayerState.PAUSE.value
+
+        return {
+            'duration': self._player.duration(),
+            'filename': urllib.parse.unquote(self._player.get_source()).split('/')[-1] if self._player.get_source().startswith('file://') else None,
+            'fullscreen': self._player.fullscreen(),
+            'mute': self._player._is_muted,
+            'path': self._player.get_source(),
+            'pause': state == PlayerState.PAUSE.value,
+            'position': max(0, self._player.position()),
+            'seekable': self._player.can_seek(),
+            'state': state,
+            'title': urllib.parse.unquote(self._player.get_source()).split('/')[-1] if self._player.get_source().startswith('file://') else None,
+            'url': self._player.get_source(),
+            'volume': self._player.volume() * 100,
+            'volume_max': 100,
+        }
 
     def add_handler(self, event_type, callback):
         if event_type not in self._handlers.keys():
