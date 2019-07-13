@@ -38,6 +38,7 @@ class Procedure(object):
         if_count = 0
         if_config = LifoQueue()
         procedure_class = procedure_class or cls
+        key = None
 
         for request_config in requests:
             # Check if this request is a for loop

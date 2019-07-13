@@ -3,12 +3,7 @@
 """
 
 import json
-import logging
 import os
-
-import google.auth.transport.grpc
-import google.auth.transport.requests
-import google.oauth2.credentials
 
 import googlesamples.assistant.grpc.audio_helpers as audio_helpers
 import googlesamples.assistant.grpc.device_helpers as device_helpers
@@ -21,6 +16,7 @@ from platypush.message.event.assistant import ConversationStartEvent, \
 from platypush.plugins import action
 from platypush.plugins.assistant import AssistantPlugin
 from platypush.plugins.assistant.google.lib import SampleAssistant
+
 
 class AssistantGooglePushtotalkPlugin(AssistantPlugin):
     """
@@ -89,10 +85,12 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
         # Load OAuth 2.0 credentials.
         try:
+            from google.oauth2.credentials import Credentials
+            from google.auth.transport.requests import Request
+
             with open(self.credentials_file, 'r') as f:
-                self.credentials = google.oauth2.credentials.Credentials(token=None,
-                                                                    **json.load(f))
-                self.http_request = google.auth.transport.requests.Request()
+                self.credentials = Credentials(token=None, **json.load(f))
+                self.http_request = Request()
                 self.credentials.refresh(self.http_request)
         except Exception as ex:
             self.logger.error('Error loading credentials: %s', str(ex))
@@ -105,12 +103,11 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         self.device_handler = None
 
     def _init_assistant(self):
+        from google.auth.transport.grpc import secure_authorized_channel
         self.interactions = []
 
         # Create an authorized gRPC channel.
-        self.grpc_channel = google.auth.transport.grpc.secure_authorized_channel(
-            self.credentials, self.http_request, self.api_endpoint)
-
+        self.grpc_channel = secure_authorized_channel(self.credentials, self.http_request, self.api_endpoint)
         self.logger.info('Connecting to {}'.format(self.api_endpoint))
 
         # Configure audio source and sink.
@@ -143,14 +140,16 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
         self.device_handler = device_helpers.DeviceRequestHandler(self.device_id)
 
-    def on_conversation_start(self):
+    @staticmethod
+    def on_conversation_start():
         """ Conversation start handler """
         def handler():
             get_bus().post(ConversationStartEvent())
 
         return handler
 
-    def on_conversation_end(self):
+    @staticmethod
+    def on_conversation_end():
         """ Conversation end handler """
         def handler(with_follow_on_turn):
             get_bus().post(ConversationEndEvent(with_follow_on_turn=with_follow_on_turn))
@@ -165,7 +164,8 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
         return handler
 
-    def on_volume_changed(self):
+    @staticmethod
+    def on_volume_changed():
         """ Volume changed event """
         def handler(volume):
             get_bus().post(VolumeChangedEvent(volume=volume))
@@ -192,7 +192,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         return handler
 
     @action
-    def start_conversation(self, language=None):
+    def start_conversation(self, *args, language=None, **kwargs):
         """
         Start a conversation
 

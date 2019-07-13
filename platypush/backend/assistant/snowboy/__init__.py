@@ -60,15 +60,19 @@ class AssistantSnowboyBackend(Backend):
                 ok_google:    # Hotword model name
                     voice_model_file: /path/models/OK Google.pmdl  # Voice model file location
                     sensitivity: 0.5            # Model sensitivity, between 0 and 1 (default: 0.5)
-                    assistant_plugin: assistant.google.pushtotalk  # When the hotword is detected trigger the Google push-to-talk assistant plugin (optional)
-                    assistant_language: en-US   # The assistant will conversate in English when this hotword is detected (optional)
+                    assistant_plugin: assistant.google.pushtotalk  # When the hotword is detected trigger the Google
+                                                                   # push-to-talk assistant plugin (optional)
+                    assistant_language: en-US   # The assistant will conversate in English when this hotword is
+                        detected (optional)
                     detect_sound: /path/to/bell.wav   # Sound file to be played when the hotword is detected (optional)
 
                 ciao_google:  # Hotword model name
                     voice_model_file: /path/models/Ciao Google.pmdl  # Voice model file location
                     sensitivity: 0.5            # Model sensitivity, between 0 and 1 (default: 0.5)
-                    assistant_plugin: assistant.google.pushtotalk    # When the hotword is detected trigger the Google push-to-talk assistant plugin (optional)
-                    assistant_language: it-IT   # The assistant will conversate in Italian when this hotword is detected (optional)
+                    assistant_plugin: assistant.google.pushtotalk    # When the hotword is detected trigger the Google
+                                                                     # push-to-talk assistant plugin (optional)
+                    assistant_language: it-IT   # The assistant will conversate in Italian when this hotword is
+                                                # detected (optional)
                     detect_sound: /path/to/bell.wav   # Sound file to be played when the hotword is detected (optional)
 
         :type models: dict
@@ -93,7 +97,8 @@ class AssistantSnowboyBackend(Backend):
             sensitivity=[model['sensitivity'] for model in self.models.values()],
             audio_gain=self.audio_gain)
 
-        self.logger.info('Initialized Snowboy hotword detection with {} voice model configurations'.format(len(self.models)))
+        self.logger.info('Initialized Snowboy hotword detection with {} voice model configurations'.
+                         format(len(self.models)))
 
     def _init_models(self, models):
         if not models:
@@ -117,7 +122,8 @@ class AssistantSnowboyBackend(Backend):
                 detect_sound = os.path.abspath(os.path.expanduser(detect_sound))
 
             if not os.path.isfile(model_file):
-                raise FileNotFoundError('Voice model file {} does not exist or it not a regular file'.format(model_file))
+                raise FileNotFoundError('Voice model file {} does not exist or it not a regular file'.
+                                        format(model_file))
 
             self.models[name] = {
                 'voice_model_file': model_file,
@@ -135,7 +141,6 @@ class AssistantSnowboyBackend(Backend):
             import snowboydecoder
         except ImportError:
             import snowboy.snowboydecoder as snowboydecoder
-
 
         def sound_thread(sound):
             snowboydecoder.play_audio_file(sound)
