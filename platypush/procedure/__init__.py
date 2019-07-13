@@ -108,10 +108,9 @@ class Procedure(object):
             request = Request.build(request_config)
             reqs.append(request)
 
-        pending_if = if_config.get()
-        while pending_if:
-            reqs.append(IfProcedure.build(**pending_if))
+        while not if_config.empty():
             pending_if = if_config.get()
+            reqs.append(IfProcedure.build(**pending_if))
 
         return procedure_class(name=name, _async=_async, requests=reqs, args=args, backend=backend, **kwargs)
 
