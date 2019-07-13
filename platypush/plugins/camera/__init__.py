@@ -12,7 +12,7 @@ from platypush.config import Config
 from platypush.message.response import Response
 from platypush.message.event.camera import CameraRecordingStartedEvent, \
     CameraRecordingStoppedEvent, CameraVideoRenderedEvent, \
-    CameraPictureTakenEvent, CameraFrameCapturedEvent, CameraEvent
+    CameraPictureTakenEvent, CameraFrameCapturedEvent
 
 from platypush.plugins import Plugin, action
 
@@ -52,8 +52,7 @@ class CameraPlugin(Plugin):
                  sleep_between_frames=_default_sleep_between_frames,
                  max_stored_frames=_max_stored_frames,
                  color_transform=_default_color_transform,
-                 scale_x=None, scale_y=None, rotate=None, flip=None,
-                 *args, **kwargs):
+                 scale_x=None, scale_y=None, rotate=None, flip=None, **kwargs):
         """
         :param device_id: Index of the default video device to be used for
             capturing (default: 0)
@@ -115,7 +114,7 @@ class CameraPlugin(Plugin):
         :type flip: int
         """
 
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
         self.default_device_id = device_id
         self.frames_dir = os.path.abspath(os.path.expanduser(frames_dir))
@@ -131,10 +130,10 @@ class CameraPlugin(Plugin):
         self.rotate = rotate
         self.flip = flip
 
-        self._is_recording = {}   # device_id => Event map
-        self._devices = {}   # device_id => VideoCapture map
-        self._recording_threads = {}    # device_id => Thread map
-        self._recording_info = {}   # device_id => recording info map
+        self._is_recording = {}  # device_id => Event map
+        self._devices = {}  # device_id => VideoCapture map
+        self._recording_threads = {}  # device_id => Thread map
+        self._recording_info = {}  # device_id => recording info map
 
     def _init_device(self, device_id, frames_dir=None, **info):
         self._release_device(device_id)
@@ -152,7 +151,6 @@ class CameraPlugin(Plugin):
             self._recording_info[device_id]['frames_dir'] = frames_dir
 
         return self._devices[device_id]
-
 
     def _release_device(self, device_id, wait_thread_termination=True):
         if device_id in self._is_recording:
@@ -174,8 +172,8 @@ class CameraPlugin(Plugin):
         if device_id in self._recording_info:
             del self._recording_info[device_id]
 
-
-    def _store_frame_to_file(self, frame, frames_dir, image_file):
+    @staticmethod
+    def _store_frame_to_file(frame, frames_dir, image_file):
         if image_file:
             filepath = image_file
         else:
@@ -185,15 +183,13 @@ class CameraPlugin(Plugin):
         cv2.imwrite(filepath, frame)
         return filepath
 
-
     def _get_stored_frames_files(self, frames_dir):
         ret = sorted([
             os.path.join(frames_dir, f) for f in os.listdir(frames_dir)
             if os.path.isfile(os.path.join(frames_dir, f)) and
-            re.search(self._frame_filename_regex, f)
+               re.search(self._frame_filename_regex, f)
         ])
         return ret
-
 
     def _get_avg_fps(self, frames_dir):
         files = self._get_stored_frames_files(frames_dir)
@@ -201,7 +197,7 @@ class CameraPlugin(Plugin):
         n_frames = 0
 
         for i in range(1, len(files)):
-            m1 = re.search(self._frame_filename_regex, files[i-1])
+            m1 = re.search(self._frame_filename_regex, files[i - 1])
             m2 = re.search(self._frame_filename_regex, files[i])
 
             if not m1 or not m2:
@@ -209,17 +205,15 @@ class CameraPlugin(Plugin):
 
             t1 = datetime.timestamp(datetime(*map(int, m1.groups())))
             t2 = datetime.timestamp(datetime(*map(int, m2.groups())))
-            frame_time_diff += (t2-t1)
+            frame_time_diff += (t2 - t1)
             n_frames += 1
 
-        return n_frames/frame_time_diff if n_frames and frame_time_diff else 0
-
+        return n_frames / frame_time_diff if n_frames and frame_time_diff else 0
 
     def _remove_expired_frames(self, frames_dir, max_stored_frames):
         files = self._get_stored_frames_files(frames_dir)
-        for f in files[:len(files)-max_stored_frames]:
+        for f in files[:len(files) - max_stored_frames]:
             os.unlink(f)
-
 
     def _make_video_file(self, frames_dir, video_file, video_type):
         files = self._get_stored_frames_files(frames_dir)
@@ -238,7 +232,6 @@ class CameraPlugin(Plugin):
 
         self.fire_event(CameraVideoRenderedEvent(filename=video_file))
         shutil.rmtree(frames_dir, ignore_errors=True)
-
 
     def _recording_thread(self):
         def thread(duration, video_file, image_file, device_id,
@@ -282,7 +275,7 @@ class CameraPlugin(Plugin):
                     rows, cols = frame.shape
                     if not rotation_matrix:
                         rotation_matrix = cv2.getRotationMatrix2D(
-                            (cols/2, rows/2), rotate, 1)
+                            (cols / 2, rows / 2), rotate, 1)
 
                     frame = cv2.warpAffine(frame, rotation_matrix, (cols, rows))
 
@@ -293,7 +286,7 @@ class CameraPlugin(Plugin):
                     scale_x = scale_x or 1
                     scale_y = scale_y or 1
                     frame = cv2.resize(frame, None, fx=scale_x, fy=scale_y,
-                                       interpolation = cv2.INTER_CUBIC)
+                                       interpolation=cv2.INTER_CUBIC)
 
                 self._store_frame_to_file(frame=frame, frames_dir=frames_dir,
                                           image_file=image_file)
@@ -325,7 +318,6 @@ class CameraPlugin(Plugin):
                                  format(video_file))
 
         return thread
-
 
     @action
     def start_recording(self, duration=None, video_file=None, video_type=None,
@@ -360,17 +352,18 @@ class CameraPlugin(Plugin):
             return self.status(device_id=device_id)
 
         recording_started = threading.Event()
+
         def on_recording_started(event):
             recording_started.set()
 
         frames_dir = os.path.abspath(os.path.expanduser(frames_dir)) \
             if frames_dir is not None else self.frames_dir
         sleep_between_frames = sleep_between_frames if sleep_between_frames \
-            is not None else self.sleep_between_frames
+                                                       is not None else self.sleep_between_frames
         max_stored_frames = max_stored_frames if max_stored_frames \
-            is not None else self.max_stored_frames
+                                                 is not None else self.max_stored_frames
         color_transform = color_transform if color_transform \
-            is not None else self.color_transform
+                                             is not None else self.color_transform
         scale_x = scale_x if scale_x is not None else self.scale_x
         scale_y = scale_y if scale_y is not None else self.scale_y
         rotate = rotate if rotate is not None else self.rotate
@@ -399,17 +392,17 @@ class CameraPlugin(Plugin):
         self.register_handler(CameraRecordingStartedEvent, on_recording_started)
 
         self._recording_threads[device_id] = threading.Thread(
-            target=self._recording_thread(), kwargs = {
-                'duration':duration,
-                'video_file':video_file,
-                'video_type':video_type,
-                'image_file':None, 'device_id':device_id,
-                'frames_dir':frames_dir, 'n_frames':None,
-                'sleep_between_frames':sleep_between_frames,
-                'max_stored_frames':max_stored_frames,
-                'color_transform':color_transform,
-                'scale_x':scale_x, 'scale_y':scale_y,
-                'rotate':rotate, 'flip':flip
+            target=self._recording_thread(), kwargs={
+                'duration': duration,
+                'video_file': video_file,
+                'video_type': video_type,
+                'image_file': None, 'device_id': device_id,
+                'frames_dir': frames_dir, 'n_frames': None,
+                'sleep_between_frames': sleep_between_frames,
+                'max_stored_frames': max_stored_frames,
+                'color_transform': color_transform,
+                'scale_x': scale_x, 'scale_y': scale_y,
+                'rotate': rotate, 'flip': flip
             })
 
         self._recording_threads[device_id].start()
@@ -459,7 +452,7 @@ class CameraPlugin(Plugin):
             status = self.status(device_id=device_id).output.get(device_id)
             if 'image_file' in status:
                 shutil.copyfile(status['image_file'], image_file)
-                return { 'path': image_file }
+                return {'path': image_file}
 
             raise RuntimeError('Recording already in progress and no images ' +
                                'have been captured yet')
@@ -467,7 +460,7 @@ class CameraPlugin(Plugin):
         warmup_frames = warmup_frames if warmup_frames is not None else \
             self.warmup_frames
         color_transform = color_transform if color_transform \
-            is not None else self.color_transform
+                                             is not None else self.color_transform
         scale_x = scale_x if scale_x is not None else self.scale_x
         scale_y = scale_y if scale_y is not None else self.scale_y
         rotate = rotate if rotate is not None else self.rotate
@@ -481,16 +474,16 @@ class CameraPlugin(Plugin):
 
         self.register_handler(CameraPictureTakenEvent, on_picture_taken)
         self._recording_threads[device_id] = threading.Thread(
-            target=self._recording_thread(), kwargs = {
-                'duration':None, 'video_file':None,
-                'image_file':image_file, 'video_type':None,
-                'device_id':device_id, 'frames_dir':None,
-                'n_frames':warmup_frames,
-                'sleep_between_frames':None,
-                'max_stored_frames':None,
-                'color_transform':color_transform,
-                'scale_x':scale_x, 'scale_y':scale_y,
-                'rotate':rotate, 'flip':flip
+            target=self._recording_thread(), kwargs={
+                'duration': None, 'video_file': None,
+                'image_file': image_file, 'video_type': None,
+                'device_id': device_id, 'frames_dir': None,
+                'n_frames': warmup_frames,
+                'sleep_between_frames': None,
+                'max_stored_frames': None,
+                'color_transform': color_transform,
+                'scale_x': scale_x, 'scale_y': scale_y,
+                'rotate': rotate, 'flip': flip
             })
 
         self._recording_threads[device_id].start()
@@ -498,7 +491,7 @@ class CameraPlugin(Plugin):
 
         picture_taken.wait()
         self.unregister_handler(CameraPictureTakenEvent, on_picture_taken)
-        return { 'path': image_file }
+        return {'path': image_file}
 
     @action
     def status(self, device_id=None):
@@ -512,14 +505,13 @@ class CameraPlugin(Plugin):
             id: {
                 'image_file': self._get_stored_frames_files(info['frames_dir'])[-2]
                 if 'frames_dir' in info
-                and len(self._get_stored_frames_files(info['frames_dir'])) > 1
-                and 'image_file' not in info else info.get('image_file'), **info
+                   and len(self._get_stored_frames_files(info['frames_dir'])) > 1
+                   and 'image_file' not in info else info.get('image_file'), **info
             }
             for id, info in self._recording_info.items()
             if device_id is None or id == device_id
         }, disable_logging=True)
         return resp
-
 
     @action
     def get_default_device_id(self):
