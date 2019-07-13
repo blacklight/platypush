@@ -157,6 +157,7 @@
 
             &.active {
                 height: 4rem;
+                @extend .active-glow;
             }
 
             &.move:hover {
