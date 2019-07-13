@@ -21,15 +21,14 @@ class Procedure(object):
             requests -- List of platylist.message.request.Request objects
         """
 
-        self.name     = name
-        self._async   = _async
+        self.name = name
+        self._async = _async
         self.requests = requests
-        self.backend  = backend
-        self.args     = args or {}
+        self.backend = backend
+        self.args = args or {}
 
         for req in requests:
             req.backend = self.backend
-
 
     @classmethod
     def build(cls, name, _async, requests, args=None, backend=None, id=None, procedure_class=None, **kwargs):
@@ -68,7 +67,7 @@ class Procedure(object):
             # Check if this request is an if-else
             if len(request_config.keys()) >= 1:
                 key = list(request_config.keys())[0]
-                m = re.match('\s*(if)\s+\$\{(.*)\}\s*', key)
+                m = re.match('\s*(if)\s+\${(.*)}\s*', key)
 
                 if m:
                     if_count += 1
@@ -76,13 +75,13 @@ class Procedure(object):
                     condition = m.group(2)
 
                     if_config.put({
-                        'name':if_name,
-                        '_async':False,
-                        'requests':request_config[key],
-                        'condition':condition,
-                        'else_branch':[],
-                        'backend':backend,
-                        'id':id,
+                        'name': if_name,
+                        '_async': False,
+                        'requests': request_config[key],
+                        'condition': condition,
+                        'else_branch': [],
+                        'backend': backend,
+                        'id': id,
                     })
 
                     continue
@@ -109,11 +108,12 @@ class Procedure(object):
             request = Request.build(request_config)
             reqs.append(request)
 
-        for pending_if in if_config.queue:
+        pending_if = if_config.get()
+        while pending_if:
             reqs.append(IfProcedure.build(**pending_if))
+            pending_if = if_config.get()
 
         return procedure_class(name=name, _async=_async, requests=reqs, args=args, backend=backend, **kwargs)
-
 
     def execute(self, n_tries=1, **context):
         """
@@ -123,7 +123,7 @@ class Procedure(object):
         """
         if self.args:
             args = self.args.copy()
-            for (k,v) in args.items():
+            for k, v in args.items():
                 v = Request.expand_value_from_context(v, **context)
                 args[k] = v
                 context[k] = v
@@ -138,12 +138,13 @@ class Procedure(object):
             if token:
                 request.token = token
 
-            context['_async'] = self._async; context['n_tries'] = n_tries
+            context['_async'] = self._async
+            context['n_tries'] = n_tries
             response = request.execute(**context)
 
             if not self._async and response:
                 if isinstance(response.output, dict):
-                    for (k,v) in response.output.items():
+                    for k, v in response.output.items():
                         context[k] = v
 
                 context['output'] = response.output
@@ -178,13 +179,12 @@ class LoopProcedure(Procedure):
 
     context = {}
 
-    def __init__(self, name, iterator_name, iterable, requests, _async=False, args=None, backend=None, **kwargs):
-        super(). __init__(name=name, _async=_async, requests=requests, args=args, backend=backend, **kwargs)
+    def __init__(self, name, iterator_name, iterable, requests, _async=False, args=None, backend=None):
+        super(). __init__(name=name, _async=_async, requests=requests, args=args, backend=backend)
 
         self.iterator_name = iterator_name
         self.iterable = iterable
         self.requests = requests
-
 
     def execute(self, _async=None, **context):
         iterable = Request.expand_value_from_context(self.iterable, **context)
@@ -197,6 +197,7 @@ class LoopProcedure(Procedure):
         return response
 
 
+# noinspection PyBroadException
 class IfProcedure(Procedure):
     """
     Models an if-else construct.
@@ -252,8 +253,8 @@ class IfProcedure(Procedure):
                                         procedure_class=Procedure, **kwargs)
 
         return super().build(name=name, condition=condition, requests=requests,
-                   else_branch=else_branch, args=args, backend=backend, id=id,
-                   **kwargs)
+                             else_branch=else_branch, args=args, backend=backend, id=id,
+                             **kwargs)
 
     def execute(self, **context):
         for (k, v) in context.items():
@@ -278,4 +279,3 @@ class IfProcedure(Procedure):
 
 
 # vim:sw=4:ts=4:et:
-
