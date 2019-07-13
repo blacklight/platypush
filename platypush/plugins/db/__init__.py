@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, Table, MetaData
 
 from platypush.plugins import Plugin, action
 
+
 class DbPlugin(Plugin):
     """
     Database plugin. It allows you to programmatically select, insert, update
@@ -29,20 +30,20 @@ class DbPlugin(Plugin):
         super().__init__()
         self.engine = self._get_engine(engine, *args, **kwargs)
 
-
     def _get_engine(self, engine=None, *args, **kwargs):
         if engine:
             return create_engine(engine, *args, **kwargs)
         else:
             return self.engine
 
-    def _build_condition(self, table, column, value):
+    @staticmethod
+    def _build_condition(table, column, value):
         if isinstance(value, str):
             value = "'{}'".format(value)
-        elif not isinstance(value, int) and not isinstance(value, 'float'):
+        elif not isinstance(value, int) and not isinstance(value, float):
             value = "'{}'".format(str(value))
 
-        return eval('table.c.{}=={}'.format(column, value))
+        return eval('{}.{}=={}'.format(table, column, value))
 
     @action
     def execute(self, statement, engine=None, *args, **kwargs):
@@ -69,7 +70,6 @@ class DbPlugin(Plugin):
         with engine.connect() as connection:
             result = connection.execute(statement)
 
-
     @action
     def select(self, query=None, table=None, filter=None, engine=None, *args, **kwargs):
         """
@@ -77,14 +77,18 @@ class DbPlugin(Plugin):
 
         :param query: SQL to be executed
         :type query: str
-        :param filter: Query WHERE filter expressed as a dictionary. This approach is preferred over specifying raw SQL in ``query`` as the latter approach may be prone to SQL injection, unless you need to build some complex SQL logic.
+        :param filter: Query WHERE filter expressed as a dictionary. This approach is preferred over specifying raw SQL
+            in ``query`` as the latter approach may be prone to SQL injection, unless you need to build some complex
+            SQL logic.
         :type filter: dict
         :param table: If you specified a filter instead of a raw query, you'll have to specify the target table
         :type table: str
         :param engine: Engine to be used (default: default class engine)
         :type engine: str
-        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
-        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine``
+            (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine``
+            (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
         :returns: List of hashes representing the result rows.
 
         Examples:
@@ -149,9 +153,8 @@ class DbPlugin(Plugin):
 
         return rows
 
-
     @action
-    def insert(self, table, records, engine=None, key_columns=[],
+    def insert(self, table, records, engine=None, key_columns=None,
                on_duplicate_update=False, *args, **kwargs):
         """
         Inserts records (as a list of hashes) into a table.
@@ -195,6 +198,9 @@ class DbPlugin(Plugin):
                 }
         """
 
+        if key_columns is None:
+            key_columns = []
+
         db = self._get_engine(engine, *args, **kwargs)
 
         for record in records:
@@ -211,7 +217,6 @@ class DbPlugin(Plugin):
                                 *args, **kwargs)
                 else:
                     raise e
-
 
     @action
     def update(self, table, records, key_columns, engine=None, *args, **kwargs):
@@ -272,7 +277,6 @@ class DbPlugin(Plugin):
             update = update.values(**values)
             engine.execute(update)
 
-
     @action
     def delete(self, table, records, engine=None, *args, **kwargs):
         """
@@ -320,4 +324,3 @@ class DbPlugin(Plugin):
 
 
 # vim:sw=4:ts=4:et:
-

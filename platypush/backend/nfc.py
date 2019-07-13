@@ -22,6 +22,11 @@ class NfcBackend(Backend):
     Requires:
 
         * **nfcpy** >= 1.0 (``pip install nfcpy``)
+
+    Run the following to check if your device is compatible with nfcpy and the right permissions are set::
+
+        python -m nfc
+
     """
 
     def __init__(self, device='usb', *args, **kwargs):
