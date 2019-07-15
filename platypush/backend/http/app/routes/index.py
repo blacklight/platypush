@@ -1,10 +1,9 @@
 import os
 
-from flask import Blueprint, request, render_template
+from flask import Blueprint, render_template
 
 from platypush.backend.http.app import template_folder, static_folder
-from platypush.backend.http.app.utils import authenticate, authentication_ok, \
-    get_websocket_port
+from platypush.backend.http.app.utils import authenticate, get_websocket_port
 
 from platypush.backend.http.utils import HttpUtils
 from platypush.config import Config
@@ -19,11 +18,9 @@ __routes__ = [
 
 
 @index.route('/')
+@authenticate()
 def index():
     """ Route to the main web panel """
-    if not authentication_ok(request):
-        return authenticate()
-
     configured_plugins = Config.get_plugins()
     enabled_templates = {}
     enabled_scripts = {}

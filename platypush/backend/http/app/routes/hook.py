@@ -3,8 +3,7 @@ import json
 from flask import Blueprint, abort, request, Response
 
 from platypush.backend.http.app import template_folder
-from platypush.backend.http.app.utils import authenticate, authentication_ok, \
-    logger, send_message
+from platypush.backend.http.app.utils import authenticate, logger, send_message
 
 from platypush.message.event.http.hook import WebhookEvent
 
@@ -16,10 +15,11 @@ __routes__ = [
     hook,
 ]
 
+
 @hook.route('/hook/<hook_name>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'])
+@authenticate(skip_auth_methods=['session'])
 def hook(hook_name):
     """ Endpoint for custom webhooks """
-    if not authentication_ok(request): return authenticate()
 
     event_args = {
         'hook': hook_name,

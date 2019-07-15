@@ -1,8 +1,7 @@
 from flask import Blueprint, request, render_template
 
 from platypush.backend.http.app import template_folder, static_folder
-from platypush.backend.http.app.utils import authenticate, authentication_ok, \
-    get_websocket_port
+from platypush.backend.http.app.utils import authenticate, get_websocket_port
 
 from platypush.backend.http.utils import HttpUtils
 from platypush.config import Config
@@ -16,11 +15,9 @@ __routes__ = [
 
 
 @dashboard.route('/dashboard', methods=['GET'])
+@authenticate()
 def dashboard():
     """ Route for the fullscreen dashboard """
-    if not authentication_ok(request):
-        return authenticate()
-
     http_conf = Config.get('backend.http')
     dashboard_conf = http_conf.get('dashboard', {})
 

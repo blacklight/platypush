@@ -1,0 +1,29 @@
+<!doctype html>
+<head>
+    <title>Platypush login page</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/all.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dist/login.css') }}">
+</head>
+
+<body>
+    <main>
+        <form class="login" method="POST">
+            <div class="row">
+                <input type="text" name="username" placeholder="Username">
+            </div>
+            <div class="row">
+                <input type="password" name="password" placeholder="Password">
+            </div>
+            <div class="row pull-right">
+                <input type="submit" class="btn btn-primary" value="Login">
+            </div>
+            <div class="row pull-right">
+                Keep me logged in on this device &nbsp;<input type="checkbox" name="remember">
+            </div>
+        </form>
+    </main>
+</body>
+

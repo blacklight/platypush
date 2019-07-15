@@ -1,15 +1,12 @@
-import json
 import os
 import shutil
 import tempfile
 import time
 
-from flask import abort, jsonify, request, Response, Blueprint, \
-    send_from_directory
+from flask import Response, Blueprint, send_from_directory
 
 from platypush.backend.http.app import template_folder
-from platypush.backend.http.app.utils import logger, get_remote_base_url, \
-    authenticate_user, send_request
+from platypush.backend.http.app.utils import authenticate, send_request
 
 camera = Blueprint('camera', __name__, template_folder=template_folder)
 
@@ -17,6 +14,7 @@ camera = Blueprint('camera', __name__, template_folder=template_folder)
 __routes__ = [
     camera,
 ]
+
 
 def get_device_id(device_id=None):
     if device_id is None:
@@ -32,8 +30,8 @@ def get_frame_file(device_id=None):
 
     if device_id not in status:
         was_recording = False
-        response = send_request(action='camera.start_recording',
-                                device_id=device_id)
+        send_request(action='camera.start_recording',
+                     device_id=device_id)
 
     while not frame_file:
         frame_file = send_request(action='camera.status', device_id=device_id). \
@@ -43,12 +41,10 @@ def get_frame_file(device_id=None):
             time.sleep(0.1)
 
     if not was_recording:
-        # stop_recording will delete the temporary frames. Copy the image file
-        # to a temporary file before stopping recording
-        tmp_file = None
-
         with tempfile.NamedTemporaryFile(prefix='camera_capture_', suffix='.jpg',
                                          delete=False) as f:
+            # stop_recording will delete the temporary frames. Copy the image file
+            # to a temporary file before stopping recording
             tmp_file = f.name
 
         shutil.copyfile(frame_file, tmp_file)
@@ -62,7 +58,6 @@ def video_feed(device_id=None):
     device_id = get_device_id(device_id)
     send_request(action='camera.start_recording', device_id=device_id)
     last_frame_file = None
-    last_frame = None
 
     try:
         while True:
@@ -77,33 +72,35 @@ def video_feed(device_id=None):
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
             last_frame_file = frame_file
-            last_frame = frame
     finally:
         send_request(action='camera.stop_recording', device_id=device_id)
 
 
 @camera.route('/camera/<device_id>/frame', methods=['GET'])
-@authenticate_user
+@authenticate()
 def get_camera_frame(device_id):
     frame_file = get_frame_file(device_id)
     return send_from_directory(os.path.dirname(frame_file),
                                os.path.basename(frame_file))
 
+
 @camera.route('/camera/frame', methods=['GET'])
-@authenticate_user
+@authenticate()
 def get_default_camera_frame():
     frame_file = get_frame_file()
     return send_from_directory(os.path.dirname(frame_file),
                                os.path.basename(frame_file))
 
+
 @camera.route('/camera/stream', methods=['GET'])
-@authenticate_user
+@authenticate()
 def get_default_stream_feed():
     return Response(video_feed(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
+
 @camera.route('/camera/<device_id>/stream', methods=['GET'])
-@authenticate_user
+@authenticate()
 def get_stream_feed(device_id):
     return Response(video_feed(device_id),
                     mimetype='multipart/x-mixed-replace; boundary=frame')

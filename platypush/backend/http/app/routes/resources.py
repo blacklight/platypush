@@ -5,8 +5,6 @@ from flask import Blueprint, abort, send_from_directory
 
 from platypush.config import Config
 from platypush.backend.http.app import template_folder, static_folder
-from platypush.backend.http.app.utils import authenticate, authentication_ok, \
-    send_message
 
 
 img_folder = os.path.join(static_folder, 'resources', 'img')
@@ -20,6 +18,7 @@ __routes__ = [
     favicon,
     img,
 ]
+
 
 @resources.route('/resources/<path:path>', methods=['GET'])
 def resources_path(path):

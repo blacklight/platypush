@@ -43,7 +43,7 @@ class DbPlugin(Plugin):
         elif not isinstance(value, int) and not isinstance(value, float):
             value = "'{}'".format(str(value))
 
-        return eval('{}.{}=={}'.format(table, column, value))
+        return eval('table.c.{}=={}'.format(column, value))
 
     @action
     def execute(self, statement, engine=None, *args, **kwargs):

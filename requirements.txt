@@ -32,6 +32,9 @@ requests
 # Database plugin support
 sqlalchemy
 
+# Support for multi-users and password authentication
+bcrypt
+
 # RSS feeds support
 # feedparser
 
