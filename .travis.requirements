@@ -5,3 +5,4 @@ flask
 redis
 python-dateutil
 websockets
+bcrypt
