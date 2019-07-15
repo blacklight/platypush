@@ -6,3 +6,4 @@ redis
 python-dateutil
 websockets
 bcrypt
+sqlalchemy
