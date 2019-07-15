@@ -19,7 +19,8 @@ class TestHttp(unittest.TestCase):
     """ Tests the full flow of a request/response on the HTTP backend.
         Runs a remote command over HTTP via shell.exec plugin and gets the output """
 
-    timeout = 5
+    timeout = 10
+    sleep_secs = 10
 
     def setUp(self):
         logging.basicConfig(level=logging.INFO, stream=sys.stdout)
@@ -28,7 +29,8 @@ class TestHttp(unittest.TestCase):
 
     def test_request_exec_flow(self):
         self.start_daemon()
-        time.sleep(1)
+        logging.info('Sleeping {} seconds while waiting for the daemon to start up'.format(self.sleep_secs))
+        time.sleep(self.sleep_secs)
         self.send_request()
 
     def start_daemon(self):
@@ -67,5 +69,5 @@ class TestHttp(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 
-# vim:sw=4:ts=4:et:
 
+# vim:sw=4:ts=4:et:
