@@ -106,7 +106,7 @@ def get_plugin(plugin_name, reload=False):
     try:
         plugin_class = getattr(plugin, cls_name)
     except AttributeError as e:
-        logger.warning('No such class in {}: {}'.format(plugin_name, cls_name))
+        logger.warning('No such class in {}: {} [error: {}]'.format(plugin_name, cls_name, str(e)))
         raise RuntimeError(e)
 
     with plugins_init_locks[plugin_name]:
