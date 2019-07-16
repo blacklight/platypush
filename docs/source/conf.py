@@ -210,6 +210,15 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'nfc',
                         'ndef',
                         'bcrypt',
+                        'google',
+                        'feedparser',
+                        'kafka',
+                        'googlesamples',
+                        'icalendar',
+                        'httplib2',
+                        'mpd',
+                        'serial',
+                        'pyHS100',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))

@@ -34,8 +34,7 @@ class AssistantSnowboyBackend(Backend):
 
         * **snowboy** (``pip install snowboy``)
 
-    Manual installation for snowboy and its Python bindings if the command above
-    fails:
+    Manual installation for snowboy and its Python bindings if the command above fails::
 
         $ [sudo] apt-get install libatlas-base-dev swig
         $ [sudo] pip install pyaudio

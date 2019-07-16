@@ -37,9 +37,6 @@ class CameraPlugin(Plugin):
         * **opencv** (``pip install opencv-python``)
     """
 
-    _default_frames_dir = os.path.join(Config.get('workdir'), 'camera',
-                                       'frames')
-
     _default_warmup_frames = 5
     _default_sleep_between_frames = 0
     _default_color_transform = 'COLOR_BGR2BGRA'
@@ -115,6 +112,9 @@ class CameraPlugin(Plugin):
         """
 
         super().__init__(**kwargs)
+
+        self._default_frames_dir = os.path.join(Config.get('workdir'), 'camera',
+                                                'frames')
 
         self.default_device_id = device_id
         self.frames_dir = os.path.abspath(os.path.expanduser(frames_dir))

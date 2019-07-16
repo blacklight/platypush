@@ -4,5 +4,3 @@
 .. automodule:: platypush.plugins.assistant.google.pushtotalk
     :members:
 
-
-
