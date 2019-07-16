@@ -17,6 +17,8 @@ Plugins
     platypush/plugins/db.rst
     platypush/plugins/file.rst
     platypush/plugins/google.calendar.rst
+    platypush/plugins/google.credentials.rst
+    platypush/plugins/google.fit.rst
     platypush/plugins/google.mail.rst
     platypush/plugins/google.maps.rst
     platypush/plugins/google.rst
@@ -27,8 +29,10 @@ Plugins
     platypush/plugins/gpio.sensor.mcp3008.rst
     platypush/plugins/gpio.sensor.rst
     platypush/plugins/gpio.zeroborg.rst
+    platypush/plugins/homeseer.rst
     platypush/plugins/http.request.rss.rst
     platypush/plugins/http.request.rst
+    platypush/plugins/http.webpage.rst
     platypush/plugins/ifttt.rst
     platypush/plugins/kafka.rst
     platypush/plugins/light.hue.rst
@@ -37,6 +41,7 @@ Plugins
     platypush/plugins/media.mplayer.rst
     platypush/plugins/media.mpv.rst
     platypush/plugins/media.omxplayer.rst
+    platypush/plugins/media.plex.rst
     platypush/plugins/media.search.local.rst
     platypush/plugins/media.search.torrent.rst
     platypush/plugins/media.search.youtube.rst
@@ -59,8 +64,10 @@ Plugins
     platypush/plugins/torrent.rst
     platypush/plugins/tts.google.rst
     platypush/plugins/tts.rst
+    platypush/plugins/user.rst
     platypush/plugins/utils.rst
     platypush/plugins/variable.rst
     platypush/plugins/weather.forecast.rst
     platypush/plugins/websocket.rst
     platypush/plugins/wiimote.rst
+

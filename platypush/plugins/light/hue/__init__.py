@@ -97,8 +97,6 @@ class LightHuePlugin(LightPlugin):
         Connect to the configured Hue bridge. If the device hasn't been paired
         yet, uncomment the ``.connect()`` and ``.get_api()`` lines and retry
         after clicking the pairing button on your bridge.
-
-        :todo: Support for dynamic retry and better user interaction in case of bridge pairing needed.
         """
 
         # Lazy init
@@ -137,13 +135,14 @@ class LightHuePlugin(LightPlugin):
 
         Example output::
 
-            output = {
+            {
                 "scene-id-1": {
                     "name": "Scene 1",
                     "lights": [
                         "1",
                         "3"
                     ],
+
                     "owner": "owner-id",
                     "recycle": true,
                     "locked": false,
@@ -151,11 +150,9 @@ class LightHuePlugin(LightPlugin):
                     "picture": "",
                     "lastupdated": "2018-06-01T00:00:00",
                     "version": 1
-                },
-                "scene-id-2": {
-                    # ...
                 }
             }
+
         """
 
         return self.bridge.get_scene()
@@ -169,7 +166,7 @@ class LightHuePlugin(LightPlugin):
 
         Example::
 
-            output = {
+            {
                 "1": {
                     "state": {
                         "on": true,
@@ -181,22 +178,22 @@ class LightHuePlugin(LightPlugin):
                             0.6163,
                             0.3403
                         ],
+
                         "ct": 153,
                         "alert": "none",
                         "colormode": "hs",
                         "reachable": true
                     },
+
                     "type": "Extended color light",
                     "name": "Lightbulb 1",
                     "modelid": "LCT001",
                     "manufacturername": "Philips",
                     "uniqueid": "00:11:22:33:44:55:66:77-88",
                     "swversion": "5.105.0.21169"
-                },
-                "2": {
-                    # ...
                 }
             }
+
         """
 
         return self.bridge.get_light()
@@ -210,7 +207,7 @@ class LightHuePlugin(LightPlugin):
 
         Example::
 
-            output = {
+            {
                 "1": {
                     "name": "Living Room",
                     "lights": [
@@ -223,11 +220,13 @@ class LightHuePlugin(LightPlugin):
                         "1",
                         "3"
                     ],
+
                     "type": "Room",
                     "state": {
                         "all_on": true,
                         "any_on": true
                     },
+
                     "class": "Living room",
                     "action": {
                         "on": true,
@@ -239,16 +238,14 @@ class LightHuePlugin(LightPlugin):
                             0.2844,
                             0.2609
                         ],
+
                         "ct": 153,
                         "alert": "none",
                         "colormode": "hs"
                     }
-                },
-
-                "2": {
-                    # ...
                 }
             }
+
         """
 
         return self.bridge.get_group()
@@ -258,7 +255,9 @@ class LightHuePlugin(LightPlugin):
         """
         Get the list of running light animations.
 
-        :returns: A dictionary with the following structure:
+        :returns: A dictionary with the following structure.
+
+        .code-block:: json
 
             {
                 "groups": {
@@ -271,14 +270,18 @@ class LightHuePlugin(LightPlugin):
                         "sat_step": 10,
                         "bri_step": 2,
                         "transition_seconds": 2
-                    },
-                    ...
+
+                    }
+
                 },
+
                 "lights": {
-                    "id_1": { ... },
-                    ...
+                    "id_1": {}
+
                 }
+
             }
+
         """
 
         return self.animations
@@ -325,7 +328,8 @@ class LightHuePlugin(LightPlugin):
         """
         Set a light (or lights) property.
 
-        :param light: Light or lights to set. Can be a string representing the light name, a light object, a list of string, or a list of light objects.
+        :param light: Light or lights to set. Can be a string representing the light name,
+            a light object, a list of string, or a list of light objects.
         :param kwargs: key-value list of parameters to set.
 
         Example call::
@@ -339,6 +343,7 @@ class LightHuePlugin(LightPlugin):
                     "sat": 255
                 }
             }
+
         """
 
         self.connect()
@@ -363,6 +368,7 @@ class LightHuePlugin(LightPlugin):
                     "sat": 255
                 }
             }
+
         """
 
         self.connect()

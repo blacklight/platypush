@@ -7,14 +7,17 @@ Backends
 
     platypush/backend.rst
     platypush/backend/adafruit.io.rst
-    platypush/backend/assistant.google.pushtotalk.rst
     platypush/backend/assistant.google.rst
     platypush/backend/assistant.snowboy.rst
     platypush/backend/button.flic.rst
+    platypush/backend/camera.rst
     platypush/backend/camera.pi.rst
-    platypush/backend/http.poll.rst
+    platypush/backend/google.fit.rst
     platypush/backend/http.rst
+    platypush/backend/http.poll.rst
+    platypush/backend/http.request.rss.rst
     platypush/backend/inotify.rst
+    platypush/backend/joystick.rst
     platypush/backend/kafka.rst
     platypush/backend/light.hue.rst
     platypush/backend/midi.rst
@@ -22,6 +25,7 @@ Backends
     platypush/backend/music.mopidy.rst
     platypush/backend/music.mpd.rst
     platypush/backend/music.snapcast.rst
+    platypush/backend/nfc.rst
     platypush/backend/pushbullet.rst
     platypush/backend/redis.rst
     platypush/backend/scard.rst
@@ -35,3 +39,4 @@ Backends
     platypush/backend/weather.forecast.rst
     platypush/backend/websocket.rst
     platypush/backend/wiimote.rst
+

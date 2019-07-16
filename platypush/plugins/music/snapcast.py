@@ -116,9 +116,9 @@ class MusicSnapcastPlugin(Plugin):
         :param group: Group ID or name (default: None)
         :type group: str
 
-        :returns: dict. Example:
+        :returns: dict.
 
-        .. codeblock:: json
+        Example::
 
             "output": {
                 "groups": [
@@ -177,27 +177,28 @@ class MusicSnapcastPlugin(Plugin):
                 },
                 "streams": [
                     {
-                    "id": "mopidy",
-                    "meta": {
-                        "STREAM": "mopidy"
-                    },
-                    "status": "playing",
-                    "uri": {
-                        "fragment": "",
-                        "host": "",
-                        "path": "/tmp/snapfifo",
-                        "query": {
-                        "buffer_ms": "20",
-                        "codec": "pcm",
-                        "name": "mopidy",
-                        "sampleformat": "48000:16:2"
+                        "id": "mopidy",
+                        "meta": {
+                            "STREAM": "mopidy"
                         },
-                        "raw": "pipe:////tmp/snapfifo?buffer_ms=20&codec=pcm&name=mopidy&sampleformat=48000:16:2",
-                        "scheme": "pipe"
-                    }
+                        "status": "playing",
+                        "uri": {
+                            "fragment": "",
+                            "host": "",
+                            "path": "/tmp/snapfifo",
+                            "query": {
+                            "buffer_ms": "20",
+                            "codec": "pcm",
+                            "name": "mopidy",
+                            "sampleformat": "48000:16:2"
+                            },
+                            "raw": "pipe:////tmp/snapfifo?buffer_ms=20&codec=pcm&name=mopidy&sampleformat=48000:16:2",
+                            "scheme": "pipe"
+                        }
                     }
                 ]
             }
+
         """
 
         sock = None
@@ -554,7 +555,9 @@ class MusicSnapcastPlugin(Plugin):
         :param exclude_local: Exclude localhost connections (default: False)
         :type exclude_local: bool
 
-        :returns: dict with the host->port mapping. Example::
+        :returns: dict with the host->port mapping.
+
+        Example::
 
             {
                 "hosts": {
@@ -563,6 +566,7 @@ class MusicSnapcastPlugin(Plugin):
                     "server_3": 1705
                 }
             }
+
         """
 
         backend_hosts = self.get_backend_hosts().output

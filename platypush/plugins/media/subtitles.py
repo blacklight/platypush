@@ -59,8 +59,8 @@ class MediaSubtitlesPlugin(Plugin):
         :param resource: Media file, torrent or URL to the media resource
         :type resource: str
 
-        :param language: Language name or code (default: configured preferred
-            language). Choose 'all' for all the languages
+        :param language: Language name or code (default: configured preferred language).
+            Choose 'all' for all the languages
         :type language: str
         """
 
@@ -118,14 +118,12 @@ class MediaSubtitlesPlugin(Plugin):
     @action
     def download(self, link, media_resource=None, path=None, convert_to_vtt=False):
         """
-        Downloads a subtitle link (.srt/.vtt file or gzip/zip OpenSubtitles
-        archive link) to the specified directory
+        Downloads a subtitle link (.srt/.vtt file or gzip/zip OpenSubtitles archive link) to the specified directory
 
         :param link: Local subtitles file or OpenSubtitles gzip download link
         :type link: str
 
-        :param path: Path where the subtitle file will be downloaded (default:
-            temporary file under /tmp)
+        :param path: Path where the subtitle file will be downloaded (default: temporary file under /tmp)
         :type path: str
 
         :param media_resource: Name of the media resource. If set and if it's a
@@ -136,11 +134,14 @@ class MediaSubtitlesPlugin(Plugin):
             will be converted to VTT format (default: no conversion)
         :type convert_to_vtt: bool
 
-        :returns: dict. Format::
+        :returns: dict.
+
+        Format::
 
             {
                 "filename": "/path/to/subtitle/file.srt"
             }
+
         """
 
         if link.startswith('file://'):

@@ -55,7 +55,8 @@ def generate_credentials(client_secret_path, scope):
 def main():
     """
     Generates a Google API credentials file given client secret JSON and scopes.
-    Usage:
+    Usage::
+
         python -m platypush.plugins.google.credentials [client_secret.json location] [comma-separated list of scopes]
     """
 

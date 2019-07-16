@@ -17,13 +17,16 @@ class UserPlugin(Plugin):
         Create a user. This action needs to be executed by an already existing user, who needs to authenticate with
             their own credentials, unless this is the first user created on the system.
 
-        :return: dict::
+        :return: dict.
+
+        Format::
 
             {
                 "user_id": int,
                 "username": str,
                 "created_at": str (in ISO format)
             }
+
         """
 
         if self.user_manager.get_user_count() > 0 and not executing_user:
@@ -87,6 +90,7 @@ class UserPlugin(Plugin):
                 "created_at": str (in ISO format),
                 "expires_at": str (in ISO format),
             }
+
         """
 
         session = self.user_manager.create_user_session(username=username,
@@ -107,13 +111,16 @@ class UserPlugin(Plugin):
     def authenticate_session(self, session_token):
         """
         Authenticate a session by token and return the associated user
-        :return: dict::
+        :return: dict.
+
+        Format::
 
             {
                 "user_id": int,
                 "username": str,
                 "created_at": str (in ISO format)
             }
+
         """
 
         user = self.user_manager.authenticate_user_session(session_token=session_token)

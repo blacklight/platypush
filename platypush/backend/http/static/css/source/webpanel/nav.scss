@@ -46,10 +46,26 @@ nav {
 
         .date-time {
             position: absolute;
+            display: inline-block;
             right: 0;
             margin-right: .7rem;
             font-size: 14pt;
             text-shadow: $nav-date-time-shadow;
+
+            .time {
+                display: inline-block;
+            }
+        }
+
+        .settings {
+            display: inline-block;
+            cursor: pointer;
+            padding: 1rem;
+
+            &:hover {
+                background: $hover-bg;
+                border-radius: 3rem;
+            }
         }
 
         .decorator {
@@ -71,10 +87,6 @@ nav {
 
             li.selected {
                 border-radius: 2rem;
-            }
-
-            .date-time {
-                @extend .hidden;
             }
         }
     }

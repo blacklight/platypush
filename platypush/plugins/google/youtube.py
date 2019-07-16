@@ -27,25 +27,25 @@ class GoogleYoutubePlugin(GooglePlugin):
         """
         Search for YouTube content.
 
-        :param parts: List of parts to get (default: snippet). See the `YouTube API documentation
-            <https://developers.google.com/youtube/v3/getting-started#part>`_.
+        :param parts: List of parts to get (default: snippet).
+            See the `Getting started - Part <https://developers.google.com/youtube/v3/getting-started#part>`_.
         :type parts: list[str] or str
 
         :param query: Query string (default: empty string)
         :type query: str
 
-        :param types: List of types to retrieve (default: video). See the `YouTube API documentation
-            <https://developers.google.com/youtube/v3/getting-started#resources>`_.
+        :param types: List of types to retrieve (default: video).
+            See the `Getting started - Resources <https://developers.google.com/youtube/v3/getting-started#resources>`_.
         :type types: list[str] or str
 
         :param max_results: Maximum number of items that will be returned (default: 25).
         :type max_results: int
 
-        :param kwargs: Any extra arguments that will be transparently passed to the YouTube API, see the
-            `YouTube API documentation <https://developers.google.com/youtube/v3/docs/search/list#parameters>`_.
+        :param kwargs: Any extra arguments that will be transparently passed to the YouTube API.
+            See the `Getting started - parameters <https://developers.google.com/youtube/v3/docs/search/list#parameters>`_.
 
-        :return: A list of YouTube resources, see the `YouTube API documentation
-            <https://developers.google.com/youtube/v3/docs/search#resource>`_.
+        :return: A list of YouTube resources.
+            See the `Getting started - Resource <https://developers.google.com/youtube/v3/docs/search#resource>`_.
         """
 
         parts = parts or self._default_parts[:]

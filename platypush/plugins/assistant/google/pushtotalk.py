@@ -24,11 +24,11 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
     Triggers:
 
-        * :class:`platypush.message.event.assistant.ConversationStartEvent` \
+        * :class:`platypush.message.event.assistant.ConversationStartEvent`
             when a new conversation starts
-        * :class:`platypush.message.event.assistant.SpeechRecognizedEvent` \
+        * :class:`platypush.message.event.assistant.SpeechRecognizedEvent`
             when a new voice command is recognized
-        * :class:`platypush.message.event.assistant.ConversationEndEvent` \
+        * :class:`platypush.message.event.assistant.ConversationEndEvent`
             when a new conversation ends
 
     Requires:
@@ -54,15 +54,15 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
                      'device_config.json'),
                  language='en-US', **kwargs):
         """
-        :param credentials_file: Path to the Google OAuth credentials file \
-            (default: ~/.config/google-oauthlib-tool/credentials.json). \
-            See https://developers.google.com/assistant/sdk/guides/library/python/embed/install-sample#generate_credentials \
+        :param credentials_file: Path to the Google OAuth credentials file
+            (default: ~/.config/google-oauthlib-tool/credentials.json).
+            See https://developers.google.com/assistant/sdk/guides/library/python/embed/install-sample#generate_credentials
             for instructions to get your own credentials file.
         :type credentials_file: str
 
-        :param device_config: Path to device_config.json. Register your device \
-            (see https://developers.google.com/assistant/sdk/guides/library/python/embed/register-device) \
-            and create a project, then run the pushtotalk.py script from \
+        :param device_config: Path to device_config.json. Register your device
+            (see https://developers.google.com/assistant/sdk/guides/library/python/embed/register-device)
+            and create a project, then run the pushtotalk.py script from
             googlesamples to create your device_config.json
         :type device_config: str
 
@@ -196,22 +196,28 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         """
         Start a conversation
 
-        :param language: Language code override (default: default configured
-            language)
+        :param language: Language code override (default: default configured language)
         :type language: str
 
-        :returns: A list of the interactions that happen within the conversation::
+        :returns: A list of the interactions that happen within the conversation.
 
-                [
-                    {
-                        "request": "request 1",
-                        "response": "response 1"
-                    },
-                    {
-                        "request": "request 2",
-                        "response": "response 2"
-                    },
-                ]
+        ..code-block:: json
+
+            [
+                {
+                    "request": "request 1",
+                    "response": "response 1"
+
+                },
+
+                {
+                    "request": "request 2",
+                    "response": "response 2"
+
+                }
+
+            ]
+
         """
 
         if not language:

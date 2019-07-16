@@ -29,6 +29,10 @@
         {% endfor %}
 
         <div class="date-time pull-right">
+            <div class="settings">
+                <i class="fas fa-cog"></i>
+            </div>
+
             <div class="time" v-text="now.toTimeString().substring(0,8)"></div>
         </div>
     </ul>

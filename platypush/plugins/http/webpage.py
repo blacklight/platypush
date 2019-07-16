@@ -34,21 +34,28 @@ class HttpWebpagePlugin(Plugin):
         :param outfile: If set then the output will be written to the specified file
             (supported formats: pdf, html, plain (default)). The plugin will guess
             the format from the extension
-        :return: dict. Example if outfile is not specified::
+        :return: dict. Example if outfile is not specified
+
+        ..code-block:: json
 
             {
                 "url": <url>,
                 "title": <page title>,
                 "content": <page parsed content>
+
             }
 
         Example if outfile is specified:
+
+        ..code-block:: json
 
             {
                 "url": <url>,
                 "title": <page title>,
                 "outfile": <output file absolute path>
+
             }
+
         """
 
         if not self.mercury_api_key:

@@ -24,22 +24,26 @@ class AutoremotePlugin(Plugin):
 
     def __init__(self, devices=None, key=None, password=None, *args, **kwargs):
         """
-        :param devices: Set this attribute if you want to control multiple AutoRemote devices. This will be a map in the format:
+        :param devices: Set this attribute if you want to control multiple AutoRemote devices.
+            This will be a map in the format::
 
-            {
-                'device_name': {
-                    'key': 'AUTOREMOTE_KEY',
-                    'password': 'DEVICE_PASSWORD'
-                },
-                ...
-            }
+                {
+                    'device_name': {
+                        'key': 'AUTOREMOTE_KEY',
+                        'password': 'DEVICE_PASSWORD'
+                    },
+                    ...
+                }
 
         :type devices: dict
 
-        :param key: The key associated to your device. Open the link in your AutoRemote app and copy the key in the target URL. Set this value if you want to communicate with only one AutoRemote device.
+        :param key: The key associated to your device. Open the link in your AutoRemote app
+            and copy the key in the target URL. Set this value if you want to communicate
+            with only one AutoRemote device.
         :type key: str
 
-        :param password: AutoRemote password configured on the device (default: None). Set this value if you want to communicate with only one AutoRemote device.
+        :param password: AutoRemote password configured on the device (default: None).
+            Set this value if you want to communicate with only one AutoRemote device.
         :type password: str
         """
 
@@ -60,13 +64,15 @@ class AutoremotePlugin(Plugin):
 
         :param msg: Message to send
 
-        :param key: Set it if you want to override the default devices (default: None, message sent to all the configured devices)
+        :param key: Set it if you want to override the default devices
+            (default: None, message sent to all the configured devices)
         :type key: str
 
         :param password: Set it if you want to override the default password (default: None)
         :type password: str
 
-        :param devices: Set it if you want to send the message to a specific list of configured devices (default: None, message sent to all the configured devices)
+        :param devices: Set it if you want to send the message to a specific list of
+            configured devices (default: None, message sent to all the configured devices)
         :type devices: list
 
         :param target: Message target (default: None)

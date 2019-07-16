@@ -62,12 +62,12 @@ class SoundPlugin(Plugin):
                  output_blocksize=Sound._DEFAULT_BLOCKSIZE, *args, **kwargs):
         """
         :param input_device: Index or name of the default input device. Use
-            :method:`platypush.plugins.sound.query_devices` to get the
+            :meth:`platypush.plugins.sound.query_devices` to get the
             available devices. Default: system default
         :type input_device: int or str
 
         :param output_device: Index or name of the default output device.
-            Use :method:`platypush.plugins.sound.query_devices` to get the
+            Use :meth:`platypush.plugins.sound.query_devices` to get the
             available devices. Default: system default
         :type output_device: int or str
 
@@ -121,7 +121,9 @@ class SoundPlugin(Plugin):
         :param category: Device category to query. Can be either input or output. Default: None (query all devices)
         :type category: str
 
-        :returns: A dictionary representing the available devices. Example::
+        :returns: A dictionary representing the available devices.
+
+        Example::
 
             [
                 {
@@ -215,7 +217,7 @@ class SoundPlugin(Plugin):
             synthetic sounds. You can also create polyphonic sounds by just
             calling play multple times.
         :type sound: Sound. You can initialize it either from a list
-            of `Sound` objects or from its JSON representation, e.g.:
+            of `Sound` objects or from its JSON representation, e.g.::
 
                 {
                     "midi_note": 69,  # 440 Hz A
@@ -245,7 +247,7 @@ class SoundPlugin(Plugin):
 
         :param stream_index: If specified, play to an already active stream
             index (you can get them through
-            :method:`platypush.plugins.sound.query_streams`). Default:
+            :meth:`platypush.plugins.sound.query_streams`). Default:
             creates a new audio stream through PortAudio.
         :type stream_index: int
 
@@ -426,7 +428,7 @@ class SoundPlugin(Plugin):
         :param channels: Number of channels (default: 1)
         :type channels: int
 
-        :param subtype: Recording subtype - see `soundfile docs <https://pysoundfile.readthedocs.io/en/0.9.0/#soundfile.available_subtypes>`_ for a list of the available subtypes (default: PCM_24)
+        :param subtype: Recording subtype - see `Soundfile docs - Subtypes <https://pysoundfile.readthedocs.io/en/0.9.0/#soundfile.available_subtypes>`_ for a list of the available subtypes (default: PCM_24)
         :type subtype: str
         """
 
@@ -544,7 +546,7 @@ class SoundPlugin(Plugin):
         :param channels: Number of channels (default: 1)
         :type channels: int
 
-        :param dtype: Data type for the recording - see `soundfile docs <https://python-sounddevice.readthedocs.io/en/0.3.12/_modules/sounddevice.html#rec>`_ for available types (default: input device default)
+        :param dtype: Data type for the recording - see `Soundfile docs - Recording <https://python-sounddevice.readthedocs.io/en/0.3.12/_modules/sounddevice.html#rec>`_ for available types (default: input device default)
         :type dtype: str
         """
 
@@ -816,7 +818,7 @@ class SoundPlugin(Plugin):
                 sound_index=None, midi_note=None, frequency=None):
         """
         Remove a sound from an active stream, either by sound index (use
-            :method:`platypush.sound.plugin.SoundPlugin.query_streams` to get
+            :meth:`platypush.sound.plugin.SoundPlugin.query_streams` to get
             the sounds playing on the active streams), midi_note, frequency
             or absolute file path.
 
