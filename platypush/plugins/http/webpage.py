@@ -34,9 +34,9 @@ class HttpWebpagePlugin(Plugin):
         :param outfile: If set then the output will be written to the specified file
             (supported formats: pdf, html, plain (default)). The plugin will guess
             the format from the extension
-        :return: dict. Example if outfile is not specified
+        :return: dict
 
-        ..code-block:: json
+        Example if outfile is not specified::
 
             {
                 "url": <url>,
@@ -45,9 +45,7 @@ class HttpWebpagePlugin(Plugin):
 
             }
 
-        Example if outfile is specified:
-
-        ..code-block:: json
+        Example if outfile is specified::
 
             {
                 "url": <url>,

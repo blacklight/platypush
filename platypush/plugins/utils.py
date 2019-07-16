@@ -105,9 +105,9 @@ class UtilsPlugin(Plugin):
         """
         Get info about the pending timeouts
 
-        :returns: dict. Example:
+        :returns: dict.
 
-        .. code-block:: json
+        Example::
 
             {
                 "test_timeout": {
@@ -139,9 +139,9 @@ class UtilsPlugin(Plugin):
         :param name: Name of the timeout to get
         :type name: str
 
-        :returns: dict. Example:
+        :returns: dict
 
-        .. code-block:: json
+        Example::
 
             {
                 "test_timeout": {
@@ -248,9 +248,9 @@ class UtilsPlugin(Plugin):
         """
         Get info about the running intervals
 
-        :returns: dict. Example:
+        :returns: dict
 
-        .. code-block:: json
+        Example::
 
             {
                 "test_interval": {

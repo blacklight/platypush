@@ -255,9 +255,9 @@ class LightHuePlugin(LightPlugin):
         """
         Get the list of running light animations.
 
-        :returns: A dictionary with the following structure.
+        :returns: dict.
 
-        .code-block:: json
+        Structure::
 
             {
                 "groups": {

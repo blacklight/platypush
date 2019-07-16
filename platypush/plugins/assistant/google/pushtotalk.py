@@ -201,8 +201,6 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
         :returns: A list of the interactions that happen within the conversation.
 
-        ..code-block:: json
-
             [
                 {
                     "request": "request 1",
