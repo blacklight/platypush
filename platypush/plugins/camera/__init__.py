@@ -40,11 +40,12 @@ class CameraPlugin(Plugin):
     _default_warmup_frames = 5
     _default_sleep_between_frames = 0
     _default_color_transform = 'COLOR_BGR2BGRA'
+    _default_frames_dir = None
 
     _max_stored_frames = 100
     _frame_filename_regex = re.compile('(\d+)-(\d+)-(\d+)_(\d+)-(\d+)-(\d+)-(\d+).jpe?g$')
 
-    def __init__(self, device_id=0, frames_dir=_default_frames_dir,
+    def __init__(self, device_id=0, frames_dir=None,
                  warmup_frames=_default_warmup_frames, video_type=0,
                  sleep_between_frames=_default_sleep_between_frames,
                  max_stored_frames=_max_stored_frames,
@@ -113,11 +114,9 @@ class CameraPlugin(Plugin):
 
         super().__init__(**kwargs)
 
-        self._default_frames_dir = os.path.join(Config.get('workdir'), 'camera',
-                                                'frames')
-
+        self._default_frames_dir = os.path.join(Config.get('workdir'), 'camera', 'frames')
         self.default_device_id = device_id
-        self.frames_dir = os.path.abspath(os.path.expanduser(frames_dir))
+        self.frames_dir = os.path.abspath(os.path.expanduser(frames_dir or _default_frames_dir))
         self.warmup_frames = warmup_frames
         self.video_type = cv2.VideoWriter_fourcc(*video_type) \
             if isinstance(video_type, str) else video_type

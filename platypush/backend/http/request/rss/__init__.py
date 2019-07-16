@@ -23,12 +23,12 @@ Session = scoped_session(sessionmaker())
 class RssUpdates(HttpRequest):
     """ Gets new items in an RSS feed """
 
-    workdir = os.path.join(os.path.expanduser(Config.get('workdir')), 'feeds')
     dbfile = os.path.join(workdir, 'rss.db')
     user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'
 
     def __init__(self, url, title=None, headers=None, params=None, max_entries=None,
                  mercury_api_key=None, digest_format=None, *argv, **kwargs):
+        self.workdir = os.path.join(os.path.expanduser(Config.get('workdir')), 'feeds')
         self.url = url
         self.title = title
         self.max_entries = max_entries
