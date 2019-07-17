@@ -28,7 +28,7 @@ class RssUpdates(HttpRequest):
     def __init__(self, url, title=None, headers=None, params=None, max_entries=None,
                  mercury_api_key=None, digest_format=None, *argv, **kwargs):
         self.workdir = os.path.join(os.path.expanduser(Config.get('workdir')), 'feeds')
-        self.dbfile = os.path.join(workdir, 'rss.db')
+        self.dbfile = os.path.join(self.workdir, 'rss.db')
         self.url = url
         self.title = title
         self.max_entries = max_entries
