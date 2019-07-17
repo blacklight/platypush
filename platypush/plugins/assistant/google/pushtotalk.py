@@ -13,6 +13,8 @@ from platypush.message.event.assistant import ConversationStartEvent, \
     ConversationEndEvent, SpeechRecognizedEvent, VolumeChangedEvent, \
     ResponseEvent
 
+from platypush.message.event.google import GoogleDeviceOnOffEvent
+
 from platypush.plugins import action
 from platypush.plugins.assistant import AssistantPlugin
 from platypush.plugins.assistant.google.lib import SampleAssistant
@@ -44,6 +46,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
     audio_block_size = audio_helpers.DEFAULT_AUDIO_DEVICE_BLOCK_SIZE
     audio_flush_size = audio_helpers.DEFAULT_AUDIO_DEVICE_FLUSH_SIZE
     grpc_deadline = 60 * 3 + 5
+    device_handler = None
 
     def __init__(self,
                  credentials_file=os.path.join(
@@ -100,7 +103,6 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
         self.grpc_channel = None
         self.conversation_stream = None
-        self.device_handler = None
 
     def _init_assistant(self):
         from google.auth.transport.grpc import secure_authorized_channel
@@ -138,7 +140,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
             sample_width=self.audio_sample_width,
         )
 
-        self.device_handler = device_helpers.DeviceRequestHandler(self.device_id)
+        self._install_device_handlers()
 
     @staticmethod
     def on_conversation_start():
@@ -184,13 +186,6 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
         return handler
 
-    def on_device_action(self):
-        """ Device action handler """
-        def handler(request):
-            self.logger.info('Received request: {}'.format(request))
-
-        return handler
-
     @action
     def start_conversation(self, *args, language=None, **kwargs):
         """
@@ -230,7 +225,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
                              display=None,
                              channel=self.grpc_channel,
                              deadline_sec=self.grpc_deadline,
-                             device_handler=self.on_device_action(),
+                             device_handler=self.device_handler,
                              on_conversation_start=self.on_conversation_start(),
                              on_conversation_end=self.on_conversation_end(),
                              on_volume_changed=self.on_volume_changed(),
@@ -259,6 +254,16 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
                 self.conversation_stream.stop_recording()
 
             get_bus().post(ConversationEndEvent())
+
+    def _install_device_handlers(self):
+        self.device_handler = device_helpers.DeviceRequestHandler(self.device_id)
+
+        @self.device_handler.command('action.devices.commands.OnOff')
+        def handler(on):
+            get_bus().post(GoogleDeviceOnOffEvent(
+                device_id=self.device_id,
+                device_model_id=self.device_model_id,
+                on=on))
 
 
 # vim:sw=4:ts=4:et:
