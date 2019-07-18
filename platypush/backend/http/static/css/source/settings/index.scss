@@ -1,0 +1,111 @@
+@import 'common/vars';
+
+@import 'common/mixins';
+@import 'common/layout';
+@import 'common/elements';
+@import 'common/animations';
+@import 'common/modal';
+@import 'common/notifications';
+
+@import 'settings/users';
+@import 'settings/token';
+
+$nav-background: #f0f0f0;
+$section-header-background: #eee;
+
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow-x: hidden;
+    font-family: $default-font-family;
+    font-size: $default-font-size;
+}
+
+#app {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+
+    nav {
+        background: $nav-background;
+        color: $default-link-fg;
+        border-right: $default-border-3;
+
+        ul {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: auto;
+            list-style-type: none;
+
+            li {
+                display: flex;
+                margin: 0;
+                padding: 1em;
+                cursor: pointer;
+
+                &:not(:first-of-type) {
+                    border-top: $default-border-3;
+                }
+
+                &:hover {
+                    background: $hover-bg;
+                }
+
+                a:first-child {
+                    width: 100%;
+                }
+            }
+        }
+    }
+
+    main {
+        margin: 0;
+        flex: 1 1 auto;
+        overflow: hidden;
+        height: inherit;
+
+        .section {
+            overflow: auto;
+            height: inherit;
+
+            header {
+                display: flex;
+                align-items: center;
+                border-bottom: $default-border-2;
+                background: $section-header-background;
+
+                h1 {
+                    margin: .45em .2em;
+                }
+
+                button {
+                    border: 0;
+                    &:hover {
+                        color: $default-hover-fg;
+                    }
+                }
+            }
+        }
+    }
+
+    a {
+        color: $default-link-fg;
+    }
+}
+
+.dropdown {
+    .item {
+        display: flex;
+        flex-direction: row;
+        cursor: pointer;
+
+        &:hover {
+            background: $hover-bg;
+        }
+
+    }
+}
+

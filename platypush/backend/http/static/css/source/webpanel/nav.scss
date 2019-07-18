@@ -4,21 +4,23 @@
 
 nav {
     width: 100%;
+    position: relative;
     height: var(--nav-height);
+    background: $nav-bg;
     margin-bottom: $nav-margin;
+    border-bottom: $default-bottom;
+    box-shadow: 0 2.5px 4px 0 #bbb;
     flex: 0 1 auto;
     z-index: 2;
 
     ul {
         position: relative;
+        width: 75%;
+        display: inline-flex;
         margin: 0;
         padding: 0;
         list-style-type: none;
-        background: $nav-bg;
-        display: flex;
         align-items: center;
-        border-bottom: $default-bottom;
-        box-shadow: 0 2.5px 4px 0 #bbb;
 
         li {
             padding: 1rem 1.5rem;
@@ -44,42 +46,6 @@ nav {
             }
         }
 
-        .date-time {
-            position: absolute;
-            display: inline-block;
-            right: 0;
-            margin-right: .7rem;
-            font-size: 14pt;
-            text-shadow: $nav-date-time-shadow;
-
-            .time {
-                display: inline-block;
-            }
-        }
-
-        .settings {
-            display: inline-block;
-            cursor: pointer;
-            padding: .75rem 1rem;
-
-            &:hover {
-                background: $hover-bg;
-                border-radius: 3rem;
-            }
-        }
-
-        .decorator {
-            width: 0;
-            height: 0;
-            border-top: 20px solid transparent;
-            border-bottom: 20px solid transparent;
-            border-left: 17px solid $selected-bg;
-
-            &:hover {
-                display: none;
-            }
-        }
-
         &:hover {
             .decorator {
                 display: none;
@@ -88,6 +54,30 @@ nav {
             li.selected {
                 border-radius: 2rem;
             }
+        }
+    }
+
+    .date-time {
+        position: absolute;
+        width: 25%;
+        display: inline-block;
+        right: 0;
+        margin-right: .7rem;
+        font-size: 14pt;
+        text-shadow: $nav-date-time-shadow;
+
+        .time {
+            display: inline-block;
+        }
+    }
+
+    .settings {
+        display: inline-block;
+        padding: .75rem 1rem;
+
+        &:hover {
+            background: $hover-bg;
+            border-radius: 3rem;
         }
     }
 }

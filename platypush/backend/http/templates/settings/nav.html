@@ -1,0 +1,47 @@
+<nav class="col-s-4 col-m-3 col-l-2">
+    <ul>
+        <li :class="{selected: selectedTab === 'back'}" @click="selectedTab = 'back'">
+            <a :href="document.referrer" v-if="document.referrer">
+                <div class="col-3 icon">
+                    <i class="fas fa-caret-left"></i>
+                </div>
+                <div class="col-9 title">
+                    Go Back
+                </div>
+            </a>
+
+            <a href="/" v-else>
+                <div class="col-3 icon">
+                    <i class="fas fa-home"></i>
+                </div>
+                <div class="col-9 title">
+                    Home
+                </div>
+            </a>
+        </li>
+
+        <li :class="{selected: selectedTab === 'users'}" @click="selectedTab = 'users'">
+            <div class="col-3 icon">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="col-9 title">Users</div>
+        </li>
+
+        <li :class="{selected: selectedTab === 'token'}" @click="selectedTab = 'token'">
+            <div class="col-3 icon">
+                <i class="fas fa-key"></i>
+            </div>
+            <div class="col-9 title">Token</div>
+        </li>
+
+        <li :class="{selected: selectedTab === 'logout'}" @click="selectedTab = 'logout'">
+            <a href="/logout">
+                <div class="col-3 icon">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+                <div class="col-9 title">Logout</div>
+            </a>
+        </li>
+    </ul>
+</nav>
+

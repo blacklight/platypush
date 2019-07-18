@@ -1,0 +1,17 @@
+<div class="section" :class="{hidden: selectedTab !== 'token'}" id="token">
+    <header>
+        <h1>Token</h1>
+    </header>
+
+    <div class="warning" v-if="!config.token">
+        No token configured for requests. It is strongly advised to generate a random token (e.g.
+        <tt>dd if=/dev/urandom bs=18 count=1 | base64</tt>) and copy it in the <tt>token:</tt>
+        section of your configuration file.
+    </div>
+
+    <div class="token-container" v-else>
+        <input type="text" :value="config.token"
+               @focus="onTokenFocus" @blur="onTokenBlur">
+    </div>
+</div>
+

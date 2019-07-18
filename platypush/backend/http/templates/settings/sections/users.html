@@ -1,0 +1,43 @@
+<div class="section" :class="{hidden: selectedTab !== 'users'}" id="users">
+    <header>
+        <h1 class="title col-8">Users</h1>
+        <div class="col-4 pull-right">
+            <button type="button">
+                <i class="fa fa-plus" title="Add User" @click="modalVisible.addUser = true"></i>
+            </button>
+        </div>
+    </header>
+
+    <modal id="add-user" title="Add User" v-model="modalVisible.addUser">
+        <form action="#" method="POST" ref="createUserForm" @submit="createUser">
+            <input type="text" name="username" placeholder="Username" :disabled="formDisabled.addUser">
+            <input type="password" name="password" placeholder="Password" :disabled="formDisabled.addUser">
+            <input type="password" name="confirm_password" placeholder="Confirm password" :disabled="formDisabled.addUser">
+            <input type="submit" value="Create User" :disabled="formDisabled.addUser">
+        </form>
+    </modal>
+
+    <modal id="change-password" title="Change password" v-model="modalVisible.changePassword" v-if="selectedUser">
+        <form action="#" method="POST" ref="changePasswordForm" @submit="changePassword">
+            <input type="text" name="username" placeholder="Username" :value="selectedUser" disabled="disabled">
+            <input type="password" name="password" placeholder="Current password" :disabled="formDisabled.changePassword">
+            <input type="password" name="new_password" placeholder="New password" :disabled="formDisabled.changePassword">
+            <input type="password" name="confirm_new_password" placeholder="Confirm new password" :disabled="formDisabled.changePassword">
+            <input type="submit" value="Change Password" :disabled="formDisabled.changePassword">
+        </form>
+    </modal>
+
+    <div class="body">
+        <ul>
+            {% for user in users %}
+                <li @click="onUserClick('{{ user.username }}')">{{ user.username }}</li>
+            {% endfor %}
+        </ul>
+
+        <dropdown id="user-dropdown"
+                  ref="userDropdown"
+                  :items="userDropdownItems">
+        </dropdown>
+    </div>
+</div>
+

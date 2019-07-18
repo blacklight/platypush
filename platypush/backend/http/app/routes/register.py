@@ -22,7 +22,7 @@ def register():
     session_token = request.cookies.get('session_token')
 
     if session_token:
-        user = user_manager.authenticate_user_session(session_token)
+        user, session = user_manager.authenticate_user_session(session_token)
         if user:
             return redirect(redirect_page, 302)
 

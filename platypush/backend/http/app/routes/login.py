@@ -1,6 +1,7 @@
 import datetime
+import re
 
-from flask import Blueprint, request, redirect, render_template, make_response, url_for
+from flask import Blueprint, request, redirect, render_template, make_response
 
 from platypush.backend.http.app import template_folder
 from platypush.backend.http.utils import HttpUtils
@@ -18,11 +19,18 @@ __routes__ = [
 def login():
     """ Login page """
     user_manager = UserManager()
-    redirect_page = request.args.get('redirect', '/')
     session_token = request.cookies.get('session_token')
 
+    # redirect_page = request.args.get('redirect', request.headers.get('Referer', '/'))
+    redirect_page = request.args.get('redirect')
+    if not redirect_page:
+        redirect_page = request.headers.get('Referer', '/')
+    if re.search('(^https?://[^/]+)?/login[^?#]?', redirect_page):
+        # Prevent redirect loop
+        redirect_page = '/'
+
     if session_token:
-        user = user_manager.authenticate_user_session(session_token)
+        user, session = user_manager.authenticate_user_session(session_token)
         if user:
             return redirect(redirect_page, 302)
 

@@ -11,7 +11,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from platypush.context import get_plugin
 
 Base = declarative_base()
-Session = scoped_session(sessionmaker())
 
 
 class UserManager:
@@ -40,6 +39,10 @@ class UserManager:
     def get_user_count(self):
         session = self._get_db_session()
         return session.query(User).count()
+
+    def get_users(self):
+        session = self._get_db_session()
+        return session.query(User)
 
     def create_user(self, username, password, **kwargs):
         session = self._get_db_session()
@@ -83,19 +86,23 @@ class UserManager:
 
         if not user_session or (
                 user_session.expires_at and user_session.expires_at < datetime.datetime.utcnow()):
-            return None
+            return None, None
 
         user = session.query(User).filter_by(user_id=user_session.user_id).first()
 
         # Hide password
         user.password = None
-        return user
+        return user, session
 
     def delete_user(self, username):
         session = self._get_db_session()
         user = self._get_user(session, username)
         if not user:
-            raise NameError('No such user: '.format(username))
+            raise NameError('No such user: {}'.format(username))
+
+        user_sessions = session.query(UserSession).filter_by(user_id=user.user_id).all()
+        for user_session in user_sessions:
+            session.delete(user_session)
 
         session.delete(user)
         session.commit()
@@ -125,11 +132,11 @@ class UserManager:
 
         user = self._get_user(session, username)
         user_session = UserSession(user_id=user.user_id, session_token=self._generate_token(),
-                                   created_at=datetime.datetime.utcnow(), expires_at=expires_at)
+                                   csrf_token=self._generate_token(), created_at=datetime.datetime.utcnow(),
+                                   expires_at=expires_at)
 
         session.add(user_session)
         session.commit()
-
         return user_session
 
     @staticmethod
@@ -151,9 +158,9 @@ class UserManager:
 
     def _get_db_session(self):
         Base.metadata.create_all(self._engine)
-        Session = scoped_session(sessionmaker())
-        Session.configure(bind=self._engine)
-        return Session()
+        session = scoped_session(sessionmaker())
+        session.configure(bind=self._engine)
+        return session()
 
     def _authenticate_user(self, session, username, password):
         user = self._get_user(session, username)
@@ -183,6 +190,7 @@ class UserSession(Base):
 
     session_id = Column(Integer, primary_key=True)
     session_token = Column(String, unique=True, nullable=False)
+    csrf_token = Column(String, unique=True)
     user_id = Column(Integer, ForeignKey('user.user_id'), nullable=False)
     created_at = Column(DateTime)
     expires_at = Column(DateTime)

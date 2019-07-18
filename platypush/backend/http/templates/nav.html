@@ -27,15 +27,15 @@
                 </a>
             </li>
         {% endfor %}
-
-        <div class="date-time pull-right">
-            <div class="settings">
-                <i class="fas fa-cog"></i>
-            </div>
-
-            <div class="time" v-text="now.toTimeString().substring(0,8)"></div>
-        </div>
     </ul>
+
+    <div class="date-time pull-right">
+        <a href="/settings" class="settings">
+            <i class="fas fa-cog"></i>
+        </a>
+
+        <div class="time" v-text="now.toTimeString().substring(0,8)"></div>
+    </div>
 </nav>
 
 {% endwith %}

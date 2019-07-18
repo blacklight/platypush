@@ -1,19 +1,3 @@
-Vue.component('app-header', {
-    template: '#tmpl-app-header',
-    data: function() {
-        return {
-            now: new Date(),
-        };
-    },
-
-    created: function() {
-        const self = this;
-        setInterval(() => {
-            self.now = new Date();
-        }, 1000)
-    },
-});
-
 Vue.component('plugin', {
     template: '#tmpl-plugin',
     props: ['config','tag'],
@@ -43,7 +27,7 @@ window.vm = new Vue({
         const self = this;
         setInterval(() => {
             self.now = new Date();
-        }, 1000)
+        }, 1000);
 
         initEvents();
     },

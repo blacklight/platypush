@@ -1,0 +1,21 @@
+#token {
+    .warning {
+        background: $notification-error-bg;
+        border: $notification-error-border;
+        margin: 1em;
+        padding: 1em;
+        border-radius: 1em;
+    }
+
+    .token-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 2em;
+
+        input {
+            width: 100%;
+        }
+    }
+}
+

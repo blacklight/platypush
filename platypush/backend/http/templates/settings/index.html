@@ -1,0 +1,47 @@
+<!doctype html>
+<head>
+    <title>Platypush Settings</title>
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/all.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dist/settings.css') }}">
+
+    <script type="text/javascript">
+        if (!window.config) {
+            window.config = {};
+        }
+
+        {% if token %}
+            window.config.token = '{{ token }}';
+        {% else %}
+            window.config.token = undefined;
+        {% endif %}
+    </script>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/vue.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/axios.min.js') }}"></script>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+
+    {% include 'elements.html' %}
+</head>
+
+<body>
+<div id="app">
+    {% include 'settings/nav.html' %}
+
+    <main class="col-s-8 col-m-9 col-l-10">
+        {% include 'settings/sections/users.html' %}
+        {% include 'settings/sections/token.html' %}
+    </main>
+
+    {% include 'notifications.html' %}
+</div>
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/settings/index.js') }}"></script>
+</body>
+

@@ -1,0 +1,27 @@
+#users {
+    ul {
+        list-style-type: none;
+
+        li {
+            margin: 0;
+            padding: 1em .5em;
+            border-bottom: $default-border-3;
+            cursor: pointer;
+
+            &:hover {
+                background: $hover-bg;
+            }
+        }
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        width: 20em;
+
+        input {
+            margin: 1em .5em;
+        }
+    }
+}
+

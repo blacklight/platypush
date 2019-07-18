@@ -146,12 +146,33 @@ def _authenticate_session():
         user_session_token = request.cookies.get('session_token')
 
     if user_session_token:
-        user = user_manager.authenticate_user_session(user_session_token)
+        user, session = user_manager.authenticate_user_session(user_session_token)
 
     return user is not None
 
 
-def authenticate(redirect_page='', skip_auth_methods=None):
+def _authenticate_csrf_token():
+    user_manager = UserManager()
+    user_session_token = None
+    user = None
+
+    if 'X-Session-Token' in request.headers:
+        user_session_token = request.headers['X-Session-Token']
+    elif 'session_token' in request.args:
+        user_session_token = request.args.get('session_token')
+    elif 'session_token' in request.cookies:
+        user_session_token = request.cookies.get('session_token')
+
+    if user_session_token:
+        user, session = user_manager.authenticate_user_session(user_session_token)
+
+    if user is None:
+        return False
+
+    return session.csrf_token is None or request.form.get('csrf_token') == session.csrf_token
+
+
+def authenticate(redirect_page='', skip_auth_methods=None, check_csrf_token=False):
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
@@ -182,6 +203,13 @@ def authenticate(redirect_page='', skip_auth_methods=None):
                     return f(*args, **kwargs)
 
                 return redirect('/login?redirect=' + redirect_page, 307)
+
+            # CSRF token check
+            csrf_check_ok = True
+            if check_csrf_token:
+                csrf_check_ok = _authenticate_csrf_token()
+                if not csrf_check_ok:
+                    return abort(403, 'Invalid or missing csrf_token')
 
             if n_users == 0 and 'session' not in skip_methods:
                 return redirect('/register?redirect=' + redirect_page, 307)
