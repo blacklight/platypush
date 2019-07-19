@@ -87,10 +87,21 @@ class RssUpdates(HttpRequest):
             raise err
 
         if not response.text:
-            raise RuntimeError("No response from Mercury API for URL {} after {} tries"
-                               .format(link, n_tries))
+            self.logger.warning('No response from Mercury API for URL {} after {} tries'.format(link, n_tries))
+            return
 
-        return response.json()['content'] if response and response.ok else None
+        if not response.ok:
+            self.logger.warning('Mercury API call failed with status {}'.format(response.status_code))
+            return
+
+        response = response.json()
+        error = response.get('error')
+
+        if error:
+            self.logger.warning('Mercury API error: {}'.format(error))
+            return
+
+        return response.get('content')
 
 
     def get_new_items(self, response):
@@ -161,6 +172,7 @@ class RssUpdates(HttpRequest):
             except Exception as e:
                 self.logger.warning('Exception encountered while parsing RSS ' +
                                     'RSS feed {}: {}'.format(self.url, str(e)))
+                self.logger.exception(e)
 
         source_record.last_updated_at = parse_start_time
         digest_filename = None
