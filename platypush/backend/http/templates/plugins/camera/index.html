@@ -1,0 +1,23 @@
+<script type="text/x-template" id="tmpl-camera">
+    <div class="camera">
+        <div class="camera-container">
+            <div class="no-frame" v-if="!streaming && !capturing">The camera is not active</div>
+            <img class="frame" ref="frame">
+        </div>
+
+        <div class="controls">
+            <button type="button" @click="startStreaming" :disabled="capturing" v-if="!streaming">
+                <i class="fa fa-play"></i>&nbsp; Start streaming
+            </button>
+
+            <button type="button" @click="stopStreaming" :disabled="capturing" v-else>
+                <i class="fa fa-stop"></i>&nbsp; Stop streaming
+            </button>
+
+            <button type="button" @click="capture" :disabled="streaming || capturing">
+                <i class="fas fa-camera"></i>&nbsp; Take snapshot
+            </button>
+        </div>
+    </div>
+</script>
+
