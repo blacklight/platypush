@@ -116,7 +116,7 @@ class CameraPlugin(Plugin):
 
         self._default_frames_dir = os.path.join(Config.get('workdir'), 'camera', 'frames')
         self.default_device_id = device_id
-        self.frames_dir = os.path.abspath(os.path.expanduser(frames_dir or _default_frames_dir))
+        self.frames_dir = os.path.abspath(os.path.expanduser(frames_dir or self._default_frames_dir))
         self.warmup_frames = warmup_frames
         self.video_type = cv2.VideoWriter_fourcc(*video_type) \
             if isinstance(video_type, str) else video_type
