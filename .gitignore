@@ -14,3 +14,4 @@ docs/build
 config
 platypush/backend/http/static/css/*/.sass-cache/
 .vscode
+platypush/backend/http/static/js/lib/vue.js
