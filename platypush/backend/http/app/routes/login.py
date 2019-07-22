@@ -38,14 +38,16 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         remember = request.form.get('remember')
+        expires = datetime.datetime.utcnow() + datetime.timedelta(days=365) \
+            if remember else None
+
         session = user_manager.create_user_session(username=username, password=password,
-                                                   expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=1)
-                                                   if not remember else None)
+                                                   expires_at=expires)
 
         if session:
             redirect_target = redirect(redirect_page, 302)
             response = make_response(redirect_target)
-            response.set_cookie('session_token', session.session_token)
+            response.set_cookie('session_token', session.session_token, expires=expires)
             return response
 
     return render_template('login.html', utils=HttpUtils)

@@ -165,6 +165,8 @@ def _authenticate_csrf_token():
 
     if user_session_token:
         user, session = user_manager.authenticate_user_session(user_session_token)
+    else:
+        return False
 
     if user is None:
         return False
