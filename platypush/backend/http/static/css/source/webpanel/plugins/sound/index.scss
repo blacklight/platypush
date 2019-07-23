@@ -1,0 +1,15 @@
+@import 'common/vars';
+
+.sound {
+    height: 90%;
+    margin-top: 7%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .sound-container {
+        margin-bottom: 1em;
+    }
+}
+

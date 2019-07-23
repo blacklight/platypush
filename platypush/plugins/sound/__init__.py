@@ -2,10 +2,9 @@
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
 """
 
-import json
-import math
 import os
 import queue
+import stat
 import tempfile
 import time
 
@@ -15,24 +14,22 @@ from threading import Thread, Event, RLock
 from .core import Sound, Mix
 
 from platypush.context import get_bus
-from platypush.message.event.sound import SoundPlaybackStartedEvent, \
-    SoundPlaybackPausedEvent, SoundPlaybackStoppedEvent, \
-    SoundRecordingStartedEvent, SoundRecordingPausedEvent, \
-    SoundRecordingStoppedEvent
+from platypush.message.event.sound import \
+    SoundRecordingStartedEvent, SoundRecordingStoppedEvent
 
 from platypush.plugins import Plugin, action
 
 
 class PlaybackState(Enum):
-    STOPPED='STOPPED',
-    PLAYING='PLAYING',
-    PAUSED='PAUSED'
+    STOPPED = 'STOPPED',
+    PLAYING = 'PLAYING',
+    PAUSED = 'PAUSED'
 
 
 class RecordingState(Enum):
-    STOPPED='STOPPED',
-    RECORDING='RECORDING',
-    PAUSED='PAUSED'
+    STOPPED = 'STOPPED',
+    RECORDING = 'RECORDING',
+    PAUSED = 'PAUSED'
 
 
 class SoundPlugin(Plugin):
@@ -56,10 +53,12 @@ class SoundPlugin(Plugin):
     """
 
     _STREAM_NAME_PREFIX = 'platypush-stream-'
+    _default_input_stream_fifo = os.path.join(tempfile.gettempdir(), 'inputstream')
 
+    # noinspection PyProtectedMember
     def __init__(self, input_device=None, output_device=None,
                  input_blocksize=Sound._DEFAULT_BLOCKSIZE,
-                 output_blocksize=Sound._DEFAULT_BLOCKSIZE, *args, **kwargs):
+                 output_blocksize=Sound._DEFAULT_BLOCKSIZE, **kwargs):
         """
         :param input_device: Index or name of the default input device. Use
             :meth:`platypush.plugins.sound.query_devices` to get the
@@ -82,7 +81,7 @@ class SoundPlugin(Plugin):
         :type output_blocksize: int
         """
 
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
         self.input_device = input_device
         self.output_device = output_device
@@ -101,7 +100,8 @@ class SoundPlugin(Plugin):
         self.stream_index_to_name = {}
         self.completed_callback_events = {}
 
-    def _get_default_device(self, category):
+    @staticmethod
+    def _get_default_device(category):
         """
         Query the default audio devices.
 
@@ -110,8 +110,7 @@ class SoundPlugin(Plugin):
         """
 
         import sounddevice as sd
-        return sd.query_hostapis()[0].get('default_' + category.lower() +
-                                          '_device')
+        return sd.query_hostapis()[0].get('default_' + category.lower() + '_device')
 
     @action
     def query_devices(self, category=None):
@@ -167,7 +166,8 @@ class SoundPlugin(Plugin):
 
         is_raw_stream = streamtype == sd.RawOutputStream
 
-        def audio_callback(outdata, frames, time, status):
+        # noinspection PyUnusedLocal
+        def audio_callback(outdata, frames, frame_time, status):
             if self._get_playback_state(stream_index) == PlaybackState.STOPPED:
                 raise sd.CallbackStop
 
@@ -196,12 +196,11 @@ class SoundPlugin(Plugin):
             if len(data) < len(outdata):
                 outdata[:len(data)] = data
                 outdata[len(data):] = (b'\x00' if is_raw_stream else 0.) * \
-                    (len(outdata) - len(data))
+                                      (len(outdata) - len(data))
             else:
                 outdata[:] = data
 
         return audio_callback
-
 
     @action
     def play(self, file=None, sound=None, device=None, blocksize=None,
@@ -294,22 +293,26 @@ class SoundPlugin(Plugin):
         if not channels:
             channels = f.channels if f else 1
 
+        mix = None
         with self.playback_state_lock:
             stream_index, is_new_stream = self._get_or_allocate_stream_index(
                 stream_index=stream_index, stream_name=stream_name)
 
-            if sound:
+            if sound and stream_index in self.stream_mixes:
                 mix = self.stream_mixes[stream_index]
                 mix.add(sound)
 
+        if not mix:
+            return None, "Unable to allocate the stream"
+
         self.logger.info(('Starting playback of {} to sound device [{}] ' +
                           'on stream [{}]').format(
-                              file or sound, device, stream_index))
+            file or sound, device, stream_index))
 
         if not is_new_stream:
-            return   # Let the existing callback handle the new mix
-                     # TODO Potential support also for mixed streams with
-                     # multiple sound files and synth sounds?
+            return  # Let the existing callback handle the new mix
+            # TODO Potential support also for mixed streams with
+            # multiple sound files and synth sounds?
 
         try:
             # Audio queue pre-fill loop
@@ -321,18 +324,16 @@ class SoundPlugin(Plugin):
                 else:
                     duration = mix.duration()
                     blocktime = float(blocksize / samplerate)
-                    next_t = min(t+blocktime, duration) \
-                        if duration is not None else t+blocktime
+                    next_t = min(t + blocktime, duration) \
+                        if duration is not None else t + blocktime
 
-                    data = mix.get_wave(t_start=t, t_end=next_t,
-                                          samplerate=samplerate)
+                    data = mix.get_wave(t_start=t, t_end=next_t, samplerate=samplerate)
                     t = next_t
 
                     if duration is not None and t >= duration:
                         break
 
                 q.put_nowait(data)  # Pre-fill the audio queue
-
 
             stream = self.active_streams[stream_index]
             completed_callback_event = self.completed_callback_events[stream_index]
@@ -367,8 +368,8 @@ class SoundPlugin(Plugin):
                     else:
                         duration = mix.duration()
                         blocktime = float(blocksize / samplerate)
-                        next_t = min(t+blocktime, duration) \
-                            if duration is not None else t+blocktime
+                        next_t = min(t + blocktime, duration) \
+                            if duration is not None else t + blocktime
 
                         data = mix.get_wave(t_start=t, t_end=next_t,
                                             samplerate=samplerate)
@@ -400,10 +401,115 @@ class SoundPlugin(Plugin):
 
             self.stop_playback([stream_index])
 
+    @action
+    def stream_recording(self, device=None, fifo=None, duration=None, sample_rate=None,
+                         dtype='float32', blocksize=None, latency=0, channels=1):
+        """
+        Return audio data from an audio source
+
+        :param device: Input device (default: default configured device or system default audio input if not configured)
+        :type device: int or str
+
+        :param fifo: Path of the FIFO that will be used to exchange audio samples (default: /tmp/inputstream)
+        :type fifo: str
+
+        :param duration: Recording duration in seconds (default: record until stop event)
+        :type duration: float
+
+        :param sample_rate: Recording sample rate (default: device default rate)
+        :type sample_rate: int
+
+        :param dtype: Data type for the audio samples. Supported types:
+            'float64', 'float32', 'int32', 'int16', 'int8', 'uint8'. Default: float32
+        :type dtype: str
+
+        :param blocksize: Audio block size (default: configured `input_blocksize` or 2048)
+        :type blocksize: int
+
+        :param latency: Device latency in seconds (default: 0)
+        :type latency: float
+
+        :param channels: Number of channels (default: 1)
+        :type channels: int
+        """
+
+        import sounddevice as sd
+
+        self.recording_paused_changed.clear()
+
+        if device is None:
+            device = self.input_device
+        if device is None:
+            device = self._get_default_device('input')
+
+        if sample_rate is None:
+            dev_info = sd.query_devices(device, 'input')
+            sample_rate = int(dev_info['default_samplerate'])
+
+        if blocksize is None:
+            blocksize = self.input_blocksize
+
+        if not fifo:
+            fifo = self._default_input_stream_fifo
+
+        q = queue.Queue()
+
+        # noinspection PyUnusedLocal
+        def audio_callback(indata, frames, time_duration, status):
+            while self._get_recording_state() == RecordingState.PAUSED:
+                self.recording_paused_changed.wait()
+
+            if status:
+                self.logger.warning('Recording callback status: {}'.format(str(status)))
+
+            q.put(indata.copy())
+
+        def streaming_thread():
+            try:
+                with sd.InputStream(samplerate=sample_rate, device=device,
+                                    channels=channels, callback=audio_callback,
+                                    dtype=dtype, latency=latency, blocksize=blocksize):
+                    with open(fifo, 'wb') as audio_queue:
+                        self.start_recording()
+                        get_bus().post(SoundRecordingStartedEvent())
+                        self.logger.info('Started recording from device [{}]'.format(device))
+                        recording_started_time = time.time()
+
+                        while self._get_recording_state() != RecordingState.STOPPED \
+                                and (duration is None or
+                                     time.time() - recording_started_time < duration):
+                            while self._get_recording_state() == RecordingState.PAUSED:
+                                self.recording_paused_changed.wait()
+
+                            get_args = {
+                                'block': True,
+                                'timeout': max(0, duration - (time.time() - recording_started_time)),
+                            } if duration is not None else {}
+
+                            data = q.get(**get_args)
+                            if not len(data):
+                                continue
+
+                            audio_queue.write(data)
+            except queue.Empty:
+                self.logger.warning('Recording timeout: audio callback failed?')
+            finally:
+                self.stop_recording()
+                get_bus().post(SoundRecordingStoppedEvent())
+
+        if os.path.exists(fifo):
+            if stat.S_ISFIFO(os.stat(fifo).st_mode):
+                self.logger.info('Removing previous input stream FIFO {}'.format(fifo))
+                os.unlink(fifo)
+            else:
+                raise RuntimeError('{} exists and is not a FIFO. Please remove it or rename it'.format(fifo))
+
+        os.mkfifo(fifo, 0o644)
+        Thread(target=streaming_thread).start()
 
     @action
     def record(self, outfile=None, duration=None, device=None, sample_rate=None,
-               blocksize=None, latency=0, channels=1, subtype='PCM_24'):
+               format=None, blocksize=None, latency=0, channels=1, subtype='PCM_24'):
         """
         Records audio to a sound file (support formats: wav, raw)
 
@@ -419,6 +525,9 @@ class SoundPlugin(Plugin):
         :param sample_rate: Recording sample rate (default: device default rate)
         :type sample_rate: int
 
+        :param format: Audio format (default: WAV)
+        :type format: str
+
         :param blocksize: Audio block size (default: configured `input_blocksize` or 2048)
         :type blocksize: int
 
@@ -432,22 +541,21 @@ class SoundPlugin(Plugin):
         :type subtype: str
         """
 
-        def recording_thread(outfile, duration, device, sample_rate, blocksize,
-                             latency, channels, subtype):
+        def recording_thread(outfile, duration, device, sample_rate, format,
+                             blocksize, latency, channels, subtype):
             import sounddevice as sd
 
             self.recording_paused_changed.clear()
 
             if outfile:
                 outfile = os.path.abspath(os.path.expanduser(outfile))
+                if os.path.isfile(outfile):
+                    self.logger.info('Removing existing audio file {}'.format(outfile))
+                    os.unlink(outfile)
             else:
                 outfile = tempfile.NamedTemporaryFile(
                     prefix='recording_', suffix='.wav', delete=False,
                     dir=tempfile.gettempdir()).name
-
-            if os.path.isfile(outfile):
-                self.logger.info('Removing existing audio file {}'.format(outfile))
-                os.unlink(outfile)
 
             if device is None:
                 device = self.input_device
@@ -463,7 +571,7 @@ class SoundPlugin(Plugin):
 
             q = queue.Queue()
 
-            def audio_callback(indata, frames, time, status):
+            def audio_callback(indata, frames, duration, status):
                 while self._get_recording_state() == RecordingState.PAUSED:
                     self.recording_paused_changed.wait()
 
@@ -471,57 +579,61 @@ class SoundPlugin(Plugin):
                     self.logger.warning('Recording callback status: {}'.format(
                         str(status)))
 
-                q.put(indata.copy())
-
+                q.put({
+                    'timestamp': time.time(),
+                    'frames': frames,
+                    'time': duration,
+                    'data': indata.copy()
+                })
 
             try:
                 import soundfile as sf
                 import numpy
 
-                with sf.SoundFile(outfile, mode='x', samplerate=sample_rate,
-                                channels=channels, subtype=subtype) as f:
+                with sf.SoundFile(outfile, mode='w', samplerate=sample_rate,
+                                  format=format, channels=channels, subtype=subtype) as f:
                     with sd.InputStream(samplerate=sample_rate, device=device,
                                         channels=channels, callback=audio_callback,
                                         latency=latency, blocksize=blocksize):
                         self.start_recording()
                         get_bus().post(SoundRecordingStartedEvent(filename=outfile))
                         self.logger.info('Started recording from device [{}] to [{}]'.
-                                        format(device, outfile))
+                                         format(device, outfile))
 
                         recording_started_time = time.time()
 
                         while self._get_recording_state() != RecordingState.STOPPED \
                                 and (duration is None or
-                                    time.time() - recording_started_time < duration):
+                                     time.time() - recording_started_time < duration):
                             while self._get_recording_state() == RecordingState.PAUSED:
                                 self.recording_paused_changed.wait()
 
                             get_args = {
                                 'block': True,
-                                'timeout': max(0, duration - (time.time() -
-                                                            recording_started_time))
+                                'timeout': max(0, duration - (time.time() - recording_started_time)),
                             } if duration is not None else {}
 
                             data = q.get(**get_args)
-                            f.write(data)
+                            if data and time.time() - data.get('timestamp') <= 1.0:
+                                # Only write the block if the latency is still acceptable
+                                f.write(data['data'])
 
                     f.flush()
 
-            except queue.Empty as e:
+            except queue.Empty:
                 self.logger.warning('Recording timeout: audio callback failed?')
             finally:
                 self.stop_recording()
                 get_bus().post(SoundRecordingStoppedEvent(filename=outfile))
 
-        Thread(target=recording_thread, args=(
-            outfile, duration, device, sample_rate, blocksize, latency, channels,
-            subtype)).start()
-
+        Thread(target=recording_thread,
+               args=(
+                   outfile, duration, device, sample_rate, format, blocksize, latency, channels, subtype)
+               ).start()
 
     @action
     def recordplay(self, duration=None, input_device=None, output_device=None,
-                   sample_rate=None, blocksize=None, latency=0, channels=1,
-                   dtype=None):
+                   sample_rate=None, blocksize=None, latency=0, channels=1, dtype=None):
         """
         Records audio and plays it on an output sound device (audio pass-through)
 
@@ -571,6 +683,7 @@ class SoundPlugin(Plugin):
         if blocksize is None:
             blocksize = self.output_blocksize
 
+        # noinspection PyUnusedLocal
         def audio_callback(indata, outdata, frames, time, status):
             while self._get_recording_state() == RecordingState.PAUSED:
                 self.recording_paused_changed.wait()
@@ -580,7 +693,6 @@ class SoundPlugin(Plugin):
                     str(status)))
 
             outdata[:] = indata
-
 
         stream_index = None
 
@@ -598,14 +710,14 @@ class SoundPlugin(Plugin):
                                  stream=stream)
 
             self.logger.info('Started recording pass-through from device ' +
-                                '[{}] to sound device [{}]'.
-                                format(input_device, output_device))
+                             '[{}] to sound device [{}]'.
+                             format(input_device, output_device))
 
             recording_started_time = time.time()
 
             while self._get_recording_state() != RecordingState.STOPPED \
                     and (duration is None or
-                            time.time() - recording_started_time < duration):
+                         time.time() - recording_started_time < duration):
                 while self._get_recording_state() == RecordingState.PAUSED:
                     self.recording_paused_changed.wait()
 
@@ -616,7 +728,6 @@ class SoundPlugin(Plugin):
         finally:
             self.stop_playback([stream_index])
             self.stop_recording()
-
 
     @action
     def query_streams(self):
@@ -638,11 +749,10 @@ class SoundPlugin(Plugin):
             stream['playback_state'] = self.playback_state[i].name
             stream['name'] = self.stream_index_to_name.get(i)
             if i in self.stream_mixes:
-                stream['mix'] = { j: sound for j, sound in
-                                 enumerate(list(self.stream_mixes[i])) }
+                stream['mix'] = {j: sound for j, sound in
+                                 enumerate(list(self.stream_mixes[i]))}
 
         return streams
-
 
     def _get_or_allocate_stream_index(self, stream_index=None, stream_name=None,
                                       completed_callback_event=None):
@@ -662,8 +772,8 @@ class SoundPlugin(Plugin):
 
             if not stream:
                 return (self._allocate_stream_index(stream_name=stream_name,
-                                                   completed_callback_event=
-                                                   completed_callback_event),
+                                                    completed_callback_event=
+                                                    completed_callback_event),
                         True)
 
             return (stream_index, False)
@@ -673,7 +783,7 @@ class SoundPlugin(Plugin):
         stream_index = None
 
         with self.playback_state_lock:
-            for i in range(len(self.active_streams)+1):
+            for i in range(len(self.active_streams) + 1):
                 if i not in self.active_streams:
                     stream_index = i
                     break

@@ -41,7 +41,7 @@ Vue.component('camera', {
 
             this.streaming = false;
             this.capturing = true;
-            this.$refs.frame.setAttribute('src', '/camera/' + this.deviceId + '/frame');
+            this.$refs.frame.setAttribute('src', '/camera/' + this.deviceId + '/frame?t=' + (new Date()).getTime());
         },
 
         onFrameLoaded: function(event) {

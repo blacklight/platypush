@@ -1,10 +1,9 @@
 import importlib
-import json
 import logging
 import os
 
 from functools import wraps
-from flask import request, redirect, Response
+from flask import abort, request, redirect, Response
 from redis import Redis
 
 # NOTE: The HTTP service will *only* work on top of a Redis bus. The default
@@ -77,7 +76,7 @@ def get_websocket_port():
     return http_conf.get('websocket_port', HttpBackend._DEFAULT_WEBSOCKET_PORT)
 
 
-def send_message(msg):
+def send_message(msg, wait_for_response=True):
     msg = Message.build(msg)
 
     if isinstance(msg, Request):
@@ -88,7 +87,7 @@ def send_message(msg):
 
     bus().post(msg)
 
-    if isinstance(msg, Request):
+    if isinstance(msg, Request) and wait_for_response:
         response = get_message_response(msg)
         logger().debug('Processing response on the HTTP backend: {}'.
                        format(response))
@@ -96,7 +95,7 @@ def send_message(msg):
         return response
 
 
-def send_request(action, **kwargs):
+def send_request(action, wait_for_response=True, **kwargs):
     msg = {
         'type': 'request',
         'action': action
@@ -105,12 +104,11 @@ def send_request(action, **kwargs):
     if kwargs:
         msg['args'] = kwargs
 
-    return send_message(msg)
+    return send_message(msg, wait_for_response=wait_for_response)
 
 
 def _authenticate_token():
     token = Config.get('token')
-    user_token = None
 
     if 'X-Token' in request.headers:
         user_token = request.headers['X-Token']
@@ -154,7 +152,6 @@ def _authenticate_session():
 def _authenticate_csrf_token():
     user_manager = UserManager()
     user_session_token = None
-    user = None
 
     if 'X-Session-Token' in request.headers:
         user_session_token = request.headers['X-Session-Token']
@@ -207,7 +204,6 @@ def authenticate(redirect_page='', skip_auth_methods=None, check_csrf_token=Fals
                 return redirect('/login?redirect=' + redirect_page, 307)
 
             # CSRF token check
-            csrf_check_ok = True
             if check_csrf_token:
                 csrf_check_ok = _authenticate_csrf_token()
                 if not csrf_check_ok:
