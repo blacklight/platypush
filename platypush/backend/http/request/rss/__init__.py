@@ -2,11 +2,9 @@ import datetime
 import enum
 import feedparser
 import os
-import requests
-import time
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, \
-    Enum, UniqueConstraint, ForeignKey
+    Enum, ForeignKey
 
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
@@ -14,6 +12,7 @@ from sqlalchemy.sql.expression import func
 
 from platypush.backend.http.request import HttpRequest
 from platypush.config import Config
+from platypush.context import get_plugin
 from platypush.message.event.http.rss import NewFeedEvent
 
 Base = declarative_base()
@@ -23,21 +22,26 @@ Session = scoped_session(sessionmaker())
 class RssUpdates(HttpRequest):
     """ Gets new items in an RSS feed """
 
-    user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'
+    user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) ' + \
+                 'Chrome/62.0.3202.94 Safari/537.36'
 
     def __init__(self, url, title=None, headers=None, params=None, max_entries=None,
-                 mercury_api_key=None, digest_format=None, *argv, **kwargs):
+                 extract_content=None, digest_format=None, *argv, **kwargs):
         self.workdir = os.path.join(os.path.expanduser(Config.get('workdir')), 'feeds')
         self.dbfile = os.path.join(self.workdir, 'rss.db')
         self.url = url
         self.title = title
         self.max_entries = max_entries
-        self.mercury_api_key = mercury_api_key  # Mercury Reader API used to parse the content of the link
+
+        # If true, then the http.webpage plugin will be used to parse the content
+        self.extract_content = extract_content
+
         self.digest_format = digest_format.lower() if digest_format else None  # Supported formats: html, pdf
 
         os.makedirs(os.path.expanduser(os.path.dirname(self.dbfile)), exist_ok=True)
 
-        if headers is None: headers = {}
+        if headers is None:
+            headers = {}
         headers['User-Agent'] = self.user_agent
 
         request_args = {
@@ -58,55 +62,24 @@ class RssUpdates(HttpRequest):
         session.commit()
         return record
 
-
-    def _get_latest_update(self, session, source_id):
+    @staticmethod
+    def _get_latest_update(session, source_id):
         return session.query(func.max(FeedEntry.published)).filter_by(source_id=source_id).scalar()
 
-
     def _parse_entry_content(self, link):
-        response = None
-        err = None
-        n_tries = 5
+        parser = get_plugin('http.webpage')
+        response = parser.simplify(link).output
+        errors = parser.simplify(link).errors
 
-        for _ in range(0, n_tries):
-            try:
-                self.logger.info('Parsing content for {}'.format(link))
-                response = requests.get('https://mercury.postlight.com/parser',
-                                        params = {'url': link},
-                                        headers = {'x-api-key': self.mercury_api_key })
-            except Exception as e:
-                err = e
-
-            if response.text:
-                err = None
-                break
-            else:
-                time.sleep(1)
-
-        if err:
-            raise err
-
-        if not response.text:
-            self.logger.warning('No response from Mercury API for URL {} after {} tries'.format(link, n_tries))
-            return
-
-        if not response.ok:
-            self.logger.warning('Mercury API call failed with status {}'.format(response.status_code))
-            return
-
-        response = response.json()
-        error = response.get('error')
-
-        if error:
-            self.logger.warning('Mercury API error: {}'.format(error))
+        if not response:
+            self.logger.warning('Mercury parser error: '.format(errors or '[unknown error]'))
             return
 
         return response.get('content')
 
-
     def get_new_items(self, response):
         engine = create_engine('sqlite:///{}'.format(self.dbfile),
-                               connect_args = { 'check_same_thread': False })
+                               connect_args={'check_same_thread': False})
 
         Base.metadata.create_all(engine)
         Session.configure(bind=engine)
@@ -128,11 +101,10 @@ class RssUpdates(HttpRequest):
             <h1 style="margin-top: 30px">{}</h1>
             <h2 style="margin-top: 10px; page-break-after: always">
                 Feeds digest generated on {} </h2>'''.format(self.title,
-                datetime.datetime.now().strftime('%d %B %Y, %H:%M')
-            )
+                                                             datetime.datetime.now().strftime('%d %B %Y, %H:%M'))
 
         self.logger.info('Parsed {:d} items from RSS feed <{}>'
-                     .format(len(feed.entries), self.url))
+                         .format(len(feed.entries), self.url))
 
         for entry in feed.entries:
             if not entry.published_parsed:
@@ -146,7 +118,7 @@ class RssUpdates(HttpRequest):
                     self.logger.info('Processed new item from RSS feed <{}>'.format(self.url))
                     entry.summary = entry.summary if hasattr(entry, 'summary') else None
 
-                    if self.mercury_api_key:
+                    if self.extract_content:
                         entry.content = self._parse_entry_content(entry.link)
                     elif hasattr(entry, 'summary'):
                         entry.content = entry.summary
@@ -168,7 +140,8 @@ class RssUpdates(HttpRequest):
 
                     entries.append(e)
                     session.add(FeedEntry(**e))
-                    if self.max_entries and len(entries) > self.max_entries: break
+                    if self.max_entries and len(entries) > self.max_entries:
+                        break
             except Exception as e:
                 self.logger.warning('Exception encountered while parsing RSS ' +
                                     'RSS feed {}: {}'.format(self.url, str(e)))
@@ -196,11 +169,11 @@ class RssUpdates(HttpRequest):
                     weasyprint.HTML(string=digest).write_pdf(digest_filename)
                 else:
                     raise RuntimeError('Unsupported format: {}. Supported formats: ' +
-                                    'html or pdf'.format(self.digest_format))
+                                       'html or pdf'.format(self.digest_format))
 
                 digest_entry = FeedDigest(source_id=source_record.id,
-                                        format=self.digest_format,
-                                        filename=digest_filename)
+                                          format=self.digest_format,
+                                          filename=digest_filename)
 
                 session.add(digest_entry)
                 self.logger.info('{} digest ready: {}'.format(self.digest_format, digest_filename))
@@ -218,7 +191,7 @@ class FeedSource(Base):
     """ Models the FeedSource table, containing RSS sources to be parsed """
 
     __tablename__ = 'FeedSource'
-    __table_args__ = ({ 'sqlite_autoincrement': True })
+    __table_args__ = ({'sqlite_autoincrement': True})
 
     id = Column(Integer, primary_key=True)
     title = Column(String)
@@ -230,7 +203,7 @@ class FeedEntry(Base):
     """ Models the FeedEntry table, which contains RSS entries """
 
     __tablename__ = 'FeedEntry'
-    __table_args__ = ({ 'sqlite_autoincrement': True })
+    __table_args__ = ({'sqlite_autoincrement': True})
 
     id = Column(Integer, primary_key=True)
     entry_id = Column(String)
@@ -251,7 +224,7 @@ class FeedDigest(Base):
         pdf = 2
 
     __tablename__ = 'FeedDigest'
-    __table_args__ = ({ 'sqlite_autoincrement': True })
+    __table_args__ = ({'sqlite_autoincrement': True})
 
     id = Column(Integer, primary_key=True)
     source_id = Column(Integer, ForeignKey('FeedSource.id'), nullable=False)
@@ -259,6 +232,4 @@ class FeedDigest(Base):
     filename = Column(String, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
 
-
 # vim:sw=4:ts=4:et:
-

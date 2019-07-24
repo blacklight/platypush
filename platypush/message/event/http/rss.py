@@ -1,11 +1,12 @@
 from platypush.message.event.http import HttpEvent
 
+
 class NewFeedEvent(HttpEvent):
     """
     Event triggered when a monitored RSS feed has some new content
     """
 
-    def __init__(self, request, response, source_id=None, title=None,
+    def __init__(self, request, response: list, source_id=None, title=None,
                  digest_format=None, digest_filename=None, *args, **kwargs):
         """
         :param request: Original request
@@ -22,4 +23,3 @@ class NewFeedEvent(HttpEvent):
 
 
 # vim:sw=4:ts=4:et:
-

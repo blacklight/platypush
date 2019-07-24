@@ -1,5 +1,6 @@
 from platypush.message.event import Event
 
+
 class HttpEvent(Event):
     """
     Event triggered upon HTTP request/response cycle completion
@@ -11,7 +12,7 @@ class HttpEvent(Event):
         :type request: dict
 
         :param response: The server response
-        :type response: dict
+        :type response: dict or list
         """
 
         super().__init__(request=request, response=response, *args, **kwargs)

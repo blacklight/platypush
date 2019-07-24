@@ -1,6 +1,7 @@
+import datetime
+import json
 import os
-import requests
-import time
+import subprocess
 
 from platypush.plugins import action
 from platypush.plugins.http.request import Plugin
@@ -8,22 +9,19 @@ from platypush.plugins.http.request import Plugin
 
 class HttpWebpagePlugin(Plugin):
     """
-    Plugin to handle and parse/simplify web pages
+    Plugin to handle and parse/simplify web pages.
+    It used to use the Mercury Reader web API, but now that the API is discontinued this plugin is basically a
+    wrapper around the `mercury-parser <https://github.com/postlight/mercury-parser>`_ JavaScript library.
 
     Requires:
 
         * **requests** (``pip install requests``)
         * **weasyprint** (``pip install weasyprint``), optional, for HTML->PDF conversion
+        * **node** and **npm** installed on your system (to use the mercury-parser interface)
+        * The mercury-parser library installed (``npm install @postlight/mercury-parser``)
     """
 
-    def __init__(self, mercury_api_key=None, **kwargs):
-        """
-        :param mercury_api_key: If set then Mercury will be used to parse web pages content
-        :type mercury_api_key: str
-        """
-
-        super().__init__(**kwargs)
-        self.mercury_api_key = mercury_api_key
+    _mercury_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mercury-parser.js')
 
     @action
     def simplify(self, url, outfile=None):
@@ -56,24 +54,17 @@ class HttpWebpagePlugin(Plugin):
 
         """
 
-        if not self.mercury_api_key:
-            raise RuntimeError("mercury_api_key not set")
-
         self.logger.info('Parsing URL {}'.format(url))
-        response = requests.get('https://mercury.postlight.com/parser',
-                                params={'url': url},
-                                headers={'x-api-key': self.mercury_api_key})
+        parser = subprocess.Popen(['node', self._mercury_script, url], stdout=subprocess.PIPE)
+        response = json.loads(parser.stdout.read().decode())
 
-        if not response or not response.ok:
-            raise RuntimeError("Unable to parse content for {}: {}".format(url, response.reason))
+        self.logger.info('Got response from Mercury API: {}'.format(response))
+        title = response.get('title', '{} on {}'.format(
+            'Published' if response.get('date_published') else 'Generated',
+            response.get('date_published', datetime.datetime.now().isoformat())))
 
-        if not len(response.text):
-            raise RuntimeError("Empty response from Mercury API for URL {}".format(url))
-
-        self.logger.info('Got response from Mercury API: {}'.format(response.json()))
-        title = response.json().get('title', 'No_title_{}'.format(int(time.time())))
         content = '<body style="{body_style}"><h1>{title}</h1>{content}</body>'.\
-            format(title=title, content=response.json()['content'],
+            format(title=title, content=response.get('content', '[No content available]'),
                    body_style='font-size: 22px; font-family: Tahoma, Geneva, sans-serif')
 
         if not outfile:
@@ -85,7 +76,7 @@ class HttpWebpagePlugin(Plugin):
 
         outfile = os.path.abspath(os.path.expanduser(outfile))
 
-        if outfile.endswith('.pdf'):
+        if outfile.lower().endswith('.pdf'):
             import weasyprint
             weasyprint.HTML(string=content).write_pdf(outfile)
         else:
