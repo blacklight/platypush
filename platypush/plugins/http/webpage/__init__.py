@@ -56,7 +56,12 @@ class HttpWebpagePlugin(Plugin):
 
         self.logger.info('Parsing URL {}'.format(url))
         parser = subprocess.Popen(['node', self._mercury_script, url], stdout=subprocess.PIPE)
-        response = json.loads(parser.stdout.read().decode())
+        response = parser.stdout.read().decode()
+
+        try:
+            response = json.loads(response)
+        except Exception as e:
+            raise RuntimeError('Could not parse JSON: {}. Response: {}'.format(str(e), response))
 
         self.logger.info('Got response from Mercury API: {}'.format(response))
         title = response.get('title', '{} on {}'.format(
