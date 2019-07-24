@@ -26,7 +26,7 @@ class RssUpdates(HttpRequest):
                  'Chrome/62.0.3202.94 Safari/537.36'
 
     def __init__(self, url, title=None, headers=None, params=None, max_entries=None,
-                 extract_content=None, digest_format=None, *argv, **kwargs):
+                 extract_content=False, digest_format=None, *argv, **kwargs):
         self.workdir = os.path.join(os.path.expanduser(Config.get('workdir')), 'feeds')
         self.dbfile = os.path.join(self.workdir, 'rss.db')
         self.url = url
