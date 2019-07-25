@@ -14,8 +14,9 @@ Vue.component('sound', {
             this.recording = true;
         },
 
-        stopRecording: function() {
+        stopRecording: async function() {
             this.recording = false;
+            await request('sound.stop_recording')
         },
     },
 });
