@@ -3,6 +3,7 @@ Platypush
 
 [![Build Status](https://travis-ci.org/BlackLight/platypush.svg?branch=master)](https://travis-ci.org/BlackLight/platypush)
 [![Documentation Status](https://readthedocs.org/projects/platypush/badge/?version=latest)](https://platypush.readthedocs.io/en/latest/?badge=latest)
+[![pip version](https://pypi.python.org/pypi/platypush/)](https://img.shields.io/pypi/v/platypush.svg?style=flat)
 
 
 Imagine Platypush as some kind of [IFTTT](https://ifttt.com) on steroids - or [Tasker](https://tasker.joaoapps.com/), or [Microsoft Flow](https://flow.microsoft.com), or [PushBullet](https://pushbullet.com) on steroids.
