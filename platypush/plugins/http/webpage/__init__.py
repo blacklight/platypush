@@ -68,9 +68,7 @@ class HttpWebpagePlugin(Plugin):
             'Published' if response.get('date_published') else 'Generated',
             response.get('date_published', datetime.datetime.now().isoformat())))
 
-        content = '<body style="{body_style}"><h1>{title}</h1>{content}</body>'.\
-            format(title=title, content=response.get('content', '[No content available]'),
-                   body_style='font-size: 22px; font-family: Tahoma, Geneva, sans-serif')
+        content = response.get('content', '')
 
         if not outfile:
             return {
@@ -78,6 +76,10 @@ class HttpWebpagePlugin(Plugin):
                 'title': title,
                 'content': content,
             }
+
+        content = '<body style="{body_style}"><h1>{title}</h1>{content}</body>'. \
+            format(title=title, content=content,
+                   body_style='font-size: 22px; font-family: Tahoma, Geneva, Verdana, Helvetica, sans-serif')
 
         outfile = os.path.abspath(os.path.expanduser(outfile))
 
