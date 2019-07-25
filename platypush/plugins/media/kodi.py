@@ -309,7 +309,7 @@ class MediaKodiPlugin(MediaPlugin):
         volume = self._get_kodi().Application.GetProperties(
             properties=['volume']).get('result', {}).get('volume')
 
-        result = self._get_kodi().Application.SetVolume(volume=min(volume+step, 100))
+        result = self._get_kodi().Application.SetVolume(volume=int(min(volume+step, 100)))
         return self._build_result(result)
 
     @action
@@ -318,7 +318,7 @@ class MediaKodiPlugin(MediaPlugin):
         volume = self._get_kodi().Application.GetProperties(
             properties=['volume']).get('result', {}).get('volume')
 
-        result = self._get_kodi().Application.SetVolume(volume=max(volume-step, 0))
+        result = self._get_kodi().Application.SetVolume(volume=int(max(volume-step, 0)))
         return self._build_result(result)
 
     @action
@@ -330,7 +330,7 @@ class MediaKodiPlugin(MediaPlugin):
         :type volume: int
         """
 
-        result = self._get_kodi().Application.SetVolume(volume=volume)
+        result = self._get_kodi().Application.SetVolume(volume=int(volume))
         return self._build_result(result)
 
     @action
