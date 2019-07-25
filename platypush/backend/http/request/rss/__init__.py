@@ -146,7 +146,7 @@ class RssUpdates(HttpRequest):
                         break
             except Exception as e:
                 self.logger.warning('Exception encountered while parsing RSS ' +
-                                    'RSS feed {}: {}'.format(self.url, str(e)))
+                                    'RSS feed {}: {}'.format(entry.link, str(e)))
                 self.logger.exception(e)
 
         source_record.last_updated_at = parse_start_time

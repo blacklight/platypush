@@ -55,7 +55,7 @@ class HttpWebpagePlugin(Plugin):
         """
 
         self.logger.info('Parsing URL {}'.format(url))
-        parser = subprocess.Popen(['node', self._mercury_script, url], stdout=subprocess.PIPE)
+        parser = subprocess.Popen(['node', self._mercury_script, url], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         response = parser.stdout.read().decode()
 
         try:
