@@ -67,6 +67,8 @@ class RssUpdates(HttpRequest):
         return session.query(func.max(FeedEntry.published)).filter_by(source_id=source_id).scalar()
 
     def _parse_entry_content(self, link):
+        self.logger.info('Extracting content from {}'.format(link))
+
         parser = get_plugin('http.webpage')
         response = parser.simplify(link).output
         errors = parser.simplify(link).errors
