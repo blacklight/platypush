@@ -1,2 +1,3 @@
 recursive-include platypush/backend/http/static *
 recursive-include platypush/backend/http/templates *
+include platypush/plugins/http/webpage/mercury-parser.js
