@@ -276,7 +276,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
         if self._media_plugin.download_dir:
             return self._media_plugin.download_dir
         else:
-            d = os.path.join(os.environ['HOME'], 'Downloads')
+            d = os.path.join(os.path.expanduser('~'), 'Downloads')
             os.makedirs(d, exist_ok=True)
             return d
 

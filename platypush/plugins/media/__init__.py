@@ -130,7 +130,7 @@ class MediaPlugin(Plugin):
 
         self.download_dir = os.path.abspath(os.path.expanduser(
             download_dir or player_config.get('download_dir') or
-            os.path.join((os.environ['HOME'] or self._env.get('HOME') or '/'), 'Downloads')))
+            os.path.join((os.path.expanduser('~') or self._env.get('HOME') or '/'), 'Downloads')))
 
         if not os.path.isdir(self.download_dir):
             os.makedirs(self.download_dir, exist_ok=True)

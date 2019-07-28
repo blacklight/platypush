@@ -28,7 +28,7 @@ class Config(object):
         - /etc/platypush/config.yaml
     """
     _cfgfile_locations = [
-        os.path.join(os.environ['HOME'], '.config', 'platypush', 'config.yaml'),
+        os.path.join(os.path.expanduser('~'), '.config', 'platypush', 'config.yaml'),
         os.path.join(os.sep, 'etc', 'platypush', 'config.yaml'),
     ]
 
@@ -37,7 +37,7 @@ class Config(object):
         'now': datetime.datetime.now,
     }
 
-    _workdir_location = os.path.join(os.environ['HOME'], '.local', 'share', 'platypush')
+    _workdir_location = os.path.join(os.path.expanduser('~'), '.local', 'share', 'platypush')
     _included_files = set()
 
     def __init__(self, cfgfile=None):
@@ -69,7 +69,7 @@ class Config(object):
 
         self._config['db'] = self._config.get('main.db', {
             'engine': 'sqlite:///' + os.path.join(
-                os.environ['HOME'], '.local', 'share', 'platypush', 'main.db')
+                os.path.expanduser('~'), '.local', 'share', 'platypush', 'main.db')
         })
 
         logging_config = {

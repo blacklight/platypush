@@ -23,8 +23,8 @@ from platypush.config import Config
 from platypush.context import register_backends, get_plugin, get_backend
 
 
-workdir = os.path.join(os.environ['HOME'], '.local', 'share',
-                       'platypush', 'platydock')
+workdir = os.path.join(os.path.expanduser('~'), '.local', 'share',
+        'platypush', 'platydock')
 
 class Action(enum.Enum):
     build = 'build'
