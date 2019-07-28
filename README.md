@@ -5,6 +5,7 @@ Platypush
 [![Documentation Status](https://readthedocs.org/projects/platypush/badge/?version=latest)](https://platypush.readthedocs.io/en/latest/?badge=latest)
 [![pip version](https://img.shields.io/pypi/v/platypush.svg?style=flat)](https://pypi.python.org/pypi/platypush/)
 
+Advised read: [**Getting started with Platypush**](https://medium.com/@automationguru/automate-your-house-your-life-and-everything-else-around-with-platypush-dba1cd13e3f6) (Medium article).
 
 Imagine Platypush as some kind of [IFTTT](https://ifttt.com) on steroids - or [Tasker](https://tasker.joaoapps.com/), or [Microsoft Flow](https://flow.microsoft.com), or [PushBullet](https://pushbullet.com) on steroids.
 Platypush aims to turn any device in a smart hub that can control things, interact with cloud services and send messages to other devices. It's a general-purpose lightweight platform to process any request and run any logic triggered by custom events.
