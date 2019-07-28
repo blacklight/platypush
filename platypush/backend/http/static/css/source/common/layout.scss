@@ -82,6 +82,12 @@ $widths: (
     }
 }
 
+@media (min-width: 720px) and (orientation:portrait) {
+    body {
+        font-size: $default-font-size-vertial;
+    }
+}
+
 .vertical-center {
     display: flex;
     align-items: center;
