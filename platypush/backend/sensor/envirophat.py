@@ -27,6 +27,7 @@ class SensorEnvirophatBackend(SensorBackend):
         super().__init__(self, **kwargs)
 
         self.qnh = qnh
+        self._last_read = {}
         self.enabled_sensors = {
             'temperature': temperature,
             'pressure': pressure,
@@ -43,9 +44,10 @@ class SensorEnvirophatBackend(SensorBackend):
         ret = {
             sensor: sensors[sensor]
             for sensor, enabled in self.enabled_sensors.items()
-            if enabled and sensor in sensors
+            if enabled and sensor in sensors and sensors[sensor] != self._last_read.get(sensor)
         }
 
+        self._last_read = ret
         return ret
 
 
