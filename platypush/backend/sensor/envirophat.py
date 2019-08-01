@@ -9,8 +9,7 @@ class SensorEnvirophatBackend(SensorBackend):
 
     Requires:
 
-        * ``adafruit-mcp3008`` (``pip install adafruit-mcp3008``)
-        * The :mod:`platypush.plugins.gpio.sensor.mcp3008` plugin configured
+        * ``envirophat`` (``pip install envirophat``)
     """
 
     def __init__(self, temperature=True, pressure=True, altitude=True, luminosity=True,
@@ -42,7 +41,7 @@ class SensorEnvirophatBackend(SensorBackend):
         plugin = get_plugin('gpio.sensor.envirophat')
         sensors = plugin.get_data(qnh=self.qnh).output
         ret = {
-            sensors[sensor]
+            sensor: sensors[sensor]
             for sensor, enabled in self.enabled_sensors.items()
             if enabled and sensor in sensors
         }
