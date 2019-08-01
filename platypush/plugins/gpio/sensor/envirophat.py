@@ -60,8 +60,8 @@ class GpioSensorEnvirophatPlugin(GpioSensorPlugin):
         ret['pressure'] = weather.pressure()
         ret['altitude'] = weather.altitude(qnh=qnh)
         ret['luminosity'] = light.light()
-        ret['accelerometer'] = {getattr(accelerometer, v) for v in ['x', 'y', 'z']}
-        ret['magnetometer'] = {getattr(magnetometer, v) for v in ['x', 'y', 'z']}
+        ret['accelerometer'] = {v: getattr(accelerometer, v) for v in ['x', 'y', 'z']}
+        ret['magnetometer'] = {v: getattr(magnetometer, v) for v in ['x', 'y', 'z']}
         ret['analog'] = list(analog.read_all())
         ret['leds'] = leds.is_on()
 
