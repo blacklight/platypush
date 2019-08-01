@@ -171,6 +171,7 @@ setup(
         'Support for mpv player plugin': ['python-mpv'],
         'Support for compiling SASS/SCSS styles to CSS': ['pyScss'],
         'Support for NFC tags': ['nfcpy>=1.0', 'ndef'],
+        'Support for enviropHAT': ['envirophat'],
         # 'Support for Leap Motion backend': ['git+ssh://git@github.com:BlackLight/leap-sdk-python3.git'],
         # 'Support for Flic buttons': ['git+https://@github.com/50ButtonsEach/fliclib-linux-hci.git']
         # 'Support for media subtitles': ['git+https://github.com/agonzalezro/python-opensubtitles#egg=python-opensubtitles']

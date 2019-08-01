@@ -147,3 +147,6 @@ pyScss
 # nfcpy >= 1.0
 # ndef
 
+# Support for enviropHAT
+# envirophat
+

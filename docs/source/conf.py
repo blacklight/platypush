@@ -220,6 +220,7 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'serial',
                         'pyHS100',
                         'grpc',
+                        'envirophat',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))
