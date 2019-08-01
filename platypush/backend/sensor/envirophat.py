@@ -47,7 +47,7 @@ class SensorEnvirophatBackend(SensorBackend):
             if enabled and sensor in sensors and sensors[sensor] != self._last_read.get(sensor)
         }
 
-        self._last_read = ret
+        self._last_read = sensors
         return ret
 
 
