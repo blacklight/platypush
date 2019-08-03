@@ -16,6 +16,7 @@ Backends
     platypush/backend/http.rst
     platypush/backend/http.poll.rst
     platypush/backend/http.request.rss.rst
+    platypush/backend/gps.rst
     platypush/backend/inotify.rst
     platypush/backend/joystick.rst
     platypush/backend/kafka.rst
@@ -30,6 +31,7 @@ Backends
     platypush/backend/redis.rst
     platypush/backend/scard.rst
     platypush/backend/sensor.accelerometer.rst
+    platypush/backend/sensor.envirophat.rst
     platypush/backend/sensor.ir.zeroborg.rst
     platypush/backend/sensor.leap.rst
     platypush/backend/sensor.mcp3008.rst
