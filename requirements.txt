@@ -150,3 +150,5 @@ pyScss
 # Support for enviropHAT
 # envirophat
 
+# Support for GPS integration
+# gps
