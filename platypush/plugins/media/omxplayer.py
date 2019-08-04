@@ -81,6 +81,8 @@ class MediaOmxplayerPlugin(MediaPlugin):
                                 'be able to control the media')
             self.logger.exception(e)
 
+        self._player.pause()
+        self._player.play()
         return self.status()
 
     @action
