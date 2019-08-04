@@ -465,7 +465,8 @@ class MediaPlugin(Plugin):
             url = 'https://www.youtube.com/watch?v={}'.format(m.group(1))
 
         proc = subprocess.Popen(['youtube-dl', '-f', 'best', '-g', url], stdout=subprocess.PIPE)
-        return proc.stdout.read().decode("utf-8", "strict")[:-1]
+        raw_url = proc.stdout.read().decode("utf-8", "strict")[:-1]
+        return raw_url if raw_url else url
 
     @action
     def get_youtube_info(self, url):
