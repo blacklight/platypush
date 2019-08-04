@@ -58,7 +58,7 @@ class MediaOmxplayerPlugin(MediaPlugin):
         """
 
         if subtitles:
-            args.append('--subtitles', subtitles)
+            args += ('--subtitles', subtitles)
 
         resource = self._get_resource(resource)
         if self._player:
