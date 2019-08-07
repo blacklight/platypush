@@ -4,8 +4,6 @@ import shutil
 import threading
 import time
 
-import cv2
-
 from datetime import datetime
 
 from platypush.config import Config
@@ -112,6 +110,7 @@ class CameraPlugin(Plugin):
         :type flip: int
         """
 
+        import cv2
         super().__init__(**kwargs)
 
         self._default_frames_dir = os.path.join(Config.get('workdir'), 'camera', 'frames')
@@ -135,6 +134,7 @@ class CameraPlugin(Plugin):
         self._recording_info = {}  # device_id => recording info map
 
     def _init_device(self, device_id, frames_dir=None, **info):
+        import cv2
         self._release_device(device_id)
 
         if device_id not in self._devices:
@@ -173,6 +173,8 @@ class CameraPlugin(Plugin):
 
     @staticmethod
     def _store_frame_to_file(frame, frames_dir, image_file):
+        import cv2
+
         if image_file:
             filepath = image_file
         else:
@@ -215,6 +217,8 @@ class CameraPlugin(Plugin):
             os.unlink(f)
 
     def _make_video_file(self, frames_dir, video_file, video_type):
+        import cv2
+
         files = self._get_stored_frames_files(frames_dir)
         if not files:
             self.logger.warning('No frames found in {}'.format(frames_dir))
@@ -238,6 +242,7 @@ class CameraPlugin(Plugin):
                    max_stored_frames, color_transform, video_type,
                    scale_x, scale_y, rotate, flip):
 
+            import cv2
             device = self._devices[device_id]
             color_transform = getattr(cv2, self.color_transform)
             rotation_matrix = None
@@ -343,6 +348,7 @@ class CameraPlugin(Plugin):
             these parameters if you want to override the default configured ones.
         """
 
+        import cv2
         device_id = device_id if device_id is not None else self.default_device_id
         if device_id in self._is_recording and \
                 self._is_recording[device_id].is_set():
