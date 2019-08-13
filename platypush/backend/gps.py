@@ -30,6 +30,8 @@ class GpsBackend(Backend):
     """
 
     _fail_sleep_time = 5.0
+    _lat_lng_tolerance = 1e-5
+    _alt_tolerance = 0.5
 
     def __init__(self, gpsd_server='localhost', gpsd_port=2947, **kwargs):
         """
@@ -82,14 +84,19 @@ class GpsBackend(Backend):
     def run(self):
         super().run()
         self.logger.info('Initialized GPS backend on {}:{}'.format(self.gpsd_server, self.gpsd_port))
+        last_event = None
 
         while not self.should_stop():
             try:
                 session = self._get_session()
                 report = session.next()
                 event = self._gps_report_to_event(report)
-                if event:
+                if event and (last_event is None or
+                              abs((last_event.args.get('latitude') or 0) - (event.args.get('latitude') or 0)) >= self._lat_lng_tolerance or
+                              abs((last_event.args.get('longitude') or 0) - (event.args.get('longitude') or 0)) >= self._lat_lng_tolerance or
+                              abs((last_event.args.get('altitude') or 0) - (event.args.get('altitude') or 0)) >= self._alt_tolerance):
                     self.bus.post(event)
+                    last_event = event
             except Exception as e:
                 if isinstance(e, StopIteration):
                     self.logger.warning('GPS service connection lost, check that gpsd is running')
