@@ -11,8 +11,8 @@ Plugins
     platypush/plugins/autoremote.rst
     platypush/plugins/calendar.ical.rst
     platypush/plugins/calendar.rst
-    platypush/plugins/camera.rst
     platypush/plugins/camera.pi.rst
+    platypush/plugins/camera.rst
     platypush/plugins/clipboard.rst
     platypush/plugins/db.rst
     platypush/plugins/file.rst
@@ -25,8 +25,9 @@ Plugins
     platypush/plugins/google.youtube.rst
     platypush/plugins/gpio.rst
     platypush/plugins/gpio.sensor.accelerometer.rst
-    platypush/plugins/gpio.sensor.envirophat.rst
+    platypush/plugins/gpio.sensor.bme280.rst
     platypush/plugins/gpio.sensor.distance.rst
+    platypush/plugins/gpio.sensor.envirophat.rst
     platypush/plugins/gpio.sensor.mcp3008.rst
     platypush/plugins/gpio.sensor.rst
     platypush/plugins/gpio.zeroborg.rst
@@ -71,4 +72,3 @@ Plugins
     platypush/plugins/weather.forecast.rst
     platypush/plugins/websocket.rst
     platypush/plugins/wiimote.rst
-

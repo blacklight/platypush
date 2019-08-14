@@ -10,13 +10,13 @@ Backends
     platypush/backend/assistant.google.rst
     platypush/backend/assistant.snowboy.rst
     platypush/backend/button.flic.rst
-    platypush/backend/camera.rst
     platypush/backend/camera.pi.rst
+    platypush/backend/camera.rst
     platypush/backend/google.fit.rst
-    platypush/backend/http.rst
+    platypush/backend/gps.rst
     platypush/backend/http.poll.rst
     platypush/backend/http.request.rss.rst
-    platypush/backend/gps.rst
+    platypush/backend/http.rst
     platypush/backend/inotify.rst
     platypush/backend/joystick.rst
     platypush/backend/kafka.rst
@@ -31,6 +31,7 @@ Backends
     platypush/backend/redis.rst
     platypush/backend/scard.rst
     platypush/backend/sensor.accelerometer.rst
+    platypush/backend/sensor.bme280.rst
     platypush/backend/sensor.envirophat.rst
     platypush/backend/sensor.ir.zeroborg.rst
     platypush/backend/sensor.leap.rst
@@ -41,4 +42,3 @@ Backends
     platypush/backend/weather.forecast.rst
     platypush/backend/websocket.rst
     platypush/backend/wiimote.rst
-
