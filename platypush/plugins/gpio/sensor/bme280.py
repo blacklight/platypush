@@ -44,6 +44,7 @@ class GpioSensorBme280Plugin(GpioSensorPlugin):
                 "temperature": 21.0,   # Celsius
                 "pressure": 101555.08, # Pascals
                 "humidity": 23.543,    # percentage
+                "altitude": 15.703     # meters
             }
 
         """
@@ -53,6 +54,7 @@ class GpioSensorBme280Plugin(GpioSensorPlugin):
             'temperature': device.get_temperature(),
             'pressure': device.get_pressure()*100,
             'humidity': device.get_humidity(),
+            'altitude': device.get_altitude(),
         }
 
 
