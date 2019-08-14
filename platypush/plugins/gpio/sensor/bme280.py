@@ -19,9 +19,21 @@ class GpioSensorBme280Plugin(GpioSensorPlugin):
 
         super().__init__(**kwargs)
         self.port = port
+        self._bus = None
+        self._device = None
 
     # noinspection PyPackageRequirements
     # noinspection PyUnresolvedReferences
+    def _get_device(self):
+        if self._device:
+            return self._device
+
+        from smbus import SMBus
+        from bme280 import BME280
+
+        self._bus = SMBus(self.port)
+        self._device = BME280(i2c_dev=self._bus)
+
     @action
     def get_measurement(self):
         """
@@ -35,11 +47,7 @@ class GpioSensorBme280Plugin(GpioSensorPlugin):
 
         """
 
-        from smbus import SMBus
-        from bme280 import BME280
-
-        bus = SMBus(self.port)
-        device = BME280(i2c_dev=bus)
+        device = self._get_device()
         return {
             'temperature': device.get_temperature(),
             'pressure': device.get_pressure()*100,
