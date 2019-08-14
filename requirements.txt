@@ -159,3 +159,6 @@ pyScss
 # Support for LTR559 light/proximity sensor
 # ltr559
 
+# Support for VL53L1X laser ranger/distance sensor
+# smbus2
+# vl53l1x
