@@ -28,6 +28,7 @@ Plugins
     platypush/plugins/gpio.sensor.bme280.rst
     platypush/plugins/gpio.sensor.distance.rst
     platypush/plugins/gpio.sensor.envirophat.rst
+    platypush/plugins/gpio.sensor.ltr559.rst
     platypush/plugins/gpio.sensor.mcp3008.rst
     platypush/plugins/gpio.sensor.rst
     platypush/plugins/gpio.zeroborg.rst
