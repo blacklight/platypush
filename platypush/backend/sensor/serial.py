@@ -12,7 +12,7 @@ class SensorSerialBackend(SensorBackend):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(plugin='gpio.sensor.serial', **kwargs)
+        super().__init__(plugin='serial', **kwargs)
 
 
 # vim:sw=4:ts=4:et:
