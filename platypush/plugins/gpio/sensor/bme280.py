@@ -33,6 +33,7 @@ class GpioSensorBme280Plugin(GpioSensorPlugin):
 
         self._bus = SMBus(self.port)
         self._device = BME280(i2c_dev=self._bus)
+        return self._device
 
     @action
     def get_measurement(self):
