@@ -118,15 +118,25 @@ class SensorBackend(Backend):
             if v is None:
                 continue
 
-            if isinstance(self.tolerance, dict):
-                tolerance = float(self.tolerance.get(k, self.default_tolerance))
-            else:
-                try:
-                    tolerance = float(self.tolerance)
-                except (TypeError, ValueError):
-                    continue
+            tolerance = None
+            isNaN = False
 
-            if abs(v - self.data.get(k)) >= tolerance:
+            try:
+                v = float(v)
+            except (TypeError, ValueError):
+                isNaN = True
+
+            if not isNaN:
+                if isinstance(self.tolerance, dict):
+                    tolerance = float(self.tolerance.get(k, self.default_tolerance))
+                else:
+                    try:
+                        tolerance = float(self.tolerance)
+                    except (TypeError, ValueError):
+                        pass
+
+            if tolerance is None or isNaN or \
+                    abs(v - self.data.get(k)) >= tolerance:
                 ret[k] = v
 
         return ret
