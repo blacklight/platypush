@@ -217,6 +217,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
             language = self.language
 
         self._init_assistant()
+        self.on_conversation_start()
 
         with SampleAssistant(language_code=language,
                              device_model_id=self.device_model_id,
