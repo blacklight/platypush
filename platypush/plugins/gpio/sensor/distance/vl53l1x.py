@@ -30,7 +30,7 @@ class GpioSensorDistanceVl53L1XPlugin(GpioSensorPlugin):
         if self._device:
             return self._device
 
-        import VL53L1X
+        from VL53L1X import VL53L1X
         self._device = VL53L1X(i2c_bus=self.i2c_bus, i2c_address=self.i2c_address)
         return self._device
 
