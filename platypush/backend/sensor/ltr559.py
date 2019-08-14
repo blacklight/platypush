@@ -22,7 +22,7 @@ class SensorLtr559Backend(SensorBackend):
             'proximity': proximity,
         }
 
-        super().__init__(plugin='gpio.sensor.bme280', enabled_sensors=enabled_sensors, **kwargs)
+        super().__init__(plugin='gpio.sensor.ltr559', enabled_sensors=enabled_sensors, **kwargs)
 
 
 # vim:sw=4:ts=4:et:
