@@ -64,7 +64,7 @@ class SensorBackend(Backend):
         self.plugin = plugin
         self.plugin_args = plugin_args or {}
         self.thresholds = thresholds
-        self.tolerance = tolerance or {}
+        self.tolerance = tolerance
         self.poll_seconds = poll_seconds
 
         if isinstance(enabled_sensors, list):
@@ -115,8 +115,11 @@ class SensorBackend(Backend):
                 ret[k] = v
                 continue
 
+            if v is None:
+                continue
+
             if isinstance(self.tolerance, dict):
-                tolerance = self.tolerance.get(k, self.default_tolerance)
+                tolerance = float(self.tolerance.get(k, self.default_tolerance))
             else:
                 try:
                     tolerance = float(self.tolerance)
@@ -165,7 +168,14 @@ class SensorBackend(Backend):
             if data_above_threshold:
                 self.bus.post(SensorDataAboveThresholdEvent(data=data_above_threshold))
 
-            self.data = new_data
+            self.data = data
+
+            if new_data:
+                if isinstance(new_data, dict):
+                    for k, v in new_data.items():
+                        self.data[k] = v
+                else:
+                    self.data = new_data
 
             if self.poll_seconds:
                 time.sleep(self.poll_seconds)
