@@ -152,3 +152,10 @@ pyScss
 
 # Support for GPS integration
 # gps
+
+# Support for BME280 environment sensor
+# pimoroni-bme280
+
+# Support for LTR559 light/proximity sensor
+# ltr559
+
