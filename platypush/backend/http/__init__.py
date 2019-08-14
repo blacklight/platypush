@@ -287,8 +287,9 @@ class HttpBackend(Backend):
             self.logger.info('Starting uWSGI with arguments {}'.format(uwsgi_cmd))
             self.server_proc = subprocess.Popen(uwsgi_cmd)
         else:
-            raise EnvironmentError('The web server is configured to be launched externally but ' +
-                                   'no uwsgi_args were provide')
+            self.logger.info('The web server is configured to be launched externally but ' +
+                             'no uwsgi_args were provided. Make sure that you run another external service' +
+                             'for the webserver (e.g. nginx)')
 
 
 # vim:sw=4:ts=4:et:
