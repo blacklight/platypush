@@ -1,5 +1,4 @@
 from platypush.backend.sensor import SensorBackend
-from platypush.context import get_plugin
 
 
 class SensorAccelerometerBackend(SensorBackend):
@@ -12,11 +11,8 @@ class SensorAccelerometerBackend(SensorBackend):
         * The :mod:`platypush.plugins.gpio.sensor.accelerometer` plugin configured
     """
 
-    def get_measurement(self):
-        """ get_measurement implementation """
-        plugin = get_plugin('gpio.sensor.accelerometer')
-        return plugin.get_data().output
+    def __init__(self, **kwargs):
+        super().__init__(plugin='gpio.sensor.accelerometer', **kwargs)
 
 
 # vim:sw=4:ts=4:et:
-

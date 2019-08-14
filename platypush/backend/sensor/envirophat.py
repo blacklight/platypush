@@ -1,11 +1,10 @@
 from platypush.backend.sensor import SensorBackend
-from platypush.context import get_plugin
 
 
 class SensorEnvirophatBackend(SensorBackend):
     """
-    Backend to poll analog sensor values from an MCP3008 chipset
-    (https://learn.adafruit.com/raspberry-pi-analog-to-digital-converters/mcp3008)
+    Backend to poll analog sensor values from an enviroPHAT sensor pHAT
+    (https://shop.pimoroni.com/products/enviro-phat)
 
     Requires:
 
@@ -24,11 +23,8 @@ class SensorEnvirophatBackend(SensorBackend):
         :param magnetometer: Enable magnetometer polling
         :param qnh: Base reference for your sea level pressure (for altitude sensor)
         """
-        super().__init__(self, **kwargs)
 
-        self.qnh = qnh
-        self._last_read = {}
-        self.enabled_sensors = {
+        enabled_sensors = {
             'temperature': temperature,
             'pressure': pressure,
             'altitude': altitude,
@@ -38,17 +34,9 @@ class SensorEnvirophatBackend(SensorBackend):
             'magnetometer': magnetometer,
         }
 
-    def get_measurement(self):
-        plugin = get_plugin('gpio.sensor.envirophat')
-        sensors = plugin.get_data(qnh=self.qnh).output
-        ret = {
-            sensor: sensors[sensor]
-            for sensor, enabled in self.enabled_sensors.items()
-            if enabled and sensor in sensors and sensors[sensor] != self._last_read.get(sensor)
-        }
-
-        self._last_read = sensors
-        return ret
+        super().__init__(plugin='gpio.sensor.envirophat',
+                         plugin_args={'qnh': qnh},
+                         enabled_sensors=enabled_sensors, **kwargs)
 
 
 # vim:sw=4:ts=4:et:

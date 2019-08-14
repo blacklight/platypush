@@ -7,8 +7,8 @@ class GpioSensorPlugin(Plugin):
     should implement this class (and the get_measurement() method)
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @action
     def get_measurement(self, *args, **kwargs):

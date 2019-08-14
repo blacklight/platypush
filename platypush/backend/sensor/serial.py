@@ -1,5 +1,4 @@
 from platypush.backend.sensor import SensorBackend
-from platypush.context import get_plugin
 
 
 class SensorSerialBackend(SensorBackend):
@@ -12,10 +11,8 @@ class SensorSerialBackend(SensorBackend):
         * The :mod:`platypush.plugins.serial` plugin configured
     """
 
-    def get_measurement(self):
-        """ Implementation of ``get_measurement`` """
-        plugin = get_plugin('serial')
-        return plugin.get_data().output
+    def __init__(self, **kwargs):
+        super().__init__(plugin='gpio.sensor.serial', **kwargs)
 
 
 # vim:sw=4:ts=4:et:
