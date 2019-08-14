@@ -123,6 +123,7 @@ class SensorBackend(Backend):
 
             try:
                 v = float(v)
+                old_v = float(self.data.get(k))
             except (TypeError, ValueError):
                 isNaN = True
 
@@ -136,7 +137,7 @@ class SensorBackend(Backend):
                         pass
 
             if tolerance is None or isNaN or \
-                    abs(v - self.data.get(k)) >= tolerance:
+                    abs(v - old_v) >= tolerance:
                 ret[k] = v
 
         return ret
