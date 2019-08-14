@@ -1,7 +1,7 @@
 from platypush.backend.sensor import SensorBackend
 
 
-class SensorDistanceVl53l1xBackend(SensorBackend):
+class SensorDistanceVl53L1XBackend(SensorBackend):
     """
     Backend to poll an `VL53L1x <https://www.st.com/en/imaging-and-photonics-solutions/vl53l1x.html>`_
     laser ranger/distance sensor

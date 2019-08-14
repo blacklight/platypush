@@ -2,7 +2,7 @@ from platypush.plugins import action
 from platypush.plugins.gpio.sensor import GpioSensorPlugin
 
 
-class GpioSensorDistanceVl53l1xPlugin(GpioSensorPlugin):
+class GpioSensorDistanceVl53L1XPlugin(GpioSensorPlugin):
     """
     Plugin to interact with an `VL53L1x <https://www.st.com/en/imaging-and-photonics-solutions/vl53l1x.html>`_
     laser ranger/distance sensor
