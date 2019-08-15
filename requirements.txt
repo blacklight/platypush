@@ -48,7 +48,7 @@ bcrypt
 # python-mpd2
 
 # Belkin WeMo Switch plugin support
-# ouimeaux
+# git+https://github.com/iancmcc/ouimeaux
 
 # Google Assistant support
 # google-assistant-sdk
