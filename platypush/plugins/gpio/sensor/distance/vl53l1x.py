@@ -1,3 +1,5 @@
+import time
+
 from platypush.plugins import action
 from platypush.plugins.gpio.sensor import GpioSensorPlugin
 
@@ -32,6 +34,7 @@ class GpioSensorDistanceVl53L1XPlugin(GpioSensorPlugin):
 
         from VL53L1X import VL53L1X
         self._device = VL53L1X(i2c_bus=self.i2c_bus, i2c_address=self.i2c_address)
+        self._device.open()
         return self._device
 
     @action
@@ -52,14 +55,24 @@ class GpioSensorDistanceVl53L1XPlugin(GpioSensorPlugin):
         """
 
         device = self._get_device()
-        device.open()
         ret = {}
 
-        for i, r in enumerate(['short', 'medium', 'long']):
-            if eval(r):
-                device.start_ranging(i+1)
-                ret[r] = device.get_distance()
-                device.stop_ranging()
+        try:
+            for i, r in enumerate(['short', 'medium', 'long']):
+                if eval(r):
+                    device.start_ranging(i+1)
+                    ret[r] = device.get_distance()
+                    device.stop_ranging()
+        except Exception as e:
+            self.logger.exception(e)
+
+            try:
+                self._device.close()
+            except:
+                pass
+
+            self._device = None
+            time.sleep(1)
 
         return ret
 
