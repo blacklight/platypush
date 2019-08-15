@@ -28,21 +28,22 @@ class GpioSensorDistanceVl53L1XPlugin(GpioSensorPlugin):
         self._device = None
 
     # noinspection PyUnresolvedReferences
-    def _get_device(self):
+    def _get_device(self, ranging=1):
         if self._device:
             return self._device
 
         from VL53L1X import VL53L1X
         self._device = VL53L1X(i2c_bus=self.i2c_bus, i2c_address=self.i2c_address)
         self._device.open()
+        self._device.start_ranging(ranging)
         return self._device
 
     @action
-    def get_measurement(self, short=True, medium=True, long=True):
+    def get_measurement(self, short=True, medium=False, long=False):
         """
         :param short: Enable short range measurement (default: True)
-        :param medium: Enable medium range measurement (default: True)
-        :param long: Enable long range measurement (default: True)
+        :param medium: Enable medium range measurement (default: False)
+        :param long: Enable long range measurement (default: False)
 
         :returns: dict. Example::
 
@@ -54,19 +55,26 @@ class GpioSensorDistanceVl53L1XPlugin(GpioSensorPlugin):
 
         """
 
-        device = self._get_device()
+        range_idx = 0
+        range_name = None
+
+        for i, r in enumerate(['short', 'medium', 'long']):
+            if eval(r):
+                range_idx = i+1
+                range_name = r
+                break
+
+        assert range_name is not None
+        device = self._get_device(ranging=range_idx)
         ret = {}
 
         try:
-            for i, r in enumerate(['short', 'medium', 'long']):
-                if eval(r):
-                    device.start_ranging(i+1)
-                    ret[r] = device.get_distance()
-                    device.stop_ranging()
+            ret[range_name] = device.get_distance()
         except Exception as e:
             self.logger.exception(e)
 
             try:
+                self._device.stop_ranging()
                 self._device.close()
             except:
                 pass

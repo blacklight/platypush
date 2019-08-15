@@ -12,11 +12,11 @@ class SensorDistanceVl53L1XBackend(SensorBackend):
         * ``vl53l1x`` (``pip install vl53l1x``)
     """
 
-    def __init__(self, short=True, medium=True, long=True, **kwargs):
+    def __init__(self, short=True, medium=False, long=False, **kwargs):
         """
         :param short: Enable short range measurement (default: True)
-        :param medium: Enable medium range measurement (default: True)
-        :param long: Enable long range measurement (default: True)
+        :param medium: Enable medium range measurement (default: False)
+        :param long: Enable long range measurement (default: False)
         """
         enabled_sensors = {
             'short': short,
