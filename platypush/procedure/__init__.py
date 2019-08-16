@@ -186,7 +186,14 @@ class LoopProcedure(Procedure):
         self.requests = requests
 
     def execute(self, _async=None, **context):
-        iterable = Request.expand_value_from_context(self.iterable, **context)
+        # noinspection PyBroadException
+        try:
+            iterable = eval(self.iterable)
+            if not hasattr(iterable, '__iter__'):
+                raise RuntimeError
+        except:
+            iterable = Request.expand_value_from_context(self.iterable, **context)
+
         response = Response()
 
         for item in iterable:
