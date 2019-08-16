@@ -77,6 +77,25 @@ class CameraPiPlugin(CameraPlugin):
         return self._camera
 
     @action
+    def start_preview(self, **opts):
+        """
+        Start camera preview.
+
+        :param opts: Extra options to pass to the camera (see
+            https://www.raspberrypi.org/documentation/usage/camera/python/README.md)
+        """
+        camera = self._get_camera(**opts)
+        camera.start_preview()
+
+    @action
+    def stop_preview(self):
+        """
+        Stop camera preview.
+        """
+        camera = self._get_camera()
+        camera.stop_preview()
+
+    @action
     def take_picture(self, image_file, preview=False, warmup_time=2, resize=None, **opts):
         """
         Take a picture.
