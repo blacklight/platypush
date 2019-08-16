@@ -146,7 +146,7 @@ setup(
         'Support for PDF generation': ['weasyprint'],
         'Support for Philips Hue plugin': ['phue'],
         'Support for MPD/Mopidy music server plugin': ['python-mpd2'],
-        'Support for Belkin WeMo Switch plugin': ['git+https://github.com/iancmcc/ouimeaux'],
+        # 'Support for Belkin WeMo Switch plugin': ['git+https://github.com/iancmcc/ouimeaux'],
         'Support for text2speech plugin': ['mplayer'],
         'Support for OMXPlayer plugin': ['omxplayer'],
         'Support for YouTube in the OMXPlayer plugin': ['youtube-dl'],
