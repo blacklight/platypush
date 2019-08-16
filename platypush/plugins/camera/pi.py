@@ -292,7 +292,8 @@ class CameraPiPlugin(CameraPlugin):
 
         multifile = not video_file
         if multifile and not (directory and split_duration):
-            return None, 'No video_file specified for single file capture and no directory/split_duration specified for multifile split'
+            return None, 'No video_file specified for single file capture and no directory/split_duration ' + \
+                   'specified for multi-file split'
 
         camera = self._get_camera(**opts)
         video_file = os.path.abspath(os.path.expanduser(video_file))
@@ -306,39 +307,41 @@ class CameraPiPlugin(CameraPlugin):
                     self._recording_stop_condition.wait(timeout=duration)
                     self._recording_stop_condition.release()
                     self.logger.info('Video recorded to {}'.format(video_file))
-                else:
-                    self.logger.info('Starting recording video files to directory {}'.format(directory))
+                    return
 
-                    i = 1
-                    start_time = time.time()
-                    end_time = None
-                    if duration is not None:
-                        end_time = time.time() + duration
+                self.logger.info('Starting recording video files to directory {}'.format(directory))
+                i = 1
+                end_time = None
+                timeout = split_duration
 
-                    camera.start_recording(name_format % i, format='h264')
+                if duration is not None:
+                    end_time = time.time() + duration
+                    timeout = min(split_duration, duration)
+
+                camera.start_recording(name_format % i, format='h264')
+                self._recording_stop_condition.acquire()
+                self._recording_stop_condition.wait(timeout=timeout)
+                self._recording_stop_condition.release()
+                self.logger.info('Video file {} saved'.format(name_format % i))
+
+                while True:
+                    i += 1
+                    timeout = None
+
+                    if end_time:
+                        remaining_duration = end_time - time.time()
+                        timeout = min(split_duration, remaining_duration)
+                        if remaining_duration <= 0:
+                            break
+
+                    camera.split_recording(name_format % i)
                     self._recording_stop_condition.acquire()
-                    self._recording_stop_condition.wait(timeout=split_duration)
+                    should_stop = self._recording_stop_condition.wait(timeout=timeout)
                     self._recording_stop_condition.release()
                     self.logger.info('Video file {} saved'.format(name_format % i))
 
-                    while True:
-                        i += 1
-                        remaining_duration = None
-
-                        if end_time:
-                            remaining_duration = end_time - time.time()
-                            split_duration = min(split_duration, remaining_duration)
-                            if remaining_duration <= 0:
-                                break
-
-                        camera.split_recording(name_format % i)
-                        self._recording_stop_condition.acquire()
-                        should_stop = self._recording_stop_condition.wait(timeout=split_duration)
-                        self._recording_stop_condition.release()
-                        self.logger.info('Video file {} saved'.format(name_format % i))
-
-                        if should_stop:
-                            break
+                    if should_stop:
+                        break
             finally:
                 try:
                     camera.stop_recording()
@@ -368,6 +371,7 @@ class CameraPiPlugin(CameraPlugin):
         if self._recording_thread:
             self._recording_thread.join()
 
+    # noinspection PyShadowingBuiltins
     @action
     def start_streaming(self, listen_port=5000, format='h264', **opts):
         """
@@ -392,6 +396,7 @@ class CameraPiPlugin(CameraPlugin):
         server_socket.bind(('0.0.0.0', listen_port))
         server_socket.listen(1)
 
+        # noinspection PyBroadException
         def streaming_thread():
             try:
                 self.logger.info('Starting streaming on port {}'.format(listen_port))
@@ -412,9 +417,7 @@ class CameraPiPlugin(CameraPlugin):
                     try:
                         if stream:
                             camera.start_recording(stream, format=format)
-
-                            while not should_stop:
-                                camera.wait_recording(1)
+                            camera.wait_recording()
                     except ConnectionError:
                         self.logger.info('Client closed connection')
                     finally:
@@ -445,7 +448,7 @@ class CameraPiPlugin(CameraPlugin):
         self._streaming_thread.start()
 
     @action
-    def stop_streaming(self, **kwargs):
+    def stop_streaming(self):
         """
         Stop a camera streaming session
         """
