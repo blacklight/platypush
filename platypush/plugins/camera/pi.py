@@ -93,7 +93,10 @@ class CameraPiPlugin(CameraPlugin):
         Stop camera preview.
         """
         camera = self._get_camera()
-        camera.stop_preview()
+        try:
+            camera.stop_preview()
+        except Exception as e:
+            self.logger.warning(str(e))
 
     @action
     def take_picture(self, image_file, preview=False, warmup_time=2, resize=None, **opts):
