@@ -449,7 +449,8 @@ class CameraPiPlugin(CameraPlugin):
                     try:
                         if stream:
                             camera.start_recording(stream, format=format)
-                            camera.wait_recording()
+                            while True:
+                                camera.wait_recording(1)
                     except ConnectionError:
                         self.logger.info('Client closed connection')
                     finally:
