@@ -1,12 +1,12 @@
 import json
 import socket
-import time
 
 from enum import Enum
 from threading import Thread
 
 from platypush.backend import Backend
 from platypush.context import get_backend
+
 
 class CameraPiBackend(Backend):
     """
@@ -29,12 +29,13 @@ class CameraPiBackend(Backend):
         def __eq__(self, other):
             return self.value == other
 
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
     def __init__(self, listen_port, x_resolution=640, y_resolution=480,
                  redis_queue='platypush/camera/pi',
                  start_recording_on_startup=True,
                  framerate=24, hflip=False, vflip=False,
                  sharpness=0, contrast=0, brightness=50,
-                 video_stabilization=False, ISO=0, exposure_compensation=0,
+                 video_stabilization=False, iso=0, exposure_compensation=0,
                  exposure_mode='auto', meter_mode='average', awb_mode='auto',
                  image_effect='none', color_effects=None, rotation=0,
                  crop=(0.0, 0.0, 1.0, 1.0), **kwargs):
@@ -46,13 +47,14 @@ class CameraPiBackend(Backend):
         :type listen_port: int
         """
 
-        import picamera
         super().__init__(**kwargs)
 
         self.listen_port = listen_port
         self.server_socket = socket.socket()
         self.server_socket.bind(('0.0.0.0', self.listen_port))
         self.server_socket.listen(0)
+
+        import picamera
 
         self.camera = picamera.PiCamera()
         self.camera.resolution = (x_resolution, y_resolution)
@@ -63,7 +65,7 @@ class CameraPiBackend(Backend):
         self.camera.contrast = contrast
         self.camera.brightness = brightness
         self.camera.video_stabilization = video_stabilization
-        self.camera.ISO = ISO
+        self.camera.ISO = iso
         self.camera.exposure_compensation = exposure_compensation
         self.camera.exposure_mode = exposure_mode
         self.camera.meter_mode = meter_mode
@@ -76,7 +78,6 @@ class CameraPiBackend(Backend):
         self.redis = None
         self.redis_queue = redis_queue
         self._recording_thread = None
-
 
     def send_camera_action(self, action, **kwargs):
         action = {
@@ -97,17 +98,20 @@ class CameraPiBackend(Backend):
         self.camera.capture(image_file)
         self.logger.info('Captured camera snapshot to {}'.format(image_file))
 
+    # noinspection PyShadowingBuiltins
     def start_recording(self, video_file=None, format='h264'):
         """
         Start a recording.
 
-        :param video_file: Output video file. If specified, the video will be recorded to file, otherwise it will be served via TCP/IP on the listen_port. Use ``stop_recording`` to stop the recording.
+        :param video_file: Output video file. If specified, the video will be recorded to file, otherwise it will be
+            served via TCP/IP on the listen_port. Use ``stop_recording`` to stop the recording.
         :type video_file: str
 
         :param format: Video format (default: h264)
         :type format: str
         """
 
+        # noinspection PyBroadException
         def recording_thread():
             if video_file:
                 self.camera.start_recording(video_file, format=format)
@@ -116,8 +120,7 @@ class CameraPiBackend(Backend):
             else:
                 while True:
                     connection = self.server_socket.accept()[0].makefile('wb')
-                    self.logger.info('Accepted client connection on port {}'.
-                                    format(self.listen_port))
+                    self.logger.info('Accepted client connection on port {}'.format(self.listen_port))
 
                     try:
                         self.camera.start_recording(connection, format=format)
@@ -125,20 +128,17 @@ class CameraPiBackend(Backend):
                             self.camera.wait_recording(2)
                     except ConnectionError:
                         self.logger.info('Client closed connection')
-                        try: self.stop_recording()
-                        except: pass
+                        try:
+                            self.stop_recording()
+                        except:
+                            pass
 
-                        try: connection.close()
-                        except: pass
+                        try:
+                            connection.close()
+                        except:
+                            pass
 
                         self.send_camera_action(self.CameraAction.START_RECORDING)
-
-            self._recording_thread = None
-
-            try:
-                self.camera.stop_recording()
-            except:
-                pass
 
         if self._recording_thread:
             self.logger.info('Recording already running')
@@ -148,7 +148,6 @@ class CameraPiBackend(Backend):
         self._recording_thread = Thread(target=recording_thread,
                                         name='PiCameraRecorder')
         self._recording_thread.start()
-
 
     def stop_recording(self):
         """ Stops recording """
@@ -187,4 +186,3 @@ class CameraPiBackend(Backend):
 
 
 # vim:sw=4:ts=4:et:
-
