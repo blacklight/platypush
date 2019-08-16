@@ -63,7 +63,7 @@ class CameraPiPlugin(CameraPlugin):
 
     # noinspection PyUnresolvedReferences,PyPackageRequirements
     def _get_camera(self, **opts):
-        if self._camera:
+        if self._camera and not self._camera.closed:
             return self._camera
 
         import picamera
