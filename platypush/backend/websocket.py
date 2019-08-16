@@ -88,8 +88,9 @@ class WebsocketBackend(Backend):
                 self.logger.warning('Error on websocket send_event: {}'.format(e))
 
         loop = get_or_create_event_loop()
+        active_websockets = self.active_websockets.copy()
 
-        for websocket in self.active_websockets:
+        for websocket in active_websockets:
             try:
                 loop.run_until_complete(send_event(websocket))
             except websockets.exceptions.ConnectionClosed:
