@@ -116,6 +116,11 @@ class CameraPiPlugin(CameraPlugin):
             capture_opts['resize'] = tuple(resize)
 
         camera.capture(image_file, **capture_opts)
+
+        if preview:
+            camera.stop_preview()
+
+        camera.close()
         return {'image_file': image_file}
 
     @action
@@ -173,6 +178,11 @@ class CameraPiPlugin(CameraPlugin):
 
         images = [os.path.join(directory, name_format % (i+1)) for i in range(0, n_images)]
         camera.capture_sequence(images, **capture_opts)
+
+        if preview:
+            camera.stop_preview()
+
+        camera.close()
         return {'image_files': images}
 
     @action
