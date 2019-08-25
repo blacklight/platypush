@@ -124,26 +124,30 @@ class CameraPiPlugin(CameraPlugin):
 
         """
 
-        camera = self._get_camera(**opts)
-        image_file = os.path.abspath(os.path.expanduser(image_file))
+        camera = None
 
-        if preview:
-            camera.start_preview()
+        try:
+            camera = self._get_camera(**opts)
+            image_file = os.path.abspath(os.path.expanduser(image_file))
 
-        if warmup_time:
-            time.sleep(warmup_time)
+            if preview:
+                camera.start_preview()
 
-        capture_opts = {}
-        if resize:
-            capture_opts['resize'] = tuple(resize)
+            if warmup_time:
+                time.sleep(warmup_time)
 
-        camera.capture(image_file, **capture_opts)
+            capture_opts = {}
+            if resize:
+                capture_opts['resize'] = tuple(resize)
 
-        if preview:
-            camera.stop_preview()
+            camera.capture(image_file, **capture_opts)
 
-        camera.close()
-        return {'image_file': image_file}
+            if preview:
+                camera.stop_preview()
+            return {'image_file': image_file}
+        finally:
+            if camera:
+                camera.close()
 
     @action
     def capture_sequence(self, n_images, directory, name_format='image_%04d.jpg', preview=False, warmup_time=2,
@@ -179,33 +183,37 @@ class CameraPiPlugin(CameraPlugin):
 
         """
 
-        camera = self._get_camera(**opts)
-        directory = os.path.abspath(os.path.expanduser(directory))
+        camera = None
 
-        if preview:
-            camera.start_preview()
+        try:
+            camera = self._get_camera(**opts)
+            directory = os.path.abspath(os.path.expanduser(directory))
 
-        if warmup_time:
-            time.sleep(warmup_time)
-            camera.exposure_mode = 'off'
+            if preview:
+                camera.start_preview()
 
-        camera.shutter_speed = camera.exposure_speed
-        g = camera.awb_gains
-        camera.awb_mode = 'off'
-        camera.awb_gains = g
-        capture_opts = {}
+            if warmup_time:
+                time.sleep(warmup_time)
+                camera.exposure_mode = 'off'
 
-        if resize:
-            capture_opts['resize'] = tuple(resize)
+            camera.shutter_speed = camera.exposure_speed
+            g = camera.awb_gains
+            camera.awb_mode = 'off'
+            camera.awb_gains = g
+            capture_opts = {}
 
-        images = [os.path.join(directory, name_format % (i+1)) for i in range(0, n_images)]
-        camera.capture_sequence(images, **capture_opts)
+            if resize:
+                capture_opts['resize'] = tuple(resize)
 
-        if preview:
-            camera.stop_preview()
+            images = [os.path.join(directory, name_format % (i+1)) for i in range(0, n_images)]
+            camera.capture_sequence(images, **capture_opts)
 
-        camera.close()
-        return {'image_files': images}
+            if preview:
+                camera.stop_preview()
+
+            return {'image_files': images}
+        finally:
+            camera.close()
 
     @action
     def start_time_lapse(self, directory, n_images=None, interval=0, warmup_time=2,
