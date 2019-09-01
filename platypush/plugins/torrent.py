@@ -160,8 +160,8 @@ class TorrentPlugin(Plugin):
 
         for show in shows:
             request = urllib.request.urlopen(urllib.request.Request(
-                'https://tv-v2.api-fetch.website/show/' + show.get('_id')),
-                headers=self.headers)
+                'https://tv-v2.api-fetch.website/show/' + show.get('_id'),
+                headers=self.headers))
 
             show = json.loads(request.read().decode('utf-8'))
 
@@ -209,8 +209,8 @@ class TorrentPlugin(Plugin):
 
         for show in shows:
             request = urllib.request.urlopen(urllib.request.Request(
-                'https://anime.api-fetch.website/anime/' + show.get('_id')),
-                headers=self.headers)
+                'https://anime.api-fetch.website/anime/' + show.get('_id'),
+                headers=self.headers))
 
             show = json.loads(request.read().decode('utf-8'))
 
