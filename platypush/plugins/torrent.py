@@ -115,8 +115,7 @@ class TorrentPlugin(Plugin):
             ret += items
         return ret
 
-    @staticmethod
-    def search_movies(query, language=None):
+    def search_movies(self, query, language=None):
         request = urllib.request.urlopen(urllib.request.Request(
             'https://movies-v2.api-fetch.website/movies/1?' + urllib.parse.urlencode({
                 'sort': 'relevance',
@@ -148,8 +147,7 @@ class TorrentPlugin(Plugin):
             for (quality, item) in items.items()
         ], key=lambda _: _.get('seeds'), reverse=True)
 
-    @staticmethod
-    def search_tv(query):
+    def search_tv(self, query):
         request = urllib.request.urlopen(urllib.request.Request(
             'https://tv-v2.api-fetch.website/shows/1?' + urllib.parse.urlencode({
                 'sort': 'relevance',
@@ -198,8 +196,7 @@ class TorrentPlugin(Plugin):
 
         return results
 
-    @staticmethod
-    def search_anime(query):
+    def search_anime(self, query):
         request = urllib.request.urlopen(urllib.request.Request(
             'https://anime.api-fetch.website/animes/1?' + urllib.parse.urlencode({
                 'sort': 'relevance',
