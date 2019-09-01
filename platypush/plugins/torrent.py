@@ -37,6 +37,9 @@ class TorrentPlugin(Plugin):
 
     torrent_state = {}
     transfers = {}
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36'
+    }
 
     def __init__(self, download_dir=None, torrent_ports=None, **kwargs):
         """
@@ -118,7 +121,7 @@ class TorrentPlugin(Plugin):
             'https://movies-v2.api-fetch.website/movies/1?' + urllib.parse.urlencode({
                 'sort': 'relevance',
                 'keywords': query,
-            })
+            }), headers=self.headers
         ))
 
         response = json.loads(request.read().decode('utf-8'))
@@ -151,7 +154,7 @@ class TorrentPlugin(Plugin):
             'https://tv-v2.api-fetch.website/shows/1?' + urllib.parse.urlencode({
                 'sort': 'relevance',
                 'keywords': query,
-            })
+            }), headers=self.headers
         ))
 
         results = []
@@ -159,7 +162,8 @@ class TorrentPlugin(Plugin):
 
         for show in shows:
             request = urllib.request.urlopen(urllib.request.Request(
-                'https://tv-v2.api-fetch.website/show/' + show.get('_id')))
+                'https://tv-v2.api-fetch.website/show/' + show.get('_id')),
+                headers=self.headers)
 
             show = json.loads(request.read().decode('utf-8'))
 
@@ -200,7 +204,7 @@ class TorrentPlugin(Plugin):
             'https://anime.api-fetch.website/animes/1?' + urllib.parse.urlencode({
                 'sort': 'relevance',
                 'keywords': query,
-            })
+            }), headers=self.headers
         ))
 
         results = []
@@ -208,7 +212,8 @@ class TorrentPlugin(Plugin):
 
         for show in shows:
             request = urllib.request.urlopen(urllib.request.Request(
-                'https://anime.api-fetch.website/anime/' + show.get('_id')))
+                'https://anime.api-fetch.website/anime/' + show.get('_id')),
+                headers=self.headers)
 
             show = json.loads(request.read().decode('utf-8'))
 
