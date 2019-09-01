@@ -97,7 +97,7 @@ class TorrentPlugin(Plugin):
             results[cat] = self.categories[cat](query, *args, **kwargs)
 
         workers = [
-            threading.Thread(target=worker, kwargs={'category': category})
+            threading.Thread(target=worker, kwargs={'cat': category})
             for category in (category or self.categories.keys())
         ]
 
