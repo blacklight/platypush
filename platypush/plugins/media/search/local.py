@@ -99,6 +99,7 @@ class LocalMediaSearcher(MediaSearcher):
                 continue
             record = MediaToken.build(token=token)
             session.add(record)
+            records[token] = record
 
         session.commit()
         return session.query(MediaToken).filter(
