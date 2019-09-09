@@ -110,15 +110,17 @@ class CameraPlugin(Plugin):
         :type flip: int
         """
 
-        import cv2
         super().__init__(**kwargs)
 
         self._default_frames_dir = os.path.join(Config.get('workdir'), 'camera', 'frames')
         self.default_device_id = device_id
         self.frames_dir = os.path.abspath(os.path.expanduser(frames_dir or self._default_frames_dir))
         self.warmup_frames = warmup_frames
-        self.video_type = cv2.VideoWriter_fourcc(*video_type) \
-            if isinstance(video_type, str) else video_type
+        self.video_type = video_type
+
+        if isinstance(video_type, str):
+            import cv2
+            self.video_type = cv2.VideoWriter_fourcc(*video_type)
 
         self.sleep_between_frames = sleep_between_frames
         self.max_stored_frames = max_stored_frames
