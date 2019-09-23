@@ -16,7 +16,7 @@ class Rotation(enum.IntEnum):
 
 
 class SPISlot(enum.Enum):
-    FRONT = 'front',
+    FRONT = 'front'
     BACK = 'back'
 
 
@@ -59,7 +59,10 @@ class GpioSensorMotionPwm3901Plugin(GpioSensorPlugin):
             if isinstance(spi_slot, str):
                 spi_slot = [s for s in SPISlot if s.value == spi_slot][0]
 
-            self.spi_slot = BG_CS_FRONT_BCM if spi_slot == SPISlot.FRONT else BG_CS_BACK_BCM
+            if spi_slot == SPISlot.FRONT:
+                self.spi_slot = BG_CS_FRONT_BCM
+            else:
+                self.spi_slot = BG_CS_BACK_BCM
         except IndexError:
             raise ValueError('{} is not a valid value for spi_slot - possible values: {}'.format(
                 spi_slot, [s.value for s in SPISlot]))
