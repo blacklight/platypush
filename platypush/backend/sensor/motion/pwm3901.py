@@ -1,7 +1,7 @@
 from platypush.backend.sensor import SensorBackend
 
 
-class SensorPwm3901Backend(SensorBackend):
+class SensorMotionPwm3901Backend(SensorBackend):
     """
     Backend to poll an `PWM3901 <https://github.com/pimoroni/pmw3901-python>`_
     optical flow and motion sensor
