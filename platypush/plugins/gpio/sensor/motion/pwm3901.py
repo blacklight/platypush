@@ -1,5 +1,6 @@
 import enum
 import math
+import time
 
 # noinspection PyUnresolvedReferences,PyPackageRequirements
 from pmw3901 import PMW3901, BG_CS_FRONT_BCM, BG_CS_BACK_BCM
@@ -45,6 +46,8 @@ class GpioSensorMotionPwm3901Plugin(GpioSensorPlugin):
         super().__init__(**kwargs)
         self.spi_port = spi_port
         self._sensor = None
+        self._events_per_sec = {}
+        self.x, self.y = (0, 0)
 
         try:
             if isinstance(rotation, int):
@@ -84,6 +87,7 @@ class GpioSensorMotionPwm3901Plugin(GpioSensorPlugin):
                 "motion_x": 3,   # Detected motion vector X-coord
                 "motion_y": 4,   # Detected motion vector Y-coord
                 "motion_mod": 5  # Detected motion vector module
+                "motion_events_per_sec": 7  # Number of motion events detected in the last second
             }
 
         """
@@ -97,10 +101,20 @@ class GpioSensorMotionPwm3901Plugin(GpioSensorPlugin):
             self._sensor = None
             return {}, str(e)
 
+        secs = int(time.time())
+        if (x, y) != (self.x, self.y):
+            (self.x, self.y) = (x, y)
+
+            if secs not in self._events_per_sec:
+                self._events_per_sec = {secs: 1}
+            else:
+                self._events_per_sec[secs] += 1
+
         return {
             'motion_x': x,
             'motion_y': y,
             'motion_mod': math.sqrt(x * x + y * y),
+            'motion_events_per_sec': self._events_per_sec[secs],
         }
 
 
