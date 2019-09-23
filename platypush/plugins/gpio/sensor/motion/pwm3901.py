@@ -114,7 +114,7 @@ class GpioSensorMotionPwm3901Plugin(GpioSensorPlugin):
             'motion_x': x,
             'motion_y': y,
             'motion_mod': math.sqrt(x * x + y * y),
-            'motion_events_per_sec': self._events_per_sec[secs],
+            'motion_events_per_sec': self._events_per_sec.get(secs, 0),
         }
 
 
