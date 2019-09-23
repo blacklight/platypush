@@ -45,7 +45,6 @@ class GpioSensorMotionPwm3901Plugin(GpioSensorPlugin):
         super().__init__(**kwargs)
         self.spi_port = spi_port
         self._sensor = None
-        (self.x, self.y) = (0, 0)
 
         try:
             if isinstance(rotation, int):
@@ -82,28 +81,20 @@ class GpioSensorMotionPwm3901Plugin(GpioSensorPlugin):
         :returns: dict. Example::
 
             output = {
-                "motion_rel_x": 0,   # Detected relative motion vector X-coord
-                "motion_rel_y": 1,   # Detected relative motion vector Y-coord
-                "motion_abs_x": 3,   # Detected absolute motion vector X-coord
-                "motion_abs_y": 3,   # Detected absolute motion vector Y-coord
-                "motion_rel_mod": 1, # Detected relative motion vector module
-                "motion_abs_mod": 5  # Detected absolute motion vector module
+                "motion_x": 3,   # Detected motion vector X-coord
+                "motion_y": 4,   # Detected motion vector Y-coord
+                "motion_mod": 5  # Detected motion vector module
             }
 
         """
 
         sensor = self._get_sensor()
         x, y = sensor.get_motion()
-        self.x += x
-        self.y += y
 
         return {
-            'motion_rel_x': x,
-            'motion_rel_y': y,
-            'motion_abs_x': self.x,
-            'motion_abs_y': self.y,
-            'motion_rel_mod': math.sqrt(x * x + y * y),
-            'motion_abs_mod': math.sqrt(self.x * self.x + self.y * self.y),
+            'motion_x': x,
+            'motion_y': y,
+            'motion_mod': math.sqrt(x * x + y * y),
         }
 
 
