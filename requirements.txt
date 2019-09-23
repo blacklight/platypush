@@ -162,3 +162,6 @@ pyScss
 # Support for VL53L1X laser ranger/distance sensor
 # smbus2
 # vl53l1x
+
+# Support for PWM3901 2-Dimensional Optical Flow Sensor
+# pwm3901
