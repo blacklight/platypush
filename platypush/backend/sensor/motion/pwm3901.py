@@ -11,6 +11,8 @@ class SensorMotionPwm3901Backend(SensorBackend):
         * ``pwm3901`` (``pip install pwm3901``)
     """
 
+    _default_poll_seconds = 0.01
+
     def __init__(self, absolute=True, relative=True, **kwargs):
         """
         :param absolute: Enable absolute motion sensor events (default: true)
@@ -25,6 +27,10 @@ class SensorMotionPwm3901Backend(SensorBackend):
             'motion_abs_y': absolute,
             'motion_abs_mod': absolute,
         }
+
+        if 'poll_seconds' not in kwargs:
+            # noinspection PyTypeChecker
+            kwargs['poll_seconds'] = self._default_poll_seconds
 
         super().__init__(plugin='gpio.sensor.motion.pwm3901', enabled_sensors=enabled_sensors, **kwargs)
 
