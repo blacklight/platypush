@@ -98,7 +98,7 @@ class GpioSensorMotionPwm3901Plugin(GpioSensorPlugin):
             try:
                 x, y = sensor.get_motion()
                 break
-            except RuntimeError as e:
+            except RuntimeError:
                 time.sleep(0.01)
 
         secs = int(time.time())
