@@ -94,12 +94,12 @@ class GpioSensorMotionPwm3901Plugin(GpioSensorPlugin):
 
         sensor = self._get_sensor()
 
-        try:
-            x, y = sensor.get_motion()
-        except RuntimeError as e:
-            self.logger.warning('Unable to retrieve sensor data: {}'.format(e))
-            self._sensor = None
-            return {}, str(e)
+        while True:
+            try:
+                x, y = sensor.get_motion()
+                break
+            except RuntimeError as e:
+                time.sleep(0.01)
 
         secs = int(time.time())
         if (x, y) != (self.x, self.y):
