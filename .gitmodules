@@ -7,3 +7,6 @@
 [submodule "platypush/backend/http/static/flag-icons"]
 	path = platypush/backend/http/static/flag-icons
 	url = https://github.com/BlackLight/flag-icon-css.git
+[submodule "platypush/plugins/gpio/sensor/ir/mlx90640/lib"]
+	path = platypush/plugins/camera/ir/mlx90640/lib
+	url = https://github.com/pimoroni/mlx90640-library
