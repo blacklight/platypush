@@ -50,6 +50,7 @@ class CameraIrMlx90640Plugin(Plugin):
 
         if not rawrgb_path:
             rawrgb_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lib', 'examples', 'rawrgb')
+        rawrgb_path = os.path.abspath(os.path.expanduser(rawrgb_path))
 
         assert fps > 0
         assert skip_frames >= 0
