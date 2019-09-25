@@ -165,3 +165,6 @@ pyScss
 
 # Support for PWM3901 2-Dimensional Optical Flow Sensor
 # pwm3901
+
+# Support for MLX90640 thermal camera
+# Pillow
