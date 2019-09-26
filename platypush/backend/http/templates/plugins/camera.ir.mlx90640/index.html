@@ -14,7 +14,7 @@
                 <i class="fa fa-stop"></i>&nbsp; Stop streaming
             </button>
 
-            <select ref="rotate" @change="rotate = $event.target.value" :disabled="capturing">
+            <select ref="rotate" @change="onRotationChange" :disabled="capturing">
                 <option value="0" :selected="rotate == 0">0 degrees</option>
                 <option value="90" :selected="rotate == 90">90 degrees</option>
                 <option value="180" :selected="rotate == 180">180 degrees</option>

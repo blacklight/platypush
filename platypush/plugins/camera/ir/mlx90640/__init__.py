@@ -36,6 +36,11 @@ class CameraIrMlx90640Plugin(Plugin):
     """
 
     _img_size = (32, 24)
+    _rotate_values = {
+        90: Image.ROTATE_90,
+        180: Image.ROTATE_180,
+        270: Image.ROTATE_270,
+    }
 
     def __init__(self, fps=16, skip_frames=2, scale_factor=1, rotate=0, rawrgb_path=None, **kwargs):
         """
@@ -74,7 +79,7 @@ class CameraIrMlx90640Plugin(Plugin):
         return self._capture_proc
 
     @action
-    def capture(self, output_file=None, frames=1, grayscale=False, fps=None, skip_frames=None, scale_factor=None, rotate=None, format=None):
+    def capture(self, output_file=None, frames=1, grayscale=False, fps=None, skip_frames=None, scale_factor=None, rotate=None, format='jpeg'):
         """
         Capture one or multiple frames and return them as raw RGB
 
@@ -100,18 +105,18 @@ class CameraIrMlx90640Plugin(Plugin):
         :param rotate: If set it overrides the rotate parameter specified on the object (default: None)
         :type rotate: int
 
-        :param format: Output image format if output_file is not specified(default: None, raw RGB).
+        :param format: Output image format if output_file is not specified (default: jpeg).
             It can be jpg, png, gif or any format supported by PIL
         :type format: str
 
-        :returns: list[str]. Each item is a base64 encoded raw RGB representation of a frame if output_file is not set, otherwise a list with
+        :returns: list[str]. Each item is a base64 encoded representation of a frame in the specified format if output_file is not set, otherwise a list with
             the captured image files will be returned.
         """
 
         fps = self.fps if fps is None else fps
         skip_frames = self.skip_frames if skip_frames is None else skip_frames
         scale_factor = self.scale_factor if scale_factor is None else scale_factor
-        rotate = self.rotate if rotate is None else rotate
+        rotate = self._rotate_values.get(self.rotate if rotate is None else rotate, 0)
 
         size = self._img_size
         sleep_time = 1.0 / self.fps
@@ -132,21 +137,16 @@ class CameraIrMlx90640Plugin(Plugin):
 
             if grayscale:
                 image = self._convert_to_grayscale(image)
-            if rotate:
-                image = image.rotate(rotate)
             if scale_factor != 1:
                 size = tuple(i*scale_factor for i in size)
                 image = image.resize(size, Image.ANTIALIAS)
-
-            frame = image.getdata()
+            if rotate:
+                image = image.transpose(rotate)
 
             if not output_file:
-                if format:
-                    temp = io.BytesIO()
-                    image.save(temp, format=format)
-                    frame = temp.getvalue()
-
-                frame = base64.encodebytes(frame).decode()
+                temp = io.BytesIO()
+                image.save(temp, format=format)
+                frame = base64.encodebytes(temp.getvalue()).decode()
                 captured_frames.append(frame)
             else:
                 image_file = os.path.abspath(os.path.expanduser(output_file.format(n_captured_frames)))
