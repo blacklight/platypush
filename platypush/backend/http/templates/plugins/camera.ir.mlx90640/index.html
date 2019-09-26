@@ -1,0 +1,31 @@
+<script type="text/x-template" id="tmpl-camera-ir-mlx90640">
+    <div class="camera">
+        <div class="camera-container">
+            <div class="no-frame" v-if="!capturing">The camera is not active</div>
+            <img class="frame" ref="frame">
+        </div>
+
+        <div class="controls">
+            <button type="button" @click="startStreaming" v-if="!capturing">
+                <i class="fa fa-play"></i>&nbsp; Start streaming
+            </button>
+
+            <button type="button" @click="stopStreaming" v-else>
+                <i class="fa fa-stop"></i>&nbsp; Stop streaming
+            </button>
+
+            <select ref="rotate" @change="rotate = $event.target.value" :disabled="capturing">
+                <option value="0" :selected="rotate == 0">0 degrees</option>
+                <option value="90" :selected="rotate == 90">90 degrees</option>
+                <option value="180" :selected="rotate == 180">180 degrees</option>
+                <option value="270" :selected="rotate == 270">270 degrees</option>
+            </select>
+
+            <input type="checkbox" :checked="grayscale" :disabled="capturing"
+                @change="grayscale = $event.target.checked">
+                Grayscale
+            </input>
+        </div>
+    </div>
+</script>
+
