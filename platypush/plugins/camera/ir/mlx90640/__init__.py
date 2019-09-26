@@ -1,11 +1,11 @@
 import base64
 import io
-import math
 import os
 import subprocess
 import time
 
-from PIL import Image, ImageCms
+# noinspection PyPackageRequirements
+from PIL import Image
 
 from platypush.plugins import Plugin, action
 
@@ -46,7 +46,8 @@ class CameraIrMlx90640Plugin(Plugin):
         """
         :param fps: Frames per seconds (default: 16)
         :param skip_frames: Number of frames to be skipped on sensor initialization/warmup (default: 2)
-        :param scale_factor: The camera outputs 24x32 pixels artifacts. Use scale_factor to scale them up to a larger image (default: 1)
+        :param scale_factor: The camera outputs 24x32 pixels artifacts. Use scale_factor to scale them up to a larger
+            image (default: 1)
         :param rotate: Rotation angle in degrees (default: 0)
         :param rawrgb_path: Specify it if the rawrgb executable compiled from
             https://github.com/pimoroni/mlx90640-library is in another folder than
@@ -70,27 +71,34 @@ class CameraIrMlx90640Plugin(Plugin):
         self._capture_proc = None
 
     def _is_capture_proc_running(self):
-        return self._capture_proc != None and self._capture_proc.poll() == None
+        return self._capture_proc is not None and self._capture_proc.poll() is None
 
     def _get_capture_proc(self, fps):
         if not self._is_capture_proc_running():
-            self._capture_proc = subprocess.Popen([self.rawrgb_path, '{}'.format(self.fps)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            fps = fps or self.fps
+            self._capture_proc = subprocess.Popen([self.rawrgb_path, '{}'.format(fps)], stdin=subprocess.PIPE,
+                                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         return self._capture_proc
 
+    # noinspection PyShadowingBuiltins
     @action
-    def capture(self, output_file=None, frames=1, grayscale=False, fps=None, skip_frames=None, scale_factor=None, rotate=None, format='jpeg'):
+    def capture(self, output_file=None, frames=1, grayscale=False, fps=None, skip_frames=None, scale_factor=None,
+                rotate=None, format='jpeg'):
         """
         Capture one or multiple frames and return them as raw RGB
 
-        :param output_file: Can be either the path to a single image file or a format string (e.g. 'snapshots/image-{:04d}') in case of multiple frames.
-            If not set the function will return a list of base64 encoded representations of the raw RGB frames, otherwise the list of captured files.
+        :param output_file: Can be either the path to a single image file or a format string
+            (e.g. 'snapshots/image-{:04d}') in case of multiple frames. If not set the function will return a list of
+            base64 encoded representations of the raw RGB frames, otherwise the list of captured files.
         :type output_file: str
 
-        :param frames: Number of frames to be captured (default: 1). If None the capture process will proceed until `stop` is called.
+        :param frames: Number of frames to be captured (default: 1). If None the capture process will proceed until
+            `stop` is called.
         :type frames: int
 
-        :param grayscale: Save the image as grayscale - black pixels will be colder, white pixels warmer (default: False)
+        :param grayscale: Save the image as grayscale - black pixels will be colder, white pixels warmer
+            (default: False)
         :type grayscale: bool
 
         :param fps: If set it overrides the fps parameter specified on the object (default: None)
@@ -109,8 +117,8 @@ class CameraIrMlx90640Plugin(Plugin):
             It can be jpg, png, gif or any format supported by PIL
         :type format: str
 
-        :returns: list[str]. Each item is a base64 encoded representation of a frame in the specified format if output_file is not set, otherwise a list with
-            the captured image files will be returned.
+        :returns: list[str]. Each item is a base64 encoded representation of a frame in the specified format if
+            output_file is not set, otherwise a list with the captured image files will be returned.
         """
 
         fps = self.fps if fps is None else fps
@@ -125,7 +133,8 @@ class CameraIrMlx90640Plugin(Plugin):
         files = set()
         camera = self._get_capture_proc(fps)
 
-        while (frames is not None and n_captured_frames < frames) or (frames is None and self._is_capture_proc_running()):
+        while (frames is not None and n_captured_frames < frames) or (
+                frames is None and self._is_capture_proc_running()):
             frame = camera.stdout.read(size[0] * size[1] * 3)
 
             if skip_frames > 0:
@@ -138,7 +147,7 @@ class CameraIrMlx90640Plugin(Plugin):
             if grayscale:
                 image = self._convert_to_grayscale(image)
             if scale_factor != 1:
-                size = tuple(i*scale_factor for i in size)
+                size = tuple(i * scale_factor for i in size)
                 image = image.resize(size, Image.ANTIALIAS)
             if rotate:
                 image = image.transpose(rotate)
@@ -159,13 +168,14 @@ class CameraIrMlx90640Plugin(Plugin):
         self.stop()
         return sorted([f for f in files]) if output_file else captured_frames
 
-    def _convert_to_grayscale(self, image):
+    @staticmethod
+    def _convert_to_grayscale(image):
         new_image = Image.new('L', image.size)
 
         for i in range(0, image.size[0]):
             for j in range(0, image.size[1]):
                 r, g, b = image.getpixel((i, j))
-                value = int(2.0*r - 0.5*g - 1.5*b)
+                value = int(2.0 * r - 0.5 * g - 1.5 * b)
 
                 if value > 255:
                     value = 255
@@ -188,6 +198,5 @@ class CameraIrMlx90640Plugin(Plugin):
         self._capture_proc.kill()
         self._capture_proc.wait()
         self._capture_proc = None
-
 
 # vim:sw=4:ts=4:et:

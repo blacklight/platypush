@@ -1,7 +1,6 @@
 import base64
 import os
 import tempfile
-import time
 
 from flask import Response, request, Blueprint, send_from_directory
 
@@ -22,7 +21,7 @@ def get_feed(**args):
             frame = send_request(action='camera.ir.mlx90640.capture', **args).output[0]
             frame = base64.decodebytes(frame.encode())
             yield (b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
     finally:
         send_request(action='camera.ir.mlx90640.stop')
 
@@ -55,6 +54,5 @@ def get_feed_route():
 
     return Response(get_feed(**args),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
-
 
 # vim:sw=4:ts=4:et:
