@@ -172,3 +172,6 @@ pyScss
 # Support for machine learning CV plugin
 # cv2
 # numpy
+
+# Support for cronjobs
+croniter

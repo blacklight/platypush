@@ -133,6 +133,7 @@ setup(
         'pyyaml',
         'redis',
         'requests',
+        'croniter',
     ],
     extras_require = {
         'Support for custom thread and process names': ['python-prctl'],
