@@ -214,7 +214,7 @@ class SoundPlugin(Plugin):
 
         :param sound: Sound to play. Specify this if you want to play
             synthetic sounds. You can also create polyphonic sounds by just
-            calling play multple times.
+            calling play multiple times.
         :type sound: Sound. You can initialize it either from a list
             of `Sound` objects or from its JSON representation, e.g.::
 
