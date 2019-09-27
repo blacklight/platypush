@@ -168,3 +168,7 @@ pyScss
 
 # Support for MLX90640 thermal camera
 # Pillow
+
+# Support for machine learning CV plugin
+# cv2
+# numpy
