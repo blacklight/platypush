@@ -81,7 +81,7 @@ class CronScheduler(Thread):
                 if job.should_run():
                     job.start()
 
-            time.sleep(60)
+            time.sleep(0.5)
 
 
 # vim:sw=4:ts=4:et:
