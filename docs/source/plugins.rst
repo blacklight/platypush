@@ -53,6 +53,8 @@ Plugins
     platypush/plugins/media.vlc.rst
     platypush/plugins/media.webtorrent.rst
     platypush/plugins/midi.rst
+    platypush/plugins/ml.cv.rst
+    platypush/plugins/ml.__init__.rst
     platypush/plugins/mqtt.rst
     platypush/plugins/music.mpd.rst
     platypush/plugins/music.snapcast.rst
