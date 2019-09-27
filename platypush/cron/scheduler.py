@@ -28,12 +28,9 @@ class Cronjob(Thread):
 
 
     def should_run(self):
-        cron_units = re.split('\s+', self.cron_expression)
-        units = ('second', 'minute', 'hour', 'day', 'month', 'year') \
-                if len(cron_units) > 5 else \
-                ('minute', 'hour', 'day', 'month', 'year')
-
+        units = ('minute', 'hour', 'day', 'month', 'year')
         now = datetime.datetime.fromtimestamp(time.time())
+        cron_units = re.split('\s+', self.cron_expression)
 
         for i in range(0, len(units)):
             unit = units[i]
@@ -81,7 +78,7 @@ class CronScheduler(Thread):
                 if job.should_run():
                     job.start()
 
-            time.sleep(0.5)
+            time.sleep(60)
 
 
 # vim:sw=4:ts=4:et:
