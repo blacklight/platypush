@@ -28,9 +28,12 @@ class Cronjob(Thread):
 
 
     def should_run(self):
-        units = ('minute', 'hour', 'day', 'month', 'year')
-        now = datetime.datetime.fromtimestamp(time.time())
         cron_units = re.split('\s+', self.cron_expression)
+        units = ('second', 'minute', 'hour', 'day', 'month', 'year') \
+                if len(cron_units) > 5 else \
+                ('minute', 'hour', 'day', 'month', 'year')
+
+        now = datetime.datetime.fromtimestamp(time.time())
 
         for i in range(0, len(units)):
             unit = units[i]
