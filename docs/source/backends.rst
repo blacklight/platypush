@@ -14,8 +14,6 @@ Backends
     platypush/backend/camera.rst
     platypush/backend/google.fit.rst
     platypush/backend/gps.rst
-    platypush/backend/http.app.routes.plugins.camera.ir.__init__.rst
-    platypush/backend/http.app.routes.plugins.camera.ir.mlx90640.rst
     platypush/backend/http.poll.rst
     platypush/backend/http.request.rss.rst
     platypush/backend/http.rst
