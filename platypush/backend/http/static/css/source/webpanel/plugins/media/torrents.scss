@@ -7,6 +7,17 @@
                 padding: 0;
                 text-align: center;
 
+                .search {
+                    input[type=text] {
+                        width: 88%;
+                        max-width: none;
+                    }
+
+                    input[type=submit] {
+                        width: 8%;
+                    }
+                }
+
                 .head {
                     font-weight: bold;
                     padding: .5rem 0 2.5rem 0;

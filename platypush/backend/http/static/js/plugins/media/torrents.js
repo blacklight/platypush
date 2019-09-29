@@ -63,6 +63,16 @@ Vue.component('media-torrents', {
             this.selectedItem = item;
             openDropdown(this.$refs.menu);
         },
+
+        onMagnetDownload: async function() {
+            const magnet = this.$refs.magnetLink.value.trim();
+            if (!magnet.length)
+                return;
+
+            const ret = await request('torrent.download', {
+                torrent: magnet,
+            });
+        }
     },
 });
 

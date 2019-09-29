@@ -2,6 +2,15 @@
 
 <script type="text/x-template" id="tmpl-media-torrents">
     <div class="transfers-container">
+        <div class="search">
+            <form @submit.prevent="onMagnetDownload">
+                <input type="text" ref="magnetLink" placeholder="Magnet link">
+                <button type="submit">
+                    <i class="fas fa-download"></i>
+                </button>
+            </form>
+        </div>
+
         <div class="head">
             <div class="col-4">Name</div>
             <div class="col-2">State</div>
