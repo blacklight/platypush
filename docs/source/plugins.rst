@@ -16,6 +16,7 @@ Plugins
     platypush/plugins/camera.rst
     platypush/plugins/clipboard.rst
     platypush/plugins/db.rst
+    platypush/plugins/dropbox.rst
     platypush/plugins/file.rst
     platypush/plugins/google.calendar.rst
     platypush/plugins/google.credentials.rst

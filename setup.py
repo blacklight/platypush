@@ -177,6 +177,7 @@ setup(
         'Support for BME280 environment sensor': ['pimoroni-bme280'],
         'Support for LTR559 light/proximity sensor': ['ltr559'],
         'Support for VL53L1X laser ranger/distance sensor': ['smbus2','vl53l1x'],
+        'Support for Dropbox integration': ['dropbox'],
         # 'Support for Leap Motion backend': ['git+ssh://git@github.com:BlackLight/leap-sdk-python3.git'],
         # 'Support for Flic buttons': ['git+https://@github.com/50ButtonsEach/fliclib-linux-hci.git']
         # 'Support for media subtitles': ['git+https://github.com/agonzalezro/python-opensubtitles#egg=python-opensubtitles']

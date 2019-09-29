@@ -175,3 +175,6 @@ pyScss
 
 # Support for cronjobs
 croniter
+
+# Support for Dropbox
+# dropbox
