@@ -42,6 +42,7 @@ class MediaPlugin(Plugin):
     # A media plugin can either be local or remote (e.g. control media on
     # another device)
     _is_local = True
+    _youtube_fifo = os.path.join(tempfile.gettempdir(), 'youtube_video.sock')
 
     _NOT_IMPLEMENTED_ERR = NotImplementedError(
         'This method must be implemented in a derived class')
@@ -137,6 +138,7 @@ class MediaPlugin(Plugin):
 
         self.media_dirs.add(self.download_dir)
         self._videos_queue = []
+        self._youtube_proc = None
 
     @staticmethod
     def _torrent_event_handler(evt_queue):
@@ -157,12 +159,20 @@ class MediaPlugin(Plugin):
         """
 
         if resource.startswith('youtube:') \
+                or resource.startswith('https://youtu.be/') \
                 or resource.startswith('https://www.youtube.com/watch?v='):
+            m = re.match('youtube:video:(.*)', resource)
+            if not m:
+                m = re.match('https://youtu.be/(.*)', resource)
+            if m:
+                resource = 'https://www.youtube.com/watch?v={}'.format(m.group(1))
+
             if self.__class__.__name__ == 'MediaChromecastPlugin':
                 # The Chromecast has already its native way to handle YouTube
                 return resource
 
-            resource = self.get_youtube_url(resource).output
+            self.stream_youtube_to_fifo(resource)
+            resource = 'file://' + self._youtube_fifo
         elif resource.startswith('magnet:?'):
             self.logger.info('Downloading torrent {} to {}'.format(
                 resource, self.download_dir))
@@ -457,6 +467,24 @@ class MediaPlugin(Plugin):
                          .format(len(results), query))
 
         return results
+
+    def stream_youtube_to_fifo(self, url):
+        if self._youtube_proc:
+            self.logger.info('Terminating existing YouTube process')
+            self._youtube_proc.terminate()
+            self._youtube_proc = None
+
+        if os.path.exists(self._youtube_fifo):
+            os.unlink(self._youtube_fifo)
+
+        os.mkfifo(self._youtube_fifo, 0o644)
+
+        def _youtube_dl_thread():
+            self._youtube_proc = subprocess.Popen(['youtube-dl', '-f', 'best', '-o', self._youtube_fifo, url])
+            self._youtube_proc.wait()
+            self._youtube_proc = None
+
+        threading.Thread(target=_youtube_dl_thread).start()
 
     @action
     def get_youtube_url(self, url):

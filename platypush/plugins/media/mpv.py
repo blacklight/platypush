@@ -1,5 +1,4 @@
 import os
-import re
 import threading
 
 from platypush.context import get_bus
@@ -102,19 +101,6 @@ class MediaMpvPlugin(MediaPlugin):
 
         return callback
 
-    @staticmethod
-    def _get_youtube_link(resource):
-        base_url = 'https://youtu.be/'
-        regexes = ['^https://(www\.)?youtube.com/watch\?v=([^?&#]+)',
-                   '^https://(www\.)?youtu.be.com/([^?&#]+)',
-                   '^(youtube:video):([^?&#]+)']
-
-        for regex in regexes:
-            m = re.search(regex, resource)
-            if m:
-                return base_url + m.group(2)
-        return None
-
     @action
     def execute(self, cmd, **args):
         """
@@ -150,10 +136,6 @@ class MediaMpvPlugin(MediaPlugin):
 
         if resource.startswith('file://'):
             resource = resource[7:]
-        else:
-            yt_resource = self._get_youtube_link(resource)
-            if yt_resource:
-                resource = yt_resource
 
         self._player.play(resource)
         return self.status()
