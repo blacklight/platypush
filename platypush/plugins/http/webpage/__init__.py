@@ -77,9 +77,22 @@ class HttpWebpagePlugin(Plugin):
                 'content': content,
             }
 
-        content = '<body style="{body_style}"><h1>{title}</h1>{content}</body>'. \
-            format(title=title, content=content,
-                   body_style='font-size: 22px; font-family: Tahoma, Geneva, Verdana, Helvetica, sans-serif')
+        content = '''<html>
+            <head>
+                <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather" />
+                <title>{title}</title>
+                <style>
+                    body {{
+                        font-size: 22px;
+                        font-family: 'Merriweather', Georgia, 'Times New Roman', Times, serif;
+                    }}
+                </style>
+            </head>
+            <body>
+                <h1>{title}</h1>
+                {content}
+            </body>
+        </html>'''.format(title=title, content=content)
 
         outfile = os.path.abspath(os.path.expanduser(outfile))
 
