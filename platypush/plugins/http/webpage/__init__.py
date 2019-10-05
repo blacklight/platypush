@@ -77,29 +77,37 @@ class HttpWebpagePlugin(Plugin):
                 'content': content,
             }
 
-        content = '''<html>
-            <head>
-                <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather" />
-                <title>{title}</title>
-                <style>
-                    body {{
-                        font-size: 22px;
-                        font-family: 'Merriweather', Georgia, 'Times New Roman', Times, serif;
-                    }}
-                </style>
-            </head>
-            <body>
-                <h1>{title}</h1>
-                {content}
-            </body>
-        </html>'''.format(title=title, content=content)
-
         outfile = os.path.abspath(os.path.expanduser(outfile))
+        content = '''<h1>{title}</h1><div class="_parsed-content">{content}</div>'''.\
+            format(title=title, content=content)
+
+        style = '''
+            body {
+                font-size: 22px;
+                font-family: 'Merriweather', Georgia, 'Times New Roman', Times, serif;
+            }
+            '''
 
         if outfile.lower().endswith('.pdf'):
             import weasyprint
-            weasyprint.HTML(string=content).write_pdf(outfile)
+            from weasyprint.fonts import FontConfiguration
+
+            font_config = FontConfiguration()
+            css = [weasyprint.CSS('https://fonts.googleapis.com/css?family=Merriweather'),
+                   weasyprint.CSS(string=style, font_config=font_config)]
+
+            weasyprint.HTML(string=content).write_pdf(outfile, stylesheets=css)
         else:
+            content = '''
+                <html>
+                    <head>
+                        <title>{title}</title>
+                        <style>{style}</style>
+                    </head>
+                    <body>{{content}}</body>
+                </html>
+            '''.format(title=title, style=style, content=content)
+
             with open(outfile, 'w', encoding='utf-8') as f:
                 f.write(content)
 
