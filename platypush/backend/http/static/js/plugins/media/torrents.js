@@ -71,6 +71,7 @@ Vue.component('media-torrents', {
 
             const ret = await request('torrent.download', {
                 torrent: magnet,
+                _async: false,
             });
         }
     },
