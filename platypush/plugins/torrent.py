@@ -408,8 +408,7 @@ class TorrentPlugin(Plugin):
         if not self._session:
             # noinspection PyArgumentList
             self._session = lt.session()
-
-        self._session.listen_on(*self.torrent_ports)
+            self._session.listen_on(*self.torrent_ports)
 
         params = {
             'save_path': download_dir,
