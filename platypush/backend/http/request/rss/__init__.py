@@ -99,11 +99,18 @@ class RssUpdates(HttpRequest):
             self.title = feed.feed['title']
             source_record.title = self.title
 
-        digest = u'''
+        content = u'''
             <h1 style="margin-top: 30px">{}</h1>
             <h2 style="margin-top: 10px; page-break-after: always">
                 Feeds digest generated on {} </h2>'''.format(self.title,
                                                              datetime.datetime.now().strftime('%d %B %Y, %H:%M'))
+
+        style = '''
+            body {
+                font-size: 22px;
+                font-family: 'Merriweather', Georgia, 'Times New Roman', Times, serif;
+            }
+            '''
 
         self.logger.info('Parsed {:d} items from RSS feed <{}>'
                          .format(len(feed.entries), self.url))
@@ -127,8 +134,8 @@ class RssUpdates(HttpRequest):
                     else:
                         entry.content = None
 
-                    digest += '<h1 style="page-break-before: always">{}</h1>{}' \
-                        .format(entry.title, entry.content)
+                    content += u'''<h1 style="page-break-before: always">{}</h1>
+                        <div class="_parsed-content">{}</div>'''.format(entry.title, entry.content)
 
                     e = {
                         'entry_id': entry.id,
@@ -164,11 +171,27 @@ class RssUpdates(HttpRequest):
                 os.makedirs(os.path.dirname(digest_filename), exist_ok=True)
 
                 if self.digest_format == 'html':
+                    content = '''
+                        <html>
+                            <head>
+                                <title>{title}</title>
+                                <style>{style}</style>
+                            </head>
+                            <body>{{content}}</body>
+                        </html>
+                    '''.format(title=self.title, style=style, content=content)
+
                     with open(digest_filename, 'w', encoding='utf-8') as f:
-                        f.write(digest)
+                        f.write(content)
                 elif self.digest_format == 'pdf':
                     import weasyprint
-                    weasyprint.HTML(string=digest).write_pdf(digest_filename)
+                    from weasyprint.fonts import FontConfiguration
+
+                    font_config = FontConfiguration()
+                    css = [weasyprint.CSS('https://fonts.googleapis.com/css?family=Merriweather'),
+                           weasyprint.CSS(string=style, font_config=font_config)]
+
+                    weasyprint.HTML(string=content).write_pdf(digest_filename, stylesheets=css)
                 else:
                     raise RuntimeError('Unsupported format: {}. Supported formats: ' +
                                        'html or pdf'.format(self.digest_format))
