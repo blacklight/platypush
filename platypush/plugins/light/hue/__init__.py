@@ -775,8 +775,9 @@ class LightHuePlugin(LightPlugin):
             'transition_seconds': transition_seconds,
         }
 
-        for g in groups:
-            self.animations['groups'][g.group_id] = info
+        if groups:
+            for g in groups:
+                self.animations['groups'][g.group_id] = info
 
         for l in self.bridge.lights:
             if l.name in lights:
