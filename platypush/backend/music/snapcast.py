@@ -4,7 +4,6 @@ import threading
 import time
 
 from platypush.backend import Backend
-from platypush.context import get_plugin
 from platypush.utils import set_thread_name
 from platypush.message.event.music.snapcast import ClientVolumeChangeEvent, \
     GroupMuteChangeEvent, ClientConnectedEvent, ClientDisconnectedEvent, \
@@ -68,16 +67,15 @@ class MusicSnapcastBackend(Backend):
             for _ in range(len(ports), len(hosts)):
                 self.ports.append(self._DEFAULT_SNAPCAST_PORT)
 
-
     def _connect(self, host, port):
         if self._socks.get(host):
             return self._socks[host]
 
-        self.logger.debug('Connecting to {}:{}'.format(host, port))
+        self.logger.debug('Connecting to {host}:{port}'.format(host=host, port=port))
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((host, port))
         self._socks[host] = sock
-        self.logger.info('Connected to {}:{}'.format(host, port))
+        self.logger.info('Connected to {host}:{port}'.format(host=host, port=port))
         return sock
 
     def _disconnect(self, host, port):
@@ -86,9 +84,13 @@ class MusicSnapcastBackend(Backend):
             self.logger.debug('Not connected to {}:{}'.format(host, port))
             return
 
-        try: sock.close()
-        except: pass
-        finally: self._socks[host] = None
+        try:
+            sock.close()
+        except Exception as e:
+            self.logger.warning(('Exception while disconnecting from {host}:{port}: {error}'.
+                                 format(host=host, port=port, error=str(e))))
+        finally:
+            self._socks[host] = None
 
     @classmethod
     def _recv(cls, sock):
@@ -139,22 +141,9 @@ class MusicSnapcastBackend(Backend):
 
         return evt
 
-    def _client(self, host, port):
+    def _client(self, host, port, thread_name):
         def _thread():
-            set_thread_name('Snapcast-' + host)
-
-            try:
-                self._status(host, port)
-            except Exception as e:
-                self.logger.warning(('Exception while getting the status ' +
-                                     'of the Snapcast server {}:{}: {}').
-                                    format(host, port, str(e)))
-
-                try:
-                    self._disconnect(host, port)
-                    time.sleep(self.poll_seconds)
-                except:
-                    pass
+            set_thread_name(thread_name)
 
             while not self.should_stop():
                 try:
@@ -165,46 +154,21 @@ class MusicSnapcastBackend(Backend):
                         msgs = [msgs]
 
                     for msg in msgs:
-                        self.logger.debug('Received message on {}:{}: {}'.format(
-                            host, port, msg))
+                        self.logger.debug('Received message on {host}:{port}: {msg}'.
+                                          format(host=host, port=port, msg=msg))
 
                         evt = self._parse_msg(host=host, msg=msg)
                         if evt:
                             self.bus.post(evt)
                 except Exception as e:
-                    self.logger.warning(('Exception while getting the status ' +
-                                         'of the Snapcast server {}:{}: {}').
+                    self.logger.warning('Exception while getting the status ' + 'of the Snapcast server {}:{}: {}'.
                                         format(host, port, str(e)))
 
-                    try:
-                        self._disconnect(host, port)
-                    except:
-                        pass
-                    finally:
-                        time.sleep(self.poll_seconds)
+                    self._disconnect(host, port)
+                finally:
+                    time.sleep(self.poll_seconds)
 
         return _thread
-
-    @classmethod
-    def _get_req_id(cls):
-        return get_plugin('music.snapcast')._get_req_id()
-
-    def _status(self, host, port):
-        sock = self._connect(host, port)
-
-        request = {
-            'id': self._get_req_id(),
-            'jsonrpc':'2.0',
-            'method':'Server.GetStatus'
-        }
-
-        get_plugin('music.snapcast')._send(sock, request)
-        try:
-            return self._recv(sock).get('result', {}).get('server', {})
-        except Exception as e:
-            self.logger.warning('Unable to connect to {}:{}: {}'.format(
-                host, port, str(e)))
-            self._socks[host] = None
 
     def run(self):
         super().run()
@@ -215,9 +179,11 @@ class MusicSnapcastBackend(Backend):
         while not self.should_stop():
             for i, host in enumerate(self.hosts):
                 port = self.ports[i]
+                thread_name = 'Snapcast-{host}-{port}'.format(host=host, port=port)
+
                 self._threads[host] = threading.Thread(
-                    target=self._client(host, port),
-                    name='Snapcast-' + host
+                    target=self._client(host, port, thread_name),
+                    name=thread_name
                 )
 
                 self._threads[host].start()
