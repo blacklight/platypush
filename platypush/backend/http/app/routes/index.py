@@ -1,6 +1,6 @@
 import os
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 
 from platypush.backend.http.app import template_folder, static_folder
 from platypush.backend.http.app.utils import authenticate, get_websocket_port
@@ -26,12 +26,22 @@ def index():
     enabled_scripts = {}
     enabled_styles = {}
 
+    enabled_plugins = set(request.args.get('enabled_plugins', '').split(','))
+    for plugin in enabled_plugins:
+        if plugin not in configured_plugins:
+            configured_plugins[plugin] = {}
+
+    disabled_plugins = set(request.args.get('disabled_plugins', '').split(','))
+
     js_folder = os.path.abspath(
         os.path.join(template_folder, '..', 'static', 'js'))
     style_folder = os.path.abspath(
         os.path.join(template_folder, '..', 'static', 'css', 'dist'))
 
     for plugin, conf in configured_plugins.items():
+        if plugin in disabled_plugins:
+            continue
+
         template_file = os.path.join(
             template_folder, 'plugins', plugin, 'index.html')
 
