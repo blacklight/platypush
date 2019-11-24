@@ -43,14 +43,14 @@ class AssistantEchoPlugin(AssistantPlugin):
         * **avs** (``pip install avs``)
     """
 
-    def __init__(self, avs_config_file=DEFAULT_CONFIG_FILE, language='en-US', **kwargs):
+    def __init__(self, avs_config_file=DEFAULT_CONFIG_FILE, **kwargs):
         """
         :param avs_config_file: AVS credentials file - default: ~/.avs.json. If the file doesn't exist then
             an instance of the AVS authentication service will be spawned. You can login through an Amazon
             account either in the spawned browser window, if available, or by opening http://your-ip:3000
             in the browser on another machine.
         """
-        super().__init__(language=language, **kwargs)
+        super().__init__(**kwargs)
 
         if not avs_config_file or not os.path.isfile(avs_config_file):
             auth(None, avs_config_file)
@@ -108,7 +108,7 @@ class AssistantEchoPlugin(AssistantPlugin):
         return _callback
 
     @action
-    def start_conversation(self):
+    def start_conversation(self, **kwargs):
         """
         Programmatically start a conversation with the assistant
         """
