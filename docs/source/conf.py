@@ -226,6 +226,8 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'pwm3901',
                         'PIL',
                         'croniter',
+                        'pyaudio',
+                        'avs',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))
