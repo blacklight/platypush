@@ -14,8 +14,7 @@ from platypush.plugins import action
 from platypush.plugins.assistant import AssistantPlugin
 
 from platypush.message.event.assistant import ConversationStartEvent, \
-    ConversationEndEvent, SpeechRecognizedEvent, VolumeChangedEvent, \
-    ResponseEvent
+    ConversationEndEvent, SpeechRecognizedEvent, ResponseEvent
 
 
 class AssistantEchoPlugin(AssistantPlugin):
@@ -44,14 +43,14 @@ class AssistantEchoPlugin(AssistantPlugin):
         * **avs** (``pip install avs``)
     """
 
-    def __init__(self, avs_config_file=DEFAULT_CONFIG_FILE, **kwargs):
+    def __init__(self, avs_config_file=DEFAULT_CONFIG_FILE, language='en-US', **kwargs):
         """
         :param avs_config_file: AVS credentials file - default: ~/.avs.json. If the file doesn't exist then
             an instance of the AVS authentication service will be spawned. You can login through an Amazon
             account either in the spawned browser window, if available, or by opening http://your-ip:3000
             in the browser on another machine.
         """
-        super().__init__(**kwargs)
+        super().__init__(language=language, **kwargs)
 
         if not avs_config_file or not os.path.isfile(avs_config_file):
             auth(None, avs_config_file)
@@ -65,6 +64,7 @@ class AssistantEchoPlugin(AssistantPlugin):
         self.alexa.state_listener.on_ready = self._on_ready()
         self.alexa.state_listener.on_listening = self._on_listening()
         self.alexa.state_listener.on_speaking = self._on_speaking()
+        self.alexa.state_listener.on_thinking = self._on_thinking()
         self.alexa.state_listener.on_finished = self._on_finished()
         self.alexa.state_listener.on_disconnected = self._on_disconnected()
 
@@ -98,6 +98,13 @@ class AssistantEchoPlugin(AssistantPlugin):
     def _on_disconnected(self):
         def _callback():
             self._ready = False
+        return _callback
+
+    @staticmethod
+    def _on_thinking():
+        def _callback():
+            # AVS doesn't provide a way to access the detected text
+            get_bus().post(SpeechRecognizedEvent(phrase=''))
         return _callback
 
     @action
