@@ -3,17 +3,12 @@
 .. license: MIT
 """
 
-import json
 import os
-import subprocess
 import threading
-import time
 
 from platypush.backend import Backend
 from platypush.context import get_plugin
-from platypush.message.event.assistant import \
-    ConversationStartEvent, ConversationEndEvent, \
-    SpeechRecognizedEvent, HotwordDetectedEvent
+from platypush.message.event.assistant import HotwordDetectedEvent
 
 
 class AssistantSnowboyBackend(Backend):
