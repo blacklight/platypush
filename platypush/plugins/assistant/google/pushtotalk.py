@@ -55,7 +55,9 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
                  device_config=os.path.join(
                      os.path.expanduser('~'), '.config', 'googlesamples-assistant',
                      'device_config.json'),
-                 language='en-US', **kwargs):
+                 language='en-US',
+                 play_response=True,
+                 **kwargs):
         """
         :param credentials_file: Path to the Google OAuth credentials file
             (default: ~/.config/google-oauthlib-tool/credentials.json).
@@ -71,6 +73,10 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
         :param language: Assistant language (default: en-US)
         :type language: str
+
+        :param play_response: If True (default) then the plugin will play the assistant response upon processed
+            response. Otherwise nothing will be played - but you may want to handle the ``ResponseEvent`` manually.
+        :type play_response: bool
         """
 
         super().__init__(**kwargs)
@@ -78,6 +84,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         self.language = language
         self.credentials_file = credentials_file
         self.device_config = device_config
+        self.play_response = play_response
         self.assistant = None
         self.interactions = []
 
@@ -223,6 +230,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
                              display=None,
                              channel=self.grpc_channel,
                              deadline_sec=self.grpc_deadline,
+                             play_response=self.play_response,
                              device_handler=self.device_handler,
                              on_conversation_start=self.on_conversation_start(),
                              on_conversation_end=self.on_conversation_end(),

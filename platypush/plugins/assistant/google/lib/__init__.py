@@ -50,7 +50,7 @@ class SampleAssistant(object):
 
     def __init__(self, language_code, device_model_id, device_id,
                  conversation_stream, display,
-                 channel, deadline_sec, device_handler,
+                 channel, deadline_sec, device_handler, play_response=True,
                  on_conversation_start=None, on_conversation_end=None,
                  on_speech_recognized=None, on_volume_changed=None,
                  on_response=None):
@@ -59,7 +59,7 @@ class SampleAssistant(object):
         self.device_id = device_id
         self.conversation_stream = conversation_stream
         self.display = display
-        self.play_response = True
+        self.play_response = play_response
 
         # Opaque blob provided in AssistResponse that,
         # when provided in a follow-up AssistRequest,
@@ -94,6 +94,7 @@ class SampleAssistant(object):
             return False
         self.conversation_stream.close()
 
+    @staticmethod
     def is_grpc_error_unavailable(e):
         is_grpc_error = isinstance(e, grpc.RpcError)
         if is_grpc_error and (e.code() == grpc.StatusCode.UNAVAILABLE):
@@ -115,7 +116,6 @@ class SampleAssistant(object):
         if self.on_conversation_start:
             self.on_conversation_start()
 
-        self.play_response = True
         logging.info('Recording audio request.')
 
         def iter_log_assist_requests():
