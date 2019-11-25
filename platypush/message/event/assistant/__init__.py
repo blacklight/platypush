@@ -1,8 +1,7 @@
 import logging
-import re
 
 from platypush.context import get_backend, get_plugin
-from platypush.message.event import Event, EventMatchResult
+from platypush.message.event import Event
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +23,7 @@ class AssistantEvent(Event):
             if not self._assistant:
                 logger.warning('Assistant plugin/backend not configured/initialized')
                 self._assistant = None
+
 
 class ConversationStartEvent(AssistantEvent):
     """
@@ -94,9 +94,6 @@ class SpeechRecognizedEvent(AssistantEvent):
         super().__init__(*args, phrase=phrase, **kwargs)
         self.recognized_phrase = phrase.strip().lower()
 
-        if not self._assistant and assistant:
-            self._assistant = assistant
-
     def matches_condition(self, condition):
         """
         Overrides matches condition, and stops the conversation to prevent the
@@ -104,10 +101,8 @@ class SpeechRecognizedEvent(AssistantEvent):
         """
 
         result = super().matches_condition(condition)
-
         if result.is_match and self._assistant and 'phrase' in condition.args:
-            if self._assistant:
-                self._assistant.stop_conversation()
+            self._assistant.stop_conversation()
 
         return result
 
