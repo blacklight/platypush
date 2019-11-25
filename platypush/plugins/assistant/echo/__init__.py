@@ -23,7 +23,7 @@ class AssistantEchoPlugin(AssistantPlugin):
 
     In order to activate the Echo service on your device follow these steps:
 
-        1. Install avs (``pip install avs``)
+        1. Install avs (``pip install git+https://github.com:BlackLight/avs.git``)
         2. Run the ``alexa-auth`` script. A local webservice will start on port 3000
         3. If a browser instance doesn't open automatically then head to http://localhost:3000
         4. Log in to your Amazon account
@@ -43,12 +43,14 @@ class AssistantEchoPlugin(AssistantPlugin):
         * **avs** (``pip install avs``)
     """
 
-    def __init__(self, avs_config_file=DEFAULT_CONFIG_FILE, **kwargs):
+    def __init__(self, avs_config_file: str = DEFAULT_CONFIG_FILE, audio_device: str = 'default', **kwargs):
         """
         :param avs_config_file: AVS credentials file - default: ~/.avs.json. If the file doesn't exist then
             an instance of the AVS authentication service will be spawned. You can login through an Amazon
             account either in the spawned browser window, if available, or by opening http://your-ip:3000
             in the browser on another machine.
+
+        :param audio_device: Name of the input audio device (default: 'default')
         """
         super().__init__(**kwargs)
 
@@ -57,7 +59,8 @@ class AssistantEchoPlugin(AssistantPlugin):
             self.logger.warning('Amazon Echo assistant credentials not configured. Open http://localhost:3000 ' +
                                 'to authenticate this client')
 
-        self.audio = Audio()
+        self.audio_device = audio_device
+        self.audio = Audio(device_name=audio_device)
         self.alexa = Alexa(avs_config_file)
         self._ready = False
 

@@ -178,3 +178,6 @@ croniter
 
 # Support for Dropbox
 # dropbox
+
+# Support for Alexa/Echo voice integrations
+# git+https://github.com:BlackLight/avs.git
