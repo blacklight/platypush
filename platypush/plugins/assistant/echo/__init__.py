@@ -79,23 +79,20 @@ class AssistantEchoPlugin(AssistantPlugin):
             self._ready = True
         return _callback
 
-    @staticmethod
-    def _on_listening():
+    def _on_listening(self):
         def _callback():
-            get_bus().post(ConversationStartEvent())
+            get_bus().post(ConversationStartEvent(assistant=self))
         return _callback
 
-    @staticmethod
-    def _on_speaking():
+    def _on_speaking(self):
         def _callback():
             # AVS doesn't provide a way to access the response text
-            get_bus().post(ResponseEvent(response_text=''))
+            get_bus().post(ResponseEvent(assistant=self, response_text=''))
         return _callback
 
-    @staticmethod
-    def _on_finished():
+    def _on_finished(self):
         def _callback():
-            get_bus().post(ConversationEndEvent())
+            get_bus().post(ConversationEndEvent(assistant=self))
         return _callback
 
     def _on_disconnected(self):
@@ -103,11 +100,10 @@ class AssistantEchoPlugin(AssistantPlugin):
             self._ready = False
         return _callback
 
-    @staticmethod
-    def _on_thinking():
+    def _on_thinking(self):
         def _callback():
             # AVS doesn't provide a way to access the detected text
-            get_bus().post(SpeechRecognizedEvent(phrase=''))
+            get_bus().post(SpeechRecognizedEvent(assistant=self, phrase=''))
         return _callback
 
     @action
