@@ -5,14 +5,12 @@
 
 import json
 import os
-import subprocess
 import time
 
 import google.oauth2.credentials
 
 from google.assistant.library import Assistant
 from google.assistant.library.event import EventType, AlertType
-from google.assistant.library.file_helpers import existing_file
 
 from platypush.backend import Backend
 from platypush.message.event.assistant import \
@@ -100,17 +98,17 @@ class AssistantGoogleBackend(Backend):
         self._has_error = False
 
         if event.type == EventType.ON_CONVERSATION_TURN_STARTED:
-            self.bus.post(ConversationStartEvent())
+            self.bus.post(ConversationStartEvent(assistant=self))
         elif event.type == EventType.ON_CONVERSATION_TURN_FINISHED:
             if not event.args.get('with_follow_on_turn'):
-                self.bus.post(ConversationEndEvent())
+                self.bus.post(ConversationEndEvent(assistant=self))
         elif event.type == EventType.ON_CONVERSATION_TURN_TIMEOUT:
-            self.bus.post(ConversationTimeoutEvent())
+            self.bus.post(ConversationTimeoutEvent(assistant=self))
         elif event.type == EventType.ON_NO_RESPONSE:
-            self.bus.post(NoResponseEvent())
+            self.bus.post(NoResponseEvent(assistant=self))
         elif hasattr(EventType, 'ON_RENDER_RESPONSE') and \
-            event.type == EventType.ON_RENDER_RESPONSE:
-            self.bus.post(ResponseEvent(response_text=event.args.get('text')))
+                event.type == EventType.ON_RENDER_RESPONSE:
+            self.bus.post(ResponseEvent(assistant=self, response_text=event.args.get('text')))
         elif hasattr(EventType, 'ON_RESPONDING_STARTED') and \
                 event.type == EventType.ON_RESPONDING_STARTED and \
                 event.args.get('is_error_response', False) is True:
@@ -118,21 +116,21 @@ class AssistantGoogleBackend(Backend):
         elif event.type == EventType.ON_RECOGNIZING_SPEECH_FINISHED:
             phrase = event.args['text'].lower().strip()
             self.logger.info('Speech recognized: {}'.format(phrase))
-            self.bus.post(SpeechRecognizedEvent(phrase=phrase))
+            self.bus.post(SpeechRecognizedEvent(assistant=self, phrase=phrase))
         elif event.type == EventType.ON_ALERT_STARTED:
             if event.args.get('alert_type') == AlertType.ALARM:
-                self.bus.post(AlarmStartedEvent())
+                self.bus.post(AlarmStartedEvent(assistant=self))
             elif event.args.get('alert_type') == AlertType.TIMER:
-                self.bus.post(TimerStartedEvent())
+                self.bus.post(TimerStartedEvent(assistant=self))
             else:
-                self.bus.post(AlertStartedEvent())
+                self.bus.post(AlertStartedEvent(assistant=self))
         elif event.type == EventType.ON_ALERT_FINISHED:
             if event.args.get('alert_type') == AlertType.ALARM:
-                self.bus.post(AlarmEndEvent())
+                self.bus.post(AlarmEndEvent(assistant=self))
             elif event.args.get('alert_type') == AlertType.TIMER:
-                self.bus.post(TimerEndEvent())
+                self.bus.post(TimerEndEvent(assistant=self))
             else:
-                self.bus.post(AlertEndEvent())
+                self.bus.post(AlertEndEvent(assistant=self))
         elif event.type == EventType.ON_ASSISTANT_ERROR:
             self._has_error = True
             if event.args.get('is_fatal'):
@@ -140,18 +138,15 @@ class AssistantGoogleBackend(Backend):
             else:
                 self.logger.warning('Assistant error')
 
-
     def start_conversation(self):
         """ Starts an assistant conversation """
         if self.assistant:
             self.assistant.start_conversation()
 
-
     def stop_conversation(self):
         """ Stops an assistant conversation """
         if self.assistant:
             self.assistant.stop_conversation()
-
 
     def run(self):
         super().run()

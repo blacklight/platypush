@@ -142,42 +142,39 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
         self._install_device_handlers()
 
-    @staticmethod
-    def on_conversation_start():
+    def on_conversation_start(self):
         """ Conversation start handler """
         def handler():
-            get_bus().post(ConversationStartEvent())
+            get_bus().post(ConversationStartEvent(assistant=self))
 
         return handler
 
-    @staticmethod
-    def on_conversation_end():
+    def on_conversation_end(self):
         """ Conversation end handler """
         def handler(with_follow_on_turn):
-            get_bus().post(ConversationEndEvent(with_follow_on_turn=with_follow_on_turn))
+            get_bus().post(ConversationEndEvent(assistant=self, with_follow_on_turn=with_follow_on_turn))
 
         return handler
 
     def on_speech_recognized(self):
         """ Speech recognized handler """
         def handler(phrase):
-            get_bus().post(SpeechRecognizedEvent(phrase=phrase))
+            get_bus().post(SpeechRecognizedEvent(assistant=self, phrase=phrase))
             self.interactions.append({'request': phrase})
 
         return handler
 
-    @staticmethod
-    def on_volume_changed():
+    def on_volume_changed(self):
         """ Volume changed event """
         def handler(volume):
-            get_bus().post(VolumeChangedEvent(volume=volume))
+            get_bus().post(VolumeChangedEvent(assistant=self, volume=volume))
 
         return handler
 
     def on_response(self):
         """ Response handler """
         def handler(response):
-            get_bus().post(ResponseEvent(response_text=response))
+            get_bus().post(ResponseEvent(assistant=self, response_text=response))
 
             if not self.interactions:
                 self.interactions.append({'response': response})
@@ -254,7 +251,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
                 self.conversation_stream.stop_playback()
                 self.conversation_stream.stop_recording()
 
-            get_bus().post(ConversationEndEvent())
+            get_bus().post(ConversationEndEvent(assistant=self))
 
     def _install_device_handlers(self):
         self.device_handler = device_helpers.DeviceRequestHandler(self.device_id)
