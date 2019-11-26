@@ -6,6 +6,7 @@ Plugins
     :caption: Plugins:
 
     platypush/plugins/adafruit.io.rst
+    platypush/plugins/assistant.echo.rst
     platypush/plugins/assistant.google.pushtotalk.rst
     platypush/plugins/assistant.google.rst
     platypush/plugins/autoremote.rst
