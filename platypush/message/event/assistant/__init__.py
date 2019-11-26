@@ -70,18 +70,6 @@ class ResponseEvent(ConversationEndEvent):
 
         super().__init__(*args, response_text=response_text, **kwargs)
 
-    def matches_condition(self, condition):
-        """
-        Overrides matches condition, and stops the conversation to prevent the
-        default assistant response if the event matched some event hook condition
-        """
-
-        result = super().matches_condition(condition)
-        if result.is_match and self._assistant:
-            self._assistant.stop_conversation()
-
-        return result
-
 
 class NoResponseEvent(ConversationEndEvent):
     """
