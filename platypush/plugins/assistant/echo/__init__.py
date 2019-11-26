@@ -43,7 +43,8 @@ class AssistantEchoPlugin(AssistantPlugin):
         * **avs** (``pip install avs``)
     """
 
-    def __init__(self, avs_config_file: str = DEFAULT_CONFIG_FILE, audio_device: str = 'default', **kwargs):
+    def __init__(self, avs_config_file: str = DEFAULT_CONFIG_FILE, audio_device: str = 'default',
+                 audio_player: str = 'default', **kwargs):
         """
         :param avs_config_file: AVS credentials file - default: ~/.avs.json. If the file doesn't exist then
             an instance of the AVS authentication service will be spawned. You can login through an Amazon
@@ -51,6 +52,8 @@ class AssistantEchoPlugin(AssistantPlugin):
             in the browser on another machine.
 
         :param audio_device: Name of the input audio device (default: 'default')
+        :param audio_player: Player to be used for audio playback (default: 'default').
+            Supported values: 'mpv', 'mpg123', 'gstreamer'
         """
         super().__init__(**kwargs)
 
@@ -60,8 +63,9 @@ class AssistantEchoPlugin(AssistantPlugin):
                                 'to authenticate this client')
 
         self.audio_device = audio_device
+        self.audio_player = audio_player
         self.audio = Audio(device_name=audio_device)
-        self.alexa = Alexa(avs_config_file)
+        self.alexa = Alexa(avs_config_file, audio_player=audio_player)
         self._ready = False
 
         self.alexa.state_listener.on_ready = self._on_ready()
