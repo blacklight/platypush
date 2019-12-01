@@ -90,11 +90,12 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
     for dep in deps:
         content += '\t&& pip install {} \\\n'.format(dep)
 
-    content += '\t&& pip install ' + \
-               'git+https://github.com/BlackLight/platypush.git \\\n'
+    content += textwrap.dedent(
+        '''
+        RUN pip install git+https://github.com/BlackLight/platypush.git
+        RUN apk del git && apk del build-base
 
-    content += '\t&& apk del git \\\n'
-    content += '\t&& apk del build-base\n\n'
+        ''')
 
     for port in ports:
         content += 'EXPOSE {}\n'.format(port)
