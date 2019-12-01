@@ -92,7 +92,8 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
 
     content += textwrap.dedent(
         '''
-        RUN pip install git+https://github.com/BlackLight/platypush.git
+        RUN git clone https://github.com/BlackLight/platypush.git /app && cd /app
+        RUN pip install -r requirements.txt && python setup.py build install
         RUN apk del git && apk del build-base
 
         ''')
@@ -100,7 +101,7 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
     for port in ports:
         content += 'EXPOSE {}\n'.format(port)
 
-    content += '\nCMD ["python3", "-m", "platypush"]\n'
+    content += '\nCMD ["python", "-m", "platypush"]\n'
     dockerfile = os.path.join(devdir, 'Dockerfile')
     print('Generating Dockerfile {}'.format(dockerfile))
 
