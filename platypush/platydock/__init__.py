@@ -17,21 +17,19 @@ import sys
 import textwrap
 import traceback as tb
 
-import platypush
-
 from platypush.config import Config
 from platypush.context import register_backends, get_plugin, get_backend
 
-
 workdir = os.path.join(os.path.expanduser('~'), '.local', 'share',
-        'platypush', 'platydock')
+                       'platypush', 'platydock')
+
 
 class Action(enum.Enum):
     build = 'build'
     start = 'start'
-    stop  = 'stop'
-    rm    = 'rm'
-    ls    = 'ls'
+    stop = 'stop'
+    rm = 'rm'
+    ls = 'ls'
 
     def __str__(self):
         return self.value
@@ -47,30 +45,28 @@ def _parse_deps(cls):
 
     return deps
 
-def generate_dockerfile(deps, ports, cfgfile, devdir):
+
+def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
     device_id = Config.get('device_id')
     if not device_id:
         raise RuntimeError(('You need to specify a device_id in {} - Docker ' +
-                           'containers cannot rely on hostname').format(cfgfile))
+                            'containers cannot rely on hostname').format(cfgfile))
 
-    try:
-        os.makedirs(devdir)
-    except FileExistsError:
-        pass
-
+    os.makedirs(devdir, exist_ok=True)
     content = textwrap.dedent(
         '''
-        FROM python:alpine3.7
+        FROM python:alpine{python_version}
 
         RUN mkdir -p /etc/platypush
         RUN mkdir -p /usr/local/share/platypush\n
-        ''').lstrip()
+        '''.format(python_version=python_version)).lstrip()
 
     srcdir = os.path.dirname(cfgfile)
     cfgfile_copy = os.path.join(devdir, 'config.yaml')
     subprocess.call(['cp', cfgfile, cfgfile_copy])
     content += 'COPY config.yaml /etc/platypush/\n'
 
+    # noinspection PyProtectedMember
     for include in Config._included_files:
         incdir = os.path.relpath(os.path.dirname(include), srcdir)
         destdir = os.path.join(devdir, incdir)
@@ -83,8 +79,7 @@ def generate_dockerfile(deps, ports, cfgfile, devdir):
         subprocess.call(['cp', include, destdir])
         content += 'RUN mkdir -p /etc/platypush/' + incdir + '\n'
         content += 'COPY ' + os.path.relpath(include, srcdir) + \
-            ' /etc/platypush/' + incdir + '\n'
-
+                   ' /etc/platypush/' + incdir + '\n'
 
     content += textwrap.dedent(
         '''
@@ -96,7 +91,7 @@ def generate_dockerfile(deps, ports, cfgfile, devdir):
         content += '\t&& pip install {} \\\n'.format(dep)
 
     content += '\t&& pip install ' + \
-        'git+https://github.com/BlackLight/platypush.git \\\n'
+               'git+https://github.com/BlackLight/platypush.git \\\n'
 
     content += '\t&& apk del git \\\n'
     content += '\t&& apk del build-base\n\n'
@@ -120,14 +115,17 @@ def build(args):
 
     parser = argparse.ArgumentParser(prog='platydock build',
                                      description='Build a Platypush image ' +
-                                     'from a config.yaml')
+                                                 'from a config.yaml')
 
     parser.add_argument('-c', '--config', type=str, required=True,
                         help='Path to the platypush configuration file')
+    parser.add_argument('-p', '--python-version', type=str, default='3.8',
+                        help='Python version to be used')
 
     opts, args = parser.parse_known_args(args)
 
     cfgfile = os.path.abspath(os.path.expanduser(opts.config))
+    python_version = opts.python_version
     Config.init(cfgfile)
     register_backends()
     backend_config = Config.get_backends()
@@ -150,11 +148,11 @@ def build(args):
     for name in Config.get_plugins().keys():
         try:
             deps.update(_parse_deps(get_plugin(name)))
-        except:
-            pass
+        except Exception as ex:
+            print('Dependencies parsing error for {}: {}'.format(name, str(ex)))
 
     devdir = os.path.join(workdir, Config.get('device_id'))
-    generate_dockerfile(deps=deps, ports=ports, cfgfile=cfgfile, devdir=devdir)
+    generate_dockerfile(deps=deps, ports=ports, cfgfile=cfgfile, devdir=devdir, python_version=python_version)
 
     subprocess.call(['docker', 'build', '-t', 'platypush-{}'.format(
         Config.get('device_id')), devdir])
@@ -164,8 +162,8 @@ def start(args):
     global workdir
 
     parser = argparse.ArgumentParser(prog='platydock start',
-                description='Start a Platypush container',
-                epilog=textwrap.dedent('''
+                                     description='Start a Platypush container',
+                                     epilog=textwrap.dedent('''
                                        You can append additional options that
                                        will be passed to the docker container.
                                        Example:
@@ -239,9 +237,9 @@ def rm(args):
 
     parser = argparse.ArgumentParser(prog='platydock rm',
                                      description='Remove a Platypush image. ' +
-                                     'NOTE: make sure that no container is ' +
-                                     'running nor linked to the image before ' +
-                                     'removing it')
+                                                 'NOTE: make sure that no container is ' +
+                                                 'running nor linked to the image before ' +
+                                                 'removing it')
 
     parser.add_argument('image', type=str, help='Platypush image to remove')
     opts, args = parser.parse_known_args(args)
@@ -274,12 +272,14 @@ def ls(args):
         for image in images:
             print(image)
 
+
 def main():
     parser = argparse.ArgumentParser(prog='platydock', add_help=False,
                                      description='Manage Platypush docker containers',
                                      epilog='Use platydock <action> --help to ' +
-                                     'get additional help')
+                                            'get additional help')
 
+    # noinspection PyTypeChecker
     parser.add_argument('action', nargs='?', type=Action, choices=list(Action),
                         help='Action to execute')
     parser.add_argument('-h', '--help', action='store_true', help='Show usage')
@@ -301,6 +301,5 @@ if __name__ == '__main__':
     except Exception as e:
         tb.print_exc(file=sys.stdout)
         print(ERR_PREFIX + str(e) + ERR_SUFFIX, file=sys.stderr)
-
 
 # vim:sw=4:ts=4:et:

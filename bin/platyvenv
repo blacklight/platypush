@@ -17,7 +17,7 @@ function build {
     cfgfile=
 
     while getopts ':c:' opt; do
-        case $opt in
+        case ${opt} in
             c)
                 cfgfile=$OPTARG;;
             \?)
@@ -29,7 +29,7 @@ function build {
         esac
     done
 
-    if [ -z "$cfgfile" ]; then
+    if [[ -z "$cfgfile" ]]; then
         echo "Usage: $0 build -c <path-to-platypush-config-file>" >&2
         exit 1
     fi
@@ -39,18 +39,18 @@ function build {
     includes=()
 
     while read -r line; do
-        echo $line | egrep '``pip install .+?``' > /dev/null 2>&1
+        echo ${line} | egrep '``pip install .+?``' > /dev/null 2>&1
         if (( $? != 0 )); then
             continue
         fi
 
-        dep=$(echo $line | sed -r -e 's/.*``pip install (.+?)``.*/\1/')
+        dep=$(echo ${line} | sed -r -e 's/.*``pip install (.+?)``.*/\1/')
         deps+=("$dep")
     done <<< $(python <<EOF
 from platypush.config import Config
 from platypush.context import get_plugin, get_backend, register_backends
 
-Config.init('`realpath $cfgfile`')
+Config.init('`realpath ${cfgfile}`')
 register_backends()
 backend_config = Config.get_backends()
 
@@ -68,12 +68,12 @@ EOF
 )
 
     while read -r include; do
-        includes+=($include)
+        includes+=(${include})
     done <<< $(python <<EOF
 from platypush.config import Config
 from platypush.context import get_plugin, get_backend, register_backends
 
-Config.init('`realpath $cfgfile`')
+Config.init('`realpath ${cfgfile}`')
 
 for include in Config._included_files:
     print(include)
@@ -83,13 +83,13 @@ EOF
     device_id=$(python <<EOF
 from platypush.config import Config
 
-Config.init('`realpath $cfgfile`')
+Config.init('`realpath ${cfgfile}`')
 print(Config.get('device_id'))
 EOF
 )
 
-    envdir=$workdir/$device_id
-    etcdir=$envdir/etc/platypush
+    envdir=${workdir}/${device_id}
+    etcdir=${envdir}/etc/platypush
 
     echo "Preparing virtual environment for device $device_id"
     mkdir -p "$envdir"
@@ -105,18 +105,18 @@ EOF
     done
 
     cp "$cfgfile" "$etcdir/config.yaml"
-    cfgfile=$etcdir/config.yaml
+    cfgfile=${etcdir}/config.yaml
 
-    python3 -m venv $envdir
-    cd $envdir
-    source $envdir/bin/activate
+    python3 -m venv ${envdir}
+    cd ${envdir}
+    source ${envdir}/bin/activate
 
     echo "Installing required dependencies"
 
     for ((i=0; $i < ${#deps[@]}; i++)); do
         echo ${deps[$i]}
     done | sort -u | while read dep; do
-        pip install $dep
+        pip install ${dep}
     done
 
     pip install --upgrade git+https://github.com/BlackLight/platypush.git
@@ -124,29 +124,29 @@ EOF
 }
 
 function start {
-    if [ -z "$1" ]; then
+    if [[ -z "$1" ]]; then
         echo "Usage: $0 start <env-name>" >&2
         exit 1
     fi
 
     env=$1
-    envdir=$workdir/$env
-    logsdir=$envdir/var/log/platypush
-    rundir=$envdir/var/run
-    pidfile=$rundir/platypush.pid
-    cfgfile=$envdir/etc/platypush/config.yaml
+    envdir=${workdir}/${env}
+    logsdir=${envdir}/var/log/platypush
+    rundir=${envdir}/var/run
+    pidfile=${rundir}/platypush.pid
+    cfgfile=${envdir}/etc/platypush/config.yaml
 
-    if [ ! -d "$envdir" ]; then
+    if [[ ! -d "$envdir" ]]; then
         echo "No such directory: $envdir" >&2
         exit 1
     fi
 
-    mkdir -p $logsdir
-    mkdir -p $rundir
+    mkdir -p ${logsdir}
+    mkdir -p ${rundir}
 
     if [[ -f "$pidfile" ]]; then
         pid=`cat "$pidfile"`
-        if ps -p $pid | grep platypush; then
+        if ps -p ${pid} | grep platypush; then
             echo "Another instance (PID $pid) is running, please stop that instance first"
             exit 1
         fi
@@ -155,10 +155,10 @@ function start {
         rm -f "$pidfile"
     fi
 
-    python3 -m venv $envdir
-    cd $envdir
+    python3 -m venv ${envdir}
+    cd ${envdir}
     source bin/activate
-    bin/platypush -c "$cfgfile" -P "$pidfile" > $logsdir/stdout.log 2> $logsdir/stderr.log &
+    bin/platypush -c "$cfgfile" -P "$pidfile" > ${logsdir}/stdout.log 2> ${logsdir}/stderr.log &
     start_time=`date +'%s'`
     timeout=30
 
@@ -166,7 +166,7 @@ function start {
         [[ -f "$pidfile" ]] && break
         now=`date +'%s'`
         let elapsed=$now-$start_time
-        if (( $elapsed >= $timeout )); then
+        if (( ${elapsed} >= ${timeout} )); then
             echo "Platypush instance '$env' didn't start within $timeout seconds" >&2
             exit 1
         fi
@@ -181,44 +181,44 @@ function start {
 }
 
 function stop {
-    if [ -z "$1" ]; then
+    if [[ -z "$1" ]]; then
         echo "Usage: $0 stop <env-name>" >&2
         exit 1
     fi
 
     env=$1
-    envdir=$workdir/$env
-    rundir=$envdir/var/run
-    pidfile=$rundir/platypush.pid
+    envdir=${workdir}/${env}
+    rundir=${envdir}/var/run
+    pidfile=${rundir}/platypush.pid
 
-    if [ ! -d "$envdir" ]; then
+    if [[ ! -d "$envdir" ]]; then
         echo "No such directory: $envdir" >&2
         exit 1
     fi
 
     if [[ ! -f "$pidfile" ]]; then
-        echo "No pidfile found for instance "$env""
+        echo "No pidfile found for instance "${env}""
         exit 1
     fi
 
     pid=`cat "$pidfile"`
     pids="$pid `ps --no-headers -o pid= --ppid $pid`"
-    kill -9 $pids
+    kill -9 ${pids}
     rm -f "$pidfile"
     echo "Instance '$env' with PID $pid stopped"
 }
 
 function rme {
-    if [ -z "$1" ]; then
+    if [[ -z "$1" ]]; then
         echo "Usage: $0 rm <env-name>" >&2
         exit 1
     fi
 
-    envdir=$workdir/$1
-    rundir=$envdir/var/run
-    pidfile=$rundir/platypush.pid
+    envdir=${workdir}/$1
+    rundir=${envdir}/var/run
+    pidfile=${rundir}/platypush.pid
 
-    if [ ! -d "$envdir" ]; then
+    if [[ ! -d "$envdir" ]]; then
         echo "No such directory: $envdir" >&2
         exit 1
     fi
@@ -247,10 +247,10 @@ fi
 
 action=$1
 shift
-mkdir -p $workdir
+mkdir -p ${workdir}
 
-case $action in
-    'build') build $*;;
+case ${action} in
+    'build') build;;
     'start') start $*;;
     'stop') stop $*;;
     'rm') rme $*;;
