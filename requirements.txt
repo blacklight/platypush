@@ -51,7 +51,7 @@ bcrypt
 # git+https://github.com/iancmcc/ouimeaux
 
 # Google Assistant support
-# google-assistant-sdk
+# google-assistant-sdk[samples]
 # google-assistant-library
 
 # Google APIs general layer support
@@ -80,7 +80,7 @@ bcrypt
 # snowboy
 
 # Support for the RaspberryPi camera module
-# apt install python3-picamera
+# picamera
 
 # Support for torrents download
 # python-libtorrent

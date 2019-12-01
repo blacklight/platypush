@@ -134,53 +134,113 @@ setup(
         'redis',
         'requests',
         'croniter',
+        'pyScss',
     ],
+
     extras_require = {
-        'Support for custom thread and process names': ['python-prctl'],
-        'Support for Apache Kafka backend': ['kafka-python'],
-        'Support for Pushbullet backend': ['requests', 'pushbullet.py'],
-        'Support for HTTP backend': ['flask','websockets', 'python-dateutil'],
-        'Support for HTTP poll backend': ['frozendict'],
-        'Support for external web server': ['uwsgi'],
-        'Support for database plugin': ['sqlalchemy'],
-        'Support for RSS feeds': ['feedparser'],
-        'Support for PDF generation': ['weasyprint'],
-        'Support for Philips Hue plugin': ['phue'],
-        'Support for MPD/Mopidy music server plugin': ['python-mpd2'],
-        # 'Support for Belkin WeMo Switch plugin': ['git+https://github.com/iancmcc/ouimeaux'],
-        'Support for text2speech plugin': ['mplayer'],
-        'Support for OMXPlayer plugin': ['omxplayer'],
-        'Support for YouTube in the OMXPlayer plugin': ['youtube-dl'],
-        'Support for torrents download': ['python-libtorrent'],
-        'Support for Google Assistant': ['google-assistant-library'],
-        'Support for the Google APIs': ['google-api-python-client'],
-        'Support for most of the HTTP poll backends': ['python-dateutil'],
-        'Support for Last.FM scrobbler plugin': ['pylast'],
-        'Support for custom hotword detection': ['snowboy'],
-        'Support for real-time MIDI events': ['rtmidi'],
-        'Support for GPIO pins access': ['RPi.GPIO'],
-        'Support for MCP3008 analog-to-digital converter plugin': ['adafruit-mcp3008'],
-        'Support for smart cards detection': ['pyscard'],
-        'Support for ICal calendars': ['icalendar', 'python-dateutil'],
-        'Support for joystick backend': ['inputs'],
-        'Support for Kodi plugin': ['kodi-json'],
-        'Support for Plex plugin': ['plexapi'],
-        'Support for Chromecast plugin': ['pychromecast'],
-        'Support for sound devices': ['sounddevice', 'soundfile', 'numpy'],
-        'Support for web media subtitles': ['webvtt-py'],
-        'Support for mopidy backend': ['websocket-client'],
-        'Support for mpv player plugin': ['python-mpv'],
-        'Support for compiling SASS/SCSS styles to CSS': ['pyScss'],
-        'Support for NFC tags': ['nfcpy>=1.0', 'ndef'],
-        'Support for enviropHAT': ['envirophat'],
-        'Support for GPS': ['gps'],
-        'Support for BME280 environment sensor': ['pimoroni-bme280'],
-        'Support for LTR559 light/proximity sensor': ['ltr559'],
-        'Support for VL53L1X laser ranger/distance sensor': ['smbus2','vl53l1x'],
-        'Support for Dropbox integration': ['dropbox'],
-        # 'Support for Leap Motion backend': ['git+ssh://git@github.com:BlackLight/leap-sdk-python3.git'],
-        # 'Support for Flic buttons': ['git+https://@github.com/50ButtonsEach/fliclib-linux-hci.git']
-        # 'Support for media subtitles': ['git+https://github.com/agonzalezro/python-opensubtitles#egg=python-opensubtitles']
+        # Support for thread custom name
+        'threadname': ['python-prctl'],
+        # Support for Kafka backend and plugin
+        'kafka': ['kafka-python'],
+        # Support for Pushbullet backend and plugin
+        'pushbullet': ['pushbullet.py'],
+        # Support for HTTP backend
+        'http': ['flask','websockets', 'python-dateutil', 'tz', 'frozendict', 'uwsgi'],
+        # Support for database
+        'db': ['sqlalchemy'],
+        # Support for MQTT backends
+        'mqtt': ['paho-mqtt'],
+        # Support for RSS feeds parser
+        'rss': ['feedparser'],
+        # Support for PDF generation
+        'pdf': ['weasyprint'],
+        # Support for Philips Hue plugin
+        'phue': ['phue'],
+        # Support for MPD/Mopidy music server plugin and backend
+        'mpd': ['python-mpd2', 'websocket-client'],
+        # Support for Belkin WeMo Switch plugin
+        'wemo' : ['ouimeaux @ https://github.com/iancmcc/ouimeaux/tarball/master'],
+        # Support for text2speech plugin
+        'tts': ['mplayer'],
+        # Support for Google text2speech plugin
+        'google-tts': ['google-cloud-texttospeech'],
+        # Support for OMXPlayer plugin
+        'omxplayer': ['omxplayer-wrapper'],
+        # Support for YouTube
+        'youtube': ['youtube-dl'],
+        # Support for torrents download
+        'torrent': ['python-libtorrent'],
+        # Support for RaspberryPi camera
+        'picamera': ['picamera'],
+        # Support for inotify file monitors
+        'inotify': ['inotify'],
+        # Support for Google Assistant
+        'google-assistant-legacy': ['google-assistant-library'],
+        'google-assistant': ['google-assistant-sdk[samples]'],
+        # Support for the Google APIs
+        'google': ['oauth2client', 'google-api-python-client'],
+        # Support for Last.FM scrobbler plugin
+        'lastfm': ['pylast'],
+        # Support for custom hotword detection
+        'hotword': ['snowboy'],
+        # Support for real-time MIDI events
+        'midi': ['rtmidi'],
+        # Support for RaspberryPi GPIO
+        'rpi-gpio': ['RPi.GPIO'],
+        # Support for MCP3008 analog-to-digital converter plugin
+        'mcp3008': ['adafruit-mcp3008'],
+        # Support for smart cards detection
+        'scard': ['pyscard'],
+        # Support for serial port plugin
+        'serial': ['pyserial'],
+        # Support for ICal calendars
+        'ical': ['icalendar', 'python-dateutil'],
+        # Support for joystick backend
+        'joystick': ['inputs'],
+        # Support for Kodi plugin
+        'kodi': ['kodi-json'],
+        # Support for Plex plugin
+        'plex': ['plexapi'],
+        # Support for Chromecast plugin
+        'chromecast': ['pychromecast'],
+        # Support for sound devices
+        'sound': ['sounddevice', 'soundfile', 'numpy'],
+        # Support for web media subtitles
+        'subtitles': [
+                'webvtt-py',
+                'python-opensubtitles @ https://github.com/agonzalezro/python-opensubtitles/tarball/master'],
+        # Support for mpv player plugin
+        'mpv': ['python-mpv'],
+        # Support for NFC tags
+        'nfc': ['nfcpy>=1.0', 'ndef'],
+        # Support for enviropHAT
+        'envirophat': ['envirophat'],
+        # Support for GPS
+        'gps': ['gps'],
+        # Support for BME280 environment sensor
+        'bme280': ['pimoroni-bme280'],
+        # Support for LTR559 light/proximity sensor
+        'ltr559': ['ltr559'],
+        # Support for VL53L1X laser ranger/distance sensor
+        'vl53l1x': ['smbus2','vl53l1x'],
+        # Support for Dropbox integration
+        'dropbox': ['dropbox'],
+        # Support for Leap Motion backend
+        'leap': ['leap-sdk @ https://github.com/BlackLight/leap-sdk-python3/tarball/master'],
+        # Support for Flic buttons
+        'flic': ['flic @ https://github.com/50ButtonsEach/fliclib-linux-hci/tarball/master'],
+        # Support for Alexa/Echo plugin
+        'alexa': ['avs @ https://github.com:BlackLight/avs/tarball/master'],
+        # Support for bluetooth and Switchbot plugin
+        'bluetooth': ['pybluez', 'gattlib'],
+        # Support for TP-Link devices
+        'tplink': ['pyHS100'],
+        # Support for PWM3901 2-Dimensional Optical Flow Sensor
+        'pwm3901': ['pwm3901'],
+        # Support for MLX90640 thermal camera
+        'mlx90640': ['Pillow'],
+        # Support for machine learning and CV plugin
+        'cv': ['cv2', 'numpy'],
     },
 )
 
