@@ -118,6 +118,16 @@ class Config(object):
         self._init_constants()
         self._init_components()
 
+    @staticmethod
+    def _is_special_token(token):
+        return token == 'main.db' or \
+                token == 'token' or \
+                token == 'token_hash' or \
+                token == 'logging' or \
+                token == 'workdir' or \
+                token == 'device_id' or \
+                token == 'switches' or \
+                token == 'environment'
 
     def _read_config_file(self, cfgfile):
         cfgfile_dir = os.path.dirname(os.path.abspath(
@@ -168,7 +178,7 @@ class Config(object):
                     '_async': _async,
                     'actions': self._config[key]
                 }
-            else:
+            elif not self._is_special_token(key):
                 self.plugins[key] = self._config[key]
 
     def _init_constants(self):
