@@ -57,6 +57,7 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
         '''
         FROM python:alpine{python_version}
 
+        RUN mkdir -p /app
         RUN mkdir -p /etc/platypush
         RUN mkdir -p /usr/local/share/platypush\n
         '''.format(python_version=python_version)).lstrip()
