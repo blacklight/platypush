@@ -109,7 +109,8 @@ class HttpUtils(object):
             return f.read()
 
     @classmethod
-    def isfile(cls, file):
-        return os.path.isfile(file)
+    def isfile(cls, *path):
+        path = path[0] if len(path) == 1 else os.path.join(*path)
+        return os.path.isfile(path)
 
 # vim:sw=4:ts=4:et:
