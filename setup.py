@@ -3,6 +3,8 @@
 import errno
 import os
 import re
+import subprocess
+import sys
 import distutils.cmd
 from distutils.command.build import build
 from setuptools import setup, find_packages
@@ -18,7 +20,18 @@ class WebBuildCommand(distutils.cmd.Command):
 
     @classmethod
     def generate_css_files(cls):
-        from scss import Compiler
+        try:
+            from scss import Compiler
+        except ImportError:
+            print('pyScss not found, trying to install it')
+            cmd = [sys.executable, '-m', 'pip', 'install', 'pyScss']
+
+            try:
+                subprocess.call(cmd)
+            except Exception as e:
+                print(('pyScss install command failed: {}: {}. You will have to generate ' +
+                    'the CSS files manually through python setup.py build install').format(' '.join(cmd), str(e)))
+                return
 
         print('Building CSS files')
         base_path = path(os.path.join('platypush','backend','http','static','css'))
