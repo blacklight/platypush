@@ -2,8 +2,6 @@ import struct
 import subprocess
 import time
 
-from bluetooth.ble import DiscoveryService, GATTRequester
-
 from platypush.plugins import action
 from platypush.plugins.switch import SwitchPlugin
 
@@ -39,6 +37,7 @@ class Scanner(object):
         return uuids
 
     def scan(self):
+        from bluetooth.ble import DiscoveryService
         service = DiscoveryService(self.bt_interface) \
             if self.bt_interface else DiscoveryService()
 
@@ -62,6 +61,7 @@ class Driver(object):
         self.req = None
 
     def connect(self):
+        from bluetooth.ble import GATTRequester
         if self.bt_interface:
             self.req = GATTRequester(self.device, False, self.bt_interface)
         else:

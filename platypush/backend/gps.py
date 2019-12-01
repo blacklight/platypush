@@ -1,4 +1,3 @@
-import gps
 import threading
 import time
 
@@ -49,6 +48,8 @@ class GpsBackend(Backend):
         self._devices = {}
 
     def _get_session(self):
+        import gps
+
         with self._session_lock:
             if not self._session:
                 self._session = gps.gps(host=self.gpsd_server, port=self.gpsd_port, reconnect=True)

@@ -2,7 +2,6 @@
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
 """
 
-import cwiid
 import re
 import time
 
@@ -51,6 +50,8 @@ class WiimoteBackend(Backend):
 
 
     def get_wiimote(self):
+        import cwiid
+
         if not self._wiimote:
             if self._bdaddr:
                 self._wiimote = cwiid.Wiimote(bdaddr=self._bdaddr)
@@ -67,6 +68,7 @@ class WiimoteBackend(Backend):
         return self._wiimote
 
     def get_state(self):
+        import cwiid
         wm = self.get_wiimote()
         state = wm.state
         parsed_state = {}

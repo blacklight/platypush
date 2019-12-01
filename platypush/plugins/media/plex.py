@@ -1,6 +1,3 @@
-from plexapi.myplex import MyPlexAccount
-from plexapi.video import Movie, Show
-
 from platypush.context import get_plugin
 from platypush.plugins import Plugin, action
 
@@ -26,6 +23,7 @@ class MediaPlexPlugin(Plugin):
         :type username: str
         """
 
+        from plexapi.myplex import MyPlexAccount
         super().__init__(*args, **kwargs)
 
         self.resource = MyPlexAccount(username, password).resource(server)
@@ -378,6 +376,8 @@ class MediaPlexPlugin(Plugin):
 
 
     def _flatten_item(self, item):
+        from plexapi.video import Movie, Show
+
         _item = {
             'summary': item.summary,
             'title': item.title,

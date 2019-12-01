@@ -1,5 +1,3 @@
-import envirophat
-
 from platypush.plugins import action
 from platypush.plugins.gpio.sensor import GpioSensorPlugin
 
@@ -45,6 +43,8 @@ class GpioSensorEnvirophatPlugin(GpioSensorPlugin):
             }
 
         """
+
+        import envirophat
 
         ret = {}
         weather = envirophat.weather

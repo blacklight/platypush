@@ -1,7 +1,5 @@
 import base64
 import json
-import nfc
-import ndef
 
 from platypush.backend import Backend
 from platypush.message.event.nfc import NFCTagDetectedEvent, NFCTagRemovedEvent, NFCDeviceConnectedEvent, \
@@ -21,7 +19,8 @@ class NfcBackend(Backend):
 
     Requires:
 
-        * **nfcpy** >= 1.0 (``pip install nfcpy``)
+        * **nfcpy** >= 1.0 (``pip install 'nfcpy>=1.0'``)
+        * **ndef** (``pip install ndef``)
 
     Run the following to check if your device is compatible with nfcpy and the right permissions are set::
 
@@ -44,6 +43,8 @@ class NfcBackend(Backend):
         self._clf = None
 
     def _get_clf(self):
+        import nfc
+
         if not self._clf:
             self._clf = nfc.ContactlessFrontend()
             self._clf.open(self.device_id)
@@ -63,6 +64,7 @@ class NfcBackend(Backend):
 
     @staticmethod
     def _parse_records(tag):
+        import ndef
         records = []
 
         for record in tag.ndef.records:

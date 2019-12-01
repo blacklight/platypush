@@ -1,10 +1,5 @@
 import json
 
-from smartcard.CardType import AnyCardType, ATRCardType
-from smartcard.CardRequest import CardRequest
-from smartcard.Exceptions import NoCardException, CardConnectionException
-from smartcard.util import toHexString
-
 from platypush.backend import Backend
 from platypush.message.event.scard import SmartCardDetectedEvent, SmartCardRemovedEvent
 
@@ -32,6 +27,7 @@ class ScardBackend(Backend):
         :param atr: If set, the backend will trigger events only for card(s) with the specified ATR(s). It can be either an ATR string (space-separated hex octects) or a list of ATR strings.  Default: none (any card will be detected)
         """
 
+        from smartcard.CardType import AnyCardType, ATRCardType
         super().__init__(*args, **kwargs)
         self.ATRs = []
 
@@ -51,6 +47,10 @@ class ScardBackend(Backend):
 
 
     def run(self):
+        from smartcard.CardRequest import CardRequest
+        from smartcard.Exceptions import NoCardException, CardConnectionException
+        from smartcard.util import toHexString
+
         super().run()
 
         self.logger.info('Initialized smart card reader backend - ATR filter: {}'.

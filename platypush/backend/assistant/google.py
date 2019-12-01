@@ -7,11 +7,6 @@ import json
 import os
 import time
 
-import google.oauth2.credentials
-
-from google.assistant.library import Assistant
-from google.assistant.library.event import EventType, AlertType
-
 from platypush.backend import Backend
 from platypush.message.event.assistant import \
     ConversationStartEvent, ConversationEndEvent, ConversationTimeoutEvent, \
@@ -83,17 +78,15 @@ class AssistantGoogleBackend(Backend):
         super().__init__(**kwargs)
         self.credentials_file = credentials_file
         self.device_model_id = device_model_id
+        self.credentials = None
         self.assistant = None
         self._has_error = False
-
-        with open(self.credentials_file, 'r') as f:
-            self.credentials = google.oauth2.credentials.Credentials(
-                token=None,
-                **json.load(f))
 
         self.logger.info('Initialized Google Assistant backend')
 
     def _process_event(self, event):
+        from google.assistant.library.event import EventType, AlertType
+
         self.logger.info('Received assistant event: {}'.format(event))
         self._has_error = False
 
@@ -149,7 +142,15 @@ class AssistantGoogleBackend(Backend):
             self.assistant.stop_conversation()
 
     def run(self):
+        import google.oauth2.credentials
+        from google.assistant.library import Assistant
+
         super().run()
+
+        with open(self.credentials_file, 'r') as f:
+            self.credentials = google.oauth2.credentials.Credentials(
+                token=None,
+                **json.load(f))
 
         while not self.should_stop():
             self._has_error = False

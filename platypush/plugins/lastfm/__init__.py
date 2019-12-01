@@ -1,4 +1,3 @@
-import pylast
 import time
 
 from platypush.plugins import Plugin, action
@@ -28,7 +27,9 @@ class LastfmPlugin(Plugin):
         :type api_key: str
         """
 
+        import pylast
         super().__init__()
+
         self.api_key = api_key
         self.api_secret = api_secret
         self.username = username

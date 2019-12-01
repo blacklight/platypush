@@ -2,8 +2,6 @@ import json
 import logging
 import time
 
-from kafka import KafkaProducer
-
 from platypush.context import get_backend
 from platypush.plugins import Plugin, action
 
@@ -46,6 +44,8 @@ class KafkaPlugin(Plugin):
         :param server: Kafka server name or address + port (format: ``host:port``). If None, then the default server will be used
         :type server: str
         """
+
+        from kafka import KafkaProducer
 
         if not server:
             if not self.server:

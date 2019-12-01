@@ -1,4 +1,3 @@
-import rtmidi
 import time
 
 from platypush.plugins import Plugin, action
@@ -23,6 +22,7 @@ class MidiPlugin(Plugin):
         :type device_name: str
         """
 
+        import rtmidi
         super().__init__(*args, **kwargs)
 
         self.device_name = device_name
@@ -126,6 +126,7 @@ class MidiPlugin(Plugin):
         :returns: dict: A list of the available MIDI ports with index and name
         """
 
+        import rtmidi
         in_ports = rtmidi.MidiIn().get_ports()
         out_ports = rtmidi.MidiOut().get_ports()
 

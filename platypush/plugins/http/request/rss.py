@@ -1,5 +1,3 @@
-import feedparser
-
 from platypush.plugins import action
 from platypush.plugins.http.request import HttpRequestPlugin
 
@@ -14,6 +12,7 @@ class HttpRequestRssPlugin(HttpRequestPlugin):
 
     @action
     def get(self, url):
+        import feedparser
         response = super().get(url, output='text').output
         feed = feedparser.parse(response)
         return feed.entries

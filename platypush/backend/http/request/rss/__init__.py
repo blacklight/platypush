@@ -1,6 +1,5 @@
 import datetime
 import enum
-import feedparser
 import os
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, \
@@ -20,7 +19,13 @@ Session = scoped_session(sessionmaker())
 
 
 class RssUpdates(HttpRequest):
-    """ Gets new items in an RSS feed """
+    """
+    Gets new items in an RSS feed
+
+    Requires:
+
+        * **feedparser** (``pip install feedparser``)
+    """
 
     user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) ' + \
                  'Chrome/62.0.3202.94 Safari/537.36'
@@ -80,6 +85,7 @@ class RssUpdates(HttpRequest):
         return response.get('content')
 
     def get_new_items(self, response):
+        import feedparser
         engine = create_engine('sqlite:///{}'.format(self.dbfile),
                                connect_args={'check_same_thread': False})
 

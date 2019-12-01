@@ -1,5 +1,3 @@
-import pyperclip
-
 from platypush.plugins import Plugin, action
 
 
@@ -20,6 +18,7 @@ class ClipboardPlugin(Plugin):
         :param text: Text to copy
         :type text: str
         """
+        import pyperclip
         pyperclip.copy(text)
 
 
@@ -28,6 +27,7 @@ class ClipboardPlugin(Plugin):
         """
         Get the current content of the clipboard
         """
+        import pyperclip
         return pyperclip.paste()
 
 

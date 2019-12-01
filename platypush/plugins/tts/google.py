@@ -2,8 +2,6 @@ import os
 import subprocess
 import tempfile
 
-from google.cloud import texttospeech
-
 from platypush.plugins import Plugin, action
 
 
@@ -35,7 +33,9 @@ class TtsGooglePlugin(Plugin):
         :type credentials_file: str
         """
 
+        from google.cloud import texttospeech
         super().__init__()
+
         self.language = language
         self.voice = voice
 
@@ -84,6 +84,7 @@ class TtsGooglePlugin(Plugin):
         :type gender: str
         """
 
+        from google.cloud import texttospeech
         client = texttospeech.TextToSpeechClient()
         synthesis_input = texttospeech.types.SynthesisInput(text=text)
 
@@ -120,4 +121,3 @@ class TtsGooglePlugin(Plugin):
 
 
 # vim:sw=4:ts=4:et:
-

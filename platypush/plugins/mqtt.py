@@ -1,6 +1,5 @@
 import json
 import os
-import paho.mqtt.publish as publisher
 
 from platypush.message import Message
 from platypush.plugins import Plugin, action
@@ -104,6 +103,8 @@ class MqttPlugin(Plugin):
         :param password: Specify it if the MQTT server requires authentication (default: None)
         :type password: str
         """
+
+        import paho.mqtt.publish as publisher
 
         if not host and not self.host:
             raise RuntimeError('No host specified and no default host configured')

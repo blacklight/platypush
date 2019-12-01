@@ -6,8 +6,6 @@ import datetime
 import dateutil.parser
 import requests
 
-from icalendar import Calendar
-
 from platypush.plugins import Plugin, action
 from platypush.plugins.calendar import CalendarInterface
 
@@ -68,6 +66,7 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
         """
 
         import pytz
+        from icalendar import Calendar
 
         events = []
         try:

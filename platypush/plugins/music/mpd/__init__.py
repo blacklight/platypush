@@ -1,4 +1,3 @@
-import mpd
 import re
 import threading
 import time
@@ -39,6 +38,8 @@ class MusicMpdPlugin(MusicPlugin):
         self.client = None
 
     def _connect(self, n_tries=2):
+        import mpd
+
         with self._client_lock:
             if self.client:
                 return

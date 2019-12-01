@@ -7,8 +7,6 @@ import httplib2
 import mimetypes
 import os
 
-from apiclient import discovery
-
 from email.encoders import encode_base64
 from email.mime.application import MIMEApplication
 from email.mime.audio import MIMEAudio

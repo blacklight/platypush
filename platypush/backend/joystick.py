@@ -1,4 +1,3 @@
-import inputs
 import time
 
 from platypush.backend import Backend
@@ -30,6 +29,8 @@ class JoystickBackend(Backend):
         self.device = device
 
     def run(self):
+        import inputs
+
         super().run()
         self.logger.info('Initialized joystick backend on device {}'.format(self.device))
 

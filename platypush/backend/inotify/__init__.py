@@ -1,5 +1,4 @@
 import os
-import inotify.adapters
 
 from platypush.backend import Backend
 from platypush.message.event.path import PathCreateEvent, PathDeleteEvent, \
@@ -49,6 +48,7 @@ class InotifyBackend(Backend):
         self.inotify_watch = None
 
     def run(self):
+        import inotify.adapters
         super().run()
 
         self.inotify_watch = inotify.adapters.Inotify()

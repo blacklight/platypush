@@ -4,9 +4,6 @@ import os
 import subprocess
 import time
 
-# noinspection PyPackageRequirements
-from PIL import Image
-
 from platypush.plugins import Plugin, action
 
 
@@ -36,11 +33,7 @@ class CameraIrMlx90640Plugin(Plugin):
     """
 
     _img_size = (32, 24)
-    _rotate_values = {
-        90: Image.ROTATE_90,
-        180: Image.ROTATE_180,
-        270: Image.ROTATE_270,
-    }
+    _rotate_values = {}
 
     def __init__(self, fps=16, skip_frames=2, scale_factor=1, rotate=0, rawrgb_path=None, **kwargs):
         """
@@ -53,7 +46,14 @@ class CameraIrMlx90640Plugin(Plugin):
             https://github.com/pimoroni/mlx90640-library is in another folder than
             `<directory of this file>/lib/examples`.
         """
+        from PIL import Image
         super().__init__(**kwargs)
+
+        self._rotate_values = {
+            90: Image.ROTATE_90,
+            180: Image.ROTATE_180,
+            270: Image.ROTATE_270,
+        }
 
         if not rawrgb_path:
             rawrgb_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lib', 'examples', 'rawrgb')
@@ -121,6 +121,7 @@ class CameraIrMlx90640Plugin(Plugin):
             output_file is not set, otherwise a list with the captured image files will be returned.
         """
 
+        from PIL import Image
         fps = self.fps if fps is None else fps
         skip_frames = self.skip_frames if skip_frames is None else skip_frames
         scale_factor = self.scale_factor if scale_factor is None else scale_factor
@@ -170,6 +171,7 @@ class CameraIrMlx90640Plugin(Plugin):
 
     @staticmethod
     def _convert_to_grayscale(image):
+        from PIL import Image
         new_image = Image.new('L', image.size)
 
         for i in range(0, image.size[0]):

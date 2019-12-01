@@ -1,5 +1,3 @@
-from pyHS100 import Discover
-
 from platypush.plugins import action
 from platypush.plugins.switch import SwitchPlugin
 
@@ -21,6 +19,8 @@ class SwitchTplinkPlugin(SwitchPlugin):
         super().__init__(**kwargs)
 
     def _scan(self):
+        from pyHS100 import Discover
+
         devices = Discover.discover()
         self._ip_to_dev = {}
         self._alias_to_dev = {}

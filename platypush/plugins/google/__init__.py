@@ -5,7 +5,6 @@
 import os
 
 from platypush.plugins import Plugin
-from platypush.plugins.google.credentials import get_credentials
 
 
 class GooglePlugin(Plugin):
@@ -41,6 +40,7 @@ class GooglePlugin(Plugin):
         :type scopes: list
         """
 
+        from platypush.plugins.google.credentials import get_credentials
         super().__init__(*args, **kwargs)
         self._scopes = scopes or []
 

@@ -15,7 +15,7 @@ pyyaml
 # kafka-python
 
 # Pushbullet backend support
-git+https://github.com/rbrcsk/pushbullet.py
+# git+https://github.com/rbrcsk/pushbullet.py
 
 # HTTP backend support
 flask
@@ -181,3 +181,6 @@ croniter
 
 # Support for Alexa/Echo voice integrations
 # git+https://github.com:BlackLight/avs.git
+
+# Support for clipboard manipulation
+# pyperclip

@@ -4,8 +4,6 @@ import json
 import time
 
 from threading import Thread, Lock
-from Adafruit_IO import Client
-from Adafruit_IO.errors import ThrottlingError
 
 from platypush.context import get_backend
 from platypush.plugins import Plugin, action
@@ -64,6 +62,7 @@ class AdafruitIoPlugin(Plugin):
         :type throttle_seconds: float
         """
 
+        from Adafruit_IO import Client
         global data_throttler_lock
         super().__init__(**kwargs)
 

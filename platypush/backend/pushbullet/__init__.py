@@ -1,8 +1,6 @@
 import json
 import time
 
-from pushbullet import Pushbullet, Listener
-
 from platypush.backend import Backend
 from platypush.message.event.pushbullet import PushbulletEvent
 
@@ -43,6 +41,7 @@ class PushbulletBackend(Backend):
         :type proxy_port: int
         """
 
+        from pushbullet import Pushbullet
         super().__init__(**kwargs)
 
         self.token = token
@@ -133,6 +132,7 @@ class PushbulletBackend(Backend):
         return self.close()
 
     def run(self):
+        from pushbullet import Listener
         super().run()
 
         self.logger.info('Initialized Pushbullet backend - device_id: {}'

@@ -4,11 +4,6 @@
 
 import os
 
-from avs.auth import auth
-from avs.alexa import Alexa
-from avs.config import DEFAULT_CONFIG_FILE
-from avs.mic import Audio
-
 from platypush.context import get_bus
 from platypush.plugins import action
 from platypush.plugins.assistant import AssistantPlugin
@@ -43,7 +38,7 @@ class AssistantEchoPlugin(AssistantPlugin):
         * **avs** (``pip install avs``)
     """
 
-    def __init__(self, avs_config_file: str = DEFAULT_CONFIG_FILE, audio_device: str = 'default',
+    def __init__(self, avs_config_file: str = None, audio_device: str = 'default',
                  audio_player: str = 'default', **kwargs):
         """
         :param avs_config_file: AVS credentials file - default: ~/.avs.json. If the file doesn't exist then
@@ -55,9 +50,17 @@ class AssistantEchoPlugin(AssistantPlugin):
         :param audio_player: Player to be used for audio playback (default: 'default').
             Supported values: 'mpv', 'mpg123', 'gstreamer'
         """
+        from avs.alexa import Alexa
+        from avs.config import DEFAULT_CONFIG_FILE
+        from avs.mic import Audio
+
         super().__init__(**kwargs)
 
+        if not avs_config_file:
+            avs_config_file = DEFAULT_CONFIG_FILE
+
         if not avs_config_file or not os.path.isfile(avs_config_file):
+            from avs.auth import auth
             auth(None, avs_config_file)
             self.logger.warning('Amazon Echo assistant credentials not configured. Open http://localhost:3000 ' +
                                 'to authenticate this client')

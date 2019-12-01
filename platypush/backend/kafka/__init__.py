@@ -2,8 +2,6 @@ import json
 import logging
 import time
 
-from kafka import KafkaConsumer, KafkaProducer
-
 from platypush.backend import Backend
 from platypush.context import get_plugin
 from platypush.message import Message
@@ -82,6 +80,7 @@ class KafkaBackend(Backend):
             self.logger.exception(e)
 
     def run(self):
+        from kafka import KafkaConsumer
         super().run()
 
         self.consumer = KafkaConsumer(self.topic, bootstrap_servers=self.server)

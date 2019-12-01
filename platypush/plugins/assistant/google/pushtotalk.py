@@ -5,9 +5,6 @@
 import json
 import os
 
-import googlesamples.assistant.grpc.audio_helpers as audio_helpers
-import googlesamples.assistant.grpc.device_helpers as device_helpers
-
 from platypush.context import get_bus
 from platypush.message.event.assistant import ConversationStartEvent, \
     ConversationEndEvent, SpeechRecognizedEvent, VolumeChangedEvent, \
@@ -17,7 +14,6 @@ from platypush.message.event.google import GoogleDeviceOnOffEvent
 
 from platypush.plugins import action
 from platypush.plugins.assistant import AssistantPlugin
-from platypush.plugins.assistant.google.lib import SampleAssistant
 
 
 class AssistantGooglePushtotalkPlugin(AssistantPlugin):
@@ -40,11 +36,6 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
     """
 
     api_endpoint = 'embeddedassistant.googleapis.com'
-    audio_sample_rate = audio_helpers.DEFAULT_AUDIO_SAMPLE_RATE
-    audio_sample_width = audio_helpers.DEFAULT_AUDIO_SAMPLE_WIDTH
-    audio_iter_size = audio_helpers.DEFAULT_AUDIO_ITER_SIZE
-    audio_block_size = audio_helpers.DEFAULT_AUDIO_DEVICE_BLOCK_SIZE
-    audio_flush_size = audio_helpers.DEFAULT_AUDIO_DEVICE_FLUSH_SIZE
     grpc_deadline = 60 * 3 + 5
     device_handler = None
 
@@ -79,7 +70,14 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         :type play_response: bool
         """
 
+        import googlesamples.assistant.grpc.audio_helpers as audio_helpers
         super().__init__(**kwargs)
+
+        self.audio_sample_rate = audio_helpers.DEFAULT_AUDIO_SAMPLE_RATE
+        self.audio_sample_width = audio_helpers.DEFAULT_AUDIO_SAMPLE_WIDTH
+        self.audio_iter_size = audio_helpers.DEFAULT_AUDIO_ITER_SIZE
+        self.audio_block_size = audio_helpers.DEFAULT_AUDIO_DEVICE_BLOCK_SIZE
+        self.audio_flush_size = audio_helpers.DEFAULT_AUDIO_DEVICE_FLUSH_SIZE
 
         self.language = language
         self.credentials_file = credentials_file
@@ -112,7 +110,9 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         self.conversation_stream = None
 
     def _init_assistant(self):
+        import googlesamples.assistant.grpc.audio_helpers as audio_helpers
         from google.auth.transport.grpc import secure_authorized_channel
+
         self.interactions = []
 
         # Create an authorized gRPC channel.
@@ -217,6 +217,8 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
         """
 
+        from platypush.plugins.assistant.google.lib import SampleAssistant
+
         if not language:
             language = self.language
 
@@ -262,6 +264,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
             get_bus().post(ConversationEndEvent(assistant=self))
 
     def _install_device_handlers(self):
+        import googlesamples.assistant.grpc.device_helpers as device_helpers
         self.device_handler = device_helpers.DeviceRequestHandler(self.device_id)
 
         @self.device_handler.command('action.devices.commands.OnOff')

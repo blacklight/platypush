@@ -2,9 +2,6 @@ import enum
 import math
 import time
 
-# noinspection PyUnresolvedReferences,PyPackageRequirements
-from pmw3901 import PMW3901, BG_CS_FRONT_BCM, BG_CS_BACK_BCM
-
 from platypush.plugins import action
 from platypush.plugins.gpio.sensor import GpioSensorPlugin
 
@@ -43,7 +40,9 @@ class GpioSensorMotionPwm3901Plugin(GpioSensorPlugin):
         :param spi_port: SPI port (default: 0)
         :type spi_slot: int
         """
+        from pmw3901 import BG_CS_FRONT_BCM, BG_CS_BACK_BCM
         super().__init__(**kwargs)
+
         self.spi_port = spi_port
         self._sensor = None
         self._events_per_sec = {}
@@ -70,6 +69,8 @@ class GpioSensorMotionPwm3901Plugin(GpioSensorPlugin):
                 spi_slot, [s.value for s in SPISlot]))
 
     def _get_sensor(self):
+        from pmw3901 import PMW3901
+
         if not self._sensor:
             self._sensor = PMW3901(spi_port=self.spi_port,
                                    spi_cs=1,

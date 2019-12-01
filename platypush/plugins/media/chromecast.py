@@ -1,9 +1,6 @@
 import datetime
 import re
-import pychromecast
 import time
-
-from pychromecast.controllers.youtube import YouTubeController
 
 from platypush.context import get_plugin, get_bus
 from platypush.plugins import action
@@ -151,6 +148,7 @@ class MediaChromecastPlugin(MediaPlugin):
         :type callback: func
         """
 
+        import pychromecast
         self.chromecasts.update({
             cast.device.friendly_name: cast
             for cast in pychromecast.get_chromecasts(tries=tries, retry_wait=retry_wait,
@@ -193,6 +191,7 @@ class MediaChromecastPlugin(MediaPlugin):
             cast.media_controller.register_status_listener(self._media_listeners[name])
 
     def get_chromecast(self, chromecast=None, n_tries=2):
+        import pychromecast
         if isinstance(chromecast, pychromecast.Chromecast):
             return chromecast
 
@@ -268,6 +267,7 @@ class MediaChromecastPlugin(MediaPlugin):
         :type subtitle_id: int
         """
 
+        from pychromecast.controllers.youtube import YouTubeController
         if not chromecast:
             chromecast = self.chromecast
 
