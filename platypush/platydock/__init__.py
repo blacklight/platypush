@@ -88,11 +88,15 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
             && apk add --update --no-cache --virtual git \\
         ''')
 
-    for dep in deps:
-        content += '\t&& pip install {} \\\n'.format(dep)
+    for i, dep in enumerate(deps):
+        content += '\t&& pip install {}'.format(dep)
+        if i < len(deps)-1:
+            content += ' \\'.format(dep)
+        content += '\n'
 
     content += textwrap.dedent(
         '''
+
         RUN git clone https://github.com/BlackLight/platypush.git /app && cd /app
         RUN pip install -r requirements.txt && python setup.py build install
         RUN apk del git && apk del build-base
