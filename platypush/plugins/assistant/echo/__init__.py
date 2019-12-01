@@ -23,7 +23,7 @@ class AssistantEchoPlugin(AssistantPlugin):
 
     In order to activate the Echo service on your device follow these steps:
 
-        1. Install avs (``pip install git+https://github.com:BlackLight/avs.git``)
+        1. Install avs (``pip install git+https://github.com/BlackLight/avs.git``)
         2. Run the ``alexa-auth`` script. A local webservice will start on port 3000
         3. If a browser instance doesn't open automatically then head to http://localhost:3000
         4. Log in to your Amazon account
