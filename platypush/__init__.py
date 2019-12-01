@@ -28,7 +28,7 @@ from .utils import set_thread_name
 
 
 __author__ = 'Fabio Manganiello <blacklight86@gmail.com>'
-__version__ = '0.10.8'
+__version__ = '0.10.9'
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
