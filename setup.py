@@ -145,7 +145,9 @@ setup(
         # Support for Pushbullet backend and plugin
         'pushbullet': ['pushbullet.py'],
         # Support for HTTP backend
-        'http': ['flask','websockets', 'python-dateutil', 'tz', 'frozendict', 'uwsgi'],
+        'http': ['flask','websockets', 'python-dateutil', 'tz', 'frozendict', 'bcrypt', 'sqlalchemy'],
+        # Support for uWSGI HTTP backend
+        'uwsgi': ['flask','websockets', 'python-dateutil', 'tz', 'frozendict', 'uwsgi', 'bcrypt', 'sqlalchemy'],
         # Support for database
         'db': ['sqlalchemy'],
         # Support for MQTT backends
@@ -155,7 +157,7 @@ setup(
         # Support for PDF generation
         'pdf': ['weasyprint'],
         # Support for Philips Hue plugin
-        'phue': ['phue'],
+        'hue': ['phue'],
         # Support for MPD/Mopidy music server plugin and backend
         'mpd': ['python-mpd2', 'websocket-client'],
         # Support for Belkin WeMo Switch plugin
