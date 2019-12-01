@@ -109,7 +109,7 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
             && apk del build-base \\
             && apk del libffi-dev \\
             && apk del libjpeg-turbo-dev \\
-            && apk del zlib-dev \\
+            && apk del zlib-dev
 
         ''')
 
