@@ -25,7 +25,7 @@ Vue.component('light-hue', {
                 }
 
                 this.groups[groupId].scenes = {};
-                var lights = {};
+                let lights = {};
 
                 for (const lightId of this.groups[groupId].lights) {
                     lights[lightId] = this.lights[lightId];
@@ -146,7 +146,8 @@ Vue.component('light-hue', {
                         }
                     }
 
-                    groups[groupId].lights.push(lightId)
+                    groups[groupId].lights.push(lightId);
+
                     if (groups[groupId].lights.length == Object.values(group.lights).length) {
                         groups[groupId].all_on = true;
                     }
@@ -178,7 +179,13 @@ Vue.component('light-hue', {
         },
 
         onUnitInput: function(event) {
-            var groups = this.lights[event.id].groups;
+            for (let attr of ['on', 'hue', 'sat', 'bri', 'xy', 'ct']) {
+                if (attr in event) {
+                    this.lights[event.id].state[attr] = event[attr];
+                }
+            }
+
+            let groups = this.lights[event.id].groups;
             for (const [groupId, group] of Object.entries(groups)) {
                 if (event.on === true) {
                     this.groups[groupId].state.any_on = true;
@@ -186,12 +193,6 @@ Vue.component('light-hue', {
                 } else if (event.on === false) {
                     this.groups[groupId].state.all_on = false;
                     this.groups[groupId].state.any_on = Object.values(group.lights).filter((l) => l.state.on).length > 0;
-                }
-            }
-
-            for (var attr of ['on', 'hue', 'sat', 'bri', 'xy', 'ct']) {
-                if (attr in event) {
-                    this.lights[event.id].state[attr] = event[attr];
                 }
             }
         },
@@ -203,7 +204,7 @@ Vue.component('light-hue', {
                     id: event.light_id,
                 });
             } else if ('group_id' in event) {
-                var args = {
+                let args = {
                     id: event.group_id,
                     state: {
                         ...event,
