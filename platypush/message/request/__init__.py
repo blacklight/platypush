@@ -193,6 +193,11 @@ class Request(Message):
                 if response is not None:
                     self._send_response(response)
                 return response
+            # utils.get_context is a special action that simply returns the current context
+            elif self.action == 'utils.get_context':
+                response = Response(output=context)
+                self._send_response(response)
+                return response
             else:
                 action = self.expand_value_from_context(self.action, **context)
                 (module_name, method_name) = get_module_and_method_from_action(action)
