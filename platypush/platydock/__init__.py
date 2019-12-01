@@ -86,6 +86,9 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
         '''
         RUN apk add --update --no-cache --virtual build-base \\
             && apk add --update --no-cache --virtual git \\
+            && apk add --update --no-cache --virtual libffi-dev \\
+            && apk add --update --no-cache --virtual libjpeg-turbo-dev \\
+            && apk add --update --no-cache --virtual zlib-dev \\
         ''')
 
     for i, dep in enumerate(deps):
@@ -102,7 +105,11 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
             && pip install -r requirements.txt \\
             && python setup.py build install
 
-        RUN apk del git && apk del build-base
+        RUN apk del git \\
+            && apk del build-base \\
+            && apk del libffi-dev \\
+            && apk del libjpeg-turbo-dev \\
+            && apk del zlib-dev \\
 
         ''')
 
