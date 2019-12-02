@@ -111,8 +111,8 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
             && apk del libjpeg-turbo-dev \\
             && apk del zlib-dev
 
-        RUN cat <<EOF > /app/platypush-start.sh
-        cd /app && python -m platypush
+        RUN cat <<EOF > /app/platypush-start.sh \\
+        cd /app && python -m platypush \\
         EOF
 
         RUN chmod 0755 /app/platypush-start.sh
