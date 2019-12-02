@@ -111,15 +111,18 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
             && apk del libjpeg-turbo-dev \\
             && apk del zlib-dev
 
-        RUN echo 'cd /app && python -m platypush' > /app/platypush-start.sh
-        RUN chmod 0755 /app/platypush-start.sh
-
         ''')
 
     for port in ports:
         content += 'EXPOSE {}\n'.format(port)
 
-    content += '\nCMD ["sh", "/app/platypush-start.sh"]\n'
+    content += textwrap.dedent(
+        '''
+
+        ENV PYTHONPATH /app:$PYTHONPATH
+        CMD ["python", "-m", "platypush"]
+        ''')
+
     dockerfile = os.path.join(devdir, 'Dockerfile')
     print('Generating Dockerfile {}'.format(dockerfile))
 
