@@ -100,7 +100,7 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
     content += textwrap.dedent(
         '''
 
-        RUN git clone https://github.com/BlackLight/platypush.git /app \\
+        RUN git clone --recursive https://github.com/BlackLight/platypush.git /app \\
             && cd /app \\
             && pip install -r requirements.txt \\
             && python setup.py build install
