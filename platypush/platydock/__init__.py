@@ -103,7 +103,7 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
         RUN git clone --recursive https://github.com/BlackLight/platypush.git /app \\
             && cd /app \\
             && pip install -r requirements.txt \\
-            && python setup.py build install
+            && python setup.py build
 
         RUN apk del git \\
             && apk del build-base \\
@@ -111,12 +111,18 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
             && apk del libjpeg-turbo-dev \\
             && apk del zlib-dev
 
+        RUN cat <<EOF > /app/platypush-start.sh
+        cd /app && python -m platypush
+        EOF
+
+        RUN chmod 0755 /app/platypush-start.sh
+
         ''')
 
     for port in ports:
         content += 'EXPOSE {}\n'.format(port)
 
-    content += '\nCMD ["python", "-m", "platypush"]\n'
+    content += '\nCMD ["sh", "/app/platypush-start.sh"]\n'
     dockerfile = os.path.join(devdir, 'Dockerfile')
     print('Generating Dockerfile {}'.format(dockerfile))
 
