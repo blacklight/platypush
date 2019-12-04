@@ -126,11 +126,8 @@ class SwitchWemoPlugin(SwitchPlugin):
 
         :param device: Device name or address
         """
-        state = self._exec(device=device, action=SwitchAction.SET_STATE, value=1)
-        return {
-            'device': device,
-            'on': bool(int(state)),
-        }
+        self._exec(device=device, action=SwitchAction.SET_STATE, value=1)
+        return self.status(device)
 
     @action
     def off(self, device: str, **kwargs):
@@ -139,11 +136,8 @@ class SwitchWemoPlugin(SwitchPlugin):
 
         :param device: Device name or address
         """
-        state = self._exec(device=device, action=SwitchAction.SET_STATE, value=0)
-        return {
-            'device': device,
-            'on': bool(int(state)),
-        }
+        self._exec(device=device, action=SwitchAction.SET_STATE, value=0)
+        return self.status(device)
 
     @action
     def toggle(self, device: str, *args, **kwargs):
