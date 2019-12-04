@@ -3,6 +3,7 @@ import requests
 from platypush.message import Message
 from platypush.plugins import Plugin, action
 
+
 class HttpRequestPlugin(Plugin):
     """
     Plugin for executing custom HTTP requests.
@@ -40,10 +41,11 @@ class HttpRequestPlugin(Plugin):
         }
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-    def _exec(self, method, url, output='text', **kwargs):
+    @staticmethod
+    def _exec(method, url, output='text', **kwargs):
         """ Available output types: text (default), json, binary """
 
         if 'username' in kwargs and 'password' in kwargs:
@@ -53,18 +55,21 @@ class HttpRequestPlugin(Plugin):
         response = method(url, **kwargs)
         response.raise_for_status()
 
-        if output == 'json': output = response.json()
-        if output == 'binary': output = response.content
-        else: output = response.text
+        if output == 'json':
+            output = response.json()
+        if output == 'binary':
+            output = response.content
+        else:
+            output = response.text
 
+        # noinspection PyBroadException
         try:
             # If the response is a Platypush JSON, extract it
             output = Message.build(output)
-        except Exception as e:
+        except:
             pass
 
         return output
-
 
     @action
     def get(self, url, **kwargs):
@@ -74,12 +79,13 @@ class HttpRequestPlugin(Plugin):
         :param url: Target URL
         :type url: str
 
-        :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including but not limited to query params, data, JSON, headers etc. (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
+        :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including
+            but not limited to query params, data, JSON, headers etc.
+            (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
         :type kwargs: dict
         """
 
         return self._exec(method='get', url=url, **kwargs)
-
 
     @action
     def post(self, url, **kwargs):
@@ -89,12 +95,13 @@ class HttpRequestPlugin(Plugin):
         :param url: Target URL
         :type url: str
 
-        :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including but not limited to query params, data, JSON, headers etc. (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
+        :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including
+            but not limited to query params, data, JSON, headers etc.
+            (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
         :type kwargs: dict
         """
 
         return self._exec(method='post', url=url, **kwargs)
-
 
     @action
     def head(self, url, **kwargs):
@@ -104,12 +111,13 @@ class HttpRequestPlugin(Plugin):
         :param url: Target URL
         :type url: str
 
-        :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including but not limited to query params, data, JSON, headers etc. (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
+        :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including
+            but not limited to query params, data, JSON, headers etc.
+            (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
         :type kwargs: dict
         """
 
         return self._exec(method='head', url=url, **kwargs)
-
 
     @action
     def put(self, url, **kwargs):
@@ -119,12 +127,13 @@ class HttpRequestPlugin(Plugin):
         :param url: Target URL
         :type url: str
 
-        :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including but not limited to query params, data, JSON, headers etc. (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
+        :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including
+            but not limited to query params, data, JSON, headers etc.
+            (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
         :type kwargs: dict
         """
 
         return self._exec(method='put', url=url, **kwargs)
-
 
     @action
     def delete(self, url, **kwargs):
@@ -134,12 +143,13 @@ class HttpRequestPlugin(Plugin):
         :param url: Target URL
         :type url: str
 
-        :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including but not limited to query params, data, JSON, headers etc. (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
+        :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including
+            but not limited to query params, data, JSON, headers etc.
+            (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
         :type kwargs: dict
         """
 
         return self._exec(method='delete', url=url, **kwargs)
-
 
     @action
     def options(self, url, **kwargs):
@@ -149,12 +159,12 @@ class HttpRequestPlugin(Plugin):
         :param url: Target URL
         :type url: str
 
-        :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including but not limited to query params, data, JSON, headers etc. (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
+        :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including
+            but not limited to query params, data, JSON, headers etc.
+            (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
         :type kwargs: dict
         """
 
         return self._exec(method='options', url=url, **kwargs)
 
-
 # vim:sw=4:ts=4:et:
-
