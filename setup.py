@@ -165,8 +165,6 @@ setup(
         'hue': ['phue'],
         # Support for MPD/Mopidy music server plugin and backend
         'mpd': ['python-mpd2', 'websocket-client'],
-        # Support for Belkin WeMo Switch plugin
-        'wemo' : ['ouimeaux @ https://github.com/iancmcc/ouimeaux/tarball/master'],
         # Support for text2speech plugin
         'tts': ['mplayer'],
         # Support for Google text2speech plugin

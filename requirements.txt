@@ -47,9 +47,6 @@ bcrypt
 # MPD/Mopidy music server support
 # python-mpd2
 
-# Belkin WeMo Switch plugin support
-# git+https://github.com/iancmcc/ouimeaux
-
 # Google Assistant support
 # google-assistant-sdk[samples]
 # google-assistant-library

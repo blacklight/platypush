@@ -1,5 +1,17 @@
+import enum
+import textwrap
+
+from xml.dom.minidom import parseString
+import requests
+
 from platypush.plugins import action
 from platypush.plugins.switch import SwitchPlugin
+
+
+class SwitchAction(enum.Enum):
+    GET_STATE = 'GetBinaryState'
+    SET_STATE = 'SetBinaryState'
+    GET_NAME = 'GetFriendlyName'
 
 
 class SwitchWemoPlugin(SwitchPlugin):
@@ -9,32 +21,28 @@ class SwitchWemoPlugin(SwitchPlugin):
 
     Requires:
 
-        * **ouimeaux** (``pip install ouimeaux``)
+        * **requests** (``pip install requests``)
     """
 
-    def __init__(self, discovery_seconds=3, **kwargs):
+    _default_port = 49153
+
+    def __init__(self, devices=None, **kwargs):
         """
-        :param discovery_seconds: Discovery time when scanning for devices (default: 3)
-        :type discovery_seconds: int
+        :param devices: List of IP addresses or name->address map containing the WeMo Switch devices to control.
+            This plugin previously used ouimeaux for auto-discovery but it's been dropped because
+            1. too slow 2. too heavy 3. auto-discovery failed too often.
+        :type devices: list or dict
         """
 
         super().__init__(**kwargs)
-        self.discovery_seconds = discovery_seconds
-        self.env = None
+        self._port = self._default_port
+        if devices:
+            self._devices = devices if isinstance(devices, dict) else \
+                {addr: addr for addr in devices}
+        else:
+            self._devices = {}
 
-    def _refresh_devices(self):
-        """ Update the list of available devices """
-        self.logger.info('Starting WeMo discovery')
-        self._get_environment()
-        self.env.discover(seconds=self.discovery_seconds)
-        self._devices = self.env.devices
-
-    def _get_environment(self):
-        if not self.env:
-            from ouimeaux.environment import Environment
-            self.env = Environment()
-            self.env.start()
-            self._refresh_devices()
+        self._addresses = set(self._devices.values())
 
     @property
     def devices(self):
@@ -48,9 +56,7 @@ class SwitchWemoPlugin(SwitchPlugin):
                     {
                         "ip": "192.168.1.123",
                         "name": "Switch 1",
-                        "state": 1,
-                        "model": "Belkin Plugin Socket 1.0",
-                        "serialnumber": "123456ABCDEF"
+                        "on": true,
                     },
 
                     {
@@ -58,65 +64,105 @@ class SwitchWemoPlugin(SwitchPlugin):
                     }
                 ]
         """
-        self._refresh_devices()
 
         return [
             {
-                'id': dev.name,
-                'ip': dev.host,
-                'name': dev.name,
-                'model': dev.model,
-                'on': True if dev.get_state() else False,
-                'serialnumber': dev.serialnumber,
+                'ip': addr,
+                'name': name if name != addr else self.get_name(addr),
+                'on': self.get_state(addr),
             }
-            for (name, dev) in self._devices.items()
+            for (name, addr) in self._devices.items()
         ]
 
-    def _exec(self, method, device, *args, **kwargs):
-        self._get_environment()
+    def _exec(self, device: str, action: SwitchAction, port: int = _default_port, value=None):
+        if device not in self._addresses:
+            try:
+                device = self._devices[device]
+            except KeyError:
+                pass
 
-        if device not in self._devices:
-            self._refresh_devices()
+        state_name = action.value[3:]
 
-        if device not in self._devices:
-            raise RuntimeError('Device {} not found'.format(device))
+        response = requests.post(
+            'http://{}:{}/upnp/control/basicevent1'.format(device, port),
+            headers={
+                'User-Agent': '',
+                'Accept': '',
+                'Content-Type': 'text/xml; charset="utf-8"',
+                'SOAPACTION': '\"urn:Belkin:service:basicevent:1#{}\"'.format(action.value),
+            },
+            data=textwrap.dedent(
+                '''
+                <?xml version="1.0" encoding="utf-8"?>
+                <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+                        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+                    <s:Body>
+                        <u:{action} xmlns:u="urn:Belkin:service:basicevent:1">
+                            <{state}>{value}</{state}>
+                        </u:{action}
+                    ></s:Body>
+                </s:Envelope>
+                '''.format(action=action.value, state=state_name,
+                           value=value if value is not None else ''))
+        )
 
-        self.logger.info('Executing {} on WeMo device {}'.
-                         format(method, device))
-        dev = self._devices[device]
-        getattr(dev, method)(*args, **kwargs)
-
-        return self.status(device)
+        dom = parseString(response.text)
+        return dom.getElementsByTagName(state_name).item(0).firstChild.data
 
     @action
-    def on(self, device, **kwargs):
+    def on(self, device: str, **kwargs):
         """
         Turn a switch on
 
-        :param device: Device name
-        :type device: str
+        :param device: Device name or address
         """
-        return self._exec('on', device)
+        state = self._exec(device=device, action=SwitchAction.SET_STATE, value=1)
+        return {
+            'device': device,
+            'on': bool(int(state)),
+        }
 
     @action
-    def off(self, device, **kwargs):
+    def off(self, device: str, **kwargs):
         """
         Turn a switch off
 
-        :param device: Device name
-        :type device: str
+        :param device: Device name or address
         """
-        return self._exec('off', device)
+        state = self._exec(device=device, action=SwitchAction.SET_STATE, value=0)
+        return {
+            'device': device,
+            'on': bool(int(state)),
+        }
 
     @action
-    def toggle(self, device, **kwargs):
+    def toggle(self, device: str, *args, **kwargs):
         """
-        Toggle the state of a switch (on/off)
+        Toggle a device on/off state
 
-        :param device: Device name
-        :type device: str
+        :param device: Device name or address
         """
-        return self._exec('toggle', device)
+        state = self.get_state(device).output
+        return self.on(device) if not state else self.off(device)
+
+    @action
+    def get_state(self, device: str):
+        """
+        Get the on state of a device (True/False)
+
+        :param device: Device name or address
+        """
+        state = self._exec(device=device, action=SwitchAction.GET_STATE)
+        return bool(int(state))
+
+    @action
+    def get_name(self, device: str):
+        """
+        Get the friendly name of a device
+
+        :param device: Device name or address
+        """
+        return self._exec(device=device, action=SwitchAction.GET_NAME)
 
 
 # vim:sw=4:ts=4:et:
