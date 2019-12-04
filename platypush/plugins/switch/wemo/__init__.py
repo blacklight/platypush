@@ -109,7 +109,7 @@ class SwitchWemoPlugin(SwitchPlugin):
     def status(self, device=None, *args, **kwargs):
         devices = {device: device} if device else self._devices.copy()
 
-        return [
+        ret = [
             {
                 'id': addr,
                 'ip': addr,
@@ -118,6 +118,8 @@ class SwitchWemoPlugin(SwitchPlugin):
             }
             for (name, addr) in self._devices.items()
         ]
+
+        return ret[0] if device else ret
 
     @action
     def on(self, device: str, **kwargs):
