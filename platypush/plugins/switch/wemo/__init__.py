@@ -66,12 +66,8 @@ class SwitchWemoPlugin(SwitchPlugin):
         """
 
         return [
-            {
-                'ip': addr,
-                'name': name if name != addr else self.get_name(addr),
-                'on': self.get_state(addr),
-            }
-            for (name, addr) in self._devices.items()
+                self.status(device).output
+                for device in self._devices.values()
         ]
 
     def _exec(self, device: str, action: SwitchAction, port: int = _default_port, value=None):
@@ -108,6 +104,19 @@ class SwitchWemoPlugin(SwitchPlugin):
 
         dom = parseString(response.text)
         return dom.getElementsByTagName(state_name).item(0).firstChild.data
+
+    @action
+    def status(self, device=None, *args, **kwargs):
+        devices = {device: device} if device else self._devices.copy()
+
+        return [
+            {
+                'ip': addr,
+                'name': name if name != addr else self.get_name(addr).output,
+                'on': self.get_state(addr).output,
+            }
+            for (name, addr) in self._devices.items()
+        ]
 
     @action
     def on(self, device: str, **kwargs):
