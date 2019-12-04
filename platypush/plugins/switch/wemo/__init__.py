@@ -111,6 +111,7 @@ class SwitchWemoPlugin(SwitchPlugin):
 
         return [
             {
+                'id': addr,
                 'ip': addr,
                 'name': name if name != addr else self.get_name(addr).output,
                 'on': self.get_state(addr).output,
