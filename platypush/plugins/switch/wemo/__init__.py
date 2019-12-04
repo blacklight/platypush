@@ -1,4 +1,5 @@
 import enum
+import re
 import textwrap
 
 from xml.dom.minidom import parseString
@@ -70,6 +71,7 @@ class SwitchWemoPlugin(SwitchPlugin):
                 for device in self._devices.values()
         ]
 
+    # noinspection PyShadowingNames
     def _exec(self, device: str, action: SwitchAction, port: int = _default_port, value=None):
         if device not in self._addresses:
             try:
@@ -87,7 +89,7 @@ class SwitchWemoPlugin(SwitchPlugin):
                 'Content-Type': 'text/xml; charset="utf-8"',
                 'SOAPACTION': '\"urn:Belkin:service:basicevent:1#{}\"'.format(action.value),
             },
-            data=textwrap.dedent(
+            data=re.sub('\s+', ' ', textwrap.dedent(
                 '''
                 <?xml version="1.0" encoding="utf-8"?>
                 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
@@ -99,8 +101,7 @@ class SwitchWemoPlugin(SwitchPlugin):
                     ></s:Body>
                 </s:Envelope>
                 '''.format(action=action.value, state=state_name,
-                           value=value if value is not None else ''))
-        )
+                           value=value if value is not None else ''))))
 
         dom = parseString(response.text)
         return dom.getElementsByTagName(state_name).item(0).firstChild.data
@@ -116,7 +117,7 @@ class SwitchWemoPlugin(SwitchPlugin):
                 'name': name if name != addr else self.get_name(addr).output,
                 'on': self.get_state(addr).output,
             }
-            for (name, addr) in self._devices.items()
+            for (name, addr) in devices.items()
         ]
 
         return ret[0] if device else ret
