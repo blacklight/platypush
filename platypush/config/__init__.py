@@ -126,7 +126,6 @@ class Config(object):
                 token == 'logging' or \
                 token == 'workdir' or \
                 token == 'device_id' or \
-                token == 'switches' or \
                 token == 'environment'
 
     def _read_config_file(self, cfgfile):
