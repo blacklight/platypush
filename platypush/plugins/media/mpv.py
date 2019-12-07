@@ -38,6 +38,7 @@ class MediaMpvPlugin(MediaPlugin):
 
         self.args = self._default_mpv_args
         if args:
+            # noinspection PyTypeChecker
             self.args.update(args)
 
         self._player = None
@@ -55,7 +56,7 @@ class MediaMpvPlugin(MediaPlugin):
             os.environ[k] = v
 
         self._player = mpv.MPV(**mpv_args)
-        self._player.register_event_callback(self._event_callback())
+        self._player.event_callbacks += self._event_callback()
 
     @staticmethod
     def _post_event(evt_type, **evt):
@@ -83,8 +84,8 @@ class MediaMpvPlugin(MediaPlugin):
                 self._post_event(MediaPauseEvent, resource=self._get_current_resource(), title=self._player.filename)
             elif evt == Event.UNPAUSE:
                 self._post_event(MediaPlayEvent, resource=self._get_current_resource(), title=self._player.filename)
-            elif evt == Event.SHUTDOWN or (
-                evt == Event.END_FILE and event.get('event', {}).get('reason') in
+            elif evt == Event.SHUTDOWN or evt == Event.IDLE or (
+                    evt == Event.END_FILE and event.get('event', {}).get('reason') in
                     [EndFile.EOF_OR_INIT_FAILURE, EndFile.ABORTED, EndFile.QUIT]):
                 playback_rebounced = self._playback_rebounce_event.wait(timeout=0.5)
                 if playback_rebounced:
@@ -171,14 +172,14 @@ class MediaMpvPlugin(MediaPlugin):
         """ Volume down by (default: 10)% """
         if not self._player:
             return None, 'No mpv instance is running'
-        return self.set_volume(self._player.volume-step)
+        return self.set_volume(self._player.volume - step)
 
     @action
     def volup(self, step=10.0):
         """ Volume up by (default: 10)% """
         if not self._player:
             return None, 'No mpv instance is running'
-        return self.set_volume(self._player.volume+step)
+        return self.set_volume(self._player.volume + step)
 
     @action
     def set_volume(self, volume):
@@ -207,7 +208,7 @@ class MediaMpvPlugin(MediaPlugin):
             return None, 'No mpv instance is running'
         if not self._player.seekable:
             return None, 'The resource is not seekable'
-        pos = min(self._player.time_pos+self._player.time_remaining,
+        pos = min(self._player.time_pos + self._player.time_remaining,
                   max(0, position))
         self._player.time_pos = pos
         return self.status()
@@ -219,7 +220,7 @@ class MediaMpvPlugin(MediaPlugin):
             return None, 'No mpv instance is running'
         if not self._player.seekable:
             return None, 'The resource is not seekable'
-        pos = max(0, self._player.time_pos-offset)
+        pos = max(0, self._player.time_pos - offset)
         return self.seek(pos)
 
     @action
@@ -229,8 +230,8 @@ class MediaMpvPlugin(MediaPlugin):
             return None, 'No mpv instance is running'
         if not self._player.seekable:
             return None, 'The resource is not seekable'
-        pos = min(self._player.time_pos+self._player.time_remaining,
-                  self._player.time_pos+offset)
+        pos = min(self._player.time_pos + self._player.time_remaining,
+                  self._player.time_pos + offset)
         return self.seek(pos)
 
     @action
@@ -267,6 +268,7 @@ class MediaMpvPlugin(MediaPlugin):
         """ Toggle the fullscreen mode """
         return self.toggle_property('fullscreen')
 
+    # noinspection PyShadowingBuiltins
     @action
     def toggle_property(self, property):
         """
@@ -285,6 +287,7 @@ class MediaMpvPlugin(MediaPlugin):
         setattr(self._player, property, value)
         return {property: value}
 
+    # noinspection PyShadowingBuiltins
     @action
     def get_property(self, property):
         """
@@ -307,13 +310,14 @@ class MediaMpvPlugin(MediaPlugin):
         if not self._player:
             return None, 'No mpv instance is running'
 
-        for k,v in props.items():
+        for k, v in props.items():
             setattr(self._player, k, v)
         return props
 
     @action
     def set_subtitles(self, filename, *args, **kwargs):
         """ Sets media subtitles from filename """
+        # noinspection PyTypeChecker
         return self.set_property(subfile=filename, sub_visibility=True)
 
     @action
@@ -339,13 +343,13 @@ class MediaMpvPlugin(MediaPlugin):
         """
         if not self._player:
             return self.play(resource, **args)
-        return self._player.loadfile(resource, mode='append-play', **args)
+        return self._player.loadfile(resource, mode='append-play')
 
     @action
     def mute(self):
         """ Toggle mute state """
         if not self._player:
-            return (None, 'No mpv instance is running')
+            return None, 'No mpv instance is running'
         mute = not self._player.mute
         self._player.mute = mute
         return {'muted': mute}
@@ -378,8 +382,7 @@ class MediaMpvPlugin(MediaPlugin):
             'audio_channels': getattr(self._player, 'audio_channels'),
             'audio_codec': getattr(self._player, 'audio_codec_name'),
             'delay': getattr(self._player, 'delay'),
-            'duration': getattr(self._player, 'playback_time', 0) +
-                        getattr(self._player, 'playtime_remaining', 0)
+            'duration': getattr(self._player, 'playback_time', 0) + getattr(self._player, 'playtime_remaining', 0)
             if getattr(self._player, 'playtime_remaining') else None,
             'filename': getattr(self._player, 'filename'),
             'file_size': getattr(self._player, 'file_size'),
@@ -409,6 +412,5 @@ class MediaMpvPlugin(MediaPlugin):
 
         return ('file://' if os.path.isfile(self._player.stream_path)
                 else '') + self._player.stream_path
-
 
 # vim:sw=4:ts=4:et:
