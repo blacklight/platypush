@@ -2,6 +2,7 @@
     with pluginIcons = {
         'camera': 'fas fa-camera',
         'camera.ir.mlx90640': 'fas fa-sun',
+        'execute': 'fas fa-play',
         'light.hue': 'fa fa-lightbulb',
         'media.mplayer': 'fa fa-film',
         'media.mpv': 'fa fa-film',
@@ -19,6 +20,12 @@
 
 <nav>
     <ul>
+        <li :class="{selected: 'execute' == selectedPlugin}" title="execute">
+            <a href="#execute" @click="selectedPlugin = 'execute'">
+                <i class="{{ pluginIcons['execute'] }}"></i>
+            </a>
+        </li>
+
         {% for plugin in plugins|sort %}
             <li :class="{selected: '{{ plugin }}' == selectedPlugin}" title="{{ plugin }}">
                 <a href="#{{ plugin }}" @click="selectedPlugin = '{{ plugin }}'">

@@ -1,0 +1,173 @@
+@import 'common/vars';
+@import 'common/layout';
+@import 'webpanel/plugins/execute/vars';
+
+.execute-container {
+    height: 99%;
+    color: $default-fg-2;
+    font-weight: 400;
+    //line-height: 3.8rem;
+    //letter-spacing: .1rem;
+    border-bottom: $default-border-2;
+    border-radius: 0 0 1em 1em;
+
+    .title {
+        background: $title-bg;
+        padding: .2em;
+        border: $title-border;
+        box-shadow: $title-shadow;
+        font-size: 1.1em;
+    }
+
+    .request-type-container {
+        display: flex;
+        flex-direction: row;
+        align-items: baseline;
+        margin: 1em 0 0 1em;
+
+        label {
+            margin: 0 1em 0 .5em;
+        }
+    }
+
+    .request {
+        margin: 0 .5em;
+
+        form {
+            margin-bottom: 0 !important;
+        }
+
+        .autocomplete {
+            width: 80%;
+            max-width: 60em;
+        }
+
+        .action-name {
+            box-shadow: $action-name-shadow;
+            width: 100%;
+        }
+
+        [type=submit] {
+            margin-left: 2em;
+        }
+
+        .options {
+            display: flex;
+            margin-top: .5em;
+            margin-bottom: 1.5em;
+            padding-top: .5em;
+        }
+
+        .params {
+            margin-right: 1.5em;
+            max-height: 50vh;
+            overflow: auto;
+
+            .param {
+                margin-bottom: .25em;
+            }
+
+            .action-param-value {
+                width: 100%;
+            }
+        }
+
+        .add-param {
+            width: 100%;
+
+            button {
+                width: 100%;
+                background: $extra-params-btn-bg;
+                border: $title-border;
+            }
+        }
+
+        .extra-param {
+            display: flex;
+            margin-bottom: .5em;
+
+            .action-extra-param-del {
+                border: 0;
+                text-align: right;
+                padding: 0 .5em;
+            }
+        }
+
+        .output-container {
+            max-height: 50vh;
+            overflow: auto;
+
+            .response,
+            .error,
+            .doc {
+                padding: .5em .5em 0 .5em;
+                border-radius: 1em;
+            }
+
+            .response {
+                background: $response-bg;
+                border: $response-border;
+            }
+
+            .error {
+                background: $error-bg;
+                border: $error-border;
+            }
+
+            .doc {
+                background: $doc-bg;
+                border: $doc-border;
+            }
+        }
+
+        textarea {
+            width: 80%;
+            max-width: 60em;
+            height: 10em;
+            border-radius: 1em;
+        }
+    }
+
+    .raw-request {
+        .first-row {
+            display: flex;
+            flex-direction: row;
+        }
+    }
+
+    .procedures-container {
+        .procedure {
+            border-bottom: $default-border-2;
+            padding: 1.5em .5em;
+            cursor: pointer;
+
+            &:hover {
+                background: $hover-bg;
+            }
+
+            &.selected {
+                background: $selected-bg;
+            }
+
+            form {
+                display: flex;
+                margin-bottom: 0 !important;
+                flex-direction: column;
+            }
+
+            .head {
+                display: flex;
+                align-items: center;
+            }
+
+            .btn-container {
+                text-align: right;
+            }
+
+            button {
+                background: $procedure-submit-btn-bg;
+            }
+        }
+    }
+}
+

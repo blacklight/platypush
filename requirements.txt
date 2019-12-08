@@ -181,3 +181,6 @@ croniter
 
 # Support for clipboard manipulation
 # pyperclip
+
+# Support for RST->HTML docstring conversion
+# docutils

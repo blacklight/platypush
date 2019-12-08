@@ -67,6 +67,7 @@ def index():
                            websocket_port=get_websocket_port(),
                            template_folder=template_folder, static_folder=static_folder,
                            plugins=Config.get_plugins(), backends=Config.get_backends(),
+                           procedures=Config.get_procedures(),
                            has_ssl=http_conf.get('ssl_cert') is not None)
 
 

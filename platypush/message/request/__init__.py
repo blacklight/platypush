@@ -209,13 +209,16 @@ class Request(Message):
                 args = self.expand_value_from_context(args, **context)
                 response = plugin.run(method=method_name, **args)
 
-                if response and response.is_error():
-                    logger.warning(('Response processed with errors from ' +
-                                    'action {}: {}').format(
-                        action, str(response)))
-                elif not response.disable_logging:
-                    logger.info('Processed response from action {}: {}'.
-                                format(action, str(response)))
+                if not response:
+                    logger.warning('Received null response from action {}'.format(action))
+                else:
+                    if response.is_error():
+                        logger.warning(('Response processed with errors from ' +
+                                        'action {}: {}').format(
+                            action, str(response)))
+                    elif not response.disable_logging:
+                        logger.info('Processed response from action {}: {}'.
+                                    format(action, str(response)))
             except Exception as e:
                 # Retry mechanism
                 plugin.logger.exception(e)

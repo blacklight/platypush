@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/all.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dist/webpanel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dist/webpanel/plugins/execute.css') }}">
 
     <script type="text/javascript">
         if (!window.config) {
@@ -43,12 +44,14 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/api.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/events.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
 
     {% for style in styles.values() %}
     <link rel="stylesheet" href="{{ url_for('static', filename=style['_style_file']) }}">
     {% endfor %}
 
     {% include 'elements.html' %}
+    {% include 'plugins/execute/index.html' %}
 
     {% for plugin, conf in templates.items() %}
         {% with configuration=templates[plugin] %}
@@ -56,6 +59,7 @@
         {% endwith %}
     {% endfor %}
 
+    <script type="text/javascript" src="{{ url_for('static', filename='js/plugins/execute/index.js') }}"></script>
     {% for script in scripts.values() %}
     <script type="text/javascript" src="{{ url_for('static', filename=script['_script_file']) }}"></script>
     {% endfor %}
@@ -69,6 +73,9 @@
 
         <main>
             <div class="plugins-container">
+                <plugin tag="execute" key="execute" :class="{hidden: selectedPlugin != 'execute'}"
+                        config="{{ utils.to_json(procedures) }}"></plugin>
+
                 <plugin v-for="(conf, plugin) in {{ utils.to_json(templates) }}"
                         :tag="plugin.replace(/\./g, '-')"
                         :key="plugin"

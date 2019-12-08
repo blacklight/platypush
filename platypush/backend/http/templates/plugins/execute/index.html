@@ -1,0 +1,112 @@
+<script type="text/x-template" id="tmpl-execute">
+    <div class="row plugin execute-container">
+        <div class="command-container">
+            <div class="title">Execute Action</div>
+            <form ref="actionForm" autocomplete="off" @submit.prevent="executeAction">
+                <div class="request-type-container">
+                    <input type="radio" id="action-structured-input"
+                           :checked="structuredInput" @change="onInputTypeChange(true)">
+                    <label for="action-structured-input">Structured request</label>
+                    <input type="radio" id="action-raw-input"
+                           :checked="!structuredInput" @change="onInputTypeChange(false)">
+                    <label for="action-raw-input">Raw request</label>
+                </div>
+
+                <div class="request structured-request" :class="structuredInput ? '' : 'hidden'">
+                    <div class="autocomplete">
+                        <input ref="actionName" type="text" class="action-name"
+                               placeholder="Action Name" :disabled="loading" v-model="action.name"
+                               @change="actionChanged=true" @blur="updateAction">
+                    </div>
+                    <button type="submit" class="btn-primary" :disabled="running" title="Run">
+                        <i class="fas fa-play"></i>
+                    </button>
+
+                    <div class="options" v-if="action.name in actions">
+                        <div class="params col-6" ref="params"
+                             v-if="Object.keys(action.args).length || action.supportsExtraArgs">
+                            <div class="param" :key="name" v-for="(param, name) in action.args">
+                                <input type="text" class="action-param-value"
+                                       :placeholder="name" v-model="action.args[name].value"
+                                       @focus="selectAttrDoc(name)"
+                                       @blur="resetDoc">
+                            </div>
+
+                            <div class="extra-params" ref="extraParams" v-if="Object.keys(action.extraArgs).length">
+                                <div class="param extra-param" :key="i" v-for="(param, i) in action.extraArgs">
+                                    <input type="text" class="action-extra-param-name col-5"
+                                           placeholder="Name" v-model="action.extraArgs[i].name">
+                                    <input type="text" class="action-extra-param-value col-6"
+                                           placeholder="Value" v-model="action.extraArgs[i].value">
+                                    <button type="button" class="action-extra-param-del col-1" title="Remove parameter"
+                                            @click="removeParameter(i)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="add-param" v-if="action.supportsExtraArgs">
+                                <button type="button" title="Add a parameter" @click="addParameter">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="output-container"
+                             :class="Object.keys(action.args).length || action.supportsExtraArgs ? 'col-6' : 'col-12'">
+                            <div class="response" v-html="response" v-if="response != null"></div>
+                            <div class="error" v-html="error" v-else-if="error != null"></div>
+                            <div class="doc-container" v-else-if="selectedDoc">
+                                <div class="doc" v-html="selectedDoc" v-if="htmlDoc"></div>
+                                <div class="doc" v-text="selectedDoc" v-else></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="request raw-request" :class="structuredInput ? 'hidden' : ''">
+                    <div class="first-row">
+                        <textarea v-model="rawRequest" placeholder="Raw JSON request"></textarea>
+                        <button type="submit" :disabled="running" class="btn-primary" title="Run">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+
+                    <div class="output-container" v-if="response != null || error != null">
+                        <div class="response" v-html="response" v-if="response != null"></div>
+                        <div class="error" v-html="error" v-else="error != null"></div>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+
+        <div class="procedures-container">
+            <div class="title">Execute Procedure</div>
+            <div class="procedure" :class="selectedProcedure.name === name ? 'selected' : ''"
+                 v-for="(procedure, name) in procedures" :key="name" @click="updateProcedure(name)">
+                <form ref="procedureForm" autocomplete="off" @submit.prevent="executeProcedure">
+                    <div class="head">
+                        <div class="name col-no-margin-11" v-text="name"></div>
+                        <div class="btn-container col-no-margin-1">
+                            <button type="submit" class="btn-default" :disabled="running" title="Run"
+                                    v-if="selectedProcedure.name === name">
+                                <i class="fas fa-play"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="params" v-if="selectedProcedure.name === name">
+                        <div class="param"
+                             v-for="(argvalue, argname) in selectedProcedure.args"
+                             :key="argname">
+                            <input type="text" class="action-param-value" @click="$event.stopPropagation()"
+                                   :placeholder="argname" v-model="selectedProcedure.args[argname]">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</script>
+

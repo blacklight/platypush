@@ -1,0 +1,160 @@
+import importlib
+import inspect
+import json
+import pkgutil
+import re
+import threading
+
+import platypush.plugins
+
+from platypush.plugins import Plugin, action
+from platypush.utils import get_decorators
+
+
+# noinspection PyTypeChecker
+class Model:
+    def __str__(self):
+        return json.dumps(dict(self), indent=2, sort_keys=True)
+
+    def __repr__(self):
+        return json.dumps(dict(self))
+
+    @staticmethod
+    def to_html(doc):
+        try:
+            import docutils.core
+        except ImportError:
+            # docutils not found
+            return doc
+
+        return docutils.core.publish_parts(doc, writer_name='html')['html_body']
+
+
+class PluginModel(Model):
+    def __init__(self, plugin, prefix='', html_doc: bool = False):
+        self.name = plugin.__module__[len(prefix):]
+        self.html_doc = html_doc
+        self.doc = self.to_html(plugin.__doc__) if html_doc and plugin.__doc__ else plugin.__doc__
+        self.actions = {action_name: ActionModel(getattr(plugin, action_name), html_doc=html_doc)
+                        for action_name in get_decorators(plugin, climb_class_hierarchy=True).get('action', [])}
+
+    def __iter__(self):
+        for attr in ['name', 'actions', 'doc', 'html_doc']:
+            if attr == 'actions':
+                # noinspection PyShadowingNames
+                yield attr, {name: dict(action) for name, action in self.actions.items()},
+            else:
+                yield attr, getattr(self, attr)
+
+
+class ActionModel(Model):
+    # noinspection PyShadowingNames
+    def __init__(self, action, html_doc: bool = False):
+        self.name = action.__name__
+        self.doc, argsdoc = self._parse_docstring(action.__doc__, html_doc=html_doc)
+        self.args = {}
+        self.has_kwargs = False
+
+        for arg in list(inspect.signature(action).parameters.values())[1:]:
+            if arg.kind == arg.VAR_KEYWORD:
+                self.has_kwargs = True
+                continue
+
+            self.args[arg.name] = {
+                'default': arg.default if not issubclass(arg.default.__class__, type) else None,
+                'doc': argsdoc.get(arg.name)
+            }
+
+    @classmethod
+    def _parse_docstring(cls, docstring: str, html_doc: bool = False):
+        new_docstring = ''
+        params = {}
+        cur_param = None
+        cur_param_docstring = ''
+
+        if not docstring:
+            return None, {}
+
+        for line in docstring.split('\n'):
+            m = re.match(r'^\s*:param ([^:]+):\s*(.*)', line)
+            if m:
+                if cur_param:
+                    params[cur_param] = cls.to_html(cur_param_docstring) if html_doc else cur_param_docstring
+
+                cur_param = m.group(1)
+                cur_param_docstring = m.group(2)
+            elif re.match(r'^\s*:[^:]+:\s*.*', line):
+                continue
+            else:
+                if cur_param:
+                    if not line.strip():
+                        params[cur_param] = cls.to_html(cur_param_docstring) if html_doc else cur_param_docstring
+                        cur_param = None
+                        cur_param_docstring = ''
+                    else:
+                        cur_param_docstring += '\n' + line.strip()
+                else:
+                    new_docstring += line.rstrip() + '\n'
+
+        if cur_param:
+            params[cur_param] = cls.to_html(cur_param_docstring) if html_doc else cur_param_docstring
+
+        return new_docstring.strip() if not html_doc else cls.to_html(new_docstring), params
+
+    def __iter__(self):
+        for attr in ['name', 'args', 'doc', 'has_kwargs']:
+            yield attr, getattr(self, attr)
+
+
+class InspectPlugin(Plugin):
+    """
+    This plugin can be used to inspect platypush plugins and backends
+
+    Requires:
+
+        * **docutils** (``pip install docutils``) - optional, for HTML doc generation
+
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._plugins = {}
+        self._plugins_lock = threading.RLock()
+        self._html_doc = False
+
+    def _init_plugins(self):
+        package = platypush.plugins
+        prefix = package.__name__ + '.'
+
+        for _, modname, _ in pkgutil.walk_packages(path=package.__path__,
+                                                   prefix=prefix,
+                                                   onerror=lambda x: None):
+            # noinspection PyBroadException
+            try:
+                module = importlib.import_module(modname)
+            except:
+                continue
+
+            for _, obj in inspect.getmembers(module):
+                if inspect.isclass(obj) and issubclass(obj, Plugin):
+                    model = PluginModel(plugin=obj, prefix=prefix, html_doc=self._html_doc)
+                    if model.name:
+                        self._plugins[model.name] = model
+
+    @action
+    def get_all_plugins(self, html_doc: bool = None):
+        """
+        :param html_doc: If True then the docstring will be parsed into HTML (default: False)
+        """
+        with self._plugins_lock:
+            if not self._plugins or (html_doc is not None and html_doc != self._html_doc):
+                self._html_doc = html_doc
+                self._init_plugins()
+
+            return json.dumps({
+                name: dict(plugin)
+                for name, plugin in self._plugins.items()
+            })
+
+
+# vim:sw=4:ts=4:et:

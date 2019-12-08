@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+import re
 import socket
 import sys
 import yaml
@@ -157,7 +158,6 @@ class Config(object):
 
         return config
 
-
     def _init_components(self):
         for key in self._config.keys():
             if key.startswith('backend.'):
@@ -173,9 +173,21 @@ class Config(object):
                 tokens = key.split('.')
                 _async = True if len(tokens) > 2 and tokens[1] == 'async' else False
                 procedure_name = '.'.join(tokens[2:] if len(tokens) > 2 else tokens[1:])
+                args = []
+                m = re.match(r'^([^(]+)\(([^)]+)\)\s*', procedure_name)
+
+                if m:
+                    procedure_name = m.group(1).strip()
+                    args = [
+                        arg.strip()
+                        for arg in m.group(2).strip().split(',')
+                        if arg.strip()
+                    ]
+
                 self.procedures[procedure_name] = {
                     '_async': _async,
-                    'actions': self._config[key]
+                    'actions': self._config[key],
+                    'args': args,
                 }
             elif not self._is_special_token(key):
                 self.plugins[key] = self._config[key]

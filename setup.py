@@ -246,6 +246,8 @@ setup(
         'mlx90640': ['Pillow'],
         # Support for machine learning and CV plugin
         'cv': ['cv2', 'numpy'],
+        # Support for the generation of HTML documentation from docstring
+        'htmldoc': ['docutils'],
     },
 )
 
