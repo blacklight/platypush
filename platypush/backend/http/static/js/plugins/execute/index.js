@@ -32,7 +32,7 @@ Vue.component('execute', {
     methods: {
         refresh: async function() {
             this.loading = true;
-            this.procedures = JSON.parse(this.config);
+            this.procedures = window.config.procedures;
             this.plugins = await request('inspect.get_all_plugins', {html_doc: true});
 
             for (const plugin of Object.values(this.plugins)) {

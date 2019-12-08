@@ -20,12 +20,6 @@
 
 <nav>
     <ul>
-        <li :class="{selected: 'execute' == selectedPlugin}" title="execute">
-            <a href="#execute" @click="selectedPlugin = 'execute'">
-                <i class="{{ pluginIcons['execute'] }}"></i>
-            </a>
-        </li>
-
         {% for plugin in plugins|sort %}
             <li :class="{selected: '{{ plugin }}' == selectedPlugin}" title="{{ plugin }}">
                 <a href="#{{ plugin }}" @click="selectedPlugin = '{{ plugin }}'">

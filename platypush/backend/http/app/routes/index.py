@@ -1,3 +1,4 @@
+import json
 import os
 
 from flask import Blueprint, render_template, request
@@ -31,6 +32,7 @@ def index():
         if plugin not in configured_plugins:
             configured_plugins[plugin] = {}
 
+    configured_plugins['execute'] = {}
     disabled_plugins = set(request.args.get('disabled_plugins', '').split(','))
 
     js_folder = os.path.abspath(
@@ -38,8 +40,10 @@ def index():
     style_folder = os.path.abspath(
         os.path.join(template_folder, '..', 'static', 'css', 'dist'))
 
-    for plugin, conf in configured_plugins.items():
+    for plugin, conf in configured_plugins.copy().items():
         if plugin in disabled_plugins:
+            if plugin == 'execute':
+                configured_plugins.pop('execute')
             continue
 
         template_file = os.path.join(
@@ -67,7 +71,7 @@ def index():
                            websocket_port=get_websocket_port(),
                            template_folder=template_folder, static_folder=static_folder,
                            plugins=Config.get_plugins(), backends=Config.get_backends(),
-                           procedures=Config.get_procedures(),
+                           procedures=json.dumps(Config.get_procedures()),
                            has_ssl=http_conf.get('ssl_cert') is not None)
 
 

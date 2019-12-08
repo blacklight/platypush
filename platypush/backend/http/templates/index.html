@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/all.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dist/webpanel.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dist/webpanel/plugins/execute.css') }}">
 
     <script type="text/javascript">
         if (!window.config) {
@@ -20,6 +19,7 @@
             has_ssl: {{ 'true' if has_ssl else 'false' }},
             templates: JSON.parse('{{ utils.to_json(templates)|safe }}'),
             scripts: JSON.parse('{{ utils.to_json(scripts)|safe }}'),
+            procedures: JSON.parse('{{ procedures.replace("\'", "\\\'")|safe }}'),
         };
 
 
@@ -51,7 +51,6 @@
     {% endfor %}
 
     {% include 'elements.html' %}
-    {% include 'plugins/execute/index.html' %}
 
     {% for plugin, conf in templates.items() %}
         {% with configuration=templates[plugin] %}
@@ -59,7 +58,6 @@
         {% endwith %}
     {% endfor %}
 
-    <script type="text/javascript" src="{{ url_for('static', filename='js/plugins/execute/index.js') }}"></script>
     {% for script in scripts.values() %}
     <script type="text/javascript" src="{{ url_for('static', filename=script['_script_file']) }}"></script>
     {% endfor %}
@@ -73,9 +71,6 @@
 
         <main>
             <div class="plugins-container">
-                <plugin tag="execute" key="execute" :class="{hidden: selectedPlugin != 'execute'}"
-                        config="{{ utils.to_json(procedures) }}"></plugin>
-
                 <plugin v-for="(conf, plugin) in {{ utils.to_json(templates) }}"
                         :tag="plugin.replace(/\./g, '-')"
                         :key="plugin"
