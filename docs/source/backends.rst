@@ -27,6 +27,7 @@ Backends
     platypush/backend/music.mpd.rst
     platypush/backend/music.snapcast.rst
     platypush/backend/nfc.rst
+    platypush/backend/nodered.rst
     platypush/backend/pushbullet.rst
     platypush/backend/redis.rst
     platypush/backend/scard.rst
