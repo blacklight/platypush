@@ -41,19 +41,23 @@ class MqttBackend(Backend):
         :param topic: Topic to read messages from (default: ``platypush_bus_mq/<device_id>``)
         :type topic: str
 
-        :param tls_cafile: If TLS/SSL is enabled on the MQTT server and the certificate requires a certificate authority to authenticate it, `ssl_cafile` will point to the provided ca.crt file (default: None)
+        :param tls_cafile: If TLS/SSL is enabled on the MQTT server and the certificate requires a certificate authority
+            to authenticate it, `ssl_cafile` will point to the provided ca.crt file (default: None)
         :type tls_cafile: str
 
-        :param tls_certfile: If TLS/SSL is enabled on the MQTT server and a client certificate it required, specify it here (default: None)
+        :param tls_certfile: If TLS/SSL is enabled on the MQTT server and a client certificate it required, specify it
+            here (default: None)
         :type tls_certfile: str
 
-        :param tls_keyfile: If TLS/SSL is enabled on the MQTT server and a client certificate key it required, specify it here (default: None)
-        :type tls_keyfile: str
+        :param tls_keyfile: If TLS/SSL is enabled on the MQTT server and a client certificate key it required,
+            specify it here (default: None) :type tls_keyfile: str
 
-        :param tls_version: If TLS/SSL is enabled on the MQTT server and it requires a certain TLS version, specify it here (default: None)
+        :param tls_version: If TLS/SSL is enabled on the MQTT server and it requires a certain TLS version, specify it
+            here (default: None)
         :type tls_version: str
 
-        :param tls_ciphers: If TLS/SSL is enabled on the MQTT server and an explicit list of supported ciphers is required, specify it here (default: None)
+        :param tls_ciphers: If TLS/SSL is enabled on the MQTT server and an explicit list of supported ciphers is
+            required, specify it here (default: None)
         :type tls_ciphers: str
 
         :param username: Specify it if the MQTT server requires authentication (default: None)
@@ -95,8 +99,7 @@ class MqttBackend(Backend):
         self.tls_ciphers = tls_ciphers
         self.listeners_conf = listeners or []
 
-
-    def send_message(self, msg):
+    def send_message(self, msg, **kwargs):
         try:
             client = get_plugin('mqtt')
             client.send_message(topic=self.topic, msg=msg, host=self.host,
@@ -112,24 +115,31 @@ class MqttBackend(Backend):
     def _initialize_listeners(self, listeners_conf):
         import paho.mqtt.client as mqtt
 
+        # noinspection PyShadowingNames
         def listener_thread(client, host, port):
             client.connect(host, port, 60)
             client.loop_forever()
 
+        # noinspection PyShadowingNames
         def on_connect(topics):
+            # noinspection PyShadowingNames,PyUnusedLocal
             def handler(client, userdata, flags, rc):
                 for topic in topics:
                     client.subscribe(topic)
+
             return handler
 
+        # noinspection PyShadowingNames,PyUnusedLocal
         def on_message(client, userdata, msg):
             data = msg.payload
+            # noinspection PyBroadException
             try:
                 data = data.decode('utf-8')
                 data = json.loads(data)
             except:
                 pass
 
+            # noinspection PyProtectedMember
             self.bus.post(MQTTMessageEvent(host=client._host, port=client._port,
                                            topic=msg.topic, msg=data))
 
@@ -143,7 +153,7 @@ class MqttBackend(Backend):
 
             if not host or not topics:
                 self.logger.warning('No host nor list of topics specified for ' +
-                                    'listener n.{}'.format(i+1))
+                                    'listener n.{}'.format(i + 1))
                 continue
 
             client = mqtt.Client()
@@ -160,15 +170,17 @@ class MqttBackend(Backend):
                                tls_version=listener.get('tls_version'),
                                ciphers=listener.get('tls_ciphers'))
 
-            threading.Thread(target=listener_thread, kwargs = {
-                'client': client, 'host': host, 'port': port }).start()
-
+            threading.Thread(target=listener_thread, kwargs={
+                'client': client, 'host': host, 'port': port}).start()
 
     def run(self):
+        # noinspection PyUnusedLocal
         def on_connect(client, userdata, flags, rc):
             client.subscribe(self.topic)
 
+        # noinspection PyUnusedLocal
         def on_message(client, userdata, msg):
+            # noinspection PyShadowingNames
             def response_thread(msg):
                 set_thread_name('MQTTProcessor')
                 response = self.get_message_response(msg)
@@ -177,14 +189,19 @@ class MqttBackend(Backend):
                 response_topic = '{}/responses/{}'.format(self.topic, msg.id)
 
                 self.logger.info('Processing response on the MQTT topic {}: {}'.
-                                format(response_topic, response))
+                                 format(response_topic, response))
 
                 self.send_message(response)
 
             msg = msg.payload.decode('utf-8')
-            try: msg = Message.build(json.loads(msg))
-            except: pass
-            if not msg: return
+            # noinspection PyBroadException
+            try:
+                msg = Message.build(json.loads(msg))
+            except:
+                pass
+
+            if not msg:
+                return
 
             self.logger.info('Received message on the MQTT backend: {}'.format(msg))
 
@@ -211,12 +228,12 @@ class MqttBackend(Backend):
 
         if self.tls_cafile:
             self._client.tls_set(ca_certs=self.tls_cafile, certfile=self.tls_certfile,
-                           keyfile=self.tls_keyfile, tls_version=self.tls_version,
-                           ciphers=self.tls_ciphers)
+                                 keyfile=self.tls_keyfile, tls_version=self.tls_version,
+                                 ciphers=self.tls_ciphers)
 
         self._client.connect(self.host, self.port, 60)
         self.logger.info('Initialized MQTT backend on host {}:{}, topic {}'.
-                     format(self.host, self.port, self.topic))
+                         format(self.host, self.port, self.topic))
 
         self._initialize_listeners(self.listeners_conf)
         self._client.loop_forever()
@@ -232,10 +249,10 @@ class MqttBackend(Backend):
             try:
                 listener.loop_stop()
             except Exception as e:
+                # noinspection PyProtectedMember
                 self.logger.warning('Could not stop listener ' +
                                     '{host}:{port}: {error}'.format(
                                         host=listener._host, port=listener._port,
                                         error=str(e)))
-
 
 # vim:sw=4:ts=4:et:
