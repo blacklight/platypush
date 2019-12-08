@@ -67,6 +67,9 @@ class NfcBackend(Backend):
         import ndef
         records = []
 
+        if not tag.ndef:
+            return records
+
         for record in tag.ndef.records:
             r = {
                 'record_type': record.type,
