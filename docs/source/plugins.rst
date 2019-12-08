@@ -42,6 +42,7 @@ Plugins
     platypush/plugins/http.request.rst
     platypush/plugins/http.webpage.rst
     platypush/plugins/ifttt.rst
+    platypush/plugins/inspect.rst
     platypush/plugins/kafka.rst
     platypush/plugins/light.hue.rst
     platypush/plugins/light.rst
