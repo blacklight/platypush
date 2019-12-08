@@ -1,0 +1,22 @@
+# platypush systemd service example.
+# Edit and copy this file to your systemd folder. It's usually
+# /usr/lib/systemd/user for global installation or
+# ~/.config/systemd/user for user installation. You can
+# then control and monitor the service through
+# systemd [--user] [start|stop|restart|status] platypush.service
+
+[Unit]
+Description=Platypush daemon
+After=network.target
+
+[Service]
+# platypush installation path
+ExecStart=/usr/bin/platypush
+Restart=always
+# How long should be waited before restarting the service
+# in case of failure.
+RestartSec=10
+
+[Install]
+WantedBy=default.target
+

@@ -140,6 +140,7 @@ setup(
         'requests',
         'croniter',
         'pyScss',
+        'sqlalchemy',
     ],
 
     extras_require = {
@@ -150,9 +151,9 @@ setup(
         # Support for Pushbullet backend and plugin
         'pushbullet': ['pushbullet.py'],
         # Support for HTTP backend
-        'http': ['flask', 'websockets', 'python-dateutil', 'tz', 'frozendict', 'bcrypt', 'sqlalchemy'],
+        'http': ['flask', 'websockets', 'python-dateutil', 'tz', 'frozendict', 'bcrypt'],
         # Support for uWSGI HTTP backend
-        'uwsgi': ['flask', 'websockets', 'python-dateutil', 'tz', 'frozendict', 'uwsgi', 'bcrypt', 'sqlalchemy'],
+        'uwsgi': ['flask', 'websockets', 'python-dateutil', 'tz', 'frozendict', 'uwsgi', 'bcrypt'],
         # Support for database
         'db': ['sqlalchemy'],
         # Support for MQTT backends
@@ -168,7 +169,7 @@ setup(
         # Support for text2speech plugin
         'tts': ['mplayer'],
         # Support for Google text2speech plugin
-        'google-tts': ['google-cloud-texttospeech'],
+        'google-tts': ['oauth2client', 'google-api-python-client', 'google-cloud-texttospeech'],
         # Support for OMXPlayer plugin
         'omxplayer': ['omxplayer-wrapper'],
         # Support for YouTube
