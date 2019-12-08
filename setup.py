@@ -248,6 +248,8 @@ setup(
         'cv': ['cv2', 'numpy'],
         # Support for the generation of HTML documentation from docstring
         'htmldoc': ['docutils'],
+        # Support for Node-RED integration
+        'nodered': ['pynodered'],
     },
 )
 

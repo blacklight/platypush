@@ -184,3 +184,6 @@ croniter
 
 # Support for RST->HTML docstring conversion
 # docutils
+
+# Support for Node-RED integration
+# nodered
