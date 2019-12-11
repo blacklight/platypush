@@ -15,7 +15,7 @@ class BluetoothPlugin(Plugin):
     Requires:
 
         * **pybluez** (``pip install pybluez``)
-        * **pyobex** (``pip install pyobex``) [optional] for file transfer support
+        * **pyobex** (``pip install git+https://github.com/BlackLight/PyOBEX``)
 
     """
 
