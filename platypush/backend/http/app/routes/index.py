@@ -9,7 +9,6 @@ from platypush.backend.http.app.utils import authenticate, get_websocket_port
 from platypush.backend.http.utils import HttpUtils
 from platypush.config import Config
 
-
 index = Blueprint('index', __name__, template_folder=template_folder)
 
 # Declare routes list

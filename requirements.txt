@@ -103,9 +103,10 @@ paho-mqtt
 # Serial port support
 # pyserial
 
-# Switchbot devices support
+# Bluetooth devices support
 # pybluez
 # gattlib
+# git+https://github.com/BlackLight/PyOBEX
 
 # Support for TP-Link HS100 and similar smart switches/plugins
 # pyHS100

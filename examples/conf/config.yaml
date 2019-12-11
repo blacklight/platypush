@@ -21,6 +21,12 @@ include:
     - include/media.yaml
     - include/sensors.yaml
 
+# platypush logs on stdout by default. You can use the logging section to specify
+# an alternative file or change the logging level.
+logging:
+    filename: ~/.local/log/platypush/platypush.log
+    level: INFO
+
 # The device_id is used by many components of platypush and it should uniquely
 # identify a device in your network. If nothing is specified then the hostname
 # will be used.

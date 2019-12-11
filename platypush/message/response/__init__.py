@@ -3,10 +3,11 @@ import time
 
 from platypush.message import Message
 
+
 class Response(Message):
     """ Response message class """
 
-    def __init__(self, target=None, origin=None, id=None, output=None, errors=[],
+    def __init__(self, target=None, origin=None, id=None, output=None, errors=None,
                  timestamp=None, disable_logging=False):
         """
         Params:
@@ -21,13 +22,13 @@ class Response(Message):
         super().__init__(timestamp=timestamp)
         self.target = target
         self.output = self._parse_msg(output)
-        self.errors = self._parse_msg(errors)
+        self.errors = self._parse_msg(errors or [])
         self.origin = origin
         self.id = id
         self.disable_logging = disable_logging
 
     def is_error(self):
-        """ Returns True if the respopnse has errors """
+        """ Returns True if the response has errors """
         return len(self.errors) != 0
 
     @classmethod
@@ -35,27 +36,30 @@ class Response(Message):
         if isinstance(msg, bytes) or isinstance(msg, bytearray):
             msg = msg.decode('utf-8')
         if isinstance(msg, str):
-            try: msg = json.loads(msg.strip())
-            except ValueError as e: pass
+            try:
+                msg = json.loads(msg.strip())
+            except ValueError:
+                pass
 
         return msg
-
 
     @classmethod
     def build(cls, msg):
         msg = super().parse(msg)
         args = {
-            'target' : msg['target'],
-            'output' : msg['response']['output'],
-            'errors' : msg['response']['errors'],
+            'target': msg['target'],
+            'output': msg['response']['output'],
+            'errors': msg['response']['errors'],
+            'timestamp': msg['_timestamp'] if '_timestamp' in msg else time.time(),
+            'disable_logging': msg.get('_disable_logging', False),
         }
 
-        args['timestamp'] = msg['_timestamp'] if '_timestamp' in msg else time.time()
-        args['disable_logging'] = msg.get('_disable_logging', False)
-        if 'id' in msg: args['id'] = msg['id']
-        if 'origin' in msg: args['origin'] = msg['origin']
-        return cls(**args)
+        if 'id' in msg:
+            args['id'] = msg['id']
+        if 'origin' in msg:
+            args['origin'] = msg['origin']
 
+        return cls(**args)
 
     def __str__(self):
         """
@@ -64,14 +68,14 @@ class Response(Message):
         """
 
         response_dict = {
-            'id'         : self.id,
-            'type'       : 'response',
-            'target'     : self.target if hasattr(self, 'target') else None,
-            'origin'     : self.origin if hasattr(self, 'origin') else None,
-            '_timestamp' : self.timestamp,
-            'response'   : {
-                'output' : self.output,
-                'errors' : self.errors,
+            'id': self.id,
+            'type': 'response',
+            'target': self.target if hasattr(self, 'target') else None,
+            'origin': self.origin if hasattr(self, 'origin') else None,
+            '_timestamp': self.timestamp,
+            'response': {
+                'output': self.output,
+                'errors': self.errors,
             },
         }
 
@@ -79,6 +83,5 @@ class Response(Message):
             response_dict['_disable_logging'] = self.disable_logging
 
         return json.dumps(response_dict)
-
 
 # vim:sw=4:ts=4:et:
