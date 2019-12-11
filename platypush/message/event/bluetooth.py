@@ -37,6 +37,14 @@ class BluetoothFilePutRequestEvent(Event):
         super().__init__(*args, address=address, port=port, **kwargs)
 
 
+class BluetoothFileGetRequestEvent(Event):
+    """
+    Event triggered on bluetooth device file transfer get request
+    """
+    def __init__(self, address: str = None, port: str = None, *args, **kwargs):
+        super().__init__(*args, address=address, port=port, **kwargs)
+
+
 class BluetoothFileReceivedEvent(Event):
     """
     Event triggered on bluetooth device file transfer put request
