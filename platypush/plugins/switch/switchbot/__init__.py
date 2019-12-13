@@ -1,96 +1,18 @@
-import struct
-import subprocess
-import time
+import enum
 
+from platypush.message.response.bluetooth import BluetoothScanResponse
 from platypush.plugins import action
+from platypush.plugins.bluetooth.ble import BluetoothBlePlugin
 from platypush.plugins.switch import SwitchPlugin
 
 
-class Scanner(object):
-    """
-    XXX The Scanner object doesn't work. Add your devices by address statically to the plugin configuration for now
-    instead of relying on scanning capabilities
-    """
-
-    service_uuid = '1bc5d5a5-0200b89f-e6114d22-000da2cb'
-
-    def __init__(self, bt_interface=None, timeout_secs=None):
-        self.bt_interface = bt_interface
-        self.timeout_secs = timeout_secs if timeout_secs else 2
-
-    @classmethod
-    def _get_uuids(cls, device):
-        uuids = set()
-
-        for uuid in device['uuids']:
-            if isinstance(uuid, tuple):
-                uuid = ''
-                for i in range(0, len(uuid)):
-                    token = struct.pack('<I', uuid[i])
-                    for byte in token:
-                        uuid += hex(byte)[2:].zfill(2)
-                    uuid += ('-' if i < len(uuid)-1 else '')
-                uuids.add(uuid)
-            else:
-                uuids.add(hex(uuid)[2:])
-
-        return uuids
-
-    def scan(self):
-        from bluetooth.ble import DiscoveryService
-        service = DiscoveryService(self.bt_interface) \
-            if self.bt_interface else DiscoveryService()
-
-        devices = service.discover(self.timeout_secs)
-        return sorted([addr for addr, device in devices.items()
-                       if self.service_uuid in self._get_uuids(device)])
-
-
-class Driver(object):
-    handle = 0x16
-    commands = {
-        'press': '\x57\x01\x00',
-        'on': '\x57\x01\x01',
-        'off': '\x57\x01\x02',
-    }
-
-    def __init__(self, device, bt_interface=None, timeout_secs=None):
-        self.device = device
-        self.bt_interface = bt_interface
-        self.timeout_secs = timeout_secs if timeout_secs else 5
-        self.req = None
-
-    def connect(self):
-        from bluetooth.ble import GATTRequester
-        if self.bt_interface:
-            self.req = GATTRequester(self.device, False, self.bt_interface)
-        else:
-            self.req = GATTRequester(self.device, False)
-
-        self.req.connect(True, 'random')
-        connect_start_time = time.time()
-
-        while not self.req.is_connected():
-            if time.time() - connect_start_time >= self.timeout_secs:
-                raise RuntimeError('Connection to {} timed out after {} seconds'
-                                   .format(self.device, self.timeout_secs))
-
-    def run_command(self, command):
-        self.req.write_by_handle(self.handle, self.commands[command])
-        data = self.req.read_by_handle(self.handle)
-        return data
-
-
-class SwitchSwitchbotPlugin(SwitchPlugin):
+class SwitchSwitchbotPlugin(SwitchPlugin, BluetoothBlePlugin):
     """
     Plugin to interact with a Switchbot (https://www.switch-bot.com/) device and
     programmatically control buttons.
 
-    NOTE: since the interaction with the Switchbot requires root privileges
-    (in order to scan on the bluetooth interface or setting gattlib in random),
-    this plugin just wraps the module into a `sudo` flavor, since running
-    Platypush with root privileges should be considered as a very bad idea.
-    Make sure that your user has sudo privileges for running this plugin.
+    See :class:`platypush.plugins.bluetooth.ble.BluetoothBlePlugin` for how to enable BLE permissions for
+    the platypush user (a simple solution may be to run it as root, but that's usually NOT a good idea).
 
     Requires:
 
@@ -99,56 +21,52 @@ class SwitchSwitchbotPlugin(SwitchPlugin):
         * **libboost** (on Debian ```apt-get install libboost-python-dev libboost-thread-dev``)
     """
 
-    def __init__(self, bt_interface=None, connect_timeout=None,
+    uuid = 'cba20002-224d-11e6-9fb8-0002a5d5c51b'
+    handle = 0x16
+
+    class Command(enum.Enum):
+        """
+        Base64 encoded commands
+        """
+        # \x57\x01\x00
+        PRESS = 'VwEA'
+        # # \x57\x01\x01
+        ON = 'VwEB'
+        # # \x57\x01\x02
+        OFF = 'VwEC'
+
+    def __init__(self, interface=None, connect_timeout=None,
                  scan_timeout=None, devices=None, **kwargs):
         """
-        :param bt_interface: Bluetooth interface to use (e.g. hci0) default: first available one
-        :type bt_interface: str
+        :param interface: Bluetooth interface to use (e.g. hci0) default: first available one
+        :type interface: str
 
-        :param connecct_timeout: Timeout for the conncection to the Switchbot device - default: None
+        :param connect_timeout: Timeout for the connection to the Switchbot device - default: None
         :type connect_timeout: float
 
         :param scan_timeout: Timeout for the scan operations - default: None
         :type scan_timeout: float
 
-        :param devices: Devices to control, as a BMAC address -> name map
+        :param devices: Devices to control, as a MAC address -> name map
         :type devices: dict
         """
 
-        super().__init__(**kwargs)
+        SwitchPlugin.__init__(self, **kwargs)
+        BluetoothBlePlugin.__init__(self, interface=interface)
 
-        if devices is None:
-            devices = {}
-
-        self.bt_interface = bt_interface
         self.connect_timeout = connect_timeout if connect_timeout else 5
         self.scan_timeout = scan_timeout if scan_timeout else 2
-        self.configured_devices = devices
+        self.configured_devices = devices or {}
         self.configured_devices_by_name = {
             name: addr
             for addr, name in self.configured_devices.items()
         }
 
-    def _run(self, device, command=None):
+    def _run(self, device: str, command: Command):
         if device in self.configured_devices_by_name:
             device = self.configured_devices_by_name[device]
 
-        try:
-            # XXX this requires sudo and it's executed in its own process
-            # because the Switchbot plugin requires root privileges to send
-            # raw bluetooth messages on the interface. Make sure that the user
-            # that runs platypush has the right permissions to run this with sudo
-            output = subprocess.check_output((
-                'sudo python3 -m platypush.plugins.switch.switchbot ' +
-                '--device {} ' +
-                ('--interface {} '.format(self.bt_interface) if self.bt_interface else '') +
-                ('--connect-timeout {} '.format(self.connect_timeout) if self.connect_timeout else '') +
-                ('--{} '.format(command) if command else '')).format(device),
-                stderr=subprocess.STDOUT, shell=True).decode('utf-8')
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(e.output.decode('utf-8'))
-
-        self.logger.info('Output of switchbot command: {}'.format(output))
+        self.write(device, command.value, handle=self.handle, channel_type='random', binary=True)
         return self.status(device)
 
     @action
@@ -159,7 +77,7 @@ class SwitchSwitchbotPlugin(SwitchPlugin):
         :param device: Device name or address
         :type device: str
         """
-        return self._run(device)
+        return self._run(device, self.Command.PRESS)
 
     @action
     def toggle(self, device, **kwargs):
@@ -173,7 +91,7 @@ class SwitchSwitchbotPlugin(SwitchPlugin):
         :param device: Device name or address
         :type device: str
         """
-        return self._run(device, 'on')
+        return self._run(device, self.Command.ON)
 
     @action
     def off(self, device, **kwargs):
@@ -183,23 +101,35 @@ class SwitchSwitchbotPlugin(SwitchPlugin):
         :param device: Device name or address
         :type device: str
         """
-        return self._run(device, 'off')
+        return self._run(device, self.Command.OFF)
 
     @action
-    def scan(self):
+    def scan(self, interface: str = None, duration: int = 10) -> BluetoothScanResponse:
         """
         Scan for available Switchbot devices nearby.
-        XXX This action doesn't work for now. Configure your devices statically for now instead of
-        relying on the scanner
+
+        :param interface: Bluetooth interface to scan (default: default configured interface)
+        :param duration: Scan duration in seconds
         """
-        try:
-            return subprocess.check_output(
-                'sudo python3 -m platypush.plugins.switch.switchbot --scan ' +
-                ('--interface {} '.format(self.bt_interface) if self.bt_interface else '') +
-                ('--scan-timeout {} '.format(self.scan_timeout) if self.scan_timeout else ''),
-                stderr=subprocess.STDOUT, shell=True).decode('utf-8')
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(e.output.decode('utf-8'))
+
+        devices = super().scan(interface=interface, duration=duration).devices
+        compatible_devices = {}
+
+        for dev in devices:
+            # noinspection PyBroadException
+            try:
+                characteristics = [
+                    chrc for chrc in self.discover_characteristics(
+                        dev['addr'], channel_type='random', wait=False, timeout=2.0).characteristics
+                    if chrc.get('uuid') == self.uuid
+                ]
+
+                if characteristics:
+                    compatible_devices[dev['addr']] = None
+            except:
+                pass
+
+        return BluetoothScanResponse(devices=compatible_devices)
 
     @property
     def devices(self):
