@@ -10,6 +10,8 @@ Plugins
     platypush/plugins/assistant.google.pushtotalk.rst
     platypush/plugins/assistant.google.rst
     platypush/plugins/autoremote.rst
+    platypush/plugins/bluetooth.rst
+    platypush/plugins/bluetooth.ble.rst
     platypush/plugins/calendar.ical.rst
     platypush/plugins/calendar.rst
     platypush/plugins/camera.ir.mlx90640.rst
@@ -59,7 +61,8 @@ Plugins
     platypush/plugins/media.webtorrent.rst
     platypush/plugins/midi.rst
     platypush/plugins/ml.cv.rst
-    platypush/plugins/mobile.join.rst
+    platypush/plugins/ml.__init__.rst
+    platypush/plugins/mobile.join.__init__.rst
     platypush/plugins/mqtt.rst
     platypush/plugins/music.mpd.rst
     platypush/plugins/music.snapcast.rst

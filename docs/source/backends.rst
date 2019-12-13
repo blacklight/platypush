@@ -9,6 +9,8 @@ Backends
     platypush/backend/adafruit.io.rst
     platypush/backend/assistant.google.rst
     platypush/backend/assistant.snowboy.rst
+    platypush/backend/bluetooth.fileserver.rst
+    platypush/backend/bluetooth.pushserver.rst
     platypush/backend/button.flic.rst
     platypush/backend/camera.pi.rst
     platypush/backend/camera.rst
