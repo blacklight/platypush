@@ -36,7 +36,7 @@ class SwitchSwitchbotPlugin(SwitchPlugin, BluetoothBlePlugin):
         OFF = 'VwEC'
 
     def __init__(self, interface=None, connect_timeout=None,
-                 scan_timeout=None, devices=None, **kwargs):
+                 scan_timeout=2, devices=None, **kwargs):
         """
         :param interface: Bluetooth interface to use (e.g. hci0) default: first available one
         :type interface: str
@@ -44,7 +44,7 @@ class SwitchSwitchbotPlugin(SwitchPlugin, BluetoothBlePlugin):
         :param connect_timeout: Timeout for the connection to the Switchbot device - default: None
         :type connect_timeout: float
 
-        :param scan_timeout: Timeout for the scan operations - default: None
+        :param scan_timeout: Timeout for the scan operations
         :type scan_timeout: float
 
         :param devices: Devices to control, as a MAC address -> name map
@@ -120,7 +120,8 @@ class SwitchSwitchbotPlugin(SwitchPlugin, BluetoothBlePlugin):
             try:
                 characteristics = [
                     chrc for chrc in self.discover_characteristics(
-                        dev['addr'], channel_type='random', wait=False, timeout=2.0).characteristics
+                        dev['addr'], channel_type='random', wait=False,
+                        timeout=self.scan_timeout).characteristics
                     if chrc.get('uuid') == self.uuid
                 ]
 
