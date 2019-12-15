@@ -1,4 +1,3 @@
-import multiprocessing
 import socket
 
 from typing import Optional
@@ -17,9 +16,8 @@ class ScanResult:
 class Scanner(Worker):
     timeout = 1.5
 
-    def __init__(self, request_queue: multiprocessing.Queue, response_queue: multiprocessing.Queue,
-                 port: int = WemoRunner.default_port):
-        super().__init__(request_queue, response_queue)
+    def __init__(self, port: int = WemoRunner.default_port, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.port = port
 
     def process(self, addr: str) -> Optional[ScanResult]:
