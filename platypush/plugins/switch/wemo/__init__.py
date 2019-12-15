@@ -1,18 +1,10 @@
-import enum
-import re
-import textwrap
-
-from xml.dom.minidom import parseString
-import requests
+import ipaddress
 
 from platypush.plugins import action
 from platypush.plugins.switch import SwitchPlugin
-
-
-class SwitchAction(enum.Enum):
-    GET_STATE = 'GetBinaryState'
-    SET_STATE = 'SetBinaryState'
-    GET_NAME = 'GetFriendlyName'
+from platypush.utils.workers import Workers
+from .lib import WemoRunner
+from .scanner import Scanner
 
 
 class SwitchWemoPlugin(SwitchPlugin):
@@ -27,19 +19,29 @@ class SwitchWemoPlugin(SwitchPlugin):
 
     _default_port = 49153
 
-    def __init__(self, devices=None, **kwargs):
+    def __init__(self, devices=None, netmask: str = None, port: int = _default_port, **kwargs):
         """
         :param devices: List of IP addresses or name->address map containing the WeMo Switch devices to control.
             This plugin previously used ouimeaux for auto-discovery but it's been dropped because
             1. too slow 2. too heavy 3. auto-discovery failed too often.
         :type devices: list or dict
+
+        :param netmask: Alternatively to a list of static IP->name pairs,  you can specify the network mask where
+            the devices should be scanned (e.g. '192.168.1.0/24')
+
+        :param port: Port where the WeMo devices are expected to expose the RPC/XML over HTTP service (default: 49153)
         """
 
         super().__init__(**kwargs)
-        self._port = self._default_port
+        self.port = port
+        self.netmask = netmask
+        self._devices = {}
+        self._init_devices(devices)
+
+    def _init_devices(self, devices):
         if devices:
-            self._devices = devices if isinstance(devices, dict) else \
-                {addr: addr for addr in devices}
+            self._devices.update(devices if isinstance(devices, dict) else
+                                 {addr: addr for addr in devices})
         else:
             self._devices = {}
 
@@ -71,51 +73,25 @@ class SwitchWemoPlugin(SwitchPlugin):
                 for device in self._devices.values()
         ]
 
-    # noinspection PyShadowingNames
-    def _exec(self, device: str, action: SwitchAction, port: int = _default_port, value=None):
+    def _get_address(self, device: str) -> str:
         if device not in self._addresses:
             try:
-                device = self._devices[device]
+                return self._devices[device]
             except KeyError:
                 pass
 
-        state_name = action.value[3:]
-
-        response = requests.post(
-            'http://{}:{}/upnp/control/basicevent1'.format(device, port),
-            headers={
-                'User-Agent': '',
-                'Accept': '',
-                'Content-Type': 'text/xml; charset="utf-8"',
-                'SOAPACTION': '\"urn:Belkin:service:basicevent:1#{}\"'.format(action.value),
-            },
-            data=re.sub('\s+', ' ', textwrap.dedent(
-                '''
-                <?xml version="1.0" encoding="utf-8"?>
-                <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
-                        s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
-                    <s:Body>
-                        <u:{action} xmlns:u="urn:Belkin:service:basicevent:1">
-                            <{state}>{value}</{state}>
-                        </u:{action}
-                    ></s:Body>
-                </s:Envelope>
-                '''.format(action=action.value, state=state_name,
-                           value=value if value is not None else ''))))
-
-        dom = parseString(response.text)
-        return dom.getElementsByTagName(state_name).item(0).firstChild.data
+        return device
 
     @action
-    def status(self, device=None, *args, **kwargs):
+    def status(self, device: str = None, *args, **kwargs):
         devices = {device: device} if device else self._devices.copy()
 
         ret = [
             {
                 'id': addr,
                 'ip': addr,
-                'name': name if name != addr else self.get_name(addr).output,
-                'on': self.get_state(addr).output,
+                'name': name if name != addr else WemoRunner.get_name(addr),
+                'on': WemoRunner.get_state(addr),
             }
             for (name, addr) in devices.items()
         ]
@@ -129,7 +105,8 @@ class SwitchWemoPlugin(SwitchPlugin):
 
         :param device: Device name or address
         """
-        self._exec(device=device, action=SwitchAction.SET_STATE, value=1)
+        device = self._get_address(device)
+        WemoRunner.on(device)
         return self.status(device)
 
     @action
@@ -139,7 +116,8 @@ class SwitchWemoPlugin(SwitchPlugin):
 
         :param device: Device name or address
         """
-        self._exec(device=device, action=SwitchAction.SET_STATE, value=0)
+        device = self._get_address(device)
+        WemoRunner.off(device)
         return self.status(device)
 
     @action
@@ -149,8 +127,9 @@ class SwitchWemoPlugin(SwitchPlugin):
 
         :param device: Device name or address
         """
-        state = self.get_state(device).output
-        return self.on(device) if not state else self.off(device)
+        device = self._get_address(device)
+        WemoRunner.toggle(device)
+        return self.status(device)
 
     @action
     def get_state(self, device: str):
@@ -159,8 +138,8 @@ class SwitchWemoPlugin(SwitchPlugin):
 
         :param device: Device name or address
         """
-        state = self._exec(device=device, action=SwitchAction.GET_STATE)
-        return bool(int(state))
+        device = self._get_address(device)
+        return WemoRunner.get_state(device)
 
     @action
     def get_name(self, device: str):
@@ -169,7 +148,26 @@ class SwitchWemoPlugin(SwitchPlugin):
 
         :param device: Device name or address
         """
-        return self._exec(device=device, action=SwitchAction.GET_NAME)
+        device = self._get_address(device)
+        return WemoRunner.get_name(device)
+
+    @action
+    def scan(self, netmask: str = None):
+        netmask = netmask or self.netmask
+        assert netmask, 'Scan not supported: No netmask specified'
+
+        workers = Workers(10, Scanner, port=self.port)
+        with workers:
+            for addr in ipaddress.IPv4Network(netmask):
+                workers.put(addr.exploded)
+
+        devices = {
+            dev.name: dev.addr
+            for dev in workers.responses
+        }
+
+        self._init_devices(devices)
+        return self.status()
 
 
 # vim:sw=4:ts=4:et:
