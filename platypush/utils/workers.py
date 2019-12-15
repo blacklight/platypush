@@ -111,14 +111,12 @@ class Workers:
         :ret: A list containing the processed responses
         """
         while self._workers:
-            for i, wrk in enumerate(self._workers):
-                if not self._workers[i].is_alive():
-                    self._workers.pop(i)
-                    break
+            wrk = self._workers.pop()
+            wrk.join()
 
-        self.responses = []
         while not self.response_queue.empty():
             self.responses.append(self.response_queue.get())
+
         return self.responses
 
     def end_stream(self):
