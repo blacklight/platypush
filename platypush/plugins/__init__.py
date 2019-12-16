@@ -6,6 +6,7 @@ from platypush.event import EventGenerator
 from platypush.message.response import Response
 from platypush.utils import get_decorators
 
+
 def action(f):
     @wraps(f)
     def _execute_action(*args, **kwargs):
