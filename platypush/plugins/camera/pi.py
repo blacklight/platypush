@@ -67,7 +67,7 @@ class CameraPiPlugin(CameraPlugin):
         self._time_lapse_stop_condition = threading.Condition()
         self._recording_stop_condition = threading.Condition()
         self._streaming_stop_condition = threading.Condition()
-        self._output: StreamingOutput = None
+        self._output: Optional[StreamingOutput] = None
 
     # noinspection PyUnresolvedReferences,PyPackageRequirements
     def _get_camera(self, **opts):
@@ -175,11 +175,10 @@ class CameraPiPlugin(CameraPlugin):
                 self.close()
 
     def get_output_stream(self, resize: Union[tuple, list] = None, **opts) -> StreamingOutput:
-        camera = self._get_camera(**opts)
-
-        if self._output and not camera.closed:
+        if self._output:
             return self._output
 
+        camera = self._get_camera(**opts)
         capture_opts = {}
         if resize:
             capture_opts['resize'] = tuple(resize)
@@ -189,9 +188,8 @@ class CameraPiPlugin(CameraPlugin):
         return self._output
 
     def close_output_stream(self):
-        if self._camera and not self._camera.closed:
+        if self._output:
             self._camera.stop_recording()
-
         self._output = None
 
     @action
