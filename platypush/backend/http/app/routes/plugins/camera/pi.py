@@ -17,10 +17,10 @@ __routes__ = [
 
 def get_frame_file(*args, **kwargs):
     response = send_request(*args, action='camera.pi.take_picture', image_file=filename, **kwargs)
-    assert response['output'] and 'image_file' in response['output'],\
-        response['errors'].get(0, 'Unable to capture an image file')
+    assert response.output and 'image_file' in response.output,\
+        (response.errors[0] if response.errors else 'Unable to capture frame from the picamera')
 
-    return response['output']['image_file']
+    return response.output['image_file']
 
 
 def video_feed():
