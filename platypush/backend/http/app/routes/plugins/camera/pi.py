@@ -19,21 +19,20 @@ __routes__ = [
 
 def video_feed():
     camera: Optional[CameraPiPlugin] = None
+    camera_conf = Config.get('camera.pi') or {}
+    camera = CameraPiPlugin(**camera_conf)
 
-    try:
-        camera_conf = Config.get('camera.pi') or {}
-        camera = CameraPiPlugin(**camera_conf)
-
+    with camera:
         while True:
-            output = camera.get_output_stream()
+            output = camera.get_stream()
+
             with output.ready:
                 output.ready.wait()
+                frame = output.frame
 
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + output.frame + b'\r\n')
-    finally:
-        if camera:
-            camera.close_output_stream()
+            if frame and len(frame):
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
 @camera_pi.route('/camera/pi/frame', methods=['GET'])
@@ -52,7 +51,6 @@ def get_frame_img():
 @authenticate()
 def get_stream_feed():
     return Response(video_feed(),
-                    headers={'Cache-Control': 'no-cache, private', 'Pragma': 'no-cache', 'Age': 0},
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 

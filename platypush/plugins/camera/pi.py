@@ -2,6 +2,7 @@
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
 """
 
+import io
 import os
 import socket
 import threading
@@ -10,7 +11,25 @@ import time
 from typing import Optional, Union
 
 from platypush.plugins import action
-from platypush.plugins.camera import CameraPlugin, StreamingOutput
+from platypush.plugins.camera import CameraPlugin
+
+
+class StreamingOutput:
+    def __init__(self):
+        self.frame = None
+        self.buffer = io.BytesIO()
+        self.ready = threading.Condition()
+
+    def write(self, buf):
+        if buf.startswith(b'\xff\xd8'):
+            # New frame, copy the existing buffer's content and notify all clients that it's available
+            self.buffer.truncate()
+            with self.ready:
+                self.frame = self.buffer.getvalue()
+                self.ready.notify_all()
+            self.buffer.seek(0)
+
+        return self.buffer.write(buf)
 
 
 class CameraPiPlugin(CameraPlugin):
@@ -89,10 +108,12 @@ class CameraPiPlugin(CameraPlugin):
         """
         Close an active connection to the camera.
         """
-        if not self._camera or self._camera.closed:
-            self.logger.info('Camera connection already closed')
+        if self._output and self._camera:
+            self._camera.stop_recording()
 
-        self._camera.close()
+        if self._camera and not self._camera.closed:
+            self._camera.close()
+
         self._camera = None
 
     @action
@@ -174,23 +195,16 @@ class CameraPiPlugin(CameraPlugin):
             if camera and close:
                 self.close()
 
-    def get_output_stream(self, resize: Union[tuple, list] = None, **opts) -> StreamingOutput:
-        if self._output:
-            return self._output
-
-        camera = self._get_camera(**opts)
-        capture_opts = {}
-        if resize:
-            capture_opts['resize'] = tuple(resize)
-
+    def __enter__(self):
+        camera = self._get_camera()
         self._output = StreamingOutput()
-        camera.start_recording(self._output, format='mjpeg', **capture_opts)
+        camera.start_recording(self._output, format='mjpeg')
+
+    def get_stream(self):
         return self._output
 
-    def close_output_stream(self):
-        if self._output:
-            self._camera.stop_recording()
-        self._output = None
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
     @action
     def capture_sequence(self, n_images, directory, name_format='image_%04d.jpg', preview=False, warmup_time=2,
