@@ -1,3 +1,4 @@
+import io
 import os
 import re
 import shutil
@@ -13,6 +14,24 @@ from platypush.message.event.camera import CameraRecordingStartedEvent, \
     CameraPictureTakenEvent, CameraFrameCapturedEvent
 
 from platypush.plugins import Plugin, action
+
+
+class StreamingOutput:
+    def __init__(self):
+        self.frame = None
+        self.buffer = io.BytesIO()
+        self.ready = threading.Condition()
+
+    def write(self, buf):
+        if buf.startswith(b'\xff\xd8'):
+            # New frame, copy the existing buffer's content and notify all clients that it's available
+            self.buffer.truncate()
+            with self.ready:
+                self.frame = self.buffer.getvalue()
+                self.ready.notify_all()
+            self.buffer.seek(0)
+
+        return self.buffer.write(buf)
 
 
 class CameraPlugin(Plugin):

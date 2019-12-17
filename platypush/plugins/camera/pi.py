@@ -7,10 +7,10 @@ import socket
 import threading
 import time
 
-from typing import Optional
+from typing import Optional, Union
 
 from platypush.plugins import action
-from platypush.plugins.camera import CameraPlugin
+from platypush.plugins.camera import CameraPlugin, StreamingOutput
 
 
 class CameraPiPlugin(CameraPlugin):
@@ -67,6 +67,7 @@ class CameraPiPlugin(CameraPlugin):
         self._time_lapse_stop_condition = threading.Condition()
         self._recording_stop_condition = threading.Condition()
         self._streaming_stop_condition = threading.Condition()
+        self._output: StreamingOutput = None
 
     # noinspection PyUnresolvedReferences,PyPackageRequirements
     def _get_camera(self, **opts):
@@ -172,6 +173,26 @@ class CameraPiPlugin(CameraPlugin):
         finally:
             if camera and close:
                 self.close()
+
+    def get_output_stream(self, resize: Union[tuple, list] = None, **opts) -> StreamingOutput:
+        camera = self._get_camera(**opts)
+
+        if self._output and not camera.closed:
+            return self._output
+
+        capture_opts = {}
+        if resize:
+            capture_opts['resize'] = tuple(resize)
+
+        self._output = StreamingOutput()
+        camera.start_recording(self._output, format='mjpeg', **capture_opts)
+        return self._output
+
+    def close_output_stream(self):
+        if self._camera and not self._camera.closed:
+            self._camera.stop_recording()
+
+        self._output = None
 
     @action
     def capture_sequence(self, n_images, directory, name_format='image_%04d.jpg', preview=False, warmup_time=2,
