@@ -1,3 +1,7 @@
+from typing import Union, Dict, List
+
+from pyHS100 import SmartDevice, SmartPlug, SmartBulb, SmartStrip, Discover
+
 from platypush.plugins import action
 from platypush.plugins.switch import SwitchPlugin
 
@@ -15,20 +19,61 @@ class SwitchTplinkPlugin(SwitchPlugin):
     _ip_to_dev = {}
     _alias_to_dev = {}
 
-    def __init__(self, **kwargs):
+    def __init__(self, plugs: Union[Dict[str, str], List[str]] = None, bulbs: Union[Dict[str, str], List[str]] = None,
+                 strips: Union[Dict[str, str], List[str]] = None, **kwargs):
+        """
+        :param plugs: Optional list of IP addresses or name->address mapping if you have a static list of
+            TpLink plugs and you want to save on the scan time.
+        :param bulbs: Optional list of IP addresses or name->address mapping if you have a static list of
+            TpLink bulbs and you want to save on the scan time.
+        :param strips: Optional list of IP addresses or name->address mapping if you have a static list of
+            TpLink strips and you want to save on the scan time.
+        """
         super().__init__(**kwargs)
-
-    def _scan(self):
-        from pyHS100 import Discover
-
-        devices = Discover.discover()
         self._ip_to_dev = {}
         self._alias_to_dev = {}
+        self._static_devices = {}
 
-        for (ip, dev) in devices.items():
+        if isinstance(plugs, list):
+            plugs = {addr: addr for addr in plugs}
+        if isinstance(bulbs, list):
+            bulbs = {addr: addr for addr in bulbs}
+        if isinstance(strips, list):
+            strips = {addr: addr for addr in strips}
+
+        for name, addr in (plugs or {}).items():
+            self._static_devices[addr] = {
+                'name': name,
+                'type': SmartPlug,
+            }
+
+        for name, addr in (bulbs or {}).items():
+            self._static_devices[addr] = {
+                'name': name,
+                'type': SmartBulb,
+            }
+
+        for name, addr in (strips or {}).items():
+            self._static_devices[addr] = {
+                'name': name,
+                'type': SmartStrip,
+            }
+
+        self._update_devices()
+
+    def _update_devices(self, devices: Dict[str, SmartDevice] = None):
+        for (addr, info) in self._static_devices.items():
+            dev = info['type'](addr)
+            self._ip_to_dev[addr] = dev
+            self._alias_to_dev[info.get('name', dev.alias)] = dev
+
+        for (ip, dev) in (devices or {}).items():
             self._ip_to_dev[ip] = dev
             self._alias_to_dev[dev.alias] = dev
 
+    def _scan(self):
+        devices = Discover.discover()
+        self._update_devices(devices)
         return devices
 
     def _get_device(self, device, use_cache=True):
