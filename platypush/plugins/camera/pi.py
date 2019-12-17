@@ -7,6 +7,8 @@ import socket
 import threading
 import time
 
+from typing import Optional
+
 from platypush.plugins import action
 from platypush.plugins.camera import CameraPlugin
 
@@ -21,14 +23,18 @@ class CameraPiPlugin(CameraPlugin):
     """
 
     _default_resolution = (800, 600)
+    _default_listen_port = 5000
 
     def __init__(self, resolution=(_default_resolution[0], _default_resolution[1]), framerate=24,
                  hflip=False, vflip=False, sharpness=0, contrast=0, brightness=50, video_stabilization=False, iso=0,
                  exposure_compensation=0, exposure_mode='auto', meter_mode='average', awb_mode='auto',
-                 image_effect='none', color_effects=None, rotation=0, crop=(0.0, 0.0, 1.0, 1.0), **kwargs):
+                 image_effect='none', color_effects=None, rotation=0, crop=(0.0, 0.0, 1.0, 1.0),
+                 listen_port: int = _default_listen_port, **kwargs):
         """
         See https://www.raspberrypi.org/documentation/usage/camera/python/README.md
         for a detailed reference about the Pi camera options.
+
+        :param listen_port: Default port that will be used for streaming the feed (default: 5000)
         """
         super().__init__(**kwargs)
 
@@ -53,6 +59,7 @@ class CameraPiPlugin(CameraPlugin):
         }
 
         self._camera = None
+        self.listen_port = listen_port
 
         self._time_lapse_thread = None
         self._recording_thread = None
@@ -77,6 +84,17 @@ class CameraPiPlugin(CameraPlugin):
         return self._camera
 
     @action
+    def close(self):
+        """
+        Close an active connection to the camera.
+        """
+        if not self._camera or self._camera.closed:
+            self.logger.info('Camera connection already closed')
+
+        self._camera.close()
+        self._camera = None
+
+    @action
     def start_preview(self, **opts):
         """
         Start camera preview.
@@ -99,7 +117,7 @@ class CameraPiPlugin(CameraPlugin):
             self.logger.warning(str(e))
 
     @action
-    def take_picture(self, image_file, preview=False, warmup_time=2, resize=None, **opts):
+    def take_picture(self, image_file, preview=False, warmup_time=2, resize=None, close=True, **opts):
         """
         Take a picture.
 
@@ -117,6 +135,11 @@ class CameraPiPlugin(CameraPlugin):
 
         :param opts: Extra options to pass to the camera (see
             https://www.raspberrypi.org/documentation/usage/camera/python/README.md)
+
+        :param close: If True (default) close the connection to the camera after capturing,
+            otherwise keep the connection open (e.g. if you want to take a sequence of pictures).
+            If you set close=False you should remember to call ``close`` when you don't need
+            the connection anymore.
 
         :return: dict::
 
@@ -144,10 +167,11 @@ class CameraPiPlugin(CameraPlugin):
 
             if preview:
                 camera.stop_preview()
+
             return {'image_file': image_file}
         finally:
-            if camera:
-                camera.close()
+            if camera and close:
+                self.close()
 
     @action
     def capture_sequence(self, n_images, directory, name_format='image_%04d.jpg', preview=False, warmup_time=2,
@@ -183,8 +207,6 @@ class CameraPiPlugin(CameraPlugin):
 
         """
 
-        camera = None
-
         try:
             camera = self._get_camera(**opts)
             directory = os.path.abspath(os.path.expanduser(directory))
@@ -213,7 +235,7 @@ class CameraPiPlugin(CameraPlugin):
 
             return {'image_files': images}
         finally:
-            camera.close()
+            self.close()
 
     @action
     def start_time_lapse(self, directory, n_images=None, interval=0, warmup_time=2,
@@ -413,11 +435,11 @@ class CameraPiPlugin(CameraPlugin):
 
     # noinspection PyShadowingBuiltins
     @action
-    def start_streaming(self, listen_port=5000, format='h264', **opts):
+    def start_streaming(self, listen_port: Optional[int] = None, format='h264', **opts):
         """
         Start recording to a network stream
 
-        :param listen_port: TCP listen port (default: 5000)
+        :param listen_port: TCP listen port (default: `listen_port` configured value or 5000)
         :type listen_port: int
 
         :param format: Video stream format (default: h264)
@@ -429,6 +451,9 @@ class CameraPiPlugin(CameraPlugin):
 
         if self._streaming_thread:
             return None, 'A streaming thread is already running'
+
+        if not listen_port:
+            listen_port = self.listen_port
 
         camera = self._get_camera(**opts)
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
