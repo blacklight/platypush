@@ -2,7 +2,6 @@ import os
 import tempfile
 
 from flask import Response, Blueprint, send_from_directory
-from typing import Optional
 
 from platypush.backend.http.app import template_folder
 from platypush.backend.http.app.utils import authenticate, send_request
@@ -18,7 +17,6 @@ __routes__ = [
 
 
 def video_feed():
-    camera: Optional[CameraPiPlugin] = None
     camera_conf = Config.get('camera.pi') or {}
     camera = CameraPiPlugin(**camera_conf)
 

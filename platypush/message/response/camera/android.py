@@ -10,6 +10,9 @@ class AndroidCameraStatusResponse(CameraResponse):
         ..code-block:: json
 
         {
+            "stream_url": "https://192.168.1.30:8080/video",
+            "image_url": "https://192.168.1.30:8080/photo.jpg",
+            "audio_url": "https://192.168.1.30:8080/audio.wav",
             "orientation": "landscape",
             "idle": "off",
             "audio_only": "off",
@@ -71,6 +74,10 @@ class AndroidCameraStatusResponse(CameraResponse):
     }
 
     def __init__(self, *args,
+                 name: str = None,
+                 stream_url: str = None,
+                 image_url: str = None,
+                 audio_url: str = None,
                  orientation: str = None,
                  idle: str = None,
                  audio_only: str = None,
@@ -117,6 +124,10 @@ class AndroidCameraStatusResponse(CameraResponse):
                  **kwargs):
 
         self.status = {
+            "name": name,
+            "stream_url": stream_url,
+            "image_url": image_url,
+            "audio_url": audio_url,
             "orientation": orientation,
             "idle": True if idle == "on" else False,
             "audio_only": True if audio_only == "on" else False,

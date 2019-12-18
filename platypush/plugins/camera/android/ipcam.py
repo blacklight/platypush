@@ -148,19 +148,29 @@ class CameraAndroidIpcamPlugin(Plugin):
         :return: True if the camera is available, False otherwise
         """
         cameras = self._camera_name_to_idx.keys() if camera is None else [camera]
-        status = []
+        statuses = []
 
-        for cam in cameras:
+        for c in cameras:
             try:
-                status_data = self._exec('status.json', params={'show_avail': 1}, camera=cam).get('curvals', {})
-                status.append(AndroidCameraStatusResponse(
+                if isinstance(camera, int):
+                    cam = self.cameras[c]
+                else:
+                    cam = self.cameras[self._camera_name_to_idx[c]]
+
+                status_data = self._exec('status.json', params={'show_avail': 1}, camera=cam.name).get('curvals', {})
+                status = AndroidCameraStatusResponse(
+                    name=cam.name,
+                    stream_url=cam.stream_url,
+                    image_url=cam.image_url,
+                    audio_url=cam.audio_url,
                     **{k: v for k, v in status_data.items()
                        if k in AndroidCameraStatusResponse.attrs})
-                )
-            except Exception as e:
-                self.logger.warning('Could not get the status of {}: {}'.format(cam, str(e)))
 
-        return AndroidCameraStatusListResponse(status)
+                statuses.append(status)
+            except Exception as e:
+                self.logger.warning('Could not get the status of {}: {}'.format(c, str(e)))
+
+        return AndroidCameraStatusListResponse(statuses)
 
     @action
     def set_front_facing_camera(self, activate: bool = True, camera: Union[int, str] = None) -> bool:
@@ -245,24 +255,6 @@ class CameraAndroidIpcamPlugin(Plugin):
     def set_scenemode(self, scenemode: str = 'auto', camera: Union[int, str] = None) -> bool:
         """Set video orientation."""
         return self.change_setting('scenemode', scenemode, camera=camera)
-
-    @action
-    def get_stream_url(self, camera: Union[int, str] = None) -> str:
-        """ Get the streaming URL for the specified camera. """
-        cam = self._get_camera(camera)
-        return cam.stream_url
-
-    @action
-    def get_image_url(self, camera: Union[int, str] = None) -> str:
-        """ Get the URL to the camera static picture. """
-        cam = self._get_camera(camera)
-        return cam.image_url
-
-    @action
-    def get_audio_url(self, camera: Union[int, str] = None) -> str:
-        """ Get the URL to the camera audio source. """
-        cam = self._get_camera(camera)
-        return cam.audio_url
 
 
 # vim:sw=4:ts=4:et:
