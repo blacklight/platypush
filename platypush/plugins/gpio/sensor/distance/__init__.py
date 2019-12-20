@@ -30,7 +30,7 @@ class GpioSensorDistancePlugin(GpioSensorPlugin):
         self.echo_pin = echo_pin
         self._is_probing = False
 
-        gpio.setmode(gpio.BCM)
+        gpio.setmode(self.mode)
         gpio.setup(self.trigger_pin, gpio.OUT)
         gpio.setup(self.echo_pin, gpio.IN)
 

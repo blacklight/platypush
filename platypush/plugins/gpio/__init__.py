@@ -2,6 +2,8 @@
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
 """
 
+from typing import Any, Optional, Dict, Union
+
 from platypush.plugins import Plugin, action
 
 
@@ -13,10 +15,11 @@ class GpioPlugin(Plugin):
         * **RPi.GPIO** (`pip install RPi.GPIO`)
     """
 
-    def __init__(self, pins=None, **kwargs):
+    def __init__(self, pins: Optional[Dict[str, int]] = None, mode: str = 'board', **kwargs):
         """
+        :param mode: Specify 'board' if you want to use the board PIN numbers,
+            'bcm' for Broadcom PIN numbers (default: 'board')
         :param pins: Configuration for the GPIO PINs as a name -> pin_number map.
-        :type pins: dict
 
         Example::
 
@@ -26,9 +29,11 @@ class GpioPlugin(Plugin):
                 "MOTOR": 16,
                 "SENSOR": 17
             }
+
         """
 
         super().__init__(**kwargs)
+        self.mode = self._get_mode(mode)
         self.pins_by_name = pins if pins else {}
         self.pins_by_number = {number: name
                                for (name, number) in self.pins_by_name.items()}
@@ -43,21 +48,25 @@ class GpioPlugin(Plugin):
 
         return pin
 
+    @staticmethod
+    def _get_mode(mode_str: str) -> int:
+        import RPi.GPIO as gpio
+
+        mode_str = mode_str.upper()
+        assert mode_str in ['BOARD', 'BCM'], 'Invalid mode: {}'.format(mode_str)
+        return getattr(gpio, mode_str)
+
     @action
-    def write(self, pin, value, name=None):
+    def write(self, pin: Union[int, str], int, value: Union[int, bool],
+            name: Optional[str] = None, mode: Optional[str] = None) -> Dict[str, Any]:
         """
         Write a byte value to a pin.
 
         :param pin: PIN number or configured name
-        :type pin: int or str
-
         :param name: Optional name for the written value (e.g. "temperature" or "humidity")
-        :type name: str
-
         :param value: Value to write
-        :type value: int
-
-        :returns: dict
+        :param mode: If a PIN number is specified then you can override the default 'mode'
+            default parameter
 
         Response::
 
@@ -73,7 +82,8 @@ class GpioPlugin(Plugin):
 
         name = name or pin
         pin = self._get_pin_number(pin)
-        gpio.setmode(gpio.BCM)
+        mode = self._get_mode(mode) if mode else self.mode
+        gpio.setmode(mode)
         gpio.setup(pin, gpio.OUT)
         gpio.output(pin, value)
 
@@ -85,17 +95,15 @@ class GpioPlugin(Plugin):
         }
 
     @action
-    def read(self, pin, name=None):
+    def read(self, pin: Union[int, str], name: Optional[str] = None,
+            mode: Optional[str] = None) -> Dict[str, Any]:
         """
         Reads a value from a PIN.
 
         :param pin: PIN number or configured name.
-        :type pin: int or str
-
         :param name: Optional name for the read value (e.g. "temperature" or "humidity")
-        :type name: str
-
-        :returns: dict
+        :param mode: If a PIN number is specified then you can override the default 'mode'
+            default parameter
 
         Response::
 
