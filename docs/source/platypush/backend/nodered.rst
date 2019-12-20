@@ -1,6 +1,6 @@
-``platypush.backend.nodered.__init__``
-======================================
+``platypush.backend.nodered``
+=============================
 
-.. automodule:: platypush.backend.nodered.__init__
+.. automodule:: platypush.backend.nodered
 	:members:
 
