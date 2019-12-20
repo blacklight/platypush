@@ -1,10 +1,11 @@
 import time
 
 from platypush.plugins import action
+from platypush.plugins.gpio import GpioPlugin
 from platypush.plugins.gpio.sensor import GpioSensorPlugin
 
 
-class GpioSensorDistancePlugin(GpioSensorPlugin):
+class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
     """
     You can use this plugin to interact with a distance sensor on your Raspberry
     Pi (tested with a HC-SR04 ultrasound sensor).
@@ -24,7 +25,7 @@ class GpioSensorDistancePlugin(GpioSensorPlugin):
         """
 
         import RPi.GPIO as gpio
-        super().__init__(*args, **kwargs)
+        GpioPlugin.__init__(self, *args, **kwargs)
 
         self.trigger_pin = trigger_pin
         self.echo_pin = echo_pin
@@ -88,4 +89,3 @@ class GpioSensorDistancePlugin(GpioSensorPlugin):
 
 
 # vim:sw=4:ts=4:et:
-
