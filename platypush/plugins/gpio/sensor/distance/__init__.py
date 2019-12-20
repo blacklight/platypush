@@ -24,33 +24,21 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
         :type echo_pin: int
         """
 
-        import RPi.GPIO as gpio
         GpioPlugin.__init__(self, *args, **kwargs)
-
         self.trigger_pin = trigger_pin
         self.echo_pin = echo_pin
         self._is_probing = False
 
+    def _init_gpio(self):
+        import RPi.GPIO as gpio
         gpio.setmode(self.mode)
         gpio.setup(self.trigger_pin, gpio.OUT)
         gpio.setup(self.echo_pin, gpio.IN)
-
-        self.logger.info('Resetting trigger sensor on GPIO pin {}'.format(self.trigger_pin))
         gpio.output(self.trigger_pin, False)
 
-
-    @action
-    def get_measurement(self):
-        """
-        Extends :func:`.GpioSensorPlugin.get_measurement`
-
-        :returns: Distance measurement as a scalar (in mm):
-        """
-
+    def _get_data(self):
         import RPi.GPIO as gpio
-        gpio.setmode(gpio.BCM)
-        gpio.setup(self.trigger_pin, gpio.OUT)
-        gpio.setup(self.echo_pin, gpio.IN)
+        self._init_gpio()
 
         gpio.output(self.trigger_pin, True)
         time.sleep(0.00001)  # 1 us pulse to trigger echo measurement
@@ -86,6 +74,21 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
 
         # s = vt where v = avg speed of sound
         return round(pulse_duration * 171500.0, 2)
+
+
+    @action
+    def get_measurement(self):
+        """
+        Extends :func:`.GpioSensorPlugin.get_measurement`
+
+        :returns: Distance measurement as a scalar (in mm):
+        """
+        import RPi.GPIO as gpio
+
+        try:
+            return self._get_data()
+        finally:
+            gpio.cleanup()
 
 
 # vim:sw=4:ts=4:et:
