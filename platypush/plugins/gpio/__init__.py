@@ -57,7 +57,7 @@ class GpioPlugin(Plugin):
         return getattr(gpio, mode_str)
 
     @action
-    def write(self, pin: Union[int, str], int, value: Union[int, bool],
+    def write(self, pin: Union[int, str], value: Union[int, bool],
             name: Optional[str] = None, mode: Optional[str] = None) -> Dict[str, Any]:
         """
         Write a byte value to a pin.
