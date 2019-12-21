@@ -152,5 +152,10 @@ class GpioPlugin(Plugin):
 
         return values
 
+    @action
+    def cleanup(self):
+        import RPi.GPIO as gpio
+        gpio.cleanup()
+
 
 # vim:sw=4:ts=4:et:
