@@ -36,5 +36,9 @@ class GpioSensorPlugin(Plugin):
 
         return self.get_measurement(*args, **kwargs).output
 
+    @action
+    def close(self):
+        pass
+
 
 # vim:sw=4:ts=4:et:

@@ -129,6 +129,10 @@ class GpioZeroborgPlugin(Plugin):
             value = self._get_measurement(plugin=plugin, timeout=sensor['timeout'])
             threshold = sensor['threshold']
 
+            if value is None:
+                self.logger.warning('Read timeout from sensor {}'.format(sensor['plugin']))
+                return Direction.DIR_AUTO.value
+
             if value >= threshold and 'above_threshold_direction' in sensor:
                 direction = sensor['above_threshold_direction']
             elif 'below_threshold_direction' in sensor:
@@ -156,37 +160,43 @@ class GpioZeroborgPlugin(Plugin):
         self.logger.info('Received ZeroBorg drive command: {}'.format(direction))
 
         def _run():
-            while self._can_run and self._direction:
-                if self._direction == Direction.DIR_AUTO_TOGGLE.value:
-                    if self.auto_mode:
-                        self._direction = None
-                        self.auto_mode = False
-                    else:
-                        self._direction = Direction.DIR_AUTO
+            try:
+                while self._can_run and self._direction:
+                    if self._direction == Direction.DIR_AUTO_TOGGLE.value:
+                        if self.auto_mode:
+                            self._direction = None
+                            self.auto_mode = False
+                        else:
+                            self._direction = Direction.DIR_AUTO
+                            self.auto_mode = True
+
+                    if self._direction == Direction.DIR_AUTO.value:
                         self.auto_mode = True
 
-                if self._direction == Direction.DIR_AUTO.value:
-                    self.auto_mode = True
+                    motor_1_power = motor_2_power = motor_3_power = motor_4_power = 0.0
 
-                if self.auto_mode:
-                    self._direction = self._get_direction_from_sensors()
-                    time.sleep(0.1)
+                    try:
+                        if self.auto_mode:
+                            self._direction = self._get_direction_from_sensors()
+                            time.sleep(0.1)
 
-                motor_1_power = motor_2_power = motor_3_power = motor_4_power = 0.0
-                if self._direction in self.directions:
-                    motor_1_power = self.directions[self._direction]['motor_1_power']
-                    motor_2_power = self.directions[self._direction]['motor_2_power']
-                    motor_3_power = self.directions[self._direction]['motor_3_power']
-                    motor_4_power = self.directions[self._direction]['motor_4_power']
-                elif self._direction:
-                    self.logger.warning('Invalid direction {}, stopping motors'.format(self._direction))
+                        if self._direction in self.directions and self._direction != Direction.DIR_AUTO.value:
+                            motor_1_power = self.directions[self._direction]['motor_1_power']
+                            motor_2_power = self.directions[self._direction]['motor_2_power']
+                            motor_3_power = self.directions[self._direction]['motor_3_power']
+                            motor_4_power = self.directions[self._direction]['motor_4_power']
+                        else:
+                            self.logger.warning('Invalid direction {}: stopping motors'.format(self._direction))
+                    except Exception as e:
+                        self.logger.error('Error on _get_direction_from_sensors: {}'.format(str(e)))
+                        break
 
-                self.zb.SetMotor1(motor_1_power)
-                self.zb.SetMotor2(motor_2_power)
-                self.zb.SetMotor3(motor_3_power)
-                self.zb.SetMotor4(motor_4_power)
-
-            self.auto_mode = False
+                    self.zb.SetMotor1(motor_1_power)
+                    self.zb.SetMotor2(motor_2_power)
+                    self.zb.SetMotor3(motor_3_power)
+                    self.zb.SetMotor4(motor_4_power)
+            finally:
+                self.stop()
 
         self._drive_thread = threading.Thread(target=_run)
         self._drive_thread.start()
@@ -200,6 +210,8 @@ class GpioZeroborgPlugin(Plugin):
         """
 
         self._can_run = False
+        self.auto_mode = False
+
         if self._drive_thread and threading.get_ident() != self._drive_thread.ident:
             self._drive_thread.join()
 

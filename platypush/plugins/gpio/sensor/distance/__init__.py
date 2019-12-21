@@ -15,66 +15,75 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
         * ``RPi.GPIO`` (``pip install RPi.GPIO``)
     """
 
-    def __init__(self, trigger_pin, echo_pin, *args, **kwargs):
+    def __init__(self, trigger_pin: int, echo_pin: int,
+            timeout: float = 1.0, warmup_time: float = 2.0, *args, **kwargs):
         """
-        :param trigger_pin: GPIO PIN where you connected your sensor trigger PIN (the one that triggers the sensor to perform a measurement).
-        :type trigger_pin: int
+        :param trigger_pin: GPIO PIN where you connected your sensor trigger PIN (the one that triggers the
+            sensor to perform a measurement).
 
-        :param echo_pin: GPIO PIN where you connected your sensor echo PIN (the one that will listen for the signal to bounce back and therefore trigger the distance calculation).
-        :type echo_pin: int
+        :param echo_pin: GPIO PIN where you connected your sensor echo PIN (the one that will listen for the
+            signal to bounce back and therefore trigger the distance calculation).
+
+        :param timeout: The echo-wait will terminate and the plugin will return null if no echo has been
+            received after this time (default: 1 second).
+
+        :param warmup_time: Number of seconds that should be waited on plugin instantiation
+            for the sensor to be ready (default: 2 seconds).
         """
 
         GpioPlugin.__init__(self, *args, **kwargs)
         self.trigger_pin = trigger_pin
         self.echo_pin = echo_pin
-        self._is_probing = False
+        self.timeout = timeout
+        self.warmup_time = warmup_time
+        self._initialized = False
+        self._init_gpio()
 
     def _init_gpio(self):
+        if self._initialized:
+            return
+
         import RPi.GPIO as gpio
         gpio.setmode(self.mode)
         gpio.setup(self.trigger_pin, gpio.OUT)
         gpio.setup(self.echo_pin, gpio.IN)
-        gpio.output(self.trigger_pin, False)
+        gpio.output(self.trigger_pin, gpio.LOW)
+
+        self.logger.info('Waiting {} seconds for the sensor to be ready'.format(self.warmup_time))
+        time.sleep(self.warmup_time)
+        self.logger.info('Sensor ready')
+        self._initialized = True
 
     def _get_data(self):
         import RPi.GPIO as gpio
+
+        pulse_start = pulse_end = pulse_on = pulse_off = time.time()
+
         self._init_gpio()
-
-        gpio.output(self.trigger_pin, True)
+        gpio.output(self.trigger_pin, gpio.HIGH)
         time.sleep(0.00001)  # 1 us pulse to trigger echo measurement
-        gpio.output(self.trigger_pin, False)
-        read_timeout = False
-
-        pulse_start = time.time()
-        pulse_on = pulse_start
+        gpio.output(self.trigger_pin, gpio.LOW)
 
         while gpio.input(self.echo_pin) == 0:
             pulse_on = time.time()
-            if pulse_on - pulse_start > 0.5:
-                self.logger.warning('Distance sensor echo timeout: 0')
-                read_timeout = True
-                break
+            if pulse_on - pulse_start > self.timeout:
+                raise TimeoutError('Distance sensor echo timeout after {} seconds: 0'.
+                        format(self.timeout))
 
         pulse_start = pulse_on
-        pulse_end = time.time()
-        pulse_off = pulse_end
+        pulse_end = pulse_off = time.time()
 
         while gpio.input(self.echo_pin) == 1:
             pulse_off = time.time()
-            if pulse_off - pulse_end > 0.5:
-                self.logger.warning('Distance sensor echo timeout: 1')
-                read_timeout = True
-                break
-
-        if read_timeout:
-            return None
+            if pulse_off - pulse_end > self.timeout:
+                raise TimeoutError('Distance sensor echo timeout after {} seconds: 1'.
+                        format(self.timeout))
 
         pulse_end = pulse_off
         pulse_duration = pulse_end - pulse_start
 
-        # s = vt where v = avg speed of sound
+        # s = vt where v = 1/2 * avg speed of sound in mm/s
         return round(pulse_duration * 171500.0, 2)
-
 
     @action
     def get_measurement(self):
@@ -83,12 +92,28 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
 
         :returns: Distance measurement as a scalar (in mm):
         """
-        import RPi.GPIO as gpio
 
         try:
             return self._get_data()
-        finally:
+        except TimeoutError as e:
+            self.logger.warning(str(e))
+            return
+        except Exception as e:
+            self.close()
+            raise e
+
+    @action
+    def close(self):
+        import RPi.GPIO as gpio
+        if self._initialized:
             gpio.cleanup()
+            self._initialized = False
+
+    def __enter__(self):
+        self._init_gpio()
+
+    def __exit__(self):
+        self.close()
 
 
 # vim:sw=4:ts=4:et:
