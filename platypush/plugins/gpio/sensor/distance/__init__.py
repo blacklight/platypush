@@ -129,7 +129,7 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
     def __enter__(self):
         self._init_board()
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
     def _get_measurement_thread(self, duration: float):
