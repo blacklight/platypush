@@ -2,6 +2,10 @@ import enum
 import threading
 import time
 
+from typing import Optional
+
+from platypush.context import get_bus
+from platypush.message.event.zeroborg import ZeroborgDriveEvent, ZeroborgStopEvent
 from platypush.plugins import Plugin, action
 from platypush.context import get_plugin
 
@@ -21,12 +25,13 @@ class GpioZeroborgPlugin(Plugin):
     ZeroBorg plugin. It allows you to control a ZeroBorg
     (https://www.piborg.org/motor-control-1135/zeroborg) motor controller and
     infrared sensor circuitry for Raspberry Pi
-    """
 
-    _drive_thread = None
-    _can_run = False
-    _direction = None
-    _init_in_progress = threading.Lock()
+    Triggers:
+
+        * :class:`platypush.message.event.zeroborg.ZeroborgDriveEvent` when motors direction changes
+        * :class:`platypush.message.event.zeroborg.ZeroborgStopEvent` upon motors stop
+
+    """
 
     def __init__(self, directions=None, **kwargs):
         """
@@ -96,6 +101,8 @@ class GpioZeroborgPlugin(Plugin):
         self.directions = directions
         self.auto_mode = False
         self._direction = None
+        self._drive_thread: Optional[threading.Thread] = None
+        self._can_run: bool = False
 
         self.zb = ZeroBorg.ZeroBorg()
         self.zb.Init()
@@ -155,10 +162,6 @@ class GpioZeroborgPlugin(Plugin):
 
         """
 
-        self._can_run = True
-        self._direction = direction.lower()
-        self.logger.info('Received ZeroBorg drive command: {}'.format(direction))
-
         def _run():
             try:
                 while self._can_run and self._direction:
@@ -173,7 +176,7 @@ class GpioZeroborgPlugin(Plugin):
                     if self._direction == Direction.DIR_AUTO.value:
                         self.auto_mode = True
 
-                    motor_1_power = motor_2_power = motor_3_power = motor_4_power = 0.0
+                    motors = [0, 0, 0, 0]
 
                     try:
                         if self.auto_mode:
@@ -181,25 +184,27 @@ class GpioZeroborgPlugin(Plugin):
                             time.sleep(0.1)
 
                         if self._direction in self.directions and self._direction != Direction.DIR_AUTO.value:
-                            motor_1_power = self.directions[self._direction]['motor_1_power']
-                            motor_2_power = self.directions[self._direction]['motor_2_power']
-                            motor_3_power = self.directions[self._direction]['motor_3_power']
-                            motor_4_power = self.directions[self._direction]['motor_4_power']
+                            motors = self.directions[self._direction]
                         else:
                             self.logger.warning('Invalid direction {}: stopping motors'.format(self._direction))
                     except Exception as e:
                         self.logger.error('Error on _get_direction_from_sensors: {}'.format(str(e)))
                         break
 
-                    self.zb.SetMotor1(motor_1_power)
-                    self.zb.SetMotor2(motor_2_power)
-                    self.zb.SetMotor3(motor_3_power)
-                    self.zb.SetMotor4(motor_4_power)
+                    for i, power in enumerate(motors):
+                        method = getattr(self.zb, 'SetMotor{}'.format(i+1))
+                        method(power)
             finally:
                 self.stop()
+                self._drive_thread = None
 
-        self._drive_thread = threading.Thread(target=_run)
-        self._drive_thread.start()
+        self._can_run = True
+        self._direction = direction.lower()
+        get_bus().post(ZeroborgDriveEvent(direction=self._direction, motors=self.directions[self._direction]))
+
+        if not self._drive_thread:
+            self._drive_thread = threading.Thread(target=_run)
+            self._drive_thread.start()
 
         return {'status': 'running', 'direction': direction}
 
@@ -217,7 +222,7 @@ class GpioZeroborgPlugin(Plugin):
 
         self.zb.MotorsOff()
         self.zb.ResetEpo()
-
+        get_bus().post(ZeroborgStopEvent())
         return {'status': 'stopped'}
 
 
