@@ -19,10 +19,8 @@ class Event(Message):
     # will be disabled. Logging is usually disabled for events with a very
     # high frequency that would otherwise pollute the logs e.g. camera capture
     # events
-    disable_logging = False
-
     def __init__(self, target=None, origin=None, id=None, timestamp=None,
-                 disable_logging=disable_logging, **kwargs):
+                 disable_logging=False, disable_web_clients_notification=False, **kwargs):
         """
         Params:
             target  -- Target node [String]
@@ -39,6 +37,7 @@ class Event(Message):
                                    self.__class__.__name__)
         self.args = kwargs
         self.disable_logging = disable_logging
+        self.disable_web_clients_notification = disable_web_clients_notification
 
         for arg, value in self.args.items():
             self.__setattr__(arg, value)

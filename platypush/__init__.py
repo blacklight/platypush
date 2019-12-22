@@ -9,9 +9,6 @@ import argparse
 import logging
 import os
 import sys
-import traceback
-
-from threading import Thread
 
 from .bus import Bus
 from .bus.redis import RedisBus
@@ -32,6 +29,7 @@ __version__ = '0.11.2'
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
+
 
 class Daemon:
     """ Main class for the Platypush daemon """
@@ -149,13 +147,11 @@ class Daemon:
 
         return _f
 
-
     def stop_app(self):
         """ Stops the backends and the bus """
         for backend in self.backends.values():
             backend.stop()
         self.bus.stop()
-
 
     def start(self):
         """ Start the daemon """
