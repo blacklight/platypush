@@ -43,13 +43,13 @@ class GpioPlugin(Plugin):
                                for (name, number) in self.pins_by_name.items()}
 
     def _init_board(self):
-        import RPi.GPIO as gpio
+        import RPi.GPIO as GPIO
 
         with self._init_lock:
             if self._initialized:
                 return
 
-            gpio.setmode(self.mode)
+            GPIO.setmode(self.mode)
             self._initialized = True
 
     def _get_pin_number(self, pin):
@@ -64,15 +64,15 @@ class GpioPlugin(Plugin):
 
     @staticmethod
     def _get_mode(mode_str: str) -> int:
-        import RPi.GPIO as gpio
+        import RPi.GPIO as GPIO
 
         mode_str = mode_str.upper()
         assert mode_str in ['BOARD', 'BCM'], 'Invalid mode: {}'.format(mode_str)
-        return getattr(gpio, mode_str)
+        return getattr(GPIO, mode_str)
 
     @action
     def write(self, pin: Union[int, str], value: Union[int, bool],
-            name: Optional[str] = None) -> Dict[str, Any]:
+              name: Optional[str] = None) -> Dict[str, Any]:
         """
         Write a byte value to a pin.
 
@@ -90,18 +90,18 @@ class GpioPlugin(Plugin):
             }
         """
 
-        import RPi.GPIO as gpio
+        import RPi.GPIO as GPIO
 
         self._init_board()
         name = name or pin
         pin = self._get_pin_number(pin)
 
-        if pin not in self._initialized_pins or self._initialized_pins[pin] != gpio.OUT:
-            gpio.setup(pin, gpio.OUT)
-            self._initialized_pins[pin] = gpio.OUT
+        if pin not in self._initialized_pins or self._initialized_pins[pin] != GPIO.OUT:
+            GPIO.setup(pin, GPIO.OUT)
+            self._initialized_pins[pin] = GPIO.OUT
 
-        gpio.setup(pin, gpio.OUT)
-        gpio.output(pin, value)
+        GPIO.setup(pin, GPIO.OUT)
+        GPIO.output(pin, value)
 
         return {
             'name': name,
@@ -128,17 +128,17 @@ class GpioPlugin(Plugin):
             }
         """
 
-        import RPi.GPIO as gpio
+        import RPi.GPIO as GPIO
 
         self._init_board()
         name = name or pin
         pin = self._get_pin_number(pin)
 
         if pin not in self._initialized_pins:
-            gpio.setup(pin, gpio.IN)
-            self._initialized_pins[pin] = gpio.IN
+            GPIO.setup(pin, GPIO.IN)
+            self._initialized_pins[pin] = GPIO.IN
 
-        val = gpio.input(pin)
+        val = GPIO.input(pin)
 
         return {
             'name': name,
@@ -165,6 +165,7 @@ class GpioPlugin(Plugin):
 
         values = []
         for (pin, name) in self.pins_by_number.items():
+            # noinspection PyUnresolvedReferences
             values.append(self.read(pin=pin, name=name).output)
 
         return values
@@ -174,8 +175,8 @@ class GpioPlugin(Plugin):
         """
         Cleanup the state of the GPIO and resets PIN values.
         """
-        import RPi.GPIO as gpio
-        gpio.cleanup()
+        import RPi.GPIO as GPIO
+        GPIO.cleanup()
         self._initialized_pins = {}
         self._initialized = False
 
