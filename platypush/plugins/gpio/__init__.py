@@ -2,6 +2,7 @@
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
 """
 
+import threading
 from typing import Any, Optional, Dict, Union
 
 from platypush.plugins import Plugin, action
@@ -34,9 +35,22 @@ class GpioPlugin(Plugin):
 
         super().__init__(**kwargs)
         self.mode = self._get_mode(mode)
+        self._initialized = False
+        self._init_lock = threading.RLock()
+        self._initialized_pins = {}
         self.pins_by_name = pins if pins else {}
         self.pins_by_number = {number: name
                                for (name, number) in self.pins_by_name.items()}
+
+    def _init_board(self):
+        import RPi.GPIO as gpio
+
+        with self._init_lock:
+            if self._initialized:
+                return
+
+            gpio.setmode(self.mode)
+            self._initialized = True
 
     def _get_pin_number(self, pin):
         try:
@@ -58,15 +72,13 @@ class GpioPlugin(Plugin):
 
     @action
     def write(self, pin: Union[int, str], value: Union[int, bool],
-            name: Optional[str] = None, mode: Optional[str] = None) -> Dict[str, Any]:
+            name: Optional[str] = None) -> Dict[str, Any]:
         """
         Write a byte value to a pin.
 
         :param pin: PIN number or configured name
         :param name: Optional name for the written value (e.g. "temperature" or "humidity")
         :param value: Value to write
-        :param mode: If a PIN number is specified then you can override the default 'mode'
-            default parameter
 
         Response::
 
@@ -80,10 +92,14 @@ class GpioPlugin(Plugin):
 
         import RPi.GPIO as gpio
 
+        self._init_board()
         name = name or pin
         pin = self._get_pin_number(pin)
-        mode = self._get_mode(mode) if mode else self.mode
-        gpio.setmode(mode)
+
+        if pin not in self._initialized_pins or self._initialized_pins[pin] != gpio.OUT:
+            gpio.setup(pin, gpio.OUT)
+            self._initialized_pins[pin] = gpio.OUT
+
         gpio.setup(pin, gpio.OUT)
         gpio.output(pin, value)
 
@@ -95,15 +111,12 @@ class GpioPlugin(Plugin):
         }
 
     @action
-    def read(self, pin: Union[int, str], name: Optional[str] = None,
-            mode: Optional[str] = None) -> Dict[str, Any]:
+    def read(self, pin: Union[int, str], name: Optional[str] = None) -> Dict[str, Any]:
         """
         Reads a value from a PIN.
 
         :param pin: PIN number or configured name.
         :param name: Optional name for the read value (e.g. "temperature" or "humidity")
-        :param mode: If a PIN number is specified then you can override the default 'mode'
-            default parameter
 
         Response::
 
@@ -117,10 +130,14 @@ class GpioPlugin(Plugin):
 
         import RPi.GPIO as gpio
 
+        self._init_board()
         name = name or pin
         pin = self._get_pin_number(pin)
-        gpio.setmode(gpio.BCM)
-        gpio.setup(pin, gpio.IN)
+
+        if pin not in self._initialized_pins:
+            gpio.setup(pin, gpio.IN)
+            self._initialized_pins[pin] = gpio.IN
+
         val = gpio.input(pin)
 
         return {
@@ -154,8 +171,13 @@ class GpioPlugin(Plugin):
 
     @action
     def cleanup(self):
+        """
+        Cleanup the state of the GPIO and resets PIN values.
+        """
         import RPi.GPIO as gpio
         gpio.cleanup()
+        self._initialized_pins = {}
+        self._initialized = False
 
 
 # vim:sw=4:ts=4:et:

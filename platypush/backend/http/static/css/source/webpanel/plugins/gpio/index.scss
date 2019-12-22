@@ -1,0 +1,39 @@
+@import 'common/vars';
+
+.gpio-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: auto;
+
+    .refresh {
+        border-bottom: $default-border-2;
+        background: $default-bg-5;
+
+        button {
+            border: 0;
+            &:hover {
+                color: $default-hover-fg;
+            }
+        }
+    }
+
+    .pins {
+        .pin {
+            padding: 1em;
+            border-bottom: $default-border-2;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+
+            &:nth-child(even) {
+                background: $modal-header-bg;
+            }
+
+            &:hover {
+                background: $hover-bg;
+            }
+        }
+    }
+}
+

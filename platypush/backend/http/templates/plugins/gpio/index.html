@@ -1,0 +1,21 @@
+<script type="text/x-template" id="tmpl-gpio">
+    <div class="gpio-container">
+        <div class="refresh pull-right">
+            <button class="btn btn-default btn-refresh" title="Refresh">
+                <i class="fa fa-retweet">
+            </button>
+        </div>
+
+        <div class="pins">
+            <div class="pin"
+                    v-for="(pin, number) in pins"
+                    :key="number">
+                <div class="col-10 name" v-text="pin.name || number"></div>
+                <div class="col-2 toggle pull-right">
+                    <toggle-switch :value="pin.on" @toggled="toggle(number)"></toggle-switch>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
