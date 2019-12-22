@@ -102,7 +102,7 @@ class GpioZeroborgPlugin(Plugin):
         self.auto_mode = False
         self._direction = None
         self._drive_thread: Optional[threading.Thread] = None
-        self._can_run: bool = False
+        self._motors = [0, 0, 0, 0]
 
         self.zb = ZeroBorg.ZeroBorg()
         self.zb.Init()
@@ -164,7 +164,7 @@ class GpioZeroborgPlugin(Plugin):
 
         def _run():
             try:
-                while self._can_run and self._direction:
+                while self._direction:
                     if self._direction == Direction.DIR_AUTO_TOGGLE.value:
                         if self.auto_mode:
                             self._direction = None
@@ -176,36 +176,34 @@ class GpioZeroborgPlugin(Plugin):
                     if self._direction == Direction.DIR_AUTO.value:
                         self.auto_mode = True
 
-                    motors = [0, 0, 0, 0]
-
                     try:
                         if self.auto_mode:
                             self._direction = self._get_direction_from_sensors()
                             time.sleep(0.1)
 
                         if self._direction in self.directions and self._direction != Direction.DIR_AUTO.value:
-                            motors = self.directions[self._direction]
+                            self._motors = self.directions[self._direction]
                         else:
                             self.logger.warning('Invalid direction {}: stopping motors'.format(self._direction))
                     except Exception as e:
                         self.logger.error('Error on _get_direction_from_sensors: {}'.format(str(e)))
                         break
 
-                    for i, power in enumerate(motors):
+                    for i, power in enumerate(self._motors):
                         method = getattr(self.zb, 'SetMotor{}'.format(i+1))
                         method(power)
             finally:
-                self.stop()
+                self.zb.MotorsOff()
+                self.zb.ResetEpo()
                 self._drive_thread = None
 
-        self._can_run = True
         self._direction = direction.lower()
-        get_bus().post(ZeroborgDriveEvent(direction=self._direction, motors=self.directions[self._direction]))
 
         if not self._drive_thread:
             self._drive_thread = threading.Thread(target=_run)
             self._drive_thread.start()
 
+        get_bus().post(ZeroborgDriveEvent(direction=self._direction, motors=self.directions[self._direction]))
         return {'status': 'running', 'direction': direction}
 
     @action
@@ -214,16 +212,35 @@ class GpioZeroborgPlugin(Plugin):
         Turns off the motors
         """
 
-        self._can_run = False
         self.auto_mode = False
+        self._direction = None
 
-        if self._drive_thread and threading.get_ident() != self._drive_thread.ident:
+        if self._drive_thread:
             self._drive_thread.join()
 
-        self.zb.MotorsOff()
-        self.zb.ResetEpo()
         get_bus().post(ZeroborgStopEvent())
         return {'status': 'stopped'}
+
+    @action
+    def status(self) -> dict:
+        """
+        Get the current direction and motors power. Example response::
+
+            ..code-block:: json
+
+            {
+                "status": "running",
+                "direction": "up",
+                "motors": [1.0, 1.0, -1.0, -1.0]
+            }
+
+        """
+
+        return {
+            'status': 'running' if self._direction else 'stopped',
+            'direction': self._direction,
+            'motors': [getattr(self.zb, 'GetMotor{}'.format(i+1))() for i in range(4)],
+        }
 
 
 # vim:sw=4:ts=4:et:

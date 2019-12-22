@@ -25,7 +25,7 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
 
     """
 
-    def __init__(self, trigger_pin: int, echo_pin: int, measurement_interval: float = 0.1,
+    def __init__(self, trigger_pin: int, echo_pin: int, measurement_interval: float = 0.15,
                  timeout: float = 2.0, warmup_time: float = 2.0, *args, **kwargs):
         """
         :param trigger_pin: GPIO PIN where you connected your sensor trigger PIN (the one that triggers the
@@ -36,7 +36,7 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
 
         :param measurement_interval: When running in continuous mode (see
             :func:`platypush.plugins.gpio.sensor.distance.GpioSensorDistancePlugin.start_measurement`) this parameter
-            indicates how long should be waited between two measurements (default: 0.1 seconds)
+            indicates how long should be waited between two measurements (default: 0.15 seconds)
         :param timeout: The echo-wait will terminate and the plugin will return null if no echo has been
             received after this time (default: 1 second).
 
