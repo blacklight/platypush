@@ -1,5 +1,10 @@
+import threading
 import time
 
+from typing import Optional
+
+from platypush.context import get_bus
+from platypush.message.event.distance import DistanceSensorEvent
 from platypush.plugins import action
 from platypush.plugins.gpio import GpioPlugin
 from platypush.plugins.gpio.sensor import GpioSensorPlugin
@@ -13,6 +18,11 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
     Requires:
 
         * ``RPi.GPIO`` (``pip install RPi.GPIO``)
+
+    Triggers:
+
+        * :class:`platypush.message.event.distance.DistanceSensorEvent` when a new distance measurement is available
+
     """
 
     def __init__(self, trigger_pin: int, echo_pin: int,
@@ -31,35 +41,42 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
             for the sensor to be ready (default: 2 seconds).
         """
 
-        GpioPlugin.__init__(self, *args, **kwargs)
+        GpioPlugin.__init__(self, pins={'trigger': trigger_pin, 'echo': echo_pin, }, *args, **kwargs)
+
         self.trigger_pin = trigger_pin
         self.echo_pin = echo_pin
         self.timeout = timeout
         self.warmup_time = warmup_time
-        self._initialized = False
-        self._init_gpio()
+        self._measurement_thread: Optional[threading.Thread] = None
+        self._measurement_thread_lock = threading.RLock()
+        self._measurement_thread_can_run = False
+        self._init_board()
 
-    def _init_gpio(self):
-        if self._initialized:
-            return
-
+    def _init_board(self):
         import RPi.GPIO as GPIO
-        GPIO.setmode(self.mode)
-        GPIO.setup(self.trigger_pin, GPIO.OUT)
-        GPIO.setup(self.echo_pin, GPIO.IN)
-        GPIO.output(self.trigger_pin, GPIO.LOW)
 
-        self.logger.info('Waiting {} seconds for the sensor to be ready'.format(self.warmup_time))
-        time.sleep(self.warmup_time)
-        self.logger.info('Sensor ready')
-        self._initialized = True
+        with self._init_lock:
+            if self._initialized:
+                return
+
+            GpioPlugin._init_board(self)
+            self._initialized = False
+
+            GPIO.setup(self.trigger_pin, GPIO.OUT)
+            GPIO.setup(self.echo_pin, GPIO.IN)
+            GPIO.output(self.trigger_pin, GPIO.LOW)
+
+            self.logger.info('Waiting {} seconds for the sensor to be ready'.format(self.warmup_time))
+            time.sleep(self.warmup_time)
+            self.logger.info('Sensor ready')
+            self._initialized = True
 
     def _get_data(self):
         import RPi.GPIO as GPIO
 
         pulse_start = pulse_on = time.time()
 
-        self._init_gpio()
+        self._init_board()
         GPIO.output(self.trigger_pin, GPIO.HIGH)
         time.sleep(0.00001)  # 1 us pulse to trigger echo measurement
         GPIO.output(self.trigger_pin, GPIO.LOW)
@@ -94,7 +111,10 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
         """
 
         try:
-            return self._get_data()
+            distance = self._get_data()
+            bus = get_bus()
+            bus.post(DistanceSensorEvent(distance=distance, unit='mm'))
+            return distance
         except TimeoutError as e:
             self.logger.warning(str(e))
             return
@@ -104,16 +124,67 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
 
     @action
     def close(self):
-        import RPi.GPIO as GPIO
-        if self._initialized:
-            GPIO.cleanup()
-            self._initialized = False
+        return self.cleanup()
 
     def __enter__(self):
-        self._init_gpio()
+        self._init_board()
 
     def __exit__(self):
         self.close()
+
+    def _get_measurement_thread(self, duration: float):
+        def _thread():
+            with self:
+                start_time = time.time()
+
+                try:
+                    while self._measurement_thread_can_run and (
+                            not duration or time.time() - start_time <= duration):
+                        self.get_measurement()
+                finally:
+                    self._measurement_thread = None
+
+        return _thread
+
+    def _is_measurement_thread_running(self):
+        with self._measurement_thread_lock:
+            return self._measurement_thread is not None
+
+    @action
+    def start_measurement(self, duration: Optional[float] = None):
+        """
+        Start the measurement thread. It will trigger :class:`platypush.message.event.distance.DistanceSensorEvent`
+        events when new measurements are available.
+
+        :param duration: If set, then the thread will run for the specified amount of seconds (default: None)
+        """
+        with self._measurement_thread_lock:
+            if self._is_measurement_thread_running():
+                self.logger.warning('A measurement thread is already running')
+                return
+
+            thread_func = self._get_measurement_thread(duration=duration)
+            self._measurement_thread = threading.Thread(target=thread_func)
+            self._measurement_thread_can_run = True
+            self._measurement_thread.start()
+
+    @action
+    def stop_measurement(self):
+        """
+        Stop the running measurement thread.
+        """
+        with self._measurement_thread_lock:
+            if not self._is_measurement_thread_running():
+                self.logger.warning('No measurement thread is running')
+                return
+
+            self._measurement_thread_can_run = False
+            self.logger.info('Waiting for the measurement thread to end')
+
+            if self._measurement_thread:
+                self._measurement_thread.join(timeout=self.timeout)
+
+            self.logger.info('Measurement thread terminated')
 
 
 # vim:sw=4:ts=4:et:

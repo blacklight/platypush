@@ -11,6 +11,7 @@ from platypush.config import Config
 from platypush.message import Message
 from platypush.utils import get_event_class_by_type
 
+
 class Event(Message):
     """ Event message class """
 
@@ -39,6 +40,9 @@ class Event(Message):
         self.args = kwargs
         self.disable_logging = disable_logging
 
+        for arg, value in self.args.items():
+            self.__setattr__(arg, value)
+
     @classmethod
     def build(cls, msg):
         """ Builds an event message from a JSON UTF-8 string/bytearray, a
@@ -55,15 +59,13 @@ class Event(Message):
         args['timestamp'] = msg['_timestamp'] if '_timestamp' in msg else time.time()
         return event_class(**args)
 
-
     @staticmethod
     def _generate_id():
         """ Generate a unique event ID """
         id = ''
-        for i in range(0,16):
+        for i in range(0, 16):
             id += '%.2x' % random.randint(0, 255)
         return id
-
 
     def matches_condition(self, condition):
         """
@@ -75,7 +77,8 @@ class Event(Message):
         result = EventMatchResult(is_match=False, parsed_args=self.args)
         match_scores = []
 
-        if not isinstance(self, condition.type): return result
+        if not isinstance(self, condition.type):
+            return result
 
         for (attr, value) in condition.args.items():
             if attr not in self.args:
@@ -99,7 +102,6 @@ class Event(Message):
             result.score = sum(match_scores) / float(len(match_scores))
 
         return result
-
 
     def _matches_argument(self, argname, condition_value):
         """
@@ -147,10 +149,9 @@ class Event(Message):
                     else:
                         result.parsed_args[argname] += ' ' + event_token
 
-
                     if (len(condition_tokens) == 1 and len(event_tokens) == 1) \
-                            or (len(event_tokens) > 1 and len(condition_tokens) > 1 \
-                            and event_tokens[1] == condition_tokens[1]):
+                            or (len(event_tokens) > 1 and len(condition_tokens) > 1
+                                and event_tokens[1] == condition_tokens[1]):
                         # Stop appending tokens to this argument, as the next
                         # condition will be satisfied as well
                         condition_tokens.pop(0)
@@ -164,7 +165,6 @@ class Event(Message):
         result.is_match = len(condition_tokens) == 0
         return result
 
-
     def __str__(self):
         """
         Overrides the str() operator and converts
@@ -175,13 +175,13 @@ class Event(Message):
         flatten(args)
 
         return json.dumps({
-            'type'     : 'event',
-            'target'   : self.target,
-            'origin'   : self.origin if hasattr(self, 'origin') else None,
-            'id'       : self.id if hasattr(self, 'id') else None,
-            '_timestamp' : self.timestamp,
-            'args'     : {
-                'type' : self.type,
+            'type': 'event',
+            'target': self.target,
+            'origin': self.origin if hasattr(self, 'origin') else None,
+            'id': self.id if hasattr(self, 'id') else None,
+            '_timestamp': self.timestamp,
+            'args': {
+                'type': self.type,
                 **args
             },
         })
@@ -226,18 +226,16 @@ class StopEvent(Event):
 
 def flatten(args):
     if isinstance(args, dict):
-        for (key,value) in args.items():
+        for (key, value) in args.items():
             if isinstance(value, date):
                 args[key] = value.isoformat()
             elif isinstance(value, dict) or isinstance(value, list):
                 flatten(args[key])
     elif isinstance(args, list):
-        for i in range(0,len(args)):
+        for i in range(0, len(args)):
             if isinstance(args[i], date):
-                args[i] = value.isoformat()
+                args[i] = args[i].isoformat()
             elif isinstance(args[i], dict) or isinstance(args[i], list):
                 flatten(args[i])
 
-
 # vim:sw=4:ts=4:et:
-

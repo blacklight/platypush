@@ -176,9 +176,12 @@ class GpioPlugin(Plugin):
         Cleanup the state of the GPIO and resets PIN values.
         """
         import RPi.GPIO as GPIO
-        GPIO.cleanup()
-        self._initialized_pins = {}
-        self._initialized = False
+
+        with self._init_lock:
+            if self._initialized:
+                GPIO.cleanup()
+                self._initialized_pins = {}
+                self._initialized = False
 
 
 # vim:sw=4:ts=4:et:
