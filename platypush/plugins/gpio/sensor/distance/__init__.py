@@ -25,8 +25,8 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
 
     """
 
-    def __init__(self, trigger_pin: int, echo_pin: int,
-                 timeout: float = 1.0, warmup_time: float = 2.0, *args, **kwargs):
+    def __init__(self, trigger_pin: int, echo_pin: int, measurement_interval: float = 0.1,
+                 timeout: float = 2.0, warmup_time: float = 2.0, *args, **kwargs):
         """
         :param trigger_pin: GPIO PIN where you connected your sensor trigger PIN (the one that triggers the
             sensor to perform a measurement).
@@ -34,6 +34,9 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
         :param echo_pin: GPIO PIN where you connected your sensor echo PIN (the one that will listen for the
             signal to bounce back and therefore trigger the distance calculation).
 
+        :param measurement_interval: When running in continuous mode (see
+            :func:`platypush.plugins.gpio.sensor.distance.GpioSensorDistancePlugin.start_measurement`) this parameter
+            indicates how long should be waited between two measurements (default: 0.1 seconds)
         :param timeout: The echo-wait will terminate and the plugin will return null if no echo has been
             received after this time (default: 1 second).
 
@@ -45,6 +48,7 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
 
         self.trigger_pin = trigger_pin
         self.echo_pin = echo_pin
+        self.measurement_interval = measurement_interval
         self.timeout = timeout
         self.warmup_time = warmup_time
         self._measurement_thread: Optional[threading.Thread] = None
@@ -135,12 +139,15 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
     def _get_measurement_thread(self, duration: float):
         def _thread():
             with self:
+                self.logger.info('Started distance measurement thread')
                 start_time = time.time()
 
                 try:
                     while self._measurement_thread_can_run and (
                             not duration or time.time() - start_time <= duration):
                         self.get_measurement()
+                        if self.measurement_interval:
+                            time.sleep(self.measurement_interval)
                 finally:
                     self._measurement_thread = None
 
