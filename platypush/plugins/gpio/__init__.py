@@ -46,7 +46,7 @@ class GpioPlugin(Plugin):
         import RPi.GPIO as GPIO
 
         with self._init_lock:
-            if self._initialized or GPIO.getmode():
+            if self._initialized and GPIO.getmode():
                 return
 
             GPIO.setmode(self.mode)
