@@ -51,7 +51,7 @@ class GpioSensorDistancePlugin(GpioPlugin, GpioSensorPlugin):
         self.measurement_interval = measurement_interval
         self.timeout = timeout
         self.warmup_time = warmup_time
-        self._measurement_thread: Optional[threading.Thread] = None
+        self._measurement_thread = None
         self._measurement_thread_lock = threading.RLock()
         self._measurement_thread_can_run = False
         self._init_board()

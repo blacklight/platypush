@@ -92,7 +92,7 @@ class Workers:
         # noinspection PyArgumentList
         self._workers = [worker_type(self.request_queue, self.response_queue, *args, **kwargs)
                          for _ in range(n_workers)]
-        self.responses: list = []
+        self.responses = []
 
     def start(self):
         for wrk in self._workers:

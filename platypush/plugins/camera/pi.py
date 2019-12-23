@@ -86,7 +86,7 @@ class CameraPiPlugin(CameraPlugin):
         self._time_lapse_stop_condition = threading.Condition()
         self._recording_stop_condition = threading.Condition()
         self._streaming_stop_condition = threading.Condition()
-        self._output: Optional[StreamingOutput] = None
+        self._output = None
 
     # noinspection PyUnresolvedReferences,PyPackageRequirements
     def _get_camera(self, **opts):
