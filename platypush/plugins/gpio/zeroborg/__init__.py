@@ -2,7 +2,7 @@ import enum
 import threading
 import time
 
-from typing import Optional, Dict, List
+from typing import Dict, List
 
 from platypush.context import get_bus
 from platypush.message.event.zeroborg import ZeroborgDriveEvent, ZeroborgStopEvent
@@ -76,7 +76,7 @@ class GpioZeroborgPlugin(Plugin):
 
         self.directions = directions
         self._direction = None
-        self._drive_thread: Optional[threading.Thread] = None
+        self._drive_thread = None
         self._motors = [0, 0, 0, 0]
 
         self.zb = ZeroBorg.ZeroBorg()
