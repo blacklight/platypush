@@ -125,8 +125,9 @@ class GpioZeroborgPlugin(Plugin):
         self._direction = direction.lower()
 
         if not self._drive_thread:
-            self._drive_thread = threading.Thread(target=_run)
-            self._drive_thread.start()
+            drive_thread = threading.Thread(target=_run)
+            drive_thread.start()
+            self._drive_thread = drive_thread
 
         get_bus().post(ZeroborgDriveEvent(direction=self._direction, motors=self.directions[self._direction]))
         return {'status': 'running', 'direction': direction}
