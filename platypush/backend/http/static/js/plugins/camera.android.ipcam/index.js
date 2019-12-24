@@ -85,6 +85,11 @@ Vue.component('camera-android-ipcam', {
                         if (cam[attr].startsWith('https://')) {
                             cam[attr] = cam[attr].replace('https://', 'http://');
                         }
+
+                        if (cam[name] in this.config && this.config[cam[name]].username) {
+                            cam[attr] = 'http://' + this.config[cam[name]].username + ':' +
+                                this.config[cam[name]].password + cam[attr].substr(7);
+                        }
                     }
 
                     cameras[cam.name] = cam;
