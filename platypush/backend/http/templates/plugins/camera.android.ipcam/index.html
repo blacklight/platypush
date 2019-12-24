@@ -42,6 +42,12 @@
             </button>
         </div>
 
+        <div class="controls">
+            <button type="button" @click="updateCameraStatus" :disabled="loading">
+                <i class="fas fa-sync-alt"></i>&nbsp; Refresh available cameras
+            </button>
+        </div>
+
         <div class="sound-container">
             <audio autoplay preload="none" ref="player" v-if="recording">
                 <source :src="cameras[selectedCamera].audio_url" type="audio/x-wav;codec=pcm">
