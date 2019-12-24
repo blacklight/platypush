@@ -88,7 +88,7 @@ Vue.component('camera-android-ipcam', {
 
                         if (cam.name in this.config.cameras && this.config.cameras[cam.name].username) {
                             cam[attr] = 'http://' + this.config.cameras[cam.name].username + ':' +
-                                this.config.cameras[cam.name].password + cam[attr].substr(7);
+                                this.config.cameras[cam.name].password + '@' + cam[attr].substr(7);
                         }
                     }
 
