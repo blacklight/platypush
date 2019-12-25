@@ -84,4 +84,5 @@ class Response(Message):
 
         return json.dumps(response_dict)
 
+
 # vim:sw=4:ts=4:et:

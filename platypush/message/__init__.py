@@ -46,6 +46,7 @@ class Message(object):
         if isinstance(msg, bytes) or isinstance(msg, bytearray):
             msg = msg.decode('utf-8')
         if isinstance(msg, str):
+            # noinspection PyBroadException
             try:
                 msg = json.loads(msg.strip())
             except:
@@ -53,7 +54,7 @@ class Message(object):
 
         assert isinstance(msg, dict)
 
-        if not '_timestamp' in msg:
+        if '_timestamp' not in msg:
             msg['_timestamp'] = time.time()
 
         return msg
@@ -67,10 +68,66 @@ class Message(object):
         """
         from platypush.utils import get_message_class_by_type
 
-
         msg = cls.parse(msg)
         msgtype = get_message_class_by_type(msg['type'])
-        if msgtype != cls: return msgtype.build(msg)
+        if msgtype != cls:
+            return msgtype.build(msg)
+
+
+class Mapping(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __setitem__(self, key, item):
+        self.__dict__[key] = item
+
+    def __getitem__(self, key):
+        return self.__dict__[key]
+
+    def __repr__(self):
+        return repr(self.__dict__)
+
+    def __len__(self):
+        return len(self.__dict__)
+
+    def __delitem__(self, key):
+        del self.__dict__[key]
+
+    def clear(self):
+        return self.__dict__.clear()
+
+    def copy(self):
+        return self.__dict__.copy()
+
+    def has_key(self, k):
+        return k in self.__dict__
+
+    def update(self, *args, **kwargs):
+        return self.__dict__.update(*args, **kwargs)
+
+    def keys(self):
+        return self.__dict__.keys()
+
+    def values(self):
+        return self.__dict__.values()
+
+    def items(self):
+        return self.__dict__.items()
+
+    def pop(self, *args):
+        return self.__dict__.pop(*args)
+
+    def __cmp__(self, dict_):
+        return self.__cmp__(dict_)
+
+    def __contains__(self, item):
+        return item in self.__dict__
+
+    def __iter__(self):
+        return iter(self.__dict__)
+
+    def __str__(self):
+        return str(self.__dict__)
+
 
 # vim:sw=4:ts=4:et:
-

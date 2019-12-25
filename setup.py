@@ -252,6 +252,8 @@ setup(
         'htmldoc': ['docutils'],
         # Support for Node-RED integration
         'nodered': ['pynodered'],
+        # Support for Todoist integration
+        'nodered': ['todoist-python'],
     },
 )
 

@@ -188,3 +188,6 @@ croniter
 
 # Support for Node-RED integration
 # nodered
+
+# Support for Todoist integration
+# todoist

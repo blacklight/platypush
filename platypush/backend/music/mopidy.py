@@ -45,6 +45,7 @@ class MusicMopidyBackend(Backend):
         self._msg_id = 0
         self._ws = None
         self._latest_status = {}
+        self._connected = False
 
         try:
             self._latest_status = self._get_tracklist_status()
@@ -202,13 +203,18 @@ class MusicMopidyBackend(Backend):
     def _on_close(self):
         def hndl():
             self._ws = None
+            self._connected = False
             self.logger.warning('Mopidy websocket connection closed')
-            time.sleep(5)
-            self._connect()
+
+            while not self._connected:
+                self._connect()
+                time.sleep(10)
+
         return hndl
 
     def _on_open(self):
         def hndl(ws):
+            self._connected = True
             self.logger.info('Mopidy websocket connected')
         return hndl
 
