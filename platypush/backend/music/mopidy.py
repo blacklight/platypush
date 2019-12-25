@@ -196,7 +196,7 @@ class MusicMopidyBackend(Backend):
         return hndl
 
     def _on_error(self):
-        def hndl(error):
+        def hndl(ws, error):
             self.logger.warning('Mopidy websocket error: {}'.format(error))
         return hndl
 

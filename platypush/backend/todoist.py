@@ -59,7 +59,8 @@ class TodoistBackend(Backend):
         return hndl
 
     def _on_error(self):
-        def hndl(error):
+        # noinspection PyUnusedLocal
+        def hndl(ws, error):
             self.logger.warning('Todoist websocket error: {}'.format(error))
         return hndl
 
