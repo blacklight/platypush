@@ -1,7 +1,7 @@
 import json
 import time
 
-from platypush.message import Message
+from platypush.message import Message, MessageEncoder
 
 
 class Response(Message):
@@ -67,6 +67,10 @@ class Response(Message):
         the message into a UTF-8 JSON string
         """
 
+        output = self.output if self.output is not None and self.output != {} else {
+            'status': 'ok' if not self.errors else 'error'
+        }
+
         response_dict = {
             'id': self.id,
             'type': 'response',
@@ -74,7 +78,7 @@ class Response(Message):
             'origin': self.origin if hasattr(self, 'origin') else None,
             '_timestamp': self.timestamp,
             'response': {
-                'output': self.output,
+                'output': output,
                 'errors': self.errors,
             },
         }
@@ -82,7 +86,7 @@ class Response(Message):
         if self.disable_logging:
             response_dict['_disable_logging'] = self.disable_logging
 
-        return json.dumps(response_dict)
+        return json.dumps(response_dict, cls=MessageEncoder)
 
 
 # vim:sw=4:ts=4:et:

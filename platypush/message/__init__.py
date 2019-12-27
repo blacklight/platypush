@@ -1,3 +1,4 @@
+import datetime
 import logging
 import inspect
 import json
@@ -23,7 +24,7 @@ class Message(object):
             for attr in self.__dir__()
             if (attr != '_timestamp' or not attr.startswith('_'))
             and not inspect.ismethod(getattr(self, attr))
-        }).replace('\n', ' ')
+        }, cls=MessageEncoder).replace('\n', ' ')
 
     def __bytes__(self):
         """
@@ -77,6 +78,8 @@ class Message(object):
 class Mapping(dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        for k, v in kwargs.items():
+            self.__setattr__(k, v)
 
     def __setitem__(self, key, item):
         self.__dict__[key] = item
@@ -128,6 +131,16 @@ class Mapping(dict):
 
     def __str__(self):
         return str(self.__dict__)
+
+
+class MessageEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime) or \
+                isinstance(obj, datetime.date) or \
+                isinstance(obj, datetime.time):
+            return obj.isoformat()
+
+        return super().default(obj)
 
 
 # vim:sw=4:ts=4:et:

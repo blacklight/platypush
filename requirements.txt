@@ -190,4 +190,8 @@ croniter
 # nodered
 
 # Support for Todoist integration
-# todoist
+# todoist-python
+
+# Support for Trello integration
+# py-trello
+

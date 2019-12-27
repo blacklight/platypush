@@ -253,7 +253,9 @@ setup(
         # Support for Node-RED integration
         'nodered': ['pynodered'],
         # Support for Todoist integration
-        'nodered': ['todoist-python'],
+        'todoist': ['todoist-python'],
+        # Support for Trello integration
+        'trello': ['py-trello'],
     },
 )
 
