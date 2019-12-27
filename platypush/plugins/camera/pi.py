@@ -555,5 +555,13 @@ class CameraPiPlugin(CameraPlugin):
         if self._streaming_thread:
             self._streaming_thread.join()
 
+    @action
+    def is_streaming(self):
+        """
+        :return: True if the Pi Camera network streaming thread is running,
+            False otherwise.
+        """
+        return self._streaming_thread is not None
+
 
 # vim:sw=4:ts=4:et:
