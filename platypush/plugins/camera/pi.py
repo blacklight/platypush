@@ -85,8 +85,8 @@ class CameraPiPlugin(CameraPlugin):
         self._streaming_thread = None
         self._time_lapse_stop_condition = threading.Condition()
         self._recording_stop_condition = threading.Condition()
-        self._streaming_stop_condition = threading.Condition()
         self._output = None
+        self._can_stream = False
 
     # noinspection PyUnresolvedReferences,PyPackageRequirements
     def _get_camera(self, **opts):
@@ -493,24 +493,23 @@ class CameraPiPlugin(CameraPlugin):
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind(('0.0.0.0', listen_port))
         server_socket.listen(1)
+        server_socket.settimeout(1)
 
         # noinspection PyBroadException
         def streaming_thread():
             try:
                 self.logger.info('Starting streaming on port {}'.format(listen_port))
-                should_stop = False
 
-                while not should_stop:
+                while self._can_stream:
                     sock = None
                     stream = None
 
                     try:
-                        server_socket.settimeout(1)
                         sock = server_socket.accept()[0]
                         stream = sock.makefile('wb')
                         self.logger.info('Accepted client connection from {}'.format(sock.getpeername()))
                     except socket.timeout:
-                        pass
+                        continue
 
                     try:
                         if stream:
@@ -520,29 +519,24 @@ class CameraPiPlugin(CameraPlugin):
                     except ConnectionError:
                         self.logger.info('Client closed connection')
                     finally:
-                        if not should_stop:
-                            self._streaming_stop_condition.acquire()
-                            should_stop = self._streaming_stop_condition.wait(timeout=1)
-                            self._streaming_stop_condition.release()
-
-                        try:
-                            camera.stop_recording()
-                        except:
-                            pass
-
-                        try:
+                        if sock:
                             sock.close()
-                        except:
-                            pass
             finally:
                 try:
                     server_socket.close()
+                    camera.stop_recording()
+                except:
+                    pass
+
+                try:
+                    camera.close()
                 except:
                     pass
 
                 self._streaming_thread = None
                 self.logger.info('Stopped camera stream')
 
+        self._can_stream = True
         self._streaming_thread = threading.Thread(target=streaming_thread)
         self._streaming_thread.start()
 
@@ -556,9 +550,7 @@ class CameraPiPlugin(CameraPlugin):
             self.logger.info('No recording thread is running')
             return
 
-        self._streaming_stop_condition.acquire()
-        self._streaming_stop_condition.notify_all()
-        self._streaming_stop_condition.release()
+        self._can_stream = False
 
         if self._streaming_thread:
             self._streaming_thread.join()
