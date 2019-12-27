@@ -163,7 +163,7 @@ class Daemon:
 
         print('---- Starting platypush v.{}'.format(__version__))
 
-        redis_conf = Config.get('backend.redis', {})
+        redis_conf = Config.get('backend.redis') or {}
         self.bus = RedisBus(on_message=self.on_message(),
                             **redis_conf.get('redis_args', {}))
 
