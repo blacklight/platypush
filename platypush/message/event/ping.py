@@ -1,4 +1,4 @@
-from platypush.message.event import Event, EventMatchResult
+from platypush.message.event import Event
 
 
 class PingEvent(Event):
@@ -13,5 +13,20 @@ class PingEvent(Event):
         super().__init__(message=message, *args, **kwargs)
 
 
-# vim:sw=4:ts=4:et:
+class HostDownEvent(Event):
+    """
+    Event triggered when a remote host stops responding ping requests.
+    """
+    def __init__(self, host: str, *args, **kwargs):
+        super().__init__(host=host, *args, **kwargs)
 
+
+class HostUpEvent(Event):
+    """
+    Event triggered when a remote host starts responding ping requests.
+    """
+    def __init__(self, host: str, *args, **kwargs):
+        super().__init__(host=host, *args, **kwargs)
+
+
+# vim:sw=4:ts=4:et:

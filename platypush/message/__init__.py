@@ -10,6 +10,15 @@ logger = logging.getLogger(__name__)
 class Message(object):
     """ Message generic class """
 
+    class Encoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, datetime.datetime) or \
+                    isinstance(obj, datetime.date) or \
+                    isinstance(obj, datetime.time):
+                return obj.isoformat()
+
+            return super().default(obj)
+
     def __init__(self, timestamp=None, *args, **kwargs):
         self.timestamp = timestamp or time.time()
 
@@ -24,7 +33,7 @@ class Message(object):
             for attr in self.__dir__()
             if (attr != '_timestamp' or not attr.startswith('_'))
             and not inspect.ismethod(getattr(self, attr))
-        }, cls=MessageEncoder).replace('\n', ' ')
+        }, cls=self.Encoder).replace('\n', ' ')
 
     def __bytes__(self):
         """
@@ -131,16 +140,6 @@ class Mapping(dict):
 
     def __str__(self):
         return str(self.__dict__)
-
-
-class MessageEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime) or \
-                isinstance(obj, datetime.date) or \
-                isinstance(obj, datetime.time):
-            return obj.isoformat()
-
-        return super().default(obj)
 
 
 # vim:sw=4:ts=4:et:

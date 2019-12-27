@@ -1,7 +1,7 @@
 import json
 import time
 
-from platypush.message import Message, MessageEncoder
+from platypush.message import Message
 
 
 class Response(Message):
@@ -66,9 +66,8 @@ class Response(Message):
         Overrides the str() operator and converts
         the message into a UTF-8 JSON string
         """
-
         output = self.output if self.output is not None and self.output != {} else {
-            'status': 'ok' if not self.errors else 'error'
+            'success': True if not self.errors else False
         }
 
         response_dict = {
@@ -86,7 +85,7 @@ class Response(Message):
         if self.disable_logging:
             response_dict['_disable_logging'] = self.disable_logging
 
-        return json.dumps(response_dict, cls=MessageEncoder)
+        return json.dumps(response_dict, cls=self.Encoder)
 
 
 # vim:sw=4:ts=4:et:
