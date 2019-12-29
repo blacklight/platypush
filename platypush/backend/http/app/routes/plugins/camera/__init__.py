@@ -37,7 +37,6 @@ def get_frame(device_id=None):
             with output.ready:
                 output.ready.wait()
                 frame = output.frame
-                print(frame, type(frame))
 
         return frame
 
