@@ -1,6 +1,7 @@
-import multiprocessing
+import threading
 
 from abc import ABC, abstractmethod
+from queue import Queue
 from typing import Type
 
 
@@ -8,13 +9,13 @@ class EndOfStream:
     pass
 
 
-class Worker(ABC, multiprocessing.Process):
+class Worker(ABC, threading.Thread):
     """
-    Generic class for worker processes, used to split the execution of an action over multiple
+    Generic class for worker threads, used to split the execution of an action over multiple
     parallel instances.
     """
 
-    def __init__(self, request_queue: multiprocessing.Queue, response_queue=multiprocessing.Queue):
+    def __init__(self, request_queue: Queue, response_queue=Queue, id=None):
         """
         :param request_queue: The worker will listen for messages to process over this queue
         :param response_queue: The worker will return responses over this queue
@@ -22,6 +23,7 @@ class Worker(ABC, multiprocessing.Process):
         super().__init__()
         self.request_queue = request_queue
         self.response_queue = response_queue
+        self._id = id
 
     def run(self) -> None:
         """
@@ -87,11 +89,11 @@ class Workers:
         :param args: Extra args to pass to the `worker_type` constructor
         :param kwargs: Extra kwargs to pass to the `worker_type` constructor
         """
-        self.request_queue = multiprocessing.Queue()
-        self.response_queue = multiprocessing.Queue()
+        self.request_queue = Queue()
+        self.response_queue = Queue()
         # noinspection PyArgumentList
-        self._workers = [worker_type(self.request_queue, self.response_queue, *args, **kwargs)
-                         for _ in range(n_workers)]
+        self._workers = [worker_type(self.request_queue, self.response_queue, id=i, *args, **kwargs)
+                         for i in range(n_workers)]
         self.responses = []
 
     def start(self):

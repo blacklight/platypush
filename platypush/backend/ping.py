@@ -46,7 +46,7 @@ class PingBackend(Backend):
         self.logger.info('Starting ping backend with {} hosts to monitor'.format(len(self.hosts)))
 
         while not self.should_stop():
-            workers = Workers(min(len(self.hosts), 10), self.Pinger, timeout=self.timeout)
+            workers = Workers(10, self.Pinger, timeout=self.timeout)
 
             with workers:
                 for host in self.hosts.keys():
