@@ -1,3 +1,4 @@
+import io
 import os
 import re
 import shutil
@@ -5,14 +6,39 @@ import threading
 import time
 
 from datetime import datetime
+from typing import Optional
 
 from platypush.config import Config
+from platypush.message import Mapping
 from platypush.message.response import Response
 from platypush.message.event.camera import CameraRecordingStartedEvent, \
     CameraRecordingStoppedEvent, CameraVideoRenderedEvent, \
     CameraPictureTakenEvent, CameraFrameCapturedEvent
 
 from platypush.plugins import Plugin, action
+
+
+class StreamingOutput:
+    def __init__(self):
+        self.frame = None
+        self.buffer = io.BytesIO()
+        self.ready = threading.Condition()
+
+    @staticmethod
+    def is_new_frame(buf):
+        # JPEG header begin
+        return buf.startswith(b'\xff\xd8')
+
+    def write(self, buf):
+        if self.is_new_frame(buf):
+            # New frame, copy the existing buffer's content and notify all clients that it's available
+            self.buffer.truncate()
+            with self.ready:
+                self.frame = self.buffer.getvalue()
+                self.ready.notify_all()
+            self.buffer.seek(0)
+
+        return self.buffer.write(buf)
 
 
 class CameraPlugin(Plugin):
@@ -33,6 +59,7 @@ class CameraPlugin(Plugin):
     Requires:
 
         * **opencv** (``pip install opencv-python``)
+
     """
 
     _default_warmup_frames = 5
@@ -68,7 +95,8 @@ class CameraPlugin(Plugin):
 
         :param video_type: Default video type to use when exporting captured
             frames to camera (default: 0, infers the type from the video file
-            extension). See https://docs.opencv.org/4.0.1/dd/d9e/classcv_1_1VideoWriter.html#afec93f94dc6c0b3e28f4dd153bc5a7f0
+            extension). See
+            `here <https://docs.opencv.org/4.0.1/dd/d9e/classcv_1_1VideoWriter.html#afec93f94dc6c0b3e28f4dd153bc5a7f0>`_
             for a reference on the supported types (e.g. 'MJPEG', 'XVID', 'H264' etc')
         :type video_type: str or int
 
@@ -120,7 +148,7 @@ class CameraPlugin(Plugin):
 
         if isinstance(video_type, str):
             import cv2
-            self.video_type = cv2.VideoWriter_fourcc(*video_type)
+            self.video_type = cv2.VideoWriter_fourcc(*video_type.upper())
 
         self.sleep_between_frames = sleep_between_frames
         self.max_stored_frames = max_stored_frames
@@ -134,6 +162,7 @@ class CameraPlugin(Plugin):
         self._devices = {}  # device_id => VideoCapture map
         self._recording_threads = {}  # device_id => Thread map
         self._recording_info = {}  # device_id => recording info map
+        self._output = None
 
     def _init_device(self, device_id, frames_dir=None, **info):
         import cv2
@@ -190,7 +219,7 @@ class CameraPlugin(Plugin):
         ret = sorted([
             os.path.join(frames_dir, f) for f in os.listdir(frames_dir)
             if os.path.isfile(os.path.join(frames_dir, f)) and
-               re.search(self._frame_filename_regex, f)
+            re.search(self._frame_filename_regex, f)
         ])
         return ret
 
@@ -243,14 +272,12 @@ class CameraPlugin(Plugin):
                    frames_dir, n_frames, sleep_between_frames,
                    max_stored_frames, color_transform, video_type,
                    scale_x, scale_y, rotate, flip):
-
             import cv2
             device = self._devices[device_id]
-            color_transform = getattr(cv2, self.color_transform)
+            color_transform = getattr(cv2, color_transform or self.color_transform)
             rotation_matrix = None
             self._is_recording[device_id].wait()
-            self.logger.info('Starting recording from video device {}'.
-                             format(device_id))
+            self.logger.info('Starting recording from video device {}'.format(device_id))
             recording_started_time = time.time()
             captured_frames = 0
 
@@ -280,8 +307,7 @@ class CameraPlugin(Plugin):
                 if rotate:
                     rows, cols = frame.shape
                     if not rotation_matrix:
-                        rotation_matrix = cv2.getRotationMatrix2D(
-                            (cols / 2, rows / 2), rotate, 1)
+                        rotation_matrix = cv2.getRotationMatrix2D((cols / 2, rows / 2), rotate, 1)
 
                     frame = cv2.warpAffine(frame, rotation_matrix, (cols, rows))
 
@@ -294,8 +320,16 @@ class CameraPlugin(Plugin):
                     frame = cv2.resize(frame, None, fx=scale_x, fy=scale_y,
                                        interpolation=cv2.INTER_CUBIC)
 
-                self._store_frame_to_file(frame=frame, frames_dir=frames_dir,
-                                          image_file=image_file)
+                if self._output:
+                    result, frame = cv2.imencode('.jpg', frame)
+                    if not result:
+                        self.logger.warning('Unable to convert frame to JPEG')
+                        continue
+
+                    self._output.write(frame.tobytes())
+                elif frames_dir:
+                    self._store_frame_to_file(frame=frame, frames_dir=frames_dir, image_file=image_file)
+
                 captured_frames += 1
                 self.fire_event(CameraFrameCapturedEvent(filename=image_file))
 
@@ -326,31 +360,32 @@ class CameraPlugin(Plugin):
         return thread
 
     @action
-    def start_recording(self, duration=None, video_file=None, video_type=None,
-                        device_id=None, frames_dir=None,
-                        sleep_between_frames=None, max_stored_frames=None,
-                        color_transform=None, scale_x=None, scale_y=None,
-                        rotate=None, flip=None):
+    def start_recording(self, duration: Optional[float] = None, video_file: Optional[str] = None,
+                        video_type: Optional[str] = None, device_id: Optional[int] = None,
+                        frames_dir: Optional[str] = None, sleep_between_frames: Optional[float] = None,
+                        max_stored_frames: Optional[int] = None, color_transform: Optional[str] = None,
+                        scale_x: Optional[float] = None, scale_y: Optional[float] = None,
+                        rotate: Optional[float] = None, flip: Optional[int] = None):
         """
         Start recording
 
         :param duration: Record duration in seconds (default: None, record until
             ``stop_recording``)
-        :type duration: float
-
         :param video_file: If set, the stream will be recorded to the specified
             video file (default: None)
-        :type video_file: str
-
         :param video_type: Overrides the default configured ``video_type``
-        :type video_file: str
 
-        :param device_id, frames_dir, sleep_between_frames, max_stored_frames,
-            color_transform, scale_x, scale_y, rotate, flip: Set
-            these parameters if you want to override the default configured ones.
+        :param device_id: Override default device_id
+        :param frames_dir: Override default frames_dir
+        :param sleep_between_frames: Override default sleep_between_frames
+        :param max_stored_frames: Override default max_stored_frames
+        :param color_transform: Override default color_transform
+        :param scale_x: Override default scale_x
+        :param scale_y: Override default scale_y
+        :param rotate: Override default rotate
+        :param flip: Override default flip
         """
 
-        import cv2
         device_id = device_id if device_id is not None else self.default_device_id
         if device_id in self._is_recording and \
                 self._is_recording[device_id].is_set():
@@ -360,56 +395,55 @@ class CameraPlugin(Plugin):
 
         recording_started = threading.Event()
 
+        # noinspection PyUnusedLocal
         def on_recording_started(event):
             recording_started.set()
 
-        frames_dir = os.path.abspath(os.path.expanduser(frames_dir)) \
-            if frames_dir is not None else self.frames_dir
-        sleep_between_frames = sleep_between_frames if sleep_between_frames \
-                                                       is not None else self.sleep_between_frames
-        max_stored_frames = max_stored_frames if max_stored_frames \
-                                                 is not None else self.max_stored_frames
-        color_transform = color_transform if color_transform \
-                                             is not None else self.color_transform
-        scale_x = scale_x if scale_x is not None else self.scale_x
-        scale_y = scale_y if scale_y is not None else self.scale_y
-        rotate = rotate if rotate is not None else self.rotate
-        flip = flip if flip is not None else self.flip
+        attrs = self._get_attributes(frames_dir=frames_dir, sleep_between_frames=sleep_between_frames,
+                                     max_stored_frames=max_stored_frames, color_transform=color_transform,
+                                     scale_x=scale_x, scale_y=scale_y, rotate=rotate, flip=flip, video_type=video_type)
 
-        if video_type is not None:
-            video_type = cv2.VideoWriter_fourcc(*video_type.upper()) \
-                if isinstance(video_type, str) else video_type
-        else:
-            video_type = self.video_type
+        # noinspection PyUnresolvedReferences
+        if attrs.frames_dir:
+            # noinspection PyUnresolvedReferences
+            attrs.frames_dir = os.path.join(attrs.frames_dir, str(device_id))
+            if video_file:
+                video_file = os.path.abspath(os.path.expanduser(video_file))
+                attrs.frames_dir = os.path.join(attrs.frames_dir, 'recording_{}'.format(
+                    datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f')))
 
-        frames_dir = os.path.join(frames_dir, str(device_id))
-        if video_file:
-            video_file = os.path.abspath(os.path.expanduser(video_file))
-            frames_dir = os.path.join(frames_dir, 'recording_{}'.format(
-                datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f')))
-
-        self._init_device(device_id, video_file=video_file,
-                          video_type=video_type,
-                          frames_dir=frames_dir,
-                          sleep_between_frames=sleep_between_frames,
-                          max_stored_frames=max_stored_frames,
-                          color_transform=color_transform, scale_x=scale_x,
-                          scale_y=scale_y, rotate=rotate, flip=flip)
+        # noinspection PyUnresolvedReferences
+        self._init_device(device_id,
+                          video_file=video_file,
+                          video_type=attrs.video_type,
+                          frames_dir=attrs.frames_dir,
+                          sleep_between_frames=attrs.sleep_between_frames,
+                          max_stored_frames=attrs.max_stored_frames,
+                          color_transform=attrs.color_transform,
+                          scale_x=attrs.scale_x,
+                          scale_y=attrs.scale_y,
+                          rotate=attrs.rotate,
+                          flip=attrs.flip)
 
         self.register_handler(CameraRecordingStartedEvent, on_recording_started)
 
+        # noinspection PyUnresolvedReferences
         self._recording_threads[device_id] = threading.Thread(
             target=self._recording_thread(), kwargs={
                 'duration': duration,
                 'video_file': video_file,
-                'video_type': video_type,
-                'image_file': None, 'device_id': device_id,
-                'frames_dir': frames_dir, 'n_frames': None,
-                'sleep_between_frames': sleep_between_frames,
-                'max_stored_frames': max_stored_frames,
-                'color_transform': color_transform,
-                'scale_x': scale_x, 'scale_y': scale_y,
-                'rotate': rotate, 'flip': flip
+                'video_type': attrs.video_type,
+                'image_file': None,
+                'device_id': device_id,
+                'frames_dir': attrs.frames_dir,
+                'n_frames': None,
+                'sleep_between_frames': attrs.sleep_between_frames,
+                'max_stored_frames': attrs.max_stored_frames,
+                'color_transform': attrs.color_transform,
+                'scale_x': attrs.scale_x,
+                'scale_y': attrs.scale_y,
+                'rotate': attrs.rotate,
+                'flip': attrs.flip,
             })
 
         self._recording_threads[device_id].start()
@@ -430,24 +464,52 @@ class CameraPlugin(Plugin):
         self._release_device(device_id)
         shutil.rmtree(frames_dir, ignore_errors=True)
 
+    def _get_attributes(self, frames_dir=None, warmup_frames=None,
+                        color_transform=None, scale_x=None, scale_y=None,
+                        rotate=None, flip=None, sleep_between_frames=None,
+                        max_stored_frames=None, video_type=None) -> Mapping:
+        import cv2
+
+        warmup_frames = warmup_frames if warmup_frames is not None else self.warmup_frames
+        frames_dir = os.path.abspath(os.path.expanduser(frames_dir)) if frames_dir is not None else self.frames_dir
+        sleep_between_frames = sleep_between_frames if sleep_between_frames is not None else self.sleep_between_frames
+        max_stored_frames = max_stored_frames if max_stored_frames is not None else self.max_stored_frames
+        color_transform = color_transform if color_transform is not None else self.color_transform
+        scale_x = scale_x if scale_x is not None else self.scale_x
+        scale_y = scale_y if scale_y is not None else self.scale_y
+        rotate = rotate if rotate is not None else self.rotate
+        flip = flip if flip is not None else self.flip
+        if video_type is not None:
+            video_type = cv2.VideoWriter_fourcc(*video_type.upper()) if isinstance(video_type, str) else video_type
+        else:
+            video_type = self.video_type
+
+        return Mapping(warmup_frames=warmup_frames, frames_dir=frames_dir, sleep_between_frames=sleep_between_frames,
+                       max_stored_frames=max_stored_frames, color_transform=color_transform, scale_x=scale_x,
+                       scale_y=scale_y, rotate=rotate, flip=flip, video_type=video_type)
+
     @action
-    def take_picture(self, image_file, device_id=None, warmup_frames=None,
-                     color_transform=None, scale_x=None, scale_y=None,
-                     rotate=None, flip=None):
+    def take_picture(self, image_file: str, device_id: Optional[int] = None, warmup_frames: Optional[int] = None,
+                     color_transform: Optional[str] = None, scale_x: Optional[float] = None,
+                     scale_y: Optional[float] = None, rotate: Optional[float] = None, flip: Optional[int] = None):
         """
         Take a picture.
 
         :param image_file: Path where the output image will be stored.
-        :type image_file: str
-
-        :param device_id, warmup_frames, color_transform, scale_x, scale_y,
-            rotate, flip: Overrides the configured default parameters
+        :param device_id: Override default device_id
+        :param warmup_frames: Override default warmup_frames
+        :param color_transform: Override default color_transform
+        :param scale_x: Override default scale_x
+        :param scale_y: Override default scale_y
+        :param rotate: Override default rotate
+        :param flip: Override default flip
         """
 
         device_id = device_id if device_id is not None else self.default_device_id
         image_file = os.path.abspath(os.path.expanduser(image_file))
         picture_taken = threading.Event()
 
+        # noinspection PyUnusedLocal
         def on_picture_taken(event):
             picture_taken.set()
 
@@ -464,20 +526,13 @@ class CameraPlugin(Plugin):
             raise RuntimeError('Recording already in progress and no images ' +
                                'have been captured yet')
 
-        warmup_frames = warmup_frames if warmup_frames is not None else \
-            self.warmup_frames
-        color_transform = color_transform if color_transform \
-                                             is not None else self.color_transform
-        scale_x = scale_x if scale_x is not None else self.scale_x
-        scale_y = scale_y if scale_y is not None else self.scale_y
-        rotate = rotate if rotate is not None else self.rotate
-        flip = flip if flip is not None else self.flip
+        attrs = self._get_attributes(warmup_frames=warmup_frames, color_transform=color_transform, scale_x=scale_x,
+                                     scale_y=scale_y, rotate=rotate, flip=flip)
 
-        self._init_device(device_id, image_file=image_file,
-                          warmup_frames=warmup_frames,
-                          color_transform=color_transform,
-                          scale_x=scale_x, scale_y=scale_y, rotate=rotate,
-                          flip=flip)
+        # noinspection PyUnresolvedReferences
+        self._init_device(device_id, image_file=image_file, warmup_frames=attrs.warmup_frames,
+                          color_transform=attrs.color_transform, scale_x=attrs.scale_x, scale_y=attrs.scale_y,
+                          rotate=attrs.rotate, flip=attrs.flip)
 
         self.register_handler(CameraPictureTakenEvent, on_picture_taken)
         self._recording_threads[device_id] = threading.Thread(
@@ -523,6 +578,19 @@ class CameraPlugin(Plugin):
     @action
     def get_default_device_id(self):
         return self.default_device_id
+
+    def get_stream(self):
+        return self._output
+
+    def __enter__(self):
+        device_id = self.default_device_id
+        self._output = StreamingOutput()
+        self._init_device(device_id=device_id)
+        self.start_recording(device_id=device_id)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop_recording(self.default_device_id)
+        self._output = None
 
 
 # vim:sw=4:ts=4:et:

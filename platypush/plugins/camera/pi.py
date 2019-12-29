@@ -2,34 +2,15 @@
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
 """
 
-import io
 import os
 import socket
 import threading
 import time
 
-from typing import Optional, Union
+from typing import Optional
 
 from platypush.plugins import action
-from platypush.plugins.camera import CameraPlugin
-
-
-class StreamingOutput:
-    def __init__(self):
-        self.frame = None
-        self.buffer = io.BytesIO()
-        self.ready = threading.Condition()
-
-    def write(self, buf):
-        if buf.startswith(b'\xff\xd8'):
-            # New frame, copy the existing buffer's content and notify all clients that it's available
-            self.buffer.truncate()
-            with self.ready:
-                self.frame = self.buffer.getvalue()
-                self.ready.notify_all()
-            self.buffer.seek(0)
-
-        return self.buffer.write(buf)
+from platypush.plugins.camera import CameraPlugin, StreamingOutput
 
 
 class CameraPiPlugin(CameraPlugin):
@@ -85,7 +66,6 @@ class CameraPiPlugin(CameraPlugin):
         self._streaming_thread = None
         self._time_lapse_stop_condition = threading.Condition()
         self._recording_stop_condition = threading.Condition()
-        self._output = None
         self._can_stream = False
 
     # noinspection PyUnresolvedReferences,PyPackageRequirements
@@ -199,9 +179,6 @@ class CameraPiPlugin(CameraPlugin):
         camera = self._get_camera()
         self._output = StreamingOutput()
         camera.start_recording(self._output, format='mjpeg')
-
-    def get_stream(self):
-        return self._output
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
@@ -501,9 +478,6 @@ class CameraPiPlugin(CameraPlugin):
                 self.logger.info('Starting streaming on port {}'.format(listen_port))
 
                 while self._can_stream:
-                    sock = None
-                    stream = None
-
                     try:
                         sock = server_socket.accept()[0]
                         stream = sock.makefile('wb')
