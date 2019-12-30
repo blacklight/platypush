@@ -74,7 +74,7 @@ Backends
 ''')
 
         for backend in all_backends:
-            f.write('    platypush/backends/' + backend + '.rst\n')
+            f.write('    platypush/backend/' + backend + '.rst\n')
 
 
 generate_plugins_doc()
