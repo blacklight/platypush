@@ -1,7 +1,7 @@
 import requests
 
-from platypush.message import Message
 from platypush.plugins import Plugin, action
+
 
 class IftttPlugin(Plugin):
     """
@@ -30,15 +30,16 @@ class IftttPlugin(Plugin):
 
     _base_url = 'https://maker.ifttt.com/trigger/{event_name}/with/key/{ifttt_key}'
 
-    def __init__(self, ifttt_key, *args, **kwargs):
+    def __init__(self, ifttt_key, **kwargs):
         """
-        :param ifttt_key: Your IFTTT Maker API key. Log in to IFTTT and get your key from <https://ifttt.com/maker_webhooks>. Once you've got your key, you can start creating IFTTT rules using the Webhooks channel.
+        :param ifttt_key: Your IFTTT Maker API key. Log in to IFTTT and get your key from
+            `here <https://ifttt.com/maker_webhooks>`_. Once you've got your key, you can start creating IFTTT rules
+            using the Webhooks channel.
         :type ifttt_key: str
         """
 
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         self.ifttt_key = ifttt_key
-
 
     @action
     def trigger_event(self, event_name, values=None):
@@ -48,7 +49,8 @@ class IftttPlugin(Plugin):
         :param event_name: Name of the event
         :type event_name: str
 
-        :param values: Optional list of values to be passed to the event. By convention IFTTT names the values as ``value1,value2,...``.
+        :param values: Optional list of values to be passed to the event. By convention IFTTT names the values as
+            ``value1,value2,...``.
         :type values: list
         """
 
@@ -56,12 +58,12 @@ class IftttPlugin(Plugin):
         if not values:
             values = []
 
-        response = requests.post(url, json={'value{}'.format(i+1): v
-                                            for (i,v) in enumerate(values)})
+        response = requests.post(url, json={'value{}'.format(i + 1): v
+                                            for (i, v) in enumerate(values)})
 
         if not response.ok:
-            raise RuntimeError("IFTTT event '{}' error: {}: {}".format(event_name, r.status_code, r.reason))
+            raise RuntimeError("IFTTT event '{}' error: {}: {}".format(
+                event_name, response.status_code, response.reason))
 
 
 # vim:sw=4:ts=4:et:
-

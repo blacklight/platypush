@@ -14,8 +14,8 @@ class PingBackend(Backend):
 
     Triggers:
 
-        - :class:`platypush.message.ping.HostDownEvent` if a host stops responding ping requests
-        - :class:`platypush.message.ping.HostUpEvent` if a host starts responding ping requests
+        - :class:`platypush.message.event.ping.HostDownEvent` if a host stops responding ping requests
+        - :class:`platypush.message.event.ping.HostUpEvent` if a host starts responding ping requests
 
     """
 
