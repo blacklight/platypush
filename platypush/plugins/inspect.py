@@ -5,8 +5,10 @@ import pkgutil
 import re
 import threading
 
+import platypush.backend
 import platypush.plugins
 
+from platypush.backend import Backend
 from platypush.plugins import Plugin, action
 from platypush.utils import get_decorators
 
@@ -28,6 +30,17 @@ class Model:
             return doc
 
         return docutils.core.publish_parts(doc, writer_name='html')['html_body']
+
+
+class BackendModel(Model):
+    def __init__(self, backend, prefix='', html_doc: bool = False):
+        self.name = backend.__module__[len(prefix):]
+        self.html_doc = html_doc
+        self.doc = self.to_html(backend.__doc__) if html_doc and backend.__doc__ else backend.__doc__
+
+    def __iter__(self):
+        for attr in ['name', 'doc', 'html_doc']:
+            yield attr, getattr(self, attr)
 
 
 class PluginModel(Model):
@@ -119,7 +132,9 @@ class InspectPlugin(Plugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._plugins = {}
+        self._backends = {}
         self._plugins_lock = threading.RLock()
+        self._backends_lock = threading.RLock()
         self._html_doc = False
 
     def _init_plugins(self):
@@ -141,6 +156,25 @@ class InspectPlugin(Plugin):
                     if model.name:
                         self._plugins[model.name] = model
 
+    def _init_backends(self):
+        package = platypush.backend
+        prefix = package.__name__ + '.'
+
+        for _, modname, _ in pkgutil.walk_packages(path=package.__path__,
+                                                   prefix=prefix,
+                                                   onerror=lambda x: None):
+            # noinspection PyBroadException
+            try:
+                module = importlib.import_module(modname)
+            except:
+                continue
+
+            for _, obj in inspect.getmembers(module):
+                if inspect.isclass(obj) and issubclass(obj, Backend):
+                    model = BackendModel(backend=obj, prefix=prefix, html_doc=self._html_doc)
+                    if model.name:
+                        self._backends[model.name] = model
+
     @action
     def get_all_plugins(self, html_doc: bool = None):
         """
@@ -154,6 +188,21 @@ class InspectPlugin(Plugin):
             return json.dumps({
                 name: dict(plugin)
                 for name, plugin in self._plugins.items()
+            })
+
+    @action
+    def get_all_backends(self, html_doc: bool = None):
+        """
+        :param html_doc: If True then the docstring will be parsed into HTML (default: False)
+        """
+        with self._backends_lock:
+            if not self._backends or (html_doc is not None and html_doc != self._html_doc):
+                self._html_doc = html_doc
+                self._init_backends()
+
+            return json.dumps({
+                name: dict(backend)
+                for name, backend in self._backends.items()
             })
 
 

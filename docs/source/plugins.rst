@@ -1,3 +1,4 @@
+
 Plugins
 =======
 
@@ -6,29 +7,32 @@ Plugins
     :caption: Plugins:
 
     platypush/plugins/adafruit.io.rst
+    platypush/plugins/assistant.rst
     platypush/plugins/assistant.echo.rst
-    platypush/plugins/assistant.google.pushtotalk.rst
     platypush/plugins/assistant.google.rst
+    platypush/plugins/assistant.google.pushtotalk.rst
     platypush/plugins/autoremote.rst
     platypush/plugins/bluetooth.rst
     platypush/plugins/bluetooth.ble.rst
-    platypush/plugins/calendar.ical.rst
     platypush/plugins/calendar.rst
+    platypush/plugins/calendar.ical.rst
+    platypush/plugins/camera.rst
+    platypush/plugins/camera.android.ipcam.rst
     platypush/plugins/camera.ir.mlx90640.rst
     platypush/plugins/camera.pi.rst
-    platypush/plugins/camera.rst
     platypush/plugins/clipboard.rst
     platypush/plugins/db.rst
     platypush/plugins/dropbox.rst
     platypush/plugins/file.rst
+    platypush/plugins/google.rst
     platypush/plugins/google.calendar.rst
-    platypush/plugins/google.credentials.rst
     platypush/plugins/google.fit.rst
     platypush/plugins/google.mail.rst
     platypush/plugins/google.maps.rst
-    platypush/plugins/google.rst
+    platypush/plugins/google.pubsub.rst
     platypush/plugins/google.youtube.rst
     platypush/plugins/gpio.rst
+    platypush/plugins/gpio.sensor.rst
     platypush/plugins/gpio.sensor.accelerometer.rst
     platypush/plugins/gpio.sensor.bme280.rst
     platypush/plugins/gpio.sensor.distance.rst
@@ -37,25 +41,27 @@ Plugins
     platypush/plugins/gpio.sensor.ltr559.rst
     platypush/plugins/gpio.sensor.mcp3008.rst
     platypush/plugins/gpio.sensor.motion.pwm3901.rst
-    platypush/plugins/gpio.sensor.rst
     platypush/plugins/gpio.zeroborg.rst
     platypush/plugins/homeseer.rst
-    platypush/plugins/http.request.rss.rst
     platypush/plugins/http.request.rst
+    platypush/plugins/http.request.ota.booking.rst
+    platypush/plugins/http.request.rss.rst
     platypush/plugins/http.webpage.rst
     platypush/plugins/ifttt.rst
     platypush/plugins/inspect.rst
     platypush/plugins/kafka.rst
-    platypush/plugins/light.hue.rst
+    platypush/plugins/lastfm.rst
     platypush/plugins/light.rst
+    platypush/plugins/light.hue.rst
+    platypush/plugins/logger.rst
+    platypush/plugins/media.rst
+    platypush/plugins/media.chromecast.rst
+    platypush/plugins/media.ctrl.rst
     platypush/plugins/media.kodi.rst
     platypush/plugins/media.mplayer.rst
     platypush/plugins/media.mpv.rst
     platypush/plugins/media.omxplayer.rst
     platypush/plugins/media.plex.rst
-    platypush/plugins/media.search.local.rst
-    platypush/plugins/media.search.torrent.rst
-    platypush/plugins/media.search.youtube.rst
     platypush/plugins/media.subtitles.rst
     platypush/plugins/media.vlc.rst
     platypush/plugins/media.webtorrent.rst
@@ -63,8 +69,10 @@ Plugins
     platypush/plugins/ml.cv.rst
     platypush/plugins/mobile.join.rst
     platypush/plugins/mqtt.rst
+    platypush/plugins/music.rst
     platypush/plugins/music.mpd.rst
     platypush/plugins/music.snapcast.rst
+    platypush/plugins/ping.rst
     platypush/plugins/pushbullet.rst
     platypush/plugins/redis.rst
     platypush/plugins/serial.rst
@@ -72,14 +80,16 @@ Plugins
     platypush/plugins/sound.rst
     platypush/plugins/switch.rst
     platypush/plugins/switch.switchbot.rst
-    platypush/plugins/switch.tplink.rst
     platypush/plugins/switch.wemo.rst
+    platypush/plugins/todoist.rst
     platypush/plugins/torrent.rst
-    platypush/plugins/tts.google.rst
+    platypush/plugins/trello.rst
     platypush/plugins/tts.rst
+    platypush/plugins/tts.google.rst
     platypush/plugins/user.rst
     platypush/plugins/utils.rst
     platypush/plugins/variable.rst
+    platypush/plugins/video.torrentcast.rst
     platypush/plugins/weather.forecast.rst
     platypush/plugins/websocket.rst
     platypush/plugins/wiimote.rst
