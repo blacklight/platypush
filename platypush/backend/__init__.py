@@ -53,7 +53,8 @@ class Backend(Thread, EventGenerator):
         self.bus = bus or Bus()
         self.device_id = Config.get('device_id')
         self.thread_id = None
-        self._stop = False
+        self._should_stop = False
+        self._stop_event = threading.Event()
         self._kwargs = kwargs
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -95,25 +96,22 @@ class Backend(Thread, EventGenerator):
 
         if isinstance(msg, StopEvent) and msg.targets_me():
             self.logger.info('Received STOP event on {}'.format(self.__class__.__name__))
-            self._stop = True
+            self._should_stop = True
         else:
             msg.backend = self   # Augment message to be able to process responses
             self.bus.post(msg)
-
 
     def _is_expected_response(self, msg):
         """ Internal only - returns true if we are expecting for a response
             and msg is that response """
 
-        return  self._request_context \
+        return self._request_context \
             and isinstance(msg, Response) \
             and msg.id == self._request_context['request'].id
-
 
     def _get_backend_config(self):
         config_name = 'backend.' + self.__class__.__name__.split('Backend')[0].lower()
         return Config.get(config_name)
-
 
     def _setup_response_handler(self, request, on_response, response_timeout):
         def _timeout_hndl():
@@ -127,7 +125,7 @@ class Backend(Thread, EventGenerator):
         }
 
         resp_backend = self.__class__(bus=self.bus, _req_ctx=req_ctx,
-                                     **self._get_backend_config(), **self._kwargs)
+                                      **self._get_backend_config(), **self._kwargs)
 
         # Set the response timeout
         if response_timeout:
@@ -135,12 +133,12 @@ class Backend(Thread, EventGenerator):
 
         resp_backend.start()
 
-
     def send_event(self, event, **kwargs):
         """
         Send an event message on the backend.
 
-        :param event: Event to send. It can be a dict, a string/bytes UTF-8 JSON, or a platypush.message.event.Event object.
+        :param event: Event to send. It can be a dict, a string/bytes UTF-8 JSON, or a platypush.message.event.Event
+            object.
         """
 
         event = Event.build(event)
@@ -152,18 +150,20 @@ class Backend(Thread, EventGenerator):
 
         self.send_message(event, **kwargs)
 
-
     def send_request(self, request, on_response=None,
                      response_timeout=_default_response_timeout, **kwargs):
         """
         Send a request message on the backend.
 
-        :param request: The request, either a dict, a string/bytes UTF-8 JSON, or a platypush.message.request.Request object.
+        :param request: The request, either a dict, a string/bytes UTF-8 JSON, or a platypush.message.request.Request
+            object.
 
-        :param on_response: Optional callback that will be called when a response is received. If set, this method will synchronously wait for a response before exiting.
+        :param on_response: Optional callback that will be called when a response is received. If set, this method will
+            synchronously wait for a response before exiting.
         :type on_response: function
 
-        :param response_timeout: If on_response is set, the backend will raise an exception if the response isn't received within this number of seconds (default: None)
+        :param response_timeout: If on_response is set, the backend will raise an exception if the response isn't
+            received within this number of seconds (default: None)
         :type response_timeout: float
         """
 
@@ -177,12 +177,12 @@ class Backend(Thread, EventGenerator):
 
         self.send_message(request, **kwargs)
 
-
     def send_response(self, response, request, **kwargs):
         """
         Send a response message on the backend.
 
-        :param response: The response, either a dict, a string/bytes UTF-8 JSON, or a platypush.message.response.Response object
+        :param response: The response, either a dict, a string/bytes UTF-8 JSON, or a
+            :class:`platypush.message.response.Response` object.
         :param request: Associated request, used to set the response parameters that will link them
         """
 
@@ -190,7 +190,6 @@ class Backend(Thread, EventGenerator):
         assert isinstance(request, Request)
 
         self.send_message(response, **kwargs)
-
 
     def send_message(self, msg, queue_name=None, **kwargs):
         """
@@ -200,7 +199,8 @@ class Backend(Thread, EventGenerator):
         other consumers through the configured Redis main queue.
 
         :param msg: The message to send
-        :param queue_name: Send the message on a specific queue (default: the queue_name configured on the Redis backend)
+        :param queue_name: Send the message on a specific queue (default: the queue_name configured on the Redis
+            backend)
         """
 
         try:
@@ -213,7 +213,6 @@ class Backend(Thread, EventGenerator):
             return
 
         redis.send_message(msg, queue_name=queue_name)
-
 
     def run(self):
         """ Starts the backend thread. To be implemented in the derived classes """
@@ -231,12 +230,16 @@ class Backend(Thread, EventGenerator):
                             thread_id=self.thread_id)
 
             self.send_message(evt)
+            self._stop_event.set()
             self.on_stop()
 
         Thread(target=_async_stop).start()
 
     def should_stop(self):
-        return self._stop
+        return self._should_stop
+
+    def wait_stop(self, timeout=None):
+        self._stop_event.wait(timeout)
 
     def _get_redis(self):
         import redis

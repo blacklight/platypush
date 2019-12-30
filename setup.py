@@ -256,6 +256,8 @@ setup(
         'todoist': ['todoist-python'],
         # Support for Trello integration
         'trello': ['py-trello'],
+        # Support for Google Pub/Sub
+        'google-pubsub': ['google-cloud-pubsub'],
     },
 )
 

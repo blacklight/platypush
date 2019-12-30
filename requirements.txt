@@ -195,3 +195,6 @@ croniter
 # Support for Trello integration
 # py-trello
 
+# Support for Google Pub/Sub
+# google-cloud-pubsub
+
