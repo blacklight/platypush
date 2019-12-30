@@ -11,6 +11,10 @@ def get_all_backends():
     return get_plugin('inspect').get_all_backends().output
 
 
+def get_all_events():
+    return get_plugin('inspect').get_all_events().output
+
+
 # noinspection DuplicatedCode
 def generate_plugins_doc():
     plugins_index = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docs', 'source', 'plugins.rst')
@@ -77,8 +81,41 @@ Backends
             f.write('    platypush/backend/' + backend + '.rst\n')
 
 
+# noinspection DuplicatedCode
+def generate_events_doc():
+    events_index = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docs', 'source', 'events.rst')
+    events_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docs', 'source', 'platypush', 'events')
+    all_events = sorted(event for event in get_all_events().keys())
+
+    for event in all_events:
+        event_file = os.path.join(events_dir, event[len('platypush.message.event.'):] + '.rst')
+        if not os.path.exists(event_file):
+            header = '``{}``'.format(event)
+            divider = '=' * len(header)
+            body = '\n.. automodule:: {}\n    :members:\n'.format(event)
+            out = '\n'.join([header, divider, body])
+
+            with open(event_file, 'w') as f:
+                f.write(out)
+
+    with open(events_index, 'w') as f:
+        f.write('''
+Events
+======
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Events:
+
+''')
+
+        for event in all_events:
+            f.write('    platypush/events/' + event[len('platypush.message.event.'):] + '.rst\n')
+
+
 generate_plugins_doc()
 generate_backends_doc()
+generate_events_doc()
 
 
 # vim:sw=4:ts=4:et:

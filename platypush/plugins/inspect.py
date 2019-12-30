@@ -7,9 +7,11 @@ import threading
 
 import platypush.backend
 import platypush.plugins
+import platypush.message.event
 
 from platypush.backend import Backend
 from platypush.plugins import Plugin, action
+from platypush.message.event import Event
 from platypush.utils import get_decorators
 
 
@@ -58,6 +60,18 @@ class PluginModel(Model):
                 yield attr, {name: dict(action) for name, action in self.actions.items()},
             else:
                 yield attr, getattr(self, attr)
+
+
+class EventModel(Model):
+    def __init__(self, event, html_doc: bool = False):
+        self.package = event.__module__
+        self.name = event.__name__
+        self.html_doc = html_doc
+        self.doc = self.to_html(event.__doc__) if html_doc and event.__doc__ else event.__doc__
+
+    def __iter__(self):
+        for attr in ['name', 'doc', 'html_doc']:
+            yield attr, getattr(self, attr)
 
 
 class ActionModel(Model):
@@ -133,8 +147,10 @@ class InspectPlugin(Plugin):
         super().__init__(**kwargs)
         self._plugins = {}
         self._backends = {}
+        self._events = {}
         self._plugins_lock = threading.RLock()
         self._backends_lock = threading.RLock()
+        self._events_lock = threading.RLock()
         self._html_doc = False
 
     def _init_plugins(self):
@@ -175,6 +191,30 @@ class InspectPlugin(Plugin):
                     if model.name:
                         self._backends[model.name] = model
 
+    def _init_events(self):
+        package = platypush.message.event
+        prefix = package.__name__ + '.'
+
+        for _, modname, _ in pkgutil.walk_packages(path=package.__path__,
+                                                   prefix=prefix,
+                                                   onerror=lambda x: None):
+            # noinspection PyBroadException
+            try:
+                module = importlib.import_module(modname)
+            except:
+                continue
+
+            for _, obj in inspect.getmembers(module):
+                if type(obj) == Event:
+                    continue
+
+                if inspect.isclass(obj) and issubclass(obj, Event):
+                    event = EventModel(event=obj, html_doc=self._html_doc)
+                    if event.package not in self._events:
+                        self._events[event.package] = {event.name: event}
+                    else:
+                        self._events[event.package][event.name] = event
+
     @action
     def get_all_plugins(self, html_doc: bool = None):
         """
@@ -203,6 +243,24 @@ class InspectPlugin(Plugin):
             return json.dumps({
                 name: dict(backend)
                 for name, backend in self._backends.items()
+            })
+
+    @action
+    def get_all_events(self, html_doc: bool = None):
+        """
+        :param html_doc: If True then the docstring will be parsed into HTML (default: False)
+        """
+        with self._events_lock:
+            if not self._events or (html_doc is not None and html_doc != self._html_doc):
+                self._html_doc = html_doc
+                self._init_events()
+
+            return json.dumps({
+                package: {
+                    name: dict(event)
+                    for name, event in self._events[package].items()
+                }
+                for package, events in self._events.items()
             })
 
 
