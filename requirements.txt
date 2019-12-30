@@ -198,3 +198,6 @@ croniter
 # Support for Google Pub/Sub
 # google-cloud-pubsub
 
+# Support for keyboard/mouse plugin
+# pyuserinput
+

@@ -258,6 +258,8 @@ setup(
         'trello': ['py-trello'],
         # Support for Google Pub/Sub
         'google-pubsub': ['google-cloud-pubsub'],
+        # Support for keyboard/mouse plugin
+        'inputs': ['pyuserinput'],
     },
 )
 

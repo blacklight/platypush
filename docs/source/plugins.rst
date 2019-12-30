@@ -48,6 +48,7 @@ Plugins
     platypush/plugins/http.request.rss.rst
     platypush/plugins/http.webpage.rst
     platypush/plugins/ifttt.rst
+    platypush/plugins/inputs.rst
     platypush/plugins/inspect.rst
     platypush/plugins/kafka.rst
     platypush/plugins/lastfm.rst
