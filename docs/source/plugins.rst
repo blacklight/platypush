@@ -91,6 +91,7 @@ Plugins
     platypush/plugins/utils.rst
     platypush/plugins/variable.rst
     platypush/plugins/video.torrentcast.rst
-    platypush/plugins/weather.forecast.rst
+    platypush/plugins/weather.buienradar.rst
+    platypush/plugins/weather.darksky.rst
     platypush/plugins/websocket.rst
     platypush/plugins/wiimote.rst

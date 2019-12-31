@@ -48,6 +48,7 @@ Backends
     platypush/backend/sensor.serial.rst
     platypush/backend/tcp.rst
     platypush/backend/todoist.rst
-    platypush/backend/weather.forecast.rst
+    platypush/backend/weather.buienradar.rst
+    platypush/backend/weather.darksky.rst
     platypush/backend/websocket.rst
     platypush/backend/wiimote.rst
