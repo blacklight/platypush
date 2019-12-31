@@ -2,7 +2,7 @@ from platypush.plugins import action
 from platypush.plugins.http.request import HttpRequestPlugin
 
 
-class WeatherForecastPlugin(HttpRequestPlugin):
+class WeatherDarkskyPlugin(HttpRequestPlugin):
     """
     Plugin for getting weather updates through Darksky API
 

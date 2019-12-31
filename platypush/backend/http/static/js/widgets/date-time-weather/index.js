@@ -13,7 +13,7 @@ Vue.component('date-time-weather', {
 
     methods: {
         refresh: async function() {
-            let weather = (await request('weather.forecast.get_hourly_forecast')).data[0];
+            let weather = (await request('weather.darksky.get_hourly_forecast')).data[0];
             this.onWeatherChange(weather);
         },
 

@@ -2,11 +2,10 @@ import time
 
 from platypush.backend import Backend
 from platypush.context import get_plugin
-from platypush.plugins.weather.forecast import WeatherForecastPlugin
 from platypush.message.event.weather import NewWeatherConditionEvent
 
 
-class WeatherForecastBackend(Backend):
+class WeatherDarkskyBackend(Backend):
     """
     Weather forecast backend - listens and propagates new weather events.
 
@@ -16,7 +15,7 @@ class WeatherForecastBackend(Backend):
 
     Requires:
 
-        * The :mod:`platypush.plugins.weather.forecast` plugin configured
+        * The :class:`platypush.plugins.weather.darksky.WeatherDarkskyPlugin` plugin configured
     """
 
     def __init__(self, poll_seconds, **kwargs):
@@ -24,12 +23,9 @@ class WeatherForecastBackend(Backend):
         self.poll_seconds = poll_seconds
         self.latest_update = {}
 
-    def send_message(self, msg):
-        pass
-
     def run(self):
         super().run()
-        weather = get_plugin('weather.forecast')
+        weather = get_plugin('weather.darksky')
         self.logger.info('Initialized weather forecast backend')
 
         while not self.should_stop():
@@ -44,4 +40,3 @@ class WeatherForecastBackend(Backend):
 
 
 # vim:sw=4:ts=4:et:
-
