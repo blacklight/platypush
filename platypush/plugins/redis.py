@@ -19,6 +19,7 @@ class RedisPlugin(Plugin):
         self.kwargs = kwargs
 
         if not kwargs:
+            # noinspection PyBroadException
             try:
                 redis_backend = get_backend('redis')
                 if redis_backend and redis_backend.redis_args:
@@ -32,7 +33,7 @@ class RedisPlugin(Plugin):
     @action
     def send_message(self, queue, msg, *args, **kwargs):
         """
-        Send a message to a Redis queu.
+        Send a message to a Redis queue.
 
         :param queue: Queue name
         :type queue: str
@@ -43,7 +44,8 @@ class RedisPlugin(Plugin):
         :param args: Args passed to the Redis constructor (see https://redis-py.readthedocs.io/en/latest/#redis.Redis)
         :type args: list
 
-        :param kwargs: Kwargs passed to the Redis constructor (see https://redis-py.readthedocs.io/en/latest/#redis.Redis)
+        :param kwargs: Kwargs passed to the Redis constructor (see
+            https://redis-py.readthedocs.io/en/latest/#redis.Redis)
         :type kwargs: dict
         """
 
@@ -66,13 +68,13 @@ class RedisPlugin(Plugin):
         }
 
     @action
-    def mset(self, *args, **kwargs):
+    def mset(self, **kwargs):
         """
         Set key/values based on mapping (wraps MSET)
         """
 
         try:
-            return self._get_redis().mset(*args, **kwargs)
+            return self._get_redis().mset(**kwargs)
         except TypeError:
             # XXX commit https://github.com/andymccurdy/redis-py/commit/90a52dd5de111f0053bb3ebaa7c78f73a82a1e3e
             # broke back-compatibility with the previous way of passing
@@ -106,4 +108,3 @@ class RedisPlugin(Plugin):
 
 
 # vim:sw=4:ts=4:et:
-

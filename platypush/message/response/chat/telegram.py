@@ -1,6 +1,6 @@
 import datetime
 
-from typing import Optional
+from typing import Optional, List
 
 from platypush.message.response import Response
 
@@ -159,6 +159,14 @@ class TelegramUserResponse(Response):
             'first_name': first_name,
             'last_name': last_name,
         }, **kwargs)
+
+
+class TelegramUsersResponse(Response):
+    # noinspection PyShadowingBuiltins
+    def __init__(self,
+                 users: List[TelegramUserResponse],
+                 *args, **kwargs):
+        super().__init__(*args, output=[user.output for user in users], **kwargs)
 
 
 # vim:sw=4:ts=4:et:

@@ -12,7 +12,7 @@ from telegram.message import Message as TelegramMessage
 from telegram.user import User as TelegramUser
 
 from platypush.message.response.chat.telegram import TelegramMessageResponse, TelegramFileResponse, \
-    TelegramChatResponse, TelegramUserResponse
+    TelegramChatResponse, TelegramUserResponse, TelegramUsersResponse
 from platypush.plugins import Plugin, action
 
 
@@ -666,6 +666,60 @@ class ChatTelegramPlugin(Plugin):
                                     type=chat.type,
                                     first_name=chat.first_name,
                                     last_name=chat.last_name)
+
+    @action
+    def get_chat_user(self, chat_id: Union[int, str], user_id: int, timeout: int = 20) -> TelegramUserResponse:
+        """
+        Get the info about a user connected to a chat.
+
+        :param chat_id: Chat ID.
+        :param user_id: User ID.
+        :param timeout: Upload timeout (default: 20 seconds).
+        """
+
+        telegram = self.get_telegram()
+        user = telegram.bot.get_chat_member(chat_id, user_id, timeout=timeout)
+        return TelegramUserResponse(user_id=user.user.id,
+                                    link=user.user.link,
+                                    username=user.user.username,
+                                    first_name=user.user.first_name,
+                                    last_name=user.user.last_name,
+                                    is_bot=user.user.is_bot,
+                                    language_code=user.user.language_code)
+
+    @action
+    def get_chat_administrators(self, chat_id: Union[int, str], timeout: int = 20) -> TelegramUsersResponse:
+        """
+        Get the list of the administrators of a chat.
+
+        :param chat_id: Chat ID.
+        :param timeout: Upload timeout (default: 20 seconds).
+        """
+
+        telegram = self.get_telegram()
+        admins = telegram.bot.get_chat_administrators(chat_id, timeout=timeout)
+        return TelegramUsersResponse([
+            TelegramUserResponse(
+                user_id=user.user.id,
+                link=user.user.link,
+                username=user.user.username,
+                first_name=user.user.first_name,
+                last_name=user.user.last_name,
+                is_bot=user.user.is_bot,
+                language_code=user.user.language_code,
+            ) for user in admins
+        ])
+
+    @action
+    def get_chat_members_count(self, chat_id: Union[int, str], timeout: int = 20) -> int:
+        """
+        Get the number of users in a chat.
+
+        :param chat_id: Chat ID.
+        :param timeout: Upload timeout (default: 20 seconds).
+        """
+        telegram = self.get_telegram()
+        return telegram.bot.get_chat_members_count(chat_id, timeout=timeout)
 
     @action
     def kick_chat_member(self, chat_id: Union[str, int],
