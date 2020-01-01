@@ -46,7 +46,7 @@ class ChatTelegramBackend(Backend):
         # noinspection PyUnusedLocal
         def hook(update, context):
             msg = update.effective_message
-            m = re.match('\s*/([0-9a-zA-Z]+)\s*(.*)', msg.text)
+            m = re.match('\s*/([0-9a-zA-Z_-]+)\s*(.*)', msg.text)
             cmd = m.group(1).lower()
             args = [arg for arg in re.split('\s+', m.group(2)) if len(arg)]
             self.bus.post(CommandMessageEvent(chat_id=update.effective_chat.id,
