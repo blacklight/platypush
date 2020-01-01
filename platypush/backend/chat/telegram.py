@@ -5,7 +5,7 @@ from typing import Type
 from platypush.backend import Backend
 from platypush.context import get_plugin
 from platypush.message.event.chat.telegram import MessageEvent, CommandMessageEvent, TextMessageEvent, \
-    PhotoMessageEvent, VideoMessageEvent, ContactMessageEvent, DocumentMessageEvent
+    PhotoMessageEvent, VideoMessageEvent, ContactMessageEvent, DocumentMessageEvent, LocationMessageEvent
 from platypush.plugins.chat.telegram import ChatTelegramPlugin
 
 
@@ -18,6 +18,7 @@ class ChatTelegramBackend(Backend):
         * :class:`platypush.message.event.chat.telegram.TextMessageEvent` when a text message is received.
         * :class:`platypush.message.event.chat.telegram.PhotoMessageEvent` when a photo is received.
         * :class:`platypush.message.event.chat.telegram.VideoMessageEvent` when a video is received.
+        * :class:`platypush.message.event.chat.telegram.LocationMessageEvent` when a location is received.
         * :class:`platypush.message.event.chat.telegram.ContactMessageEvent` when a contact is received.
         * :class:`platypush.message.event.chat.telegram.DocumentMessageEvent` when a document is received.
         * :class:`platypush.message.event.chat.telegram.CommandMessageEvent` when a command message is received.
@@ -67,7 +68,8 @@ class ChatTelegramBackend(Backend):
         dispatcher.add_handler(MessageHandler(Filters.text, self._msg_hook(TextMessageEvent)))
         dispatcher.add_handler(MessageHandler(Filters.photo, self._msg_hook(PhotoMessageEvent)))
         dispatcher.add_handler(MessageHandler(Filters.video, self._msg_hook(VideoMessageEvent)))
-        dispatcher.add_handler(MessageHandler(Filters.location, self._msg_hook(ContactMessageEvent)))
+        dispatcher.add_handler(MessageHandler(Filters.contact, self._msg_hook(ContactMessageEvent)))
+        dispatcher.add_handler(MessageHandler(Filters.location, self._msg_hook(LocationMessageEvent)))
         dispatcher.add_handler(MessageHandler(Filters.document, self._msg_hook(DocumentMessageEvent)))
         dispatcher.add_handler(MessageHandler(Filters.command, self._command_hook()))
 
