@@ -94,8 +94,9 @@ class MusicMpdPlugin(MusicPlugin):
         """
 
         if resource:
-            self.clear()
-            self.add(resource)
+            self.add(resource, position=0)
+            return self.play_pos(0)
+
         return self._exec('play')
 
     @action
