@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from platypush.backend import Backend
 from platypush.context import get_plugin
-from platypush.message.event.chat.telegram import NewMessageEvent, NewCommandMessageEvent
+from platypush.message.event.chat.telegram import MessageEvent, CommandMessageEvent
 from platypush.plugins.chat.telegram import ChatTelegramPlugin
 
 
@@ -12,8 +12,8 @@ class ChatTelegramBackend(Backend):
 
     Triggers:
 
-        * :class:`platypush.message.event.chat.telegram.NewMessageEvent` when a new message is received.
-        * :class:`platypush.message.event.chat.telegram.NewCommandMessageEvent` when a new command message is received.
+        * :class:`platypush.message.event.chat.telegram.MessageEvent` when a message is received.
+        * :class:`platypush.message.event.chat.telegram.CommandMessageEvent` when a command message is received.
 
     Requires:
 
@@ -35,18 +35,18 @@ class ChatTelegramBackend(Backend):
     def _msg_hook(self):
         # noinspection PyUnusedLocal
         def hook(update, context):
-            self.bus.post(NewMessageEvent(chat_id=update.effective_chat.id,
-                                          message=self._plugin.parse_msg(update.effective_message).output,
-                                          user=self._plugin.parse_user(update.effective_user).output))
+            self.bus.post(MessageEvent(chat_id=update.effective_chat.id,
+                                       message=self._plugin.parse_msg(update.effective_message).output,
+                                       user=self._plugin.parse_user(update.effective_user).output))
         return hook
 
     def _command_hook(self, cmd):
         # noinspection PyUnusedLocal
         def hook(update, context):
-            self.bus.post(NewCommandMessageEvent(command=cmd,
-                                                 chat_id=update.effective_chat.id,
-                                                 message=self._plugin.parse_msg(update.effective_message).output,
-                                                 user=self._plugin.parse_user(update.effective_user).output))
+            self.bus.post(CommandMessageEvent(command=cmd,
+                                              chat_id=update.effective_chat.id,
+                                              message=self._plugin.parse_msg(update.effective_message).output,
+                                              user=self._plugin.parse_user(update.effective_user).output))
 
         return hook
 
@@ -57,7 +57,7 @@ class ChatTelegramBackend(Backend):
         super().run()
         telegram = self._plugin.get_telegram()
         dispatcher = telegram.dispatcher
-        dispatcher.add_handler(MessageHandler(Filters.text, self._msg_hook()))
+        dispatcher.add_handler(MessageHandler(Filters.all, self._msg_hook()))
 
         for cmd in self.commands:
             dispatcher.add_handler(CommandHandler(cmd, self._command_hook(cmd)))

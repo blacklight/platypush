@@ -6,7 +6,7 @@ class TelegramEvent(Event):
         super().__init__(*args, chat_id=chat_id, **kwargs)
 
 
-class NewMessageEvent(TelegramEvent):
+class MessageEvent(TelegramEvent):
     """
     Event triggered when a new message is received by the Telegram bot.
     """
@@ -14,7 +14,7 @@ class NewMessageEvent(TelegramEvent):
         super().__init__(*args, message=message, user=user, **kwargs)
 
 
-class NewCommandMessageEvent(NewMessageEvent):
+class CommandMessageEvent(MessageEvent):
     """
     Event triggered when a new message is received by the Telegram bot.
     """
