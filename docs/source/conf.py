@@ -231,6 +231,8 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'PyOBEX',
                         'todoist',
                         'trello',
+                        'telegram',
+                        'telegram.ext',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))

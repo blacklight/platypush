@@ -1,3 +1,4 @@
+import os
 import requests
 
 from platypush.message import Message
@@ -166,5 +167,20 @@ class HttpRequestPlugin(Plugin):
         """
 
         return self._exec(method='options', url=url, **kwargs)
+
+    @action
+    def download(self, url: str, path: str, **kwargs):
+        """
+        Locally download the content of a remote URL.
+
+        :param url: URL to be downloaded.
+        :param path: Path where the content will be downloaded on the local filesystem - must be a file name.
+        """
+        path = os.path.abspath(os.path.expanduser(path))
+        content = self._exec(method='get', url=url, output='binary', **kwargs)
+
+        with open(path, 'wb') as f:
+            f.write(content)
+
 
 # vim:sw=4:ts=4:et:

@@ -19,6 +19,7 @@ class WebBuildCommand(distutils.cmd.Command):
     @classmethod
     def generate_css_files(cls):
         try:
+            # noinspection PyPackageRequirements
             from scss import Compiler
         except ImportError:
             print('pyScss module not found: {}. You will have to generate ' +
@@ -26,9 +27,9 @@ class WebBuildCommand(distutils.cmd.Command):
             return
 
         print('Building CSS files')
-        base_path = path(os.path.join('platypush','backend','http','static','css'))
-        input_path = path(os.path.join(base_path,'source'))
-        output_path = path(os.path.join(base_path,'dist'))
+        base_path = path(os.path.join('platypush', 'backend', 'http', 'static', 'css'))
+        input_path = path(os.path.join(base_path, 'source'))
+        output_path = path(os.path.join(base_path, 'dist'))
 
         for root, dirs, files in os.walk(input_path, followlinks=True):
             scss_file = os.path.join(root, 'index.scss')
@@ -59,7 +60,6 @@ class WebBuildCommand(distutils.cmd.Command):
         self.generate_css_files()
 
 
-
 class BuildCommand(build):
     def run(self):
         build.run(self)
@@ -75,8 +75,10 @@ def readfile(fname):
         return f.read()
 
 
+# noinspection PyShadowingBuiltins
 def pkg_files(dir):
     paths = []
+    # noinspection PyShadowingNames
     for (path, dirs, files) in os.walk(dir):
         for file in files:
             paths.append(os.path.join('..', path, file))
@@ -84,6 +86,7 @@ def pkg_files(dir):
 
 
 def create_etc_dir():
+    # noinspection PyShadowingNames
     path = '/etc/platypush'
     try:
         os.makedirs(path)
@@ -101,40 +104,40 @@ backend = pkg_files('platypush/backend')
 # create_etc_dir()
 
 setup(
-    name = "platypush",
-    version = "0.11.2",
-    author = "Fabio Manganiello",
-    author_email = "info@fabiomanganiello.com",
-    description = ("Platypush service"),
-    license = "MIT",
-    python_requires = '>= 3.5',
-    keywords = "home-automation iot mqtt websockets redis dashboard notificaions",
-    url = "https://github.com/BlackLight/platypush",
-    packages = find_packages(),
-    include_package_data = True,
-    entry_points = {
+    name="platypush",
+    version="0.11.2",
+    author="Fabio Manganiello",
+    author_email="info@fabiomanganiello.com",
+    description="Platypush service",
+    license="MIT",
+    python_requires='>= 3.5',
+    keywords="home-automation iot mqtt websockets redis dashboard notificaions",
+    url="https://github.com/BlackLight/platypush",
+    packages=find_packages(),
+    include_package_data=True,
+    entry_points={
         'console_scripts': [
             'platypush=platypush:main',
             'pusher=platypush.pusher:main',
             'platydock=platypush.platydock:main',
         ],
     },
-    scripts = ['bin/platyvenv'],
-    cmdclass = {
+    scripts=['bin/platyvenv'],
+    cmdclass={
         'web_build': WebBuildCommand,
         'build': BuildCommand,
     },
     # data_files = [
     #     ('/etc/platypush', ['platypush/config.example.yaml'])
     # ],
-    long_description = readfile('README.md'),
-    long_description_content_type = 'text/markdown',
-    classifiers = [
+    long_description=readfile('README.md'),
+    long_description_content_type='text/markdown',
+    classifiers=[
         "Topic :: Utilities",
         "License :: OSI Approved :: MIT License",
         "Development Status :: 3 - Alpha",
     ],
-    install_requires = [
+    install_requires=[
         'pyyaml',
         'redis',
         'requests',
@@ -143,7 +146,7 @@ setup(
         'sqlalchemy',
     ],
 
-    extras_require = {
+    extras_require={
         # Support for thread custom name
         'threadname': ['python-prctl'],
         # Support for Kafka backend and plugin
@@ -213,8 +216,8 @@ setup(
         'sound': ['sounddevice', 'soundfile', 'numpy'],
         # Support for web media subtitles
         'subtitles': [
-                'webvtt-py',
-                'python-opensubtitles @ https://github.com/agonzalezro/python-opensubtitles/tarball/master'],
+            'webvtt-py',
+            'python-opensubtitles @ https://github.com/agonzalezro/python-opensubtitles/tarball/master'],
         # Support for mpv player plugin
         'mpv': ['python-mpv'],
         # Support for NFC tags
@@ -228,7 +231,7 @@ setup(
         # Support for LTR559 light/proximity sensor
         'ltr559': ['ltr559'],
         # Support for VL53L1X laser ranger/distance sensor
-        'vl53l1x': ['smbus2','vl53l1x'],
+        'vl53l1x': ['smbus2', 'vl53l1x'],
         # Support for Dropbox integration
         'dropbox': ['dropbox'],
         # Support for Leap Motion backend
@@ -239,7 +242,7 @@ setup(
         'alexa': ['avs @ https://github.com:BlackLight/avs/tarball/master'],
         # Support for bluetooth devices
         'bluetooth': ['pybluez', 'gattlib',
-                'pyobex @ https://github.com/BlackLight/PyOBEX'],
+                      'pyobex @ https://github.com/BlackLight/PyOBEX'],
         # Support for TP-Link devices
         'tplink': ['pyHS100'],
         # Support for PWM3901 2-Dimensional Optical Flow Sensor
@@ -260,6 +263,9 @@ setup(
         'google-pubsub': ['google-cloud-pubsub'],
         # Support for keyboard/mouse plugin
         'inputs': ['pyuserinput'],
+        # Support for Buienradar weather forecast
+        'buienradar': ['buienradar'],
+        # Support for Telegram integration
+        'telegram': ['python-telegram-bot'],
     },
 )
-

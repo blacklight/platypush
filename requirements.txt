@@ -201,3 +201,8 @@ croniter
 # Support for keyboard/mouse plugin
 # pyuserinput
 
+# Support for Buienradar weather forecast
+# buienradar
+
+# Support for Telegram integration
+# python-telegram-bot
