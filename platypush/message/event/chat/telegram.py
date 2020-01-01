@@ -48,4 +48,8 @@ class DocumentMessageEvent(MessageEvent):
     pass
 
 
+class GroupChatCreatedEvent(MessageEvent):
+    pass
+
+
 # vim:sw=4:ts=4:et:
