@@ -37,6 +37,7 @@ class TrelloBoard(Mapping):
 class TrelloBoardResponse(TrelloResponse):
     def __init__(self, board: TrelloBoard, **kwargs):
         super().__init__(output=board, **kwargs)
+        self.board = board
 
 
 class TrelloBoardsResponse(TrelloResponse):

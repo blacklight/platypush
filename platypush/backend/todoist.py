@@ -65,7 +65,8 @@ class TodoistBackend(Backend):
         return hndl
 
     def _on_close(self):
-        def hndl():
+        # noinspection PyUnusedLocal
+        def hndl(ws):
             self._ws = None
             self.logger.warning('Todoist websocket connection closed')
             self._connected = False
