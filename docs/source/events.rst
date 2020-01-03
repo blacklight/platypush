@@ -45,6 +45,7 @@ Events
     platypush/events/sound.rst
     platypush/events/todoist.rst
     platypush/events/torrent.rst
+    platypush/events/trello.rst
     platypush/events/video.rst
     platypush/events/weather.rst
     platypush/events/web.rst
