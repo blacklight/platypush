@@ -267,5 +267,7 @@ setup(
         'buienradar': ['buienradar'],
         # Support for Telegram integration
         'telegram': ['python-telegram-bot'],
+        # Support for Arduino integration
+        'arduino': ['pyserial', 'pyfirmata2'],
     },
 )

@@ -51,8 +51,10 @@ class Request(Message):
                 'args': msg.get('args', {}), 'id': msg['id'] if 'id' in msg else cls._generate_id(),
                 'timestamp': msg['_timestamp'] if '_timestamp' in msg else time.time()}
 
-        if 'origin' in msg: args['origin'] = msg['origin']
-        if 'token' in msg: args['token'] = msg['token']
+        if 'origin' in msg:
+            args['origin'] = msg['origin']
+        if 'token' in msg:
+            args['token'] = msg['token']
         return cls(**args)
 
     @staticmethod
@@ -78,11 +80,12 @@ class Request(Message):
     def _expand_context(self, event_args=None, **context):
         from platypush.config import Config
 
-        if event_args is None: event_args = copy.deepcopy(self.args)
+        if event_args is None:
+            event_args = copy.deepcopy(self.args)
 
         constants = Config.get_constants()
         context['constants'] = {}
-        for (name,value) in constants.items():
+        for (name, value) in constants.items():
             context['constants'][name] = value
 
         keys = []
@@ -103,6 +106,7 @@ class Request(Message):
 
         return event_args
 
+    # noinspection PyBroadException
     @classmethod
     def expand_value_from_context(cls, _value, **context):
         for (k, v) in context.items():
@@ -142,9 +146,9 @@ class Request(Message):
 
                 parsed_value += prefix + (
                     json.dumps(context_value)
-                    if isinstance(context_value, list)
-                    or isinstance(context_value, dict)
-                    else str(context_value))
+                    if isinstance(context_value, list) or isinstance(context_value, dict)
+                    else str(context_value)
+                )
             else:
                 parsed_value += _value
                 _value = ''
@@ -219,6 +223,10 @@ class Request(Message):
                     elif not response.disable_logging:
                         logger.info('Processed response from action {}: {}'.
                                     format(action, str(response)))
+            except AssertionError as e:
+                plugin.logger.exception(e)
+                logger.warning('Assertion error from action [{}]: {}'.format(action, str(e)))
+                response = Response(output=None, errors=[str(e)])
             except Exception as e:
                 # Retry mechanism
                 plugin.logger.exception(e)
@@ -230,10 +238,10 @@ class Request(Message):
                     errors.append(str(e))
 
                 response = Response(output=None, errors=errors)
-                if _n_tries-1 > 0:
+                if _n_tries - 1 > 0:
                     logger.info('Reloading plugin {} and retrying'.format(module_name))
                     get_plugin(module_name, reload=True)
-                    response = _thread_func(_n_tries=_n_tries - 1, errors=errors)
+                    response = _thread_func(_n_tries=_n_tries-1, errors=errors)
             finally:
                 self._send_response(response)
                 return response
@@ -265,6 +273,5 @@ class Request(Message):
             'token': self.token if hasattr(self, 'token') else None,
             '_timestamp': self.timestamp,
         })
-
 
 # vim:sw=4:ts=4:et:

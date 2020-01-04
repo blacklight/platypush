@@ -206,3 +206,7 @@ croniter
 
 # Support for Telegram integration
 # python-telegram-bot
+
+# Support for Arduino integration
+# pyserial
+# pyfirmata2

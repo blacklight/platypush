@@ -119,15 +119,16 @@ class SensorBackend(Backend):
                 continue
 
             tolerance = None
-            isNaN = False
+            is_nan = False
+            old_v = None
 
             try:
                 v = float(v)
                 old_v = float(self.data.get(k))
             except (TypeError, ValueError):
-                isNaN = True
+                is_nan = True
 
-            if not isNaN:
+            if not is_nan:
                 if isinstance(self.tolerance, dict):
                     tolerance = float(self.tolerance.get(k, self.default_tolerance))
                 else:
@@ -136,11 +137,18 @@ class SensorBackend(Backend):
                     except (TypeError, ValueError):
                         pass
 
-            if tolerance is None or isNaN or \
-                    abs(v - old_v) >= tolerance:
+            if tolerance is None or is_nan or abs(v - old_v) >= tolerance:
                 ret[k] = v
 
         return ret
+
+    def on_stop(self):
+        if not self.plugin:
+            return
+
+        plugin = get_plugin(self.plugin)
+        if plugin and hasattr(plugin, 'close'):
+            plugin.close()
 
     def run(self):
         super().run()

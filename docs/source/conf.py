@@ -233,6 +233,7 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'trello',
                         'telegram',
                         'telegram.ext',
+                        'pyfirmata2'
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))

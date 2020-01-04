@@ -14,6 +14,7 @@ class SwitchTplinkPlugin(SwitchPlugin):
     Requires:
 
         * **pyHS100** (``pip install pyHS100``)
+
     """
 
     _ip_to_dev = {}
