@@ -85,11 +85,13 @@ Plugins
     platypush/plugins/switch.rst
     platypush/plugins/switch.switchbot.rst
     platypush/plugins/switch.wemo.rst
+    platypush/plugins/tcp.rst
     platypush/plugins/todoist.rst
     platypush/plugins/torrent.rst
     platypush/plugins/trello.rst
     platypush/plugins/tts.rst
     platypush/plugins/tts.google.rst
+    platypush/plugins/udp.rst
     platypush/plugins/user.rst
     platypush/plugins/utils.rst
     platypush/plugins/variable.rst
