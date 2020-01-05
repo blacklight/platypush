@@ -7,7 +7,7 @@ class AndroidCameraStatusResponse(CameraResponse):
     """
     Sample response::
 
-        ..code-block:: json
+        .. code-block:: json
 
         {
             "stream_url": "https://192.168.1.30:8080/video",

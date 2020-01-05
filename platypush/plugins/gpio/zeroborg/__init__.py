@@ -150,7 +150,7 @@ class GpioZeroborgPlugin(Plugin):
         """
         Get the current direction and motors power. Example response::
 
-            ..code-block:: json
+            .. code-block:: json
 
             {
                 "status": "running",

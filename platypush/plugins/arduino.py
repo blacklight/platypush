@@ -66,7 +66,7 @@ class ArduinoPlugin(GpioSensorPlugin):
             can be a function that takes an argument and transforms it or its lambda string representation.
             Note that ``analog_read`` returns by default float values in the range [0.0, 1.0]. Example:
 
-            ..code-block:: yaml
+            .. code-block:: yaml
 
                 arduino:
                     board: /dev/ttyUSB0
