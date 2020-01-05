@@ -212,5 +212,5 @@ croniter
 # pyfirmata2
 
 # Support for CUPS printers management
-pycups
+# pycups
 
