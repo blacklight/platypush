@@ -99,8 +99,8 @@ class ArduinoPlugin(GpioSensorPlugin):
             for pin, f in (conv_functions or {}).items()
         }
 
-        self._boards: Dict[str, Arduino] = {}
-        self._board_iterators: Dict[str, util.Iterator] = {}
+        self._boards = {}
+        self._board_iterators = {}
 
     @staticmethod
     def _get_board_type(board_type: Optional[str] = None) -> Type:
@@ -376,7 +376,14 @@ class ArduinoPlugin(GpioSensorPlugin):
 
     @action
     def close(self):
+        for it in self._board_iterators.values():
+            it.stop()
+
         for board in self._boards.values():
             board.exit()
+
+        self._board_iterators = {}
+        self._boards = {}
+
 
 # vim:sw=4:ts=4:et:
