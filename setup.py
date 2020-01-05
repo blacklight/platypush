@@ -269,5 +269,7 @@ setup(
         'telegram': ['python-telegram-bot'],
         # Support for Arduino integration
         'arduino': ['pyserial', 'pyfirmata2'],
+        # Support for CUPS printers management
+        'cups': ['pycups'],
     },
 )

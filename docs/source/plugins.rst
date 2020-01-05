@@ -76,6 +76,7 @@ Plugins
     platypush/plugins/music.mpd.rst
     platypush/plugins/music.snapcast.rst
     platypush/plugins/ping.rst
+    platypush/plugins/printer.cups.rst
     platypush/plugins/pushbullet.rst
     platypush/plugins/redis.rst
     platypush/plugins/serial.rst

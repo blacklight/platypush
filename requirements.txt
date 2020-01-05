@@ -210,3 +210,7 @@ croniter
 # Support for Arduino integration
 # pyserial
 # pyfirmata2
+
+# Support for CUPS printers management
+pycups
+
