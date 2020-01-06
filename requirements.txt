@@ -214,3 +214,6 @@ croniter
 # Support for CUPS printers management
 # pycups
 
+# Support for Graphite integration
+# graphyte
+

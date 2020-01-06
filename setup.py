@@ -271,5 +271,7 @@ setup(
         'arduino': ['pyserial', 'pyfirmata2'],
         # Support for CUPS printers management
         'cups': ['pycups'],
+        # Support for Graphite integration
+        'graphite': ['graphyte'],
     },
 )

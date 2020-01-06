@@ -44,6 +44,7 @@ Plugins
     platypush/plugins/gpio.sensor.mcp3008.rst
     platypush/plugins/gpio.sensor.motion.pwm3901.rst
     platypush/plugins/gpio.zeroborg.rst
+    platypush/plugins/graphite.rst
     platypush/plugins/homeseer.rst
     platypush/plugins/http.request.rst
     platypush/plugins/http.request.ota.booking.rst
@@ -84,6 +85,7 @@ Plugins
     platypush/plugins/sound.rst
     platypush/plugins/switch.rst
     platypush/plugins/switch.switchbot.rst
+    platypush/plugins/switch.tplink.rst
     platypush/plugins/switch.wemo.rst
     platypush/plugins/tcp.rst
     platypush/plugins/todoist.rst
