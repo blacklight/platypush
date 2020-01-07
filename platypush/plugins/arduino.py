@@ -6,7 +6,7 @@ from typing import Optional, Dict, Union, Callable, Tuple, Type
 from pyfirmata2 import Arduino, ArduinoMega, ArduinoDue, ArduinoNano, Pin, util, ANALOG, INPUT, PWM
 
 from platypush.plugins import action
-from platypush.plugins.gpio.sensor import GpioSensorPlugin
+from platypush.plugins.sensor import SensorPlugin
 
 
 class PinType(enum.IntEnum):
@@ -21,7 +21,7 @@ class BoardType(enum.Enum):
 
 
 # noinspection PyBroadException
-class ArduinoPlugin(GpioSensorPlugin):
+class ArduinoPlugin(SensorPlugin):
     """
     Interact with an Arduino connected to the host machine over USB using the
     `Firmata <https://www.arduino.cc/en/reference/firmata>`_ protocol.

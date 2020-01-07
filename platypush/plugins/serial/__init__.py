@@ -5,11 +5,11 @@ import threading
 import time
 
 from platypush.plugins import action
-from platypush.plugins.gpio.sensor import GpioSensorPlugin
+from platypush.plugins.sensor import SensorPlugin
 
 
 # noinspection PyBroadException
-class SerialPlugin(GpioSensorPlugin):
+class SerialPlugin(SensorPlugin):
     """
     The serial plugin can read data from a serial device, as long as the serial
     device returns a JSON. You can use this plugin to interact for example with
@@ -19,7 +19,7 @@ class SerialPlugin(GpioSensorPlugin):
     https://github.com/bblanchon/ArduinoJson.
     """
 
-    def __init__(self, device=None, baud_rate=9600, *args, **kwargs):
+    def __init__(self, device=None, baud_rate=9600, **kwargs):
         """
         :param device: Device path (e.g. ``/dev/ttyUSB0`` or ``/dev/ttyACM0``)
         :type device: str
@@ -28,7 +28,7 @@ class SerialPlugin(GpioSensorPlugin):
         :type baud_rate: int
         """
 
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
         self.device = device
         self.baud_rate = baud_rate
