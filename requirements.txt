@@ -217,3 +217,7 @@ croniter
 # Support for Graphite integration
 # graphyte
 
+# Support for CPU and memory monitoring and info
+# py-cpuinfo
+# psutil
+

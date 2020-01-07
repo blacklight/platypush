@@ -236,6 +236,8 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'pyfirmata2',
                         'cups',
                         'graphyte',
+                        'cpuinfo',
+                        'psutil',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))

@@ -273,5 +273,7 @@ setup(
         'cups': ['pycups'],
         # Support for Graphite integration
         'graphite': ['graphyte'],
+        # Support for CPU and memory monitoring and info
+        'sys': ['py-cpuinfo', 'psutil'],
     },
 )

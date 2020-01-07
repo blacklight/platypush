@@ -88,6 +88,7 @@ Plugins
     platypush/plugins/switch.switchbot.rst
     platypush/plugins/switch.tplink.rst
     platypush/plugins/switch.wemo.rst
+    platypush/plugins/system.rst
     platypush/plugins/tcp.rst
     platypush/plugins/todoist.rst
     platypush/plugins/torrent.rst
