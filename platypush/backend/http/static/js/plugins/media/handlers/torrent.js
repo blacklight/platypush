@@ -90,7 +90,7 @@ MediaHandlers.torrent = MediaHandlers.base.extend({
 
         download: async function(item) {
             let status = await this.status(item.url);
-            if (status && Object.keys(status).length) {
+            if (status && Object.keys(status).length > 1) {
                 createNotification({
                     text: 'This torrent is already being downloaded, please play the downloading local media file instead',
                     image: {
