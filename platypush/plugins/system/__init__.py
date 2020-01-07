@@ -626,6 +626,11 @@ class SystemPlugin(Plugin):
 
         return ProcessResponseList(p_list)
 
+    @staticmethod
+    def _get_process(pid: int):
+        import psutil
+        return psutil.Process(pid)
+
     @action
     def pid_exists(self, pid: int) -> bool:
         """
@@ -634,6 +639,48 @@ class SystemPlugin(Plugin):
         """
         import psutil
         return psutil.pid_exists(pid)
+
+    @action
+    def suspend(self, pid: int):
+        """
+        Suspend a process.
+        :param pid: Process PID.
+        """
+        self._get_process(pid).suspend()
+
+    @action
+    def resume(self, pid: int):
+        """
+        Resume a process.
+        :param pid: Process PID.
+        """
+        self._get_process(pid).resume()
+
+    @action
+    def terminate(self, pid: int):
+        """
+        Terminate a process.
+        :param pid: Process PID.
+        """
+        self._get_process(pid).terminate()
+
+    @action
+    def kill(self, pid: int):
+        """
+        Kill a process.
+        :param pid: Process PID.
+        """
+        self._get_process(pid).kill()
+
+    @action
+    def wait(self, pid: int, timeout: int = None):
+        """
+        Wait for a process to terminate.
+
+        :param pid: Process PID.
+        :param timeout: Timeout in seconds (default: ``None``).
+        """
+        self._get_process(pid).wait(timeout)
 
 
 # vim:sw=4:ts=4:et:
