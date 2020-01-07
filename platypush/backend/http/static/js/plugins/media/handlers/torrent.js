@@ -237,7 +237,8 @@ MediaHandlers.torrent = MediaHandlers.base.extend({
                 return;
 
             for (const [url, torrent] of Object.entries(status)) {
-                self.torrentStatus[event.url]
+                if (!torrent.url)
+                    continue;
                 self.mergeStatus(torrent);
             }
         });
