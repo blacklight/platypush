@@ -588,6 +588,8 @@ class SystemPlugin(Plugin):
             args = {}
 
             try:
+                mem = p.memory_info()
+                times = p.cpu_times()
                 args.update(
                     pid=p.pid,
                     name=p.name(),
@@ -597,17 +599,17 @@ class SystemPlugin(Plugin):
                     status=p.status(),
                     username=p.username(),
                     terminal=p.terminal(),
-                    cpu_user_time=p.cpu_times().user,
-                    cpu_system_time=p.cpu_times().system,
-                    cpu_children_user_time=p.cpu_times().children_user,
-                    cpu_children_system_time=p.cpu_times().children_system,
-                    mem_rss=p.memory_info().rss,
-                    mem_vms=p.memory_info().vms,
-                    mem_shared=p.memory_info().shared,
-                    mem_text=p.memory_info().text,
-                    mem_data=p.memory_info().data,
-                    mem_lib=p.memory_info().lib,
-                    mem_dirty=p.memory_info().dirty,
+                    cpu_user_time=times.user,
+                    cpu_system_time=times.system,
+                    cpu_children_user_time=times.children_user,
+                    cpu_children_system_time=times.children_system,
+                    mem_rss=mem.rss,
+                    mem_vms=mem.vms,
+                    mem_shared=mem.shared,
+                    mem_text=mem.text,
+                    mem_data=mem.data,
+                    mem_lib=mem.lib,
+                    mem_dirty=mem.dirty,
                     mem_percent=p.memory_percent(),
                 )
             except psutil.Error:
@@ -623,6 +625,15 @@ class SystemPlugin(Plugin):
             p_list.append(ProcessResponse(**args))
 
         return ProcessResponseList(p_list)
+
+    @action
+    def pid_exists(self, pid: int) -> bool:
+        """
+        :param pid: Process PID.
+        :return: ``True`` if the process exists, ``False`` otherwise.
+        """
+        import psutil
+        return psutil.pid_exists(pid)
 
 
 # vim:sw=4:ts=4:et:
