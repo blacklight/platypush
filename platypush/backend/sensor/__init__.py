@@ -94,6 +94,12 @@ class SensorBackend(Backend):
 
         return data
 
+    @staticmethod
+    def _get_value(value):
+        if isinstance(value, float) or isinstance(value, int) or isinstance(value, bool):
+            return value
+        return float(value)
+
     def get_new_data(self, new_data):
         if self.data is None or new_data is None:
             return new_data
@@ -101,11 +107,11 @@ class SensorBackend(Backend):
         # noinspection PyBroadException
         try:
             # Scalar data case
-            new_data = float(new_data)
+            new_data = self._get_value(new_data)
             return new_data if abs(new_data - self.data) >= self.tolerance else None
         except:
             # If it's not a scalar then it should be a dict
-            assert isinstance(new_data, dict)
+            assert isinstance(new_data, dict), 'Invalid type {} received for sensor data'.format(type(new_data))
 
         ret = {}
         for k, v in new_data.items():
@@ -123,8 +129,8 @@ class SensorBackend(Backend):
             old_v = None
 
             try:
-                v = float(v)
-                old_v = float(self.data.get(k))
+                v = self._get_value(v)
+                old_v = self._get_value(self.data.get(k))
             except (TypeError, ValueError):
                 is_nan = True
 
@@ -155,46 +161,49 @@ class SensorBackend(Backend):
         self.logger.info('Initialized {} sensor backend'.format(self.__class__.__name__))
 
         while not self.should_stop():
-            data = self.get_measurement()
-            new_data = self.get_new_data(data)
+            try:
+                data = self.get_measurement()
+                new_data = self.get_new_data(data)
 
-            if new_data:
-                self.bus.post(SensorDataChangeEvent(data=new_data))
+                if new_data:
+                    self.bus.post(SensorDataChangeEvent(data=new_data))
 
-            data_below_threshold = {}
-            data_above_threshold = {}
+                data_below_threshold = {}
+                data_above_threshold = {}
 
-            if self.thresholds:
-                if isinstance(self.thresholds, dict) and isinstance(data, dict):
-                    for (measure, thresholds) in self.thresholds.items():
-                        if measure not in data:
-                            continue
+                if self.thresholds:
+                    if isinstance(self.thresholds, dict) and isinstance(data, dict):
+                        for (measure, thresholds) in self.thresholds.items():
+                            if measure not in data:
+                                continue
 
-                        if not isinstance(thresholds, list):
-                            thresholds = [thresholds]
+                            if not isinstance(thresholds, list):
+                                thresholds = [thresholds]
 
-                        for threshold in thresholds:
-                            if data[measure] > threshold and (self.data is None or (
-                                    measure in self.data and self.data[measure] <= threshold)):
-                                data_above_threshold[measure] = data[measure]
-                            elif data[measure] < threshold and (self.data is None or (
-                                    measure in self.data and self.data[measure] >= threshold)):
-                                data_below_threshold[measure] = data[measure]
+                            for threshold in thresholds:
+                                if data[measure] > threshold and (self.data is None or (
+                                        measure in self.data and self.data[measure] <= threshold)):
+                                    data_above_threshold[measure] = data[measure]
+                                elif data[measure] < threshold and (self.data is None or (
+                                        measure in self.data and self.data[measure] >= threshold)):
+                                    data_below_threshold[measure] = data[measure]
 
-            if data_below_threshold:
-                self.bus.post(SensorDataBelowThresholdEvent(data=data_below_threshold))
+                if data_below_threshold:
+                    self.bus.post(SensorDataBelowThresholdEvent(data=data_below_threshold))
 
-            if data_above_threshold:
-                self.bus.post(SensorDataAboveThresholdEvent(data=data_above_threshold))
+                if data_above_threshold:
+                    self.bus.post(SensorDataAboveThresholdEvent(data=data_above_threshold))
 
-            self.data = data
+                self.data = data
 
-            if new_data:
-                if isinstance(new_data, dict):
-                    for k, v in new_data.items():
-                        self.data[k] = v
-                else:
-                    self.data = new_data
+                if new_data:
+                    if isinstance(new_data, dict):
+                        for k, v in new_data.items():
+                            self.data[k] = v
+                    else:
+                        self.data = new_data
+            except Exception as e:
+                self.logger.exception(e)
 
             if self.poll_seconds:
                 time.sleep(self.poll_seconds)

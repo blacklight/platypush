@@ -8,7 +8,6 @@ class SensorBatteryBackend(SensorBackend):
     The sensor events triggered by this backend will include any of the following fields:
 
         - ``battery_percent``
-        - ``battery_secs_left``
         - ``battery_power_plugged``
 
     Requires:
@@ -21,9 +20,11 @@ class SensorBatteryBackend(SensorBackend):
 
     def get_measurement(self):
         plugin = get_plugin('system')
+        battery = plugin.sensors_battery().output
+
         return {
-            'battery_' + name: value
-            for name, value in plugin.sensors_battery().output.items()
+            'battery_percent': battery.get('percent'),
+            'battery_power_plugged': bool(battery.get('power_plugged')),
         }
 
 

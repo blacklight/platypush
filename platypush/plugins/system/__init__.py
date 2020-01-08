@@ -1,7 +1,7 @@
 import socket
 
 from datetime import datetime
-from typing import Union, List, Optional
+from typing import Union, List, Optional, Dict
 
 from platypush.message.response.system import CpuInfoResponse, CpuTimesResponse, CpuResponseList, CpuStatsResponse, \
     CpuFrequencyResponse, VirtualMemoryUsageResponse, SwapMemoryUsageResponse, DiskResponseList, \
@@ -468,38 +468,61 @@ class SystemPlugin(Plugin):
 
     # noinspection DuplicatedCode
     @action
-    def sensors_temperature(self, sensor: Optional[str] = None, fahrenheit: bool = False) -> SensorResponseList:
+    def sensors_temperature(self, sensor: Optional[str] = None, fahrenheit: bool = False) \
+            -> Union[SensorTemperatureResponse, List[SensorTemperatureResponse],
+                     Dict[str, Union[SensorTemperatureResponse, List[SensorTemperatureResponse]]]]:
         """
         Get stats from the temperature sensors.
 
         :param sensor: Select the sensor name.
         :param fahrenheit: Return the temperature in Fahrenheit (default: Celsius).
-        :return: List of :class:`platypush.message.response.system.SensorTemperatureResponse`.
         """
         import psutil
         stats = psutil.sensors_temperatures(fahrenheit=fahrenheit)
 
-        def _expand_stats(name, _stats):
-            return SensorResponseList([
+        if sensor:
+            stats = [addr for name, addr in stats.items() if name == sensor]
+            assert stats, 'No such sensor name: {}'.format(sensor)
+            if len(stats) == 1:
+                return SensorTemperatureResponse(
+                    name=sensor,
+                    current=stats[0].current,
+                    high=stats[0].high,
+                    critical=stats[0].critical,
+                    label=stats[0].label,
+                )
+
+            return [
                 SensorTemperatureResponse(
-                    name=name,
+                    name=sensor,
                     current=s.current,
                     high=s.high,
                     critical=s.critical,
                     label=s.label,
                 )
-                for s in _stats
-            ])
+                for s in stats
+            ]
 
-        if sensor:
-            stats = [addr for name, addr in stats.items() if name == sensor]
-            assert stats, 'No such sensor name: {}'.format(sensor)
-            return _expand_stats(sensor, stats[0])
+        ret = {}
+        for name, data in stats.items():
+            for stat in data:
+                resp = SensorTemperatureResponse(
+                    name=sensor,
+                    current=stat.current,
+                    high=stat.high,
+                    critical=stat.critical,
+                    label=stat.label,
+                ).output
 
-        return SensorResponseList([
-            _expand_stats(name, stat)
-            for name, stat in stats.items()
-        ])
+                if name not in ret:
+                    ret[name] = resp
+                else:
+                    if isinstance(ret[name], list):
+                        ret[name].append(resp)
+                    else:
+                        ret[name] = [ret[name], resp]
+
+        return ret
 
     # noinspection DuplicatedCode
     @action
