@@ -544,7 +544,7 @@ class SystemPlugin(Plugin):
 
         return SensorBatteryResponse(
             percent=stats.percent,
-            secsleft=stats.secsleft,
+            secs_left=stats.secsleft,
             power_plugged=stats.power_plugged,
         )
 

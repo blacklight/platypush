@@ -384,13 +384,13 @@ class SensorFanResponse(SensorResponse):
 class SensorBatteryResponse(SensorResponse):
     def __init__(self,
                  percent: float,
-                 secsleft: int,
+                 secs_left: int,
                  power_plugged: bool,
                  *args, **kwargs):
         super().__init__(
             *args, output={
                 'percent': percent,
-                'secsleft': secsleft,
+                'secs_left': secs_left,
                 'power_plugged': power_plugged,
             }, **kwargs
         )
