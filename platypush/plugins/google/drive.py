@@ -35,7 +35,7 @@ class GoogleDrivePlugin(GooglePlugin):
         Get the list of files.
 
         :param filter: Optional filter (default: None). See
-            `Google Drive API docs <https://developers.google.com/drive/api/v3/search-files>` for
+            `Google Drive API docs <https://developers.google.com/drive/api/v3/search-files>`_ for
             the supported syntax.
 
         :param folder_id: Drive folder ID to search (default: get all files).
