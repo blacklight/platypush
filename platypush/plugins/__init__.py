@@ -45,15 +45,12 @@ class Plugin(EventGenerator):
             self.logger.setLevel(getattr(logging, kwargs['logging'].upper()))
 
         self.registered_actions = set(
-            get_decorators(self.__class__, climb_class_hierarchy=True)
-            .get('action', [])
+            get_decorators(self.__class__, climb_class_hierarchy=True).get('action', [])
         )
 
     def run(self, method, *args, **kwargs):
-        if method not in self.registered_actions:
-            raise RuntimeError('{} is not a registered action on {}'.format(
-                method, self.__class__.__name__))
-
+        assert method in self.registered_actions, '{} is not a registered action on {}'.\
+            format(method, self.__class__.__name__)
         return getattr(self, method)(*args, **kwargs)
 
 
