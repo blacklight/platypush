@@ -30,6 +30,8 @@ class GooglePlugin(Plugin):
     Requires:
 
         * **google-api-python-client** (``pip install google-api-python-client``)
+        * **oauth2client** (``pip install oauth2client``)
+
     """
 
     def __init__(self, scopes=None, *args, **kwargs):
