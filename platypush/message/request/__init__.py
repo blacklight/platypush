@@ -138,6 +138,8 @@ class Request(Message):
 
                     if callable(context_value):
                         context_value = context_value()
+                    if isinstance(context_value, range) or isinstance(context_value, tuple):
+                        context_value = [*context_value]
                     if isinstance(context_value, datetime.date):
                         context_value = context_value.isoformat()
                 except Exception as e:
