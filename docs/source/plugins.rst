@@ -28,6 +28,7 @@ Plugins
     platypush/plugins/file.rst
     platypush/plugins/google.rst
     platypush/plugins/google.calendar.rst
+    platypush/plugins/google.drive.rst
     platypush/plugins/google.fit.rst
     platypush/plugins/google.mail.rst
     platypush/plugins/google.maps.rst
@@ -81,6 +82,7 @@ Plugins
     platypush/plugins/printer.cups.rst
     platypush/plugins/pushbullet.rst
     platypush/plugins/redis.rst
+    platypush/plugins/sensor.rst
     platypush/plugins/serial.rst
     platypush/plugins/shell.rst
     platypush/plugins/sound.rst
