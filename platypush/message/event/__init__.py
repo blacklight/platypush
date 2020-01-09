@@ -69,8 +69,7 @@ class Event(Message):
     def matches_condition(self, condition):
         """
         If the event matches an event condition, it will return an EventMatchResult
-        Params:
-            -- condition -- The platypush.event.hook.EventCondition object
+        :param condition: The platypush.event.hook.EventCondition object
         """
 
         result = EventMatchResult(is_match=False, parsed_args=self.args)
@@ -207,12 +206,11 @@ class StopEvent(Event):
 
     def __init__(self, target, origin, thread_id, id=None, **kwargs):
         """ Constructor.
-        Params:
-            target    -- Target node
-            origin    -- Origin node
-            thread_id -- thread_iden() to be terminated if listening on the bus
-            id        -- Event ID (default: auto-generated)
-            kwargs    -- Extra key-value arguments
+        :param target: Target node
+        :param origin: Origin node
+        :param thread_id: thread_iden() to be terminated if listening on the bus
+        :param id: Event ID (default: auto-generated)
+        :param kwargs: Extra key-value arguments
         """
 
         super().__init__(target=target, origin=origin, id=id,

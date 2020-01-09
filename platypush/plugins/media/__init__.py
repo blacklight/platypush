@@ -384,7 +384,9 @@ class MediaPlugin(Plugin):
             the streaming link instead of streaming it
         :type download: bool
 
-        :returns: dict containing the streaming URL.Example::
+        :return: dict containing the streaming URL.Example:
+
+        .. code-block:: json
 
             {
                 "id": "0123456abcdef.mp4",
@@ -392,6 +394,7 @@ class MediaPlugin(Plugin):
                 "mime_type": "video/mp4",
                 "url": "http://192.168.1.2:8008/media/0123456abcdef.mp4"
             }
+
         """
         import requests
 

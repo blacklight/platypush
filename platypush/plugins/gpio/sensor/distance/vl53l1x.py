@@ -45,7 +45,9 @@ class GpioSensorDistanceVl53L1XPlugin(GpioSensorPlugin):
         :param medium: Enable medium range measurement (default: False)
         :param long: Enable long range measurement (default: False)
 
-        :returns: dict. Example::
+        :returns: dict. Example:
+
+        .. code-block:: python
 
             output = {
                 "short": 83,     # Short range measurement in mm

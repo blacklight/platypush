@@ -139,7 +139,7 @@ class GoogleDrivePlugin(GooglePlugin):
         :param path: Path of the file to upload.
         :param mime_type: MIME type of the source file (e.g. "``image/jpeg``").
         :param name: Name of the target file. Default: same name as the source file.
-        :param description; File description.
+        :param description: File description.
         :param parents: List of folder IDs that will contain the file (default: drive root).
         :param starred: If True, then the uploaded file will be marked as starred by the user.
         :param target_mime_type: Target MIME type. Useful if you want to e.g. import a CSV file as a Google Sheet

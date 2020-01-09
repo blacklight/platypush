@@ -10,10 +10,12 @@ class MediaCtrlPlugin(Plugin):
     """
     Wrapper plugin to control audio and video media.
     Examples of supported URL types:
+
         - file:///media/movies/Movie.mp4 [requires media plugin enabled]
         - youtube:video:poAk9XgK7Cs [requires media plugin+youtube-dl]
         - magnet:?torrent_magnet [requires torrentcast]
         - spotify:track:track_id [leverages plugins.music.mpd]
+
     """
 
     _supported_plugins = {

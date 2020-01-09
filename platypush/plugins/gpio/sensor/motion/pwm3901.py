@@ -82,14 +82,16 @@ class GpioSensorMotionPwm3901Plugin(GpioSensorPlugin):
     @action
     def get_measurement(self):
         """
-        :returns: dict. Example::
+        :returns: dict. Example:
 
-            output = {
-                "motion_x": 3,   # Detected motion vector X-coord
-                "motion_y": 4,   # Detected motion vector Y-coord
-                "motion_mod": 5  # Detected motion vector module
-                "motion_events_per_sec": 7  # Number of motion events detected in the last second
-            }
+        .. code-block:: python
+
+           output = {
+               "motion_x": 3,   # Detected motion vector X-coord
+               "motion_y": 4,   # Detected motion vector Y-coord
+               "motion_mod": 5  # Detected motion vector module
+               "motion_events_per_sec": 7  # Number of motion events detected in the last second
+           }
 
         """
 

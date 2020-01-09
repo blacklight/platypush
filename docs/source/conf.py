@@ -23,8 +23,8 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = 'platypush'
-copyright = '2018, BlackLight'
-author = 'BlackLight'
+copyright = '2017-2019, Fabio Manganiello'
+author = 'Fabio Manganiello'
 
 # The short X.Y version
 version = ''
@@ -49,6 +49,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
+    'sphinx_rtd_theme',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -84,8 +85,8 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = 'alabaster'
-html_theme = 'nature'
+# html_theme = 'haiku'
+html_theme = 'sphinx_rtd_theme'
 
 html_domain_indices = True
 

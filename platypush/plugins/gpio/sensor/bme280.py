@@ -38,14 +38,16 @@ class GpioSensorBme280Plugin(GpioSensorPlugin):
     @action
     def get_measurement(self):
         """
-        :returns: dict. Example::
+        :returns: dict. Example:
 
-            output = {
-                "temperature": 21.0,   # Celsius
-                "pressure": 101555.08, # Pascals
-                "humidity": 23.543,    # percentage
-                "altitude": 15.703     # meters
-            }
+        .. code-block:: python
+
+           output = {
+               "temperature": 21.0,   # Celsius
+               "pressure": 101555.08, # Pascals
+               "humidity": 23.543,    # percentage
+               "altitude": 15.703     # meters
+           }
 
         """
 

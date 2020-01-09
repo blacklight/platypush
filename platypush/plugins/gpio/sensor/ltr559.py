@@ -19,12 +19,14 @@ class GpioSensorLtr559Plugin(GpioSensorPlugin):
     @action
     def get_measurement(self):
         """
-        :returns: dict. Example::
+        :returns: dict. Example:
 
-            output = {
-                "light": 109.3543,     # Lux
-                "proximity": 103       # The higher the value, the nearest the object, within a ~5cm range
-            }
+        .. code-block:: python
+:
+        output = {
+            "light": 109.3543,     # Lux
+            "proximity": 103       # The higher the value, the nearest the object, within a ~5cm range
+        }
 
         """
 

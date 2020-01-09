@@ -19,28 +19,30 @@ class GpioSensorEnvirophatPlugin(GpioSensorPlugin):
         :param: qnh: Local value for atmospheric pressure adjusted to sea level (default: 1020)
         :type qnh: float
 
-        :returns: dict. Example::
+        :returns: dict. Example:
 
-            output = {
-                "temperature": 21.0,   # Celsius
-                "pressure": 101555.08, # pascals
-                "altitude": 10,        # meters
-                "luminosity": 426,     # lumens
+        .. code-block:: python
 
-                # Measurements from the custom analog channels
-                "analog": [0.513, 0.519, 0.531, 0.528],
+           output = {
+               "temperature": 21.0,   # Celsius
+               "pressure": 101555.08, # pascals
+               "altitude": 10,        # meters
+               "luminosity": 426,     # lumens
 
-                "accelerometer": {
-                    "x": -0.000915,
-                    "y": 0.0760,
-                    "z": 1.026733
-                },
-                "magnetometer": {
-                    "x": -2297,
-                    "y": 1226,
-                    "z": -7023
-                },
-            }
+               # Measurements from the custom analog channels
+               "analog": [0.513, 0.519, 0.531, 0.528],
+
+               "accelerometer": {
+                   "x": -0.000915,
+                   "y": 0.0760,
+                   "z": 1.026733
+               },
+               "magnetometer": {
+                   "x": -2297,
+                   "y": 1226,
+                   "z": -7023
+               },
+           }
 
         """
 

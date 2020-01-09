@@ -45,6 +45,7 @@ Backends
     platypush/backend/sensor.distance.vl53l1x.rst
     platypush/backend/sensor.envirophat.rst
     platypush/backend/sensor.ir.zeroborg.rst
+    platypush/backend/sensor.leap.rst
     platypush/backend/sensor.ltr559.rst
     platypush/backend/sensor.mcp3008.rst
     platypush/backend/sensor.motion.pwm3901.rst

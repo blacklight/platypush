@@ -358,9 +358,9 @@ class MobileJoinPlugin(Plugin):
             displayed lower in the notification list. Values from -2 (lowest priority) to 2 (highest priority).
             Default is 2.
         :param vibration_pattern: If the notification is received on an Android device, the vibration pattern in this
-            field will change the way the device vibrates with it. You can easily create a pattern by going
-            `here <http://autoremotejoaomgcd.appspot.com/AutoRemoteNotification.html>`_ and generating the pattern in
-            the Vibration Pattern field
+            field will change the way the device vibrates with it. You can easily create a pattern by going to the
+            `AutoRemote notification page <http://autoremotejoaomgcd.appspot.com/AutoRemoteNotification.html>`_
+            and generate the pattern in the Vibration Pattern field
         :type vibration_pattern: str (comma-separated float values) or list[float]
         :param dismiss_on_touch: If set the notification will be dismissed when touched (default: False)
         :param image: Publicly available URL for an image to show up in the notification
@@ -368,7 +368,7 @@ class MobileJoinPlugin(Plugin):
         :param sound: Publicly available URL for a sound to play with the notification
         :param actions: Set notification buttons with customized behaviour. This parameter is a list of Join actions
             configured on the target device that will be mapped to notification input elements.
-            More info `here <https://joaoapps.com/join/actions/#notifications>`_
+            More info `on the Joaoapps notifications page <https://joaoapps.com/join/actions/#notifications>`_
         """
 
         params = {'dismissOnTouch': dismiss_on_touch}
