@@ -33,7 +33,7 @@ class FoursquareBackend(Backend):
     def run(self):
         super().run()
         self._last_created_at = int(get_plugin('variable').get(self._last_created_at_varname).
-                                    output.get(self._last_created_at_varname))
+                                    output.get(self._last_created_at_varname) or 0)
         self.logger.info('Started Foursquare backend')
 
         while not self.should_stop():
