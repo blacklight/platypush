@@ -5,8 +5,10 @@
 
 import logging
 import threading
+import time
 
 from threading import Thread
+from typing import Optional
 
 from platypush.bus import Bus
 from platypush.config import Config
@@ -35,13 +37,15 @@ class Backend(Thread, EventGenerator):
 
     _default_response_timeout = 5
 
-    def __init__(self, bus=None, **kwargs):
+    # Loop function, can be implemented by derived classes
+    loop = None
+
+    def __init__(self, bus: Optional[Bus] = None, poll_seconds: Optional[float] = None, **kwargs):
         """
         :param bus: Reference to the bus object to be used in the backend
-        :type bus: platypush.bus.Bus
-
+        :param poll_seconds: If the backend implements a ``loop`` method, this parameter expresses how often the
+            loop should run in seconds.
         :param kwargs: Key-value configuration for the backend
-        :type kwargs: dict
         """
 
         self._thread_name = self.__class__.__name__
@@ -51,6 +55,7 @@ class Backend(Thread, EventGenerator):
         # If no bus is specified, create an internal queue where
         # the received messages will be pushed
         self.bus = bus or Bus()
+        self.poll_seconds = float(poll_seconds) if poll_seconds else None
         self.device_id = Config.get('device_id')
         self.thread_id = None
         self._should_stop = False
@@ -218,6 +223,28 @@ class Backend(Thread, EventGenerator):
         """ Starts the backend thread. To be implemented in the derived classes """
         self.thread_id = threading.get_ident()
         set_thread_name(self._thread_name)
+        if not callable(self.loop):
+            return
+
+        with self:
+            while not self.should_stop():
+                try:
+                    self.loop()
+                except Exception as e:
+                    self.logger.error(str(e))
+                    self.logger.exception(e)
+                finally:
+                    if self.poll_seconds:
+                        time.sleep(self.poll_seconds)
+
+    def __enter__(self):
+        """ Invoked when the backend is initialized, if the main logic is within a ``loop()`` function """
+        self.logger.info('Initialized backend {}'.format(self.__class__.__name__))
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """ Invoked when the backend is terminated, if the main logic is within a ``loop()`` function """
+        self.on_stop()
+        self.logger.info('Terminated backend {}'.format(self.__class__.__name__))
 
     def on_stop(self):
         """ Callback invoked when the process stops """

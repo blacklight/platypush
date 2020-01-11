@@ -1,4 +1,4 @@
-import time
+from typing import Optional
 
 from platypush.backend import Backend
 from platypush.context import get_plugin
@@ -22,34 +22,31 @@ class FoursquareBackend(Backend):
 
     _last_created_at_varname = '_foursquare_checkin_last_created_at'
 
-    def __init__(self, poll_seconds: float = 60.0, *args, **kwargs):
+    def __init__(self, poll_seconds: Optional[float] = 60.0, *args, **kwargs):
         """
         :param poll_seconds: How often the backend should check for new check-ins (default: one minute).
         """
-        super().__init__(*args, **kwargs)
-        self.poll_seconds = poll_seconds
+        super().__init__(*args, poll_seconds=poll_seconds, **kwargs)
         self._last_created_at = None
 
-    def run(self):
-        super().run()
+    def __enter__(self):
         self._last_created_at = int(get_plugin('variable').get(self._last_created_at_varname).
                                     output.get(self._last_created_at_varname) or 0)
         self.logger.info('Started Foursquare backend')
 
-        while not self.should_stop():
-            try:
-                checkins = get_plugin('foursquare').get_checkins().output
-                if checkins:
-                    last_checkin = checkins[0]
-                    if not self._last_created_at or last_checkin.get('createdAt', 0) > self._last_created_at:
-                        self.bus.post(FoursquareCheckinEvent(checkin=last_checkin))
-                        self._last_created_at = last_checkin.get('createdAt', 0)
-                        get_plugin('variable').set(**{self._last_created_at_varname: self._last_created_at})
-            except Exception as e:
-                self.logger.error('Error while retrieving the list of checkins: {}'.format(str(e)))
-                self.logger.exception(e)
-            finally:
-                time.sleep(self.poll_seconds)
+    def loop(self):
+        checkins = get_plugin('foursquare').get_checkins().output
+        if not checkins:
+            return
+
+        last_checkin = checkins[0]
+        last_checkin_created_at = last_checkin.get('createdAt', 0)
+        if self._last_created_at and last_checkin_created_at <= self._last_created_at:
+            return
+
+        self.bus.post(FoursquareCheckinEvent(checkin=last_checkin))
+        self._last_created_at = last_checkin_created_at
+        get_plugin('variable').set(**{self._last_created_at_varname: self._last_created_at})
 
 
 # vim:sw=4:ts=4:et:
