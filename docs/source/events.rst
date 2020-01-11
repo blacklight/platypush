@@ -15,6 +15,7 @@ Events
     platypush/events/camera.rst
     platypush/events/chat.telegram.rst
     platypush/events/distance.rst
+    platypush/events/foursquare.rst
     platypush/events/geo.rst
     platypush/events/google.rst
     platypush/events/google.fit.rst
