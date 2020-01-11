@@ -41,6 +41,7 @@ class PushbulletBackend(Backend):
         :type proxy_port: int
         """
 
+        # noinspection PyPackageRequirements
         from pushbullet import Pushbullet
         super().__init__(**kwargs)
 
@@ -51,6 +52,7 @@ class PushbulletBackend(Backend):
         self.pb = Pushbullet(token)
         self.listener = None
 
+        # noinspection PyBroadException
         try:
             self.device = self.pb.get_device(self.device_name)
         except:
@@ -79,7 +81,8 @@ class PushbulletBackend(Backend):
                     push = self._get_latest_push()
                 elif data['type'] == 'push':
                     push = data['push']
-                else: return  # Not a push notification
+                else:
+                    return  # Not a push notification
 
                 if not push:
                     return
@@ -89,7 +92,8 @@ class PushbulletBackend(Backend):
                 event = PushbulletEvent(**push)
                 self.on_message(event)
 
-                if 'body' not in push: return
+                if 'body' not in push:
+                    return
                 self.logger.debug('Received push: {}'.format(push))
 
                 body = push['body']
@@ -98,8 +102,8 @@ class PushbulletBackend(Backend):
                     self.on_message(body)
                 except Exception as e:
                     self.logger.debug(('Unexpected message received on the ' +
-                                        'Pushbullet backend: {}. Message: {}')
-                                        .format(str(e), body))
+                                       'Pushbullet backend: {}. Message: {}')
+                                      .format(str(e), body))
 
             except Exception as e:
                 self.logger.exception(e)
@@ -108,9 +112,10 @@ class PushbulletBackend(Backend):
         return callback
 
     def get_device_id(self):
+        # noinspection PyBroadException
         try:
             return self.pb.get_device(self.device_name).device_iden
-        except Exception as e:
+        except Exception:
             device = self.pb.new_device(self.device_name, model='Platypush virtual device',
                                         manufacturer='platypush', icon='system')
 
@@ -118,11 +123,6 @@ class PushbulletBackend(Backend):
                 self.device_name))
 
             return device.device_iden
-
-    def send_message(self, msg):
-        if isinstance(msg, dict):
-            msg = json.dumps(msg)
-        self.device.push_note(title=None, body=str(msg))
 
     def close(self):
         if self.listener:
@@ -132,11 +132,12 @@ class PushbulletBackend(Backend):
         return self.close()
 
     def run(self):
+        # noinspection PyPackageRequirements
         from pushbullet import Listener
         super().run()
 
         self.logger.info('Initialized Pushbullet backend - device_id: {}'
-                     .format(self.device_name))
+                         .format(self.device_name))
 
         self.listener = Listener(account=self.pb, on_push=self.on_push(),
                                  http_proxy_host=self.proxy_host,
@@ -145,4 +146,3 @@ class PushbulletBackend(Backend):
         self.listener.run_forever()
 
 # vim:sw=4:ts=4:et:
-
