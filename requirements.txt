@@ -221,3 +221,6 @@ croniter
 # py-cpuinfo
 # psutil
 
+# Support for nmap integration
+# python-nmap
+

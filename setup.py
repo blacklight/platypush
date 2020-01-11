@@ -275,5 +275,7 @@ setup(
         'graphite': ['graphyte'],
         # Support for CPU and memory monitoring and info
         'sys': ['py-cpuinfo', 'psutil'],
+        # Support for nmap integration
+        'nmap': ['python-nmap'],
     },
 )
