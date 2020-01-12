@@ -53,6 +53,7 @@ Backends
     platypush/backend/sensor.serial.rst
     platypush/backend/tcp.rst
     platypush/backend/todoist.rst
+    platypush/backend/travisci.rst
     platypush/backend/trello.rst
     platypush/backend/weather.buienradar.rst
     platypush/backend/weather.darksky.rst
