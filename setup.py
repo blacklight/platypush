@@ -277,5 +277,7 @@ setup(
         'sys': ['py-cpuinfo', 'psutil'],
         # Support for nmap integration
         'nmap': ['python-nmap'],
+        # Support for ESP8266/ESP32 Micropython integration
+        'esp': ['websocket-client'],
     },
 )

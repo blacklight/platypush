@@ -199,6 +199,7 @@ def set_thread_name(name):
     except ImportError:
         logger.debug('Unable to set thread name: prctl module is missing')
 
+
 def find_bins_in_path(bin_name):
     return [os.path.join(p, bin_name)
             for p in os.environ.get('PATH', '').split(':')
@@ -261,9 +262,25 @@ def get_mime_type(resource):
         if mime:
             return mime.mime_type
 
+
 def camel_case_to_snake_case(string):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', string)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+def grouper(n, iterable, fillvalue=None):
+    """
+    Split an iterable in groups of max N elements.
+    grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx
+    """
+    from itertools import zip_longest
+    args = [iter(iterable)] * n
+
+    if fillvalue:
+        return zip_longest(fillvalue=fillvalue, *args)
+
+    for chunk in zip_longest(*args):
+        yield filter(None, chunk)
 
 
 # vim:sw=4:ts=4:et:

@@ -25,6 +25,7 @@ Plugins
     platypush/plugins/clipboard.rst
     platypush/plugins/db.rst
     platypush/plugins/dropbox.rst
+    platypush/plugins/esp.rst
     platypush/plugins/file.rst
     platypush/plugins/foursquare.rst
     platypush/plugins/google.rst
