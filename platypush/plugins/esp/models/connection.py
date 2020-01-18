@@ -158,6 +158,10 @@ class Connection:
             self._received_response = self._received_response[4:]
             self._received_response = self._received_response.strip()
 
+        # Replace \r\n serial end-of-line with \n
+        self._received_response = self._received_response.replace('\r\n', '\n')
+
+        # Notify the listeners
         self._response_received.set()
 
     def wait_ready(self):
