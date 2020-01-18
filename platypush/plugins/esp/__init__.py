@@ -1547,5 +1547,59 @@ with open('{target}', 'w') as f:
         with open(target, 'w') as f:
             f.write(content)
 
+    def _dht_get_value(self, pin: Union[int, str], dht_type: int, value: str, **kwargs) -> float:
+        device = self._get_device(**kwargs)
+        pin = device.get_pin(pin)
+        code = '''
+import machine
+import dht
+
+dht_sensor = dht.DHT{type}(machine.Pin({pin}))
+dht_sensor.measure()
+dht_sensor.{value}()
+'''.format(pin=pin, type=dht_type, value=value)
+
+        return self.execute(code, **kwargs).output
+
+    @action
+    def dht11_get_temperature(self, pin: Union[int, str], **kwargs) -> float:
+        """
+        Get the temperature value in Celsius from a connected DHT11 sensor.
+
+        :param pin: GPIO PIN number or configured name where the sensor is connected.
+        :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
+        """
+        return self._dht_get_value(pin=pin, dht_type=11, value='temperature', **kwargs)
+
+    @action
+    def dht11_get_humidity(self, pin: Union[int, str], **kwargs) -> float:
+        """
+        Get the humidity value in percentage (0-100) from a connected DHT11 sensor.
+
+        :param pin: GPIO PIN number or configured name where the sensor is connected.
+        :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
+        """
+        return self._dht_get_value(pin=pin, dht_type=11, value='humidity', **kwargs)
+
+    @action
+    def dht22_get_temperature(self, pin: Union[int, str], **kwargs) -> float:
+        """
+        Get the temperature value in Celsius from a connected DHT22 sensor.
+
+        :param pin: GPIO PIN number or configured name where the sensor is connected.
+        :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
+        """
+        return self._dht_get_value(pin=pin, dht_type=22, value='temperature', **kwargs)
+
+    @action
+    def dht22_get_humidity(self, pin: Union[int, str], **kwargs) -> float:
+        """
+        Get the humidity value in percentage (0-100) from a connected DHT22 sensor.
+
+        :param pin: GPIO PIN number or configured name where the sensor is connected.
+        :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
+        """
+        return self._dht_get_value(pin=pin, dht_type=22, value='humidity', **kwargs)
+
 
 # vim:sw=4:ts=4:et:
