@@ -276,6 +276,7 @@ class EspPlugin(Plugin):
     def pin_on(self, pin: Union[int, str], pull_up: bool = False, **kwargs):
         """
         Set the specified PIN to HIGH.
+
         :param pin: GPIO PIN number or configured name.
         :param pull_up: Set to True if the PIN has a (weak) pull-up resistor attached.
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
@@ -294,6 +295,7 @@ pin.on()
     def pin_off(self, pin: Union[int, str], pull_up: bool = False, **kwargs):
         """
         Set the specified PIN to LOW.
+
         :param pin: GPIO PIN number.
         :param pull_up: Set to True if the PIN has a (weak) pull-up resistor attached.
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
@@ -312,6 +314,7 @@ pin.off()
     def pin_toggle(self, pin: Union[int, str], pull_up: bool = False, **kwargs):
         """
         Toggle a PIN state - to HIGH if LOW, to LOW if HIGH.
+
         :param pin: GPIO PIN number or configured name.
         :param pull_up: Set to True if the PIN has a (weak) pull-up resistor attached.
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
@@ -333,6 +336,7 @@ else:
     def pin_read(self, pin: Union[int, str], out: bool = False, pull_up: bool = False, **kwargs) -> bool:
         """
         Get the ON/OFF value of a PIN.
+
         :param pin: GPIO PIN number or configured name.
         :param out: Treat the PIN as an output PIN - e.g. if you usually write to it and now want to read the
             value. If not set, then the PIN will be treated as an input PIN.
@@ -416,6 +420,7 @@ pin.duty({duty})
     def pwm_on(self, pin: Union[int, str], freq: Optional[int] = None, duty: Optional[int] = None, **kwargs):
         """
         Set the specified PIN to HIGH.
+
         :param pin: GPIO PIN number or configured name.
         :param freq: PWM PIN frequency.
         :param duty: PWM PIN duty cycle.
@@ -821,6 +826,7 @@ uart.read(*args)
     def get_freq(self, **kwargs) -> int:
         """
         Get the frequency of the device in Hz.
+
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
         """
         code = '''
@@ -870,6 +876,7 @@ machine.soft_reset()
     def disable_irq(self, **kwargs):
         """
         Disable interrupt requests.
+
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
         """
         code = '''
@@ -882,6 +889,7 @@ machine.disable_irq()
     def enable_irq(self, **kwargs):
         """
         Enable interrupt requests.
+
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
         """
         code = '''
@@ -975,6 +983,7 @@ webrepl._webrepl.password({password})
     def wifi_connect(self, essid: str, passphrase: str, **kwargs):
         """
         Connect the device WiFi interface to the specified access point.
+
         :param essid: WiFi ESSID.
         :param passphrase: WiFi passphrase.
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
@@ -1091,6 +1100,7 @@ print(json.dumps(list(wlan.ifconfig())))
     def wifi_enable(self, **kwargs):
         """
         Enable the device WiFi interface.
+
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
         """
         self.net_enabled_change('network.STA_IF', True, **kwargs)
@@ -1099,6 +1109,7 @@ print(json.dumps(list(wlan.ifconfig())))
     def wifi_disable(self, **kwargs):
         """
         Disable the device WiFi interface.
+
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
         """
         self.net_enabled_change('network.STA_IF', False, **kwargs)
@@ -1107,6 +1118,7 @@ print(json.dumps(list(wlan.ifconfig())))
     def wifi_disconnect(self, **kwargs):
         """
         Disconnect from the currently connected WiFi network
+
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
         """
         code = '''
@@ -1120,6 +1132,7 @@ wlan.disconnect()
     def ap_enable(self, **kwargs):
         """
         Enable the device WiFi access point interface.
+
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
         """
         self.net_enabled_change('network.AP_IF', True, **kwargs)
@@ -1128,6 +1141,7 @@ wlan.disconnect()
     def ap_disable(self, **kwargs):
         """
         Disable the device WiFi access point interface.
+
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
         """
         self.net_enabled_change('network.AP_IF', False, **kwargs)
@@ -1181,6 +1195,7 @@ print(json.dumps(config))
     def wifi_scan(self, **kwargs) -> List[EspWifiScanResult]:
         """
         Scan the available networks.
+
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
         """
         code = '''
@@ -1343,6 +1358,7 @@ print(json.dumps({k.decode(): v.decode() for k, v in db.items()}))
     def set_ntp_time(self, **kwargs):
         """
         Set the device time using an NTP server.
+
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
         """
         code = '''
