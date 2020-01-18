@@ -17,9 +17,6 @@ class EspPlugin(Plugin):
         This plugin allows you to fully control to ESP8266/ESP32 devices connected over WiFi.
         It uses the WebREPL interface embedded in MicroPython to communicate with the device.
 
-        Getting started
-        ---------------
-
         All you need to do is to flash the MicroPython firmware to your device, enable the WebREPL interface,
         and you can use this plugin to fully control the device remotely without deploying any code to the controller.
 
