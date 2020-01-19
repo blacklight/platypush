@@ -4,9 +4,7 @@
 
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='font-awesome/css/all.css') }}">
+    {% include 'css-common.html' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dist/settings.css') }}">
 
     <script type="text/javascript">
@@ -21,12 +19,7 @@
         {% endif %}
     </script>
 
-    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/vue.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/axios.min.js') }}"></script>
-
-    <script type="text/javascript" src="{{ url_for('static', filename='js/api.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/notifications.js') }}"></script>
-
+    {% include 'js-common.html' %}
     {% include 'elements.html' %}
 </head>
 

@@ -3,20 +3,11 @@
     <title>Platypush Dashboard</title>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Lato">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/skeleton.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/normalize.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='font-awesome/css/all.css') }}">
+    {% include 'css-common.html' %}
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/dist/dashboard.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/dist/webpanel/plugins/assistant.google.css') }}">
 
-    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/vue.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/vue.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/axios.min.js') }}"></script>
-
-    <script type="text/javascript" src="{{ url_for('static', filename='js/api.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/events.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+    {% include 'js-common.html' %}
 
     <script type="text/javascript" src="{{ url_for('static', filename='js/plugins/pushbullet/index.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/plugins/assistant.google/index.js') }}"></script>

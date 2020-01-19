@@ -1,0 +1,11 @@
+{% if utils.isfile(static_folder, 'js', 'lib', 'vue.js') %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/vue.js') }}"></script>
+{% else %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/vue.min.js') }}"></script>
+{% endif %}
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/lib/axios.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/api.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/events.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+

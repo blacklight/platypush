@@ -4,10 +4,7 @@
 
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/skeleton.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/normalize.css') }}">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.0/css/all.css"
-          integrity="sha384-REHJTs1r2ErKBuJB0fCK99gCYsVjwxHrSU0N7I1zl9vZbggVJXRMsv/sLlOAGb4M" crossorigin="anonymous">
+    {% include 'css-common.html' %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dist/webpanel.css') }}">
 
     <script type="text/javascript">
@@ -34,17 +31,7 @@
         {% endif %}
     </script>
 
-    {% if utils.isfile(static_folder, 'js', 'lib', 'vue.js') %}
-    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/vue.js') }}"></script>
-    {% else %}
-    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/vue.min.js') }}"></script>
-    {% endif %}
-
-    <script type="text/javascript" src="{{ url_for('static', filename='js/lib/axios.min.js') }}"></script>
-
-    <script type="text/javascript" src="{{ url_for('static', filename='js/api.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/events.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+    {% include 'js-common.html' %}
     <script type="text/javascript" src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
 
     {% for style in styles.values() %}
