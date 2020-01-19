@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
-from platypush.plugins import Plugin
+from platypush.context import get_backend
+from platypush.plugins import Plugin, action
 
 
 class AssistantPlugin(ABC, Plugin):
@@ -22,26 +23,32 @@ class AssistantPlugin(ABC, Plugin):
         """
         raise NotImplementedError
 
-    @abstractmethod
-    def pause_detection(self, *args, **kwargs):
+    def _get_assistant(self):
+        return get_backend('assistant.snowboy')
+
+    @action
+    def pause_detection(self):
         """
         Put the assistant on pause. No new conversation events will be triggered.
         """
-        raise NotImplementedError
+        assistant = self._get_assistant()
+        assistant.pause_detection()
 
-    @abstractmethod
-    def resume_detection(self, *args, **kwargs):
+    @action
+    def resume_detection(self):
         """
         Resume the assistant hotword detection from a paused state.
         """
-        raise NotImplementedError
+        assistant = self._get_assistant()
+        assistant.resume_detection()
 
-    @abstractmethod
+    @action
     def is_detecting(self) -> bool:
         """
         :return: True if the asistant is detecting, False otherwise.
         """
-        raise NotImplementedError
+        assistant = self._get_assistant()
+        return assistant.is_detecting()
 
 
 # vim:sw=4:ts=4:et:

@@ -3,7 +3,6 @@
 """
 
 import os
-import threading
 
 from platypush.context import get_bus
 from platypush.plugins import action
@@ -71,7 +70,6 @@ class AssistantEchoPlugin(AssistantPlugin):
         self.audio = Audio(device_name=audio_device)
         self.alexa = Alexa(avs_config_file, audio_player=audio_player)
         self._ready = False
-        self._detection_paused = threading.Event()
 
         self.alexa.state_listener.on_ready = self._on_ready()
         self.alexa.state_listener.on_listening = self._on_listening()
@@ -127,18 +125,6 @@ class AssistantEchoPlugin(AssistantPlugin):
     def stop_conversation(self):
         self.audio.stop()
         self._on_finished()()
-
-    @action
-    def pause_detection(self):
-        self._detection_paused.set()
-
-    @action
-    def resume_detection(self):
-        self._detection_paused.clear()
-
-    @action
-    def is_detecting(self) -> bool:
-        return not self._detection_paused.is_set()
 
 
 # vim:sw=4:ts=4:et:
