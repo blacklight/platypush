@@ -7,7 +7,7 @@ import json
 import os
 import time
 
-from platypush.backend import Backend
+from platypush.backend.assistant import AssistantBackend
 from platypush.message.event.assistant import \
     ConversationStartEvent, ConversationEndEvent, ConversationTimeoutEvent, \
     ResponseEvent, NoResponseEvent, SpeechRecognizedEvent, AlarmStartedEvent, \
@@ -15,7 +15,7 @@ from platypush.message.event.assistant import \
     AlertEndEvent
 
 
-class AssistantGoogleBackend(Backend):
+class AssistantGoogleBackend(AssistantBackend):
     """
     Google Assistant backend.
 
@@ -158,12 +158,15 @@ class AssistantGoogleBackend(Backend):
             with Assistant(self.credentials, self.device_model_id) as assistant:
                 self.assistant = assistant
                 for event in assistant.start():
+                    if not self.is_detecting():
+                        self.logger.info('Assistant event received but detection is currently paused')
+                        continue
+
                     self._process_event(event)
                     if self._has_error:
-                        self.logger.info('Restarting the assistant after ' +
-                                         'an unrecoverable error')
+                        self.logger.info('Restarting the assistant after an unrecoverable error')
                         time.sleep(5)
-                        continue
+                        break
 
 
 # vim:sw=4:ts=4:et:

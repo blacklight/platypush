@@ -4,6 +4,7 @@
 
 import json
 import os
+import threading
 
 from platypush.context import get_bus
 from platypush.message.event.assistant import ConversationStartEvent, \
@@ -85,6 +86,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         self.play_response = play_response
         self.assistant = None
         self.interactions = []
+        self._detection_paused = threading.Event()
 
         with open(self.device_config) as f:
             device = json.load(f)
@@ -219,6 +221,10 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
         from platypush.plugins.assistant.google.lib import SampleAssistant
 
+        if not self.is_detecting():
+            self.logger.info('Conversation start event received but detection is currently paused')
+            return
+
         if not language:
             language = self.language
 
@@ -253,7 +259,6 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
     @action
     def stop_conversation(self):
-        """ Stop a conversation """
         if self.assistant:
             self.assistant.play_response = False
 
@@ -273,6 +278,18 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
                 device_id=self.device_id,
                 device_model_id=self.device_model_id,
                 on=on))
+
+    @action
+    def pause_detection(self):
+        self._detection_paused.set()
+
+    @action
+    def resume_detection(self):
+        self._detection_paused.clear()
+
+    @action
+    def is_detecting(self) -> bool:
+        return not self._detection_paused.is_set()
 
 
 # vim:sw=4:ts=4:et:

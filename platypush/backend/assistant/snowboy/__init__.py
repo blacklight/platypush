@@ -6,12 +6,12 @@
 import os
 import threading
 
-from platypush.backend import Backend
+from platypush.backend.assistant import AssistantBackend
 from platypush.context import get_plugin
 from platypush.message.event.assistant import HotwordDetectedEvent
 
 
-class AssistantSnowboyBackend(Backend):
+class AssistantSnowboyBackend(AssistantBackend):
     """
     Backend for detecting custom voice hotwords through Snowboy.  The purpose of
     this component is only to detect the hotword specified in your Snowboy voice
@@ -140,6 +140,10 @@ class AssistantSnowboyBackend(Backend):
             snowboydecoder.play_audio_file(sound)
 
         def callback():
+            if not self.is_detecting():
+                self.logger.info('Hotword detected but assistant response currently paused')
+                return
+
             self.bus.post(HotwordDetectedEvent(hotword=hotword))
             model = self.models[hotword]
 
