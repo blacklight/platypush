@@ -38,8 +38,10 @@ class TravisciBackend(Backend):
         if not d:
             return
 
-        if isinstance(d, int) or isinstance(d, float):
-            return d
+        try:
+            return float(d)
+        except ValueError:
+            pass
 
         if isinstance(d, str):
             if d.endswith('Z'):
