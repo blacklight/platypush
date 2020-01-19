@@ -35,6 +35,9 @@ class TravisciBackend(Backend):
 
     @staticmethod
     def _convert_iso_date(d):
+        if not d:
+            return
+
         if isinstance(d, int) or isinstance(d, float):
             return d
 
@@ -43,7 +46,7 @@ class TravisciBackend(Backend):
                 d = d[:-1] + '+00:00'
             d = datetime.datetime.fromisoformat(d)
 
-        assert isinstance(d, datetime.datetime)
+        assert isinstance(d, datetime.datetime), 'Unexpected datetime type: ' + type(d)
         return d.timestamp()
 
     def __enter__(self):
