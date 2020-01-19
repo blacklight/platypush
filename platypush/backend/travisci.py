@@ -34,24 +34,20 @@ class TravisciBackend(Backend):
         self._last_build_finished_at = None
 
     @staticmethod
-    def _convert_iso_date_to_shitty_python_datetime(d):
-        """
-        Python's datetime is dumb and shitty, and it won't understand dates in formats such as '2020-01-01:00:00:00Z',
-        even though they're perfectly fine formatted ISO dates.
-        """
+    def _convert_iso_date(d):
+        if isinstance(d, int) or isinstance(d, float):
+            return d
+
         if isinstance(d, str):
             if d.endswith('Z'):
                 d = d[:-1] + '+00:00'
-            return datetime.datetime.fromisoformat(d)
-
-        if isinstance(d, int) or isinstance(d, float):
-            return datetime.datetime.fromtimestamp(d)
+            d = datetime.datetime.fromisoformat(d)
 
         assert isinstance(d, datetime.datetime)
-        return d
+        return d.timestamp()
 
     def __enter__(self):
-        self._last_build_finished_at = self._convert_iso_date_to_shitty_python_datetime(
+        self._last_build_finished_at = self._convert_iso_date(
             get_plugin('variable').get(self._last_build_finished_at_varname).
             output.get(self._last_build_finished_at_varname) or 0)
 
@@ -63,7 +59,7 @@ class TravisciBackend(Backend):
             return
 
         last_build = builds[0]
-        last_build_finished_at = self._convert_iso_date_to_shitty_python_datetime(last_build.get('finished_at', 0))
+        last_build_finished_at = self._convert_iso_date(last_build.get('finished_at', 0))
         if self._last_build_finished_at and last_build_finished_at <= self._last_build_finished_at:
             return
 
@@ -87,11 +83,11 @@ class TravisciBackend(Backend):
                        commit_id=last_build.get('commit', {}).get('id'),
                        commit_sha=last_build.get('commit', {}).get('sha'),
                        commit_message=last_build.get('commit', {}).get('message'),
-                       committed_at=self._convert_iso_date_to_shitty_python_datetime(
+                       committed_at=self._convert_iso_date(
                            last_build.get('commit', {}).get('committed_at')),
                        created_by=last_build.get('created_by', {}).get('login'),
-                       started_at=self._convert_iso_date_to_shitty_python_datetime(last_build.get('started_at')),
-                       finished_at=self._convert_iso_date_to_shitty_python_datetime(last_build.get('finished_at')))
+                       started_at=self._convert_iso_date(last_build.get('started_at')),
+                       finished_at=self._convert_iso_date(last_build.get('finished_at')))
 
         self.bus.post(evt)
         self._last_build_finished_at = last_build_finished_at
