@@ -65,6 +65,9 @@ class TravisciBackend(Backend):
 
         last_build = builds[0]
         last_build_finished_at = self._convert_iso_date(last_build.get('finished_at', 0))
+        if not last_build_finished_at:
+            return
+
         if self._last_build_finished_at and last_build_finished_at <= self._last_build_finished_at:
             return
 
