@@ -154,7 +154,7 @@ setup(
         # Support for Kafka backend and plugin
         'kafka': ['kafka-python'],
         # Support for Pushbullet backend and plugin
-        'pushbullet': ['pushbullet.py @ https://github.com/rbrcsk/pushbullet.py'],
+        'pushbullet': ['pushbullet.py @ https://github.com/rbrcsk/pushbullet.py/tarball/master'],
         # Support for HTTP backend
         'http': ['flask', 'python-dateutil', 'tz', 'frozendict', 'bcrypt'],
         # Support for uWSGI HTTP backend
@@ -244,7 +244,7 @@ setup(
         'alexa': ['avs @ https://github.com:BlackLight/avs/tarball/master'],
         # Support for bluetooth devices
         'bluetooth': ['pybluez', 'gattlib',
-                      'pyobex @ https://github.com/BlackLight/PyOBEX'],
+                      'pyobex @ https://github.com/BlackLight/PyOBEX/tarball/master'],
         # Support for TP-Link devices
         'tplink': ['pyHS100'],
         # Support for PWM3901 2-Dimensional Optical Flow Sensor
