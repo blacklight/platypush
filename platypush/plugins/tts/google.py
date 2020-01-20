@@ -107,9 +107,6 @@ class TtsGooglePlugin(Plugin):
 
         with tempfile.NamedTemporaryFile() as f:
             f.write(response.audio_content)
-
-            output = None
-            errors = []
             cmd = ['mplayer -ao alsa -really-quiet -noconsolecontrols {}'
                    .format(f.name)]
 
