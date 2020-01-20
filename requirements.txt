@@ -132,7 +132,7 @@ paho-mqtt
 # git+https://github.com/agonzalezro/python-opensubtitles
 # webvtt-py
 
-# Mopidy backend
+# Multiple plugins and backends require the websocket client
 websocket-client
 
 # mpv player plugin
@@ -224,5 +224,3 @@ croniter
 # Support for nmap integration
 # python-nmap
 
-# Support for ESP8266/ESP32 Micropython integration
-# websocket-client

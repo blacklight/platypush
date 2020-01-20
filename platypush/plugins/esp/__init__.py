@@ -121,6 +121,10 @@ class EspPlugin(Plugin):
 
     def on_message(self, conn: Connection):
         def handler(ws, msg):
+            if not isinstance(msg, str):
+                # Bytes sequences will be handled by on_data
+                return
+
             if msg.endswith('Password: ') and conn.state == conn.State.CONNECTED:
                 conn.on_password_requested()
                 return
@@ -147,6 +151,34 @@ class EspPlugin(Plugin):
         def callback(ws, msg):
             try:
                 handler(ws, msg)
+            except Exception as e:
+                self.logger.exception(e)
+                raise e
+
+        return callback
+
+    def on_data(self, conn: Connection):
+        # noinspection PyUnusedLocal
+        def handler(ws, data):
+            if conn.state == conn.State.WAITING_FILE_TRANSFER_RESPONSE:
+                conn.on_recv_file_transfer_response(data)
+                return
+
+            if conn.state == conn.State.UPLOADING_FILE:
+                conn.on_file_transfer_completed(data)
+                return
+
+            if conn.state == conn.State.DOWNLOADING_FILE:
+                conn.on_chunk_received(data)
+                return
+
+        # noinspection PyUnusedLocal
+        def callback(ws, data, data_type, continue_flag):
+            import websocket
+
+            try:
+                if data_type == websocket.ABNF.OPCODE_BINARY:
+                    handler(ws, data)
             except Exception as e:
                 self.logger.exception(e)
                 raise e
@@ -186,6 +218,18 @@ class EspPlugin(Plugin):
 
         return Device(host=host, port=port, password=password)
 
+    # noinspection PyUnusedLocal
+    def _get_connection(self, device: Optional[str] = None, host: Optional[str] = None, port: int = 8266, **kwargs) \
+            -> Connection:
+        if device:
+            assert device in self._devices_by_name, 'No such device configured: ' + device
+            device = self._devices_by_name[device]
+            host = device['host']
+            port = device['port']
+
+        assert host and port, 'No host and port specified'
+        return self._connections.get((host, port))
+
     @action
     def connect(self, device: Optional[str] = None, host: Optional[str] = None, port: int = 8266,
                 password: Optional[str] = None, timeout: Optional[float] = 10.0):
@@ -201,7 +245,9 @@ class EspPlugin(Plugin):
         import websocket
 
         device = self._get_device(device=device, host=host, port=port, password=password)
-        conn = self._connections.get((device['host'], device['port']))
+        host = device['host']
+        port = device['port']
+        conn = self._get_connection(host=host, port=port)
         if conn and conn.ws and conn.ws.sock.connected:
             self.logger.info('Already connected to {}:{}'.format(host, port))
             return
@@ -212,6 +258,7 @@ class EspPlugin(Plugin):
         ws = websocket.WebSocketApp('ws://{host}:{port}'.format(host=host, port=port),
                                     on_open=self.on_open(conn),
                                     on_message=self.on_message(conn),
+                                    on_data=self.on_data(conn),
                                     on_error=self.on_error(conn),
                                     on_close=self.on_close(conn))
 
@@ -246,6 +293,7 @@ class EspPlugin(Plugin):
                 password: Optional[str] = None,
                 conn_timeout: Optional[float] = 10.0,
                 recv_timeout: Optional[float] = 30.0,
+                wait_response: bool = True,
                 **kwargs) -> Response:
         """
         Run raw Python code on the ESP device.
@@ -257,6 +305,7 @@ class EspPlugin(Plugin):
         :param password: ESP WebREPL password.
         :param conn_timeout: Connection timeout (default: 10 seconds).
         :param recv_timeout: Response receive timeout (default: 30 seconds).
+        :param wait_response: Wait for the response from the device (default: True)
         :return: The response returned by the Micropython interpreter, as a string.
         """
         device = self._get_device(device=device, host=host, port=port, password=password)
@@ -264,7 +313,7 @@ class EspPlugin(Plugin):
         conn = self._connections.get((device['host'], device['port']))
 
         try:
-            return conn.send(code, timeout=recv_timeout)
+            return conn.send(code, timeout=recv_timeout, wait_response=wait_response)
         except Exception as e:
             conn.close()
             raise e
@@ -855,7 +904,7 @@ machine.freq({freq})
 import machine
 machine.reset()
 '''
-        return self.execute(code, **kwargs).output
+        return self.execute(code, wait_response=False, **kwargs).output
 
     @action
     def soft_reset(self, **kwargs):
@@ -867,7 +916,7 @@ machine.reset()
 import machine
 machine.soft_reset()
 '''
-        return self.execute(code, **kwargs).output
+        return self.execute(code, wait_response=False, **kwargs).output
 
     @action
     def disable_irq(self, **kwargs):
@@ -908,7 +957,7 @@ import time
 time.sleep({sec})
 '''.format(sec=seconds)
 
-        return self.execute(code, **kwargs).output
+        return self.execute(code, wait_response=False, **kwargs).output
 
     @action
     def soft_sleep(self, seconds: Optional[float] = None, **kwargs):
@@ -925,7 +974,7 @@ import machine
 machine.lightsleep({msec})
 '''.format(msec=int(seconds * 1000) if seconds else '')
 
-        return self.execute(code, **kwargs).output
+        return self.execute(code, wait_response=False, **kwargs).output
 
     @action
     def deep_sleep(self, seconds: Optional[float] = None, **kwargs):
@@ -942,7 +991,7 @@ import machine
 machine.deepsleep({msec})
 '''.format(msec=int(seconds * 1000) if seconds else '')
 
-        return self.execute(code, **kwargs).output
+        return self.execute(code, wait_response=False, **kwargs).output
 
     @action
     def unique_id(self, **kwargs) -> str:
@@ -1501,51 +1550,47 @@ with open('{file}', 'r') as f:
         return self.execute(code, **kwargs).output
 
     @action
-    def file_upload(self, file: str, target: Optional[str] = None, **kwargs):
+    def file_upload(self, source: str, destination: Optional[str] = None, timeout: Optional[float] = 60.0, **kwargs):
         """
         Upload a file to the board.
-        NOTE: It only works with non-binary files.
 
-        :param file: Local file name/path to copy.
-        :param target: Target file name/path (default: a filename will be created under the board's
+        :param source: Path of the local file to copy.
+        :param destination: Target file name (default: a filename will be created under the board's
             root folder with the same name as the source file).
-        :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
+        :param timeout: File transfer timeout (default: one minute).
+        :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.connect`.
         """
-        file = os.path.abspath(os.path.expanduser(file))
-        with open(file, 'r') as f:
-            content = f.read()
-
-        if not target:
-            target = os.path.basename(file)
-
-        code = '''
-content = """{content}"""
-
-with open('{target}', 'w') as f:
-    f.write(content)
-'''.format(content=content, target=target)
-
-        return self.execute(code, **kwargs).output
+        device = self._get_device(**kwargs)
+        host = device['host']
+        port = device['port']
+        self.connect(host=host, port=port, password=device['password'])
+        conn = self._get_connection(host=host, port=port)
+        conn.file_upload(source=source, destination=destination, timeout=timeout)
 
     @action
-    def file_download(self, file: str, target: str, **kwargs):
+    def file_download(self, source: str, destination: str, timeout: Optional[float] = 60.0, **kwargs):
         """
         Download a file from the board to the local machine.
         NOTE: It only works with non-binary files.
 
-        :param file: File name/path to get from the device.
-        :param target: Target directory or file path on the local machine.
+        :param source: Name or path of the file to download from the device.
+        :param destination: Target directory or path on the local machine.
+        :param timeout: File transfer timeout (default: one minute).
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
         """
-        target = os.path.abspath(os.path.expanduser(target))
-        if os.path.isdir(target):
-            filename = os.path.basename(file)
-            target = os.path.join(target, filename)
+        destination = os.path.abspath(os.path.expanduser(destination))
+        if os.path.isdir(destination):
+            filename = os.path.basename(source)
+            destination = os.path.join(destination, filename)
 
-        # noinspection PyUnresolvedReferences
-        content = self.file_get(file, **kwargs).output
-        with open(target, 'w') as f:
-            f.write(content)
+        device = self._get_device(**kwargs)
+        host = device['host']
+        port = device['port']
+        self.connect(host=host, port=port, password=device['password'])
+        conn = self._get_connection(host=host, port=port)
+
+        with open(destination, 'wb') as f:
+            conn.file_download(source, f, timeout=timeout)
 
     def _dht_get_value(self, pin: Union[int, str], dht_type: int, value: str, **kwargs) -> float:
         device = self._get_device(**kwargs)

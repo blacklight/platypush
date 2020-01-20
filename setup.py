@@ -144,6 +144,8 @@ setup(
         'croniter',
         'pyScss',
         'sqlalchemy',
+        'websockets',
+        'websocket-client',
     ],
 
     extras_require={
@@ -154,9 +156,9 @@ setup(
         # Support for Pushbullet backend and plugin
         'pushbullet': ['pushbullet.py @ https://github.com/rbrcsk/pushbullet.py'],
         # Support for HTTP backend
-        'http': ['flask', 'websockets', 'python-dateutil', 'tz', 'frozendict', 'bcrypt'],
+        'http': ['flask', 'python-dateutil', 'tz', 'frozendict', 'bcrypt'],
         # Support for uWSGI HTTP backend
-        'uwsgi': ['flask', 'websockets', 'python-dateutil', 'tz', 'frozendict', 'uwsgi', 'bcrypt'],
+        'uwsgi': ['flask', 'python-dateutil', 'tz', 'frozendict', 'uwsgi', 'bcrypt'],
         # Support for database
         'db': ['sqlalchemy'],
         # Support for MQTT backends
@@ -168,7 +170,7 @@ setup(
         # Support for Philips Hue plugin
         'hue': ['phue'],
         # Support for MPD/Mopidy music server plugin and backend
-        'mpd': ['python-mpd2', 'websocket-client'],
+        'mpd': ['python-mpd2'],
         # Support for text2speech plugin
         'tts': ['mplayer'],
         # Support for Google text2speech plugin
@@ -277,7 +279,5 @@ setup(
         'sys': ['py-cpuinfo', 'psutil'],
         # Support for nmap integration
         'nmap': ['python-nmap'],
-        # Support for ESP8266/ESP32 Micropython integration
-        'esp': ['websocket-client'],
     },
 )
