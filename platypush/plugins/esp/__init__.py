@@ -1581,7 +1581,6 @@ print([b for b in os.urandom({size})])
     def file_download(self, source: str, destination: str, timeout: Optional[float] = 60.0, **kwargs):
         """
         Download a file from the board to the local machine.
-        NOTE: It only works with non-binary files.
 
         :param source: Name or path of the file to download from the device.
         :param destination: Target directory or path on the local machine.
