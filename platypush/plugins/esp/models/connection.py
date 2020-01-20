@@ -1,5 +1,6 @@
 import enum
 import logging
+import queue
 import os
 import re
 import threading
@@ -50,7 +51,7 @@ class Connection:
         self._file_transfer_ack_received = threading.Event()
         self._file_transfer_request_successful = True
         self._file_transfer_successful = True
-        self._downloaded_chunk = None
+        self._downloaded_chunks = queue.Queue()
         self._password_requested = False
         self._running_cmd = None
         self._received_echo = None
@@ -203,7 +204,7 @@ class Connection:
     def on_file_download_start(self):
         self.logger.info('Starting file download')
         self._file_transfer_successful = False
-        self._downloaded_chunk = None
+        self._downloaded_chunks = queue.Queue()
         self.state = self.State.DOWNLOADING_FILE
         self._file_transfer_ack_received.clear()
         self.ws.send(b'\x00', opcode=websocket.ABNF.OPCODE_BINARY)
@@ -218,10 +219,10 @@ class Connection:
         if size == 0:
             # End of file
             self.logger.info('File download completed')
-            self._downloaded_chunk = None
+            self._downloaded_chunks.put(None)
             self.on_file_download_completed()
         else:
-            self._downloaded_chunk = data
+            self._downloaded_chunks.put(data)
             self.ws.send(b'\x00', opcode=websocket.ABNF.OPCODE_BINARY)
 
         self._download_chunk_ready.set()
@@ -237,14 +238,16 @@ class Connection:
         self.state = self.State.SENDING_FILE_TRANSFER_RESPONSE
 
     def get_downloaded_chunks(self, timeout: Optional[float] = None):
-        block_ok = self._download_chunk_ready.wait(timeout=timeout)
+        while True:
+            try:
+                chunk = self._downloaded_chunks.get(timeout=timeout)
+            except queue.Empty:
+                self.on_timeout('File download timed out')
 
-        while self._downloaded_chunk and block_ok:
-            yield self._downloaded_chunk
-            block_ok = self._download_chunk_ready.wait(timeout=timeout)
+            if chunk is None:
+                break
 
-        if not block_ok:
-            self.on_timeout('File download timed out')
+            yield chunk
 
     def wait_ready(self):
         connected = self._connected.wait(timeout=self.connect_timeout)

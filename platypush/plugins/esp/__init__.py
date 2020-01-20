@@ -1,4 +1,5 @@
 import base64
+import io
 import os
 import threading
 
@@ -1532,22 +1533,31 @@ print([b for b in os.urandom({size})])
         return self.execute(code, **kwargs).output
 
     @action
-    def file_get(self, file: str, **kwargs) -> str:
+    def file_get(self, file: str, binary: bool = False, timeout: Optional[float] = 60.0, **kwargs) -> str:
         """
         Get the content of a file on the board.
-        NOTE: It only works with non-binary files.
 
         :param file: File name/path to get from the device.
-        :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
+        :param binary: If True, then the base64-encoded content of the file will be returned.
+        :param timeout: File transfer timeout (default: one minute).
+        :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.connect`.
         """
-        file = self.string_quote(file)
-        code = '''
-import os
-with open('{file}', 'r') as f:
-    print(f.read())
-'''.format(file=file)
+        device = self._get_device(**kwargs)
+        host = device['host']
+        port = device['port']
+        self.connect(host=host, port=port, password=device['password'])
+        conn = self._get_connection(host=host, port=port)
 
-        return self.execute(code, **kwargs).output
+        with io.BytesIO() as buffer:
+            conn.file_download(file, buffer, timeout=timeout)
+            data = buffer.getvalue()
+
+        if binary:
+            data = base64.encodebytes(data).decode()
+        else:
+            data = data.decode()
+
+        return data
 
     @action
     def file_upload(self, source: str, destination: Optional[str] = None, timeout: Optional[float] = 60.0, **kwargs):
