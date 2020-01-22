@@ -1,0 +1,63 @@
+<!doctype html>
+<head>
+    <title>{{ plugin }}</title>
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    {% include 'css-common.html' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dist/webpanel.css') }}">
+
+    <script type="text/javascript">
+        if (!window.config) {
+            window.config = {};
+        }
+
+        window.config = { ...window.config,
+            websocket_port: {{ websocket_port }},
+            has_ssl: {{ 'true' if has_ssl else 'false' }},
+        };
+
+        {% if token %}
+            window.config.token = '{{ token }}';
+        {% else %}
+            window.config.token = undefined;
+        {% endif %}
+    </script>
+
+    {% include 'js-common.html' %}
+    <script type="text/javascript" src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename=style) }}">
+    <style>
+        #app main {
+            height: 100vh;
+        }
+    </style>
+
+    {% include 'elements.html' %}
+
+    {% with configuration=conf %}
+        {% include template %}
+    {% endwith %}
+
+    <script type="text/javascript" src="{{ url_for('static', filename=script) }}"></script>
+</head>
+
+<body>
+    <div id="app">
+        <main>
+            <div class="plugins-container">
+                <plugin :tag="'{{ plugin }}'.replace(/\./g, '-')"
+                        :config='{{ utils.to_json(conf) }}'>
+                </plugin>
+            </div>
+        </main>
+
+        {% include 'notifications.html' %}
+    </div>
+
+    {% include 'plugins/template.html' %}
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/application.js') }}"></script>
+</body>
+
