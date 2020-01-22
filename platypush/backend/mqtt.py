@@ -1,6 +1,7 @@
 import json
 import os
 import threading
+from typing import Optional
 
 from platypush.backend import Backend
 from platypush.context import get_plugin
@@ -27,53 +28,50 @@ class MqttBackend(Backend):
 
     _default_mqtt_port = 1883
 
-    def __init__(self, host, port=_default_mqtt_port, topic='platypush_bus_mq',
-                 tls_cafile=None, tls_certfile=None, tls_keyfile=None,
-                 tls_version=None, tls_ciphers=None, username=None,
-                 password=None, listeners=None, *args, **kwargs):
+    def __init__(self, host: Optional[str] = None, port: int = _default_mqtt_port,
+                 topic='platypush_bus_mq', subscribe_default_topic: bool = True,
+                 tls_cafile: Optional[str] = None, tls_certfile: Optional[str] = None,
+                 tls_keyfile: Optional[str] = None, tls_version: Optional[str] = None,
+                 tls_ciphers: Optional[str] = None, username: Optional[str] = None,
+                 password: Optional[str] = None, listeners=None, *args, **kwargs):
         """
         :param host: MQTT broker host
-        :type host: str
-
         :param port: MQTT broker port (default: 1883)
-        :type port: int
-
         :param topic: Topic to read messages from (default: ``platypush_bus_mq/<device_id>``)
-        :type topic: str
-
+        :param subscribe_default_topic: Whether the backend should subscribe the default topic (default:
+            ``platypush_bus_mq/<device_id>``) and execute the messages received there as action requests
+            (default: True).
         :param tls_cafile: If TLS/SSL is enabled on the MQTT server and the certificate requires a certificate authority
             to authenticate it, `ssl_cafile` will point to the provided ca.crt file (default: None)
-        :type tls_cafile: str
-
         :param tls_certfile: If TLS/SSL is enabled on the MQTT server and a client certificate it required, specify it
             here (default: None)
-        :type tls_certfile: str
-
         :param tls_keyfile: If TLS/SSL is enabled on the MQTT server and a client certificate key it required,
             specify it here (default: None) :type tls_keyfile: str
-
         :param tls_version: If TLS/SSL is enabled on the MQTT server and it requires a certain TLS version, specify it
             here (default: None)
-        :type tls_version: str
-
         :param tls_ciphers: If TLS/SSL is enabled on the MQTT server and an explicit list of supported ciphers is
             required, specify it here (default: None)
-        :type tls_ciphers: str
-
         :param username: Specify it if the MQTT server requires authentication (default: None)
-        :type username: str
-
         :param password: Specify it if the MQTT server requires authentication (default: None)
-        :type password: str
-
         :param listeners: If specified then the MQTT backend will also listen for
             messages on the additional configured message queues. This parameter
             is a list of maps where each item supports the same arguments passed
             to the main backend configuration (host, port, topic, password etc.).
             Note that the message queue configured on the main configuration
             will expect valid Platypush messages that then can execute, while
-            message queues registered to the listeners will accept any message.
-        :type listeners: list[dict]
+            message queues registered to the listeners will accept any message. Example::
+
+                listeners:
+                    - host: localhost
+                      topics:
+                          - topic1
+                          - topic2
+                          - topic3
+                    - host: sensors
+                      topics:
+                          - topic4
+                          - topic5
+
         """
 
         super().__init__(*args, **kwargs)
@@ -81,6 +79,7 @@ class MqttBackend(Backend):
         self.host = host
         self.port = port
         self.topic = '{}/{}'.format(topic, self.device_id)
+        self.subscribe_default_topic = subscribe_default_topic
         self.username = username
         self.password = password
         self._client = None
@@ -99,38 +98,30 @@ class MqttBackend(Backend):
         self.tls_ciphers = tls_ciphers
         self.listeners_conf = listeners or []
 
-    def send_message(self, msg, **kwargs):
+    def send_message(self, msg, topic: Optional[str] = None, **kwargs):
         try:
             client = get_plugin('mqtt')
-            client.send_message(topic=self.topic, msg=msg, host=self.host,
+            client.send_message(topic=topic or self.topic, msg=msg, host=self.host,
                                 port=self.port, username=self.username,
                                 password=self.password, tls_cafile=self.tls_cafile,
                                 tls_certfile=self.tls_certfile,
                                 tls_keyfile=self.tls_keyfile,
                                 tls_version=self.tls_version,
-                                tls_ciphers=self.tls_ciphers)
+                                tls_ciphers=self.tls_ciphers, **kwargs)
         except Exception as e:
             self.logger.exception(e)
 
-    def _initialize_listeners(self, listeners_conf):
-        import paho.mqtt.client as mqtt
+    @staticmethod
+    def on_connect(*topics):
+        # noinspection PyUnusedLocal
+        def handler(client, userdata, flags, rc):
+            for topic in topics:
+                client.subscribe(topic)
 
-        # noinspection PyShadowingNames
-        def listener_thread(client, host, port):
-            client.connect(host, port, 60)
-            client.loop_forever()
+        return handler
 
-        # noinspection PyShadowingNames
-        def on_connect(topics):
-            # noinspection PyShadowingNames,PyUnusedLocal
-            def handler(client, userdata, flags, rc):
-                for topic in topics:
-                    client.subscribe(topic)
-
-            return handler
-
-        # noinspection PyShadowingNames,PyUnusedLocal
-        def on_message(client, userdata, msg):
+    def on_mqtt_message(self):
+        def handler(client, _, msg):
             data = msg.payload
             # noinspection PyBroadException
             try:
@@ -140,9 +131,19 @@ class MqttBackend(Backend):
                 pass
 
             # noinspection PyProtectedMember
-            self.bus.post(MQTTMessageEvent(host=client._host, port=client._port,
-                                           topic=msg.topic, msg=data))
+            self.bus.post(MQTTMessageEvent(host=client._host, port=client._port, topic=msg.topic, msg=data))
 
+        return handler
+
+    def _initialize_listeners(self, listeners_conf):
+        import paho.mqtt.client as mqtt
+
+        # noinspection PyShadowingNames
+        def listener_thread(client, host, port):
+            client.connect(host, port)
+            client.loop_forever()
+
+        # noinspection PyShadowingNames,PyUnusedLocal
         for i, listener in enumerate(listeners_conf):
             host = listener.get('host')
             port = listener.get('port', self._default_mqtt_port)
@@ -157,8 +158,8 @@ class MqttBackend(Backend):
                 continue
 
             client = mqtt.Client()
-            client.on_connect = on_connect(topics)
-            client.on_message = on_message
+            client.on_connect = self.on_connect(*topics)
+            client.on_message = self.on_mqtt_message()
 
             if username and password:
                 client.username_pw_set(username, password)
@@ -173,13 +174,8 @@ class MqttBackend(Backend):
             threading.Thread(target=listener_thread, kwargs={
                 'client': client, 'host': host, 'port': port}).start()
 
-    def run(self):
-        # noinspection PyUnusedLocal
-        def on_connect(client, userdata, flags, rc):
-            client.subscribe(self.topic)
-
-        # noinspection PyUnusedLocal
-        def on_message(client, userdata, msg):
+    def on_exec_message(self):
+        def handler(_, __, msg):
             # noinspection PyShadowingNames
             def response_thread(msg):
                 set_thread_name('MQTTProcessor')
@@ -196,7 +192,8 @@ class MqttBackend(Backend):
             msg = msg.payload.decode('utf-8')
             # noinspection PyBroadException
             try:
-                msg = Message.build(json.loads(msg))
+                msg = json.loads(msg)
+                msg = Message.build(msg)
             except:
                 pass
 
@@ -212,31 +209,37 @@ class MqttBackend(Backend):
                 return
 
             if isinstance(msg, Request):
-                threading.Thread(target=response_thread,
-                                 name='MQTTProcessor',
-                                 args=(msg,)).start()
+                threading.Thread(target=response_thread, name='MQTTProcessor', args=(msg,)).start()
 
+        return handler
+
+    def run(self):
         import paho.mqtt.client as mqtt
 
         super().run()
-        self._client = mqtt.Client()
-        self._client.on_connect = on_connect
-        self._client.on_message = on_message
+        self._client = None
 
-        if self.username and self.password:
-            self._client.username_pw_set(self.username, self.password)
+        if self.host:
+            self._client = mqtt.Client()
+            if self.subscribe_default_topic:
+                self._client.on_connect = self.on_connect(self.topic)
 
-        if self.tls_cafile:
-            self._client.tls_set(ca_certs=self.tls_cafile, certfile=self.tls_certfile,
-                                 keyfile=self.tls_keyfile, tls_version=self.tls_version,
-                                 ciphers=self.tls_ciphers)
+            self._client.on_message = self.on_exec_message()
+            if self.username and self.password:
+                self._client.username_pw_set(self.username, self.password)
 
-        self._client.connect(self.host, self.port, 60)
-        self.logger.info('Initialized MQTT backend on host {}:{}, topic {}'.
-                         format(self.host, self.port, self.topic))
+            if self.tls_cafile:
+                self._client.tls_set(ca_certs=self.tls_cafile, certfile=self.tls_certfile,
+                                     keyfile=self.tls_keyfile, tls_version=self.tls_version,
+                                     ciphers=self.tls_ciphers)
+
+            self._client.connect(self.host, self.port, 60)
+            self.logger.info('Initialized MQTT backend on host {}:{}, topic {}'.
+                             format(self.host, self.port, self.topic))
 
         self._initialize_listeners(self.listeners_conf)
-        self._client.loop_forever()
+        if self._client:
+            self._client.loop_forever()
 
     def stop(self):
         self.logger.info('Received STOP event on MqttBackend')
@@ -250,9 +253,9 @@ class MqttBackend(Backend):
                 listener.loop_stop()
             except Exception as e:
                 # noinspection PyProtectedMember
-                self.logger.warning('Could not stop listener ' +
-                                    '{host}:{port}: {error}'.format(
-                                        host=listener._host, port=listener._port,
-                                        error=str(e)))
+                self.logger.warning('Could not stop listener {host}:{port}: {error}'.format(
+                    host=listener._host, port=listener._port,
+                    error=str(e)))
+
 
 # vim:sw=4:ts=4:et:

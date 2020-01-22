@@ -7,6 +7,7 @@ Backends
     :caption: Backends:
 
     platypush/backend/adafruit.io.rst
+    platypush/backend/assistant.rst
     platypush/backend/assistant.google.rst
     platypush/backend/assistant.snowboy.rst
     platypush/backend/bluetooth.rst
@@ -59,3 +60,4 @@ Backends
     platypush/backend/weather.darksky.rst
     platypush/backend/websocket.rst
     platypush/backend/wiimote.rst
+    platypush/backend/zigbee.mqtt.rst
