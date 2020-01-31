@@ -24,7 +24,7 @@ window.vm = new Vue({
     },
 
     created: function() {
-        m = window.location.href.match('/#([a-zA-Z0-9._]+)$');
+        m = window.location.href.match('#([a-zA-Z0-9._]+)$');
         if (m) {
             this.selectedPlugin = m[1];
         }
