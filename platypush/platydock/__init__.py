@@ -92,7 +92,7 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
         ''')
 
     for i, dep in enumerate(deps):
-        content += '\t&& pip install {}'.format(dep)
+        content += '\t&& pip install --no-cache-dir {}'.format(dep)
         if i < len(deps)-1:
             content += ' \\'.format(dep)
         content += '\n'
