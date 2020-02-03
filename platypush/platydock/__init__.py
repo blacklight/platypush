@@ -221,6 +221,12 @@ def start(args):
                                              -p 18008:8008 -p 18009:8009
                                              '''))
 
+    parser.add_argument('-a', '--attach', action='store_true', default=False,
+                        help=textwrap.dedent('''
+                                             If set, then attach to the container after starting it up (default: false).
+                                             '''))
+
+
     opts, args = parser.parse_known_args(args)
     ports = {}
     dockerfile = os.path.join(workdir, opts.image, 'Dockerfile')
@@ -251,6 +257,9 @@ def start(args):
 
     print('Starting Platypush container {}'.format(opts.image))
     subprocess.call(docker_cmd)
+
+    if opts.attach:
+        subprocess.call(['docker', 'attach', opts.image])
 
 
 def stop(args):
