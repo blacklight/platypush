@@ -55,7 +55,7 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
     os.makedirs(devdir, exist_ok=True)
     content = textwrap.dedent(
         '''
-        FROM python:alpine{python_version}
+        FROM python:{python_version}-slim-buster
 
         RUN mkdir -p /app
         RUN mkdir -p /etc/platypush
@@ -84,11 +84,19 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
 
     content += textwrap.dedent(
         '''
-        RUN apk add --update --no-cache --virtual build-base \\
-            && apk add --update --no-cache --virtual git \\
-            && apk add --update --no-cache --virtual libffi-dev \\
-            && apk add --update --no-cache --virtual libjpeg-turbo-dev \\
-            && apk add --update --no-cache --virtual zlib-dev \\
+        RUN dpkg --configure -a \\
+            && apt-get -f install \\
+            && apt-get --fix-missing install \\
+            && apt-get clean \\
+            && apt-get update \\
+            && apt-get -y upgrade \\
+            && apt-get -y dist-upgrade \\
+            && apt-get install --no-install-recommends -y apt-utils\\
+            && apt-get install --no-install-recommends -y build-essential \\
+            && apt-get install --no-install-recommends -y git \\
+            && apt-get install --no-install-recommends -y libffi-dev \\
+            && apt-get install --no-install-recommends -y libjpeg-dev \\
+            && apt-get install --no-install-recommends -y zlib1g-dev \\
         ''')
 
     for i, dep in enumerate(deps):
@@ -105,11 +113,15 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
             && pip install -r requirements.txt \\
             && python setup.py web_build
 
-        RUN apk del git \\
-            && apk del build-base \\
-            && apk del libffi-dev \\
-            && apk del libjpeg-turbo-dev \\
-            && apk del zlib-dev
+        RUN apt-get remove -y git \\
+            && apt-get remove -y build-essential \\
+            && apt-get remove -y libffi-dev \\
+            && apt-get remove -y libjpeg-dev \\
+            && apt-get remove -y zlib1g-dev \\
+            && apt-get remove -y apt-utils \\
+            && apt-get clean \\
+            && apt-get autoremove -y \\
+            && rm -rf /var/lib/apt/lists/*
 
         ''')
 
