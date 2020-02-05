@@ -111,3 +111,4 @@ Plugins
     platypush/plugins/websocket.rst
     platypush/plugins/wiimote.rst
     platypush/plugins/zigbee.mqtt.rst
+    platypush/plugins/zwave.rst

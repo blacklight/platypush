@@ -61,3 +61,4 @@ Backends
     platypush/backend/websocket.rst
     platypush/backend/wiimote.rst
     platypush/backend/zigbee.mqtt.rst
+    platypush/backend/zwave.rst

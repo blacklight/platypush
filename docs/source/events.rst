@@ -55,3 +55,4 @@ Events
     platypush/events/wiimote.rst
     platypush/events/zeroborg.rst
     platypush/events/zigbee.mqtt.rst
+    platypush/events/zwave.rst
