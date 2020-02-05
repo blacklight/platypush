@@ -224,3 +224,8 @@ croniter
 # Support for nmap integration
 # python-nmap
 
+# Support for zigbee2mqtt
+# paho-mqtt
+
+# Support for Z-Wave
+# python-openzwave

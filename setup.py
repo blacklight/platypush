@@ -279,5 +279,9 @@ setup(
         'sys': ['py-cpuinfo', 'psutil'],
         # Support for nmap integration
         'nmap': ['python-nmap'],
+        # Support for zigbee2mqtt
+        'zigbee': ['paho-mqtt'],
+        # Support for Z-Wave
+        'zwave': ['python-openzwave'],
     },
 )

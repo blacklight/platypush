@@ -220,22 +220,33 @@ class Backend(Thread, EventGenerator):
         redis.send_message(msg, queue_name=queue_name)
 
     def run(self):
-        """ Starts the backend thread. To be implemented in the derived classes """
+        """ Starts the backend thread. To be implemented in the derived classes if the loop method isn't defined. """
         self.thread_id = threading.get_ident()
         set_thread_name(self._thread_name)
         if not callable(self.loop):
             return
 
-        with self:
-            while not self.should_stop():
-                try:
-                    self.loop()
-                except Exception as e:
-                    self.logger.error(str(e))
-                    self.logger.exception(e)
-                finally:
-                    if self.poll_seconds:
-                        time.sleep(self.poll_seconds)
+        while not self.should_stop():
+            try:
+                with self:
+                    has_error = False
+
+                    while not self.should_stop() and not has_error:
+                        try:
+                            self.loop()
+                        except Exception as e:
+                            has_error = True
+                            self.logger.error(str(e))
+                            self.logger.exception(e)
+                        finally:
+                            if self.poll_seconds:
+                                time.sleep(self.poll_seconds)
+                            elif has_error:
+                                time.sleep(5)
+            except Exception as e:
+                self.logger.error('{} initialization error: {}'.format(self.__class__.__name__, str(e)))
+                self.logger.exception(e)
+                time.sleep(self.poll_seconds or 5)
 
     def __enter__(self):
         """ Invoked when the backend is initialized, if the main logic is within a ``loop()`` function """
