@@ -1,4 +1,4 @@
-var websocket = {
+const websocket = {
     ws: undefined,
     instance: undefined,
     pending: false,
@@ -10,7 +10,7 @@ var websocket = {
 
 function initEvents() {
     try {
-        url_prefix = window.config.has_ssl ? 'wss://' : 'ws://';
+        const url_prefix = window.config.has_ssl ? 'wss://' : 'ws://';
         websocket.ws = new WebSocket(url_prefix  + window.location.hostname + ':' + window.config.websocket_port);
     } catch (err) {
         console.error("Websocket initialization error");
@@ -20,7 +20,7 @@ function initEvents() {
 
     websocket.pending = true;
 
-    var onWebsocketTimeout = function(self) {
+    const onWebsocketTimeout = function(self) {
         return function() {
             console.log('Websocket reconnection timed out, retrying');
             websocket.pending = false;
@@ -33,8 +33,7 @@ function initEvents() {
         onWebsocketTimeout(websocket.ws), websocket.reconnectMsecs);
 
     websocket.ws.onmessage = function(event) {
-        console.debug(event);
-        handlers = [];
+        const handlers = [];
         event = event.data;
 
         if (typeof event === 'string') {
@@ -46,6 +45,7 @@ function initEvents() {
             }
         }
 
+        console.debug(event);
         if (event.type !== 'event') {
             // Discard non-event messages
             return;
@@ -59,7 +59,7 @@ function initEvents() {
             handlers.push(...websocket.handlers[event.args.type]);
         }
 
-        for (var handler of handlers) {
+        for (const handler of handlers) {
             handler(event.args);
         }
     };
@@ -100,12 +100,12 @@ function initEvents() {
             initEvents();
         }
     };
-};
+}
 
 function registerEventHandler(handler, ...events) {
     if (events.length) {
         // Event type filter specified
-        for (var event of events) {
+        for (const event of events) {
             if (!(event in websocket.handlers)) {
                 websocket.handlers[event] = [];
             }
