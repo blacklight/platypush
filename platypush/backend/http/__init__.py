@@ -225,12 +225,18 @@ class HttpBackend(Backend):
             raise TimeoutError('Websocket on address {} not ready to receive data'.format(addr))
 
     def _release_websocket_lock(self, ws):
-        addr = ws.local_address
-        if addr in self._websocket_locks:
-            try:
+        try:
+            acquire_ok = self._websocket_lock.acquire(timeout=self._websocket_lock_timeout)
+            if not acquire_ok:
+                raise TimeoutError('Websocket lock acquire timeout')
+
+            addr = ws.remote_address
+            if addr in self._websocket_locks:
                 self._websocket_locks[addr].release()
-            except RuntimeError:
-                pass
+        except Exception as e:
+            self.logger.warning('Unhandled exception while releasing websocket lock: {}'.format(str(e)))
+        finally:
+            self._websocket_lock.release()
 
     def notify_web_clients(self, event):
         """ Notify all the connected web clients (over websocket) of a new event """
@@ -246,8 +252,8 @@ class HttpBackend(Backend):
                 self._release_websocket_lock(ws)
 
         loop = get_or_create_event_loop()
-
         wss = self.active_websockets.copy()
+
         for _ws in wss:
             try:
                 loop.run_until_complete(send_event(_ws))
