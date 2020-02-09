@@ -11,6 +11,10 @@
     text-align: right !important;
 }
 
+.clickable {
+    cursor: pointer;
+}
+
 a:focus {
     outline: none;
 }

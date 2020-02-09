@@ -1,0 +1,19 @@
+<modal id="zwave-add-to-group" title="Add nodes to group" v-model="modal.group.visible" v-if="modal.group.visible">
+    <div class="group-add">
+        <div class="params">
+            <div class="section">
+                <div class="header">
+                    <div class="title">Select nodes to add</div>
+                </div>
+
+                <div class="body">
+                    <div class="row clickable" @click="addToGroup(node.node_id, selected.groupId)" :key="node.node_id"
+                         v-for="node in Object.values(nodes).filter((node) => groups[selected.groupId].associations.indexOf(node.node_id) < 0)">
+                        <div class="param-name" v-text="node.name"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</modal>
+

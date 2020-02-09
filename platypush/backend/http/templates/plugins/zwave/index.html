@@ -1,0 +1,99 @@
+{% include 'plugins/zwave/node.html' %}
+{% include 'plugins/zwave/group.html' %}
+
+<script type="text/x-template" id="tmpl-zwave">
+    <div class="zwave-container">
+        {% include 'plugins/zwave/modals/network.html' %}
+        {% include 'plugins/zwave/modals/group.html' %}
+
+        <div class="view-options">
+            <div class="view-selector col-s-9 col-m-10 col-l-11">
+                <select @change="onViewChange">
+                    <option v-for="_, view in views"
+                            v-text="view[0].toUpperCase() + view.slice(1)"
+                            :key="view"
+                            :selected="view == selected.view"
+                            :value="view">
+                    </option>
+                </select>
+            </div>
+
+            <div class="buttons">
+                <button class="btn btn-default" title="Add node" v-if="selected.view === 'nodes'"
+                        @click="addNode" :disabled="commandRunning">
+                    <i class="fa fa-plus"></i>
+                </button>
+
+                <button class="btn btn-default" title="Remove node" v-if="selected.view === 'nodes'"
+                        @click="removeNode" :disabled="commandRunning">
+                    <i class="fa fa-minus"></i>
+                </button>
+
+                <button class="btn btn-default" title="Add scene" v-if="selected.view === 'scenes'"
+                        :disabled="commandRunning">
+                    <i class="fa fa-plus"></i>
+                </button>
+
+                <button class="btn btn-default" title="Network info" @click="onNetworkInfoModalOpen">
+                    <i class="fa fa-info"></i>
+                </button>
+
+                <button class="btn btn-default" title="Network commands" @click="openNetworkCommandsDropdown">
+                    <i class="fa fa-cog"></i>
+                </button>
+
+                <button class="btn btn-default" title="Refresh network" @click="refresh">
+                    <i class="fa fa-sync-alt"></i>
+                </button>
+            </div>
+
+            <dropdown ref="networkCommandsDropdown" :items="networkDropdownItems"></dropdown>
+        </div>
+
+        <div class="view nodes" v-if="selected.view == 'nodes'">
+            <div class="no-items" v-if="Object.keys(nodes).length == 0">
+                <div class="loading" v-if="loading.nodes">Loading nodes...</div>
+                <div class="empty" v-else>No nodes available on the network</div>
+            </div>
+
+            <zwave-node
+                    v-for="node, nodeId in nodes"
+                    :key="nodeId"
+                    :node="node"
+                    :bus="bus"
+                    :selected="selected.nodeId == nodeId">
+            </zwave-node>
+        </div>
+
+        <div class="view groups" v-if="selected.view == 'groups'">
+            <div class="no-items" v-if="Object.keys(groups).length == 0">
+                <div class="loading" v-if="loading.groups">Loading groups...</div>
+                <div class="empty" v-else>No groups available on the network</div>
+            </div>
+
+            <zwave-group
+                    v-for="group, groupId in groups"
+                    :key="groupId"
+                    :group="group"
+                    :nodes="groupId in groups ? groups[groupId].associations.map((node) => nodes[node]).reduce((nodes, node) => {nodes[node.node_id] = node; return nodes}, {}) : {}"
+                    :selected="selected.groupId == groupId"
+                    :bus="bus">
+            </zwave-group>
+        </div>
+
+        <div class="view scenes" v-if="selected.view == 'scenes'">
+            <div class="no-items" v-if="Object.keys(scenes).length == 0">
+                <div class="loading" v-if="loading.scenes">Loading scenes...</div>
+                <div class="empty" v-else>No scenes configured on the network</div>
+            </div>
+
+            <!--            <zwave-scenes-->
+            <!--                    v-for="scene, sceneId in scenes"-->
+            <!--                    :key="sceneId"-->
+            <!--                    :name="scene.label"-->
+            <!--                    :bus="bus">-->
+            <!--            </zwave-scene>-->
+        </div>
+    </div>
+</script>
+

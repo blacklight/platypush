@@ -1,0 +1,35 @@
+<modal id="zwave-network-info" title="Network info" v-model="modal.networkInfo.visible" v-if="modal.networkInfo.visible">
+    <div class="network-info">
+        <div class="no-items" v-if="loading.status">
+            Loading status...
+        </div>
+
+        <div class="params" v-else>
+            <div class="row">
+                <div class="param-name">State</div>
+                <div class="param-value" v-text="status.state"></div>
+            </div>
+
+            <div class="row">
+                <div class="param-name">Device</div>
+                <div class="param-value" v-text="status.device"></div>
+            </div>
+
+            <div class="section">
+                <div class="header">
+                    <div class="title">Statistics</div>
+                </div>
+
+                <div class="body">
+                    <div class="row"
+                         v-for="value, name in status.stats"
+                         :key="name">
+                        <div class="param-name" v-text="name"></div>
+                        <div class="param-value" v-text="value"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</modal>
+

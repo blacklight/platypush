@@ -53,6 +53,22 @@ class ZwavePlugin(Plugin):
         backend.stop_network()
 
     @action
+    def status(self) -> Dict[str, Any]:
+        """
+        Get the status of the controller.
+        :return: dict
+        """
+        backend = self._get_backend()
+        network = self._get_network()
+        controller = self._get_controller()
+
+        return {
+            'device': backend.device,
+            'state': network.state_str,
+            'stats': controller.stats,
+        }
+
+    @action
     def add_node(self, do_security=False):
         """
         Start the inclusion process to add a node to the network.
@@ -189,7 +205,7 @@ class ZwavePlugin(Plugin):
             'node_id': node.node_id,
             'home_id': node.home_id,
             'capabilities': list(node.capabilities),
-            'command_classes': list(node.command_classes),
+            'command_classes': [node.get_command_class_as_string(cc) for cc in node.command_classes],
             'device_type': node.device_type,
             'groups': {
                 group_id: cls.group_to_dict(group)
@@ -367,13 +383,13 @@ class ZwavePlugin(Plugin):
         self._get_controller().kill_command()
 
     @action
-    def set_controller_name(self, node_name: str):
+    def set_controller_name(self, name: str):
         """
         Set the name of the controller on the network.
 
-        :param node_name: New controller name.
+        :param name: New controller name.
         """
-        self._get_controller().name = node_name
+        self._get_controller().name = name
         self.write_config()
 
     @action
@@ -613,9 +629,9 @@ class ZwavePlugin(Plugin):
         return self._get_values('power_levels', node_id=node_id, node_name=node_name)
 
     @action
-    def get_rgb_bulbs(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[int, Any]:
+    def get_bulbs(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[int, Any]:
         """
-        Get the RGB bulbs/LEDs on the network or associated to a node.
+        Get the bulbs/LEDs on the network or associated to a node.
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by name.

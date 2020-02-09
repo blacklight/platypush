@@ -132,7 +132,7 @@ Vue.component('light-hue', {
             );
 
             this.selectedScene = event.id;
-            groups = {}
+            const groups = {};
 
             for (const lightId of Object.values(this.scenes[this.selectedScene].lights)) {
                 this.lights[lightId].state.on = true;
@@ -148,7 +148,7 @@ Vue.component('light-hue', {
 
                     groups[groupId].lights.push(lightId);
 
-                    if (groups[groupId].lights.length == Object.values(group.lights).length) {
+                    if (groups[groupId].lights.length === Object.values(group.lights).length) {
                         groups[groupId].all_on = true;
                     }
                 }
@@ -164,8 +164,8 @@ Vue.component('light-hue', {
         },
 
         collapsedToggled: function(event) {
-            if (event.type == this.selectedProperties.type
-                    && event.id == this.selectedProperties.id) {
+            if (event.type === this.selectedProperties.type
+                    && event.id === this.selectedProperties.id) {
                 this.selectedProperties = {
                     type: undefined,
                     id: undefined,
