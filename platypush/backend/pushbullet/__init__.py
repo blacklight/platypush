@@ -1,5 +1,6 @@
 import json
 import time
+from typing import Optional
 
 from platypush.backend import Backend
 from platypush.message.event.pushbullet import PushbulletEvent
@@ -24,33 +25,29 @@ class PushbulletBackend(Backend):
         * **pushbullet.py** (``pip install git+https://github.com/rbrcsk/pushbullet.py``)
     """
 
-    def __init__(self, token, device='Platypush', proxy_host=None,
-                 proxy_port=None, **kwargs):
+    def __init__(self, token: str, device: str = 'Platypush', proxy_host: Optional[str] = None,
+                 proxy_port: Optional[int] = None, **kwargs):
         """
-        :param token: Your Pushbullet API token, see
-            https://docs.pushbullet.com/#authentication
-        :type token: str
-
+        :param token: Your Pushbullet API token, see https://docs.pushbullet.com/#authentication
         :param device: Name of the virtual device for Platypush (default: Platypush)
-        :type device: str
-
         :param proxy_host: HTTP proxy host (default: None)
-        :type proxy_host: str
-
         :param proxy_port: HTTP proxy port (default: None)
-        :type proxy_port: int
         """
-
-        # noinspection PyPackageRequirements
-        from pushbullet import Pushbullet
         super().__init__(**kwargs)
 
         self.token = token
         self.device_name = device
         self.proxy_host = proxy_host
         self.proxy_port = proxy_port
-        self.pb = Pushbullet(token)
+        self.device = None
+        self.pb_device_id = None
+        self.pb = None
         self.listener = None
+
+    def _initialize(self):
+        # noinspection PyPackageRequirements
+        from pushbullet import Pushbullet
+        self.pb = Pushbullet(self.token)
 
         # noinspection PyBroadException
         try:
@@ -135,6 +132,16 @@ class PushbulletBackend(Backend):
         # noinspection PyPackageRequirements
         from pushbullet import Listener
         super().run()
+        initialized = False
+
+        while not initialized:
+            try:
+                self._initialize()
+                initialized = True
+            except Exception as e:
+                self.logger.exception(e)
+                self.logger.error('Pushbullet initialization error: {}'.format(str(e)))
+                time.sleep(30)
 
         self.logger.info('Initialized Pushbullet backend - device_id: {}'
                          .format(self.device_name))
