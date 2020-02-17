@@ -4,7 +4,7 @@ import subprocess
 import threading
 import time
 
-from platypush.context import get_bus, get_plugin
+from platypush.context import get_bus
 from platypush.message.response import Response
 from platypush.plugins.media import PlayerState, MediaPlugin
 from platypush.message.event.media import MediaPlayEvent, MediaPlayRequestEvent, \
@@ -148,6 +148,10 @@ class MediaMplayerPlugin(MediaPlugin):
             cmd_name, ' ' if args else '',
             ' '.join(repr(a) for a in args)).encode()
 
+        if not self._player:
+            self.logger.warning('Cannot send command {}: player unavailable'.format(cmd))
+            return
+
         self._player.stdin.write(cmd)
         self._player.stdin.flush()
 
@@ -175,6 +179,9 @@ class MediaMplayerPlugin(MediaPlugin):
         while time.time() - last_read_time < self._mplayer_timeout:
             result = poll.poll(0)
             if result:
+                if not self._player:
+                    break
+
                 line = self._player.stdout.readline().decode()
                 last_read_time = time.time()
 

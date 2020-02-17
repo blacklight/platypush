@@ -8,8 +8,6 @@ import subprocess
 import tempfile
 import threading
 
-from platypush.plugins.media.search import YoutubeMediaSearcher
-
 from platypush.config import Config
 from platypush.context import get_plugin, get_backend
 from platypush.plugins import Plugin, action
@@ -452,6 +450,7 @@ class MediaPlugin(Plugin):
 
     @staticmethod
     def _youtube_search_html_parse(query):
+        from .search import YoutubeMediaSearcher
         # noinspection PyProtectedMember
         return YoutubeMediaSearcher()._youtube_search_html_parse(query)
 
