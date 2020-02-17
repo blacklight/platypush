@@ -8,8 +8,7 @@ import subprocess
 import tempfile
 import threading
 
-import urllib.request
-import urllib.parse
+from platypush.plugins.media.search import YoutubeMediaSearcher
 
 from platypush.config import Config
 from platypush.context import get_plugin, get_backend
@@ -275,6 +274,10 @@ class MediaPlugin(Plugin):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    def status(self):
+        raise self._NOT_IMPLEMENTED_ERR
+
+    @action
     def search(self, query, types=None, queue_results=False, autoplay=False,
                search_timeout=_default_search_timeout):
         """
@@ -447,29 +450,10 @@ class MediaPlugin(Plugin):
             if item.get('id', {}).get('kind') == 'youtube#video'
         ]
 
-    def _youtube_search_html_parse(self, query):
-        query = urllib.parse.quote(query)
-        url = "https://www.youtube.com/results?search_query=" + query
-        response = urllib.request.urlopen(url)
-        html = response.read().decode('utf-8')
-        results = []
-
-        while html:
-            m = re.search('(<a href="(/watch\?v=.+?)".+?yt-uix-tile-link.+?title="(.+?)".+?>)', html)
-            if m:
-                results.append({
-                    'url': 'https://www.youtube.com' + m.group(2),
-                    'title': m.group(3)
-                })
-
-                html = html.split(m.group(1))[1]
-            else:
-                html = ''
-
-        self.logger.info('{} YouTube video results for the search query "{}"'
-                         .format(len(results), query))
-
-        return results
+    @staticmethod
+    def _youtube_search_html_parse(query):
+        # noinspection PyProtectedMember
+        return YoutubeMediaSearcher()._youtube_search_html_parse(query)
 
     def stream_youtube_to_fifo(self, url):
         if self._youtube_proc:

@@ -3,7 +3,9 @@ import urllib.parse
 import urllib.request
 
 from platypush.context import get_plugin
+# noinspection PyProtectedMember
 from platypush.plugins.media.search import MediaSearcher
+
 
 class YoutubeMediaSearcher(MediaSearcher):
     def search(self, query, **kwargs):
