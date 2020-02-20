@@ -10,31 +10,30 @@ Vue.component('zwave', {
             nodes: {},
             groups: {},
             scenes: {},
-            values: {},
-            switches: new Set(),
-            dimmers: new Set(),
-            sensors: new Set(),
-            batteryLevels: new Set(),
-            powerLevels: new Set(),
-            bulbs: new Set(),
-            doorlocks: new Set(),
-            usercodes: new Set(),
-            thermostats: new Set(),
-            protections: new Set(),
             commandRunning: false,
+            values: {
+                switches: {},
+                dimmers: {},
+                sensors: {},
+                battery_levels: {},
+                power_levels: {},
+                bulbs: {},
+                doorlocks: {},
+                usercodes: {},
+                thermostats: {},
+                protections: {},
+            },
             selected: {
                 view: 'nodes',
                 nodeId: undefined,
                 groupId: undefined,
                 sceneId: undefined,
-                valueId: undefined,
             },
             loading: {
                 status: false,
                 nodes: false,
                 groups: false,
                 scenes: false,
-                values: false,
             },
             modal: {
                 networkInfo: {
@@ -198,28 +197,11 @@ Vue.component('zwave', {
     methods: {
         refreshNodes: async function () {
             this.loading.nodes = true;
-            this.loading.values = true;
-
             this.nodes = await request('zwave.get_nodes');
-            this.loading.nodes = false;
 
-            this.values = Object.values(this.nodes).reduce((values, node) => {
-                values = {
-                    ...Object.values(node.values).reduce((values, value) => {
-                        values[value.value_id] = {
-                            node_id: node.node_id,
-                            ...value,
-                        };
-
-                        return values;
-                    }, {}),
-                    ...values
-                };
-
-                return values;
-            }, {});
-
-            this.loading.values = false;
+            if (Object.keys(this.nodes).length) {
+                Vue.set(this.views, 'values', true);
+            }
         },
 
         refreshGroups: async function () {
@@ -250,93 +232,16 @@ Vue.component('zwave', {
             this.loading.scenes = false;
         },
 
-        refreshSwitches: async function () {
-            this.switches = new Set(Object.values(await request('zwave.get_switches'))
-                .filter((sw) => sw.id_on_network).map((sw) => sw.value_id));
+        refreshValues: async function(type) {
+            Vue.set(this.values, type, Object.values(await request('zwave.get_' + type))
+                .filter((item) => item.id_on_network)
+                .reduce((values, value) => {
+                    values[value.id_on_network] = true;
+                    return values;
+                }, {}));
 
-            if (this.switches.size) {
-                Vue.set(this.views, 'switches', true);
-            }
-        },
-
-        refreshDimmers: async function () {
-            this.dimmers = new Set(Object.values(await request('zwave.get_dimmers'))
-                .filter((dimmer) => dimmer.id_on_network).map((dimmer) => dimmer.value_id));
-
-            if (this.dimmers.size) {
-                Vue.set(this.views, 'dimmers', true);
-            }
-        },
-
-        refreshSensors: async function () {
-            this.sensors = new Set(Object.values(await request('zwave.get_sensors'))
-                .filter((sensor) => sensor.id_on_network).map((sensor) => sensor.value_id));
-
-            if (this.sensors.size) {
-                Vue.set(this.views, 'sensors', true);
-            }
-        },
-
-        refreshBatteryLevels: async function () {
-            this.batteryLevels = new Set(Object.values(await request('zwave.get_battery_levels'))
-                .filter((battery) => battery.id_on_network).map((battery) => battery.value_id));
-
-            if (this.batteryLevels.size) {
-                Vue.set(this.views, 'batteryLevels', true);
-            }
-        },
-
-        refreshPowerLevels: async function () {
-            this.powerLevels = new Set(Object.values(await request('zwave.get_power_levels'))
-                .filter((power) => power.id_on_network).map((power) => power.value_id));
-
-            if (this.powerLevels.size) {
-                Vue.set(this.views, 'powerLevels', true);
-            }
-        },
-
-        refreshBulbs: async function () {
-            this.bulbs = new Set(Object.values(await request('zwave.get_bulbs'))
-                .filter((bulb) => bulb.id_on_network).map((bulb) => bulb.value_id));
-
-            if (this.bulbs.size) {
-                Vue.set(this.views, 'bulbs', true);
-            }
-        },
-
-        refreshDoorlocks: async function () {
-            this.doorlocks = new Set(Object.values(await request('zwave.get_doorlocks'))
-                .filter((lock) => lock.id_on_network).map((lock) => lock.value_id));
-
-            if (this.doorlocks.size) {
-                Vue.set(this.views, 'doorlocks', true);
-            }
-        },
-
-        refreshUsercodes: async function () {
-            this.doorlocks = new Set(Object.values(await request('zwave.get_usercodes'))
-                .filter((code) => code.id_on_network).map((code) => code.value_id));
-
-            if (this.usercodes.size) {
-                Vue.set(this.views, 'usercodes', true);
-            }
-        },
-
-        refreshThermostats: async function () {
-            this.thermostats = new Set(Object.values(await request('zwave.get_thermostats'))
-                .filter((th) => th.id_on_network).map((th) => th.value_id));
-
-            if (this.thermostats.size) {
-                Vue.set(this.views, 'thermostats', true);
-            }
-        },
-
-        refreshProtections: async function () {
-            this.protections = new Set(Object.values(await request('zwave.get_protections'))
-                .filter((p) => p.id_on_network).map((p) => p.value_id));
-
-            if (this.protections.size) {
-                Vue.set(this.views, 'protections', true);
+            if (Object.keys(this.values[type]).length) {
+                Vue.set(this.views, type, true);
             }
         },
 
@@ -355,16 +260,17 @@ Vue.component('zwave', {
             this.refreshNodes();
             this.refreshGroups();
             this.refreshScenes();
-            this.refreshSwitches();
-            this.refreshDimmers();
-            this.refreshSensors();
-            this.refreshBulbs();
-            this.refreshDoorlocks();
-            this.refreshUsercodes();
-            this.refreshThermostats();
-            this.refreshProtections();
-            this.refreshBatteryLevels();
-            this.refreshPowerLevels();
+            this.refreshValues('switches');
+            this.refreshValues('dimmers');
+            this.refreshValues('sensors');
+            this.refreshValues('bulbs');
+            this.refreshValues('doorlocks');
+            this.refreshValues('usercodes');
+            this.refreshValues('thermostats');
+            this.refreshValues('protections');
+            this.refreshValues('battery_levels');
+            this.refreshValues('power_levels');
+            this.refreshValues('node_config');
             this.refreshStatus();
         },
 
@@ -428,6 +334,8 @@ Vue.component('zwave', {
 
     created: function() {
         const self = this;
+        this.bus.$on('refresh', this.refresh);
+        this.bus.$on('refreshNodes', this.refreshNodes);
         this.bus.$on('nodeClicked', this.onNodeClicked);
         this.bus.$on('groupClicked', this.onGroupClicked);
         this.bus.$on('openAddToGroupModal', () => {self.modal.group.visible = true});
@@ -447,7 +355,11 @@ Vue.component('zwave', {
             'platypush.message.event.zwave.ZwaveNodeEvent',
             'platypush.message.event.zwave.ZwaveNodeAddedEvent',
             'platypush.message.event.zwave.ZwaveNodeRenamedEvent',
-            'platypush.message.event.zwave.ZwaveNodeReadyEvent');
+            'platypush.message.event.zwave.ZwaveNodeReadyEvent',
+            'platypush.message.event.zwave.ZwaveValueAddedEvent',
+            'platypush.message.event.zwave.ZwaveValueChangedEvent',
+            'platypush.message.event.zwave.ZwaveValueRemovedEvent',
+            'platypush.message.event.zwave.ZwaveValueRefreshedEvent');
     },
 
     mounted: function() {

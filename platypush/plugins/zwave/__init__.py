@@ -150,13 +150,14 @@ class ZwavePlugin(Plugin):
         controller.request_node_neighbor_update(node.node_id)
 
     @staticmethod
-    def value_to_dict(value) -> Dict[str, Any]:
+    def value_to_dict(value: Optional[ZWaveValue]) -> Dict[str, Any]:
         if not value:
             return {}
 
         return {
-            'command_class': value.command_class,
+            'command_class': value.node.get_command_class_as_string(value.command_class),
             'data': value.data,
+            'data_as_string': value.data_as_string,
             'data_items': list(value.data_items) if isinstance(value.data_items, set) else value.data_items,
             'genre': value.genre,
             'help': value.help,
@@ -185,7 +186,7 @@ class ZwavePlugin(Plugin):
         }
 
     @staticmethod
-    def group_to_dict(group) -> Dict[str, Any]:
+    def group_to_dict(group: Optional[ZWaveGroup]) -> Dict[str, Any]:
         if not group:
             return {}
 
@@ -197,7 +198,7 @@ class ZwavePlugin(Plugin):
         }
 
     @classmethod
-    def node_to_dict(cls, node) -> Dict[str, Any]:
+    def node_to_dict(cls, node: Optional[ZWaveNode]) -> Dict[str, Any]:
         if not node:
             return {}
 
@@ -240,7 +241,7 @@ class ZwavePlugin(Plugin):
             'use_cache': node.use_cache,
             'version': node.version,
             'values': {
-                value_id: cls.value_to_dict(value)
+                value.id_on_network: cls.value_to_dict(value)
                 for value_id, value in (node.values or {}).items()
             },
         }
@@ -445,16 +446,22 @@ class ZwavePlugin(Plugin):
                    node_id: Optional[int] = None, node_name: Optional[str] = None, value_label: Optional[str] = None) \
             -> ZWaveValue:
         assert (value_id is not None or id_on_network is not None) or \
-               (node_id is not None and node_name is not None and value_label is not None),\
+               ((node_id is not None or node_name is not None) and value_label is not None),\
             'Specify either value_id, id_on_network, or [node_id/node_name, value_label]'
 
         if value_id is not None:
             return self._get_network().get_value(value_id)
         if id_on_network is not None:
-            return self._get_network().get_value_from_id_on_network(id_on_network)
+            values = [value
+                      for node in self._get_network().nodes.values()
+                      for value in node.values.values()
+                      if value.id_on_network == id_on_network]
+
+            assert values, 'No such value ID: {}'.format(id_on_network)
+            return values[0]
 
         node = self._get_node(node_id=node_id, node_name=node_name)
-        values = [v for v in node.values if v.label == value_label]
+        values = [v for v in node.values.values() if v.label == value_label]
         assert values, 'No such value on node "{}": "{}"'.format(node.name, value_label)
         return values[0]
 
@@ -489,7 +496,30 @@ class ZwavePlugin(Plugin):
         """
         value = self._get_value(value_id=value_id, id_on_network=id_on_network,
                                 node_id=node_id, node_name=node_name, value_label=value_label)
-        value.data = data
+        new_val = value.check_data(data)
+        assert new_val is not None, 'Invalid value passed to the property'
+        node: ZWaveNode = self._get_network().nodes[value.node.node_id]
+        node.values[value.value_id].data = new_val
+        self.write_config()
+
+    @action
+    def set_value_label(self, new_label: str, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
+                        value_label: Optional[str] = None, node_id: Optional[int] = None,
+                        node_name: Optional[str] = None):
+        """
+        Change the label/name of a value.
+
+        :param new_label: New value label.
+        :param value_id: Select value by value_id.
+        :param id_on_network: Select value by id_on_network.
+        :param value_label: Select value by [node_id/node_name, value_label]
+        :param node_id: Select value by [node_id/node_name, value_label]
+        :param node_name: Select value by [node_id/node_name, value_label]
+        """
+        value = self._get_value(value_id=value_id, id_on_network=id_on_network,
+                                node_id=node_id, node_name=node_name, value_label=value_label)
+        value.label = new_label
+        self.write_config()
 
     @action
     def node_add_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
@@ -579,7 +609,7 @@ class ZwavePlugin(Plugin):
             else self._get_network().nodes.values()
 
         return {
-            value_id: {
+            value.id_on_network: {
                 'node_id': node.node_id,
                 'node_name': node.name,
                 **self.value_to_dict(value)

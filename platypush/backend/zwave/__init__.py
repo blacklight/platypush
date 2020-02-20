@@ -241,6 +241,8 @@ class ZwaveBackend(Backend):
             event = ZwaveValueRemovedEvent(device=self.device,
                                            node=ZwavePlugin.node_to_dict(event.args['node']),
                                            value=ZwavePlugin.value_to_dict(event.args['value']))
+        else:
+            self.logger.info('Received unhandled ZWave event: {}'.format(event))
 
         if isinstance(event, ZwaveEvent):
             self.bus.post(event)

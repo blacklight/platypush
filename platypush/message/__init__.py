@@ -17,6 +17,9 @@ class Message(object):
                     isinstance(obj, datetime.time):
                 return obj.isoformat()
 
+            if isinstance(obj, set):
+                return list(obj)
+
             return super().default(obj)
 
     def __init__(self, timestamp=None, *args, **kwargs):

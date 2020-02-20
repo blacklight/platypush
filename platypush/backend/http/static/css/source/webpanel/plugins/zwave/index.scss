@@ -17,6 +17,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    overflow: auto;
 
     .no-items {
         padding: 2em;
@@ -156,7 +157,69 @@
             display: inline-block;
             width: 58%;
             text-align: right;
+
+            .value-edit {
+                display: flex;
+                align-items: center;
+            }
+
+            .value-data {
+                display: inline-block;
+                font-weight: bold;
+            }
+
+            .slider-container {
+                display: flex;
+                align-items: center;
+            }
+
+            .unit {
+                font-size: .8em;
+                margin-left: 1em;
+                display: inline;
+            }
+
+            select {
+                width: 100%;
+                border-radius: 2em;
+            }
+
+            .numeric {
+                input.slider {
+                    text-align: left;
+                }
+
+                input[type=text] {
+                    text-align: right;
+                    width: 100%;
+                }
+
+                .row {
+                    background: none;
+                    &:hover {
+                        background: none;
+                    }
+                }
+
+                .value-min, .value-max {
+                    width: 50%;
+                    font-size: .85em;
+                    opacity: .75;
+                }
+
+                .value-min {
+                    text-align: left;
+                }
+
+                .value-max {
+                    text-align: right;
+                }
+            }
         }
+    }
+
+    .btn-value-name-edit {
+        padding: 0;
     }
 
     .modal {

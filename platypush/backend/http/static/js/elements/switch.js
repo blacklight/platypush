@@ -6,7 +6,8 @@ Vue.component('toggle-switch', {
         toggled: function(event) {
             this.$emit('toggled', {
                 id: this.id,
-                value: !this.value
+                value: !this.value,
+                event: event,
             });
         },
     },
