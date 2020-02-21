@@ -56,7 +56,8 @@ class MediaMpvPlugin(MediaPlugin):
             os.environ[k] = v
 
         self._player = mpv.MPV(**mpv_args)
-        self._player.event_callbacks += self._event_callback()
+        # noinspection PyProtectedMember
+        self._player._event_callbacks += [self._event_callback()]
 
     @staticmethod
     def _post_event(evt_type, **evt):
