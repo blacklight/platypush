@@ -173,6 +173,9 @@ class MediaKodiPlugin(MediaPlugin):
             resource = resource[7:]
 
         result = self._get_kodi().Player.Open(item={'file': resource})
+        if self.volume:
+            self.set_volume(volume=int(self.volume))
+
         return self._build_result(result)
 
     @action

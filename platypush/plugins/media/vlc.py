@@ -167,6 +167,8 @@ class MediaVlcPlugin(MediaPlugin):
             self._player.video_set_subtitle_file(subtitles)
 
         self._player.play()
+        if self.volume:
+            self.set_volume(volume=self.volume)
 
         if fullscreen or self._default_fullscreen:
             self.set_fullscreen(True)

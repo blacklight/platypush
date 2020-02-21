@@ -3,6 +3,8 @@ import functools
 import os
 import queue
 import re
+from typing import Optional, List, Dict, Union
+
 import requests
 import subprocess
 import tempfile
@@ -69,20 +71,23 @@ class MediaPlugin(Plugin):
     _supported_media_types = ['file', 'torrent', 'youtube']
     _default_search_timeout = 60  # 60 seconds
 
-    def __init__(self, media_dirs=None, download_dir=None, env=None,
+    def __init__(self,
+                 media_dirs: Optional[List[str]] = None,
+                 download_dir: Optional[str] = None,
+                 env: Optional[Dict[str, str]] = None,
+                 volume: Optional[Union[float, int]] = None,
                  *args, **kwargs):
         """
         :param media_dirs: Directories that will be scanned for media files when
             a search is performed (default: none)
-        :type media_dirs: list
 
         :param download_dir: Directory where external resources/torrents will be
             downloaded (default: ~/Downloads)
-        :type download_dir: str
 
         :param env: Environment variables key-values to pass to the
             player executable (e.g. DISPLAY, XDG_VTNR, PULSE_SINK etc.)
-        :type env: dict
+
+        :param volume: Default volume for the player (default: None, maximum volume).
         """
 
         super().__init__(**kwargs)
@@ -134,6 +139,7 @@ class MediaPlugin(Plugin):
             os.makedirs(self.download_dir, exist_ok=True)
 
         self.media_dirs.add(self.download_dir)
+        self.volume = volume
         self._videos_queue = []
         self._youtube_proc = None
 

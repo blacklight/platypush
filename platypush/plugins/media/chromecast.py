@@ -318,6 +318,10 @@ class MediaChromecastPlugin(MediaPlugin):
             mc.register_status_listener(self.SubtitlesAsyncHandler(mc, subtitle_id))
 
         mc.block_until_active()
+
+        if self.volume:
+            self.set_volume(volume=self.volume, chromecast=chromecast)
+
         return self.status(chromecast=chromecast)
 
     @classmethod

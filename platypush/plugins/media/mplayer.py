@@ -268,6 +268,10 @@ class MediaMplayerPlugin(MediaPlugin):
 
         self._exec('loadfile', resource, mplayer_args=mplayer_args)
         self._post_event(MediaPlayEvent, resource=resource)
+
+        if self.volume:
+            self.set_volume(volume=self.volume)
+
         return self.status()
 
     @action

@@ -140,6 +140,9 @@ class MediaMpvPlugin(MediaPlugin):
             resource = resource[7:]
 
         self._player.play(resource)
+        if self.volume:
+            self.set_volume(volume=self.volume)
+
         return self.status()
 
     @action

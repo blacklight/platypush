@@ -82,6 +82,9 @@ class MediaOmxplayerPlugin(MediaPlugin):
             self.logger.exception(e)
 
         self._player.pause()
+        if self.volume:
+            self.set_volume(volume=self.volume)
+
         self._player.play()
         return self.status()
 
