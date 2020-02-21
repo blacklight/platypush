@@ -8,8 +8,7 @@ class TravisciPlugin(Plugin):
     """
     `Travis-Ci <https://travis-ci.org/>`_ continuous integration plugin.
 
-    Setup
-    #####
+    Setup:
 
         - Get your API token from your `Travis-Ci account settings page <https://travis-ci.org/account/preferences>`_.
 
