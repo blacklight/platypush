@@ -31,7 +31,7 @@
                 </button>
 
                 <button class="btn btn-default" title="Add scene" v-if="selected.view === 'scenes'"
-                        :disabled="commandRunning">
+                        :disabled="commandRunning" @click="addScene">
                     <i class="fa fa-plus"></i>
                 </button>
 
@@ -88,12 +88,56 @@
                 <div class="empty" v-else>No scenes configured on the network</div>
             </div>
 
-            <!--            <zwave-scenes-->
-            <!--                    v-for="scene, sceneId in scenes"-->
-            <!--                    :key="sceneId"-->
-            <!--                    :name="scene.label"-->
-            <!--                    :bus="bus">-->
-            <!--            </zwave-scene>-->
+            <div class="item scene"
+                 :class="{selected: selected.sceneId === sceneId}"
+                 v-for="scene, sceneId in scenes"
+                 :key="sceneId">
+                <div class="row name vertical-center" :class="{selected: selected.sceneId === sceneId}"
+                     v-text="scene.label" @click="onSceneClicked({sceneId: sceneId})"></div>
+
+                <div class="params" v-if="selected.sceneId === sceneId">
+                    <div class="row">
+                        <div class="param-name">Activate</div>
+                        <div class="param-value">
+                            <toggle-switch :value="false" @toggled="activateScene(sceneId, true)"></toggle-switch>
+                        </div>
+                    </div>
+
+                    <div class="section actions">
+                        <div class="header">
+                            <div class="title">Actions</div>
+                        </div>
+
+                        <div class="body">
+                            <div class="row" @click="removeScene(sceneId)">
+                                <div class="param-name">Remove Scene</div>
+                                <div class="param-value">
+                                    <i class="fa fa-trash"></i>
+                                </div>
+                            </div>
+
+                            <div class="row" @click="renameScene(sceneId)">
+                                <div class="param-name">Rename Scene</div>
+                                <div class="param-value">
+                                    <i class="fa fa-edit"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section values" v-if="scene.values && scene.values.length">
+                        <zwave-value
+                                v-for="value, valueId in valuesMap"
+                                v-if="value.id_on_network && value.id_on_network in scenes.values[sceneId]"
+                                :key="valueId"
+                                :value="value"
+                                :node="node"
+                                :sceneId="sceneId"
+                                :bus="bus">
+                        </zwave-value>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="view values" v-else>
@@ -102,15 +146,26 @@
                 <div class="empty" v-else>No nodes found on the network</div>
             </div>
 
-            <zwave-value
-                    v-for="node, nodeId in nodes"
-                    v-if="selected.view === 'values' || Object.values(node.values).filter((value) => value.id_on_network in values[selected.view]).length > 0"
-                    :key="nodeId"
-                    :values="Object.values(node.values).filter((value) => selected.view === 'values' || value.id_on_network in values[selected.view]).map((value) => value.id_on_network)"
-                    :node="node"
-                    :selected="selected.nodeId == nodeId"
-                    :bus="bus">
-            </zwave-value>
+            <div class="item node"
+                 :class="{selected: selected.nodeId === nodeId}"
+                 v-if="selected.view === 'values' || Object.values(node.values).filter((value) => value.id_on_network in values[selected.view]).length > 0"
+                 v-for="node, nodeId in nodes"
+                 :key="nodeId">
+                <div class="row name vertical-center" :class="{selected: selected.nodeId === nodeId}" v-text="node.name" @click="onNodeClicked({nodeId: nodeId})"></div>
+
+                <div class="params" v-if="selected.nodeId === nodeId">
+                    <zwave-value
+                            v-for="value, valueId in node.values"
+                            v-if="value.id_on_network && (selected.view === 'values' || value.id_on_network in values[selected.view])"
+                            :key="valueId"
+                            :value="value"
+                            :node="node"
+                            :bus="bus">
+                    </zwave-value>
+                </div>
+            </div>
+
+            <dropdown ref="addToSceneDropdown" :items="addToSceneDropdownItems"></dropdown>
         </div>
     </div>
 </script>

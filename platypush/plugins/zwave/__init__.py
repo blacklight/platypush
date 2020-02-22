@@ -228,6 +228,7 @@ class ZwavePlugin(Plugin):
             'manufacturer_id': node.manufacturer_id,
             'manufacturer_name': node.manufacturer_name,
             'max_baud_rate': node.max_baud_rate,
+            'neighbours': [node_id for node_id in node.neighbors],
             'name': node.name,
             'outdated': node.outdated,
             'product_id': node.product_id,
@@ -743,7 +744,11 @@ class ZwavePlugin(Plugin):
         """
         Get the scenes configured on the network.
         """
-        return self._get_network().scenes_to_dict()
+        network = self._get_network()
+        if not network.get_scenes():
+            return {}
+
+        return network.scenes_to_dict()
 
     @action
     def create_scene(self, label: str):
@@ -753,6 +758,7 @@ class ZwavePlugin(Plugin):
         :param label: Scene label.
         """
         self._get_network().create_scene(label)
+        self.write_config()
 
     @action
     def remove_scene(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None):
@@ -764,6 +770,7 @@ class ZwavePlugin(Plugin):
         """
         scene = self._get_scene(scene_id=scene_id, scene_label=scene_label)
         self._get_network().remove_scene(scene.scene_id)
+        self.write_config()
 
     @action
     def activate_scene(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None):
@@ -790,14 +797,19 @@ class ZwavePlugin(Plugin):
         self.write_config()
 
     @action
-    def scene_add_value(self, data, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
+    def scene_add_value(self, data: Optional[Any] = None,
+                        value_id: Optional[int] = None, id_on_network: Optional[str] = None,
                         value_label: Optional[str] = None, scene_id: Optional[int] = None,
                         scene_label: Optional[str] = None, node_id: Optional[int] = None,
                         node_name: Optional[str] = None):
         """
         Add a value to a scene.
 
-        :param data: Data to set for the value.
+        WARNING: This method actually doesn't work, by own admission of the
+        :ref:`OpenZWave developer <https://github.com/OpenZWave/python-openzwave/blob/master/src-lib/libopenzwave/libopenzwave.pyx#L4730>`_
+
+
+        :param data: Data to set for the value (default: current value data).
         :param value_id: Select value by value_id.
         :param id_on_network: Select value by id_on_network.
         :param value_label: Select value by [node_id/node_name, value_label]
@@ -809,6 +821,10 @@ class ZwavePlugin(Plugin):
         value = self._get_value(value_id=value_id, id_on_network=id_on_network, node_id=node_id, node_name=node_name,
                                 value_label=value_label)
         scene = self._get_scene(scene_id=scene_id, scene_label=scene_label)
+        data = data if data is not None else value.data
+        data = value.check_data(data)
+        assert data is not None, 'Invalid value passed to the property'
+
         scene.add_value(value.value_id, data)
         self.write_config()
 

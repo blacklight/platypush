@@ -54,6 +54,13 @@
                 <div class="param-value" v-text="node.node_id"></div>
             </div>
 
+            <div class="row" v-if="node.neighbours.length">
+                <div class="param-name">Neighbours</div>
+                <div class="param-value">
+                    <div class="row" v-for="neighbour in node.neighbours" v-text="neighbour"></div>
+                </div>
+            </div>
+
             <div class="row">
                 <div class="param-name">Is Ready</div>
                 <div class="param-value" v-text="node.is_ready"></div>

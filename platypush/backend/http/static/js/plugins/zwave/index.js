@@ -28,6 +28,7 @@ Vue.component('zwave', {
                 nodeId: undefined,
                 groupId: undefined,
                 sceneId: undefined,
+                valueId: undefined,
             },
             loading: {
                 status: false,
@@ -47,6 +48,17 @@ Vue.component('zwave', {
     },
 
     computed: {
+        valuesMap: function() {
+            const values = {};
+            for (const node of Object.values(this.nodes)) {
+                for (const value of Object.values(node.values)) {
+                    values[value.id_on_network] = value;
+                }
+            }
+
+            return values;
+        },
+
         networkDropdownItems: function() {
             const self = this;
             return [
@@ -192,6 +204,32 @@ Vue.component('zwave', {
                 },
             ]
         },
+
+        addToSceneDropdownItems: function() {
+            const self = this;
+            return Object.values(this.scenes).filter((scene) => {
+                return !scene.values || !scene.values.length || !(this.selected.valueId in this.scene.values);
+            }).map((scene) => {
+                return {
+                    text: scene.label,
+                    disabled: this.commandRunning,
+                    click: async function () {
+                        if (!self.selected.valueId) {
+                            return;
+                        }
+
+                        self.commandRunning = true;
+                        await request('zwave.scene_add_value', {
+                            id_on_network: self.selected.valueId,
+                            scene_id: scene.scene_id,
+                        });
+
+                        self.commandRunning = false;
+                        self.refresh();
+                    },
+                };
+            });
+        },
     },
 
     methods: {
@@ -274,6 +312,29 @@ Vue.component('zwave', {
             this.refreshStatus();
         },
 
+        addScene: async function() {
+            const name = prompt('Scene name');
+            if (!name) {
+                return;
+            }
+
+            this.commandRunning = true;
+            await request('zwave.create_scene', {label: name});
+            this.commandRunning = false;
+            this.refreshScenes();
+        },
+
+        removeScene: async function(sceneId) {
+            if (!confirm('Are you sure that you want to delete this scene?')) {
+                return;
+            }
+
+            this.commandRunning = true;
+            await request('zwave.remove_scene', {scene_id: sceneId});
+            this.commandRunning = false;
+            this.refreshScenes();
+        },
+
         onNodeUpdate: function(event) {
             Vue.set(this.nodes, event.node.node_id, event.node);
         },
@@ -288,6 +349,10 @@ Vue.component('zwave', {
 
         onGroupClicked: function(event) {
             Vue.set(this.selected, 'groupId', event.groupId === this.selected.groupId ? undefined : event.groupId);
+        },
+
+        onSceneClicked: function(event) {
+            Vue.set(this.selected, 'sceneId', event.sceneId === this.selected.sceneId ? undefined : event.sceneId);
         },
 
         onNetworkInfoModalOpen: function() {
@@ -306,6 +371,11 @@ Vue.component('zwave', {
 
         openNetworkCommandsDropdown: function() {
             openDropdown(this.$refs.networkCommandsDropdown);
+        },
+
+        openAddToSceneDropdown: function(event) {
+            this.selected.valueId = event.valueId;
+            openDropdown(this.$refs.addToSceneDropdown);
         },
 
         addNode: async function() {
@@ -330,6 +400,38 @@ Vue.component('zwave', {
             await request('zwave.remove_node');
             this.commandRunning = false;
         },
+
+        removeNodeFromScene: async function(event) {
+            if (!confirm('Are you sure that you want to remove this value from the scene?')) {
+                return;
+            }
+
+            this.commandRunning = true;
+            await request('zwave.scene_remove_value', {
+                id_on_network: event.valueId,
+                scene_id: event.sceneId,
+            });
+
+            this.commandRunning = false;
+        },
+
+        renameScene: async function(sceneId) {
+            const scene = this.scenes[sceneId];
+            const name = prompt('New name', scene.label);
+
+            if (!name || !name.length || name === scene.label) {
+                return;
+            }
+
+            this.commandRunning = true;
+            await request('zwave.set_scene_label', {
+                new_label: name,
+                scene_id: sceneId,
+            });
+
+            this.commandRunning = false;
+            this.refreshScenes();
+        },
     },
 
     created: function() {
@@ -339,6 +441,8 @@ Vue.component('zwave', {
         this.bus.$on('nodeClicked', this.onNodeClicked);
         this.bus.$on('groupClicked', this.onGroupClicked);
         this.bus.$on('openAddToGroupModal', () => {self.modal.group.visible = true});
+        this.bus.$on('openAddToSceneDropdown', this.openAddToSceneDropdown);
+        this.bus.$on('removeFromScene', this.removeNodeFromScene);
 
         registerEventHandler(this.refreshGroups, 'platypush.message.event.zwave.ZwaveNodeGroupEvent');
         registerEventHandler(this.refreshScenes, 'platypush.message.event.zwave.ZwaveNodeSceneEvent');

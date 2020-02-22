@@ -1,35 +1,17 @@
 Vue.component('zwave-value', {
     template: '#tmpl-zwave-value',
-    props: ['node','bus','selected','values'],
+    props: ['value','node','bus','selected','sceneId'],
     data: function() {
-        return {
-        };
+        return {};
     },
 
     methods: {
-        onNodeClicked: function() {
-            this.bus.$emit('nodeClicked', {
-                nodeId: this.node.node_id,
-            });
-        },
-
         disableForm: function(form) {
             form.querySelector('input,button').readOnly = true;
         },
 
         enableForm: function(form) {
             form.querySelector('input,button').readOnly = false;
-        },
-
-        onEditMode: function(mode) {
-            Vue.set(this.editMode, mode, true);
-            const form = this.$refs[mode + 'Form'];
-            const input = form.querySelector('input[type=text]');
-
-            setTimeout(() => {
-                input.focus();
-                input.select();
-            }, 10);
         },
 
         editName: function(event) {
