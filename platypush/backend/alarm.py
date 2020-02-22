@@ -57,8 +57,12 @@ class Alarm:
         try:
             cron = croniter.croniter(self.when, now)
             return cron.get_next()
-        except croniter.CroniterBadCronError:
-            timestamp = datetime.datetime.fromisoformat(self.when).timestamp()
+        except (AttributeError, croniter.CroniterBadCronError):
+            try:
+                timestamp = datetime.datetime.fromisoformat(self.when).timestamp()
+            except (TypeError, ValueError):
+                timestamp = (datetime.datetime.now() + datetime.timedelta(seconds=int(self.when))).timestamp()
+
             return timestamp if timestamp >= now else None
 
     def is_enabled(self):
@@ -223,8 +227,13 @@ class AlarmBackend(Backend):
 
     def add_alarm(self, when: str, actions: list, name: Optional[str] = None, audio_file: Optional[str] = None,
                   enabled: bool = True) -> Alarm:
-        alarm = Alarm(when=when, actions=actions, name=name, enabled=enabled, audio_file=audio_file)
-        assert alarm.name not in self.alarms, 'Alarm {} already exists'.format(alarm.name)
+        alarm = Alarm(when=when, actions=actions, name=name, enabled=enabled, audio_file=audio_file,
+                      audio_plugin=self.audio_plugin)
+
+        if alarm.name in self.alarms:
+            self.logger.info('Overwriting existing alarm {}'.format(alarm.name))
+            self.alarms[alarm.name].stop()
+
         self.alarms[alarm.name] = alarm
         self.alarms[alarm.name].start()
         return self.alarms[alarm.name]

@@ -20,22 +20,23 @@ class AlarmPlugin(Plugin):
         return get_backend('alarm')
 
     @action
-    def add(self, when: str, actions: list, name: Optional[str] = None, audio_file: Optional[str] = None,
-            enabled: bool = True) -> str:
+    def add(self, when: str, actions: Optional[list] = None, name: Optional[str] = None,
+            audio_file: Optional[str] = None, enabled: bool = True) -> str:
         """
         Add a new alarm. NOTE: alarms that aren't configured in the :class:`platypush.backend.alarm.AlarmBackend`
         will only run in the current session. If you want an alarm to be permanently stored, you should configure
         it in the alarm backend configuration. You may want to add an alarm dynamically if it's a one-time alarm instead
 
         :param when: When the alarm should be executed. It can be either a cron expression (for recurrent alarms), or
-            a datetime string in ISO format (for one-shot alarms/timers).
+            a datetime string in ISO format (for one-shot alarms/timers), or an integer representing the number of
+            seconds before the alarm goes on (e.g. 300 for 5 minutes).
         :param actions: List of actions to be executed.
         :param name: Alarm name.
         :param audio_file: Path of the audio file to be played.
         :param enabled: Whether the new alarm should be enabled (default: True).
         :return: The alarm name.
         """
-        alarm = self._get_backend().add_alarm(when=when, audio_file=audio_file, actions=actions,
+        alarm = self._get_backend().add_alarm(when=when, audio_file=audio_file, actions=actions or [],
                                               name=name, enabled=enabled)
         return alarm.name
 
