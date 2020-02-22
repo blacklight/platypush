@@ -1,7 +1,7 @@
 <script type="text/x-template" id="tmpl-zwave-node">
     <div class="item node" :class="{selected: selected}">
         <div class="row name vertical-center" :class="{selected: selected}"
-             v-text="node.name" @click="onNodeClicked"></div>
+             v-text="node.name && node.name.length ? node.name : '<Node ' + node.node_id + '>'" @click="onNodeClicked"></div>
 
         <div class="params" v-if="selected">
             <div class="row">
