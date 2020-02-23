@@ -77,7 +77,7 @@ Vue.component('zwave', {
                     disabled: this.commandRunning,
                     click: async function() {
                         self.commandRunning = true;
-                        await request('zwave.start_network');
+                        await request('zwave.stop_network');
                         self.commandRunning = false;
                     },
                 },

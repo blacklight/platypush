@@ -1,0 +1,264 @@
+@import 'common/vars';
+@import 'webpanel/plugins/zigbee.mqtt/vars';
+
+.fa.fa-zigbee:before {
+    content: ' ';
+    background: url('/static/img/icons/zigbee-logo.svg');
+    background-size: 1em 1em;
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+}
+
+.zigbee-container {
+    height: 100%;
+    padding: 0 .5em;
+    background: $container-bg;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: auto;
+
+    .no-items {
+        padding: 2em;
+        font-size: 1.5em;
+        color: $no-items-color;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .view-options {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        padding: 1em 0;
+
+        .view-selector {
+            display: inline-flex;
+        }
+
+        .buttons {
+            display: inline-flex;
+        }
+
+        select {
+            width: 100%;
+            border-radius: 1em;
+        }
+    }
+
+    .btn-default {
+        border: 0;
+        padding: 0 1em;
+
+        &:hover {
+            border: $default-border-2;
+            border-radius: 1em;
+        }
+    }
+
+
+    .buttons {
+        text-align: right;
+    }
+
+    .view {
+        min-width: 400pt;
+        max-width: 750pt;
+        background: $view-bg;
+        border: $view-border;
+        border-radius: 1.5em;
+        box-shadow: $view-box-shadow;
+    }
+
+    .item {
+        &.selected {
+            box-shadow: $selected-item-box-shadow;
+        }
+
+        .name {
+            padding: 1em;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+
+            &.selected {
+                border-radius: 1.5em;
+            }
+        }
+
+        &:hover {
+            background: $hover-bg;
+        }
+
+        &:not(:last-child) {
+            border-bottom: $item-border;
+        }
+
+        &:first-child {
+            border-radius: 1.5em 1.5em 0 0;
+        }
+
+        &:last-child {
+            border-radius: 0 0 1.5em 1.5em;
+        }
+    }
+
+    .params {
+        background: $params-bg;
+        padding-bottom: 1em;
+
+        .section {
+            display: flex;
+            flex-direction: column;
+            padding: 0 1em;
+
+            &:not(:first-child) {
+                padding-top: 1em;
+            }
+
+            .header {
+                display: flex;
+                align-items: center;
+                font-weight: bold;
+                border-bottom: $param-section-header-border;
+            }
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            border-radius: 1em;
+            padding: .3em;
+
+            &:nth-child(even) {
+                background: $param-even-row-bg;
+            }
+
+            &:nth-child(odd) {
+                background: $param-odd-row-bg;
+            }
+
+            &:hover {
+                background: $hover-bg;
+            }
+        }
+
+        .param-name {
+            display: inline-flex;
+            width: 40%;
+            margin-left: 1%;
+            vertical-align: top;
+            letter-spacing: .04em;
+        }
+
+        .param-value {
+            display: inline-block;
+            width: 58%;
+            text-align: right;
+
+            .value-edit {
+                display: flex;
+                align-items: center;
+            }
+
+            .value-data {
+                display: inline-block;
+                font-weight: bold;
+            }
+
+            .slider-container {
+                display: flex;
+                align-items: center;
+            }
+
+            .unit {
+                font-size: .8em;
+                margin-left: 1em;
+                display: inline;
+            }
+
+            select {
+                width: 100%;
+                border-radius: 2em;
+            }
+
+            .numeric {
+                input.slider {
+                    text-align: left;
+                }
+
+                input[type=text] {
+                    text-align: right;
+                    width: 100%;
+                }
+
+                .row {
+                    background: none;
+                    &:hover {
+                        background: none;
+                    }
+                }
+
+                .value-min, .value-max {
+                    width: 50%;
+                    font-size: .85em;
+                    opacity: .75;
+                }
+
+                .value-min {
+                    text-align: left;
+                }
+
+                .value-max {
+                    text-align: right;
+                }
+            }
+        }
+    }
+
+    .btn-value-name-edit {
+        padding: 0;
+    }
+
+    .modal {
+        .section {
+            .header {
+                background: none;
+                padding: .5em 0;
+            }
+
+            .body {
+                padding: 0;
+            }
+        }
+
+        .network-info {
+            min-width: 600pt;
+        }
+    }
+
+    .error {
+        color: $error-color;
+    }
+
+    .device, .group {
+        .actions {
+            .row {
+                cursor: pointer;
+            }
+        }
+
+        form {
+            margin-bottom: 0;
+        }
+
+        .param-value {
+            input[type=text] {
+                text-align: right;
+            }
+        }
+    }
+}
+

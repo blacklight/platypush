@@ -1,0 +1,69 @@
+{% include 'plugins/zigbee.mqtt/device.html' %}
+{% include 'plugins/zigbee.mqtt/group.html' %}
+
+<script type="text/x-template" id="tmpl-zigbee-mqtt">
+    <div class="zigbee-container">
+        {% include 'plugins/zigbee.mqtt/modals/group.html' %}
+
+        <div class="view-options">
+            <div class="view-selector col-s-9 col-m-10 col-l-11">
+                <select @change="onViewChange">
+                    <option v-for="_, view in views"
+                            v-text="(view[0].toUpperCase() + view.slice(1)).replace('_', ' ')"
+                            :key="view" :selected="view == selected.view" :value="view">
+                    </option>
+                </select>
+            </div>
+
+            <div class="buttons">
+                <button class="btn btn-default" title="Add Group" v-if="selected.view === 'groups'"
+                        :disabled="commandRunning" @click="addGroup">
+                    <i class="fa fa-plus"></i>
+                </button>
+
+                <button class="btn btn-default" title="Network commands" @click="openNetworkCommandsDropdown">
+                    <i class="fa fa-cog"></i>
+                </button>
+
+                <button class="btn btn-default" title="Refresh network" @click="refresh">
+                    <i class="fa fa-sync-alt"></i>
+                </button>
+            </div>
+
+            <dropdown ref="networkCommandsDropdown" :items="networkDropdownItems"></dropdown>
+        </div>
+
+        <div class="view devices" v-if="selected.view == 'devices'">
+            <div class="no-items" v-if="Object.keys(devices).length == 0">
+                <div class="loading" v-if="loading.nodes">Loading devices...</div>
+                <div class="empty" v-else>No devices found on the network</div>
+            </div>
+
+            <zigbee-device
+                    v-for="device, deviceId in devices"
+                    :key="deviceId"
+                    :device="device"
+                    :bus="bus"
+                    :selected="selected.deviceId == deviceId">
+            </zigbee-device>
+
+            <dropdown ref="addToGroupDropdown" :items="addToGroupDropdownItems"></dropdown>
+        </div>
+
+        <div class="view groups" v-else-if="selected.view == 'groups'">
+            <div class="no-items" v-if="Object.keys(groups).length == 0">
+                <div class="loading" v-if="loading.groups">Loading groups...</div>
+                <div class="empty" v-else>No groups available on the network</div>
+            </div>
+
+            <zigbee-group
+                    v-for="group, groupId in groups"
+                    :key="groupId"
+                    :group="group"
+                    :selected="selected.groupId == groupId"
+                    :bus="bus">
+            </zigbee-group>
+        </div>
+    </div>
+</script>
+

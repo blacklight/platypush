@@ -92,12 +92,12 @@ class ZigbeeMqttPlugin(MqttPlugin):
 
     """
 
-    def __init__(self, host: str, port: int = 1883, base_topic: str = 'zigbee2mqtt', timeout: int = 60,
+    def __init__(self, host: str = 'localhost', port: int = 1883, base_topic: str = 'zigbee2mqtt', timeout: int = 60,
                  tls_certfile: Optional[str] = None, tls_keyfile: Optional[str] = None,
                  tls_version: Optional[str] = None, tls_ciphers: Optional[str] = None,
                  username: Optional[str] = None, password: Optional[str] = None, **kwargs):
         """
-        :param host: Default MQTT broker where ``zigbee2mqtt`` publishes its messages.
+        :param host: Default MQTT broker where ``zigbee2mqtt`` publishes its messages (default: ``localhost``).
         :param port: Broker listen port (default: 1883).
         :param base_topic: Topic prefix, as specified in ``/opt/zigbee2mqtt/data/configuration.yaml``
             (default: '``base_topic``').
@@ -305,6 +305,15 @@ class ZigbeeMqttPlugin(MqttPlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
+        if name == device:
+            self.logger.info('Old and new name are the same: nothing to do')
+            return
+
+        # noinspection PyUnresolvedReferences
+        devices = self.devices().output
+        assert not [dev for dev in devices if dev.get('friendly_name') == name], \
+            'A device named {} already exists on the network'.format(name)
+
         self.publish(
             topic=self._topic('bridge/config/rename{}'.format('_last' if not device else '')),
             msg={'old': device, 'new': name} if device else name,
@@ -333,7 +342,7 @@ class ZigbeeMqttPlugin(MqttPlugin):
 
         return properties
 
-    # noinspection PyShadowingBuiltins
+    # noinspection PyShadowingBuiltins,DuplicatedCode
     @action
     def device_set(self, device: str, property: str, value: Any, **kwargs):
         """
@@ -373,6 +382,37 @@ class ZigbeeMqttPlugin(MqttPlugin):
             output.get('group_list', [])
 
     @action
+    def groups(self, **kwargs):
+        """
+        Get the groups registered on the device.
+
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+            (default: query the default configured device).
+        """
+        groups = self.publish(topic=self._topic('bridge/config/groups'), msg={},
+                              reply_topic=self._topic('bridge/log'),
+                              **self._mqtt_args(**kwargs)).output.get('message', [])
+
+        # noinspection PyUnresolvedReferences
+        devices = {
+            device['ieeeAddr']: device
+            for device in self.devices(**kwargs).output
+        }
+
+        return [
+            {
+                'id': group['ID'],
+                'friendly_name': group['friendly_name'],
+                'optimistic': group.get('optimistic', False),
+                'devices': [
+                    devices[device.split('/')[0]]
+                    for device in group.get('devices', [])
+                ]
+            }
+            for group in groups
+        ]
+
+    @action
     def group_add(self, name: str, id: Optional[int] = None, **kwargs):
         """
         Add a new group.
@@ -387,6 +427,53 @@ class ZigbeeMqttPlugin(MqttPlugin):
             args['id'] = id
 
         self.publish(topic=self._topic('bridge/config/add_group'), msg=args, **self._mqtt_args(**kwargs))
+
+    # noinspection PyShadowingBuiltins,DuplicatedCode
+    @action
+    def group_set(self, group: str, property: str, value: Any, **kwargs):
+        """
+        Set a properties on a group. The compatible properties vary depending on the devices on the group.
+        For example, a light bulb may have the "``state``" (with values ``"ON"`` and ``"OFF"``) and "``brightness``"
+        properties, while an environment sensor may have the "``temperature``" and "``humidity``" properties, and so on.
+
+        :param group: Display name of the group.
+        :param property: Name of the property that should be set.
+        :param value: New value of the property.
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+            (default: query the default configured device).
+        """
+        properties = self.publish(topic=self._topic(group + '/set'),
+                                  reply_topic=self._topic(group),
+                                  msg={property: value}, **self._mqtt_args(**kwargs)).output
+
+        if property:
+            assert property in properties, 'No such property: ' + property
+            return {property: properties[property]}
+
+        return properties
+
+    @action
+    def group_rename(self, name: str, group: str, **kwargs):
+        """
+        Rename a group.
+
+        :param name: New name.
+        :param group: Current name of the group to rename.
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+            (default: query the default configured device).
+        """
+        if name == group:
+            self.logger.info('Old and new name are the same: nothing to do')
+            return
+
+        # noinspection PyUnresolvedReferences
+        groups = {group.get('friendly_name'): group for group in self.groups().output}
+        assert name not in groups, 'A group named {} already exists on the network'.format(name)
+
+        self.publish(
+            topic=self._topic('bridge/config/rename'),
+            msg={'old': group, 'new': name} if group else name,
+            **self._mqtt_args(**kwargs))
 
     @action
     def group_remove(self, name: str, **kwargs):

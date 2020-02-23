@@ -66,7 +66,7 @@ class Response(Message):
         Overrides the str() operator and converts
         the message into a UTF-8 JSON string
         """
-        output = self.output if self.output is not None and self.output != {} else {
+        output = self.output if self.output is not None else {
             'success': True if not self.errors else False
         }
 

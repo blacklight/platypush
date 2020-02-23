@@ -1,0 +1,163 @@
+<script type="text/x-template" id="tmpl-zigbee-device">
+    <div class="item device" :class="{selected: selected}">
+        <div class="row name vertical-center" :class="{selected: selected}"
+             v-text="device.friendly_name" @click="onDeviceClicked"></div>
+
+        <div class="params" v-if="selected">
+            <div class="row">
+                <div class="param-name">Name</div>
+                <div class="param-value">
+                    <div :class="{hidden: !editMode.name}">
+                        <form ref="nameForm" @submit.prevent="editName">
+                            <input type="text" name="name" :value="device.friendly_name">
+
+                            <span class="buttons">
+                                <button type="button" class="btn btn-default" @click="editMode.name = false">
+                                    <i class="fas fa-times"></i>
+                                </button>
+
+                                <button type="submit" class="btn btn-default">
+                                    <i class="fa fa-check"></i>
+                                </button>
+                            </span>
+                        </form>
+                    </div>
+
+                    <div :class="{hidden: editMode.name}">
+                        <span v-text="device.friendly_name"></span>
+                        <span class="buttons">
+                            <button type="button" class="btn btn-default" @click="onEditMode('name')">
+                                <i class="fa fa-edit"></i>
+                            </button>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="param-name">IEEE Address</div>
+                <div class="param-value" v-text="device.ieeeAddr"></div>
+            </div>
+
+            <div class="row">
+                <div class="param-name">Network Address</div>
+                <div class="param-value" v-text="'0x' + parseInt(device.networkAddress).toString(16)"></div>
+            </div>
+
+            <div class="row">
+                <div class="param-name">Type</div>
+                <div class="param-value" v-text="device.type"></div>
+            </div>
+
+            <div class="row" v-if="device.manufacturerID">
+                <div class="param-name">Manufacturer</div>
+                <div class="param-value">
+                    {% raw %}{{ device.manufacturerName }} ({{ device.manufacturerID }}){% endraw %}
+                </div>
+            </div>
+
+            <div class="row" v-if="device.modelID">
+                <div class="param-name">Model</div>
+                <div class="param-value">
+                    {% raw %}{{ device.model }} ({{ device.modelID }}){% endraw %}
+                </div>
+            </div>
+
+            <div class="row" v-if="device.softwareBuildID && device.softwareBuildID">
+                <div class="param-name">Software Build ID</div>
+                <div class="param-value" v-text="device.softwareBuildID"></div>
+            </div>
+
+            <div class="row" v-if="device.dateCode && device.dateCode.length">
+                <div class="param-name">Date Code</div>
+                <div class="param-value" v-text="device.dateCode"></div>
+            </div>
+
+            <div class="row" v-if="device.powerSource">
+                <div class="param-name">Power Source</div>
+                <div class="param-value" v-text="device.powerSource"></div>
+            </div>
+
+            <div class="row" v-if="device.lastSeen">
+                <div class="param-name">Last Seen</div>
+                <div class="param-value" v-text="(new Date(device.lastSeen)).toLocaleString()"></div>
+            </div>
+
+            <div class="section values" v-if="device.values && Object.keys(device.values).length">
+                <div class="header">
+                    <div class="title">Values</div>
+                </div>
+
+                <div class="body">
+                    <div class="row"
+                         v-for="value, name in device.values"
+                         :key="name">
+                        <div class="param-name" v-text="name"></div>
+                        <div class="param-value">
+                            <toggle-switch :value="value === 'ON' ? true : false"
+                                           :data-name="name"
+                                           @toggled="setValue"
+                                           v-if="name === 'state'">
+                            </toggle-switch>
+
+                            <span v-text="value.toString() + '%'" v-else-if="name === 'linkquality'"></span>
+
+                            <div v-else>
+                                <input type="text" :value="value" :data-name="name" @change="setValue">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="param-name">
+                            <input type="text" placeholder="New property name" v-model="newPropertyName">
+                        </div>
+
+                        <div class="param-value">
+                            <input type="text" placeholder="New property value" @change="setValue">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section actions">
+                <div class="header">
+                    <div class="title">Actions</div>
+                </div>
+
+                <div class="body">
+                    <div class="row" @click="removeDevice(false)">
+                        <div class="param-name">Remove Device</div>
+                        <div class="param-value">
+                            <i class="fa fa-trash"></i>
+                        </div>
+                    </div>
+
+                    <div class="row error" @click="removeDevice(true)">
+                        <div class="param-name">Force Remove Device</div>
+                        <div class="param-value">
+                            <i class="fa fa-trash"></i>
+                        </div>
+                    </div>
+
+                    <div class="row" @click="banDevice">
+                        <div class="param-name">Ban Device</div>
+                        <div class="param-value">
+                            <i class="fa fa-ban"></i>
+                        </div>
+                    </div>
+
+                    <div class="row" @click="whitelistDevice">
+                        <div class="param-name">Whitelist Device</div>
+                        <div class="param-value">
+                            <i class="fa fa-list"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/zigbee.mqtt/device.js') }}"></script>
+

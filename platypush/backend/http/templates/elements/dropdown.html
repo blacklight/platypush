@@ -1,6 +1,8 @@
 <script type="text/x-template" id="tmpl-dropdown">
     <div class="dropdown" :id="id" :class="{hidden: !visible}">
-        <div class="row item" :class="{disabled: item.disabled}" v-for="item in items" @click="clicked(item)">
+        <div class="row item"
+             :class="{disabled: item.disabled, ...classes.reduce((classes, c) => {classes[c] = true; return classes}, {})}"
+             v-for="item in items" @click="clicked(item)">
             <div class="col-1 icon">
                 <i class="fa" :class="['fa-' + (item.icon || '')]" v-if="item.icon"></i>
                 <i :class="item.iconClass" v-else-if="item.iconClass"></i>

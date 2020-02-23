@@ -1,0 +1,75 @@
+<script type="text/x-template" id="tmpl-zigbee-group">
+    <div class="item group" :class="{selected: selected}">
+        <div class="row name vertical-center" :class="{selected: selected}"
+             v-text="group.friendly_name" @click="onGroupClicked"></div>
+
+        <div class="params" v-if="selected">
+            <div class="section values">
+                <div class="header">
+                    <div class="title">Values</div>
+                </div>
+
+                <div class="body">
+                    <div class="row" v-for="value, name in properties" :key="name">
+                        <div class="param-name" v-text="name"></div>
+                        <div class="param-value">
+                            <div v-if="name === 'state'">
+                                <toggle-switch :value="value" @toggled="toggleState"></toggle-switch>
+                            </div>
+                            <div v-else>
+                                <input type="text" :value="value" :data-name="name" @change="setValue">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section devices">
+                <div class="header">
+                    <div class="title col-10">Devices</div>
+                    <div class="buttons col-2">
+                        <button class="btn btn-default" title="Add Devices" @click="bus.$emit('openAddToGroupModal')">
+                            <i class="fa fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="body">
+                    <div class="row" v-for="device in group.devices">
+                        <div class="col-10" v-text="device.friendly_name"></div>
+                        <div class="buttons col-2">
+                            <button class="btn btn-default" title="Remove from group" @click="removeFromGroup(device.friendly_name)">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section actions">
+                <div class="header">
+                    <div class="title">Actions</div>
+                </div>
+
+                <div class="body">
+                    <div class="row" @click="renameGroup">
+                        <div class="col-10">Rename Group</div>
+                        <div class="buttons col-2">
+                            <i class="fa fa-edit"></i>
+                        </div>
+                    </div>
+
+                    <div class="row" @click="removeGroup">
+                        <div class="col-10">Remove Group</div>
+                        <div class="buttons col-2">
+                            <i class="fa fa-trash"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script type="application/javascript" src="{{ url_for('static', filename='js/plugins/zigbee.mqtt/group.js') }}"></script>
+

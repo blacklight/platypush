@@ -1,0 +1,20 @@
+<modal id="zigbee-add-to-group" title="Add devices to group" v-model="modal.group.visible" v-if="modal.group.visible">
+    <div class="group-add">
+        <div class="params">
+            <div class="section">
+                <div class="header">
+                    <div class="title">Select devices to add</div>
+                </div>
+
+                <div class="body">
+                    <div class="row clickable" @click="addToGroup(device.friendly_name, groups[selected.groupId].friendly_name)"
+                         :key="device.friendly_name"
+                         v-for="device in Object.values(devices).filter((dev) => Object.values(groups[selected.groupId].devices).map((d) => d.friendly_name).indexOf(dev.friendly_name) < 0)">
+                        <div class="param-name" v-text="device.friendly_name"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</modal>
+

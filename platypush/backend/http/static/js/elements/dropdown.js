@@ -14,6 +14,11 @@ Vue.component('dropdown', {
             type: Array,
             default: [],
         },
+
+        classes: {
+            type: Array,
+            default: () => [],
+        },
     },
 
     methods: {
@@ -38,7 +43,7 @@ let clickHndl = function(event) {
 
     var element = event.target;
     while (element) {
-        if (element == openedDropdown) {
+        if (element === openedDropdown) {
             return;
         }
 

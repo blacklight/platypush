@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 from platypush.message.event import Event
 
@@ -108,7 +108,7 @@ class ZigbeeMqttGroupAddedEvent(ZigbeeMqttEvent):
     Triggered when a group is added.
     """
     def __init__(self, host: str, port: int, group=None, *args, **kwargs):
-        super().__init__(*args, host=host, port=port, device=device, **kwargs)
+        super().__init__(*args, host=host, port=port, group=group, **kwargs)
 
 
 class ZigbeeMqttGroupAddedFailedEvent(ZigbeeMqttEvent):
@@ -116,7 +116,7 @@ class ZigbeeMqttGroupAddedFailedEvent(ZigbeeMqttEvent):
     Triggered when a request to add a group fails.
     """
     def __init__(self, host: str, port: int, group=None, *args, **kwargs):
-        super().__init__(*args, host=host, port=port, device=device, **kwargs)
+        super().__init__(*args, host=host, port=port, group=group, **kwargs)
 
 
 class ZigbeeMqttGroupRemovedEvent(ZigbeeMqttEvent):
@@ -124,7 +124,7 @@ class ZigbeeMqttGroupRemovedEvent(ZigbeeMqttEvent):
     Triggered when a group is removed.
     """
     def __init__(self, host: str, port: int, group=None, *args, **kwargs):
-        super().__init__(*args, host=host, port=port, device=device, **kwargs)
+        super().__init__(*args, host=host, port=port, group=group, **kwargs)
 
 
 class ZigbeeMqttGroupRemovedFailedEvent(ZigbeeMqttEvent):
@@ -132,7 +132,7 @@ class ZigbeeMqttGroupRemovedFailedEvent(ZigbeeMqttEvent):
     Triggered when a request to remove a group fails.
     """
     def __init__(self, host: str, port: int, group=None, *args, **kwargs):
-        super().__init__(*args, host=host, port=port, device=device, **kwargs)
+        super().__init__(*args, host=host, port=port, group=group, **kwargs)
 
 
 class ZigbeeMqttGroupRemoveAllEvent(ZigbeeMqttEvent):
@@ -140,7 +140,7 @@ class ZigbeeMqttGroupRemoveAllEvent(ZigbeeMqttEvent):
     Triggered when all the devices are removed from a group.
     """
     def __init__(self, host: str, port: int, group=None, *args, **kwargs):
-        super().__init__(*args, host=host, port=port, device=device, **kwargs)
+        super().__init__(*args, host=host, port=port, group=group, **kwargs)
 
 
 class ZigbeeMqttGroupRemoveAllFailedEvent(ZigbeeMqttEvent):
@@ -148,7 +148,7 @@ class ZigbeeMqttGroupRemoveAllFailedEvent(ZigbeeMqttEvent):
     Triggered when a request to remove all the devices from a group fails.
     """
     def __init__(self, host: str, port: int, group=None, *args, **kwargs):
-        super().__init__(*args, host=host, port=port, device=device, **kwargs)
+        super().__init__(*args, host=host, port=port, group=group, **kwargs)
 
 
 class ZigbeeMqttErrorEvent(ZigbeeMqttEvent):
