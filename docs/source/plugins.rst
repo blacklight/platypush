@@ -7,6 +7,7 @@ Plugins
     :caption: Plugins:
 
     platypush/plugins/adafruit.io.rst
+    platypush/plugins/alarm.rst
     platypush/plugins/arduino.rst
     platypush/plugins/assistant.rst
     platypush/plugins/assistant.echo.rst

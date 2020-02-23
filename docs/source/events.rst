@@ -8,6 +8,7 @@ Events
 
     platypush/events/.rst
     platypush/events/adafruit.rst
+    platypush/events/alarm.rst
     platypush/events/application.rst
     platypush/events/assistant.rst
     platypush/events/bluetooth.rst

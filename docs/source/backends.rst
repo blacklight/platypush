@@ -7,6 +7,7 @@ Backends
     :caption: Backends:
 
     platypush/backend/adafruit.io.rst
+    platypush/backend/alarm.rst
     platypush/backend/assistant.rst
     platypush/backend/assistant.google.rst
     platypush/backend/assistant.snowboy.rst
