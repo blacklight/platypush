@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Union
 
 from platypush.backend.alarm import AlarmBackend
 from platypush.context import get_backend
@@ -21,7 +21,8 @@ class AlarmPlugin(Plugin):
 
     @action
     def add(self, when: str, actions: Optional[list] = None, name: Optional[str] = None,
-            audio_file: Optional[str] = None, enabled: bool = True) -> str:
+            audio_file: Optional[str] = None, audio_volume: Optional[Union[int, float]] = None,
+            enabled: bool = True) -> str:
         """
         Add a new alarm. NOTE: alarms that aren't configured in the :class:`platypush.backend.alarm.AlarmBackend`
         will only run in the current session. If you want an alarm to be permanently stored, you should configure
@@ -33,11 +34,12 @@ class AlarmPlugin(Plugin):
         :param actions: List of actions to be executed.
         :param name: Alarm name.
         :param audio_file: Path of the audio file to be played.
+        :param audio_volume: Volume of the audio.
         :param enabled: Whether the new alarm should be enabled (default: True).
         :return: The alarm name.
         """
         alarm = self._get_backend().add_alarm(when=when, audio_file=audio_file, actions=actions or [],
-                                              name=name, enabled=enabled)
+                                              name=name, enabled=enabled, audio_volume=audio_volume)
         return alarm.name
 
     @action

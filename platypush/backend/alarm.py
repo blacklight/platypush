@@ -29,6 +29,7 @@ class Alarm:
 
     def __init__(self, when: str, actions: Optional[list] = None, name: Optional[str] = None,
                  audio_file: Optional[str] = None, audio_plugin: Optional[str] = None,
+                 audio_volume: Optional[Union[int, float]] = None,
                  snooze_interval: float = 300.0, enabled: bool = True):
         with self._id_lock:
             self._alarms_count += 1
@@ -43,6 +44,7 @@ class Alarm:
             assert os.path.isfile(self.audio_file), 'No such audio file: {}'.format(self.audio_file)
 
         self.audio_plugin = audio_plugin
+        self.audio_volume = audio_volume
         self.snooze_interval = snooze_interval
         self.state: Optional[AlarmState] = None
         self.timer: Optional[threading.Timer] = None
@@ -109,6 +111,8 @@ class Alarm:
     def play_audio(self):
         def thread():
             self._get_audio_plugin().play(self.audio_file)
+            if self.audio_volume is not None:
+                self._get_audio_plugin().set_volume(self.audio_volume)
 
         self.state = AlarmState.RUNNING
         audio_thread = threading.Thread(target=thread)
@@ -192,6 +196,8 @@ class AlarmBackend(Backend):
             morning_alarm:
                 when: '0 7 * * 1-5'   # Cron expression format: run every weekday at 7 AM
                 audio_file: ~/path/your_ringtone.mp3
+                audio_plugin: media.mplayer
+                audio_volume: 10       # 10%
                 snooze_interval: 300   # 5 minutes snooze
                 actions:
                     - action: tts.say
@@ -226,9 +232,9 @@ class AlarmBackend(Backend):
         self.alarms: Dict[str, Alarm] = {alarm.name: alarm for alarm in alarms}
 
     def add_alarm(self, when: str, actions: list, name: Optional[str] = None, audio_file: Optional[str] = None,
-                  enabled: bool = True) -> Alarm:
+                  audio_volume: Optional[Union[int, float]] = None, enabled: bool = True) -> Alarm:
         alarm = Alarm(when=when, actions=actions, name=name, enabled=enabled, audio_file=audio_file,
-                      audio_plugin=self.audio_plugin)
+                      audio_plugin=self.audio_plugin, audio_volume=audio_volume)
 
         if alarm.name in self.alarms:
             self.logger.info('Overwriting existing alarm {}'.format(alarm.name))
