@@ -72,9 +72,7 @@ class SampleAssistant(object):
         self.is_new_conversation = True
 
         # Create Google Assistant API gRPC client.
-        self.assistant = embedded_assistant_pb2_grpc.EmbeddedAssistantStub(
-            channel
-        )
+        self.assistant = embedded_assistant_pb2_grpc.EmbeddedAssistantStub(channel)
         self.deadline = deadline_sec
 
         self.device_handler = device_handler
@@ -126,8 +124,7 @@ class SampleAssistant(object):
 
         # This generator yields AssistResponse proto messages
         # received from the gRPC Google Assistant API.
-        for resp in self.assistant.Assist(iter_log_assist_requests(),
-                                          self.deadline):
+        for resp in self.assistant.Assist(iter_log_assist_requests(), self.deadline):
             assistant_helpers.log_assist_response_without_audio(resp)
             if resp.event_type == END_OF_UTTERANCE:
                 logging.info('End of audio request detected.')
@@ -143,6 +140,7 @@ class SampleAssistant(object):
                     if len(r.transcript.strip())).strip()
 
                 logging.info('Transcript of user request: "%s".', self.detected_speech)
+
             if len(resp.audio_out.audio_data) > 0:
                 if not self.conversation_stream.playing:
                     self.conversation_stream.stop_recording()
@@ -155,10 +153,12 @@ class SampleAssistant(object):
                     self.conversation_stream.write(resp.audio_out.audio_data)
                 elif self.conversation_stream.playing:
                     self.conversation_stream.stop_playback()
+
             if resp.dialog_state_out.conversation_state:
                 conversation_state = resp.dialog_state_out.conversation_state
                 logging.debug('Updating conversation state.')
                 self.conversation_state = conversation_state
+
             if resp.dialog_state_out.volume_percentage != 0:
                 volume_percentage = resp.dialog_state_out.volume_percentage
                 logging.info('Setting volume to %s%%', volume_percentage)
@@ -166,11 +166,13 @@ class SampleAssistant(object):
 
                 if self.on_volume_changed:
                     self.on_volume_changed(volume_percentage)
+
             if resp.dialog_state_out.microphone_mode == DIALOG_FOLLOW_ON:
                 continue_conversation = True
                 logging.info('Expecting follow-on query from user.')
             elif resp.dialog_state_out.microphone_mode == CLOSE_MICROPHONE:
                 continue_conversation = False
+
             if resp.device_action.device_request_json:
                 device_request = json.loads(
                     resp.device_action.device_request_json
@@ -178,6 +180,7 @@ class SampleAssistant(object):
                 fs = self.device_handler(device_request)
                 if fs:
                     device_actions_futures.extend(fs)
+
             if self.display and resp.screen_out.data:
                 system_browser = browser_helpers.system_browser
                 system_browser.display(resp.screen_out.data)

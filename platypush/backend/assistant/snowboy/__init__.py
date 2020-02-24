@@ -125,6 +125,8 @@ class AssistantSnowboyBackend(AssistantBackend):
                 'detect_sound': detect_sound,
                 'assistant_plugin': get_plugin(assistant_plugin_name) if assistant_plugin_name else None,
                 'assistant_language': conf.get('assistant_language'),
+                'tts_plugin': conf.get('tts_plugin'),
+                'tts_args': conf.get('tts_args', {}),
             }
 
     def hotword_detected(self, hotword):
@@ -150,12 +152,15 @@ class AssistantSnowboyBackend(AssistantBackend):
             detect_sound = model.get('detect_sound')
             assistant_plugin = model.get('assistant_plugin')
             assistant_language = model.get('assistant_language')
+            tts_plugin = model.get('tts_plugin')
+            tts_args = model.get('tts_args')
 
             if detect_sound:
                 threading.Thread(target=sound_thread, args=(detect_sound,)).start()
 
             if assistant_plugin:
-                assistant_plugin.start_conversation(language=assistant_language)
+                assistant_plugin.start_conversation(language=assistant_language, tts_plugin=tts_plugin,
+                                                    tts_args=tts_args)
 
         return callback
 

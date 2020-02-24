@@ -4,8 +4,9 @@
 
 import json
 import os
+from typing import Optional, Dict, Any
 
-from platypush.context import get_bus
+from platypush.context import get_bus, get_plugin
 from platypush.message.event.assistant import ConversationStartEvent, \
     ConversationEndEvent, SpeechRecognizedEvent, VolumeChangedEvent, \
     ResponseEvent
@@ -48,6 +49,8 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
                      'device_config.json'),
                  language='en-US',
                  play_response=True,
+                 tts_plugin=None,
+                 tts_args=None,
                  **kwargs):
         """
         :param credentials_file: Path to the Google OAuth credentials file
@@ -68,6 +71,12 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         :param play_response: If True (default) then the plugin will play the assistant response upon processed
             response. Otherwise nothing will be played - but you may want to handle the ``ResponseEvent`` manually.
         :type play_response: bool
+
+        :param tts_plugin: Optional text-to-speech plugin to be used to process response text.
+        :type tts_plugin: str
+
+        :param tts_args: Optional arguments for the TTS plugin ``say`` method.
+        :type tts_args: dict
         """
 
         import googlesamples.assistant.grpc.audio_helpers as audio_helpers
@@ -83,6 +92,8 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         self.credentials_file = credentials_file
         self.device_config = device_config
         self.play_response = play_response
+        self.tts_plugin = tts_plugin
+        self.tts_args = tts_args or {}
         self.assistant = None
         self.interactions = []
 
@@ -188,17 +199,25 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
             else:
                 self.interactions[-1]['response'] = response
 
+            if self.tts_plugin:
+                tts = get_plugin(self.tts_plugin)
+                tts.say(response, **self.tts_args)
+
         return handler
 
     @action
-    def start_conversation(self, *args, language=None, **kwargs):
+    def start_conversation(self, *args, language: Optional[str] = None, tts_plugin: Optional[str] = None,
+                           tts_args: Optional[Dict[str, Any]] = None, **kwargs):
         """
         Start a conversation
 
-        :param language: Language code override (default: default configured language)
-        :type language: str
+        :param language: Language code override (default: default configured language).
+        :param tts_plugin: Optional text-to-speech plugin to be used for rendering text.
+        :param tts_args: Optional arguments for the TTS plugin say method.
 
         :returns: A list of the interactions that happen within the conversation.
+
+        ..code-block:: json
 
             [
                 {
@@ -212,15 +231,16 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
                     "response": "response 2"
 
                 }
-
             ]
 
         """
 
         from platypush.plugins.assistant.google.lib import SampleAssistant
 
-        if not language:
-            language = self.language
+        self.tts_plugin = tts_plugin
+        self.tts_args = tts_args
+        language = language or self.language
+        play_response = False if self.tts_plugin else self.play_response
 
         self._init_assistant()
         self.on_conversation_start()
@@ -232,7 +252,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
                              display=None,
                              channel=self.grpc_channel,
                              deadline_sec=self.grpc_deadline,
-                             play_response=self.play_response,
+                             play_response=play_response,
                              device_handler=self.device_handler,
                              on_conversation_start=self.on_conversation_start(),
                              on_conversation_end=self.on_conversation_end(),
@@ -261,6 +281,22 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
                 self.conversation_stream.stop_recording()
 
             get_bus().post(ConversationEndEvent(assistant=self))
+
+    @action
+    def set_mic_mute(self, muted: bool = True):
+        """
+        Programmatically mute/unmute the microphone.
+
+        :param muted: Set to True or False.
+        """
+        if not self.conversation_stream:
+            self.logger.warning('The assistant is not running')
+            return
+
+        if muted:
+            self.conversation_stream.stop_recording()
+        else:
+            self.conversation_stream.start_recording()
 
     def _install_device_handlers(self):
         import googlesamples.assistant.grpc.device_helpers as device_helpers

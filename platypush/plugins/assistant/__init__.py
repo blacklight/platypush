@@ -10,7 +10,7 @@ class AssistantPlugin(ABC, Plugin):
     """
 
     @abstractmethod
-    def start_conversation(self, *args, language=None, **kwargs):
+    def start_conversation(self, *args, language=None, tts_plugin=None, tts_args=None, **kwargs):
         """
         Start a conversation.
         """

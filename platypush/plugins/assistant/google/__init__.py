@@ -2,6 +2,7 @@
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
 """
 
+from platypush.backend.assistant.google import AssistantGoogleBackend
 from platypush.context import get_backend
 from platypush.plugins import action
 from platypush.plugins.assistant import AssistantPlugin
@@ -17,11 +18,11 @@ class AssistantGooglePlugin(AssistantPlugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def _get_assistant(self):
+    def _get_assistant(self) -> AssistantGoogleBackend:
         return get_backend('assistant.google')
 
     @action
-    def start_conversation(self):
+    def start_conversation(self, **kwargs):
         """
         Programmatically start a conversation with the assistant
         """
@@ -35,6 +36,26 @@ class AssistantGooglePlugin(AssistantPlugin):
         """
         assistant = self._get_assistant()
         assistant.stop_conversation()
+
+    @action
+    def set_mic_mute(self, muted: bool = True):
+        """
+        Programmatically mute/unmute the microphone.
+
+        :param muted: Set to True or False.
+        """
+        assistant = self._get_assistant()
+        assistant.set_mic_mute(muted)
+
+    @action
+    def send_text_query(self, query: str):
+        """
+        Send a text query to the assistant.
+
+        :param query: Query to be sent.
+        """
+        assistant = self._get_assistant()
+        assistant.send_text_query(query)
 
 
 # vim:sw=4:ts=4:et:

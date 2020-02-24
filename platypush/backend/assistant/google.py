@@ -102,6 +102,11 @@ class AssistantGoogleBackend(AssistantBackend):
         elif hasattr(EventType, 'ON_RENDER_RESPONSE') and \
                 event.type == EventType.ON_RENDER_RESPONSE:
             self.bus.post(ResponseEvent(assistant=self, response_text=event.args.get('text')))
+            tts, args = self._get_tts_plugin()
+
+            if tts and 'text' in event.args:
+                self.stop_conversation()
+                tts.say(text=event.args['text'], **args)
         elif hasattr(EventType, 'ON_RESPONDING_STARTED') and \
                 event.type == EventType.ON_RESPONDING_STARTED and \
                 event.args.get('is_error_response', False) is True:
@@ -141,6 +146,20 @@ class AssistantGoogleBackend(AssistantBackend):
         if self.assistant:
             self.assistant.stop_conversation()
 
+    def set_mic_mute(self, muted):
+        if not self.assistant:
+            self.logger.warning('Assistant not running')
+            return
+
+        self.assistant.set_mic_mute(muted)
+
+    def send_text_query(self, query):
+        if not self.assistant:
+            self.logger.warning('Assistant not running')
+            return
+
+        self.assistant.send_text_query(query)
+
     def run(self):
         import google.oauth2.credentials
         from google.assistant.library import Assistant
@@ -148,9 +167,7 @@ class AssistantGoogleBackend(AssistantBackend):
         super().run()
 
         with open(self.credentials_file, 'r') as f:
-            self.credentials = google.oauth2.credentials.Credentials(
-                token=None,
-                **json.load(f))
+            self.credentials = google.oauth2.credentials.Credentials(token=None, **json.load(f))
 
         while not self.should_stop():
             self._has_error = False
