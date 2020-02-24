@@ -1,4 +1,5 @@
 import inspect
+import logging
 import threading
 
 
@@ -8,6 +9,8 @@ class EventGenerator(object):
     trigger/register/unregister custom callback handlers associated to event
     types. Both plugins and backends extend this class.
     """
+
+    logger = logging.getLogger(__name__)
 
     def __init__(self, *args, **kwargs):
         self._event_handlers = {}   # Event type => callback map
@@ -29,7 +32,11 @@ class EventGenerator(object):
         from platypush.context import get_bus
 
         bus = self.bus if isinstance(self, Backend) else get_bus()
-        bus.post(event)
+        if not bus:
+            self.logger.warning('No bus available to post the event: {}'.format(event))
+        else:
+            bus.post(event)
+
         handlers = set()
 
         for cls in inspect.getmro(event.__class__):
