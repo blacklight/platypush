@@ -254,7 +254,14 @@ Vue.component('zigbee-mqtt', {
                 text: 'WARNING: The controller is now offline',
                 error: true,
             });
-        }, 'platypush.message.event.zigbee.mqtt.ZigbeeMqttOnlineEvent');
+        }, 'platypush.message.event.zigbee.mqtt.ZigbeeMqttOfflineEvent');
+
+        registerEventHandler(() => {
+            createNotification({
+                text: 'The controller is now online',
+                iconClass: 'fas fa-check',
+            });
+        }, 'platypush.message.event.zigbee.mqtt.ZigbeeMqttOfflineEvent');
 
         registerEventHandler(() => {
             createNotification({
