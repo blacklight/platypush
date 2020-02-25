@@ -170,6 +170,10 @@ Vue.component('zigbee-mqtt', {
             this.bus.$emit('refreshProperties');
         },
 
+        updateProperties: function(device, props) {
+            Vue.set(this.devices[device], 'values', props);
+        },
+
         addGroup: async function() {
             const name = prompt('Group name');
             if (!name) {
@@ -287,9 +291,12 @@ Vue.component('zigbee-mqtt', {
             });
         }, 'platypush.message.event.zigbee.mqtt.ZigbeeMqttErrorEvent');
 
+        registerEventHandler((event) => {
+            self.updateProperties(event.device, event.properties);
+        }, 'platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePropertySetEvent');
+
         registerEventHandler(this.refresh,
             'platypush.message.event.zigbee.mqtt.ZigbeeMqttOnlineEvent',
-            'platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePropertySetEvent',
             'platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePairingEvent',
             'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceConnectedEvent',
             'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBannedEvent',
