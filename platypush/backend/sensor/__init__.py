@@ -82,15 +82,26 @@ class SensorBackend(Backend):
         if not self.plugin:
             raise NotImplementedError('No plugin specified')
 
-        plugin = get_plugin(self.plugin)
-        data = plugin.get_data(**self.plugin_args).output
+        reload = False
+        success = False
+        data = None
 
-        if self.enabled_sensors:
-            data = {
-                sensor: data[sensor]
-                for sensor, enabled in self.enabled_sensors.items()
-                if enabled and sensor in data
-            }
+        while not success:
+            try:
+                plugin = get_plugin(self.plugin, reload=reload)
+                data = plugin.get_data(**self.plugin_args).output
+            except Exception as e:
+                self.logger.warning('Unexpected exception while getting data: {}'.format(str(e)))
+                self.logger.exception(e)
+                reload = True
+                time.sleep(5)
+
+            if self.enabled_sensors:
+                data = {
+                    sensor: data[sensor]
+                    for sensor, enabled in self.enabled_sensors.items()
+                    if enabled and sensor in data
+                }
 
         return data
 
