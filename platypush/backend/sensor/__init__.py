@@ -100,7 +100,7 @@ class SensorBackend(Backend):
                 reload = True
                 time.sleep(5)
 
-            if self.enabled_sensors:
+            if self.enabled_sensors and data is not None:
                 data = {
                     sensor: data[sensor]
                     for sensor, enabled in self.enabled_sensors.items()
