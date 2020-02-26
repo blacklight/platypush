@@ -90,6 +90,10 @@ class SensorBackend(Backend):
             try:
                 plugin = get_plugin(self.plugin, reload=reload)
                 data = plugin.get_data(**self.plugin_args).output
+                if reload:
+                    self.logger.info('Backend successfully restored')
+
+                success = True
             except Exception as e:
                 self.logger.warning('Unexpected exception while getting data: {}'.format(str(e)))
                 self.logger.exception(e)
