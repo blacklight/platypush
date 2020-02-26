@@ -48,7 +48,7 @@ class SerialPlugin(SensorPlugin):
                 break
 
             try:
-                ch = ch.decode()
+                ch.decode()
             except Exception as e:
                 self.logger.warning('Could not decode character: {}'.format(str(e)))
                 output = bytes()
