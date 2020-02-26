@@ -36,8 +36,7 @@ class SerialPlugin(SensorPlugin):
         self.serial_lock = threading.Lock()
         self.last_measurement = None
 
-    @staticmethod
-    def _read_json(serial_port):
+    def _read_json(self, serial_port):
         n_brackets = 0
         is_escaped_ch = False
         parse_start = False
@@ -47,6 +46,12 @@ class SerialPlugin(SensorPlugin):
             ch = serial_port.read()
             if not ch:
                 break
+
+            try:
+                ch = ch.decode()
+            except Exception as e:
+                self.logger.warning('Could not decode character: {}'.format(str(e)))
+                output = bytes()
 
             if ch.decode() == '{' and not is_escaped_ch:
                 parse_start = True
