@@ -15,6 +15,10 @@ def get_all_events():
     return get_plugin('inspect').get_all_events().output
 
 
+def get_all_responses():
+    return get_plugin('inspect').get_all_responses().output
+
+
 # noinspection DuplicatedCode
 def generate_plugins_doc():
     plugins_index = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docs', 'source', 'plugins.rst')
@@ -113,9 +117,42 @@ Events
             f.write('    platypush/events/' + event[len('platypush.message.event.'):] + '.rst\n')
 
 
+# noinspection DuplicatedCode
+def generate_responses_doc():
+    responses_index = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docs', 'source', 'responses.rst')
+    responses_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docs', 'source', 'platypush', 'responses')
+    all_responses = sorted(response for response in get_all_responses().keys())
+
+    for response in all_responses:
+        response_file = os.path.join(responses_dir, response[len('platypush.message.response.'):] + '.rst')
+        if not os.path.exists(response_file):
+            header = '``{}``'.format(response)
+            divider = '=' * len(header)
+            body = '\n.. automodule:: {}\n    :members:\n'.format(response)
+            out = '\n'.join([header, divider, body])
+
+            with open(response_file, 'w') as f:
+                f.write(out)
+
+    with open(responses_index, 'w') as f:
+        f.write('''
+Responses
+=========
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Responses:
+
+''')
+
+        for response in all_responses:
+            f.write('    platypush/responses/' + response[len('platypush.message.response.'):] + '.rst\n')
+
+
 generate_plugins_doc()
 generate_backends_doc()
 generate_events_doc()
+generate_responses_doc()
 
 
 # vim:sw=4:ts=4:et:
