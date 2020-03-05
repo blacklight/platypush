@@ -48,6 +48,23 @@ class AssistantGooglePlugin(AssistantPlugin):
         assistant.set_mic_mute(muted)
 
     @action
+    def toggle_mic_mute(self):
+        """
+        Toggle the mic mute state.
+        """
+        assistant = self._get_assistant()
+        is_muted = assistant.is_muted()
+        self.set_mic_mute(muted=not is_muted)
+
+    @action
+    def is_muted(self) -> bool:
+        """
+        :return: True if the microphone is muted, False otherwise.
+        """
+        assistant = self._get_assistant()
+        return assistant.is_muted()
+
+    @action
     def send_text_query(self, query: str):
         """
         Send a text query to the assistant.

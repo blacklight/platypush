@@ -85,6 +85,7 @@ class AssistantGoogleBackend(AssistantBackend):
         self.credentials = None
         self.assistant = None
         self._has_error = False
+        self._is_muted = False
 
         self.logger.info('Initialized Google Assistant backend')
 
@@ -140,8 +141,8 @@ class AssistantGoogleBackend(AssistantBackend):
             else:
                 self.logger.warning('Assistant error')
         if event.type == EventType.ON_MUTED_CHANGED:
-            muted = event.args.get('is_muted')
-            event = MicMutedEvent() if muted else MicUnmutedEvent()
+            self._is_muted = event.args.get('is_muted')
+            event = MicMutedEvent() if self._is_muted else MicUnmutedEvent()
             self.bus.post(event)
 
     def start_conversation(self):
@@ -160,6 +161,9 @@ class AssistantGoogleBackend(AssistantBackend):
             return
 
         self.assistant.set_mic_mute(muted)
+
+    def is_muted(self) -> bool:
+        return self._is_muted
 
     def send_text_query(self, query):
         if not self.assistant:
