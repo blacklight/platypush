@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import queue
 import os
 import threading
@@ -265,7 +263,7 @@ class SttDeepspeechPlugin(Plugin):
         speech = self._detect(buffer)
         return SpeechDetectedResponse(speech=speech)
 
-    def __enter__(self) -> SttDeepspeechPlugin:
+    def __enter__(self):
         """
         Context manager enter. Starts detection and returns self.
         """
