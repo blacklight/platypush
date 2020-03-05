@@ -245,6 +245,9 @@ class InspectPlugin(Plugin):
                 continue
 
             for _, obj in inspect.getmembers(module):
+                if type(obj) == Response:
+                    continue
+
                 if inspect.isclass(obj) and issubclass(obj, Response):
                     response = ResponseModel(response=obj, html_doc=self._html_doc)
                     if response.package not in self._responses:
