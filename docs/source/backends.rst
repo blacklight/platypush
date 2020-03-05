@@ -53,6 +53,7 @@ Backends
     platypush/backend/sensor.mcp3008.rst
     platypush/backend/sensor.motion.pwm3901.rst
     platypush/backend/sensor.serial.rst
+    platypush/backend/stt.deepspeech.rst
     platypush/backend/tcp.rst
     platypush/backend/todoist.rst
     platypush/backend/travisci.rst

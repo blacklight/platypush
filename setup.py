@@ -283,5 +283,7 @@ setup(
         'zigbee': ['paho-mqtt'],
         # Support for Z-Wave
         'zwave': ['python-openzwave'],
+        # Support for DeepSpeech
+        'deepspeech': ['deepspeech', 'numpy','sounddevice'],
     },
 )

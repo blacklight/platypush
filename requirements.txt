@@ -229,3 +229,8 @@ croniter
 
 # Support for Z-Wave
 # python-openzwave
+
+# Support for DeepSpeech
+# deepspeech
+# numpy
+# sounddevice
