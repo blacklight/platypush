@@ -12,7 +12,7 @@ from platypush.message.event.assistant import \
     ConversationStartEvent, ConversationEndEvent, ConversationTimeoutEvent, \
     ResponseEvent, NoResponseEvent, SpeechRecognizedEvent, AlarmStartedEvent, \
     AlarmEndEvent, TimerStartedEvent, TimerEndEvent, AlertStartedEvent, \
-    AlertEndEvent
+    AlertEndEvent, MicMutedEvent, MicUnmutedEvent
 
 
 class AssistantGoogleBackend(AssistantBackend):
@@ -50,6 +50,10 @@ class AssistantGoogleBackend(AssistantBackend):
             when a timer starts
         * :class:`platypush.message.event.assistant.TimerEndEvent` \
             when a timer ends
+        * :class:`platypush.message.event.assistant.MicMutedEvent` \
+            when the microphone is muted.
+        * :class:`platypush.message.event.assistant.MicUnmutedEvent` \
+            when the microphone is un-muted.
 
     Requires:
 
@@ -135,6 +139,10 @@ class AssistantGoogleBackend(AssistantBackend):
                 self.logger.error('Fatal assistant error')
             else:
                 self.logger.warning('Assistant error')
+        if event.type == EventType.ON_MUTED_CHANGED:
+            muted = event.args.get('is_muted')
+            event = MicMutedEvent() if muted else MicUnmutedEvent()
+            self.bus.post(event)
 
     def start_conversation(self):
         """ Starts an assistant conversation """

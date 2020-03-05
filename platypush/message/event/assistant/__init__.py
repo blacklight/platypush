@@ -184,4 +184,18 @@ class TimerEndEvent(AlertEndEvent):
         super().__init__(*args, **kwargs)
 
 
+class MicMutedEvent(AssistantEvent):
+    """
+    Event triggered when the microphone is muted.
+    """
+    pass
+
+
+class MicUnmutedEvent(AssistantEvent):
+    """
+    Event triggered when the microphone is muted.
+    """
+    pass
+
+
 # vim:sw=4:ts=4:et:
