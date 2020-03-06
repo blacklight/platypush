@@ -34,7 +34,6 @@ class SttDeepspeechBackend(Backend):
             try:
                 plugin: SttDeepspeechPlugin = get_plugin('stt.deepspeech')
                 with plugin:
-                    plugin.start_detection()
                     # noinspection PyProtectedMember
                     plugin._detection_thread.join()
             except Exception as e:
