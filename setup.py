@@ -285,7 +285,9 @@ setup(
         'zwave': ['python-openzwave'],
         # Support for Mozilla DeepSpeech speech-to-text engine
         'deepspeech': ['deepspeech', 'numpy','sounddevice'],
+        # Support for PicoVoice hotword detection engine
+        'picovoice-hotword': ['pvporcupine'],
         # Support for PicoVoice speech-to-text engine
-        'picovoice': ['pvporcupine'],
+        'picovoice-speech': ['pvcheetah @ git+https://github.com/BlackLight/cheetah'],
     },
 )

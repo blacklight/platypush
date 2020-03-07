@@ -235,5 +235,8 @@ croniter
 # numpy
 # sounddevice
 
-# Support for PicoVoice speech-to-text engine
+# Support for PicoVoice hotword engine
 # pvporcupine
+
+# Support for PicoVoice speech-to-text engine
+# pvcheetah

@@ -7,10 +7,10 @@ from platypush.plugins import action
 from platypush.plugins.stt import SttPlugin
 
 
-class SttPicovoicePlugin(SttPlugin):
+class SttPicovoiceHotwordPlugin(SttPlugin):
     """
-    This plugin performs speech-to-text and speech detection using the
-    `PicoVoice <https://github.com/Picovoice>`_ speech-to-text integrations.
+    This plugin performs hotword detection using
+    `PicoVoice <https://github.com/Picovoice>`_.
 
     Requires:
 
