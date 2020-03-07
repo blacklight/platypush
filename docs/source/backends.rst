@@ -55,7 +55,8 @@ Backends
     platypush/backend/sensor.serial.rst
     platypush/backend/stt.rst
     platypush/backend/stt.deepspeech.rst
-    platypush/backend/stt.picovoice.rst
+    platypush/backend/stt.picovoice.hotword.rst
+    platypush/backend/stt.picovoice.speech.rst
     platypush/backend/tcp.rst
     platypush/backend/todoist.rst
     platypush/backend/travisci.rst
