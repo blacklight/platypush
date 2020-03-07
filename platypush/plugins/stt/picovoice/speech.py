@@ -16,6 +16,9 @@ from platypush.plugins.stt import SttPlugin
 class SttPicovoiceSpeechPlugin(SttPlugin):
     """
     This plugin performs speech detection using `PicoVoice <https://github.com/Picovoice>`_.
+    NOTE: The PicoVoice product used for real-time speech-to-text (Cheetah) can be used freely for
+    personal applications on x86_64 Linux. Other architectures and operating systems require a commercial license.
+    You can ask for a license `here <https://picovoice.ai/contact.html>`_.
 
     Requires:
 

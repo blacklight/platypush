@@ -9,8 +9,7 @@ from platypush.plugins.stt import SttPlugin
 
 class SttPicovoiceHotwordPlugin(SttPlugin):
     """
-    This plugin performs hotword detection using
-    `PicoVoice <https://github.com/Picovoice>`_.
+    This plugin performs hotword detection using `PicoVoice <https://github.com/Picovoice>`_.
 
     Requires:
 
