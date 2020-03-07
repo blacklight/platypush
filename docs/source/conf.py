@@ -242,6 +242,7 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'openzwave',
                         'deepspeech',
                         'wave',
+                        'pvporcupine ',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))

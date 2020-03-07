@@ -283,7 +283,9 @@ setup(
         'zigbee': ['paho-mqtt'],
         # Support for Z-Wave
         'zwave': ['python-openzwave'],
-        # Support for DeepSpeech
+        # Support for Mozilla DeepSpeech speech-to-text engine
         'deepspeech': ['deepspeech', 'numpy','sounddevice'],
+        # Support for PicoVoice speech-to-text engine
+        'picovoice': ['pvporcupine'],
     },
 )

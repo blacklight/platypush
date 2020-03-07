@@ -90,7 +90,9 @@ Plugins
     platypush/plugins/serial.rst
     platypush/plugins/shell.rst
     platypush/plugins/sound.rst
+    platypush/plugins/stt.rst
     platypush/plugins/stt.deepspeech.rst
+    platypush/plugins/stt.picovoice.rst
     platypush/plugins/switch.rst
     platypush/plugins/switch.switchbot.rst
     platypush/plugins/switch.tplink.rst

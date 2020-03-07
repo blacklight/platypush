@@ -116,7 +116,7 @@ class SttDeepspeechPlugin(SttPlugin):
             self._model.finishStream()
         self._context = None
 
-    def detect_audio(self, frames) -> str:
+    def detect_speech(self, frames) -> str:
         model = self._get_model()
         context = self._get_context()
         model.feedAudioContent(context, frames)

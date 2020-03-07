@@ -6,7 +6,6 @@ Responses
     :maxdepth: 2
     :caption: Responses:
 
-    platypush/responses/.rst
     platypush/responses/bluetooth.rst
     platypush/responses/camera.rst
     platypush/responses/camera.android.rst

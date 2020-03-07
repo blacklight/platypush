@@ -230,7 +230,10 @@ croniter
 # Support for Z-Wave
 # python-openzwave
 
-# Support for DeepSpeech
+# Support for Mozilla DeepSpeech speech-to-text engine
 # deepspeech
 # numpy
 # sounddevice
+
+# Support for PicoVoice speech-to-text engine
+# pvporcupine
