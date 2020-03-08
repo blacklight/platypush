@@ -3,13 +3,15 @@ import os
 import subprocess
 import sys
 import time
+from typing import Optional, Dict
 
-from platypush.plugins import Plugin, action
+from platypush.plugins import action
+from platypush.plugins.sensor import SensorPlugin
 from platypush.message.response.bluetooth import BluetoothScanResponse, BluetoothDiscoverPrimaryResponse, \
     BluetoothDiscoverCharacteristicsResponse
 
 
-class BluetoothBlePlugin(Plugin):
+class BluetoothBlePlugin(SensorPlugin):
     """
     Bluetooth BLE (low-energy) plugin
 
@@ -76,7 +78,7 @@ class BluetoothBlePlugin(Plugin):
                                '\t[sudo] setcap "cap_net_raw,cap_net_admin+eip" {}'.format(exe))
 
     @action
-    def scan(self, interface: str = None, duration: int = 10) -> BluetoothScanResponse:
+    def scan(self, interface: Optional[str] = None, duration: int = 10) -> BluetoothScanResponse:
         """
         Scan for nearby bluetooth low-energy devices
 
@@ -92,6 +94,19 @@ class BluetoothBlePlugin(Plugin):
         svc = DiscoveryService(interface)
         devices = svc.discover(duration)
         return BluetoothScanResponse(devices)
+
+    @action
+    def get_measurement(self, interface: Optional[str] = None, duration: Optional[int] = 10, *args, **kwargs) \
+            -> Dict[str, dict]:
+        """
+        Wrapper for ``scan`` that returns bluetooth devices in a format usable by sensor backends.
+
+        :param interface: Bluetooth adapter name to use (default configured if None)
+        :param duration: Scan duration in seconds
+        :return: Device address -> info map.
+        """
+        devices = self.scan(interface=interface, duration=duration).output
+        return {device['addr']: device for device in devices}
 
     # noinspection PyArgumentList
     @action
