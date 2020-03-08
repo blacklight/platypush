@@ -761,7 +761,7 @@ Vue.component('music-mpd', {
             var info = item;
 
             if (typeof(item) === 'string') {
-                var items = await request('music.mpd.search', {filter: ['file', info]});
+                var items = await request('music.mpd.search', {filter: {file: info}});
                 item = items.length ? items[0] : {file: info};
             }
 

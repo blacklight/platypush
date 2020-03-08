@@ -121,13 +121,13 @@ Vue.component('music-mpd-search', {
 
     methods: {
         search: async function() {
-            const filter = Object.keys(this.query).reduce((items, key) => {
+            const filter = Object.keys(this.query).reduce((query, key) => {
                 if (this.query[key].length) {
-                    items.push(key, this.query[key]);
+                    query[key] = this.query[key];
                 }
 
-                return items;
-            }, []);
+                return query;
+            }, {});
 
             this.results = [];
             var results = await request('music.mpd.search', {filter: filter});
