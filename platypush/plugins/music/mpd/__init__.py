@@ -105,7 +105,6 @@ class MusicMpdPlugin(MusicPlugin):
         Play a track in the current playlist by position number
 
         :param pos: Position number
-        :type resource: int
         """
 
         return self._exec('play', pos)
@@ -115,8 +114,10 @@ class MusicMpdPlugin(MusicPlugin):
         """ Pause playback """
 
         status = self.status().output['state']
-        if status == 'play': return self._exec('pause')
-        else: return self._exec('play')
+        if status == 'play':
+            return self._exec('pause')
+        else:
+            return self._exec('play')
 
     @action
     def pause_if_playing(self):
@@ -146,7 +147,6 @@ class MusicMpdPlugin(MusicPlugin):
     def stop(self):
         """ Stop playback """
         return self._exec('stop')
-
 
     @action
     def play_or_stop(self):
@@ -186,7 +186,7 @@ class MusicMpdPlugin(MusicPlugin):
         :param vol: Volume value (range: 0-100)
         :type vol: int
         """
-        return self._exec('setvol', vol)
+        return self._exec('setvol', str(vol))
 
     @action
     def volup(self, delta=10):
@@ -198,8 +198,8 @@ class MusicMpdPlugin(MusicPlugin):
         """
 
         volume = int(self.status().output['volume'])
-        new_volume = min(volume+delta, 100)
-        return self.setvol(str(new_volume))
+        new_volume = min(volume + delta, 100)
+        return self.setvol(new_volume)
 
     @action
     def voldown(self, delta=10):
@@ -211,8 +211,8 @@ class MusicMpdPlugin(MusicPlugin):
         """
 
         volume = int(self.status().output['volume'])
-        new_volume = max(volume-delta, 0)
-        return self.setvol(str(new_volume))
+        new_volume = max(volume - delta, 0)
+        return self.setvol(new_volume)
 
     @action
     def random(self, value=None):
@@ -370,7 +370,8 @@ class MusicMpdPlugin(MusicPlugin):
             return
 
         m = re.search('^https://open.spotify.com/([^?]+)', resource)
-        if m: resource = 'spotify:{}'.format(m.group(1).replace('/', ':'))
+        if m:
+            resource = 'spotify:{}'.format(m.group(1).replace('/', ':'))
 
         if resource.startswith('spotify:'):
             resource = resource.split('?')[0]
@@ -469,6 +470,7 @@ class MusicMpdPlugin(MusicPlugin):
 
         return None, error
 
+    # noinspection PyTypeChecker
     @action
     def currentsong(self):
         """
@@ -697,9 +699,9 @@ class MusicMpdPlugin(MusicPlugin):
         """
 
         playlists = list(map(lambda _: _['playlist'],
-                        filter(lambda playlist:
-                               name.lower() in playlist['playlist'].lower(),
-                               self._exec('listplaylists', return_status=False))))
+                             filter(lambda playlist:
+                                    name.lower() in playlist['playlist'].lower(),
+                                    self._exec('listplaylists', return_status=False))))
 
         if len(playlists):
             self._exec('clear')
@@ -707,59 +709,70 @@ class MusicMpdPlugin(MusicPlugin):
             self._exec('play')
             return {'playlist': playlists[0]}
 
+    @staticmethod
+    def _make_filter(f: dict) -> list:
+        ll = []
+        for k, v in f.items():
+            ll.extend([k, v])
+        return ll
+
+    # noinspection PyShadowingBuiltins
     @action
-    def find(self, filter, *args, **kwargs):
+    def find(self, filter: dict, *args, **kwargs):
         """
         Find in the database/library by filter.
 
-        :param filter: Search filter. MPD treats it as a key-valued list (e.g. ``["artist", "Led Zeppelin", "album", "IV"]``)
-        :type filter: list[str]
+        :param filter: Search filter (e.g. ``{"artist": "Led Zeppelin", "album": "IV"}``)
         :returns: list[dict]
         """
 
+        filter = self._make_filter(filter)
         return self._exec('find', *filter, *args, return_status=False, **kwargs)
 
+    # noinspection PyShadowingBuiltins
     @action
-    def findadd(self, filter, *args, **kwargs):
+    def findadd(self, filter: dict, *args, **kwargs):
         """
         Find in the database/library by filter and add to the current playlist.
 
-        :param filter: Search filter. MPD treats it as a key-valued list (e.g. ``["artist", "Led Zeppelin", "album", "IV"]``)
-        :type filter: list[str]
+        :param filter: Search filter (e.g. ``{"artist": "Led Zeppelin", "album": "IV"}``)
         :returns: list[dict]
         """
 
+        filter = self._make_filter(filter)
         return self._exec('findadd', *filter, *args, return_status=False, **kwargs)
 
+    # noinspection PyShadowingBuiltins
     @action
-    def search(self, filter, *args, **kwargs):
+    def search(self, filter: dict, *args, **kwargs):
         """
         Free search by filter.
 
-        :param filter: Search filter. MPD treats it as a key-valued list (e.g. ``["artist", "Led Zeppelin", "album", "IV"]``)
-        :type filter: list[str]
+        :param filter: Search filter (e.g. ``{"artist": "Led Zeppelin", "album": "IV"}``)
         :returns: list[dict]
         """
 
+        filter = self._make_filter(filter)
         items = self._exec('search', *filter, *args, return_status=False, **kwargs)
 
         # Spotify results first
         items = sorted(items, key=lambda item:
-                       0 if item['file'].startswith('spotify:') else 1)
+        0 if item['file'].startswith('spotify:') else 1)
 
         return items
 
+    # noinspection PyShadowingBuiltins
     @action
     def searchadd(self, filter, *args, **kwargs):
         """
         Free search by filter and add the results to the current playlist.
 
-        :param filter: Search filter. MPD treats it as a key-valued list (e.g. ``["artist", "Led Zeppelin", "album", "IV"]``)
-        :type filter: list[str]
+        :param filter: Search filter (e.g. ``{"artist": "Led Zeppelin", "album": "IV"}``)
         :returns: list[dict]
         """
 
+        filter = self._make_filter(filter)
         return self._exec('searchadd', *filter, *args, return_status=False, **kwargs)
 
-# vim:sw=4:ts=4:et:
 
+# vim:sw=4:ts=4:et:
