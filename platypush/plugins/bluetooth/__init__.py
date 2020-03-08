@@ -3,12 +3,16 @@ import os
 import re
 import select
 
-from platypush.plugins import Plugin, action
+from typing import Dict, Optional
+
+from platypush.plugins.sensor import SensorPlugin
+
+from platypush.plugins import action
 from platypush.message.response.bluetooth import BluetoothScanResponse, \
     BluetoothLookupNameResponse, BluetoothLookupServiceResponse, BluetoothResponse
 
 
-class BluetoothPlugin(Plugin):
+class BluetoothPlugin(SensorPlugin):
     """
     Bluetooth plugin
 
@@ -67,7 +71,7 @@ class BluetoothPlugin(Plugin):
         return self.lookup_address(device).output['addr']
 
     @action
-    def scan(self, device_id: int = None, duration: int = 10) -> BluetoothScanResponse:
+    def scan(self, device_id: Optional[int] = None, duration: int = 10) -> BluetoothScanResponse:
         """
         Scan for nearby bluetooth devices
 
@@ -79,7 +83,7 @@ class BluetoothPlugin(Plugin):
         if device_id is None:
             device_id = self.device_id
 
-        self.logger.info('Discovering devices on adapter {}, duration: {} seconds'.format(
+        self.logger.debug('Discovering devices on adapter {}, duration: {} seconds'.format(
             device_id, duration))
 
         devices = discover_devices(duration=duration, lookup_names=True, lookup_class=True, device_id=device_id,
@@ -90,6 +94,19 @@ class BluetoothPlugin(Plugin):
         self._devices_by_addr = {dev['addr']: dev for dev in self._devices}
         self._devices_by_name = {dev['name']: dev for dev in self._devices if dev.get('name')}
         return response
+
+    @action
+    def get_measurement(self, device_id: Optional[int] = None, duration: Optional[int] = 10, *args, **kwargs) \
+            -> Dict[str, dict]:
+        """
+        Wrapper for ``scan`` that returns bluetooth devices in a format usable by sensor backends.
+
+        :param device_id: Bluetooth adapter ID to use (default configured if None)
+        :param duration: Scan duration in seconds
+        :return: Device address -> info map.
+        """
+        devices = self.scan(device_id=device_id, duration=duration).output
+        return {device['addr']: device for device in devices}
 
     @action
     def lookup_name(self, addr: str, timeout: int = 10) -> BluetoothLookupNameResponse:
@@ -280,7 +297,7 @@ class BluetoothPlugin(Plugin):
         sock = self._get_sock(device=device, port=port, service_uuid=service_uuid, service_name=service_name)
 
         if not sock:
-            self.logger.info('Close on device {}({}) that is not connected'.format(device, port))
+            self.logger.debug('Close on device {}({}) that is not connected'.format(device, port))
             return
 
         try:

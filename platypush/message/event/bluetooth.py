@@ -1,8 +1,26 @@
+from typing import Optional
+
 from platypush.message.event import Event
 
 
 class BluetoothEvent(Event):
     pass
+
+
+class BluetoothDeviceFoundEvent(Event):
+    """
+    Event triggered when a bluetooth device is found during a scan.
+    """
+    def __init__(self, address: str, name: Optional[str] = None, *args, **kwargs):
+        super().__init__(*args, address=address, name=name, **kwargs)
+
+
+class BluetoothDeviceLostEvent(Event):
+    """
+    Event triggered when a bluetooth device previously scanned is lost.
+    """
+    def __init__(self, address: str, name: Optional[str] = None, *args, **kwargs):
+        super().__init__(*args, address=address, name=name, **kwargs)
 
 
 class BluetoothDeviceConnectedEvent(Event):

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from platypush.message.event import Event
 
 
@@ -6,14 +8,14 @@ class SensorDataChangeEvent(Event):
     Event triggered when a sensor has new data
     """
 
-    def __init__(self, data, *args, **kwargs):
+    def __init__(self, data, source: Optional[str] = None, *args, **kwargs):
         """
         :param data: Sensor data
-        :type data: object
         """
 
-        super().__init__(data=data, *args, **kwargs)
+        super().__init__(data=data, source=source, *args, **kwargs)
         self.data = data
+        self.source = source
 
 
 class SensorDataAboveThresholdEvent(Event):
@@ -24,7 +26,6 @@ class SensorDataAboveThresholdEvent(Event):
     def __init__(self, data, *args, **kwargs):
         """
         :param data: Sensor data
-        :type data: object
         """
 
         super().__init__(data=data, *args, **kwargs)
@@ -39,7 +40,6 @@ class SensorDataBelowThresholdEvent(Event):
     def __init__(self, data, *args, **kwargs):
         """
         :param data: Sensor data
-        :type data: object
         """
 
         super().__init__(data=data, *args, **kwargs)

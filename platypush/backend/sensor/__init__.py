@@ -158,7 +158,9 @@ class SensorBackend(Backend):
                     except (TypeError, ValueError):
                         pass
 
-            if tolerance is None or is_nan or abs(v - old_v) >= tolerance:
+                if tolerance is None or abs(v - old_v) >= tolerance:
+                    ret[k] = v
+            elif k not in self.data or self.data[k] != v:
                 ret[k] = v
 
         return ret
@@ -171,6 +173,10 @@ class SensorBackend(Backend):
         if plugin and hasattr(plugin, 'close'):
             plugin.close()
 
+    def process_data(self, data, new_data):
+        if new_data:
+            self.bus.post(SensorDataChangeEvent(data=data, source=self.plugin or self.__class__.__name__))
+
     def run(self):
         super().run()
         self.logger.info('Initialized {} sensor backend'.format(self.__class__.__name__))
@@ -179,9 +185,7 @@ class SensorBackend(Backend):
             try:
                 data = self.get_measurement()
                 new_data = self.get_new_data(data)
-
-                if new_data:
-                    self.bus.post(SensorDataChangeEvent(data=new_data))
+                self.process_data(data, new_data)
 
                 data_below_threshold = {}
                 data_above_threshold = {}

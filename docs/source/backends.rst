@@ -14,6 +14,8 @@ Backends
     platypush/backend/bluetooth.rst
     platypush/backend/bluetooth.fileserver.rst
     platypush/backend/bluetooth.pushserver.rst
+    platypush/backend/bluetooth.scanner.rst
+    platypush/backend/bluetooth.scanner.ble.rst
     platypush/backend/button.flic.rst
     platypush/backend/camera.pi.rst
     platypush/backend/chat.telegram.rst
