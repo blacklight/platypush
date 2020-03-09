@@ -29,6 +29,7 @@ Backends
     platypush/backend/joystick.rst
     platypush/backend/kafka.rst
     platypush/backend/light.hue.rst
+    platypush/backend/linode.rst
     platypush/backend/local.rst
     platypush/backend/midi.rst
     platypush/backend/mqtt.rst

@@ -61,6 +61,7 @@ Plugins
     platypush/plugins/lastfm.rst
     platypush/plugins/light.rst
     platypush/plugins/light.hue.rst
+    platypush/plugins/linode.rst
     platypush/plugins/logger.rst
     platypush/plugins/media.rst
     platypush/plugins/media.chromecast.rst

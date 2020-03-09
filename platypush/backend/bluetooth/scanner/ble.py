@@ -19,14 +19,14 @@ class BluetoothBleScannerBackend(BluetoothScannerBackend):
 
     """
 
-    def __init__(self, interface: Optional[int] = None, scan_interval: int = 10, **kwargs):
+    def __init__(self, interface: Optional[int] = None, scan_duration: int = 10, **kwargs):
         """
         :param interface: Bluetooth adapter name to use (default configured on the ``bluetooth.ble`` plugin if None).
-        :param scan_interval:  How long the scan should run (default: 10 seconds).
+        :param scan_duration:  How long the scan should run (default: 10 seconds).
         """
         super().__init__(plugin='bluetooth.ble', plugin_args={
             'interface': interface,
-            'duration': scan_interval,
+            'duration': scan_duration,
         }, **kwargs)
 
 

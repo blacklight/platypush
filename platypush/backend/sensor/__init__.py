@@ -175,7 +175,7 @@ class SensorBackend(Backend):
 
     def process_data(self, data, new_data):
         if new_data:
-            self.bus.post(SensorDataChangeEvent(data=data, source=self.plugin or self.__class__.__name__))
+            self.bus.post(SensorDataChangeEvent(data=new_data, source=self.plugin or self.__class__.__name__))
 
     def run(self):
         super().run()

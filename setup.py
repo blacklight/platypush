@@ -291,5 +291,7 @@ setup(
         'picovoice-speech': ['pvcheetah @ git+https://github.com/BlackLight/cheetah'],
         # Support for OTP (One-Time Password) generation
         'otp': ['pyotp'],
+        # Support for Linode integration
+        'linode': ['linode_api4'],
     },
 )

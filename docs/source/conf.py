@@ -245,6 +245,7 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'pvporcupine ',
                         'pvcheetah',
                         'pyotp',
+                        'linode_api4',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))
