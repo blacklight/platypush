@@ -246,3 +246,8 @@ croniter
 
 # Support for Linode integration
 # linode_api4
+
+# Support for QR codes
+# qrcode
+# Pillow
+# pyzbar

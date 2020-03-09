@@ -15,6 +15,7 @@ Responses
     platypush/responses/pihole.rst
     platypush/responses/ping.rst
     platypush/responses/printer.cups.rst
+    platypush/responses/qrcode.rst
     platypush/responses/stt.rst
     platypush/responses/system.rst
     platypush/responses/todoist.rst

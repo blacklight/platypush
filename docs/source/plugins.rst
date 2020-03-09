@@ -87,6 +87,7 @@ Plugins
     platypush/plugins/ping.rst
     platypush/plugins/printer.cups.rst
     platypush/plugins/pushbullet.rst
+    platypush/plugins/qrcode.rst
     platypush/plugins/redis.rst
     platypush/plugins/sensor.rst
     platypush/plugins/serial.rst

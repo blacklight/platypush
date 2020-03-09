@@ -293,5 +293,7 @@ setup(
         'otp': ['pyotp'],
         # Support for Linode integration
         'linode': ['linode_api4'],
+        # Support for QR codes
+        'qrcode': ['qrcode[pil]', 'Pillow', 'pyzbar'],
     },
 )
