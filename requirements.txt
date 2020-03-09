@@ -240,3 +240,6 @@ croniter
 
 # Support for PicoVoice speech-to-text engine
 # pvcheetah
+
+# Support for OTP (One-Time Password) generation
+# pyotp

@@ -289,5 +289,7 @@ setup(
         'picovoice-hotword': ['pvporcupine'],
         # Support for PicoVoice speech-to-text engine
         'picovoice-speech': ['pvcheetah @ git+https://github.com/BlackLight/cheetah'],
+        # Support for OTP (One-Time Password) generation
+        'otp': ['pyotp'],
     },
 )
