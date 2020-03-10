@@ -23,6 +23,7 @@ class QrcodePlugin(Plugin):
 
     Requires:
 
+        * **numpy** (``pip install numpy``).
         * **qrcode** (``pip install 'qrcode[pil]'``) for QR generation.
         * **pyzbar** (``pip install pyzbar``) for decoding code from images.
         * **Pillow** (``pip install Pillow``) for image management.

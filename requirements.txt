@@ -248,6 +248,7 @@ croniter
 # linode_api4
 
 # Support for QR codes
+# numpy
 # qrcode
 # Pillow
 # pyzbar
