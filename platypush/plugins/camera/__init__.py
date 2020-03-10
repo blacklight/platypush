@@ -19,26 +19,38 @@ from platypush.plugins import Plugin, action
 
 
 class StreamingOutput:
-    def __init__(self):
+    def __init__(self, raw=False):
         self.frame = None
+        self.raw_frame = None
+        self.raw = raw
         self.buffer = io.BytesIO()
         self.ready = threading.Condition()
 
-    @staticmethod
-    def is_new_frame(buf):
+    def is_new_frame(self, buf):
+        if self.raw:
+            return True
+
         # JPEG header begin
         return buf.startswith(b'\xff\xd8')
 
     def write(self, buf):
         if self.is_new_frame(buf):
-            # New frame, copy the existing buffer's content and notify all clients that it's available
-            self.buffer.truncate()
-            with self.ready:
-                self.frame = self.buffer.getvalue()
-                self.ready.notify_all()
-            self.buffer.seek(0)
+            if self.raw:
+                with self.ready:
+                    self.raw_frame = buf
+                    self.ready.notify_all()
+            else:
+                # New frame, copy the existing buffer's content and notify all clients that it's available
+                self.buffer.truncate()
+                with self.ready:
+                    self.frame = self.buffer.getvalue()
+                    self.ready.notify_all()
+                self.buffer.seek(0)
 
         return self.buffer.write(buf)
+
+    def close(self):
+        self.buffer.close()
 
 
 class CameraPlugin(Plugin):
@@ -75,7 +87,7 @@ class CameraPlugin(Plugin):
                  sleep_between_frames=_default_sleep_between_frames,
                  max_stored_frames=_max_stored_frames,
                  color_transform=_default_color_transform,
-                 scale_x=None, scale_y=None, rotate=None, flip=None, **kwargs):
+                 scale_x=None, scale_y=None, rotate=None, flip=None, stream_raw_frames=False, **kwargs):
         """
         :param device_id: Index of the default video device to be used for
             capturing (default: 0)
@@ -145,6 +157,7 @@ class CameraPlugin(Plugin):
         self.frames_dir = os.path.abspath(os.path.expanduser(frames_dir or self._default_frames_dir))
         self.warmup_frames = warmup_frames
         self.video_type = video_type
+        self.stream_raw_frames = stream_raw_frames
 
         if isinstance(video_type, str):
             import cv2
@@ -321,12 +334,15 @@ class CameraPlugin(Plugin):
                                        interpolation=cv2.INTER_CUBIC)
 
                 if self._output:
-                    result, frame = cv2.imencode('.jpg', frame)
-                    if not result:
-                        self.logger.warning('Unable to convert frame to JPEG')
-                        continue
+                    if not self.stream_raw_frames:
+                        result, frame = cv2.imencode('.jpg', frame)
+                        if not result:
+                            self.logger.warning('Unable to convert frame to JPEG')
+                            continue
 
-                    self._output.write(frame.tobytes())
+                        self._output.write(frame.tobytes())
+                    else:
+                        self._output.write(frame)
                 elif frames_dir:
                     self._store_frame_to_file(frame=frame, frames_dir=frames_dir, image_file=image_file)
 
@@ -584,12 +600,14 @@ class CameraPlugin(Plugin):
 
     def __enter__(self):
         device_id = self.default_device_id
-        self._output = StreamingOutput()
+        self._output = StreamingOutput(raw=self.stream_raw_frames)
         self._init_device(device_id=device_id)
         self.start_recording(device_id=device_id)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop_recording(self.default_device_id)
+        if self._output:
+            self._output.close()
         self._output = None
 
 
