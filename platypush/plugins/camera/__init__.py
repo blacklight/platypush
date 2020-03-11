@@ -34,19 +34,22 @@ class StreamingOutput:
         return buf.startswith(b'\xff\xd8')
 
     def write(self, buf):
-        if self.is_new_frame(buf):
-            if self.raw:
-                with self.ready:
-                    self.raw_frame = buf
-                    self.ready.notify_all()
-            else:
-                # New frame, copy the existing buffer's content and notify all clients that it's available
-                self.buffer.truncate()
-                with self.ready:
-                    self.frame = self.buffer.getvalue()
-                    self.ready.notify_all()
-                self.buffer.seek(0)
+        if not self.is_new_frame(buf):
+            return
 
+        if self.raw:
+            with self.ready:
+                self.raw_frame = buf
+                self.ready.notify_all()
+                return
+
+        # New frame, copy the existing buffer's content and notify all clients that it's available
+        self.buffer.truncate()
+        with self.ready:
+            self.frame = self.buffer.getvalue()
+            self.ready.notify_all()
+
+        self.buffer.seek(0)
         return self.buffer.write(buf)
 
     def close(self):

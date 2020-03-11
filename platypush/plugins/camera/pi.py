@@ -20,6 +20,8 @@ class CameraPiPlugin(CameraPlugin):
     Requires:
 
         * **picamera** (``pip install picamera``)
+        * **numpy** (``pip install numpy``)
+
     """
 
     _default_resolution = (800, 600)
@@ -64,9 +66,11 @@ class CameraPiPlugin(CameraPlugin):
         self._time_lapse_thread = None
         self._recording_thread = None
         self._streaming_thread = None
+        self._capturing_thread = None
         self._time_lapse_stop_condition = threading.Condition()
         self._recording_stop_condition = threading.Condition()
         self._can_stream = False
+        self._can_capture = False
 
     # noinspection PyUnresolvedReferences,PyPackageRequirements
     def _get_camera(self, **opts):
@@ -88,11 +92,19 @@ class CameraPiPlugin(CameraPlugin):
         """
         Close an active connection to the camera.
         """
+        import picamera
+
         if self._output and self._camera:
-            self._camera.stop_recording()
+            try:
+                self._camera.stop_recording()
+            except picamera.PiCameraNotRecording:
+                pass
 
         if self._camera and not self._camera.closed:
-            self._camera.close()
+            try:
+                self._camera.close()
+            except picamera.PiCameraClosed:
+                pass
 
         self._camera = None
 
@@ -175,12 +187,38 @@ class CameraPiPlugin(CameraPlugin):
             if camera and close:
                 self.close()
 
+    def _raw_capture(self):
+        import numpy as np
+        resolution = self.camera_args['resolution']
+        camera = self._get_camera()
+
+        while self._can_capture:
+            shape = (resolution[1] + (resolution[1]%16),
+                     resolution[0] + (resolution[0]%32),
+                     3)
+
+            frame = np.empty(shape, dtype=np.uint8)
+            camera.capture(frame, 'bgr')
+            frame.reshape((shape[0], shape[1], 3))
+            self._output.write(frame)
+
     def __enter__(self):
         camera = self._get_camera()
-        self._output = StreamingOutput()
-        camera.start_recording(self._output, format='mjpeg')
+        self._output = StreamingOutput(raw=self.stream_raw_frames)
+        self._can_capture = True
+
+        if self.stream_raw_frames:
+            self._capturing_thread = threading.Thread(target=self._raw_capture)
+            self._capturing_thread.start()
+        else:
+            camera.start_recording(self._output, format='mjpeg')
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self._can_capture = False
+        if self._capturing_thread:
+            self._capturing_thread.join()
+            self._capturing_thread = None
+
         self.close()
 
     @action

@@ -182,7 +182,7 @@ setup(
         # Support for torrents download
         'torrent': ['python-libtorrent'],
         # Support for RaspberryPi camera
-        'picamera': ['picamera'],
+        'picamera': ['picamera', 'numpy'],
         # Support for inotify file monitors
         'inotify': ['inotify'],
         # Support for Google Assistant

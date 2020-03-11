@@ -106,7 +106,8 @@ class QrcodePlugin(Plugin):
         return QrcodeDecodedResponse(results)
 
     def _convert_frame(self, frame) -> Image:
-        assert isinstance(frame, np.ndarray), 'Image conversion only works with numpy arrays for now'
+        assert isinstance(frame, np.ndarray), \
+                'Image conversion only works with numpy arrays for now (got {})'.format(type(frame))
         mode = 'RGB'
         if len(frame.shape) > 2 and frame.shape[2] == 4:
             mode = 'RGBA'
