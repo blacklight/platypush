@@ -182,7 +182,7 @@ class Event(Message):
                 'type': self.type,
                 **args
             },
-        })
+        }, cls=self.Encoder)
 
 
 class EventMatchResult(object):

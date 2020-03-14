@@ -11,14 +11,40 @@ class Message(object):
     """ Message generic class """
 
     class Encoder(json.JSONEncoder):
-        def default(self, obj):
+        @staticmethod
+        def parse_numpy(obj):
+            try:
+                import numpy as np
+            except ImportError:
+                return
+
+            if isinstance(obj, np.floating):
+                return float(obj)
+            if isinstance(obj, np.integer):
+                return int(obj)
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+
+            return
+
+        @staticmethod
+        def parse_datetime(obj):
             if isinstance(obj, datetime.datetime) or \
                     isinstance(obj, datetime.date) or \
                     isinstance(obj, datetime.time):
                 return obj.isoformat()
 
+        def default(self, obj):
+            value = self.parse_datetime(obj)
+            if value is not None:
+                return value
+
             if isinstance(obj, set):
                 return list(obj)
+
+            value = self.parse_numpy(obj)
+            if value is not None:
+                return value
 
             return super().default(obj)
 
