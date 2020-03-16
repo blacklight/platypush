@@ -1,11 +1,13 @@
 import os
 import subprocess
 import tempfile
+from typing import Optional, List
 
-from platypush.plugins import Plugin, action
+from platypush.plugins import action
+from platypush.plugins.tts import TtsPlugin
 
 
-class TtsGooglePlugin(Plugin):
+class TtsGooglePlugin(TtsPlugin):
     """
     Advanced text-to-speech engine that leverages the Google Cloud TTS API.
     See https://cloud.google.com/text-to-speech/docs/quickstart-client-libraries#client-libraries-install-python
@@ -17,27 +19,25 @@ class TtsGooglePlugin(Plugin):
         * **mplayer** - see your distribution docs on how to install the mplayer package
     """
 
-    def __init__(self, language='en-US', voice=None,
-                 gender='FEMALE', credentials_file='~/.credentials/platypush/google/platypush-tts.json'):
+    def __init__(self,
+                 language: str ='en-US',
+                 voice: Optional[str] = None,
+                 gender: str = 'FEMALE',
+                 credentials_file: str = '~/.credentials/platypush/google/platypush-tts.json',
+                 player_args: Optional[List[str]] = None):
         """
         :param language: Language code, see https://cloud.google.com/text-to-speech/docs/basics for supported languages
-        :type language: str
-
         :param voice: Voice type, see https://cloud.google.com/text-to-speech/docs/basics for supported voices
-        :type voice: str
-
         :param gender: Voice gender (MALE, FEMALE or NEUTRAL)
-        :type gender: str
-
         :param credentials_file: Where your GCloud credentials for TTS are stored, see https://cloud.google.com/text-to-speech/docs/basics
-        :type credentials_file: str
+        :param player_args: Extra options to be passed to the audio player (default: ``mplayer``).
         """
-
         from google.cloud import texttospeech
         super().__init__()
 
         self.language = language
         self.voice = voice
+        self.player_args = player_args or []
 
         self.language = self._parse_language(language)
         self.voice = self._parse_voice(self.language, voice)
@@ -67,21 +67,20 @@ class TtsGooglePlugin(Plugin):
         return language + '-Wavenet-A'
 
     @action
-    def say(self, text, language=None, voice=None, gender=None):
+    def say(self,
+            text: str,
+            language: Optional[str] = None,
+            voice: Optional[str] = None,
+            gender: Optional[str] = None,
+            player_args: Optional[List[str]] = None):
         """
-        Say a phrase
+        Say a phrase.
 
-        :param text: Text to say
-        :type text: str
-
-        :param language: Language code override
-        :type language: str
-
-        :param voice: Voice type override
-        :type voice: str
-
-        :param gender: Gender override
-        :type gender: str
+        :param text: Text to say.
+        :param language: Language code override.
+        :param voice: Voice type override.
+        :param gender: Gender override.
+        :param player_args: Player args override.
         """
 
         from google.cloud import texttospeech
@@ -96,6 +95,7 @@ class TtsGooglePlugin(Plugin):
         else:
             gender = getattr(texttospeech.enums.SsmlVoiceGender, gender.upper())
 
+        player_args = player_args or self.player_args
         voice = texttospeech.types.VoiceSelectionParams(
             language_code=language, ssml_gender=gender,
             name=voice)
@@ -107,8 +107,8 @@ class TtsGooglePlugin(Plugin):
 
         with tempfile.NamedTemporaryFile() as f:
             f.write(response.audio_content)
-            cmd = ['mplayer -ao alsa -really-quiet -noconsolecontrols {}'
-                   .format(f.name)]
+            cmd = ['mplayer -ao alsa -really-quiet -noconsolecontrols {} "{}"'.format(
+                ' '.join(player_args), f.name)]
 
             try:
                 return subprocess.check_output(

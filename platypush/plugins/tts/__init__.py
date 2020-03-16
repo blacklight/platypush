@@ -1,5 +1,6 @@
 import subprocess
 import urllib.parse
+from typing import Optional, List
 
 from platypush.plugins import Plugin, action
 
@@ -13,30 +14,38 @@ class TtsPlugin(Plugin):
         * **mplayer** - see your distribution docs on how to install the mplayer package
     """
 
-    def __init__(self, lang='en-gb'):
+    def __init__(self, language='en-gb', player_args: Optional[List[str]] = None):
+        """
+        :param language: Language code (default: ``en-gb``).
+        :param player_args: Extra options to be passed to the audio player (default: ``mplayer``).
+        """
         super().__init__()
-        self.lang=lang
+        self.language = language
+        self.player_args = player_args or []
 
     @action
-    def say(self, text, language=None):
+    def say(self, text: str, language: Optional[str] = None, player_args: Optional[List[str]] = None):
         """
-        Say a phrase
+        Say some text.
 
-        :param text: Phrase to say
-        :type text: str
-
-        :param language: Language code
-        :type language: str
+        :param text: Text to say.
+        :param language: Language code override.
+        :param player_args: ``player_args`` override.
         """
-        if language is None: language=self.lang
-        cmd = ['mplayer -ao alsa -really-quiet -noconsolecontrols ' +
-               '"http://translate.google.com/translate_tts?{}"'
-               .format(urllib.parse.urlencode({
-                   'ie': 'UTF-8',
-                   'client': 'tw-ob',
-                   'tl': language,
-                   'q': text,
-                }))]
+        language = language or self.language
+        player_args = player_args or self.player_args
+        cmd = [
+            'mplayer -ao alsa -really-quiet -noconsolecontrols ' +
+            ' '.join(player_args) + ' ' +
+            '"http://translate.google.com/translate_tts?{}"'.format(
+                urllib.parse.urlencode({
+                    'ie': 'UTF-8',
+                    'client': 'tw-ob',
+                    'tl': language,
+                    'q': text,
+                })
+            )
+        ]
 
         try:
             return subprocess.check_output(
@@ -44,6 +53,4 @@ class TtsPlugin(Plugin):
         except subprocess.CalledProcessError as e:
             raise RuntimeError(e.output.decode('utf-8'))
 
-
 # vim:sw=4:ts=4:et:
-
