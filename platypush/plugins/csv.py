@@ -49,7 +49,10 @@ class CsvPlugin(Plugin):
     def _parse_header(filename: str, **csv_args) -> List[str]:
         column_names = []
         with open(filename, 'r', newline='') as f:
-            has_header = csv.Sniffer().has_header(f.read(1024))
+            try:
+                has_header = csv.Sniffer().has_header(f.read(1024))
+            except csv.Error:
+                has_header = False
 
         if has_header:
             with open(filename, 'r', newline='') as f:

@@ -295,5 +295,7 @@ setup(
         'linode': ['linode_api4'],
         # Support for QR codes
         'qrcode': ['numpy','qrcode[pil]', 'Pillow', 'pyzbar'],
+        # Support for Tensorflow
+        'tensorflow': ['numpy', 'tensorflow>=2.0', 'keras', 'pandas'],
     },
 )

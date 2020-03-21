@@ -252,3 +252,9 @@ croniter
 # qrcode
 # Pillow
 # pyzbar
+
+# Support for Tensorflow
+# numpy
+# pandas
+# tensorflow>=2.0
+# keras
