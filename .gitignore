@@ -16,3 +16,4 @@ platypush/backend/http/static/css/*/.sass-cache/
 platypush/backend/http/static/js/lib/vue.js
 platypush/notebooks
 platypush/requests
+/http-client.env.json
