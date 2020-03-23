@@ -1010,7 +1010,7 @@ class TensorflowPlugin(Plugin):
         inputs = self._get_data(inputs, model)
         if isinstance(inputs, np.ndarray) and \
                 len(model.inputs[0].shape) == len(inputs.shape) + 1 and \
-                model.inputs[0].shape[0] is None:
+                (model.inputs[0].shape[0] is None or model.inputs[0].shape[0].value is None):
             inputs = np.asarray([inputs])
 
         ret = model.predict(
