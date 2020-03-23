@@ -104,6 +104,7 @@ Plugins
     platypush/plugins/switch.wemo.rst
     platypush/plugins/system.rst
     platypush/plugins/tcp.rst
+    platypush/plugins/tensorflow.rst
     platypush/plugins/todoist.rst
     platypush/plugins/torrent.rst
     platypush/plugins/travisci.rst

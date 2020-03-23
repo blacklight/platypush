@@ -18,6 +18,7 @@ Responses
     platypush/responses/qrcode.rst
     platypush/responses/stt.rst
     platypush/responses/system.rst
+    platypush/responses/tensorflow.rst
     platypush/responses/todoist.rst
     platypush/responses/trello.rst
     platypush/responses/weather.buienradar.rst
