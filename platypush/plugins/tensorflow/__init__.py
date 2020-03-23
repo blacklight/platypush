@@ -238,7 +238,7 @@ class TensorflowPlugin(Plugin):
             you could also pass a dictionary, such as
             ``metrics={'output_a': 'accuracy', 'output_b': ['accuracy', 'mse']}``. You can also pass a list
             ``(len = len(outputs))`` of lists of metrics such as ``metrics=[['accuracy'], ['accuracy', 'mse']]`` or
-            ``metrics=['accuracy', ['accuracy', 'mse']]``.
+            ``metrics=['accuracy', ['accuracy', 'mse']]``. Default: ``['accuracy']``.
 
         :param loss_weights: Optional list or dictionary specifying scalar coefficients (Python floats) to weight the
             loss contributions of different model outputs. The loss value that will be minimized by the model
@@ -370,6 +370,9 @@ class TensorflowPlugin(Plugin):
                 layer = self._layer_from_dict(layer.pop('type'), **layer)
             model.add(layer)
 
+        if not metrics:
+            metrics = ['accuracy']
+
         model.compile(
             optimizer=optimizer,
             loss=loss,
@@ -433,7 +436,7 @@ class TensorflowPlugin(Plugin):
             you could also pass a dictionary, such as
             ``metrics={'output_a': 'accuracy', 'output_b': ['accuracy', 'mse']}``. You can also pass a list
             ``(len = len(outputs))`` of lists of metrics such as ``metrics=[['accuracy'], ['accuracy', 'mse']]`` or
-            ``metrics=['accuracy', ['accuracy', 'mse']]``.
+            ``metrics=['accuracy', ['accuracy', 'mse']]``. Default: ``['mae', 'mse']``.
 
         :param loss_weights: Optional list or dictionary specifying scalar coefficients (Python floats) to weight the
             loss contributions of different model outputs. The loss value that will be minimized by the model
@@ -500,6 +503,9 @@ class TensorflowPlugin(Plugin):
             model.output_labels = output_names
         else:
             model.output_labels = []
+
+        if not metrics:
+            metrics = ['mae', 'mse']
 
         model.compile(
             optimizer=optimizer,
