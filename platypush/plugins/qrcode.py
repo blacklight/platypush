@@ -55,7 +55,7 @@ class QrcodePlugin(Plugin):
                  format: str = 'png', camera_plugin: Optional[str] = None) -> QrcodeGeneratedResponse:
         """
         Generate a QR code.
-        If you configured the :class`:platypush.backend.http.HttpBackend` then you can also generate
+        If you configured the :class:`platypush.backend.http.HttpBackend` then you can also generate
         codes directly from the browser through ``http://<host>:<port>/qrcode?content=...``.
 
         :param content: Text, URL or content of the QR code.
