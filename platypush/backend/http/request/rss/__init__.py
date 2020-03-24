@@ -79,15 +79,14 @@ class RssUpdates(HttpRequest):
         errors = parser.simplify(link).errors
 
         if not response:
-            self.logger.warning('Mercury parser error: '.format(errors or '[unknown error]'))
+            self.logger.warning('Mercury parser error: {}'.format(errors or '[unknown error]'))
             return
 
         return response.get('content')
 
     def get_new_items(self, response):
         import feedparser
-        engine = create_engine('sqlite:///{}'.format(self.dbfile),
-                               connect_args={'check_same_thread': False})
+        engine = create_engine('sqlite:///{}'.format(self.dbfile), connect_args={'check_same_thread': False})
 
         Base.metadata.create_all(engine)
         Session.configure(bind=engine)
