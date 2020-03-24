@@ -4,7 +4,6 @@ from flask import abort, request, Blueprint, Response
 
 from platypush.backend.http.app import template_folder
 from platypush.context import get_plugin
-from platypush.plugins.qrcode import QrcodePlugin
 
 qrcode = Blueprint('qrcode', __name__, template_folder=template_folder)
 
@@ -20,6 +19,7 @@ def generate_code():
     This route can be used to generate a QR code given a ``content`` parameter.
     """
 
+    from platypush.plugins.qrcode import QrcodePlugin
     content = request.args.get('content')
     if not content:
         abort(400, 'Expected content parmeter')
