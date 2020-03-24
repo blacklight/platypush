@@ -5,9 +5,6 @@ import threading
 import time
 from typing import Optional, List
 
-import numpy as np
-from PIL import Image
-
 from platypush import Config
 from platypush.context import get_bus
 from platypush.message.event.qrcode import QrcodeScannedEvent
@@ -105,7 +102,8 @@ class QrcodePlugin(Plugin):
         results = pyzbar.decode(img)
         return QrcodeDecodedResponse(results)
 
-    def _convert_frame(self, frame) -> Image:
+    def _convert_frame(self, frame):
+        import numpy as np
         assert isinstance(frame, np.ndarray), \
                 'Image conversion only works with numpy arrays for now (got {})'.format(type(frame))
         mode = 'RGB'
