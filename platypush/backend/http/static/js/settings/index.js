@@ -3,6 +3,7 @@ window.vm = new Vue({
     data: function() {
         return {
             config: window.config,
+            document: undefined,
             sessionToken: undefined,
             selectedTab: 'users',
             selectedUser: undefined,
@@ -103,7 +104,7 @@ window.vm = new Vue({
 
         onTokenFocus: function(event) {
             event.target.select();
-            document.execCommand('copy');
+            this.document.execCommand('copy');
             event.target.setAttribute('disabled', true);
 
             createNotification({
@@ -116,7 +117,7 @@ window.vm = new Vue({
 
         onTokenBlur: function(event) {
             event.target.select();
-            document.execCommand('copy');
+            this.document.execCommand('copy');
             event.target.removeAttribute('disabled');
 
             createNotification({
@@ -177,7 +178,8 @@ window.vm = new Vue({
     },
 
     created: function() {
-        let cookies = Object.fromEntries(document.cookie.split('; ').map(x => x.split('=')));
+        this.document = document;
+        let cookies = Object.fromEntries(this.document.cookie.split('; ').map(x => x.split('=')));
         this.sessionToken = cookies.session_token;
     },
 });
