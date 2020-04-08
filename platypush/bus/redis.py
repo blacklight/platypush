@@ -1,3 +1,4 @@
+import ast
 import json
 import logging
 import threading
@@ -34,10 +35,16 @@ class RedisBus(Bus):
 
         try:
             msg = self.redis.blpop(self.redis_queue)
-            if msg and msg[1]:
-                msg = Message.build(json.loads(msg[1].decode('utf-8')))
-            else:
-                msg = None
+            if not msg or msg[1] is None:
+                return
+
+            msg = msg[1].decode('utf-8')
+            try:
+                msg = json.loads(msg)
+            except json.decoder.JSONDecodeError:
+                msg = ast.literal_eval(msg)
+
+            msg = Message.build(msg)
         except Exception as e:
             logger.exception(e)
 
@@ -49,4 +56,3 @@ class RedisBus(Bus):
 
 
 # vim:sw=4:ts=4:et:
-

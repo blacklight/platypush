@@ -1,15 +1,19 @@
 import datetime
+import importlib
+import inspect
 import logging
 import os
+import pkgutil
 import re
 import socket
 import sys
 import yaml
 
-from platypush.utils import get_hash
+from platypush.utils import get_hash, is_functional_procedure, is_functional_hook
 
 """ Config singleton instance """
 _default_config_instance = None
+
 
 class Config(object):
     """
@@ -57,7 +61,7 @@ class Config(object):
             raise RuntimeError('No config file specified and nothing found in {}'
                                .format(self._cfgfile_locations))
 
-        self._cfgfile = cfgfile
+        self._cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
         self._config = self._read_config_file(self._cfgfile)
 
         if 'token' in self._config:
@@ -67,6 +71,15 @@ class Config(object):
         if 'workdir' not in self._config:
             self._config['workdir'] = self._workdir_location
         os.makedirs(self._config['workdir'], exist_ok=True)
+
+        if 'scripts_dir' not in self._config:
+            self._config['scripts_dir'] = os.path.join(os.path.dirname(cfgfile), 'scripts')
+        os.makedirs(self._config['scripts_dir'], mode=0o755, exist_ok=True)
+
+        init_py = os.path.join(self._config['scripts_dir'], '__init__.py')
+        if not os.path.isfile(init_py):
+            with open(init_py, 'w') as f:
+                f.write('# Auto-generated __init__.py - do not remove\n')
 
         self._config['db'] = self._config.get('main.db', {
             'engine': 'sqlite:///' + os.path.join(
@@ -80,7 +93,7 @@ class Config(object):
         }
 
         if 'logging' in self._config:
-            for (k,v) in self._config['logging'].items():
+            for (k, v) in self._config['logging'].items():
                 if k == 'filename':
                     logfile = os.path.expanduser(v)
                     logdir = os.path.dirname(logfile)
@@ -106,7 +119,7 @@ class Config(object):
             self._config['device_id'] = socket.gethostname()
 
         if 'environment' in self._config:
-            for k,v in self._config['environment'].items():
+            for k, v in self._config['environment'].items():
                 os.environ[k] = str(v)
 
         self.backends = {}
@@ -117,17 +130,18 @@ class Config(object):
         self.cronjobs = {}
 
         self._init_constants()
+        self._load_scripts()
         self._init_components()
 
     @staticmethod
     def _is_special_token(token):
         return token == 'main.db' or \
-                token == 'token' or \
-                token == 'token_hash' or \
-                token == 'logging' or \
-                token == 'workdir' or \
-                token == 'device_id' or \
-                token == 'environment'
+               token == 'token' or \
+               token == 'token_hash' or \
+               token == 'logging' or \
+               token == 'workdir' or \
+               token == 'device_id' or \
+               token == 'environment'
 
     def _read_config_file(self, cfgfile):
         cfgfile_dir = os.path.dirname(os.path.abspath(
@@ -155,11 +169,43 @@ class Config(object):
                     included_config = self._read_config_file(include_file)
                     for incl_section in included_config.keys():
                         config[incl_section] = included_config[incl_section]
+            elif section == 'scripts_dir':
+                assert isinstance(file_config[section], str)
+                config['scripts_dir'] = os.path.abspath(os.path.expanduser(file_config[section]))
             elif 'disabled' not in file_config[section] \
                     or file_config[section]['disabled'] is False:
                 config[section] = file_config[section]
 
         return config
+
+    def _load_scripts(self):
+        scripts_dir = self._config['scripts_dir']
+        sys_path = sys.path.copy()
+        sys.path = [scripts_dir] + sys.path
+
+        for x, modname, y in pkgutil.walk_packages(path=[scripts_dir], onerror=lambda x: None):
+            try:
+                module = importlib.import_module(modname)
+            except Exception as e:
+                print('Unhandled exception while importing module {} from {}: {}'.format(
+                    modname, scripts_dir, str(e)
+                ))
+
+                continue
+
+            self.procedures.update(**{
+                modname + '.' + name: obj
+                for name, obj in inspect.getmembers(module)
+                if is_functional_procedure(obj)
+            })
+
+            self.event_hooks.update(**{
+                modname + '.' + name: obj
+                for name, obj in inspect.getmembers(module)
+                if is_functional_hook(obj)
+            })
+
+        sys.path = sys_path
 
     def _init_components(self):
         for key in self._config.keys():
@@ -199,38 +245,42 @@ class Config(object):
         if 'constants' in self._config:
             self.constants = self._config['constants']
 
-        for (key,value) in self._default_constants.items():
+        for (key, value) in self._default_constants.items():
             self.constants[key] = value
-
 
     @staticmethod
     def get_backends():
         global _default_config_instance
-        if _default_config_instance is None: _default_config_instance = Config()
+        if _default_config_instance is None:
+            _default_config_instance = Config()
         return _default_config_instance.backends
 
     @staticmethod
     def get_plugins():
         global _default_config_instance
-        if _default_config_instance is None: _default_config_instance = Config()
+        if _default_config_instance is None:
+            _default_config_instance = Config()
         return _default_config_instance.plugins
 
     @staticmethod
     def get_event_hooks():
         global _default_config_instance
-        if _default_config_instance is None: _default_config_instance = Config()
+        if _default_config_instance is None:
+            _default_config_instance = Config()
         return _default_config_instance.event_hooks
 
     @staticmethod
     def get_procedures():
         global _default_config_instance
-        if _default_config_instance is None: _default_config_instance = Config()
+        if _default_config_instance is None:
+            _default_config_instance = Config()
         return _default_config_instance.procedures
 
     @staticmethod
     def get_constants():
         global _default_config_instance
-        if _default_config_instance is None: _default_config_instance = Config()
+        if _default_config_instance is None:
+            _default_config_instance = Config()
         constants = {}
 
         for name in _default_config_instance.constants.keys():
@@ -240,16 +290,19 @@ class Config(object):
     @staticmethod
     def get_constant(name):
         global _default_config_instance
-        if _default_config_instance is None: _default_config_instance = Config()
+        if _default_config_instance is None:
+            _default_config_instance = Config()
 
-        if name not in _default_config_instance.constants: return None
+        if name not in _default_config_instance.constants:
+            return None
         value = _default_config_instance.constants[name]
         return value() if callable(value) else value
 
     @staticmethod
     def get_cronjobs():
         global _default_config_instance
-        if _default_config_instance is None: _default_config_instance = Config()
+        if _default_config_instance is None:
+            _default_config_instance = Config()
         return _default_config_instance.cronjobs
 
     @staticmethod
@@ -263,11 +316,11 @@ class Config(object):
 
         return backends[0] if backends else None
 
-
     @classmethod
     def _get_default_cfgfile(cls):
         for location in cls._cfgfile_locations:
-            if os.path.isfile(location): return location
+            if os.path.isfile(location):
+                return location
 
     @staticmethod
     def init(cfgfile=None):
@@ -287,9 +340,8 @@ class Config(object):
             key -- Config key to get
         """
         global _default_config_instance
-        if _default_config_instance is None: _default_config_instance = Config()
+        if _default_config_instance is None:
+            _default_config_instance = Config()
         return _default_config_instance._config.get(key)
 
-
 # vim:sw=4:ts=4:et:
-

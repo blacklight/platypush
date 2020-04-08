@@ -12,7 +12,8 @@ from platypush.config import Config
 from platypush.context import get_plugin
 from platypush.message import Message
 from platypush.message.response import Response
-from platypush.utils import get_hash, get_module_and_method_from_action, get_redis_queue_name_by_message
+from platypush.utils import get_hash, get_module_and_method_from_action, get_redis_queue_name_by_message, \
+    is_functional_procedure
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +70,19 @@ class Request(Message):
         from platypush.procedure import Procedure
 
         logger.info('Executing procedure request: {}'.format(self.action))
-        proc_name = self.action.split('.')[-1]
-        proc_config = Config.get_procedures()[proc_name]
+        procedures = Config.get_procedures()
+        proc_name = '.'.join(self.action.split('.')[1:])
+        if proc_name not in procedures:
+            proc_name = self.action.split('.')[-1]
+
+        proc_config = procedures[proc_name]
+        if is_functional_procedure(proc_config):
+            kwargs.update(**self.args)
+            if 'n_tries' in kwargs:
+                del kwargs['n_tries']
+
+            return proc_config(*args, **kwargs)
+
         proc = Procedure.build(name=proc_name, requests=proc_config['actions'],
                                _async=proc_config['_async'], args=self.args,
                                backend=self.backend, id=self.id)

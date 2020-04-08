@@ -1,14 +1,14 @@
 import copy
 import json
 import logging
-import re
 import threading
+from functools import wraps
 
 from platypush.config import Config
-from platypush.message.event import Event, EventMatchResult
+from platypush.message.event import Event
 from platypush.message.request import Request
 from platypush.procedure import Procedure
-from platypush.utils import get_event_class_by_type, set_thread_name
+from platypush.utils import get_event_class_by_type, set_thread_name, is_functional_hook
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ def parse(msg):
     if isinstance(msg, str):
         try:
             msg = json.loads(msg.strip())
-        except:
+        except json.JSONDecodeError:
             logger.warning('Invalid JSON message: {}'.format(msg))
             return None
 
@@ -57,10 +57,12 @@ class EventCondition(object):
         """ Builds a rule given either another EventRule, a dictionary or
             a JSON UTF-8 encoded string/bytearray """
 
-        if isinstance(rule, cls): return rule
-        else: rule = parse(rule)
-        assert isinstance(rule, dict)
+        if isinstance(rule, cls):
+            return rule
+        else:
+            rule = parse(rule)
 
+        assert isinstance(rule, dict)
         type = get_event_class_by_type(
             rule.pop('type') if 'type' in rule else 'Event')
 
@@ -76,10 +78,10 @@ class EventAction(Request):
         whose fields can be configured later depending on the event context """
 
     def __init__(self, target=None, action=None, **args):
-        if target is None: target=Config.get('device_id')
+        if target is None:
+            target = Config.get('device_id')
         args_copy = copy.deepcopy(args)
         super().__init__(target=target, action=action, **args_copy)
-
 
     @classmethod
     def build(cls, action):
@@ -97,11 +99,11 @@ class EventAction(Request):
 
 
 class EventHook(object):
-    """ Event hook class. It consists of one conditionss and
+    """ Event hook class. It consists of one conditions and
         one or multiple actions to be executed """
 
-    def __init__(self, name, priority=None, condition=None, actions=[]):
-        """ Construtor. Takes a name, a EventCondition object and an event action
+    def __init__(self, name, priority=None, condition=None, actions=None):
+        """ Constructor. Takes a name, a EventCondition object and an event action
             procedure as input. It may also have a priority attached
             as a positive number. If multiple hooks match against an event,
             only the ones that have either the maximum match score or the
@@ -109,20 +111,25 @@ class EventHook(object):
 
         self.name = name
         self.condition = EventCondition.build(condition or {})
-        self.actions = actions
+        self.actions = actions or []
         self.priority = priority or 0
         self.condition.priority = self.priority
-
 
     @classmethod
     def build(cls, name, hook):
         """ Builds a rule given either another EventRule, a dictionary or
             a JSON UTF-8 encoded string/bytearray """
 
-        if isinstance(hook, cls): return hook
-        else: hook = parse(hook)
-        assert isinstance(hook, dict)
+        if isinstance(hook, cls):
+            return hook
+        else:
+            hook = parse(hook)
 
+        if is_functional_hook(hook):
+            actions = Procedure(name=name, requests=[hook], _async=False)
+            return cls(name=name, condition=hook.condition, actions=actions)
+
+        assert isinstance(hook, dict)
         condition = EventCondition.build(hook['if']) if 'if' in hook else None
         actions = []
         priority = hook['priority'] if 'priority' in hook else None
@@ -134,16 +141,14 @@ class EventHook(object):
             else:
                 actions = [hook['then']]
 
-        actions = Procedure.build(name=name+'__Hook', requests=actions, _async=False)
+        actions = Procedure.build(name=name + '__Hook', requests=actions, _async=False)
         return cls(name=name, condition=condition, actions=actions, priority=priority)
-
 
     def matches_event(self, event):
         """ Returns an EventMatchResult object containing the information
             about the match between the event and this hook """
 
         return event.matches_condition(self.condition)
-
 
     def run(self, event):
         """ Checks the condition of the hook against a particular event and
@@ -154,14 +159,30 @@ class EventHook(object):
             self.actions.execute(event=event, **result.parsed_args)
 
         result = self.matches_event(event)
-        token = Config.get('token')
 
         if result.is_match:
             logger.info('Running hook {} triggered by an event'.format(self.name))
-            threading.Thread(target=_thread_func,
-                             name='Event-' + self.name,
-                             args=(result,)).start()
+            threading.Thread(target=_thread_func, name='Event-' + self.name, args=(result,)).start()
+
+
+def hook(f, event_type=Event, **condition):
+    f.hook = True
+    f.condition = EventCondition(type=event_type, **condition)
+
+    @wraps(f)
+    def _execute_hook(*args, **kwargs):
+        from platypush import Response
+
+        try:
+            ret = f(*args, **kwargs)
+            if isinstance(ret, Response):
+                return ret
+
+            return Response(output=ret)
+        except Exception as e:
+            return Response(errors=[str(e)])
+
+    return _execute_hook
 
 
 # vim:sw=4:ts=4:et:
-

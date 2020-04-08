@@ -1,6 +1,7 @@
 import enum
 import logging
 import re
+from functools import wraps
 
 from queue import LifoQueue
 from ..config import Config
@@ -179,6 +180,10 @@ class Procedure(object):
         token = Config.get('token')
 
         for request in self.requests:
+            if callable(request):
+                response = request(**context)
+                continue
+
             if isinstance(request, Statement):
                 if request == Statement.RETURN:
                     self._should_return = True
@@ -459,6 +464,23 @@ class IfProcedure(Procedure):
             response = self.else_branch.execute(**context)
 
         return response
+
+
+def procedure(f):
+    f.procedure = True
+
+    @wraps(f)
+    def _execute_procedure(*args, **kwargs):
+        try:
+            ret = f(*args, **kwargs)
+            if isinstance(ret, Response):
+                return ret
+
+            return Response(output=ret)
+        except Exception as e:
+            return Response(errors=[str(e)])
+
+    return _execute_procedure
 
 
 # vim:sw=4:ts=4:et:

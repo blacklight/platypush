@@ -114,7 +114,6 @@ def get_decorators(cls, climb_class_hierarchy=False):
 
     def visit_FunctionDef(node):
         for n in node.decorator_list:
-            name = ''
             if isinstance(n, ast.Call):
                 name = n.func.attr if isinstance(n.func, ast.Attribute) else n.func.id
             else:
@@ -281,6 +280,22 @@ def grouper(n, iterable, fillvalue=None):
 
     for chunk in zip_longest(*args):
         yield filter(None, chunk)
+
+
+def is_functional_procedure(obj) -> bool:
+    return callable(obj) and hasattr(obj, 'procedure')
+
+
+def is_functional_hook(obj) -> bool:
+    return callable(obj) and hasattr(obj, 'hook')
+
+
+def run(action, **kwargs):
+    from platypush.context import get_plugin
+    (module_name, method_name) = get_module_and_method_from_action(action)
+    plugin = get_plugin(module_name)
+    method = getattr(plugin, method_name)
+    return method(**kwargs)
 
 
 # vim:sw=4:ts=4:et:
