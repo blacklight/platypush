@@ -165,24 +165,27 @@ class EventHook(object):
             threading.Thread(target=_thread_func, name='Event-' + self.name, args=(result,)).start()
 
 
-def hook(f, event_type=Event, **condition):
-    f.hook = True
-    f.condition = EventCondition(type=event_type, **condition)
+def hook(event_type=Event, **condition):
+    def wrapper(f):
+        f.hook = True
+        f.condition = EventCondition(type=event_type, **condition)
 
-    @wraps(f)
-    def _execute_hook(*args, **kwargs):
-        from platypush import Response
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            from platypush import Response
 
-        try:
-            ret = f(*args, **kwargs)
-            if isinstance(ret, Response):
-                return ret
+            try:
+                ret = f(*args, **kwargs)
+                if isinstance(ret, Response):
+                    return ret
 
-            return Response(output=ret)
-        except Exception as e:
-            return Response(errors=[str(e)])
+                return Response(output=ret)
+            except Exception as e:
+                return Response(errors=[str(e)])
 
-    return _execute_hook
+        return wrapped
+
+    return wrapper
 
 
 # vim:sw=4:ts=4:et:
