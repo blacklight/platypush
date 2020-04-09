@@ -290,12 +290,12 @@ def is_functional_hook(obj) -> bool:
     return callable(obj) and hasattr(obj, 'hook')
 
 
-def run(action, **kwargs):
+def run(action, *args, **kwargs):
     from platypush.context import get_plugin
     (module_name, method_name) = get_module_and_method_from_action(action)
     plugin = get_plugin(module_name)
     method = getattr(plugin, method_name)
-    return method(**kwargs)
+    return method(*args, **kwargs)
 
 
 # vim:sw=4:ts=4:et:
