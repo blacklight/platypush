@@ -3,6 +3,7 @@ import importlib
 import inspect
 import logging
 import os
+import pathlib
 import pkgutil
 import re
 import socket
@@ -80,6 +81,11 @@ class Config(object):
         if not os.path.isfile(init_py):
             with open(init_py, 'w') as f:
                 f.write('# Auto-generated __init__.py - do not remove\n')
+
+        # Include scripts_dir parent in sys.path so members can be imported in scripts
+        # through the `scripts` package
+        scripts_parent_dir = str(pathlib.Path(self._config['scripts_dir']).absolute().parent)
+        sys.path = [scripts_parent_dir] + sys.path
 
         self._config['db'] = self._config.get('main.db', {
             'engine': 'sqlite:///' + os.path.join(
