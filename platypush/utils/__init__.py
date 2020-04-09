@@ -295,7 +295,12 @@ def run(action, *args, **kwargs):
     (module_name, method_name) = get_module_and_method_from_action(action)
     plugin = get_plugin(module_name)
     method = getattr(plugin, method_name)
-    return method(*args, **kwargs)
+    response = method(*args, **kwargs)
+
+    if response.errors:
+        raise RuntimeError(response.errors[0])
+
+    return response.output
 
 
 # vim:sw=4:ts=4:et:
