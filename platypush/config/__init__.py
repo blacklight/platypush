@@ -8,6 +8,8 @@ import pkgutil
 import re
 import socket
 import sys
+from typing import Optional
+
 import yaml
 
 from platypush.utils import get_hash, is_functional_procedure, is_functional_hook
@@ -184,32 +186,35 @@ class Config(object):
 
         return config
 
+    def _load_module(self, modname: str, prefix: Optional[str] = None):
+        try:
+            module = importlib.import_module(modname)
+        except Exception as e:
+            print('Unhandled exception while importing module {}: {}'.format(modname, str(e)))
+            return
+
+        prefix = modname + '.' if prefix is None else prefix
+        self.procedures.update(**{
+            prefix + name: obj
+            for name, obj in inspect.getmembers(module)
+            if is_functional_procedure(obj)
+        })
+
+        self.event_hooks.update(**{
+            prefix + name: obj
+            for name, obj in inspect.getmembers(module)
+            if is_functional_hook(obj)
+        })
+
     def _load_scripts(self):
         scripts_dir = self._config['scripts_dir']
         sys_path = sys.path.copy()
         sys.path = [scripts_dir] + sys.path
+        scripts_modname = os.path.basename(scripts_dir)
+        self._load_module(scripts_modname, prefix='')
 
-        for x, modname, y in pkgutil.walk_packages(path=[scripts_dir], onerror=lambda x: None):
-            try:
-                module = importlib.import_module(modname)
-            except Exception as e:
-                print('Unhandled exception while importing module {} from {}: {}'.format(
-                    modname, scripts_dir, str(e)
-                ))
-
-                continue
-
-            self.procedures.update(**{
-                modname + '.' + name: obj
-                for name, obj in inspect.getmembers(module)
-                if is_functional_procedure(obj)
-            })
-
-            self.event_hooks.update(**{
-                modname + '.' + name: obj
-                for name, obj in inspect.getmembers(module)
-                if is_functional_hook(obj)
-            })
+        for _, modname, _ in pkgutil.walk_packages(path=[scripts_dir], onerror=lambda x: None):
+            self._load_module(modname)
 
         sys.path = sys_path
 
