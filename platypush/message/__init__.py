@@ -24,6 +24,8 @@ class Message(object):
                 return int(obj)
             if isinstance(obj, np.ndarray):
                 return obj.tolist()
+            if callable(obj):
+                return '<function at {}.{}>'.format(obj.__module__, obj.__name__)
 
             return
 

@@ -8,6 +8,7 @@ from platypush.backend.http.app.utils import authenticate, get_websocket_port
 
 from platypush.backend.http.utils import HttpUtils
 from platypush.config import Config
+from platypush.message import Message
 
 index = Blueprint('index', __name__, template_folder=template_folder)
 
@@ -70,7 +71,7 @@ def index():
                            websocket_port=get_websocket_port(),
                            template_folder=template_folder, static_folder=static_folder,
                            plugins=Config.get_plugins(), backends=Config.get_backends(),
-                           procedures=json.dumps(Config.get_procedures()),
+                           procedures=json.dumps(Config.get_procedures(), cls=Message.Encoder),
                            has_ssl=http_conf.get('ssl_cert') is not None)
 
 
