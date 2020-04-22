@@ -76,6 +76,7 @@ class HttpRequest(object):
 
                 response.raise_for_status()
             except Exception as e:
+                self.logger.exception(e)
                 self.logger.warning('Encountered an error while retrieving {}: {}'.
                                     format(self.args.url, str(e)))
 
