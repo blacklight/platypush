@@ -1,12 +1,8 @@
 import importlib
 import time
 
-from threading import Thread
-
-from platypush.bus import Bus
 from platypush.backend import Backend
 from platypush.backend.http.request import HttpRequest
-from platypush.message.request import Request
 
 
 class HttpPollBackend(Backend):
@@ -60,8 +56,8 @@ class HttpPollBackend(Backend):
 
         for request in requests:
             if isinstance(request, dict):
-                type = request['type']
-                (module, name) = ('.'.join(type.split('.')[:-1]), type.split('.')[-1])
+                req_type = request['type']
+                (module, name) = ('.'.join(req_type.split('.')[:-1]), req_type.split('.')[-1])
                 module = importlib.import_module(module)
                 request = getattr(module, name)(**request)
             elif not isinstance(request, HttpRequest):
@@ -70,7 +66,6 @@ class HttpPollBackend(Backend):
 
             request.bus = self.bus
             self.requests.append(request)
-
 
     def run(self):
         super().run()
@@ -84,4 +79,3 @@ class HttpPollBackend(Backend):
 
 
 # vim:sw=4:ts=4:et:
-
