@@ -1,5 +1,4 @@
 pyyaml
-requires
 requests
 flask
 redis
