@@ -117,7 +117,7 @@ class TorrentPlugin(Plugin):
 
     def search_movies(self, query, language=None):
         request = urllib.request.urlopen(urllib.request.Request(
-            'https://popcorn-api.io/movies/1?' + urllib.parse.urlencode({
+            'https://movies-v2.api-fetch.sh/movies/1?' + urllib.parse.urlencode({
                 'sort': 'relevance',
                 'keywords': query,
             }), headers=self.headers
@@ -149,7 +149,7 @@ class TorrentPlugin(Plugin):
 
     def search_tv(self, query):
         request = urllib.request.urlopen(urllib.request.Request(
-            'https://popcorn-api.io/shows/1?' + urllib.parse.urlencode({
+            'https://tv-v2.api-fetch.sh/shows/1?' + urllib.parse.urlencode({
                 'sort': 'relevance',
                 'keywords': query,
             }), headers=self.headers
