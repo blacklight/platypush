@@ -77,11 +77,11 @@ class Covid19Backend(Backend):
             update_time=update_time,
         ))
 
-        session.add(Covid19Update(country=summary['CountryCode'],
-                                  confirmed=summary['TotalConfirmed'],
-                                  deaths=summary['TotalDeaths'],
-                                  recovered=summary['TotalRecovered'],
-                                  last_updated_at=update_time))
+        session.merge(Covid19Update(country=summary['CountryCode'],
+                                    confirmed=summary['TotalConfirmed'],
+                                    deaths=summary['TotalDeaths'],
+                                    recovered=summary['TotalRecovered'],
+                                    last_updated_at=update_time))
 
     def loop(self):
         # noinspection PyUnresolvedReferences
