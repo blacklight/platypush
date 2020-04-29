@@ -24,6 +24,7 @@ Plugins
     platypush/plugins/camera.pi.rst
     platypush/plugins/chat.telegram.rst
     platypush/plugins/clipboard.rst
+    platypush/plugins/covid19.rst
     platypush/plugins/csv.rst
     platypush/plugins/db.rst
     platypush/plugins/dropbox.rst
