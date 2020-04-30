@@ -10,6 +10,7 @@ class Covid19UpdateEvent(Event):
                  deaths: int,
                  recovered: int,
                  country: Optional[str] = None,
+                 country_code: Optional[str] = None,
                  update_time: Optional[datetime] = None,
                  *args, **kwargs):
         super().__init__(*args,
@@ -17,6 +18,7 @@ class Covid19UpdateEvent(Event):
                          deaths=deaths,
                          recovered=recovered,
                          country=country,
+                         country_code=country_code,
                          update_time=update_time,
                          **kwargs)
 

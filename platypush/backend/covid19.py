@@ -70,7 +70,8 @@ class Covid19Backend(Backend):
         update_time = datetime.datetime.fromisoformat(summary['Date'].replace('Z', '+00:00'))
 
         self.bus.post(Covid19UpdateEvent(
-            country=summary['CountryCode'],
+            country=summary['Country'],
+            country_code=summary['CountryCode'],
             confirmed=summary['TotalConfirmed'],
             deaths=summary['TotalDeaths'],
             recovered=summary['TotalRecovered'],
