@@ -57,8 +57,11 @@ class Covid19Plugin(Plugin):
 
         :param country: Default country override.
         """
-        country = self._get_countries(country)[0]
-        return requests.get('{}/total/dayone/country/{}'.format(self.base_url, country)).json()
+        countries = self._get_countries(country)
+        ret = []
+        for country in countries:
+            ret += requests.get('{}/total/dayone/country/{}'.format(self.base_url, country)).json()
+        return ret
 
 
 # vim:sw=4:ts=4:et:
