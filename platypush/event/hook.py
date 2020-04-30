@@ -181,6 +181,7 @@ def hook(event_type=Event, **condition):
 
                 return Response(output=ret)
             except Exception as e:
+                logger.exception(e)
                 return Response(errors=[str(e)])
 
         return wrapped
