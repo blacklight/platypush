@@ -258,3 +258,6 @@ croniter
 # pandas
 # tensorflow>=2.0
 # keras
+
+# Support for Samsung TizenOS-based smart TVs
+# samsungtvws

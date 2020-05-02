@@ -112,6 +112,7 @@ Plugins
     platypush/plugins/trello.rst
     platypush/plugins/tts.rst
     platypush/plugins/tts.google.rst
+    platypush/plugins/tv.samsung.ws.rst
     platypush/plugins/udp.rst
     platypush/plugins/user.rst
     platypush/plugins/utils.rst

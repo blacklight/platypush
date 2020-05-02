@@ -297,5 +297,7 @@ setup(
         'qrcode': ['numpy','qrcode[pil]', 'Pillow', 'pyzbar'],
         # Support for Tensorflow
         'tensorflow': ['numpy', 'tensorflow>=2.0', 'keras', 'pandas'],
+        # Support for Samsung TizenOS-based smart TVs
+        'samsungtv': ['samsungtvws'],
     },
 )
