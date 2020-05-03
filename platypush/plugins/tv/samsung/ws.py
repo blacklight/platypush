@@ -1,5 +1,6 @@
 import os
-from typing import Optional, Tuple, Union, Dict
+import time
+from typing import Optional, Tuple, Union, Dict, Callable, Any
 
 from samsungtvws import SamsungTVWS
 
@@ -52,6 +53,20 @@ class TvSamsungWsPlugin(Plugin):
 
         return self._connections[(host, port)]
 
+    def exec(self, func: Callable[[SamsungTVWS], Any], host: Optional[str] = None, port: Optional[int] = None,
+             n_tries=2) -> Any:
+        tv = self.connect(host, port)
+
+        try:
+            return func(tv)
+        except Exception as e:
+            self.logger.warning(str(e))
+            if n_tries <= 0:
+                raise e
+            else:
+                time.sleep(1)
+                return self.exec(func, host, port, n_tries-1)
+
     @action
     def power(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
         """
@@ -60,8 +75,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().power()
+        return self.exec(lambda tv: tv.shortcuts().power(), host=host, port=port)
 
     @action
     def volume_up(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -71,8 +85,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().volume_up()
+        return self.exec(lambda tv: tv.shortcuts().volume_up(), host=host, port=port)
 
     @action
     def volume_down(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -82,8 +95,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().volume_down()
+        return self.exec(lambda tv: tv.shortcuts().volume_down(), host=host, port=port)
 
     @action
     def back(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -93,8 +105,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().back()
+        return self.exec(lambda tv: tv.shortcuts().back(), host=host, port=port)
 
     @action
     def channel(self, channel: int, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -105,8 +116,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().channel(channel)
+        return self.exec(lambda tv: tv.shortcuts().channel(channel), host=host, port=port)
 
     @action
     def channel_up(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -116,8 +126,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().channel_up()
+        return self.exec(lambda tv: tv.shortcuts().channel_up(), host=host, port=port)
 
     @action
     def channel_down(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -127,8 +136,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().channel_down()
+        return self.exec(lambda tv: tv.shortcuts().channel_down(), host=host, port=port)
 
     @action
     def enter(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -138,8 +146,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().enter()
+        return self.exec(lambda tv: tv.shortcuts().enter(), host=host, port=port)
 
     @action
     def guide(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -149,8 +156,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().guide()
+        return self.exec(lambda tv: tv.shortcuts().guide(), host=host, port=port)
 
     @action
     def home(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -160,8 +166,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().home()
+        return self.exec(lambda tv: tv.shortcuts().home(), host=host, port=port)
 
     @action
     def info(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -171,8 +176,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().info()
+        return self.exec(lambda tv: tv.shortcuts().info(), host=host, port=port)
 
     @action
     def menu(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -182,8 +186,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().menu()
+        return self.exec(lambda tv: tv.shortcuts().menu(), host=host, port=port)
 
     @action
     def mute(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -193,8 +196,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().mute()
+        return self.exec(lambda tv: tv.shortcuts().mute(), host=host, port=port)
 
     @action
     def source(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -204,8 +206,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().source()
+        return self.exec(lambda tv: tv.shortcuts().source(), host=host, port=port)
 
     @action
     def tools(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -215,8 +216,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().tools()
+        return self.exec(lambda tv: tv.shortcuts().tools(), host=host, port=port)
 
     @action
     def up(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -226,8 +226,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().up()
+        return self.exec(lambda tv: tv.shortcuts().up(), host=host, port=port)
 
     @action
     def down(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -237,8 +236,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().down()
+        return self.exec(lambda tv: tv.shortcuts().down(), host=host, port=port)
 
     @action
     def left(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -248,8 +246,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().left()
+        return self.exec(lambda tv: tv.shortcuts().left(), host=host, port=port)
 
     @action
     def right(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -259,8 +256,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().right()
+        return self.exec(lambda tv: tv.shortcuts().right(), host=host, port=port)
 
     @action
     def blue(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -270,8 +266,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().blue()
+        return self.exec(lambda tv: tv.shortcuts().blue(), host=host, port=port)
 
     @action
     def green(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -281,8 +276,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().green()
+        return self.exec(lambda tv: tv.shortcuts().green(), host=host, port=port)
 
     @action
     def red(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -292,8 +286,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().red()
+        return self.exec(lambda tv: tv.shortcuts().red(), host=host, port=port)
 
     @action
     def yellow(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -303,8 +296,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().yellow()
+        return self.exec(lambda tv: tv.shortcuts().yellow(), host=host, port=port)
 
     @action
     def digit(self, digit: int, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -315,8 +307,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        tv.shortcuts().digit(digit)
+        return self.exec(lambda tv: tv.shortcuts().digit(digit), host=host, port=port)
 
     @action
     def run_app(self, app_id: Union[int, str], host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -328,7 +319,43 @@ class TvSamsungWsPlugin(Plugin):
         :param port: Default port override.
         """
         tv = self.connect(host, port)
-        tv.run_app(app_id)
+        tv.rest_app_run(str(app_id))
+
+    @action
+    def close_app(self, app_id: Union[int, str], host: Optional[str] = None, port: Optional[int] = None) -> None:
+        """
+        Close an app.
+
+        :param app_id: App ID.
+        :param host: Default host IP/name override.
+        :param port: Default port override.
+        """
+        tv = self.connect(host, port)
+        tv.rest_app_close(str(app_id))
+
+    @action
+    def install_app(self, app_id: Union[int, str], host: Optional[str] = None, port: Optional[int] = None) -> None:
+        """
+        Install an app.
+
+        :param app_id: App ID.
+        :param host: Default host IP/name override.
+        :param port: Default port override.
+        """
+        tv = self.connect(host, port)
+        tv.rest_app_install(str(app_id))
+
+    @action
+    def status_app(self, app_id: Union[int, str], host: Optional[str] = None, port: Optional[int] = None) -> dict:
+        """
+        Get the status of an app.
+
+        :param app_id: App ID.
+        :param host: Default host IP/name override.
+        :param port: Default port override.
+        """
+        tv = self.connect(host, port)
+        return tv.rest_app_status(str(app_id))
 
     @action
     def list_apps(self, host: Optional[str] = None, port: Optional[int] = None) -> list:
@@ -338,8 +365,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        return tv.app_list()
+        return self.exec(lambda tv: tv.app_list(), host=host, port=port)
 
     @action
     def open_browser(self, url: str, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -350,8 +376,7 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        tv = self.connect(host, port)
-        return tv.open_browser(url)
+        return self.exec(lambda tv: tv.open_browser(url), host=host, port=port)
 
     @action
     def device_info(self, host: Optional[str] = None, port: Optional[int] = None) -> dict:

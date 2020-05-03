@@ -1,0 +1,73 @@
+@import 'common/vars';
+
+.tv-samsung-ws-container {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+
+    .controls {
+        max-width: 500px;
+        height: calc(100% - .15em);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        padding: 0 1em;
+        border: $default-border-2;
+        border-radius: 2em;
+        box-shadow: 0 2px 9px 2px #bbb;
+
+        .power { color: red; }
+        button { margin: .5em 0; }
+    }
+
+    .rows {
+        flex-direction: column;
+
+        * {
+            button {
+                width: 100%;
+            }
+        }
+    }
+
+    .section {
+        width: 100%;
+        display: flex;
+        margin: 0 0 1.5em 0;
+        padding: 0 0 1.5em 0;
+        border-bottom: $default-border-2;
+    }
+
+    .directions {
+        flex-direction: column;
+
+        * {
+            button {
+                width: 5em;
+                height: 4em;
+            }
+        }
+    }
+
+    .volume, .channel {
+        text-align: center;
+    }
+
+    .colors {
+        text-align: center;
+
+        .color {
+            width: 3em;
+            height: 3em;
+            padding: 0;
+            border-radius: 2em;
+
+            &.red { background: red; }
+            &.green { background: green; }
+            &.yellow { background: yellow; }
+            &.blue { background: blue; }
+        }
+    }
+}
+
