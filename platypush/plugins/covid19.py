@@ -21,14 +21,19 @@ class Covid19Plugin(Plugin):
             - ``all``: Get all the available stats.
         """
         super().__init__(**kwargs)
-        self.country = country
+        self.country = []
+        self.all_countries = requests.get('{}/countries'.format(self.base_url)).json()
         self.country = self._get_countries(country)
 
     def _get_countries(self, country: Optional[Union[str, List[str]]] = None) -> List[str]:
         country = country or self.country
         if isinstance(country, str):
             country = country.split(',')
-        return [c.upper().strip() for c in country]
+        lc_country = {c.lower() for c in country}
+        return [c['ISO2'] for c in self.all_countries
+                if c['ISO2'].lower() in lc_country
+                or c['Slug'].lower() in lc_country
+                or c['Country'].lower() in lc_country]
 
     @action
     def summary(self, country: Optional[Union[str, List[str]]] = None) -> List[Dict[str, Any]]:
