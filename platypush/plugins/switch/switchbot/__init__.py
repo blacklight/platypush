@@ -1,4 +1,5 @@
 import enum
+import time
 
 from platypush.message.response.bluetooth import BluetoothScanResponse
 from platypush.plugins import action
@@ -65,8 +66,18 @@ class SwitchSwitchbotPlugin(SwitchPlugin, BluetoothBlePlugin):
     def _run(self, device: str, command: Command):
         if device in self.configured_devices_by_name:
             device = self.configured_devices_by_name[device]
+        n_tries = 1
 
-        self.write(device, command.value, handle=self.handle, channel_type='random', binary=True)
+        try:
+            self.write(device, command.value, handle=self.handle, channel_type='random', binary=True)
+        except Exception as e:
+            self.logger.exception(e)
+            n_tries -= 1
+
+            if n_tries == 0:
+                raise e
+            time.sleep(5)
+
         return self.status(device)
 
     @action
