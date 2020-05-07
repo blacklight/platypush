@@ -1,11 +1,8 @@
-import json
 import os
 import random
+import requests
 import threading
 import time
-
-import urllib.request
-import urllib.parse
 
 from platypush.context import get_bus
 from platypush.plugins import Plugin, action
@@ -60,7 +57,7 @@ class TorrentPlugin(Plugin):
 
         self.torrent_ports = torrent_ports if torrent_ports else self.default_torrent_ports
         self.download_dir = None
-        self._session = None
+        self._sessions = {}
 
         if download_dir:
             self.download_dir = os.path.abspath(os.path.expanduser(download_dir))
@@ -116,14 +113,12 @@ class TorrentPlugin(Plugin):
         return ret
 
     def search_movies(self, query, language=None):
-        request = urllib.request.urlopen(urllib.request.Request(
-            'https://movies-v2.api-fetch.sh/movies/1?' + urllib.parse.urlencode({
+        response = requests.get(
+            'https://movies-v2.api-fetch.sh/movies/1', params={
                 'sort': 'relevance',
                 'keywords': query,
-            }), headers=self.headers
-        ))
-
-        response = json.loads(request.read().decode('utf-8'))
+            }, headers=self.headers
+        ).json()
 
         return sorted([
             {
@@ -148,22 +143,20 @@ class TorrentPlugin(Plugin):
         ], key=lambda _: _.get('seeds'), reverse=True)
 
     def search_tv(self, query):
-        request = urllib.request.urlopen(urllib.request.Request(
-            'https://tv-v2.api-fetch.sh/shows/1?' + urllib.parse.urlencode({
+        shows = requests.get(
+            'https://tv-v2.api-fetch.sh/shows/1', params={
                 'sort': 'relevance',
                 'keywords': query,
-            }), headers=self.headers
-        ))
+            }, headers=self.headers
+        ).json()
 
         results = []
-        shows = json.loads(request.read().decode('utf-8'))
 
         for show in shows:
-            request = urllib.request.urlopen(urllib.request.Request(
+            show = requests.get(
                 'https://tv-v2.api-fetch.website/show/' + show.get('_id'),
-                headers=self.headers))
-
-            show = json.loads(request.read().decode('utf-8'))
+                headers=self.headers
+            ).json()
 
             results.extend(sorted([
                 {
@@ -197,22 +190,18 @@ class TorrentPlugin(Plugin):
         return results
 
     def search_anime(self, query):
-        request = urllib.request.urlopen(urllib.request.Request(
-            'https://popcorn-api.io/animes/1?' + urllib.parse.urlencode({
+        shows = requests.get(
+            'https://popcorn-api.io/animes/1', params={
                 'sort': 'relevance',
                 'keywords': query,
-            }), headers=self.headers
-        ))
+            }, headers=self.headers
+        ).json()
 
         results = []
-        shows = json.loads(request.read().decode('utf-8'))
 
         for show in shows:
-            request = urllib.request.urlopen(urllib.request.Request(
-                'https://anime.api-fetch.website/anime/' + show.get('_id'),
-                headers=self.headers))
-
-            show = json.loads(request.read().decode('utf-8'))
+            show = requests.get('https://anime.api-fetch.website/anime/' + show.get('_id'),
+                                headers=self.headers).json()
 
             results.extend(sorted([
                 {
@@ -254,10 +243,8 @@ class TorrentPlugin(Plugin):
             info = lt.parse_magnet_uri(magnet)
             info['magnet'] = magnet
         elif torrent.startswith('http://') or torrent.startswith('https://'):
-            import requests
-            response = requests.get(torrent, allow_redirects=True)
-            torrent_file = os.path.join(download_dir,
-                                        self._generate_rand_filename())
+            response = requests.get(torrent, headers=self.headers, allow_redirects=True)
+            torrent_file = os.path.join(download_dir, self._generate_rand_filename())
 
             with open(torrent_file, 'wb') as f:
                 f.write(response.content)
@@ -405,10 +392,14 @@ class TorrentPlugin(Plugin):
         os.makedirs(download_dir, exist_ok=True)
         info, file_info, torrent_file, magnet = self._get_torrent_info(torrent, download_dir)
 
-        if not self._session:
-            # noinspection PyArgumentList
-            self._session = lt.session()
-            self._session.listen_on(*self.torrent_ports)
+        if torrent in self._sessions:
+            self.logger.info('A torrent session is already running for {}'.format(torrent))
+            return self.torrent_state.get(torrent, {})
+
+        # noinspection PyArgumentList
+        session = lt.session()
+        session.listen_on(*self.torrent_ports)
+        self._sessions[torrent] = session
 
         params = {
             'save_path': download_dir,
@@ -416,10 +407,10 @@ class TorrentPlugin(Plugin):
         }
 
         if magnet:
-            transfer = lt.add_magnet_uri(self._session, magnet, params)
+            transfer = lt.add_magnet_uri(session, magnet, params)
         else:
             params['ti'] = file_info
-            transfer = self._session.add_torrent(params)
+            transfer = session.add_torrent(params)
 
         self.transfers[torrent] = transfer
         self.torrent_state[torrent] = {
@@ -505,19 +496,14 @@ class TorrentPlugin(Plugin):
         del self.torrent_state[torrent]
         del self.transfers[torrent]
 
-        if not len(self.transfers):
-            self.logger.info('No remaining active torrent transfers found, exiting session')
-            self._session = None
+        if torrent in self._sessions:
+            del self._sessions[torrent]
 
     @action
     def quit(self):
         """
         Quits all the transfers and the active session
         """
-        if not self._session:
-            self.logger.info('No active sessions found')
-            return
-
         transfers = self.transfers.copy()
         for torrent in transfers:
             self.remove(torrent)
