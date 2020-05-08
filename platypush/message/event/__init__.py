@@ -40,7 +40,8 @@ class Event(Message):
         self.disable_web_clients_notification = disable_web_clients_notification
 
         for arg, value in self.args.items():
-            self.__setattr__(arg, value)
+            if arg != 'args':
+                self.__setattr__(arg, value)
 
     @classmethod
     def build(cls, msg):

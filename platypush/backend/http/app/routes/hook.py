@@ -18,7 +18,7 @@ __routes__ = [
 
 @hook.route('/hook/<hook_name>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'])
 @authenticate(skip_auth_methods=['session'])
-def hook(hook_name):
+def _hook(hook_name):
     """ Endpoint for custom webhooks """
 
     event_args = {
@@ -29,6 +29,7 @@ def hook(hook_name):
     }
 
     if event_args['data']:
+        # noinspection PyBroadException
         try:
             event_args['data'] = json.loads(event_args['data'])
         except:
@@ -37,12 +38,11 @@ def hook(hook_name):
     event = WebhookEvent(**event_args)
 
     try:
-        response = send_message(event)
-        return Response(json.dumps({'status': 'ok', **event_args}),
-                        mimetype='application/json')
+        send_message(event)
+        return Response(json.dumps({'status': 'ok', **event_args}), mimetype='application/json')
     except Exception as e:
-        logger().error('Error while dispatching webhook event {}: {}'.
-                       format(event, str(e)))
+        logger().exception(e)
+        logger().error('Error while dispatching webhook event {}: {}'.format(event, str(e)))
         abort(500, str(e))
 
 

@@ -20,8 +20,7 @@ class WebhookEvent(Event):
         :type args: dict
         """
 
-        super().__init__(hook=hook, method=method, data=data,
-                         args=args or {}, *argv, **kwargs)
+        super().__init__(hook=hook, method=method, data=data, args=args or {}, *argv, **kwargs)
 
 
 # vim:sw=4:ts=4:et:
