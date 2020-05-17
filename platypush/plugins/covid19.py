@@ -65,7 +65,7 @@ class Covid19Plugin(Plugin):
         countries = self._get_countries(country)
         ret = []
         for country in countries:
-            ret += requests.get('{}/total/dayone/country/{}'.format(self.base_url, country)).json()
+            ret += requests.get('{}/total/country/{}'.format(self.base_url, country)).json()
         return ret
 
 
