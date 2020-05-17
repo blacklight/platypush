@@ -148,7 +148,7 @@ class ZwaveBackend(Backend):
 
     def _process_event(self, event: _ZWEvent):
         from platypush.plugins.zwave import ZwavePlugin
-        network = event.network or self.network
+        network = event.network if hasattr(event, 'network') and event.network else self.network
 
         if event.signal == network.SIGNAL_NETWORK_STOPPED or \
                 event.signal == network.SIGNAL_DRIVER_REMOVED:
