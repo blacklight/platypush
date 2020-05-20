@@ -25,26 +25,8 @@ window.vm = new Vue({
     },
 
     methods: {
-        enterFullScreen: function() {
-            const self = this;
-            enterFullScreen().then(() => {
-                self.fullscreen = true;
-            });
-        },
-
-        exitFullScreen: function() {
-            const self = this;
-            exitFullscreen().finally(() => {
-                self.fullscreen = false;
-            });
-        },
-
         toggleFullScreen: function() {
-            if (this.fullscreen) {
-                this.exitFullScreen();
-            } else {
-                this.enterFullScreen();
-            }
+            toggleFullScreen();
         },
     },
 
@@ -52,12 +34,6 @@ window.vm = new Vue({
         let m = window.location.href.match('#([a-zA-Z0-9._]+)$');
         if (m) {
             this.selectedPlugin = m[1];
-        }
-
-        m = window.location.href.match('[?&]fs=([01])');
-        if (m) {
-            this.fullscreen = !parseInt(m[1]);
-            this.toggleFullScreen();
         }
 
         const self = this;

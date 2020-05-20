@@ -32,3 +32,16 @@ function exitFullScreen() {
     }
 }
 
+function toggleFullScreen() {
+    const elem = document.fullscreenElement
+            || document.webkitFullscreenElement
+            || document.msFullscreenElement
+            || document.mozFullScreenElement;
+
+    if (elem) {
+        exitFullScreen();
+    } else {
+        enterFullScreen();
+    }
+}
+
