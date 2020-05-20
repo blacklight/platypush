@@ -24,6 +24,7 @@ body {
     height: 100%;
 
     main {
+        background: $default-bg;
         margin: 0;
         flex: 1 1 auto;
         overflow: hidden;
