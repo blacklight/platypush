@@ -1,13 +1,13 @@
 function enterFullScreen() {
-    const body = document.getElementsByTagName('body')[0];
-    if (body.requestFullscreen()) {
-        return body.requestFullscreen();
-    } else if (body.msRequestFullscreen()) {
-        return body.msRequestFullscreen();
-    } else if (body.mozRequestFullScreen()) {
-        return body.mozRequestFullScreen();
-    } else if (body.webkitRequestFullscreen()) {
-        return body.webkitRequestFullscreen();
+    const app = document.documentElement;
+    if (app.requestFullscreen()) {
+        return app.requestFullscreen();
+    } else if (app.msRequestFullscreen()) {
+        return app.msRequestFullscreen();
+    } else if (app.mozRequestFullScreen()) {
+        return app.mozRequestFullScreen();
+    } else if (app.webkitRequestFullscreen()) {
+        return app.webkitRequestFullscreen();
     } else {
         console.warn('This browser does not support fullscreen mode');
     }
