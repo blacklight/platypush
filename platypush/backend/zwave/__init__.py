@@ -152,7 +152,7 @@ class ZwaveBackend(Backend):
 
         if event.signal == network.SIGNAL_NETWORK_STOPPED or \
                 event.signal == network.SIGNAL_DRIVER_REMOVED:
-            event_queue.put(ZwaveNetworkStoppedEvent(device=self.device))
+            event = ZwaveNetworkStoppedEvent(device=self.device)
         elif event.signal == network.SIGNAL_ALL_NODES_QUERIED or \
                 event.signal == network.SIGNAL_ALL_NODES_QUERIED_SOME_DEAD:
             event = ZwaveNodeQueryCompletedEvent(device=self.device)
