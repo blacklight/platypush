@@ -301,5 +301,7 @@ setup(
         'samsungtv': ['samsungtvws'],
         # Support for SSH integration
         'ssh': ['paramiko'],
+        # Support for clipboard integration
+        'clipboard': ['pyperclip'],
     },
 )

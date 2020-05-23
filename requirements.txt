@@ -264,3 +264,6 @@ croniter
 
 # Support for SSH integration
 # paramiko
+
+# Support for clipboard integration
+# pyperclip
