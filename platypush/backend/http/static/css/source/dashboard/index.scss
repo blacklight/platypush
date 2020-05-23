@@ -19,7 +19,7 @@ body {
     --background-image: $background-image;
     --background-color: $background-color;
 
-    background-image: var(--background-image);
+    background-image: var(--background-image) !important;
     background-color: var(--background-color);
     background-size: 100% 100%;
     background-repeat: no-repeat;
