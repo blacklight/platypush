@@ -15,6 +15,10 @@ class ClipboardBackend(Backend):
 
         - **pyperclip** (``pip install pyperclip``)
 
+    Triggers:
+
+        - :class:`platypush.message.event.clipboard.ClipboardEvent` on clipboard update.
+
     """
 
     def __init__(self, *args, **kwargs):
