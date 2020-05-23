@@ -299,5 +299,7 @@ setup(
         'tensorflow': ['numpy', 'tensorflow>=2.0', 'keras', 'pandas'],
         # Support for Samsung TizenOS-based smart TVs
         'samsungtv': ['samsungtvws'],
+        # Support for SSH integration
+        'ssh': ['paramiko'],
     },
 )

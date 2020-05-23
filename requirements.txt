@@ -261,3 +261,6 @@ croniter
 
 # Support for Samsung TizenOS-based smart TVs
 # samsungtvws
+
+# Support for SSH integration
+# paramiko

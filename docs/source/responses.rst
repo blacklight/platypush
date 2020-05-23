@@ -16,6 +16,7 @@ Responses
     platypush/responses/ping.rst
     platypush/responses/printer.cups.rst
     platypush/responses/qrcode.rst
+    platypush/responses/ssh.rst
     platypush/responses/stt.rst
     platypush/responses/system.rst
     platypush/responses/tensorflow.rst
