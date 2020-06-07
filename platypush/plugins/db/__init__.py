@@ -39,6 +39,8 @@ class DbPlugin(Plugin):
         if engine:
             if isinstance(engine, Engine):
                 return engine
+            if engine.startswith('sqlite://'):
+                kwargs['connect_args'] = {'check_same_thread': False}
 
             return create_engine(engine, *args, **kwargs)
 
