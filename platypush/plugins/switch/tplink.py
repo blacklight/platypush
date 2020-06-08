@@ -1,6 +1,6 @@
 from typing import Union, Dict, List
 
-from pyHS100 import SmartDevice, SmartPlug, SmartBulb, SmartStrip, Discover
+from pyHS100 import SmartDevice, SmartPlug, SmartBulb, SmartStrip, Discover, SmartDeviceException
 
 from platypush.plugins import action
 from platypush.plugins.switch import SwitchPlugin
@@ -64,9 +64,12 @@ class SwitchTplinkPlugin(SwitchPlugin):
 
     def _update_devices(self, devices: Dict[str, SmartDevice] = None):
         for (addr, info) in self._static_devices.items():
-            dev = info['type'](addr)
-            self._ip_to_dev[addr] = dev
-            self._alias_to_dev[info.get('name', dev.alias)] = dev
+            try:
+                dev = info['type'](addr)
+                self._alias_to_dev[info.get('name', dev.alias)] = dev
+                self._ip_to_dev[addr] = dev
+            except SmartDeviceException as e:
+                self.logger.warning('Could not communicate with device {}: {}'.format(addr, str(e)))
 
         for (ip, dev) in (devices or {}).items():
             self._ip_to_dev[ip] = dev
