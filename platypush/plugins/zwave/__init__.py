@@ -155,7 +155,7 @@ class ZwavePlugin(Plugin):
             return {}
 
         return {
-            'command_class': value.node.get_command_class_as_string(value.command_class),
+            'command_class': value.node.get_command_class_as_string(value.command_class) if value.command_class else None,
             'data': value.data,
             'data_as_string': value.data_as_string,
             'data_items': list(value.data_items) if isinstance(value.data_items, set) else value.data_items,
@@ -206,7 +206,7 @@ class ZwavePlugin(Plugin):
             'node_id': node.node_id,
             'home_id': node.home_id,
             'capabilities': list(node.capabilities),
-            'command_classes': [node.get_command_class_as_string(cc) for cc in node.command_classes]
+            'command_classes': [node.get_command_class_as_string(cc) for cc in node.command_classes if cc]
                 if hasattr(node, 'command_classes') else [],
             'device_type': node.device_type if hasattr(node, 'device_type') else '',
             'groups': {
