@@ -4,7 +4,7 @@ import errno
 import os
 import re
 import distutils.cmd
-from distutils.command.build import build
+from distutils.command.install import install
 from setuptools import setup, find_packages
 
 
@@ -60,9 +60,9 @@ class WebBuildCommand(distutils.cmd.Command):
         self.generate_css_files()
 
 
-class BuildCommand(build):
+class InstallCommand(install):
     def run(self):
-        build.run(self)
+        install.run(self)
         self.run_command('web_build')
 
 
@@ -125,7 +125,7 @@ setup(
     scripts=['bin/platyvenv'],
     cmdclass={
         'web_build': WebBuildCommand,
-        'build': BuildCommand,
+        'install': InstallCommand,
     },
     # data_files = [
     #     ('/etc/platypush', ['platypush/config.example.yaml'])
