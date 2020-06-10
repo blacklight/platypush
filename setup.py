@@ -5,9 +5,9 @@ import os
 import re
 from distutils.cmd import Command
 from distutils.command.build import build as _build
-from distutils.command.install import install
-from setuptools import setup, find_packages
+from distutils.command.install import install as _install
 from setuptools.command.bdist_egg import bdist_egg as _bdist_egg
+from setuptools import setup, find_packages
 
 
 class WebBuildCommand(Command):
@@ -62,10 +62,10 @@ class WebBuildCommand(Command):
         self.generate_css_files()
 
 
-class InstallCommand(install):
+class install(_install):
     def do_egg_install(self):
         self.run_command('web_build')
-        install.do_egg_install(self)
+        _install.do_egg_install(self)
 
 
 class bdist_egg(_bdist_egg):
@@ -137,7 +137,7 @@ setup(
     scripts=['bin/platyvenv'],
     cmdclass={
         'web_build': WebBuildCommand,
-        'install': InstallCommand,
+        'install': install,
         'build': build,
         'bdist_egg': bdist_egg,
     },
