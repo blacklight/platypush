@@ -62,8 +62,8 @@ class WebBuildCommand(distutils.cmd.Command):
 
 class InstallCommand(install):
     def run(self):
-        install.run(self)
         self.run_command('web_build')
+        install.run(self)
 
 
 def path(fname=''):
