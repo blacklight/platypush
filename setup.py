@@ -3,12 +3,14 @@
 import errno
 import os
 import re
-import distutils.cmd
+from distutils.cmd import Command
+from distutils.command.build import build as _build
 from distutils.command.install import install
 from setuptools import setup, find_packages
+from setuptools.command.bdist_egg import bdist_egg as _bdist_egg
 
 
-class WebBuildCommand(distutils.cmd.Command):
+class WebBuildCommand(Command):
     """
     Custom command to build the web files
     """
@@ -64,6 +66,16 @@ class InstallCommand(install):
     def do_egg_install(self):
         self.run_command('web_build')
         install.do_egg_install(self)
+
+
+class bdist_egg(_bdist_egg):
+    def run(self):
+        self.run_command('web_build')
+        _bdist_egg.run(self)
+
+
+class build(_build):
+    sub_commands = _build.sub_commands + [('web_build', None)]
 
 
 def path(fname=''):
@@ -126,6 +138,8 @@ setup(
     cmdclass={
         'web_build': WebBuildCommand,
         'install': InstallCommand,
+        'build': build,
+        'bdist_egg': bdist_egg,
     },
     # data_files = [
     #     ('/etc/platypush', ['platypush/config.example.yaml'])
