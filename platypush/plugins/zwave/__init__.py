@@ -245,6 +245,12 @@ class ZwavePlugin(Plugin):
             'values': {
                 value.id_on_network: cls.value_to_dict(value)
                 for value_id, value in (node.values or {}).items()
+                if value.index is not None
+                and value.instance is not None
+                and value.command_class
+                and value.parent_id is not None
+                and value._network
+                and value._network.home_id is not None
             } if hasattr(node, 'values') else {},
         }
 
