@@ -11,6 +11,7 @@ import platypush.message.event
 import platypush.message.response
 
 from platypush.backend import Backend
+from platypush.config import Config
 from platypush.plugins import Plugin, action
 from platypush.message.event import Event
 from platypush.message.response import Response
@@ -34,6 +35,16 @@ class Model:
             return doc
 
         return docutils.core.publish_parts(doc, writer_name='html')['html_body']
+
+
+class ProcedureEncoder(json.JSONEncoder):
+    def default(self, o):
+        if callable(o):
+            return {
+                'type': 'native_function',
+            }
+
+        return super().default(o)
 
 
 class BackendModel(Model):
@@ -320,6 +331,13 @@ class InspectPlugin(Plugin):
                 }
                 for package, events in self._responses.items()
             })
+
+    @action
+    def get_procedures(self) -> dict:
+        """
+        Get the list of procedures installed on the device.
+        """
+        return json.loads(json.dumps(Config.get_procedures(), cls=ProcedureEncoder))
 
 
 # vim:sw=4:ts=4:et:
