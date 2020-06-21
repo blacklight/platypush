@@ -160,6 +160,7 @@ setup(
         'sqlalchemy',
         'websockets',
         'websocket-client',
+        'wheel',
     ],
 
     extras_require={
@@ -173,8 +174,6 @@ setup(
         'http': ['flask', 'python-dateutil', 'tz', 'frozendict', 'bcrypt'],
         # Support for uWSGI HTTP backend
         'uwsgi': ['flask', 'python-dateutil', 'tz', 'frozendict', 'uwsgi', 'bcrypt'],
-        # Support for database
-        'db': ['sqlalchemy'],
         # Support for MQTT backends
         'mqtt': ['paho-mqtt'],
         # Support for RSS feeds parser
@@ -185,8 +184,6 @@ setup(
         'hue': ['phue'],
         # Support for MPD/Mopidy music server plugin and backend
         'mpd': ['python-mpd2'],
-        # Support for text2speech plugin
-        'tts': ['mplayer'],
         # Support for Google text2speech plugin
         'google-tts': ['oauth2client', 'google-api-python-client', 'google-cloud-texttospeech'],
         # Support for OMXPlayer plugin
