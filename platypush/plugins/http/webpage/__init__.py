@@ -24,11 +24,16 @@ class HttpWebpagePlugin(Plugin):
     _mercury_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mercury-parser.js')
 
     @action
-    def simplify(self, url, outfile=None):
+    def simplify(self, url, type='html', html=None, outfile=None):
         """
         Parse the content of a web page removing any extra elements using Mercury
 
-        :param url: URL to parse
+        :param url: URL to parse.
+        :param type: Input type. Supported types: html, markdown, text (default: html).
+        :param html: Set this parameter if you want to parse some HTML content already fetched. Note
+            that URL is still required by Mercury to properly style the output, but it won't be used
+            to actually fetch the content.
+
         :param outfile: If set then the output will be written to the specified file
             (supported formats: pdf, html, plain (default)). The plugin will guess
             the format from the extension
@@ -55,8 +60,8 @@ class HttpWebpagePlugin(Plugin):
         """
 
         self.logger.info('Parsing URL {}'.format(url))
-        parser = subprocess.Popen(['node', self._mercury_script, url], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        response = parser.stdout.read().decode()
+        parser = subprocess.Popen(['node', self._mercury_script, url, type, html], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        response = parser.stdout.read().decode().strip()
 
         try:
             response = json.loads(response)
