@@ -6,22 +6,38 @@
 
 'use strict';
 
-const parser = require('@postlight/mercury-parser');
+const fs = require('fs');
+const Mercury = require('@postlight/mercury-parser');
 
 if (process.argv.length < 3) {
-    console.error('Usage: ' + process.argv[1] + ' <url to parse> [markdown|html] [Pre-fetched content]');
+    console.error('Usage: ' + process.argv[1] + ' <url to parse> [markdown|html] [Pre-fetched HTML content file]');
     process.exit(1);
 }
 
 const url = process.argv[2];
 const type = process.argv[3] || 'html';
-const content = process.argv[4];
+const contentFile = process.argv[4];
 const args = {
     contentType: type,
-    html: content,
 };
 
-parser.parse(url, args).then(result => {
-    console.log(JSON.stringify(result));
-});
+const parse = (url, args) => {
+    Mercury.parse(url, args).then(result => {
+        console.log(JSON.stringify(result));
+    });
+};
+
+if (contentFile) {
+    fs.readFile(contentFile, 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+            process.exit(1);
+        }
+
+        args.html = data;
+        parse(url, args);
+    });
+} else {
+    parse(url, args);
+}
 

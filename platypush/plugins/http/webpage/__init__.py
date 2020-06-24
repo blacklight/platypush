@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import subprocess
+import tempfile
 
 from platypush.plugins import action
 from platypush.plugins.http.request import Plugin
@@ -22,6 +23,14 @@ class HttpWebpagePlugin(Plugin):
     """
 
     _mercury_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mercury-parser.js')
+
+    def _parse(self, proc):
+        output = ''
+
+        with subprocess.Popen(proc, stdout=subprocess.PIPE, stderr=None) as parser:
+            output = parser.communicate()[0].decode()
+
+        return output
 
     @action
     def simplify(self, url, type='html', html=None, outfile=None):
@@ -60,15 +69,27 @@ class HttpWebpagePlugin(Plugin):
         """
 
         self.logger.info('Parsing URL {}'.format(url))
-        parser = subprocess.Popen(['node', self._mercury_script, url, type, html], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        response = parser.stdout.read().decode().strip()
+        proc = ['node', self._mercury_script, url, type]
+        f = None
+
+        if html:
+            f = tempfile.NamedTemporaryFile('w+', delete=False)
+            f.write(html)
+            f.flush()
+            proc.append(f.name)
 
         try:
-            response = json.loads(response)
+            response = self._parse(proc)
+        finally:
+            if f:
+                os.unlink(f.name)
+
+        try:
+            response = json.loads(response.strip())
         except Exception as e:
             raise RuntimeError('Could not parse JSON: {}. Response: {}'.format(str(e), response))
 
-        self.logger.info('Got response from Mercury API: {}'.format(response))
+        self.logger.debug('Got response from Mercury API: {}'.format(response))
         title = response.get('title', '{} on {}'.format(
             'Published' if response.get('date_published') else 'Generated',
             response.get('date_published', datetime.datetime.now().isoformat())))
