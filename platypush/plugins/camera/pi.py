@@ -30,7 +30,7 @@ class CameraPiPlugin(CameraPlugin):
     def __init__(self, resolution=(_default_resolution[0], _default_resolution[1]), framerate=24,
                  hflip=False, vflip=False, sharpness=0, contrast=0, brightness=50, video_stabilization=False, iso=0,
                  exposure_compensation=0, exposure_mode='auto', meter_mode='average', awb_mode='auto',
-                 image_effect='none', color_effects=None, rotation=0, crop=(0.0, 0.0, 1.0, 1.0),
+                 image_effect='none', color_effects=None, rotation=0, zoom=(0.0, 0.0, 1.0, 1.0),
                  listen_port: int = _default_listen_port, **kwargs):
         """
         See https://www.raspberrypi.org/documentation/usage/camera/python/README.md
@@ -49,7 +49,7 @@ class CameraPiPlugin(CameraPlugin):
             'contrast': contrast,
             'brightness': brightness,
             'video_stabilization': video_stabilization,
-            'ISO': iso,
+            'iso': iso,
             'exposure_compensation': exposure_compensation,
             'exposure_mode': exposure_mode,
             'meter_mode': meter_mode,
@@ -57,7 +57,7 @@ class CameraPiPlugin(CameraPlugin):
             'image_effect': image_effect,
             'color_effects': color_effects,
             'rotation': rotation,
-            'crop': tuple(crop),
+            'zoom': tuple(zoom),
         }
 
         self._camera = None
