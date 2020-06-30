@@ -1,3 +1,4 @@
+import json
 import os
 import pathlib
 
@@ -12,6 +13,13 @@ class FilePlugin(Plugin):
     @classmethod
     def _get_path(cls, filename):
         return os.path.abspath(os.path.expanduser(filename))
+
+    @classmethod
+    def _to_string(cls, content):
+        try:
+            return json.dumps(content)
+        except:
+            return str(content)
 
     @action
     def read(self, file: str):
@@ -33,6 +41,9 @@ class FilePlugin(Plugin):
         :param content: Content to write.
         """
 
+        if not isinstance(content, str):
+            content = self._to_string(content)
+
         with open(self._get_path(file), 'w') as f:
             f.write(content)
 
@@ -44,6 +55,9 @@ class FilePlugin(Plugin):
         :param file: Path of the file.
         :param content: Content to write.
         """
+
+        if not isinstance(content, str):
+            content = self._to_string(content)
 
         with open(self._get_path(file), 'a') as f:
             f.write(content)
