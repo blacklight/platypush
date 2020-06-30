@@ -73,7 +73,11 @@ class HttpPollBackend(Backend):
         while not self.should_stop():
             for request in self.requests:
                 if time.time() - request.last_request_timestamp > request.poll_seconds:
-                    request.execute()
+                    try:
+                        request.execute()
+                    except Exception as e:
+                        self.logger.error('Error while executing request: {}'.format(request))
+                        self.logger.exception(e)
 
             time.sleep(0.1)  # Prevent a tight loop
 
