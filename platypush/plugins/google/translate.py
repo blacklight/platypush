@@ -2,8 +2,6 @@ import os
 from typing import Optional
 
 # noinspection PyPackageRequirements
-from google.auth import jwt
-# noinspection PyPackageRequirements
 from google.cloud import translate_v2 as translate
 
 from platypush.message.response.translate import TranslateResponse
@@ -53,10 +51,8 @@ class GoogleTranslatePlugin(Plugin):
         elif os.path.isfile(self.default_credentials_file):
             self.credentials_file = self.default_credentials_file
 
-    def _get_credentials(self):
         if self.credentials_file:
-            return jwt.Credentials.from_service_account_file(
-                self.credentials_file)
+            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = self.credentials_file
 
     # noinspection PyShadowingBuiltins
     @action
@@ -72,18 +68,11 @@ class GoogleTranslatePlugin(Plugin):
         :return: :class:`platypush.message.response.translate.TranslateResponse`.
         """
         target_language = target_language or self.target_language
-        credentials = self._get_credentials()
         args = {}
-
         if target_language:
             args['target_language'] = target_language
-        if credentials:
-            args['credentials'] = credentials
 
         client = translate.Client(**args)
-
-        if credentials:
-            del args['credentials']
         if source_language:
             args['source_language'] = source_language
 
