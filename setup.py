@@ -274,6 +274,8 @@ setup(
         'trello': ['py-trello'],
         # Support for Google Pub/Sub
         'google-pubsub': ['google-cloud-pubsub'],
+        # Support for Google Translate
+        'google-translate': ['google-cloud-translate'],
         # Support for keyboard/mouse plugin
         'inputs': ['pyuserinput'],
         # Support for Buienradar weather forecast

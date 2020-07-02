@@ -267,3 +267,6 @@ croniter
 
 # Support for clipboard integration
 # pyperclip
+
+# Support for Google Translate
+# google-cloud-translate

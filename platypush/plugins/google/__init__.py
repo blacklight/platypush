@@ -2,8 +2,6 @@
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
 """
 
-import os
-
 from platypush.plugins import Plugin
 
 
@@ -43,7 +41,7 @@ class GooglePlugin(Plugin):
         """
 
         from platypush.plugins.google.credentials import get_credentials
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         self._scopes = scopes or []
 
         if self._scopes:
@@ -53,7 +51,6 @@ class GooglePlugin(Plugin):
             }
         else:
             self.credentials = {}
-
 
     def get_service(self, service, version, scopes=None):
         import httplib2
