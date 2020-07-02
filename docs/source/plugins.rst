@@ -38,6 +38,7 @@ Plugins
     platypush/plugins/google.mail.rst
     platypush/plugins/google.maps.rst
     platypush/plugins/google.pubsub.rst
+    platypush/plugins/google.translate.rst
     platypush/plugins/google.youtube.rst
     platypush/plugins/gpio.rst
     platypush/plugins/gpio.sensor.rst
