@@ -483,10 +483,10 @@ class MediaPlugin(Plugin):
         patterns = [
             re.compile(pattern)
             for pattern in [
-                r'https?://www.youtube.com/watch\?v=([^&#]+)'
-                r'https?://youtube.com/watch\?v=([^&#]+)'
-                r'https?://youtu.be/([^&#/]+)'
-                r'youtube:video:([^&#:])'
+                r'https?://www.youtube.com/watch\?v=([^&#]+)',
+                r'https?://youtube.com/watch\?v=([^&#]+)',
+                r'https?://youtu.be/([^&#/]+)',
+                r'youtube:video:([^&#:])',
             ]
         ]
 
