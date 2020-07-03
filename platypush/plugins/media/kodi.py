@@ -155,18 +155,12 @@ class MediaKodiPlugin(MediaPlugin):
         :param resource: URL or path to the media to be played
         """
 
-        if resource.startswith('youtube:video:') \
-                or resource.startswith('https://www.youtube.com/watch?v='):
-            m1 = re.match('youtube:video:([^:?&]+)', resource)
-            m2 = re.match('https://www.youtube.com/watch?v=([^:?&#/]+)', resource)
-            youtube_id = None
-
-            if m1:
-                youtube_id = m1.group(1)
-            elif m2:
-                youtube_id = m2.group(1)
-
-            if youtube_id:
+        youtube_id = self.get_youtube_id(resource)
+        if youtube_id:
+            try:
+                resource = self.get_youtube_url('https://www.youtube.com/watch?v=' + youtube_id)
+            except Exception as e:
+                self.logger.warning('youtube-dl error, falling back to Kodi YouTube plugin: {}'.format(str(e)))
                 resource = 'plugin://plugin.video.youtube/?action=play_video&videoid=' + youtube_id
 
         if resource.startswith('file://'):

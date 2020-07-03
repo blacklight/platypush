@@ -479,6 +479,23 @@ class MediaPlugin(Plugin):
         threading.Thread(target=_youtube_dl_thread).start()
 
     @action
+    def get_youtube_id(self, url: str) -> Optional[str]:
+        patterns = [
+            re.compile(pattern)
+            for pattern in [
+                'https?://www.youtube.com/watch?v=([^&#]+)'
+                'https?://youtube.com/watch?v=([^&#]+)'
+                'https?://youtu.be/([^&#/]+)'
+                'youtube:video:([^&#:])'
+            ]
+        ]
+
+        for pattern in patterns:
+            m = re.match(pattern, url)
+            if m:
+                return m.group(1)
+
+    @action
     def get_youtube_url(self, url):
         m = re.match('youtube:video:(.*)', url)
         if m:
