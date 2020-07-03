@@ -483,27 +483,26 @@ class MediaPlugin(Plugin):
         patterns = [
             re.compile(pattern)
             for pattern in [
-                r'https?://www.youtube.com/watch?v=([^&#]+)'
-                r'https?://youtube.com/watch?v=([^&#]+)'
+                r'https?://www.youtube.com/watch\?v=([^&#]+)'
+                r'https?://youtube.com/watch\?v=([^&#]+)'
                 r'https?://youtu.be/([^&#/]+)'
                 r'youtube:video:([^&#:])'
             ]
         ]
 
         for pattern in patterns:
-            m = pattern.match(url)
+            m = pattern.search(url)
             if m:
                 return m.group(1)
 
     @action
     def get_youtube_url(self, url):
-        m = re.match('youtube:video:(.*)', url)
-        if m:
-            url = 'https://www.youtube.com/watch?v={}'.format(m.group(1))
-
-        proc = subprocess.Popen(['youtube-dl', '-f', 'best', '-g', url], stdout=subprocess.PIPE)
-        raw_url = proc.stdout.read().decode("utf-8", "strict")[:-1]
-        return raw_url if raw_url else url
+        youtube_id = self.get_youtube_id(url)
+        if youtube_id:
+            url = 'https://www.youtube.com/watch?v={}'.format(youtube_id)
+            proc = subprocess.Popen(['youtube-dl', '-f', 'best', '-g', url], stdout=subprocess.PIPE)
+            raw_url = proc.stdout.read().decode("utf-8", "strict")[:-1]
+            return raw_url if raw_url else url
 
     @action
     def get_youtube_info(self, url):
