@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, List
 
 # noinspection PyPackageRequirements
 from google.cloud import translate_v2 as translate
@@ -30,6 +30,7 @@ class GoogleTranslatePlugin(Plugin):
 
     """
 
+    _maximum_text_length = 2000
     default_credentials_file = os.path.join(os.path.expanduser('~'), '.credentials', 'platypush', 'google',
                                             'translate.json')
 
@@ -54,6 +55,33 @@ class GoogleTranslatePlugin(Plugin):
         if self.credentials_file:
             os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = self.credentials_file
 
+    @staticmethod
+    def _nearest_delimiter_index(text: str, pos: int) -> int:
+        for i in range(min(pos, len(text)-1), -1, -1):
+            if text[i] in [' ', '\t', ',', '.', ')', '>']:
+                return i
+            elif text[i] in ['(', '<']:
+                return i-1 if i > 0 else 0
+
+        return 0
+
+    @classmethod
+    def _split_text(cls, text: str, length: int = _maximum_text_length) -> List[str]:
+        parts = []
+
+        while text:
+            i = cls._nearest_delimiter_index(text, length)
+            if i == 0:
+                parts.append(text)
+                text = ''
+            else:
+                part = text[:i+1]
+                if part:
+                    parts.append(part.strip())
+                text = text[i+1:]
+
+        return parts
+
     # noinspection PyShadowingBuiltins
     @action
     def translate(self, text: str, target_language: Optional[str] = None, source_language: Optional[str] = None,
@@ -76,11 +104,20 @@ class GoogleTranslatePlugin(Plugin):
         if source_language:
             args['source_language'] = source_language
 
-        result = client.translate(text, format_=format, **args)
-        # noinspection PyUnresolvedReferences
+        inputs = self._split_text(text)
+        result = {}
+
+        for input in inputs:
+            response = client.translate(input, format_=format, **args)
+            if not result:
+                result = response
+            else:
+                # noinspection PyTypeChecker
+                result['translatedText'] += ' ' + response['translatedText']
+
         return TranslateResponse(
             translated_text=result.get('translatedText'),
-            source_text=result.get('input'),
+            source_text=text,
             detected_source_language=result.get('detectedSourceLanguage'),
         )
 
