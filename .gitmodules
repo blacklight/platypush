@@ -6,4 +6,4 @@
 	url = https://github.com/pimoroni/mlx90640-library
 [submodule "webext"]
 	path = webext
-	url = https://github.com/BlackLight/platypush-webext
+	url = git@github.com:/BlackLight/platypush-webext
