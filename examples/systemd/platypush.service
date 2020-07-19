@@ -7,7 +7,7 @@
 
 [Unit]
 Description=Platypush daemon
-After=network.target
+After=network.target redis.service
 
 [Service]
 # platypush installation path
