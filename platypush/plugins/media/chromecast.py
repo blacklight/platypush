@@ -123,6 +123,14 @@ class MediaChromecastPlugin(MediaPlugin):
         self.chromecasts = {}
         self._media_listeners = {}
 
+    @staticmethod
+    def _get_chromecasts(*args, **kwargs):
+        import pychromecast
+        chromecasts = pychromecast.get_chromecasts(*args, **kwargs)
+        if isinstance(chromecasts, tuple):
+            return chromecasts[0]
+        return chromecasts
+
     @action
     def get_chromecasts(self, tries=2, retry_wait=10, timeout=60,
                         blocking=True, callback=None):
@@ -151,9 +159,9 @@ class MediaChromecastPlugin(MediaPlugin):
         import pychromecast
         self.chromecasts.update({
             cast.device.friendly_name: cast
-            for cast in pychromecast.get_chromecasts(tries=tries, retry_wait=retry_wait,
-                                                     timeout=timeout, blocking=blocking,
-                                                     callback=callback)
+            for cast in self._get_chromecasts(tries=tries, retry_wait=retry_wait,
+                                              timeout=timeout, blocking=blocking,
+                                              callback=callback)
         })
 
         for name, cast in self.chromecasts.items():
@@ -206,7 +214,7 @@ class MediaChromecastPlugin(MediaPlugin):
                 n_tries -= 1
                 casts.update({
                     cast.device.friendly_name: cast
-                    for cast in pychromecast.get_chromecasts()
+                    for cast in self._get_chromecasts()
                 })
 
                 if chromecast in casts:
