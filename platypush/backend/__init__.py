@@ -50,7 +50,7 @@ class Backend(Thread, EventGenerator):
 
         self._thread_name = self.__class__.__name__
         EventGenerator.__init__(self)
-        Thread.__init__(self, name=self._thread_name)
+        Thread.__init__(self, name=self._thread_name, daemon=True)
 
         # If no bus is specified, create an internal queue where
         # the received messages will be pushed
@@ -70,8 +70,6 @@ class Backend(Thread, EventGenerator):
 
         if 'logging' in kwargs:
             self.logger.setLevel(getattr(logging, kwargs.get('logging').upper()))
-
-        Thread.__init__(self)
 
     def on_message(self, msg):
         """
