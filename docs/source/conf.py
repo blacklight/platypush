@@ -252,6 +252,7 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'pandas',
                         'samsungtvws',
                         'paramiko',
+                        'luma',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))

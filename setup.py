@@ -316,5 +316,7 @@ setup(
         'ssh': ['paramiko'],
         # Support for clipboard integration
         'clipboard': ['pyperclip'],
+        # Support for luma.oled display drivers
+        'luma-oled': ['luma.oled @ git+https://github.com/rm-hull/luma.oled'],
     },
 )

@@ -270,3 +270,6 @@ croniter
 
 # Support for Google Translate
 # google-cloud-translate
+
+# Support for luma.oled
+# git+https://github.com/rm-hull/luma.oled

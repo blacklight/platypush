@@ -11,11 +11,6 @@ Backends
     platypush/backend/assistant.rst
     platypush/backend/assistant.google.rst
     platypush/backend/assistant.snowboy.rst
-    platypush/backend/bluetooth.rst
-    platypush/backend/bluetooth.fileserver.rst
-    platypush/backend/bluetooth.pushserver.rst
-    platypush/backend/bluetooth.scanner.rst
-    platypush/backend/bluetooth.scanner.ble.rst
     platypush/backend/button.flic.rst
     platypush/backend/camera.pi.rst
     platypush/backend/chat.telegram.rst
@@ -53,7 +48,6 @@ Backends
     platypush/backend/sensor.distance.vl53l1x.rst
     platypush/backend/sensor.envirophat.rst
     platypush/backend/sensor.ir.zeroborg.rst
-    platypush/backend/sensor.leap.rst
     platypush/backend/sensor.ltr559.rst
     platypush/backend/sensor.mcp3008.rst
     platypush/backend/sensor.motion.pwm3901.rst

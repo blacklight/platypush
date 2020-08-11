@@ -8,7 +8,6 @@ Plugins
 
     platypush/plugins/adafruit.io.rst
     platypush/plugins/alarm.rst
-    platypush/plugins/arduino.rst
     platypush/plugins/assistant.rst
     platypush/plugins/assistant.echo.rst
     platypush/plugins/assistant.google.rst
@@ -66,6 +65,7 @@ Plugins
     platypush/plugins/light.hue.rst
     platypush/plugins/linode.rst
     platypush/plugins/logger.rst
+    platypush/plugins/luma.oled.rst
     platypush/plugins/media.rst
     platypush/plugins/media.chromecast.rst
     platypush/plugins/media.ctrl.rst
@@ -85,7 +85,6 @@ Plugins
     platypush/plugins/music.mpd.rst
     platypush/plugins/music.snapcast.rst
     platypush/plugins/nmap.rst
-    platypush/plugins/otp.rst
     platypush/plugins/pihole.rst
     platypush/plugins/ping.rst
     platypush/plugins/printer.cups.rst
@@ -98,7 +97,6 @@ Plugins
     platypush/plugins/sound.rst
     platypush/plugins/ssh.rst
     platypush/plugins/stt.rst
-    platypush/plugins/stt.deepspeech.rst
     platypush/plugins/stt.picovoice.hotword.rst
     platypush/plugins/stt.picovoice.speech.rst
     platypush/plugins/switch.rst
