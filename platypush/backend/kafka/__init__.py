@@ -68,6 +68,7 @@ class KafkaBackend(Backend):
                                   server=self.server)
 
     def on_stop(self):
+        super().on_stop()
         try:
             if self.producer:
                 self.producer.flush()

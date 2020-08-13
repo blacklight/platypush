@@ -198,6 +198,7 @@ class HttpBackend(Backend):
 
     def on_stop(self):
         """ On backend stop """
+        super().on_stop()
         self.logger.info('Received STOP event on HttpBackend')
 
         if self.server_proc:
@@ -312,6 +313,7 @@ class HttpBackend(Backend):
 
     def run(self):
         super().run()
+        self.register_service(port=self.port)
 
         if not self.disable_websocket:
             self.logger.info('Initializing websocket interface')

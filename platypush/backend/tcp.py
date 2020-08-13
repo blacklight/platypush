@@ -94,6 +94,7 @@ class TcpBackend(Backend):
 
     def run(self):
         super().run()
+        self.register_service(port=self.port)
 
         serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         serv_sock.bind((self.bind_address, self.port))

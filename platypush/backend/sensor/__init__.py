@@ -166,6 +166,7 @@ class SensorBackend(Backend):
         return ret
 
     def on_stop(self):
+        super().on_stop()
         if not self.plugin:
             return
 

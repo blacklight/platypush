@@ -4,6 +4,8 @@
 """
 
 import logging
+import re
+import socket
 import threading
 import time
 
@@ -13,9 +15,11 @@ from typing import Optional
 from platypush.bus import Bus
 from platypush.config import Config
 from platypush.context import get_backend
+from platypush.message.event.zeroconf import ZeroconfServiceAddedEvent, ZeroconfServiceRemovedEvent
 from platypush.utils import set_timeout, clear_timeout, \
     get_redis_queue_name_by_message, set_thread_name
 
+from platypush import __version__
 from platypush.event import EventGenerator
 from platypush.message import Message
 from platypush.message.event import Event, StopEvent
@@ -62,6 +66,8 @@ class Backend(Thread, EventGenerator):
         self._stop_event = threading.Event()
         self._kwargs = kwargs
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.zeroconf = None
+        self.zeroconf_info = None
 
         # Internal-only, we set the request context on a backend if that
         # backend is intended to react for a response to a specific request
@@ -257,7 +263,7 @@ class Backend(Thread, EventGenerator):
 
     def on_stop(self):
         """ Callback invoked when the process stops """
-        pass
+        self.unregister_service()
 
     def stop(self):
         """ Stops the backend thread by sending a STOP event on its bus """
@@ -303,6 +309,62 @@ class Backend(Thread, EventGenerator):
             return response
         except Exception as e:
             self.logger.error('Error while processing response to {}: {}'.format(msg, str(e)))
+
+    @staticmethod
+    def _get_ip() -> str:
+        """
+        Get the IP address of the machine.
+        """
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        addr = s.getsockname()[0]
+        s.close()
+        return addr
+
+    def register_service(self, port: Optional[int] = None, name: Optional[str] = None, udp: bool = False):
+        """
+        Initialize the Zeroconf service configuration for this backend.
+        """
+        try:
+            from zeroconf import ServiceInfo, Zeroconf
+        except ImportError:
+            self.logger.warning('zeroconf package not available, service discovery will be disabled.')
+            return
+
+        self.zeroconf = Zeroconf()
+        srv_desc = {
+            'name': 'Platypush',
+            'vendor': 'Platypush',
+            'version': __version__,
+        }
+
+        name = name or re.sub(r'Backend$', '', self.__class__.__name__).lower()
+        srv_type = '_platypush-{name}._{proto}.local.'.format(name=name, proto='udp' if udp else 'tcp')
+        srv_name = '{host}.{type}'.format(host=self.device_id, type=srv_type)
+
+        if port:
+            srv_port = port
+        else:
+            srv_port = self.port if hasattr(self, 'port') else None
+
+        self.zeroconf_info = ServiceInfo(srv_type, srv_name, socket.inet_aton(self._get_ip()),
+                                         srv_port, 0, 0, srv_desc)
+
+        self.zeroconf.register_service(self.zeroconf_info)
+        self.bus.post(ZeroconfServiceAddedEvent(service_type=srv_type, service_name=srv_name))
+
+    def unregister_service(self):
+        """
+        Unregister the Zeroconf service configuration if available.
+        """
+        if self.zeroconf and self.zeroconf_info:
+            self.zeroconf.unregister_service(self.zeroconf_info)
+            self.zeroconf.close()
+            self.bus.post(ZeroconfServiceRemovedEvent(service_type=self.zeroconf_info.type,
+                                                      service_name=self.zeroconf_info.name))
+
+            self.zeroconf_info = None
+            self.zeroconf = None
 
 
 # vim:sw=4:ts=4:et:

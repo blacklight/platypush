@@ -165,6 +165,7 @@ class AssistantSnowboyBackend(AssistantBackend):
         return callback
 
     def on_stop(self):
+        super().on_stop()
         if self.detector:
             self.detector.terminate()
             self.detector = None

@@ -30,12 +30,14 @@ class NoderedBackend(Backend):
         self._server = None
 
     def on_stop(self):
+        super().on_stop()
         if self._server:
             self._server.terminate()
             self._server = None
 
     def run(self):
         super().run()
+        self.register_service(port=self.port, name='node')
 
         self._server = subprocess.Popen([sys.executable, '-m', 'pynodered.server',
                                          '--port', str(self.port), self._runner_path])

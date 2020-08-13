@@ -126,6 +126,7 @@ class PushbulletBackend(Backend):
             self.listener.close()
 
     def on_stop(self):
+        super().on_stop()
         return self.close()
 
     def run(self):

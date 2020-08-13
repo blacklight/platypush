@@ -1,7 +1,4 @@
 import asyncio
-import os
-import ssl
-import threading
 import websockets
 
 from platypush.backend import Backend
@@ -66,7 +63,7 @@ class WebsocketBackend(Backend):
                                                   ssl_capath=ssl_capath) \
             if ssl_cert else None
 
-    def send_message(self, msg):
+    def send_message(self, msg, **kwargs):
         websocket = get_plugin('websocket')
         websocket_args = {}
 
@@ -77,7 +74,6 @@ class WebsocketBackend(Backend):
             url = 'ws://localhost:{}'.format(self.port)
 
         websocket.send(url=url, msg=msg, **websocket_args)
-
 
     def notify_web_clients(self, event):
         """ Notify all the connected web clients (over websocket) of a new event """
@@ -90,21 +86,22 @@ class WebsocketBackend(Backend):
         loop = get_or_create_event_loop()
         active_websockets = self.active_websockets.copy()
 
-        for websocket in active_websockets:
+        for ws in active_websockets:
             try:
-                loop.run_until_complete(send_event(websocket))
+                loop.run_until_complete(send_event(ws))
             except websockets.exceptions.ConnectionClosed:
                 self.logger.info('Client connection lost')
-                self.active_websockets.remove(websocket)
-
+                self.active_websockets.remove(ws)
 
     def run(self):
         super().run()
+        self.register_service(port=self.port, name='ws')
 
+        # noinspection PyUnusedLocal
         async def serve_client(websocket, path):
             self.active_websockets.add(websocket)
             self.logger.debug('New websocket connection from {}'.
-                             format(websocket.remote_address[0]))
+                              format(websocket.remote_address[0]))
 
             try:
                 while True:
@@ -116,7 +113,7 @@ class WebsocketBackend(Backend):
 
                     msg = Message.build(msg)
                     self.logger.info('Received message from {}: {}'.
-                                    format(websocket.remote_address[0], msg))
+                                     format(websocket.remote_address[0], msg))
 
                     self.on_message(msg)
 
@@ -154,4 +151,3 @@ class WebsocketBackend(Backend):
 
 
 # vim:sw=4:ts=4:et:
-

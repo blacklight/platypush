@@ -35,6 +35,9 @@ sqlalchemy
 # Support for multi-users and password authentication
 bcrypt
 
+# Support for Zeroconf/Bonjour
+zeroconf
+
 # RSS feeds support
 # feedparser
 
