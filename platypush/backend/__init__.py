@@ -16,6 +16,7 @@ from platypush.bus import Bus
 from platypush.config import Config
 from platypush.context import get_backend
 from platypush.message.event.zeroconf import ZeroconfServiceAddedEvent, ZeroconfServiceRemovedEvent
+from platypush.plugins.zeroconf import ZeroconfListener
 from platypush.utils import set_timeout, clear_timeout, \
     get_redis_queue_name_by_message, set_thread_name
 
@@ -355,7 +356,8 @@ class Backend(Thread, EventGenerator):
                                          properties=srv_desc)
 
         self.zeroconf.register_service(self.zeroconf_info)
-        self.bus.post(ZeroconfServiceAddedEvent(service_type=srv_type, service_name=srv_name))
+        self.bus.post(ZeroconfServiceAddedEvent(service_type=srv_type, service_name=srv_name,
+                                                service_info=ZeroconfListener.parse_service_info(self.zeroconf_info)))
 
     def unregister_service(self):
         """

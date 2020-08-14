@@ -10,12 +10,14 @@ class ZeroconfEventType(enum.Enum):
 
 
 class ZeroconfEvent(Event):
-    def __init__(self, service_event: ZeroconfEventType, service_type: str, service_name: str, *args, **kwargs):
+    def __init__(self, service_event: ZeroconfEventType, service_type: str, service_name: str,
+                 service_info: dict, *args, **kwargs):
         super().__init__(*args, service_event=service_event.value, service_type=service_type,
-                         service_name=service_name, **kwargs)
+                         service_name=service_name, service_info=service_info, **kwargs)
 
         self.service_type = service_type
         self.service_name = service_name
+        self.service_info = service_info
 
 
 class ZeroconfServiceAddedEvent(ZeroconfEvent):
