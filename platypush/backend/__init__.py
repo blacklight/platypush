@@ -347,8 +347,12 @@ class Backend(Thread, EventGenerator):
         else:
             srv_port = self.port if hasattr(self, 'port') else None
 
-        self.zeroconf_info = ServiceInfo(srv_type, srv_name, socket.inet_aton(self._get_ip()),
-                                         srv_port, 0, 0, srv_desc)
+        self.zeroconf_info = ServiceInfo(srv_type, srv_name,
+                                         addresses=[socket.inet_aton(self._get_ip())],
+                                         port=srv_port,
+                                         weight=0,
+                                         priority=0,
+                                         properties=srv_desc)
 
         self.zeroconf.register_service(self.zeroconf_info)
         self.bus.post(ZeroconfServiceAddedEvent(service_type=srv_type, service_name=srv_name))
