@@ -16,7 +16,6 @@ from platypush.bus import Bus
 from platypush.config import Config
 from platypush.context import get_backend
 from platypush.message.event.zeroconf import ZeroconfServiceAddedEvent, ZeroconfServiceRemovedEvent
-from platypush.plugins.zeroconf import ZeroconfListener
 from platypush.utils import set_timeout, clear_timeout, \
     get_redis_queue_name_by_message, set_thread_name
 
@@ -328,6 +327,7 @@ class Backend(Thread, EventGenerator):
         """
         try:
             from zeroconf import ServiceInfo, Zeroconf
+            from platypush.plugins.zeroconf import ZeroconfListener
         except ImportError:
             self.logger.warning('zeroconf package not available, service discovery will be disabled.')
             return
