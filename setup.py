@@ -161,7 +161,7 @@ setup(
         'websockets',
         'websocket-client',
         'wheel',
-        'zeroconf',
+        'zeroconf>=0.27.0',
     ],
 
     extras_require={
