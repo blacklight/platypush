@@ -319,5 +319,7 @@ setup(
         'clipboard': ['pyperclip'],
         # Support for luma.oled display drivers
         'luma-oled': ['luma.oled @ git+https://github.com/rm-hull/luma.oled'],
+        # Support for DBus integration
+        'dbus': ['dbus-python'],
     },
 )

@@ -254,6 +254,9 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'paramiko',
                         'luma',
                         'zeroconf',
+                        'dbus',
+                        'gi',
+                        'gi.repository',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))

@@ -88,6 +88,9 @@ class ZeroconfPlugin(Plugin):
             discovery will loop forever and generate events upon service changes.
         :return: A ``service_type -> [service_names]`` mapping. Example::
 
+
+        .. code-block:: json
+
             {
                 "host1._platypush-http._tcp.local.": {
                     "type": "_platypush-http._tcp.local.",

@@ -276,3 +276,6 @@ croniter
 
 # Support for luma.oled
 # git+https://github.com/rm-hull/luma.oled
+
+# Support for DBus integration
+# python-dbus
