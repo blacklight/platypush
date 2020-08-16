@@ -8,13 +8,15 @@ Platypush
 [![Last Commit](https://img.shields.io/github/last-commit/BlackLight/platypush.svg)](https://github.com/BlackLight/platypush/commits/master)
 [![Contributions](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/BlackLight/platypush/issues)
 
-Advised read: [**Getting started with Platypush**](https://medium.com/@automationguru/automate-your-house-your-life-and-everything-else-around-with-platypush-dba1cd13e3f6) (Medium article).
+- Advised read: [**Getting started with Platypush**](https://medium.com/@automationguru/automate-your-house-your-life-and-everything-else-around-with-platypush-dba1cd13e3f6) (Medium article).
 
-Extensive documentation for all the available integrations and messages is available on [ReadTheDocs](https://platypush.readthedocs.io/en/latest/).
+- The [wiki](https://github.com/BlackLight/platypush/wiki) also contains many resources on getting started.
 
-Also check other [Medium stories](https://medium.com/tag/platypush/archive) to get more insights on what you can build with it and inspiration about possible usages.
+- Extensive documentation for all the available integrations and messages is available on [ReadTheDocs](https://platypush.readthedocs.io/en/latest/).
 
-If you have issues/feature requests/enhancement ideas please post a [GitHub issue](https://github.com/BlackLight/platypush/issues).
+- Also check other [Medium stories](https://medium.com/tag/platypush/archive) to get more insights on what you can build with it and inspiration about possible usages.
+
+- If you have issues/feature requests/enhancement ideas please post a [GitHub issue](https://github.com/BlackLight/platypush/issues).
 A [Reddit channel](https://www.reddit.com/r/platypush) is also available for more general questions.
 
 ---
