@@ -10,6 +10,8 @@ Platypush
 
 Advised read: [**Getting started with Platypush**](https://medium.com/@automationguru/automate-your-house-your-life-and-everything-else-around-with-platypush-dba1cd13e3f6) (Medium article).
 
+Extensive documentation for all the available integrations and messages is available on [ReadTheDocs](https://platypush.readthedocs.io/en/latest/).
+
 Also check other [Medium stories](https://medium.com/tag/platypush/archive) to get more insights on what you can build with it and inspiration about possible usage.
 
 If you have issues/feature requests/enhancement ideas please post a [GitHub issue](https://github.com/BlackLight/platypush/issues).
