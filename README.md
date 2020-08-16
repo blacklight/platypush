@@ -4,6 +4,9 @@ Platypush
 [![Build Status](https://travis-ci.org/BlackLight/platypush.svg?branch=master)](https://travis-ci.org/BlackLight/platypush)
 [![Documentation Status](https://readthedocs.org/projects/platypush/badge/?version=latest)](https://platypush.readthedocs.io/en/latest/?badge=latest)
 [![pip version](https://img.shields.io/pypi/v/platypush.svg?style=flat)](https://pypi.python.org/pypi/platypush/)
+[![License](https://img.shields.io/github/license/BlackLight/platypush.svg)](https://github.com/BlackLight/platypush/blob/master/LICENSE)
+[![Last Commit](https://img.shields.io/github/last-commit/BlackLight/platypush.svg)](https://github.com/BlackLight/platypush/commits/master)
+[![Contributions](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/BlackLight/platypush/issues)
 
 Advised read: [**Getting started with Platypush**](https://medium.com/@automationguru/automate-your-house-your-life-and-everything-else-around-with-platypush-dba1cd13e3f6) (Medium article).
 [Reddit channel](https://www.reddit.com/r/platypush)
