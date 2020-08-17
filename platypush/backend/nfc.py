@@ -64,7 +64,14 @@ class NfcBackend(Backend):
 
     @staticmethod
     def _parse_records(tag):
-        import ndef
+        from ndef.text import TextRecord
+        from ndef.uri import UriRecord
+        from ndef.smartposter import SmartposterRecord
+        from ndef.deviceinfo import DeviceInformationRecord
+        from ndef.wifi import WifiSimpleConfigRecord, WifiPeerToPeerRecord
+        from ndef.bluetooth import BluetoothLowEnergyRecord, BluetoothEasyPairingRecord
+        from ndef.signature import SignatureRecord
+
         records = []
 
         if not tag.ndef:
@@ -76,7 +83,7 @@ class NfcBackend(Backend):
                 'record_name': record.name,
             }
 
-            if isinstance(record, ndef.text.TextRecord):
+            if isinstance(record, TextRecord):
                 try:
                     r = {
                         **r,
@@ -89,46 +96,46 @@ class NfcBackend(Backend):
                         'type': 'text',
                         'text': record.text,
                     }
-            elif isinstance(record, ndef.uri.UriRecord):
+            elif isinstance(record, UriRecord):
                 r = {
                     **r,
                     'type': 'uri',
                     'uri': record.uri,
                     'iri': record.iri,
                 }
-            elif isinstance(record, ndef.smartposter.SmartposterRecord):
+            elif isinstance(record, SmartposterRecord):
                 r = {
                     **r,
                     'type': 'smartposter',
                     **{attr: getattr(record, attr) for attr in ['resource', 'titles', 'title', 'action', 'icon',
                                                                 'icons', 'resource_size', 'resource_type']},
                 }
-            elif isinstance(record, ndef.deviceinfo.DeviceInformationRecord):
+            elif isinstance(record, DeviceInformationRecord):
                 r = {
                     **r,
                     'type': 'device_info',
                     **{attr: getattr(record, attr) for attr in ['vendor_name', 'model_name', 'unique_name',
                                                                 'uuid_string', 'version_string']},
                 }
-            elif isinstance(record, ndef.wifi.WifiSimpleConfigRecord):
+            elif isinstance(record, WifiSimpleConfigRecord):
                 r = {
                     **r,
                     'type': 'wifi_simple_config',
                     **{attr: record[attr] for attr in record.attribute_names()}
                 }
-            elif isinstance(record, ndef.wifi.WifiPeerToPeerRecord):
+            elif isinstance(record, WifiPeerToPeerRecord):
                 r = {
                     **r,
                     'type': 'wifi_peer_to_peer',
                     **{attr: record[attr] for attr in record.attribute_names()}
                 }
-            elif isinstance(record, ndef.bluetooth.BluetoothEasyPairingRecord):
+            elif isinstance(record, BluetoothEasyPairingRecord):
                 r = {
                     **r,
                     'type': 'bluetooth_easy_pairing',
                     **{attr: getattr(record, attr) for attr in ['device_address', 'device_name', 'device_class']},
                 }
-            elif isinstance(record, ndef.bluetooth.BluetoothLowEnergyRecord):
+            elif isinstance(record, BluetoothLowEnergyRecord):
                 r = {
                     **r,
                     'type': 'bluetooth_low_energy',
@@ -137,7 +144,7 @@ class NfcBackend(Backend):
                                                                 'secure_connections_confirmation_value',
                                                                 'secure_connections_random_value']},
                 }
-            elif isinstance(record, ndef.signature.SignatureRecord):
+            elif isinstance(record, SignatureRecord):
                 r = {
                     **r,
                     'type': 'signature',
