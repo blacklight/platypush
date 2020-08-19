@@ -117,6 +117,7 @@ Plugins
     platypush/plugins/tts.rst
     platypush/plugins/tts.google.rst
     platypush/plugins/tv.samsung.ws.rst
+    platypush/plugins/twilio.rst
     platypush/plugins/udp.rst
     platypush/plugins/user.rst
     platypush/plugins/utils.rst
