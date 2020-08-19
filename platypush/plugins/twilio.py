@@ -60,7 +60,7 @@ class TwilioPlugin(Plugin):
 
         :param country: Country code (e.g. ``US`` or ``NL``).
         :param number_type: Phone number type - e.g. ``mobile``, ``local`` or ``toll_free``.
-        :return: A list of the available phone numbers with their properties and capabilities. Example::
+        :return: A list of the available phone numbers with their properties and capabilities. Example:
 
             .. code-block:: json
 
@@ -168,7 +168,7 @@ class TwilioPlugin(Plugin):
         # noinspection SpellCheckingInspection
         """
         Request to allocate a phone number on your Twilio account. The phone number should first be displayed as
-        available in :meth:`get_available_phone_numbers`.
+        available in :meth:`.get_available_phone_numbers`.
 
         :param phone_number: Phone number to be allocated.
         :param friendly_name: A string used to identify your new phone number.
@@ -395,7 +395,7 @@ class TwilioPlugin(Plugin):
         Get the details of a stored message.
 
         :param message_sid: Message SID to be retrieved.
-        :return: Message with its properties - see :meth:`send_message`.
+        :return: Message with its properties - see :meth:`.send_message`.
         """
         msg = self.client.messages(message_sid).fetch()
         # noinspection PyProtectedMember
@@ -408,7 +408,7 @@ class TwilioPlugin(Plugin):
 
         :param message_sid: Message SID to be updated.
         :param body: New message body.
-        :return: Updated message with its properties - see :meth:`send_message`.
+        :return: Updated message with its properties - see :meth:`.send_message`.
         """
         msg = self.client.messages(message_sid).update(body)
         # noinspection PyProtectedMember
