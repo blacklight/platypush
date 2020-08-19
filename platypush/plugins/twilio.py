@@ -156,15 +156,15 @@ class TwilioPlugin(Plugin):
     @action
     def register_phone_number(self,
                               phone_number: str,
-                              friendly_name: str = values.unset,
-                              address_sid: str = values.unset,
-                              sms_url: str = values.unset,
-                              sms_fallback_url: str = values.unset,
-                              status_callback: str = values.unset,
+                              friendly_name: Optional[str] = None,
+                              address_sid: Optional[str] = None,
+                              sms_url: Optional[str] = None,
+                              sms_fallback_url: Optional[str] = None,
+                              status_callback: Optional[str] = None,
                               voice_caller_id_lookup: bool = True,
-                              voice_url: str = values.unset,
-                              voice_fallback_url: str = values.unset,
-                              area_code: str = values.unset) -> dict:
+                              voice_url: Optional[str] = None,
+                              voice_fallback_url: Optional[str] = None,
+                              area_code: Optional[str] = None) -> dict:
         # noinspection SpellCheckingInspection
         """
         Request to allocate a phone number on your Twilio account. The phone number should first be displayed as
