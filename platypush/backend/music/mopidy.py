@@ -1,6 +1,6 @@
 import json
 import re
-import time
+import threading
 
 from platypush.backend import Backend
 from platypush.message.event.music import MusicPlayEvent, MusicPauseEvent, \
@@ -45,7 +45,8 @@ class MusicMopidyBackend(Backend):
         self._msg_id = 0
         self._ws = None
         self._latest_status = {}
-        self._connected = False
+        self._reconnect_thread = None
+        self._connected_event = threading.Event()
 
         try:
             self._latest_status = self._get_tracklist_status()
@@ -195,27 +196,43 @@ class MusicMopidyBackend(Backend):
 
         return hndl
 
+    def _retry_connect(self):
+        def reconnect():
+            while not self._should_stop() and not self._connected_event.is_set():
+                try:
+                    self._connect()
+                except Exception as e:
+                    self.logger.warning('Error on websocket reconnection: '.format(str(e)))
+
+                self._connected_event.wait(timeout=10)
+
+            self._reconnect_thread = None
+
+        if not self._reconnect_thread or not self._reconnect_thread.is_alive():
+            self._reconnect_thread = threading.Thread(target=reconnect)
+            self._reconnect_thread.start()
+
     def _on_error(self):
         def hndl(ws, error):
             self.logger.warning('Mopidy websocket error: {}'.format(error))
+            ws.close()
+
         return hndl
 
     def _on_close(self):
-        def hndl():
+        def hndl(ws):
+            self._connected_event.clear()
             self._ws = None
-            self._connected = False
             self.logger.warning('Mopidy websocket connection closed')
-
-            while not self._connected:
-                self._connect()
-                time.sleep(10)
+            self._retry_connect()
 
         return hndl
 
     def _on_open(self):
         def hndl(ws):
-            self._connected = True
+            self._connected_event.set()
             self.logger.info('Mopidy websocket connected')
+
         return hndl
 
     def _connect(self):
@@ -223,18 +240,17 @@ class MusicMopidyBackend(Backend):
 
         if not self._ws:
             self._ws = websocket.WebSocketApp(self.url,
+                                              on_open=self._on_open(),
                                               on_message=self._on_msg(),
                                               on_error=self._on_error(),
                                               on_close=self._on_close())
 
+            self._ws.run_forever()
+
     def run(self):
         super().run()
-        self.logger.info('Started tracking Mopidy events backend on {}:{}'.
-                         format(self.host, self.port))
-
+        self.logger.info('Started tracking Mopidy events backend on {}:{}'.format(self.host, self.port))
         self._connect()
-        self._ws.on_open = self._on_open()
-        self._ws.run_forever()
 
 
 # vim:sw=4:ts=4:et:
