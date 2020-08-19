@@ -198,7 +198,7 @@ class MusicMopidyBackend(Backend):
 
     def _retry_connect(self):
         def reconnect():
-            while not self._should_stop() and not self._connected_event.is_set():
+            while not self.should_stop() and not self._connected_event.is_set():
                 try:
                     self._connect()
                 except Exception as e:
