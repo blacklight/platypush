@@ -372,7 +372,7 @@ class Backend(Thread, EventGenerator):
                 self.bus.post(ZeroconfServiceRemovedEvent(service_type=self.zeroconf_info.type,
                                                           service_name=self.zeroconf_info.name))
             else:
-                self.bus.post(ZeroconfServiceRemovedEvent())
+                self.bus.post(ZeroconfServiceRemovedEvent(service_type=None, service_name=None))
 
             self.zeroconf_info = None
             self.zeroconf = None
