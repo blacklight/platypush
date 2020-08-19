@@ -128,7 +128,7 @@ class ZeroconfPlugin(Plugin):
             while timeout and time.time() - discovery_start < timeout:
                 to = discovery_start + timeout - time.time() if timeout else None
                 try:
-                    evt: ZeroconfEvent = evt_queue.get(block=True, timeout=to)
+                    evt = evt_queue.get(block=True, timeout=to)
                     if isinstance(evt, ZeroconfServiceAddedEvent) or isinstance(evt, ZeroconfServiceUpdatedEvent):
                         services[evt.service_name] = {
                             'type': evt.service_type,
