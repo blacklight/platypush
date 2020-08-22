@@ -19,10 +19,8 @@ class TvSamsungWsPlugin(Plugin):
 
     """
 
-    workdir = os.path.join(Config.get('workdir'), 'samsungtvws')
-
     def __init__(self, host: Optional[str] = None, port: int = 8002, timeout: Optional[int] = 5, name='platypush',
-                 token_file: str = os.path.join(workdir, 'token.txt'), **kwargs):
+                 token_file: Optional[str] = None, **kwargs):
         """
         :param host: IP address or host name of the smart TV.
         :param port: Websocket port (default: 8002).
@@ -31,6 +29,10 @@ class TvSamsungWsPlugin(Plugin):
         :param token_file: Path to the token file (default: ``~/.local/share/platypush/samsungtvws/token.txt``)
         """
         super().__init__(**kwargs)
+        self.workdir = os.path.join(Config.get('workdir'), 'samsungtvws')
+        if not token_file:
+            token_file = os.path.join(self.workdir, 'token.txt')
+
         self.host = host
         self.port = port
         self.timeout = timeout
