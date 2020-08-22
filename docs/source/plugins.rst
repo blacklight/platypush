@@ -45,6 +45,7 @@ Plugins
     platypush/plugins/gpio.sensor.rst
     platypush/plugins/gpio.sensor.accelerometer.rst
     platypush/plugins/gpio.sensor.bme280.rst
+    platypush/plugins/gpio.sensor.dht.rst
     platypush/plugins/gpio.sensor.distance.rst
     platypush/plugins/gpio.sensor.distance.vl53l1x.rst
     platypush/plugins/gpio.sensor.envirophat.rst

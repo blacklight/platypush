@@ -51,6 +51,7 @@ Backends
     platypush/backend/sensor.arduino.rst
     platypush/backend/sensor.battery.rst
     platypush/backend/sensor.bme280.rst
+    platypush/backend/sensor.dht.rst
     platypush/backend/sensor.distance.rst
     platypush/backend/sensor.distance.vl53l1x.rst
     platypush/backend/sensor.envirophat.rst

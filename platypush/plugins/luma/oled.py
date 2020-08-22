@@ -2,9 +2,6 @@ import enum
 import os
 from typing import Optional, Union, Tuple, List
 
-import luma.core.interface.serial
-import luma.oled.device
-from luma.core.render import canvas
 from PIL import Image, ImageFont
 
 from platypush.plugins import Plugin, action
@@ -73,6 +70,10 @@ class LumaOledPlugin(Plugin):
         :param font: Path to a default TTF font used to display the text.
         :param font_size: Font size - it only applies if ``font`` is set.
         """
+        import luma.core.interface.serial
+        import luma.oled.device
+        from luma.core.render import canvas
+
         super().__init__(**kwargs)
 
         iface_name = interface
@@ -103,6 +104,7 @@ class LumaOledPlugin(Plugin):
         """
         clear the display canvas.
         """
+        from luma.core.render import canvas
         self.device.clear()
         del self.canvas
         self.canvas = canvas(self.device)
