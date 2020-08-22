@@ -42,6 +42,7 @@ class AdafruitIoBackend(Backend):
         if not plugin:
             raise RuntimeError('Adafruit IO plugin not configured')
 
+        # noinspection PyProtectedMember
         self._client = MQTTClient(plugin._username, plugin._key)
         self._client.on_connect = self.on_connect()
         self._client.on_disconnect = self.on_disconnect()
@@ -52,18 +53,25 @@ class AdafruitIoBackend(Backend):
             for feed in self.feeds:
                 client.subscribe(feed)
             self.bus.post(ConnectedEvent())
+
         return _handler
 
     def on_disconnect(self):
         def _handler(client):
             self.bus.post(DisconnectedEvent())
+
         return _handler
 
-    def on_message(self):
+    def on_message(self, msg):
+        # noinspection PyUnusedLocal
         def _handler(client, feed, data):
-            try: data = float(data)
-            except: pass
+            # noinspection PyBroadException
+            try:
+                data = float(data)
+            except:
+                pass
             self.bus.post(FeedUpdateEvent(feed=feed, data=data))
+
         return _handler
 
     def run(self):
@@ -80,6 +88,5 @@ class AdafruitIoBackend(Backend):
             except Exception as e:
                 self.logger.exception(e)
                 self._client = None
-
 
 # vim:sw=4:ts=4:et:
