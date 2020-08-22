@@ -122,7 +122,7 @@ setup(
     author_email="info@fabiomanganiello.com",
     description="Platypush service",
     license="MIT",
-    python_requires='>= 3.5',
+    python_requires='>= 3.6',
     keywords="home-automation iot mqtt websockets redis dashboard notificaions",
     url="https://github.com/BlackLight/platypush",
     packages=find_packages(),
@@ -149,7 +149,7 @@ setup(
     classifiers=[
         "Topic :: Utilities",
         "License :: OSI Approved :: MIT License",
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
     ],
     install_requires=[
         'pyyaml',
