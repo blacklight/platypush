@@ -285,3 +285,7 @@ croniter
 
 # Support for Github
 # pytz
+
+# Support for DHT11/DHT22/AM2302 temperature/humidity sensors
+# git+https://github.com/adafruit/Adafruit_Python_DHT
+
