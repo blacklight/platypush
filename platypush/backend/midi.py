@@ -72,7 +72,6 @@ class MidiBackend(Backend):
 
         self.midi.set_callback(self._on_midi_message())
 
-
     def _on_midi_message(self):
         def flush_midi_message(message):
             def _f():
@@ -81,6 +80,7 @@ class MidiBackend(Backend):
                 self.bus.post(MidiMessageEvent(message=message, delay=delay))
             return _f
 
+        # noinspection PyUnusedLocal
         def callback(message, data):
             # rtmidi will provide a tuple in the format
             # (midi_message, time_since_last_event)
@@ -106,13 +106,12 @@ class MidiBackend(Backend):
 
         return callback
 
-
     def run(self):
         super().run()
 
         self.midi.open_port(self.port_number)
         self.logger.info('Initialized MIDI backend, listening for events on device {}'.
-                     format(self.device_name))
+                         format(self.device_name))
 
         while not self.should_stop():
             try:
@@ -126,4 +125,3 @@ class MidiBackend(Backend):
 
 
 # vim:sw=4:ts=4:et:
-

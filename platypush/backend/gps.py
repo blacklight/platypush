@@ -66,12 +66,14 @@ class GpsBackend(Backend):
         if report.get('class').lower() == 'devices':
             for device in report.get('devices', []):
                 if device.get('path') not in self._devices or device != self._devices.get('path'):
+                    # noinspection DuplicatedCode
                     self._devices[device.get('path')] = device
                     return GPSDeviceEvent(path=device.get('path'), activated=device.get('activated'),
                                           native=device.get('native'), bps=device.get('bps'),
                                           parity=device.get('parity'), stopbits=device.get('stopbits'),
                                           cycle=device.get('cycle'), driver=device.get('driver'))
         if report.get('class').lower() == 'device':
+            # noinspection DuplicatedCode
             self._devices[report.get('path')] = report
             return GPSDeviceEvent(path=report.get('path'), activated=report.get('activated'),
                                   native=report.get('native'), bps=report.get('bps'),

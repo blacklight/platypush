@@ -1,10 +1,8 @@
-import redis
 import socket
 import threading
 
 from platypush.backend import Backend
 from platypush.message import Message
-from platypush.message.request import Request
 from platypush.utils import set_thread_name
 
 
@@ -40,7 +38,6 @@ class TcpBackend(Backend):
             open_brackets = 0
             msg = b''
             prev_ch = None
-            redis = self._get_redis()
 
             while True:
                 if processed_bytes > self._MAX_REQ_SIZE:
@@ -100,7 +97,7 @@ class TcpBackend(Backend):
         serv_sock.bind((self.bind_address, self.port))
 
         self.logger.info('Initialized TCP backend on port {} with bind address {}'.
-                     format(self.port, self.bind_address))
+                         format(self.port, self.bind_address))
 
         serv_sock.listen(self.listen_queue)
 
@@ -111,4 +108,3 @@ class TcpBackend(Backend):
 
 
 # vim:sw=4:ts=4:et:
-

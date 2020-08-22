@@ -109,6 +109,7 @@ class ZwaveBackend(Backend):
         self.device = device
 
         if not config_path:
+            # noinspection PyTypeChecker
             config_path = os.path.join(os.path.dirname(inspect.getfile(python_openzwave)), 'ozw_config')
         if not user_path:
             user_path = os.path.join(Config.get('workdir'), 'zwave')
