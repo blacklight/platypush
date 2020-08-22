@@ -282,3 +282,6 @@ croniter
 
 # Support for Twilio
 # twilio
+
+# Support for Github
+# pytz

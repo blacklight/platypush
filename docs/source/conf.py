@@ -258,6 +258,7 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'gi',
                         'gi.repository',
                         'twilio',
+                        'pytz',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))

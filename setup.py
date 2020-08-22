@@ -162,6 +162,7 @@ setup(
         'websocket-client',
         'wheel',
         'zeroconf>=0.27.0',
+        'tz',
     ],
 
     extras_require={
@@ -172,9 +173,9 @@ setup(
         # Support for Pushbullet backend and plugin
         'pushbullet': ['pushbullet.py @ https://github.com/rbrcsk/pushbullet.py/tarball/master'],
         # Support for HTTP backend
-        'http': ['flask', 'python-dateutil', 'tz', 'frozendict', 'bcrypt'],
+        'http': ['flask', 'python-dateutil', 'frozendict', 'bcrypt'],
         # Support for uWSGI HTTP backend
-        'uwsgi': ['flask', 'python-dateutil', 'tz', 'frozendict', 'uwsgi', 'bcrypt'],
+        'uwsgi': ['flask', 'python-dateutil', 'frozendict', 'uwsgi', 'bcrypt'],
         # Support for MQTT backends
         'mqtt': ['paho-mqtt'],
         # Support for RSS feeds parser
@@ -323,5 +324,7 @@ setup(
         'dbus': ['dbus-python'],
         # Support for Twilio integration
         'twilio': ['twilio'],
+        # Support for Github integration
+        'github': ['pytz'],
     },
 )

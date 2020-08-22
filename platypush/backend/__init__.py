@@ -280,8 +280,8 @@ class Backend(Thread, EventGenerator):
     def should_stop(self):
         return self._should_stop
 
-    def wait_stop(self, timeout=None):
-        self._stop_event.wait(timeout)
+    def wait_stop(self, timeout=None) -> bool:
+        return self._stop_event.wait(timeout)
 
     def _get_redis(self):
         import redis
