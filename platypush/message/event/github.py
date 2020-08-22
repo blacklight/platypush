@@ -31,7 +31,7 @@ class GithubEvent(Event):
                  actor: Optional[Dict[str, str]] = None,
                  repo: Optional[Dict[str, str]] = None,
                  *args, **kwargs):
-        super().__init__(*args, actor=actor, event_type=event_type, created_at=created_at, **kwargs)
+        super().__init__(*args, actor=actor, event_type=event_type, repo=repo, created_at=created_at, **kwargs)
         self.event_type = event_type
         self.actor = Actor(**actor) if actor else None
         self.repo = Repo(**repo) if repo else None
