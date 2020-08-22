@@ -20,6 +20,7 @@ Events
     platypush/events/distance.rst
     platypush/events/foursquare.rst
     platypush/events/geo.rst
+    platypush/events/github.rst
     platypush/events/google.rst
     platypush/events/google.fit.rst
     platypush/events/google.pubsub.rst

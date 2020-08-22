@@ -23,6 +23,7 @@ Backends
     platypush/backend/covid19.rst
     platypush/backend/dbus.rst
     platypush/backend/foursquare.rst
+    platypush/backend/github.rst
     platypush/backend/google.fit.rst
     platypush/backend/google.pubsub.rst
     platypush/backend/gps.rst
