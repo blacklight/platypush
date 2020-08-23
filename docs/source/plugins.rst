@@ -64,6 +64,8 @@ Plugins
     platypush/plugins/inspect.rst
     platypush/plugins/kafka.rst
     platypush/plugins/lastfm.rst
+    platypush/plugins/lcd.gpio.rst
+    platypush/plugins/lcd.i2c.rst
     platypush/plugins/light.rst
     platypush/plugins/light.hue.rst
     platypush/plugins/linode.rst
