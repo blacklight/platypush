@@ -1,14 +1,7 @@
 from abc import ABC, abstractmethod
-from enum import Enum
 from typing import List, Optional
 
 from platypush.plugins import Plugin, action
-
-
-class PinMode(Enum):
-    import RPi.GPIO
-    BOARD = RPi.GPIO.BOARD
-    BCM = RPi.GPIO.BCM
 
 
 class LcdPlugin(Plugin, ABC):
@@ -21,23 +14,20 @@ class LcdPlugin(Plugin, ABC):
         * **RPi.GPIO** (``pip install RPi.GPIO``)
 
     """
-    import RPLCD.lcd
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.lcd = None
 
     @staticmethod
     def _get_pin_mode(pin_mode: str) -> int:
+        import RPi.GPIO
+        pin_modes = ['BOARD', 'BCM']
         pin_mode = pin_mode.upper()
-        assert hasattr(PinMode, pin_mode), \
-            'Invalid pin_mode: {}. Supported modes: {}'.format(
-                pin_mode, list([mode.name for mode in PinMode if mode.name != 'RPi']))
-
-        return getattr(PinMode, pin_mode).value
+        assert pin_mode in pin_modes, 'Invalid pin_mode: {}. Supported modes: {}'.format(pin_mode, pin_modes)
+        return getattr(RPi.GPIO, pin_mode).value
 
     @abstractmethod
-    def _get_lcd(self) -> RPLCD.lcd.BaseCharLCD:
+    def _get_lcd(self):
         pass
 
     def _init_lcd(self):

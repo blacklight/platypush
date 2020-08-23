@@ -1,6 +1,5 @@
-from typing import List, Optional
+from typing import Optional
 
-from platypush.plugins import action
 from platypush.plugins.lcd import LcdPlugin
 
 
