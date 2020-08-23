@@ -75,7 +75,7 @@ class FoursquarePlugin(Plugin):
         :param query: Search query (e.g. "coffee shops" or "restaurants").
         :param limit: Maximum number of results.
         :param url: Venue URL to search.
-        :param categories: List of ``category IDs <https://developer.foursquare.com/docs/resources/categories>``_
+        :param categories: List of `category IDs <https://developer.foursquare.com/docs/resources/categories>`_
             to be searched.
         :param radius: Search radius in meters.
         :param sw: South/west boundary box as a ``[latitude, longitude]`` pair.
@@ -157,7 +157,7 @@ class FoursquarePlugin(Plugin):
         :param query: Search query (e.g. "coffee shops" or "restaurants"). The parameter has no effect if
             ``section`` is specified.
         :param limit: Maximum number of results.
-        :param categories: List of ``category IDs <https://developer.foursquare.com/docs/resources/categories>``_
+        :param categories: List of `category IDs <https://developer.foursquare.com/docs/resources/categories>`_
             to be searched.
         :param radius: Search radius in meters.
         :param open_now: Filter by open/not open now.

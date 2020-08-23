@@ -6,7 +6,6 @@ Events
     :maxdepth: 2
     :caption: Events:
 
-    platypush/events/.rst
     platypush/events/adafruit.rst
     platypush/events/alarm.rst
     platypush/events/application.rst

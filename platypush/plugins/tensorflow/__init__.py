@@ -719,9 +719,9 @@ class TensorflowPlugin(Plugin):
             The model will not be trained on this data. ``validation_data`` will override ``validation_split``.
             ``validation_data`` could be:
 
-              - tuple ``(x_val, y_val)`` of arrays/numpy arrays/tensors
-              - tuple ``(x_val, y_val, val_sample_weights)`` of Numpy arrays
-              - dataset
+            - tuple ``(x_val, y_val)`` of arrays/numpy arrays/tensors
+            - tuple ``(x_val, y_val, val_sample_weights)`` of Numpy arrays
+            - dataset
 
             For the first two cases, ``batch_size`` must be provided. For the last case, ``validation_steps`` could be
             provided.

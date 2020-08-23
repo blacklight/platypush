@@ -1,7 +1,6 @@
 import os
 from typing import Optional, Union
 
-import deepspeech
 import numpy as np
 import wave
 
@@ -79,6 +78,7 @@ class SttDeepspeechPlugin(SttPlugin):
         :param block_duration: Duration of the acquired audio blocks (default: 1 second).
         """
 
+        import deepspeech
         super().__init__(*args, **kwargs)
         self.model_file = os.path.abspath(os.path.expanduser(model_file))
         self.lm_file = os.path.abspath(os.path.expanduser(lm_file))
@@ -89,7 +89,8 @@ class SttDeepspeechPlugin(SttPlugin):
         self._model: Optional[deepspeech.Model] = None
         self._context = None
 
-    def _get_model(self) -> deepspeech.Model:
+    def _get_model(self):
+        import deepspeech
         if not self._model:
             self._model = deepspeech.Model(self.model_file, self.beam_width)
             self._model.enableDecoderWithLM(self.lm_file, self.trie_file, self.lm_alpha, self.lm_beta)

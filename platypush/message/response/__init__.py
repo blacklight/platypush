@@ -10,13 +10,18 @@ class Response(Message):
     def __init__(self, target=None, origin=None, id=None, output=None, errors=None,
                  timestamp=None, disable_logging=False):
         """
-        Params:
-            target -- Target [String]
-            origin -- Origin [String]
-            output -- Output [String]
-            errors -- Errors [List of strings or exceptions]
-                id -- Message ID this response refers to
-         timestamp -- Message timestamp [Float]
+        :param target: Target
+        :type target: str
+        :param origin: Origin
+        :type origin: str
+        :param output: Output
+        :type output: str
+        :param errors: Errors
+        :type errors: list
+        :param id: Message ID this response refers to
+        :type id: str
+        :param timestamp: Message timestamp
+        :type timestamp: float
         """
 
         super().__init__(timestamp=timestamp)
@@ -63,7 +68,7 @@ class Response(Message):
 
     def __str__(self):
         """
-        Overrides the str() operator and converts
+        Overrides the ``str()`` operator and converts
         the message into a UTF-8 JSON string
         """
         output = self.output if self.output is not None else {

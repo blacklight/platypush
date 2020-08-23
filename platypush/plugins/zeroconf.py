@@ -86,32 +86,30 @@ class ZeroconfPlugin(Plugin):
         :param service: Service type (e.g. ``_http._tcp.local.``).
         :param timeout: Browser timeout in seconds (default: 5). Specify None for no timeout - in such case the
             discovery will loop forever and generate events upon service changes.
-        :return: A ``service_type -> [service_names]`` mapping. Example::
-
+        :return: A ``service_type -> [service_names]`` mapping. Example:
 
         .. code-block:: json
 
-            {
-                "host1._platypush-http._tcp.local.": {
-                    "type": "_platypush-http._tcp.local.",
-                    "name": "host1._platypush-http._tcp.local.",
-                    "info": {
-                        "addresses": ["192.168.1.11"],
-                        "port": 8008,
-                        "host_ttl": 120,
-                        "other_ttl": 4500,
-                        "priority": 0,
-                        "properties": {
-                            "name": "Platypush",
-                            "vendor": "Platypush",
-                            "version": "0.13.2"
-                        },
-                        "server": "host1._platypush-http._tcp.local.",
-                        "weight": 0
-                    }
-                },
-                ...
+        {
+            "host1._platypush-http._tcp.local.": {
+                "type": "_platypush-http._tcp.local.",
+                "name": "host1._platypush-http._tcp.local.",
+                "info": {
+                    "addresses": ["192.168.1.11"],
+                    "port": 8008,
+                    "host_ttl": 120,
+                    "other_ttl": 4500,
+                    "priority": 0,
+                    "properties": {
+                        "name": "Platypush",
+                        "vendor": "Platypush",
+                        "version": "0.13.2"
+                    },
+                    "server": "host1._platypush-http._tcp.local.",
+                    "weight": 0
+                }
             }
+        }
 
         """
         assert not self._discovery_in_progress, 'A discovery process is already running'

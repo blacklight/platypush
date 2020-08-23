@@ -22,7 +22,7 @@ class GpioSensorLtr559Plugin(GpioSensorPlugin):
         :returns: dict. Example:
 
         .. code-block:: python
-:
+
         output = {
             "light": 109.3543,     # Lux
             "proximity": 103       # The higher the value, the nearest the object, within a ~5cm range

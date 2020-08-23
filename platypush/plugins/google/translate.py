@@ -16,13 +16,13 @@ class GoogleTranslatePlugin(Plugin):
         1. Create a project on the `Google Cloud console <https://console.cloud.google.com/projectcreate>`_ if
            you don't have one already.
 
-        2. In the menu navigate to the _Artificial Intelligence_ section and select _Translations_ and enable the API.
+        2. In the menu navigate to the *Artificial Intelligence* section and select *Translations* and enable the API.
 
-        3. From the menu select _APIs & Services_ and create a service account. You can leave role and permissions
+        3. From the menu select *APIs & Services* and create a service account. You can leave role and permissions
            empty.
 
         4. Create a new private JSON key for the service account and download it. By default platypush will look for the
-           credentials file under ~/.credentials/platypush/google/translate.json.
+           credentials file under ``~/.credentials/platypush/google/translate.json``.
 
     Requires:
 

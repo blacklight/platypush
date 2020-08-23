@@ -34,6 +34,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
         * **tenacity** (``pip install tenacity``)
         * **google-assistant-sdk** (``pip install google-assistant-sdk[samples]``)
+
     """
 
     api_endpoint = 'embeddedassistant.googleapis.com'
@@ -214,24 +215,20 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         :param language: Language code override (default: default configured language).
         :param tts_plugin: Optional text-to-speech plugin to be used for rendering text.
         :param tts_args: Optional arguments for the TTS plugin say method.
-
         :returns: A list of the interactions that happen within the conversation.
 
         ..code-block:: json
 
-            [
-                {
-                    "request": "request 1",
-                    "response": "response 1"
-
-                },
-
-                {
-                    "request": "request 2",
-                    "response": "response 2"
-
-                }
-            ]
+        [
+            {
+                "request": "request 1",
+                "response": "response 1"
+            },
+            {
+                "request": "request 2",
+                "response": "response 2"
+            }
+        ]
 
         """
 
