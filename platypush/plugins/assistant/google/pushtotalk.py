@@ -217,7 +217,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         :param tts_args: Optional arguments for the TTS plugin say method.
         :returns: A list of the interactions that happen within the conversation.
 
-        ..code-block:: json
+        .. code-block:: json
 
         [
             {
