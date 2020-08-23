@@ -289,3 +289,7 @@ croniter
 # Support for DHT11/DHT22/AM2302 temperature/humidity sensors
 # git+https://github.com/adafruit/Adafruit_Python_DHT
 
+# Support for LCD display integration
+# RPi.GPIO
+# RPLCD
+

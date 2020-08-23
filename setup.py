@@ -328,5 +328,7 @@ setup(
         'github': ['pytz'],
         # Support for DHT11/DHT22/AM2302 temperature/humidity sensors
         'dht': ['Adafruit_Python_DHT @ git+https://github.com/adafruit/Adafruit_Python_DHT'],
+        # Support for LCD display integration
+        'lcd': ['RPi.GPIO', 'RPLCD'],
     },
 )
