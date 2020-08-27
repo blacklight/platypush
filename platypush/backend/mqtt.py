@@ -151,19 +151,35 @@ class MqttBackend(Backend):
         # noinspection PyShadowingNames,PyUnusedLocal
         for i, listener in enumerate(listeners_conf):
             host = listener.get('host')
-            port = listener.get('port', self._default_mqtt_port)
-            topics = listener.get('topics')
-            username = listener.get('username')
-            password = listener.get('password')
-            client_id = listener.get('client_id', self.client_id)
-            tls_cafile = self._expandpath(listener.get('tls_cafile'))
+            if host:
+                port = listener.get('port', self._default_mqtt_port)
+                topics = listener.get('topics')
+                username = listener.get('username')
+                password = listener.get('password')
+                tls_cafile = self._expandpath(listener.get('tls_cafile'))
+                tls_certfile = self._expandpath(listener.get('tls_certfile'))
+                tls_keyfile = self._expandpath(listener.get('tls_keyfile'))
+                tls_version = MQTTPlugin.get_tls_version(listener.get('tls_version'))
+                tls_ciphers = listener.get('tls_ciphers')
+                tls_insecure = listener.get('tls_insecure')
+            else:
+                host = self.host
+                port = self.port
+                username = self.username
+                password = self.password
+                tls_cafile = self.tls_cafile
+                tls_certfile = self.tls_certfile
+                tls_keyfile = self.tls_keyfile
+                tls_version = self.tls_keyfile
+                tls_ciphers = self.tls_ciphers
+                tls_insecure = self.tls_insecure
 
-            if not host or not topics:
-                self.logger.warning('No host nor list of topics specified for ' +
-                                    'listener n.{}'.format(i + 1))
+            topics = listener.get('topics')
+            if not topics:
+                self.logger.warning('No list of topics specified for listener n.{}'.format(i+1))
                 continue
 
-            client = mqtt.Client(client_id)
+            client = mqtt.Client()
             client.on_connect = self.on_connect(*topics)
             client.on_message = self.on_mqtt_message()
 
@@ -172,12 +188,12 @@ class MqttBackend(Backend):
 
             if tls_cafile:
                 client.tls_set(ca_certs=tls_cafile,
-                               certfile=self._expandpath(listener.get('tls_certfile')),
-                               keyfile=self._expandpath(listener.get('tls_keyfile')),
-                               tls_version=MQTTPlugin.get_tls_version(listener.get('tls_version')),
-                               ciphers=listener.get('tls_ciphers'))
+                               certfile=tls_certfile,
+                               keyfile=tls_keyfile,
+                               tls_version=tls_version,
+                               ciphers=tls_ciphers)
 
-                client.tls_insecure_set(self.tls_insecure)
+                client.tls_insecure_set(tls_insecure)
 
             threading.Thread(target=listener_thread, kwargs={
                 'client_': client, 'host': host, 'port': port}).start()
