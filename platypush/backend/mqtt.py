@@ -144,10 +144,9 @@ class MqttBackend(Backend):
     def _initialize_listeners(self, listeners_conf):
         import paho.mqtt.client as mqtt
 
-        # noinspection PyShadowingNames
-        def listener_thread(client, host, port):
-            client.connect(host, port)
-            client.loop_forever()
+        def listener_thread(client_, host, port):
+            client_.connect(host, port)
+            client_.loop_forever()
 
         # noinspection PyShadowingNames,PyUnusedLocal
         for i, listener in enumerate(listeners_conf):
@@ -181,7 +180,7 @@ class MqttBackend(Backend):
                 client.tls_insecure_set(self.tls_insecure)
 
             threading.Thread(target=listener_thread, kwargs={
-                'client': client, 'host': host, 'port': port}).start()
+                'client_': client, 'host': host, 'port': port}).start()
 
     def on_exec_message(self):
         def handler(_, __, msg):
