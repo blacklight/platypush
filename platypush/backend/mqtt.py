@@ -88,15 +88,9 @@ class MqttBackend(Backend):
         self._client = None
         self._listeners = []
 
-        self.tls_cafile = os.path.abspath(os.path.expanduser(tls_cafile)) \
-            if tls_cafile else None
-
-        self.tls_certfile = os.path.abspath(os.path.expanduser(tls_certfile)) \
-            if tls_certfile else None
-
-        self.tls_keyfile = os.path.abspath(os.path.expanduser(tls_keyfile)) \
-            if tls_keyfile else None
-
+        self.tls_cafile = self._expandpath(tls_cafile) if tls_cafile else None
+        self.tls_certfile = self._expandpath(tls_certfile) if tls_certfile else None
+        self.tls_keyfile = self._expandpath(tls_keyfile) if tls_keyfile else None
         self.tls_version = MQTTPlugin.get_tls_version(tls_version)
         self.tls_ciphers = tls_ciphers
         self.tls_insecure = tls_insecure
@@ -138,6 +132,10 @@ class MqttBackend(Backend):
 
         return handler
 
+    @staticmethod
+    def _expand_path(path: str) -> str:
+        return os.path.abspath(os.path.expanduser(path)) if path else path
+
     def _initialize_listeners(self, listeners_conf):
         import paho.mqtt.client as mqtt
 
@@ -153,7 +151,7 @@ class MqttBackend(Backend):
             topics = listener.get('topics')
             username = listener.get('username')
             password = listener.get('password')
-            tls_cafile = os.path.abspath(os.path.expanduser(listener.get('tls_cafile')))
+            tls_cafile = self._expandpath(listener.get('tls_cafile'))
 
             if not host or not topics:
                 self.logger.warning('No host nor list of topics specified for ' +
@@ -169,8 +167,8 @@ class MqttBackend(Backend):
 
             if tls_cafile:
                 client.tls_set(ca_certs=tls_cafile,
-                               certfile=os.path.abspath(os.path.expanduser(listener.get('tls_certfile'))),
-                               keyfile=os.path.abspath(os.path.expanduser(listener.get('tls_keyfile'))),
+                               certfile=self._expandpath(listener.get('tls_certfile')),
+                               keyfile=self._expandpath(listener.get('tls_keyfile')),
                                tls_version=MQTTPlugin.get_tls_version(listener.get('tls_version')),
                                ciphers=listener.get('tls_ciphers'))
 
