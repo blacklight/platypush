@@ -33,8 +33,9 @@ class MqttBackend(Backend):
                  topic='platypush_bus_mq', subscribe_default_topic: bool = True,
                  tls_cafile: Optional[str] = None, tls_certfile: Optional[str] = None,
                  tls_keyfile: Optional[str] = None, tls_version: Optional[str] = None,
-                 tls_ciphers: Optional[str] = None, username: Optional[str] = None,
-                 password: Optional[str] = None, listeners=None, *args, **kwargs):
+                 tls_ciphers: Optional[str] = None, tls_insecure: bool = False,
+                 username: Optional[str] = None, password: Optional[str] = None, listeners=None,
+                 *args, **kwargs):
         """
         :param host: MQTT broker host
         :param port: MQTT broker port (default: 1883)
@@ -52,6 +53,7 @@ class MqttBackend(Backend):
             here (default: None). Supported versions: ``tls`` (automatic), ``tlsv1``, ``tlsv1.1``, ``tlsv1.2``.
         :param tls_ciphers: If TLS/SSL is enabled on the MQTT server and an explicit list of supported ciphers is
             required, specify it here (default: None)
+        :param tls_insecure: Set to True to ignore TLS insecure warnings (default: False).
         :param username: Specify it if the MQTT server requires authentication (default: None)
         :param password: Specify it if the MQTT server requires authentication (default: None)
         :param listeners: If specified then the MQTT backend will also listen for
@@ -97,6 +99,7 @@ class MqttBackend(Backend):
 
         self.tls_version = MQTTPlugin.get_tls_version(tls_version)
         self.tls_ciphers = tls_ciphers
+        self.tls_insecure = tls_insecure
         self.listeners_conf = listeners or []
 
     def send_message(self, msg, topic: Optional[str] = None, **kwargs):
@@ -105,9 +108,8 @@ class MqttBackend(Backend):
             client.send_message(topic=topic or self.topic, msg=msg, host=self.host,
                                 port=self.port, username=self.username,
                                 password=self.password, tls_cafile=self.tls_cafile,
-                                tls_certfile=self.tls_certfile,
-                                tls_keyfile=self.tls_keyfile,
-                                tls_version=self.tls_version,
+                                tls_certfile=self.tls_certfile, tls_keyfile=self.tls_keyfile,
+                                tls_version=self.tls_version, tls_insecure=self.tls_insecure,
                                 tls_ciphers=self.tls_ciphers, **kwargs)
         except Exception as e:
             self.logger.exception(e)
@@ -172,6 +174,8 @@ class MqttBackend(Backend):
                                tls_version=MQTTPlugin.get_tls_version(listener.get('tls_version')),
                                ciphers=listener.get('tls_ciphers'))
 
+                client.tls_insecure_set(self.tls_insecure)
+
             threading.Thread(target=listener_thread, kwargs={
                 'client': client, 'host': host, 'port': port}).start()
 
@@ -234,6 +238,8 @@ class MqttBackend(Backend):
                                      keyfile=self.tls_keyfile,
                                      tls_version=self.tls_version,
                                      ciphers=self.tls_ciphers)
+
+                self._client.tls_insecure_set(self.tls_insecure)
 
             self._client.connect(self.host, self.port, 60)
             self.logger.info('Initialized MQTT backend on host {}:{}, topic {}'.

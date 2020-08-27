@@ -22,8 +22,8 @@ class MqttPlugin(Plugin):
 
     def __init__(self, host=None, port=1883, tls_cafile=None,
                  tls_certfile=None, tls_keyfile=None,
-                 tls_version=None, tls_ciphers=None, username=None,
-                 password=None, **kwargs):
+                 tls_version=None, tls_ciphers=None, tls_insecure=False,
+                 username=None, password=None, **kwargs):
         """
         :param host: If set, MQTT messages will by default routed to this host unless overridden in `send_message` (default: None)
         :type host: str
@@ -46,6 +46,9 @@ class MqttPlugin(Plugin):
 
         :param tls_ciphers: If a default host is set and requires TLS/SSL, specify the supported ciphers (default: None)
         :type tls_ciphers: str
+
+        :param tls_insecure: Set to True to ignore TLS insecure warnings (default: False).
+        :type tls_insecure: bool
 
         :param username: If a default host is set and requires user authentication, specify the username ciphers (default: None)
         :type username: str
@@ -70,6 +73,7 @@ class MqttPlugin(Plugin):
             if tls_keyfile else None
 
         self.tls_version = self.get_tls_version(tls_version)
+        self.tls_insecure = self.tls_insecure
         self.tls_ciphers = tls_ciphers
 
     @staticmethod
@@ -95,8 +99,8 @@ class MqttPlugin(Plugin):
                 reply_topic: Optional[str] = None, timeout: int = 60,
                 tls_cafile: Optional[str] = None, tls_certfile: Optional[str] = None,
                 tls_keyfile: Optional[str] = None, tls_version: Optional[str] = None,
-                tls_ciphers: Optional[str] = None, username: Optional[str] = None,
-                password: Optional[str] = None):
+                tls_ciphers: Optional[str] = None, tls_insecure: Optional[bool] = None,
+                username: Optional[str] = None, password: Optional[str] = None):
         """
         Sends a message to a topic.
 
@@ -115,6 +119,7 @@ class MqttPlugin(Plugin):
             it here (default: None).
         :param tls_version: If TLS/SSL is enabled on the MQTT server and it requires a certain TLS version, specify it
             here (default: None). Supported versions: ``tls`` (automatic), ``tlsv1``, ``tlsv1.1``, ``tlsv1.2``.
+        :param tls_insecure: Set to True to ignore TLS insecure warnings (default: False).
         :param tls_ciphers: If TLS/SSL is enabled on the MQTT server and an explicit list of supported ciphers is
             required, specify it here (default: None).
         :param username: Specify it if the MQTT server requires authentication (default: None).
@@ -131,21 +136,27 @@ class MqttPlugin(Plugin):
             tls_keyfile = self.tls_keyfile
             tls_version = self.tls_version
             tls_ciphers = self.tls_ciphers
+            tls_insecure = self.tls_insecure
             username = self.username
             password = self.password
-        elif tls_version:
-            tls_version = self.get_tls_version(tls_version)
+        else:
+            if tls_version:
+                tls_version = self.get_tls_version(tls_version)
+            if tls_insecure is None:
+                tls_insecure = self.tls_insecure
 
         client = Client()
 
         if username and password:
             client.username_pw_set(username, password)
         if tls_cafile:
-            client.tls_set(ca_certs=tls_cafile, certfile=tls_certfile, keyfile=tls_keyfile, tls_version=tls_version,
-                           ciphers=tls_ciphers)
+            client.tls_set(ca_certs=tls_cafile, certfile=tls_certfile, keyfile=tls_keyfile,
+                           tls_version=tls_version, ciphers=tls_ciphers)
+
+            client.tls_insecure_set(tls_insecure)
 
         # Try to parse it as a platypush message or dump it to JSON from a dict/list
-        if isinstance(msg, dict) or isinstance(msg, list):
+        if isinstance(msg, (dict, list)):
             msg = json.dumps(msg)
 
             # noinspection PyBroadException
