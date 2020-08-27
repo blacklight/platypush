@@ -153,7 +153,7 @@ class MqttBackend(Backend):
             topics = listener.get('topics')
             username = listener.get('username')
             password = listener.get('password')
-            tls_cafile = listener.get('tls_cafile')
+            tls_cafile = os.path.abspath(os.path.expanduser(listener.get('tls_cafile')))
 
             if not host or not topics:
                 self.logger.warning('No host nor list of topics specified for ' +
@@ -169,8 +169,8 @@ class MqttBackend(Backend):
 
             if tls_cafile:
                 client.tls_set(ca_certs=tls_cafile,
-                               certfile=listener.get('tls_certfile'),
-                               keyfile=listener.get('tls_keyfile'),
+                               certfile=os.path.abspath(os.path.expanduser(listener.get('tls_certfile'))),
+                               keyfile=os.path.abspath(os.path.expanduser(listener.get('tls_keyfile'))),
                                tls_version=MQTTPlugin.get_tls_version(listener.get('tls_version')),
                                ciphers=listener.get('tls_ciphers'))
 
