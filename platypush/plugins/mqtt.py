@@ -69,15 +69,9 @@ class MqttPlugin(Plugin):
         self.username = username
         self.password = password
         self.client_id = client_id or Config.get('device_id')
-        self.tls_cafile = os.path.abspath(os.path.expanduser(tls_cafile)) \
-            if tls_cafile else None
-
-        self.tls_certfile = os.path.abspath(os.path.expanduser(tls_certfile)) \
-            if tls_certfile else None
-
-        self.tls_keyfile = os.path.abspath(os.path.expanduser(tls_keyfile)) \
-            if tls_keyfile else None
-
+        self.tls_cafile = self._expandpath(tls_cafile) if tls_cafile else None
+        self.tls_certfile = self._expandpath(tls_certfile) if tls_certfile else None
+        self.tls_keyfile = self._expandpath(tls_keyfile) if tls_keyfile else None
         self.tls_version = self.get_tls_version(tls_version)
         self.tls_insecure = tls_insecure
         self.tls_ciphers = tls_ciphers
@@ -100,14 +94,17 @@ class MqttPlugin(Plugin):
 
         assert 'Unrecognized TLS version: {}'.format(version)
 
+    @staticmethod
+    def _expandpath(path: Optional[str] = None) -> Optional[str]:
+        return os.path.abspath(os.path.expanduser(path)) if path else None
+
     @action
     def publish(self, topic: str, msg: Any, host: Optional[str] = None, port: int = 1883,
                 reply_topic: Optional[str] = None, timeout: int = 60,
                 tls_cafile: Optional[str] = None, tls_certfile: Optional[str] = None,
                 tls_keyfile: Optional[str] = None, tls_version: Optional[str] = None,
                 tls_ciphers: Optional[str] = None, tls_insecure: Optional[bool] = None,
-                username: Optional[str] = None, password: Optional[str] = None,
-                client_id: Optional[str] = None):
+                username: Optional[str] = None, password: Optional[str] = None):
         """
         Sends a message to a topic.
 
@@ -131,15 +128,15 @@ class MqttPlugin(Plugin):
             required, specify it here (default: None).
         :param username: Specify it if the MQTT server requires authentication (default: None).
         :param password: Specify it if the MQTT server requires authentication (default: None).
-        :param client_id: Override the default client_id (default: None).
         """
         from paho.mqtt.client import Client
 
         if not host and not self.host:
             raise RuntimeError('No host specified and no default host configured')
 
-        client_id = client_id or self.client_id
         if not host:
+            host = self.host
+            port = self.port
             tls_cafile = self.tls_cafile
             tls_certfile = self.tls_certfile
             tls_keyfile = self.tls_keyfile
@@ -149,12 +146,15 @@ class MqttPlugin(Plugin):
             username = self.username
             password = self.password
         else:
+            tls_cafile = self._expandpath(tls_cafile)
+            tls_certfile = self._expandpath(tls_certfile)
+            tls_keyfile = self._expandpath(tls_keyfile)
             if tls_version:
                 tls_version = self.get_tls_version(tls_version)
             if tls_insecure is None:
                 tls_insecure = self.tls_insecure
 
-        client = Client(client_id)
+        client = Client()
 
         if username and password:
             client.username_pw_set(username, password)

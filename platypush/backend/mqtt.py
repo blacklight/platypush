@@ -39,7 +39,9 @@ class MqttBackend(Backend):
                  client_id: Optional[str] = None, listeners=None,
                  *args, **kwargs):
         """
-        :param host: MQTT broker host
+        :param host: MQTT broker host. If no host configuration is specified then
+            the backend will use the host configuration specified on the ``mqtt``
+            plugin if it's available.
         :param port: MQTT broker port (default: 1883)
         :param topic: Topic to read messages from (default: ``platypush_bus_mq/<device_id>``)
         :param subscribe_default_topic: Whether the backend should subscribe the default topic (default:
@@ -83,22 +85,39 @@ class MqttBackend(Backend):
 
         super().__init__(*args, **kwargs)
 
-        self.host = host
-        self.port = port
+        if host:
+            self.host = host
+            self.port = port
+            self.tls_cafile = self._expandpath(tls_cafile) if tls_cafile else None
+            self.tls_certfile = self._expandpath(tls_certfile) if tls_certfile else None
+            self.tls_keyfile = self._expandpath(tls_keyfile) if tls_keyfile else None
+            self.tls_version = MQTTPlugin.get_tls_version(tls_version)
+            self.tls_ciphers = tls_ciphers
+            self.tls_insecure = tls_insecure
+            self.username = username
+            self.password = password
+            self.client_id = client_id or Config.get('device_id')
+        else:
+            client = get_plugin('mqtt')
+            assert client.host, 'No host specified on backend.mqtt nor mqtt configuration'
+
+            self.host = client.host
+            self.port = client.port
+            self.tls_cafile = client.tls_cafile
+            self.tls_certfile = client.tls_certfile
+            self.tls_keyfile = client.tls_keyfile
+            self.tls_version = client.tls_version
+            self.tls_ciphers = client.tls_ciphers
+            self.tls_insecure = client.tls_insecure
+            self.username = client.username
+            self.password = client.password
+            self.client_id = client_id or client.client_id
+
         self.topic = '{}/{}'.format(topic, self.device_id)
         self.subscribe_default_topic = subscribe_default_topic
-        self.username = username
-        self.password = password
-        self.client_id = client_id or Config.get('device_id')
         self._client = None
         self._listeners = []
 
-        self.tls_cafile = self._expandpath(tls_cafile) if tls_cafile else None
-        self.tls_certfile = self._expandpath(tls_certfile) if tls_certfile else None
-        self.tls_keyfile = self._expandpath(tls_keyfile) if tls_keyfile else None
-        self.tls_version = MQTTPlugin.get_tls_version(tls_version)
-        self.tls_ciphers = tls_ciphers
-        self.tls_insecure = tls_insecure
         self.listeners_conf = listeners or []
 
     def send_message(self, msg, topic: Optional[str] = None, **kwargs):
