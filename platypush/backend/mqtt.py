@@ -4,6 +4,7 @@ import threading
 from typing import Optional
 
 from platypush.backend import Backend
+from platypush.config import Config
 from platypush.context import get_plugin
 from platypush.message import Message
 from platypush.message.event.mqtt import MQTTMessageEvent
@@ -34,7 +35,8 @@ class MqttBackend(Backend):
                  tls_cafile: Optional[str] = None, tls_certfile: Optional[str] = None,
                  tls_keyfile: Optional[str] = None, tls_version: Optional[str] = None,
                  tls_ciphers: Optional[str] = None, tls_insecure: bool = False,
-                 username: Optional[str] = None, password: Optional[str] = None, listeners=None,
+                 username: Optional[str] = None, password: Optional[str] = None,
+                 client_id: Optional[str] = None, listeners=None,
                  *args, **kwargs):
         """
         :param host: MQTT broker host
@@ -56,6 +58,8 @@ class MqttBackend(Backend):
         :param tls_insecure: Set to True to ignore TLS insecure warnings (default: False).
         :param username: Specify it if the MQTT server requires authentication (default: None)
         :param password: Specify it if the MQTT server requires authentication (default: None)
+        :param client_id: ID used to identify the client on the MQTT server (default: None).
+            If None is specified then ``Config.get('device_id')`` will be used.
         :param listeners: If specified then the MQTT backend will also listen for
             messages on the additional configured message queues. This parameter
             is a list of maps where each item supports the same arguments passed
@@ -85,6 +89,7 @@ class MqttBackend(Backend):
         self.subscribe_default_topic = subscribe_default_topic
         self.username = username
         self.password = password
+        self.client_id = client_id or Config.get('device_id')
         self._client = None
         self._listeners = []
 
@@ -104,7 +109,7 @@ class MqttBackend(Backend):
                                 password=self.password, tls_cafile=self.tls_cafile,
                                 tls_certfile=self.tls_certfile, tls_keyfile=self.tls_keyfile,
                                 tls_version=self.tls_version, tls_insecure=self.tls_insecure,
-                                tls_ciphers=self.tls_ciphers, **kwargs)
+                                tls_ciphers=self.tls_ciphers, client_id=self.client_id, **kwargs)
         except Exception as e:
             self.logger.exception(e)
 
@@ -151,6 +156,7 @@ class MqttBackend(Backend):
             topics = listener.get('topics')
             username = listener.get('username')
             password = listener.get('password')
+            client_id = listener.get('client_id', self.client_id)
             tls_cafile = self._expandpath(listener.get('tls_cafile'))
 
             if not host or not topics:
@@ -158,7 +164,7 @@ class MqttBackend(Backend):
                                     'listener n.{}'.format(i + 1))
                 continue
 
-            client = mqtt.Client()
+            client = mqtt.Client(client_id)
             client.on_connect = self.on_connect(*topics)
             client.on_message = self.on_mqtt_message()
 
@@ -223,7 +229,7 @@ class MqttBackend(Backend):
         self._client = None
 
         if self.host:
-            self._client = mqtt.Client()
+            self._client = mqtt.Client(self.client_id)
             if self.subscribe_default_topic:
                 self._client.on_connect = self.on_connect(self.topic)
 

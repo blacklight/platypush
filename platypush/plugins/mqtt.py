@@ -5,6 +5,7 @@ import threading
 
 from typing import Any, Optional, IO
 
+from platypush.config import Config
 from platypush.message import Message
 from platypush.plugins import Plugin, action
 
@@ -23,7 +24,7 @@ class MqttPlugin(Plugin):
     def __init__(self, host=None, port=1883, tls_cafile=None,
                  tls_certfile=None, tls_keyfile=None,
                  tls_version=None, tls_ciphers=None, tls_insecure=False,
-                 username=None, password=None, **kwargs):
+                 username=None, password=None, client_id=None, **kwargs):
         """
         :param host: If set, MQTT messages will by default routed to this host unless overridden in `send_message` (default: None)
         :type host: str
@@ -55,6 +56,10 @@ class MqttPlugin(Plugin):
 
         :param password: If a default host is set and requires user authentication, specify the password ciphers (default: None)
         :type password: str
+
+        :param client_id: ID used to identify the client on the MQTT server (default: None).
+            If None is specified then ``Config.get('device_id')`` will be used.
+        :type client_id: str
         """
 
         super().__init__(**kwargs)
@@ -63,6 +68,7 @@ class MqttPlugin(Plugin):
         self.port = port
         self.username = username
         self.password = password
+        self.client_id = client_id or Config.get('device_id')
         self.tls_cafile = os.path.abspath(os.path.expanduser(tls_cafile)) \
             if tls_cafile else None
 
@@ -100,7 +106,8 @@ class MqttPlugin(Plugin):
                 tls_cafile: Optional[str] = None, tls_certfile: Optional[str] = None,
                 tls_keyfile: Optional[str] = None, tls_version: Optional[str] = None,
                 tls_ciphers: Optional[str] = None, tls_insecure: Optional[bool] = None,
-                username: Optional[str] = None, password: Optional[str] = None):
+                username: Optional[str] = None, password: Optional[str] = None,
+                client_id: Optional[str] = None):
         """
         Sends a message to a topic.
 
@@ -124,12 +131,14 @@ class MqttPlugin(Plugin):
             required, specify it here (default: None).
         :param username: Specify it if the MQTT server requires authentication (default: None).
         :param password: Specify it if the MQTT server requires authentication (default: None).
+        :param client_id: Override the default client_id (default: None).
         """
         from paho.mqtt.client import Client
 
         if not host and not self.host:
             raise RuntimeError('No host specified and no default host configured')
 
+        client_id = client_id or self.client_id
         if not host:
             tls_cafile = self.tls_cafile
             tls_certfile = self.tls_certfile
@@ -145,7 +154,7 @@ class MqttPlugin(Plugin):
             if tls_insecure is None:
                 tls_insecure = self.tls_insecure
 
-        client = Client()
+        client = Client(client_id)
 
         if username and password:
             client.username_pw_set(username, password)
