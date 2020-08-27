@@ -73,7 +73,7 @@ class MqttPlugin(Plugin):
             if tls_keyfile else None
 
         self.tls_version = self.get_tls_version(tls_version)
-        self.tls_insecure = self.tls_insecure
+        self.tls_insecure = tls_insecure
         self.tls_ciphers = tls_ciphers
 
     @staticmethod
