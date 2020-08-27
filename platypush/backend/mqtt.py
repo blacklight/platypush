@@ -8,6 +8,7 @@ from platypush.context import get_plugin
 from platypush.message import Message
 from platypush.message.event.mqtt import MQTTMessageEvent
 from platypush.message.request import Request
+from platypush.plugins.mqtt import MqttPlugin as MQTTPlugin
 from platypush.utils import set_thread_name
 
 
@@ -48,7 +49,7 @@ class MqttBackend(Backend):
         :param tls_keyfile: If TLS/SSL is enabled on the MQTT server and a client certificate key it required,
             specify it here (default: None) :type tls_keyfile: str
         :param tls_version: If TLS/SSL is enabled on the MQTT server and it requires a certain TLS version, specify it
-            here (default: None)
+            here (default: None). Supported versions: ``tls`` (automatic), ``tlsv1``, ``tlsv1.1``, ``tlsv1.2``.
         :param tls_ciphers: If TLS/SSL is enabled on the MQTT server and an explicit list of supported ciphers is
             required, specify it here (default: None)
         :param username: Specify it if the MQTT server requires authentication (default: None)
@@ -94,7 +95,7 @@ class MqttBackend(Backend):
         self.tls_keyfile = os.path.abspath(os.path.expanduser(tls_keyfile)) \
             if tls_keyfile else None
 
-        self.tls_version = tls_version
+        self.tls_version = MQTTPlugin.get_tls_version(tls_version)
         self.tls_ciphers = tls_ciphers
         self.listeners_conf = listeners or []
 
@@ -168,7 +169,7 @@ class MqttBackend(Backend):
                 client.tls_set(ca_certs=tls_cafile,
                                certfile=listener.get('tls_certfile'),
                                keyfile=listener.get('tls_keyfile'),
-                               tls_version=listener.get('tls_version'),
+                               tls_version=MQTTPlugin.get_tls_version(listener.get('tls_version')),
                                ciphers=listener.get('tls_ciphers'))
 
             threading.Thread(target=listener_thread, kwargs={
@@ -230,7 +231,8 @@ class MqttBackend(Backend):
 
             if self.tls_cafile:
                 self._client.tls_set(ca_certs=self.tls_cafile, certfile=self.tls_certfile,
-                                     keyfile=self.tls_keyfile, tls_version=self.tls_version,
+                                     keyfile=self.tls_keyfile,
+                                     tls_version=self.tls_version,
                                      ciphers=self.tls_ciphers)
 
             self._client.connect(self.host, self.port, 60)

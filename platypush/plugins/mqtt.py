@@ -40,7 +40,8 @@ class MqttPlugin(Plugin):
         :param tls_keyfile: If a default host is set and requires TLS/SSL, specify the key file (default: None)
         :type tls_keyfile: str
 
-        :param tls_version: If a default host is set and requires TLS/SSL, specify the minimum TLS supported version (default: None)
+        :param tls_version: If TLS/SSL is enabled on the MQTT server and it requires a certain TLS version, specify it
+            here (default: None). Supported versions: ``tls`` (automatic), ``tlsv1``, ``tlsv1.1``, ``tlsv1.2``.
         :type tls_version: str
 
         :param tls_ciphers: If a default host is set and requires TLS/SSL, specify the supported ciphers (default: None)
@@ -68,8 +69,26 @@ class MqttPlugin(Plugin):
         self.tls_keyfile = os.path.abspath(os.path.expanduser(tls_keyfile)) \
             if tls_keyfile else None
 
-        self.tls_version = tls_version
+        self.tls_version = self.get_tls_version(tls_version)
         self.tls_ciphers = tls_ciphers
+
+    @staticmethod
+    def get_tls_version(version: Optional[str] = None):
+        import ssl
+        if not version:
+            return None
+
+        version = version.lower()
+        if version == 'tls':
+            return ssl.PROTOCOL_TLS
+        if version == 'tlsv1':
+            return ssl.PROTOCOL_TLSv1
+        if version == 'tlsv1.1':
+            return ssl.PROTOCOL_TLSv1_1
+        if version == 'tlsv1.2':
+            return ssl.PROTOCOL_TLSv1_2
+
+        assert 'Unrecognized TLS version: {}'.format(version)
 
     @action
     def publish(self, topic: str, msg: Any, host: Optional[str] = None, port: int = 1883,
@@ -95,7 +114,7 @@ class MqttPlugin(Plugin):
         :param tls_keyfile: If TLS/SSL is enabled on the MQTT server and a client certificate key it required, specify
             it here (default: None).
         :param tls_version: If TLS/SSL is enabled on the MQTT server and it requires a certain TLS version, specify it
-            here (default: None).
+            here (default: None). Supported versions: ``tls`` (automatic), ``tlsv1``, ``tlsv1.1``, ``tlsv1.2``.
         :param tls_ciphers: If TLS/SSL is enabled on the MQTT server and an explicit list of supported ciphers is
             required, specify it here (default: None).
         :param username: Specify it if the MQTT server requires authentication (default: None).
@@ -114,6 +133,8 @@ class MqttPlugin(Plugin):
             tls_ciphers = self.tls_ciphers
             username = self.username
             password = self.password
+        elif tls_version:
+            tls_version = self.get_tls_version(tls_version)
 
         client = Client()
 
