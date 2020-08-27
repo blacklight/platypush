@@ -133,7 +133,7 @@ class MqttBackend(Backend):
         return handler
 
     @staticmethod
-    def _expand_path(path: str) -> str:
+    def _expandpath(path: str) -> str:
         return os.path.abspath(os.path.expanduser(path)) if path else path
 
     def _initialize_listeners(self, listeners_conf):
