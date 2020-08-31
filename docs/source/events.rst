@@ -32,6 +32,7 @@ Events
     platypush/events/kafka.rst
     platypush/events/light.rst
     platypush/events/linode.rst
+    platypush/events/mail.rst
     platypush/events/media.rst
     platypush/events/midi.rst
     platypush/events/mqtt.rst

@@ -35,6 +35,7 @@ Backends
     platypush/backend/light.hue.rst
     platypush/backend/linode.rst
     platypush/backend/local.rst
+    platypush/backend/mail.rst
     platypush/backend/midi.rst
     platypush/backend/mqtt.rst
     platypush/backend/music.mopidy.rst

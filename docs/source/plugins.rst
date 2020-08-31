@@ -64,6 +64,7 @@ Plugins
     platypush/plugins/inspect.rst
     platypush/plugins/kafka.rst
     platypush/plugins/lastfm.rst
+    platypush/plugins/lcd.rst
     platypush/plugins/lcd.gpio.rst
     platypush/plugins/lcd.i2c.rst
     platypush/plugins/light.rst
@@ -71,6 +72,8 @@ Plugins
     platypush/plugins/linode.rst
     platypush/plugins/logger.rst
     platypush/plugins/luma.oled.rst
+    platypush/plugins/mail.rst
+    platypush/plugins/mail.imap.rst
     platypush/plugins/media.rst
     platypush/plugins/media.chromecast.rst
     platypush/plugins/media.ctrl.rst
