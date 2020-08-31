@@ -17,9 +17,8 @@
             has_ssl: {{ 'true' if has_ssl else 'false' }},
             templates: JSON.parse('{{ utils.to_json(templates)|safe }}'),
             scripts: JSON.parse('{{ utils.to_json(scripts)|safe }}'),
-            procedures: JSON.parse('{{ procedures.replace("\'", "\\\'")|safe }}'),
+            procedures: JSON.parse({{ utils.to_json(procedures)|safe }}),
         };
-
 
         var __plugins__ = JSON.parse('{{ utils.to_json(plugins)|safe }}');
         var __backends__ = JSON.parse('{{ utils.to_json(backends)|safe }}');
