@@ -344,15 +344,19 @@ class Config(object):
         _default_config_instance = Config(cfgfile)
 
     @staticmethod
-    def get(key):
+    def get(key: Optional[str] = None):
         """
-        Gets a config value
-        Params:
-            key -- Config key to get
+        Get a config value or the whole configuration object.
+
+        :param key: Configuration entry to get (default: all entries).
         """
         global _default_config_instance
         if _default_config_instance is None:
             _default_config_instance = Config()
-        return _default_config_instance._config.get(key)
+
+        if key:
+            return _default_config_instance._config.get(key)
+
+        return _default_config_instance._config
 
 # vim:sw=4:ts=4:et:

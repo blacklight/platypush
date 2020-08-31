@@ -4,6 +4,7 @@ import json
 import pkgutil
 import re
 import threading
+from typing import Optional
 
 import platypush.backend
 import platypush.plugins
@@ -338,6 +339,20 @@ class InspectPlugin(Plugin):
         Get the list of procedures installed on the device.
         """
         return json.loads(json.dumps(Config.get_procedures(), cls=ProcedureEncoder))
+
+    @action
+    def get_config(self, entry: Optional[str] = None) -> dict:
+        """
+        Return the configuration of the application or of a section.
+
+        :param entry: [Optional] configuration entry name to retrieve (e.g. ``workdir`` or ``backend.http``).
+        :return: The requested configuration object.
+        """
+        if entry:
+            return Config.get(entry)
+
+        cfg = Config.get()
+        return cfg
 
 
 # vim:sw=4:ts=4:et:

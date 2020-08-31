@@ -63,7 +63,11 @@ class Message(object):
             if isinstance(obj, JSONAble):
                 return obj.to_json()
 
-            return super().default(obj)
+            try:
+                return super().default(obj)
+            except Exception as e:
+                logger.warning('Could not serialize object type {}: {}: {}'.format(
+                    type(obj), str(e), obj))
 
     def __init__(self, timestamp=None, *args, **kwargs):
         self.timestamp = timestamp or time.time()
