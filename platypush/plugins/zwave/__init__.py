@@ -813,7 +813,7 @@ class ZwavePlugin(Plugin):
         Add a value to a scene.
 
         WARNING: This method actually doesn't work, by own admission of the
-        :ref:`OpenZWave developer <https://github.com/OpenZWave/python-openzwave/blob/master/src-lib/libopenzwave/libopenzwave.pyx#L4730>`_
+        `OpenZWave developer <https://github.com/OpenZWave/python-openzwave/blob/master/src-lib/libopenzwave/libopenzwave.pyx#L4730>`_.
 
 
         :param data: Data to set for the value (default: current value data).

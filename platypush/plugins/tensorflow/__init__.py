@@ -196,7 +196,7 @@ class TensorflowPlugin(Plugin):
         :param name: Name of the model.
         :param layers: List of layers. Example:
 
-        .. code-block:: javascript
+          .. code-block:: javascript
 
             [
               // Input flatten layer with 10 units
@@ -265,7 +265,7 @@ class TensorflowPlugin(Plugin):
 
         :return: The model configuration, as a dict. Example:
 
-        .. code-block:: json
+          .. code-block:: json
 
             {
               "name": "test_model",
@@ -463,7 +463,7 @@ class TensorflowPlugin(Plugin):
 
         :return: Configuration of the model, as a dict. Example:
 
-        .. code-block:: json
+          .. code-block:: json
 
             {
               "name": "test_regression_model",
@@ -712,16 +712,15 @@ class TensorflowPlugin(Plugin):
             Fraction of the training data to be used as validation data. The model will set apart this fraction
             of the training data, will not train on it, and will evaluate the loss and any model metrics on this data
             at the end of each epoch. The validation data is selected from the last samples in the ``x`` and ``y``
-            data provided, before shuffling. This argument is not supported when ``x`` is a dataset, generator or
-           ``keras.utils.Sequence`` instance.
+            data provided, before shuffling. Not supported when ``x`` is a dataset, generator or ``keras.utils.Sequence`` instance.
 
         :param validation_data: Data on which to evaluate the loss and any model metrics at the end of each epoch.
             The model will not be trained on this data. ``validation_data`` will override ``validation_split``.
             ``validation_data`` could be:
 
-            - tuple ``(x_val, y_val)`` of arrays/numpy arrays/tensors
-            - tuple ``(x_val, y_val, val_sample_weights)`` of Numpy arrays
-            - dataset
+                - tuple ``(x_val, y_val)`` of arrays/numpy arrays/tensors
+                - tuple ``(x_val, y_val, val_sample_weights)`` of Numpy arrays
+                - dataset
 
             For the first two cases, ``batch_size`` must be provided. For the last case, ``validation_steps`` could be
             provided.
@@ -966,43 +965,43 @@ class TensorflowPlugin(Plugin):
 
             - For regression models with no output labels specified: ``values`` will contain the output vector:
 
-            .. code-block:: json
+                .. code-block:: json
 
-                {
-                    "values": [[3.1415]]
-                }
+                  {
+                      "values": [[3.1415]]
+                  }
 
             - For regression models with output labels specified: ``values`` will be a list of ``{label -> value}``
               maps:
 
-            .. code-block:: json
+                .. code-block:: json
 
-                {
-                    "values": [
-                        {
-                            "x": 42.0,
-                            "y": 43.0
-                        }
-                    ]
-                }
+                  {
+                      "values": [
+                          {
+                              "x": 42.0,
+                              "y": 43.0
+                          }
+                      ]
+                  }
 
             - For neural networks: ``values`` will contain the list of the output vector like in the case of
               regression, and ``labels`` will store the list of ``argmax`` (i.e. the index of the output unit with the
               highest value) or their labels, if the model has output labels:
 
-            .. code-block:: json
+                .. code-block:: json
 
-                {
-                    "labels": [
-                        "positive"
-                    ],
-                    "values": [
-                        {
-                            "positive": 0.998,
-                            "negative": 0.002
-                        }
-                    ]
-                }
+                  {
+                      "labels": [
+                          "positive"
+                      ],
+                      "values": [
+                          {
+                              "positive": 0.998,
+                              "negative": 0.002
+                          }
+                      ]
+                  }
 
         """
         name = model

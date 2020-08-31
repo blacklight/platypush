@@ -69,43 +69,43 @@ class MailBackend(Backend):
             The ``name`` parameter can be used to identify this mailbox in the relevant events, otherwise
             ``Mailbox #{id}`` will be used as a name. Example configuration:
 
-            .. code-block:: yaml
+              .. code-block:: yaml
 
-            backend.mail:
-                mailboxes:
-                    - plugin: mail.imap
-                      name: "My Local Server"
-                      username: me@mydomain.com
-                      password: my-imap-password
-                      server: localhost
-                      ssl: true
-                      folder: "All Mail"
+                 backend.mail:
+                     mailboxes:
+                         - plugin: mail.imap
+                           name: "My Local Server"
+                           username: me@mydomain.com
+                           password: my-imap-password
+                           server: localhost
+                           ssl: true
+                           folder: "All Mail"
 
-                    - plugin: mail.imap
-                      name: "GMail"
-                      username: me@gmail.com
-                      password: my-google-password
-                      server: imap.gmail.com
-                      ssl: true
-                      folder: "INBOX"
+                         - plugin: mail.imap
+                           name: "GMail"
+                           username: me@gmail.com
+                           password: my-google-password
+                           server: imap.gmail.com
+                           ssl: true
+                            folder: "INBOX"
 
             If you have a default configuration available for a mail plugin you can implicitly reuse it without
             replicating it here. Example:
 
-            .. code-block:: yaml
+              .. code-block:: yaml
 
-            mail.imap:
-                username: me@mydomain.com
-                password: my-imap-password
-                server: localhost
-                ssl: true
+                 mail.imap:
+                     username: me@mydomain.com
+                     password: my-imap-password
+                     server: localhost
+                     ssl: true
 
-            backend.mail:
-                mailboxes:
-                    # The mail.imap default configuration will be used
-                    - plugin: mail.imap
-                      name: "My Local Server"
-                      folder: "All Mail"
+                 backend.mail:
+                     mailboxes:
+                         # The mail.imap default configuration will be used
+                         - plugin: mail.imap
+                           name: "My Local Server"
+                           folder: "All Mail"
 
         :param timeout: Connect/read timeout for a mailbox, in seconds (default: 60).
         """

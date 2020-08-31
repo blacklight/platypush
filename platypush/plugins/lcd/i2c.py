@@ -20,8 +20,8 @@ class LcdI2cPlugin(LcdPlugin):
 
     Pin mapping::
 
-    7  | 6  | 5  | 4  | 3  | 2 | 1  | 0
-    BL | D7 | D6 | D5 | D4 | E | RS | -
+        7  | 6  | 5  | 4  | 3  | 2 | 1  | 0
+        BL | D7 | D6 | D5 | D4 | E | RS | -
 
     Requires:
 
@@ -40,20 +40,15 @@ class LcdI2cPlugin(LcdPlugin):
         :param i2c_expander: Set your I²C chip type. Supported: "PCF8574", "MCP23008", "MCP23017".
         :param address: The I2C address of your LCD.
         :param expander_params: Parameters for expanders, in a dictionary. Only needed for MCP23017
-            gpio_bank - This must be either ``A`` or ``B``
-                        If you have a HAT, A is usually marked 1 and B is 2.
+            gpio_bank - This must be either ``A`` or ``B``. If you have a HAT, A is usually marked 1 and B is 2.
             Example: ``expander_params={'gpio_bank': 'A'}``
         :param port: The I2C port number. Default: ``1``.
         :param cols: Number of columns per row (usually 16 or 20). Default: ``16``.
         :param rows: Number of display rows (usually 1, 2 or 4). Default: ``2``.
-        :param backlight_enabled: Whether the backlight is enabled initially.
-            Default: ``True``. Has no effect if pin_backlight is ``None``
-        :param dotsize: Some 1 line displays allow a font height of 10px.
-            Allowed: ``8`` or ``10``. Default: ``8``.
-        :param charmap: The character map used. Depends on your LCD. This must
-            be either ``A00`` or ``A02`` or ``ST0B``. Default: ``A02``.
-        :param auto_linebreaks: Whether or not to automatically insert line
-            breaks. Default: ``True``.
+        :param backlight_enabled: Whether the backlight is enabled initially.  Default: ``True``. Has no effect if pin_backlight is ``None``
+        :param dotsize: Some 1 line displays allow a font height of 10px.  Allowed: ``8`` or ``10``. Default: ``8``.
+        :param charmap: The character map used. Depends on your LCD. This must be either ``A00`` or ``A02`` or ``ST0B``. Default: ``A02``.
+        :param auto_linebreaks: Whether or not to automatically insert line breaks. Default: ``True``.
         """
         super().__init__(**kwargs)
 

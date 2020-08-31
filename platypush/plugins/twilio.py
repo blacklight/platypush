@@ -84,9 +84,9 @@ class TwilioPlugin(Plugin):
                       "MMS": false,
                       "fax": false
                     }
-                  },
-                  ...
+                  }
               ]
+
         """
         phone_numbers = self.client.available_phone_numbers(country.upper()).fetch()
         resp = requests.get(self._api_base_url + phone_numbers.uri, auth=(self.account_sid, self.auth_token)).json()
@@ -372,6 +372,7 @@ class TwilioPlugin(Plugin):
                   "to": "+18182008801",
                   "uri": "/2010-04-01/Accounts/ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX/Messages/SMded05904ccb347238880ca9264e8fe1c.json"
                 }
+
         """
         if to in self.address_book:
             to = self.address_book[to]

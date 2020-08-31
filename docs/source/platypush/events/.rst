@@ -1,5 +1,0 @@
-``platypush.message.event``
-===========================
-
-.. automodule:: platypush.message.event
-    :members:
