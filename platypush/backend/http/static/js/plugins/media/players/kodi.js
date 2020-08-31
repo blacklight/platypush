@@ -43,8 +43,8 @@ MediaPlayers.kodi = Vue.extend({
 
     methods: {
         scan: async function() {
-            const plugin = __plugins__['media.kodi'];
-            if (!plugin) {
+            const plugin = await request('inspect.get_config', {entry: 'media.kodi'});
+            if (!(plugin && plugin.host)) {
                 return [];
             }
 
