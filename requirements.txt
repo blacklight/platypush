@@ -293,3 +293,5 @@ croniter
 # RPi.GPIO
 # RPLCD
 
+# Support for IMAP mail integration
+# imapclient

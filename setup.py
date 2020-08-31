@@ -330,5 +330,7 @@ setup(
         'dht': ['Adafruit_Python_DHT @ git+https://github.com/adafruit/Adafruit_Python_DHT'],
         # Support for LCD display integration
         'lcd': ['RPi.GPIO', 'RPLCD'],
+        # Support for IMAP mail integration
+        'imap': ['imapclient'],
     },
 )

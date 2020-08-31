@@ -1,10 +1,22 @@
+from abc import ABC, abstractmethod
 import datetime
 import logging
 import inspect
 import json
 import time
+from typing import Union
 
 logger = logging.getLogger(__name__)
+
+
+class JSONAble(ABC):
+    """
+    Generic interface for JSON-able objects.
+    """
+
+    @abstractmethod
+    def to_json(self) -> Union[str, list, dict]:
+        raise NotImplementedError()
 
 
 class Message(object):
@@ -47,6 +59,9 @@ class Message(object):
             value = self.parse_numpy(obj)
             if value is not None:
                 return value
+
+            if isinstance(obj, JSONAble):
+                return obj.to_json()
 
             return super().default(obj)
 
