@@ -5,6 +5,14 @@ import subprocess
 from abc import ABC
 from dataclasses import dataclass
 from datetime import datetime
+from email.message import Message
+from email.mime.application import MIMEApplication
+from email.mime.audio import MIMEAudio
+from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from mimetypes import guess_type
 from typing import Optional, List, Union, Any, Dict
 
 from platypush.message import JSONAble
@@ -128,6 +136,97 @@ class MailInPlugin(MailPlugin, ABC):
     @action
     def get_message(self, id) -> dict:
         raise NotImplementedError()
+
+
+class MailOutPlugin(MailPlugin, ABC):
+    """
+    Base class for mail out plugins.
+    """
+
+    def send_message(self, message: Message, **connect_args):
+        raise NotImplementedError()
+
+    @staticmethod
+    def _file_to_part(file: str) -> MIMEBase:
+        _type, _subtype, _type_class = 'application', 'octet-stream', MIMEApplication
+        mime_type, _sub_subtype = guess_type(file)
+
+        if mime_type:
+            _type, _subtype = mime_type.split('/')
+        if _sub_subtype:
+            _subtype += ';' + _sub_subtype
+
+        if _type == 'application':
+            _type_class = MIMEApplication
+        elif _type == 'audio':
+            _type_class = MIMEAudio
+        elif _type == 'image':
+            _type_class = MIMEImage
+        elif _type == 'text':
+            _type_class = MIMEText
+
+        with open(file, 'rb') as f:
+            return _type_class(f.read(), _subtype, Name=os.path.basename(file))
+
+    @classmethod
+    def create_message(cls, to: Union[str, List[str]], from_: Optional[str] = None,
+                       cc: Optional[Union[str, List[str]]] = None, bcc: Optional[Union[str, List[str]]] = None,
+                       subject: str = '', body: str = '', body_type: str = 'plain',
+                       attachments: Optional[List[str]] = None, headers: Optional[Dict[str, str]] = None) -> Message:
+        assert from_, 'from/from_ field not specified'
+
+        body = MIMEText(body, body_type)
+        if attachments:
+            msg = MIMEMultipart()
+            msg.attach(body)
+
+            for attachment in attachments:
+                attachment = os.path.abspath(os.path.expanduser(attachment))
+                assert os.path.isfile(attachment), 'No such file: {}'.format(attachment)
+                part = cls._file_to_part(attachment)
+                part['Content-Disposition'] = 'attachment; filename="{}"'.format(os.path.basename(attachment))
+                msg.attach(part)
+        else:
+            msg = body
+
+        msg['From'] = from_
+        msg['To'] = ', '.join(to) if isinstance(to, List) else to
+        msg['Cc'] = ', '.join(cc) if cc else ''
+        msg['Bcc'] = ', '.join(bcc) if bcc else ''
+        msg['Subject'] = subject
+
+        if headers:
+            for name, value in headers.items():
+                msg.add_header(name, value)
+
+        return msg
+
+    @action
+    def send(self, to: Union[str, List[str]], from_: Optional[str] = None,
+             cc: Optional[Union[str, List[str]]] = None, bcc: Optional[Union[str, List[str]]] = None,
+             subject: str = '', body: str = '', body_type: str = 'plain', attachments: Optional[List[str]] = None,
+             headers: Optional[Dict[str, str]] = None, **connect_args):
+        """
+        Send an email through the specified SMTP sender.
+
+        :param to: Receiver(s), as comma-separated strings or list.
+        :param from_: Sender email address (``from`` is also supported outside of Python contexts).
+        :param cc: Carbon-copy addresses, as comma-separated strings or list
+        :param bcc: Blind carbon-copy addresses, as comma-separated strings or list
+        :param subject: Mail subject.
+        :param body: Mail body.
+        :param body_type: Mail body type, as a subtype of ``text/`` (e.g. ``html``) (default: ``plain``).
+        :param attachments: List of attachment files to send.
+        :param headers: Key-value map of headers to be added.
+        :param connect_args: Parameters for ``.connect()``, if you want to override the default server configuration.
+        """
+        if not from_ and 'from' in connect_args:
+            from_ = connect_args.pop('from')
+
+        msg = self.create_message(to=to, from_=from_, cc=cc, bcc=bcc, subject=subject, body=body, body_type=body_type,
+                                  attachments=attachments, headers=headers)
+
+        return self.send_message(msg, **connect_args)
 
 
 # vim:sw=4:ts=4:et:
