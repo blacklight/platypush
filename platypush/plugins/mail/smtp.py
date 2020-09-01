@@ -14,7 +14,7 @@ class MailSmtpPlugin(MailOutPlugin):
     _default_port = 25
     _default_ssl_port = 465
 
-    def __init__(self, server: str, port: Optional[int] = None, local_hostname: Optional[str] = None,
+    def __init__(self, server: Optional[str] = None, port: Optional[int] = None, local_hostname: Optional[str] = None,
                  source_address: Optional[List[str]] = None, username: Optional[str] = None,
                  password: Optional[str] = None, password_cmd: Optional[str] = None, access_token: Optional[str] = None,
                  oauth_mechanism: Optional[str] = 'XOAUTH2', oauth_vendor: Optional[str] = None, ssl: bool = False,

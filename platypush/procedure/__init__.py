@@ -478,6 +478,7 @@ def procedure(f):
 
             return Response(output=ret)
         except Exception as e:
+            logger.exception(e)
             return Response(errors=[str(e)])
 
     return _execute_procedure
