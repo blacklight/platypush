@@ -301,12 +301,10 @@ class MailImapPlugin(MailInPlugin):
             if len(ids):
                 data = client.fetch(list(ids), attributes)
 
-        messages = [
+        return [
             self._parse_message(msg_id, data[msg_id])
             for msg_id in sorted(data.keys())
         ]
-
-        return messages
 
     @action
     def search_unseen_messages(self, folder: str = 'INBOX', **connect_args) -> List[Mail]:
@@ -314,6 +312,48 @@ class MailImapPlugin(MailInPlugin):
         Shortcut for :meth:`.search` that returns only the unread messages.
         """
         return self.search(criteria='UNSEEN', directory=folder, attributes=['ALL'], **connect_args)
+
+    @action
+    def search_flagged_messages(self, folder: str = 'INBOX', **connect_args) -> List[Mail]:
+        """
+        Shortcut for :meth:`.search` that returns only the flagged/starred messages.
+        """
+        return self.search(criteria='Flagged', directory=folder, attributes=['ALL'], **connect_args)
+
+    @action
+    def search_starred_messages(self, folder: str = 'INBOX', **connect_args) -> List[Mail]:
+        """
+        Shortcut for :meth:`.search` that returns only the flagged/starred messages.
+        """
+        return self.search_flagged_messages(folder, **connect_args)
+
+    @action
+    def sort(self, folder: str = 'INBOX', sort_criteria: Union[str, List[str]] = 'ARRIVAL',
+             criteria: Union[str, List[str]] = 'ALL', **connect_args) -> List[int]:
+        """
+        Return a list of message ids from the currently selected folder, sorted by ``sort_criteria`` and optionally
+        filtered by ``criteria``. Note that SORT is an extension to the IMAP4 standard so it may not be supported by
+        all IMAP servers.
+
+        :param folder: Folder to be searched (default: ``INBOX``).
+        :param sort_criteria: It may be a sequence of strings or a single string. IMAPClient will take care any required
+            conversions. Valid *sort_criteria* values::
+
+              .. code-block:: python
+
+                ['ARRIVAL']
+                ['SUBJECT', 'ARRIVAL']
+                'ARRIVAL'
+                'REVERSE SIZE'
+
+        :param criteria: Optional filter for the messages, as specified in :meth:`.search`.
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        :return: A list of message IDs that fit the criteria.
+        """
+        with self.connect(**connect_args) as client:
+            client.select_folder(folder, readonly=True)
+            msg_ids = client.sort(sort_criteria=sort_criteria, criteria=criteria)
+            return msg_ids
 
     @action
     def get_message(self, id: int, folder: str = 'INBOX', **connect_args) -> Mail:
@@ -337,5 +377,189 @@ class MailImapPlugin(MailInPlugin):
             ret.payload = msg.get_payload()
 
         return ret
+
+    @action
+    def create_folder(self, folder: str, **connect_args):
+        """
+        Create a folder on the server.
+
+        :param folder: Folder name.
+        :param connect_args:
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        with self.connect(**connect_args) as client:
+            client.create_folder(folder)
+
+    @action
+    def rename_folder(self, old_name: str, new_name: str, **connect_args):
+        """
+        Rename a folder on the server.
+
+        :param old_name: Previous name
+        :param new_name: New name
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        with self.connect(**connect_args) as client:
+            client.rename_folder(old_name, new_name)
+
+    @action
+    def delete_folder(self, folder: str, **connect_args):
+        """
+        Delete a folder from the server.
+
+        :param folder: Folder name.
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        with self.connect(**connect_args) as client:
+            client.delete_folder(folder)
+
+    @action
+    def add_flags(self, messages: List[int], flags: List[str], folder: str = 'INBOX', **connect_args):
+        """
+        Add a set of flags to the specified set of message IDs.
+
+        :param messages: List of message IDs.
+        :param flags: List of flags to be added. Examples:
+
+          .. code-block:: python
+
+            ['Flagged']
+            ['Seen', 'Deleted']
+            ['Junk']
+
+        :param folder: IMAP folder (default: ``INBOX``).
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        with self.connect(**connect_args) as client:
+            client.select_folder(folder)
+            client.add_flags(messages, flags)
+
+    @action
+    def set_flags(self, messages: List[int], flags: List[str], folder: str = 'INBOX', **connect_args):
+        """
+        Set a set of flags to the specified set of message IDs.
+
+        :param messages: List of message IDs.
+        :param flags: List of flags to be added. Examples:
+
+          .. code-block:: python
+
+            ['Flagged']
+            ['Seen', 'Deleted']
+            ['Junk']
+
+        :param folder: IMAP folder (default: ``INBOX``).
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        with self.connect(**connect_args) as client:
+            client.select_folder(folder)
+            client.set_flags(messages, flags)
+
+    @action
+    def remove_flags(self, messages: List[int], flags: List[str], folder: str = 'INBOX', **connect_args):
+        """
+        Remove a set of flags to the specified set of message IDs.
+
+        :param messages: List of message IDs.
+        :param flags: List of flags to be added. Examples:
+
+          .. code-block:: python
+
+            ['Flagged']
+            ['Seen', 'Deleted']
+            ['Junk']
+
+        :param folder: IMAP folder (default: ``INBOX``).
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        with self.connect(**connect_args) as client:
+            client.select_folder(folder)
+            client.remove_flags(messages, flags)
+
+    @action
+    def flag_messages(self, messages: List[int], folder: str = 'INBOX', **connect_args):
+        """
+        Add a flag/star to the specified set of message IDs.
+
+        :param messages: List of message IDs.
+        :param folder: IMAP folder (default: ``INBOX``).
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        return self.add_flags(messages, ['Flagged'], folder=folder, **connect_args)
+
+    @action
+    def unflag_messages(self, messages: List[int], folder: str = 'INBOX', **connect_args):
+        """
+        Remove a flag/star from the specified set of message IDs.
+
+        :param messages: List of message IDs.
+        :param folder: IMAP folder (default: ``INBOX``).
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        return self.remove_flags(messages, ['Flagged'], folder=folder, **connect_args)
+
+    @action
+    def flag_message(self, message: int, folder: str = 'INBOX', **connect_args):
+        """
+        Add a flag/star to the specified set of message ID.
+
+        :param message: Message ID.
+        :param folder: IMAP folder (default: ``INBOX``).
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        return self.flag_messages([message], folder=folder, **connect_args)
+
+    @action
+    def unflag_message(self, message: int, folder: str = 'INBOX', **connect_args):
+        """
+        Remove a flag/star from the specified set of message ID.
+
+        :param message: Message ID.
+        :param folder: IMAP folder (default: ``INBOX``).
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        return self.unflag_messages([message], folder=folder, **connect_args)
+
+    @action
+    def copy_messages(self, messages: List[int], dest_folder: str, source_folder: str = 'INBOX', **connect_args):
+        """
+        Copy a set of messages IDs from a folder to another.
+
+        :param messages: List of message IDs.
+        :param source_folder: Source folder.
+        :param dest_folder: Destination folder.
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        with self.connect(**connect_args) as client:
+            client.select_folder(source_folder)
+            client.copy(messages, dest_folder)
+
+    @action
+    def move_messages(self, messages: List[int], dest_folder: str, source_folder: str = 'INBOX', **connect_args):
+        """
+        Move a set of messages IDs from a folder to another.
+
+        :param messages: List of message IDs.
+        :param source_folder: Source folder.
+        :param dest_folder: Destination folder.
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        with self.connect(**connect_args) as client:
+            client.select_folder(source_folder)
+            client.move(messages, dest_folder)
+
+    @action
+    def expunge_messages(self, folder: str = 'INBOX', messages: Optional[List[int]] = None, **connect_args):
+        """
+        When ``messages`` is not set, remove all the messages from ``folder`` marked as ``Deleted``.
+
+        :param folder: IMAP folder (default: ``INBOX``).
+        :param messages: List of message IDs to expunge (default: all those marked as ``Deleted``).
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        with self.connect(**connect_args) as client:
+            client.select_folder(folder)
+            client.expunge(messages)
+
 
 # vim:sw=4:ts=4:et:

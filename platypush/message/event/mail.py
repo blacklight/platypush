@@ -22,4 +22,18 @@ class MailSeenEvent(MailEvent):
     pass
 
 
+class MailFlaggedEvent(MailEvent):
+    """
+    Triggered when a message is marked as flagged/starred.
+    """
+    pass
+
+
+class MailUnflaggedEvent(MailEvent):
+    """
+    Triggered when a message previously marked as flagged/starred is unflagged.
+    """
+    pass
+
+
 # vim:sw=4:ts=4:et:

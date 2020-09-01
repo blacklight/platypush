@@ -133,6 +133,9 @@ class MailInPlugin(MailPlugin, ABC):
     def search_unseen_messages(self, directory: Optional[str] = None) -> list:
         raise NotImplementedError()
 
+    def search_flagged_messages(self, folder: str = 'INBOX', **connect_args) -> list:
+        raise NotImplementedError()
+
     @action
     def get_message(self, id) -> dict:
         raise NotImplementedError()

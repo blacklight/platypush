@@ -16,7 +16,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from platypush.backend import Backend
 from platypush.config import Config
 from platypush.context import get_plugin
-from platypush.message.event.mail import MailReceivedEvent, MailSeenEvent
+from platypush.message.event.mail import MailReceivedEvent, MailSeenEvent, MailFlaggedEvent, MailUnflaggedEvent
 from platypush.plugins.mail import MailInPlugin, Mail
 
 # <editor-fold desc="Database tables">
@@ -30,6 +30,7 @@ class MailboxStatus(Base):
 
     mailbox_id = Column(Integer, primary_key=True)
     unseen_message_ids = Column(String, default='[]')
+    flagged_message_ids = Column(String, default='[]')
     last_checked_date = Column(DateTime)
 
 
@@ -58,10 +59,13 @@ class MailBackend(Backend):
 
         - :class:`platypush.message.event.mail.MailReceivedEvent` when a new message is received.
         - :class:`platypush.message.event.mail.MailSeenEvent` when a message is marked as seen.
+        - :class:`platypush.message.event.mail.MailFlaggedEvent` when a message is marked as flagged/starred.
+        - :class:`platypush.message.event.mail.MailUnflaggedEvent` when a message is marked as unflagged/unstarred.
 
     """
 
-    def __init__(self, mailboxes: List[Dict[str, Any]], timeout: Optional[int] = 60, **kwargs):
+    def __init__(self, mailboxes: List[Dict[str, Any]], timeout: Optional[int] = 60, poll_seconds: Optional[int] = 60,
+                 **kwargs):
         """
         :param mailboxes: List of mailboxes to be monitored. Each mailbox entry contains a ``plugin`` attribute to
             identify the :class:`platypush.plugins.mail.MailInPlugin` plugin that will be used (e.g. ``mail.imap``)
@@ -107,14 +111,17 @@ class MailBackend(Backend):
                            name: "My Local Server"
                            folder: "All Mail"
 
+        :param poll_seconds: How often the backend should check the mail (default: 60).
         :param timeout: Connect/read timeout for a mailbox, in seconds (default: 60).
         """
         self.logger.info('Initializing mail backend')
 
         super().__init__(**kwargs)
+        self.poll_seconds = poll_seconds
         self.mailboxes: List[Mailbox] = []
         self.timeout = timeout
         self._unread_msgs: List[Dict[int, Mail]] = [{}] * len(mailboxes)
+        self._flagged_msgs: List[Dict[int, Mail]] = [{}] * len(mailboxes)
         self._db_lock = RLock()
         self.workdir = os.path.join(os.path.expanduser(Config.get('workdir')), 'mail')
         self.dbfile = os.path.join(self.workdir, 'backend.db')
@@ -132,14 +139,14 @@ class MailBackend(Backend):
         self._db = self._db_get_engine()
         Base.metadata.create_all(self._db)
         Session.configure(bind=self._db)
-        self._db_sync_mailboxes()
+        self._db_load_mailboxes_status()
         self.logger.info('Mail backend initialized')
 
     # <editor-fold desc="Database methods">
     def _db_get_engine(self) -> engine.Engine:
         return create_engine('sqlite:///{}'.format(self.dbfile), connect_args={'check_same_thread': False})
 
-    def _db_sync_mailboxes(self) -> None:
+    def _db_load_mailboxes_status(self) -> None:
         mailbox_ids = list(range(len(self.mailboxes)))
 
         with self._db_lock:
@@ -151,13 +158,15 @@ class MailBackend(Backend):
 
             for mbox_id, mbox in enumerate(self.mailboxes):
                 if mbox_id not in records:
-                    record = MailboxStatus(mailbox_id=mbox_id, unseen_message_ids='[]')
+                    record = MailboxStatus(mailbox_id=mbox_id, unseen_message_ids='[]', flagged_message_ids='[]')
                     session.add(record)
                 else:
                     record = records[mbox_id]
 
                 unseen_msg_ids = json.loads(record.unseen_message_ids or '[]')
+                flagged_msg_ids = json.loads(record.flagged_message_ids or '[]')
                 self._unread_msgs[mbox_id] = {msg_id: {} for msg_id in unseen_msg_ids}
+                self._flagged_msgs[mbox_id] = {msg_id: {} for msg_id in flagged_msg_ids}
 
             session.commit()
 
@@ -173,11 +182,15 @@ class MailBackend(Backend):
 
     # <editor-fold desc="Parse unread messages logic">
     @staticmethod
-    def _check_thread(q: Queue, plugin: MailInPlugin, **args):
+    def _check_thread(unread_queue: Queue, flagged_queue: Queue, plugin: MailInPlugin, **args):
         def thread():
             # noinspection PyUnresolvedReferences
             unread = plugin.search_unseen_messages(**args).output
-            q.put({msg.id: msg for msg in unread})
+            unread_queue.put({msg.id: msg for msg in unread})
+
+            # noinspection PyUnresolvedReferences
+            flagged = plugin.search_flagged_messages(**args).output
+            flagged_queue.put({msg.id: msg for msg in flagged})
 
         return thread
 
@@ -195,34 +208,57 @@ class MailBackend(Backend):
             if msg_id not in unread_msgs
         }
 
+    def _get_flagged_unflagged_msgs(self, mailbox_idx: int, flagged_msgs: Dict[int, Mail]) \
+            -> Tuple[Dict[int, Mail], Dict[int, Mail]]:
+        prev_flagged_msgs = self._flagged_msgs[mailbox_idx]
+
+        return {
+                   msg_id: flagged_msgs[msg_id]
+                   for msg_id in flagged_msgs
+                   if msg_id not in prev_flagged_msgs
+               }, {
+                   msg_id: prev_flagged_msgs[msg_id]
+                   for msg_id in prev_flagged_msgs
+                   if msg_id not in flagged_msgs
+               }
+
     def _process_msg_events(self, mailbox_id: int, unread: List[Mail], seen: List[Mail],
-                            last_checked_date: Optional[datetime] = None):
+                            flagged: List[Mail], unflagged: List[Mail], last_checked_date: Optional[datetime] = None):
         for msg in unread:
             if msg.date and last_checked_date and msg.date < last_checked_date:
                 continue
             self.bus.post(MailReceivedEvent(mailbox=self.mailboxes[mailbox_id].name, msg=msg))
+
         for msg in seen:
             self.bus.post(MailSeenEvent(mailbox=self.mailboxes[mailbox_id].name, msg=msg))
 
-    def _check_mailboxes(self) -> List[Dict[int, Mail]]:
+        for msg in flagged:
+            self.bus.post(MailFlaggedEvent(mailbox=self.mailboxes[mailbox_id].name, msg=msg))
+
+        for msg in unflagged:
+            self.bus.post(MailUnflaggedEvent(mailbox=self.mailboxes[mailbox_id].name, msg=msg))
+
+    def _check_mailboxes(self) -> List[Tuple[Dict[int, Mail], Dict[int, Mail]]]:
         workers = []
-        queues = []
+        queues: List[Tuple[Queue, Queue]] = []
         results = []
 
         for mbox in self.mailboxes:
-            q = Queue()
-            worker = Thread(target=self._check_thread(q, plugin=mbox.plugin, **mbox.args))
+            unread_queue, flagged_queue = [Queue()] * 2
+            worker = Thread(target=self._check_thread(unread_queue=unread_queue, flagged_queue=flagged_queue,
+                                                      plugin=mbox.plugin, **mbox.args))
             worker.start()
             workers.append(worker)
-            queues.append(q)
+            queues.append((unread_queue, flagged_queue))
 
         for worker in workers:
             worker.join(timeout=self.timeout)
 
-        for i, q in enumerate(queues):
+        for i, (unread_queue, flagged_queue) in enumerate(queues):
             try:
-                unread = q.get(timeout=self.timeout)
-                results.append(unread)
+                unread = unread_queue.get(timeout=self.timeout)
+                flagged = flagged_queue.get(timeout=self.timeout)
+                results.append((unread, flagged))
             except Empty:
                 self.logger.warning('Checks on mailbox #{} timed out after {} seconds'.format(i + 1, self.timeout))
                 continue
@@ -237,14 +273,18 @@ class MailBackend(Backend):
         mailbox_statuses = self._db_get_mailbox_status(list(range(len(self.mailboxes))))
         results = self._check_mailboxes()
 
-        for i, unread in enumerate(results):
+        for i, (unread, flagged) in enumerate(results):
             unread_msgs, seen_msgs = self._get_unread_seen_msgs(i, unread)
+            flagged_msgs, unflagged_msgs = self._get_flagged_unflagged_msgs(i, flagged)
             self._process_msg_events(i, unread=list(unread_msgs.values()), seen=list(seen_msgs.values()),
+                                     flagged=list(flagged_msgs.values()), unflagged=list(unflagged_msgs.values()),
                                      last_checked_date=mailbox_statuses[i].last_checked_date)
 
             self._unread_msgs[i] = unread
+            self._flagged_msgs[i] = flagged
             records.append(MailboxStatus(mailbox_id=i,
                                          unseen_message_ids=json.dumps([msg_id for msg_id in unread.keys()]),
+                                         flagged_message_ids=json.dumps([msg_id for msg_id in flagged.keys()]),
                                          last_checked_date=datetime.now()))
 
         with self._db_lock:
