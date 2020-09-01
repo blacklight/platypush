@@ -356,11 +356,11 @@ class MailImapPlugin(MailInPlugin):
             return msg_ids
 
     @action
-    def get_message(self, id: int, folder: str = 'INBOX', **connect_args) -> Mail:
+    def get_message(self, message: int, folder: str = 'INBOX', **connect_args) -> Mail:
         """
         Get the full content of a message given the ID returned by :meth:`.search`.
 
-        :param id: Message ID.
+        :param message: Message ID.
         :param folder: Folder name (default: ``INBOX``).
         :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
         :return: A message in the same format as :meth:`.search`, with an added ``payload`` attribute containing the
@@ -368,11 +368,11 @@ class MailImapPlugin(MailInPlugin):
         """
         with self.connect(**connect_args) as client:
             client.select_folder(folder, readonly=True)
-            data = client.fetch(id, ['ALL', 'RFC822'])
-            assert id in data, 'No such message ID: {}'.format(id)
+            data = client.fetch(message, ['ALL', 'RFC822'])
+            assert message in data, 'No such message ID: {}'.format(message)
 
-            data = data[id]
-            ret = self._parse_message(id, data)
+            data = data[message]
+            ret = self._parse_message(message, data)
             msg = email.message_from_bytes(data[b'RFC822'])
             ret.payload = msg.get_payload()
 
@@ -413,8 +413,14 @@ class MailImapPlugin(MailInPlugin):
         with self.connect(**connect_args) as client:
             client.delete_folder(folder)
 
+    @staticmethod
+    def _convert_flags(flags: Union[str, List[str]]) -> List[bytes]:
+        if isinstance(flags, str):
+            flags = [flag.strip() for flag in flags.split(',')]
+        return [('\\' + flag).encode() for flag in flags]
+
     @action
-    def add_flags(self, messages: List[int], flags: List[str], folder: str = 'INBOX', **connect_args):
+    def add_flags(self, messages: List[int], flags: Union[str, List[str]], folder: str = 'INBOX', **connect_args):
         """
         Add a set of flags to the specified set of message IDs.
 
@@ -432,10 +438,10 @@ class MailImapPlugin(MailInPlugin):
         """
         with self.connect(**connect_args) as client:
             client.select_folder(folder)
-            client.add_flags(messages, flags)
+            client.add_flags(messages, self._convert_flags(flags))
 
     @action
-    def set_flags(self, messages: List[int], flags: List[str], folder: str = 'INBOX', **connect_args):
+    def set_flags(self, messages: List[int], flags: Union[str, List[str]], folder: str = 'INBOX', **connect_args):
         """
         Set a set of flags to the specified set of message IDs.
 
@@ -453,10 +459,10 @@ class MailImapPlugin(MailInPlugin):
         """
         with self.connect(**connect_args) as client:
             client.select_folder(folder)
-            client.set_flags(messages, flags)
+            client.set_flags(messages, self._convert_flags(flags))
 
     @action
-    def remove_flags(self, messages: List[int], flags: List[str], folder: str = 'INBOX', **connect_args):
+    def remove_flags(self, messages: List[int], flags: Union[str, List[str]], folder: str = 'INBOX', **connect_args):
         """
         Remove a set of flags to the specified set of message IDs.
 
@@ -474,7 +480,7 @@ class MailImapPlugin(MailInPlugin):
         """
         with self.connect(**connect_args) as client:
             client.select_folder(folder)
-            client.remove_flags(messages, flags)
+            client.remove_flags(messages, self._convert_flags(flags))
 
     @action
     def flag_messages(self, messages: List[int], folder: str = 'INBOX', **connect_args):
@@ -519,6 +525,32 @@ class MailImapPlugin(MailInPlugin):
         :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
         """
         return self.unflag_messages([message], folder=folder, **connect_args)
+
+    @action
+    def delete_messages(self, messages: List[int], folder: str = 'INBOX', expunge: bool = True, **connect_args):
+        """
+        Set a specified set of message IDs as deleted.
+
+        :param messages: List of message IDs.
+        :param folder: IMAP folder (default: ``INBOX``).
+        :param expunge: If set then the messages will also be expunged from the folder, otherwise they will only be
+            marked as deleted (default: ``True``).
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        self.add_flags(messages, ['Deleted'], folder=folder, **connect_args)
+        if expunge:
+            self.expunge_messages(folder=folder, messages=messages, **connect_args)
+
+    @action
+    def undelete_messages(self, messages: List[int], folder: str = 'INBOX', **connect_args):
+        """
+        Remove the ``Deleted`` flag from the specified set of message IDs.
+
+        :param messages: List of message IDs.
+        :param folder: IMAP folder (default: ``INBOX``).
+        :param connect_args: Arguments to pass to :meth:`._get_server_info` for server configuration override.
+        """
+        return self.remove_flags(messages, ['Deleted'], folder=folder, **connect_args)
 
     @action
     def copy_messages(self, messages: List[int], dest_folder: str, source_folder: str = 'INBOX', **connect_args):

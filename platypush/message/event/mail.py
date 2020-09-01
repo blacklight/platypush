@@ -1,10 +1,11 @@
 from typing import Optional, Dict
 
 from platypush.message.event import Event
+from platypush.plugins.mail import Mail
 
 
 class MailEvent(Event):
-    def __init__(self, mailbox: str, message: Optional[Dict] = None, *args, **kwargs):
+    def __init__(self, mailbox: str, message: Optional[Mail] = None, *args, **kwargs):
         super().__init__(*args, mailbox=mailbox, message=message or {}, **kwargs)
 
 

@@ -227,16 +227,16 @@ class MailBackend(Backend):
         for msg in unread:
             if msg.date and last_checked_date and msg.date < last_checked_date:
                 continue
-            self.bus.post(MailReceivedEvent(mailbox=self.mailboxes[mailbox_id].name, msg=msg))
+            self.bus.post(MailReceivedEvent(mailbox=self.mailboxes[mailbox_id].name, message=msg))
 
         for msg in seen:
-            self.bus.post(MailSeenEvent(mailbox=self.mailboxes[mailbox_id].name, msg=msg))
+            self.bus.post(MailSeenEvent(mailbox=self.mailboxes[mailbox_id].name, message=msg))
 
         for msg in flagged:
-            self.bus.post(MailFlaggedEvent(mailbox=self.mailboxes[mailbox_id].name, msg=msg))
+            self.bus.post(MailFlaggedEvent(mailbox=self.mailboxes[mailbox_id].name, message=msg))
 
         for msg in unflagged:
-            self.bus.post(MailUnflaggedEvent(mailbox=self.mailboxes[mailbox_id].name, msg=msg))
+            self.bus.post(MailUnflaggedEvent(mailbox=self.mailboxes[mailbox_id].name, message=msg))
 
     def _check_mailboxes(self) -> List[Tuple[Dict[int, Mail], Dict[int, Mail]]]:
         workers = []
