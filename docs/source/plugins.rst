@@ -74,6 +74,7 @@ Plugins
     platypush/plugins/luma.oled.rst
     platypush/plugins/mail.rst
     platypush/plugins/mail.imap.rst
+    platypush/plugins/mail.smtp.rst
     platypush/plugins/media.rst
     platypush/plugins/media.chromecast.rst
     platypush/plugins/media.ctrl.rst
