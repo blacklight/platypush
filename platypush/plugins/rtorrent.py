@@ -91,7 +91,7 @@ class RtorrentPlugin(TorrentPlugin):
 
         - Start RTorrent and check that the XML/RPC interface works::
 
-          .. code-block:: bash
+          .. code-block:: shell
 
             $ xmlrpc localhost:8000 system.listMethods
             # Should return a list with all the methods exposed by RTorrent.
