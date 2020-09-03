@@ -59,6 +59,19 @@ Vue.component('media-torrents', {
     },
 
     methods: {
+        getTorrentPlugin: async function() {
+            if (this.config && this.config.torrent_plugin) {
+                return this.config.torrent_plugin;
+            }
+
+            const config = await request('inspect.get_config');
+            if ('rtorrent' in config)
+                return 'rtorrent';
+            if ('webtorrent' in config)
+                return 'webtorrent';
+            return 'torrent'
+        },
+
         openDropdown: function(item) {
             this.selectedItem = item;
             openDropdown(this.$refs.menu);
@@ -69,7 +82,8 @@ Vue.component('media-torrents', {
             if (!magnet.length)
                 return;
 
-            const ret = await request('torrent.download', {
+            const torrentPlugin = await this.getTorrentPlugin();
+            await request(torrentPlugin + '.download', {
                 torrent: magnet,
                 _async: true,
             });

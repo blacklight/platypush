@@ -30,6 +30,7 @@ class MediaPlugin(Plugin):
 
         * A media player installed (supported so far: mplayer, vlc, mpv, omxplayer, chromecast)
         * **python-libtorrent** (``pip install python-libtorrent``), optional, for torrent support over native library
+        * *rtorrent* installed - optional, for torrent support over rtorrent
         * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
         * **requests** (``pip install requests``), optional, for local files over HTTP streaming supporting
         * **ffmpeg**,optional, to get media files metadata
@@ -42,9 +43,7 @@ class MediaPlugin(Plugin):
     # another device)
     _is_local = True
     _youtube_fifo = os.path.join(tempfile.gettempdir(), 'youtube_video.sock')
-
-    _NOT_IMPLEMENTED_ERR = NotImplementedError(
-        'This method must be implemented in a derived class')
+    _NOT_IMPLEMENTED_ERR = NotImplementedError('This method must be implemented in a derived class')
 
     # Supported audio extensions
     audio_extensions = {
@@ -76,6 +75,7 @@ class MediaPlugin(Plugin):
                  download_dir: Optional[str] = None,
                  env: Optional[Dict[str, str]] = None,
                  volume: Optional[Union[float, int]] = None,
+                 torrent_plugin: str = 'torrent',
                  *args, **kwargs):
         """
         :param media_dirs: Directories that will be scanned for media files when
@@ -88,6 +88,13 @@ class MediaPlugin(Plugin):
             player executable (e.g. DISPLAY, XDG_VTNR, PULSE_SINK etc.)
 
         :param volume: Default volume for the player (default: None, maximum volume).
+
+        :param torrent_plugin: Optional plugin to be used for torrent download. Possible values:
+
+            - ``torrent`` - native ``libtorrent``-based plugin (default)
+            - ``rtorrent`` - torrent support over rtorrent RPC/XML interface (recommended)
+            - ``webtorrent`` - torrent support over webtorrent (unstable)
+
         """
 
         super().__init__(**kwargs)
@@ -142,6 +149,7 @@ class MediaPlugin(Plugin):
         self.volume = volume
         self._videos_queue = []
         self._youtube_proc = None
+        self.torrent_plugin = torrent_plugin
 
     @staticmethod
     def _torrent_event_handler(evt_queue):
@@ -179,7 +187,7 @@ class MediaPlugin(Plugin):
         elif resource.startswith('magnet:?'):
             self.logger.info('Downloading torrent {} to {}'.format(
                 resource, self.download_dir))
-            torrents = get_plugin('torrent')
+            torrents = get_plugin(self.torrent_plugin)
 
             evt_queue = queue.Queue()
             torrents.download(resource, download_dir=self.download_dir, _async=True, is_media=True,
@@ -195,9 +203,8 @@ class MediaPlugin(Plugin):
 
         return resource
 
-    @staticmethod
-    def _stop_torrent():
-        torrents = get_plugin('torrent')
+    def _stop_torrent(self):
+        torrents = get_plugin(self.torrent_plugin)
         torrents.quit()
 
     @action

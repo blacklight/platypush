@@ -29,7 +29,7 @@ class TorrentPlugin(Plugin):
     categories = {
         'movies': None,
         'tv': None,
-        'anime': None,
+        # 'anime': None,
     }
 
     torrent_state = {}
@@ -240,8 +240,14 @@ class TorrentPlugin(Plugin):
 
         if torrent.startswith('magnet:?'):
             magnet = torrent
-            info = lt.parse_magnet_uri(magnet)
-            info['magnet'] = magnet
+            magnet_info = lt.parse_magnet_uri(magnet)
+            info = {
+                'name': magnet_info.name,
+                'url': magnet,
+                'magnet': magnet,
+                'trackers': magnet_info.trackers,
+                'save_path': download_dir,
+            }
         elif torrent.startswith('http://') or torrent.startswith('https://'):
             response = requests.get(torrent, headers=self.headers, allow_redirects=True)
             torrent_file = os.path.join(download_dir, self._generate_rand_filename())

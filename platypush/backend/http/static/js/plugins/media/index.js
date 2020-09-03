@@ -219,12 +219,31 @@ Vue.component('media', {
             };
         },
 
+        getTorrentPlugin: async function() {
+            if (this.config && this.config.torrent_plugin) {
+                return this.config.torrent_plugin;
+            }
+
+            const config = await request('inspect.get_config');
+            if ('rtorrent' in config)
+                return 'rtorrent';
+            if ('webtorrent' in config)
+                return 'webtorrent';
+            return 'torrent'
+        },
+
         torrentStatusUpdate: function(torrents) {
             Vue.set(this.torrentModal, 'items', {});
 
             for (const [url, torrent] of Object.entries(torrents)) {
                 Vue.set(this.torrentModal.items, url, torrent);
             }
+        },
+
+        refreshTorrents: async function() {
+            const torrentPlugin = await this.getTorrentPlugin();
+            const torrents = await request(torrentPlugin + '.status');
+            this.torrentStatusUpdate(torrents);
         },
 
         onStatusUpdate: function(event) {
@@ -301,6 +320,7 @@ Vue.component('media', {
             MediaHandlers[type].bus = this.bus;
         }
 
+        this.refreshTorrents();
         registerEventHandler(this.onMediaEvent,
             'platypush.message.event.media.NewPlayingMediaEvent',
             'platypush.message.event.media.MediaPlayEvent',

@@ -89,4 +89,12 @@ class TorrentDownloadStopEvent(TorrentEvent):
         super().__init__(*args, url=url, **kwargs)
 
 
+class TorrentRemovedEvent(TorrentEvent):
+    """
+    Event triggered when a torrent transfer is removed.
+    """
+    def __init__(self, url, *args, **kwargs):
+        super().__init__(*args, url=url, **kwargs)
+
+
 # vim:sw=4:ts=4:et:

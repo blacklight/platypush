@@ -46,6 +46,19 @@ MediaHandlers.torrent = MediaHandlers.base.extend({
             );
         },
 
+        getTorrentPlugin: async function() {
+            if (this.config && this.config.torrent_plugin) {
+                return this.config.torrent_plugin;
+            }
+
+            const config = await request('inspect.get_config');
+            if ('rtorrent' in config)
+                return 'rtorrent';
+            if ('webtorrent' in config)
+                return 'webtorrent';
+            return 'torrent'
+        },
+
         getMetadata: async function(item, onlyBase=false) {
             let status = {};
 
@@ -62,34 +75,62 @@ MediaHandlers.torrent = MediaHandlers.base.extend({
         play: async function(item) {
             let status = await this.download(item);
             status.waitingPlay = true;
+            const torrentId = this.getTorrentUrlOrHash(item.url);
 
-            if (item.url in this.torrentStatus) {
+            if (torrentId in this.torrentStatus) {
                 this.firePlay(event);
             }
         },
 
         pause: async function(item) {
-            let status = await request('torrent.pause', {torrent: item.torrent});
+            const torrentPlugin = await this.getTorrentPlugin();
+            const torrentId = this.getTorrentUrlOrHash(item.url);
+            let status = {};
+
+            if (item.paused) {
+                status = await request(torrentPlugin + '.resume', {torrent: torrentId});
+            } else {
+                status = await request(torrentPlugin + '.pause', {torrent: torrentId});
+            }
+
             this.mergeStatus(status);
         },
 
         remove: async function(item) {
-            let status = await request('torrent.remove', {torrent: item.torrent});
-            this.mergeStatus(status);
+            const torrentPlugin = await this.getTorrentPlugin();
+            const torrentId = this.getTorrentUrlOrHash(item.url);
+            let status = await request(torrentPlugin + '.remove', {torrent: torrentId});
+            if (torrentId in this.torrentStatus)
+                delete this.torrentStatus[torrentId];
         },
 
         status: async function(item) {
+            const torrentPlugin = await this.getTorrentPlugin();
             if (item) {
-                return await request('torrent.status', {
-                    torrent: item.url,
+                const torrentId = this.getTorrentUrlOrHash(typeof item === 'string' ? item : item.url);
+                return await request(torrentPlugin + '.status', {
+                    torrent: torrentId,
                 });
             }
 
-            return await request('torrent.status');
+            return await request(torrentPlugin + '.status');
+        },
+
+        getTorrentUrlOrHash: function(torrent) {
+            if (torrent.startsWith('magnet:?')) {
+                m = torrent.match(/xt=urn:btih:([^&/]+)/, torrent)
+                if (m) {
+                    return m[1];  // Torrent hash
+                }
+            }
+
+            return torrent;
         },
 
         download: async function(item) {
+            const torrentPlugin = await this.getTorrentPlugin();
             let status = await this.status(item.url);
+
             if (status && Object.keys(status).length > 1) {
                 createNotification({
                     text: 'This torrent is already being downloaded, please play the downloading local media file instead',
@@ -102,7 +143,7 @@ MediaHandlers.torrent = MediaHandlers.base.extend({
             }
 
             status = await request(
-                'torrent.download',
+                torrentPlugin + '.download',
                 {
                     torrent: item.url,
                     _async: true,
@@ -111,14 +152,15 @@ MediaHandlers.torrent = MediaHandlers.base.extend({
                 timeout=120000  // Wait up to two minutes while downloading enough torrent chunks
             );
 
-            this.torrentStatus[item.url] = {
+            const torrentId = this.getTorrentUrlOrHash(item.url);
+            this.torrentStatus[torrentId] = {
                 ...item, ...status,
                 scheduledPlay: false,
                 torrentState: status.state,
                 state: 'idle',
             };
 
-            return this.torrentStatus[item.url];
+            return this.torrentStatus[torrentId];
         },
 
         onTorrentEvent: function(event) {
@@ -153,7 +195,10 @@ MediaHandlers.torrent = MediaHandlers.base.extend({
             if (!this.mergeStatus(event))
                 return;
 
-            delete this.torrentStatus[event.url];
+            const torrentId = this.getTorrentUrlOrHash(event.url);
+            if (torrentId in this.torrentStatus)
+                delete this.torrentStatus[torrentId];
+
             this.bus.$emit('torrent-status-update', this.torrentStatus);
         },
 
@@ -161,7 +206,8 @@ MediaHandlers.torrent = MediaHandlers.base.extend({
             if (!this.mergeStatus(event))
                 return;
 
-            if (this.torrentStatus[event.url].waitingPlay)
+            const torrentId = this.getTorrentUrlOrHash(event.url);
+            if (this.torrentStatus[torrentId].waitingPlay)
                 this.firePlay(event);
         },
 
@@ -169,7 +215,10 @@ MediaHandlers.torrent = MediaHandlers.base.extend({
             if (!this.mergeStatus(event))
                 return;
 
-            delete this.torrentStatus[event.url];
+            const torrentId = this.getTorrentUrlOrHash(event.url);
+            if (torrentId in this.torrentStatus)
+                delete this.torrentStatus[event.url];
+
             this.bus.$emit('torrent-status-update', this.torrentStatus);
 
             createNotification({
@@ -206,26 +255,28 @@ MediaHandlers.torrent = MediaHandlers.base.extend({
         },
 
         mergeStatus: function(event) {
+            const torrentId = this.getTorrentUrlOrHash(event.url);
             const torrentState = event.state;
             delete event.state;
 
-            this.torrentStatus[event.url] = {
-                ...this.torrentStatus[event.url],
+            this.torrentStatus[torrentId] = {
+                ...this.torrentStatus[torrentId],
                 ...event,
                 torrentState: torrentState,
             };
 
             this.bus.$emit('torrent-status-update', this.torrentStatus);
-            return this.torrentStatus[event.url];
+            return this.torrentStatus[torrentId];
         },
     },
 
     created: function() {
         registerEventHandler(this.onTorrentStart, 'platypush.message.event.torrent.TorrentDownloadStartEvent');
-        registerEventHandler(this.onTorrentStop, 'platypush.message.event.torrent.TorrentDownloadStopEvent');
         registerEventHandler(this.onTorrentProgress, 'platypush.message.event.torrent.TorrentDownloadProgressEvent');
         registerEventHandler(this.onTorrentCompleted, 'platypush.message.event.torrent.TorrentDownloadCompletedEvent');
         registerEventHandler(this.onTorrentQueued, 'platypush.message.event.torrent.TorrentQueuedEvent');
+        registerEventHandler(this.onTorrentStop, 'platypush.message.event.torrent.TorrentDownloadStopEvent',
+            'platypush.message.event.torrent.TorrentRemovedEvent');
         registerEventHandler(this.onTorrentEvent, 'platypush.message.event.torrent.TorrentPausedEvent',
             'platypush.message.event.torrent.TorrentResumedEvent',
             'platypush.message.event.torrent.TorrentDownloadStartEvent',
