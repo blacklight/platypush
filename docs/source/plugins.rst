@@ -101,6 +101,7 @@ Plugins
     platypush/plugins/pushbullet.rst
     platypush/plugins/qrcode.rst
     platypush/plugins/redis.rst
+    platypush/plugins/rtorrent.rst
     platypush/plugins/sensor.rst
     platypush/plugins/serial.rst
     platypush/plugins/shell.rst
