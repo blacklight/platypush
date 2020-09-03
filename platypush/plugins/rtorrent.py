@@ -89,9 +89,9 @@ class RtorrentPlugin(TorrentPlugin):
 
             lighttpd -f ~/.config/rtorrent/lighttpd.conf
 
-        - Start RTorrent and check that the XML/RPC interface works::
+        - Start RTorrent and check that the XML/RPC interface works:
 
-          .. code-block:: shell
+          .. code-block:: bash
 
             $ xmlrpc localhost:8000 system.listMethods
             # Should return a list with all the methods exposed by RTorrent.
