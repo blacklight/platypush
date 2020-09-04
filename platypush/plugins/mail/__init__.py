@@ -170,9 +170,12 @@ class MailOutPlugin(MailPlugin, ABC):
 
         args = {}
         if _type_class != MIMEText:
+            mode = 'rb'
             args['Name'] = os.path.basename(file)
+        else:
+            mode = 'r'
 
-        with open(file, 'rb') as f:
+        with open(file, mode) as f:
             return _type_class(f.read(), _subtype, **args)
 
     @classmethod
