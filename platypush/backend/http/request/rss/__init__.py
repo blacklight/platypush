@@ -75,14 +75,15 @@ class RssUpdates(HttpRequest):
         self.logger.info('Extracting content from {}'.format(link))
 
         parser = get_plugin('http.webpage')
-        response = parser.simplify(link).output
-        errors = parser.simplify(link).errors
+        response = parser.simplify(link)
+        output = response.output
+        errors = response.errors
 
-        if not response:
+        if not output:
             self.logger.warning('Mercury parser error: {}'.format(errors or '[unknown error]'))
             return
 
-        return response.get('content')
+        return output.get('content')
 
     def get_new_items(self, response):
         import feedparser
@@ -212,7 +213,9 @@ class RssUpdates(HttpRequest):
         self.logger.info('Parsing RSS feed {}: completed'.format(self.title))
 
         return NewFeedEvent(request=dict(self), response=entries,
-                            source_id=source_record.id, title=self.title,
+                            source_id=source_record.id,
+                            source_title=source_record.title,
+                            title=self.title,
                             digest_format=self.digest_format,
                             digest_filename=digest_filename)
 
