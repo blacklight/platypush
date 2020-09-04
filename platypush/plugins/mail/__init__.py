@@ -168,6 +168,10 @@ class MailOutPlugin(MailPlugin, ABC):
         elif _type == 'text':
             _type_class = MIMEText
 
+        args = {}
+        if _type_class != MIMEText:
+            args['Name'] = os.path.basename(file)
+
         with open(file, 'rb') as f:
             return _type_class(f.read(), _subtype, Name=os.path.basename(file))
 
