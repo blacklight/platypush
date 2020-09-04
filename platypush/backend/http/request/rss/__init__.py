@@ -142,9 +142,10 @@ class RssUpdates(HttpRequest):
 
                     content += u'''
                         <h1 style="page-break-before: always">
-                            <a href="{}" target="_blank">{}</a>
+                            <a href="{link}" target="_blank">{title}</a>
                         </h1>
-                        <div class="_parsed-content">{}</div>'''.format(entry.title, entry.link, entry.content)
+                        <div class="_parsed-content">{content}</div>'''.format(
+                        link=entry.link, title=entry.title, content=entry.content)
 
                     e = {
                         'entry_id': entry.id,
