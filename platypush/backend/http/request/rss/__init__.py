@@ -31,12 +31,13 @@ class RssUpdates(HttpRequest):
                  'Chrome/62.0.3202.94 Safari/537.36'
 
     def __init__(self, url, title=None, headers=None, params=None, max_entries=None,
-                 extract_content=False, digest_format=None, *argv, **kwargs):
+                 extract_content=False, digest_format=None, css_style=None, *argv, **kwargs):
         self.workdir = os.path.join(os.path.expanduser(Config.get('workdir')), 'feeds')
         self.dbfile = os.path.join(self.workdir, 'rss.db')
         self.url = url
         self.title = title
         self.max_entries = max_entries
+        self.css_style = css_style
 
         # If true, then the http.webpage plugin will be used to parse the content
         self.extract_content = extract_content
@@ -111,7 +112,7 @@ class RssUpdates(HttpRequest):
                 Feeds digest generated on {} </h2>'''.format(self.title,
                                                              datetime.datetime.now().strftime('%d %B %Y, %H:%M'))
 
-        style = '''
+        style = self.css_style or '''
             body {
                 font-size: 22px;
                 font-family: 'Merriweather', Georgia, 'Times New Roman', Times, serif;
