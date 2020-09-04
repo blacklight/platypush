@@ -140,8 +140,11 @@ class RssUpdates(HttpRequest):
                     else:
                         entry.content = None
 
-                    content += u'''<h1 style="page-break-before: always">{}</h1>
-                        <div class="_parsed-content">{}</div>'''.format(entry.title, entry.content)
+                    content += u'''
+                        <h1 style="page-break-before: always">
+                            <a href="{}" target="_blank">{}</a>
+                        </h1>
+                        <div class="_parsed-content">{}</div>'''.format(entry.title, entry.link, entry.content)
 
                     e = {
                         'entry_id': entry.id,
@@ -183,7 +186,7 @@ class RssUpdates(HttpRequest):
                                 <title>{title}</title>
                                 <style>{style}</style>
                             </head>
-                            <body>{{content}}</body>
+                            <body>{content}</body>
                         </html>
                     '''.format(title=self.title, style=style, content=content)
 
