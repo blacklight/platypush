@@ -173,7 +173,7 @@ class MailOutPlugin(MailPlugin, ABC):
             args['Name'] = os.path.basename(file)
 
         with open(file, 'rb') as f:
-            return _type_class(f.read(), _subtype, Name=os.path.basename(file))
+            return _type_class(f.read(), _subtype, **args)
 
     @classmethod
     def create_message(cls, to: Union[str, List[str]], from_: Optional[str] = None,
