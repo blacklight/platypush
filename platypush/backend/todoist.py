@@ -58,22 +58,27 @@ class TodoistBackend(Backend):
 
         return hndl
 
+    def _retry_hndl(self):
+        self._ws = None
+        self.logger.warning('Todoist websocket connection closed')
+        self._connected = False
+
+        while not self._connected:
+            self._connect()
+            time.sleep(10)
+
     def _on_error(self):
         # noinspection PyUnusedLocal
         def hndl(ws, error):
             self.logger.warning('Todoist websocket error: {}'.format(error))
+            self._retry_hndl()
+
         return hndl
 
     def _on_close(self):
-        # noinspection PyUnusedLocal
-        def hndl(ws):
-            self._ws = None
-            self.logger.warning('Todoist websocket connection closed')
-            self._connected = False
-
-            while not self._connected:
-                self._connect()
-                time.sleep(10)
+        def hndl(*_, **__):
+            self.logger.info('Todoist websocket closed')
+            self._retry_hndl()
 
         return hndl
 
