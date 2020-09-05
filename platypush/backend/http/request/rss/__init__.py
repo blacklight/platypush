@@ -20,24 +20,73 @@ Session = scoped_session(sessionmaker())
 
 class RssUpdates(HttpRequest):
     """
-    Gets new items in an RSS feed
+    Gets new items in an RSS feed. You can use this type of object within the context of the
+    :class:`platypush.backend.http.poll.HttpPollBackend` backend. Example:
+
+      .. code-block:: yaml
+
+        backend.http.poll:
+            requests:
+                - type: platypush.backend.http.request.rss.RssUpdates
+                  url: https://www.technologyreview.com/feed/
+                  title: MIT Technology Review
+                  poll_seconds: 86400  # Poll once a day
+                  digest_format: html  # Generate an HTML feed with the new items
+
+    Triggers:
+
+        - :class:`platypush.message.event.http.rss.NewFeedEvent` when new items are parsed from a feed or a new digest
+          is available.
 
     Requires:
 
         * **feedparser** (``pip install feedparser``)
+
     """
 
     user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) ' + \
                  'Chrome/62.0.3202.94 Safari/537.36'
 
     def __init__(self, url, title=None, headers=None, params=None, max_entries=None,
-                 extract_content=False, digest_format=None, css_style=None, *argv, **kwargs):
+                 extract_content=False, digest_format=None, user_agent: str = user_agent,
+                 body_style: str = 'font-size: 22px; ' +
+                                   'font-family: "Merriweather", Georgia, "Times New Roman", Times, serif;',
+                 title_style: str = 'margin-top: 30px',
+                 subtitle_style: str = 'margin-top: 10px; page-break-after: always',
+                 article_title_style: str = 'page-break-before: always',
+                 article_link_style: str = 'color: #555; text-decoration: none; border-bottom: 1px dotted',
+                 article_content_style: str = '', *argv, **kwargs):
+        """
+        :param url: URL to the RSS feed to be monitored.
+        :param title: Optional title for the feed.
+        :param headers: Extra headers to be passed to the request.
+        :param params: Extra GET parameters to be appended to the URL.
+        :param max_entries: Maximum number of entries that will be returned in a single
+            :class:`platypush.message.event.http.rss.NewFeedEvent` event.
+        :param extract_content: Whether the context should also be extracted (through the
+            :class:`platypush.plugins.http.webpage.HttpWebpagePlugin` plugin) (default: ``False``).
+        :param digest_format: Format of the digest output file (default: None, text. Other supported types: ``html``
+            and ``pdf`` (requires the ``weasyprint`` module installed).
+        :param user_agent: User agent string to be passed on the request.
+        :param body_style: CSS style for the body.
+        :param title_style: CSS style for the feed title.
+        :param subtitle_style: CSS style for the feed subtitle.
+        :param article_title_style: CSS style for the article titles.
+        :param article_link_style: CSS style for the article link.
+        :param article_content_style: CSS style for the article content.
+        """
         self.workdir = os.path.join(os.path.expanduser(Config.get('workdir')), 'feeds')
         self.dbfile = os.path.join(self.workdir, 'rss.db')
         self.url = url
         self.title = title
         self.max_entries = max_entries
-        self.css_style = css_style
+        self.user_agent = user_agent
+        self.body_style = body_style
+        self.title_style = title_style
+        self.subtitle_style = subtitle_style
+        self.article_title_style = article_title_style
+        self.article_link_style = article_link_style
+        self.article_content_style = article_content_style
 
         # If true, then the http.webpage plugin will be used to parse the content
         self.extract_content = extract_content
@@ -107,17 +156,10 @@ class RssUpdates(HttpRequest):
             source_record.title = self.title
 
         content = u'''
-            <h1 style="margin-top: 30px">{}</h1>
-            <h2 style="margin-top: 10px; page-break-after: always">
-                Feeds digest generated on {} </h2>'''.format(self.title,
-                                                             datetime.datetime.now().strftime('%d %B %Y, %H:%M'))
-
-        style = self.css_style or '''
-            body {
-                font-size: 22px;
-                font-family: 'Merriweather', Georgia, 'Times New Roman', Times, serif;
-            }
-            '''
+            <h1 style="{title_style}">{title}</h1>
+            <h2 style="{subtitle_style}">Feeds digest generated on {creation_date}</h2>'''.\
+            format(title_style=self.title_style, title=self.title, subtitle_style=self.subtitle_style,
+                   creation_date=datetime.datetime.now().strftime('%d %B %Y, %H:%M'))
 
         self.logger.info('Parsed {:d} items from RSS feed <{}>'
                          .format(len(feed.entries), self.url))
@@ -142,11 +184,13 @@ class RssUpdates(HttpRequest):
                         entry.content = None
 
                     content += u'''
-                        <h1 style="page-break-before: always">
-                            <a href="{link}" target="_blank">{title}</a>
+                        <h1 style="{article_title_style}">
+                            <a href="{link}" target="_blank" style="{article_link_style}">{title}</a>
                         </h1>
-                        <div class="_parsed-content">{content}</div>'''.format(
-                        link=entry.link, title=entry.title, content=entry.content)
+                        <div class="_parsed-content" style="{article_content_style}">{content}</div>'''.format(
+                        article_title_style=self.article_title_style, article_link_style=self.article_link_style,
+                        article_content_style=self.article_content_style, link=entry.link, title=entry.title,
+                        content=entry.content)
 
                     e = {
                         'entry_id': entry.id,
@@ -186,11 +230,10 @@ class RssUpdates(HttpRequest):
                         <html>
                             <head>
                                 <title>{title}</title>
-                                <style>{style}</style>
                             </head>
-                            <body>{content}</body>
+                            <body style="{body_style}">{content}</body>
                         </html>
-                    '''.format(title=self.title, style=style, content=content)
+                    '''.format(title=self.title, body_style=self.body_style, content=content)
 
                     with open(digest_filename, 'w', encoding='utf-8') as f:
                         f.write(content)
@@ -198,9 +241,10 @@ class RssUpdates(HttpRequest):
                     import weasyprint
                     from weasyprint.fonts import FontConfiguration
 
+                    body_style = 'body { {body_style} }'.format(body_style=self.body_style)
                     font_config = FontConfiguration()
                     css = [weasyprint.CSS('https://fonts.googleapis.com/css?family=Merriweather'),
-                           weasyprint.CSS(string=style, font_config=font_config)]
+                           weasyprint.CSS(string=body_style, font_config=font_config)]
 
                     weasyprint.HTML(string=content).write_pdf(digest_filename, stylesheets=css)
                 else:
