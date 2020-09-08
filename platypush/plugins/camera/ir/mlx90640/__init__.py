@@ -107,7 +107,7 @@ class CameraIrMlx90640Plugin(CameraPlugin):
                 image = image.transpose(rotate)
 
             temp = io.BytesIO()
-            image.save(temp, format='jpg')
+            image.save(temp, format='jpeg')
             self._output.write(temp.getvalue())
 
     def __enter__(self):
