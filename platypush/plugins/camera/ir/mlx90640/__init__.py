@@ -103,7 +103,8 @@ class CameraIrMlx90640Plugin(CameraPlugin):
                 size = tuple(i * self.scale_factor for i in size)
                 image = image.resize(size, Image.ANTIALIAS)
             if self.rotate:
-                image = image.transpose(self.rotate)
+                rotate = self._rotate_values.get(int(self.rotate), 0)
+                image = image.transpose(rotate)
 
             temp = io.BytesIO()
             image.save(temp, format='jpg')
