@@ -17,7 +17,7 @@ __routes__ = [
 
 
 def get_feed(**_):
-    camera_conf = Config.get('camera.mlx90640') or {}
+    camera_conf = Config.get('camera.ir.mlx90640') or {}
     camera = CameraIrMlx90640Plugin(**camera_conf)
 
     with camera:
