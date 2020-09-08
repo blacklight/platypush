@@ -2,12 +2,14 @@ import base64
 import io
 import os
 import subprocess
+import threading
 import time
 
-from platypush.plugins import Plugin, action
+from platypush.plugins import action
+from platypush.plugins.camera import CameraPlugin, StreamingOutput
 
 
-class CameraIrMlx90640Plugin(Plugin):
+class CameraIrMlx90640Plugin(CameraPlugin):
     """
     Plugin to interact with a `ML90640 <https://shop.pimoroni.com/products/mlx90640-thermal-camera-breakout>`_
     infrared thermal camera.
@@ -35,13 +37,15 @@ class CameraIrMlx90640Plugin(Plugin):
     _img_size = (32, 24)
     _rotate_values = {}
 
-    def __init__(self, fps=16, skip_frames=2, scale_factor=1, rotate=0, rawrgb_path=None, **kwargs):
+    def __init__(self, fps=16, skip_frames=2, scale_factor=1, rotate=0, grayscale=False, rawrgb_path=None, **kwargs):
         """
         :param fps: Frames per seconds (default: 16)
         :param skip_frames: Number of frames to be skipped on sensor initialization/warmup (default: 2)
         :param scale_factor: The camera outputs 24x32 pixels artifacts. Use scale_factor to scale them up to a larger
             image (default: 1)
         :param rotate: Rotation angle in degrees (default: 0)
+        :param grayscale: Save the image as grayscale - black pixels will be colder, white pixels warmer
+            (default: False = use false colors)
         :param rawrgb_path: Specify it if the rawrgb executable compiled from
             https://github.com/pimoroni/mlx90640-library is in another folder than
             `<directory of this file>/lib/examples`.
@@ -68,6 +72,7 @@ class CameraIrMlx90640Plugin(Plugin):
         self.skip_frames = skip_frames
         self.scale_factor = scale_factor
         self.rawrgb_path = rawrgb_path
+        self.grayscale = grayscale
         self._capture_proc = None
 
     def _is_capture_proc_running(self):
@@ -81,9 +86,40 @@ class CameraIrMlx90640Plugin(Plugin):
 
         return self._capture_proc
 
+    def _raw_capture(self):
+        from PIL import Image
+
+        camera = self._get_capture_proc(fps=self.fps)
+        size = self._img_size
+
+        while self._is_capture_proc_running():
+            frame = camera.stdout.read(size[0] * size[1] * 3)
+            image = Image.frombytes('RGB', size, frame)
+            self._output.write(frame)
+
+            if self.grayscale:
+                image = self._convert_to_grayscale(image)
+            if self.scale_factor != 1:
+                size = tuple(i * self.scale_factor for i in size)
+                image = image.resize(size, Image.ANTIALIAS)
+            if self.rotate:
+                image = image.transpose(self.rotate)
+
+            temp = io.BytesIO()
+            image.save(temp, format='jpg')
+            self._output.write(temp.getvalue())
+
+    def __enter__(self):
+        self._output = StreamingOutput(raw=False)
+        self._capturing_thread = threading.Thread(target=self._raw_capture)
+        self._capturing_thread.start()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop()
+
     # noinspection PyShadowingBuiltins
     @action
-    def capture(self, output_file=None, frames=1, grayscale=False, fps=None, skip_frames=None, scale_factor=None,
+    def capture(self, output_file=None, frames=1, grayscale=None, fps=None, skip_frames=None, scale_factor=None,
                 rotate=None, format='jpeg'):
         """
         Capture one or multiple frames and return them as raw RGB
@@ -97,8 +133,7 @@ class CameraIrMlx90640Plugin(Plugin):
             `stop` is called.
         :type frames: int
 
-        :param grayscale: Save the image as grayscale - black pixels will be colder, white pixels warmer
-            (default: False)
+        :param grayscale: Override the default ``grayscale`` parameter.
         :type grayscale: bool
 
         :param fps: If set it overrides the fps parameter specified on the object (default: None)
@@ -126,9 +161,10 @@ class CameraIrMlx90640Plugin(Plugin):
         skip_frames = self.skip_frames if skip_frames is None else skip_frames
         scale_factor = self.scale_factor if scale_factor is None else scale_factor
         rotate = self._rotate_values.get(self.rotate if rotate is None else rotate, 0)
+        grayscale = self.grayscale if grayscale is None else grayscale
 
         size = self._img_size
-        sleep_time = 1.0 / self.fps
+        sleep_time = 1.0 / fps
         captured_frames = []
         n_captured_frames = 0
         files = set()

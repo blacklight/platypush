@@ -1,11 +1,12 @@
-import base64
 import os
 import tempfile
 
 from flask import Response, request, Blueprint, send_from_directory
 
+from platypush import Config
 from platypush.backend.http.app import template_folder
 from platypush.backend.http.app.utils import authenticate, send_request
+from platypush.plugins.camera.ir.mlx90640 import CameraIrMlx90640Plugin
 
 camera_ir_mlx90640 = Blueprint('camera.ir.mlx90640', __name__, template_folder=template_folder)
 
@@ -15,15 +16,21 @@ __routes__ = [
 ]
 
 
-def get_feed(**args):
-    try:
+def get_feed(**_):
+    camera_conf = Config.get('camera.mlx90640') or {}
+    camera = CameraIrMlx90640Plugin(**camera_conf)
+
+    with camera:
         while True:
-            frame = send_request(action='camera.ir.mlx90640.capture', **args).output[0]
-            frame = base64.decodebytes(frame.encode())
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-    finally:
-        send_request(action='camera.ir.mlx90640.stop')
+            output = camera.get_stream()
+
+            with output.ready:
+                output.ready.wait()
+                frame = output.frame
+
+            if frame and len(frame):
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
 @camera_ir_mlx90640.route('/camera/ir/mlx90640/frame', methods=['GET'])
