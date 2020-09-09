@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional
 
 from platypush.message.event import Event
 from platypush.plugins.mail import Mail
