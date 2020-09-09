@@ -18,14 +18,14 @@ class VariablePlugin(Plugin):
 
     _variable_table_name = 'variable'
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         """
         The plugin will create a table named ``variable`` on the database
         configured in the :mod:`platypush.plugins.db` plugin. You'll have
         to specify a default ``engine`` in your ``db`` plugin configuration.
         """
 
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         self.db_plugin = get_plugin('db')
         self.redis_plugin = get_plugin('redis')
 
@@ -64,7 +64,7 @@ class VariablePlugin(Plugin):
                                      *self.db_config['args'],
                                      **self.db_config['kwargs']).output
 
-        return {name: rows[0]['value'] if rows else None}
+        return {name: rows[0]['value'] if rows else default_value}
 
     @action
     def set(self, **kwargs):
@@ -74,8 +74,8 @@ class VariablePlugin(Plugin):
         :param kwargs: Key-value list of variables to set (e.g. ``foo='bar', answer=42``)
         """
 
-        records = [ { 'name': k, 'value': v }
-                   for (k,v) in kwargs.items() ]
+        records = [{'name': k, 'value': v}
+                   for (k, v) in kwargs.items()]
 
         self.db_plugin.insert(table=self._variable_table_name,
                               records=records, key_columns=['name'],
@@ -86,7 +86,6 @@ class VariablePlugin(Plugin):
 
         return kwargs
 
-
     @action
     def unset(self, name):
         """
@@ -96,7 +95,7 @@ class VariablePlugin(Plugin):
         :type name: str
         """
 
-        records = [ { 'name': name } ]
+        records = [{'name': name}]
 
         self.db_plugin.delete(table=self._variable_table_name,
                               records=records, engine=self.db_config['engine'],
@@ -105,7 +104,6 @@ class VariablePlugin(Plugin):
 
         return True
 
-
     @action
     def mget(self, name):
         """
@@ -113,8 +111,6 @@ class VariablePlugin(Plugin):
 
         :param name: Variable name
         :type name: str
-
-        :param default_value: What will be returned if the variable is not defined (default: None)
 
         :returns: A map in the format ``{"<name>":"<value>"}``
         """
@@ -134,7 +130,6 @@ class VariablePlugin(Plugin):
         self.redis_plugin.mset(**kwargs)
         return kwargs
 
-
     @action
     def munset(self, name):
         """
@@ -145,7 +140,6 @@ class VariablePlugin(Plugin):
         """
 
         return self.redis_plugin.delete(name)
-
 
     @action
     def expire(self, name, expire):
@@ -161,6 +155,4 @@ class VariablePlugin(Plugin):
 
         return self.redis_plugin.expire(name, expire)
 
-
 # vim:sw=4:ts=4:et:
-
