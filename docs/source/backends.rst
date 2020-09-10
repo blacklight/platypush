@@ -41,6 +41,7 @@ Backends
     platypush/backend/music.mopidy.rst
     platypush/backend/music.mpd.rst
     platypush/backend/music.snapcast.rst
+    platypush/backend/nextcloud.rst
     platypush/backend/nfc.rst
     platypush/backend/nodered.rst
     platypush/backend/ping.rst

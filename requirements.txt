@@ -146,7 +146,7 @@ pyScss
 
 # Support for NFC tags
 # nfcpy >= 1.0
-# ndef
+# ndeflib
 
 # Support for enviropHAT
 # envirophat
@@ -295,3 +295,6 @@ croniter
 
 # Support for IMAP mail integration
 # imapclient
+
+# Support for NextCloud integration
+# git+https://github.com/EnterpriseyIntranet/nextcloud-API.git

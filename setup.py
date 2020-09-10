@@ -236,7 +236,7 @@ setup(
         # Support for mpv player plugin
         'mpv': ['python-mpv'],
         # Support for NFC tags
-        'nfc': ['nfcpy>=1.0', 'ndef'],
+        'nfc': ['nfcpy>=1.0', 'ndeflib'],
         # Support for enviropHAT
         'envirophat': ['envirophat'],
         # Support for GPS
@@ -332,5 +332,7 @@ setup(
         'lcd': ['RPi.GPIO', 'RPLCD'],
         # Support for IMAP mail integration
         'imap': ['imapclient'],
+        # Support for NextCloud integration
+        'nextcloud': ['nextcloud-API @ git+https://github.com/EnterpriseyIntranet/nextcloud-API.git'],
     },
 )

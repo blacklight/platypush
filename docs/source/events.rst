@@ -28,6 +28,7 @@ Events
     platypush/events/http.hook.rst
     platypush/events/http.ota.booking.rst
     platypush/events/http.rss.rst
+    platypush/events/inotify.rst
     platypush/events/joystick.rst
     platypush/events/kafka.rst
     platypush/events/light.rst
@@ -38,8 +39,8 @@ Events
     platypush/events/mqtt.rst
     platypush/events/music.rst
     platypush/events/music.snapcast.rst
+    platypush/events/nextcloud.rst
     platypush/events/nfc.rst
-    platypush/events/path.rst
     platypush/events/ping.rst
     platypush/events/pushbullet.rst
     platypush/events/qrcode.rst
