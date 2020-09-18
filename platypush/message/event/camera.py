@@ -13,8 +13,8 @@ class CameraRecordingStartedEvent(CameraEvent):
     Event triggered when a new recording starts
     """
 
-    def __init__(self, device_id, filename=None, *args, **kwargs):
-        super().__init__(*args, device_id=device_id, filename=filename, **kwargs)
+    def __init__(self, device, filename=None, *args, **kwargs):
+        super().__init__(*args, device=device, filename=filename, **kwargs)
 
 
 class CameraRecordingStoppedEvent(CameraEvent):
@@ -22,8 +22,8 @@ class CameraRecordingStoppedEvent(CameraEvent):
     Event triggered when a recording stops
     """
 
-    def __init__(self, device_id, *args, **kwargs):
-        super().__init__(*args, device_id=device_id, **kwargs)
+    def __init__(self, device, *args, **kwargs):
+        super().__init__(*args, device=device, **kwargs)
 
 
 class CameraVideoRenderedEvent(CameraEvent):

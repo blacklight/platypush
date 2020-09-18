@@ -1,9 +1,12 @@
-from flask import Response, Blueprint
-from platypush.plugins.camera import CameraPlugin
+import json
+from typing import Optional
 
-from platypush import Config
+from flask import Response, Blueprint, request
+
 from platypush.backend.http.app import template_folder
-from platypush.backend.http.app.utils import authenticate, send_request
+from platypush.backend.http.app.utils import authenticate
+from platypush.context import get_plugin
+from platypush.plugins.camera import CameraPlugin, Camera, StreamWriter
 
 camera = Blueprint('camera', __name__, template_folder=template_folder)
 
@@ -13,75 +16,95 @@ __routes__ = [
 ]
 
 
-def get_device_id(device_id=None):
-    if device_id is None:
-        device_id = int(send_request(action='camera.get_default_device_id').output)
-    return device_id
+def get_camera(plugin: str) -> CameraPlugin:
+    return get_plugin('camera.' + plugin)
 
 
-def get_camera(device_id=None):
-    device_id = get_device_id(device_id)
-    camera_conf = Config.get('camera') or {}
-    camera_conf['device_id'] = device_id
-    return CameraPlugin(**camera_conf)
+def get_frame(session: Camera, timeout: Optional[float] = None) -> bytes:
+    with session.stream.ready:
+        session.stream.ready.wait(timeout=timeout)
+        return session.stream.frame
 
 
-def get_frame(device_id=None):
-    cam = get_camera(device_id)
-    with cam:
-        frame = None
-
-        for _ in range(cam.warmup_frames):
-            output = cam.get_stream()
-
-            with output.ready:
-                output.ready.wait()
-                frame = output.frame
-
-        return frame
-
-
-def video_feed(device_id=None):
-    cam = get_camera(device_id)
-
-    with cam:
+def feed(plugin: str, **kwargs):
+    plugin = get_camera(plugin)
+    with plugin.open(stream=True, **kwargs) as session:
+        plugin.start_camera(session)
         while True:
-            output = cam.get_stream()
-            with output.ready:
-                output.ready.wait()
-                frame = output.frame
-
-            if frame and len(frame):
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            frame = get_frame(session, timeout=5.0)
+            if frame:
+                yield frame
 
 
-@camera.route('/camera/<device_id>/frame', methods=['GET'])
+def get_args(kwargs):
+    kwargs = kwargs.copy()
+    if 't' in kwargs:
+        del kwargs['t']
+
+    for k, v in kwargs.items():
+        if k == 'resolution':
+            v = json.loads('[{}]'.format(v))
+        else:
+            # noinspection PyBroadException
+            try:
+                v = int(v)
+            except:
+                # noinspection PyBroadException
+                try:
+                    v = float(v)
+                except:
+                    pass
+
+        kwargs[k] = v
+
+    return kwargs
+
+
+@camera.route('/camera/<plugin>/photo.<extension>', methods=['GET'])
 @authenticate()
-def get_camera_frame(device_id):
-    frame = get_frame(device_id)
-    return Response(frame, mimetype='image/jpeg')
+def get_photo(plugin, extension):
+    plugin = get_camera(plugin)
+    extension = 'jpeg' if extension in ('jpg', 'jpeg') else extension
+
+    with plugin.open(stream=True, stream_format=extension, frames_dir=None, **get_args(request.args)) as session:
+        plugin.start_camera(session)
+        frame = None
+        for _ in range(session.info.warmup_frames):
+            frame = get_frame(session)
+
+        return Response(frame, mimetype=session.stream.mimetype)
 
 
-@camera.route('/camera/frame', methods=['GET'])
+@camera.route('/camera/<plugin>/video.<extension>', methods=['GET'])
 @authenticate()
-def get_default_camera_frame():
-    frame = get_frame()
-    return Response(frame, mimetype='image/jpeg')
+def get_video(plugin, extension):
+    stream_class = StreamWriter.get_class_by_name(extension)
+    return Response(feed(plugin, stream_format=extension, frames_dir=None, **get_args(request.args)),
+                    mimetype=stream_class.mimetype)
 
 
-@camera.route('/camera/<device_id>/stream', methods=['GET'])
+@camera.route('/camera/<plugin>/photo', methods=['GET'])
 @authenticate()
-def get_stream_feed(device_id):
-    return Response(video_feed(device_id),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+def get_photo_default(plugin):
+    return get_photo(plugin, 'jpeg')
 
 
-@camera.route('/camera/stream', methods=['GET'])
+@camera.route('/camera/<plugin>/video', methods=['GET'])
 @authenticate()
-def get_default_stream_feed():
-    return Response(video_feed(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+def get_video_default(plugin):
+    return get_video(plugin, 'mjpeg')
+
+
+@camera.route('/camera/<plugin>/frame', methods=['GET'])
+@authenticate()
+def get_photo_deprecated(plugin):
+    return get_photo_default(plugin)
+
+
+@camera.route('/camera/<plugin>/feed', methods=['GET'])
+@authenticate()
+def get_video_deprecated(plugin):
+    return get_video_default(plugin)
 
 
 # vim:sw=4:ts=4:et:

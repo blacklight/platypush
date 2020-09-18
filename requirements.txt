@@ -81,6 +81,7 @@ zeroconf
 
 # Support for the RaspberryPi camera module
 # picamera
+# Pillow
 
 # Support for torrents download
 # python-libtorrent
@@ -298,3 +299,9 @@ croniter
 
 # Support for NextCloud integration
 # git+https://github.com/EnterpriseyIntranet/nextcloud-API.git
+
+# Support for FFmpeg integration
+# ffmpeg-python
+
+# Generic support for cameras
+# Pillow

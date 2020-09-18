@@ -30,7 +30,7 @@ class QrcodePlugin(Plugin):
     def __init__(self, camera_plugin: Optional[str] = None, **kwargs):
         """
         :param camera_plugin: Name of the plugin that will be used as a camera to capture images (e.g.
-            ``camera`` or ``camera.pi``).
+            ``camera.cv`` or ``camera.pi``).
         """
         super().__init__(**kwargs)
         self.camera_plugin = camera_plugin
@@ -104,6 +104,8 @@ class QrcodePlugin(Plugin):
 
     def _convert_frame(self, frame):
         import numpy as np
+        from PIL import Image
+
         assert isinstance(frame, np.ndarray), \
                 'Image conversion only works with numpy arrays for now (got {})'.format(type(frame))
         mode = 'RGB'

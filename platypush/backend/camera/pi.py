@@ -19,6 +19,10 @@ class CameraPiBackend(Backend):
 
         * **picamera** (``pip install picamera``)
         * **redis** (``pip install redis``) for inter-process communication with the camera process
+
+    This backend is **DEPRECATED**. Use the plugin :class:`platypush.plugins.camera.pi.CameraPiPlugin` instead to run
+    Pi camera actions. If you want to start streaming the camera on application start then simply create an event hook
+    on :class:`platypush.message.event.application.ApplicationStartedEvent` that runs ``camera.pi.start_streaming``.
     """
 
     class CameraAction(Enum):

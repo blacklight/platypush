@@ -76,6 +76,23 @@ def get_plugin_class_by_name(plugin_name):
         return None
 
 
+def get_plugin_name_by_class(plugin) -> str:
+    """Gets the common name of a plugin (e.g. "music.mpd" or "media.vlc") given its class. """
+
+    from platypush.plugins import Plugin
+
+    if isinstance(plugin, Plugin):
+        plugin = plugin.__class__
+
+    class_name = plugin.__name__
+    class_tokens = [
+        token.lower() for token in re.sub(r'([A-Z])', r' \1', class_name).split(' ')
+        if token.strip() and token != 'Plugin'
+    ]
+
+    return '.'.join(class_tokens)
+
+
 def set_timeout(seconds, on_timeout):
     """
     Set a function to be called if timeout expires without being cleared.

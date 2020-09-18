@@ -15,9 +15,7 @@ class Response(Message):
         :param origin: Origin
         :type origin: str
         :param output: Output
-        :type output: str
         :param errors: Errors
-        :type errors: list
         :param id: Message ID this response refers to
         :type id: str
         :param timestamp: Message timestamp

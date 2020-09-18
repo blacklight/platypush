@@ -194,8 +194,10 @@ setup(
         'youtube': ['youtube-dl'],
         # Support for torrents download
         'torrent': ['python-libtorrent'],
+        # Generic support for cameras
+        'camera': ['numpy', 'Pillow'],
         # Support for RaspberryPi camera
-        'picamera': ['picamera', 'numpy'],
+        'picamera': ['picamera', 'numpy', 'Pillow'],
         # Support for inotify file monitors
         'inotify': ['inotify'],
         # Support for Google Assistant
@@ -264,8 +266,8 @@ setup(
         'pwm3901': ['pwm3901'],
         # Support for MLX90640 thermal camera
         'mlx90640': ['Pillow'],
-        # Support for machine learning and CV plugin
-        'cv': ['cv2', 'numpy'],
+        # Support for machine learning models and cameras over OpenCV
+        'cv': ['cv2', 'numpy', 'Pillow'],
         # Support for the generation of HTML documentation from docstring
         'htmldoc': ['docutils'],
         # Support for Node-RED integration
@@ -334,5 +336,7 @@ setup(
         'imap': ['imapclient'],
         # Support for NextCloud integration
         'nextcloud': ['nextcloud-API @ git+https://github.com/EnterpriseyIntranet/nextcloud-API.git'],
+        # Support for FFmpeg integration
+        'ffmpeg': ['ffmpeg-python'],
     },
 )
