@@ -132,7 +132,7 @@ class CameraPiPlugin(CameraPlugin):
 
         return self.status()
 
-    def streaming_thread(self, camera: Camera, stream_format: str, duration: Optional[float] = None):
+    def streaming_thread(self, camera: PiCamera, stream_format: str, duration: Optional[float] = None):
         server_socket = self._prepare_server_socket(camera)
         sock = None
         streaming_started_time = time.time()
@@ -159,18 +159,10 @@ class CameraPiPlugin(CameraPlugin):
                             sock.close()
                         except Exception as e:
                             self.logger.warning('Error while closing client socket: {}'.format(str(e)))
+
+                    self.release_device(camera)
         finally:
             self._cleanup_stream(camera, server_socket, sock)
-            try:
-                camera.object.stop_recording()
-            except Exception as e:
-                self.logger.warning('Error while stopping camera recording: {}'.format(str(e)))
-
-            try:
-                camera.object.close()
-            except Exception as e:
-                self.logger.warning('Error while closing camera: {}'.format(str(e)))
-
             self.logger.info('Stopped camera stream')
 
     @action
