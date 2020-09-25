@@ -147,13 +147,13 @@ class CameraPiPlugin(CameraPlugin):
                 if not sock:
                     continue
 
-                picam = self.open_device(**camera.info.to_dict()) if camera.object is None or camera.object.closed \
-                    else camera.object
+                if camera.object is None or camera.object.closed:
+                    camera = self.open_device(**camera.info.to_dict())
 
                 try:
-                    picam.start_recording(sock, format=stream_format)
+                    camera.object.start_recording(sock, format=stream_format)
                     while camera.stream_event.is_set():
-                        picam.wait_recording(1)
+                        camera.object.wait_recording(1)
                 except ConnectionError:
                     self.logger.info('Client closed connection')
                 finally:
