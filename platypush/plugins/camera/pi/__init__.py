@@ -147,10 +147,13 @@ class CameraPiPlugin(CameraPlugin):
                 if not sock:
                     continue
 
+                picam = self.open_device(**camera.info.to_dict()) if camera.object is None or camera.object.closed \
+                    else camera.object
+
                 try:
-                    camera.object.start_recording(sock, format=stream_format)
+                    picam.start_recording(sock, format=stream_format)
                     while camera.stream_event.is_set():
-                        camera.object.wait_recording(1)
+                        picam.wait_recording(1)
                 except ConnectionError:
                     self.logger.info('Client closed connection')
                 finally:
@@ -160,7 +163,7 @@ class CameraPiPlugin(CameraPlugin):
                         except Exception as e:
                             self.logger.warning('Error while closing client socket: {}'.format(str(e)))
 
-                    self.release_device(camera)
+                    self.close_device(camera)
         finally:
             self._cleanup_stream(camera, server_socket, sock)
             self.logger.info('Stopped camera stream')

@@ -17,13 +17,13 @@ from platypush.message.event.camera import CameraRecordingStartedEvent, CameraPi
     CameraRecordingStoppedEvent, CameraVideoRenderedEvent
 from platypush.plugins import Plugin, action
 from platypush.plugins.camera.model.camera import CameraInfo, Camera
-from platypush.plugins.camera.model.exceptions import CameraException, CaptureSessionAlreadyRunningException
+from platypush.plugins.camera.model.exceptions import CameraException, CaptureAlreadyRunningException
 from platypush.plugins.camera.model.writer import VideoWriter, StreamWriter
 from platypush.plugins.camera.model.writer.ffmpeg import FFmpegFileWriter
 from platypush.plugins.camera.model.writer.preview import PreviewWriter, PreviewWriterFactory
 from platypush.utils import get_plugin_name_by_class
 
-__all__ = ['Camera', 'CameraInfo', 'CameraException', 'CameraPlugin', 'CaptureSessionAlreadyRunningException',
+__all__ = ['Camera', 'CameraInfo', 'CameraException', 'CameraPlugin', 'CaptureAlreadyRunningException',
            'StreamWriter']
 
 
@@ -139,11 +139,10 @@ class CameraPlugin(Plugin, ABC):
         :return: The initialized camera device.
         :raises: :class:`platypush.plugins.camera.CaptureSessionAlreadyRunningException`
         """
+        info = self._merge_info(**params)
         if device is None:
-            info = self.camera_info.clone()
             device = info.device
         elif device not in self._devices:
-            info = self._merge_info(**params)
             info.device = device
         else:
             info = self._devices[device].info.clone()
@@ -152,7 +151,7 @@ class CameraPlugin(Plugin, ABC):
         if device in self._devices:
             camera = self._devices[device]
             if camera.capture_thread and camera.capture_thread.is_alive() and camera.start_event.is_set():
-                raise CaptureSessionAlreadyRunningException(device)
+                raise CaptureAlreadyRunningException(device)
 
             camera.start_event.clear()
             camera.capture_thread = None

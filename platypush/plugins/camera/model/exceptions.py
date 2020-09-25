@@ -2,7 +2,7 @@ class CameraException(RuntimeError):
     pass
 
 
-class CaptureSessionAlreadyRunningException(CameraException):
+class CaptureAlreadyRunningException(CameraException):
     def __init__(self, device):
         super().__init__('A capturing session on the device {} is already running'.format(device))
 
