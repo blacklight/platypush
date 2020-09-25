@@ -155,7 +155,10 @@ class CameraPiPlugin(CameraPlugin):
                     self.logger.info('Client closed connection')
                 finally:
                     if sock:
-                        sock.close()
+                        try:
+                            sock.close()
+                        except Exception as e:
+                            self.logger.warning('Error while closing client socket: {}'.format(str(e)))
         finally:
             self._cleanup_stream(camera, server_socket, sock)
             try:
