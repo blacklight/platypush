@@ -84,13 +84,13 @@ class CameraPiPlugin(CameraPlugin):
         if device.object:
             try:
                 device.object.stop_recording()
-            except picamera.PiCameraNotRecording:
+            except (ConnectionError, picamera.PiCameraNotRecording):
                 pass
 
         if device.object and not device.object.closed:
             try:
                 device.object.close()
-            except picamera.PiCameraClosed:
+            except (ConnectionError, picamera.PiCameraClosed):
                 pass
 
     def capture_frame(self, camera: Camera, *args, **kwargs):
