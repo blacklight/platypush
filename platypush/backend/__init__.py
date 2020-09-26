@@ -17,7 +17,7 @@ from platypush.config import Config
 from platypush.context import get_backend
 from platypush.message.event.zeroconf import ZeroconfServiceAddedEvent, ZeroconfServiceRemovedEvent
 from platypush.utils import set_timeout, clear_timeout, \
-    get_redis_queue_name_by_message, set_thread_name
+    get_redis_queue_name_by_message, set_thread_name, get_backend_name_by_class
 
 from platypush import __version__
 from platypush.event import EventGenerator
@@ -65,7 +65,7 @@ class Backend(Thread, EventGenerator):
         self._should_stop = False
         self._stop_event = threading.Event()
         self._kwargs = kwargs
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger('platypush:backend:' + get_backend_name_by_class(self.__class__))
         self.zeroconf = None
         self.zeroconf_info = None
 

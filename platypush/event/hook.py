@@ -10,7 +10,7 @@ from platypush.message.request import Request
 from platypush.procedure import Procedure
 from platypush.utils import get_event_class_by_type, set_thread_name, is_functional_hook
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('platypush')
 
 
 def parse(msg):

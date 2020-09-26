@@ -3,14 +3,13 @@ import logging
 from platypush.context import get_backend, get_plugin
 from platypush.message.event import Event
 
-logger = logging.getLogger(__name__)
-
 
 class AssistantEvent(Event):
     """ Base class for assistant events """
 
     def __init__(self, assistant=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.logger = logging.getLogger('platypush:assistant')
 
         if assistant:
             self._assistant = assistant
@@ -21,7 +20,7 @@ class AssistantEvent(Event):
                 self._assistant = get_plugin('assistant.google.pushtotalk')
 
             if not self._assistant:
-                logger.warning('Assistant plugin/backend not configured/initialized')
+                self.logger.warning('Assistant plugin/backend not configured/initialized')
                 self._assistant = None
 
 

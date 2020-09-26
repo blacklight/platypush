@@ -10,7 +10,7 @@ class EventGenerator(object):
     types. Both plugins and backends extend this class.
     """
 
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger('platypush')
 
     def __init__(self, *args, **kwargs):
         self._event_handlers = {}   # Event type => callback map

@@ -46,7 +46,7 @@ def logger():
             log_args['filename'] = filename
 
         logging.basicConfig(**log_args)
-        _logger = logging.getLogger('platyweb')
+        _logger = logging.getLogger('platypush:web')
 
     return _logger
 

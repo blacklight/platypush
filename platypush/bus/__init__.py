@@ -7,7 +7,7 @@ from queue import Queue
 from platypush.config import Config
 from platypush.message.event import StopEvent
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('platypush:bus')
 
 
 class Bus(object):

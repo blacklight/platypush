@@ -9,8 +9,9 @@ import signal
 import socket
 import ssl
 import urllib.request
+from typing import Optional
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('utils')
 
 
 def get_module_and_method_from_action(action):
@@ -76,7 +77,7 @@ def get_plugin_class_by_name(plugin_name):
         return None
 
 
-def get_plugin_name_by_class(plugin) -> str:
+def get_plugin_name_by_class(plugin) -> Optional[str]:
     """Gets the common name of a plugin (e.g. "music.mpd" or "media.vlc") given its class. """
 
     from platypush.plugins import Plugin
@@ -88,6 +89,23 @@ def get_plugin_name_by_class(plugin) -> str:
     class_tokens = [
         token.lower() for token in re.sub(r'([A-Z])', r' \1', class_name).split(' ')
         if token.strip() and token != 'Plugin'
+    ]
+
+    return '.'.join(class_tokens)
+
+
+def get_backend_name_by_class(backend) -> Optional[str]:
+    """Gets the common name of a backend (e.g. "http" or "mqtt") given its class. """
+
+    from platypush.backend import Backend
+
+    if isinstance(backend, Backend):
+        backend = backend.__class__
+
+    class_name = backend.__name__
+    class_tokens = [
+        token.lower() for token in re.sub(r'([A-Z])', r' \1', class_name).split(' ')
+        if token.strip() and token != 'Backend'
     ]
 
     return '.'.join(class_tokens)

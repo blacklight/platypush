@@ -15,7 +15,7 @@ from platypush.message.response import Response
 from platypush.utils import get_hash, get_module_and_method_from_action, get_redis_queue_name_by_message, \
     is_functional_procedure
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('platypush')
 
 
 class Request(Message):

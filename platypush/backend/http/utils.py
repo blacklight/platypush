@@ -8,7 +8,7 @@ from platypush.backend.http.app import template_folder
 
 
 class HttpUtils(object):
-    log = logging.getLogger(__name__)
+    log = logging.getLogger('platypush:web')
 
     @staticmethod
     def widget_columns_to_html_class(columns):

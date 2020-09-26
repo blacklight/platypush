@@ -6,7 +6,7 @@ from threading import RLock
 
 from ..config import Config
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('platypush:context')
 
 # Map: backend_name -> backend_instance
 backends = {}

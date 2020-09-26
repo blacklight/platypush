@@ -23,11 +23,11 @@ from .message.response import Response
 from .utils import set_thread_name
 
 
-__author__ = 'Fabio Manganiello <blacklight86@gmail.com>'
+__author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
 __version__ = '0.13.5'
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.INFO)
+logger = logging.getLogger('platypush')
+logger.setLevel(logging.INFO)
 
 
 class Daemon:
@@ -128,20 +128,20 @@ class Daemon:
                 try:
                     msg.execute(n_tries=self.n_tries)
                 except PermissionError:
-                    LOGGER.info('Dropped unauthorized request: {}'.format(msg))
+                    logger.info('Dropped unauthorized request: {}'.format(msg))
 
                 self.processed_requests += 1
                 if self.requests_to_process \
                         and self.processed_requests >= self.requests_to_process:
                     self.stop_app()
             elif isinstance(msg, Response):
-                LOGGER.info('Received response: {}'.format(msg))
+                logger.info('Received response: {}'.format(msg))
             elif isinstance(msg, StopEvent) and msg.targets_me():
-                LOGGER.info('Received STOP event: {}'.format(msg))
+                logger.info('Received STOP event: {}'.format(msg))
                 self.stop_app()
             elif isinstance(msg, Event):
                 if not msg.disable_logging:
-                    LOGGER.info('Received event: {}'.format(msg))
+                    logger.info('Received event: {}'.format(msg))
                 self.event_processor.process_event(msg)
 
         return _f
@@ -155,9 +155,9 @@ class Daemon:
     def start(self):
         """ Start the daemon """
         if not self.no_capture_stdout:
-            sys.stdout = Logger(LOGGER.info)
+            sys.stdout = Logger(logger.info)
         if not self.no_capture_stderr:
-            sys.stderr = Logger(LOGGER.warning)
+            sys.stderr = Logger(logger.warning)
 
         set_thread_name('platypush')
 
@@ -184,7 +184,7 @@ class Daemon:
         try:
             self.bus.poll()
         except KeyboardInterrupt:
-            LOGGER.info('SIGINT received, terminating application')
+            logger.info('SIGINT received, terminating application')
         finally:
             self.bus.post(ApplicationStoppedEvent())
             self.stop_app()

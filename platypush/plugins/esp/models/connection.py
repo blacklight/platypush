@@ -57,7 +57,7 @@ class Connection:
         self._received_echo = None
         self._received_response = None
         self._paste_header_received = False
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('platypush:plugin:esp')
 
     def send(self, msg: Union[str, bytes], wait_response: bool = True, timeout: Optional[float] = None):
         bufsize = 255

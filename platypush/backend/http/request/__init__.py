@@ -1,22 +1,18 @@
-import copy
-import importlib
-import json
 import logging
 import re
 import requests
 import time
 
-from datetime import date
 from frozendict import frozendict
 from threading import Thread
 
 from platypush.message.event.http import HttpEvent
 from platypush.utils import set_thread_name
 
+
 class HttpRequest(object):
     poll_seconds = 60
     timeout = 5
-
 
     class HttpRequestArguments(object):
         def __init__(self, url, method='get', *args, **kwargs):
@@ -24,7 +20,6 @@ class HttpRequest(object):
             self.url = url
             self.args = args
             self.kwargs = kwargs
-
 
     def __init__(self, args, bus=None, poll_seconds=None, timeout=None,
                  skip_first_call=True, **kwargs):
@@ -35,7 +30,7 @@ class HttpRequest(object):
         self.bus = bus
         self.skip_first_call = skip_first_call
         self.last_request_timestamp = 0
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('platypush')
 
         if isinstance(args, self.HttpRequestArguments):
             self.args = args
@@ -50,7 +45,6 @@ class HttpRequest(object):
         self.request_args = {
             'method': self.args.method, 'url': self.args.url, **self.args.kwargs
         }
-
 
     def execute(self):
         def _thread_func():
@@ -82,11 +76,9 @@ class HttpRequest(object):
 
         Thread(target=_thread_func, name='HttpPoll').start()
 
-
     def get_new_items(self, response):
         """ Gets new items out of a response """
-        raise("get_new_items must be implemented in a derived class")
-
+        raise ("get_new_items must be implemented in a derived class")
 
     def __iter__(self):
         for (key, value) in self.request_args.items():
@@ -98,7 +90,6 @@ class JsonHttpRequest(HttpRequest):
         super().__init__(*args, **kwargs)
         self.path = path
         self.seen_entries = set()
-
 
     def get_new_items(self, response):
         response = response.json()
@@ -118,15 +109,13 @@ class JsonHttpRequest(HttpRequest):
 
 
 def deep_freeze(x):
-    if isinstance(x, str) or not hasattr(x, "__len__") :
+    if isinstance(x, str) or not hasattr(x, "__len__"):
         return x
-    if hasattr(x, "keys") and hasattr(x, "values") :
-        return frozendict({deep_freeze(k) : deep_freeze(v) for k,v in x.items()})
-    if hasattr(x, "__getitem__") :
+    if hasattr(x, "keys") and hasattr(x, "values"):
+        return frozendict({deep_freeze(k): deep_freeze(v) for k, v in x.items()})
+    if hasattr(x, "__getitem__"):
         return tuple(map(deep_freeze, x))
 
-    return frozenset(map(deep_freeze,x))
-
+    return frozenset(map(deep_freeze, x))
 
 # vim:sw=4:ts=4:et:
-

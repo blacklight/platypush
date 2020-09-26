@@ -6,7 +6,7 @@ import json
 import time
 from typing import Union
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('platypush')
 
 
 class JSONAble(ABC):

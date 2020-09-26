@@ -8,7 +8,7 @@ from threading import Thread
 
 from platypush.procedure import Procedure
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('platypush:cron')
 
 
 class CronjobState(enum.IntEnum):

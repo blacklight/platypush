@@ -8,7 +8,7 @@ from ..config import Config
 from ..message.request import Request
 from ..message.response import Response
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('platypush')
 
 
 class Statement(enum.Enum):

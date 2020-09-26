@@ -4,7 +4,7 @@ from functools import wraps
 
 from platypush.event import EventGenerator
 from platypush.message.response import Response
-from platypush.utils import get_decorators
+from platypush.utils import get_decorators, get_plugin_name_by_class
 
 
 def action(f):
@@ -39,8 +39,7 @@ class Plugin(EventGenerator):
 
     def __init__(self, **kwargs):
         super().__init__()
-
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger('platypush:plugin:' + get_plugin_name_by_class(self.__class__))
         if 'logging' in kwargs:
             self.logger.setLevel(getattr(logging, kwargs['logging'].upper()))
 
