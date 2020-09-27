@@ -9,8 +9,6 @@ from typing import Optional, IO
 
 from PIL.Image import Image
 
-logger = logging.getLogger('video-writer')
-
 
 class VideoWriter(ABC):
     """
@@ -21,6 +19,8 @@ class VideoWriter(ABC):
 
     def __init__(self, camera, plugin, *_, **__):
         from platypush.plugins.camera import Camera, CameraPlugin
+
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.camera: Camera = camera
         self.plugin: CameraPlugin = plugin
         self.closed = False
@@ -60,9 +60,9 @@ class FileVideoWriter(VideoWriter, ABC):
     """
     Abstract class to handle frames-to-video file operations.
     """
-    def __init__(self, *args, video_file: str, **kwargs):
+    def __init__(self, *args, output_file: str, **kwargs):
         VideoWriter.__init__(self, *args, **kwargs)
-        self.video_file = os.path.abspath(os.path.expanduser(video_file))
+        self.output_file = os.path.abspath(os.path.expanduser(output_file))
 
 
 class StreamWriter(VideoWriter, ABC):
@@ -98,7 +98,7 @@ class StreamWriter(VideoWriter, ABC):
             try:
                 self.sock.write(data)
             except ConnectionError:
-                logger.warning('Client connection closed')
+                self.logger.info('Client connection closed')
                 self.close()
 
     @abstractmethod

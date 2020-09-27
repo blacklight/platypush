@@ -4,7 +4,7 @@ from abc import ABC
 
 from platypush.plugins.camera.model.writer import VideoWriter
 
-logger = logging.getLogger('cam-preview')
+logger = logging.getLogger('platypush')
 
 
 class PreviewWriter(VideoWriter, ABC):

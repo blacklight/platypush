@@ -5,8 +5,6 @@ import threading
 from platypush.plugins.camera.model.writer.image import MJPEGStreamWriter
 from platypush.plugins.camera.model.writer.preview import PreviewWriter
 
-logger = logging.getLogger('cam-preview')
-
 
 class FFplayPreviewWriter(PreviewWriter, MJPEGStreamWriter):
     """
@@ -14,6 +12,7 @@ class FFplayPreviewWriter(PreviewWriter, MJPEGStreamWriter):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.ffplay = subprocess.Popen(['ffplay', '-'], stdin=subprocess.PIPE)
         self._preview_thread = threading.Thread(target=self._ffplay_thread)
         self._preview_thread.start()
@@ -28,7 +27,7 @@ class FFplayPreviewWriter(PreviewWriter, MJPEGStreamWriter):
                 try:
                     self.ffplay.stdin.write(self.frame)
                 except Exception as e:
-                    logger.warning('ffplay write error: {}'.format(str(e)))
+                    self.logger.warning('ffplay write error: {}'.format(str(e)))
                     self.close()
                     break
 

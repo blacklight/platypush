@@ -71,8 +71,10 @@ class CameraPlugin(Plugin, ABC):
                  capture_timeout: Optional[float] = 20.0, scale_x: Optional[float] = None,
                  scale_y: Optional[float] = None, rotate: Optional[float] = None, grayscale: Optional[bool] = None,
                  color_transform: Optional[Union[int, str]] = None, fps: float = 16, horizontal_flip: bool = False,
-                 vertical_flip: bool = False, video_type: Optional[str] = None, stream_format: str = 'mjpeg',
-                 listen_port: Optional[int] = 5000, bind_address: str = '0.0.0.0', **kwargs):
+                 vertical_flip: bool = False, input_format: Optional[str] = None, output_format: Optional[str] = None,
+                 stream_format: str = 'mjpeg', listen_port: Optional[int] = 5000, bind_address: str = '0.0.0.0',
+                 ffmpeg_bin: str = 'ffmpeg', input_codec: Optional[str] = None, output_codec: Optional[str] = None,
+                 **kwargs):
         """
         :param device: Identifier of the default capturing device.
         :param resolution: Default resolution, as a tuple of two integers.
@@ -96,9 +98,14 @@ class CameraPlugin(Plugin, ABC):
         :param fps: Frames per second (default: 25).
         :param horizontal_flip: If set, the images will be flipped on the horizontal axis.
         :param vertical_flip: If set, the images will be flipped on the vertical axis.
-        :param video_type: Plugin-specific format/type for the output videos.
         :param listen_port: Default port to be used for streaming over TCP (default: 5000).
         :param bind_address: Default bind address for TCP streaming (default: 0.0.0.0, accept any connections).
+        :param input_codec: Specify the ffmpeg video codec (``-vcodec``) used for the input.
+        :param output_codec: Specify the ffmpeg video codec (``-vcodec``) to be used for encoding the output. For some
+            ffmpeg output formats (e.g. ``h264`` and ``rtp``) this may default to ``libxvid``.
+        :param input_format: Plugin-specific format/type for the input stream.
+        :param output_format: Plugin-specific format/type for the output videos.
+        :param ffmpeg_bin: Path to the ffmpeg binary (default: ``ffmpeg``).
         :param stream_format: Default format for the output when streamed to a network device. Available:
 
             - ``MJPEG`` (default)
@@ -110,26 +117,29 @@ class CameraPlugin(Plugin, ABC):
         """
         super().__init__(**kwargs)
 
-        _default_frames_dir = os.path.join(Config.get('workdir'), get_plugin_name_by_class(self), 'frames')
+        self.workdir = os.path.join(Config.get('workdir'), get_plugin_name_by_class(self))
+        pathlib.Path(self.workdir).mkdir(mode=0o644, exist_ok=True, parents=True)
+
         # noinspection PyArgumentList
         self.camera_info = self._camera_info_class(device, color_transform=color_transform, warmup_frames=warmup_frames,
                                                    warmup_seconds=warmup_seconds, rotate=rotate, scale_x=scale_x,
-                                                   scale_y=scale_y, capture_timeout=capture_timeout,
-                                                   video_type=video_type, fps=fps, stream_format=stream_format,
-                                                   resolution=resolution, grayscale=grayscale, listen_port=listen_port,
+                                                   scale_y=scale_y, capture_timeout=capture_timeout, fps=fps,
+                                                   input_format=input_format, output_format=output_format,
+                                                   stream_format=stream_format, resolution=resolution,
+                                                   grayscale=grayscale, listen_port=listen_port,
                                                    horizontal_flip=horizontal_flip, vertical_flip=vertical_flip,
-                                                   bind_address=bind_address, frames_dir=os.path.abspath(
-                                                       os.path.expanduser(frames_dir or _default_frames_dir)))
+                                                   ffmpeg_bin=ffmpeg_bin, input_codec=input_codec,
+                                                   output_codec=output_codec, bind_address=bind_address,
+                                                   frames_dir=os.path.abspath(
+                                                       os.path.expanduser(frames_dir or
+                                                                          os.path.join(self.workdir, 'frames'))))
 
         self._devices: Dict[Union[int, str], Camera] = {}
         self._streams: Dict[Union[int, str], Camera] = {}
 
     def _merge_info(self, **info) -> CameraInfo:
         merged_info = self.camera_info.clone()
-        for k, v in info.items():
-            if hasattr(merged_info, k):
-                setattr(merged_info, k, v)
-
+        merged_info.set(**info)
         return merged_info
 
     def open_device(self, device: Optional[Union[int, str]] = None, stream: bool = False, **params) -> Camera:
@@ -179,12 +189,12 @@ class CameraPlugin(Plugin, ABC):
         """
         name = camera.info.device
         self.stop_preview(camera)
-        camera.start_event.clear()
+        self.release_device(camera)
 
+        camera.start_event.clear()
         if wait_capture:
             self.wait_capture(camera)
 
-        self.release_device(camera)
         if name in self._devices:
             del self._devices[name]
 
@@ -356,7 +366,7 @@ class CameraPlugin(Plugin, ABC):
         if duration and camera.info.warmup_seconds:
             duration = duration + camera.info.warmup_seconds
         if video_file:
-            camera.file_writer = self._video_writer_class(camera=camera, video_file=video_file, plugin=self)
+            camera.file_writer = self._video_writer_class(camera=camera, plugin=self, output_file=video_file)
 
         frame_queue = Queue()
         frame_processor = threading.Thread(target=self.frame_processor,
@@ -373,6 +383,10 @@ class CameraPlugin(Plugin, ABC):
                 frame_capture_start = time.time()
                 try:
                     frame = self.capture_frame(camera, **kwargs)
+                    if not frame:
+                        self.logger.warning('Invalid frame received, terminating the capture session')
+                        break
+
                     frame_queue.put(frame)
                 except AssertionError as e:
                     self.logger.warning(str(e))
@@ -478,12 +492,13 @@ class CameraPlugin(Plugin, ABC):
         return image_file
 
     @action
-    def take_picture(self, image_file: str, **camera) -> str:
+    def take_picture(self, image_file: str, preview: bool = False, **camera) -> str:
         """
         Alias for :meth:`.capture_image`.
 
         :param image_file: Path where the output image will be stored.
         :param camera: Camera parameters override - see constructors parameters.
+        :param preview: Show a preview of the camera frames.
         :return: The local path to the saved image.
         """
         return self.capture_image(image_file, **camera)
@@ -599,11 +614,11 @@ class CameraPlugin(Plugin, ABC):
         assert not camera.stream_event.is_set() and camera.info.device not in self._streams, \
             'A streaming session is already running for device {}'.format(camera.info.device)
 
+        self._streams[camera.info.device] = camera
+        camera.stream_event.set()
+
         camera.stream_thread = threading.Thread(target=self.streaming_thread, kwargs=dict(
             camera=camera, duration=duration, stream_format=stream_format))
-        self._streams[camera.info.device] = camera
-
-        camera.stream_event.set()
         camera.stream_thread.start()
         return self.status(camera.info.device)
 
@@ -624,7 +639,7 @@ class CameraPlugin(Plugin, ABC):
 
     def _stop_streaming(self, camera: Camera):
         camera.stream_event.clear()
-        if camera.stream_thread.is_alive():
+        if camera.stream_thread and camera.stream_thread.is_alive():
             camera.stream_thread.join(timeout=5.0)
 
         if camera.info.device in self._streams:
