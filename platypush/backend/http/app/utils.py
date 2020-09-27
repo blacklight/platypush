@@ -201,7 +201,7 @@ def authenticate(redirect_page='', skip_auth_methods=None, check_csrf_token=Fals
                 if session_auth_ok:
                     return f(*args, **kwargs)
 
-                return redirect('/login?redirect=' + redirect_page, 307)
+                return redirect('/login?redirect=' + (redirect_page or request.url), 307)
 
             # CSRF token check
             if check_csrf_token:
