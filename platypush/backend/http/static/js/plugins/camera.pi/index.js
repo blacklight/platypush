@@ -11,9 +11,5 @@ Vue.component('camera-pi', {
             this._capture('pi');
         },
     },
-
-    mounted: function() {
-        this.attrs.resolution = [640, 480];
-    }
 });
 
