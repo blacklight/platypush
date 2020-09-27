@@ -20,6 +20,8 @@ Plugins
     platypush/plugins/calendar.ical.rst
     platypush/plugins/camera.rst
     platypush/plugins/camera.android.ipcam.rst
+    platypush/plugins/camera.cv.rst
+    platypush/plugins/camera.ffmpeg.rst
     platypush/plugins/camera.ir.mlx90640.rst
     platypush/plugins/camera.pi.rst
     platypush/plugins/chat.telegram.rst
@@ -30,6 +32,7 @@ Plugins
     platypush/plugins/dbus.rst
     platypush/plugins/dropbox.rst
     platypush/plugins/esp.rst
+    platypush/plugins/ffmpeg.rst
     platypush/plugins/file.rst
     platypush/plugins/foursquare.rst
     platypush/plugins/google.rst
