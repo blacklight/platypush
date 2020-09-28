@@ -23,7 +23,7 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = 'platypush'
-copyright = '2017-2019, Fabio Manganiello'
+copyright = '2017-2020, Fabio Manganiello'
 author = 'Fabio Manganiello'
 
 # The short X.Y version
