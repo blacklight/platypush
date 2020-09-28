@@ -300,8 +300,8 @@ croniter
 # Support for NextCloud integration
 # git+https://github.com/EnterpriseyIntranet/nextcloud-API.git
 
-# Support for FFmpeg integration
-# ffmpeg-python
+# Support for GStreamer integration
+# gst-python
 
 # Generic support for cameras
 # Pillow

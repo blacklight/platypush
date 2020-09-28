@@ -336,7 +336,7 @@ setup(
         'imap': ['imapclient'],
         # Support for NextCloud integration
         'nextcloud': ['nextcloud-API @ git+https://github.com/EnterpriseyIntranet/nextcloud-API.git'],
-        # Support for FFmpeg integration
-        'ffmpeg': ['ffmpeg-python'],
+        # Support for GStreamer integration
+        'gstreamer': ['gst-python'],
     },
 )
