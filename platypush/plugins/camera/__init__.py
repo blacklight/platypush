@@ -118,7 +118,7 @@ class CameraPlugin(Plugin, ABC):
         super().__init__(**kwargs)
 
         self.workdir = os.path.join(Config.get('workdir'), get_plugin_name_by_class(self))
-        pathlib.Path(self.workdir).mkdir(mode=0o644, exist_ok=True, parents=True)
+        pathlib.Path(self.workdir).mkdir(mode=0o755, exist_ok=True, parents=True)
 
         # noinspection PyArgumentList
         self.camera_info = self._camera_info_class(device, color_transform=color_transform, warmup_frames=warmup_frames,
@@ -749,6 +749,14 @@ class CameraPlugin(Plugin, ABC):
         with io.BytesIO() as buf:
             frame.save(buf, format=encoding)
             return buf.getvalue()
+
+    @staticmethod
+    def _get_warmup_seconds(camera: Camera) -> float:
+        if camera.info.warmup_seconds:
+            return camera.info.warmup_seconds
+        if camera.info.warmup_frames and camera.info.fps:
+            return camera.info.warmup_frames / camera.info.fps
+        return 0
 
 
 # vim:sw=4:ts=4:et:

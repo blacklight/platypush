@@ -22,23 +22,16 @@ class CameraFfmpegPlugin(CameraPlugin):
     _camera_class = FFmpegCamera
     _camera_info_class = FFmpegCameraInfo
 
-    def __init__(self, device: Optional[str] = None, input_format: str = 'v4l2', ffmpeg_args: Tuple[str] = (), **opts):
+    def __init__(self, device: Optional[str] = '/dev/video0', input_format: str = 'v4l2', ffmpeg_args: Tuple[str] = (),
+                 **opts):
         """
-        :param device: Path to the camera device (e.g. ``/dev/video0``).
+        :param device: Path to the camera device (default: ``/dev/video0``).
         :param input_format: FFmpeg input format for the the camera device (default: ``v4l2``).
         :param ffmpeg_args: Extra options to be passed to the FFmpeg executable.
         :param opts: Camera options - see constructor of :class:`platypush.plugins.camera.CameraPlugin`.
         """
         super().__init__(device=device, input_format=input_format, **opts)
         self.camera_info.ffmpeg_args = ffmpeg_args or ()
-
-    @staticmethod
-    def _get_warmup_seconds(camera: FFmpegCamera) -> float:
-        if camera.info.warmup_seconds:
-            return camera.info.warmup_seconds
-        if camera.info.warmup_frames and camera.info.fps:
-            return camera.info.warmup_frames / camera.info.fps
-        return 0
 
     def prepare_device(self, camera: FFmpegCamera) -> subprocess.Popen:
         warmup_seconds = self._get_warmup_seconds(camera)
