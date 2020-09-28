@@ -1,6 +1,5 @@
 import logging
 import threading
-from dataclasses import dataclass
 
 from platypush.plugins.camera import CameraInfo, Camera
 
