@@ -295,8 +295,14 @@ Vue.component('media', {
                 delete event.resource;
             }
 
-            if (status.state !== 'stop') {
+            if (status.state !== 'stop' || event.type.endsWith('.MediaPlayEvent')) {
                 status.title = status.title || this.status[type][player].title;
+            }
+
+            if (event.type.endsWith('.MediaPlayEvent')) {
+                status.state = 'play';
+            } else if (event.type.endsWith('.MediaPauseEvent')) {
+                status.state = 'pause';
             }
 
             Vue.set(this.status[type], player, status);
