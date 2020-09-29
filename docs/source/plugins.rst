@@ -82,6 +82,7 @@ Plugins
     platypush/plugins/media.rst
     platypush/plugins/media.chromecast.rst
     platypush/plugins/media.ctrl.rst
+    platypush/plugins/media.gstreamer.rst
     platypush/plugins/media.kodi.rst
     platypush/plugins/media.mplayer.rst
     platypush/plugins/media.mpv.rst

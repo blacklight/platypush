@@ -4,7 +4,8 @@ from PIL import Image
 from PIL.Image import Image as ImageType
 
 from platypush.plugins.camera import CameraPlugin
-from platypush.plugins.camera.gstreamer.model import GStreamerCamera, Pipeline, Loop
+from platypush.plugins.camera.gstreamer.model import GStreamerCamera
+from platypush.common.gstreamer import Pipeline
 
 
 class CameraGstreamerPlugin(CameraPlugin):
@@ -28,7 +29,7 @@ class CameraGstreamerPlugin(CameraPlugin):
 
     def prepare_device(self, camera: GStreamerCamera) -> Pipeline:
         pipeline = Pipeline()
-        src = pipeline.add('v4l2src', device=camera.info.device)
+        src = pipeline.add_source('v4l2src', device=camera.info.device)
         convert = pipeline.add('videoconvert')
         video_filter = pipeline.add(
             'capsfilter', caps='video/x-raw,format=RGB,width={width},height={height},framerate={fps}/1'.format(
