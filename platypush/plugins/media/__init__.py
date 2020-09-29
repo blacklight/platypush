@@ -65,7 +65,7 @@ class MediaPlugin(Plugin):
     }
 
     _supported_media_plugins = {'media.mplayer', 'media.omxplayer', 'media.mpv',
-                                'media.vlc', 'media.chromecast'}
+                                'media.vlc', 'media.chromecast', 'media.gstreamer'}
 
     _supported_media_types = ['file', 'torrent', 'youtube']
     _default_search_timeout = 60  # 60 seconds
