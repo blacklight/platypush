@@ -77,7 +77,8 @@ class Pipeline:
 
     def stop(self):
         self.pipeline.set_state(Gst.State.NULL)
-        self.loop.stop()
+        if self.loop:
+            self.loop.stop()
         self.loop = None
 
     def get_volume(self) -> float:
