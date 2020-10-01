@@ -10,12 +10,12 @@ class TensorflowResponse(Response):
     """
     Generic Tensorflow response.
     """
-    def __init__(self, *args, model: Model, **kwargs):
+    def __init__(self, *args, model: Model, model_name: Optional[str] = None, **kwargs):
         """
         :param model: Name of the model.
         """
         super().__init__(*args, output={
-            'model': model.name,
+            'model': model_name or model.name,
         }, **kwargs)
 
         self.model = model
