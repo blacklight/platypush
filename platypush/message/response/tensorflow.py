@@ -44,19 +44,19 @@ class TensorflowPredictResponse(TensorflowResponse):
         super().__init__(*args, **kwargs)
 
         if output_labels and len(output_labels) == self.model.outputs[-1].shape[-1]:
-            self.output['values'] = [
+            self.output['outputs'] = [
                 {output_labels[i]: value for i, value in enumerate(p)}
                 for p in prediction
             ]
         else:
-            self.output['values'] = prediction
+            self.output['outputs'] = prediction
 
         if self.model.__class__.__name__ != 'LinearModel':
             prediction = [int(np.argmax(p)) for p in prediction]
             if output_labels:
-                self.output['labels'] = [output_labels[p] for p in prediction]
+                self.output['predictions'] = [output_labels[p] for p in prediction]
             else:
-                self.output['labels'] = prediction
+                self.output['predictions'] = prediction
 
 
 # vim:sw=4:ts=4:et:

@@ -1015,21 +1015,21 @@ class TensorflowPlugin(Plugin):
 
         :return: :class:`platypush.message.response.tensorflow.TensorflowPredictResponse`. Format:
 
-            - For regression models with no output labels specified: ``values`` will contain the output vector:
+            - For regression models with no output labels specified: ``outputs`` will contain the output vector:
 
                 .. code-block:: json
 
                   {
-                      "values": [[3.1415]]
+                      "outputs": [[3.1415]]
                   }
 
-            - For regression models with output labels specified: ``values`` will be a list of ``{label -> value}``
+            - For regression models with output labels specified: ``outputs`` will be a list of ``{label -> value}``
               maps:
 
                 .. code-block:: json
 
                   {
-                      "values": [
+                      "outputs": [
                           {
                               "x": 42.0,
                               "y": 43.0
@@ -1037,17 +1037,17 @@ class TensorflowPlugin(Plugin):
                       ]
                   }
 
-            - For neural networks: ``values`` will contain the list of the output vector like in the case of
-              regression, and ``labels`` will store the list of ``argmax`` (i.e. the index of the output unit with the
+            - For neural networks: ``outputs`` will contain the list of the output vector like in the case of
+              regression, and ``predictions`` will store the list of ``argmax`` (i.e. the index of the output unit with the
               highest value) or their labels, if the model has output labels:
 
                 .. code-block:: json
 
                   {
-                      "labels": [
+                      "predictions": [
                           "positive"
                       ],
-                      "values": [
+                      "outputs": [
                           {
                               "positive": 0.998,
                               "negative": 0.002
