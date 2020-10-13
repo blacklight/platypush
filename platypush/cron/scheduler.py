@@ -7,6 +7,7 @@ import croniter
 from threading import Thread
 
 from platypush.procedure import Procedure
+from platypush.utils import is_functional_cron
 
 logger = logging.getLogger('platypush:cron')
 
@@ -25,8 +26,11 @@ class Cronjob(Thread):
         self.cron_expression = cron_expression
         self.name = name
         self.state = CronjobState.IDLE
-        self.actions = Procedure.build(name=name + '__Cron', _async=False,
-                                       requests=actions)
+
+        if isinstance(actions, dict):
+            self.actions = Procedure.build(name=name + '__Cron', _async=False, requests=actions)
+        else:
+            self.actions = actions
 
     def run(self):
         self.state = CronjobState.WAIT
@@ -36,7 +40,12 @@ class Cronjob(Thread):
         try:
             logger.info('Running cronjob {}'.format(self.name))
             context = {}
-            response = self.actions.execute(_async=False, **context)
+
+            if isinstance(self.actions, Procedure):
+                response = self.actions.execute(_async=False, **context)
+            else:
+                response = self.actions(**context)
+
             logger.info('Response from cronjob {}: {}'.format(self.name, response))
             self.state = CronjobState.DONE
         except Exception as e:
@@ -69,8 +78,15 @@ class CronScheduler(Thread):
         if job and job.state not in [CronjobState.DONE, CronjobState.ERROR]:
             return job
 
-        self._jobs[name] = Cronjob(name=name, cron_expression=config['cron_expression'],
-                                   actions=config['actions'])
+        if isinstance(config, dict):
+            self._jobs[name] = Cronjob(name=name, cron_expression=config['cron_expression'],
+                                       actions=config['actions'])
+        elif is_functional_cron(config):
+            self._jobs[name] = Cronjob(name=name, cron_expression=config.cron_expression,
+                                       actions=config)
+        else:
+            raise AssertionError('Expected type dict or function for cron {}, got {}'.format(
+                name, type(config)))
 
         return self._jobs[name]
 

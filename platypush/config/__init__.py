@@ -12,7 +12,7 @@ from typing import Optional
 
 import yaml
 
-from platypush.utils import get_hash, is_functional_procedure, is_functional_hook
+from platypush.utils import get_hash, is_functional_procedure, is_functional_hook, is_functional_cron
 
 """ Config singleton instance """
 _default_config_instance = None
@@ -204,6 +204,12 @@ class Config(object):
             prefix + name: obj
             for name, obj in inspect.getmembers(module)
             if is_functional_hook(obj)
+        })
+
+        self.cronjobs.update(**{
+            prefix + name: obj
+            for name, obj in inspect.getmembers(module)
+            if is_functional_cron(obj)
         })
 
     def _load_scripts(self):

@@ -325,6 +325,10 @@ def is_functional_hook(obj) -> bool:
     return callable(obj) and hasattr(obj, 'hook')
 
 
+def is_functional_cron(obj) -> bool:
+    return callable(obj) and hasattr(obj, 'cron') and hasattr(obj, 'cron_expression')
+
+
 def run(action, *args, **kwargs):
     from platypush.context import get_plugin
     (module_name, method_name) = get_module_and_method_from_action(action)
