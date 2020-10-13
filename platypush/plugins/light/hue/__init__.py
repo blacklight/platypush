@@ -3,11 +3,8 @@ import statistics
 import time
 
 from enum import Enum
-from threading import Thread
-from redis import Redis
-from redis.exceptions import TimeoutError as QueueTimeoutError
+from threading import Thread, Event
 
-from platypush.context import get_backend
 from platypush.plugins import action
 from platypush.plugins.light import LightPlugin
 from platypush.utils import set_thread_name
@@ -58,7 +55,8 @@ class LightHuePlugin(LightPlugin):
         self.logger.info('Initializing Hue lights plugin - bridge: "{}"'.format(self.bridge_address))
 
         self.connect()
-        self.lights = []; self.groups = []
+        self.lights = []
+        self.groups = []
 
         if lights:
             self.lights = lights
@@ -66,19 +64,20 @@ class LightHuePlugin(LightPlugin):
             self.groups = groups
             self._expand_groups()
         else:
-            self.lights = [l.name for l in self.bridge.lights]
+            # noinspection PyUnresolvedReferences
+            self.lights = [light.name for light in self.bridge.lights]
 
-        self.redis = None
         self.animation_thread = None
         self.animations = {}
+        self._animation_stop = Event()
         self._init_animations()
-        self.logger.info('Configured lights: "{}"'. format(self.lights))
+        self.logger.info('Configured lights: "{}"'.format(self.lights))
 
     def _expand_groups(self):
         groups = [g for g in self.bridge.groups if g.name in self.groups]
-        for g in groups:
-            for l in g.lights:
-                self.lights += [l.name]
+        for group in groups:
+            for light in group.lights:
+                self.lights += [light.name]
 
     def _init_animations(self):
         self.animations = {
@@ -86,10 +85,10 @@ class LightHuePlugin(LightPlugin):
             'lights': {},
         }
 
-        for g in self.bridge.groups:
-            self.animations['groups'][g.group_id] = None
-        for l in self.bridge.lights:
-            self.animations['lights'][l.light_id] = None
+        for group in self.bridge.groups:
+            self.animations['groups'][group.group_id] = None
+        for light in self.bridge.lights:
+            self.animations['lights'][light.light_id] = None
 
     @action
     def connect(self):
@@ -295,7 +294,9 @@ class LightHuePlugin(LightPlugin):
             self.bridge = None
             raise e
 
-        lights = []; groups = []
+        lights = []
+        groups = []
+
         if 'lights' in kwargs:
             lights = kwargs.pop('lights').split(',').strip() \
                 if isinstance(lights, str) else kwargs.pop('lights')
@@ -417,9 +418,9 @@ class LightHuePlugin(LightPlugin):
             groups = []
         if lights is None:
             lights = []
-        lights_on  = []
+        lights_on = []
         lights_off = []
-        groups_on  = []
+        groups_on = []
         groups_off = []
 
         if groups:
@@ -471,7 +472,7 @@ class LightHuePlugin(LightPlugin):
             groups = []
         if lights is None:
             lights = []
-        return self._exec('bri', int(value) % (self.MAX_BRI+1),
+        return self._exec('bri', int(value) % (self.MAX_BRI + 1),
                           lights=lights, groups=groups, **kwargs)
 
     @action
@@ -488,7 +489,7 @@ class LightHuePlugin(LightPlugin):
             groups = []
         if lights is None:
             lights = []
-        return self._exec('sat', int(value) % (self.MAX_SAT+1),
+        return self._exec('sat', int(value) % (self.MAX_SAT + 1),
                           lights=lights, groups=groups, **kwargs)
 
     @action
@@ -505,7 +506,7 @@ class LightHuePlugin(LightPlugin):
             groups = []
         if lights is None:
             lights = []
-        return self._exec('hue', int(value) % (self.MAX_HUE+1),
+        return self._exec('hue', int(value) % (self.MAX_HUE + 1),
                           lights=lights, groups=groups, **kwargs)
 
     @action
@@ -515,6 +516,8 @@ class LightHuePlugin(LightPlugin):
 
         :param value: xY value
         :type value: list[float] containing the two values
+        :param lights: List of lights.
+        :param groups: List of groups.
         """
         if groups is None:
             groups = []
@@ -529,6 +532,8 @@ class LightHuePlugin(LightPlugin):
 
         :param value: Temperature value (range: 0-255)
         :type value: int
+        :param lights: List of lights.
+        :param groups: List of groups.
         """
         if groups is None:
             groups = []
@@ -550,7 +555,6 @@ class LightHuePlugin(LightPlugin):
             groups = []
         if lights is None:
             lights = []
-        bri = 0
 
         if lights:
             bri = statistics.mean([
@@ -571,10 +575,10 @@ class LightHuePlugin(LightPlugin):
                 if light['name'] in self.lights
             ])
 
-        delta *= (self.MAX_BRI/100)
-        if bri+delta < 0:
+        delta *= (self.MAX_BRI / 100)
+        if bri + delta < 0:
             bri = 0
-        elif bri+delta > self.MAX_BRI:
+        elif bri + delta > self.MAX_BRI:
             bri = self.MAX_BRI
         else:
             bri += delta
@@ -595,7 +599,6 @@ class LightHuePlugin(LightPlugin):
             groups = []
         if lights is None:
             lights = []
-        sat = 0
 
         if lights:
             sat = statistics.mean([
@@ -616,10 +619,10 @@ class LightHuePlugin(LightPlugin):
                 if light['name'] in self.lights
             ])
 
-        delta *= (self.MAX_SAT/100)
-        if sat+delta < 0:
+        delta *= (self.MAX_SAT / 100)
+        if sat + delta < 0:
             sat = 0
-        elif sat+delta > self.MAX_SAT:
+        elif sat + delta > self.MAX_SAT:
             sat = self.MAX_SAT
         else:
             sat += delta
@@ -640,7 +643,6 @@ class LightHuePlugin(LightPlugin):
             groups = []
         if lights is None:
             lights = []
-        hue = 0
 
         if lights:
             hue = statistics.mean([
@@ -661,10 +663,10 @@ class LightHuePlugin(LightPlugin):
                 if light['name'] in self.lights
             ])
 
-        delta *= (self.MAX_HUE/100)
-        if hue+delta < 0:
+        delta *= (self.MAX_HUE / 100)
+        if hue + delta < 0:
             hue = 0
-        elif hue+delta > self.MAX_HUE:
+        elif hue + delta > self.MAX_HUE:
             hue = self.MAX_HUE
         else:
             hue += delta
@@ -693,17 +695,15 @@ class LightHuePlugin(LightPlugin):
         :returns: True if there is an animation running, false otherwise.
         """
 
-        return self.animation_thread is not None
+        return self.animation_thread is not None and self.animation_thread.is_alive()
 
     @action
     def stop_animation(self):
         """
-        Stop a running animation if any
+        Stop a running animation.
         """
-
-        if self.animation_thread and self.animation_thread.is_alive():
-            redis = self._get_redis()
-            redis.rpush(self.ANIMATION_CTRL_QUEUE_NAME, 'STOP')
+        if self.is_animation_running():
+            self._animation_stop.set()
             self._init_animations()
 
     @action
@@ -756,10 +756,10 @@ class LightHuePlugin(LightPlugin):
         if groups:
             groups = [g for g in self.bridge.groups if g.name in groups or g.group_id in groups]
             lights = lights or []
-            for g in groups:
-                lights.extend([l.name for l in g.lights])
+            for group in groups:
+                lights.extend([light.name for light in group.lights])
         elif lights:
-            lights = [l.name for l in self.bridge.lights if l.name in lights or l.light_id in lights]
+            lights = [light.name for light in self.bridge.lights if light.name in lights or light.light_id in lights]
         else:
             lights = self.lights
 
@@ -776,32 +776,32 @@ class LightHuePlugin(LightPlugin):
         }
 
         if groups:
-            for g in groups:
-                self.animations['groups'][g.group_id] = info
+            for group in groups:
+                self.animations['groups'][group.group_id] = info
 
-        for l in self.bridge.lights:
-            if l.name in lights:
-                self.animations['lights'][l.light_id] = info
+        for light in self.bridge.lights:
+            if light.name in lights:
+                self.animations['lights'][light.light_id] = info
 
         def _initialize_light_attrs(lights):
             if animation == self.Animation.COLOR_TRANSITION:
-                return { l: {
+                return {light: {
                     'hue': random.randint(hue_range[0], hue_range[1]),
                     'sat': random.randint(sat_range[0], sat_range[1]),
                     'bri': random.randint(bri_range[0], bri_range[1]),
-                } for l in lights }
+                } for light in lights}
             elif animation == self.Animation.BLINK:
-                return { l: {
+                return {light: {
                     'on': True,
                     'bri': self.MAX_BRI,
                     'transitiontime': 0,
-                } for l in lights }
+                } for light in lights}
 
         def _next_light_attrs(lights):
             if animation == self.Animation.COLOR_TRANSITION:
                 for (light, attrs) in lights.items():
                     for (attr, value) in attrs.items():
-                        attr_range = [0,0]
+                        attr_range = [0, 0]
                         attr_step = 0
 
                         if attr == 'hue':
@@ -815,24 +815,19 @@ class LightHuePlugin(LightPlugin):
                             attr_step = sat_step
 
                         lights[light][attr] = ((value - attr_range[0] + attr_step) %
-                                                (attr_range[1]-attr_range[0]+1)) + \
-                                                attr_range[0]
+                                               (attr_range[1] - attr_range[0] + 1)) + \
+                                              attr_range[0]
             elif animation == self.Animation.BLINK:
-                lights = { light: {
+                lights = {light: {
                     'on': False if attrs['on'] else True,
                     'bri': self.MAX_BRI,
                     'transitiontime': 0,
-                } for (light, attrs) in lights.items() }
+                } for (light, attrs) in lights.items()}
 
             return lights
 
         def _should_stop():
-            try:
-                redis = self._get_redis(transition_seconds)
-                redis.blpop(self.ANIMATION_CTRL_QUEUE_NAME)
-                return True
-            except QueueTimeoutError:
-                return False
+            return self._animation_stop.is_set()
 
         def _animate_thread(lights):
             set_thread_name('HueAnimate')
@@ -874,24 +869,16 @@ class LightHuePlugin(LightPlugin):
 
             self.logger.info('Stopping animation')
             self.animation_thread = None
-            self.redis = None
 
         self.stop_animation()
+        self._animation_stop.clear()
         self.animation_thread = Thread(target=_animate_thread,
                                        name='HueAnimate',
                                        args=(lights,))
         self.animation_thread.start()
 
-    def _get_redis(self, socket_timeout=1.0):
-        if not self.redis:
-            redis_args = get_backend('redis').redis_args
-            redis_args['socket_timeout'] = socket_timeout
-            self.redis = Redis(**redis_args)
-        return self.redis
-
     def status(self):
         # TODO
         pass
-
 
 # vim:sw=4:ts=4:et:
