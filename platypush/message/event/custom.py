@@ -1,4 +1,4 @@
-from platypush import Event
+from platypush.message.event import Event
 
 
 class CustomEvent(Event):
