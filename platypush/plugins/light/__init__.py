@@ -1,5 +1,6 @@
 from platypush.plugins import Plugin, action
 
+
 class LightPlugin(Plugin):
     """
     Abstract plugin to interface your logic with lights/bulbs.
@@ -21,10 +22,9 @@ class LightPlugin(Plugin):
         raise NotImplementedError()
 
     @action
-    def status(self):
+    def status(self, *args, **kwargs):
         """ Get the light status """
         raise NotImplementedError()
 
 
 # vim:sw=4:ts=4:et:
-
