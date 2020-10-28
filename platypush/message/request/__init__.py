@@ -225,7 +225,12 @@ class Request(Message):
                 # Run the action
                 args = self._expand_context(**context)
                 args = self.expand_value_from_context(args, **context)
-                response = plugin.run(method=method_name, **args)
+                if isinstance(args, dict):
+                    response = plugin.run(method_name, **args)
+                elif isinstance(args, list):
+                    response = plugin.run(method_name, *args)
+                else:
+                    response = plugin.run(method_name, args)
 
                 if not response:
                     logger.warning('Received null response from action {}'.format(action))
