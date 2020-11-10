@@ -450,7 +450,7 @@ class RtorrentPlugin(TorrentPlugin):
         Terminate all the active transfers and quit the monitor.
         """
         # noinspection PyUnresolvedReferences
-        torrents = self.status().output.keys().copy()
+        torrents = list(self.status().output.keys()).copy()
         for torrent in torrents:
             self.remove(torrent)
 
