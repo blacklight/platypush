@@ -24,7 +24,7 @@ from .utils import set_thread_name
 
 
 __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
-__version__ = '0.13.8'
+__version__ = '0.13.9'
 
 logger = logging.getLogger('platypush')
 logger.setLevel(logging.INFO)
