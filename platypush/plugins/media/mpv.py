@@ -85,7 +85,7 @@ class MediaMpvPlugin(MediaPlugin):
                 self._post_event(MediaPauseEvent, resource=self._get_current_resource(), title=self._player.filename)
             elif evt == Event.UNPAUSE:
                 self._post_event(MediaPlayEvent, resource=self._get_current_resource(), title=self._player.filename)
-            elif evt == Event.SHUTDOWN or evt == Event.IDLE or (
+            elif evt == Event.SHUTDOWN or (
                     evt == Event.END_FILE and event.get('event', {}).get('reason') in
                     [EndFile.EOF_OR_INIT_FAILURE, EndFile.ABORTED, EndFile.QUIT]):
                 playback_rebounced = self._playback_rebounce_event.wait(timeout=0.5)
@@ -135,10 +135,10 @@ class MediaMpvPlugin(MediaPlugin):
             args['sub_file'] = self.get_subtitles_file(subtitles)
 
         resource = self._get_resource(resource)
-
         if resource.startswith('file://'):
             resource = resource[7:]
 
+        assert self._player, 'The player is not ready'
         self._player.play(resource)
         if self.volume:
             self.set_volume(volume=self.volume)
@@ -416,5 +416,12 @@ class MediaMpvPlugin(MediaPlugin):
 
         return ('file://' if os.path.isfile(self._player.stream_path)
                 else '') + self._player.stream_path
+
+    def _get_resource(self, resource):
+        if self._is_youtube_resource(resource):
+            return resource   # mpv can handle YouTube streaming natively
+
+        return super()._get_resource(resource)
+
 
 # vim:sw=4:ts=4:et:

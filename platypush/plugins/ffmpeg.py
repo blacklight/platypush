@@ -1,7 +1,7 @@
 import os
 import subprocess
 import threading
-from typing import Callable, Optional, List, Tuple
+from typing import Callable, Optional, List
 
 from platypush.plugins import Plugin, action
 

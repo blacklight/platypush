@@ -42,7 +42,6 @@ class MediaPlugin(Plugin):
     # A media plugin can either be local or remote (e.g. control media on
     # another device)
     _is_local = True
-    _youtube_fifo = os.path.join(tempfile.gettempdir(), 'youtube_video.sock')
     _NOT_IMPLEMENTED_ERR = NotImplementedError('This method must be implemented in a derived class')
 
     # Supported audio extensions
@@ -159,6 +158,12 @@ class MediaPlugin(Plugin):
                 evt_queue.put(event.args['files'])
         return handler
 
+    @staticmethod
+    def _is_youtube_resource(resource):
+        return resource.startswith('youtube:') \
+               or resource.startswith('https://youtu.be/') \
+               or resource.startswith('https://www.youtube.com/watch?v=')
+
     def _get_resource(self, resource):
         """
         :param resource: Resource to play/parse. Supported types:
@@ -169,9 +174,7 @@ class MediaPlugin(Plugin):
             * Torrents (format: Magnet links, Torrent URLs or local Torrent files)
         """
 
-        if resource.startswith('youtube:') \
-                or resource.startswith('https://youtu.be/') \
-                or resource.startswith('https://www.youtube.com/watch?v='):
+        if self._is_youtube_resource(resource):
             m = re.match('youtube:video:(.*)', resource)
             if not m:
                 m = re.match('https://youtu.be/(.*)', resource)
@@ -182,8 +185,7 @@ class MediaPlugin(Plugin):
                 # The Chromecast has already its native way to handle YouTube
                 return resource
 
-            self.stream_youtube_to_fifo(resource)
-            resource = 'file://' + self._youtube_fifo
+            resource = self.get_youtube_video_url(resource)
         elif resource.startswith('magnet:?'):
             self.logger.info('Downloading torrent {} to {}'.format(
                 resource, self.download_dir))
@@ -201,11 +203,16 @@ class MediaPlugin(Plugin):
             else:
                 raise RuntimeError('No media file found in torrent {}'.format(resource))
 
+        assert resource, 'Unable to find any compatible media resource'
         return resource
 
     def _stop_torrent(self):
-        torrents = get_plugin(self.torrent_plugin)
-        torrents.quit()
+        # noinspection PyBroadException
+        try:
+            torrents = get_plugin(self.torrent_plugin)
+            torrents.quit()
+        except:
+            pass
 
     @action
     def play(self, resource, *args, **kwargs):
@@ -467,23 +474,12 @@ class MediaPlugin(Plugin):
         # noinspection PyProtectedMember
         return YoutubeMediaSearcher()._youtube_search_html_parse(query)
 
-    def stream_youtube_to_fifo(self, url):
-        if self._youtube_proc:
-            self.logger.info('Terminating existing YouTube process')
-            self._youtube_proc.terminate()
-            self._youtube_proc = None
-
-        if os.path.exists(self._youtube_fifo):
-            os.unlink(self._youtube_fifo)
-
-        os.mkfifo(self._youtube_fifo, 0o644)
-
-        def _youtube_dl_thread():
-            self._youtube_proc = subprocess.Popen(['youtube-dl', '-f', 'best', '-o', self._youtube_fifo, url])
-            self._youtube_proc.wait()
-            self._youtube_proc = None
-
-        threading.Thread(target=_youtube_dl_thread).start()
+    @staticmethod
+    def get_youtube_video_url(url):
+        youtube_dl = subprocess.Popen(['youtube-dl', '-f', 'best', '-g', url], stdout=subprocess.PIPE)
+        url = youtube_dl.communicate()[0].decode()
+        youtube_dl.wait()
+        return url
 
     @staticmethod
     def get_youtube_id(url: str) -> Optional[str]:
