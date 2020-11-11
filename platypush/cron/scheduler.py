@@ -27,7 +27,7 @@ class Cronjob(Thread):
         self.name = name
         self.state = CronjobState.IDLE
 
-        if isinstance(actions, dict):
+        if isinstance(actions, dict) or isinstance(actions, list):
             self.actions = Procedure.build(name=name + '__Cron', _async=False, requests=actions)
         else:
             self.actions = actions
