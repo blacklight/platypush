@@ -80,7 +80,7 @@
                         {% endwith %}
 
                         {# increment counter #}
-                        {% if used_columns.append(used_columns.pop() + widget['columns']) %}{% endif %}
+                        {% if used_columns.append(used_columns.pop() + widget.get('columns', 12)) %}{% endif %}
 
                         {% if used_columns[0] % 12 == 0 %}
                             </div>

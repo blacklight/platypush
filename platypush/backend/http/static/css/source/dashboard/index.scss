@@ -52,3 +52,9 @@ main {
     height: 100%;
 }
 
+@for $i from 1 through 10 {
+    .row-#{$i} {
+        height: $i * 100% !important;
+    }
+}
+
