@@ -173,8 +173,8 @@ class MediaChromecastPlugin(MediaPlugin):
             'manufacturer': cc.device.manufacturer,
             'model_name': cc.model_name,
             'uuid': str(cc.device.uuid),
-            'address': cc.host,
-            'port': cc.port,
+            'address': cc.host if hasattr(cc, 'host') else cc.uri.split(':')[0],
+            'port': cc.port if hasattr(cc, 'port') else int(cc.uri.split(':')[1]),
 
             'status': ({
                 'app': {
