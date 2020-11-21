@@ -163,6 +163,7 @@ setup(
         'wheel',
         'zeroconf>=0.27.0',
         'tz',
+        'python-dateutil',
     ],
 
     extras_require={
@@ -173,9 +174,9 @@ setup(
         # Support for Pushbullet backend and plugin
         'pushbullet': ['pushbullet.py @ https://github.com/rbrcsk/pushbullet.py/tarball/master'],
         # Support for HTTP backend
-        'http': ['flask', 'python-dateutil', 'frozendict', 'bcrypt'],
+        'http': ['flask', 'frozendict', 'bcrypt'],
         # Support for uWSGI HTTP backend
-        'uwsgi': ['flask', 'python-dateutil', 'frozendict', 'uwsgi', 'bcrypt'],
+        'uwsgi': ['flask', 'frozendict', 'uwsgi', 'bcrypt'],
         # Support for MQTT backends
         'mqtt': ['paho-mqtt'],
         # Support for RSS feeds parser
@@ -220,7 +221,7 @@ setup(
         # Support for serial port plugin
         'serial': ['pyserial'],
         # Support for ICal calendars
-        'ical': ['icalendar', 'python-dateutil'],
+        'ical': ['icalendar'],
         # Support for joystick backend
         'joystick': ['inputs'],
         # Support for Kodi plugin
