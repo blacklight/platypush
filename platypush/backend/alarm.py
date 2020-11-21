@@ -1,4 +1,5 @@
 import datetime
+import enum
 import os
 import time
 import threading
@@ -6,7 +7,7 @@ import threading
 from typing import Optional, Union, Dict, Any, List
 
 import croniter
-import enum
+from dateutil.tz import gettz
 
 from platypush.backend import Backend
 from platypush.context import get_bus, get_plugin
@@ -54,18 +55,19 @@ class Alarm:
         self._runtime_snooze_interval = snooze_interval
 
     def get_next(self) -> float:
-        now = time.time()
+        now = datetime.datetime.now().replace(tzinfo=gettz())
 
         try:
             cron = croniter.croniter(self.when, now)
             return cron.get_next()
         except (AttributeError, croniter.CroniterBadCronError):
             try:
-                timestamp = datetime.datetime.fromisoformat(self.when).timestamp()
+                timestamp = datetime.datetime.fromisoformat(self.when).replace(tzinfo=gettz())
             except (TypeError, ValueError):
-                timestamp = (datetime.datetime.now() + datetime.timedelta(seconds=int(self.when))).timestamp()
+                timestamp = (datetime.datetime.now().replace(tzinfo=gettz()) +
+                             datetime.timedelta(seconds=int(self.when)))
 
-            return timestamp if timestamp >= now else None
+            return timestamp.timestamp() if timestamp >= now else None
 
     def is_enabled(self):
         return self._enabled
