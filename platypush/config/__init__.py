@@ -79,6 +79,10 @@ class Config(object):
             self._config['scripts_dir'] = os.path.join(os.path.dirname(cfgfile), 'scripts')
         os.makedirs(self._config['scripts_dir'], mode=0o755, exist_ok=True)
 
+        if 'dashboards_dir' not in self._config:
+            self._config['dashboards_dir'] = os.path.join(os.path.dirname(cfgfile), 'dashboards')
+        os.makedirs(self._config['dashboards_dir'], mode=0o755, exist_ok=True)
+
         init_py = os.path.join(self._config['scripts_dir'], '__init__.py')
         if not os.path.isfile(init_py):
             with open(init_py, 'w') as f:
@@ -136,10 +140,12 @@ class Config(object):
         self.procedures = {}
         self.constants = {}
         self.cronjobs = {}
+        self.dashboards = {}
 
         self._init_constants()
         self._load_scripts()
         self._init_components()
+        self._init_dashboards(self._config['dashboards_dir'])
 
     @staticmethod
     def _is_special_token(token):
@@ -264,6 +270,38 @@ class Config(object):
 
         for (key, value) in self._default_constants.items():
             self.constants[key] = value
+
+    @staticmethod
+    def get_dashboard(name: str, dashboards_dir: Optional[str] = None) -> Optional[str]:
+        global _default_config_instance
+
+        # noinspection PyProtectedMember,PyProtectedMember,PyUnresolvedReferences
+        dashboards_dir = dashboards_dir or _default_config_instance._config['dashboards_dir']
+        abspath = os.path.join(dashboards_dir, name + '.xml')
+        if not os.path.isfile(abspath):
+            return
+
+        with open(abspath, 'r') as fp:
+            return fp.read()
+
+    @classmethod
+    def get_dashboards(cls, dashboards_dir: Optional[str] = None) -> dict:
+        global _default_config_instance
+        dashboards = {}
+        # noinspection PyProtectedMember,PyProtectedMember,PyUnresolvedReferences
+        dashboards_dir = dashboards_dir or _default_config_instance._config['dashboards_dir']
+        for f in os.listdir(dashboards_dir):
+            abspath = os.path.join(dashboards_dir, f)
+            if not os.path.isfile(abspath) or not abspath.endswith('.xml'):
+                continue
+
+            name = f.split('.xml')[0]
+            dashboards[name] = cls.get_dashboard(name, dashboards_dir)
+
+        return dashboards
+
+    def _init_dashboards(self, dashboards_dir: str):
+        self.dashboards = self.get_dashboards(dashboards_dir)
 
     @staticmethod
     def get_backends():

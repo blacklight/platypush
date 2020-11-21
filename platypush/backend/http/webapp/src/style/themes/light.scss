@@ -1,0 +1,23 @@
+//// General
+$background-color: white;
+
+//// Notifications
+$notification-bg: rgba(185, 255, 193, 0.9) !default;
+$notification-hover-bg: rgba(160,245,178,0.95) !default;
+$notification-warning-bg: rgba(228, 255, 78, 0.9) !default;
+$notification-warning-hover-bg: rgba(218, 245, 68, 0.95) !default;
+$notification-error-bg: rgba(255, 100, 100, 0.9) !default;
+$notification-error-hover-bg: rgba(245, 90, 90, 0.95) !default;
+$notification-border: 1px solid rgba(109, 205, 134, 0.62) !default;
+$notification-warning-border: 1px solid rgba(205, 205, 109, 0.62) !default;
+$notification-error-border: 1px solid rgba(205, 109, 109, 0.62) !default;
+$notification-title-border: 1px solid rgba(83, 158, 102, 0.43) !default;
+$notification-icon-color: black !default;
+$notification-warning-icon-color: #662 !default;
+$notification-error-icon-color: #8b0000 !default;
+
+//// Loading panel
+$loading-bg: #909090;
+
+//// Dashboard
+$dashboard-bg: url('/img/dashboard-bg-light.jpg')

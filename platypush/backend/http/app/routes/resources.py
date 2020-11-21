@@ -7,7 +7,7 @@ from platypush.config import Config
 from platypush.backend.http.app import template_folder, static_folder
 
 
-img_folder = os.path.join(static_folder, 'resources', 'img')
+img_folder = os.path.join(template_folder, 'img')
 resources = Blueprint('resources', __name__, template_folder=template_folder)
 favicon = Blueprint('favicon', __name__, template_folder=template_folder)
 img = Blueprint('img', __name__, template_folder=template_folder)
@@ -57,9 +57,9 @@ def resources_path(path):
 
 
 @favicon.route('/favicon.ico', methods=['GET'])
-def favicon():
+def serve_favicon():
     """ favicon.ico icon """
-    return send_from_directory(img_folder, 'favicon.ico')
+    return send_from_directory(template_folder, 'favicon.ico')
 
 @img.route('/img/<path:path>', methods=['GET'])
 def imgpath(path):
