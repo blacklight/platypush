@@ -20,4 +20,16 @@ $notification-error-icon-color: #8b0000 !default;
 $loading-bg: #909090;
 
 //// Dashboard
-$dashboard-bg: url('/img/dashboard-bg-light.jpg')
+$dashboard-bg: url('/img/dashboard-bg-light.jpg');
+
+//// Borders
+$default-border: 1px solid #e1e4e8 !default;
+$default-border-2: 1px solid #dddddd !default;
+$default-border-3: 1px solid #cccccc !default;
+
+//// Hover
+$default-hover-fg: #35b870 !default;
+$default-hover-fg-2: #38cf80 !default;
+
+//// General-purpose colors
+$selected-bg: #c8ffd0 !default;

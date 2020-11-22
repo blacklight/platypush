@@ -58,7 +58,10 @@ export default {
         handlers.push(...this.handlers[event.args.type])
       }
 
-      for (const [handler] of handlers) {
+      for (let handler of handlers) {
+        if (handler instanceof Array)
+          handler = handler[0]
+
         handler(event.args)
       }
     },

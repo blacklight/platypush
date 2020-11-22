@@ -1,5 +1,5 @@
 <template>
-  <div :style="style" class="widget column is-full-mobile is-half-tablet is-one-quarter-desktop">
+  <div :style="style" :class="classes">
     <slot />
   </div>
 </template>
@@ -7,7 +7,33 @@
 <script>
 export default {
   name: "Widget",
-  props: ['style'],
+  props: {
+    // Widget style override
+    style: {
+      type: String,
+      required: false,
+      default: '',
+    },
+
+    // Widget class override
+    class: {
+      type: String,
+      required: false,
+      default: '',
+    },
+  },
+
+  computed: {
+    classes() {
+      let classes = ['widget', 'column']
+      if (this.class && this.class.length)
+        classes = classes.concat(this.class.split(' '))
+      else
+        classes = classes.concat('col-3')
+
+      return classes
+    },
+  },
 }
 </script>
 
@@ -15,7 +41,7 @@ export default {
 .widget {
   background: $background-color;
   border-radius: 5px;
-  margin: 0 1em 1em 0;
+  margin-bottom: 1em;
   display: flex;
   justify-content: center;
   align-content: center;

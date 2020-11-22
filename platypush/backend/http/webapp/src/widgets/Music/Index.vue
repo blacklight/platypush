@@ -1,0 +1,398 @@
+<template>
+  <Loading v-if="loading" />
+  <div class="music" v-else>
+    <div class="track">
+      <div class="unknown" v-if="!status">[Unknown state]</div>
+      <div class="no-track" v-if="status && status.state === 'stop'">No media is being played</div>
+      <div class="artist" v-if="status && status.state !== 'stop' && track && track.artist" v-text="track.artist"></div>
+      <div class="title" v-if="status && status.state !== 'stop' && track && track.title" v-text="track.title"></div>
+    </div>
+
+    <div class="time"  v-if="status && status.state === 'play'">
+      <div class="row">
+        <div class="progress-bar">
+          <div class="elapsed" :style="{width: track.time ? 100*(status.elapsed/track.time) + '%' : '100%'}"></div>
+          <div class="total"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-6 time-elapsed" v-text="convertTime(status.elapsed)"></div>
+        <div class="col-6 time-total" v-if="track.time" v-text="convertTime(track.time)"></div>
+      </div>
+    </div>
+
+    <div class="playback-status" v-if="status">
+      <div class="status-property col-4">
+        <i class="fa fa-volume-up"></i>&nbsp; <span v-text="status.volume + '%'"></span>
+      </div>
+
+      <div class="status-property col-2">
+        <i class="fas fa-random" :class="{active: status.random}"></i>
+      </div>
+      <div class="status-property col-2">
+        <i class="fas fa-redo" :class="{active: status.repeat}"></i>
+      </div>
+      <div class="status-property col-2">
+        <i class="fa fa-bullseye" :class="{active: status.single}"></i>
+      </div>
+      <div class="status-property col-2">
+        <i class="fa fa-utensils" :class="{active: status.consume}"></i>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Utils from "@/Utils";
+import Loading from "@/components/Loading";
+
+export default {
+  name: "Music",
+  components: {Loading},
+  mixins: [Utils],
+  props: {
+    // Refresh interval in seconds.
+    refreshSeconds: {
+      type: Number,
+      required: false,
+      default: 60,
+    },
+  },
+
+  data() {
+    return {
+      track: undefined,
+      status: undefined,
+      timer: undefined,
+      loading: false,
+
+      syncTime: {
+        timestamp: null,
+        elapsed: null,
+      },
+    }
+  },
+
+  methods: {
+    async refresh() {
+      this.loading = true
+
+      try {
+        let status = await this.request('music.mpd.status')
+        let track = await this.request('music.mpd.currentsong')
+
+        this._parseStatus(status)
+        this._parseTrack(track)
+
+        if (status.state === 'play' && !this.timer)
+          this.startTimer()
+        else if (status.state !== 'play' && this.timer)
+          this.stopTimer()
+      } finally {
+        this.loading = false
+      }
+    },
+
+    convertTime(time) {
+      time = parseFloat(time)   // Normalize strings
+      const t = {}
+      t.h = parseInt(time/3600)
+      t.m = parseInt(time/60 - t.h*60)
+      t.s = parseInt(time - (t.h*3600 + t.m*60))
+
+      for (const attr of ['m','s']) {
+        t[attr] = '' + t[attr]
+      }
+
+      for (const attr of ['m','s']) {
+        if (parseInt(t[attr]) < 10) {
+          t[attr] = '0' + t[attr]
+        }
+      }
+
+      const ret = []
+      if (parseInt(t.h)) {
+        ret.push(t.h)
+      }
+
+      ret.push(t.m, t.s)
+      return ret.join(':')
+    },
+
+    async _parseStatus(status) {
+      if (!status || status.length === 0)
+        status = await this.request('music.mpd.status')
+
+      if (!this.status)
+        this.status = {}
+
+      for (const [attr, value] of Object.entries(status)) {
+        if (['consume','random','repeat','single','bitrate'].indexOf(attr) >= 0) {
+          this.status[attr] = !!parseInt(value)
+        } else if (['nextsong','nextsongid','playlist','playlistlength',
+          'volume','xfade','song','songid'].indexOf(attr) >= 0) {
+          this.status[attr] = parseInt(value)
+        } else if (['elapsed'].indexOf(attr) >= 0) {
+          this.status[attr] = parseFloat(value)
+        } else {
+          this.status[attr] = value
+        }
+      }
+    },
+
+    async _parseTrack(track) {
+      if (!track || track.length === 0) {
+        track = await this.request('music.mpd.currentsong')
+      }
+
+      if (!this.track)
+        this.track = {}
+
+      for (const [attr, value] of Object.entries(track)) {
+        if (['id','pos','time','track','disc'].indexOf(attr) >= 0) {
+          this.track[attr] = parseInt(value)
+        } else {
+          this.track[attr] = value
+        }
+      }
+    },
+
+    showNewTrackNotification() {
+      this.notify({
+        html: '<b>' + (this.track.artist || '[No Artist]') + '</b><br>' +
+            (this.track.title || '[No Title]'),
+        image: {
+          icon: 'play',
+        }
+      })
+    },
+
+    async onNewPlayingTrack(event) {
+      let previousTrack = undefined
+
+      if (this.track) {
+        previousTrack = {
+          file: this.track.file,
+          artist: this.track.artist,
+          title: this.track.title,
+        }
+      }
+
+      this.status.state = 'play'
+      this.status.elapsed = 0
+      this.track = {}
+      this._parseTrack(event.track)
+
+      let status = event.status ? event.status : await this.request('music.mpd.status')
+      this._parseStatus(status)
+      this.startTimer()
+
+      if (!previousTrack || (this.track.file !== previousTrack.file
+          || this.track.artist !== previousTrack.artist
+          || this.track.title !== previousTrack.title)) {
+        this.showNewTrackNotification()
+      }
+    },
+
+    onMusicStop(event) {
+      this.status.state = 'stop'
+      this.status.elapsed = 0
+      this._parseStatus(event.status)
+      this._parseTrack(event.track)
+      this.stopTimer()
+    },
+
+    onMusicPlay(event) {
+      this.status.state = 'play'
+      this._parseStatus(event.status)
+      this._parseTrack(event.track)
+      this.startTimer()
+    },
+
+    onMusicPause(event) {
+      this.status.state = 'pause'
+      this._parseStatus(event.status)
+      this._parseTrack(event.track)
+
+      this.syncTime.timestamp = new Date()
+      this.syncTime.elapsed = this.status.elapsed
+    },
+
+    onSeekChange(event) {
+      if (event.position != null)
+        this.status.elapsed = parseFloat(event.position)
+      if (event.status)
+        this._parseStatus(event.status)
+      if (event.track)
+        this._parseTrack(event.track)
+
+      this.syncTime.timestamp = new Date()
+      this.syncTime.elapsed = this.status.elapsed
+    },
+
+    onVolumeChange(event) {
+      if (event.volume != null)
+        this.status.volume = parseFloat(event.volume)
+      if (event.status)
+        this._parseStatus(event.status)
+      if (event.track)
+        this._parseTrack(event.track)
+    },
+
+    onRepeatChange(event) {
+      this.status.repeat = event.state
+    },
+
+    onRandomChange(event) {
+      this.status.random = event.state
+    },
+
+    onConsumeChange(event) {
+      this.status.consume = event.state
+    },
+
+    onSingleChange(event) {
+      this.status.single = event.state
+    },
+
+    startTimer() {
+      if (this.timer != null) {
+        this.stopTimer()
+      }
+
+      this.syncTime.timestamp = new Date()
+      this.syncTime.elapsed = this.status.elapsed
+      this.timer = setInterval(this.timerFunc, 1000)
+    },
+
+    stopTimer() {
+      if (this.timer == null) {
+        clearInterval(this.timer)
+        this.timer = null
+      }
+    },
+
+    timerFunc() {
+      if (this.status.state !== 'play' || this.status.elapsed == null) {
+        return
+      }
+
+      this.status.elapsed = this.syncTime.elapsed +
+          ((new Date()).getTime()/1000) - (this.syncTime.timestamp.getTime()/1000)
+    },
+  },
+
+  mounted() {
+    this.refresh()
+    if (this.refreshSeconds) {
+      setInterval(this.refresh, parseInt((this.refreshSeconds*1000).toFixed(0)))
+    }
+
+    this.subscribe(this.onNewPlayingTrack, 'platypush.message.event.music.NewPlayingTrackEvent')
+    this.subscribe(this.onMusicStop, 'platypush.message.event.music.MusicStopEvent')
+    this.subscribe(this.onMusicPlay, 'platypush.message.event.music.MusicPlayEvent')
+    this.subscribe(this.onMusicPause, 'platypush.message.event.music.MusicPauseEvent')
+    this.subscribe(this.onSeekChange, 'platypush.message.event.music.SeekChangeEvent')
+    this.subscribe(this.onVolumeChange, 'platypush.message.event.music.VolumeChangeEvent')
+    this.subscribe(this.onRepeatChange, 'platypush.message.event.music.PlaybackRepeatModeChangeEvent')
+    this.subscribe(this.onRandomChange, 'platypush.message.event.music.PlaybackRandomModeChangeEvent')
+    this.subscribe(this.onConsumeChange, 'platypush.message.event.music.PlaybackConsumeModeChangeEvent')
+    this.subscribe(this.onSingleChange, 'platypush.message.event.music.PlaybackSingleModeChangeEvent')
+  },
+}
+</script>
+
+<style lang="scss" scoped>
+$progress-bar-bg: #ddd;
+$playback-status-color: #757f70;
+
+.music {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+
+  .track {
+    text-align: center;
+
+    .unknown,
+    .no-track {
+      font-size: 2em;
+    }
+
+    .artist {
+      font-size: 1.9em;
+      font-weight: bold;
+      margin-bottom: .25em;
+    }
+
+    .title {
+      font-size: 1.8em;
+      font-weight: normal;
+    }
+  }
+
+  .time {
+    width: 100%;
+    margin-top: 1em;
+    font-size: 1.2em;
+
+    .row {
+      padding: 0 .5em;
+    }
+
+    .time-total {
+      text-align: right;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 1em;
+      position: relative;
+      margin-bottom: .75em;
+
+      .total {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        background: $progress-bar-bg;
+        border-radius: 0.5em;
+      }
+
+      .elapsed {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        background: $selected-bg;
+        border-radius: 0.5em;
+        z-index: 1;
+      }
+    }
+  }
+
+  .playback-status {
+    position: absolute;
+    bottom: 0;
+    border-top: $default-border-2;
+    color: $playback-status-color;
+    width: 100%;
+    height: 2em;
+
+    .status-property {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+
+    .active {
+      color: $default-hover-fg;
+    }
+  }
+}
+</style>
