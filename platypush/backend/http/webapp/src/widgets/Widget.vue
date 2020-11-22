@@ -15,7 +15,11 @@ export default {
 .widget {
   background: $background-color;
   border-radius: 5px;
-  margin-bottom: 1em;
+  margin: 0 1em 1em 0;
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  position: relative;
   overflow: hidden;
   box-shadow: 0 3px 3px 0 rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
 }

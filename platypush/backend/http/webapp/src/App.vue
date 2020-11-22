@@ -1,43 +1,43 @@
 <template>
-  <router-view />
+  <Events ref="events" :ws-port="config['backend.http'].websocket_port" v-if="config['backend.http']" />
   <Notifications ref="notifications" />
-  <Events ref="events" />
+  <router-view />
 </template>
 
 <script>
 import Notifications from "@/components/Notifications";
 import Utils from "@/Utils";
-import { bus } from '@/bus';
 import Events from "@/Events";
+import { bus } from "@/bus";
 
 export default {
   name: 'App',
   components: {Events, Notifications},
   mixins: [Utils],
 
-  computed: {
-    config() {
-      const cfg = {
-        websocketPort: 8009,
-      }
-
-      if (this._config.websocketPort && !this._config.websocketPort.startsWith('{{')) {
-        cfg.websocketPort = parseInt(this._config.websocketPort)
-      }
-
-      return cfg;
+  data() {
+    return {
+      config: {},
     }
   },
 
   methods: {
     onNotification(notification) {
       this.$refs.notifications.create(notification)
+    },
+
+    async initConfig() {
+      this.config = await this.request('config.get')
     }
+  },
+
+  created() {
+    this.initConfig()
   },
 
   mounted() {
     bus.on('notification-create', this.onNotification)
-  }
+  },
 }
 </script>
 

@@ -1,30 +1,28 @@
 <template>
   <div class="date-time-weather">
-    <div class="date" v-text="formatDate(now)"></div>
-    <div class="time" v-text="formatTime(now)"></div>
+    <div class="row date-time-container">
+      <DateTime :show-date="_showDate" :show-time="_showTime" :animate="animate"
+                v-if="_showDate || _showTime" />
+    </div>
 
-    <h1 class="weather">
-      <skycons :condition="weatherIcon" :paused="animPaused" :size="iconSize" v-if="weatherIcon" />
-      <span class="temperature" v-if="weather">
-        {{ Math.round(parseFloat(weather.temperature)) + '&deg;' }}
-      </span>
-    </h1>
+    <div class="row weather-container">
+      <Weather :show-summary="_showSummary" :animate="_animate" :icon-size="iconSize"
+               :refresh-seconds="weatherRefreshSeconds" v-if="showWeather"/>
+    </div>
 
-    <div class="summary" v-if="weather && weather.summary" v-text="weather.summary"></div>
+    <div class="row sensors-container">
+      <div class="row" v-if="_showSensors && Object.keys(sensors).length">
+        <div class="col-3">
+          <Sensor icon-class="fas fa-thermometer-half" :value="sensors.temperature" unit="°"
+                  v-if="sensors.temperature != null" />
+        </div>
 
-    <div class="sensors" v-if="Object.keys(sensors).length">
-      <div class="sensor temperature col-6" v-if="sensors.temperature">
-        <i class="fas fa-thermometer-half"></i> &nbsp;
-        <span class="temperature">
-          {{ parseFloat(sensors.temperature).toFixed(1) + '&deg;' }}
-        </span>
-      </div>
+        <div class="col-6">&nbsp;</div>
 
-      <div class="sensor humidity col-6" v-if="sensors.humidity">
-        <i class="fa fa-tint"></i> &nbsp;
-        <span class="humidity">
-          {{ parseFloat(sensors.humidity).toFixed(1) + '%' }}
-        </span>
+        <div class="col-3">
+          <Sensor icon-class="fas fa-tint" :value="sensors.humidity" unit="%"
+                  v-if="sensors.humidity != null" />
+        </div>
       </div>
     </div>
   </div>
@@ -32,88 +30,128 @@
 
 <script>
 import Utils from "@/Utils";
-import Skycons from "vue-skycons"
+import DateTime from "@/widgets/DateTime/Index";
+import Weather from "@/widgets/Weather/Index";
+import Sensor from "@/components/Sensor";
 
 // Widget to show date, time, weather and temperature information
 export default {
   name: 'DateTimeWeather',
   mixins: [Utils],
-  components: {Skycons},
+  components: {Sensor, DateTime, Weather},
   props: {
     // If false then the weather icon will be animated.
     // Otherwise, it will be a static image.
-    paused: {
-      type: Boolean,
+    animate: {
       required: false,
       default: false,
     },
 
-    // Size of the weather icon in pixels
+    // Size of the weather icon in pixels.
     iconSize: {
       type: Number,
       required: false,
       default: 50,
     },
+
+    // If false then don't display the date.
+    showDate: {
+      required: false,
+      default: true,
+    },
+
+    // If false then don't display the time.
+    showTime: {
+      required: false,
+      default: true,
+    },
+
+    // If false then don't display the weather.
+    showWeather: {
+      required: false,
+      default: true,
+    },
+
+    // If false then the weather summary won't be displayed.
+    showSummary: {
+      required: false,
+      default: true,
+    },
+
+    // If false then temperature/humidity sensor data won't be shown.
+    showSensors: {
+      required: false,
+      default: true,
+    },
+
+    // Name of the attribute on a received SensorDataChangeEvent that
+    // represents the temperature value to be rendered.
+    sensorTemperatureAttr: {
+      type: String,
+      required: false,
+      default: 'temperature',
+    },
+
+    // Name of the attribute on a received SensorDataChangeEvent that
+    // represents the humidity value to be rendered.
+    sensorHumidityAttr: {
+      type: String,
+      required: false,
+      default: 'humidity',
+    },
+
+    // Weather refresh interval in seconds.
+    weatherRefreshSeconds: {
+      type: Number,
+      required: false,
+      default: 900,
+    },
   },
 
   computed: {
-    animPaused() {
-      return !!parseInt(this.paused)
+    _showDate() {
+      return this.parseBoolean(this.showDate)
+    },
+
+    _showTime() {
+      return this.parseBoolean(this.showTime)
+    },
+
+    _showWeather() {
+      return this.parseBoolean(this.showWeather)
+    },
+
+    _showSummary() {
+      return this.parseBoolean(this.showSummary)
+    },
+
+    _showSensors() {
+      return this.parseBoolean(this.showSensors)
+    },
+
+    _animate() {
+      return this.parseBoolean(this.animate)
     },
   },
 
   data: function() {
     return {
-      weather: undefined,
       sensors: {},
-      now: new Date(),
-      weatherIcon: undefined,
     };
   },
 
   methods: {
-    async refresh() {
-      const weather = (await this.request('weather.darksky.get_hourly_forecast')).data[0]
-      this.onWeatherChange(weather)
-    },
-
-    refreshTime() {
-      this.now = new Date()
-    },
-
-    formatDate(date) {
-      return date.toDateString().substring(0, 10)
-    },
-
-    formatTime(date) {
-      return date.toTimeString().substring(0, 8)
-    },
-
-    onWeatherChange(event) {
-      if (!this.weather)
-        this.weather = {}
-
-      this.weather = {...this.weather, ...event}
-      this.weatherIcon = this.weather.icon
-    },
-
     onSensorData(event) {
-      if ('temperature' in event.data)
+      if (this.sensorTemperatureAttr in event.data)
         this.sensors.temperature = event.data.temperature
 
-      if ('humidity' in event.data)
-        this.sensors.temperature = event.data.humidity
+      if (this.sensorHumidityAttr in event.data)
+        this.sensors.humidity = event.data.humidity
     },
   },
 
-  mounted: function() {
-    this.refresh()
-    setInterval(this.refresh, 900000)
-    setInterval(this.refreshTime, 1000)
-
-    // TODO
-    // registerEventHandler(this.onWeatherChange, 'platypush.message.event.weather.NewWeatherConditionEvent')
-    // registerEventHandler(this.onSensorData, 'platypush.message.event.sensor.SensorDataChangeEvent')
+  mounted() {
+    this.subscribe(this.onSensorData, 'platypush.message.event.sensor.SensorDataChangeEvent');
   },
 }
 </script>
@@ -126,42 +164,27 @@ export default {
   align-items: center;
   padding-top: 0.1em;
 
-  .date {
-    font-size: 1.3em;
-    height: 10%;
+  .row {
+    text-align: center;
   }
 
-  .time {
-    font-size: 2em;
-    height: 14%;
+  .date-time-container {
+    height: 40%;
   }
 
-  .weather {
-    height: 25%;
-    display: flex;
-    align-items: center;
-    margin-top: 15%;
-
-    .temperature {
-      font-size: 3.1em;
-      margin-left: 0.4em;
-    }
+  .weather-container {
+    height: 40%;
   }
 
-  .summary {
-    height: 28%;
-  }
-
-  .sensors {
+  .sensors-container {
     width: 100%;
-    height: 13%;
+    height: 20%;
+    position: relative;
 
-    .sensor {
-      padding: 0 0.1em;
-    }
-
-    .humidity {
-      text-align: right;
+    .row {
+      width: 100%;
+      position: absolute;
+      bottom: 0;
     }
   }
 }
