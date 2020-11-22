@@ -99,7 +99,7 @@ export default {
   }
 
   .event {
-    font-size: .95em;
+    font-size: .9em;
   }
 
   .event-list {

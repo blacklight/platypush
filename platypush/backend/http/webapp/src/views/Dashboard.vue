@@ -20,6 +20,15 @@ export default {
   name: 'Dashboard',
   mixins: [Utils],
   components: {Widget, Loading},
+  props: {
+    // Refresh interval in seconds.
+    refreshSeconds: {
+      type: Number,
+      required: false,
+      default: 0,
+    },
+  },
+
   data() {
     return {
       widgets: [],
@@ -75,6 +84,12 @@ export default {
 
   mounted() {
     this.refreshDashboard()
+    if (this.refreshSeconds) {
+      const self = this
+      setTimeout(() => {
+        self.refreshDashboard()
+      }, parseInt((this.refreshSeconds*1000).toFixed(0)))
+    }
   }
 }
 </script>
