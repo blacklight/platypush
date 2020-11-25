@@ -16,8 +16,8 @@
 import { defineAsyncComponent } from 'vue'
 import Utils from '@/Utils'
 import Loading from "@/components/Loading";
-import Row from "@/widgets/Row";
-import Widget from "@/widgets/Widget";
+import Row from "@/components/widgets/Row";
+import Widget from "@/components/widgets/Widget";
 
 export default {
   name: 'Dashboard',
@@ -60,7 +60,7 @@ export default {
           class: row.attributes.class ? row.attributes.class.nodeValue : undefined,
           widgets: [...row.children].map((el) => {
             const component = defineAsyncComponent(
-                () => import(`@/widgets/${el.nodeName}/Index`)
+                () => import(`@/components/widgets/${el.nodeName}/Index`)
             )
 
             const style = el.attributes.style ? el.attributes.style.nodeValue : undefined
@@ -120,6 +120,7 @@ export default {
   width: 100%;
   height: 100%;
   display: flex;
+  flex-direction: column;
   margin: 0;
   padding: 1em 1em 0 1em;
   background: $dashboard-bg;

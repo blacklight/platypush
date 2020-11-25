@@ -1,7 +1,7 @@
 <template>
   <div class="date-time-weather">
     <div class="row date-time-container">
-      <DateTime :show-date="_showDate" :show-time="_showTime" :animate="animate"
+      <DateTime :show-date="_showDate" :show-time="_showTime" :show-seconds="_showSeconds" :animate="animate"
                 v-if="_showDate || _showTime" />
     </div>
 
@@ -30,8 +30,8 @@
 
 <script>
 import Utils from "@/Utils";
-import DateTime from "@/widgets/DateTime/Index";
-import Weather from "@/widgets/Weather/Index";
+import DateTime from "@/components/widgets/DateTime/Index";
+import Weather from "@/components/widgets/Weather/Index";
 import Sensor from "@/components/Sensor";
 
 // Widget to show date, time, weather and temperature information
@@ -44,7 +44,7 @@ export default {
     // Otherwise, it will be a static image.
     animate: {
       required: false,
-      default: false,
+      default: true,
     },
 
     // Size of the weather icon in pixels.
@@ -84,6 +84,12 @@ export default {
       default: true,
     },
 
+    // If false then don't display the seconds.
+    showSeconds: {
+      required: false,
+      default: true,
+    },
+
     // Name of the attribute on a received SensorDataChangeEvent that
     // represents the temperature value to be rendered.
     sensorTemperatureAttr: {
@@ -115,6 +121,10 @@ export default {
 
     _showTime() {
       return this.parseBoolean(this.showTime)
+    },
+
+    _showSeconds() {
+      return this.parseBoolean(this.showSeconds)
     },
 
     _showWeather() {

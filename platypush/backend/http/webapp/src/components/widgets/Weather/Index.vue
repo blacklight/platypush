@@ -3,8 +3,9 @@
     <Loading v-if="loading" />
 
     <h1 v-else>
-      <skycons :condition="weatherIcon" :paused="animate" :size="iconSize" v-if="weatherIcon" />
-      <span class="temperature" v-if="weather">
+      <skycons :condition="weatherIcon" :paused="!animate" :size="iconSize" :color="iconColor"
+               v-if="_showIcon && weatherIcon" />
+      <span class="temperature" v-if="_showTemperature && weather">
         {{ Math.round(parseFloat(weather.temperature)) + '&deg;' }}
       </span>
     </h1>
@@ -28,7 +29,7 @@ export default {
     // Otherwise, it will be a static image.
     animate: {
       required: false,
-      default: false,
+      default: true,
     },
 
     // Size of the weather icon in pixels.
@@ -38,8 +39,26 @@ export default {
       default: 50,
     },
 
+    // Icon color.
+    iconColor: {
+      type: String,
+      required: false,
+    },
+
+    // If false then the weather icon won't be displayed.
+    showIcon: {
+      required: false,
+      default: true,
+    },
+
     // If false then the weather summary won't be displayed.
     showSummary: {
+      required: false,
+      default: true,
+    },
+
+    // If false then the temperature won't be displayed.
+    showTemperature: {
       required: false,
       default: true,
     },
@@ -63,6 +82,14 @@ export default {
   computed: {
     _showSummary() {
       return this.parseBoolean(this.showSummary)
+    },
+
+    _showIcon() {
+      return this.parseBoolean(this.showIcon)
+    },
+
+    _showTemperature() {
+      return this.parseBoolean(this.showTemperature)
     },
   },
 
@@ -102,8 +129,8 @@ export default {
 
   h1 {
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
   }
 
   .temperature {

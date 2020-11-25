@@ -68,7 +68,7 @@ export default {
 <style lang="scss" scoped>
 .date-time {
   .date {
-    font-size: 1.3em;
+    font-size: 1.1em;
   }
 
   .time {

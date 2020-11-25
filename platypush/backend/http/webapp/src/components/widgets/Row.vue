@@ -31,8 +31,13 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .row {
   width: 100%;
+  height: 49%;
+
+  &:not(:last-child) {
+    margin-bottom: 1%;
+  }
 }
 </style>

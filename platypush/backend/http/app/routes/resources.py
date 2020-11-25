@@ -4,7 +4,7 @@ import re
 from flask import Blueprint, abort, send_from_directory
 
 from platypush.config import Config
-from platypush.backend.http.app import template_folder, static_folder
+from platypush.backend.http.app import template_folder
 
 
 img_folder = os.path.join(template_folder, 'img')
@@ -24,7 +24,6 @@ __routes__ = [
 def resources_path(path):
     """ Custom static resources """
     path_tokens = path.split('/')
-    filename = path_tokens.pop(-1)
     http_conf = Config.get('backend.http')
     resource_dirs = http_conf.get('resource_dirs', {})
 
@@ -60,6 +59,7 @@ def resources_path(path):
 def serve_favicon():
     """ favicon.ico icon """
     return send_from_directory(template_folder, 'favicon.ico')
+
 
 @img.route('/img/<path:path>', methods=['GET'])
 def imgpath(path):

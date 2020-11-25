@@ -25,13 +25,7 @@ export default {
 
   computed: {
     classes() {
-      let classes = ['widget', 'column']
-      if (this.class && this.class.length)
-        classes = classes.concat(this.class.split(' '))
-      else
-        classes = classes.concat('col-3')
-
-      return classes
+      return (this.class && this.class.length ? this.class.split(' ') : ['col-3']).concat(['widget', 'column'])
     },
   },
 }
@@ -39,26 +33,14 @@ export default {
 
 <style lang="scss" scoped>
 .widget {
+  height: calc(100% - 1em);
   background: $background-color;
   border-radius: 5px;
-  margin-bottom: 1em;
   display: flex;
   justify-content: center;
   align-content: center;
   position: relative;
   overflow: hidden;
   box-shadow: 0 3px 3px 0 rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
-}
-
-@media screen and (max-width: $tablet){
-  .widget {
-    height: calc(100% - 1em);
-  }
-}
-
-@media screen and (min-width: $desktop){
-  .widget {
-    height: calc(50% - 1em);
-  }
 }
 </style>
