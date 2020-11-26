@@ -23,13 +23,29 @@ $loading-bg: #909090;
 $dashboard-bg: url('/img/dashboard-bg-light.jpg');
 
 //// Borders
-$default-border: 1px solid #e1e4e8 !default;
-$default-border-2: 1px solid #dddddd !default;
-$default-border-3: 1px solid #cccccc !default;
+$border-color-1: #e1e4e8 !default;
+$border-color-2: #dddddd !default;
+$border-color-3: #cccccc !default;
 
-//// Hover
+$default-border: 1px solid $border-color-1 !default;
+$default-border-2: 1px solid $border-color-2 !default;
+$default-border-3: 1px solid $border-color-3 !default;
+
+///// General-purpose colors
+
+/// Selected
+$selected-bg: #c8ffd0 !default;
+$selected-fg: #426448;
+$selected-border: 1px solid #98cfa0 !default;
+
+/// Links
+$default-link-fg: #5f7869 !default;
+
+/// Active
+$active-glow-bg-1: #d4ffe3 !default;
+$active-glow-bg-2: #9cdfb0 !default;
+
+/// Hover
 $default-hover-fg: #35b870 !default;
 $default-hover-fg-2: #38cf80 !default;
-
-//// General-purpose colors
-$selected-bg: #c8ffd0 !default;
+$hover-bg: #def6ea !default;

@@ -1,0 +1,30 @@
+button, .btn, .btn-default {
+  border: $default-border-3;
+  cursor: pointer;
+  padding: 0.5em 1em;
+  letter-spacing: 0.05em;
+
+  &.btn-primary, &[type=submit] {
+    background: $selected-bg;
+    color: $selected-fg;
+    border: $selected-border;
+  }
+}
+
+input[type=text], input[type=password] {
+  border: $default-border-3;
+  border-radius: 1em;
+  padding: 0.5em;
+
+  &:focus {
+    border: 1px solid $default-hover-fg;
+  }
+}
+
+input, button {
+  outline: none;
+
+  &:hover {
+    border: 1px solid $active-glow-bg-2;
+  }
+}

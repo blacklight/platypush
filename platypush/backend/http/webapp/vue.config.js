@@ -8,6 +8,7 @@ module.exports = {
           @import '~bulma';
           @import "@/style/themes/light.scss";
           @import "@/style/layout.scss";
+          @import "@/style/components.scss";
         `
       }
     }

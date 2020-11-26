@@ -210,7 +210,7 @@ def authenticate(redirect_page='', skip_auth_methods=None, check_csrf_token=Fals
                     return abort(403, 'Invalid or missing csrf_token')
 
             if n_users == 0 and 'session' not in skip_methods:
-                return redirect('/register?redirect=' + redirect_page, 307)
+                return redirect('/register?redirect=' + (redirect_page or request.url), 307)
 
             if ('http' not in skip_methods and http_auth_ok) or \
                     ('token' not in skip_methods and token_auth_ok) or \

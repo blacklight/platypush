@@ -1,4 +1,5 @@
 import datetime
+import re
 
 from flask import Blueprint, request, redirect, render_template, make_response, url_for
 
@@ -18,7 +19,13 @@ __routes__ = [
 def register():
     """ Registration page """
     user_manager = UserManager()
-    redirect_page = request.args.get('redirect', '/')
+    redirect_page = request.args.get('redirect')
+    if not redirect_page:
+        redirect_page = request.headers.get('Referer', '/')
+    if re.search('(^https?://[^/]+)?/register[^?#]?', redirect_page):
+        # Prevent redirect loop
+        redirect_page = '/'
+
     session_token = request.cookies.get('session_token')
 
     if session_token:
@@ -47,7 +54,7 @@ def register():
     if user_manager.get_user_count() > 0:
         return redirect('/login?redirect=' + redirect_page, 302)
 
-    return render_template('register.html', utils=HttpUtils)
+    return render_template('index.html', utils=HttpUtils)
 
 
 # vim:sw=4:ts=4:et:

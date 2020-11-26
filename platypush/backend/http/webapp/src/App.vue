@@ -1,18 +1,13 @@
 <template>
-  <Events ref="events" :ws-port="config['backend.http'].websocket_port" v-if="config['backend.http']" />
-  <Notifications ref="notifications" />
   <router-view />
 </template>
 
 <script>
-import Notifications from "@/components/Notifications";
 import Utils from "@/Utils";
-import Events from "@/Events";
 import { bus } from "@/bus";
 
 export default {
   name: 'App',
-  components: {Events, Notifications},
   mixins: [Utils],
 
   data() {

@@ -21,7 +21,6 @@ def login():
     user_manager = UserManager()
     session_token = request.cookies.get('session_token')
 
-    # redirect_page = request.args.get('redirect', request.headers.get('Referer', '/'))
     redirect_page = request.args.get('redirect')
     if not redirect_page:
         redirect_page = request.headers.get('Referer', '/')
@@ -50,7 +49,7 @@ def login():
             response.set_cookie('session_token', session.session_token, expires=expires)
             return response
 
-    return render_template('login.html', utils=HttpUtils)
+    return render_template('index.html', utils=HttpUtils)
 
 
 # vim:sw=4:ts=4:et:

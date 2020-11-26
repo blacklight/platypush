@@ -1,4 +1,7 @@
 <template>
+  <Base />
+  <Loading v-if="loading" />
+
   <div id="dashboard" class="columns is-mobile" :class="classes" :style="style">
     <Row v-for="(row, i) in rows" :key="i" :class="row.class" :style="row.style">
       <keep-alive v-for="(widget, j) in row.widgets" :key="j">
@@ -8,8 +11,6 @@
       </keep-alive>
     </Row>
   </div>
-
-  <Loading v-if="loading" />
 </template>
 
 <script>
@@ -18,11 +19,12 @@ import Utils from '@/Utils'
 import Loading from "@/components/Loading";
 import Row from "@/components/widgets/Row";
 import Widget from "@/components/widgets/Widget";
+import Base from "@/components/Base";
 
 export default {
   name: 'Dashboard',
   mixins: [Utils],
-  components: {Widget, Loading, Row},
+  components: {Widget, Loading, Row, Base},
   props: {
     // Refresh interval in seconds.
     refreshSeconds: {
