@@ -1,81 +1,7 @@
 #!/usr/bin/env python
 
-import errno
 import os
-import re
-from distutils.cmd import Command
-from distutils.command.build import build as _build
-from distutils.command.install import install as _install
-from setuptools.command.bdist_egg import bdist_egg as _bdist_egg
 from setuptools import setup, find_packages
-
-
-class WebBuildCommand(Command):
-    """
-    Custom command to build the web files
-    """
-
-    description = 'Build components and styles for the web pages'
-    user_options = []
-
-    @classmethod
-    def generate_css_files(cls):
-        try:
-            # noinspection PyPackageRequirements
-            from scss import Compiler
-        except ImportError:
-            print('pyScss module not found: {}. You will have to generate ' +
-                  'the CSS files manually through python setup.py build install')
-            return
-
-        print('Building CSS files')
-        base_path = path(os.path.join('platypush', 'backend', 'http', 'static', 'css'))
-        input_path = path(os.path.join(base_path, 'source'))
-        output_path = path(os.path.join(base_path, 'dist'))
-
-        for root, dirs, files in os.walk(input_path, followlinks=True):
-            scss_file = os.path.join(root, 'index.scss')
-            if os.path.isfile(scss_file):
-                css_path = os.path.split(scss_file[len(input_path):])[0][1:] + '.css'
-                css_dir = os.path.join(output_path, os.path.dirname(css_path))
-                css_file = os.path.join(css_dir, os.path.basename(css_path))
-
-                os.makedirs(css_dir, exist_ok=True)
-                print('\tGenerating CSS {scss} -> {css}'.format(scss=scss_file, css=css_file))
-
-                with open(css_file, 'w') as f:
-                    css_content = Compiler(output_style='compressed', search_path=[root, input_path]).compile(scss_file)
-                    css_content = cls._fix_css4_vars(css_content)
-                    f.write(css_content)
-
-    @staticmethod
-    def _fix_css4_vars(css):
-        return re.sub(r'var\("--([^"]+)"\)', r'var(--\1)', css)
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        self.generate_css_files()
-
-
-class install(_install):
-    def do_egg_install(self):
-        self.run_command('web_build')
-        _install.do_egg_install(self)
-
-
-class bdist_egg(_bdist_egg):
-    def run(self):
-        self.run_command('web_build')
-        _bdist_egg.run(self)
-
-
-class build(_build):
-    sub_commands = _build.sub_commands + [('web_build', None)]
 
 
 def path(fname=''):
@@ -97,23 +23,8 @@ def pkg_files(dir):
     return paths
 
 
-def create_etc_dir():
-    # noinspection PyShadowingNames
-    path = '/etc/platypush'
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if isinstance(e, PermissionError):
-            print('WARNING: Could not create /etc/platypush')
-        elif e.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
-
-
 plugins = pkg_files('platypush/plugins')
 backend = pkg_files('platypush/backend')
-# create_etc_dir()
 
 setup(
     name="platypush",
@@ -135,15 +46,6 @@ setup(
         ],
     },
     scripts=['bin/platyvenv'],
-    cmdclass={
-        'web_build': WebBuildCommand,
-        'install': install,
-        'build': build,
-        'bdist_egg': bdist_egg,
-    },
-    # data_files = [
-    #     ('/etc/platypush', ['platypush/config.example.yaml'])
-    # ],
     long_description=readfile('README.md'),
     long_description_content_type='text/markdown',
     classifiers=[

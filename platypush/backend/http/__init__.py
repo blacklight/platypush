@@ -29,7 +29,7 @@ class HttpBackend(Backend):
           by default available on your web root document. Any plugin that you have configured and available as a panel
           plugin will appear on the web panel as well as a tab.
 
-        * To display a fullscreen dashboard with your configured widgets, by default available under ``/dashboard``
+        * To display a fullscreen dashboard with your configured widgets, by default available under ``/dashboard/<dashboard_name>``
 
         * To stream media over HTTP through the ``/media`` endpoint
 
@@ -71,7 +71,7 @@ class HttpBackend(Backend):
 
     def __init__(self, port=_DEFAULT_HTTP_PORT,
                  websocket_port=_DEFAULT_WEBSOCKET_PORT,
-                 disable_websocket=False, dashboard=None, resource_dirs=None,
+                 disable_websocket=False, resource_dirs=None,
                  ssl_cert=None, ssl_key=None, ssl_cafile=None, ssl_capath=None,
                  maps=None, run_externally=False, uwsgi_args=None, **kwargs):
         """
@@ -104,38 +104,6 @@ class HttpBackend(Backend):
             the value is the absolute path to expose.
         :type resource_dirs: dict[str, str]
 
-        :param dashboard: Set it if you want to use the dashboard service. It will contain the configuration for the
-            widgets to be used (look under ``platypush/backend/http/templates/widgets/`` for the available widgets).
-
-        Example configuration::
-
-            dashboard:
-                background_image: https://site/image.png
-                widgets:                # Each row of the dashboard will have 6 columns
-                    -
-                        widget: calendar           # Calendar widget
-                        columns: 6
-                    -
-                        widget: music              # Music widget
-                        columns: 3
-                    -
-                        widget: date-time-weather  # Date, time and weather widget
-                        columns: 3
-                    -
-                        widget: image-carousel     # Image carousel
-                        columns: 6
-                        # Absolute path (valid as long as it's a subdirectory of one of the available `resource_dirs`)
-                        images_path: ~/Dropbox/Photos/carousel
-                        refresh_seconds: 15
-                    -
-                        widget: rss-news           # RSS feeds widget
-                        # Requires backend.http.poll to be enabled with some RSS sources and write them to sqlite db
-                        columns: 6
-                        limit: 25
-                        db: "sqlite:////home/user/.local/share/platypush/feeds/rss.db"
-
-        :type dashboard: dict
-
         :param run_externally: If set, then the HTTP backend will not directly
             spawn the web server. Set this option if you plan to run the webapp
             in a separate web server (recommended), like uwsgi or uwsgi+nginx.
@@ -161,7 +129,6 @@ class HttpBackend(Backend):
 
         self.port = port
         self.websocket_port = websocket_port
-        self.dashboard = dashboard or {}
         self.maps = maps or {}
         self.server_proc = None
         self.disable_websocket = disable_websocket
