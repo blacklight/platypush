@@ -278,14 +278,26 @@ export default {
 </style>
 
 <style lang="scss">
-.info-container {
-  .weather-container {
-    margin-bottom: 0.5em;
+.image-carousel {
+  .info-container {
+    .weather-container {
+      margin-bottom: 0.5em;
 
-    h1 {
-      justify-content: left;
-      margin-bottom: -0.5em;
-      font-size: 0.8em;
+      h1 {
+        justify-content: left;
+        margin-bottom: -0.5em;
+        font-size: 0.8em;
+      }
+    }
+
+    .date-time {
+      .date {
+        font-size: 2em;
+      }
+
+      .time {
+        font-size: 4em;
+      }
     }
   }
 }
