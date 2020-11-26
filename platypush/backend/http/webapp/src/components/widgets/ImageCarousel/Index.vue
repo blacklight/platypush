@@ -104,7 +104,7 @@ export default {
     weatherIconSize: {
       type: Number,
       required: false,
-      default: 40,
+      default: 70,
     },
 
     // If false then the weather icon will be animated.
@@ -283,6 +283,10 @@ export default {
     .weather-container {
       margin-bottom: 0.5em;
 
+      .weather {
+        font-size: 1.5em;
+      }
+
       h1 {
         justify-content: left;
         margin-bottom: -0.5em;
@@ -291,6 +295,8 @@ export default {
     }
 
     .date-time {
+      margin-right: 1em;
+
       .date {
         font-size: 2em;
       }

@@ -131,3 +131,10 @@ export default {
   }
 }
 </style>
+
+<style>
+html {
+  overflow: auto;
+}
+</style>
+
