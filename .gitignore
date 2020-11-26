@@ -3,7 +3,7 @@
 *.pyc
 __pycache__
 build/
-dist/
+/dist/
 *.egg-info/
 package.sh
 .pypirc
@@ -17,3 +17,4 @@ platypush/backend/http/static/js/lib/vue.js
 platypush/notebooks
 platypush/requests
 /http-client.env.json
+/platypush/backend/http/static/css/dist
