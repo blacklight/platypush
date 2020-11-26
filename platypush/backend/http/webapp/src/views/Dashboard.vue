@@ -134,7 +134,6 @@ export default {
 
 <style>
 html {
-  overflow: auto;
+  overflow: auto !important;
 }
 </style>
-

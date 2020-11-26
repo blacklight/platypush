@@ -26,6 +26,18 @@ import Loading from "@/components/Loading";
 import DateTime from "@/components/widgets/DateTime/Index";
 import Weather from "@/components/widgets/Weather/Index";
 
+/**
+ * In order to use the image carousel widget you have to specify one or more
+ * resource directories in your backend.http configuration - that's needed to
+ * specify the external directories that will be exported through the web server.
+ * Example:
+ *
+ *   ```yaml
+ *   backend.http:
+ *     resources:
+ *       carousel: /mnt/hd/photos/albums/carousel
+ *   ```
+ */
 export default {
   name: "ImageCarousel",
   components: {Weather, DateTime, Loading},
