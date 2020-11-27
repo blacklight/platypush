@@ -17,6 +17,7 @@ export default {
   data() {
     return {
       ws: null,
+      initialized: false,
       pending: false,
       opened: false,
       timeout: null,
@@ -125,6 +126,7 @@ export default {
       this.ws.onopen = this.onOpen
       this.ws.onerror = this.onError
       this.ws.onclose = this.onClose
+      this.initialized = true
     },
 
     subscribe(msg) {

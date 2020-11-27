@@ -118,7 +118,7 @@ export default {
   },
 
   mounted() {
-    setTimeout(this.registerHandlers, 10000)
+    this.registerHandlers()
   },
 }
 </script>
