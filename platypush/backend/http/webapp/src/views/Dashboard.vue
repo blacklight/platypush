@@ -1,5 +1,4 @@
 <template>
-  <Base />
   <Loading v-if="loading" />
 
   <div id="dashboard" class="columns is-mobile" :class="classes" :style="style">
@@ -19,12 +18,11 @@ import Utils from '@/Utils'
 import Loading from "@/components/Loading";
 import Row from "@/components/widgets/Row";
 import Widget from "@/components/widgets/Widget";
-import Base from "@/components/Base";
 
 export default {
   name: 'Dashboard',
   mixins: [Utils],
-  components: {Widget, Loading, Row, Base},
+  components: {Widget, Loading, Row},
   props: {
     // Refresh interval in seconds.
     refreshSeconds: {

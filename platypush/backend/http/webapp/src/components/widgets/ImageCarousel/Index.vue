@@ -52,77 +52,59 @@ export default {
     // Refresh interval in seconds.
     refreshSeconds: {
       type: Number,
-      required: false,
       default: 15,
     },
 
     // Show the current date on top of the images
     showDate: {
-      type: Boolean,
-      required: false,
       default: false,
     },
 
     // Show the current time on top of the images
     showTime: {
-      type: Boolean,
-      required: false,
       default: false,
     },
 
     // If false then don't display the seconds.
     showSeconds: {
-      type: Boolean,
-      required: false,
       default: false,
     },
 
     // If false then don't display weather info.
     showWeather: {
-      type: Boolean,
-      required: false,
       default: false,
     },
 
     // If false then temperature won't be displayed.
     showTemperature: {
-      type: Boolean,
-      required: false,
       default: true,
     },
 
     // If false then don't display the weather state icon.
     showWeatherIcon: {
-      type: Boolean,
-      required: false,
       default: true,
     },
 
     // If false then don't display the weather summary text.
     showWeatherSummary: {
-      type: Boolean,
-      required: false,
       default: true,
     },
 
     // Weather con color.
     weatherIconColor: {
       type: String,
-      required: false,
       default: 'white',
     },
 
     // Size of the weather icon in pixels.
     weatherIconSize: {
       type: Number,
-      required: false,
       default: 70,
     },
 
     // If false then the weather icon will be animated.
     // Otherwise, it will be a static image.
     animateWeatherIcon: {
-      required: false,
       default: true,
     },
   },

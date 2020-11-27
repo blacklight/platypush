@@ -1,14 +1,23 @@
 <template>
+  <Events ref="events" :ws-port="config['backend.http'].websocket_port"
+          v-if="Object.keys(config).length && config['backend.http']" />
+
+  <Notifications ref="notifications" />
+  <VoiceAssistant ref="voice-assistant" v-if="Object.keys(config).length" />
   <router-view />
 </template>
 
 <script>
+import Notifications from "@/components/Notifications";
 import Utils from "@/Utils";
+import Events from "@/Events";
+import VoiceAssistant from "@/components/VoiceAssistant";
 import { bus } from "@/bus";
 
 export default {
   name: 'App',
   mixins: [Utils],
+  components: {Notifications, Events, VoiceAssistant},
 
   data() {
     return {

@@ -1,3 +1,7 @@
+<template>
+  <div/>
+</template>
+
 <script>
 import { bus } from "@/bus";
 
