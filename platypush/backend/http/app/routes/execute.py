@@ -14,7 +14,7 @@ __routes__ = [
 
 
 @execute.route('/execute', methods=['POST'])
-@authenticate(skip_auth_methods=['session'])
+@authenticate()
 def execute():
     """ Endpoint to execute commands """
     try:

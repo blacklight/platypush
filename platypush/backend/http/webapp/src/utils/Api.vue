@@ -15,13 +15,6 @@ export default {
         request['type'] = 'request'
       }
 
-      // TODO Proper auth/token management
-      // if (window.config.token) {
-      //   opts.headers = {
-      //     'X-Token': window.config.token
-      //   }
-      // }
-
       if (timeout) {
         opts.timeout = timeout
       }

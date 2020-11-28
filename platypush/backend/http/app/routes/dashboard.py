@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template
+from flask import Blueprint, render_template
 
 from platypush.backend.http.app import template_folder
 from platypush.backend.http.app.utils import authenticate, get_websocket_port
@@ -12,9 +12,10 @@ __routes__ = [
 ]
 
 
+# noinspection PyUnusedLocal
 @dashboard.route('/dashboard/<name>', methods=['GET'])
 @authenticate()
-def render_dashboard(*_, **__):
+def render_dashboard(name):
     """ Route for the dashboard """
     return render_template('index.html',
                            utils=HttpUtils,
