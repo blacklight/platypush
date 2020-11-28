@@ -42,9 +42,10 @@ export default {
 .notification {
   background: $notification-bg;
   border: $notification-border;
-  border-radius: .5rem;
-  margin-bottom: 1rem;
-  margin-right: 1rem;
+  border-radius: 1em;
+  margin-bottom: 0.25em !important;
+  margin-right: 0.1em;
+  padding: 0.5em;
   cursor: pointer;
 
   &:hover {
@@ -66,18 +67,20 @@ export default {
   }
 
   .title {
-    padding: .4rem;
-    line-height: 3rem;
-    letter-spacing: .1rem;
-    font-weight: bold;
+    color: $notification-title-fg;
+    font-size: 1.25em;
+    font-weight: normal;
+    margin: 0.25em 0;
+    padding: 0;
+    letter-spacing: 0.07em;
   }
 
   .body {
     @extend .vertical-center;
     height: 6em;
     overflow: hidden;
-    padding-bottom: 1rem;
-    letter-spacing: .05rem;
+    padding-bottom: 0.1em;
+    letter-spacing: 0.05em;
   }
 
   .image {
@@ -92,7 +95,7 @@ export default {
       height: 100%;
 
       .fa {
-        font-size: 2.5rem;
+        font-size: 2.5em;
         color: var(--color);
       }
 

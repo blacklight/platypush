@@ -9,6 +9,7 @@ module.exports = {
           @import "@/style/themes/light.scss";
           @import "@/style/layout.scss";
           @import "@/style/components.scss";
+          @import "@/style/animations.scss";
         `
       }
     }

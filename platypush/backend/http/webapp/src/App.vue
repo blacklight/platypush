@@ -1,9 +1,9 @@
 <template>
-  <Events ref="events" :ws-port="config['backend.http'].websocket_port"
-          v-if="Object.keys(config).length && config['backend.http']" />
-
+  <Events ref="events" :ws-port="config['backend.http'].websocket_port" v-if="hasWebsocket" />
   <Notifications ref="notifications" />
-  <VoiceAssistant ref="voice-assistant" v-if="Object.keys(config).length" />
+  <VoiceAssistant ref="voice-assistant" v-if="hasAssistant" />
+  <Pushbullet ref="pushbullet" v-if="hasPushbullet" />
+
   <router-view />
 </template>
 
@@ -13,16 +13,35 @@ import Utils from "@/Utils";
 import Events from "@/Events";
 import VoiceAssistant from "@/components/VoiceAssistant";
 import { bus } from "@/bus";
+import Pushbullet from "@/components/Pushbullet";
 
 export default {
   name: 'App',
   mixins: [Utils],
-  components: {Notifications, Events, VoiceAssistant},
+  components: {Pushbullet, Notifications, Events, VoiceAssistant},
 
   data() {
     return {
       config: {},
     }
+  },
+
+  computed: {
+    hasWebsocket() {
+      return Object.keys(this.config).length > 0 &&
+          'backend.http' in this.config
+    },
+
+    hasAssistant() {
+      return this.hasWebsocket
+    },
+
+    hasPushbullet() {
+      return this.hasWebsocket && (
+          'pushbullet' in this.config ||
+          'backend.pushbullet' in this.config
+      )
+    },
   },
 
   methods: {
