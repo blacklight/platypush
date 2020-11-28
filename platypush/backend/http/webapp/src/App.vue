@@ -23,12 +23,13 @@ export default {
   data() {
     return {
       config: {},
+      userAuthenticated: false,
     }
   },
 
   computed: {
     hasWebsocket() {
-      return Object.keys(this.config).length > 0 &&
+      return this.userAuthenticated &&
           'backend.http' in this.config
     },
 
@@ -51,6 +52,7 @@ export default {
 
     async initConfig() {
       this.config = await this.request('config.get')
+      this.userAuthenticated = true
     }
   },
 
