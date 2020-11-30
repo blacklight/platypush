@@ -3,8 +3,15 @@ import Dashboard from "@/views/Dashboard.vue";
 import NotFound from "@/views/NotFound";
 import Login from "@/views/Login";
 import Register from "@/views/Register";
+import Panel from "@/views/Panel";
 
 const routes = [
+  {
+    path: "/",
+    name: "Panel",
+    component: Panel,
+  },
+
   {
     path: "/dashboard/:name",
     name: "Dashboard",

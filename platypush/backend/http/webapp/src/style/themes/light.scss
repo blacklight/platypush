@@ -55,3 +55,15 @@ $active-glow-bg-2: #9cdfb0 !default;
 $default-hover-fg: #35b870 !default;
 $default-hover-fg-2: #38cf80 !default;
 $hover-bg: #def6ea !default;
+
+/// Navigator
+$nav-bg: #002626 !default;
+$nav-fg: #e8f8e8 !default;
+$nav-entry-selected-bg: #205046 !default;
+$nav-entry-hover-bg: #104036 !default;
+$nav-entry-collapsed-selected-bg: rgba(160, 245, 178, 0.95) !default;
+$nav-entry-collapsed-hover-bg: rgba(160, 245, 178, 0.60) !default;
+$nav-box-shadow-main: 1px 0 2px #002626;
+$nav-box-shadow-entry: 0 0 1px 1px #103824 !default;
+$nav-box-shadow-collapsed: 1px 0 2px 1px #bbb !default;
+$nav-collapsed-fg: #5e5e5e;
