@@ -12,7 +12,7 @@
           <i :class="icons[name].class" v-if="icons[name]?.class" />
           <i class="fas fa-puzzle-piece" v-else />
         </span>
-        <span class="name" v-if="!collapsed">{{ name }}</span>
+        <span class="name" v-if="!collapsed">{{ displayName(name) }}</span>
       </a>
     </li>
   </nav>
@@ -39,6 +39,12 @@ export default {
     },
   },
 
+  methods: {
+    displayName(name) {
+      return name.split('.').map((token) => token[0].toUpperCase() + token.slice(1)).join(' ')
+    },
+  },
+
   data() {
     return {
       collapsed: false,
@@ -46,9 +52,6 @@ export default {
       host: null,
     }
   },
-
-  async mounted() {
-  }
 }
 </script>
 
@@ -65,17 +68,18 @@ nav {
   box-shadow: $nav-box-shadow-main;
   margin-right: 4px;
 
-  a {
-    color: $nav-fg;
-    &:hover {
-      color: $nav-fg;
-    }
-  }
-
   li {
-    padding: 1em 0.25em;
     box-shadow: $nav-box-shadow-entry;
     cursor: pointer;
+
+    a {
+      display: block;
+      color: $nav-fg;
+      padding: 1em 0.25em;
+      &:hover {
+        color: $nav-fg;
+      }
+    }
 
     &:hover {
       background: $nav-entry-hover-bg;
@@ -117,6 +121,7 @@ nav {
 
     a {
       color: $nav-collapsed-fg;
+      padding: 0.25em 0;
       &:hover {
         color: $nav-collapsed-fg;
       }

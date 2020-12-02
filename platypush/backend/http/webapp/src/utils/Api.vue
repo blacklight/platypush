@@ -23,10 +23,10 @@ export default {
         axios.post('/execute', request, opts)
             .then((response) => {
               response = response.data.response
-              if (!response.errors.length) {
+              if (!response.errors?.length) {
                 resolve(response.output);
               } else {
-                const error = response.errors[0]
+                const error = response.errors?.[0] || response
                 this.notify({
                   text: error,
                   error: true,

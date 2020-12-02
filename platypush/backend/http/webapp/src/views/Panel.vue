@@ -1,7 +1,8 @@
 <template>
   <main>
     <Loading v-if="loading" />
-    <Nav :panels="components" :selected-panel="selectedPanel" :hostname="hostname" @select="selectedPanel = $event" />
+    <Nav :panels="components" :selected-panel="selectedPanel" :hostname="hostname"
+         @select="selectedPanel = $event" v-else />
 
     <div class="panel-container">
       <div class="panel" v-for="(panel, name) in components" :key="name">
@@ -35,6 +36,16 @@ export default {
   },
 
   methods: {
+    initSelectedPanel() {
+      const match = this.$route.hash.match('#?([a-zA-Z0-9.]+)[?]?(.*)')
+      if (!match)
+        return
+
+      const plugin = match[1]
+      if (plugin?.length)
+        this.selectedPanel = plugin
+    },
+
     initPanels() {
       const self = this
       this.components = {}
@@ -75,6 +86,7 @@ export default {
     try {
       await this.parseConfig()
       this.initPanels()
+      this.initSelectedPanel()
     } finally {
       this.loading = false
     }
@@ -87,9 +99,18 @@ main {
   height: 100%;
   display: flex;
 
+  .panel-container {
+    display: flex;
+    flex-grow: 100;
+  }
+
   .panel {
+    width: 100%;
+    height: 100%;
+    display: flex;
     margin: 0 !important;
     box-shadow: none !important;
+    overflow: auto;
   }
 }
 </style>
