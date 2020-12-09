@@ -4,7 +4,7 @@
     <Nav :panels="components" :selected-panel="selectedPanel" :hostname="hostname"
          @select="selectedPanel = $event" v-else />
 
-    <div class="panel-container">
+    <div class="canvas">
       <div class="panel" v-for="(panel, name) in components" :key="name">
         <component :is="panel.component" :config="panel.config" :plugin-name="name" v-if="name === selectedPanel" />
       </div>
@@ -99,18 +99,19 @@ main {
   height: 100%;
   display: flex;
 
-  .panel-container {
+  .canvas {
     display: flex;
     flex-grow: 100;
-  }
+    background: $menu-panel-bg;
 
-  .panel {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    margin: 0 !important;
-    box-shadow: none !important;
-    overflow: auto;
+    .panel {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      margin: 0 !important;
+      box-shadow: none !important;
+      overflow: auto;
+    }
   }
 }
 </style>

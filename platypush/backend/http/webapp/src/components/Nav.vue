@@ -47,7 +47,7 @@ export default {
 
   data() {
     return {
-      collapsed: false,
+      collapsed: true,
       icons: icons,
       host: null,
     }

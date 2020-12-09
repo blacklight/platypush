@@ -1,19 +1,14 @@
 <template>
   <div class="menu-panel">
-    <ul :style="style">
+    <div class="content">
       <slot />
-    </ul>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
   name: "MenuPanel",
-  props: {
-    style: {
-      type: [String, Object, Array],
-    },
-  },
 }
 </script>
 
@@ -27,15 +22,16 @@ export default {
   background: $menu-panel-bg;
   padding-top: 2em;
 
-  ul {
+  .content {
     background: $menu-panel-content-bg;
     border-radius: 15px;
     box-shadow: $plugin-panel-shadow;
     border: 0;
 
-    li {
+    .panel-row {
       display: flex;
-      padding: 0.5em;
+      margin: 0 !important;
+      padding: 1em;
       box-shadow: $plugin-panel-entry-shadow;
       cursor: pointer;
       border: 0;
@@ -54,15 +50,15 @@ export default {
         border-radius: 0 0 15px 15px;
         box-shadow: $plugin-panel-last-entry-shadow;
       }
+    }
 
-      &.header {
+    .header {
+      background: $menu-header-bg;
+      font-weight: bold;
+      box-shadow: $menu-header-shadow;
+
+      &:hover {
         background: $menu-header-bg;
-        font-weight: bold;
-        box-shadow: $menu-header-shadow;
-
-        &:hover {
-          background: $menu-header-bg;
-        }
       }
     }
   }
@@ -71,11 +67,12 @@ export default {
 @media screen and (max-width: $tablet) {
   .menu-panel {
     padding-top: 0;
-    ul {
+
+    .content {
       min-width: 100%;
       border-radius: 0;
 
-      li {
+      .row {
         &:first-child {
           border-radius: 0;
         }
@@ -90,32 +87,32 @@ export default {
 
 @media screen and (min-width: $tablet) {
   .menu-panel {
-    ul {
-      min-width: 65%;
+    .content {
+      min-width: 75%;
     }
   }
 }
 
 @media screen and (min-width: $desktop) {
   .menu-panel {
-    ul {
-      min-width: 40%;
+    .content {
+      min-width: 50%;
     }
   }
 }
 
 @media screen and (min-width: $widescreen) {
   .menu-panel {
-    ul {
-      min-width: 30%;
+    .content {
+      min-width: 40%;
     }
   }
 }
 
 @media screen and (min-width: $fullhd) {
   .menu-panel {
-    ul {
-      min-width: 25%;
+    .content {
+      min-width: 35%;
     }
   }
 }

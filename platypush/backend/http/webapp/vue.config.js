@@ -6,6 +6,7 @@ module.exports = {
       sass: {
         additionalData: `
           @import '~bulma';
+          @import "@/style/mixins.scss";
           @import "@/style/themes/light.scss";
           @import "@/style/layout.scss";
           @import "@/style/components.scss";

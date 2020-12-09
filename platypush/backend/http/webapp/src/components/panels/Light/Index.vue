@@ -1,10 +1,15 @@
 <template>
   <div class="plugin lights-plugin">
     <div class="panel" v-if="selectedGroup == null && groups && Object.keys(groups).length">
-      <Groups :groups="groups" :loading-groups="loadingGroups" @select="selectedGroup = $event" @toggle="toggleGroup" />
+      <Groups :groups="groups" :loading-groups="loadingGroups" :color-converter="colorConverter"
+              @select="selectedGroup = $event" @toggle="$emit('group-toggle', $event)" />
     </div>
     <div class="panel" v-else>
-      <Group :group="groups[selectedGroup]" :lights="displayedLights" @close="closeGroup" />
+      <Group :group="groups[selectedGroup]" :lights="displayedLights" :scenes="scenesByGroup[selectedGroup]"
+             :color-converter="colorConverter" @close="closeGroup" @light-toggle="$emit('light-toggle', $event)"
+             @group-toggle="$emit('group-toggle', $event)" @set-light="$emit('set-light', $event)"
+             @set-group="$emit('set-group', {groupId: selectedGroup, value: $event})"
+             @select-scene="$emit('select-scene', {groupId: selectedGroup, sceneId: $event})" />
     </div>
   </div>
 </template>
@@ -14,6 +19,7 @@ import Utils from "@/Utils";
 import Panel from "@/components/panels/Panel";
 import Groups from "@/components/Light/Groups";
 import Group from "@/components/Light/Group";
+import {ColorConverter} from "@/components/panels/Light/color";
 
 /**
  * Generic component for light plugins panels.
@@ -22,7 +28,7 @@ export default {
   name: "Light",
   components: {Group, Groups},
   mixins: [Utils, Panel],
-  emits: ['group-toggle'],
+  emits: ['group-toggle', 'light-toggle', 'set-light', 'set-group', 'select-scene'],
 
   props: {
     lights: {
@@ -39,6 +45,11 @@ export default {
 
     animations: {
       type: Object,
+    },
+
+    colorConverter: {
+      type: Object,
+      default: () => new ColorConverter(),
     },
 
     loadingLights: {
@@ -78,6 +89,51 @@ export default {
         return lights
       }, {})
     },
+
+    lightsByGroup() {
+      if (!this.groups)
+        return {}
+
+      const self = this
+      return Object.entries(this.groups).reduce((obj, [groupId, group]) => {
+        obj[groupId] = group.lights.map((lightId) => self.lights[lightId])
+        return obj
+      }, {})
+    },
+
+    groupsByLight() {
+      if (!this.groups)
+        return {}
+
+      return Object.entries(this.groups).reduce((obj, [groupId, group]) => {
+        group.lights.forEach((lightId) => {
+          if (!obj[lightId])
+            obj[lightId] = {}
+          obj[lightId][groupId] = group
+        })
+
+        return obj
+      }, {})
+    },
+
+    scenesByGroup() {
+      if (!this.scenes)
+        return {}
+
+      const self = this
+      return Object.entries(this.scenes).reduce((obj, [sceneId, scene]) => {
+        scene.lights.forEach((lightId) => {
+          Object.keys(self.groupsByLight[lightId]).forEach((groupId) => {
+            if (!obj[groupId])
+              obj[groupId] = {}
+
+            obj[groupId][sceneId] = scene
+          })
+        })
+
+        return obj
+      }, {})
+    },
   },
 
   methods: {
@@ -96,10 +152,6 @@ export default {
 
     closeGroup() {
       this.selectedGroup = null
-    },
-
-    toggleGroup(group) {
-      this.$emit('group-toggle', group)
     },
   },
 

@@ -109,7 +109,7 @@ export default {
           border-radius: 50%;
           box-shadow: $toggle-dot-shadow;
           left: -0.25em;
-          top: -1px;
+          top: -0.05em;
           transform: translateX(var(--offset, 0));
           transition: transform .4s, box-shadow .4s;
 
@@ -152,7 +152,7 @@ export default {
         font-size: 1em;
         font-weight: 500;
         color: #A6ACCD;
-        transform: translateY(4px);
+        transform: translateY(0.2em);
         transition: opacity .4s, transform .4s;
       }
     }
@@ -162,7 +162,7 @@ export default {
         pointer-events: none;
         & + span {
           opacity: 1;
-          transform: translateY(12px);
+          transform: translateY(0.6em);
         }
       }
     }

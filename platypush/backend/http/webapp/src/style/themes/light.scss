@@ -41,7 +41,7 @@ $modal-body-bg: white !default;
 
 /// Selected
 $selected-bg: #c8ffd0 !default;
-$selected-fg: #426448;
+$selected-fg: #32b646;
 $selected-border: 1px solid #98cfa0 !default;
 
 /// Links
@@ -84,4 +84,11 @@ $toggle-selected-bg: linear-gradient(90deg, #4fef97, #27ee5e) !default;
 $toggle-dot-bg: #d4d8d6 !default;
 $toggle-shadow: inset 0 0 2px 1px #c8c8c8 !default;
 $toggle-dot-shadow: inset 0 0 2px 1px #d0d0d0 !default;
-$toggle-selected-dot-bg: linear-gradient(160deg, #ecfff0, #e4fff8);
+$toggle-selected-dot-bg: white;
+
+//// Slider element
+$slider-bg: #e4e4e4 !default;
+$slider-thumb-bg: rgba(0,215,80,1.0) !default;
+$slider-thumb-disabled-bg: rgba(0,215,80,0.3) !default;
+$slider-hover-on-hover-bg: #d2d2d2 !default;
+$slider-progress-bg: rgba(0,215,80,0.2) !default;

@@ -154,7 +154,13 @@ class LightHuePlugin(LightPlugin):
 
         """
 
-        return self.bridge.get_scene()
+        return {
+            id: {
+                'id': id,
+                **scene,
+            }
+            for id, scene in self.bridge.get_scene().items()
+        }
 
     @action
     def get_lights(self):
@@ -195,7 +201,13 @@ class LightHuePlugin(LightPlugin):
 
         """
 
-        return self.bridge.get_light()
+        return {
+            id: {
+                'id': id,
+                **light,
+            }
+            for id, light in self.bridge.get_light().items()
+        }
 
     @action
     def get_groups(self):
@@ -247,7 +259,13 @@ class LightHuePlugin(LightPlugin):
 
         """
 
-        return self.bridge.get_group()
+        return {
+            id: {
+                'id': id,
+                **group,
+            }
+            for id, group in self.bridge.get_group().items()
+        }
 
     @action
     def get_animations(self):
