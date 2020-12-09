@@ -28,12 +28,12 @@ export default {
 
   methods: {
     onWebsocketTimeout() {
-      return function() {
-        console.log('Websocket reconnection timed out, retrying')
-        this.pending = false
-        this.close()
-        this.onclose()
-      }
+      console.log('Websocket reconnection timed out, retrying')
+      this.pending = false
+      if (this.ws)
+        this.ws.close()
+
+      this.onClose()
     },
 
     onMessage(event) {
@@ -74,8 +74,10 @@ export default {
     onOpen() {
       if (this.opened) {
         console.log("There's already an opened websocket connection, closing the newly opened one")
-        this.onclose = () => {}
-        this.close()
+        if (this.ws) {
+          this.ws.onclose = () => {}
+          this.ws.close()
+        }
       }
 
       console.log('Websocket connection successful')
