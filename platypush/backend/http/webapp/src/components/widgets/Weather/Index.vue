@@ -116,7 +116,7 @@ export default {
 
   mounted: function() {
     this.refresh()
-    this.subscribe(this.onWeatherChange, 'platypush.message.event.weather.NewWeatherConditionEvent')
+    this.subscribe(this.onWeatherChange, null, 'platypush.message.event.weather.NewWeatherConditionEvent')
     setInterval(this.refresh, parseInt((this.refreshSeconds*1000).toFixed(0)))
   },
 }

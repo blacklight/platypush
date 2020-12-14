@@ -23,6 +23,7 @@ export default {
       timeout: null,
       reconnectMsecs: 30000,
       handlers: {},
+      handlerNameToEventTypes: {},
     }
   },
 
@@ -60,7 +61,7 @@ export default {
       }
 
       if (event.args.type in this.handlers) {
-        handlers.push(...this.handlers[event.args.type])
+        handlers.push(...Object.values(this.handlers[event.args.type]))
       }
 
       for (let handler of handlers) {
@@ -134,32 +135,40 @@ export default {
     subscribe(msg) {
       const handler = msg.handler
       const events = msg.events.length ? msg.events : [null]
+      const handlerName = msg.handlerName
 
       for (const event of events) {
         if (!(event in this.handlers)) {
-          this.handlers[event] = []
+          this.handlers[event] = {}
         }
 
-        this.handlers[event].push(handler)
+        if (!(handlerName in this.handlerNameToEventTypes)) {
+          this.handlerNameToEventTypes[handlerName] = events
+        }
+
+        this.handlers[event][handlerName] = handler
+      }
+
+      return () => {
+        this.unsubscribe(handlerName)
       }
     },
 
-    unsubscribe(msg) {
-      const handler = msg.handler
-      const events = msg.events.length ? msg.events : [null]
+    unsubscribe(handlerName) {
+      const events = this.handlerNameToEventTypes[handlerName]
+      if (!events)
+        return
 
       for (const event of events) {
-        if (!(event in this.handlers))
+        if (!this.handlers[event]?.[handlerName])
           continue
 
-        const idx = this.handlers[event].indexOf(handler)
-        if (idx < 0)
-          continue
-
-        this.handlers[event] = this.handlers[event].splice(idx, 1)[1]
-        if (!this.handlers[event].length)
+        delete this.handlers[event][handlerName]
+        if (!Object.keys(this.handlers[event]).length)
           delete this.handlers[event]
       }
+
+      delete this.handlerNameToEventTypes[handlerName]
     },
   },
 

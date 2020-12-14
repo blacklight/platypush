@@ -30,8 +30,7 @@
             <i class="icon far fa-image" />
             <span class="view-title">&nbsp; Scenes</span>
           </button>
-          <button :class="{selected: selectedView === 'animate'}" title="Animate"
-                  @click="selectedView = 'animate'">
+          <button :class="{selected: selectedView === 'animate'}" title="Animate" @click="selectedView = 'animate'">
             <i class="icon fas fa-video" />
             <span class="view-title">&nbsp; Animate</span>
           </button>

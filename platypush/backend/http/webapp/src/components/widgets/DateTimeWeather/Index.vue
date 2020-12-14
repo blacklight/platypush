@@ -161,7 +161,7 @@ export default {
   },
 
   mounted() {
-    this.subscribe(this.onSensorData, 'platypush.message.event.sensor.SensorDataChangeEvent');
+    this.subscribe(this.onSensorData, null, 'platypush.message.event.sensor.SensorDataChangeEvent');
   },
 }
 </script>

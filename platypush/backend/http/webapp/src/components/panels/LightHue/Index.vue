@@ -4,7 +4,7 @@
                :animations="animations" :initial-group="initialGroup" :loading-groups="loadingGroups"
                :color-converter="colorConverter" @group-toggle="toggleGroup"
                @light-toggle="toggleLight" @set-light="setLight" @set-group="setGroup" @select-scene="setScene"
-               @start-animation="startAnimation" @stop-animation="stopAnimation" />
+               @start-animation="startAnimation" @stop-animation="stopAnimation" @refresh="refresh(true)"/>
 </template>
 
 <script>

@@ -105,12 +105,12 @@ export default {
     },
 
     registerHandlers() {
-      this.subscribe(this.conversationStart, 'platypush.message.event.assistant.ConversationStartEvent')
-      this.subscribe(this.alertOn, 'platypush.message.event.assistant.AlertStartedEvent')
-      this.subscribe(this.alertOff, 'platypush.message.event.assistant.AlertEndEvent')
-      this.subscribe(this.speechRecognized, 'platypush.message.event.assistant.SpeechRecognizedEvent')
-      this.subscribe(this.response, 'platypush.message.event.assistant.ResponseEvent')
-      this.subscribe(this.conversationEnd,
+      this.subscribe(this.conversationStart, null, 'platypush.message.event.assistant.ConversationStartEvent')
+      this.subscribe(this.alertOn, null, 'platypush.message.event.assistant.AlertStartedEvent')
+      this.subscribe(this.alertOff, null, 'platypush.message.event.assistant.AlertEndEvent')
+      this.subscribe(this.speechRecognized, null, 'platypush.message.event.assistant.SpeechRecognizedEvent')
+      this.subscribe(this.response, null, 'platypush.message.event.assistant.ResponseEvent')
+      this.subscribe(this.conversationEnd, null,
           'platypush.message.event.assistant.ConversationEndEvent',
           'platypush.message.event.assistant.NoResponseEvent',
           'platypush.message.event.assistant.ConversationTimeoutEvent')

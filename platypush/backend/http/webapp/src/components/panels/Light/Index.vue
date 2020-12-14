@@ -6,7 +6,7 @@
     </div>
     <div class="panel" v-else>
       <Group :group="groups[selectedGroup]" :lights="displayedLights" :scenes="scenesByGroup[selectedGroup]"
-             :color-converter="colorConverter" :animations="animationsByGroup[selectedGroup]" @close="closeGroup"
+             :color-converter="colorConverter" :animations="animationsByGroup[selectedGroup]" @close="selectedGroup = null"
              @light-toggle="$emit('light-toggle', $event)" @group-toggle="$emit('group-toggle', $event)"
              @set-light="$emit('set-light', $event)"
              @set-group="$emit('set-group', {groupId: selectedGroup, value: $event})"
@@ -30,7 +30,8 @@ export default {
   name: "Light",
   components: {Group, Groups},
   mixins: [Utils, Panel],
-  emits: ['group-toggle', 'light-toggle', 'set-light', 'set-group', 'select-scene', 'start-animation', 'stop-animation'],
+  emits: ['group-toggle', 'light-toggle', 'set-light', 'set-group', 'select-scene', 'start-animation', 'stop-animation',
+    'refresh'],
 
   props: {
     lights: {
@@ -168,13 +169,49 @@ export default {
       })
     },
 
-    closeGroup() {
-      this.selectedGroup = null
+    refresh() {
+      this.$emit('refresh')
+    },
+
+    onLightChange(event) {
+      if (event.plugin_name !== this.pluginName)
+        return
+
+      if (!this.lights[event.light_id]) {
+        this.refresh()
+        return
+      }
+
+      delete event.plugin_name
+      delete event.type
+
+      this.lights[event.light_id].state = {
+        ...(this.lights[event.light_id]?.state || {}),
+        ...event,
+      }
+    },
+
+    onAnimationChange(event) {
+      if (event.plugin_name !== this.pluginName)
+        return
+
+      this.refresh()
     },
   },
 
   mounted() {
+    this.subscribe(this.onLightChange, 'on-light-change',
+        'platypush.message.event.light.LightStatusChangeEvent')
+    this.subscribe(this.onAnimationChange, 'on-animation-change',
+        'platypush.message.event.light.LightAnimationStartedEvent',
+        'platypush.message.event.light.LightAnimationStoppedEvent')
+
     this.initSelectedGroup()
+  },
+
+  destroyed() {
+    this.unsubscribe('on-light-change')
+    this.unsubscribe('on-animation-change')
   },
 }
 </script>

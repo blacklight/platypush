@@ -5,6 +5,8 @@ import time
 from enum import Enum
 from threading import Thread, Event
 
+from platypush.context import get_bus
+from platypush.message.event.light import LightAnimationStartedEvent, LightAnimationStoppedEvent
 from platypush.plugins import action
 from platypush.plugins.light import LightPlugin
 from platypush.utils import set_thread_name
@@ -17,6 +19,12 @@ class LightHuePlugin(LightPlugin):
     Requires:
 
         * **phue** (``pip install phue``)
+
+    Triggers:
+
+        - :class:`platypush.message.event.light.LightAnimationStartedEvent` when an animation is started.
+        - :class:`platypush.message.event.light.LightAnimationStoppedEvent` when an animation is stopped.
+
     """
 
     MAX_BRI = 255
@@ -851,7 +859,7 @@ class LightHuePlugin(LightPlugin):
 
         def _animate_thread(lights):
             set_thread_name('HueAnimate')
-            self.logger.info('Starting {} animation'.format(animation, (lights or groups)))
+            get_bus().post(LightAnimationStartedEvent(lights=lights, groups=groups, animation=animation))
 
             lights = _initialize_light_attrs(lights)
             animation_start_time = time.time()
@@ -882,7 +890,7 @@ class LightHuePlugin(LightPlugin):
 
                 lights = _next_light_attrs(lights)
 
-            self.logger.info('Stopping animation')
+            get_bus().post(LightAnimationStoppedEvent(lights=lights, groups=groups, animation=animation))
             self.animation_thread = None
 
         self.animation_thread = Thread(target=_animate_thread,

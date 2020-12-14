@@ -25,7 +25,7 @@ export default {
   },
 
   mounted() {
-    this.subscribe(this.onMessage, 'platypush.message.event.pushbullet.PushbulletEvent')
+    this.subscribe(this.onMessage, null, 'platypush.message.event.pushbullet.PushbulletEvent')
   },
 }
 </script>

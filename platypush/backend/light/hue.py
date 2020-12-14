@@ -36,8 +36,8 @@ class LightHueBackend(Backend):
         super().__init__(*args, **kwargs)
         self.poll_seconds = poll_seconds
 
-
-    def _get_lights(self):
+    @staticmethod
+    def _get_lights():
         plugin = get_plugin('light.hue')
         if not plugin:
             plugin = get_plugin('light.hue', reload=True)
@@ -67,8 +67,11 @@ class LightHueBackend(Backend):
                             event_args['hue'] = state.get('hue')
                         if 'ct' in state and state.get('ct') != prev_state.get('ct'):
                             event_args['ct'] = state.get('ct')
+                        if 'xy' in state and state.get('xy') != prev_state.get('xy'):
+                            event_args['xy'] = state.get('xy')
 
                         if event_args:
+                            event_args['plugin_name'] = 'light.hue'
                             event_args['light_id'] = light_id
                             event_args['light_name'] = light.get('name')
                             self.bus.post(LightStatusChangeEvent(**event_args))
@@ -92,5 +95,6 @@ class LightHueBackend(Backend):
             except Exception as e:
                 self.logger.exception(e)
                 time.sleep(self.poll_seconds)
+
 
 # vim:sw=4:ts=4:et:

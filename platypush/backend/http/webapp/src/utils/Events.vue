@@ -10,11 +10,12 @@ export default {
   },
 
   methods: {
-    subscribe(handler, ...events) {
+    subscribe(handler, handlerName, ...events) {
       const subFunc = () => {
         bus.emit('subscribe', {
           events: events,
           handler: handler,
+          handlerName: handlerName || this.generateId(),
         })
       }
 
@@ -30,6 +31,14 @@ export default {
           unwatch()
         }
       })
+    },
+
+    unsubscribe(handlerName) {
+      bus.emit('unsubscribe', handlerName)
+    },
+
+    generateId() {
+      return btoa([...Array(16).keys()].forEach(() => String.fromCharCode(Math.round(Math.random() * 255))))
     },
   }
 }

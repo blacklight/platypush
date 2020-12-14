@@ -289,16 +289,16 @@ export default {
       setInterval(this.refresh, parseInt((this.refreshSeconds*1000).toFixed(0)))
     }
 
-    this.subscribe(this.onNewPlayingTrack, 'platypush.message.event.music.NewPlayingTrackEvent')
-    this.subscribe(this.onMusicStop, 'platypush.message.event.music.MusicStopEvent')
-    this.subscribe(this.onMusicPlay, 'platypush.message.event.music.MusicPlayEvent')
-    this.subscribe(this.onMusicPause, 'platypush.message.event.music.MusicPauseEvent')
-    this.subscribe(this.onSeekChange, 'platypush.message.event.music.SeekChangeEvent')
-    this.subscribe(this.onVolumeChange, 'platypush.message.event.music.VolumeChangeEvent')
-    this.subscribe(this.onRepeatChange, 'platypush.message.event.music.PlaybackRepeatModeChangeEvent')
-    this.subscribe(this.onRandomChange, 'platypush.message.event.music.PlaybackRandomModeChangeEvent')
-    this.subscribe(this.onConsumeChange, 'platypush.message.event.music.PlaybackConsumeModeChangeEvent')
-    this.subscribe(this.onSingleChange, 'platypush.message.event.music.PlaybackSingleModeChangeEvent')
+    this.subscribe(this.onNewPlayingTrack, 'widget-music-on-new-track', 'platypush.message.event.music.NewPlayingTrackEvent')
+    this.subscribe(this.onMusicStop, 'widget-music-on-music-stop', 'platypush.message.event.music.MusicStopEvent')
+    this.subscribe(this.onMusicPlay, 'widget-music-on-music-play', 'platypush.message.event.music.MusicPlayEvent')
+    this.subscribe(this.onMusicPause, 'widget-music-on-music-pause', 'platypush.message.event.music.MusicPauseEvent')
+    this.subscribe(this.onSeekChange, 'widget-music-on-music-seek', 'platypush.message.event.music.SeekChangeEvent')
+    this.subscribe(this.onVolumeChange, 'widget-music-on-volume-change', 'platypush.message.event.music.VolumeChangeEvent')
+    this.subscribe(this.onRepeatChange, 'widget-music-on-repeat-change', 'platypush.message.event.music.PlaybackRepeatModeChangeEvent')
+    this.subscribe(this.onRandomChange, 'widget-music-on-random-change', 'platypush.message.event.music.PlaybackRandomModeChangeEvent')
+    this.subscribe(this.onConsumeChange, 'widget-music-on-consume-change', 'platypush.message.event.music.PlaybackConsumeModeChangeEvent')
+    this.subscribe(this.onSingleChange, 'widget-music-on-single-change', 'platypush.message.event.music.PlaybackSingleModeChangeEvent')
   },
 }
 </script>
