@@ -810,7 +810,6 @@ class LightHuePlugin(LightPlugin):
                     'hue': random.randint(hue_range[0], hue_range[1]),
                     'sat': random.randint(sat_range[0], sat_range[1]),
                     'bri': random.randint(bri_range[0], bri_range[1]),
-                    'transitiontime': transition_seconds,
                 } for light in lights}
             elif animation == self.Animation.BLINK:
                 return {light: {
