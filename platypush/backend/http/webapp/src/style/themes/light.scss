@@ -1,5 +1,11 @@
 //// General
 $background-color: white;
+$default-bg-2: #f8f8f8 !default;
+$default-bg-3: #f4f5f6 !default;
+$default-bg-4: #f1f3f2 !default;
+$default-bg-5: #edf0ee !default;
+$default-bg-6: #e4eae8 !default;
+$default-bg-7: #e4e4e4 !default;
 
 //// Notifications
 $notification-bg: rgba(185, 255, 193, 0.9) !default;
@@ -31,6 +37,9 @@ $border-color-3: #cccccc !default;
 $default-border: 1px solid $border-color-1 !default;
 $default-border-2: 1px solid $border-color-2 !default;
 $default-border-3: 1px solid $border-color-3 !default;
+
+//// Shadows
+$border-shadow-bottom: 0 3px 2px -1px #c0c0c0;
 
 //// Modals
 $modal-header-bg: #e0e0e0 !default;

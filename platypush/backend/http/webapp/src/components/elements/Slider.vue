@@ -1,8 +1,9 @@
 <template>
   <label>
-    <input class="slider" type="range" :min="range[0]" :max="range[1]" :value="value"
-           @change="$emit('input', $event)" @mouseup="$emit('mouseup', $event)"
-           @mousedown="$emit('mousedown', $event)">
+    <input class="slider" type="range" :min="range[0]" :max="range[1]" :value="value" :disabled="disabled"
+           @change="$emit('input', $event)" @mouseup="$emit('mouseup', $event)" @input="$emit('input', $event)"
+           @mousedown="$emit('mousedown', $event)" @touch="$emit('input', $event)"
+           @touchstart="$emit('mousedown', $event)" @touchend="$emit('mouseup', $event)">
   </label>
 </template>
 
@@ -38,7 +39,7 @@ export default {
   background: $slider-bg;
   outline: none;
 
-  &::-webkit-slider-thumb {
+  @mixin slider-thumb {
     @include appearance(none);
     width: 1.5em;
     height: 1.5em;
@@ -48,43 +49,29 @@ export default {
     cursor: pointer;
   }
 
-  &::-moz-range-thumb {
-    @include appearance(none);
-    width: 1.5em;
-    height: 1.5em;
-    border-radius: 50%;
-    border: 0;
-    background: $slider-thumb-bg;
-    cursor: pointer;
-  }
+  &::-webkit-slider-thumb { @include slider-thumb; }
+  &::-moz-range-thumb { @include slider-thumb; }
+  &::-moz-range-track { @include appearance(none); }
 
-  &[disabled]::-webkit-slider-thumb {
-    display: none;
-    width: 0;
-  }
-
-  &[disabled]::-moz-range-thumb {
-    display: none;
-    width: 0;
-  }
-
-  &.disabled { opacity: 0.3; }
-
-  &::-moz-range-track {
-    @include appearance(none);
-  }
-
+  &::-webkit-progress-value,
   &::-moz-range-progress {
     background: $slider-progress-bg;
     height: 1em;
   }
 
-  &[disabled]::-webkit-progress-value {
-    background: none;
-  }
+  &[disabled] {
+    opacity: 0.3;
 
-  &[disabled]::-moz-range-progress {
-    background: none;
+    &::-webkit-progress-value,
+    &::-moz-range-progress {
+      background: none;
+    }
+
+    &::-webkit-slider-thumb,
+    &::-moz-range-thumb {
+      display: none;
+      width: 0;
+    }
   }
 }
 </style>

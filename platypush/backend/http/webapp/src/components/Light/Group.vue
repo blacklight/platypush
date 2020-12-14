@@ -23,14 +23,21 @@
       <div class="lights-view" v-else>
         <div class="row view-selector">
           <button :class="{selected: selectedView === 'lights'}" title="Lights" @click="selectedView = 'lights'">
-            <i class="fas fa-lightbulb" /> &nbsp; Lights
+            <i class="icon fas fa-lightbulb" />
+            <span class="view-title">&nbsp; Lights</span>
           </button>
           <button :class="{selected: selectedView === 'scenes'}" title="Scenes" @click="selectedView = 'scenes'">
-            <i class="far fa-image" /> &nbsp; Scenes
+            <i class="icon far fa-image" />
+            <span class="view-title">&nbsp; Scenes</span>
+          </button>
+          <button :class="{selected: selectedView === 'animate'}" title="Animate"
+                  @click="selectedView = 'animate'">
+            <i class="icon fas fa-video" />
+            <span class="view-title">&nbsp; Animate</span>
           </button>
         </div>
 
-        <div class="view" v-if="selectedView === 'lights'">
+        <div class="view fade-in" v-if="selectedView === 'lights'">
           <keep-alive>
             <div class="panel-row row" :class="{expanded: light.id === selectedLight}"
                  v-for="(light, id) in lightsSorted" :key="id"
@@ -42,7 +49,7 @@
           </keep-alive>
         </div>
 
-        <div class="view" v-else-if="selectedView === 'scenes'">
+        <div class="view fade-in" v-else-if="selectedView === 'scenes'">
           <keep-alive>
             <div class="panel-row row" :class="{selected: scene.id === selectedScene}"
                  v-for="(scene, id) in scenesSorted" :key="id" @click="onSceneSelected(scene.id)">
@@ -51,10 +58,17 @@
           </keep-alive>
         </div>
 
-        <div class="view group-controls" v-else-if="selectedView === 'group'">
+        <div class="view group-controls fade-in" v-else-if="selectedView === 'group'">
           <keep-alive>
             <Controls :group="group" :lights="lights" :color-converter="colorConverter"
                       @set-group="$emit('set-group', $event)" />
+          </keep-alive>
+        </div>
+
+        <div class="view group-controls fade-in" v-else-if="selectedView === 'animate'">
+          <keep-alive>
+            <Animate :group="group" :lights="lights" :color-converter="colorConverter" :running-animations="animations"
+                     @start="$emit('start-animation', $event)" @stop="$emit('stop-animation', $event)" />
           </keep-alive>
         </div>
       </div>
@@ -69,11 +83,12 @@ import Controls from "@/components/Light/Controls";
 import MenuPanel from "@/components/MenuPanel";
 import ToggleSwitch from "@/components/elements/ToggleSwitch";
 import {ColorConverter} from "@/components/panels/Light/color";
+import Animate from "@/components/Light/Animate";
 
 export default {
   name: "Group",
-  emits: ['close', 'group-toggle', 'light-toggle', 'set-light', 'select-scene'],
-  components: {ToggleSwitch, MenuPanel, Light, Scene, Controls},
+  emits: ['close', 'group-toggle', 'light-toggle', 'set-light', 'select-scene', 'start-animation', 'stop-animation'],
+  components: {Animate, ToggleSwitch, MenuPanel, Light, Scene, Controls},
   props: {
     lights: {
       type: Object,
@@ -85,6 +100,11 @@ export default {
 
     scenes: {
       type: Object,
+    },
+
+    animations: {
+      type: Object,
+      default: () => {},
     },
 
     colorConverter: {
@@ -200,15 +220,12 @@ export default {
     border-radius: 0;
 
     button {
-      width: 50%;
+      width: 33.3%;
       padding: 1.5em;
       text-align: left;
       opacity: 0.8;
       box-shadow: $plugin-panel-entry-shadow;
-
-      &:first-child {
-        border-right: 0;
-      }
+      border-right: 0;
 
       &.selected {
         background: $selected-bg;
@@ -218,6 +235,18 @@ export default {
         background: $hover-bg;
       }
     }
+
+    @media screen and (max-width: $tablet) {
+      .view-title {
+        display: none;
+      }
+
+      .icon {
+        width: 100%;
+        text-align: center;
+        font-size: 1.2em;
+      }
+    }
   }
 }
 </style>
@@ -225,7 +254,10 @@ export default {
 <style lang="scss">
 .light-group-container {
   .group-controls {
-    margin: 1em;
+    margin: 0;
+    padding: 1em;
+    background-color: $default-bg-6;
+    border-radius: 0 0 1em 1em;
 
     .controls {
       margin: 0;

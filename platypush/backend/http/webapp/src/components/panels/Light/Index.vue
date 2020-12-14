@@ -6,10 +6,12 @@
     </div>
     <div class="panel" v-else>
       <Group :group="groups[selectedGroup]" :lights="displayedLights" :scenes="scenesByGroup[selectedGroup]"
-             :color-converter="colorConverter" @close="closeGroup" @light-toggle="$emit('light-toggle', $event)"
-             @group-toggle="$emit('group-toggle', $event)" @set-light="$emit('set-light', $event)"
+             :color-converter="colorConverter" :animations="animationsByGroup[selectedGroup]" @close="closeGroup"
+             @light-toggle="$emit('light-toggle', $event)" @group-toggle="$emit('group-toggle', $event)"
+             @set-light="$emit('set-light', $event)"
              @set-group="$emit('set-group', {groupId: selectedGroup, value: $event})"
-             @select-scene="$emit('select-scene', {groupId: selectedGroup, sceneId: $event})" />
+             @select-scene="$emit('select-scene', {groupId: selectedGroup, sceneId: $event})"
+             @start-animation="$emit('start-animation', $event)" @stop-animation="$emit('stop-animation', $event)" />
     </div>
   </div>
 </template>
@@ -28,7 +30,7 @@ export default {
   name: "Light",
   components: {Group, Groups},
   mixins: [Utils, Panel],
-  emits: ['group-toggle', 'light-toggle', 'set-light', 'set-group', 'select-scene'],
+  emits: ['group-toggle', 'light-toggle', 'set-light', 'set-group', 'select-scene', 'start-animation', 'stop-animation'],
 
   props: {
     lights: {
@@ -90,17 +92,6 @@ export default {
       }, {})
     },
 
-    lightsByGroup() {
-      if (!this.groups)
-        return {}
-
-      const self = this
-      return Object.entries(this.groups).reduce((obj, [groupId, group]) => {
-        obj[groupId] = group.lights.map((lightId) => self.lights[lightId])
-        return obj
-      }, {})
-    },
-
     groupsByLight() {
       if (!this.groups)
         return {}
@@ -134,6 +125,33 @@ export default {
         return obj
       }, {})
     },
+
+    animationsByGroup() {
+      const self = this
+      const animations = Object.entries(this.animations?.groups || {}).reduce((obj, [groupId, animation]) => {
+        obj[groupId] = {}
+        if (animation)
+          obj[groupId][null] = animation
+
+        return obj
+      }, {})
+
+      return {
+        ...animations,
+        ...Object.entries(this.animations?.lights || {}).reduce((obj, [lightId, animation]) => {
+          const group = Object.values(self.groupsByLight[lightId])?.[0]
+          if (group) {
+            if (animation && group.id != null) {
+              if (!obj[group.id])
+                obj[group.id] = {}
+              obj[group.id][lightId] = animation
+            }
+          }
+
+          return obj
+        }, {})
+      }
+    }
   },
 
   methods: {

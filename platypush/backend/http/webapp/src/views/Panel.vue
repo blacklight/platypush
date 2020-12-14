@@ -99,10 +99,15 @@ main {
   height: 100%;
   display: flex;
 
+  @media screen and (max-width: $tablet) {
+    flex-direction: column;
+  }
+
   .canvas {
     display: flex;
     flex-grow: 100;
     background: $menu-panel-bg;
+    overflow: auto;
 
     .panel {
       width: 100%;

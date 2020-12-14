@@ -3,7 +3,8 @@
   <LightPlugin plugin-name="light.hue" :config="config" :lights="lights" :groups="groups" :scenes="scenes"
                :animations="animations" :initial-group="initialGroup" :loading-groups="loadingGroups"
                :color-converter="colorConverter" @group-toggle="toggleGroup"
-               @light-toggle="toggleLight" @set-light="setLight" @set-group="setGroup" @select-scene="setScene" />
+               @light-toggle="toggleLight" @set-light="setLight" @set-group="setGroup" @select-scene="setScene"
+               @start-animation="startAnimation" @stop-animation="stopAnimation" />
 </template>
 
 <script>
@@ -65,13 +66,16 @@ export default {
     },
 
     async getScenes() {
-      // return await this.request('light.hue.get_scenes')
       return Object.entries(await this.request('light.hue.get_scenes'))
           .filter((scene) => !scene[1].recycle && scene[1].type.toLowerCase() === 'lightscene')
           .reduce((obj, [id, scene]) => {
             obj[id] = scene
             return obj
           }, {})
+    },
+
+    async getAnimations() {
+      return await this.request('light.hue.get_animations')
     },
 
     async toggleGroup(group) {
@@ -167,7 +171,7 @@ export default {
         }
 
         if (method)
-          return self.lightAction(method, args, group)
+          return self.groupAction(method, args, group)
       }).filter((req) => req != null)
 
       await Promise.all(requests)
@@ -188,15 +192,30 @@ export default {
         this.loading = true
 
       try {
-        [this.lights, this.groups, this.scenes] = await Promise.all([
+        [this.lights, this.groups, this.scenes, this.animations] = await Promise.all([
           this.getLights(),
           this.getGroups(),
           this.getScenes(),
+          this.getAnimations(),
         ])
       } finally {
         if (!background)
           this.loading = false
       }
+    },
+
+    async startAnimation(event) {
+      await this.request('light.hue.animate', {
+        lights: event.lights,
+        ...event.animation,
+      })
+
+      await this.refresh(true)
+    },
+
+    async stopAnimation() {
+      await this.request('light.hue.stop_animation')
+      await this.refresh(true)
     },
   },
 

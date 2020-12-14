@@ -2,11 +2,11 @@
   <nav :class="{collapsed: collapsed}">
     <div class="toggler" @click="collapsed = !collapsed">
       <i class="fas fa-bars" />
-      <span class="hostname" v-if="!collapsed && hostname" v-text="hostname" />
+      <span class="hostname" v-if="hostname" v-text="hostname" />
     </div>
 
     <li v-for="name in Object.keys(panels)" :key="name" class="entry" :class="{selected: name === selectedPanel}"
-        @click="$emit('select', name)">
+        :title="name" @click="onItemClick(name)">
       <a :href="`/#${name}`">
         <span class="icon">
           <i :class="icons[name].class" v-if="icons[name]?.class" />
@@ -20,10 +20,12 @@
 
 <script>
 import { icons } from '@/assets/icons.json'
+import Utils from "@/Utils";
 
 export default {
   name: "Nav",
   emits: ['select'],
+  mixins: [Utils],
   props: {
     panels: {
       type: Object,
@@ -43,6 +45,12 @@ export default {
     displayName(name) {
       return name.split('.').map((token) => token[0].toUpperCase() + token.slice(1)).join(' ')
     },
+
+    onItemClick(name) {
+      this.$emit('select', name)
+      if (this.isMobile())
+        this.collapsed = true
+    },
   },
 
   data() {
@@ -52,25 +60,48 @@ export default {
       host: null,
     }
   },
+
+  mounted() {
+    if (this.isMobile() && !this.$root.$route.hash.length)
+      this.collapsed = false
+  },
 }
 </script>
 
 <!--suppress SassScssResolvedByNameOnly -->
 <style lang="scss" scoped>
 nav {
-  width: 20%;
-  min-width: 12.5em;
-  max-width: 25em;
-  height: 100%;
-  overflow: auto;
-  background: $nav-bg;
-  color: $nav-fg;
-  box-shadow: $nav-box-shadow-main;
-  margin-right: 4px;
+  @media screen and (max-width: $tablet) {
+    width: 100%;
+    height: 100vh;
+    background: $nav-bg;
+    color: $nav-fg;
+    box-shadow: $nav-box-shadow-main;
+
+    &:not(.collapsed) {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
+    }
+  }
+
+  @media screen and (min-width: $tablet) {
+    width: 20%;
+    min-width: 12.5em;
+    max-width: 25em;
+    height: 100%;
+    overflow: auto;
+    background: $nav-bg;
+    color: $nav-fg;
+    box-shadow: $nav-box-shadow-main;
+    margin-right: 4px;
+  }
 
   li {
     box-shadow: $nav-box-shadow-entry;
     cursor: pointer;
+    list-style: none;
 
     a {
       display: block;
@@ -104,20 +135,40 @@ nav {
     font-size: 1.5em;
     cursor: pointer;
     padding: 0.4em;
+    align-items: center;
+  }
 
-    .hostname {
-      font-size: 0.7em;
+  .hostname {
+    font-size: 0.7em;
+
+    @media screen and (min-width: $tablet) {
       margin-left: 1em;
+    }
+
+    @media screen and (max-width: $tablet) {
+      text-align: right;
+      margin-right: 0.25em;
+      flex-grow: 1;
     }
   }
 
   &.collapsed {
-    width: 2.5em;
-    min-width: unset;
-    max-width: unset;
-    background: initial;
-    color: $nav-collapsed-fg;
-    box-shadow: $nav-box-shadow-collapsed;
+    @media screen and (min-width: $tablet) {
+      width: 2.5em;
+      min-width: unset;
+      max-width: unset;
+      background: initial;
+      color: $nav-collapsed-fg;
+      box-shadow: $nav-box-shadow-collapsed;
+
+      .hostname {
+        display: none;
+      }
+    }
+
+    @media screen and (max-width: $tablet) {
+      height: auto;
+    }
 
     a {
       color: $nav-collapsed-fg;
@@ -129,7 +180,9 @@ nav {
 
     .toggler {
       text-align: center;
-      margin-bottom: 3em;
+      @media screen and (min-width: $tablet) {
+        margin-bottom: 3em;
+      }
     }
 
     li {
@@ -153,6 +206,10 @@ nav {
 
       .icon {
         margin-right: 0;
+      }
+
+      @media screen and (max-width: $tablet) {
+        display: none;
       }
     }
   }

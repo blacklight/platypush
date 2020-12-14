@@ -8,6 +8,13 @@ export default {
       bus.emit('notification-create', notification)
     },
 
+    warn(msg) {
+      this.notify({
+        text: msg,
+        warning: true,
+      })
+    },
+
     error(msg) {
       this.notify({
         text: msg,

@@ -73,6 +73,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: $default-bg-6;
 }
 
 .description {
@@ -87,6 +88,7 @@ form {
   border: $default-border-3;
   border-radius: 3em;
   box-shadow: 2px 2px 3px 3px $border-color-2;
+  background: $background-color;
 
   .row {
     margin: 0.5em 0;

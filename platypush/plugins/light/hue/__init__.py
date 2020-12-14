@@ -738,32 +738,35 @@ class LightHuePlugin(LightPlugin):
         :param duration: Animation duration in seconds (default: None, i.e. continue until stop)
         :type duration: float
 
-        :param hue_range: If you selected a color color_transition.html, this will specify the hue range of your color color_transition.html.
+        :param hue_range: If you selected a ``color_transition``, this will specify the hue range of your color ``color_transition``.
             Default: [0, 65535]
         :type hue_range: list[int]
 
-        :param sat_range: If you selected a color color_transition.html, this will specify the saturation range of your color
-            color_transition.html. Default: [0, 255]
+        :param sat_range: If you selected a color ``color_transition``, this will specify the saturation range of your color
+            ``color_transition``. Default: [0, 255]
         :type sat_range: list[int]
 
-        :param bri_range: If you selected a color color_transition.html, this will specify the brightness range of your color
-            color_transition.html. Default: [254, 255] :type bri_range: list[int]
+        :param bri_range: If you selected a color ``color_transition``, this will specify the brightness range of your color
+            ``color_transition``. Default: [254, 255] :type bri_range: list[int]
 
         :param lights: Lights to control (names, IDs or light objects). Default: plugin default lights
         :param groups: Groups to control (names, IDs or group objects). Default: plugin default groups
 
-        :param hue_step: If you selected a color color_transition.html, this will specify by how much the color hue will change
+        :param hue_step: If you selected a color ``color_transition``, this will specify by how much the color hue will change
             between iterations. Default: 1000 :type hue_step: int
 
-        :param sat_step: If you selected a color color_transition.html, this will specify by how much the saturation will change
+        :param sat_step: If you selected a color ``color_transition``, this will specify by how much the saturation will change
             between iterations. Default: 2 :type sat_step: int
 
-        :param bri_step: If you selected a color color_transition.html, this will specify by how much the brightness will change
+        :param bri_step: If you selected a color ``color_transition``, this will specify by how much the brightness will change
             between iterations. Default: 1 :type bri_step: int
 
         :param transition_seconds: Time between two transitions or blinks in seconds. Default: 1.0
         :type transition_seconds: float
         """
+
+        self.stop_animation()
+        self._animation_stop.clear()
 
         if bri_range is None:
             bri_range = [self.MAX_BRI - 1, self.MAX_BRI]
@@ -807,6 +810,7 @@ class LightHuePlugin(LightPlugin):
                     'hue': random.randint(hue_range[0], hue_range[1]),
                     'sat': random.randint(sat_range[0], sat_range[1]),
                     'bri': random.randint(bri_range[0], bri_range[1]),
+                    'transitiontime': transition_seconds,
                 } for light in lights}
             elif animation == self.Animation.BLINK:
                 return {light: {
@@ -819,9 +823,6 @@ class LightHuePlugin(LightPlugin):
             if animation == self.Animation.COLOR_TRANSITION:
                 for (light, attrs) in lights.items():
                     for (attr, value) in attrs.items():
-                        attr_range = [0, 0]
-                        attr_step = 0
-
                         if attr == 'hue':
                             attr_range = hue_range
                             attr_step = hue_step
@@ -831,6 +832,8 @@ class LightHuePlugin(LightPlugin):
                         elif attr == 'sat':
                             attr_range = sat_range
                             attr_step = sat_step
+                        else:
+                            continue
 
                         lights[light][attr] = ((value - attr_range[0] + attr_step) %
                                                (attr_range[1] - attr_range[0] + 1)) + \
@@ -849,25 +852,18 @@ class LightHuePlugin(LightPlugin):
 
         def _animate_thread(lights):
             set_thread_name('HueAnimate')
-            self.logger.info('Starting {} animation'.format(
-                animation, (lights or groups)))
+            self.logger.info('Starting {} animation'.format(animation, (lights or groups)))
 
             lights = _initialize_light_attrs(lights)
             animation_start_time = time.time()
             stop_animation = False
 
-            while True:
-                if stop_animation or \
-                        (duration and time.time() - animation_start_time > duration):
-                    break
-
+            while not stop_animation and not (duration and time.time() - animation_start_time > duration):
                 try:
                     if animation == self.Animation.COLOR_TRANSITION:
                         for (light, attrs) in lights.items():
                             self.logger.debug('Setting {} to {}'.format(light, attrs))
                             self.bridge.set_light(light, attrs)
-                            stop_animation = _should_stop()
-                            if stop_animation: break
                     elif animation == self.Animation.BLINK:
                         conf = lights[list(lights.keys())[0]]
                         self.logger.debug('Setting lights to {}'.format(conf))
@@ -877,8 +873,10 @@ class LightHuePlugin(LightPlugin):
                         else:
                             self.bridge.set_light(lights.keys(), conf)
 
-                        stop_animation = _should_stop()
-                        if stop_animation: break
+                    if transition_seconds:
+                        time.sleep(transition_seconds)
+
+                    stop_animation = _should_stop()
                 except Exception as e:
                     self.logger.warning(e)
                     time.sleep(2)
@@ -888,8 +886,6 @@ class LightHuePlugin(LightPlugin):
             self.logger.info('Stopping animation')
             self.animation_thread = None
 
-        self.stop_animation()
-        self._animation_stop.clear()
         self.animation_thread = Thread(target=_animate_thread,
                                        name='HueAnimate',
                                        args=(lights,))
