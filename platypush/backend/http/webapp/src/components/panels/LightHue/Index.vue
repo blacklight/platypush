@@ -2,7 +2,7 @@
   <Loading v-if="loading" />
   <LightPlugin plugin-name="light.hue" :config="config" :lights="lights" :groups="groups" :scenes="scenes"
                :animations="animations" :initial-group="initialGroup" :loading-groups="loadingGroups"
-               :color-converter="colorConverter" @group-toggle="toggleGroup"
+               :color-converter="colorConverter" @group-toggle="toggleGroup" @light-changed="onLightChanged"
                @light-toggle="toggleLight" @set-light="setLight" @set-group="setGroup" @select-scene="setScene"
                @start-animation="startAnimation" @stop-animation="stopAnimation" @refresh="refresh(true)"/>
 </template>
@@ -216,6 +216,13 @@ export default {
     async stopAnimation() {
       await this.request('light.hue.stop_animation')
       await this.refresh(true)
+    },
+
+    onLightChanged(event) {
+      this.lights[event.id].state = {
+        ...this.lights[event.id].state,
+        ...event.state,
+      }
     },
   },
 

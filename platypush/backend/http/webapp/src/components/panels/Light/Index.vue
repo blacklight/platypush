@@ -31,7 +31,7 @@ export default {
   components: {Group, Groups},
   mixins: [Utils, Panel],
   emits: ['group-toggle', 'light-toggle', 'set-light', 'set-group', 'select-scene', 'start-animation', 'stop-animation',
-    'refresh'],
+    'refresh', 'light-changed'],
 
   props: {
     lights: {
@@ -182,13 +182,16 @@ export default {
         return
       }
 
-      delete event.plugin_name
-      delete event.type
+      const state = {...event}
+      const lightId = state.light_id
+      delete state.light_id
+      delete state.type
+      delete state.plugin_name
 
-      this.lights[event.light_id].state = {
-        ...(this.lights[event.light_id]?.state || {}),
-        ...event,
-      }
+      this.$emit('light-changed', {
+        id: lightId,
+        state: state,
+      })
     },
 
     onAnimationChange(event) {
@@ -209,7 +212,7 @@ export default {
     this.initSelectedGroup()
   },
 
-  destroyed() {
+  unmounted() {
     this.unsubscribe('on-light-change')
     this.unsubscribe('on-animation-change')
   },
