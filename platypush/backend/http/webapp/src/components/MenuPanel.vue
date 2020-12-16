@@ -64,13 +64,12 @@ export default {
   }
 }
 
-@media screen and (max-width: $tablet) {
+@media screen and (max-width: $desktop) {
   .menu-panel {
     padding-top: 0;
 
     .content {
       min-width: 100%;
-      border-radius: 0;
 
       .row {
         &:first-child {
@@ -85,7 +84,7 @@ export default {
   }
 }
 
-@media screen and (min-width: $tablet) {
+@media screen and (min-width: $desktop) {
   .menu-panel {
     .content {
       min-width: 75%;
@@ -93,18 +92,10 @@ export default {
   }
 }
 
-@media screen and (min-width: $desktop) {
-  .menu-panel {
-    .content {
-      min-width: 50%;
-    }
-  }
-}
-
 @media screen and (min-width: $widescreen) {
   .menu-panel {
     .content {
-      min-width: 40%;
+      min-width: 50%;
     }
   }
 }
