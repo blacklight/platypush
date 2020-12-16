@@ -1,7 +1,7 @@
 import datetime
 import re
 
-from flask import Blueprint, request, redirect, render_template, make_response, url_for
+from flask import Blueprint, request, redirect, render_template, make_response, abort
 
 from platypush.backend.http.app import template_folder
 from platypush.backend.http.utils import HttpUtils
@@ -33,6 +33,9 @@ def register():
         if user:
             return redirect(redirect_page, 302)
 
+    if user_manager.get_user_count() > 0:
+        return redirect('/login?redirect=' + redirect_page, 302)
+
     if request.form:
         username = request.form.get('username')
         password = request.form.get('password')
@@ -50,9 +53,8 @@ def register():
                 response = make_response(redirect_target)
                 response.set_cookie('session_token', session.session_token)
                 return response
-
-    if user_manager.get_user_count() > 0:
-        return redirect('/login?redirect=' + redirect_page, 302)
+        else:
+            abort(400, 'Password mismatch')
 
     return render_template('index.html', utils=HttpUtils)
 

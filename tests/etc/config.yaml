@@ -1,7 +1,9 @@
+main.db:
+    engine: sqlite:////tmp/platypush-tests.db
+
 backend.http:
     port: 8123
     disable_websocket: True
 
 backend.redis:
     disabled: False
-

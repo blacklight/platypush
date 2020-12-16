@@ -1,6 +1,7 @@
-from .context import platypush, config_file, TestTimeoutException
+import os
 
-import json
+from .context import config_file, TestTimeoutException
+
 import logging
 import requests
 import sys
@@ -15,55 +16,114 @@ from platypush.message import Message
 from platypush.message.response import Response
 from platypush.utils import set_timeout, clear_timeout
 
+
 class TestHttp(unittest.TestCase):
     """ Tests the full flow of a request/response on the HTTP backend.
         Runs a remote command over HTTP via shell.exec plugin and gets the output """
 
     timeout = 10
     sleep_secs = 10
+    db_file = '/tmp/platypush-tests.db'
+    test_user = 'platypush'
+    test_pass = 'test'
+    base_url = 'http://localhost:8123'
+    expected_registration_redirect = '{base_url}/register?redirect={base_url}/execute'.format(base_url=base_url)
+    expected_login_redirect = '{base_url}/login?redirect={base_url}/execute'.format(base_url=base_url)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.app = None
 
     def setUp(self):
         logging.basicConfig(level=logging.INFO, stream=sys.stdout)
         backends = Config.get_backends()
-        self.assertTrue('http' in backends)
+        self.assertTrue('http' in backends, 'Missing HTTP server configuration')
 
-    def test_request_exec_flow(self):
         self.start_daemon()
         logging.info('Sleeping {} seconds while waiting for the daemon to start up'.format(self.sleep_secs))
         time.sleep(self.sleep_secs)
-        self.send_request()
+
+    def test_http_flow(self):
+        # An /execute request performed before any user is registered should redirect to the registration page.
+        response = self.send_request()
+        self.assertEqual(self.expected_registration_redirect, response.url,
+                         'No users registered, but the application did not redirect us to the registration page')
+
+        # Emulate a first user registration through form and get the session_token.
+        response = self.register_user()
+        self.assertGreater(len(response.history), 0, 'Redirect missing from the history')
+        self.assertTrue('session_token' in response.history[0].cookies, 'No session_token returned upon registration')
+        self.assertEqual('{base_url}/'.format(base_url=self.base_url), response.url,
+                         'The registration form did not redirect to the main panel')
+
+        # After a first user has been registered any unauthenticated call to /execute should redirect to /login.
+        response = self.send_request()
+        self.assertEqual(self.expected_login_redirect, response.url,
+                         'An unauthenticated request after user registration should result in a login redirect')
+
+        # A request authenticated with user/pass should succeed.
+        response = self.parse_response(self.send_request(auth=(self.test_user, self.test_pass)))
+        self.assertEqual(response.__class__, Response, 'The request did not return a proper Response object')
+        self.assertEqual(response.output.strip(), 'ping', 'The request did not return the expected output')
+
+        # A request with the wrong user/pass should fail.
+        response = self.send_request(auth=('wrong', 'wrong'))
+        self.assertEqual(self.expected_login_redirect, response.url,
+                         'A request with wrong credentials should fail')
 
     def start_daemon(self):
         def _f():
-            self.receiver = Daemon(config_file=config_file)
-            self.receiver.start()
+            self.app = Daemon(config_file=config_file)
+            self.app.start()
 
         Thread(target=_f).start()
 
-    def on_timeout(self, msg):
+    @staticmethod
+    def on_timeout(msg):
         def _f(): raise TestTimeoutException(msg)
+
         return _f
 
-    def send_request(self):
+    def send_request(self, **kwargs):
         set_timeout(seconds=self.timeout,
                     on_timeout=self.on_timeout('Receiver response timed out'))
 
         response = requests.post(
-            u'http://localhost:8123/execute',
-            json  = {
+            '{}/execute'.format(self.base_url),
+            json={
                 'type': 'request',
                 'target': Config.get('device_id'),
                 'action': 'shell.exec',
-                'args': { 'cmd':'echo ping' }
-            }
+                'args': {'cmd': 'echo ping'}
+            }, **kwargs
         )
 
         clear_timeout()
+        return response
 
-        response = Message.build(response.json())
-        self.assertTrue(isinstance(response, Response))
-        self.assertEqual(response.output.strip(), 'ping')
-        self.receiver.stop_app()
+    def register_user(self):
+        set_timeout(seconds=self.timeout,
+                    on_timeout=self.on_timeout('User registration response timed out'))
+
+        response = requests.post('{base_url}/register?redirect={base_url}/'.format(base_url=self.base_url), data={
+            'username': self.test_user,
+            'password': self.test_pass,
+            'confirm_password': self.test_pass,
+        })
+
+        clear_timeout()
+        return response
+
+    @staticmethod
+    def parse_response(response):
+        return Message.build(response.json())
+
+    def tearDown(self):
+        if self.app:
+            self.app.stop_app()
+
+        if os.path.isfile(self.db_file):
+            os.unlink(self.db_file)
 
 
 if __name__ == '__main__':
