@@ -24,15 +24,12 @@
         <div class="row view-selector">
           <button :class="{selected: selectedView === 'lights'}" title="Lights" @click="selectedView = 'lights'">
             <i class="icon fas fa-lightbulb" />
-            <span class="view-title">&nbsp; Lights</span>
           </button>
           <button :class="{selected: selectedView === 'scenes'}" title="Scenes" @click="selectedView = 'scenes'">
             <i class="icon far fa-image" />
-            <span class="view-title">&nbsp; Scenes</span>
           </button>
           <button :class="{selected: selectedView === 'animate'}" title="Animate" @click="selectedView = 'animate'">
             <i class="icon fas fa-video" />
-            <span class="view-title">&nbsp; Animate</span>
           </button>
         </div>
 
@@ -235,16 +232,10 @@ export default {
       }
     }
 
-    @media screen and (max-width: $tablet) {
-      .view-title {
-        display: none;
-      }
-
-      .icon {
-        width: 100%;
-        text-align: center;
-        font-size: 1.2em;
-      }
+    .icon {
+      width: 100%;
+      text-align: center;
+      font-size: 1.2em;
     }
   }
 }
