@@ -141,5 +141,9 @@ main {
     flex-grow: 1;
     overflow: auto;
   }
+
+  ::v-deep button {
+    background: rgba(0, 0, 0, 0);
+  }
 }
 </style>
