@@ -60,8 +60,6 @@ export default {
   }
 
   &[disabled] {
-    opacity: 0.3;
-
     &::-webkit-progress-value,
     &::-moz-range-progress {
       background: none;

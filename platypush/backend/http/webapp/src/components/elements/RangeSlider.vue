@@ -129,7 +129,6 @@ export default {
     }
 
     &[disabled] {
-      opacity: 0.3;
       @mixin no-thumb {
         display: none;
         width: 0;

@@ -4,8 +4,8 @@ from platypush.message.event import Event
 class MusicEvent(Event):
     """ Base class for music events """
 
-    def __init__(self, status, track, *args, **kwargs):
-        super().__init__(*args, status=status, track=track, **kwargs)
+    def __init__(self, status, track, plugin_name=None, *args, **kwargs):
+        super().__init__(*args, status=status, track=track, plugin_name=plugin_name, **kwargs)
 
 
 class MusicPlayEvent(MusicEvent):

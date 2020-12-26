@@ -3,7 +3,7 @@ from platypush.plugins import Plugin, action
 
 class MusicPlugin(Plugin):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
     @action
     def play(self):
@@ -26,7 +26,11 @@ class MusicPlugin(Plugin):
         raise NotImplementedError()
 
     @action
-    def setvol(self, vol):
+    def set_volume(self, volume):
+        raise NotImplementedError()
+
+    @action
+    def seek(self, position):
         raise NotImplementedError()
 
     @action

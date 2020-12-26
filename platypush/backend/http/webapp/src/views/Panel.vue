@@ -5,7 +5,7 @@
          @select="selectedPanel = $event" v-else />
 
     <div class="canvas">
-      <div class="panel" v-for="(panel, name) in components" :key="name">
+      <div class="panel" :class="{hidden: name !== selectedPanel}" v-for="(panel, name) in components" :key="name">
         <component :is="panel.component" :config="panel.config" :plugin-name="name" v-if="name === selectedPanel" />
       </div>
     </div>

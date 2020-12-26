@@ -39,7 +39,11 @@ $default-border-2: 1px solid $border-color-2 !default;
 $default-border-3: 1px solid $border-color-3 !default;
 
 //// Shadows
-$border-shadow-bottom: 0 3px 2px -1px #c0c0c0;
+$default-shadow-color: #c0c0c0 !default;
+$border-shadow-top: 0 -2.5px 4px 0 $default-shadow-color;
+$border-shadow-bottom: 0 3px 2px -1px $default-shadow-color;
+$border-shadow-left: -2.5px 0 4px 0 $default-shadow-color;
+$border-shadow-right: 2.5px 0 4px 0 $default-shadow-color;
 
 //// Modals
 $modal-header-bg: #e0e0e0 !default;
@@ -75,6 +79,7 @@ $nav-entry-collapsed-hover-bg: rgba(160, 245, 178, 0.60) !default;
 $nav-box-shadow-main: 1px 0 2px #002626;
 $nav-box-shadow-entry: 0 0 1px 1px #103824 !default;
 $nav-box-shadow-collapsed: 1px 0 2px 1px #bbb !default;
+$nav-collapsed-bg: white;
 $nav-collapsed-fg: #5e5e5e;
 
 /// Panel/menu components
@@ -101,3 +106,16 @@ $slider-thumb-bg: rgba(0,215,80,1.0) !default;
 $slider-thumb-disabled-bg: rgba(0,215,80,0.3) !default;
 $slider-hover-on-hover-bg: #d2d2d2 !default;
 $slider-progress-bg: rgba(0,215,80,0.2) !default;
+
+//// Input element
+$input-icon-fg: #888;
+$input-icon-focus-border: 1px solid rgba(127, 216, 95, 0.83);
+$input-icon-hover-border: 1px solid rgba(159, 180, 152, 0.83);
+
+//// Media elements
+$play-btn-fg: #27ee5e !default;
+
+//// Dropdown element
+$dropdown-bg: rgb(241, 243, 242) !default;
+$dropdown-disabled-color: #999 !default;
+$dropdown-shadow: 1px 1px 1px #bbb !default;

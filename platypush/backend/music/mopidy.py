@@ -131,19 +131,19 @@ class MusicMopidyBackend(Backend):
                 track = self._parse_track(track)
                 if not track:
                     return
-                self.bus.post(MusicPauseEvent(status=status, track=track))
+                self.bus.post(MusicPauseEvent(status=status, track=track, plugin_name='music.mpd'))
             elif event == 'track_playback_resumed':
                 status['state'] = 'play'
                 track = self._parse_track(track)
                 if not track:
                     return
-                self.bus.post(MusicPlayEvent(status=status, track=track))
+                self.bus.post(MusicPlayEvent(status=status, track=track, plugin_name='music.mpd'))
             elif event == 'track_playback_ended' or (
                     event == 'playback_state_changed'
                     and msg.get('new_state') == 'stopped'):
                 status['state'] = 'stop'
                 track = self._parse_track(track)
-                self.bus.post(MusicStopEvent(status=status, track=track))
+                self.bus.post(MusicStopEvent(status=status, track=track, plugin_name='music.mpd'))
             elif event == 'track_playback_started':
                 track = self._parse_track(track)
                 if not track:
@@ -152,7 +152,7 @@ class MusicMopidyBackend(Backend):
                 status['state'] = 'play'
                 status['position'] = 0.0
                 status['time'] = track.get('time')
-                self.bus.post(NewPlayingTrackEvent(status=status, track=track))
+                self.bus.post(NewPlayingTrackEvent(status=status, track=track, plugin_name='music.mpd'))
             elif event == 'stream_title_changed':
                 m = re.match('^\s*(.+?)\s+-\s+(.*)\s*$', msg.get('title', ''))
                 if not m:
@@ -162,35 +162,35 @@ class MusicMopidyBackend(Backend):
                 track['title'] = m.group(2)
                 status['state'] = 'play'
                 status['position'] = 0.0
-                self.bus.post(NewPlayingTrackEvent(status=status, track=track))
+                self.bus.post(NewPlayingTrackEvent(status=status, track=track, plugin_name='music.mpd'))
             elif event == 'volume_changed':
                 status['volume'] = msg.get('volume')
-                self.bus.post(VolumeChangeEvent(volume=status['volume'],
-                                                status=status, track=track))
+                self.bus.post(VolumeChangeEvent(volume=status['volume'], status=status, track=track,
+                                                plugin_name='music.mpd'))
             elif event == 'mute_changed':
                 status['mute'] = msg.get('mute')
-                self.bus.post(MuteChangeEvent(mute=status['mute'],
-                                              status=status, track=track))
+                self.bus.post(MuteChangeEvent(mute=status['mute'], status=status, track=track,
+                                              plugin_name='music.mpd'))
             elif event == 'seeked':
                 status['position'] = msg.get('time_position')/1000
-                self.bus.post(SeekChangeEvent(position=status['position'],
-                                              status=status, track=track))
+                self.bus.post(SeekChangeEvent(position=status['position'], status=status, track=track,
+                                              plugin_name='music.mpd'))
             elif event == 'tracklist_changed':
                 tracklist = [self._parse_track(t, pos=i)
                              for i, t in enumerate(self._communicate({
                                 'method': 'core.tracklist.get_tl_tracks'}))]
 
-                self.bus.post(PlaylistChangeEvent(changes=tracklist))
+                self.bus.post(PlaylistChangeEvent(changes=tracklist, plugin_name='music.mpd'))
             elif event == 'options_changed':
                 new_status = self._get_tracklist_status()
                 if new_status['random'] != self._latest_status.get('random'):
-                    self.bus.post(PlaybackRandomModeChangeEvent(state=new_status['random']))
+                    self.bus.post(PlaybackRandomModeChangeEvent(state=new_status['random'], plugin_name='music.mpd'))
                 if new_status['repeat'] != self._latest_status['repeat']:
-                    self.bus.post(PlaybackRepeatModeChangeEvent(state=new_status['repeat']))
+                    self.bus.post(PlaybackRepeatModeChangeEvent(state=new_status['repeat'], plugin_name='music.mpd'))
                 if new_status['single'] != self._latest_status['single']:
-                    self.bus.post(PlaybackSingleModeChangeEvent(state=new_status['single']))
+                    self.bus.post(PlaybackSingleModeChangeEvent(state=new_status['single'], plugin_name='music.mpd'))
                 if new_status['consume'] != self._latest_status['consume']:
-                    self.bus.post(PlaybackConsumeModeChangeEvent(state=new_status['consume']))
+                    self.bus.post(PlaybackConsumeModeChangeEvent(state=new_status['consume'], plugin_name='music.mpd'))
 
                 self._latest_status = new_status
 

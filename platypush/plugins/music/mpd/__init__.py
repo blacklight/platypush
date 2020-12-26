@@ -181,12 +181,22 @@ class MusicMpdPlugin(MusicPlugin):
     @action
     def setvol(self, vol):
         """
-        Set the volume
+        Set the volume (DEPRECATED, use :meth:`.set_volume` instead).
 
         :param vol: Volume value (range: 0-100)
         :type vol: int
         """
-        return self._exec('setvol', str(vol))
+        return self.set_volume(vol)
+
+    @action
+    def set_volume(self, volume):
+        """
+        Set the volume.
+
+        :param volume: Volume value (range: 0-100)
+        :type volume: int
+        """
+        return self._exec('setvol', str(volume))
 
     @action
     def volup(self, delta=10):
@@ -407,13 +417,24 @@ class MusicMpdPlugin(MusicPlugin):
     @action
     def seekcur(self, value):
         """
-        Seek to the specified position
+        Seek to the specified position (DEPRECATED, use :meth:`.seek` instead).
 
         :param value: Seek position in seconds, or delta string (e.g. '+15' or '-15') to indicate a seek relative to the current position
         :type value: int
         """
 
-        return self._exec('seekcur', value)
+        return self.seek(value)
+
+    @action
+    def seek(self, position):
+        """
+        Seek to the specified position
+
+        :param position: Seek position in seconds, or delta string (e.g. '+15' or '-15') to indicate a seek relative to the current position
+        :type position: int
+        """
+
+        return self._exec('seekcur', position)
 
     @action
     def forward(self):

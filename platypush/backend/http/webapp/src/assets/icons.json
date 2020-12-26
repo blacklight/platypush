@@ -2,6 +2,9 @@
   "icons": {
     "light.hue": {
       "class": "fas fa-lightbulb"
+    },
+    "music.mpd": {
+      "class": "fas fa-music"
     }
   }
 }

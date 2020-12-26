@@ -1,7 +1,9 @@
 $widths: (
-        s:  '(max-width: 720px)',
-        m:  '(max-width: 1024px) and (min-width: 720px)',
-        l:  '(min-width: 1024px)',
+        s:  (max-width: $tablet),
+        m:  (min-width: $tablet),
+        l:  (min-width: $desktop),
+        xl:  (min-width: $widescreen),
+        xxl:  (min-width: $fullhd),
 );
 
 @for $i from 1 through 12 {
@@ -101,4 +103,11 @@ $widths: (
 
 .hidden {
   display: none !important;
+}
+
+.no-content {
+  display: flex;
+  font-size: 1.5em;
+  align-items: center;
+  justify-content: center;
 }

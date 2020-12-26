@@ -5,16 +5,18 @@
       <span class="hostname" v-if="hostname" v-text="hostname" />
     </div>
 
-    <li v-for="name in Object.keys(panels)" :key="name" class="entry" :class="{selected: name === selectedPanel}"
-        :title="name" @click="onItemClick(name)">
-      <a :href="`/#${name}`">
+    <ul>
+      <li v-for="name in Object.keys(panels).sort()" :key="name" class="entry" :class="{selected: name === selectedPanel}"
+          :title="name" @click="onItemClick(name)">
+        <a :href="`/#${name}`">
         <span class="icon">
           <i :class="icons[name].class" v-if="icons[name]?.class" />
           <i class="fas fa-puzzle-piece" v-else />
         </span>
-        <span class="name" v-if="!collapsed">{{ displayName(name) }}</span>
-      </a>
-    </li>
+          <span class="name" v-if="!collapsed">{{ displayName(name) }}</span>
+        </a>
+      </li>
+    </ul>
   </nav>
 </template>
 
@@ -95,7 +97,7 @@ nav {
     background: $nav-bg;
     color: $nav-fg;
     box-shadow: $nav-box-shadow-main;
-    margin-right: 4px;
+    margin-right: 2px;
   }
 
   li {
@@ -153,11 +155,14 @@ nav {
   }
 
   &.collapsed {
+    display: flex;
+    flex-direction: column;
+
     @media screen and (min-width: $tablet) {
       width: 2.5em;
       min-width: unset;
       max-width: unset;
-      background: initial;
+      background: $nav-collapsed-bg;
       color: $nav-collapsed-fg;
       box-shadow: $nav-box-shadow-collapsed;
 
@@ -180,36 +185,40 @@ nav {
 
     .toggler {
       text-align: center;
-      @media screen and (min-width: $tablet) {
-        margin-bottom: 3em;
-      }
     }
 
-    li {
-      box-shadow: none;
-      padding: 0;
-      text-align: center;
+    ul {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex-grow: 1;
 
-      &.selected,
-      &:hover {
-        border-radius: 1em;
-        margin: 0 0.2em;
-      }
+      li {
+        box-shadow: none;
+        padding: 0;
+        text-align: center;
 
-      &.selected {
-        background: $nav-entry-collapsed-selected-bg;
-      }
+        &.selected,
+        &:hover {
+          border-radius: 1em;
+          margin: 0 0.2em;
+        }
 
-      &:hover {
-        background: $nav-entry-collapsed-hover-bg;
-      }
+        &.selected {
+          background: $nav-entry-collapsed-selected-bg;
+        }
 
-      .icon {
-        margin-right: 0;
-      }
+        &:hover {
+          background: $nav-entry-collapsed-hover-bg;
+        }
 
-      @media screen and (max-width: $tablet) {
-        display: none;
+        .icon {
+          margin-right: 0;
+        }
+
+        @media screen and (max-width: $tablet) {
+          display: none;
+        }
       }
     }
   }

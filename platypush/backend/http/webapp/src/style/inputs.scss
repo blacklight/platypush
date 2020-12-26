@@ -1,0 +1,33 @@
+.input-icon {
+  position: absolute;
+  min-width: .3em;
+  padding: .1em;
+  color: $input-icon-fg;
+}
+
+input[type=text],
+input[type=password],
+input[type=search],
+input[type=number] {
+  border: $default-border-2;
+  border-radius: .5em;
+  padding: .25em;
+
+  &:hover {
+    border: $input-icon-hover-border;
+  }
+
+  &:focus {
+    border: $input-icon-focus-border;
+  }
+
+  &.with-icon {
+    padding-left: .3em;
+  }
+}
+
+input[type=search],
+input[type=text] {
+  border-radius: 1em;
+  padding: .25em .5em;
+}
