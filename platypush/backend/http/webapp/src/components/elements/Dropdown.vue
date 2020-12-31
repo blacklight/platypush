@@ -75,14 +75,11 @@ export default {
         element.style.left = 0
         element.style.top = parseFloat(getComputedStyle(this.$refs.button).height) + 'px'
 
-        const maxOffset = 45
-        const maxLeft = window.innerWidth - maxOffset
-        const left = this.$refs.container.offsetLeft + element.offsetLeft
-        const width = element.clientWidth
+        if (element.getBoundingClientRect().left > window.innerWidth/2)
+          element.style.left = (-element.clientWidth + parseFloat(getComputedStyle(this.$refs.button).width)) + 'px'
 
-        if (left + width >= maxLeft) {
-          element.style.left = -(parseFloat(getComputedStyle(this.$refs.button).width) + maxOffset) + 'px'
-        }
+        if (element.getBoundingClientRect().top > window.innerHeight/2)
+          element.style.top = (-element.clientHeight + parseFloat(getComputedStyle(this.$refs.button).height)) + 'px'
       }, 10)
     },
 

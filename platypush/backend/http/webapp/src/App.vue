@@ -53,7 +53,7 @@ export default {
     async initConfig() {
       this.config = await this.request('config.get')
       this.userAuthenticated = true
-    }
+    },
   },
 
   created() {

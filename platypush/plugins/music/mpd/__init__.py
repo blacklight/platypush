@@ -645,7 +645,7 @@ class MusicMpdPlugin(MusicPlugin):
         if isinstance(pos, int):
             pos = [pos]
 
-        for p in pos:
+        for p in sorted(pos, reverse=True):
             self._exec('playlistdelete', name, p)
 
     @action

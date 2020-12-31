@@ -12,24 +12,114 @@
 
       <div class="view-container">
         <Playlist :tracks="tracks" :status="status" :loading="loading" v-if="selectedView === 'playing'"
-                  @play="$emit('play', $event)" @clear="$emit('clear')" />
+                  @play="$emit('play', $event)" @clear="$emit('clear')" @swap="$emit('swap-tracks', $event)"
+                  @add="$emit('add-to-tracklist', $event)" @remove="$emit('remove-from-tracklist', $event)"
+                  @move="$emit('tracklist-move', $event)" @save="$emit('tracklist-save', $event)"
+                  @track-info="$emit('track-info', $event)" @add-to-playlist="openAddToPlaylist" />
+
+        <Playlists :playlists="playlists" :loading="loading" v-else-if="selectedView === 'playlists'"
+                   :edited-playlist="editedPlaylist" :tracks="editedPlaylistTracks"
+                   @play="$emit('play-playlist', $event)" @load="$emit('load-playlist', $event)"
+                   @remove="$emit('remove-playlist', $event)" @playlist-edit="$emit('playlist-edit', $event)"
+                   @load-track="$emit('add-to-tracklist-from-edited-playlist', $event)"
+                   @remove-track="$emit('remove-from-playlist', $event)" @track-info="$emit('track-info', $event)"
+                   @playlist-add="$emit('playlist-add', $event)" @add-to-playlist="openAddToPlaylist"
+                   @track-move="$emit('playlist-track-move', $event)"/>
       </div>
     </main>
   </MediaView>
+
+  <div class="track-info-container">
+    <Modal title="Track info" ref="trackInfo">
+      <div class="track-info-content" v-if="trackInfo">
+        <div class="row file" v-if="trackInfo.file">
+          <div class="col-3 attr">File</div>
+          <div class="col-9 value" v-text="trackInfo.file" />
+        </div>
+
+        <div class="row artist" v-if="trackInfo.artist">
+          <div class="col-3 attr">Artist</div>
+          <div class="col-9 value">
+            <a :href="$route.fullPath" v-text="trackInfo.artist"
+               @click.stop="$emit('search', {artist: trackInfo.artist})" />
+          </div>
+        </div>
+
+        <div class="row track-title" v-if="trackInfo.title">
+          <div class="col-3 attr">Title</div>
+          <div class="col-9 value" v-text="trackInfo.title" />
+        </div>
+
+        <div class="row album" v-if="trackInfo.album">
+          <div class="col-3 attr">Album</div>
+          <div class="col-9 value">
+            <a :href="$route.fullPath" v-text="trackInfo.album"
+               @click.stop="$emit('search', {album: trackInfo.album})" />
+          </div>
+        </div>
+
+        <div class="row date" v-if="trackInfo.date">
+          <div class="col-3 attr">Date</div>
+          <div class="col-9 value" v-text="trackInfo.date" />
+        </div>
+
+        <div class="row duration" v-if="trackInfo.time">
+          <div class="col-3 attr">Duration</div>
+          <div class="col-9 value" v-text="convertTime(trackInfo.time)" />
+        </div>
+      </div>
+    </Modal>
+  </div>
+
+  <div class="playlists-modal-container">
+    <Modal title="Playlists" ref="playlistsModal" @close="addToPlaylistTrack = null"
+           @open="selectedPlaylists = [...Array(playlists.length).keys()].map(() => false)">
+      <div class="filter">
+        <label>
+          <input type="search" placeholder="Filter" v-model="playlistFilter">
+        </label>
+      </div>
+
+      <div class="playlists">
+        <label class="row playlist"
+               :class="{hidden: playlistFilter?.length > 0 && playlist.name.toLowerCase().indexOf(playlistFilter.toLowerCase()) < 0}"
+               v-for="(playlist, i) in playlists" :key="i">
+          <input type="checkbox" :checked="selectedPlaylists[i]"
+                 @change="selectedPlaylists[i] = $event.target.checked" />
+          <span class="name" v-text="playlist.name" />
+        </label>
+      </div>
+
+      <FormFooter>
+        <button @click="addToPlaylist">
+          <i class="fa fa-plus" /> &nbsp; Add
+        </button>
+      </FormFooter>
+    </Modal>
+  </div>
 </template>
 
 <script>
+import FormFooter from "@/components/elements/FormFooter";
+import Loading from "@/components/Loading";
+import Modal from "@/components/Modal";
+import MediaUtils from "@/components/Media/Utils";
 import MediaView from "@/components/Media/View";
 import Nav from "@/components/panels/Music/Nav";
 import Playlist from "@/components/panels/Music/Playlist";
+import Playlists from "@/components/panels/Music/Playlists";
 import Utils from "@/Utils";
 
 export default {
   name: "Music",
   emits: ['play', 'pause', 'stop', 'clear', 'previous', 'next', 'set-volume', 'seek', 'consume', 'repeat', 'random',
-          'status-update', 'playlist-update', 'new-playing-track'],
-  mixins: [Utils],
-  components: {Nav, MediaView, Playlist},
+    'status-update', 'playlist-update', 'new-playing-track', 'add-to-tracklist', 'remove-from-tracklist',
+    'swap-tracks', 'play-playlist', 'load-playlist', 'remove-playlist', 'tracklist-move', 'tracklist-save',
+    'add-to-tracklist-from-edited-playlist', 'remove-from-playlist', 'track-info', 'playlist-add', 'add-to-playlist',
+    'playlist-track-move'],
+
+  mixins: [Utils, MediaUtils],
+  components: {Loading, Modal, Nav, MediaView, Playlist, Playlists, FormFooter},
   props: {
     pluginName: {
       type: String,
@@ -51,15 +141,36 @@ export default {
       default: () => [],
     },
 
+    editedPlaylistTracks: {
+      type: Array,
+      default: () => [],
+    },
+
+    playlists: {
+      type: Array,
+      default: () => [],
+    },
+
     status: {
       type: Object,
       default: () => {},
+    },
+
+    editedPlaylist: {
+      type: Number,
+    },
+
+    trackInfo: {
+      type: String,
     },
   },
 
   data() {
     return {
       selectedView: 'playing',
+      selectedPlaylists: [],
+      addToPlaylistTrack: null,
+      playlistFilter: '',
     }
   },
 
@@ -92,12 +203,29 @@ export default {
         return
 
       this.notify({
-        title: event.track?.artist,
-        text: event.track?.title,
-        iconClass: 'fa fa-play',
+        html: `<b>${event.track?.artist}</b><br>${event.track?.title}`,
+        image: {
+          iconClass: 'fa fa-play',
+        },
       })
 
       this.$emit('new-playing-track', event)
+    },
+
+    async openAddToPlaylist(track) {
+      this.addToPlaylistTrack = track
+      this.$refs.playlistsModal.isVisible = true
+    },
+
+    async addToPlaylist() {
+      this.$emit('add-to-playlist', {
+        track: this.addToPlaylistTrack,
+        playlists: [...Array(this.selectedPlaylists.length).keys()].filter((i) => this.selectedPlaylists[i])
+      })
+
+      this.$refs.playlistsModal.isVisible = false
+      this.addToPlaylistTrack = null
+      this.playlistFilter = ''
     },
   },
 
@@ -118,8 +246,13 @@ export default {
     this.subscribe(this.onPlaylistEvent, 'on-playlist-update',
         'platypush.message.event.music.PlaylistChangeEvent')
 
-    this.subscribe(this.onPlaylistEvent, 'on-new-playing-track',
+    this.subscribe(this.onNewPlayingTrack, 'on-new-playing-track',
         'platypush.message.event.music.NewPlayingTrackEvent')
+
+    this.$watch(() => this.trackInfo, (info) => {
+      if (info != null)
+        this.$refs.trackInfo.isVisible = true
+    })
   },
 
   unmounted() {
@@ -142,8 +275,76 @@ main {
     overflow: auto;
   }
 
-  ::v-deep button {
-    background: rgba(0, 0, 0, 0);
+  ::v-deep(button) {
+    background: none;
+    padding: .5em .75em;
+    border: 0;
+
+    &:hover {
+      border: 0;
+      color: $default-hover-fg;
+    }
+  }
+
+  ::v-deep(a) {
+    color: $default-fg;
+    opacity: 0.65;
+
+    &:hover {
+      opacity: 0.75;
+      border-bottom: 1px dotted;
+    }
+  }
+}
+
+.playlists-modal-container {
+  ::v-deep(.body) {
+    display: flex;
+    flex-direction: column;
+    padding: 0 !important;
+  }
+
+  ::v-deep(.filter) {
+    padding: .33em;
+    background-color: $default-bg-6;
+    border-bottom: $default-border-2;
+
+    input {
+      width: 90%;
+    }
+  }
+
+  ::v-deep(.playlists) {
+    overflow: auto;
+    padding: 1.5em;
+
+    label {
+      display: flex;
+      align-items: center;
+
+      &:not(:last-child) {
+        margin-bottom: .5em;
+      }
+
+      .name {
+        margin-left: .5em;
+      }
+    }
+  }
+}
+
+.track-info-container {
+  ::v-deep(.body) {
+    height: 15em;
+    overflow: auto;
+
+    @include until($tablet) {
+      width: 25em;
+    }
+
+    @include from($tablet) {
+      width: 35em;
+    }
   }
 }
 </style>

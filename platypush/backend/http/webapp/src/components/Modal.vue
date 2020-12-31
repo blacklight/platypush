@@ -1,7 +1,7 @@
 <template>
   <div class="modal-container fade-in" :id="id" :class="{hidden: !isVisible}" :style="{'--z-index': zIndex}" @click="close">
-    <div class="modal" :style="{'--width': width, '--height': height}">
-      <div class="content" @click="$event.stopPropagation()">
+    <div class="modal">
+      <div class="content" :style="{'--width': width, '--height': height}" @click="$event.stopPropagation()">
         <div class="header" v-text="title" v-if="title"></div>
         <div class="body">
           <slot @modal-close="close" />
@@ -14,6 +14,7 @@
 <script>
 export default {
   name: "Modal",
+  emits: ['close', 'open'],
   props: {
     // Modal ID
     id: {
@@ -86,6 +87,19 @@ export default {
     },
   },
 
+  mounted() {
+    const self = this
+    const visibleHndl = (visible) => {
+      if (!visible)
+        self.$emit('close')
+      else
+        self.$emit('open')
+    }
+
+    this.$watch(() => this.visible, visibleHndl)
+    this.$watch(() => this.isVisible, visibleHndl)
+  },
+
   updated() {
     this.prevVisible = this.isVisible
     if (this.isVisible) {
@@ -138,13 +152,13 @@ export default {
   background: rgba(10,10,10,0.9);
 
   .modal {
-    --width: auto;
-    --height: auto;
-    width: var(--width);
-    height: var(--height);
     display: flex;
 
     .content {
+      --width: auto;
+      --height: auto;
+      width: var(--width);
+      height: var(--height);
       border-radius: 0.5em;
       background: $modal-body-bg;
     }

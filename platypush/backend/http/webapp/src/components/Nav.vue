@@ -50,8 +50,7 @@ export default {
 
     onItemClick(name) {
       this.$emit('select', name)
-      if (this.isMobile())
-        this.collapsed = true
+      this.collapsed = true
     },
   },
 
