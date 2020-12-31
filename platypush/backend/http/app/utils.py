@@ -112,6 +112,8 @@ def _authenticate_token():
 
     if 'X-Token' in request.headers:
         user_token = request.headers['X-Token']
+    elif 'Authorization' in request.headers and request.headers['Authorization'].startswith('Bearer '):
+        user_token = request.headers['Authorization'][len('Bearer '):]
     elif 'token' in request.args:
         user_token = request.args.get('token')
     else:
