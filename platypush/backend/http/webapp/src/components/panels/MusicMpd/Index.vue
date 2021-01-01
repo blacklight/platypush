@@ -2,16 +2,18 @@
   <Loading v-if="loading" />
   <MusicPlugin plugin-name="music.mpd" :loading="loading" :config="config" :tracks="tracks" :status="status"
                :playlists="playlists" :edited-playlist="editedPlaylist" :edited-playlist-tracks="editedPlaylistTracks"
-               :track-info="trackInfo" @play="play" @pause="pause" @stop="stop" @previous="previous" @next="next"
-               @clear="clear" @set-volume="setVolume" @seek="seek" @consume="consume" @random="random" @repeat="repeat"
-               @status-update="refreshStatus(true)" @playlist-update="refresh(true)"
-               @new-playing-track="refreshStatus(true)" @remove-from-tracklist="removeFromTracklist"
-               @add-to-tracklist="addToTracklist" @swap-tracks="swapTracks" @load-playlist="loadPlaylist"
-               @play-playlist="playPlaylist" @remove-playlist="removePlaylist" @tracklist-move="moveTracklistTracks"
-               @tracklist-save="saveToPlaylist" @playlist-edit="playlistEditChanged"
+               :track-info="trackInfo" :search-results="searchResults" @play="play" @pause="pause" @stop="stop"
+               @previous="previous" @next="next" @clear="clear" @set-volume="setVolume" @seek="seek" @consume="consume"
+               @random="random" @repeat="repeat" @status-update="refreshStatus(true)"
+               @playlist-update="refresh(true)" @new-playing-track="refreshStatus(true)"
+               @remove-from-tracklist="removeFromTracklist" @add-to-tracklist="addToTracklist" @swap-tracks="swapTracks"
+               @load-playlist="loadPlaylist" @play-playlist="playPlaylist" @remove-playlist="removePlaylist"
+               @tracklist-move="moveTracklistTracks" @tracklist-save="saveToPlaylist"
+               @playlist-edit="playlistEditChanged"
                @add-to-tracklist-from-edited-playlist="addToTracklistFromEditedPlaylist"
-               @remove-from-playlist="removeFromPlaylist" @track-info="trackInfo = $event" @playlist-add="playlistAdd"
-               @add-to-playlist="addToPlaylist" @playlist-track-move="playlistTrackMove" />
+               @remove-from-playlist="removeFromPlaylist" @info="trackInfo = $event" @playlist-add="playlistAdd"
+               @add-to-playlist="addToPlaylist" @playlist-track-move="playlistTrackMove" @search="search"
+               @search-clear="searchResults = []" />
 </template>
 
 <script>
@@ -39,6 +41,7 @@ export default {
       editedPlaylist: null,
       editedPlaylistTracks: [],
       trackInfo: null,
+      searchResults: [],
     }
   },
 
@@ -130,6 +133,8 @@ export default {
     async play(event) {
       if (event?.pos != null) {
         await this.request('music.mpd.play_pos', {pos: event.pos})
+      } else if (event.file) {
+        await this.request('music.mpd.play', {resource: event.file})
       } else {
         await this.request('music.mpd.play')
       }
@@ -191,6 +196,9 @@ export default {
     },
 
     async addToTracklist(resource) {
+      if (resource.file)
+        resource = resource.file
+
       await this.request('music.mpd.add', {resource: resource})
       await this.refresh(true)
     },
@@ -294,6 +302,16 @@ export default {
       })
 
       await this.playlistEditChanged(event.playlist)
+    },
+
+    async search(query) {
+      this.loading = true
+
+      try {
+        this.searchResults = await this.request('music.mpd.search', {filter: query})
+      } finally {
+        this.loading = false
+      }
     },
   },
 

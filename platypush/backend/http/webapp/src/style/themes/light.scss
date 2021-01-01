@@ -34,6 +34,8 @@ $dashboard-bg: url('/img/dashboard-bg-light.jpg');
 $border-color-1: #e1e4e8 !default;
 $border-color-2: #dddddd !default;
 $border-color-3: #cccccc !default;
+$border-focus: 1px solid rgba(127, 216, 95, 0.83);
+$border-hover: 1px solid rgba(159, 180, 152, 0.83);
 
 $default-border: 1px solid $border-color-1 !default;
 $default-border-2: 1px solid $border-color-2 !default;

@@ -79,11 +79,12 @@
     <div class="track-container col-s-8 col-m-8 col-l-3">
       <div class="track-info" v-if="track && status?.state !== 'stop'">
         <div class="title">
-          <a href="#" v-text="track.title" @click="$emit('search', {album: track.album})" v-if="track.album"></a>
+          <a :href="$route.fullPath" v-text="track.title"
+             @click.prevent="$emit('search', {artist: track.artist, album: track.album})" v-if="track.album"></a>
           <span v-text="track.title" v-else></span>
         </div>
         <div class="artist" v-if="track.artist">
-          <a href="#" v-text="track.artist" @click="$emit('search', {artist: track.artist})"></a>
+          <a :href="$route.fullPath" v-text="track.artist" @click.prevent="$emit('search', {artist: track.artist})"></a>
         </div>
       </div>
     </div>

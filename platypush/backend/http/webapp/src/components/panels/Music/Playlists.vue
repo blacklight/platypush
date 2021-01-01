@@ -33,11 +33,12 @@
           </div>
 
           <div class="artist" v-if="track.artist">
-            <a :href="$route.fullPath" v-text="track.artist" @click.stop="$emit('search', {artist: track.artist})" />
+            <a :href="$route.fullPath" v-text="track.artist" @click.prevent="$emit('search', {artist: track.artist})" />
           </div>
 
           <div class="album" v-if="track.album">
-            <a :href="$route.fullPath" v-text="track.album" @click.stop="$emit('search', {artist: track.album})" />
+            <a :href="$route.fullPath" v-text="track.album"
+               @click.prevent="$emit('search', {artist: track.artist, album: track.album})" />
           </div>
         </div>
 
@@ -47,10 +48,10 @@
           <span class="actions">
           <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
             <DropdownItem text="Play" icon-class="fa fa-play" @click="$emit('load-track', {pos: i, play: true})" />
-            <DropdownItem text="Add to tracklist" icon-class="fa fa-plus" @click="$emit('load-track', {pos: i, play: false})" />
+            <DropdownItem text="Add to queue" icon-class="fa fa-plus" @click="$emit('load-track', {pos: i, play: false})" />
             <DropdownItem text="Add to playlist" icon-class="fa fa-list-ul" @click="$emit('add-to-playlist', track)" />
             <DropdownItem text="Remove" icon-class="fa fa-trash" @click="$emit('remove-track', [...(new Set([...selectedTracks, i]))])" />
-            <DropdownItem text="Show info" icon-class="fa fa-info" @click.stop="$emit('track-info', tracks[i])" />
+            <DropdownItem text="Info" icon-class="fa fa-info" @click.stop="$emit('info', tracks[i])" />
           </Dropdown>
         </span>
         </div>
@@ -106,7 +107,7 @@ export default {
   name: "Playlists",
   mixins: [MediaUtils],
   components: {DropdownItem, Dropdown, MusicHeader},
-  emits: ['play', 'load', 'remove', 'playlist-edit', 'search', 'remove-track', 'load-track', 'track-info',
+  emits: ['play', 'load', 'remove', 'playlist-edit', 'search', 'remove-track', 'load-track', 'info',
     'playlist-add', 'add-to-playlist', 'track-move'],
 
   props: {

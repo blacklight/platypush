@@ -7,7 +7,7 @@
       <Controls :status="status" :track="track" @play="$emit('play', $event)" @pause="$emit('pause', $event)"
                 @stop="$emit('stop')" @previous="$emit('previous')" @next="$emit('next')" @seek="$emit('seek', $event)"
                 @set-volume="$emit('set-volume', $event)" @consume="$emit('consume', $event)"
-                @repeat="$emit('repeat', $event)" @random="$emit('random', $event)" />
+                @repeat="$emit('repeat', $event)" @random="$emit('random', $event)" @search="$emit('search', $event)" />
     </div>
   </div>
 </template>
@@ -18,7 +18,7 @@ import Controls from "@/components/Media/Controls";
 export default {
   name: "View",
   components: {Controls},
-  emits: ['play', 'pause', 'stop', 'next', 'previous', 'set-volume', 'seek', 'consume', 'random', 'repeat'],
+  emits: ['play', 'pause', 'stop', 'next', 'previous', 'set-volume', 'seek', 'consume', 'random', 'repeat', 'search'],
   props: {
     pluginName: {
       type: String,

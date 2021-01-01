@@ -4,7 +4,7 @@
   <MediaView :plugin-name="pluginName" :status="status" :track="track" @play="$emit('play', $event)"
              @pause="$emit('pause')" @stop="$emit('stop')" @previous="$emit('previous')" @next="$emit('next')"
              @set-volume="$emit('set-volume', $event)" @seek="$emit('seek', $event)" @consume="$emit('consume', $event)"
-             @repeat="$emit('repeat', $event)" @random="$emit('random', $event)" v-else>
+             @repeat="$emit('repeat', $event)" @random="$emit('random', $event)" @search="search" v-else>
     <main>
       <div class="nav-container">
         <Nav :selected-view="selectedView" @input="selectedView = $event" />
@@ -15,16 +15,21 @@
                   @play="$emit('play', $event)" @clear="$emit('clear')" @swap="$emit('swap-tracks', $event)"
                   @add="$emit('add-to-tracklist', $event)" @remove="$emit('remove-from-tracklist', $event)"
                   @move="$emit('tracklist-move', $event)" @save="$emit('tracklist-save', $event)"
-                  @track-info="$emit('track-info', $event)" @add-to-playlist="openAddToPlaylist" />
+                  @info="$emit('info', $event)" @add-to-playlist="openAddToPlaylist" @search="search" />
 
         <Playlists :playlists="playlists" :loading="loading" v-else-if="selectedView === 'playlists'"
                    :edited-playlist="editedPlaylist" :tracks="editedPlaylistTracks"
                    @play="$emit('play-playlist', $event)" @load="$emit('load-playlist', $event)"
                    @remove="$emit('remove-playlist', $event)" @playlist-edit="$emit('playlist-edit', $event)"
                    @load-track="$emit('add-to-tracklist-from-edited-playlist', $event)"
-                   @remove-track="$emit('remove-from-playlist', $event)" @track-info="$emit('track-info', $event)"
+                   @remove-track="$emit('remove-from-playlist', $event)" @info="$emit('info', $event)"
                    @playlist-add="$emit('playlist-add', $event)" @add-to-playlist="openAddToPlaylist"
-                   @track-move="$emit('playlist-track-move', $event)"/>
+                   @track-move="$emit('playlist-track-move', $event)" @search="search" />
+
+        <Search :loading="loading" v-else-if="selectedView === 'search'" @search="search"
+                :results="searchResults" @clear="$emit('search-clear')" @info="$emit('info', $event)"
+                @play="$emit('play', $event)" @load="$emit('add-to-tracklist', $event)"
+                @add-to-playlist="openAddToPlaylist"/>
       </div>
     </main>
   </MediaView>
@@ -40,8 +45,7 @@
         <div class="row artist" v-if="trackInfo.artist">
           <div class="col-3 attr">Artist</div>
           <div class="col-9 value">
-            <a :href="$route.fullPath" v-text="trackInfo.artist"
-               @click.stop="$emit('search', {artist: trackInfo.artist})" />
+            <a :href="$route.fullPath" v-text="trackInfo.artist" @click.prevent="search({artist: trackInfo.artist})" />
           </div>
         </div>
 
@@ -54,7 +58,7 @@
           <div class="col-3 attr">Album</div>
           <div class="col-9 value">
             <a :href="$route.fullPath" v-text="trackInfo.album"
-               @click.stop="$emit('search', {album: trackInfo.album})" />
+               @click.prevent="search({artist: trackInfo.artist, album: trackInfo.album})" />
           </div>
         </div>
 
@@ -81,9 +85,8 @@
       </div>
 
       <div class="playlists">
-        <label class="row playlist"
-               :class="{hidden: playlistFilter?.length > 0 && playlist.name.toLowerCase().indexOf(playlistFilter.toLowerCase()) < 0}"
-               v-for="(playlist, i) in playlists" :key="i">
+        <label class="row playlist" v-for="(playlist, i) in playlists" :key="i"
+               :class="{hidden: playlistFilter?.length > 0 && playlist.name.toLowerCase().indexOf(playlistFilter.toLowerCase()) < 0}">
           <input type="checkbox" :checked="selectedPlaylists[i]"
                  @change="selectedPlaylists[i] = $event.target.checked" />
           <span class="name" v-text="playlist.name" />
@@ -108,6 +111,7 @@ import MediaView from "@/components/Media/View";
 import Nav from "@/components/panels/Music/Nav";
 import Playlist from "@/components/panels/Music/Playlist";
 import Playlists from "@/components/panels/Music/Playlists";
+import Search from "@/components/panels/Music/Search";
 import Utils from "@/Utils";
 
 export default {
@@ -115,11 +119,11 @@ export default {
   emits: ['play', 'pause', 'stop', 'clear', 'previous', 'next', 'set-volume', 'seek', 'consume', 'repeat', 'random',
     'status-update', 'playlist-update', 'new-playing-track', 'add-to-tracklist', 'remove-from-tracklist',
     'swap-tracks', 'play-playlist', 'load-playlist', 'remove-playlist', 'tracklist-move', 'tracklist-save',
-    'add-to-tracklist-from-edited-playlist', 'remove-from-playlist', 'track-info', 'playlist-add', 'add-to-playlist',
-    'playlist-track-move'],
+    'add-to-tracklist-from-edited-playlist', 'remove-from-playlist', 'info', 'playlist-add', 'add-to-playlist',
+    'playlist-track-move', 'search', 'search-clear'],
 
   mixins: [Utils, MediaUtils],
-  components: {Loading, Modal, Nav, MediaView, Playlist, Playlists, FormFooter},
+  components: {Loading, Modal, Nav, MediaView, Playlist, Playlists, FormFooter, Search},
   props: {
     pluginName: {
       type: String,
@@ -162,6 +166,10 @@ export default {
 
     trackInfo: {
       type: String,
+    },
+
+    searchResults: {
+      type: Array,
     },
   },
 
@@ -226,6 +234,12 @@ export default {
       this.$refs.playlistsModal.isVisible = false
       this.addToPlaylistTrack = null
       this.playlistFilter = ''
+    },
+
+    async search(filter) {
+      this.$emit('search', filter)
+      this.$refs.trackInfo.isVisible = false
+      this.selectedView = 'search'
     },
   },
 
@@ -344,6 +358,10 @@ main {
 
     @include from($tablet) {
       width: 35em;
+    }
+
+    .file {
+      user-select: text;
     }
   }
 }

@@ -27,7 +27,7 @@ export default {
         return {
           playing: {
             iconClass: 'fas fa-play',
-            displayName: 'Now Playing',
+            displayName: 'Queue',
           },
 
           search: {
