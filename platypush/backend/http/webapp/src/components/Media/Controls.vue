@@ -223,13 +223,14 @@ export default {
 
   mounted() {
     const self = this
+    this.lastSync = this.getTime()
 
-    this.$watch(() => self.track, (track) => {
+    this.$watch(() => this.track, (track) => {
       if (!track || self.status?.state !== 'play')
         self.lastSync = this.getTime()
     })
 
-    this.$watch(() => self.status, () => {
+    this.$watch(() => this.status, () => {
       self.lastSync = this.getTime()
     })
 

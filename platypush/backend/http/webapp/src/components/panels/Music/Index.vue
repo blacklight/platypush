@@ -29,7 +29,12 @@
         <Search :loading="loading" v-else-if="selectedView === 'search'" @search="search"
                 :results="searchResults" @clear="$emit('search-clear')" @info="$emit('info', $event)"
                 @play="$emit('play', $event)" @load="$emit('add-to-tracklist', $event)"
-                @add-to-playlist="openAddToPlaylist"/>
+                @add-to-playlist="openAddToPlaylist" />
+
+        <Library :loading="loading" v-else-if="selectedView === 'library'" @search="search"
+                 :results="libraryResults" :path="path" @clear="$emit('search-clear')" @info="$emit('info', $event)"
+                 @play="$emit('play', $event)" @load="$emit('add-to-tracklist', $event)"
+                 @add-to-playlist="openAddToPlaylist" @cd="$emit('cd', $event)" />
       </div>
     </main>
   </MediaView>
@@ -70,6 +75,16 @@
         <div class="row duration" v-if="trackInfo.time">
           <div class="col-3 attr">Duration</div>
           <div class="col-9 value" v-text="convertTime(trackInfo.time)" />
+        </div>
+
+        <div class="row track" v-if="trackInfo.track">
+          <div class="col-3 attr">Track</div>
+          <div class="col-9 value" v-text="trackInfo.track" />
+        </div>
+
+        <div class="row disc" v-if="trackInfo.disc">
+          <div class="col-3 attr">Disc</div>
+          <div class="col-9 value" v-text="trackInfo.disc" />
         </div>
       </div>
     </Modal>
@@ -112,6 +127,7 @@ import Nav from "@/components/panels/Music/Nav";
 import Playlist from "@/components/panels/Music/Playlist";
 import Playlists from "@/components/panels/Music/Playlists";
 import Search from "@/components/panels/Music/Search";
+import Library from "@/components/panels/Music/Library";
 import Utils from "@/Utils";
 
 export default {
@@ -120,10 +136,10 @@ export default {
     'status-update', 'playlist-update', 'new-playing-track', 'add-to-tracklist', 'remove-from-tracklist',
     'swap-tracks', 'play-playlist', 'load-playlist', 'remove-playlist', 'tracklist-move', 'tracklist-save',
     'add-to-tracklist-from-edited-playlist', 'remove-from-playlist', 'info', 'playlist-add', 'add-to-playlist',
-    'playlist-track-move', 'search', 'search-clear'],
+    'playlist-track-move', 'search', 'search-clear', 'cd'],
 
   mixins: [Utils, MediaUtils],
-  components: {Loading, Modal, Nav, MediaView, Playlist, Playlists, FormFooter, Search},
+  components: {Loading, Modal, Nav, MediaView, Playlist, Playlists, FormFooter, Search, Library},
   props: {
     pluginName: {
       type: String,
@@ -170,6 +186,14 @@ export default {
 
     searchResults: {
       type: Array,
+    },
+
+    libraryResults: {
+      type: Array,
+    },
+
+    path: {
+      type: String,
     },
   },
 

@@ -21,10 +21,8 @@
     border-top: 2px solid $default-hover-fg;
   }
 
-  .title, .artist, .album, .duration {
-    &::selection {
-      background: rgba(0, 0, 0, 0) !important;
-    }
+  &::selection {
+    background: rgba(0, 0, 0, 0) !important;
   }
 
   .title {
