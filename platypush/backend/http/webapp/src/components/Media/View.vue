@@ -4,10 +4,11 @@
       <slot />
     </div>
     <div class="controls-container">
-      <Controls :status="status" :track="track" @play="$emit('play', $event)" @pause="$emit('pause', $event)"
-                @stop="$emit('stop')" @previous="$emit('previous')" @next="$emit('next')" @seek="$emit('seek', $event)"
-                @set-volume="$emit('set-volume', $event)" @consume="$emit('consume', $event)"
-                @repeat="$emit('repeat', $event)" @random="$emit('random', $event)" @search="$emit('search', $event)" />
+      <Controls :status="status" :track="track" :buttons="buttons" @play="$emit('play', $event)"
+                @pause="$emit('pause', $event)" @stop="$emit('stop')" @previous="$emit('previous')"
+                @next="$emit('next')" @seek="$emit('seek', $event)" @set-volume="$emit('set-volume', $event)"
+                @consume="$emit('consume', $event)" @repeat="$emit('repeat', $event)" @random="$emit('random', $event)"
+                @search="$emit('search', $event)"/>
     </div>
   </div>
 </template>
@@ -31,6 +32,10 @@ export default {
     },
 
     track: {
+      type: Object,
+    },
+
+    buttons: {
       type: Object,
     },
   },

@@ -13,7 +13,7 @@
           <i :class="icons[name].class" v-if="icons[name]?.class" />
           <i class="fas fa-puzzle-piece" v-else />
         </span>
-          <span class="name" v-if="!collapsed">{{ displayName(name) }}</span>
+        <span class="name" v-if="!collapsed" v-text="name" />
         </a>
       </li>
     </ul>
@@ -44,10 +44,6 @@ export default {
   },
 
   methods: {
-    displayName(name) {
-      return name.split('.').map((token) => token[0].toUpperCase() + token.slice(1)).join(' ')
-    },
-
     onItemClick(name) {
       this.$emit('select', name)
       this.collapsed = true
@@ -123,10 +119,6 @@ nav {
 
     .icon {
       margin-right: 0.5em;
-    }
-
-    .name {
-      text-transform: capitalize;
     }
   }
 

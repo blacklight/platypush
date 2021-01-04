@@ -5,13 +5,13 @@
       </div>
       <div class="col-6">
         <div class="buttons">
-          <button @click="$emit('previous')" title="Play previous track" v-if="buttons.previous">
+          <button @click="$emit('previous')" title="Play previous track" v-if="buttons_.previous">
             <i class="icon fa fa-step-backward"></i>
           </button>
-          <button @click="$emit('stop')" v-if="buttons.stop && status.state !== 'stop'" title="Stop playback">
+          <button @click="$emit('stop')" v-if="buttons_.stop && status.state !== 'stop'" title="Stop playback">
             <i class="icon fa fa-stop"></i>
           </button>
-          <button @click="$emit('next')" title="Play next track" v-if="buttons.next">
+          <button @click="$emit('next')" title="Play next track" v-if="buttons_.next">
             <i class="icon fa fa-step-forward"></i>
           </button>
         </div>
@@ -35,17 +35,17 @@
 
       <div class="col-3 list-controls">
         <button @click="$emit('consume', !status.consume)" :class="{enabled: status.consume}"
-                title="Toggle consume mode" v-if="buttons.consume">
+                title="Toggle consume mode" v-if="buttons_.consume">
           <i class="icon fa fa-utensils"></i>
         </button>
 
         <button @click="$emit('random', !status.random)" :class="{enabled: status.random}"
-                title="Toggle shuffle" v-if="buttons.random">
+                title="Toggle shuffle" v-if="buttons_.random">
           <i class="icon fa fa-random"></i>
         </button>
 
         <button @click="$emit('repeat', !status.repeat)" :class="{enabled: status.repeat}"
-                title="Toggle repeat" v-if="buttons.repeat">
+                title="Toggle repeat" v-if="buttons_.repeat">
           <i class="icon fa fa-redo"></i>
         </button>
       </div>
@@ -81,6 +81,7 @@
         <div class="title">
           <a :href="$route.fullPath" v-text="track.title"
              @click.prevent="$emit('search', {artist: track.artist, album: track.album})" v-if="track.album"></a>
+          <a :href="track.url" v-text="track.title" v-else-if="track.url"></a>
           <span v-text="track.title" v-else></span>
         </div>
         <div class="artist" v-if="track.artist">
@@ -91,7 +92,7 @@
 
     <div class="playback-controls desktop col-6">
       <div class="row buttons">
-        <button @click="$emit('previous')" title="Play previous track" v-if="buttons.previous">
+        <button @click="$emit('previous')" title="Play previous track" v-if="buttons_.previous">
           <i class="icon fa fa-step-backward"></i>
         </button>
         <button @click="$emit(status.state === 'play' ? 'pause' : 'play')"
@@ -99,10 +100,10 @@
           <i class="icon play-pause fa fa-pause" v-if="status.state === 'play'"></i>
           <i class="icon play-pause fa fa-play" v-else></i>
         </button>
-        <button @click="$emit('stop')" v-if="buttons.stop && status.state !== 'stop'" title="Stop playback">
+        <button @click="$emit('stop')" v-if="buttons_.stop && status.state !== 'stop'" title="Stop playback">
           <i class="icon fa fa-stop"></i>
         </button>
-        <button @click="$emit('next')" title="Play next track" v-if="buttons.next">
+        <button @click="$emit('next')" title="Play next track" v-if="buttons_.next">
           <i class="icon fa fa-step-forward"></i>
         </button>
       </div>
@@ -131,13 +132,13 @@
 
     <div class="col-3 pull-right desktop">
       <div class="row list-controls">
-        <button @click="$emit('consume')" :class="{enabled: status.consume}" title="Toggle consume mode" v-if="buttons.consume">
+        <button @click="$emit('consume')" :class="{enabled: status.consume}" title="Toggle consume mode" v-if="buttons_.consume">
           <i class="icon fa fa-utensils"></i>
         </button>
-        <button @click="$emit('random')" :class="{enabled: status.random}" title="Toggle shuffle" v-if="buttons.random">
+        <button @click="$emit('random')" :class="{enabled: status.random}" title="Toggle shuffle" v-if="buttons_.random">
           <i class="icon fa fa-random"></i>
         </button>
-        <button @click="$emit('repeat')" :class="{enabled: status.repeat}" title="Toggle repeat" v-if="buttons.repeat">
+        <button @click="$emit('repeat')" :class="{enabled: status.repeat}" title="Toggle repeat" v-if="buttons_.repeat">
           <i class="icon fa fa-redo"></i>
         </button>
       </div>
@@ -202,10 +203,20 @@ export default {
   },
 
   data() {
+    const buttons = Object.keys(this.buttons)?.length ? this.buttons : {
+      previous: true,
+      next: true,
+      stop: true,
+      consume: true,
+      random: true,
+      repeat: true,
+    }
+
     return {
       expanded: false,
       lastSync: 0,
-      elapsed: this.status?.elapsed,
+      elapsed: this.status?.elapsed || this.status?.position,
+      buttons_: buttons,
     }
   },
 
@@ -235,8 +246,11 @@ export default {
     })
 
     setInterval(() => {
-      if (self.status?.state === 'play')
-        self.elapsed = (self.status?.elapsed || 0) + Math.round(this.getTime() - self.lastSync)
+      if (self.status?.state !== 'stop') {
+        self.elapsed = (self.status?.elapsed || self.status?.position || 0)
+        if (self.status?.state === 'play')
+          self.elapsed += Math.round(this.getTime() - self.lastSync)
+      }
     }, 1000)
   },
 }

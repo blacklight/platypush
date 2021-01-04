@@ -156,7 +156,6 @@ class MediaChromecastPlugin(MediaPlugin):
         :type callback: func
         """
 
-        import pychromecast
         self.chromecasts.update({
             cast.device.friendly_name: cast
             for cast in self._get_chromecasts(tries=tries, retry_wait=retry_wait,

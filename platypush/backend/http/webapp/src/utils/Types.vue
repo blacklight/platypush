@@ -15,6 +15,28 @@ export default {
 
       return !!value
     },
+
+    convertSize(value) {
+      if (typeof value === 'string')
+        value = parseInt(value)
+
+      let unit = null
+      const units = ['B', 'KB', 'MB', 'GB', 'TB']
+
+      units.forEach((u, i) => {
+        if (value <= 1024 && unit == null) {
+          unit = u
+        } else if (value > 1024) {
+          if (i === units.length-1) {
+            unit = u
+          } else {
+            value = value/1024
+          }
+        }
+      })
+
+      return `${value.toFixed(2)} ${unit}`
+    }
   },
 }
 </script>

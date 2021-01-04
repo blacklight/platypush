@@ -1,6 +1,6 @@
 <template>
   <div class="dropdown-container" ref="container">
-    <button :title="title" ref="button" @click.stop="toggle">
+    <button :title="title" ref="button" @click.stop="toggle($event)">
       <i class="icon" :class="iconClass" v-if="iconClass" />
       <span class="text" v-text="text" v-if="text" />
     </button>
@@ -83,7 +83,9 @@ export default {
       }, 10)
     },
 
-    toggle() {
+    toggle(event) {
+      event.stopPropagation()
+      this.$emit('click')
       this.visible ? this.close() : this.open()
     },
   },

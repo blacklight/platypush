@@ -3,6 +3,18 @@
     "light.hue": {
       "class": "fas fa-lightbulb"
     },
+    "media.omxplayer": {
+      "class": "fa fa-film"
+    },
+    "media.mplayer": {
+      "class": "fa fa-film"
+    },
+    "media.mpv": {
+      "class": "fa fa-film"
+    },
+    "media.vlc": {
+      "class": "fa fa-film"
+    },
     "music.mpd": {
       "class": "fas fa-music"
     }
