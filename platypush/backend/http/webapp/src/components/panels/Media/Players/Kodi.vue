@@ -25,7 +25,12 @@ export default {
         component: this,
         status: await this.request(`${this.pluginName}.status`)
       }]
-    }
+    },
+
+    supports(resource) {
+      return resource?.type === 'youtube' || (resource.url || resource).startsWith('http://') ||
+          (resource.url || resource).startsWith('https://')
+    },
   },
 }
 </script>

@@ -1,0 +1,80 @@
+.item {
+  display: flex;
+  align-items: center;
+  padding: .75em .25em;
+  box-shadow: 0 2.5px 2px -1px $default-shadow-color;
+  cursor: pointer;
+
+  &:hover {
+    background: $hover-bg;
+  }
+
+  &.active {
+    background: $active-bg;
+  }
+
+  &.selected {
+    background: $selected-bg;
+  }
+
+  &.dragover {
+    border-top: 2px solid $default-hover-fg;
+  }
+
+  &::selection {
+    background: rgba(0, 0, 0, 0) !important;
+  }
+
+  .title {
+    font-size: 1em;
+    font-weight: normal;
+    margin: 0;
+  }
+
+  .side {
+    display: inline-flex;
+    align-items: center;
+
+    &.right {
+      display: inline-flex;
+      justify-content: right;
+    }
+  }
+
+  .duration,
+  .actions {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .duration {
+    font-size: .85em;
+    opacity: .7;
+  }
+
+  .actions {
+    ::v-deep(button) {
+      opacity: .65;
+    }
+  }
+
+  .icon {
+    color: $default-fg-3;
+    margin-right: .75em;
+  }
+
+  ::v-deep(.dropdown-container) {
+    .item {
+      box-shadow: none;
+    }
+
+    button {
+      background: none;
+      border: none;
+
+      &:hover {
+        color: $default-hover-fg;
+      }
+    }
+  }
+}

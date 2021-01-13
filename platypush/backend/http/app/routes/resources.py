@@ -8,6 +8,7 @@ from platypush.backend.http.app import template_folder
 
 
 img_folder = os.path.join(template_folder, 'img')
+icons_folder = os.path.join(template_folder, 'icons')
 resources = Blueprint('resources', __name__, template_folder=template_folder)
 favicon = Blueprint('favicon', __name__, template_folder=template_folder)
 img = Blueprint('img', __name__, template_folder=template_folder)
@@ -65,6 +66,12 @@ def serve_favicon():
 def imgpath(path):
     """ Default static images """
     return send_from_directory(img_folder, path)
+
+
+@img.route('/icons/<path:path>', methods=['GET'])
+def iconpath(path):
+    """ Default static icons """
+    return send_from_directory(icons_folder, path)
 
 
 # vim:sw=4:ts=4:et:

@@ -11,8 +11,12 @@
 
       <div class="col-2 right side">
         <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" @click="$emit('select', i)">
-          <DropdownItem icon-class="fa fa-play" text="Play" @click="$emit('play', result)" />
-          <DropdownItem icon-class="fas fa-closed-captioning" text="Play with captions" />
+          <DropdownItem icon-class="fa fa-play" text="Play" @click="$emit('play', result)"
+                        v-if="result?.type !== 'torrent'" />
+          <DropdownItem icon-class="fa fa-download" text="Download" @click="$emit('download', result)"
+                        v-if="result?.type === 'torrent'" />
+          <DropdownItem icon-class="fa fa-window-maximize" text="View in browser" @click="$emit('view', result)"
+                        v-if="result?.type === 'file'" />
           <DropdownItem icon-class="fa fa-info" text="Info" @click="$emit('info', result)" />
         </Dropdown>
       </div>
@@ -27,7 +31,7 @@ import DropdownItem from "@/components/elements/DropdownItem";
 export default {
   name: "Results",
   components: {Dropdown, DropdownItem},
-  emits: ['select', 'info', 'play'],
+  emits: ['select', 'info', 'play', 'view', 'download'],
   props: {
     results: {
       type: Array,
@@ -52,7 +56,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "items";
+@import "src/style/items";
 
 .media-results {
   width: 100%;

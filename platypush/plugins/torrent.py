@@ -58,6 +58,7 @@ class TorrentPlugin(Plugin):
         self.torrent_ports = torrent_ports if torrent_ports else self.default_torrent_ports
         self.download_dir = None
         self._sessions = {}
+        self._lt_session = None
 
         if download_dir:
             self.download_dir = os.path.abspath(os.path.expanduser(download_dir))
@@ -353,6 +354,15 @@ class TorrentPlugin(Plugin):
 
         return thread
 
+    def _get_session(self):
+        if self._lt_session:
+            return self._lt_session
+
+        import libtorrent as lt
+        # noinspection PyArgumentList
+        self._lt_session = lt.session()
+        return self._lt_session
+
     @action
     def download(self, torrent, download_dir=None, _async=False, event_hndl=None, is_media=False):
         """
@@ -402,8 +412,7 @@ class TorrentPlugin(Plugin):
             self.logger.info('A torrent session is already running for {}'.format(torrent))
             return self.torrent_state.get(torrent, {})
 
-        # noinspection PyArgumentList
-        session = lt.session()
+        session = self._get_session()
         session.listen_on(*self.torrent_ports)
         self._sessions[torrent] = session
 

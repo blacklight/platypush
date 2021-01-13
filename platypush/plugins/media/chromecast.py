@@ -295,12 +295,6 @@ class MediaChromecastPlugin(MediaPlugin):
 
         resource = self._get_resource(resource)
 
-        if resource.startswith('magnet:?'):
-            player_args = {'chromecast': chromecast}
-            return get_plugin('media.webtorrent').play(resource,
-                                                       player='chromecast',
-                                                       **player_args)
-
         if not content_type:
             content_type = get_mime_type(resource)
 

@@ -14,6 +14,7 @@ __routes__ = [
     media,
 ]
 
+
 @media.route('/media', methods=['GET'])
 def get_media():
     """

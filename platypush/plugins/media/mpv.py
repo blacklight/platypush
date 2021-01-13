@@ -87,7 +87,7 @@ class MediaMpvPlugin(MediaPlugin):
                 self._post_event(MediaPlayEvent, resource=self._get_current_resource(), title=self._player.filename)
             elif evt == Event.SHUTDOWN or (
                     evt == Event.END_FILE and event.get('event', {}).get('reason') in
-                    [EndFile.EOF_OR_INIT_FAILURE, EndFile.ABORTED, EndFile.QUIT]):
+                    [EndFile.EOF, EndFile.ABORTED, EndFile.QUIT]):
                 playback_rebounced = self._playback_rebounce_event.wait(timeout=0.5)
                 if playback_rebounced:
                     self._playback_rebounce_event.clear()
@@ -131,9 +131,6 @@ class MediaMpvPlugin(MediaPlugin):
         get_bus().post(MediaPlayRequestEvent(resource=resource))
         self._init_mpv(args)
 
-        if subtitles:
-            args['sub_file'] = self.get_subtitles_file(subtitles)
-
         resource = self._get_resource(resource)
         if resource.startswith('file://'):
             resource = resource[7:]
@@ -142,6 +139,8 @@ class MediaMpvPlugin(MediaPlugin):
         self._player.play(resource)
         if self.volume:
             self.set_volume(volume=self.volume)
+        if subtitles:
+            self.add_subtitles(subtitles)
 
         return self.status()
 
@@ -157,7 +156,6 @@ class MediaMpvPlugin(MediaPlugin):
     @action
     def quit(self):
         """ Stop and quit the player """
-        self._stop_torrent()
         if not self._player:
             return None, 'No mpv instance is running'
 

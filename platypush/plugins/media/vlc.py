@@ -193,7 +193,6 @@ class MediaVlcPlugin(MediaPlugin):
     @action
     def quit(self):
         """ Quit the player (same as `stop`) """
-        self._stop_torrent()
         if not self._player:
             return None, 'No vlc instance is running'
 

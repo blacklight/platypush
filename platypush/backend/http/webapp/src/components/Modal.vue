@@ -94,6 +94,8 @@ export default {
         self.$emit('close')
       else
         self.$emit('open')
+
+      self.isVisible = visible
     }
 
     this.$watch(() => this.visible, visibleHndl)

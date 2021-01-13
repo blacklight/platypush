@@ -24,8 +24,10 @@ def get_media_url(media_id):
     return '{url}/media/{media_id}'.format(
         url=get_remote_base_url(), media_id=media_id)
 
+
 def get_media_id(source):
     return hashlib.sha1(source.encode()).hexdigest()
+
 
 def register_media(source, subtitles=None):
     global media_map, media_map_lock
@@ -89,8 +91,6 @@ def stream_media(media_id, req):
     if not media_hndl:
         raise FileNotFoundError('{} is not a registered media_id'.format(media_id))
 
-    from_bytes = None
-    to_bytes = None
     range_hdr = req.headers.get('range')
     content_length = media_hndl.content_length
     status_code = 200
@@ -102,8 +102,8 @@ def stream_media(media_id, req):
 
     if 'download' in req.args:
         headers['Content-Disposition'] = 'attachment' + \
-            ('; filename="{}"'.format(media_hndl.filename) if
-             media_hndl.filename else '')
+                                         ('; filename="{}"'.format(media_hndl.filename) if
+                                          media_hndl.filename else '')
 
     if range_hdr:
         headers['Accept-Ranges'] = 'bytes'
@@ -111,7 +111,7 @@ def stream_media(media_id, req):
         from_bytes = int(from_bytes)
 
         if not to_bytes:
-            to_bytes = content_length-1
+            to_bytes = content_length - 1
             content_length -= from_bytes
         else:
             to_bytes = int(to_bytes)
@@ -129,12 +129,12 @@ def stream_media(media_id, req):
 
     if 'webplayer' in req.args:
         return render_template('webplayer.html',
-                                media_url=media_hndl.url.replace(
-                                    get_remote_base_url(), ''),
-                                media_type=media_hndl.mime_type,
-                                subtitles_url='/media/subtitles/{}.vtt'.
-                                format(media_id) if media_hndl.subtitles
-                                else None)
+                               media_url=media_hndl.url.replace(
+                                   get_remote_base_url(), ''),
+                               media_type=media_hndl.mime_type,
+                               subtitles_url='/media/subtitles/{}.vtt'.
+                               format(media_id) if media_hndl.subtitles
+                               else None)
     else:
         return Response(media_hndl.get_data(
             from_bytes=from_bytes, to_bytes=to_bytes,
@@ -199,6 +199,7 @@ def add_subtitles(media_id, req):
         'url': get_remote_base_url() + '/media/subtitles/' + media_id + '.vtt',
     }
 
+
 def remove_subtitles(media_id):
     media_hndl = media_map.get(media_id)
     if not media_hndl:
@@ -211,7 +212,5 @@ def remove_subtitles(media_id):
 
     media_hndl.remove_subtitles()
     return {}
-
-
 
 # vim:sw=4:ts=4:et:

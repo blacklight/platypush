@@ -31,6 +31,8 @@ export default {
           unwatch()
         }
       })
+
+      return unwatch
     },
 
     unsubscribe(handlerName) {

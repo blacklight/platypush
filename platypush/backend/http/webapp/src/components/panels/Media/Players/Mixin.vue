@@ -1,9 +1,10 @@
 <script>
 import Utils from "@/Utils";
+import MediaUtils from "@/components/Media/Utils";
 
 export default {
   name: "Mixin",
-  mixins: [Utils],
+  mixins: [Utils, MediaUtils],
   emits: ['status'],
 
   props: {
@@ -35,12 +36,12 @@ export default {
       return await this.request(`${this.pluginName}.status`)
     },
 
-    async play(resource) {
+    async play(resource, subs) {
       if (!resource) {
         return await this.pause()
       }
 
-      return await this.request(`${this.pluginName}.play`, {resource: resource.url})
+      return await this.request(`${this.pluginName}.play`, {resource: resource.url, subtitles: subs})
     },
 
     async pause() {
@@ -79,6 +80,20 @@ export default {
 
       this.$emit('status', await this.status())
       return true
+    },
+
+    async addSubtitles(subs) {
+      await this.request(`${this.pluginName}.add_subtitles`, {filename: subs})
+      await this.request(`${this.pluginName}.toggle_subtitles`, {visible: true})
+    },
+
+    async removeSubtitles() {
+      await this.request(`${this.pluginName}.toggle_subtitles`, {visible: false})
+    },
+
+    supports(resource) {
+      return resource?.type === 'file' || resource?.type === 'youtube' ||
+          (resource.url || resource).startsWith('http://') || (resource.url || resource).startsWith('https://')
     },
   },
 

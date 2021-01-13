@@ -3,9 +3,10 @@ import threading
 import time
 
 from queue import Queue
+from typing import Callable, Type
 
 from platypush.config import Config
-from platypush.message.event import StopEvent
+from platypush.message.event import Event, StopEvent
 
 logger = logging.getLogger('platypush:bus')
 
@@ -19,6 +20,7 @@ class Bus(object):
         self.bus = Queue()
         self.on_message = on_message
         self.thread_id = threading.get_ident()
+        self.event_handlers = {}
 
     def post(self, msg):
         """ Sends a message to the bus """
@@ -37,7 +39,21 @@ class Bus(object):
         self.post(evt)
 
     def _msg_executor(self, msg):
+        def event_handler(event: Event, handler: Callable[[Event], None]):
+            logger.info('Triggering event handler {}'.format(handler.__name__))
+            handler(event)
+
         def executor():
+            if isinstance(msg, Event):
+                if type(msg) in self.event_handlers:
+                    handlers = self.event_handlers[type(msg)]
+                else:
+                    handlers = {*[hndl for event_type, hndl in self.event_handlers.items()
+                                  if isinstance(msg, event_type)]}
+
+                for hndl in handlers:
+                    threading.Thread(target=event_handler, args=(msg, hndl))
+
             try:
                 self.on_message(msg)
             except Exception as e:
@@ -69,6 +85,40 @@ class Bus(object):
             if isinstance(msg, StopEvent) and msg.targets_me():
                 logger.info('Received STOP event on the bus')
                 stop = True
+
+    def register_handler(self, event_type: Type[Event], handler: Callable[[Event], None]) -> Callable[[], None]:
+        """
+        Register an event handler to the bus.
+
+        :param event_type: Event type to subscribe (event inheritance also works).
+        :param handler: Event handler - a function that takes an Event object as parameter.
+        :return: A function that can be called to remove the handler (no paramters required).
+        """
+        if event_type not in self.event_handlers:
+            self.event_handlers[event_type] = set()
+
+        self.event_handlers[event_type].add(handler)
+
+        def unregister():
+            self.unregister_handler(event_type, handler)
+
+        return unregister
+
+    def unregister_handler(self, event_type: Type[Event], handler: Callable[[Event], None]) -> None:
+        """
+        Remove an event handler.
+
+        :param event_type: Event type.
+        :param handler: Existing event handler.
+        """
+        if event_type not in self.event_handlers:
+            return
+
+        if handler in self.event_handlers[event_type]:
+            self.event_handlers[event_type].remove(handler)
+
+        if len(self.event_handlers[event_type]) == 0:
+            del self.event_handlers[event_type]
 
 
 # vim:sw=4:ts=4:et:

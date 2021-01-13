@@ -22,7 +22,7 @@ class FileHandler(MediaHandler):
                                     format(self.path))
 
         self.mime_type = get_mime_type(source)
-        if self.mime_type[:5] not in ['video', 'audio', 'image']:
+        if self.mime_type[:5] not in ['video', 'audio', 'image'] and self.mime_type != 'application/octet-stream':
             raise AttributeError('{} is not a valid media file (detected format: {})'.
                                  format(source, self.mime_type))
 

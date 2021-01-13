@@ -291,7 +291,6 @@ class MediaMplayerPlugin(MediaPlugin):
     @action
     def quit(self):
         """ Quit the player """
-        self._stop_torrent()
         self._exec('quit')
         self._post_event(MediaStopEvent)
         return self.status()

@@ -119,15 +119,15 @@ class RtorrentPlugin(TorrentPlugin):
 
     """
 
-    def __init__(self, url: str, poll_seconds: float = 5.0, torrent_files_dir: str = '~/.rtorrent/watch', **kwargs):
+    def __init__(self, url: str, poll_seconds: float = 5.0, download_dir: str = '~/.rtorrent/watch', **kwargs):
         """
         :param url: HTTP URL that exposes the XML/RPC interface of RTorrent (e.g. ``http://localhost:5000/RPC2``).
         :param poll_seconds: How often the plugin will monitor for changes in the torrent state (default: 5 seconds).
-        :param torrent_files_dir: Directory where torrents and metadata files will be downloaded
+        :param download_dir: Directory where torrents and metadata files will be downloaded
             (default: ``~/.rtorrent/watch``).
         """
         super().__init__(**kwargs)
-        self.torrent_files_dir = os.path.abspath(os.path.expanduser(torrent_files_dir))
+        self.torrent_files_dir = os.path.abspath(os.path.expanduser(download_dir))
         Path(self.torrent_files_dir).mkdir(parents=True, exist_ok=True, mode=0o755)
 
         self._monitor_stop = threading.Event()

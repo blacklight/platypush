@@ -116,6 +116,20 @@ class MediaSubtitlesPlugin(Plugin):
             os.chdir(cwd)
 
     @action
+    def search(self, resource, language=None):
+        """
+        Alias for :meth:`.get_subtitles`.
+
+        :param resource: Media file, torrent or URL to the media resource
+        :type resource: str
+
+        :param language: Language name or code (default: configured preferred language).
+            Choose 'all' for all the languages
+        :type language: str
+        """
+        return self.get_subtitles(resource=resource, language=language)
+
+    @action
     def download(self, link, media_resource=None, path=None, convert_to_vtt=False):
         """
         Downloads a subtitle link (.srt/.vtt file or gzip/zip OpenSubtitles archive link) to the specified directory

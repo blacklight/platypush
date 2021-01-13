@@ -274,7 +274,16 @@ def is_process_alive(pid):
 
 def get_ip_or_hostname():
     ip = socket.gethostbyname(socket.gethostname())
-    return socket.getfqdn() if ip.startswith('127.') else ip
+    if ip.startswith('127.'):
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.connect(('10.255.255.255', 1))
+            ip = sock.getsockname()[0]
+            sock.close()
+        except:
+            pass
+
+    return ip
 
 
 def get_mime_type(resource):
@@ -294,7 +303,7 @@ def get_mime_type(resource):
             raise RuntimeError('The installed magic version provides neither detect_from_filename nor from_file')
 
         if mime:
-            return mime.mime_type
+            return mime.mime_type if hasattr(mime, 'mime_type') else mime
 
 
 def camel_case_to_snake_case(string):

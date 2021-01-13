@@ -57,7 +57,7 @@ export default {
     },
 
     async stop(player) {
-      return await this.request(`${this.pluginName}.stop`, {chromecast: this.getPlayerName(player)})
+      return await this.request(`${this.pluginName}.quit`, {chromecast: this.getPlayerName(player)})
     },
 
     async setVolume(volume, player) {
@@ -74,6 +74,11 @@ export default {
 
       this.$emit('status', await this.status(event.player))
       return true
+    },
+
+    supports(resource) {
+      return resource?.type === 'youtube' ||
+          (resource.url || resource).startsWith('http://') || (resource.url || resource).startsWith('https://')
     },
   },
 }

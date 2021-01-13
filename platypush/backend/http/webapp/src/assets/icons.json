@@ -17,6 +17,12 @@
     },
     "music.mpd": {
       "class": "fas fa-music"
+    },
+    "torrent": {
+      "class": "fa fa-magnet"
+    },
+    "rtorrent": {
+      "class": "fa fa-magnet"
     }
   }
 }

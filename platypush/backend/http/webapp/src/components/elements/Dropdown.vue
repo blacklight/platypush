@@ -27,6 +27,7 @@ export default {
 
     iconClass: {
       type: String,
+      default: 'fa fa-ellipsis-h',
     },
 
     text: {

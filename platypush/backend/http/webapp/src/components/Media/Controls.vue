@@ -54,7 +54,7 @@
     <div class="row">
       <div class="col-s-2 col-m-1 time">
           <span class="elapsed-time"
-                v-text="elapsed != null && status.state !== 'stop' ? convertTime(elapsed) : '-:--'"></span>
+                v-text="elapsed != null && (status.state === 'play' || status.state === 'pause') ? convertTime(elapsed) : '-:--'"></span>
       </div>
       <div class="col-s-8 col-m-10">
         <Slider :value="elapsed" :range="[0, duration]" :disabled="!duration || status.state === 'stop'"
@@ -78,13 +78,13 @@
 
     <div class="track-container col-s-8 col-m-8 col-l-3">
       <div class="track-info" v-if="track && status?.state !== 'stop'">
-        <div class="title">
-          <a :href="$route.fullPath" v-text="track.title"
+        <div class="title" v-if="status.state === 'play' || status.state === 'pause'">
+          <a :href="$route.fullPath" v-text="track.title?.length ? track.title : '[No Title]'"
              @click.prevent="$emit('search', {artist: track.artist, album: track.album})" v-if="track.album"></a>
-          <a :href="track.url" v-text="track.title" v-else-if="track.url"></a>
-          <span v-text="track.title" v-else></span>
+          <a :href="track.url" v-text="track.title?.length ? track.title : '[No Title]'" v-else-if="track.url"></a>
+          <span v-text="track.title?.length ? track.title : '[No Title]' " v-else></span>
         </div>
-        <div class="artist" v-if="track.artist">
+        <div class="artist" v-if="track.artist?.length && (status.state === 'play' || status.state === 'pause')">
           <a :href="$route.fullPath" v-text="track.artist" @click.prevent="$emit('search', {artist: track.artist})"></a>
         </div>
       </div>
@@ -111,7 +111,7 @@
       <div class="row">
         <div class="col-1 time">
           <span class="elapsed-time"
-                v-text="elapsed != null && status.state !== 'stop' ? convertTime(elapsed) : '-:--'"></span>
+                v-text="elapsed != null && (status.state === 'play' || status.state === 'pause') ? convertTime(elapsed) : '-:--'"></span>
         </div>
         <div class="col-10">
           <Slider :value="elapsed" :range="[0, duration]" :disabled="!duration || status.state === 'stop'"
@@ -282,6 +282,7 @@ button {
 
   @include until($desktop) {
     display: flex;
+    padding-top: .5em;
   }
 
   .row {
