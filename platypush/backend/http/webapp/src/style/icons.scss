@@ -1,8 +1,17 @@
-.fa.fa-kodi:before {
+@mixin icon {
   content: ' ';
-  background: url('/icons/kodi.svg');
   background-size: 1em 1em;
   width: 1em;
   height: 1em;
   display: inline-block;
+}
+
+.fa.fa-kodi:before {
+  @include icon;
+  background: url('/icons/kodi.svg');
+}
+
+.fa.fa-plex:before {
+  @include icon;
+  background: url('/icons/plex.svg');
 }

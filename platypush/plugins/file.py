@@ -1,6 +1,7 @@
 import json
 import os
 import pathlib
+from typing import List, Dict
 
 from platypush.plugins import Plugin, action
 
@@ -157,6 +158,37 @@ class FilePlugin(Plugin):
         :param file: File/link to remove.
         """
         pathlib.Path(self._get_path(file)).unlink()
+
+    @action
+    def list(self, path: str = os.path.abspath(os.sep)) -> List[Dict[str, str]]:
+        """
+        List a file or all the files in a directory.
+
+        :param path: File or directory (default: root directory).
+        :return: List of files in the specified path, or absolute path of the specified path if ``path`` is a file and
+            it exists. Each item will contain the fields ``type`` (``file`` or ``directory``) and ``path``.
+        """
+        path = self._get_path(path)
+        assert os.path.exists(path), 'No such file or directory: {}'.format(path)
+
+        if not os.path.isdir(path):
+            return [{
+                'type': 'file',
+                'path': path,
+                'name': os.path.basename(path),
+            }]
+
+        return sorted(
+            [
+                {
+                    'type': 'directory' if os.path.isdir(os.path.join(path, f)) else 'file',
+                    'path': os.path.join(path, f),
+                    'name': os.path.basename(f),
+                }
+                for f in sorted(os.listdir(path))
+            ],
+            key=lambda f: (f.get('type'), f.get('name'))
+        )
 
 
 # vim:sw=4:ts=4:et:

@@ -17,8 +17,9 @@ class MediaSearcher:
 from .local import LocalMediaSearcher
 from .youtube import YoutubeMediaSearcher
 from .torrent import TorrentMediaSearcher
+from .plex import PlexMediaSearcher
 
-__all__ = ['LocalMediaSearcher', 'TorrentMediaSearcher', 'YoutubeMediaSearcher']
+__all__ = ['MediaSearcher', 'LocalMediaSearcher', 'TorrentMediaSearcher', 'YoutubeMediaSearcher', 'PlexMediaSearcher']
 
 
 # vim:sw=4:ts=4:et:

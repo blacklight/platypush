@@ -1,3 +1,5 @@
+import urllib.parse
+
 from platypush.context import get_plugin
 from platypush.plugins import Plugin, action
 
@@ -11,7 +13,7 @@ class MediaPlexPlugin(Plugin):
         * **plexapi** (``pip install plexapi``)
     """
 
-    def __init__(self, server, username, password, *args, **kwargs):
+    def __init__(self, server, username, password, **kwargs):
         """
         :param server: Plex server name
         :type server: str
@@ -24,11 +26,10 @@ class MediaPlexPlugin(Plugin):
         """
 
         from plexapi.myplex import MyPlexAccount
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
         self.resource = MyPlexAccount(username, password).resource(server)
         self._plex = None
-
 
     @property
     def plex(self):
@@ -36,7 +37,6 @@ class MediaPlexPlugin(Plugin):
             self._plex = self.resource.connect()
 
         return self._plex
-
 
     @action
     def get_clients(self):
@@ -57,10 +57,8 @@ class MediaPlexPlugin(Plugin):
             'version': c.version,
         } for c in self.plex.clients()]
 
-
     def _get_client(self, name):
         return self.plex.client(name)
-
 
     @action
     def search(self, section=None, title=None, **kwargs):
@@ -93,7 +91,6 @@ class MediaPlexPlugin(Plugin):
 
         return ret
 
-
     @action
     def playlists(self):
         """
@@ -106,10 +103,9 @@ class MediaPlexPlugin(Plugin):
                 'duration': pl.duration,
                 'summary': pl.summary,
                 'viewed_at': pl.viewedAt,
-                'items': [ self._flatten_item(item) for item in pl.items() ],
+                'items': [self._flatten_item(item) for item in pl.items()],
             } for pl in self.plex.playlists()
         ]
-
 
     @action
     def history(self):
@@ -121,8 +117,8 @@ class MediaPlexPlugin(Plugin):
             self._flatten_item(item) for item in self.plex.history()
         ]
 
-
-    def get_chromecast(self, chromecast):
+    @staticmethod
+    def get_chromecast(chromecast):
         from .lib.plexcast import PlexController
 
         hndl = PlexController()
@@ -130,8 +126,7 @@ class MediaPlexPlugin(Plugin):
         cast = get_plugin('media.chromecast').get_chromecast(chromecast)
         cast.register_handler(hndl)
 
-        return (cast, hndl)
-
+        return cast, hndl
 
     @action
     def play(self, client=None, chromecast=None, **kwargs):
@@ -157,7 +152,7 @@ class MediaPlexPlugin(Plugin):
             raise RuntimeError('No client nor chromecast specified')
 
         if client:
-            client = plex.client(client)
+            client = self.plex.client(client)
         elif chromecast:
             (chromecast, handler) = self.get_chromecast(chromecast)
 
@@ -185,7 +180,6 @@ class MediaPlexPlugin(Plugin):
         elif chromecast:
             return handler.play_media(item, self.plex)
 
-
     @action
     def pause(self, client):
         """
@@ -193,7 +187,6 @@ class MediaPlexPlugin(Plugin):
         """
 
         return self.client(client).pause()
-
 
     @action
     def stop(self, client):
@@ -203,7 +196,6 @@ class MediaPlexPlugin(Plugin):
 
         return self.client(client).stop()
 
-
     @action
     def seek(self, client, offset):
         """
@@ -211,7 +203,6 @@ class MediaPlexPlugin(Plugin):
         """
 
         return self.client(client).seekTo(offset)
-
 
     @action
     def forward(self, client):
@@ -221,7 +212,6 @@ class MediaPlexPlugin(Plugin):
 
         return self.client(client).stepForward()
 
-
     @action
     def back(self, client):
         """
@@ -229,7 +219,6 @@ class MediaPlexPlugin(Plugin):
         """
 
         return self.client(client).stepBack()
-
 
     @action
     def next(self, client):
@@ -239,7 +228,6 @@ class MediaPlexPlugin(Plugin):
 
         return self.client(client).skipNext()
 
-
     @action
     def previous(self, client):
         """
@@ -248,15 +236,13 @@ class MediaPlexPlugin(Plugin):
 
         return self.client(client).skipPrevious()
 
-
     @action
     def set_volume(self, client, volume):
         """
         Set the volume on a client between 0 and 100
         """
 
-        return self.client(client).setVolume(volume/100)
-
+        return self.client(client).setVolume(volume / 100)
 
     @action
     def repeat(self, client, repeat):
@@ -266,7 +252,6 @@ class MediaPlexPlugin(Plugin):
 
         return self.client(client).setRepeat(repeat)
 
-
     @action
     def random(self, client, random):
         """
@@ -274,7 +259,6 @@ class MediaPlexPlugin(Plugin):
         """
 
         return self.client(client).setShuffle(random)
-
 
     @action
     def up(self, client):
@@ -284,7 +268,6 @@ class MediaPlexPlugin(Plugin):
 
         return self.client(client).moveUp()
 
-
     @action
     def down(self, client):
         """
@@ -292,7 +275,6 @@ class MediaPlexPlugin(Plugin):
         """
 
         return self.client(client).moveDown()
-
 
     @action
     def left(self, client):
@@ -302,7 +284,6 @@ class MediaPlexPlugin(Plugin):
 
         return self.client(client).moveLeft()
 
-
     @action
     def right(self, client):
         """
@@ -310,7 +291,6 @@ class MediaPlexPlugin(Plugin):
         """
 
         return self.client(client).moveRight()
-
 
     @action
     def go_back(self, client):
@@ -320,7 +300,6 @@ class MediaPlexPlugin(Plugin):
 
         return self.client(client).goBack()
 
-
     @action
     def go_home(self, client):
         """
@@ -328,7 +307,6 @@ class MediaPlexPlugin(Plugin):
         """
 
         return self.client(client).goHome()
-
 
     @action
     def go_to_media(self, client):
@@ -338,7 +316,6 @@ class MediaPlexPlugin(Plugin):
 
         return self.client(client).goToMedia()
 
-
     @action
     def go_to_music(self, client):
         """
@@ -346,7 +323,6 @@ class MediaPlexPlugin(Plugin):
         """
 
         return self.client(client).goToMusic()
-
 
     @action
     def next_letter(self, client):
@@ -356,7 +332,6 @@ class MediaPlexPlugin(Plugin):
 
         return self.client(client).nextLetter()
 
-
     @action
     def page_down(self, client):
         """
@@ -365,7 +340,6 @@ class MediaPlexPlugin(Plugin):
 
         return self.client(client).pageDown()
 
-
     @action
     def page_up(self, client):
         """
@@ -373,7 +347,6 @@ class MediaPlexPlugin(Plugin):
         """
 
         return self.client(client).pageUp()
-
 
     def _flatten_item(self, item):
         from plexapi.video import Movie, Show
@@ -399,7 +372,7 @@ class MediaPlexPlugin(Plugin):
 
             _item['media'] = [
                 {
-                    'duration': (item.media[i].duration or 0)/1000,
+                    'duration': (item.media[i].duration or 0) / 1000,
                     'width': item.media[i].width,
                     'height': item.media[i].height,
                     'audio_channels': item.media[i].audioChannels,
@@ -410,7 +383,10 @@ class MediaPlexPlugin(Plugin):
                     'parts': [
                         {
                             'file': part.file,
-                            'duration': (part.duration or 0)/1000,
+                            'duration': (part.duration or 0) / 1000,
+                            'url': self.plex.url(part.key) + '?' + urllib.parse.urlencode({
+                                'X-Plex-Token': self.plex._token,
+                            }),
                         } for part in item.media[i].parts
                     ]
                 } for i in range(0, len(item.media))
@@ -424,7 +400,7 @@ class MediaPlexPlugin(Plugin):
                     'summary': season.summary,
                     'episodes': [
                         {
-                            'duration': episode.duration/1000,
+                            'duration': episode.duration / 1000,
                             'index': episode.index,
                             'year': episode.year,
                             'season_number': episode.seasonNumber,
@@ -435,7 +411,7 @@ class MediaPlexPlugin(Plugin):
                             'view_offset': episode.viewOffset,
                             'media': [
                                 {
-                                    'duration': episode.media[i].duration/1000,
+                                    'duration': episode.media[i].duration / 1000,
                                     'width': episode.media[i].width,
                                     'height': episode.media[i].height,
                                     'audio_channels': episode.media[i].audioChannels,
@@ -447,7 +423,10 @@ class MediaPlexPlugin(Plugin):
                                     'parts': [
                                         {
                                             'file': part.file,
-                                            'duration': part.duration/1000,
+                                            'duration': part.duration / 1000,
+                                            'url': self.plex.url(part.key) + '?' + urllib.parse.urlencode({
+                                                'X-Plex-Token': self.plex._token,
+                                            }),
                                         } for part in episode.media[i].parts
                                     ]
                                 } for i in range(0, len(episode.locations))
@@ -461,4 +440,3 @@ class MediaPlexPlugin(Plugin):
 
 
 # vim:sw=4:ts=4:et:
-

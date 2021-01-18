@@ -1,7 +1,11 @@
 <template>
   <div class="media-results">
-    <div class="row item" :class="{selected: selectedResult === i}" v-for="(result, i) in results" :key="i"
-         @click="$emit('select', i)">
+    <div class="no-content" v-if="!results?.length">
+      No search results
+    </div>
+
+    <div class="row item" :class="{selected: selectedResult === i, hidden: !sources[result.type]}"
+         v-for="(result, i) in results" :key="i" @click="$emit('select', i)">
       <div class="col-10 left side">
         <div class="icon">
           <i :class="typeIcons[result.type]" />
@@ -41,6 +45,11 @@ export default {
     selectedResult: {
       type: Number,
     },
+
+    sources: {
+      type: Object,
+      default: () => {},
+    },
   },
 
   data() {
@@ -49,6 +58,7 @@ export default {
         'file': 'fa fa-hdd',
         'torrent': 'fa fa-magnet',
         'youtube': 'fab fa-youtube',
+        'plex': 'fa fa-plex',
       },
     }
   },
@@ -96,6 +106,16 @@ export default {
           }
         }
       }
+    }
+  }
+
+  .no-content {
+    height: 100%;
+  }
+
+  .icon {
+    .fa-youtube {
+      color: #d21;
     }
   }
 }

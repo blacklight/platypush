@@ -66,7 +66,7 @@ class MediaPlugin(Plugin):
     _supported_media_plugins = {'media.mplayer', 'media.omxplayer', 'media.mpv',
                                 'media.vlc', 'media.chromecast', 'media.gstreamer'}
 
-    _supported_media_types = ['file', 'torrent', 'youtube']
+    _supported_media_types = ['file', 'plex', 'torrent', 'youtube']
     _default_search_timeout = 60  # 60 seconds
 
     def __init__(self,
@@ -202,6 +202,8 @@ class MediaPlugin(Plugin):
                 resource = self._videos_queue.pop(0)
             else:
                 raise RuntimeError('No media file found in torrent {}'.format(resource))
+        elif re.search(r'^https?://', resource):
+            return resource
 
         assert resource, 'Unable to find any compatible media resource'
         return resource
@@ -377,6 +379,9 @@ class MediaPlugin(Plugin):
         if search_type == 'youtube':
             from .search import YoutubeMediaSearcher
             return YoutubeMediaSearcher()
+        if search_type == 'plex':
+            from .search import PlexMediaSearcher
+            return PlexMediaSearcher()
 
         self.logger.warning('Unsupported search type: {}'.format(search_type))
 

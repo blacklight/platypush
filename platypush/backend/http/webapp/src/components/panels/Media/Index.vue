@@ -13,19 +13,24 @@
 
           <div class="view-container">
             <Header :plugin-name="pluginName" :selected-view="selectedView" :has-subtitles-plugin="hasSubtitlesPlugin"
-                    :selected-item="selectedPlayer && selectedPlayer.status &&
+                    ref="header" :sources="sources" :selected-item="selectedPlayer && selectedPlayer.status &&
                       (selectedPlayer.status.state === 'play' || selectedPlayer.status.state === 'pause')
                       ? selectedPlayer.status : results[selectedResult]" :selected-subtitles="selectedSubtitles"
-                    @search="search" @select-player="selectedPlayer = $event" @player-status="onStatusUpdate"
-                    @torrent-add="downloadTorrent($event)" @show-subtitles="showSubtitlesModal = !showSubtitlesModal" />
+                    :browser-filter="browserFilter" @search="search" @select-player="selectedPlayer = $event"
+                    @player-status="onStatusUpdate" @torrent-add="downloadTorrent($event)"
+                    @show-subtitles="showSubtitlesModal = !showSubtitlesModal" @play-url="$refs.playUrlModal.show()"
+                    @filter="browserFilter = $event" @source-toggle="sources[$event] = !sources[$event]" />
 
-            <div class="body-container">
+            <div class="body-container" :class="{'expanded-header': $refs.header?.filterVisible}">
               <Results :results="results" :selected-result="selectedResult" @select="onResultSelect($event)"
                        @play="play" @info="$refs.mediaInfo.isVisible = true" @view="view" @download="download"
-                       v-if="selectedView === 'search'" />
+                       :sources="sources" v-if="selectedView === 'search'" />
 
               <TorrentView :plugin-name="torrentPlugin" :is-media="true" @play="play"
                            v-else-if="selectedView === 'torrents'" />
+
+              <Browser :plugin-name="torrentPlugin" :is-media="true" :filter="browserFilter"
+                       @path-change="browserFilter = ''" @play="play($event)" v-else-if="selectedView === 'browser'" />
             </div>
           </div>
         </main>
@@ -47,6 +52,23 @@
           </div>
         </Modal>
       </div>
+
+      <div class="play-url-container">
+        <Modal title="Play URL" ref="playUrlModal" @open="$refs.playUrlInput.focus()">
+          <form @submit.prevent="playUrl(urlPlay)">
+            <div class="row">
+              <label>
+                Play URL (use <tt>file://</tt> prefix for local files)
+                <input type="text" v-model="urlPlay" ref="playUrlInput" autofocus />
+              </label>
+            </div>
+
+            <div class="row footer">
+              <button type="submit" :disabled="!urlPlay?.length">Play</button>
+            </div>
+          </form>
+        </Modal>
+      </div>
     </div>
   </keep-alive>
 </template>
@@ -63,11 +85,12 @@ import Nav from "@/components/panels/Media/Nav";
 import Results from "@/components/panels/Media/Results";
 import Subtitles from "@/components/panels/Media/Subtitles";
 import TorrentView from "@/components/panels/Torrent/View";
+import Browser from "@/components/File/Browser";
 
 export default {
   name: "Media",
   mixins: [Utils, MediaUtils],
-  components: {Loading, MediaView, Header, Results, Modal, Info, Nav, TorrentView, Subtitles},
+  components: {Browser, Loading, MediaView, Header, Results, Modal, Info, Nav, TorrentView, Subtitles},
   props: {
     pluginName: {
       type: String,
@@ -96,11 +119,19 @@ export default {
       selectedSubtitles: null,
       showSubtitlesModal: false,
       awaitingPlayTorrent: null,
+      urlPlay: null,
+      browserFilter: null,
       torrentPlugin: null,
       torrentPlugins: [
         'torrent',
         'rtorrent',
       ],
+
+      sources: {
+        'file': true,
+        'youtube': true,
+        'torrent': true,
+      },
     }
   },
 
@@ -277,6 +308,20 @@ export default {
         this.selectedSubtitles = null
       }
     },
+
+    async playUrl(url) {
+      this.loading = true
+
+      try {
+        await this.play({
+          url: url,
+        })
+
+        this.$refs.playUrlModal.close()
+      } finally {
+        this.loading = false
+      }
+    },
   },
 
   mounted() {
@@ -303,6 +348,9 @@ export default {
         'platypush.message.event.torrent.TorrentDownloadStartEvent')
     this.subscribe(this.onTorrentDownloadCompleted,'notify-on-torrent-download-completed',
         'platypush.message.event.torrent.TorrentDownloadCompletedEvent')
+
+    if ('media.plex' in this.$root.config)
+      this.sources.plex = true
   },
 
   destroy() {
@@ -316,6 +364,7 @@ export default {
 
 <style lang="scss" scoped>
 @import "vars";
+@import "~@/components/Media/vars";
 
 .media-plugin {
   width: 100%;
@@ -335,8 +384,13 @@ export default {
     }
 
     .body-container {
-      height: calc(100% - #{$media-header-height});
-      margin-top: .2em;
+      height: calc(100% - #{$media-header-height} - #{$media-ctrl-panel-height});
+      padding-top: .1em;
+      overflow: auto;
+
+      &.expanded-header {
+        height: calc(100% - #{$media-header-height} - #{$filter-header-height} - #{$media-ctrl-panel-height});
+      }
     }
   }
 }
@@ -365,6 +419,40 @@ export default {
     .item {
       padding: 1em;
     }
+  }
+}
+
+::v-deep(.play-url-container) {
+  .body {
+    padding: 1em !important;
+  }
+
+  form {
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  input[type=text] {
+    width: 100%;
+  }
+
+  [type=submit] {
+    background: initial;
+    border-color: initial;
+    border-radius: 1.5em;
+
+    &:hover {
+      color: $default-hover-fg-2;
+    }
+  }
+
+  .footer {
+    display: flex;
+    justify-content: right;
+    padding: 0;
   }
 }
 </style>

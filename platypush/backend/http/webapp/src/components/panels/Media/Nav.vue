@@ -30,9 +30,9 @@ export default {
             displayName: 'Search',
           },
 
-          browse: {
+          browser: {
             iconClass: 'fa fa-folder',
-            displayName: 'Browse',
+            displayName: 'Browser',
           },
 
           torrents: {

@@ -53,8 +53,7 @@ export default {
   position: relative;
 
   .view-container {
-    height: calc(100% - #{$media-ctrl-panel-height});
-    overflow: auto;
+    height: 100%;
   }
 
   .controls-container {

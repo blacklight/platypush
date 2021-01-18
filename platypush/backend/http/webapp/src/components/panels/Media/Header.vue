@@ -2,7 +2,8 @@
   <div class="header" :class="{'with-filter': filterVisible}">
     <div class="row">
       <div class="col-7 left side" v-if="selectedView === 'search'">
-        <button title="Filter" @click="filterVisible = !filterVisible">
+        <button title="Filter" class="filter-btn" :class="{selected: filterVisible}"
+                @click="filterVisible = !filterVisible">
           <i class="fa fa-filter" />
         </button>
 
@@ -21,6 +22,13 @@
         </form>
       </div>
 
+      <div class="col-7 left side" v-else-if="selectedView === 'browser'">
+        <label class="search-box">
+          <input type="search" placeholder="Filter" :value="browserFilter" @change="$emit('filter', $event.target.value)"
+                 @keyup="$emit('filter', $event.target.value)">
+        </label>
+      </div>
+
       <div class="col-5 right side">
         <button title="Select subtitles" class="captions-btn" :class="{selected: selectedSubtitles != null}"
                 @click="$emit('show-subtitles')" v-if="hasSubtitlesPlugin && selectedItem &&
@@ -30,15 +38,16 @@
 
         <Players :plugin-name="pluginName" @select="$emit('select-player', $event)"
                  @status="$emit('player-status', $event)" />
-        <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
-          <DropdownItem text="Play URL" icon-class="fa fa-play-circle" />
-        </Dropdown>
+
+        <button title="Play URL" @click="$emit('play-url')">
+          <i class="fa fa-plus-circle" />
+        </button>
       </div>
     </div>
 
     <div class="row filter fade-in" :class="{hidden: !filterVisible}">
       <label v-for="source in Object.keys(sources)" :key="source">
-        <input type="checkbox" v-model="sources[source]" />
+        <input type="checkbox" :checked="sources[source]" @change="$emit('source-toggle', source)" />
         {{ source }}
       </label>
     </div>
@@ -46,13 +55,12 @@
 </template>
 
 <script>
-import Dropdown from "@/components/elements/Dropdown";
-import DropdownItem from "@/components/elements/DropdownItem";
 import Players from "@/components/panels/Media/Players";
 export default {
   name: "Header",
-  components: {Players, DropdownItem, Dropdown},
-  emits: ['search', 'select-player', 'player-status', 'torrent-add', 'show-subtitles'],
+  components: {Players},
+  emits: ['search', 'select-player', 'player-status', 'torrent-add', 'show-subtitles', 'play-url', 'filter',
+    'source-toggle'],
 
   props: {
     pluginName: {
@@ -77,6 +85,16 @@ export default {
       type: Boolean,
       default: false,
     },
+
+    browserFilter: {
+      type: String,
+      default: '',
+    },
+
+    sources: {
+      type: Object,
+      default: () => {},
+    }
   },
 
   data() {
@@ -84,11 +102,6 @@ export default {
       filterVisible: false,
       query: '',
       torrentURL: '',
-      sources: {
-        'file': true,
-        'youtube': true,
-        'torrent': true,
-      },
     }
   },
 
@@ -103,7 +116,15 @@ export default {
         types: types,
       })
     },
-  }
+  },
+
+  mounted() {
+    this.$watch(() => this.selectedView, () => {
+      this.$emit('filter', '')
+      this.torrentURL = ''
+      this.query = ''
+    })
+  },
 }
 </script>
 
@@ -118,6 +139,10 @@ export default {
   padding: .5em;
   box-shadow: $border-shadow-bottom;
 
+  .filter-btn.selected {
+    color: $selected-fg;
+  }
+
   .row {
     display: flex;
     align-items: center;
@@ -125,6 +150,7 @@ export default {
 
   &.with-filter {
     height: calc(#{$media-header-height} + #{$filter-header-height});
+    padding-bottom: 0;
   }
 
   .side {
@@ -166,10 +192,9 @@ export default {
   }
 
   .filter {
-    position: absolute;
-    top: $media-header-height;
+    width: 100%;
     height: $filter-header-height;
-    padding-bottom: 1em;
+    margin-top: .5em;
 
     label {
       display: inline-flex;

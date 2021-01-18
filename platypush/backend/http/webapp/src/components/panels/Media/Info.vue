@@ -18,6 +18,21 @@
     <div class="right side" v-text="item.description" />
   </div>
 
+  <div class="row" v-if="item?.summary">
+    <div class="left side">Summary</div>
+    <div class="right side" v-text="item.summary" />
+  </div>
+
+  <div class="row" v-if="item?.duration">
+    <div class="left side">Duration</div>
+    <div class="right side" v-text="convertTime(item.duration)" />
+  </div>
+
+  <div class="row" v-if="item?.genres">
+    <div class="left side">Genres</div>
+    <div class="right side" v-text="item.genres.join(', ')" />
+  </div>
+
   <div class="row" v-if="item?.channelId">
     <div class="left side">Channel</div>
     <div class="right side">
@@ -83,10 +98,11 @@
 
 <script>
 import Utils from "@/Utils";
+import MediaUtils from "@/components/Media/Utils";
 
 export default {
   name: "Info",
-  mixins: [Utils],
+  mixins: [Utils, MediaUtils],
   props: {
     item: {
       type: Object,

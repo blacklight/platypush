@@ -52,9 +52,10 @@ export default {
 
       let element = event.target
       while (element) {
-        if (element === this.$refs.dropdown.element) {
+        if (!this.$refs.dropdown)
+          break
+        if (element === this.$refs.dropdown.element)
           return
-        }
 
         element = element.parentElement
       }

@@ -93,7 +93,8 @@ export default {
 
     supports(resource) {
       return resource?.type === 'file' || resource?.type === 'youtube' ||
-          (resource.url || resource).startsWith('http://') || (resource.url || resource).startsWith('https://')
+          (resource.url || resource).startsWith('file://') || (resource.url || resource).startsWith('http://') ||
+          (resource.url || resource).startsWith('https://')
     },
   },
 

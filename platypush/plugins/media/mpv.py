@@ -85,7 +85,7 @@ class MediaMpvPlugin(MediaPlugin):
                 self._post_event(MediaPauseEvent, resource=self._get_current_resource(), title=self._player.filename)
             elif evt == Event.UNPAUSE:
                 self._post_event(MediaPlayEvent, resource=self._get_current_resource(), title=self._player.filename)
-            elif evt == Event.SHUTDOWN or (
+            elif evt == Event.SHUTDOWN or evt == Event.IDLE or (
                     evt == Event.END_FILE and event.get('event', {}).get('reason') in
                     [EndFile.EOF, EndFile.ABORTED, EndFile.QUIT]):
                 playback_rebounced = self._playback_rebounce_event.wait(timeout=0.5)
