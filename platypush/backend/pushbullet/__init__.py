@@ -124,14 +124,29 @@ class PushbulletBackend(Backend):
     def close(self):
         if self.listener:
             self.listener.close()
+            self.listener = None
 
     def on_stop(self):
         super().on_stop()
         return self.close()
 
+    def on_error(self, e):
+        self.logger.exception(e)
+        self.close()
+        self.run_listener()
+
+    def run_listener(self):
+        from pushbullet import Listener
+
+        self.logger.info('Initializing Pushbullet backend - device_id: {}'.format(self.device_name))
+        self.listener = Listener(account=self.pb, on_push=self.on_push(), on_error=self.on_error,
+                                 http_proxy_host=self.proxy_host,
+                                 http_proxy_port=self.proxy_port)
+
+        self.listener.run_forever()
+
     def run(self):
         # noinspection PyPackageRequirements
-        from pushbullet import Listener
         super().run()
         initialized = False
 
@@ -144,13 +159,7 @@ class PushbulletBackend(Backend):
                 self.logger.error('Pushbullet initialization error: {}'.format(str(e)))
                 time.sleep(30)
 
-        self.logger.info('Initialized Pushbullet backend - device_id: {}'
-                         .format(self.device_name))
+        self.run_listener()
 
-        self.listener = Listener(account=self.pb, on_push=self.on_push(),
-                                 http_proxy_host=self.proxy_host,
-                                 http_proxy_port=self.proxy_port)
-
-        self.listener.run_forever()
 
 # vim:sw=4:ts=4:et:
