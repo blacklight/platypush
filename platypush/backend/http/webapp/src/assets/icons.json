@@ -18,6 +18,9 @@
     "music.mpd": {
       "class": "fas fa-music"
     },
+    "music.snapcast": {
+      "class": "fa fa-volume-up"
+    },
     "torrent": {
       "class": "fa fa-magnet"
     },

@@ -50,6 +50,7 @@ $border-shadow-top: 0 -2.5px 4px 0 $default-shadow-color;
 $border-shadow-bottom: 0 3px 2px -1px $default-shadow-color;
 $border-shadow-left: -2.5px 0 4px 0 $default-shadow-color;
 $border-shadow-right: 2.5px 0 4px 0 $default-shadow-color;
+$border-shadow-bottom-right: 2.5px 2.5px 3px 0 $default-shadow-color;
 
 //// Modals
 $modal-header-bg: #e0e0e0 !default;
@@ -75,6 +76,9 @@ $default-hover-fg: #35b870 !default;
 $default-hover-fg-2: #38cf80 !default;
 $hover-bg: #bef6da !default;
 $active-bg: #8fefb7 !default;
+
+/// Disabled
+$disabled-fg: rgb(155, 155, 155);
 
 /// Navigator
 $nav-bg: #002626 !default;

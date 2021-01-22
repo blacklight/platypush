@@ -58,7 +58,6 @@ setup(
         'redis',
         'requests',
         'croniter',
-        'pyScss',
         'sqlalchemy',
         'websockets',
         'websocket-client',

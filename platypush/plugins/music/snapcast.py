@@ -92,8 +92,8 @@ class MusicSnapcastPlugin(Plugin):
     def _status(self, sock):
         request = {
             'id': self._get_req_id(),
-            'jsonrpc':'2.0',
-            'method':'Server.GetStatus'
+            'jsonrpc': '2.0',
+            'method': 'Server.GetStatus'
         }
 
         self._send(sock, request)
@@ -212,9 +212,10 @@ class MusicSnapcastPlugin(Plugin):
 
             return self._status(sock)
         finally:
-            try: sock.close()
-            except: pass
-
+            try:
+                sock.close()
+            except:
+                pass
 
     @action
     def mute(self, client=None, group=None, mute=None, host=None, port=None):
@@ -247,7 +248,7 @@ class MusicSnapcastPlugin(Plugin):
             sock = self._connect(host or self.host, port or self.port)
             request = {
                 'id': self._get_req_id(),
-                'jsonrpc':'2.0',
+                'jsonrpc': '2.0',
                 'method': 'Group.SetMute' if group else 'Client.SetVolume',
                 'params': {}
             }
@@ -268,8 +269,10 @@ class MusicSnapcastPlugin(Plugin):
             self._send(sock, request)
             return self._recv(sock)
         finally:
-            try: sock.close()
-            except: pass
+            try:
+                sock.close()
+            except:
+                pass
 
     @action
     def volume(self, client, volume=None, delta=None, mute=None, host=None,
@@ -306,7 +309,7 @@ class MusicSnapcastPlugin(Plugin):
             sock = self._connect(host or self.host, port or self.port)
             request = {
                 'id': self._get_req_id(),
-                'jsonrpc':'2.0',
+                'jsonrpc': '2.0',
                 'method': 'Client.SetVolume',
                 'params': {}
             }
@@ -336,8 +339,10 @@ class MusicSnapcastPlugin(Plugin):
             self._send(sock, request)
             return self._recv(sock)
         finally:
-            try: sock.close()
-            except: pass
+            try:
+                sock.close()
+            except:
+                pass
 
     @action
     def set_client_name(self, client, name, host=None, port=None):
@@ -363,7 +368,7 @@ class MusicSnapcastPlugin(Plugin):
             sock = self._connect(host or self.host, port or self.port)
             request = {
                 'id': self._get_req_id(),
-                'jsonrpc':'2.0',
+                'jsonrpc': '2.0',
                 'method': 'Client.SetName',
                 'params': {}
             }
@@ -374,8 +379,50 @@ class MusicSnapcastPlugin(Plugin):
             self._send(sock, request)
             return self._recv(sock)
         finally:
-            try: sock.close()
-            except: pass
+            try:
+                sock.close()
+            except:
+                pass
+
+    @action
+    def set_group_name(self, group, name, host=None, port=None):
+        """
+        Set/change the name of a group
+
+        :param group: Group ID to rename
+        :type group: str
+
+        :param name: New name
+        :type name: str
+
+        :param host: Snapcast server (default: default configured host)
+        :type host: str
+
+        :param port: Snapcast server port (default: default configured port)
+        :type port: int
+        """
+
+        sock = None
+
+        try:
+            sock = self._connect(host or self.host, port or self.port)
+            request = {
+                'id': self._get_req_id(),
+                'jsonrpc': '2.0',
+                'method': 'Group.SetName',
+                'params': {
+                    'id': group,
+                    'name': name,
+                }
+            }
+
+            self._send(sock, request)
+            return self._recv(sock)
+        finally:
+            try:
+                sock.close()
+            except:
+                pass
 
     @action
     def set_latency(self, client, latency, host=None, port=None):
@@ -401,7 +448,7 @@ class MusicSnapcastPlugin(Plugin):
             sock = self._connect(host or self.host, port or self.port)
             request = {
                 'id': self._get_req_id(),
-                'jsonrpc':'2.0',
+                'jsonrpc': '2.0',
                 'method': 'Client.SetLatency',
                 'params': {
                     'latency': latency
@@ -413,8 +460,10 @@ class MusicSnapcastPlugin(Plugin):
             self._send(sock, request)
             return self._recv(sock)
         finally:
-            try: sock.close()
-            except: pass
+            try:
+                sock.close()
+            except:
+                pass
 
     @action
     def delete_client(self, client, host=None, port=None):
@@ -437,7 +486,7 @@ class MusicSnapcastPlugin(Plugin):
             sock = self._connect(host or self.host, port or self.port)
             request = {
                 'id': self._get_req_id(),
-                'jsonrpc':'2.0',
+                'jsonrpc': '2.0',
                 'method': 'Server.DeleteClient',
                 'params': {}
             }
@@ -447,8 +496,10 @@ class MusicSnapcastPlugin(Plugin):
             self._send(sock, request)
             return self._recv(sock)
         finally:
-            try: sock.close()
-            except: pass
+            try:
+                sock.close()
+            except:
+                pass
 
     @action
     def group_set_clients(self, group, clients, host=None, port=None):
@@ -475,7 +526,7 @@ class MusicSnapcastPlugin(Plugin):
             group = self._get_group(sock, group)
             request = {
                 'id': self._get_req_id(),
-                'jsonrpc':'2.0',
+                'jsonrpc': '2.0',
                 'method': 'Group.SetClients',
                 'params': {
                     'id': group['id'],
@@ -490,9 +541,10 @@ class MusicSnapcastPlugin(Plugin):
             self._send(sock, request)
             return self._recv(sock)
         finally:
-            try: sock.close()
-            except: pass
-
+            try:
+                sock.close()
+            except:
+                pass
 
     @action
     def group_set_stream(self, group, stream_id, host=None, port=None):
@@ -519,7 +571,7 @@ class MusicSnapcastPlugin(Plugin):
             group = self._get_group(sock, group)
             request = {
                 'id': self._get_req_id(),
-                'jsonrpc':'2.0',
+                'jsonrpc': '2.0',
                 'method': 'Group.SetStream',
                 'params': {
                     'id': group['id'],
@@ -530,9 +582,10 @@ class MusicSnapcastPlugin(Plugin):
             self._send(sock, request)
             return self._recv(sock)
         finally:
-            try: sock.close()
-            except: pass
-
+            try:
+                sock.close()
+            except:
+                pass
 
     @action
     def get_backend_hosts(self):
@@ -575,7 +628,7 @@ class MusicSnapcastPlugin(Plugin):
         def _worker(host, port):
             try:
                 if exclude_local and (host == 'localhost'
-                                    or  host == Config.get('device_id')):
+                                      or host == Config.get('device_id')):
                     return
 
                 server_status = self.status(host=host, port=port).output
@@ -586,13 +639,13 @@ class MusicSnapcastPlugin(Plugin):
                     return
 
                 group = [g for g in server_status.get('groups', {})
-                        if g.get('id') == client_status.get('group_id')].pop(0)
+                         if g.get('id') == client_status.get('group_id')].pop(0)
 
                 if group.get('muted'):
                     return
 
                 stream = [s for s in server_status.get('streams')
-                        if s.get('id') == group.get('stream_id')].pop(0)
+                          if s.get('id') == group.get('stream_id')].pop(0)
 
                 if stream.get('status') != 'playing':
                     return
@@ -601,12 +654,12 @@ class MusicSnapcastPlugin(Plugin):
             except Exception as e:
                 self.logger.warning(('Error while retrieving the status of ' +
                                      'Snapcast host at {}:{}: {}').format(
-                                         host, port, str(e)))
+                    host, port, str(e)))
 
         workers = []
 
         for host, port in backend_hosts.items():
-            w = threading.Thread(target=_worker, args=(host,port))
+            w = threading.Thread(target=_worker, args=(host, port))
             w.start()
             workers.append(w)
 
@@ -615,6 +668,5 @@ class MusicSnapcastPlugin(Plugin):
             w.join()
 
         return {'hosts': playing_hosts}
-
 
 # vim:sw=4:ts=4:et:
