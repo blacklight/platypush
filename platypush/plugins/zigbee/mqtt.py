@@ -334,7 +334,7 @@ class ZigbeeMqttPlugin(MqttPlugin):
         :return: Key->value map of the device properties.
         """
         properties = self.publish(topic=self._topic(device + '/get'),
-                reply_topic=self._topic(device), msg={'property': ''}, **self._mqtt_args(**kwargs)).output
+                                  reply_topic=self._topic(device), msg='', **self._mqtt_args(**kwargs)).output
 
         if property:
             assert property in properties, 'No such property: ' + property
