@@ -7,3 +7,6 @@
 [submodule "docs/wiki"]
 	path = docs/wiki
 	url = git@git.platypush.tech:platypush/platypush.wiki.git
+[submodule "docs/blog"]
+	path = docs/blog
+	url = git@git.platypush.tech:platypush/blog.git
