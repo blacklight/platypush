@@ -17,7 +17,8 @@ Platypush
 - Extensive documentation for all the available integrations and messages is available on [ReadTheDocs](https://platypush.readthedocs.io/en/latest/).
 
 - If you have issues/feature requests/enhancement ideas please [create an issue](https://git.platypush.tech/platypush/platypush/-/issues).
-A [Reddit channel](https://www.reddit.com/r/platypush) is also available for more general questions.
+
+- A [Reddit channel](https://www.reddit.com/r/platypush) is also available for more general questions.
 
 ---
 
@@ -79,15 +80,17 @@ To get started:
 - [Read the docs](https://platypush.readthedocs.io/en/latest/) for a complete reference on the available plugins and backends
 - [Blog articles](https://blog.platypush.tech) describing hands-on applications of Platypush
 
+---
+
 ## Funding
 
 If you use and love Platypush, please consider [buying me a coffee/beer](https://paypal.me/fabiomanganiello).
 
-I've been working on Platypush all by myself in my spare time for the past few years. I've made sure that it remains open and free, and I've even opted to pay
+I've been working on Platypush all by myself in my spare time for the past few years, and I've made sure that it remains open and free, and I've even opted to pay
 for a self-hosted solution for the repo, the blog and the website to make sure that it always stays free, independent and without paywalls.
 
-If you like to use it, please consider donating some spare change - I'm definitely not planning to get rich with this project, but it'd be nice if users
-could help covering the costs for the server.
+If you think that I've done a good job, please consider donating some of your spare change - I'm definitely not planning to get rich with this project, but I'd love
+to have at least the monthly costs for the server covered by users.
 
 Issues and requests opened by donors will also be given priority over others.
 
