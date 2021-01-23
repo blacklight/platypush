@@ -124,7 +124,7 @@ setup(
     license="MIT",
     python_requires='>= 3.6',
     keywords="home-automation iot mqtt websockets redis dashboard notificaions",
-    url="https://github.com/BlackLight/platypush",
+    url="https://git.platypush.tech/platypush/platypush",
     packages=find_packages(),
     include_package_data=True,
     entry_points={

@@ -4,19 +4,19 @@ Platypush
 [![Build Status](https://travis-ci.org/BlackLight/platypush.svg?branch=master)](https://travis-ci.org/BlackLight/platypush)
 [![Documentation Status](https://readthedocs.org/projects/platypush/badge/?version=latest)](https://platypush.readthedocs.io/en/latest/?badge=latest)
 [![pip version](https://img.shields.io/pypi/v/platypush.svg?style=flat)](https://pypi.python.org/pypi/platypush/)
-[![License](https://img.shields.io/github/license/BlackLight/platypush.svg)](https://github.com/BlackLight/platypush/blob/master/LICENSE)
-[![Last Commit](https://img.shields.io/github/last-commit/BlackLight/platypush.svg)](https://github.com/BlackLight/platypush/commits/master)
-[![Contributions](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/BlackLight/platypush/issues)
+[![License](https://img.shields.io/github/license/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/-/blob/master/LICENSE.txt)
+[![Last Commit](https://img.shields.io/github/last-commit/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/-/commits/master/)
+[![Contributions](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://git.platypush.tech/platypush/platypush/-/issues)
 
 - Advised read: [**Getting started with Platypush**](https://medium.com/@automationguru/automate-your-house-your-life-and-everything-else-around-with-platypush-dba1cd13e3f6) (Medium article).
 
-- The [wiki](https://github.com/BlackLight/platypush/wiki) also contains many resources on getting started.
+- The [wiki](https://git.platypush.tech/platypush/platypush/-/wikis/home) also contains many resources on getting started.
 
 - Extensive documentation for all the available integrations and messages is available on [ReadTheDocs](https://platypush.readthedocs.io/en/latest/).
 
 - Also check other [Medium stories](https://medium.com/tag/platypush/archive) to get more insights on what you can build with it and inspiration about possible usages.
 
-- If you have issues/feature requests/enhancement ideas please post a [GitHub issue](https://github.com/BlackLight/platypush/issues).
+- If you have issues/feature requests/enhancement ideas please [create an issue](https://git.platypush.tech/platypush/platypush/-/issues).
 A [Reddit channel](https://www.reddit.com/r/platypush) is also available for more general questions.
 
 ---
@@ -75,7 +75,7 @@ Imagine the ability of running the application, with lots of those bundled featu
 
 To get started:
 
-- [Wiki](https://github.com/BlackLight/platypush/wiki) for installation notes, quick start, examples and architecture reference
+- [Wiki](https://git.platypush.tech/platypush/platypush/-/wikis/home) for installation notes, quick start, examples and architecture reference
 - [Read the docs](https://platypush.readthedocs.io/en/latest/) for a complete reference on the available plugins and backends
 - [Medium articles](https://medium.com/tag/platypush/archive) that describe hands-on applications of platypush
 

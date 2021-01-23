@@ -119,7 +119,7 @@ EOF
         pip install ${dep}
     done
 
-    pip install --upgrade git+https://github.com/BlackLight/platypush.git
+    pip install --upgrade git+https://git.platypush.tech/platypush/platypush.git
     echo "Platypush virtual environment prepared under $envdir"
 }
 
