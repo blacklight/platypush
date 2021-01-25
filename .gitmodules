@@ -1,12 +1,6 @@
 [submodule "platypush/plugins/gpio/sensor/ir/mlx90640/lib"]
 	path = platypush/plugins/camera/ir/mlx90640/lib
 	url = https://github.com/pimoroni/mlx90640-library
-[submodule "webext"]
-	path = webext
-	url = https://github.com/BlackLight/platypush-webext.git
 [submodule "docs/wiki"]
 	path = docs/wiki
-	url = git@git.platypush.tech:platypush/platypush.wiki.git
-[submodule "docs/blog"]
-	path = docs/blog
-	url = git@git.platypush.tech:platypush/blog.git
+	url = https://git.platypush.tech/platypush/platypush.wiki.git
