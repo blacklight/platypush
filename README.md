@@ -8,13 +8,27 @@ Platypush
 [![Last Commit](https://img.shields.io/github/last-commit/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/-/commits/master/)
 [![Contributions](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://git.platypush.tech/platypush/platypush/-/issues)
 
-- Advised read: [**Getting started with Platypush**](https://medium.com/@automationguru/automate-your-house-your-life-and-everything-else-around-with-platypush-dba1cd13e3f6) (Medium article).
+## Funding
+
+If you use and love Platypush, please consider [buying me a coffee/beer](https://paypal.me/fabiomanganiello).
+
+I've been working on Platypush all by myself in my spare time for the past few years, and I've made sure that it remains open and free, and I've even opted to pay
+for a self-hosted solution for the repo, the blog and the website to make sure that it always stays free, independent and without paywalls.
+
+If you think that I've done a good job, please consider donating some of your spare change - I'm definitely not planning to get rich with this project, but I'd love
+to have at least the monthly costs for the server covered by users.
+
+Issues and requests opened by donors will also be given priority over others.
+
+---
+
+- Advised read: [**Getting started with Platypush**](https://blog.platypush.tech/article/Ultimate-self-hosted-automation-with-Platypush).
+
+- The [blog](https://blog.platypush.tech) is in general a good place to get more insights on what you can build with it and inspiration about possible usages.
 
 - The [wiki](https://git.platypush.tech/platypush/platypush/-/wikis/home) also contains many resources on getting started.
 
 - Extensive documentation for all the available integrations and messages is available on [ReadTheDocs](https://platypush.readthedocs.io/en/latest/).
-
-- Also check other [Medium stories](https://medium.com/tag/platypush/archive) to get more insights on what you can build with it and inspiration about possible usages.
 
 - If you have issues/feature requests/enhancement ideas please [create an issue](https://git.platypush.tech/platypush/platypush/-/issues).
 A [Reddit channel](https://www.reddit.com/r/platypush) is also available for more general questions.
