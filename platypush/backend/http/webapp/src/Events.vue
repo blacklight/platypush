@@ -114,7 +114,7 @@ export default {
 
     init() {
       try {
-        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws'
+        const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
         const url = `${protocol}://${location.hostname}:${this.wsPort}`
         this.ws = new WebSocket(url)
       } catch (err) {
