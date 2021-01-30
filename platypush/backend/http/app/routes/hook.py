@@ -26,6 +26,7 @@ def _hook(hook_name):
         'method': request.method,
         'args': dict(request.args or {}),
         'data': request.data.decode(),
+        'headers': request.headers,
     }
 
     if event_args['data']:
