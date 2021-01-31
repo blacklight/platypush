@@ -93,20 +93,3 @@ If you think that I've done a good job, please consider donating some of your sp
 to have at least the monthly costs for the server covered by users.
 
 Issues and requests opened by donors will also be given priority over others.
-
----
-
-## Funding
-
-If you use and love Platypush, please consider [buying me a coffee/beer](https://paypal.me/fabiomanganiello).
-
-I've been working on Platypush all by myself in my spare time for the past few years, and I've made sure that it remains open and free, and I've even opted to pay
-for a self-hosted solution for the repo, the blog and the website to make sure that it always stays free, independent and without paywalls.
-
-If you think that I've done a good job, please consider donating some of your spare change - I'm definitely not planning to get rich with this project, but I'd love
-to have at least the monthly costs for the server covered by users.
-
-Issues and requests opened by donors will also be given priority over others.
-
----
-
