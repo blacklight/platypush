@@ -93,3 +93,4 @@ If you think that I've done a good job, please consider donating some of your sp
 to have at least the monthly costs for the server covered by users.
 
 Issues and requests opened by donors will also be given priority over others.
+
