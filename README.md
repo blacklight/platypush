@@ -8,20 +8,6 @@ Platypush
 [![Last Commit](https://img.shields.io/github/last-commit/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/-/commits/master/)
 [![Contributions](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://git.platypush.tech/platypush/platypush/-/issues)
 
-## Funding
-
-If you use and love Platypush, please consider [buying me a coffee/beer](https://paypal.me/fabiomanganiello).
-
-I've been working on Platypush all by myself in my spare time for the past few years, and I've made sure that it remains open and free, and I've even opted to pay
-for a self-hosted solution for the repo, the blog and the website to make sure that it always stays free, independent and without paywalls.
-
-If you think that I've done a good job, please consider donating some of your spare change - I'm definitely not planning to get rich with this project, but I'd love
-to have at least the monthly costs for the server covered by users.
-
-Issues and requests opened by donors will also be given priority over others.
-
----
-
 - Advised read: [**Getting started with Platypush**](https://blog.platypush.tech/article/Ultimate-self-hosted-automation-with-Platypush).
 
 - The [blog](https://blog.platypush.tech) is in general a good place to get more insights on what you can build with it and inspiration about possible usages.
@@ -91,5 +77,17 @@ To get started:
 
 - [Wiki](https://git.platypush.tech/platypush/platypush/-/wikis/home) for installation notes, quick start, examples and architecture reference
 - [Read the docs](https://platypush.readthedocs.io/en/latest/) for a complete reference on the available plugins and backends
-- [Medium articles](https://medium.com/tag/platypush/archive) that describe hands-on applications of platypush
+- [Blog articles](https://blog.platypush.tech) describing hands-on applications of Platypush
+
+## Funding
+
+If you use and love Platypush, please consider [buying me a coffee/beer](https://paypal.me/fabiomanganiello).
+
+I've been working on Platypush all by myself in my spare time for the past few years. I've made sure that it remains open and free, and I've even opted to pay
+for a self-hosted solution for the repo, the blog and the website to make sure that it always stays free, independent and without paywalls.
+
+If you like to use it, please consider donating some spare change - I'm definitely not planning to get rich with this project, but it'd be nice if users
+could help covering the costs for the server.
+
+Issues and requests opened by donors will also be given priority over others.
 
