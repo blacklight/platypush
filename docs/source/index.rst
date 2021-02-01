@@ -11,7 +11,7 @@ For more information on Platypush please check out:
 
 .. _GitHub page: https://git.platypush.tech/platypush/platypush
 .. _online wiki: https://git.platypush.tech/platypush/platypush/-/wikis/home
-.. _Medium stories: https://medium.com/tag/platypush/archive
+.. _Blog articles: https://blog.platypush.tech
 
 .. toctree::
     :maxdepth: 3
