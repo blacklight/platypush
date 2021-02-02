@@ -2,7 +2,7 @@ Platypush
 =========
 
 [![Build Status](https://travis-ci.org/BlackLight/platypush.svg?branch=master)](https://travis-ci.org/BlackLight/platypush)
-[![Documentation Status](https://readthedocs.org/projects/platypush/badge/?version=latest)](https://platypush.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/platypush/badge/?version=latest)](https://docs.platypush.tech/en/latest/)
 [![pip version](https://img.shields.io/pypi/v/platypush.svg?style=flat)](https://pypi.python.org/pypi/platypush/)
 [![License](https://img.shields.io/github/license/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/-/blob/master/LICENSE.txt)
 [![Last Commit](https://img.shields.io/github/last-commit/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/-/commits/master/)
@@ -14,7 +14,7 @@ Platypush
 
 - The [wiki](https://git.platypush.tech/platypush/platypush/-/wikis/home) also contains many resources on getting started.
 
-- Extensive documentation for all the available integrations and messages is available on [ReadTheDocs](https://platypush.readthedocs.io/en/latest/).
+- Extensive documentation for all the available integrations and messages is available on [ReadTheDocs](https://docs.platypush.tech/en/latest/).
 
 - If you have issues/feature requests/enhancement ideas please [create an issue](https://git.platypush.tech/platypush/platypush/-/issues).
 
@@ -43,7 +43,7 @@ You can use Platypush to do things like:
 - Play local videos, YouTube videos and torrent links
 - Get weather forecast for your location
 - Build your own web dashboard with calendar, weather, news and music controls (basically, anything that has a Platypush web widget)
-- ...and much more (basically, anything that comes with a [Platypush plugin](https://platypush.readthedocs.io/en/latest/plugins.html))
+- ...and much more (basically, anything that comes with a [Platypush plugin](https://docs.platypush.tech/en/latest/plugins.html))
 
 Imagine the ability of executing all the actions above through messages delivered through:
 
@@ -55,7 +55,7 @@ Imagine the ability of executing all the actions above through messages delivere
 - [Kafka](https://kafka.apache.org)
 - [Redis](https://redis.io)
 - [MQTT](https://mqtt.org)
-- ...amd much more (basically, anything that comes with a [Platypush backend](https://platypush.readthedocs.io/en/latest/backends.html))
+- ...amd much more (basically, anything that comes with a [Platypush backend](https://docs.platypush.tech/en/latest/backends.html))
 
 Imagine the ability of building custom event hooks to automatically trigger any actions:
 
@@ -77,7 +77,7 @@ Imagine the ability of running the application, with lots of those bundled featu
 To get started:
 
 - [Wiki](https://git.platypush.tech/platypush/platypush/-/wikis/home) for installation notes, quick start, examples and architecture reference
-- [Read the docs](https://platypush.readthedocs.io/en/latest/) for a complete reference on the available plugins and backends
+- [Read the docs](https://docs.platypush.tech/en/latest/) for a complete reference on the available plugins and backends
 - [Blog articles](https://blog.platypush.tech) describing hands-on applications of Platypush
 
 ---

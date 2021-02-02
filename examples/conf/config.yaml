@@ -40,10 +40,10 @@ device_id: myname
 # a plugin class. The methods of the class with @action annotation will
 # be exported as runnable actions, while the __init__ parameters are
 # configuration attributes that you can initialize in your config.yaml.
-# Plugin classes are documented at https://platypush.readthedocs.io/en/latest/plugins.html
+# Plugin classes are documented at https://docs.platypush.tech/en/latest/plugins.html
 #
 # In this example we'll configure the light.hue plugin, see
-# https://platypush.readthedocs.io/en/latest/platypush/plugins/light.hue.html
+# https://docs.platypush.tech/en/latest/platypush/plugins/light.hue.html
 # for reference. You can easily install the required dependencies for the plugin through
 # pip install 'platypush[hue]'
 light.hue:
@@ -54,14 +54,14 @@ light.hue:
         - Living Room
 
 # Example configuration of music.mpd plugin, see
-# https://platypush.readthedocs.io/en/latest/platypush/plugins/music.mpd.html
+# https://docs.platypush.tech/en/latest/platypush/plugins/music.mpd.html
 # You can easily install the dependencies through pip install 'platypush[mpd]'
 music.mpd:
     host: localhost
     port: 6600
 
 # Example configuration of media.chromecast plugin, see
-# https://platypush.readthedocs.io/en/latest/platypush/plugins/media.chromecast.html
+# https://docs.platypush.tech/en/latest/platypush/plugins/media.chromecast.html
 # You can easily install the dependencies through pip install 'platypush[chromecast]'
 media.chromecast:
     chromecast: Living Room TV
@@ -97,10 +97,10 @@ calendar:
 # to happen and either trigger events or provide additional services on top of platypush.
 # Just like plugins, backends are classes whose configuration matches one-to-one the
 # supported parameters on the __init__ methods. You can check the documentation for the
-# available backends here: https://platypush.readthedocs.io/en/latest/backends.html.
+# available backends here: https://docs.platypush.tech/en/latest/backends.html.
 # Moreover, most of the backends will generate events that you can react to through custom
 # event hooks. Check here for the events documentation:
-# https://platypush.readthedocs.io/en/latest/events.html
+# https://docs.platypush.tech/en/latest/events.html
 #
 # You may usually want to enable the HTTP backend, as it provides many useful features on
 # top of platypush. Among those:
