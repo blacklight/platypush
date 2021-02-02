@@ -7,11 +7,11 @@ For more information on Platypush please check out:
 
 * The `Gitlab page`_ of the project
 * The `online wiki`_ for quickstart and examples
-* The `Medium stories`_ for inspiration about possible projects
+* The `Blog articles`_ for inspiration on use-cases possible projects
 
-.. _GitHub page: https://git.platypush.tech/platypush/platypush
+.. _Gitlab page: https://git.platypush.tech/platypush/platypush
 .. _online wiki: https://git.platypush.tech/platypush/platypush/-/wikis/home
-.. _Medium stories: https://medium.com/tag/platypush/archive
+.. _Blog articles: https://blog.platypush.tech
 
 .. toctree::
     :maxdepth: 3
