@@ -65,7 +65,11 @@ class MediaCtrlPlugin(Plugin):
         ]
 
         if configured_media_plugins:
-            plugin = get_plugin(configured_media_plugins[0])
+            try:
+                plugin = get_plugin(configured_media_plugins[0])
+            except:
+                pass
+
             status = plugin.status().output
             if status.get('state') == PlayerState.PLAY.value or status.get('state') == PlayerState.PAUSE.value:
                 return plugin
