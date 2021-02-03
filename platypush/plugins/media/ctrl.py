@@ -80,12 +80,11 @@ class MediaCtrlPlugin(Plugin):
             except:
                 try:
                     player = get_plugin(plugin, reload=True)
+                    status = player.status().output
+                    if status['state'] == PlayerState.PLAY.value or status['state'] == PlayerState.PAUSE.value:
+                        return player
                 except:
                     continue
-
-            status = player.status().output
-            if status['state'] == PlayerState.PLAY.value or status['state'] == PlayerState.PAUSE.value:
-                return player
 
         return None
 
