@@ -2,7 +2,7 @@ import re
 import subprocess
 
 from platypush.context import get_plugin
-from platypush.plugins.media import PlayerState
+from platypush.plugins.media import PlayerState, MediaPlugin
 
 from platypush.plugins import Plugin, action
 
@@ -17,10 +17,6 @@ class MediaCtrlPlugin(Plugin):
         - spotify:track:track_id [leverages plugins.music.mpd]
 
     """
-
-    _supported_plugins = {
-        'music.mpd', 'media', 'video.torrentcast'
-    }
 
     def __init__(self, torrentcast_port=9090, *args, **kwargs):
         super().__init__()
@@ -62,7 +58,18 @@ class MediaCtrlPlugin(Plugin):
             if status['state'] == PlayerState.PLAY.value or state['state'] == PlayerState.PAUSE.value:
                 return self.plugin
 
-        for plugin in self._supported_plugins:
+        configured_media_plugins = [
+            Config.get(plugin) for plugin in self._supported_media_plugins
+            if Config.get(plugin)
+        ]
+
+        if configured_media_plugins:
+            plugin = get_plugin(plugin)
+            status = plugin.status().output
+            if status.get('state') == PlayerState.PLAY.value or status.get('state') == PlayerState.PAUSE.value:
+                return plugin
+
+        for plugin in MediaPlugin._supported_media_plugins:
             try:
                 player = get_plugin(plugin)
             except:
