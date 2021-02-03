@@ -59,7 +59,7 @@ class MediaCtrlPlugin(Plugin):
                 return self.plugin
 
         configured_media_plugins = [
-            Config.get(plugin) for plugin in self._supported_media_plugins
+            Config.get(plugin) for plugin in MediaPlugin._supported_media_plugins
             if Config.get(plugin)
         ]
 
