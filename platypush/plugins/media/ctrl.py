@@ -1,6 +1,7 @@
 import re
 import subprocess
 
+from platypush.config import Config
 from platypush.context import get_plugin
 from platypush.plugins.media import PlayerState, MediaPlugin
 
