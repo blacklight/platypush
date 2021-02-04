@@ -162,7 +162,8 @@ class MediaPlugin(Plugin):
     def _is_youtube_resource(resource):
         return resource.startswith('youtube:') \
                or resource.startswith('https://youtu.be/') \
-               or resource.startswith('https://www.youtube.com/watch?v=')
+               or resource.startswith('https://www.youtube.com/watch?v=') \
+               or resource.startswith('https://youtube.com/watch?v=')
 
     def _get_resource(self, resource):
         """
@@ -477,7 +478,7 @@ class MediaPlugin(Plugin):
     @staticmethod
     def get_youtube_video_url(url):
         youtube_dl = subprocess.Popen(['youtube-dl', '-f', 'best', '-g', url], stdout=subprocess.PIPE)
-        url = youtube_dl.communicate()[0].decode()
+        url = youtube_dl.communicate()[0].decode().strip()
         youtube_dl.wait()
         return url
 
