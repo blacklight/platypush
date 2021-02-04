@@ -258,8 +258,8 @@ class MediaVlcPlugin(MediaPlugin):
         return self.status()
 
     @action
-    def back(self, offset=60.0):
-        """ Back by (default: 60) seconds """
+    def back(self, offset=30.0):
+        """ Back by (default: 30) seconds """
         if not self._player:
             return None, 'No vlc instance is running'
 
@@ -271,8 +271,8 @@ class MediaVlcPlugin(MediaPlugin):
         return self.seek(pos)
 
     @action
-    def forward(self, offset=60.0):
-        """ Forward by (default: 60) seconds """
+    def forward(self, offset=30.0):
+        """ Forward by (default: 30) seconds """
         if not self._player:
             return None, 'No vlc instance is running'
 

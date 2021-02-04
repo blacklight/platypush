@@ -383,7 +383,7 @@ class MediaChromecastPlugin(MediaPlugin):
         return self.forward(chromecast=chromecast, offset=position)
 
     @action
-    def back(self, chromecast=None, offset=60):
+    def back(self, chromecast=None, offset=30):
         cast = self.get_chromecast(chromecast or self.chromecast)
         mc = cast.media_controller
         if mc.status.current_time:
@@ -393,7 +393,7 @@ class MediaChromecastPlugin(MediaPlugin):
         return self.status(chromecast=chromecast)
 
     @action
-    def forward(self, chromecast=None, offset=60):
+    def forward(self, chromecast=None, offset=30):
         cast = self.get_chromecast(chromecast or self.chromecast)
         mc = cast.media_controller
         if mc.status.current_time:

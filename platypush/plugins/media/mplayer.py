@@ -308,14 +308,14 @@ class MediaMplayerPlugin(MediaPlugin):
         return self.status()
 
     @action
-    def back(self, offset=60.0):
-        """ Back by (default: 60) seconds """
+    def back(self, offset=30.0):
+        """ Back by (default: 30) seconds """
         self.step_property('time_pos', -offset)
         return self.status()
 
     @action
-    def forward(self, offset=60.0):
-        """ Forward by (default: 60) seconds """
+    def forward(self, offset=30.0):
+        """ Forward by (default: 30) seconds """
         self.step_property('time_pos', offset)
         return self.status()
 

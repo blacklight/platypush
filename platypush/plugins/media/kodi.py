@@ -525,11 +525,11 @@ class MediaKodiPlugin(MediaPlugin):
         return self.seek(position=position, player_id=player_id, *args, **kwargs)
 
     @action
-    def back(self, offset=60, player_id=None, *args, **kwargs):
+    def back(self, offset=30, player_id=None, *args, **kwargs):
         """
         Move the player execution backward by delta_seconds
 
-        :param offset: Backward seek duration (default: 60 seconds)
+        :param offset: Backward seek duration (default: 30 seconds)
         :type offset: float
         """
 
@@ -545,11 +545,11 @@ class MediaKodiPlugin(MediaPlugin):
         return self.seek(player_id=player_id, position=position)
 
     @action
-    def forward(self, offset=60, player_id=None, *args, **kwargs):
+    def forward(self, offset=30, player_id=None, *args, **kwargs):
         """
         Move the player execution forward by delta_seconds
 
-        :param offset: Forward seek duration (default: 60 seconds)
+        :param offset: Forward seek duration (default: 30 seconds)
         :type offset: float
         """
 
