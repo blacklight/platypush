@@ -35,7 +35,7 @@ setup(
     license="MIT",
     python_requires='>= 3.6',
     keywords="home-automation iot mqtt websockets redis dashboard notificaions",
-    url="https://git.platypush.tech/platypush/platypush",
+    url="https://platypush.tech",
     packages=find_packages(),
     include_package_data=True,
     entry_points={
