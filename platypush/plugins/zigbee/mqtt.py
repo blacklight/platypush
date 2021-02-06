@@ -1,3 +1,4 @@
+import json
 import threading
 
 from typing import Optional, List, Any, Dict
@@ -12,18 +13,20 @@ class ZigbeeMqttPlugin(MqttPlugin):
 
     In order to get started you'll need:
 
-        - A Zigbee USB adapter/sniffer (in this example I'll use the `CC2531 <https://hackaday.io/project/163487-zigbee-cc2531-smart-home-usb-adapter>`_.
+        - A Zigbee USB adapter/sniffer (in this example I'll use the
+          `CC2531 <https://hackaday.io/project/163487-zigbee-cc2531-smart-home-usb-adapter>`_.
         - A Zigbee debugger/emulator + downloader cable (only to flash the firmware).
 
     Instructions:
 
         - Install `cc-tool <https://github.com/dashesy/cc-tool>`_ either from sources or from a package manager.
-        - Connect the Zigbee to your PC/RaspberryPi in this way: USB -> CC debugger -> downloader cable -> CC2531 -> USB.
-          The debugger and the adapter should be connected *at the same time*. If the later ``cc-tool`` command throws up
-          an error, put the device in sync while connected by pressing the _Reset_ button on the debugger.
+        - Connect the Zigbee to your PC/RaspberryPi in this way:
+            USB -> CC debugger -> downloader cable -> CC2531 -> USB
+          The debugger and the adapter should be connected *at the same time*. If the later ``cc-tool`` command throws
+          up an error, put the device in sync while connected by pressing the _Reset_ button on the debugger.
         - Check where the device is mapped. On Linux it will usually be ``/dev/ttyACM0``.
-        - Download the latest `Z-Stack firmware <https://github.com/Koenkk/Z-Stack-firmware/tree/master/coordinator>`_ to your device.
-          Instructions for a CC2531 device:
+        - Download the latest `Z-Stack firmware <https://github.com/Koenkk/Z-Stack-firmware/tree/master/coordinator>`_
+          to your device. Instructions for a CC2531 device:
 
           .. code-block:: shell
 
@@ -33,8 +36,8 @@ class ZigbeeMqttPlugin(MqttPlugin):
 
         - You can disconnect your debugger and downloader cable once the firmware is flashed.
 
-        - Install ``zigbee2mqtt``. First install a node/npm environment, then either install ``zigbee2mqtt`` manually or through your
-          package manager. Manual instructions:
+        - Install ``zigbee2mqtt``. First install a node/npm environment, then either install ``zigbee2mqtt`` manually or
+          through your package manager. Manual instructions:
 
           .. code-block:: shell
 
@@ -82,7 +85,8 @@ class ZigbeeMqttPlugin(MqttPlugin):
         - If it all goes fine, once the daemon is running and a new device is found you should see traces like this in
           the output of ``zigbee2mqtt``::
 
-            zigbee2mqtt:info  2019-11-09T12:19:56: Successfully interviewed '0x00158d0001dc126a', device has successfully been paired
+            zigbee2mqtt:info  2019-11-09T12:19:56: Successfully interviewed '0x00158d0001dc126a', device has
+            successfully been paired
 
         - You are now ready to use this integration.
 
@@ -121,6 +125,55 @@ class ZigbeeMqttPlugin(MqttPlugin):
         self.base_topic = base_topic
         self.timeout = timeout
 
+    def _get_network_info(self, **kwargs):
+        self.logger.info('Fetching Zigbee network information')
+        client = None
+        mqtt_args = self._mqtt_args(**kwargs)
+        timeout = 30
+        if 'timeout' in mqtt_args:
+            timeout = mqtt_args.pop('timeout')
+
+        info = {
+            'state': None,
+            'info': {},
+            'config': {},
+            'devices': [],
+            'groups': [],
+        }
+
+        info_ready_events = {topic: threading.Event() for topic in info.keys()}
+
+        def _on_message():
+            def callback(_, __, msg):
+                topic = msg.topic.split('/')[-1]
+                if topic in info:
+                    info[topic] = msg.payload.decode() if topic == 'state' else json.loads(msg.payload.decode())
+                    info_ready_events[topic].set()
+
+            return callback
+
+        try:
+            host = mqtt_args.pop('host')
+            port = mqtt_args.pop('port')
+            client = self._get_client(**mqtt_args)
+            client.on_message = _on_message()
+            client.connect(host, port, keepalive=timeout)
+            client.subscribe(self.base_topic + '/bridge/#')
+            client.loop_start()
+
+            for event in info_ready_events.values():
+                info_ready = event.wait(timeout=timeout)
+                if not info_ready:
+                    raise TimeoutError('A timeout occurred while fetching the Zigbee network information')
+
+            return info
+        finally:
+            try:
+                client.loop_stop()
+                client.disconnect()
+            except Exception as e:
+                self.logger.warning('Error on MQTT client disconnection: {}'.format(str(e)))
+
     def _mqtt_args(self, host: Optional[str] = None, **kwargs):
         if not host:
             return {
@@ -154,41 +207,171 @@ class ZigbeeMqttPlugin(MqttPlugin):
 
             [
                 {
-                    "dateCode": "20190608",
+                    "date_code": "20190608",
                     "friendly_name": "Coordinator",
-                    "ieeeAddr": "0x00123456789abcde",
-                    "lastSeen": 1579640601215,
-                    "networkAddress": 0,
-                    "softwareBuildID": "zStack12",
-                    "type": "Coordinator"
+                    "ieee_address": "0x00123456789abcde",
+                    "network_address": 0,
+                    "supported": false,
+                    "type": "Coordinator",
+                    "interviewing": false,
+                    "interviewing_completed": true,
+                    "definition": null,
+                    "endpoints": {
+                        "13": {
+                            "bindings": [],
+                            "clusters": {
+                                "input": ["genOta"],
+                                "output": []
+                            },
+                            "output": []
+                        }
+                    }
                 },
+
                 {
-                    "dateCode": "20160906",
+                    "date_code": "20180906",
                     "friendly_name": "My Lightbulb",
-                    "hardwareVersion": 1,
-                    "ieeeAddr": "0x00123456789abcdf",
-                    "lastSeen": 1579595191623,
-                    "manufacturerID": 4107,
-                    "manufacturerName": "Philips",
-                    "model": "8718696598283",
-                    "modelID": "LTW013",
-                    "networkAddress": 52715,
-                    "powerSource": "Mains (single phase)",
-                    "softwareBuildID": "1.15.2_r19181",
-                    "type": "Router"
+                    "ieee_address": "0x00123456789abcdf",
+                    "network_address": 52715,
+                    "power_source": "Mains (single phase)",
+                    "software_build_id": "5.127.1.26581",
+                    "model_id": "LCT001",
+                    "supported": true,
+                    "interviewing": false,
+                    "interviewing_completed": true,
+                    "type": "Router",
+                    "definition": {
+                        "description": "Hue white and color ambiance E26/E27/E14",
+                        "model": "9290012573A",
+                        "vendor": "Philips",
+                        "exposes": [
+                            {
+                                "features": [
+                                    {
+                                        "access": 7,
+                                        "description": "On/off state of this light",
+                                        "name": "state",
+                                        "property": "state",
+                                        "type": "binary",
+                                        "value_off": "OFF",
+                                        "value_on": "ON",
+                                        "value_toggle": "TOGGLE"
+                                    },
+                                    {
+                                        "access": 7,
+                                        "description": "Brightness of this light",
+                                        "name": "brightness",
+                                        "property": "brightness",
+                                        "type": "numeric",
+                                        "value_max": 254,
+                                        "value_min": 0
+                                    },
+                                    {
+                                        "access": 7,
+                                        "description": "Color temperature of this light",
+                                        "name": "color_temp",
+                                        "property": "color_temp",
+                                        "type": "numeric",
+                                        "unit": "mired",
+                                        "value_max": 500,
+                                        "value_min": 150
+                                    },
+                                    {
+                                        "description": "Color of this light in the CIE 1931 color space (x/y)",
+                                        "features": [
+                                            {
+                                                "access": 7,
+                                                "name": "x",
+                                                "property": "x",
+                                                "type": "numeric"
+                                            },
+                                            {
+                                                "access": 7,
+                                                "name": "y",
+                                                "property": "y",
+                                                "type": "numeric"
+                                            }
+                                        ],
+                                        "name": "color_xy",
+                                        "property": "color",
+                                        "type": "composite"
+                                    }
+                                ],
+                                "type": "light"
+                            },
+                            {
+                                "access": 2,
+                                "description": "Triggers an effect on the light (e.g. make light blink for a few seconds)",
+                                "name": "effect",
+                                "property": "effect",
+                                "type": "enum",
+                                "values": [
+                                    "blink",
+                                    "breathe",
+                                    "okay",
+                                    "channel_change",
+                                    "finish_effect",
+                                    "stop_effect"
+                                ]
+                            },
+                            {
+                                "access": 1,
+                                "description": "Link quality (signal strength)",
+                                "name": "linkquality",
+                                "property": "linkquality",
+                                "type": "numeric",
+                                "unit": "lqi",
+                                "value_max": 255,
+                                "value_min": 0
+                            }
+                        ]
+                    },
+
+                    "endpoints": {
+                        "11": {
+                            "bindings": [],
+                            "clusters": {
+                                "input": [
+                                    "genBasic",
+                                    "genIdentify",
+                                    "genGroups",
+                                    "genScenes",
+                                    "genOnOff",
+                                    "genLevelCtrl",
+                                    "touchlink",
+                                    "lightingColorCtrl",
+                                    "manuSpecificUbisysDimmerSetup"
+                                ],
+                                "output": [
+                                    "genOta"
+                                ]
+                            },
+                            "configured_reportings": []
+                        },
+                        "242": {
+                            "bindings": [],
+                            "clusters": {
+                                "input": [
+                                    "greenPower"
+                                ],
+                                "output": [
+                                    "greenPower"
+                                ]
+                            },
+                            "configured_reportings": []
+                        }
+                    }
                 }
             ]
 
         """
-        return self.publish(
-            topic=self._topic('bridge/config/devices/get'), msg='',
-            reply_topic=self._topic('bridge/config/devices'),
-            **self._mqtt_args(**kwargs))
+        return self._get_network_info(**kwargs).get('devices')
 
     def _permit_join_timeout_callback(self, permit: bool, **kwargs):
         def callback():
             self.logger.info('Restoring permit_join state to {}'.format(permit))
             self.permit_join(permit, **kwargs)
+
         return callback
 
     @action
@@ -334,9 +517,9 @@ class ZigbeeMqttPlugin(MqttPlugin):
         :return: Key->value map of the device properties.
         """
         properties = self.publish(topic=self._topic(device + ('/get' if property else '')),
-                reply_topic=self._topic(device),
-                msg={property: ''} if property else '',
-                **self._mqtt_args(**kwargs)).output
+                                  reply_topic=self._topic(device),
+                                  msg={property: ''} if property else '',
+                                  **self._mqtt_args(**kwargs)).output
 
         if property:
             assert property in properties, 'No such property: ' + property
@@ -380,39 +563,152 @@ class ZigbeeMqttPlugin(MqttPlugin):
         """
 
         return self.publish(topic=self._topic('bridge/device/{}/get_group_membership'.format(device)),
-                            reply_topic=self._topic(device), msg=device, **self._mqtt_args(**kwargs)).\
+                            reply_topic=self._topic(device), msg=device, **self._mqtt_args(**kwargs)). \
             output.get('group_list', [])
 
     @action
-    def groups(self, **kwargs):
+    def groups(self, **kwargs) -> List[dict]:
         """
         Get the groups registered on the device.
 
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        groups = self.publish(topic=self._topic('bridge/config/groups'), msg={},
-                              reply_topic=self._topic('bridge/log'),
-                              **self._mqtt_args(**kwargs)).output.get('message', [])
+        return self._get_network_info(**kwargs).get('groups')
 
-        # noinspection PyUnresolvedReferences
-        devices = {
-            device['ieeeAddr']: device
-            for device in self.devices(**kwargs).output
+    @action
+    def info(self, **kwargs) -> dict:
+        """
+        Get the information, configuration and state of the network.
+
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+            (default: query the default configured device).
+
+        :return: Example:
+
+            .. code-block:: json
+
+                {
+                    "state": "online",
+                    "commit": "07cdc9d",
+                    "config": {
+                        "advanced": {
+                            "adapter_concurrent": null,
+                            "adapter_delay": null,
+                            "availability_blacklist": [],
+                            "availability_blocklist": [],
+                            "availability_passlist": [],
+                            "availability_timeout": 0,
+                            "availability_whitelist": [],
+                            "cache_state": true,
+                            "cache_state_persistent": true,
+                            "cache_state_send_on_startup": true,
+                            "channel": 11,
+                            "elapsed": false,
+                            "ext_pan_id": [
+                                221,
+                                221,
+                                221,
+                                221,
+                                221,
+                                221,
+                                221,
+                                221
+                            ],
+                            "homeassistant_discovery_topic": "homeassistant",
+                            "homeassistant_legacy_triggers": true,
+                            "homeassistant_status_topic": "hass/status",
+                            "last_seen": "disable",
+                            "legacy_api": true,
+                            "log_directory": "/opt/zigbee2mqtt/data/log/%TIMESTAMP%",
+                            "log_file": "log.txt",
+                            "log_level": "debug",
+                            "log_output": [
+                                "console",
+                                "file"
+                            ],
+                            "log_rotation": true,
+                            "log_syslog": {},
+                            "pan_id": 6754,
+                            "report": false,
+                            "soft_reset_timeout": 0,
+                            "timestamp_format": "YYYY-MM-DD HH:mm:ss"
+                        },
+                        "ban": [],
+                        "blocklist": [],
+                        "device_options": {},
+                        "devices": {
+                            "0x00123456789abcdf": {
+                                "friendly_name": "My Lightbulb"
+                            }
+                        },
+                        "experimental": {
+                            "output": "json"
+                        },
+                        "external_converters": [],
+                        "groups": {},
+                        "homeassistant": false,
+                        "map_options": {
+                            "graphviz": {
+                                "colors": {
+                                    "fill": {
+                                        "coordinator": "#e04e5d",
+                                        "enddevice": "#fff8ce",
+                                        "router": "#4ea3e0"
+                                    },
+                                    "font": {
+                                        "coordinator": "#ffffff",
+                                        "enddevice": "#000000",
+                                        "router": "#ffffff"
+                                    },
+                                    "line": {
+                                        "active": "#009900",
+                                        "inactive": "#994444"
+                                    }
+                                }
+                            }
+                        },
+                        "mqtt": {
+                            "base_topic": "zigbee2mqtt",
+                            "force_disable_retain": false,
+                            "include_device_information": false,
+                            "server": "mqtt://localhost"
+                        },
+                        "passlist": [],
+                        "permit_join": true,
+                        "serial": {
+                            "disable_led": false,
+                            "port": "/dev/ttyUSB0"
+                        },
+                        "whitelist": []
+                    },
+                    "coordinator": {
+                        "meta": {
+                            "maintrel": 3,
+                            "majorrel": 2,
+                            "minorrel": 6,
+                            "product": 0,
+                            "revision": 20190608,
+                            "transportrev": 2
+                        },
+                        "type": "zStack12"
+                    },
+                    "log_level": "debug",
+                    "network": {
+                        "channel": 11,
+                        "extended_pan_id": "0xdddddddddddddddd",
+                        "pan_id": 6754
+                    },
+                    "permit_join": true,
+                    "version": "1.17.0"
+                }
+
+        """
+        info = self._get_network_info(**kwargs)
+        return {
+            'state': info.get('state'),
+            'info': info.get('info'),
         }
-
-        return [
-            {
-                'id': group['ID'],
-                'friendly_name': group['friendly_name'],
-                'optimistic': group.get('optimistic', False),
-                'devices': [
-                    devices[device.split('/')[0]]
-                    for device in group.get('devices', [])
-                ]
-            }
-            for group in groups
-        ]
 
     @action
     def group_add(self, name: str, id: Optional[int] = None, **kwargs):

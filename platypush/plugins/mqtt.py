@@ -98,6 +98,37 @@ class MqttPlugin(Plugin):
     def _expandpath(path: Optional[str] = None) -> Optional[str]:
         return os.path.abspath(os.path.expanduser(path)) if path else None
 
+    def _get_client(self, tls_cafile: Optional[str] = None, tls_certfile: Optional[str] = None,
+                    tls_keyfile: Optional[str] = None, tls_version: Optional[str] = None,
+                    tls_ciphers: Optional[str] = None, tls_insecure: Optional[bool] = None,
+                    username: Optional[str] = None, password: Optional[str] = None):
+        from paho.mqtt.client import Client
+
+        tls_cafile = self._expandpath(tls_cafile or self.tls_cafile)
+        tls_certfile = self._expandpath(tls_certfile or self.tls_certfile)
+        tls_keyfile = self._expandpath(tls_keyfile or self.tls_keyfile)
+        tls_ciphers = tls_ciphers or self.tls_ciphers
+        username = username or self.username
+        password = password or self.password
+
+        tls_version = tls_version or self.tls_version
+        if tls_version:
+            tls_version = self.get_tls_version(tls_version)
+        if tls_insecure is None:
+            tls_insecure = self.tls_insecure
+
+        client = Client()
+
+        if username and password:
+            client.username_pw_set(username, password)
+        if tls_cafile:
+            client.tls_set(ca_certs=tls_cafile, certfile=tls_certfile, keyfile=tls_keyfile,
+                           tls_version=tls_version, ciphers=tls_ciphers)
+
+            client.tls_insecure_set(tls_insecure)
+
+        return client
+
     @action
     def publish(self, topic: str, msg: Any, host: Optional[str] = None, port: int = 1883,
                 reply_topic: Optional[str] = None, timeout: int = 60,
@@ -129,55 +160,25 @@ class MqttPlugin(Plugin):
         :param username: Specify it if the MQTT server requires authentication (default: None).
         :param password: Specify it if the MQTT server requires authentication (default: None).
         """
-        from paho.mqtt.client import Client
-
-        if not host and not self.host:
-            raise RuntimeError('No host specified and no default host configured')
-
-        if not host:
-            host = self.host
-            port = self.port
-            tls_cafile = self.tls_cafile
-            tls_certfile = self.tls_certfile
-            tls_keyfile = self.tls_keyfile
-            tls_version = self.tls_version
-            tls_ciphers = self.tls_ciphers
-            tls_insecure = self.tls_insecure
-            username = self.username
-            password = self.password
-        else:
-            tls_cafile = self._expandpath(tls_cafile)
-            tls_certfile = self._expandpath(tls_certfile)
-            tls_keyfile = self._expandpath(tls_keyfile)
-            if tls_version:
-                tls_version = self.get_tls_version(tls_version)
-            if tls_insecure is None:
-                tls_insecure = self.tls_insecure
-
-        client = Client()
-
-        if username and password:
-            client.username_pw_set(username, password)
-        if tls_cafile:
-            client.tls_set(ca_certs=tls_cafile, certfile=tls_certfile, keyfile=tls_keyfile,
-                           tls_version=tls_version, ciphers=tls_ciphers)
-
-            client.tls_insecure_set(tls_insecure)
-
-        # Try to parse it as a platypush message or dump it to JSON from a dict/list
-        if isinstance(msg, (dict, list)):
-            msg = json.dumps(msg)
-
-            # noinspection PyBroadException
-            try:
-                msg = Message.build(json.loads(msg))
-            except:
-                pass
-
-        client.connect(host, port, keepalive=timeout)
         response_buffer = io.BytesIO()
+        client = None
 
         try:
+            # Try to parse it as a platypush message or dump it to JSON from a dict/list
+            if isinstance(msg, (dict, list)):
+                msg = json.dumps(msg)
+
+                # noinspection PyBroadException
+                try:
+                    msg = Message.build(json.loads(msg))
+                except:
+                    pass
+
+            client = self._get_client(tls_cafile=tls_cafile, tls_certfile=tls_certfile, tls_keyfile=tls_keyfile,
+                                      tls_version=tls_version, tls_ciphers=tls_ciphers, tls_insecure=tls_insecure,
+                                      username=username, password=password)
+
+            client.connect(host, port, keepalive=timeout)
             response_received = threading.Event()
 
             if reply_topic:
@@ -198,13 +199,14 @@ class MqttPlugin(Plugin):
         finally:
             response_buffer.close()
 
-            # noinspection PyBroadException
-            try:
-                client.loop_stop()
-            except:
-                pass
+            if client:
+                # noinspection PyBroadException
+                try:
+                    client.loop_stop()
+                except:
+                    pass
 
-            client.disconnect()
+                client.disconnect()
 
     @staticmethod
     def _response_callback(reply_topic: str, event: threading.Event, buffer: IO[bytes]):

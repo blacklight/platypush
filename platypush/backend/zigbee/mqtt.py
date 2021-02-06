@@ -82,47 +82,29 @@ class ZigbeeMqttBackend(MqttBackend):
         :param password: Specify it if the MQTT server requires authentication (default: None)
         """
 
-        if host:
-            self.base_topic = base_topic
-            listeners = [{
-                'host': host,
-                'port': port or self._default_mqtt_port,
-                'tls_cafile': tls_cafile,
-                'tls_certfile': tls_certfile,
-                'tls_ciphers': tls_ciphers,
-                'tls_keyfile': tls_keyfile,
-                'tls_version': tls_version,
-                'username': username,
-                'password': password,
-                'topics': [
-                    base_topic + '/' + topic
-                    for topic in ['bridge/state', 'bridge/log']
-                ],
-            }]
-        else:
-            plugin = get_plugin('zigbee.mqtt')
-            self.base_topic = plugin.base_topic
-            listeners = [{
-                'host': plugin.host,
-                'port': plugin.port or self._default_mqtt_port,
-                'tls_cafile': plugin.tls_cafile,
-                'tls_certfile': plugin.tls_certfile,
-                'tls_ciphers': plugin.tls_ciphers,
-                'username': plugin.username,
-                'password': plugin.password,
-                'topics': [
-                    plugin.base_topic + '/' + topic
-                    for topic in ['bridge/state', 'bridge/log']
-                ],
-            }]
+        plugin = get_plugin('zigbee.mqtt')
+        self.base_topic = base_topic or plugin.base_topic
+        listeners = [{
+            'host': host or plugin.host,
+            'port': port or plugin.port or self._default_mqtt_port,
+            'tls_cafile': tls_cafile or plugin.tls_cafile,
+            'tls_certfile': tls_certfile or plugin.tls_certfile,
+            'tls_ciphers': tls_ciphers or plugin.tls_ciphers,
+            'tls_keyfile': tls_keyfile or plugin.tls_keyfile,
+            'tls_version': tls_version or plugin.tls_version,
+            'username': username or plugin.username ,
+            'password': password or plugin.password,
+            'topics': [
+                self.base_topic + '/' + topic
+                for topic in ['bridge/state', 'bridge/log']
+            ],
+        }]
 
         super().__init__(subscribe_default_topic=False, listeners=listeners, *args, **kwargs)
-        self._devices = {}
 
     def _process_state_message(self, client, msg):
         if msg == 'online':
             evt = ZigbeeMqttOnlineEvent
-            self._refresh_devices(client)
         elif msg == 'offline':
             evt = ZigbeeMqttOfflineEvent
             self.logger.warning('zigbee2mqtt service is offline')
@@ -131,9 +113,6 @@ class ZigbeeMqttBackend(MqttBackend):
 
         # noinspection PyProtectedMember
         self.bus.post(evt(host=client._host, port=client._port))
-
-    def _refresh_devices(self, client):
-        client.publish(self.base_topic + '/' + 'bridge/config/devices/get')
 
     def _process_log_message(self, client, msg):
         msg_type = msg.get('type')
@@ -146,13 +125,10 @@ class ZigbeeMqttBackend(MqttBackend):
             for dev in (msg or []):
                 devices[dev['friendly_name']] = dev
                 client.subscribe(self.base_topic + '/' + dev['friendly_name'])
-
-            self._devices = devices
         elif msg_type == 'pairing':
             self.bus.post(ZigbeeMqttDevicePairingEvent(device=msg, **args))
         elif msg_type == 'device_connected':
             self.bus.post(ZigbeeMqttDeviceConnectedEvent(device=msg, **args))
-            self._refresh_devices(client)
         elif msg_type in ['device_ban', 'device_banned']:
             self.bus.post(ZigbeeMqttDeviceBannedEvent(device=msg, **args))
         elif msg_type in ['device_removed', 'device_force_removed']:
@@ -165,7 +141,6 @@ class ZigbeeMqttBackend(MqttBackend):
             self.bus.post(ZigbeeMqttDeviceWhitelistedEvent(device=msg, **args))
         elif msg_type == 'device_renamed':
             self.bus.post(ZigbeeMqttDeviceRenamedEvent(device=msg, **args))
-            self._refresh_devices(client)
         elif msg_type == 'device_bind':
             self.bus.post(ZigbeeMqttDeviceBindEvent(device=msg, **args))
         elif msg_type == 'device_unbind':
