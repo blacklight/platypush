@@ -844,4 +844,5 @@ class ZigbeeMqttPlugin(MqttPlugin):
         self.publish(topic=self._topic('bridge/unbind/' + source),
                      msg=target, **self._mqtt_args(**kwargs))
 
+
 # vim:sw=4:ts=4:et:
