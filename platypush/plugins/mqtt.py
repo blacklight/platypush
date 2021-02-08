@@ -82,7 +82,12 @@ class MqttPlugin(Plugin):
         if not version:
             return None
 
-        version = version.lower()
+        if type(version) == type(ssl.PROTOCOL_TLS):
+            return version
+
+        if isinstance(version, str):
+            version = version.lower()
+
         if version == 'tls':
             return ssl.PROTOCOL_TLS
         if version == 'tlsv1':
