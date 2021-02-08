@@ -1,9 +1,9 @@
 <template>
   <div class="row item" @click="clicked">
-    <div class="col-1 icon">
-      <i :class="iconClass" v-if="iconClass" />
+    <div class="col-1 icon" v-if="iconClass">
+      <i :class="iconClass" />
     </div>
-    <div class="col-11 text" v-text="text" />
+    <div class="text" :class="{'col-11': iconClass != null}" v-text="text" />
   </div>
 </template>
 

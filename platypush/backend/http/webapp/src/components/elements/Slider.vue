@@ -4,6 +4,8 @@
            @change="$emit('input', $event)" @mouseup="$emit('mouseup', $event)" @input="$emit('input', $event)"
            @mousedown="$emit('mousedown', $event)" @touch="$emit('input', $event)"
            @touchstart="$emit('mousedown', $event)" @touchend="$emit('mouseup', $event)">
+
+    <span class="label" v-if="withLabel" v-text="value" />
   </label>
 </template>
 
@@ -25,6 +27,11 @@ export default {
       type: Array,
       default: () => [0, 100],
     },
+
+    withLabel: {
+      type: Boolean,
+      default: false,
+    }
   },
 }
 </script>
@@ -62,14 +69,21 @@ export default {
   &[disabled] {
     &::-webkit-progress-value,
     &::-moz-range-progress {
-      background: none;
+      opacity: .5;
     }
 
     &::-webkit-slider-thumb,
     &::-moz-range-thumb {
-      display: none;
-      width: 0;
+      opacity: .4;
     }
+  }
+}
+
+label {
+  position: relative;
+  .label {
+    font-weight: normal;
+    text-align: center;
   }
 }
 </style>

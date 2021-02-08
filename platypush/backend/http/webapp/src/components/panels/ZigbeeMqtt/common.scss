@@ -1,0 +1,102 @@
+@import "vars";
+
+.zigbee-container {
+  .view {
+    .row {
+      display: flex;
+      align-items: center;
+      border-radius: 1em;
+      padding: .3em;
+
+      &:nth-child(even) {
+        background: $param-even-row-bg;
+      }
+
+      &:nth-child(odd) {
+        background: $param-odd-row-bg;
+      }
+
+      &:hover {
+        background: $hover-bg;
+      }
+    }
+  }
+
+  .row {
+    .param-name {
+      display: inline-flex;
+      width: 40%;
+      margin-left: 1%;
+      vertical-align: top;
+      letter-spacing: .04em;
+    }
+
+    .param-value {
+      display: inline-flex;
+      width: 58%;
+      justify-content: right;
+      align-items: center;
+
+      .value-edit {
+        display: flex;
+        align-items: center;
+      }
+
+      .value-data {
+        display: inline-block;
+        font-weight: bold;
+      }
+
+      .slider-container {
+        display: flex;
+        align-items: center;
+      }
+
+      .unit {
+        font-size: .8em;
+        margin-left: 1em;
+        display: inline;
+      }
+
+      select {
+        width: 100%;
+      }
+
+      .numeric {
+        input.slider {
+          text-align: left;
+        }
+
+        input[type=text] {
+          text-align: right;
+          width: 100%;
+        }
+
+        .row {
+          background: none;
+          &:hover {
+            background: none;
+          }
+        }
+
+        .value-min, .value-max {
+          width: 50%;
+          font-size: .85em;
+          opacity: .75;
+        }
+
+        .value-min {
+          text-align: left;
+        }
+
+        .value-max {
+          text-align: right;
+        }
+      }
+    }
+  }
+
+  select {
+    width: 100%;
+  }
+}

@@ -11,6 +11,7 @@
         <a :href="`/#${name}`">
         <span class="icon">
           <i :class="icons[name].class" v-if="icons[name]?.class" />
+          <img :src="icons[name].imgUrl" v-else-if="icons[name]?.imgUrl"  alt="name"/>
           <i class="fas fa-puzzle-piece" v-else />
         </span>
         <span class="name" v-if="!collapsed" v-text="name" />
