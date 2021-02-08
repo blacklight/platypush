@@ -124,6 +124,10 @@ class ZigbeeMqttPlugin(MqttPlugin):
 
         self.base_topic = base_topic
         self.timeout = timeout
+        self._info = {
+            'devices': {},
+            'groups': {},
+        }
 
     def _get_network_info(self, **kwargs):
         self.logger.info('Fetching Zigbee network information')
@@ -166,6 +170,18 @@ class ZigbeeMqttPlugin(MqttPlugin):
                 if not info_ready:
                     raise TimeoutError('A timeout occurred while fetching the Zigbee network information')
 
+            # Cache the new results
+            self._info['devices'] = {
+                device.get('friendly_name', device['ieee_address']): device
+                for device in info.get('devices', [])
+            }
+
+            self._info['groups'] = {
+                group.get('name'): group
+                for group in info.get('groups', [])
+            }
+
+            self.logger.info('Zigbee network configuration updated')
             return info
         finally:
             try:
@@ -174,21 +190,18 @@ class ZigbeeMqttPlugin(MqttPlugin):
             except Exception as e:
                 self.logger.warning('Error on MQTT client disconnection: {}'.format(str(e)))
 
-    def _mqtt_args(self, host: Optional[str] = None, **kwargs):
-        if not host:
-            return {
-                'host': self.host,
-                'port': self.port,
-                'timeout': self.timeout,
-                'tls_certfile': self.tls_certfile,
-                'tls_keyfile': self.tls_keyfile,
-                'tls_version': self.tls_version,
-                'tls_ciphers': self.tls_ciphers,
-                'username': self.username,
-                'password': self.password,
-            }
-
-        return kwargs
+    def _mqtt_args(self, **kwargs):
+        return {
+            'host': kwargs.get('host', self.host),
+            'port': kwargs.get('port', self.port),
+            'timeout': kwargs.get('timeout', self.timeout),
+            'tls_certfile': kwargs.get('tls_certfile', self.tls_certfile),
+            'tls_keyfile': kwargs.get('tls_keyfile', self.tls_keyfile),
+            'tls_version': kwargs.get('tls_version', self.tls_version),
+            'tls_ciphers': kwargs.get('tls_ciphers', self.tls_ciphers),
+            'username': kwargs.get('username', self.username),
+            'password': kwargs.get('password', self.password),
+        }
 
     def _topic(self, topic):
         return self.base_topic + '/' + topic
@@ -497,10 +510,45 @@ class ZigbeeMqttPlugin(MqttPlugin):
         assert not [dev for dev in devices if dev.get('friendly_name') == name], \
             'A device named {} already exists on the network'.format(name)
 
+        if device:
+            req = {
+                'from': device,
+                'to': name,
+            }
+        else:
+            req = {
+                'last': True,
+                'to': name,
+            }
+
         self.publish(
-            topic=self._topic('bridge/config/rename{}'.format('_last' if not device else '')),
-            msg={'old': device, 'new': name} if device else name,
-            **self._mqtt_args(**kwargs))
+            topic=self._topic('bridge/request/device/rename'),
+            msg=req, **self._mqtt_args(**kwargs))
+
+    @staticmethod
+    def _build_device_get_request(values: List[Dict[str, Any]]) -> dict:
+        def extract_value(value: dict, root: dict):
+            if not value.get('access', 1) & 0x1:
+                # Property not readable
+                return
+
+            if 'features' not in value:
+                if 'property' in value:
+                    root[value['property']] = ''
+                return
+
+            if 'property' in value:
+                root[value['property']] = root.get(value['property'], {})
+                root = root[value['property']]
+
+            for feature in value['features']:
+                extract_value(feature, root)
+
+        ret = {}
+        for value in values:
+            extract_value(value, root=ret)
+
+        return ret
 
     # noinspection PyShadowingBuiltins
     @action
@@ -516,16 +564,26 @@ class ZigbeeMqttPlugin(MqttPlugin):
             (default: query the default configured device).
         :return: Key->value map of the device properties.
         """
-        properties = self.publish(topic=self._topic(device + ('/get' if property else '')),
-                                  reply_topic=self._topic(device),
-                                  msg={property: ''} if property else '',
-                                  **self._mqtt_args(**kwargs)).output
+        kwargs = self._mqtt_args(**kwargs)
 
         if property:
+            properties = self.publish(topic=self._topic(device) + '/get/' + property, reply_topic=self._topic(device),
+                                      msg={property: ''}, **kwargs).output
+
             assert property in properties, 'No such property: ' + property
             return {property: properties[property]}
 
-        return properties
+        if device not in self._info.get('devices', {}):
+            # Refresh devices info
+            self._get_network_info(**kwargs)
+
+        assert self._info.get('devices', {}).get(device), 'No such device: ' + device
+        exposes = (self._info.get('devices', {}).get(device, {}).get('definition', {}) or {}).get('exposes', [])
+        if not exposes:
+            return {}
+
+        return self.publish(topic=self._topic(device) + '/get', reply_topic=self._topic(device),
+                            msg=self._build_device_get_request(exposes), **kwargs)
 
     # noinspection PyShadowingBuiltins,DuplicatedCode
     @action
