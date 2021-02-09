@@ -20,12 +20,183 @@
         background: $hover-bg;
       }
     }
+
+    .item {
+      &.selected {
+        box-shadow: $selected-item-box-shadow;
+      }
+
+      .name.header {
+        padding: 1em !important;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+
+        &.selected {
+          border-radius: 1.5em;
+        }
+        &.selected {
+          background: $selected-bg;
+        }
+      }
+
+      .title {
+        font-size: 1.2em;
+        padding-left: .5em;
+      }
+
+      .buttons {
+        margin: 0;
+      }
+
+      &:hover {
+        background: $hover-bg;
+
+        &.selected {
+          background: $selected-bg;
+        }
+      }
+
+      &:not(:last-child) {
+        border-bottom: $item-border;
+      }
+
+      &:first-child {
+        border-radius: 1.5em 1.5em 0 0;
+      }
+
+      &:last-child {
+        border-radius: 0 0 1.5em 1.5em;
+      }
+
+      .params {
+        .section {
+          padding: 0;
+        }
+      }
+
+      .value {
+        .param-name {
+          display: inline-block;
+
+          .name {
+            font-family: monospace;
+            font-size: .8em;
+            text-transform: unset;
+            padding: 0;
+
+            &:before {
+              content: '[';
+            }
+
+            &:after {
+              content: ']';
+            }
+          }
+
+          .unit {
+            font-size: .8em;
+            &:before {
+              content: ' [unit: ';
+            }
+
+            &:after {
+              content: ']';
+            }
+          }
+        }
+
+        .param-value {
+          label {
+            width: 90%;
+          }
+
+          input {
+            width: 100%;
+          }
+        }
+      }
+
+      button {
+        border: 0;
+        background: none;
+        padding: 0 .5em;
+
+        &:hover {
+          color: $default-hover-fg;
+        }
+      }
+
+      @media screen and (max-width: $tablet) {
+        .name-edit {
+          justify-content: left;
+        }
+      }
+
+      @media screen and (min-width: $tablet) {
+        .name-edit {
+          justify-content: right;
+        }
+      }
+
+      .name-edit {
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+
+        form {
+          width: 100%;
+          display: inline-flex;
+          align-items:center;
+          justify-content: right;
+          flex-direction: row;
+        }
+
+        .buttons {
+          display: inline-flex;
+          justify-content: right;
+          margin: 0 0 0 .5em;
+        }
+
+        form {
+          background: none;
+          padding: 0;
+          border: none;
+          box-shadow: none;
+        }
+      }
+    }
   }
 
   .row {
+    display: flex;
+    flex-wrap: wrap;
+
+    @media screen and (max-width: $tablet) {
+      .param-name {
+        width: 100%;
+        font-weight: bold;
+      }
+
+      .param-value {
+        width: 100%;
+        margin-left: 1%;
+      }
+    }
+
+    @media screen and (min-width: $tablet) {
+      .param-name {
+        width: 40%;
+      }
+
+      .param-value {
+        width: 58%;
+        justify-content: right;
+      }
+    }
+
     .param-name {
       display: inline-flex;
-      width: 40%;
       margin-left: 1%;
       vertical-align: top;
       letter-spacing: .04em;
@@ -33,8 +204,6 @@
 
     .param-value {
       display: inline-flex;
-      width: 58%;
-      justify-content: right;
       align-items: center;
 
       .value-edit {

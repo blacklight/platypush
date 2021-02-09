@@ -110,15 +110,16 @@
           <div class="row value" v-for="(value, property) in displayedValues" :key="property">
             <div class="param-name">
               {{ value.description }}
-              <span class="text" v-if="value.value?.x != null && value.value?.y != null">Color (XY coordinates)</span>
-              <span class="text" v-else-if="value.value?.hue != null && value.value?.saturation != null">Color (Hue/saturation)</span>
+              <span class="text" v-if="rgbColor != null && (value.value?.x != null && value.value?.y != null) ||
+                                       (value.value?.hue != null && value.value?.saturation != null)">Color</span>
               <span class="name" v-text="value.property" v-if="value.property" />
               <span class="unit" v-text="value.unit" v-if="value.unit" />
             </div>
 
             <div class="param-value">
               <ToggleSwitch :value="value.value_on != null ? value.value === value.value_on : !!value.value"
-                            v-if="value.type === 'binary'" @input="setValue(value, $event)" />
+                            :disabled="!value.writable" v-if="value.type === 'binary'"
+                            @input="setValue(value, $event)" />
 
               <Slider :with-label="true" :range="[value.value_min, value.value_max]" :value="value.value"
                       :disabled="!value.writable" @change="setValue(value, $event)"
@@ -138,8 +139,10 @@
                 </select>
               </label>
 
-              <label v-else-if="(value.value?.x != null && value.value?.y != null) || (value.value?.hue != null && value.value?.saturation != null)">
-<!--                <input type="color" :value="rgbColor" @change.stop="onColorSelect" />-->
+              <label v-else-if="rgbColor != null && (value.value?.x != null && value.value?.y != null) ||
+                                (value.value?.hue != null && value.value?.saturation != null)">
+                <input type="color" @change.stop="setValue(value, $event)"
+                       :value="'#' + rgbColor.map((i) => { i = Number(i).toString(16); return i.length === 1 ? '0' + i : i }).join('')" />
               </label>
 
               <label v-else>
@@ -156,33 +159,19 @@
         </div>
 
         <div class="body">
-<!--          <div class="row" @click="removeDevice(false)">-->
-<!--            <div class="param-name">Remove Device</div>-->
-<!--            <div class="param-value">-->
-<!--              <i class="fa fa-trash"></i>-->
-<!--            </div>-->
-<!--          </div>-->
+          <div class="row" @click="remove(false)">
+            <div class="param-name">Remove Device</div>
+            <div class="param-value">
+              <i class="fa fa-trash"></i>
+            </div>
+          </div>
 
-<!--          <div class="row error" @click="removeDevice(true)">-->
-<!--            <div class="param-name">Force Remove Device</div>-->
-<!--            <div class="param-value">-->
-<!--              <i class="fa fa-trash"></i>-->
-<!--            </div>-->
-<!--          </div>-->
-
-<!--          <div class="row" @click="banDevice">-->
-<!--            <div class="param-name">Ban Device</div>-->
-<!--            <div class="param-value">-->
-<!--              <i class="fa fa-ban"></i>-->
-<!--            </div>-->
-<!--          </div>-->
-
-<!--          <div class="row" @click="whitelistDevice">-->
-<!--            <div class="param-name">Whitelist Device</div>-->
-<!--            <div class="param-value">-->
-<!--              <i class="fa fa-list"></i>-->
-<!--            </div>-->
-<!--          </div>-->
+          <div class="row error" @click="remove(true)">
+            <div class="param-name">Force Remove Device</div>
+            <div class="param-value">
+              <i class="fa fa-trash"></i>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -194,13 +183,13 @@ import Loading from "@/components/Loading";
 import Slider from "@/components/elements/Slider";
 import ToggleSwitch from "@/components/elements/ToggleSwitch";
 import Utils from "@/Utils";
-// import {ColorConverter} from "@/components/panels/Light/color";
+import {ColorConverter} from "@/components/panels/Light/color";
 
 export default {
   name: "Device",
   components: {ToggleSwitch, Slider, Loading},
   mixins: [Utils],
-  emits: ['select', 'rename'],
+  emits: ['select', 'rename', 'remove'],
 
   props: {
     device: {
@@ -278,6 +267,32 @@ export default {
       Object.entries(this.values).reduce(mergeValues, ret)
       return ret
     },
+
+    rgbColor() {
+      if (!this.displayedValues.color)
+        return
+
+      const color = this.displayedValues.color.value
+      if (color.x != null && color.y != null) {
+        const converter = new ColorConverter({
+          bri: [this.displayedValues.brightness?.value_min || 0, this.displayedValues.brightness?.value_max || 255],
+        })
+
+        return converter.xyToRgb(color.x, color.y, this.displayedValues.brightness.value)
+      } else
+      if (color.hue != null && (color.saturation != null || color.sat != null)) {
+        const satAttr = color.saturation != null ? 'saturation' : 'sat'
+        const converter = new ColorConverter({
+          hue: [this.displayedValues.color.hue?.value_min || 0, this.displayedValues.color.hue.value_max || 65535],
+          sat: [this.displayedValues.color[satAttr]?.value_min || 0, this.displayedValues.color[satAttr].value_max || 255],
+          bri: [this.displayedValues.brightness?.value_min || 0, this.displayedValues.brightness?.value_max || 255],
+        })
+
+        return converter.hslToRgb(color.hue, color[satAttr], this.displayedValues.brightness.value)
+      }
+
+      return null
+    },
   },
 
   methods: {
@@ -310,6 +325,24 @@ export default {
       }
     },
 
+    async remove(force) {
+      if (!confirm('Are you really sure that you want to remove this device from the network?'))
+        return
+
+      force = !!force
+      this.loading = true
+      try {
+        await this.request('zigbee.mqtt.device_remove', {
+          device: this.device.friendly_name?.length ? this.device.friendly_name : this.device.ieee_address,
+          force: force,
+        })
+
+        this.$emit('remove', {device: this.device.friendly_name || this.device.ieee_address});
+      } finally {
+        this.loading = false
+      }
+    },
+
     async setValue(value, event) {
       const request = {
         device: this.device.friendly_name || this.device.ieee_address,
@@ -335,6 +368,46 @@ export default {
         case 'enum':
           if (event.target.value?.length) {
             request.value = event.target.value
+          }
+          break
+
+        default:
+          if ((value.x != null && value.y != null) || (value.hue != null && (value.saturation != null || value.sat != null))) {
+            request.property = 'color'
+            const rgb = event.target.value.slice(1)
+                .split(/([0-9a-fA-F]{2})/)
+                .filter((_, i) => i % 2)
+                .map((i) => parseInt(i, 16))
+
+            if ((value.x != null && value.y != null)) {
+              const converter = new ColorConverter({
+                bri: [this.displayedValues.brightness?.value_min || 0, this.displayedValues.brightness?.value_max || 255],
+              })
+
+              const xy = converter.rgbToXY(...rgb)
+              request.value = {
+                color: {
+                  x: xy[0],
+                  y: xy[1],
+                }
+              }
+            } else {
+              const satAttr = this.displayedValues.color.saturation != null ? 'saturation' : 'sat'
+              const converter = new ColorConverter({
+                hue: [this.displayedValues.color.hue?.value_min || 0, this.displayedValues.color.hue.value_max || 65535],
+                sat: [this.displayedValues.color[satAttr]?.value_min || 0, this.displayedValues.color[satAttr].value_max || 255],
+                bri: [this.displayedValues.brightness?.value_min || 0, this.displayedValues.brightness?.value_max || 255],
+              })
+
+              const hsl = converter.rgbToHsl(...rgb)
+              request.value = {
+                brightness: hsl[2],
+                color: {
+                  hue: hsl[0],
+                  '`${satAttr}': hsl[1],
+                }
+              }
+            }
           }
           break
       }
@@ -364,135 +437,4 @@ export default {
 
 <style lang="scss" scoped>
 @import "common";
-
-.item {
-  &.selected {
-    box-shadow: $selected-item-box-shadow;
-  }
-
-  .name.header {
-    padding: 1em !important;
-    cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-
-    &.selected {
-      border-radius: 1.5em;
-    }
-    &.selected {
-      background: $selected-bg;
-    }
-  }
-
-  .title {
-    font-size: 1.2em;
-    padding-left: .5em;
-  }
-
-  &:hover {
-    background: $hover-bg;
-
-    &.selected {
-      background: $selected-bg;
-    }
-  }
-
-  &:not(:last-child) {
-    border-bottom: $item-border;
-  }
-
-  &:first-child {
-    border-radius: 1.5em 1.5em 0 0;
-  }
-
-  &:last-child {
-    border-radius: 0 0 1.5em 1.5em;
-  }
-
-  .params {
-    .section {
-      padding: 0;
-    }
-  }
-
-  .value {
-    .param-name {
-      display: inline-block;
-
-      .name {
-        font-family: monospace;
-        font-size: .8em;
-        text-transform: unset;
-        padding: 0;
-
-        &:before {
-          content: '[';
-        }
-
-        &:after {
-          content: ']';
-        }
-      }
-
-      .unit {
-        font-size: .8em;
-        &:before {
-          content: ' [unit: ';
-        }
-
-        &:after {
-          content: ']';
-        }
-      }
-    }
-
-    .param-value {
-      label {
-        width: 90%;
-      }
-
-      input {
-        width: 100%;
-      }
-    }
-  }
-
-  button {
-    border: 0;
-    background: none;
-    padding: 0 .5em;
-
-    &:hover {
-      color: $default-hover-fg;
-    }
-  }
-
-  .name-edit {
-    width: 100%;
-    display: inline-flex;
-    justify-content: right;
-    align-items: center;
-
-    form {
-      width: 100%;
-      display: inline-flex;
-      align-items:center;
-      justify-content: right;
-      flex-direction: row;
-    }
-
-    .buttons {
-      display: inline-flex;
-      justify-content: right;
-      margin: 0 0 0 .5em;
-    }
-
-    form {
-      background: none;
-      padding: 0;
-      border: none;
-      box-shadow: none;
-    }
-  }
-}
 </style>

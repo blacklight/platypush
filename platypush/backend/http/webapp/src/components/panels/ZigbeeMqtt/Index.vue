@@ -23,10 +23,7 @@
         </button>
 
         <Dropdown ref="networkCommandsDropdown" icon-class="fa fa-cog" title="Network commands">
-          <DropdownItem text="Start Network" :disabled="loading" @click="startNetwork" />
-          <DropdownItem text="Stop Network" :disabled="loading" @click="stopNetwork" />
           <DropdownItem text="Permit Join" :disabled="loading" @click="permitJoin(true)" />
-          <DropdownItem text="Reset" :disabled="loading" @click="reset" />
           <DropdownItem text="Factory Reset" :disabled="loading" @click="factoryReset" />
         </Dropdown>
 
@@ -43,10 +40,10 @@
           <div class="empty" v-else>No devices found on the network</div>
         </div>
 
-        <ZigbeeDevice v-for="(device, id) in devices" :key="id"
-                      :device="device" :selected="selected.deviceId === id"
-                      @select="selected.deviceId = selected.deviceId === id ? null : id"
-                      @rename="refreshDevices" />
+        <Device v-for="(device, id) in devices" :key="id"
+                :device="device" :selected="selected.deviceId === id"
+                @select="selected.deviceId = selected.deviceId === id ? null : id"
+                @rename="refreshDevices" @remove="refreshDevices" />
 
         <!--      <dropdown ref="addToGroupDropdown" :items="addToGroupDropdownItems"></dropdown>-->
       </div>
@@ -57,16 +54,13 @@
           <div class="empty" v-else>No groups available on the network</div>
         </div>
 
-        <!--      <zigbee-group-->
-        <!--          v-for="(group, groupId) in groups"-->
-        <!--          :key="groupId"-->
-        <!--          :group="group"-->
-        <!--          :selected="selected.groupId === groupId"-->
-        <!--          :bus="bus">-->
-        <!--      </zigbee-group>-->
+        <Group v-for="(group, id) in groups" :key="id" :group="group"
+               :selected="selected.groupId === id"
+               @select="selected.groupId = selected.groupId === id ? null : id"
+               @rename="refreshGroups" @remove="refreshGroups" />
       </div>
     </div>
-    </div>
+  </div>
 </template>
 
 <script>
@@ -75,11 +69,12 @@ import DropdownItem from "@/components/elements/DropdownItem"
 import Loading from "@/components/Loading"
 import Utils from "@/Utils"
 
-import ZigbeeDevice from "@/components/panels/ZigbeeMqtt/Device";
+import Device from "@/components/panels/ZigbeeMqtt/Device";
+import Group from "@/components/panels/ZigbeeMqtt/Group";
 
 export default {
   name: "ZigbeeMqtt",
-  components: {Dropdown, DropdownItem, Loading, ZigbeeDevice},
+  components: {Dropdown, DropdownItem, Loading, Device, Group},
   mixins: [Utils],
 
   data() {
@@ -208,29 +203,12 @@ export default {
     },
 
     async permitJoin(permit) {
-      let seconds = prompt('Join allow period in seconds (type 0 for no time limits)', '60')
-      if (!seconds) {
-        return
-      }
-
-      seconds = parseInt(seconds)
+      let seconds = prompt('Join allow period in seconds (0 or empty for no time limits)', '60')
+      seconds = seconds.length ? parseInt(seconds) : null
       this.loading = true
 
       try {
         await this.request('zigbee.mqtt.permit_join', {permit: !!permit, timeout: seconds || null})
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async reset() {
-      if (!confirm('Are you sure that you want to reset the device?')) {
-        return
-      }
-
-      this.loading = true
-      try {
-        await this.request('zigbee.mqtt.reset')
       } finally {
         this.loading = false
       }
@@ -439,17 +417,37 @@ export default {
     display: flex;
     justify-content: center;
     overflow: auto;
-    padding-top: 2em;
   }
 
   .view {
-    min-width: 400pt;
-    max-width: 750pt;
     height: max-content;
     background: $view-bg;
     border: $view-border;
-    border-radius: 1.5em;
     box-shadow: $view-box-shadow;
+  }
+
+  @media screen and (max-width: $tablet) {
+    .view {
+      width: 100%;
+    }
+  }
+
+  @media screen and (min-width: $tablet) {
+    .view {
+      width: 100%;
+    }
+  }
+
+  @media screen and (min-width: $desktop) {
+    .view {
+      min-width: 400pt;
+      max-width: 750pt;
+      border-radius: 1.5em;
+    }
+
+    .view-container {
+      padding-top: 2em;
+    }
   }
 
   .params {
