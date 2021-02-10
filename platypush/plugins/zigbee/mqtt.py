@@ -414,8 +414,9 @@ class ZigbeeMqttPlugin(MqttPlugin):
     @action
     def factory_reset(self, **kwargs):
         """
-        Perform a factory reset of the device. Of course, you should only do it if you know what you're doing,
-        as you will lose all the paired devices and may also lose the Z-Stack firmware.
+        Perform a factory reset of a device connected to the network, following the procedure required by the particular
+        device (for instance, Hue bulbs require the Zigbee adapter to be close to the device while a button on the back
+        of the bulb is pressed).
 
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
@@ -628,19 +629,49 @@ class ZigbeeMqttPlugin(MqttPlugin):
         return properties
 
     @action
-    def device_groups(self, device: str, **kwargs) -> List[int]:
+    def device_check_ota_updates(self, device: str, **kwargs) -> dict:
         """
-        List the groups a given device belongs to.
+        Check if the specified device has any OTA updates available to install.
 
-        :param device: Display name of the device.
+        :param device: Address or friendly name of the device.
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
-        :return: List of group IDs the device is linked to.
-        """
 
-        return self.publish(topic=self._topic('bridge/device/{}/get_group_membership'.format(device)),
-                            reply_topic=self._topic(device), msg=device, **self._mqtt_args(**kwargs)). \
-            output.get('group_list', [])
+        :return:
+
+            .. code-block:: json
+
+                {
+                    "id": "<device ID>",
+                    "update_available": true,
+                    "status": "ok"
+                }
+
+        """
+        ret = self._parse_response(
+            self.publish(topic=self._topic('bridge/request/device/ota_update/check'),
+                         reply_topic=self._topic('bridge/response/device/ota_update/check'),
+                         msg={'id': device}, **self._mqtt_args(**kwargs)))
+
+        return {
+            'status': ret['status'],
+            'id': ret.get('data', {}).get('id'),
+            'update_available': ret.get('data', {}).get('update_available', False),
+        }
+
+    @action
+    def device_install_ota_updates(self, device: str, **kwargs):
+        """
+        Install OTA updates for a device if available.
+
+        :param device: Address or friendly name of the device.
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+            (default: query the default configured device).
+        """
+        return self._parse_response(
+            self.publish(topic=self._topic('bridge/request/device/ota_update/update'),
+                         reply_topic=self._topic('bridge/response/device/ota_update/update'),
+                         msg={'id': device}, **self._mqtt_args(**kwargs)))
 
     @action
     def groups(self, **kwargs) -> List[dict]:
@@ -808,6 +839,32 @@ class ZigbeeMqttPlugin(MqttPlugin):
                          **self._mqtt_args(**kwargs))
         )
 
+    @action
+    def group_get(self, group: str, property: Optional[str] = None, **kwargs) -> dict:
+        """
+        Get one or more properties of a group. The compatible properties vary depending on the devices on the group.
+        For example, a light bulb may have the "``state``" (with values ``"ON"`` and ``"OFF"``) and "``brightness``"
+        properties, while an environment sensor may have the "``temperature``" and "``humidity``" properties, and so on.
+
+        :param group: Display name of the group.
+        :param property: Name of the property to retrieve (default: all available properties)
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+            (default: query the default configured device).
+        """
+        msg = {}
+        if property:
+            msg = {property: ''}
+
+        properties = self.publish(topic=self._topic(group + '/get'),
+                                  reply_topic=self._topic(group),
+                                  msg=msg, **self._mqtt_args(**kwargs)).output
+
+        if property:
+            assert property in properties, 'No such property: ' + property
+            return {property: properties[property]}
+
+        return properties
+
     # noinspection PyShadowingBuiltins,DuplicatedCode
     @action
     def group_set(self, group: str, property: str, value: Any, **kwargs):
@@ -881,8 +938,13 @@ class ZigbeeMqttPlugin(MqttPlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        self.publish(topic=self._topic('bridge/group/{}/add'.format(group)),
-                     msg=device, **self._mqtt_args(**kwargs))
+        return self._parse_response(
+            self.publish(topic=self._topic('bridge/request/group/members/add'),
+                         reply_topic=self._topic('bridge/response/group/members/add'),
+                         msg={
+                             'group': group,
+                             'device': device,
+                         }, **self._mqtt_args(**kwargs)))
 
     @action
     def group_remove_device(self, group: str, device: Optional[str] = None, **kwargs):
@@ -895,11 +957,16 @@ class ZigbeeMqttPlugin(MqttPlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        self.publish(topic=self._topic('bridge/group/{}/remove{}'.format(group, '_all' if not device else '')),
-                     msg=device, **self._mqtt_args(**kwargs))
+        return self._parse_response(
+            self.publish(topic=self._topic('bridge/request/group/members/remove{}'.format('_all' if device is None else '')),
+                         reply_topic=self._topic('bridge/response/group/members/remove{}'.format('_all' if device is None else '')),
+                         msg={
+                             'group': group,
+                             'device': device,
+                         }, **self._mqtt_args(**kwargs)))
 
     @action
-    def bind_devices(self, source: str, target: str, endpoint: Optional[str] = None, **kwargs):
+    def bind_devices(self, source: str, target: str, **kwargs):
         """
         Bind two devices. Binding makes it possible that devices can directly control each other without the
         intervention of zigbee2mqtt or any home automation software. You may want to use this feature to bind
@@ -908,14 +975,16 @@ class ZigbeeMqttPlugin(MqttPlugin):
 
         :param source: Name of the source device. It can also be a group name, although the support is
             `still experimental <https://www.zigbee2mqtt.io/information/binding.html#binding-a-group>`_.
+            You can also bind a specific device endpoint - for example ``MySensor/temperature``.
         :param target: Name of the target device.
-        :param endpoint: The target may support multiple endpoints (e.g. 'left', 'down', 'up' etc.). If so,
-            you can bind the source to a specific endpoint on the target device.
+            You can also bind a specific device endpoint - for example ``MyLight/state``.
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        self.publish(topic=self._topic('bridge/bind/' + source + ('/' + endpoint if endpoint else '')),
-                     msg=target, **self._mqtt_args(**kwargs))
+        return self._parse_response(
+            self.publish(topic=self._topic('bridge/request/device/bind'),
+                         reply_topic=self._topic('bridge/response/device/bind'),
+                         msg={'from': source, 'to': target}, **self._mqtt_args(**kwargs)) )
 
     @action
     def unbind_devices(self, source: str, target: str, **kwargs):
@@ -923,12 +992,16 @@ class ZigbeeMqttPlugin(MqttPlugin):
         Un-bind two devices.
 
         :param source: Name of the source device.
+            You can also bind a specific device endpoint - for example ``MySensor/temperature``.
         :param target: Name of the target device.
+            You can also bind a specific device endpoint - for example ``MyLight/state``.
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        self.publish(topic=self._topic('bridge/unbind/' + source),
-                     msg=target, **self._mqtt_args(**kwargs))
+        return self._parse_response(
+            self.publish(topic=self._topic('bridge/request/device/unbind'),
+                         reply_topic=self._topic('bridge/response/device/unbind'),
+                         msg={'from': source, 'to': target}, **self._mqtt_args(**kwargs)) )
 
 
 # vim:sw=4:ts=4:et:
