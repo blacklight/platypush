@@ -242,9 +242,9 @@ class Request(Message):
                     elif not response.disable_logging:
                         logger.info('Processed response from action {}: {}'.
                                     format(action, str(response)))
-            except AssertionError as e:
+            except (AssertionError, TimeoutError) as e:
                 plugin.logger.exception(e)
-                logger.warning('Assertion error from action [{}]: {}'.format(action, str(e)))
+                logger.warning('{} from action [{}]: {}'.format(type(e), action, str(e)))
                 response = Response(output=None, errors=[str(e)])
             except Exception as e:
                 # Retry mechanism

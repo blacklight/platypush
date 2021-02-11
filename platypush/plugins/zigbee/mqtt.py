@@ -38,7 +38,9 @@ class ZigbeeMqttPlugin(MqttPlugin):
         - You can disconnect your debugger and downloader cable once the firmware is flashed.
 
         - Install ``zigbee2mqtt``. First install a node/npm environment, then either install ``zigbee2mqtt`` manually or
-          through your package manager. Manual instructions:
+          through your package manager. **NOTE**: many API breaking changes have occurred on Zigbee2MQTT 1.17.0,
+          therefore this integration will only be compatible with the version 1.17.0 of the service or higher versions.
+          Manual instructions:
 
           .. code-block:: shell
 
@@ -97,7 +99,7 @@ class ZigbeeMqttPlugin(MqttPlugin):
 
     """
 
-    def __init__(self, host: str = 'localhost', port: int = 1883, base_topic: str = 'zigbee2mqtt', timeout: int = 60,
+    def __init__(self, host: str = 'localhost', port: int = 1883, base_topic: str = 'zigbee2mqtt', timeout: int = 10,
                  tls_certfile: Optional[str] = None, tls_keyfile: Optional[str] = None,
                  tls_version: Optional[str] = None, tls_ciphers: Optional[str] = None,
                  username: Optional[str] = None, password: Optional[str] = None, **kwargs):
@@ -545,7 +547,7 @@ class ZigbeeMqttPlugin(MqttPlugin):
                          **self._mqtt_args(**kwargs)))
 
     @staticmethod
-    def _build_device_get_request(values: List[Dict[str, Any]]) -> dict:
+    def build_device_get_request(values: List[Dict[str, Any]]) -> dict:
         def extract_value(value: dict, root: dict):
             if not value.get('access', 1) & 0x1:
                 # Property not readable
@@ -553,7 +555,7 @@ class ZigbeeMqttPlugin(MqttPlugin):
 
             if 'features' not in value:
                 if 'property' in value:
-                    root[value['property']] = ''
+                    root[value['property']] = 0 if value['type'] == 'numeric' else ''
                 return
 
             if 'property' in value:
@@ -602,7 +604,7 @@ class ZigbeeMqttPlugin(MqttPlugin):
             return {}
 
         return self.publish(topic=self._topic(device) + '/get', reply_topic=self._topic(device),
-                            msg=self._build_device_get_request(exposes), **kwargs)
+                            msg=self.build_device_get_request(exposes), **kwargs)
 
     # noinspection PyShadowingBuiltins,DuplicatedCode
     @action
