@@ -5,47 +5,21 @@
          v-text="group.friendly_name" @click="$emit('select')" />
 
     <div class="params" v-if="selected">
-      <div class="section values">
+      <div class="section devices">
         <div class="header">
-          <div class="title">Values</div>
+          <div class="title">Devices</div>
         </div>
 
         <div class="body">
-<!--          <div class="row" v-for="(value, name) in properties" :key="name">-->
-<!--            <div class="param-name" v-text="name"></div>-->
-<!--            <div class="param-value">-->
-<!--              <div v-if="name === 'state'">-->
-<!--                <toggle-switch :value="value" @toggled="toggleState"></toggle-switch>-->
-<!--              </div>-->
-<!--              <div v-else>-->
-<!--                <input type="text" :value="value" :data-name="name" @change="setValue">-->
-<!--              </div>-->
-<!--            </div>-->
-<!--          </div>-->
+          <form>
+            <label class="row" v-for="(device, id) in devices" :key="id">
+              <input type="checkbox" :checked="members.has(device.ieee_address)" :value="device.ieee_address"
+                     @change="toggleDevice(device.ieee_address)" />
+              <span class="label" v-text="device.friendly_name?.length ? device.friendly_name : device.ieee_address" />
+            </label>
+          </form>
         </div>
       </div>
-
-<!--      <div class="section devices">-->
-<!--        <div class="header">-->
-<!--          <div class="title col-10">Devices</div>-->
-<!--          <div class="buttons col-2">-->
-<!--            <button class="btn btn-default" title="Add Devices" @click="bus.$emit('openAddToGroupModal')">-->
-<!--              <i class="fa fa-plus"></i>-->
-<!--            </button>-->
-<!--          </div>-->
-<!--        </div>-->
-
-<!--        <div class="body">-->
-<!--          <div class="row" v-for="device in group.devices">-->
-<!--            <div class="col-10" v-text="device.friendly_name"></div>-->
-<!--            <div class="buttons col-2">-->
-<!--              <button class="btn btn-default" title="Remove from group" @click="removeFromGroup(device.friendly_name)">-->
-<!--                <i class="fa fa-trash"></i>-->
-<!--              </button>-->
-<!--            </div>-->
-<!--          </div>-->
-<!--        </div>-->
-<!--      </div>-->
 
       <div class="section actions">
         <div class="header">
@@ -74,20 +48,23 @@
 
 <script>
 import Loading from "@/components/Loading";
-// import ToggleSwitch from "@/components/elements/ToggleSwitch";
 import Utils from "@/Utils";
 
 export default {
   name: "Group",
-  emits: ['select', 'remove'],
+  emits: ['select', 'remove', 'edit'],
   mixins: [Utils],
-  // components: {Loading, ToggleSwitch},
   components: {Loading},
 
   props: {
     group: {
       type: Object,
       required: true,
+    },
+
+    devices: {
+      type: Object,
+      default: () => { return {} },
     },
 
     selected: {
@@ -99,7 +76,22 @@ export default {
   data() {
     return {
       loading: false,
+      values: {},
     }
+  },
+
+  computed: {
+    devicesByAddress() {
+      return Object.entries(this.devices).reduce((obj, entry) => {
+        const device = entry[1]
+        obj[device.ieee_address] = device
+        return obj
+      }, {})
+    },
+
+    members() {
+      return new Set((this.group.members || []).map((member) => member.ieee_address))
+    },
   },
 
   methods: {
@@ -117,10 +109,11 @@ export default {
     },
 
     async rename() {
-      const name = prompt('New group name', this.group.friendly_name).trim()
-      if (!name.length)
+      let name = prompt('New group name', this.group.friendly_name)
+      if (!name?.length)
         return
 
+      name = name.trim()
       this.loading = true
 
       try {
@@ -134,10 +127,52 @@ export default {
         this.loading = false
       }
     },
-  }
+
+    async toggleDevice(ieeeAddress) {
+      const device = this.devicesByAddress[ieeeAddress]
+      const name = device.friendly_name?.length ? device.friendly_name : ieeeAddress
+      const method = this.members.has(ieeeAddress) ? 'remove' : 'add'
+
+      this.loading = true
+      try {
+        await this.request(`zigbee.mqtt.group_${method}_device`, {
+          group: this.group.friendly_name,
+          device: name,
+        })
+
+        this.$emit('edit', {device: name, method: method})
+      } finally {
+        this.loading = false
+      }
+    },
+  },
 }
 </script>
 
 <style lang="scss" scoped>
 @import "common";
+
+.section {
+  padding-left: 1em !important;
+}
+
+form {
+  margin: 0;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+
+  .row {
+    background: none !important;
+
+    &:hover {
+      background: $hover-bg !important;
+    }
+
+    .label {
+      margin-left: .75em;
+      font-weight: normal;
+    }
+  }
+}
 </style>

@@ -1,13 +1,8 @@
 @import "vars";
 
 .zigbee-container {
-  .view {
+  .params, .info-body {
     .row {
-      display: flex;
-      align-items: center;
-      border-radius: 1em;
-      padding: .3em;
-
       &:nth-child(even) {
         background: $param-even-row-bg;
       }
@@ -15,6 +10,15 @@
       &:nth-child(odd) {
         background: $param-odd-row-bg;
       }
+    }
+  }
+
+  .view, .info-body {
+    .row {
+      display: flex;
+      align-items: center;
+      border-radius: 1em;
+      padding: .3em;
 
       &:hover {
         background: $hover-bg;
@@ -71,7 +75,7 @@
 
       .params {
         .section {
-          padding: 0;
+          padding: 1.5em 0 0 0;
         }
       }
 

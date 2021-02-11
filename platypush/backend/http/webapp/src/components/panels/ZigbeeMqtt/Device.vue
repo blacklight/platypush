@@ -1,6 +1,24 @@
 <template>
   <div class="item device" :class="{selected: selected}">
     <Loading v-if="loading" />
+
+    <Modal class="groups-modal" ref="groupsModal" title="Device groups">
+      <Loading v-if="loading" />
+
+      <form class="content" @submit.prevent="manageGroups">
+        <div class="groups">
+          <label class="row group" v-for="(group, id) in groups" :key="id">
+            <input type="checkbox" :value="id" :checked="associatedGroups.has(parseInt(group.id))">
+            <span class="name" v-text="group.friendly_name?.length ? group.friendly_name : `[Group #${group.id}]`" />
+          </label>
+        </div>
+
+        <div class="footer buttons">
+          <button type="submit">Save</button>
+        </div>
+      </form>
+    </Modal>
+
     <div class="row name header vertical-center" :class="{selected: selected}"
          v-text="device.friendly_name || device.ieee_address" @click="$emit('select')" />
 
@@ -159,17 +177,32 @@
         </div>
 
         <div class="body">
+          <div class="row" @click="$refs.groupsModal.show()">
+            <div class="param-name">Manage groups</div>
+            <div class="param-value">
+              <i class="fa fa-network-wired" />
+            </div>
+          </div>
+
+          <div class="row" @click="otaUpdatesAvailable ? installOtaUpdates() : checkOtaUpdates()">
+            <div class="param-name" v-if="!otaUpdatesAvailable">Check for updates</div>
+            <div class="param-name" v-else>Install updates</div>
+            <div class="param-value">
+              <i class="fa fa-sync-alt" />
+            </div>
+          </div>
+
           <div class="row" @click="remove(false)">
             <div class="param-name">Remove Device</div>
             <div class="param-value">
-              <i class="fa fa-trash"></i>
+              <i class="fa fa-trash" />
             </div>
           </div>
 
           <div class="row error" @click="remove(true)">
             <div class="param-name">Force Remove Device</div>
             <div class="param-value">
-              <i class="fa fa-trash"></i>
+              <i class="fa fa-trash" />
             </div>
           </div>
         </div>
@@ -184,17 +217,23 @@ import Slider from "@/components/elements/Slider";
 import ToggleSwitch from "@/components/elements/ToggleSwitch";
 import Utils from "@/Utils";
 import {ColorConverter} from "@/components/panels/Light/color";
+import Modal from "@/components/Modal";
 
 export default {
   name: "Device",
-  components: {ToggleSwitch, Slider, Loading},
+  components: {Modal, ToggleSwitch, Slider, Loading},
   mixins: [Utils],
-  emits: ['select', 'rename', 'remove'],
+  emits: ['select', 'rename', 'remove', 'groups-edit'],
 
   props: {
     device: {
       type: Object,
       required: true,
+    },
+
+    groups: {
+      type: Object,
+      default: () => {},
     },
 
     selected: {
@@ -208,6 +247,7 @@ export default {
       editName: false,
       loading: false,
       status: {},
+      otaUpdatesAvailable: false,
     }
   },
 
@@ -272,7 +312,10 @@ export default {
       if (!this.displayedValues.color)
         return
 
-      const color = this.displayedValues.color.value
+      const color = this.displayedValues.color?.value
+      if (!color)
+        return
+
       if (color.x != null && color.y != null) {
         const converter = new ColorConverter({
           bri: [this.displayedValues.brightness?.value_min || 0, this.displayedValues.brightness?.value_max || 255],
@@ -292,6 +335,13 @@ export default {
       }
 
       return null
+    },
+
+    associatedGroups() {
+      return new Set(Object.values(this.groups)
+          .filter((group) => new Set(
+              (group.members || []).map((member) => member.ieee_address)).has(this.device.ieee_address))
+          .map((group) => parseInt(group.id)))
     },
   },
 
@@ -423,18 +473,158 @@ export default {
         this.loading = false
       }
     },
+
+    async manageGroups(event) {
+      const groups = [...event.target.querySelectorAll('input[type=checkbox]')].reduce((obj, element) => {
+        const groupId = parseInt(element.value)
+        if (element.checked && !this.associatedGroups.has(groupId))
+          obj.add.add(groupId)
+        else if (!element.checked && this.associatedGroups.has(groupId))
+          obj.remove.add(groupId)
+
+        return obj
+      }, {add: new Set(), remove: new Set()})
+
+      const editGroups = async (action) => {
+        await Promise.all([...groups[action]].map(async (groupId) => {
+          await this.request(`zigbee.mqtt.group_${action}_device`, {
+            group: this.groups[groupId].friendly_name,
+            device: this.device.friendly_name?.length ? this.device.friendly_name : this.device.ieee_address,
+          })
+        }))
+      }
+
+      this.loading = true
+      try {
+        await Promise.all(Object.keys(groups).map(editGroups))
+        this.$emit('groups-edit', groups)
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async checkOtaUpdates() {
+      this.loading = true
+      try {
+        this.otaUpdatesAvailable = (await this.request('zigbee.mqtt.device_check_ota_updates', {
+          device: this.device.friendly_name?.length ? this.device.friendly_name : this.device.ieee_address,
+        })).update_available
+
+        if (this.otaUpdatesAvailable)
+          this.notify({
+            text: 'A firmware update is available for the device',
+            image: {
+              iconClass: 'fa fa-sync-alt',
+            }
+          })
+        else
+          this.notify({
+            text: 'The device is up to date',
+            image: {
+              iconClass: 'fa fa-check',
+            }
+          })
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async installOtaUpdates() {
+      this.loading = true
+      try {
+        await this.request('zigbee.mqtt.device_install_ota_updates', {
+          device: this.device.friendly_name?.length ? this.device.friendly_name : this.device.ieee_address,
+        })
+      } finally {
+        this.loading = false
+      }
+    },
   },
 
-  created() {
-    this.refresh()
+  mounted() {
     this.$watch(() => this.selected, (newValue) => {
       if (newValue)
         this.refresh()
     })
+
+    this.$watch(() => this.status.update_available, (newValue) => {
+      this.otaUpdatesAvailable = newValue
+    })
+
+    this.subscribe((event) => {
+      if (event.device !== this.device.friendly_name && event.device !== this.device.ieee_address)
+        return
+
+      this.status = {...this.status, ...event.properties}
+    }, `on-property-change-${this.device.ieee_address}`,
+        'platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePropertySetEvent')
   },
+
+  unmounted() {
+    this.unsubscribe(`on-property-change-${this.device.ieee_address}`)
+  }
 }
 </script>
 
 <style lang="scss" scoped>
 @import "common";
+
+.groups-modal {
+  .content {
+    min-width: 20em;
+    margin: -2em;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+  }
+
+  .group {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: .5em 1em !important;
+
+    input[type=checkbox] {
+      margin-right: 1em;
+    }
+  }
+
+  .groups {
+    width: 100%;
+    height: calc(100% - 3.5em);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+  }
+
+  .footer {
+    width: 100%;
+    height: 3.5em;
+    display: flex;
+    justify-content: right;
+    align-items: center;
+    padding: 0;
+    background: $default-bg-2;
+    border-top: $default-border-2;
+  }
+}
+
+@media screen and (max-width: $tablet) {
+  .section.actions {
+    .row {
+      flex-direction: row-reverse;
+      justify-content: left;
+
+      .param-name {
+        width: auto;
+      }
+
+      .param-value {
+        width: 1.5em;
+        margin-right: .5em;
+      }
+    }
+  }
+}
 </style>

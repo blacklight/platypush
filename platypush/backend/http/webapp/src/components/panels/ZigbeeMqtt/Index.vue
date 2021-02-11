@@ -2,7 +2,56 @@
   <div class="zigbee-container">
     <Loading v-if="loading" />
 
-    <!-- Include group modal -->
+    <Modal title="Network Info" ref="infoModal">
+      <div class="info-body" v-if="status.info">
+        <div class="row">
+          <div class="param-name">State</div>
+          <div class="param-value" v-text="status.state" />
+        </div>
+
+        <div class="row">
+          <div class="param-name">Permit Join</div>
+          <div class="param-value" v-text="status.info.permit_join" />
+        </div>
+
+        <div class="row" v-if="status.info.network">
+          <div class="param-name">Network Channel</div>
+          <div class="param-value" v-text="status.info.network.channel" />
+        </div>
+
+        <div class="row">
+          <div class="param-name">Zigbee2MQTT Version</div>
+          <div class="param-value" v-text="status.info.version" />
+        </div>
+
+        <div class="row" v-if="status.info.config?.mqtt">
+          <div class="param-name">MQTT Server</div>
+          <div class="param-value" v-text="status.info.config.mqtt.server" />
+        </div>
+
+        <div class="row" v-if="status.info.config?.serial">
+          <div class="param-name">Serial Port</div>
+          <div class="param-value" v-text="status.info.config.serial.port" />
+        </div>
+
+        <div class="row" v-if="status.info.coordinator?.type">
+          <div class="param-name">Firmware Type</div>
+          <div class="param-value" v-text="status.info.coordinator.type" />
+        </div>
+
+        <div class="row" v-if="status.info.coordinator?.meta">
+          <div class="param-name">Firmware Version</div>
+          <div class="param-value">
+            {{ status.info.coordinator.meta.maintrel }}.{{ status.info.coordinator.meta.majorrel }}.{{ status.info.coordinator.meta.minorrel }}
+          </div>
+        </div>
+
+        <div class="row" v-if="status.info.coordinator?.meta">
+          <div class="param-name">Firmware Revision</div>
+          <div class="param-value" v-text="status.info.coordinator.meta.revision" />
+        </div>
+      </div>
+    </Modal>
 
     <div class="view-options">
       <div class="view-selector col-s-8 col-m-9 col-l-10">
@@ -23,7 +72,10 @@
         </button>
 
         <Dropdown ref="networkCommandsDropdown" icon-class="fa fa-cog" title="Network commands">
-          <DropdownItem text="Permit Join" :disabled="loading" @click="permitJoin(true)" />
+          <DropdownItem text="Network Info" :disabled="loading" @click="$refs.infoModal.show()" />
+          <DropdownItem text="Permit Join" :disabled="loading" @click="permitJoin(true)"
+                        v-if="!status.info?.permit_join" />
+          <DropdownItem text="Disable Join" :disabled="loading" @click="permitJoin(false)" v-else/>
           <DropdownItem text="Factory Reset" :disabled="loading" @click="factoryReset" />
         </Dropdown>
 
@@ -41,11 +93,9 @@
         </div>
 
         <Device v-for="(device, id) in devices" :key="id"
-                :device="device" :selected="selected.deviceId === id"
+                :device="device" :groups="groups" :selected="selected.deviceId === id"
                 @select="selected.deviceId = selected.deviceId === id ? null : id"
-                @rename="refreshDevices" @remove="refreshDevices" />
-
-        <!--      <dropdown ref="addToGroupDropdown" :items="addToGroupDropdownItems"></dropdown>-->
+                @rename="refreshDevices" @remove="refreshDevices" @groups-edit="refreshGroups" />
       </div>
 
       <div class="view groups" v-else-if="selected.view === 'groups'">
@@ -54,10 +104,10 @@
           <div class="empty" v-else>No groups available on the network</div>
         </div>
 
-        <Group v-for="(group, id) in groups" :key="id" :group="group"
+        <Group v-for="(group, id) in groups" :key="id" :group="group" :devices="devices"
                :selected="selected.groupId === id"
                @select="selected.groupId = selected.groupId === id ? null : id"
-               @rename="refreshGroups" @remove="refreshGroups" />
+               @rename="refreshGroups" @remove="refreshGroups" @edit="refreshGroups" />
       </div>
     </div>
   </div>
@@ -71,17 +121,18 @@ import Utils from "@/Utils"
 
 import Device from "@/components/panels/ZigbeeMqtt/Device";
 import Group from "@/components/panels/ZigbeeMqtt/Group";
+import Modal from "@/components/Modal";
 
 export default {
   name: "ZigbeeMqtt",
-  components: {Dropdown, DropdownItem, Loading, Device, Group},
+  components: {Modal, Dropdown, DropdownItem, Loading, Device, Group},
   mixins: [Utils],
 
   data() {
     return {
-      status: {},
       devices: {},
       groups: {},
+      status: {},
       loading: false,
       selected: {
         view: 'devices',
@@ -98,34 +149,6 @@ export default {
         },
       },
     }
-  },
-
-  computed: {
-    // addToGroupDropdownItems: function() {
-    //   const self = this
-    //   return Object.values(this.groups).filter((group) => {
-    //     return !group.values || !group.values.length || !(this.selected.valueId in this.scene.values)
-    //   }).map((group) => {
-    //     return {
-    //       text: group.name,
-    //       disabled: this.loading,
-    //       click: async function () {
-    //         if (!self.selected.valueId) {
-    //           return
-    //         }
-    //
-    //         self.loading = true
-    //         await this.request('zwave.scene_add_value', {
-    //           id_on_network: self.selected.valueId,
-    //           scene_id: group.scene_id,
-    //         })
-    //
-    //         self.loading = false
-    //         self.refresh()
-    //       },
-    //     }
-    //   })
-    // },
   },
 
   methods: {
@@ -151,17 +174,29 @@ export default {
 
     async refreshGroups() {
       this.loading = true
-      this.groups = (await this.request('zigbee.mqtt.groups')).reduce((groups, group) => {
-        groups[group.id] = group
-        return groups
-      }, {})
+      try {
+        this.groups = (await this.request('zigbee.mqtt.groups')).reduce((groups, group) => {
+          groups[group.id] = group
+          return groups
+        }, {})
+      } finally {
+        this.loading = false
+      }
+    },
 
-      this.loading = false
+    async refreshInfo() {
+      this.loading = true
+      try {
+        this.status = await this.request('zigbee.mqtt.info')
+      } finally {
+        this.loading = false
+      }
     },
 
     refresh() {
       this.refreshDevices()
       this.refreshGroups()
+      this.refreshInfo()
     },
 
     updateProperties(device, props) {
@@ -184,31 +219,17 @@ export default {
       await this.refreshGroups()
     },
 
-    async startNetwork() {
-      this.loading = true
-      try {
-        await this.request('zigbee.mqtt.start_network')
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async stopNetwork() {
-      this.loading = true
-      try {
-        await this.request('zigbee.mqtt.stop_network')
-      } finally {
-        this.loading = false
-      }
-    },
-
     async permitJoin(permit) {
-      let seconds = prompt('Join allow period in seconds (0 or empty for no time limits)', '60')
-      seconds = seconds.length ? parseInt(seconds) : null
-      this.loading = true
+      const args = {permit: !!permit}
+      if (permit) {
+        let seconds = prompt('Join allow period in seconds (0 or empty for no time limits)', '60')
+        args.seconds = seconds.length ? parseInt(seconds) : null
+      }
 
+      this.loading = true
       try {
-        await this.request('zigbee.mqtt.permit_join', {permit: !!permit, timeout: seconds || null})
+        await this.request('zigbee.mqtt.permit_join', args)
+        setTimeout(this.refreshInfo, 1000)
       } finally {
         this.loading = false
       }
@@ -228,11 +249,6 @@ export default {
       }
     },
 
-    // openAddToGroupDropdown(event) {
-    //   this.selected.valueId = event.valueId
-    //   openDropdown(this.$refs.addToGroupDropdown)
-    // },
-
     async addToGroup(device, group) {
       this.loading = true
       await this.request('zigbee.mqtt.group_add_device', {
@@ -248,102 +264,92 @@ export default {
         self.refreshGroups()
       }, 100)
     },
-
-    async removeNodeFromGroup(event) {
-      if (!confirm('Are you sure that you want to remove this value from the group?')) {
-        return
-      }
-
-      this.loading = true
-      await this.request('zigbee.mqtt.group_remove_device', {
-        group: event.group,
-        device: event.device,
-      })
-
-      this.loading = false
-    },
   },
 
   created() {
-    // const self = this
-    // this.bus.$on('refresh', this.refresh)
-    // this.bus.$on('refreshDevices', this.refreshDevices)
-    // this.bus.$on('refreshGroups', this.refreshGroups)
-    // this.bus.$on('openAddToGroupModal', () => {self.modal.group.visible = true})
-    // this.bus.$on('openAddToGroupDropdown', this.openAddToGroupDropdown)
-    // this.bus.$on('removeFromGroup', this.removeNodeFromGroup)
-    //
-    // registerEventHandler(() => {
-    //   createNotification({
-    //     text: 'WARNING: The controller is now offline',
-    //     error: true,
-    //   })
-    // }, 'platypush.message.event.zigbee.mqtt.ZigbeeMqttOfflineEvent')
-    //
-    // registerEventHandler(() => {
-    //   createNotification({
-    //     text: 'The controller is now online',
-    //     iconClass: 'fas fa-check',
-    //   })
-    // }, 'platypush.message.event.zigbee.mqtt.ZigbeeMqttOfflineEvent')
-    //
-    // registerEventHandler(() => {
-    //   createNotification({
-    //     text: 'Failed to remove the device',
-    //     error: true,
-    //   })
-    // }, 'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedFailedEvent')
-    //
-    // registerEventHandler(() => {
-    //   createNotification({
-    //     text: 'Failed to add the group',
-    //     error: true,
-    //   })
-    // }, 'platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedFailedEvent')
-    //
-    // registerEventHandler(() => {
-    //   createNotification({
-    //     text: 'Failed to remove the group',
-    //     error: true,
-    //   })
-    // }, 'platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedFailedEvent')
-    //
-    // registerEventHandler(() => {
-    //   createNotification({
-    //     text: 'Failed to remove the devices from the group',
-    //     error: true,
-    //   })
-    // }, 'platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllFailedEvent')
-    //
-    // registerEventHandler((event) => {
-    //   createNotification({
-    //     text: 'Unhandled Zigbee error: ' + (event.error || '[Unknown error]'),
-    //     error: true,
-    //   })
-    // }, 'platypush.message.event.zigbee.mqtt.ZigbeeMqttErrorEvent')
-    //
-    // registerEventHandler((event) => {
-    //   self.updateProperties(event.device, event.properties)
-    // }, 'platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePropertySetEvent')
-    //
-    // registerEventHandler(this.refresh,
-    //     'platypush.message.event.zigbee.mqtt.ZigbeeMqttOnlineEvent',
-    //     'platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePairingEvent',
-    //     'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceConnectedEvent',
-    //     'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBannedEvent',
-    //     'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedEvent',
-    //     'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceWhitelistedEvent',
-    //     'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRenamedEvent',
-    //     'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBindEvent',
-    //     'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceUnbindEvent',
-    //     'platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedEvent',
-    //     'platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedEvent',
-    //     'platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllEvent',
-    // )
+    this.subscribe(() => {
+      this.notify({
+        text: 'WARNING: The controller is offline',
+        error: true,
+      })
+    }, 'on-zigbee-offline', 'platypush.message.event.zigbee.mqtt.ZigbeeMqttOfflineEvent')
+
+    this.subscribe(() => {
+      this.notify({
+        text: 'The controller is now online',
+        iconClass: 'fas fa-check',
+      })
+    }, 'on-zigbee-online', 'platypush.message.event.zigbee.mqtt.ZigbeeMqttOnlineEvent')
+
+    this.subscribe(() => {
+      this.notify({
+        text: 'Failed to remove the device',
+        error: true,
+      })
+    }, 'on-zigbee-device-remove-failed', 'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedFailedEvent')
+
+    this.subscribe(() => {
+      this.notify({
+        text: 'Failed to add the group',
+        error: true,
+      })
+    }, 'on-zigbee-group-add-failed', 'platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedFailedEvent')
+
+    this.subscribe(() => {
+      this.notify({
+        text: 'Failed to remove group',
+        error: true,
+      })
+    }, 'on-zigbee-group-remove-failed', 'platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedFailedEvent')
+
+    this.subscribe(() => {
+      this.notify({
+        text: 'Failed to remove the devices from group',
+        error: true,
+      })
+    }, 'on-zigbee-remove-all-failed',
+        'platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllFailedEvent')
+
+    this.subscribe((event) => {
+      this.notify({
+        text: event.error || '[Unknown error]',
+        error: true,
+      })
+    }, 'on-zigbee-error', 'platypush.message.event.zigbee.mqtt.ZigbeeMqttErrorEvent')
+
+    this.subscribe(this.refresh, 'on-zigbee-device-update',
+        'platypush.message.event.zigbee.mqtt.ZigbeeMqttOnlineEvent',
+        'platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePairingEvent',
+        'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceConnectedEvent',
+        'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBannedEvent',
+        'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedEvent',
+        'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceWhitelistedEvent',
+        'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRenamedEvent',
+        'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBindEvent',
+        'platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceUnbindEvent',
+    )
+
+    this.subscribe(this.refreshGroups, 'on-zigbee-group-update',
+        'platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedEvent',
+        'platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedEvent',
+        'platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllEvent',
+    )
   },
 
   mounted() {
     this.refresh()
+  },
+
+  unmounted() {
+    this.unsubscribe('on-zigbee-error')
+    this.unsubscribe('on-zigbee-remove-all-failed')
+    this.unsubscribe('on-zigbee-group-remove-failed')
+    this.unsubscribe('on-zigbee-group-add-failed')
+    this.unsubscribe('on-zigbee-device-remove-failed')
+    this.unsubscribe('on-zigbee-online')
+    this.unsubscribe('on-zigbee-offline')
+    this.unsubscribe('on-zigbee-device-update')
+    this.unsubscribe('on-zigbee-group-update')
   },
 }
 </script>
@@ -513,6 +519,38 @@ export default {
       input[type=text] {
         text-align: right;
       }
+    }
+  }
+
+  .info-body {
+    margin: -2em;
+    padding: 0;
+
+    .row {
+      padding: 1em .5em;
+
+      .param-name {
+        font-weight: bold;
+      }
+    }
+  }
+
+  @media screen and (max-width: $tablet) {
+    .info-body {
+      width: 100vw;
+    }
+  }
+
+  @media screen and (min-width: $tablet) {
+    .info-body {
+      width: 80vw;
+    }
+  }
+
+  @media screen and (min-width: $desktop) {
+    .info-body {
+      width: 60vw;
+      max-width: 30em;
     }
   }
 }
