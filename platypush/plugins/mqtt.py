@@ -135,7 +135,7 @@ class MqttPlugin(Plugin):
         return client
 
     @action
-    def publish(self, topic: str, msg: Any, host: Optional[str] = None, port: int = 1883,
+    def publish(self, topic: str, msg: Any, host: Optional[str] = None, port: Optional[int] = None,
                 reply_topic: Optional[str] = None, timeout: int = 60,
                 tls_cafile: Optional[str] = None, tls_certfile: Optional[str] = None,
                 tls_keyfile: Optional[str] = None, tls_version: Optional[str] = None,
@@ -146,8 +146,8 @@ class MqttPlugin(Plugin):
 
         :param topic: Topic/channel where the message will be delivered
         :param msg: Message to be sent. It can be a list, a dict, or a Message object.
-        :param host: MQTT broker hostname/IP.
-        :param port: MQTT broker port (default: 1883).
+        :param host: MQTT broker hostname/IP (default: default host configured on the plugin).
+        :param port: MQTT broker port (default: default port configured on the plugin).
         :param reply_topic: If a ``reply_topic`` is specified, then the action will wait for a response on this topic.
         :param timeout: If ``reply_topic`` is set, use this parameter to specify the maximum amount of time to
             wait for a response (default: 60 seconds).
@@ -178,6 +178,10 @@ class MqttPlugin(Plugin):
                     msg = Message.build(json.loads(msg))
                 except:
                     pass
+
+            host = host or self.host
+            port = port or self.port or 1883
+            assert host, 'No host specified'
 
             client = self._get_client(tls_cafile=tls_cafile, tls_certfile=tls_certfile, tls_keyfile=tls_keyfile,
                                       tls_version=tls_version, tls_ciphers=tls_ciphers, tls_insecure=tls_insecure,
