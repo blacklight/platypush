@@ -34,6 +34,8 @@ sqlalchemy
 
 # Support for multi-users and password authentication
 bcrypt
+cryptography
+pyjwt
 
 # Support for Zeroconf/Bonjour
 zeroconf

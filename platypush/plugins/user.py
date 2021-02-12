@@ -56,7 +56,7 @@ class UserPlugin(Plugin):
         :return: True if the provided username and password are correct, False otherwise
         """
 
-        return self.user_manager.authenticate_user(username, password)
+        return True if self.user_manager.authenticate_user(username, password) else False
 
     @action
     def update_password(self, username, old_password, new_password):

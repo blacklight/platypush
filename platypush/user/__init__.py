@@ -1,14 +1,19 @@
 import datetime
 import hashlib
 import random
+import time
+from typing import Optional, Dict
 
 import bcrypt
+import jwt
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
 
 from platypush.context import get_plugin
+from platypush.exceptions.user import InvalidJWTTokenException, InvalidCredentialsException
+from platypush.utils import get_or_generate_jwt_rsa_key_pair
 
 Base = declarative_base()
 
@@ -121,7 +126,8 @@ class UserManager:
 
     def create_user_session(self, username, password, expires_at=None):
         session = self._get_db_session()
-        if not self._authenticate_user(session, username, password):
+        user = self._authenticate_user(session, username, password)
+        if not user:
             return None
 
         if expires_at:
@@ -130,9 +136,8 @@ class UserManager:
             elif isinstance(expires_at, str):
                 expires_at = datetime.datetime.fromisoformat(expires_at)
 
-        user = self._get_user(session, username)
-        user_session = UserSession(user_id=user.user_id, session_token=self._generate_token(),
-                                   csrf_token=self._generate_token(), created_at=datetime.datetime.utcnow(),
+        user_session = UserSession(user_id=user.user_id, session_token=self.generate_session_token(),
+                                   csrf_token=self.generate_session_token(), created_at=datetime.datetime.utcnow(),
                                    expires_at=expires_at)
 
         session.add(user_session)
@@ -152,9 +157,63 @@ class UserManager:
         return bcrypt.checkpw(pwd.encode(), hashed_pwd)
 
     @staticmethod
-    def _generate_token():
+    def generate_session_token():
         rand = bytes(random.randint(0, 255) for _ in range(0, 255))
         return hashlib.sha256(rand).hexdigest()
+
+    def generate_jwt_token(self, username: str, password: str, expires_at: Optional[datetime.datetime] = None) -> str:
+        """
+        Create a user JWT token for API usage.
+
+        :param username: User name.
+        :param password: Password.
+        :param expires_at: Expiration datetime of the token.
+        :return: The generated JWT token as a string.
+        :raises: :class:`platypush.exceptions.user.InvalidCredentialsException` in case of invalid credentials.
+        """
+        user = self.authenticate_user(username, password)
+        if not user:
+            raise InvalidCredentialsException()
+
+        pub_key, priv_key = get_or_generate_jwt_rsa_key_pair()
+        payload = {
+            'username': username,
+            'created_at': datetime.datetime.now().timestamp(),
+            'expires_at': expires_at.timestamp() if expires_at else None,
+        }
+
+        return jwt.encode(payload, priv_key, algorithm='RS256').decode()
+
+    @staticmethod
+    def validate_jwt_token(token: str) -> Dict[str, str]:
+        """
+        Validate a JWT token.
+
+        :param token: Token to validate.
+        :return: On success, it returns the JWT payload with the following structure:
+
+            .. code-block:: json
+
+                {
+                    "username": "user ID/name",
+                    "created_at": "token creation timestamp",
+                    "expires_at": "token expiration timestamp"
+                }
+
+        :raises: :class:`platypush.exceptions.user.InvalidJWTTokenException` in case of invalid token.
+        """
+        pub_key, priv_key = get_or_generate_jwt_rsa_key_pair()
+
+        try:
+            payload = jwt.decode(token.encode(), pub_key, algorithms=['RS256'])
+        except jwt.exceptions.PyJWTError as e:
+            raise InvalidJWTTokenException(str(e))
+
+        expires_at = payload.get('expires_at')
+        if expires_at and time.time() > expires_at:
+            raise InvalidJWTTokenException('Expired JWT token')
+
+        return payload
 
     def _get_db_session(self):
         Base.metadata.create_all(self._engine)
@@ -163,11 +222,17 @@ class UserManager:
         return session()
 
     def _authenticate_user(self, session, username, password):
+        """
+        :return: :class:`platypush.user.User` instance if the user exists and the password is valid, ``None`` otherwise.
+        """
         user = self._get_user(session, username)
         if not user:
-            return False
+            return None
 
-        return self._check_password(password, user.password)
+        if not self._check_password(password, user.password):
+            return None
+
+        return user
 
 
 class User(Base):

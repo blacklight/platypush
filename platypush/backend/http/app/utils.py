@@ -109,6 +109,7 @@ def send_request(action, wait_for_response=True, **kwargs):
 
 def _authenticate_token():
     token = Config.get('token')
+    user_manager = UserManager()
 
     if 'X-Token' in request.headers:
         user_token = request.headers['X-Token']
@@ -119,7 +120,11 @@ def _authenticate_token():
     else:
         return False
 
-    return token and user_token == token
+    try:
+        user_manager.validate_jwt_token(user_token)
+        return True
+    except:
+        return token and user_token == token
 
 
 def _authenticate_http():
@@ -179,7 +184,6 @@ def authenticate(redirect_page='', skip_auth_methods=None, check_csrf_token=Fals
         def wrapper(*args, **kwargs):
             user_manager = UserManager()
             n_users = user_manager.get_user_count()
-            token = Config.get('token')
             skip_methods = skip_auth_methods or []
 
             # User/pass HTTP authentication
@@ -191,7 +195,7 @@ def authenticate(redirect_page='', skip_auth_methods=None, check_csrf_token=Fals
 
             # Token-based authentication
             token_auth_ok = True
-            if token and 'token' not in skip_methods:
+            if 'token' not in skip_methods:
                 token_auth_ok = _authenticate_token()
                 if token_auth_ok:
                     return f(*args, **kwargs)

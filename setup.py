@@ -65,6 +65,8 @@ setup(
         'zeroconf>=0.27.0',
         'tz',
         'python-dateutil',
+        'cryptography',
+        'pyjwt',
     ],
 
     extras_require={

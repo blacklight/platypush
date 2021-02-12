@@ -4,12 +4,13 @@ import importlib
 import inspect
 import logging
 import os
+import pathlib
 import re
 import signal
 import socket
 import ssl
 import urllib.request
-from typing import Optional
+from typing import Optional, Tuple
 
 logger = logging.getLogger('utils')
 
@@ -349,6 +350,74 @@ def run(action, *args, **kwargs):
         raise RuntimeError(response.errors[0])
 
     return response.output
+
+
+def generate_rsa_key_pair(key_file: Optional[str] = None, size: int = 2048) -> Tuple[str, str]:
+    """
+    Generate an RSA key pair.
+
+    :param key_file: Target file for the private key (the associated public key will be stored in ``<key_file>.pub``.
+        If no key file is specified then the public and private keys will be returned in ASCII format in a dictionary
+        with the following structure:
+
+            .. code-block:: json
+
+                {
+                    "private": "private key here",
+                    "public": "public key here"
+                }
+
+    :param size: Key size (default: 2048 bits).
+    :return: A tuple with the generated ``(priv_key_str, pub_key_str)``.
+    """
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.backends import default_backend
+
+    public_exp = 65537
+    private_key = rsa.generate_private_key(
+        public_exponent=public_exp,
+        key_size=size,
+        backend=default_backend()
+    )
+
+    logger.info('Generating RSA {} key pair'.format(size))
+    private_key_str = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption()
+    ).decode()
+
+    public_key_str = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.PKCS1,
+    ).decode()
+
+    if key_file:
+        logger.info('Saving private key to {}'.format(key_file))
+        with open(os.path.expanduser(key_file), 'w') as f1, \
+                open(os.path.expanduser(key_file) + '.pub', 'w') as f2:
+            f1.write(private_key_str)
+            f2.write(public_key_str)
+            os.chmod(key_file, 0o600)
+
+    return public_key_str, private_key_str
+
+
+def get_or_generate_jwt_rsa_key_pair():
+    from platypush.config import Config
+
+    key_dir = os.path.join(Config.get('workdir'), 'jwt')
+    priv_key_file = os.path.join(key_dir, 'id_rsa')
+    pub_key_file = priv_key_file + '.pub'
+
+    if os.path.isfile(priv_key_file) and os.path.isfile(pub_key_file):
+        with open(pub_key_file, 'r') as f1, \
+                open(priv_key_file, 'r') as f2:
+            return f1.read(), f2.read()
+
+    pathlib.Path(key_dir).mkdir(parents=True, exist_ok=True, mode=0o755)
+    return generate_rsa_key_pair(priv_key_file, size=2048)
 
 
 # vim:sw=4:ts=4:et:
