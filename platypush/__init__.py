@@ -27,7 +27,6 @@ __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
 __version__ = '0.13.9'
 
 logger = logging.getLogger('platypush')
-logger.setLevel(logging.INFO)
 
 
 class Daemon:
