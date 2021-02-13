@@ -1,11 +1,22 @@
+import logging
 import os
 
 from flask import Flask
 
+from platypush import Config
 from platypush.backend.http.app.utils import get_routes
 
 
+def initialize_logger():
+    logger = logging.getLogger('werkzeug')
+    log_conf = Config.get('logging')
+    if 'level' in log_conf:
+        logger.setLevel(log_conf['level'])
+
+
 ## Webapp initialization
+
+initialize_logger()
 
 base_folder = os.path.abspath(os.path.join(
     os.path.dirname(os.path.abspath(__file__)), '..'))
