@@ -86,6 +86,7 @@ class ZigbeeMqttBackend(MqttBackend):
         self.base_topic = base_topic or plugin.base_topic
         self._devices = {}
         self._groups = {}
+        self._last_state = None
         self.server_info = {
             'host': host or plugin.host,
             'port': port or plugin.port or self._default_mqtt_port,
@@ -109,6 +110,9 @@ class ZigbeeMqttBackend(MqttBackend):
         super().__init__(subscribe_default_topic=False, listeners=listeners, *args, **kwargs)
 
     def _process_state_message(self, client, msg):
+        if msg == self._last_state:
+            return
+
         if msg == 'online':
             evt = ZigbeeMqttOnlineEvent
         elif msg == 'offline':
@@ -119,6 +123,7 @@ class ZigbeeMqttBackend(MqttBackend):
 
         # noinspection PyProtectedMember
         self.bus.post(evt(host=client._host, port=client._port))
+        self._last_state = msg
 
     def _process_log_message(self, client, msg):
         msg_type = msg.get('type')
