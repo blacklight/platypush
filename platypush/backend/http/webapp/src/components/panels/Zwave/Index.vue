@@ -56,39 +56,25 @@
       <div class="view-selector col-s-9 col-m-10 col-l-11">
         <label>
           <select @change="selected.view = $event.target.value">
-            <option v-for="(id, view) in views"
+            <option v-for="(id, view) in views" :key="id"
                     v-text="(view[0].toUpperCase() + view.slice(1)).replace('_', ' ')"
-                    :key="id"
-                    :selected="view === selected.view"
-                    :value="view">
-            </option>
+                    :selected="view === selected.view" :value="view" />
           </select>
         </label>
       </div>
 
       <div class="buttons">
-        <button class="btn btn-default" title="Add node" v-if="selected.view === 'nodes'" @click="addNode"
-                :disabled="commandRunning">
-          <i class="fa fa-plus" />
-        </button>
-
-        <button class="btn btn-default" title="Remove node" v-if="selected.view === 'nodes'" @click="removeNode"
-                :disabled="commandRunning">
-          <i class="fa fa-minus" />
-        </button>
-
-        <button class="btn btn-default" title="Add scene" v-if="selected.view === 'scenes'" @click="addScene"
-                :disabled="commandRunning">
-          <i class="fa fa-plus" />
-        </button>
-
-        <button class="btn btn-default" title="Network info" @click="networkInfoModalOpen">
-          <i class="fa fa-info" />
-        </button>
-
         <Dropdown title="Network commands" icon-class="fa fa-cog">
+          <DropdownItem text="Network Info" :disabled="commandRunning" icon-class="fa fa-info"
+                        @click="networkInfoModalOpen" />
           <DropdownItem text="Start Network" :disabled="commandRunning" @click="startNetwork" />
           <DropdownItem text="Stop Network" :disabled="commandRunning" @click="stopNetwork" />
+          <DropdownItem text="Add Scene" :disabled="commandRunning" icon-class="fa fa-plus" @click="addScene"
+                        v-if="selected.view === 'scenes'" />
+          <DropdownItem text="Add Node" :disabled="commandRunning" icon-class="fa fa-plus" @click="addNode"
+                        v-if="selected.view === 'nodes'" />
+          <DropdownItem text="Remove Node" :disabled="commandRunning" icon-class="fa fa-minus" @click="removeNode"
+                        v-if="selected.view === 'nodes'" />
           <DropdownItem text="Switch All On" :disabled="commandRunning" @click="switchAll(true)" />
           <DropdownItem text="Switch All Off" :disabled="commandRunning" @click="switchAll(false)" />
           <DropdownItem text="Cancel Command" :disabled="commandRunning" @click="cancelCommand" />
@@ -101,7 +87,7 @@
           <DropdownItem text="Hard Reset" :disabled="commandRunning" @click="hardReset" />
         </Dropdown>
 
-        <button class="btn btn-default" title="Refresh network" @click="refresh">
+        <button class="btn btn-default" title="Refresh Network" @click="refresh">
           <i class="fa fa-sync-alt" />
         </button>
       </div>
@@ -729,8 +715,17 @@ export default {
 
     select {
       width: 100%;
-      border-radius: 1em;
     }
+  }
+
+  .group-add {
+    margin: -2em;
+    min-width: 20em;
+    padding-bottom: 1em;
+  }
+
+  .network-info {
+    margin: -1em;
   }
 }
 </style>

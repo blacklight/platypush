@@ -43,8 +43,8 @@
     padding-bottom: 1em;
 
     .title {
-      font-size: 1.05em;
-      margin-top: 1.5em;
+      font-size: 1.1em !important;
+      margin: 0 !important;
     }
 
     .section {
@@ -61,6 +61,11 @@
         align-items: center;
         font-weight: bold;
         border-bottom: $param-section-header-border;
+
+        .buttons {
+          display: inline-flex;
+          justify-content: right;
+        }
       }
     }
 
@@ -278,6 +283,14 @@
     box-shadow: $view-box-shadow;
   }
 
+  @media screen and (max-width: $desktop) {
+    .view {
+      width: 100%;
+      border-radius: 0;
+      margin-top: 0;
+    }
+  }
+
   @media screen and (min-width: $desktop) {
     .view {
       margin-top: 1em;
@@ -285,6 +298,8 @@
   }
 
   .item {
+    border-bottom: $item-border;
+
     &.selected {
       box-shadow: $selected-item-box-shadow;
     }
@@ -294,6 +309,10 @@
       cursor: pointer;
       text-transform: uppercase;
       letter-spacing: .06em;
+
+      &:hover {
+        border-radius: 1.5em;
+      }
 
       &.selected {
         background: $selected-bg;
@@ -318,22 +337,12 @@
       }
     }
 
-    &:not(:last-child) {
-      border-bottom: $item-border;
-    }
-
     &:first-child {
       border-radius: 1.5em 1.5em 0 0;
-      &:hover {
-        border-radius: 1.5em;
-      }
     }
 
     &:last-child {
       border-radius: 0 0 1.5em 1.5em;
-      &:hover {
-        border-radius: 1.5em;
-      }
     }
 
     .params {
@@ -489,5 +498,15 @@
 
   select {
     width: 100%;
+  }
+
+  .clickable {
+    cursor: pointer;
+  }
+
+  .buttons {
+    button {
+      background: none !important;
+    }
   }
 }
