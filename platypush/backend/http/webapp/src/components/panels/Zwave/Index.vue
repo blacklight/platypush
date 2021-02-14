@@ -53,7 +53,7 @@
     </Modal>
 
     <div class="view-options">
-      <div class="view-selector col-s-9 col-m-10 col-l-11">
+      <div class="view-selector col-s-8 col-m-9 col-l-10">
         <label>
           <select @change="selected.view = $event.target.value">
             <option v-for="(id, view) in views" :key="id"
@@ -63,7 +63,7 @@
         </label>
       </div>
 
-      <div class="buttons">
+      <div class="buttons col-s-4 col-m-3 col-l-2">
         <Dropdown title="Network commands" icon-class="fa fa-cog">
           <DropdownItem text="Network Info" :disabled="commandRunning" icon-class="fa fa-info"
                         @click="networkInfoModalOpen" />
@@ -93,102 +93,104 @@
       </div>
     </div>
 
-    <div class="view nodes" v-if="selected.view === 'nodes'">
-      <Loading v-if="loading.nodes" />
-      <div class="no-items" v-else-if="!Object.keys(nodes || {}).length">
-        <div class="empty">No nodes available on the network</div>
+    <div class="view-container">
+      <div class="view nodes" v-if="selected.view === 'nodes'">
+        <Loading v-if="loading.nodes" />
+        <div class="no-items" v-else-if="!Object.keys(nodes || {}).length">
+          <div class="empty">No nodes available on the network</div>
+        </div>
+
+        <Node v-for="(node, nodeId) in nodes" :key="nodeId" :node="node" :selected="selected.nodeId === nodeId"
+              @select="onNodeClick(nodeId)" />
       </div>
 
-      <Node v-for="(node, nodeId) in nodes" :key="nodeId" :node="node" :selected="selected.nodeId === nodeId"
-            @select="onNodeClick(nodeId)" />
-    </div>
+      <div class="view groups" v-else-if="selected.view === 'groups'">
+        <Loading v-if="loading.groups" />
+        <div class="no-items" v-else-if="!Object.keys(groups || {}).length">
+          <div class="empty">No groups available on the network</div>
+        </div>
 
-    <div class="view groups" v-else-if="selected.view === 'groups'">
-      <Loading v-if="loading.groups" />
-      <div class="no-items" v-else-if="!Object.keys(groups || {}).length">
-        <div class="empty">No groups available on the network</div>
-      </div>
-
-      <Group v-for="(group, groupId) in groups" :key="groupId" :group="group" :selected="selected.groupId === groupId"
-             :nodes="groupId in groups ? groups[groupId].associations.map((node) => nodes[node]).
+        <Group v-for="(group, groupId) in groups" :key="groupId" :group="group" :selected="selected.groupId === groupId"
+               :nodes="groupId in groups ? groups[groupId].associations.map((node) => nodes[node]).
                      reduce((nodes, node) => {nodes[node.node_id] = node; return nodes}, {}) : {}"
-             @select="selected.groupId = groupId === selected.groupId ? undefined : groupId"
-             @open-add-nodes-to-group="$refs.addNodesToGroupModal.show()" />
-    </div>
-
-    <div class="view scenes" v-else-if="selected.view === 'scenes'">
-      <Loading v-if="loading.scenes" />
-      <div class="no-items" v-else-if="!Object.keys(scenes || {}).length">
-        <div class="empty">No scenes configured on the network</div>
+               @select="selected.groupId = groupId === selected.groupId ? undefined : groupId"
+               @open-add-nodes-to-group="$refs.addNodesToGroupModal.show()" />
       </div>
 
-      <div class="item scene" :class="{selected: selected.sceneId === sceneId}"
-           v-for="(scene, sceneId) in scenes" :key="sceneId">
-        <div class="row name header vertical-center" :class="{selected: selected.sceneId === sceneId}" v-text="scene.label"
-             @click="selected.sceneId = sceneId === selected.sceneId ? undefined : sceneId" />
+      <div class="view scenes" v-else-if="selected.view === 'scenes'">
+        <Loading v-if="loading.scenes" />
+        <div class="no-items" v-else-if="!Object.keys(scenes || {}).length">
+          <div class="empty">No scenes configured on the network</div>
+        </div>
 
-        <div class="params" v-if="selected.sceneId === sceneId">
-          <div class="row">
-            <div class="param-name">Activate</div>
-            <div class="param-value">
-              <ToggleSwitch :value="false" @input="activateScene(sceneId)" />
-            </div>
-          </div>
+        <div class="item scene" :class="{selected: selected.sceneId === sceneId}"
+             v-for="(scene, sceneId) in scenes" :key="sceneId">
+          <div class="row name header vertical-center" :class="{selected: selected.sceneId === sceneId}" v-text="scene.label"
+               @click="selected.sceneId = sceneId === selected.sceneId ? undefined : sceneId" />
 
-          <div class="section actions">
-            <div class="header">
-              <div class="title">Actions</div>
-            </div>
-
-            <div class="body">
-              <div class="row" @click="removeScene(sceneId)">
-                <div class="param-name">Remove Scene</div>
-                <div class="param-value">
-                  <i class="fa fa-trash"></i>
-                </div>
-              </div>
-
-              <div class="row" @click="renameScene(sceneId)">
-                <div class="param-name">Rename Scene</div>
-                <div class="param-value">
-                  <i class="fa fa-edit"></i>
-                </div>
+          <div class="params" v-if="selected.sceneId === sceneId">
+            <div class="row">
+              <div class="param-name">Activate</div>
+              <div class="param-value">
+                <ToggleSwitch :value="false" @input="activateScene(sceneId)" />
               </div>
             </div>
-          </div>
 
-          <div class="section values" v-if="scene.values?.length">
-            <div class="value-container" v-for="(value, valueId) in valuesMap" :key="valueId">
-              <div class="value-display"
-                   v-if="value.valueId && value.valueId in scenes.values[sceneId]" :scenes="scenes">
-                <Value :value="value" :node="node" :sceneId="sceneId" @add-to-scene="addValueToScene"
-                       @remove-from-scene="removeValueFromScene" @refresh="refreshNodes" />
+            <div class="section actions">
+              <div class="header">
+                <div class="title">Actions</div>
+              </div>
+
+              <div class="body">
+                <div class="row" @click="removeScene(sceneId)">
+                  <div class="param-name">Remove Scene</div>
+                  <div class="param-value">
+                    <i class="fa fa-trash"></i>
+                  </div>
+                </div>
+
+                <div class="row" @click="renameScene(sceneId)">
+                  <div class="param-name">Rename Scene</div>
+                  <div class="param-value">
+                    <i class="fa fa-edit"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section values" v-if="scene.values?.length">
+              <div class="value-container" v-for="(value, valueId) in valuesMap" :key="valueId">
+                <div class="value-display"
+                     v-if="value.valueId && value.valueId in scenes.values[sceneId]" :scenes="scenes">
+                  <Value :value="value" :node="node" :sceneId="sceneId" @add-to-scene="addValueToScene"
+                         @remove-from-scene="removeValueFromScene" @refresh="refreshNodes" />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="view values" v-else>
-      <Loading v-if="loading.nodes" />
-      <div class="no-items" v-else-if="!Object.keys(nodes || {}).length">
-        <div class="empty">No nodes found on the network</div>
-      </div>
+      <div class="view values" v-else>
+        <Loading v-if="loading.nodes" />
+        <div class="no-items" v-else-if="!Object.keys(nodes || {}).length">
+          <div class="empty">No nodes found on the network</div>
+        </div>
 
-      <div class="node-container" v-for="(node, nodeId) in nodes" :key="nodeId">
-        <div class="item node"
-             :class="{selected: selected.nodeId === nodeId}"
-             v-if="selected.view === 'values' || Object.values(node.values).filter((value) => value.id_on_network in values[selected.view]).length > 0">
-          <div class="row name header vertical-center" :class="{selected: selected.nodeId === nodeId}" v-text="node.name"
-               @click="onNodeClick(nodeId)"></div>
+        <div class="node-container" v-for="(node, nodeId) in nodes" :key="nodeId">
+          <div class="item node"
+               :class="{selected: selected.nodeId === nodeId}"
+               v-if="selected.view === 'values' || Object.values(node.values).filter((value) => value.id_on_network in values[selected.view]).length > 0">
+            <div class="row name header vertical-center" :class="{selected: selected.nodeId === nodeId}" v-text="node.name"
+                 @click="onNodeClick(nodeId)"></div>
 
-          <div class="params" v-if="selected.nodeId === nodeId">
-            <div class="value-container" v-for="(value, valueId) in node.values" :key="valueId">
-              <div class="value-display"
-                   v-if="valueId && (selected.view === 'values' || value.valueId in values[selected.view])">
-                <Value :value="value" :node="node" :scenes="scenes" @add-to-scene="addValueToScene"
-                       @remove-from-scene="removeValueFromScene" @refresh="refreshNodes" />
+            <div class="params" v-if="selected.nodeId === nodeId">
+              <div class="value-container" v-for="(value, valueId) in node.values" :key="valueId">
+                <div class="value-display"
+                     v-if="valueId && (selected.view === 'values' || value.valueId in values[selected.view])">
+                  <Value :value="value" :node="node" :scenes="scenes" @add-to-scene="addValueToScene"
+                         @remove-from-scene="removeValueFromScene" @refresh="refreshNodes" />
+                </div>
               </div>
             </div>
           </div>
@@ -726,6 +728,11 @@ export default {
 
   .network-info {
     margin: -1em;
+  }
+
+  button {
+    border: none;
+    background: none;
   }
 }
 </style>

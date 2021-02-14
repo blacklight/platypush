@@ -274,12 +274,17 @@
     text-align: right;
   }
 
+  .view-container {
+    width: 100%;
+    height: calc(100% - #{$header-height});
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+  }
+
   .view {
-    min-width: 400pt;
-    max-width: 750pt;
     background: $view-bg;
     border: $view-border;
-    border-radius: 1.5em;
     box-shadow: $view-box-shadow;
   }
 
@@ -293,6 +298,9 @@
 
   @media screen and (min-width: $desktop) {
     .view {
+      min-width: 400pt;
+      max-width: 750pt;
+      border-radius: 1.5em;
       margin-top: 1em;
     }
   }
