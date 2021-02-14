@@ -118,6 +118,10 @@ nav {
       background: $nav-entry-selected-bg;
     }
 
+    .name {
+      margin-left: 0.5em;
+    }
+
     .icon {
       margin-right: 0.5em;
     }

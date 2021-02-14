@@ -678,7 +678,7 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 @import "common";
 
 .zwave-container {
@@ -711,12 +711,18 @@ export default {
       }
     }
 
-    .view-selector {
-      display: inline-flex;
-    }
-
     select {
       width: 100%;
+    }
+
+    .buttons {
+      display: inline-flex;
+      justify-content: right;
+
+      button {
+        border: none;
+        background: none;
+      }
     }
   }
 
@@ -728,11 +734,6 @@ export default {
 
   .network-info {
     margin: -1em;
-  }
-
-  button {
-    border: none;
-    background: none;
   }
 }
 </style>
