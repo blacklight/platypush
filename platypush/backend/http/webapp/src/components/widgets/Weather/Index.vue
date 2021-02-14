@@ -134,8 +134,13 @@ export default {
   }
 
   .temperature {
-    font-size: 3.1em;
+    font-size: 4em;
     margin-left: 0.4em;
+  }
+
+  .summary {
+    font-size: 1.1em;
+    margin-top: .75em;
   }
 }
 </style>

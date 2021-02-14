@@ -1,11 +1,11 @@
 <template>
   <div class="sensor">
-    <div class="label-container col-6" v-if="iconClass || name">
+    <div class="label-container col-4" v-if="iconClass || name">
       <i :class="iconClass" v-if="iconClass" />
       <span v-text="name" v-else-if="name" />
     </div>
 
-    <div class="value-container col-6">
+    <div class="value-container col-8">
       <span class="value" v-text="_value" />
     </div>
   </div>

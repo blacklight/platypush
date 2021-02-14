@@ -1,5 +1,7 @@
 <template>
   <Loading v-if="loading" />
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
 
   <div id="dashboard" class="columns is-mobile" :class="classes" :style="style">
     <Row v-for="(row, i) in rows" :key="i" :class="row.class" :style="row.style">
@@ -125,6 +127,7 @@ export default {
   padding: 1em 1em 0 1em;
   background: $dashboard-bg;
   background-size: cover;
+  font-family: Roboto, Avenir, Helvetica, Arial, sans-serif;
 
   .blurred {
     filter: blur(0.075em);

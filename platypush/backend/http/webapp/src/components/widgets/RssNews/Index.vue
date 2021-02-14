@@ -97,14 +97,14 @@ export default {
     }
 
     .title {
-      font-size: 1.7em;
+      font-size: 1.8em;
       font-weight: normal;
       margin-bottom: .5em;
     }
 
     .published {
       text-align: right;
-      font-size: 1em;
+      font-size: 1.1em;
     }
   }
 }

@@ -99,7 +99,7 @@ export default {
   }
 
   .event {
-    font-size: .9em;
+    font-size: 1.1em;
   }
 
   .event-list {
@@ -110,6 +110,10 @@ export default {
     text-align: center;
     margin-bottom: .15em;
     font-size: 1.2em;
+
+    .date {
+      font-size: 1.1em;
+    }
 
     .summary {
       text-transform: uppercase;

@@ -179,11 +179,11 @@ export default {
   }
 
   .date-time-container {
-    height: 40%;
+    height: 35%;
   }
 
   .weather-container {
-    height: 40%;
+    height: 45%;
   }
 
   .sensors-container {
