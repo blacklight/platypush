@@ -41,9 +41,9 @@
               <div class="title">Select nodes to add</div>
             </div>
 
-            <div class="body">
+            <div class="body" v-if="selected.groupId != null">
               <div class="row clickable" @click="addToGroup(node.node_id, selected.groupId)" :key="node.node_id"
-                   v-for="node in Object.values(nodes).filter((n) => groups[selected.groupId].associations.indexOf(n.node_id) < 0)">
+                   v-for="node in Object.values(nodes || {}).filter((n) => groups[selected.groupId].associations.indexOf(n.node_id) < 0)">
                 <div class="param-name" v-text="node.name"></div>
               </div>
             </div>
@@ -172,10 +172,12 @@
           </div>
 
           <div class="section values" v-if="scene.values?.length">
-            <div class="value-container"
-                 v-if="value.id_on_network && value.id_on_network in scenes.values[sceneId]" :scenes="scenes">
-              <Value v-for="(value, valueId) in valuesMap" :key="valueId" :value="value" :node="node" :sceneId="sceneId"
-                     @add-to-scene="addValueToScene" @remove-from-scene="removeValueFromScene" @refresh="refreshNodes" />
+            <div class="value-container" v-for="(value, valueId) in valuesMap" :key="valueId">
+              <div class="value-display"
+                   v-if="value.valueId && value.valueId in scenes.values[sceneId]" :scenes="scenes">
+                <Value :value="value" :node="node" :sceneId="sceneId" @add-to-scene="addValueToScene"
+                       @remove-from-scene="removeValueFromScene" @refresh="refreshNodes" />
+              </div>
             </div>
           </div>
         </div>
@@ -188,20 +190,20 @@
         <div class="empty">No nodes found on the network</div>
       </div>
 
-      <div class="node-container"
-           v-if="selected.view === 'values' || Object.values(node.values).filter((value) => value.id_on_network in values[selected.view]).length > 0">
+      <div class="node-container" v-for="(node, nodeId) in nodes" :key="nodeId">
         <div class="item node"
              :class="{selected: selected.nodeId === nodeId}"
-             v-for="(node, nodeId) in nodes"
-             :key="nodeId">
+             v-if="selected.view === 'values' || Object.values(node.values).filter((value) => value.id_on_network in values[selected.view]).length > 0">
           <div class="row name vertical-center" :class="{selected: selected.nodeId === nodeId}" v-text="node.name"
                @click="onNodeClick(nodeId)"></div>
 
           <div class="params" v-if="selected.nodeId === nodeId">
-            <div class="value-container"
-                 v-if="value.id_on_network && (selected.view === 'values' || value.id_on_network in values[selected.view])">
-              <Value v-for="(value, valueId) in node.values" :key="valueId" :value="value" :node="node" :scenes="scenes"
-                     @add-to-scene="addValueToScene" @remove-from-scene="removeValueFromScene" @refresh="refreshNodes" />
+            <div class="value-container" v-for="(value, valueId) in node.values" :key="valueId">
+              <div class="value-display"
+                   v-if="valueId && (selected.view === 'values' || value.valueId in values[selected.view])">
+                <Value :value="value" :node="node" :scenes="scenes" @add-to-scene="addValueToScene"
+                       @remove-from-scene="removeValueFromScene" @refresh="refreshNodes" />
+              </div>
             </div>
           </div>
         </div>
@@ -692,6 +694,7 @@ export default {
 @import "common";
 
 .zwave-container {
+  width: 100%;
   height: 100%;
   padding: 0 .5em;
   background: $container-bg;
@@ -703,14 +706,24 @@ export default {
   .view-options {
     display: flex;
     width: 100%;
+    height: $header-height;
     justify-content: space-between;
-    padding: 1em 0;
+    align-items: center;
+    padding: 0;
+    background: $header-bg;
+    border-bottom: $default-border-2;
+    box-shadow: $border-shadow-bottom;
 
     .view-selector {
       display: inline-flex;
+      padding-left: .5em;
+
+      label {
+        width: 100%;
+      }
     }
 
-    .buttons {
+    .view-selector {
       display: inline-flex;
     }
 

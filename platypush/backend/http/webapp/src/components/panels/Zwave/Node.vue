@@ -7,7 +7,7 @@
       <div class="row">
         <div class="param-name">Name</div>
         <div class="param-value">
-          <div :class="{hidden: !editMode.name}">
+          <div class="edit-cell" :class="{hidden: !editMode.name}">
             <form ref="nameForm" @submit.prevent="editName">
               <label>
                 <input type="text" name="name" :value="node.name" :disabled="commandRunning">

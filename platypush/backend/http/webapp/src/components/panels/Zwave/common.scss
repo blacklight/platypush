@@ -26,6 +26,10 @@
     background: $params-bg;
     padding-bottom: 1em;
 
+    .title {
+      font-size: 1.2em;
+    }
+
     .section {
       display: flex;
       flex-direction: column;
@@ -132,6 +136,17 @@
           text-align: right;
         }
       }
+
+      .edit-cell {
+        width: 100%;
+        display: inline-flex;
+        justify-content: right;
+        align-items: center;
+
+        .buttons {
+          margin: 0;
+        }
+      }
     }
   }
 
@@ -221,5 +236,26 @@
     box-shadow: none;
     padding: 0;
     margin: 0;
+  }
+
+  button {
+    background: none;
+    border: none;
+    padding: 0 .75em;
+
+    &:hover {
+      color: $default-hover-fg;
+    }
+  }
+
+  .buttons {
+    display: inline-flex;
+    margin: 0;
+
+    .dropdown {
+      .item {
+        padding: .5em 2em .5em .5em;
+      }
+    }
   }
 }
