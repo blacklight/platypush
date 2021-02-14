@@ -65,15 +65,12 @@
 
       <div class="buttons col-s-4 col-m-3 col-l-2">
         <Dropdown title="Network commands" icon-class="fa fa-cog">
-          <DropdownItem text="Network Info" :disabled="commandRunning" icon-class="fa fa-info"
-                        @click="networkInfoModalOpen" />
+          <DropdownItem text="Network Info" :disabled="commandRunning" @click="networkInfoModalOpen" />
           <DropdownItem text="Start Network" :disabled="commandRunning" @click="startNetwork" />
           <DropdownItem text="Stop Network" :disabled="commandRunning" @click="stopNetwork" />
-          <DropdownItem text="Add Scene" :disabled="commandRunning" icon-class="fa fa-plus" @click="addScene"
-                        v-if="selected.view === 'scenes'" />
-          <DropdownItem text="Add Node" :disabled="commandRunning" icon-class="fa fa-plus" @click="addNode"
-                        v-if="selected.view === 'nodes'" />
-          <DropdownItem text="Remove Node" :disabled="commandRunning" icon-class="fa fa-minus" @click="removeNode"
+          <DropdownItem text="Add Scene" :disabled="commandRunning" @click="addScene" v-if="selected.view === 'scenes'" />
+          <DropdownItem text="Add Node" :disabled="commandRunning" @click="addNode" v-if="selected.view === 'nodes'" />
+          <DropdownItem text="Remove Node" :disabled="commandRunning" @click="removeNode"
                         v-if="selected.view === 'nodes'" />
           <DropdownItem text="Switch All On" :disabled="commandRunning" @click="switchAll(true)" />
           <DropdownItem text="Switch All Off" :disabled="commandRunning" @click="switchAll(false)" />
@@ -685,7 +682,6 @@ export default {
   width: 100%;
   height: 100%;
   padding: 0;
-  background: $container-bg;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -718,6 +714,7 @@ export default {
     .buttons {
       display: inline-flex;
       justify-content: right;
+      margin: 0 !important;
 
       button {
         border: none;

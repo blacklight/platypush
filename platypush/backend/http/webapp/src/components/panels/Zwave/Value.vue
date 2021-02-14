@@ -23,8 +23,7 @@
             <div :class="['col-' + (value.units?.length ? '11' : '12')]">
               <div class="list" v-if="value.type === 'List'">
                 <label>
-                  <select @change="onValueChange"
-                          :data-id-on-network="value.id_on_network">
+                  <select @change="onValueChange">
                     <option v-for="(data, index) in value.data_items"
                             v-text="data"
                             :key="index"
@@ -43,21 +42,19 @@
                   </div>
                   <div class="row">
                     <label>
-                      <Slider :range="[value.min, value.max]" :value="value.data"
-                              :data-id-on-network="value.id_on_network" @change="onValueChange" />
+                      <Slider :range="[value.min, value.max]" :value="value.data" @change="onValueChange" />
                     </label>
                   </div>
                 </div>
                 <div class="col-2">
                   <label>
-                    <input type="text" :data-id-on-network="value.id_on_network" :value="value.data"
-                           @change="onValueChange">
+                    <input type="text" :value="value.data" @change="onValueChange">
                   </label>
                 </div>
               </div>
 
               <div class="boolean" v-else-if="['Bool', 'Button'].indexOf(value.type) >= 0">
-                <ToggleSwitch :value="value.data" :data-id-on-network="value.id_on_network" @input="onValueChange" />
+                <ToggleSwitch :value="value.data" @input="onValueChange" />
               </div>
 
               <div class="value-data" v-text="value.data" v-else />
@@ -165,8 +162,8 @@ export default {
   },
 
   methods: {
-    async editName(event) {
-      const value = this.node.values[event.target.parentElement.dataset.idOnNetwork]
+    async editName() {
+      const value = this.node.values[this.value.id_on_network]
       let name = prompt('New name', value.label)
       if (name?.length)
         name = name.trim()
@@ -194,7 +191,7 @@ export default {
 
     async onValueChange(event) {
       const target = event.target ? event.target : event.event.target.parentElement
-      const value = this.node.values[target.dataset.idOnNetwork]
+      const value = this.node.values[this.value.id_on_network]
       const data = value.type === 'List' ? value.data_items[event.target.value] : (target.value || event.value)
 
       this.commandRunning = true
@@ -221,4 +218,22 @@ export default {
 
 <style lang="scss" scoped>
 @import "common";
+
+.node-container {
+  &:first-child {
+    .item.node {
+      &:hover {
+        border-radius: 1.5em 1.5em 0 0;
+      }
+    }
+  }
+
+  &:last-child {
+    .item.node {
+      &:hover {
+        border-radius: 0 0 1.5em 1.5em;
+      }
+    }
+  }
+}
 </style>
