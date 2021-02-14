@@ -29,6 +29,9 @@
     },
     "zigbee.mqtt": {
       "imgUrl": "/icons/zigbee.svg"
+    },
+    "zwave": {
+      "imgUrl": "/icons/z-wave.png"
     }
   }
 }
