@@ -43,9 +43,8 @@
                   </div>
                   <div class="row">
                     <label>
-                      <input class="slider" type="range" :min="value.min" :max="value.max"
-                             :value="value.data" :data-id-on-network="value.id_on_network"
-                             @change="onValueChange">
+                      <Slider :range="[value.min, value.max]" :value="value.data"
+                              :data-id-on-network="value.id_on_network" @change="onValueChange" />
                     </label>
                   </div>
                 </div>
@@ -121,10 +120,11 @@ import Dropdown from "@/components/elements/Dropdown";
 import DropdownItem from "@/components/elements/DropdownItem";
 import ToggleSwitch from "@/components/elements/ToggleSwitch";
 import Utils from "@/Utils";
+import Slider from "@/components/elements/Slider";
 
 export default {
   name: "Value",
-  components: {Dropdown, DropdownItem, ToggleSwitch},
+  components: {Slider, Dropdown, DropdownItem, ToggleSwitch},
   mixins: [Utils],
   emits: ['remove-from-scene', 'add-to-scene', 'refresh'],
 

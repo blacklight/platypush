@@ -10,6 +10,22 @@
     justify-content: center;
   }
 
+  .params, .info-body {
+    .row {
+      &:nth-child(even) {
+        background: $param-even-row-bg;
+      }
+
+      &:nth-child(odd) {
+        background: $param-odd-row-bg;
+      }
+
+      &:hover {
+        background: $hover-bg;
+      }
+    }
+  }
+
   .node, .scene {
     .actions {
       .row {
@@ -27,7 +43,8 @@
     padding-bottom: 1em;
 
     .title {
-      font-size: 1.2em;
+      font-size: 1.05em;
+      margin-top: 1.5em;
     }
 
     .section {
@@ -52,14 +69,6 @@
       align-items: center;
       border-radius: 1em;
       padding: .3em;
-
-      &:nth-child(even) {
-        background: $param-even-row-bg;
-      }
-
-      &:nth-child(odd) {
-        background: $param-odd-row-bg;
-      }
 
       &:hover {
         background: $hover-bg;
@@ -102,7 +111,6 @@
 
       select {
         width: 100%;
-        border-radius: 2em;
       }
 
       .numeric {
@@ -150,6 +158,103 @@
     }
   }
 
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+
+    @media screen and (max-width: $tablet) {
+      .param-name {
+        width: 100%;
+        font-weight: bold;
+      }
+
+      .param-value {
+        width: 100%;
+        margin-left: 1%;
+      }
+    }
+
+    @media screen and (min-width: $tablet) {
+      .param-name {
+        width: 40%;
+      }
+
+      .param-value {
+        width: 58%;
+        justify-content: right;
+      }
+    }
+
+    .param-name {
+      display: inline-flex;
+      margin-left: 1%;
+      vertical-align: top;
+      letter-spacing: .04em;
+    }
+
+    .param-value {
+      display: inline-flex;
+      align-items: center;
+
+      .value-edit {
+        display: flex;
+        align-items: center;
+      }
+
+      .value-data {
+        display: inline-block;
+        font-weight: bold;
+      }
+
+      .slider-container {
+        display: flex;
+        align-items: center;
+      }
+
+      .unit {
+        font-size: .8em;
+        margin-left: 1em;
+        display: inline;
+      }
+
+      select {
+        width: 100%;
+      }
+
+      .numeric {
+        input.slider {
+          text-align: left;
+        }
+
+        input[type=text] {
+          text-align: right;
+          width: 100%;
+        }
+
+        .row {
+          background: none;
+          &:hover {
+            background: none;
+          }
+        }
+
+        .value-min, .value-max {
+          width: 50%;
+          font-size: .85em;
+          opacity: .75;
+        }
+
+        .value-min {
+          text-align: left;
+        }
+
+        .value-max {
+          text-align: right;
+        }
+      }
+    }
+  }
+
   .btn-default {
     border: 0;
     padding: 0 1em;
@@ -173,24 +278,44 @@
     box-shadow: $view-box-shadow;
   }
 
+  @media screen and (min-width: $desktop) {
+    .view {
+      margin-top: 1em;
+    }
+  }
+
   .item {
     &.selected {
       box-shadow: $selected-item-box-shadow;
     }
 
-    .name {
-      padding: 1em;
+    .name.header {
+      padding: 1em !important;
       cursor: pointer;
       text-transform: uppercase;
       letter-spacing: .06em;
 
       &.selected {
+        background: $selected-bg;
         border-radius: 1.5em;
       }
     }
 
+    .title {
+      font-size: 1.2em;
+      padding-left: .5em;
+    }
+
+    .buttons {
+      margin: 0;
+    }
+
     &:hover {
       background: $hover-bg;
+
+      &.selected {
+        background: $selected-bg;
+      }
     }
 
     &:not(:last-child) {
@@ -199,10 +324,113 @@
 
     &:first-child {
       border-radius: 1.5em 1.5em 0 0;
+      &:hover {
+        border-radius: 1.5em;
+      }
     }
 
     &:last-child {
       border-radius: 0 0 1.5em 1.5em;
+      &:hover {
+        border-radius: 1.5em;
+      }
+    }
+
+    .params {
+      .section {
+        padding: 1.5em 0 0 0;
+      }
+    }
+
+    .value {
+      .param-name {
+        display: inline-block;
+
+        .name {
+          font-family: monospace;
+          font-size: .8em;
+          text-transform: unset;
+          padding: 0;
+
+          &:before {
+            content: '[';
+          }
+
+          &:after {
+            content: ']';
+          }
+        }
+
+        .unit {
+          font-size: .8em;
+          &:before {
+            content: ' [unit: ';
+          }
+
+          &:after {
+            content: ']';
+          }
+        }
+      }
+
+      .param-value {
+        label {
+          width: 90%;
+        }
+
+        input {
+          width: 100%;
+        }
+      }
+    }
+
+    button {
+      border: 0;
+      background: none;
+      padding: 0 .5em;
+
+      &:hover {
+        color: $default-hover-fg;
+      }
+    }
+
+    @media screen and (max-width: $tablet) {
+      .name-edit {
+        justify-content: left;
+      }
+    }
+
+    @media screen and (min-width: $tablet) {
+      .name-edit {
+        justify-content: right;
+      }
+    }
+
+    .name-edit {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+
+      form {
+        width: 100%;
+        display: inline-flex;
+        align-items:center;
+        justify-content: right;
+        flex-direction: row;
+      }
+
+      .buttons {
+        display: inline-flex;
+        justify-content: right;
+        margin: 0 0 0 .5em;
+      }
+
+      form {
+        background: none;
+        padding: 0;
+        border: none;
+        box-shadow: none;
+      }
     }
   }
 
@@ -257,5 +485,9 @@
         padding: .5em 2em .5em .5em;
       }
     }
+  }
+
+  select {
+    width: 100%;
   }
 }

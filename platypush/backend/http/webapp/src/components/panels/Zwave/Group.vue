@@ -1,6 +1,6 @@
 <template>
   <div class="item group" :class="{selected: selected}">
-    <div class="row name vertical-center" :class="{selected: selected}" v-text="group.label"
+    <div class="row name header vertical-center" :class="{selected: selected}" v-text="group.label"
          @click="$emit('select', group.index)" />
 
     <div class="params" v-if="selected">

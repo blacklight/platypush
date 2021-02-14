@@ -138,7 +138,7 @@
 
       <div class="item scene" :class="{selected: selected.sceneId === sceneId}"
            v-for="(scene, sceneId) in scenes" :key="sceneId">
-        <div class="row name vertical-center" :class="{selected: selected.sceneId === sceneId}" v-text="scene.label"
+        <div class="row name header vertical-center" :class="{selected: selected.sceneId === sceneId}" v-text="scene.label"
              @click="selected.sceneId = sceneId === selected.sceneId ? undefined : sceneId" />
 
         <div class="params" v-if="selected.sceneId === sceneId">
@@ -194,7 +194,7 @@
         <div class="item node"
              :class="{selected: selected.nodeId === nodeId}"
              v-if="selected.view === 'values' || Object.values(node.values).filter((value) => value.id_on_network in values[selected.view]).length > 0">
-          <div class="row name vertical-center" :class="{selected: selected.nodeId === nodeId}" v-text="node.name"
+          <div class="row name header vertical-center" :class="{selected: selected.nodeId === nodeId}" v-text="node.name"
                @click="onNodeClick(nodeId)"></div>
 
           <div class="params" v-if="selected.nodeId === nodeId">
@@ -696,7 +696,7 @@ export default {
 .zwave-container {
   width: 100%;
   height: 100%;
-  padding: 0 .5em;
+  padding: 0;
   background: $container-bg;
   display: flex;
   flex-direction: column;

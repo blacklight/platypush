@@ -1,6 +1,6 @@
 <template>
   <div class="item node" :class="{selected: selected}">
-    <div class="row name vertical-center" :class="{selected: selected}"
+    <div class="row name header vertical-center" :class="{selected: selected}"
          v-text="node.name && node.name.length ? node.name : `<Node ${node.node_id}>`" @click="$emit('select')" />
 
     <div class="params" v-if="selected">
