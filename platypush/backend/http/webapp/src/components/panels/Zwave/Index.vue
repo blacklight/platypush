@@ -184,7 +184,7 @@
             <div class="params" v-if="selected.nodeId === nodeId">
               <div class="value-container" v-for="(value, valueId) in node.values" :key="valueId">
                 <div class="value-display"
-                     v-if="valueId && (selected.view === 'values' || value.valueId in values[selected.view])">
+                     v-if="value.id_on_network && (selected.view === 'values' || value.id_on_network in values[selected.view])">
                   <Value :value="value" :node="node" :scenes="scenes" @add-to-scene="addValueToScene"
                          @remove-from-scene="removeValueFromScene" @refresh="refreshNodes" />
                 </div>
