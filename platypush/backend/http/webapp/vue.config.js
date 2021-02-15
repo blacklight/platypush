@@ -18,6 +18,14 @@ module.exports = {
       '/execute': {
         target: 'http://localhost:8008',
         changeOrigin: true,
+      },
+      '/auth': {
+        target: 'http://localhost:8008',
+        changeOrigin: true,
+      },
+      '/logout': {
+        target: 'http://localhost:8008',
+        changeOrigin: true,
       }
     }
   }

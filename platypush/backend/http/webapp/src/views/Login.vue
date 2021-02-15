@@ -98,8 +98,13 @@ form {
     width: 100%;
   }
 
-  input[type=submit] {
+  input[type=submit],
+  input[type=password] {
     border-radius: 1em;
+  }
+
+  input[type=password] {
+    padding: .25em .5em;
   }
 
   .checkbox {

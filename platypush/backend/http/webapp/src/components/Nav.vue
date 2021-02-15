@@ -5,7 +5,7 @@
       <span class="hostname" v-if="hostname" v-text="hostname" />
     </div>
 
-    <ul>
+    <ul class="plugins">
       <li v-for="name in Object.keys(panels).sort()" :key="name" class="entry" :class="{selected: name === selectedPanel}"
           :title="name" @click="onItemClick(name)">
         <a :href="`/#${name}`">
@@ -15,6 +15,28 @@
           <i class="fas fa-puzzle-piece" v-else />
         </span>
         <span class="name" v-if="!collapsed" v-text="name" />
+        </a>
+      </li>
+    </ul>
+
+    <ul class="footer">
+      <li :class="{selected: selectedPanel === 'settings'}" title="Settings" @click="onItemClick('settings')">
+        <!--suppress HtmlUnknownAnchorTarget -->
+        <a href="/#settings">
+          <span class="icon">
+            <i class="fa fa-cog" />
+          </span>
+          <span class="name" v-if="!collapsed">Settings</span>
+        </a>
+      </li>
+
+      <li title="Logout" @click="onItemClick('logout')">
+        <!--suppress HtmlUnknownTarget -->
+        <a href="/logout">
+          <span class="icon">
+            <i class="fas fa-sign-out-alt" />
+          </span>
+          <span class="name" v-if="!collapsed">Logout</span>
         </a>
       </li>
     </ul>
@@ -68,6 +90,10 @@ export default {
 
 <!--suppress SassScssResolvedByNameOnly -->
 <style lang="scss" scoped>
+$toggler-height: 2em;
+$footer-collapsed-height: 4em;
+$footer-expanded-height: 8.25em;
+
 nav {
   @media screen and (max-width: $tablet) {
     width: 100%;
@@ -150,6 +176,18 @@ nav {
     }
   }
 
+  .plugins {
+    height: calc(100% - #{$toggler-height} - #{$footer-expanded-height} - .75em);
+    overflow: auto;
+  }
+
+  .footer {
+    height: $footer-expanded-height;
+    background: none;
+    padding: 0;
+    margin: 0;
+  }
+
   &.collapsed {
     display: flex;
     flex-direction: column;
@@ -180,14 +218,31 @@ nav {
     }
 
     .toggler {
+      height: $toggler-height;
       text-align: center;
+    }
+
+    .plugins {
+      height: calc(100% - #{$toggler-height} - #{$footer-collapsed-height});
+      overflow: auto;
+    }
+
+    .footer {
+      height: $footer-collapsed-height;
+      padding: 0;
+      margin-bottom: .5em;
+    }
+
+    @media screen and (max-width: $tablet) {
+      .footer {
+        display: none;
+      }
     }
 
     ul {
       display: flex;
       flex-direction: column;
       justify-content: center;
-      flex-grow: 1;
 
       li {
         box-shadow: none;

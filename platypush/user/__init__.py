@@ -161,6 +161,23 @@ class UserManager:
         rand = bytes(random.randint(0, 255) for _ in range(0, 255))
         return hashlib.sha256(rand).hexdigest()
 
+    def get_user_by_session(self, session_token: str):
+        """
+        Get a user associated to a session token.
+
+        :param session_token: Session token.
+        """
+        session = self._get_db_session()
+        return session.query(User).join(UserSession).filter_by(session_token=session_token).first()
+        if not user:
+            return None
+
+        return {
+            'user_id': user.user_id,
+            'username': user.username,
+            'created_at': user.created_at,
+        }
+
     def generate_jwt_token(self, username: str, password: str, expires_at: Optional[datetime.datetime] = None) -> str:
         """
         Create a user JWT token for API usage.

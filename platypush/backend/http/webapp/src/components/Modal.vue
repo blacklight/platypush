@@ -74,6 +74,10 @@ export default {
       this.isVisible = false
     },
 
+    hide() {
+      this.close()
+    },
+
     show() {
       this.prevVisible = this.isVisible
       this.isVisible = true

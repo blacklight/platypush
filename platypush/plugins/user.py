@@ -1,3 +1,5 @@
+from typing import List, Dict, Any
+
 from platypush.plugins import Plugin, action
 from platypush.user import UserManager
 
@@ -145,6 +147,65 @@ class UserPlugin(Plugin):
         """
 
         return self.user_manager.delete_user_session(session_token)
+
+    @action
+    def get_users(self) -> List[Dict[str, Any]]:
+        """
+        Get the list of registered users.
+        :return:
+
+            .. code-block:: json
+
+                [
+                    {
+                        "user_id": 1,
+                        "username": "user1",
+                        "created_at": "2020-11-26T22:41:40.550574"
+                    },
+                    {
+                        "user_id": 2,
+                        "username": "user2",
+                        "created_at": "2020-11-28T21:10:23.224813"
+                    }
+                ]
+
+        """
+        return [
+            {
+                'user_id': user.user_id,
+                'username': user.username,
+                'created_at': user.created_at.isoformat(),
+            }
+            for user in self.user_manager.get_users().all()
+        ]
+
+    @action
+    def get_user_by_session(self, session_token: str) -> dict:
+        """
+        Get the user record associated to a session token.
+
+        :param session_token: Session token.
+        :return:
+
+            .. code-block:: json
+
+                [
+                    {
+                        "user_id": 1,
+                        "username": "user1",
+                        "created_at": "2020-11-26T22:41:40.550574"
+                    }
+                ]
+
+        """
+        user = self.user_manager.get_user_by_session(session_token)
+        assert user, 'No user associated with the specified session token'
+
+        return {
+            'user_id': user.user_id,
+            'username': user.username,
+            'created_at': user.created_at.isoformat(),
+        }
 
 
 # vim:sw=4:ts=4:et:

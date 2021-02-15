@@ -4,7 +4,13 @@
     <Nav :panels="components" :selected-panel="selectedPanel" :hostname="hostname"
          @select="selectedPanel = $event" v-else />
 
-    <div class="canvas">
+    <div class="canvas" v-if="selectedPanel === 'settings'">
+      <div class="panel">
+        <Settings />
+      </div>
+    </div>
+
+    <div class="canvas" v-else>
       <div class="panel" :class="{hidden: name !== selectedPanel}" v-for="(panel, name) in components" :key="name">
         <component :is="panel.component" :config="panel.config" :plugin-name="name" v-if="name === selectedPanel" />
       </div>
@@ -17,11 +23,12 @@ import {defineAsyncComponent} from "vue";
 import Utils from '@/Utils'
 import Loading from "@/components/Loading";
 import Nav from "@/components/Nav";
+import Settings from "@/components/panels/Settings/Index";
 
 export default {
   name: 'Panel',
   mixins: [Utils],
-  components: {Nav, Loading},
+  components: {Settings, Nav, Loading},
 
   data() {
     return {
