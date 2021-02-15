@@ -319,8 +319,8 @@ class MqttBackend(Backend):
     def run(self):
         super().run()
 
-        if self.host:
-            topics = [self.topic] if self.subscribe_default_topic else []
+        if self.host and self.subscribe_default_topic:
+            topics = [self.topic]
             client = self._get_client(host=self.host, port=self.port, topics=topics, username=self.username,
                                       password=self.password, client_id=self.client_id,
                                       tls_cafile=self.tls_cafile, tls_certfile=self.tls_certfile,
