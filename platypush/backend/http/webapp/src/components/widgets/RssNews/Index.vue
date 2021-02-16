@@ -85,6 +85,7 @@ export default {
   height: 100%;
   display: flex;
   align-items: center;
+  letter-spacing: .025em;
 
   .article {
     width: 90%;

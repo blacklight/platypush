@@ -108,6 +108,12 @@ export default {
   mounted() {
     this.$refs.frame.addEventListener('load', this.onFrameLoaded)
     this.onSizeChanged()
+    this.$watch(() => this.attrs.resolution, this.onSizeChanged)
+    this.$watch(() => this.attrs.horizontal_flip, this.onSizeChanged)
+    this.$watch(() => this.attrs.vertical_flip, this.onSizeChanged)
+    this.$watch(() => this.attrs.rotate, this.onSizeChanged)
+    this.$watch(() => this.attrs.scale_x, this.onSizeChanged)
+    this.$watch(() => this.attrs.scale_y, this.onSizeChanged)
   },
 }
 </script>
