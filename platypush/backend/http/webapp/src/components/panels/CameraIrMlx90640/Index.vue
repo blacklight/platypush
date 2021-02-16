@@ -10,12 +10,13 @@ export default {
   components: {Camera},
 
   mounted() {
-    console.log(this.$refs.camera.attrs.resolution)
     const config = this.$root.config[`camera.${this.cameraPlugin}`] || {}
     if (!config.resolution)
       this.$refs.camera.attrs.resolution = [32, 24]
-
-    console.log(this.$refs.camera.attrs.resolution)
+    if (!config.scale_x)
+      this.$refs.camera.attrs.scale_x = 15
+    if (!config.scale_y)
+      this.$refs.camera.attrs.scale_y = 15
   },
 }
 </script>

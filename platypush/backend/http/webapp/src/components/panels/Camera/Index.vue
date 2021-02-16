@@ -16,7 +16,8 @@
             <i class="fa fa-stop" />
           </button>
 
-          <button type="button" @click="capture" :disabled="streaming || capturing" title="Take a picture">
+          <button type="button" @click="capture" :disabled="streaming || capturing" v-if="!streaming"
+                  title="Take a picture">
             <i class="fas fa-camera" />
           </button>
         </div>
