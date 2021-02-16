@@ -1,5 +1,8 @@
 {
   "icons": {
+    "camera.android.ipcam": {
+      "class": "fab fa-android"
+    },
     "camera.cv": {
       "class": "fas fa-camera"
     },

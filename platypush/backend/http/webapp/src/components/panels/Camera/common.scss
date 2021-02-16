@@ -1,0 +1,156 @@
+$camera-background: #101520;
+
+.camera {
+  width: 100%;
+  height: 100%;
+  background: $background-color;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 3em;
+
+  .camera-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: $camera-background;
+
+    .frame-container {
+      position: relative;
+    }
+
+    .frame, .no-frame {
+      position: absolute;
+      top: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .frame {
+      z-index: 1;
+    }
+
+    .no-frame {
+      display: flex;
+      color: white;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      background: black;
+    }
+
+    .controls {
+      width: 100%;
+      display: flex;
+      border-top: 1px solid #202530;
+      padding: .5em .25em;
+
+      .left,.right {
+        width: 50%;
+      }
+
+      .right {
+        text-align: right;
+      }
+
+      button {
+        background: none;
+        color: white;
+        border: none;
+
+        &:hover {
+          color: $default-hover-fg-2;
+        }
+      }
+    }
+  }
+
+  .url {
+    @media screen and (max-width: calc(#{$tablet} - 1px)) {
+      width: 80%;
+    }
+
+    @media screen and (min-width: $tablet) {
+      width: 640px;
+    }
+
+    display: flex;
+    margin: 1em;
+
+    .row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    .name {
+      width: 140px;
+    }
+
+    input {
+      width: 500px;
+      font-weight: normal;
+    }
+  }
+
+  .params {
+    @media screen and (min-width: $tablet) {
+      width: 640px;
+    }
+
+    display: flex;
+    flex-direction: column;
+    margin: -2em;
+
+    label {
+      font-weight: normal;
+    }
+
+    .head {
+      display: flex;
+      justify-content: center;
+
+      label {
+        width: 100%;
+        display: flex;
+        justify-content: right;
+
+        .name {
+          margin-right: 1em;
+        }
+      }
+    }
+
+    .row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      padding: 0.5em 1em;
+
+      .name {
+        width: 30%;
+      }
+
+      input {
+        width: 70%;
+      }
+
+      &:nth-child(even) {
+        background: $default-bg-4;
+      }
+
+      &:hover {
+        background: $hover-bg;
+      }
+    }
+  }
+
+  .modal {
+    .content {
+      @media screen and (max-width: calc(#{$tablet} - 1px)) {
+        width: 90% !important;
+      }
+    }
+  }
+}
