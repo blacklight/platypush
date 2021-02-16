@@ -1,5 +1,17 @@
 {
   "icons": {
+    "camera.cv": {
+      "class": "fas fa-camera"
+    },
+    "camera.ffmpeg": {
+      "class": "fas fa-camera"
+    },
+    "camera.gstreamer": {
+      "class": "fas fa-camera"
+    },
+    "camera.pi": {
+      "class": "fas fa-camera"
+    },
     "light.hue": {
       "class": "fas fa-lightbulb"
     },

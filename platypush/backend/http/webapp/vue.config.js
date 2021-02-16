@@ -17,15 +17,19 @@ module.exports = {
     proxy: {
       '/execute': {
         target: 'http://localhost:8008',
-        changeOrigin: true,
+        changeOrigin: true
       },
       '/auth': {
         target: 'http://localhost:8008',
-        changeOrigin: true,
+        changeOrigin: true
       },
       '/logout': {
         target: 'http://localhost:8008',
-        changeOrigin: true,
+        changeOrigin: true
+      },
+      '/camera/*': {
+        target: 'http://localhost:8008',
+        changeOrigin: true
       }
     }
   }
