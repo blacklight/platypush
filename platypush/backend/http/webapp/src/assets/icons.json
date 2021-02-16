@@ -9,6 +9,9 @@
     "camera.gstreamer": {
       "class": "fas fa-camera"
     },
+    "camera.ir.mlx90640": {
+      "class": "fas fa-sun"
+    },
     "camera.pi": {
       "class": "fas fa-camera"
     },

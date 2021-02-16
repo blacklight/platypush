@@ -87,6 +87,8 @@
           <span class="name">Grayscale</span>
           <input name="grayscale" type="checkbox" v-model="attrs.grayscale" @change="onGrayscaleChanged"/>
         </label>
+
+        <Slot />
       </div>
     </Modal>
   </div>
