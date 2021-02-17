@@ -45,6 +45,9 @@
     "rtorrent": {
       "class": "fa fa-magnet"
     },
+    "sound": {
+      "class": "fa fa-microphone"
+    },
     "zigbee.mqtt": {
       "imgUrl": "/icons/zigbee.svg"
     },

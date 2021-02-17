@@ -1,6 +1,10 @@
 <script>
+import Utils from "@/Utils";
+
 export default {
   name: "CameraMixin",
+  mixins: [Utils],
+
   props: {
     cameraPlugin: {
       type: String,
@@ -13,6 +17,7 @@ export default {
       streaming: false,
       capturing: false,
       captured: false,
+      audioOn: false,
       url: null,
       attrs: {},
     }
@@ -87,6 +92,15 @@ export default {
 
     onFpsChanged() {},
     onGrayscaleChanged() {},
+
+    startAudio() {
+      this.audioOn = true
+    },
+
+    async stopAudio() {
+      this.audioOn = false
+      await this.request('sound.stop_recording')
+    },
   },
 
   created() {

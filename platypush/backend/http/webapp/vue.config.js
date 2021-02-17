@@ -30,6 +30,10 @@ module.exports = {
       '/camera/*': {
         target: 'http://localhost:8008',
         changeOrigin: true
+      },
+      '/sound/*': {
+        target: 'http://localhost:8008',
+        changeOrigin: true
       }
     }
   }

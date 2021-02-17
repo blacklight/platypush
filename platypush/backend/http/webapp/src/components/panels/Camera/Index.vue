@@ -23,11 +23,27 @@
         </div>
 
         <div class="right">
+          <button type="button" @click="startAudio" title="Start audio" v-if="!audioOn">
+            <i class="fas fa-volume-mute" />
+          </button>
+
+          <button type="button" @click="stopAudio" title="Stop audio" v-else>
+            <i class="fas fa-volume-up" />
+          </button>
+
           <button type="button" @click="$refs.paramsModal.show()" title="Settings">
             <i class="fas fa-cog" />
           </button>
         </div>
       </div>
+    </div>
+
+    <div class="audio-container">
+      <audio autoplay preload="none" ref="player" v-if="audioOn">
+        <!--suppress HtmlUnknownTarget -->
+        <source :src="`/sound/stream?t=${(new Date()).getTime()}`" type="audio/x-wav;codec=pcm">
+        Your browser does not support audio elements
+      </audio>
     </div>
 
     <div class="url" v-if="url?.length">

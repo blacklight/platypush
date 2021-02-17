@@ -46,11 +46,11 @@
           </button>
 
           <button type="button" @click="recording = true" v-if="!recording" :disabled="loading">
-            <i class="fa fa-volume-up" title="Start audio" />
+            <i class="fa fa-volume-mute" title="Start audio" />
           </button>
 
           <button type="button" @click="recording = false" v-else :disabled="loading">
-            <i class="fa fa-volume-mute" title="Stop audio" />
+            <i class="fa fa-volume-up" title="Stop audio" />
           </button>
         </div>
       </div>
