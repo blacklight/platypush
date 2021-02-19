@@ -92,7 +92,7 @@ export default {
 <style lang="scss" scoped>
 $toggler-height: 2em;
 $footer-collapsed-height: 4em;
-$footer-expanded-height: 8.25em;
+$footer-expanded-height: 7.5em;
 
 nav {
   @media screen and (max-width: $tablet) {
@@ -125,7 +125,7 @@ nav {
   }
 
   li {
-    box-shadow: $nav-box-shadow-entry;
+    border: $nav-entry-border;
     cursor: pointer;
     list-style: none;
 
@@ -158,10 +158,12 @@ nav {
   .toggler {
     width: 100%;
     display: flex;
+    background: $nav-toggler-bg;
     font-size: 1.5em;
     cursor: pointer;
-    padding: 0.4em;
+    padding: 0.6em;
     align-items: center;
+    box-shadow: $nav-toggler-shadow;
   }
 
   .hostname {
@@ -179,13 +181,13 @@ nav {
   }
 
   .plugins {
-    height: calc(100% - #{$toggler-height} - #{$footer-expanded-height} - .75em);
+    height: calc(100% - #{$toggler-height} - #{$footer-expanded-height} - 1.4em);
     overflow: auto;
   }
 
   .footer {
     height: $footer-expanded-height;
-    background: none;
+    background: $nav-footer-bg;
     padding: 0;
     margin: 0;
   }
@@ -221,16 +223,15 @@ nav {
 
     .toggler {
       height: $toggler-height;
+      background: none;
       text-align: center;
-    }
-
-    .plugins {
-      height: calc(100% - #{$toggler-height} - #{$footer-collapsed-height});
-      overflow: auto;
+      padding: 0.4em;
+      box-shadow: none;
     }
 
     .footer {
       height: $footer-collapsed-height;
+      background: none;
       padding: 0;
       margin-bottom: .5em;
     }
@@ -245,9 +246,22 @@ nav {
       display: flex;
       flex-direction: column;
       justify-content: center;
+      height: calc(100% - #{$toggler-height} - #{$footer-collapsed-height});
+      overflow: hidden;
+
+      &.plugins {
+        @media screen and (min-width: $tablet) and (max-width: $desktop - 1px) {
+          justify-content: left;
+          margin: 2em 0;
+        }
+      }
+
+      &:hover {
+        overflow: auto;
+      }
 
       li {
-        box-shadow: none;
+        border: none;
         padding: 0;
         text-align: center;
 
