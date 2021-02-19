@@ -3,8 +3,10 @@ import threading
 import time
 
 from platypush.backend.http.utils import HttpUtils
+from platypush.config import Config
 from platypush.plugins import Plugin, action
 from platypush.procedure import Procedure
+from platypush.utils import get_enabled_plugins
 
 
 class UtilsPlugin(Plugin):
@@ -24,6 +26,11 @@ class UtilsPlugin(Plugin):
     _pending_intervals = {}
     _pending_timeouts_lock = threading.RLock()
     _pending_intervals_lock = threading.RLock()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._plugins = {}
+        self._plugins_lock = threading.RLock()
 
     @action
     def sleep(self, seconds):
@@ -89,9 +96,6 @@ class UtilsPlugin(Plugin):
         :param name: Name of the timeout to clear
         :type name: str
         """
-
-        timer = None
-
         with self._pending_timeouts_lock:
             if name not in self._pending_timeouts:
                 self.logger.debug('{} is not a pending timeout'.format(name))
@@ -161,7 +165,7 @@ class UtilsPlugin(Plugin):
         timeout name will be null.
         """
 
-        response = { name: None }
+        response = {name: None}
 
         with self._pending_timeouts_lock:
             timer = self._pending_timeouts.get(name)
@@ -201,12 +205,11 @@ class UtilsPlugin(Plugin):
             self._interval_hndl_idx += 1
             if not name:
                 name = self._DEFAULT_INTERVAL_PREFIX + \
-                    str(self._interval_hndl_idx)
+                       str(self._interval_hndl_idx)
 
             if name in self._pending_intervals:
                 return (None,
                         "An interval named '{}' is already running".format(name))
-
 
         procedure = Procedure.build(name=name, requests=actions, _async=False)
         self._pending_intervals[name] = procedure
@@ -233,15 +236,11 @@ class UtilsPlugin(Plugin):
         :param name: Name of the interval to clear
         :type name: str
         """
-
-        interval = None
-
         with self._pending_intervals_lock:
             if name not in self._pending_intervals:
                 self.logger.debug('{} is not a running interval'.format(name))
                 return
             del self._pending_intervals[name]
-
 
     @action
     def get_intervals(self):
@@ -304,13 +303,14 @@ class UtilsPlugin(Plugin):
         timeout name will be null.
         """
 
-        response = { name: None }
+        response = {name: None}
 
         with self._pending_intervals_lock:
             timer = self._pending_intervals.get(name)
             if not timer:
                 return response
 
+            # noinspection PyProtectedMember
             return {
                 name: {
                     'seconds': timer._args[1],
@@ -327,6 +327,45 @@ class UtilsPlugin(Plugin):
     @action
     def search_web_directory(self, directory, extensions):
         return HttpUtils.search_web_directory(directory, *extensions)
+
+    @action
+    def get_enabled_plugins(self) -> dict:
+        """
+        :return: The list of enabled plugins as a ``name -> configuration`` map.
+        """
+        if self._plugins:
+            return self._plugins
+
+        plugins = {}
+        with self._plugins_lock:
+            for name in get_enabled_plugins().keys():
+                plugins[name] = Config.get(name)
+
+        return plugins
+
+    @action
+    def get_sensor_plugins(self) -> dict:
+        """
+        :return: The list of enabled sensor plugins as a ``name -> configuration`` map.
+        """
+        from platypush.plugins.sensor import SensorPlugin
+        return {
+            name: Config.get(name)
+            for name, plugin in get_enabled_plugins().items()
+            if isinstance(plugin, SensorPlugin)
+        }
+
+    @action
+    def get_switch_plugins(self) -> dict:
+        """
+        :return: The list of enabled switch plugins as a ``name -> configuration`` map.
+        """
+        from platypush.plugins.switch import SwitchPlugin
+        return {
+            name: Config.get(name)
+            for name, plugin in get_enabled_plugins().items()
+            if isinstance(plugin, SwitchPlugin)
+        }
 
 
 # vim:sw=4:ts=4:et:

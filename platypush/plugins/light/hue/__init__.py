@@ -4,6 +4,7 @@ import time
 
 from enum import Enum
 from threading import Thread, Event
+from typing import List
 
 from platypush.context import get_bus
 from platypush.message.event.light import LightAnimationStartedEvent, LightAnimationStoppedEvent
@@ -898,8 +899,49 @@ class LightHuePlugin(LightPlugin):
                                        args=(lights,))
         self.animation_thread.start()
 
-    def status(self):
-        # TODO
-        pass
+    @property
+    def switches(self) -> List[dict]:
+        """
+        :returns: Implements :meth:`platypush.plugins.switch.SwitchPlugin.switches` and returns the status of the
+            configured lights. Example:
+
+            .. code-block:: json
+
+                [
+                    {
+                        "id": "3",
+                        "name": "Lightbulb 1",
+                        "on": true,
+                        "bri": 254,
+                        "hue": 1532,
+                        "sat": 215,
+                        "effect": "none",
+                        "xy": [
+                            0.6163,
+                            0.3403
+                        ],
+                        "ct": 153,
+                        "alert": "none",
+                        "colormode": "hs",
+                        "reachable": true
+                        "type": "Extended color light",
+                        "modelid": "LCT001",
+                        "manufacturername": "Philips",
+                        "uniqueid": "00:11:22:33:44:55:66:77-88",
+                        "swversion": "5.105.0.21169"
+                    }
+                ]
+
+        """
+
+        return [
+            {
+                'id': id,
+                **light.pop('state', {}),
+                **light,
+            }
+            for id, light in self.bridge.get_light().items()
+        ]
+
 
 # vim:sw=4:ts=4:et:

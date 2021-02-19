@@ -1,4 +1,5 @@
 import ipaddress
+from typing import List
 
 from platypush.plugins import action
 from platypush.plugins.switch import SwitchPlugin
@@ -48,24 +49,26 @@ class SwitchWemoPlugin(SwitchPlugin):
         self._addresses = set(self._devices.values())
 
     @property
-    def devices(self):
+    def switches(self) -> List[dict]:
         """
         Get the list of available devices
         :returns: The list of devices.
 
-        Example output::
+            .. code-block:: json
 
-            output = [
+                [
                     {
                         "ip": "192.168.1.123",
                         "name": "Switch 1",
-                        "on": true,
+                        "on": true
                     },
-
                     {
-                        # ...
+                        "ip": "192.168.1.124",
+                        "name": "Switch 2",
+                        "on": false
                     }
                 ]
+
         """
 
         return [

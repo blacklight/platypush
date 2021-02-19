@@ -1,5 +1,6 @@
 import enum
 import time
+from typing import List
 
 from platypush.message.response.bluetooth import BluetoothScanResponse
 from platypush.plugins import action
@@ -144,7 +145,7 @@ class SwitchSwitchbotPlugin(SwitchPlugin, BluetoothBlePlugin):
         return BluetoothScanResponse(devices=compatible_devices)
 
     @property
-    def devices(self):
+    def switches(self) -> List[dict]:
         return [
             {
                 'address': addr,

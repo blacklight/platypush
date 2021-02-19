@@ -1,13 +1,15 @@
 import json
 import threading
 
+from queue import Queue
 from typing import Optional, List, Any, Dict, Union
 
 from platypush.message.response import Response
 from platypush.plugins.mqtt import MqttPlugin, action
+from platypush.plugins.switch import SwitchPlugin
 
 
-class ZigbeeMqttPlugin(MqttPlugin):
+class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):
     """
     This plugin allows you to interact with Zigbee devices over MQTT through any Zigbee sniffer and
     `zigbee2mqtt <https://www.zigbee2mqtt.io/>`_.
@@ -606,6 +608,63 @@ class ZigbeeMqttPlugin(MqttPlugin):
         return self.publish(topic=self._topic(device) + '/get', reply_topic=self._topic(device),
                             msg=self.build_device_get_request(exposes), **kwargs)
 
+    @action
+    def devices_get(self, devices: Optional[List[str]] = None, **kwargs) -> Dict[str, dict]:
+        """
+        Get the properties of the devices connected to the network. *NOTE*: Use this function instead of :meth:`.status`
+        if you want to retrieve the status of *all* the components associated to the network - :meth:`.status` only
+        returns the status of the devices with a writable ``ON``/``OFF`` ``state`` property.
+
+        :param devices: If set, then only the status of these devices (by friendly name) will be retrieved (default:
+            retrieve all).
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+            (default: query the default configured device).
+        :return: Key->value map of the device properties:
+
+            .. code-block:: json
+
+                {
+                    "Bulb": {
+                        "state": "ON",
+                        "brightness": 254
+                    },
+                    "Sensor": {
+                        "temperature": 22.5
+                    }
+                }
+        """
+        kwargs = self._mqtt_args(**kwargs)
+
+        if not devices:
+            # noinspection PyUnresolvedReferences
+            devices = set([
+                device['friendly_name'] or device['ieee_address']
+                for device in self.devices(**kwargs).output
+            ])
+
+        def worker(device: str, q: Queue):
+            # noinspection PyUnresolvedReferences
+            q.put(self.device_get(device, **kwargs).output)
+
+        queues = {}
+        workers = {}
+        response = {}
+
+        for device in devices:
+            queues[device] = Queue()
+            workers[device] = threading.Thread(target=worker, args=(device, queues[device]))
+            workers[device].start()
+
+        for device in devices:
+            try:
+                response[device] = queues[device].get(timeout=kwargs.get('timeout'))
+                workers[device].join(timeout=kwargs.get('timeout'))
+            except Exception as e:
+                self.logger.warning('An error while getting the status of the device {}: {}'.format(
+                    device, str(e)))
+
+        return response
+
     # noinspection PyShadowingBuiltins,DuplicatedCode
     @action
     def device_set(self, device: str, property: str, value: Any, **kwargs):
@@ -960,12 +1019,14 @@ class ZigbeeMqttPlugin(MqttPlugin):
             (default: query the default configured device).
         """
         return self._parse_response(
-            self.publish(topic=self._topic('bridge/request/group/members/remove{}'.format('_all' if device is None else '')),
-                         reply_topic=self._topic('bridge/response/group/members/remove{}'.format('_all' if device is None else '')),
-                         msg={
-                             'group': group,
-                             'device': device,
-                         }, **self._mqtt_args(**kwargs)))
+            self.publish(
+                topic=self._topic('bridge/request/group/members/remove{}'.format('_all' if device is None else '')),
+                reply_topic=self._topic(
+                    'bridge/response/group/members/remove{}'.format('_all' if device is None else '')),
+                msg={
+                    'group': group,
+                    'device': device,
+                }, **self._mqtt_args(**kwargs)))
 
     @action
     def bind_devices(self, source: str, target: str, **kwargs):
@@ -986,7 +1047,7 @@ class ZigbeeMqttPlugin(MqttPlugin):
         return self._parse_response(
             self.publish(topic=self._topic('bridge/request/device/bind'),
                          reply_topic=self._topic('bridge/response/device/bind'),
-                         msg={'from': source, 'to': target}, **self._mqtt_args(**kwargs)) )
+                         msg={'from': source, 'to': target}, **self._mqtt_args(**kwargs)))
 
     @action
     def unbind_devices(self, source: str, target: str, **kwargs):
@@ -1003,7 +1064,92 @@ class ZigbeeMqttPlugin(MqttPlugin):
         return self._parse_response(
             self.publish(topic=self._topic('bridge/request/device/unbind'),
                          reply_topic=self._topic('bridge/response/device/unbind'),
-                         msg={'from': source, 'to': target}, **self._mqtt_args(**kwargs)) )
+                         msg={'from': source, 'to': target}, **self._mqtt_args(**kwargs)))
+
+    @action
+    def on(self, device, *args, **kwargs) -> dict:
+        """
+        Implements :meth:`platypush.plugins.switch.plugin.SwitchPlugin.on` and turns on a Zigbee device with a writable
+        binary property.
+        """
+        switch_info = self._get_switches_info().get(device)
+        assert switch_info, '{} is not a valid switch'.format(device)
+        props = self.device_set(device, switch_info['property'], switch_info['value_on']).output
+        return self._properties_to_switch(device=device, props=props, switch_info=switch_info)
+
+    @action
+    def off(self, device, *args, **kwargs) -> dict:
+        """
+        Implements :meth:`platypush.plugins.switch.plugin.SwitchPlugin.off` and turns off a Zigbee device with a
+        writable binary property.
+        """
+        switch_info = self._get_switches_info().get(device)
+        assert switch_info, '{} is not a valid switch'.format(device)
+        props = self.device_set(device, switch_info['property'], switch_info['value_off']).output
+        return self._properties_to_switch(device=device, props=props, switch_info=switch_info)
+
+    @action
+    def toggle(self, device, *args, **kwargs) -> dict:
+        """
+        Implements :meth:`platypush.plugins.switch.plugin.SwitchPlugin.toggle` and toggles a Zigbee device with a
+        writable binary property.
+        """
+        switch_info = self._get_switches_info().get(device)
+        assert switch_info, '{} is not a valid switch'.format(device)
+        props = self.device_set(device, switch_info['property'], switch_info['value_toggle']).output
+        return self._properties_to_switch(device=device, props=props, switch_info=switch_info)
+
+    @staticmethod
+    def _properties_to_switch(device: str, props: dict, switch_info: dict) -> dict:
+        return {
+            'on': props[switch_info['property']] == switch_info['value_on'],
+            'friendly_name': device,
+            'name': device,
+            **props,
+        }
+
+    def _get_switches_info(self) -> dict:
+        def switch_info(device_info: dict) -> dict:
+            exposes = (device_info.get('definition', {}) or {}).get('exposes', [])
+            for exposed in exposes:
+                for feature in exposed.get('features', []):
+                    if feature.get('type') == 'binary' and 'value_on' in feature and 'value_off' in feature and \
+                            feature.get('access', 0) & 2:
+                        return {
+                            'property': feature['property'],
+                            'value_on': feature['value_on'],
+                            'value_off': feature['value_off'],
+                            'value_toggle': feature.get('value_toggle', None),
+                        }
+
+            return {}
+
+        # noinspection PyUnresolvedReferences
+        devices = self.devices().output
+        switches_info = {}
+
+        for device in devices:
+            info = switch_info(device)
+            if not info:
+                continue
+
+            switches_info[device.get('friendly_name', device.get('ieee_address'))] = info
+
+        return switches_info
+
+    @property
+    def switches(self) -> List[dict]:
+        """
+        Implements the :class:`platypush.plugins.switch.SwitchPlugin.switches` property and returns the state of any
+        device on the Zigbee network identified as a switch (a device is identified as a switch if it exposes a writable
+        ``state`` property that can be set to ``ON`` or ``OFF``).
+        """
+        switches_info = self._get_switches_info()
+        # noinspection PyUnresolvedReferences
+        return [
+            self._properties_to_switch(device=name, props=switch, switch_info=switches_info[name])
+            for name, switch in self.devices_get(list(switches_info.keys())).output.items()
+        ]
 
 
 # vim:sw=4:ts=4:et:

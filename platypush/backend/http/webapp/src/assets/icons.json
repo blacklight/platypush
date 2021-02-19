@@ -45,6 +45,9 @@
     "rtorrent": {
       "class": "fa fa-magnet"
     },
+    "switches": {
+      "class": "fas fa-toggle-on"
+    },
     "sound": {
       "class": "fa fa-microphone"
     },

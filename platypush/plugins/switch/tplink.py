@@ -148,7 +148,7 @@ class SwitchTplinkPlugin(SwitchPlugin):
         }
 
     @property
-    def devices(self):
+    def switches(self) -> List[dict]:
         return [
             {
                 'current_consumption': dev.current_consumption(),

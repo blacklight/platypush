@@ -1,3 +1,5 @@
+from typing import List
+
 from platypush.plugins import Plugin, action
 
 
@@ -27,18 +29,37 @@ class SwitchPlugin(Plugin):
     @action
     def status(self, device=None, *args, **kwargs):
         """ Get the status of a specified device or of all the configured devices (default)"""
-        devices = self.devices
+        devices = self.switches
         if device:
-            devices = [d for d in self.devices if d.get('id') == device or d.get('name') == device]
+            devices = [d for d in self.switches if d.get('id') == device or d.get('name') == device]
             if devices:
-                return self.devices.pop(0)
+                return self.switches.pop(0)
             else:
                 return None
 
         return devices
 
     @property
-    def devices(self):
+    def switches(self) -> List[dict]:
+        """
+        This property must be implemented by the derived classes and must return a dictionary in the following format:
+
+            .. code-block:: json
+
+                [
+                    {
+                        "name": "switch_1",
+                        "on": true
+                    },
+                    {
+                        "name": "switch_2",
+                        "on": false
+                    },
+                ]
+
+        ``name`` and ``on`` are the minimum set of attributes that should be returned for a switch, but more attributes
+        can also be added.
+        """
         raise NotImplementedError()
 
 

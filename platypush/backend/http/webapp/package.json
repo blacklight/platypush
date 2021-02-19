@@ -12,6 +12,7 @@
     "axios": "^0.21.0",
     "bulma": "^0.9.1",
     "core-js": "^3.6.5",
+    "lato-font": "^3.0.0",
     "mitt": "^2.1.0",
     "node-sass": "^5.0.0",
     "sass-loader": "^10.1.0",

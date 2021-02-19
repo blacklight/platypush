@@ -111,15 +111,17 @@ nav {
   }
 
   @media screen and (min-width: $tablet) {
-    width: 20%;
-    min-width: 12.5em;
-    max-width: 25em;
+    width: calc(16em - 2vw);
     height: 100%;
     overflow: auto;
     background: $nav-bg;
     color: $nav-fg;
     box-shadow: $nav-box-shadow-main;
     margin-right: 2px;
+  }
+
+  @media screen and (min-width: $desktop) {
+    width: 16em;
   }
 
   li {

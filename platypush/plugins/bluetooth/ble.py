@@ -64,18 +64,19 @@ class BluetoothBlePlugin(SensorPlugin):
         if not output:
             return False
 
-        caps = set(output.pop(0).split('=').pop().strip().split(','))
-        return 'cap_net_raw+eip' in caps and 'cap_net_admin' in caps
+        caps = output[0]
+        return ('cap_net_raw+eip' in caps or 'cap_net_raw=eip' in caps) and 'cap_net_admin' in caps
 
     def _check_ble_support(self):
         # Check if the script is running as root or if the Python executable
         # has 'cap_net_admin,cap_net_raw+eip' capabilities
         exe = self._get_python_interpreter()
-        if os.getuid() != 0 and not self._python_has_ble_capabilities(exe):
-            raise RuntimeError('You are not running platypush as root and the Python interpreter has no ' +
-                               'capabilities/permissions to access the BLE stack. Set the permissions on ' +
-                               'your Python interpreter through:\n' +
-                               '\t[sudo] setcap "cap_net_raw,cap_net_admin+eip" {}'.format(exe))
+        assert os.getuid() == 0 or self._python_has_ble_capabilities(exe), '''
+            You are not running platypush as root and the Python interpreter has no
+            capabilities/permissions to access the BLE stack. Set the permissions on
+            your Python interpreter through:
+
+                [sudo] setcap "cap_net_raw,cap_net_admin+eip" {}'''.format(exe)
 
     @action
     def scan(self, interface: Optional[str] = None, duration: int = 10) -> BluetoothScanResponse:

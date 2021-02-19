@@ -420,4 +420,20 @@ def get_or_generate_jwt_rsa_key_pair():
     return generate_rsa_key_pair(priv_key_file, size=2048)
 
 
+def get_enabled_plugins() -> dict:
+    from platypush.config import Config
+    from platypush.context import get_plugin
+
+    plugins = {}
+    for name, config in Config.get_plugins().items():
+        try:
+            plugin = get_plugin(name)
+            if plugin:
+                plugins[name] = plugin
+        except:
+            pass
+
+    return plugins
+
+
 # vim:sw=4:ts=4:et:

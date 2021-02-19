@@ -84,6 +84,8 @@ export default {
             this.request('config.get_procedures'),
             this.request('config.get_device_id'),
           ])
+
+      this.plugins.switches = {}
     },
   },
 
