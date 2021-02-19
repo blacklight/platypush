@@ -1,4 +1,5 @@
 import os
+import re
 import select
 import subprocess
 import threading
@@ -186,7 +187,8 @@ class MediaMplayerPlugin(MediaPlugin):
                 last_read_time = time.time()
 
                 if line.startswith('ANS_'):
-                    k, v = tuple(line[4:].split('='))
+                    m = re.match('^([^=]+)=(.*)$', line[4:])
+                    k, v = m.group(1), m.group(2)
                     v = v.strip()
                     if v == 'yes':
                         v = True

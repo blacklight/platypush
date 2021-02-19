@@ -1,8 +1,10 @@
-import subprocess
 import urllib.parse
-from typing import Optional, List
+from typing import Optional
 
+from platypush.config import Config
+from platypush.context import get_plugin
 from platypush.plugins import Plugin, action
+from platypush.plugins.media import MediaPlugin
 
 
 class TtsPlugin(Plugin):
@@ -11,46 +13,67 @@ class TtsPlugin(Plugin):
 
     Requires:
 
-        * **mplayer** - see your distribution docs on how to install the mplayer package
+        * At least a *media plugin* (see :class:`platypush.plugins.media.MediaPlugin`) enabled/configured - used for
+          speech playback.
+
     """
 
-    def __init__(self, language='en-gb', player_args: Optional[List[str]] = None):
+    _supported_media_plugins = [
+        'media.omxplayer',
+        'media.gstreamer',
+        'media.mplayer',
+        'media.mpv',
+        'media.vlc',
+    ]
+
+    def __init__(self, language='en-gb', media_plugin: Optional[str] = None, player_args: Optional[dict] = None):
         """
         :param language: Language code (default: ``en-gb``).
-        :param player_args: Extra options to be passed to the audio player (default: ``mplayer``).
+        :param media_plugin: Media plugin to be used for audio playback. Supported:
+
+            - ``media.gstreamer``
+            - ``media.omxplayer``
+            - ``media.mplayer``
+            - ``media.mpv``
+            - ``media.vlc``
+
+        :param player_args: Optional arguments that should be passed to the player plugin's
+            :meth:`platypush.plugins.media.MediaPlugin.play` method.
         """
         super().__init__()
         self.language = language
-        self.player_args = player_args or []
+        self.player_args = player_args or {}
+        self.media_plugin = get_plugin(media_plugin) if media_plugin else self._get_media_plugin()
+        assert self.media_plugin, 'No media playback plugin configured. Supported plugins: [{}]'.format(
+            ', '.join(self._supported_media_plugins))
+
+    @classmethod
+    def _get_media_plugin(cls) -> Optional[MediaPlugin]:
+        for plugin in cls._supported_media_plugins:
+            if plugin in Config.get():
+                return get_plugin(plugin)
 
     @action
-    def say(self, text: str, language: Optional[str] = None, player_args: Optional[List[str]] = None):
+    def say(self, text: str, language: Optional[str] = None, player_args: Optional[dict] = None):
         """
         Say some text.
 
         :param text: Text to say.
         :param language: Language code override.
-        :param player_args: ``player_args`` override.
+        :param player_args: Optional arguments that should be passed to the player plugin's
+            :meth:`platypush.plugins.media.MediaPlugin.play` method.
         """
         language = language or self.language
         player_args = player_args or self.player_args
-        cmd = [
-            'mplayer -ao alsa -really-quiet -noconsolecontrols ' +
-            ' '.join(player_args) + ' ' +
-            '"http://translate.google.com/translate_tts?{}"'.format(
-                urllib.parse.urlencode({
-                    'ie': 'UTF-8',
-                    'client': 'tw-ob',
-                    'tl': language,
-                    'q': text,
-                })
-            )
-        ]
+        url = 'http://translate.google.com/translate_tts?{}'.format(
+            urllib.parse.urlencode({
+                'ie': 'UTF-8',
+                'client': 'tw-ob',
+                'tl': language,
+                'q': text,
+            }))
 
-        try:
-            return subprocess.check_output(
-                cmd, stderr=subprocess.STDOUT, shell=True).decode('utf-8')
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(e.output.decode('utf-8'))
+        self.media_plugin.play(url, **player_args)
+
 
 # vim:sw=4:ts=4:et:

@@ -51,6 +51,12 @@
     "sound": {
       "class": "fa fa-microphone"
     },
+    "tts": {
+      "class": "far fa-comment"
+    },
+    "tts.google": {
+      "class": "fas fa-comment"
+    },
     "zigbee.mqtt": {
       "imgUrl": "/icons/zigbee.svg"
     },
