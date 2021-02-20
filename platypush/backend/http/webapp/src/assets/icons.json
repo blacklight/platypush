@@ -18,6 +18,9 @@
     "camera.pi": {
       "class": "fas fa-camera"
     },
+    "execute": {
+      "class": "fa fa-play"
+    },
     "light.hue": {
       "class": "fas fa-lightbulb"
     },

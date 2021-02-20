@@ -85,6 +85,11 @@ export default {
             this.request('config.get_device_id'),
           ])
 
+      this.initializeDefaultViews()
+    },
+
+    initializeDefaultViews() {
+      this.plugins.execute = {}
       this.plugins.switches = {}
     },
   },
