@@ -580,6 +580,10 @@ $params-tablet-width: 20em;
       }
     }
 
+    .output-container {
+      flex-grow: 1;
+    }
+
     .attr-doc-container {
       @include from($tablet) {
         width: calc(100% - #{$params-tablet-width} - 2em);

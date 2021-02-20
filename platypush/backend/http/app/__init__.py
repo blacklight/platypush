@@ -21,8 +21,8 @@ initialize_logger()
 base_folder = os.path.abspath(os.path.join(
     os.path.dirname(os.path.abspath(__file__)), '..'))
 
-template_folder = os.path.join(base_folder, 'dist')
-static_folder = os.path.join(base_folder, 'dist/static')
+template_folder = os.path.join(base_folder, 'webapp/dist')
+static_folder = os.path.join(base_folder, 'webapp/dist/static')
 
 application = Flask('platypush', template_folder=template_folder,
                     static_folder=static_folder)
