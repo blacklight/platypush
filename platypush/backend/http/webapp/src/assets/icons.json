@@ -57,6 +57,9 @@
     "tts.google": {
       "class": "fas fa-comment"
     },
+    "tv.samsung.ws": {
+      "class": "fas fa-tv"
+    },
     "zigbee.mqtt": {
       "imgUrl": "/icons/zigbee.svg"
     },
