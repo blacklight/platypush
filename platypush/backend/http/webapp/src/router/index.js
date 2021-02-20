@@ -4,6 +4,7 @@ import NotFound from "@/views/NotFound";
 import Login from "@/views/Login";
 import Register from "@/views/Register";
 import Panel from "@/views/Panel";
+import Plugin from "@/views/Plugin";
 
 const routes = [
   {
@@ -16,6 +17,12 @@ const routes = [
     path: "/dashboard/:name",
     name: "Dashboard",
     component: Dashboard,
+  },
+
+  {
+    path: "/plugin/:plugin",
+    name: "Plugin",
+    component: Plugin,
   },
 
   {

@@ -127,20 +127,11 @@ def stream_media(media_id, req):
 
     headers['Content-Length'] = content_length
 
-    if 'webplayer' in req.args:
-        return render_template('webplayer.html',
-                               media_url=media_hndl.url.replace(
-                                   get_remote_base_url(), ''),
-                               media_type=media_hndl.mime_type,
-                               subtitles_url='/media/subtitles/{}.vtt'.
-                               format(media_id) if media_hndl.subtitles
-                               else None)
-    else:
-        return Response(media_hndl.get_data(
-            from_bytes=from_bytes, to_bytes=to_bytes,
-            chunk_size=STREAMING_CHUNK_SIZE),
-            status_code, headers=headers, mimetype=headers['Content-Type'],
-            direct_passthrough=True)
+    return Response(media_hndl.get_data(
+        from_bytes=from_bytes, to_bytes=to_bytes,
+        chunk_size=STREAMING_CHUNK_SIZE),
+        status_code, headers=headers, mimetype=headers['Content-Type'],
+        direct_passthrough=True)
 
 
 def add_subtitles(media_id, req):
