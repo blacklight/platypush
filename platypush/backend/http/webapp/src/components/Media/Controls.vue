@@ -404,6 +404,7 @@ button {
     button {
       padding: 0;
       margin: 0 .75em;
+      background: none;
 
       .play-pause {
         color: $play-btn-fg;
