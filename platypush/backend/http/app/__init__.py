@@ -9,9 +9,13 @@ from platypush.backend.http.app.utils import get_routes
 
 def initialize_logger():
     logger = logging.getLogger('werkzeug')
-    log_conf = Config.get('logging')
-    if 'level' in log_conf:
-        logger.setLevel(log_conf['level'])
+    try:
+        log_conf = Config.get('logging')
+        if 'level' in log_conf:
+            logger.setLevel(log_conf['level'])
+    except Exception as e:
+        logger.warning('Could not read logging level')
+        logger.exception(e)
 
 
 ## Webapp initialization
