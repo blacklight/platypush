@@ -119,6 +119,7 @@ export default {
 
 .players {
   ::v-deep(.dropdown) {
+    direction: ltr;
     .item {
       padding: .5em;
     }

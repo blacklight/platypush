@@ -159,6 +159,7 @@ export default {
 
     &.right {
       justify-content: right;
+      direction: rtl;
     }
   }
 

@@ -261,6 +261,8 @@ export default {
 
 button {
   border: 0;
+  background: none;
+
   &:hover {
     border: 0;
 
@@ -404,7 +406,6 @@ button {
     button {
       padding: 0;
       margin: 0 .75em;
-      background: none;
 
       .play-pause {
         color: $play-btn-fg;
