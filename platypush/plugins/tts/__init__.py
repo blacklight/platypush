@@ -19,8 +19,8 @@ class TtsPlugin(Plugin):
     """
 
     _supported_media_plugins = [
-        'media.omxplayer',
         'media.gstreamer',
+        'media.omxplayer',
         'media.mplayer',
         'media.mpv',
         'media.vlc',
