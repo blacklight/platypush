@@ -21,12 +21,10 @@ class AssistantGoogleBackend(AssistantBackend):
 
     It listens for voice commands and post conversation events on the bus.
 
-    **WARNING**: This backend is deprecated, as the underlying Google Assistant
-    library has been deprecated too: https://developers.google.com/assistant/sdk/reference/library/python/
-    The old library might still work on some systems but its proper functioning
-    is not guaranteed.
-    Please use the Snowboy backend for hotword detection and the Google Assistant
-    push-to-talk plugin for assistant interaction instead.
+    **WARNING**: The Google Assistant library used by this backend has officially been deprecated:
+    https://developers.google.com/assistant/sdk/reference/library/python/. This backend still works on most of the
+    devices where I use it, but its correct functioning is not guaranteed as the assistant library is no longer
+    maintained.
 
     Triggers:
 
