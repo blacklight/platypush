@@ -33,9 +33,9 @@ class HttpBackend(Backend):
 
         * To execute Platypush commands via HTTP calls. In order to do so:
 
-            ** Register a user to Platypush through the web panel (usually served on ``http://host:8008/``).
+            * Register a user to Platypush through the web panel (usually served on ``http://host:8008/``).
 
-            ** Generate a token for your user, either through the web panel (Settings -> Generate Token) or via API:
+            * Generate a token for your user, either through the web panel (Settings -> Generate Token) or via API:
 
                 .. code-block:: shell
 
@@ -45,7 +45,7 @@ class HttpBackend(Backend):
                         "password": "$YOUR_PASSWORD"
                       }' http://host:8008/auth
 
-            ** Execute actions through the ``/execute`` endpoint:
+            * Execute actions through the ``/execute`` endpoint:
 
                 .. code-block:: shell
 
@@ -64,11 +64,10 @@ class HttpBackend(Backend):
 
         * To display a fullscreen dashboard with custom widgets.
 
-            ** Widgets are available as Vue.js components under
-               ``platypush/backend/http/webapp/src/components/widgets``.
+            * Widgets are available as Vue.js components under ``platypush/backend/http/webapp/src/components/widgets``.
 
-            ** Explore their options (some may require some plugins or backends to be configured in order to work) and
-               create a new dashboard template under ``~/.config/platypush/dashboards``- e.g. ``main.xml``:
+            * Explore their options (some may require some plugins or backends to be configured in order to work) and
+              create a new dashboard template under ``~/.config/platypush/dashboards``- e.g. ``main.xml``:
 
                 .. code-block:: xml
 
@@ -102,8 +101,8 @@ class HttpBackend(Backend):
                         </Row>
                     </Dashboard>
 
-            ** The dashboard will be accessible under ``http://host:8008/dashboard/<name>``, where ``name=main`` if for
-               example you stored your template under ``~/.config/platypush/dashboards/main.xml``.
+            * The dashboard will be accessible under ``http://host:8008/dashboard/<name>``, where ``name=main`` if for
+              example you stored your template under ``~/.config/platypush/dashboards/main.xml``.
 
         * To expose custom endpoints that can be called as web hooks by other applications and run some custom logic.
           All you have to do in this case is to create a hook on a
