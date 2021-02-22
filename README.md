@@ -221,6 +221,62 @@ def on_music_play_command(event, title=None, artist=None, **context):
     run('music.mpd.play', results[0]['file'])
 ```
 
+### Procedures
+
+Procedures are pieces of custom logic that can be executed as atomic actions using `procedure.<name>` as an action name.
+They can be defined either in the `config.yaml` or as Python scripts stored under `~/.config/platypush/scripts` -
+provided that the procedure is also imported in `~/.config/platypush/scripts/__init__.py` so it can be discovered by
+the service.
+
+YAML example for a procedure that can be executed when we arrive home and turns on the lights if the luminosity is lower
+that a certain thresholds, says a welcome home message using the TTS engine and starts playing the music:
+
+```yaml
+procedure.at_home:
+    # Get luminosity data from a sensor - e.g. LTR559
+    - action: gpio.sensor.ltr559.get_data
+
+    # If it's lower than a certain threshold, turn on the lights
+    - if ${int(light or 0) < 110}:
+        - action: light.hue.on
+
+    # Say a welcome home message
+    - action: tts.google.say
+      args:
+        text: Welcome home
+
+    # Play the music
+    - action: music.mpd.play
+```
+
+Python example:
+
+```python
+# Content of ~/.config/platypush/scripts/home.py
+from platypush.procedure import procedure
+from platypush.utils import run
+
+@procedure
+def at_home(**context):
+  sensor_data = run('gpio.sensor.ltr559.get_data')
+  if sensor_data['light'] < 110:
+    run('light.hue.on')
+
+  run('tts.google.say', text='Welcome home')
+  run('music.mpd.play')
+```
+
+In either case, you can easily trigger the at-home procedure by sending an action request message to a backend - for
+example, over the HTTP backend:
+
+```shell
+curl -XPOST -H 'Content-Type: application/json' -H "Authorization: Bearer $YOUR_TOKEN" -d '
+  {
+    "type": "request",
+    "action": "procedure.at_home"
+  }' http://host:8008/execute
+```
+
 ### The web interface
 
 If [`backend.http`](https://docs.platypush.tech/en/latest/platypush/backend/http.html) is enabled then a web interface
