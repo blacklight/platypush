@@ -117,7 +117,11 @@ class MediaOmxplayerPlugin(MediaPlugin):
 
         if self._player:
             try:
-                self._player.stop()
+                try:
+                    self._player.stop()
+                except:
+                    pass
+
                 self._player.quit()
             except OMXPlayerDeadError:
                 pass
