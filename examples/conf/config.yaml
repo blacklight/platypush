@@ -46,46 +46,39 @@
 # https://docs.platypush.tech/en/latest/platypush/plugins/light.hue.html
 # for reference. You can easily install the required dependencies for the plugin through
 # pip install 'platypush[hue]'
-#light.hue:
-#    # IP address or hostname of the Hue bridge
-#    bridge: 192.168.1.10
-#    # Groups that will be handled by default if nothing is specified on the request
-#    groups:
-#        - Living Room
+light.hue:
+    # IP address or hostname of the Hue bridge
+    bridge: 192.168.1.10
+    # Groups that will be handled by default if nothing is specified on the request
+    groups:
+        - Living Room
 
 # Example configuration of music.mpd plugin, see
 # https://docs.platypush.tech/en/latest/platypush/plugins/music.mpd.html
 # You can easily install the dependencies through pip install 'platypush[mpd]'
-#music.mpd:
-#    host: localhost
-#    port: 6600
+music.mpd:
+    host: localhost
+    port: 6600
 
 # Example configuration of media.chromecast plugin, see
 # https://docs.platypush.tech/en/latest/platypush/plugins/media.chromecast.html
 # You can easily install the dependencies through pip install 'platypush[chromecast]'
-#media.chromecast:
-#    chromecast: Living Room TV
+media.chromecast:
+    chromecast: Living Room TV
 
 # Plugins with empty configuration can also be explicitly enabled by specifying
 # enabled=True or disabled=False (it's a good practice if you want the
 # corresponding web panel to be enabled, if available)
-#camera:
-#    enabled: True
-
-# Support for last.fm scrobbling. Install dependencies with 'pip install "platypush[lastfm]"
-lastfm:
-    api_key: your_api_key
-    api_secret: your_api_secret
-    username: your_username
-    password: your_password
+camera.pi:
+    enabled: True
 
 # Support for calendars - in this case Google and Facebook calendars
 # Installing the dependencies: pip install 'platypush[ical,google]'
-#calendar:
-#    calendars:
-#        - type: platypush.plugins.google.calendar.GoogleCalendarPlugin
-#        - type: platypush.plugins.calendar.ical.CalendarIcalPlugin
-#          url: https://www.facebook.com/events/ical/upcoming/?uid=your_user_id&key=your_key
+calendar:
+    calendars:
+        - type: platypush.plugins.google.calendar.GoogleCalendarPlugin
+        - type: platypush.plugins.calendar.ical.CalendarIcalPlugin
+          url: https://www.facebook.com/events/ical/upcoming/?uid=your_user_id&key=your_key
 
 ## --
 ## Backends configuration examples
@@ -130,35 +123,35 @@ backend.http:
 # the backend to listen for changes on a set of RSS feeds. New content will be stored by default
 # on a SQLite database under ~/.local/share/platypush/feeds/rss.db.
 # Install the required dependencies through 'pip install "platypush[rss,db]"'
-#backend.http.poll:
-#    requests:
-#        - type: platypush.backend.http.request.rss.RssUpdates # HTTP poll type (RSS)
-#          # Remote URL
-#          url: http://www.theguardian.com/rss/world
-#          # Custom title
-#          title: The Guardian - World News
-#          # How often we should check for changes
-#          poll_seconds: 600
-#          # Maximum number of new entries to be processed
-#          max_entries: 10
-#
-#        - type: platypush.backend.http.request.rss.RssUpdates
-#          url: http://www.physorg.com/rss-feed
-#          title: Phys.org
-#          poll_seconds: 600
-#          max_entries: 10
-#
-#        - type: platypush.backend.http.request.rss.RssUpdates
-#          url: http://feeds.feedburner.com/Techcrunch
-#          title: Tech Crunch
-#          poll_seconds: 600
-#          max_entries: 10
-#
-#        - type: platypush.backend.http.request.rss.RssUpdates
-#          url: http://www.nytimes.com/services/xml/rss/nyt/HomePage.xml
-#          title: The New York Times
-#          poll_seconds: 300
-#          max_entries: 10
+backend.http.poll:
+    requests:
+        - type: platypush.backend.http.request.rss.RssUpdates # HTTP poll type (RSS)
+          # Remote URL
+          url: http://www.theguardian.com/rss/world
+          # Custom title
+          title: The Guardian - World News
+          # How often we should check for changes
+          poll_seconds: 600
+          # Maximum number of new entries to be processed
+          max_entries: 10
+
+        - type: platypush.backend.http.request.rss.RssUpdates
+          url: http://www.physorg.com/rss-feed
+          title: Phys.org
+          poll_seconds: 600
+          max_entries: 10
+
+        - type: platypush.backend.http.request.rss.RssUpdates
+          url: http://feeds.feedburner.com/Techcrunch
+          title: Tech Crunch
+          poll_seconds: 600
+          max_entries: 10
+
+        - type: platypush.backend.http.request.rss.RssUpdates
+          url: http://www.nytimes.com/services/xml/rss/nyt/HomePage.xml
+          title: The New York Times
+          poll_seconds: 300
+          max_entries: 10
 
 # MQTT backend. Installed required dependencies through 'pip install "platypush[mqtt]"'
 backend.mqtt:
@@ -391,3 +384,4 @@ cron.TestCron:
         - action: shell.exec
           args:
               cmd: ~/bin/myscript.sh
+
