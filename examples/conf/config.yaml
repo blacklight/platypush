@@ -345,10 +345,8 @@ event.hook.SearchSongVoiceCommand:
         - action: music.mpd.search
           args:
               filter:
-                  - artist
-                  - ${artist}
-                  - any
-                  - ${title}
+                  artist: ${artist}
+                  title: ${title}
 
         # Play the first search result
         - action: music.mpd.play

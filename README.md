@@ -8,7 +8,7 @@ Platypush
 [![Last Commit](https://img.shields.io/github/last-commit/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/-/commits/master/)
 [![Contributions](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://git.platypush.tech/platypush/platypush/-/issues)
 
-- Advised read: [**Getting started with Platypush**](https://blog.platypush.tech/article/Ultimate-self-hosted-automation-with-Platypush).
+- Recommended read: [**Getting started with Platypush**](https://blog.platypush.tech/article/Ultimate-self-hosted-automation-with-Platypush).
 
 - The [blog](https://blog.platypush.tech) is in general a good place to get more insights on what you can build with it and inspiration about possible usages.
 
@@ -22,63 +22,362 @@ Platypush
 
 ---
 
-Imagine Platypush as some kind of [IFTTT](https://ifttt.com) on steroids - or [Tasker](https://tasker.joaoapps.com/), or [Microsoft Flow](https://flow.microsoft.com), or [PushBullet](https://pushbullet.com) on steroids.
-Platypush aims to turn any device in a smart hub that can control things, interact with cloud services and send messages to other devices. It's a general-purpose lightweight platform to process any request and run any logic triggered by custom events.
+Platypush is a general-purpose extensible platform for automation and integration across multiple services and devices.
 
-Imagine the ability of running any task you like, or automate any routine you like, on any of your devices. And the flexibility of executing actions through a cloud service, with the power of running them from your laptop, Raspberry Pi, smart home device or smartphone.
+It enables users to create their own self-hosted pieces of automation based on events (*if this happens then do that*)
+and it provides a comprehensive and customizable user interface that collects everything you need to visualize and
+control under one roof.
+
+It takes some concepts from [IFTTT](https://ifttt.com), [Tasker](https://tasker.joaoapps.com/),
+[Microsoft Flow](https://flow.microsoft.com), [PushBullet](https://pushbullet.com) and
+[Home Assistant](https://www.home-assistant.io/) to provide an environment where the user can easily connect things
+together.
+
+Its ideal home is a single-board computer like a RaspberryPi that you can configure to orchestrate any home automation
+and cloud automation in your own living room or garage, but it can easily run on any device that can run a Python
+interpreter, and the bar for the hardware requirements is very low as well - I use it to run pieces of automation on
+devices as powerful as a RaspberryPi Zero or an old Nokia N900 with Linux.
 
 You can use Platypush to do things like:
 
-- Control your smart home lights
-- Control your favourite music player
-- Interact with your voice assistant
-- Get events from your Google or Facebook calendars
-- Read data from your sensors and trigger custom events whenever they go above or below some custom thresholds
-- Control the motors of your robot
-- Send automated emails
-- Synchronize the clipboards on your devices
-- Control your smart switches
-- Implement custom text-to-speech commands
-- Build any kind of interaction with your Android device using Tasker
-- Play local videos, YouTube videos and torrent links
-- Get weather forecast for your location
+- [Control your smart home lights](https://blog.platypush.tech/article/Ultimate-self-hosted-automation-with-Platypush)
+- [Control your music and synchronize it to multiple devices](https://blog.platypush.tech/article/Build-your-open-source-multi-room-and-multi-provider-sound-server-with-Platypush-Mopidy-and-Snapcast)
+- [Create custom and privacy-secure voice assistants that run custom hooks on your phrases](https://blog.platypush.tech/article/Build-custom-voice-assistants)
+- Build integrations between [sensors](https://docs.platypush.tech/en/latest/platypush/backend/sensor.html),
+  [cameras](https://docs.platypush.tech/en/latest/platypush/plugins/camera.pi.html),
+  [microphones](https://docs.platypush.tech/en/latest/platypush/plugins/sound.html) and
+  [machine learning models](https://docs.platypush.tech/en/latest/platypush/plugins/tensorflow.html) to create smart
+  pieces of automation for e.g.
+  [people detection](https://blog.platypush.tech/article/Detect-people-with-a-RaspberryPi-a-thermal-camera-Platypush-and-a-pinch-of-machine-learning)
+  or [sound detection](https://blog.platypush.tech/article/Create-your-smart-baby-monitor-with-Platypush-and-Tensorflow)
+- [Get events from your Google or Facebook calendars](https://docs.platypush.tech/en/latest/platypush/plugins/calendar.html)
+- [Read data from your sensors and trigger custom events whenever they go above or below some custom thresholds](https://blog.platypush.tech/article/How-to-build-your-personal-infrastructure-for-data-collection-and-visualization)
+- [Control and automate a self-built robot](https://docs.platypush.tech/en/latest/platypush/plugins/gpio.zeroborg.html)
+- [Deliver automated newsletters from custom RSS digests](https://blog.platypush.tech/article/Deliver-customized-newsletters-from-RSS-feeds-with-Platypush)
+- [Synchronize the clipboards on your devices](https://docs.platypush.tech/en/latest/platypush/plugins/clipboard.html)
+- [Control your smart switches](https://docs.platypush.tech/en/latest/platypush/plugins/switch.html)
+- [Implement automated custom text-to-speech routines](https://docs.platypush.tech/en/latest/platypush/plugins/tts.html)
+- [Build any kind of interactions and automation routines with your Android device using Tasker](https://blog.platypush.tech/article/How-to-build-your-personal-infrastructure-for-data-collection-and-visualization)
+- Play [local videos](https://docs.platypush.tech/en/latest/platypush/plugins/media.mpv.html), YouTube videos and torrent media from any device and service, to any device
+- [Get weather forecast events for your location and build automation routines on them](https://docs.platypush.tech/en/latest/platypush/plugins/weather.darksky.html)
+- [Create a custom single hub for Zigbee and Z-Wave smart devices](https://blog.platypush.tech/article/Transform-a-RaspberryPi-into-a-universal-Zigbee-and-Z-Wave-bridge)
 - Build your own web dashboard with calendar, weather, news and music controls (basically, anything that has a Platypush web widget)
 - ...and much more (basically, anything that comes with a [Platypush plugin](https://docs.platypush.tech/en/latest/plugins.html))
 
-Imagine the ability of executing all the actions above through messages delivered through:
+## Architecture
 
-- A web interface
-- A JSON-RPC API
-- Raw TCP messages
-- Web sockets
-- [PushBullet](https://pushbullet.com)
-- [Kafka](https://kafka.apache.org)
-- [Redis](https://redis.io)
-- [MQTT](https://mqtt.org)
-- ...amd much more (basically, anything that comes with a [Platypush backend](https://docs.platypush.tech/en/latest/backends.html))
+The architecture of Platypush consists of a few simple pieces, orchestrated by a configuration file stored by default
+under [`~/.config/platypush/config.yaml`](https://git.platypush.tech/platypush/platypush/-/blob/master/examples/conf/config.yaml):
 
-Imagine the ability of building custom event hooks to automatically trigger any actions:
+### [Plugins](https://docs.platypush.tech/en/latest/plugins.html)
 
-- When your voice assistant recognizes some text
-- When you start playing a new song
-- When a new event is added to your calendar
-- When a new article is published on your favourite feed
-- When the weather conditions change
-- When your press a [Flic button](https://flic.io) with a certain pattern
-- When you receive a new push on your Pushbullet account
-- When your GPS signal enters a certain area
-- Whenever a new MIDI event is received (yes, you heard well :) )
-- Whenever a sensor sends new data
-- At a specific date or time
-- ...and so on (basically, anything can send events that can be used to build hooks)
+They are integrations that do things - like
+[modify files](https://docs.platypush.tech/en/latest/platypush/plugins/file.html),
+[train and evaluate machine learning models](https://docs.platypush.tech/en/latest/platypush/plugins/tensorflow.html),
+[control cameras](https://docs.platypush.tech/en/latest/platypush/plugins/camera.pi.html),
+[read sensors](https://docs.platypush.tech/en/latest/platypush/plugins/gpio.sensor.dht.html),
+[parse a web page](https://docs.platypush.tech/en/latest/platypush/plugins/http.webpage.html),
+[control lights](https://docs.platypush.tech/en/latest/platypush/plugins/light.hue.html),
+[send emails](https://docs.platypush.tech/en/latest/platypush/plugins/mail.smtp.html),
+[control Chromecasts](https://docs.platypush.tech/en/latest/platypush/plugins/media.chromecast.html),
+[run voice queries](https://docs.platypush.tech/en/latest/platypush/plugins/assistant.google.html),
+[handle torrent transfers](https://docs.platypush.tech/en/latest/platypush/plugins/torrent.html) or
+control [Zigbee](https://docs.platypush.tech/en/latest/platypush/plugins/zigbee.mqtt.html) or
+[Z-Wave](https://docs.platypush.tech/en/latest/platypush/plugins/zwave.html) devices.
 
-Imagine the ability of running the application, with lots of those bundled features, on any device that can comes with Python (_only compatible with version 3.6 and higher_). Platypush has been designed with performance in mind, it's been heavily tested on slower devices like Raspberry Pis, and it can run the web server features, multiple backends and plugins quite well even on a Raspberry Pi Zero - it's even been tested with some quite impressive performance on an older [Nokia N900](https://en.wikipedia.org/wiki/Nokia_N900), and of course you can run it on any laptop, desktop, server environment. It's been developed mainly with IoT in mind (and some of its features overlap with IoT frameworks like [Mozilla IoT](https://iot.mozilla.com) and [Android Things](https://developer.android.com/things/)), but nothing prevents you from automating any task on any device and environment.
+The configuration of a plugin matches one-on-one that of its documented class constructor, so it's very straightforward
+to write a configuration for a plugin by reading its documentation:
 
-To get started:
+```yaml
+light.hue:
+  # Groups that will be controlled by default
+  groups:
+    - Living Room
+    - Hall
+```
 
-- [Wiki](https://git.platypush.tech/platypush/platypush/-/wikis/home) for installation notes, quick start, examples and architecture reference
-- [Read the docs](https://docs.platypush.tech/en/latest/) for a complete reference on the available plugins and backends
-- [Blog articles](https://blog.platypush.tech) describing hands-on applications of Platypush
+### Actions
+
+Plugins expose *actions*, that match one-on-one the plugin class methods denoted by `@action`, so it's very
+straightforward to invoke plugin actions by just reading the plugin documentation. They can be invoked directly from
+your own scripts or they can be sent to the platform through any supported channel as simple JSON messages:
+
+```json
+{
+  "type": "request",
+  "action": "light.hue.on",
+  "args": {
+    "lights": ["Entrance Bulb"]
+  }
+}
+```
+
+### [Backends](https://docs.platypush.tech/en/latest/backends.html)
+
+They are background services that either listen for messages on channels (like an
+[HTTP backend](https://docs.platypush.tech/en/latest/platypush/backend/http.html), an
+[MQTT instance](https://docs.platypush.tech/en/latest/platypush/backend/mqtt.html), a
+[Kafka instance](https://docs.platypush.tech/en/latest/platypush/backend/kafka.html), a
+[Websocket service](https://docs.platypush.tech/en/latest/platypush/backend/websocket.html),
+[Pushbullet](https://docs.platypush.tech/en/latest/platypush/backend/pushbullet.html) etc.) or monitor a device or a
+service for events (like a [sensor](https://docs.platypush.tech/en/latest/platypush/backend/sensor.html), a custom
+[voice assistant](https://docs.platypush.tech/en/latest/platypush/backend/assistant.google.html), a bridge running on a
+[Zigbee](https://docs.platypush.tech/en/latest/platypush/backend/zigbee.mqtt.html) or
+[Z-Wave](https://docs.platypush.tech/en/latest/platypush/backend/zwave.html), an
+[NFC card reader](https://docs.platypush.tech/en/latest/platypush/backend/nfc.html), a
+[MIDI device](https://docs.platypush.tech/en/latest/platypush/backend/midi.html), a
+[Telegram channel](https://docs.platypush.tech/en/latest/platypush/backend/chat.telegram.html), a
+[Bluetooth scanner](https://docs.platypush.tech/en/latest/platypush/backend/bluetooth.scanner.ble.html) etc.).
+
+If a backend supports the execution of requests (e.g. HTTP, MQTT, Kafka, Websocket and TCP) then you can send requests
+to these services in JSON format. For example, in the case of the HTTP backend:
+
+```shell
+# Get a token
+curl -XPOST -H 'Content-Type: application/json' -d '
+  {
+    "username": "$YOUR_USER",
+    "password": "$YOUR_PASSWORD"
+  }' http://host:8008/auth
+
+# Execute a request
+
+curl -XPOST -H 'Content-Type: application/json' -H "Authorization: Bearer $YOUR_TOKEN" -d '
+  {
+    "type": "request",
+    "action": "tts.say",
+    "args": {
+      "text": "This is a test"
+    }
+  }' http://host:8008/execute
+```
+
+### [Events](https://docs.platypush.tech/en/latest/events.html)
+
+When a certain event occurs (e.g. a JSON request is received, or a
+[Bluetooth device is connected](https://docs.platypush.tech/en/latest/platypush/events/bluetooth.html#platypush.message.event.bluetooth.BluetoothDeviceConnectedEvent),
+or a
+[Flic button is pressed](https://docs.platypush.tech/en/latest/platypush/events/button.flic.html#platypush.message.event.button.flic.FlicButtonEvent),
+or some
+[speech is detected on the voice assistant service](https://docs.platypush.tech/en/latest/platypush/events/assistant.html#platypush.message.event.assistant.SpeechRecognizedEvent),
+or an
+[RSS feed has new items](https://docs.platypush.tech/en/latest/platypush/events/http.rss.html#platypush.message.event.http.rss.NewFeedEvent),
+or a
+[new email is received](https://docs.platypush.tech/en/latest/platypush/events/mail.html#platypush.message.event.mail.MailReceivedEvent),
+or a
+[new track is played](https://docs.platypush.tech/en/latest/platypush/events/music.html#platypush.message.event.music.NewPlayingTrackEvent),
+or an
+[NFC tag is detected](https://docs.platypush.tech/en/latest/platypush/events/nfc.html#platypush.message.event.nfc.NFCTagDetectedEvent),
+or
+[new sensor data is available](https://docs.platypush.tech/en/latest/platypush/events/sensor.html#platypush.message.event.sensor.SensorDataChangeEvent),
+or
+[a value of a Zigbee device changes](https://docs.platypush.tech/en/latest/platypush/events/zigbee.mqtt.html#platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePropertySetEvent),
+etc.), the associated backend will trigger an [event](https://docs.platypush.tech/en/latest/events.html).
+
+### Hooks
+
+Event hooks are custom pieces of logic that will be run when a certain event is triggered. Hooks are the glue that
+connects events to actions, exposing a paradigm similar to IFTTT (_if a certain event happens then run these actions_).
+They can declared as:
+
+- Sections of the [`config.yaml`](https://git.platypush.tech/platypush/platypush/-/blob/master/examples/conf/config.yaml).
+  Example:
+
+```yaml
+event.hook.SearchSongVoiceCommand:
+  if:
+    type: platypush.message.event.assistant.SpeechRecognizedEvent
+    phrase: "play ${title} by ${artist}"
+  then:
+    - action: music.mpd.clear
+    - action: music.mpd.search
+      args:
+        filter:
+          artist: ${artist}
+          title: ${title}
+
+    - if ${len(output)}:
+      - action: music.mpd.play
+        args:
+          resource: ${output[0]['file']}
+```
+
+- Stand-alone Python scripts stored under `~/.config/platypush/scripts` and will be dynamically imported at start time.
+  [Example](https://git.platypush.tech/platypush/platypush/-/blob/master/examples/conf/hook.py):
+  
+```python
+from platypush.event.hook import hook
+from platypush.utils import run
+from platypush.message.event.assistant import SpeechRecognizedEvent
+
+@hook(SpeechRecognizedEvent, phrase='play ${title} by ${artist}')
+def on_music_play_command(event, title=None, artist=None, **context):
+  results = run('music.mpd.search', filter={
+    'artist': artist,
+    'title': title,
+  })
+
+  if results:
+    run('music.mpd.play', results[0]['file'])
+```
+
+### The web interface
+
+If [`backend.http`](https://docs.platypush.tech/en/latest/platypush/backend/http.html) is enabled then a web interface
+will be provided by default on `http://host:8008/`. Besides using the `/execute` endpoint for running requests, the
+built-in web server also provides a full-featured interface that groups together the controls for most of the plugins -
+e.g. sensors, switches, music controls and search, media library and torrent management, lights, Zigbee/Z-Wave devices
+and so on. The UI is responsive and mobile-friendly.
+
+The web service also provides means for the user to create
+[custom dashboards](https://git.platypush.tech/platypush/platypush/-/blob/master/examples/conf/dashboard.xml) that can
+be used to show information from multiple sources on a large screen.
+
+## Installation
+
+### System installation
+
+Platypush uses Redis to deliver and store requests and temporary messages:
+
+```yaml
+# Example for Debian-based distributions
+[sudo] apt-get install redis-server
+
+# Enable and start the service
+[sudo] systemctl enable redis
+[sudo] systemctl start redis
+```
+
+To install the core platform:
+
+* The `pip` way:
+
+```shell
+[sudo] pip3 install platypush
+```
+
+* The sources way:
+
+```shell
+git clone https://git.platypush.tech/platypush/platypush.git
+cd platypush
+[sudo] python3 setup.py install
+```
+
+Then install the extensions that you wish to use. There are a few ways to check the dependencies required by an
+extension:
+
+#### Check their `extras` name in [`extras_require` under `setup.py`](https://git.platypush.tech/platypush/platypush/-/blob/master/setup.py#L72).
+
+If you follow this route then you can install the extra dependencies in one of the following ways:
+
+1. `pip` installation:
+
+```shell
+[sudo] pip3 install 'platypush[extra1,extra2,extra3]'
+```
+
+2. Sources installation:
+
+```shell
+cd $DIR_TO_PLATYPUSH
+[sudo] pip3 install '.[extra1,extra2,extra3]'
+```
+  
+#### Check the dependencies/installation instructions reported under the plugin/backend documentation.
+
+If you follow this route then simply run the commands listed in the plugin/backend documentation to get the dependencies
+installed.
+
+#### Check/uncomment the associated lines in [`requirements.txt`](https://git.platypush.tech/platypush/platypush/-/blob/master/requirements.txt).
+
+If you follow this route then uncomment the lines in
+[`requirements.txt`](https://git.platypush.tech/platypush/platypush/-/blob/master/requirements.txt) associated to the
+plugins/backends that you want to use and run:
+
+```shell
+[sudo] pip3 install -r requirements.txt
+```
+
+After installing the dependencies, create a configuration file under `~/.config/platypush/config.yaml` (the application
+can load the configuration from another location through the `-c` option) containing the configuration of the backend
+and plugins that you want to use, and add any hooks and procedures for your use case.
+
+You can then start the service by simply running:
+
+```shell
+platypush
+```
+
+It's advised to run it as a systemd service though - simply copy the provided
+[`.service` file](https://git.platypush.tech/platypush/platypush/-/blob/master/examples/systemd/platypush.service) to
+`~/.config/systemd/user`, check if the path of `platypush` matches the path where it's installed on your system, and
+start the service via `systemctl`:
+
+```shell
+systemctl --user start platypush
+```
+
+### [Virtual environment installation](https://git.platypush.tech/platypush/platypush/-/wikis/Run-platypush-in-a-virtual-environment)
+
+Platypush provides a script named `platyvenv` that can parse a `config.yaml` and automatically create a virtual
+environment (under `~/.local/share/platypush/venv/<device_id>`) with all the dependencies required by the configured
+integrations.
+
+1. Create the environment from a configuration file:
+
+```shell
+platyvenv build -c /path/to/config.yaml
+```
+
+2. Start the service from the virtual environment:
+
+```shell
+# device_id matches either the hostname or the device_id in config.yaml
+platyvenv start device_id
+```
+
+3. Stop the instance:
+
+```shell
+platyvenv stop device_id
+```
+
+4. Remove the instance:
+
+```shell
+platyvenv rm device_id
+```
+
+### [Docker installation](https://git.platypush.tech/platypush/platypush/-/wikis/Run-platypush-in-a-container)
+
+You can also install Platypush in a container - the application provides a script named `platydock` that automatically
+creates a container instance from a `config.yaml`:
+
+1. Create the container from a configuration file:
+
+```shell
+platydock build -c /path/to/config.yaml
+```
+
+2. Start the container:
+
+```shell
+# device_id matches either the hostname or the device_id in config.yaml
+platydock start device_id
+```
+
+3. Stop the instance:
+
+```shell
+platydock stop device_id
+```
+
+4. Remove the instance:
+
+```shell
+platyvdock rm device_id
+```
 
 ---
 
@@ -86,11 +385,10 @@ To get started:
 
 If you use and love Platypush, please consider [buying me a coffee/beer](https://paypal.me/fabiomanganiello).
 
-I've been working on Platypush all by myself in my spare time for the past few years, and I've made sure that it remains open and free, and I've even opted to pay
-for a self-hosted solution for the repo, the blog and the website to make sure that it always stays free, independent and without paywalls.
+I've been working on Platypush all by myself in my spare time for the past few years, and I've made sure that it remains
+open and free.
 
-If you think that I've done a good job, please consider donating some of your spare change - I'm definitely not planning to get rich with this project, but I'd love
-to have at least the monthly costs for the server covered by users.
+If you like this product, please consider supporting - I'm definitely not planning to get rich with this project, but
+I'd love to have at least the costs for the server covered by users.
 
 Issues and requests opened by donors will also be given priority over others.
-

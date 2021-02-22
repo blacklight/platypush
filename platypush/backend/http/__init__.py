@@ -56,7 +56,7 @@ class HttpBackend(Backend):
                         "args": {
                           "text": "This is a test"
                         }
-                      }' http://localhost:8008/execute
+                      }' http://host:8008/execute
 
         * To interact with your system (and control plugins and backends) through the Platypush web panel,
           by default available on ``http://host:8008/``. Any configured plugin that has an available panel
