@@ -12,36 +12,137 @@ from platypush.utils import get_ssl_server_context, set_thread_name
 
 class HttpBackend(Backend):
     """
-    The HTTP backend is a general-purpose web server that you can leverage:
+    The HTTP backend is a general-purpose web server.
 
-        * To execute Platypush commands via HTTP calls. Example::
+    Example configuration:
 
-            curl -XPOST -H 'Content-Type: application/json' -H "X-Token: your_token" \\
-                -d '{
-                    "type":"request",
-                    "target":"nodename",
-                    "action":"tts.say",
-                    "args": {"phrase":"This is a test"}
-                }' \\
-                http://localhost:8008/execute
+      .. code-block:: yaml
+
+        backend.http:
+            # Default HTTP listen port
+            port: 8008
+            # Default websocket port
+            websocket_port: 8009
+            # External folders that will be exposed over `/resources/<name>`
+            resource_dirs:
+                photos: /mnt/hd/photos
+                videos: /mnt/hd/videos
+                music: /mnt/hd/music
+
+    You can leverage this backend:
+
+        * To execute Platypush commands via HTTP calls. In order to do so:
+
+            ** Register a user to Platypush through the web panel (usually served on ``http://host:8008/``).
+
+            ** Generate a token for your user, either through the web panel (Settings -> Generate Token) or via API:
+
+                .. code-block:: shell
+
+                    curl -XPOST -H 'Content-Type: application/json' -d '
+                      {
+                        "username": "$YOUR_USER",
+                        "password": "$YOUR_PASSWORD"
+                      }' http://host:8008/auth
+
+            ** Execute actions through the ``/execute`` endpoint:
+
+                .. code-block:: shell
+
+                    curl -XPOST -H 'Content-Type: application/json' -H "Authorization: Bearer $YOUR_TOKEN" -d '
+                      {
+                        "type": "request",
+                        "action": "tts.say",
+                        "args": {
+                          "text": "This is a test"
+                        }
+                      }' http://localhost:8008/execute
 
         * To interact with your system (and control plugins and backends) through the Platypush web panel,
-          by default available on your web root document. Any plugin that you have configured and available as a panel
-          plugin will appear on the web panel as well as a tab.
+          by default available on ``http://host:8008/``. Any configured plugin that has an available panel
+          plugin will be automatically added to the web panel.
 
-        * To display a fullscreen dashboard with your configured widgets, by default available under ``/dashboard/<dashboard_name>``
+        * To display a fullscreen dashboard with custom widgets.
 
-        * To stream media over HTTP through the ``/media`` endpoint
+            ** Widgets are available as Vue.js components under
+               ``platypush/backend/http/webapp/src/components/widgets``.
+
+            ** Explore their options (some may require some plugins or backends to be configured in order to work) and
+               create a new dashboard template under ``~/.config/platypush/dashboards``- e.g. ``main.xml``:
+
+                .. code-block:: xml
+
+                    <Dashboard>
+                        <!-- Display the following widgets on the same row. Each row consists of 12 columns.
+                             You can specify the width of each widget either through class name (e.g. col-6 means
+                             6 columns out of 12, e.g. half the size of the row) or inline style
+                             (e.g. `style="width: 50%"`). -->
+                        <Row>
+                            <!-- Show a calendar widget with the upcoming events. It requires the `calendar` plugin to
+                                 be enabled and configured. -->
+                            <Calendar class="col-6" />
+
+                            <!-- Show the current track and other playback info. It requires `music.mpd` plugin or any
+                                 other music plugin enabled. -->
+                            <Music class="col-3" />
+
+                            <!-- Show current date, time and weather. It requires a `weather` plugin or backend enabled -->
+                            <DateTimeWeather class="col-3" />
+                        </Row>
+
+                        <!-- Display the following widgets on a second row -->
+                        <Row>
+                            <!-- Show a carousel of images from a local folder. For security reasons, the folder must be
+                                 explicitly exposed as an HTTP resource through the backend `resource_dirs` attribute. -->
+                            <ImageCarousel class="col-6" img-dir="/mnt/hd/photos/carousel" />
+
+                            <!-- Show the news headlines parsed from a list of RSS feed and stored locally through the
+                                 `http.poll` backend -->
+                            <RssNews class="col-6" db="sqlite:////path/to/your/rss.db" />
+                        </Row>
+                    </Dashboard>
+
+            ** The dashboard will be accessible under ``http://host:8008/dashboard/<name>``, where ``name=main`` if for
+               example you stored your template under ``~/.config/platypush/dashboards/main.xml``.
+
+        * To expose custom endpoints that can be called as web hooks by other applications and run some custom logic.
+          All you have to do in this case is to create a hook on a
+          :class:`platypush.message.event.http.hook.WebhookEvent` with the endpoint that you want to expose and store
+          it under e.g. ``~/.config/platypush/scripts/hooks.py``:
+
+            .. code-block:: python
+
+                from platypush.context import get_plugin
+                from platypush.event.hook import hook
+                from platypush.message.event.http.hook import WebhookEvent
+
+                hook_token = 'abcdefabcdef'
+
+                # Expose the hook under the /hook/lights_toggle endpoint
+                @hook(WebhookEvent, hook='lights_toggle')
+                def lights_toggle(event, **context):
+                    # Do any checks on the request
+                    assert event.headers.get('X-Token') == hook_token, 'Unauthorized'
+
+                    # Run some actions
+                    lights = get_plugin('light.hue')
+                    lights.toggle()
 
     Any plugin can register custom routes under ``platypush/backend/http/app/routes/plugins``.
     Any additional route is managed as a Flask blueprint template and the `.py`
     module can expose lists of routes to the main webapp through the
     ``__routes__`` object (a list of Flask blueprints).
 
-    Note that if you set up a main token, it will be required for any HTTP
-    interaction - either as ``X-Token`` HTTP header, on the query string
-    (attribute name: ``token``), as part of the JSON payload root (attribute
-    name: ``token``), or via HTTP basic auth (any username works).
+    Security: Access to the endpoints requires at least one user to be registered. Access to the endpoints is regulated
+    in the following ways (with the exception of event hooks, whose logic is up to the user):
+
+        * **Simple authentication** - i.e. registered username and password.
+        * **JWT token** provided either over as ``Authorization: Bearer`` header or ``GET`` ``?token=<TOKEN>``
+          parameter. A JWT token can be generated either through the web panel or over the ``/auth`` endpoint.
+        * **Global platform token**, usually configured on the root of the ``config.yaml`` as ``token: <VALUE>``.
+          It can provided either over on the ``X-Token`` header or as a ``GET`` ``?token=<TOKEN>`` parameter.
+        * **Session token**, generated upon login, it can be used to authenticate requests through the ``Cookie`` header
+          (cookie name: ``session_token``).
 
     Requires:
 

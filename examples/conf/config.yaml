@@ -16,21 +16,21 @@
 # Using multiple files is encouraged in the case of large configurations
 # that can easily end up in a messy config.yaml file, as they help you
 # keep your configuration more organized.
-include:
-    - include/logging.yaml
-    - include/media.yaml
-    - include/sensors.yaml
+#include:
+#    - include/logging.yaml
+#    - include/media.yaml
+#    - include/sensors.yaml
 
 # platypush logs on stdout by default. You can use the logging section to specify
 # an alternative file or change the logging level.
-logging:
-    filename: ~/.local/log/platypush/platypush.log
-    level: INFO
+#logging:
+#    filename: ~/.local/log/platypush/platypush.log
+#    level: INFO
 
 # The device_id is used by many components of platypush and it should uniquely
 # identify a device in your network. If nothing is specified then the hostname
 # will be used.
-device_id: myname
+#device_id: my_device
 
 ## --
 ## Plugin configuration examples
@@ -46,31 +46,31 @@ device_id: myname
 # https://docs.platypush.tech/en/latest/platypush/plugins/light.hue.html
 # for reference. You can easily install the required dependencies for the plugin through
 # pip install 'platypush[hue]'
-light.hue:
-    # IP address or hostname of the Hue bridge
-    bridge: 192.168.1.10
-    # Groups that will be handled by default if nothing is specified on the request
-    groups:
-        - Living Room
+#light.hue:
+#    # IP address or hostname of the Hue bridge
+#    bridge: 192.168.1.10
+#    # Groups that will be handled by default if nothing is specified on the request
+#    groups:
+#        - Living Room
 
 # Example configuration of music.mpd plugin, see
 # https://docs.platypush.tech/en/latest/platypush/plugins/music.mpd.html
 # You can easily install the dependencies through pip install 'platypush[mpd]'
-music.mpd:
-    host: localhost
-    port: 6600
+#music.mpd:
+#    host: localhost
+#    port: 6600
 
 # Example configuration of media.chromecast plugin, see
 # https://docs.platypush.tech/en/latest/platypush/plugins/media.chromecast.html
 # You can easily install the dependencies through pip install 'platypush[chromecast]'
-media.chromecast:
-    chromecast: Living Room TV
+#media.chromecast:
+#    chromecast: Living Room TV
 
 # Plugins with empty configuration can also be explicitly enabled by specifying
 # enabled=True or disabled=False (it's a good practice if you want the
 # corresponding web panel to be enabled, if available)
-camera:
-    enabled: True
+#camera:
+#    enabled: True
 
 # Support for last.fm scrobbling. Install dependencies with 'pip install "platypush[lastfm]"
 lastfm:
@@ -81,13 +81,11 @@ lastfm:
 
 # Support for calendars - in this case Google and Facebook calendars
 # Installing the dependencies: pip install 'platypush[ical,google]'
-calendar:
-    calendars:
-        -
-            type: platypush.plugins.google.calendar.GoogleCalendarPlugin
-        -
-            type: platypush.plugins.calendar.ical.CalendarIcalPlugin
-            url: https://www.facebook.com/events/ical/upcoming/?uid=your_user_id&key=your_key
+#calendar:
+#    calendars:
+#        - type: platypush.plugins.google.calendar.GoogleCalendarPlugin
+#        - type: platypush.plugins.calendar.ical.CalendarIcalPlugin
+#          url: https://www.facebook.com/events/ical/upcoming/?uid=your_user_id&key=your_key
 
 ## --
 ## Backends configuration examples
@@ -118,77 +116,49 @@ calendar:
 backend.http:
     # Listening port
     port: 8008
+    # Websocket port
+    websocket_port: 8009
 
     # Through resource_dirs you can specify external folders whose content can be accessed on
     # the web server through a custom URL. In the case below we have a Dropbox folder containing
     # our pictures and we mount it to the '/carousel' endpoint.
     resource_dirs:
-        carousel: ~/Dropbox/Photos/carousel
-
-    # Dashboard configuration. The dashboard is a collection of widgets and it's organized in
-    # multiple rows. Each rows can be split in 12 columns. Therefore 'columns: 12' will make
-    # a widget span over the whole row, while 'columns: 6' will make a widget take half the
-    # horizontal space of a column.
-    dashboard:
-        widgets:
-            -
-                widget: calendar
-                columns: 6
-            -
-                widget: music
-                columns: 3
-            -
-                widget: date-time-weather
-                columns: 3
-            -
-                widget: image-carousel
-                columns: 6
-                images_path: ~/Dropbox/Photos/carousel
-                refresh_seconds: 15
-            -
-                widget: rss-news
-                # Requires backend.http.poll to be enabled with some
-                # RSS sources and write them to sqlite db
-                columns: 6
-                limit: 25
-                db: "sqlite:////home/user/.local/share/platypush/feeds/rss.db"
+        carousel: /mnt/hd/photos/carousel
 
 # The HTTP poll backend is a versatile backend that can monitor for HTTP-based resources and
 # trigger events whenever new entries are available. In the example below we show how to use
 # the backend to listen for changes on a set of RSS feeds. New content will be stored by default
 # on a SQLite database under ~/.local/share/platypush/feeds/rss.db.
 # Install the required dependencies through 'pip install "platypush[rss,db]"'
-backend.http.poll:
-    requests:
-        -
-            # HTTP poll type (RSS)
-            type: platypush.backend.http.request.rss.RssUpdates
-            # Remote URL
-            url: http://www.theguardian.com/rss/world
-            # Custom title
-            title: The Guardian - World News
-            # How often we should check for changes
-            poll_seconds: 600
-            # Maximum number of new entries to be processed
-            max_entries: 10
-        -
-            type: platypush.backend.http.request.rss.RssUpdates
-            url: http://www.physorg.com/rss-feed
-            title: Phys.org
-            poll_seconds: 600
-            max_entries: 10
-        -
-            type: platypush.backend.http.request.rss.RssUpdates
-            url: http://feeds.feedburner.com/Techcrunch
-            title: Tech Crunch
-            poll_seconds: 600
-            max_entries: 10
-        -
-            type: platypush.backend.http.request.rss.RssUpdates
-            url: http://www.nytimes.com/services/xml/rss/nyt/HomePage.xml
-            title: The New York Times
-            poll_seconds: 300
-            max_entries: 10
+#backend.http.poll:
+#    requests:
+#        - type: platypush.backend.http.request.rss.RssUpdates # HTTP poll type (RSS)
+#          # Remote URL
+#          url: http://www.theguardian.com/rss/world
+#          # Custom title
+#          title: The Guardian - World News
+#          # How often we should check for changes
+#          poll_seconds: 600
+#          # Maximum number of new entries to be processed
+#          max_entries: 10
+#
+#        - type: platypush.backend.http.request.rss.RssUpdates
+#          url: http://www.physorg.com/rss-feed
+#          title: Phys.org
+#          poll_seconds: 600
+#          max_entries: 10
+#
+#        - type: platypush.backend.http.request.rss.RssUpdates
+#          url: http://feeds.feedburner.com/Techcrunch
+#          title: Tech Crunch
+#          poll_seconds: 600
+#          max_entries: 10
+#
+#        - type: platypush.backend.http.request.rss.RssUpdates
+#          url: http://www.nytimes.com/services/xml/rss/nyt/HomePage.xml
+#          title: The New York Times
+#          poll_seconds: 300
+#          max_entries: 10
 
 # MQTT backend. Installed required dependencies through 'pip install "platypush[mqtt]"'
 backend.mqtt:
@@ -196,15 +166,15 @@ backend.mqtt:
     host: mqtt-server
     # By default the backend will listen for messages on the platypush_bus_mq/device_id
     # topic, but you can change the prefix using the topic attribute
-    topic: my_platypush_bus
+#    topic: MyBus
 
 # Raw TCP socket backend. It can run commands sent as JSON over telnet or netcat
-backend.tcp:
-    port: 3333
+#backend.tcp:
+#    port: 3333
 
 # Websocket backend. Install required dependencies through 'pip install "platypush[http]"'
-backend.websocket:
-    port: 8765
+#backend.websocket:
+#    port: 8765
 
 ## --
 ## Assistant configuration examples
@@ -254,9 +224,12 @@ backend.assistant.snowboy:
 assistant.echo:
     audio_player: mplayer
 
-# Install Google Assistant dependencies with 'pip install "platypush[google-assistant]"'
-assistant.google.pushtotalk:
-    language: en-US
+# Install Google Assistant dependencies with 'pip install "platypush[google-assistant-legacy]"'
+assistant.google:
+    enabled: True
+
+backend.assistant.google:
+    enabled: True
 
 ## --
 ## Procedure examples
@@ -327,14 +300,14 @@ procedure.outside_home:
 procedure.send_request(target, action, args):
     - action: mqtt.send_message
       args:
-          topic: my_platypush_bus/${target}
+          topic: platypush_bus_mq/${target}
           host: mqtt-server
           port: 1883
           msg:
               type: request
               target: ${target}
               action: ${action}
-              args: "${context.get('args', {}}"
+              args: ${args}
 
 ## --
 ## Event hook examples
@@ -418,4 +391,3 @@ cron.TestCron:
         - action: shell.exec
           args:
               cmd: ~/bin/myscript.sh
-

@@ -33,8 +33,8 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):
 
           .. code-block:: shell
 
-              wget https://github.com/Koenkk/Z-Stack-firmware/raw/master/coordinator/Z-Stack_Home_1.2/bin/default/CC2531_DEFAULT_20190608.zip
-              unzip CC2531_DEFAULT_20190608.zip
+              wget https://github.com/Koenkk/Z-Stack-firmware/raw/master/coordinator/Z-Stack_Home_1.2/bin/default/CC2531_DEFAULT_20201127.zip
+              unzip CC2531_DEFAULT_20201127.zip
               [sudo] cc-tool -e -w CC2531ZNP-Prod.hex
 
         - You can disconnect your debugger and downloader cable once the firmware is flashed.

@@ -16,9 +16,13 @@ class MusicMpdPlugin(MusicPlugin):
     sources through plugins (e.g. Spotify, TuneIn, Soundcloud, local files
     etc.).
 
+    **NOTE**: As of Mopidy 3.0 MPD is an optional interface provided by the ``mopidy-mpd`` extension. Make sure that you
+    have the extension installed and enabled on your instance to use this plugin with your server.
+
     Requires:
 
         * **python-mpd2** (``pip install python-mpd2``)
+
     """
 
     _client_lock = threading.RLock()

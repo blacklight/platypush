@@ -1,0 +1,33 @@
+<!-- Dashboard templates are stored as ~/.config/platypush/dashboards/<name>.xml and can be accessed on
+     http://<host>:8008/dashboard/<name>. A dashboard can show a custom set of widgets on a screen - e.g. calendar
+     events, media information, photo carousels, sensors data, weather forecast and news headlines. The available
+     widgets are stored as Vue.js templates under `platypush/backend/http/webapp/src/components/widgets`. -->
+<Dashboard>
+    <!-- Display the following widgets on the same row. Each row consists of 12 columns.
+         You can specify the width of each widget either through class name (e.g. col-6 means
+         6 columns out of 12, e.g. half the size of the row) or inline style
+         (e.g. `style="width: 50%"`). -->
+    <Row>
+        <!-- Show a calendar widget with the upcoming events. It requires the `calendar` plugin to
+             be enabled and configured. -->
+        <Calendar class="col-6" />
+
+        <!-- Show the current track and other playback info. It requires `music.mpd` plugin or any
+             other music plugin enabled. -->
+        <Music class="col-3" />
+
+        <!-- Show current date, time and weather. It requires a `weather` plugin or backend enabled -->
+        <DateTimeWeather class="col-3" />
+    </Row>
+
+    <!-- Display the following widgets on a second row -->
+    <Row>
+        <!-- Show a carousel of images from a local folder. For security reasons, the folder must be
+             explicitly exposed as an HTTP resource through the backend `resource_dirs` attribute. -->
+        <ImageCarousel class="col-6" img-dir="/mnt/hd/photos/carousel" />
+
+        <!-- Show the news headlines parsed from a list of RSS feed and stored locally through the
+             `http.poll` backend -->
+        <RssNews class="col-6" db="sqlite:////path/to/your/rss.db" />
+    </Row>
+</Dashboard>
