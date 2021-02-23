@@ -1,6 +1,6 @@
 import os
 
-from .context import config_file, TestTimeoutException
+from .context import config_file, TimeoutException
 
 import logging
 import requests
@@ -8,7 +8,7 @@ import sys
 import time
 import unittest
 
-from threading import Thread
+from threading import Thread, Event
 
 from platypush import Daemon
 from platypush.config import Config
@@ -22,7 +22,7 @@ class TestHttp(unittest.TestCase):
         Runs a remote command over HTTP via shell.exec plugin and gets the output """
 
     timeout = 10
-    sleep_secs = 10
+    sleep_secs = 5
     db_file = '/tmp/platypush-tests.db'
     test_user = 'platypush'
     test_pass = 'test'
@@ -33,6 +33,7 @@ class TestHttp(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.app = None
+        self._app_started = Event()
 
     def setUp(self):
         logging.basicConfig(level=logging.INFO, stream=sys.stdout)
@@ -68,26 +69,24 @@ class TestHttp(unittest.TestCase):
 
         # A request with the wrong user/pass should fail.
         response = self.send_request(auth=('wrong', 'wrong'))
-        self.assertEqual(self.expected_login_redirect, response.url,
-                         'A request with wrong credentials should fail')
+        self.assertEqual(self.expected_login_redirect, response.url, 'A request with wrong credentials should fail')
 
     def start_daemon(self):
-        def _f():
-            self.app = Daemon(config_file=config_file)
-            self.app.start()
+        self.app = Daemon(config_file=config_file)
+        Thread(target=lambda: self.app.run()).start()
 
-        Thread(target=_f).start()
+    def stop_daemon(self):
+        if self.app:
+            self.app.stop_app()
 
     @staticmethod
     def on_timeout(msg):
-        def _f(): raise TestTimeoutException(msg)
+        def _f(): raise TimeoutException(msg)
 
         return _f
 
     def send_request(self, **kwargs):
-        set_timeout(seconds=self.timeout,
-                    on_timeout=self.on_timeout('Receiver response timed out'))
-
+        set_timeout(seconds=self.timeout, on_timeout=self.on_timeout('Receiver response timed out'))
         response = requests.post(
             '{}/execute'.format(self.base_url),
             json={
@@ -102,9 +101,7 @@ class TestHttp(unittest.TestCase):
         return response
 
     def register_user(self):
-        set_timeout(seconds=self.timeout,
-                    on_timeout=self.on_timeout('User registration response timed out'))
-
+        set_timeout(seconds=self.timeout, on_timeout=self.on_timeout('User registration response timed out'))
         response = requests.post('{base_url}/register?redirect={base_url}/'.format(base_url=self.base_url), data={
             'username': self.test_user,
             'password': self.test_pass,
@@ -119,11 +116,11 @@ class TestHttp(unittest.TestCase):
         return Message.build(response.json())
 
     def tearDown(self):
-        if self.app:
-            self.app.stop_app()
-
-        if os.path.isfile(self.db_file):
-            os.unlink(self.db_file)
+        try:
+            self.stop_daemon()
+        finally:
+            if os.path.isfile(self.db_file):
+                os.unlink(self.db_file)
 
 
 if __name__ == '__main__':

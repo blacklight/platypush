@@ -10,14 +10,5 @@ class ApplicationStartedEvent(Event):
         super().__init__(*args, **kwargs)
 
 
-class ApplicationStoppedEvent(Event):
-    """
-    Event triggered when the application stops
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
 # vim:sw=4:ts=4:et:
 

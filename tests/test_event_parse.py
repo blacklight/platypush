@@ -1,9 +1,8 @@
-from .context import platypush
-
 import unittest
 
 from platypush.event.hook import EventCondition
 from platypush.message.event.ping import PingEvent
+
 
 class TestEventParse(unittest.TestCase):
     def setUp(self):
@@ -30,4 +29,3 @@ if __name__ == '__main__':
     unittest.main()
 
 # vim:sw=4:ts=4:et:
-

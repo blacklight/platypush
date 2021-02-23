@@ -17,7 +17,7 @@ from .cron.scheduler import CronScheduler
 from .event.processor import EventProcessor
 from .logger import Logger
 from .message.event import Event
-from .message.event.application import ApplicationStartedEvent, ApplicationStoppedEvent
+from .message.event.application import ApplicationStartedEvent
 from .message.request import Request
 from .message.response import Response
 from .utils import set_thread_name
@@ -75,6 +75,8 @@ class Daemon:
         Config.init(self.config_file)
         logging.basicConfig(**Config.get('logging'))
 
+        redis_conf = Config.get('backend.redis') or {}
+        self.bus = RedisBus(on_message=self.on_message(), **redis_conf.get('redis_args', {}))
         self.no_capture_stdout = no_capture_stdout
         self.no_capture_stderr = no_capture_stderr
         self.event_processor = EventProcessor()
@@ -145,8 +147,6 @@ class Daemon:
 
     def stop_app(self):
         """ Stops the backends and the bus """
-        self.bus.post(ApplicationStoppedEvent())
-
         for backend in self.backends.values():
             backend.stop()
 
@@ -154,7 +154,7 @@ class Daemon:
         if self.cron_scheduler:
             self.cron_scheduler.stop()
 
-    def start(self):
+    def run(self):
         """ Start the daemon """
         if not self.no_capture_stdout:
             sys.stdout = Logger(logger.info)
@@ -162,12 +162,7 @@ class Daemon:
             sys.stderr = Logger(logger.warning)
 
         set_thread_name('platypush')
-
-        print('---- Starting platypush v.{}'.format(__version__))
-
-        redis_conf = Config.get('backend.redis') or {}
-        self.bus = RedisBus(on_message=self.on_message(),
-                            **redis_conf.get('redis_args', {}))
+        logger.info('---- Starting platypush v.{}'.format(__version__))
 
         # Initialize the backends and link them to the bus
         self.backends = register_backends(bus=self.bus, global_scope=True)
@@ -198,9 +193,8 @@ def main():
     """
     Platypush daemon main
     """
-
     app = Daemon.build_from_cmdline(sys.argv[1:])
-    app.start()
+    app.run()
 
 
 # vim:sw=4:ts=4:et:
