@@ -122,7 +122,7 @@ class CameraPiBackend(Backend):
                 while True:
                     self.camera.wait_recording(2)
             else:
-                while True:
+                while not self.should_stop():
                     connection = self.server_socket.accept()[0].makefile('wb')
                     self.logger.info('Accepted client connection on port {}'.format(self.listen_port))
 

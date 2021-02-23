@@ -1,4 +1,5 @@
 import json
+import select
 import socket
 import threading
 import time
@@ -94,9 +95,16 @@ class MusicSnapcastBackend(Backend):
 
     @classmethod
     def _recv(cls, sock):
+        sock.setblocking(0)
         buf = b''
+
         while buf[-2:] != cls._SOCKET_EOL:
-            buf += sock.recv(1)
+            ready = select.select([sock], [], [], 0.5)
+            if ready[0]:
+                buf += sock.recv(1)
+            else:
+                return
+
         return json.loads(buf.decode().strip())
 
     @classmethod
@@ -150,6 +158,8 @@ class MusicSnapcastBackend(Backend):
                     sock = self._connect(host, port)
                     msgs = self._recv(sock)
 
+                    if msgs is None:
+                        continue
                     if not isinstance(msgs, list):
                         msgs = [msgs]
 
@@ -157,6 +167,7 @@ class MusicSnapcastBackend(Backend):
                         self.logger.debug('Received message on {host}:{port}: {msg}'.
                                           format(host=host, port=port, msg=msg))
 
+                        # noinspection PyTypeChecker
                         evt = self._parse_msg(host=host, msg=msg)
                         if evt:
                             self.bus.post(evt)
@@ -190,6 +201,18 @@ class MusicSnapcastBackend(Backend):
 
             for host in self.hosts:
                 self._threads[host].join()
+
+        self.logger.info('Snapcast backend terminated')
+
+    def on_stop(self):
+        self.logger.info('Received STOP event on the Snapcast backend')
+        for host, sock in self._socks.items():
+            if sock:
+                try:
+                    sock.close()
+                except Exception as e:
+                    self.logger.warning('Could not close Snapcast connection to {}: {}: {}'.format(
+                        host, type(e), str(e)))
 
 
 # vim:sw=4:ts=4:et:

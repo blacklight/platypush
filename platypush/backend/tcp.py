@@ -39,7 +39,7 @@ class TcpBackend(Backend):
             msg = b''
             prev_ch = None
 
-            while True:
+            while not self.should_stop():
                 if processed_bytes > self._MAX_REQ_SIZE:
                     self.logger.warning('Ignoring message longer than {} bytes from {}'
                                         .format(self._MAX_REQ_SIZE, address[0]))
@@ -95,6 +95,8 @@ class TcpBackend(Backend):
 
         serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         serv_sock.bind((self.bind_address, self.port))
+        serv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        serv_sock.settimeout(0.5)
 
         self.logger.info('Initialized TCP backend on port {} with bind address {}'.
                          format(self.port, self.bind_address))
@@ -102,9 +104,15 @@ class TcpBackend(Backend):
         serv_sock.listen(self.listen_queue)
 
         while not self.should_stop():
-            (sock, address) = serv_sock.accept()
+            try:
+                (sock, address) = serv_sock.accept()
+            except socket.timeout:
+                continue
+
             self.logger.info('Accepted connection from client {}'.format(address[0]))
             self._process_client(sock, address)
+
+        self.logger.info('TCP backend terminated')
 
 
 # vim:sw=4:ts=4:et:

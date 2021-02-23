@@ -127,8 +127,10 @@ class PushbulletBackend(Backend):
             self.listener = None
 
     def on_stop(self):
+        self.logger.info('Received STOP event on the Pushbullet backend')
         super().on_stop()
-        return self.close()
+        self.close()
+        self.logger.info('Pushbullet backend terminated')
 
     def on_error(self, e):
         self.logger.exception(e)

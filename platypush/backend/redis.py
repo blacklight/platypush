@@ -53,10 +53,13 @@ class RedisBackend(Backend):
     # noinspection PyBroadException
     def get_message(self, queue_name=None):
         queue = queue_name or self.queue
-        msg = self.redis.blpop(queue)[1].decode('utf-8')
+        data = self.redis.blpop(queue, timeout=1)
+        if data is None:
+            return
 
+        msg = data[1].decode()
         try:
-            msg = Message.build(json.loads(msg))
+            msg = Message.build(msg)
         except:
             try:
                 import ast
@@ -78,11 +81,16 @@ class RedisBackend(Backend):
         while not self.should_stop():
             try:
                 msg = self.get_message()
+                if not msg:
+                    continue
+
                 self.logger.info('Received message on the Redis backend: {}'.
                                  format(msg))
                 self.on_message(msg)
             except Exception as e:
                 self.logger.exception(e)
+
+        self.logger.info('Redis backend terminated')
 
 
 # vim:sw=4:ts=4:et:

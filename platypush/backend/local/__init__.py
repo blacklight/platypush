@@ -1,20 +1,16 @@
-import json
 import os
 import time
-import threading
 
 from .. import Backend
 
 from platypush.message import Message
-from platypush.message.event import StopEvent
-from platypush.message.request import Request
 from platypush.message.response import Response
 
 
 class LocalBackend(Backend):
     """
-    Sends and receive messages on two distinct local FIFOs, one for
-    the requests and one for the responses.
+    Sends and receive messages on two distinct local FIFOs, one for the requests and one for the responses.
+    This is a legacy backend that should only be used for testing purposes.
 
     You can use this backend either to send local commands to push through
     Pusher (or any other script), or debug. You can even send command on the
@@ -41,8 +37,7 @@ class LocalBackend(Backend):
         try: os.mkfifo(self.response_fifo)
         except FileExistsError as e: pass
 
-
-    def send_message(self, msg):
+    def send_message(self, msg, **kwargs):
         fifo = self.response_fifo \
             if isinstance(msg, Response) or self._request_context \
             else self.request_fifo

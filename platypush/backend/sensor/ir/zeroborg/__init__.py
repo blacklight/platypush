@@ -21,7 +21,7 @@ class SensorIrZeroborgBackend(Backend):
         * :class:`platypush.message.event.sensor.ir.IrKeyUpEvent` when a key is released
     """
 
-    last_message =None
+    last_message = None
     last_message_timestamp = None
 
     def __init__(self, no_message_timeout=0.37, **kwargs):
@@ -31,11 +31,10 @@ class SensorIrZeroborgBackend(Backend):
         self.zb.Init()
         self.logger.info('Initialized Zeroborg infrared sensor backend')
 
-
     def run(self):
         super().run()
 
-        while True:
+        while not self.should_stop():
             try:
                 self.zb.GetIrMessage()
                 if self.zb.HasNewIrMessage():
@@ -47,7 +46,7 @@ class SensorIrZeroborgBackend(Backend):
                     self.last_message = message
                     self.last_message_timestamp = time.time()
             except OSError as e:
-                self.logger.warning('Failed reading IR sensor status')
+                self.logger.warning('Failed reading IR sensor status: {}: {}'.format(type(e), str(e)))
 
             if self.last_message_timestamp and \
                     time.time() - self.last_message_timestamp > self.no_message_timeout:
@@ -57,6 +56,4 @@ class SensorIrZeroborgBackend(Backend):
                 self.last_message = None
                 self.last_message_timestamp = None
 
-
 # vim:sw=4:ts=4:et:
-

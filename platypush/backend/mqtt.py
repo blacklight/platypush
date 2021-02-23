@@ -334,17 +334,17 @@ class MqttBackend(Backend):
 
         self.add_listeners(*self.listeners_conf)
 
-    def stop(self):
+    def on_stop(self):
         self.logger.info('Received STOP event on the MQTT backend')
 
         for ((host, port, _), listener) in self._listeners.items():
             try:
-                listener.loop_stop()
-                listener.disconnect()
+                listener.stop()
             except Exception as e:
                 # noinspection PyProtectedMember
                 self.logger.warning('Could not stop listener {host}:{port}: {error}'.
                                     format(host=host, port=port, error=str(e)))
 
+        self.logger.info('MQTT backend terminated')
 
 # vim:sw=4:ts=4:et:

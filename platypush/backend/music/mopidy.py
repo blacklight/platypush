@@ -224,7 +224,9 @@ class MusicMopidyBackend(Backend):
             self._connected_event.clear()
             self._ws = None
             self.logger.warning('Mopidy websocket connection closed')
-            self._retry_connect()
+
+            if not self.should_stop():
+                self._retry_connect()
 
         return hndl
 
@@ -251,6 +253,13 @@ class MusicMopidyBackend(Backend):
         super().run()
         self.logger.info('Started tracking Mopidy events backend on {}:{}'.format(self.host, self.port))
         self._connect()
+
+    def on_stop(self):
+        self.logger.info('Received STOP event on the Mopidy backend')
+        if self._ws:
+            self._ws.close()
+
+        self.logger.info('Mopidy backend terminated')
 
 
 # vim:sw=4:ts=4:et:

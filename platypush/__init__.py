@@ -16,7 +16,7 @@ from .context import register_backends
 from .cron.scheduler import CronScheduler
 from .event.processor import EventProcessor
 from .logger import Logger
-from .message.event import Event, StopEvent
+from .message.event import Event
 from .message.event.application import ApplicationStartedEvent, ApplicationStoppedEvent
 from .message.request import Request
 from .message.response import Response
@@ -80,6 +80,7 @@ class Daemon:
         self.event_processor = EventProcessor()
         self.requests_to_process = requests_to_process
         self.processed_requests = 0
+        self.cron_scheduler = None
 
     @classmethod
     def build_from_cmdline(cls, args):
@@ -135,9 +136,6 @@ class Daemon:
                     self.stop_app()
             elif isinstance(msg, Response):
                 logger.info('Received response: {}'.format(msg))
-            elif isinstance(msg, StopEvent) and msg.targets_me():
-                logger.info('Received STOP event: {}'.format(msg))
-                self.stop_app()
             elif isinstance(msg, Event):
                 if not msg.disable_logging:
                     logger.info('Received event: {}'.format(msg))
@@ -147,9 +145,14 @@ class Daemon:
 
     def stop_app(self):
         """ Stops the backends and the bus """
+        self.bus.post(ApplicationStoppedEvent())
+
         for backend in self.backends.values():
             backend.stop()
+
         self.bus.stop()
+        if self.cron_scheduler:
+            self.cron_scheduler.stop()
 
     def start(self):
         """ Start the daemon """
@@ -175,7 +178,8 @@ class Daemon:
 
         # Start the cron scheduler
         if Config.get_cronjobs():
-            CronScheduler(jobs=Config.get_cronjobs()).start()
+            self.cron_scheduler = CronScheduler(jobs=Config.get_cronjobs())
+            self.cron_scheduler.start()
 
         self.bus.post(ApplicationStartedEvent())
 
@@ -185,8 +189,9 @@ class Daemon:
         except KeyboardInterrupt:
             logger.info('SIGINT received, terminating application')
         finally:
-            self.bus.post(ApplicationStoppedEvent())
             self.stop_app()
+
+        sys.exit(0)
 
 
 def main():

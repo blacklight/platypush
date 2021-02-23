@@ -165,7 +165,7 @@ class GithubBackend(Backend):
 
     def _events_monitor(self, uri: str, method: str = 'get'):
         def thread():
-            while True:
+            while not self.should_stop():
                 try:
                     events = self._request(uri, method)
                     if not events:

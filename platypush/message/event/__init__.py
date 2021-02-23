@@ -2,7 +2,6 @@ import copy
 import json
 import random
 import re
-import threading
 import time
 
 from datetime import date
@@ -197,29 +196,6 @@ class EventMatchResult(object):
         self.is_match = is_match
         self.score = score
         self.parsed_args = {} if not parsed_args else parsed_args
-
-
-# XXX Should be a stop Request, not an Event
-class StopEvent(Event):
-    """ StopEvent message. When received on a Bus, it will terminate the
-    listening thread having the specified ID. Useful to keep listeners in
-    sync and make them quit when the application terminates """
-
-    def __init__(self, target, origin, thread_id, id=None, **kwargs):
-        """ Constructor.
-        :param target: Target node
-        :param origin: Origin node
-        :param thread_id: thread_iden() to be terminated if listening on the bus
-        :param id: Event ID (default: auto-generated)
-        :param kwargs: Extra key-value arguments
-        """
-
-        super().__init__(target=target, origin=origin, id=id,
-                         thread_id=thread_id, **kwargs)
-
-    def targets_me(self):
-        """ Returns true if the stop event is for the current thread """
-        return self.args['thread_id'] == threading.get_ident()
 
 
 def flatten(args):

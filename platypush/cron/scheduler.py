@@ -1,10 +1,9 @@
 import enum
 import logging
+import threading
 import time
 
 import croniter
-
-from threading import Thread
 
 from platypush.procedure import Procedure
 from platypush.utils import is_functional_cron
@@ -20,12 +19,13 @@ class CronjobState(enum.IntEnum):
     ERROR = 4
 
 
-class Cronjob(Thread):
+class Cronjob(threading.Thread):
     def __init__(self, name, cron_expression, actions):
         super().__init__()
         self.cron_expression = cron_expression
         self.name = name
         self.state = CronjobState.IDLE
+        self._should_stop = threading.Event()
 
         if isinstance(actions, dict) or isinstance(actions, list):
             self.actions = Procedure.build(name=name + '__Cron', _async=False, requests=actions)
@@ -35,6 +35,9 @@ class Cronjob(Thread):
     def run(self):
         self.state = CronjobState.WAIT
         self.wait()
+        if self.should_stop():
+            return
+
         self.state = CronjobState.RUNNING
 
         try:
@@ -56,7 +59,7 @@ class Cronjob(Thread):
         now = int(time.time())
         cron = croniter.croniter(self.cron_expression, now)
         next_run = int(cron.get_next())
-        time.sleep(next_run - now)
+        self._should_stop.wait(next_run - now)
 
     def should_run(self):
         now = int(time.time())
@@ -64,12 +67,19 @@ class Cronjob(Thread):
         next_run = int(cron.get_next())
         return now == next_run
 
+    def stop(self):
+        self._should_stop.set()
 
-class CronScheduler(Thread):
+    def should_stop(self):
+        return self._should_stop.is_set()
+
+
+class CronScheduler(threading.Thread):
     def __init__(self, jobs):
         super().__init__()
         self.jobs_config = jobs
         self._jobs = {}
+        self._should_stop = threading.Event()
         logger.info('Cron scheduler initialized with {} jobs'.
                     format(len(self.jobs_config.keys())))
 
@@ -90,16 +100,26 @@ class CronScheduler(Thread):
 
         return self._jobs[name]
 
+    def stop(self):
+        for job in self._jobs.values():
+            job.stop()
+        self._should_stop.set()
+
+    def should_stop(self):
+        return self._should_stop.is_set()
+
     def run(self):
         logger.info('Running cron scheduler')
 
-        while True:
+        while not self.should_stop():
             for (job_name, job_config) in self.jobs_config.items():
                 job = self._get_job(name=job_name, config=job_config)
                 if job.state == CronjobState.IDLE:
                     job.start()
 
             time.sleep(0.5)
+
+        logger.info('Terminating cron scheduler')
 
 
 # vim:sw=4:ts=4:et:

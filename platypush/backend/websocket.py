@@ -56,6 +56,7 @@ class WebsocketBackend(Backend):
         self.bind_address = bind_address
         self.client_timeout = client_timeout
         self.active_websockets = set()
+        self._loop = None
 
         self.ssl_context = get_ssl_server_context(ssl_cert=ssl_cert,
                                                   ssl_key=ssl_key,
@@ -104,7 +105,7 @@ class WebsocketBackend(Backend):
                               format(websocket.remote_address[0]))
 
             try:
-                while True:
+                while not self.should_stop():
                     if self.client_timeout:
                         msg = await asyncio.wait_for(websocket.recv(),
                                                      timeout=self.client_timeout)
@@ -142,12 +143,19 @@ class WebsocketBackend(Backend):
         if self.ssl_context:
             websocket_args['ssl'] = self.ssl_context
 
-        loop = get_or_create_event_loop()
+        self._loop = get_or_create_event_loop()
         server = websockets.serve(serve_client, self.bind_address, self.port,
                                   **websocket_args)
 
-        loop.run_until_complete(server)
-        loop.run_forever()
+        self._loop.run_until_complete(server)
+        self._loop.run_forever()
+
+    def on_stop(self):
+        self.logger.info('Received STOP event on the websocket backend')
+        if self._loop:
+            self._loop.stop()
+
+        self.logger.info('Websocket backend terminated')
 
 
 # vim:sw=4:ts=4:et:

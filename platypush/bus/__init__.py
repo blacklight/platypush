@@ -2,11 +2,10 @@ import logging
 import threading
 import time
 
-from queue import Queue
+from queue import Queue, Empty
 from typing import Callable, Type
 
-from platypush.config import Config
-from platypush.message.event import Event, StopEvent
+from platypush.message.event import Event
 
 logger = logging.getLogger('platypush:bus')
 
@@ -21,6 +20,7 @@ class Bus(object):
         self.on_message = on_message
         self.thread_id = threading.get_ident()
         self.event_handlers = {}
+        self._should_stop = threading.Event()
 
     def post(self, msg):
         """ Sends a message to the bus """
@@ -28,15 +28,13 @@ class Bus(object):
 
     def get(self):
         """ Reads one message from the bus """
-        return self.bus.get()
+        try:
+            return self.bus.get(timeout=0.1)
+        except Empty:
+            return
 
     def stop(self):
-        """ Stops the bus by sending a STOP event """
-        evt = StopEvent(target=Config.get('device_id'),
-                        origin=Config.get('device_id'),
-                        thread_id=self.thread_id)
-
-        self.post(evt)
+        self._should_stop.set()
 
     def _msg_executor(self, msg):
         def event_handler(event: Event, handler: Callable[[Event], None]):
@@ -62,18 +60,22 @@ class Bus(object):
 
         return executor
 
+    def should_stop(self):
+        return self._should_stop.is_set()
+
     def poll(self):
         """
         Reads messages from the bus until either stop event message or KeyboardInterrupt
         """
-
         if not self.on_message:
             logger.warning('No message handlers installed, cannot poll')
             return
 
-        stop = False
-        while not stop:
+        while not self.should_stop():
             msg = self.get()
+            if msg is None:
+                continue
+
             timestamp = msg.timestamp if hasattr(msg, 'timestamp') else msg.get('timestamp')
             if timestamp and time.time() - timestamp > self._MSG_EXPIRY_TIMEOUT:
                 logger.debug('{} seconds old message on the bus expired, ignoring it: {}'.
@@ -82,9 +84,7 @@ class Bus(object):
 
             threading.Thread(target=self._msg_executor(msg)).start()
 
-            if isinstance(msg, StopEvent) and msg.targets_me():
-                logger.info('Received STOP event on the bus')
-                stop = True
+        logger.info('Bus service stoppped')
 
     def register_handler(self, event_type: Type[Event], handler: Callable[[Event], None]) -> Callable[[], None]:
         """

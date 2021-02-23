@@ -171,6 +171,7 @@ class HttpBackend(Backend):
 
     def __init__(self, port=_DEFAULT_HTTP_PORT,
                  websocket_port=_DEFAULT_WEBSOCKET_PORT,
+                 bind_address='0.0.0.0',
                  disable_websocket=False, resource_dirs=None,
                  ssl_cert=None, ssl_key=None, ssl_cafile=None, ssl_capath=None,
                  maps=None, run_externally=False, uwsgi_args=None, **kwargs):
@@ -180,6 +181,9 @@ class HttpBackend(Backend):
 
         :param websocket_port: Listen port for the websocket server (default: 8009)
         :type websocket_port: int
+
+        :param bind_address: Address/interface to bind to (default: 0.0.0.0, accept connection from any IP)
+        :type bind_address: str
 
         :param disable_websocket: Disable the websocket interface (default: False)
         :type disable_websocket: bool
@@ -233,6 +237,8 @@ class HttpBackend(Backend):
         self.server_proc = None
         self.disable_websocket = disable_websocket
         self.websocket_thread = None
+        self._websocket_loop = None
+        self.bind_address = bind_address
 
         if resource_dirs:
             self.resource_dirs = {name: os.path.abspath(
@@ -271,10 +277,24 @@ class HttpBackend(Backend):
         if self.server_proc:
             if isinstance(self.server_proc, subprocess.Popen):
                 self.server_proc.kill()
-                self.server_proc.wait()
+                self.server_proc.wait(timeout=10)
+                if self.server_proc.poll() is not None:
+                    self.logger.warning('HTTP server process still alive at termination')
+                else:
+                    self.logger.info('HTTP server process terminated')
             else:
                 self.server_proc.terminate()
-                self.server_proc.join()
+                self.server_proc.join(timeout=10)
+                if self.server_proc.is_alive():
+                    self.server_proc.kill()
+                if self.server_proc.is_alive():
+                    self.logger.warning('HTTP server process still alive at termination')
+                else:
+                    self.logger.info('HTTP server process terminated')
+
+        if self.websocket_thread and self.websocket_thread.is_alive() and self._websocket_loop:
+            self._websocket_loop.stop()
+            self.logger.info('HTTP websocket service terminated')
 
     def _acquire_websocket_lock(self, ws):
         try:
@@ -355,17 +375,17 @@ class HttpBackend(Backend):
         if self.ssl_context:
             websocket_args['ssl'] = self.ssl_context
 
-        loop = get_or_create_event_loop()
-        loop.run_until_complete(
-            websockets.serve(register_websocket, '0.0.0.0', self.websocket_port,
+        self._websocket_loop = get_or_create_event_loop()
+        self._websocket_loop.run_until_complete(
+            websockets.serve(register_websocket, self.bind_address, self.websocket_port,
                              **websocket_args))
-        loop.run_forever()
+        self._websocket_loop.run_forever()
 
     def _start_web_server(self):
         def proc():
             self.logger.info('Starting local web server on port {}'.format(self.port))
             kwargs = {
-                'host': '0.0.0.0',
+                'host': self.bind_address,
                 'port': self.port,
                 'use_reloader': False,
                 'debug': False,

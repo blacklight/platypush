@@ -26,6 +26,7 @@ class ClipboardBackend(Backend):
         self._last_text: Optional[str] = None
 
     def run(self):
+        self.logger.info('Started clipboard monitor backend')
         while not self.should_stop():
             text = pyperclip.paste()
             if text and text != self._last_text:
@@ -34,5 +35,6 @@ class ClipboardBackend(Backend):
             self._last_text = text
             time.sleep(0.1)
 
+        self.logger.info('Stopped clipboard monitor backend')
 
 # vim:sw=4:ts=4:et:

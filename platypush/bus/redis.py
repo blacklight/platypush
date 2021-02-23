@@ -32,9 +32,11 @@ class RedisBus(Bus):
     def get(self):
         """ Reads one message from the Redis queue """
         msg = None
-
         try:
-            msg = self.redis.blpop(self.redis_queue)
+            if self.should_stop():
+                return
+
+            msg = self.redis.blpop(self.redis_queue, timeout=1)
             if not msg or msg[1] is None:
                 return
 
@@ -53,6 +55,10 @@ class RedisBus(Bus):
     def post(self, msg):
         """ Sends a message to the Redis queue """
         return self.redis.rpush(self.redis_queue, str(msg))
+
+    def stop(self):
+        super().stop()
+        self.redis.close()
 
 
 # vim:sw=4:ts=4:et:

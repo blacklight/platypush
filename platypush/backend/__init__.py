@@ -22,7 +22,7 @@ from platypush.utils import set_timeout, clear_timeout, \
 from platypush import __version__
 from platypush.event import EventGenerator
 from platypush.message import Message
-from platypush.message.event import Event, StopEvent
+from platypush.message.event import Event
 from platypush.message.request import Request
 from platypush.message.response import Response
 
@@ -62,7 +62,6 @@ class Backend(Thread, EventGenerator):
         self.poll_seconds = float(poll_seconds) if poll_seconds else None
         self.device_id = Config.get('device_id')
         self.thread_id = None
-        self._should_stop = False
         self._stop_event = threading.Event()
         self._kwargs = kwargs
         self.logger = logging.getLogger('platypush:backend:' + get_backend_name_by_class(self.__class__))
@@ -103,12 +102,8 @@ class Backend(Thread, EventGenerator):
             self.stop()
             return
 
-        if isinstance(msg, StopEvent) and msg.targets_me():
-            self.logger.info('Received STOP event on {}'.format(self.__class__.__name__))
-            self._should_stop = True
-        else:
-            msg.backend = self   # Augment message to be able to process responses
-            self.bus.post(msg)
+        msg.backend = self   # Augment message to be able to process responses
+        self.bus.post(msg)
 
     def _is_expected_response(self, msg):
         """ Internal only - returns true if we are expecting for a response
@@ -263,22 +258,19 @@ class Backend(Thread, EventGenerator):
 
     def on_stop(self):
         """ Callback invoked when the process stops """
-        self.unregister_service()
+        pass
 
     def stop(self):
         """ Stops the backend thread by sending a STOP event on its bus """
         def _async_stop():
-            evt = StopEvent(target=self.device_id, origin=self.device_id,
-                            thread_id=self.thread_id)
-
-            self.send_message(evt)
             self._stop_event.set()
+            self.unregister_service()
             self.on_stop()
 
         Thread(target=_async_stop).start()
 
     def should_stop(self):
-        return self._should_stop
+        return self._stop_event.is_set()
 
     def wait_stop(self, timeout=None) -> bool:
         return self._stop_event.wait(timeout)

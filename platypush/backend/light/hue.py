@@ -1,5 +1,3 @@
-import time
-
 from threading import Thread
 
 from platypush.backend import Backend
@@ -80,12 +78,13 @@ class LightHueBackend(Backend):
                 except Exception as e:
                     self.logger.exception(e)
                 finally:
-                    time.sleep(self.poll_seconds)
+                    self.wait_stop(self.poll_seconds)
 
         return _thread
 
     def run(self):
         super().run()
+        self.logger.info('Starting Hue lights backend')
 
         while not self.should_stop():
             try:
@@ -94,7 +93,9 @@ class LightHueBackend(Backend):
                 poll_thread.join()
             except Exception as e:
                 self.logger.exception(e)
-                time.sleep(self.poll_seconds)
+                self.wait_stop(self.poll_seconds)
+
+        self.logger.info('Stopped Hue lights backend')
 
 
 # vim:sw=4:ts=4:et:
