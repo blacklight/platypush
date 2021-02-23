@@ -1,5 +1,7 @@
+import logging
 import unittest
 
+from .context import config_file
 from platypush.event.hook import EventCondition
 from platypush.message.event.ping import PingEvent
 
@@ -12,6 +14,7 @@ class TestEventParse(unittest.TestCase):
         })
 
     def test_event_parse(self):
+        logging.info('Starting test on configuration file: {}'.format(config_file))
         message = "GARBAGE GARBAGE this is the answer: 42"
         event = PingEvent(message=message)
         result = event.matches_condition(self.condition)
