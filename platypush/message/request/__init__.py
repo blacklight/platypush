@@ -129,7 +129,7 @@ class Request(Message):
             except:
                 if isinstance(v, str):
                     try:
-                        exec('{}="{}"'.format(k, re.sub('(^|[^\\\])"', '\1\\"', v)))
+                        exec('{}="{}"'.format(k, re.sub(r'(^|[^\\\])"', '\1\\"', v)))
                     except:
                         pass
 
@@ -138,7 +138,7 @@ class Request(Message):
             parsed_value = _value
 
         while _value and isinstance(_value, str):
-            m = re.match('([^$]*)(\${\s*(.+?)\s*})(.*)', _value)
+            m = re.match(r'([^$]*)(\${\s*(.+?)\s*})(.*)', _value)
             if m and not m.group(1).endswith('\\'):
                 prefix = m.group(1)
                 expr = m.group(2)

@@ -119,8 +119,8 @@ class Event(Message):
         """
 
         result = EventMatchResult(is_match=False)
-        event_tokens = re.split('\s+', self.args[argname].strip().lower())
-        condition_tokens = re.split('\s+', condition_value.strip().lower())
+        event_tokens = re.split(r'\s+', self.args[argname].strip().lower())
+        condition_tokens = re.split(r'\s+', condition_value.strip().lower())
 
         while event_tokens and condition_tokens:
             event_token = event_tokens[0]
@@ -138,7 +138,7 @@ class Event(Message):
 
                 condition_tokens.pop(0)
             else:
-                m = re.match('[^\\\]*\${(.+?)}', condition_token)
+                m = re.match(r'[^\\\]*\${(.+?)}', condition_token)
                 if m:
                     argname = m.group(1)
                     if argname not in result.parsed_args:

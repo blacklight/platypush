@@ -58,7 +58,7 @@ class Procedure(object):
             # Check if this request is an if-else
             if len(request_config.keys()) >= 1:
                 key = list(request_config.keys())[0]
-                m = re.match('\s*(if)\s+\${(.*)}\s*', key)
+                m = re.match(r'\s*(if)\s+\${(.*)}\s*', key)
 
                 if m:
                     if_count += 1
@@ -94,7 +94,7 @@ class Procedure(object):
             # Check if this request is a for loop
             if len(request_config.keys()) == 1:
                 key = list(request_config.keys())[0]
-                m = re.match('\s*(fork?)\s+([\w\d_]+)\s+in\s+(.*)\s*', key)
+                m = re.match(r'\s*(fork?)\s+([\w\d_]+)\s+in\s+(.*)\s*', key)
 
                 if m:
                     for_count += 1
@@ -118,7 +118,7 @@ class Procedure(object):
             # Check if this request is a while loop
             if len(request_config.keys()) == 1:
                 key = list(request_config.keys())[0]
-                m = re.match('\s*while\s+\${(.*)}\s*', key)
+                m = re.match(r'\s*while\s+\${(.*)}\s*', key)
 
                 if m:
                     while_count += 1
@@ -145,6 +145,7 @@ class Procedure(object):
             pending_if = if_config.get()
             reqs.append(IfProcedure.build(**pending_if))
 
+        # noinspection PyArgumentList
         return procedure_class(name=name, _async=_async, requests=reqs, args=args, backend=backend, **kwargs)
 
     @staticmethod
@@ -338,7 +339,7 @@ class WhileProcedure(LoopProcedure):
                 if isinstance(v, str):
                     # noinspection PyBroadException
                     try:
-                        context[k] = eval('"{}"'.format(re.sub('(^|[^\\\])"', '\1\\"', v)))
+                        context[k] = eval('"{}"'.format(re.sub(r'(^|[^\\\])"', '\1\\"', v)))
                     except:
                         pass
 
@@ -451,7 +452,7 @@ class IfProcedure(Procedure):
             except:
                 if isinstance(v, str):
                     try:
-                        exec('{}="{}"'.format(k, re.sub('(^|[^\\\])"', '\1\\"', v)))
+                        exec('{}="{}"'.format(k, re.sub(r'(^|[^\\\])"', '\1\\"', v)))
                     except:
                         pass
 
