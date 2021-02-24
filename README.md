@@ -435,6 +435,10 @@ platydock stop device_id
 platyvdock rm device_id
 ```
 
+## Tests
+
+To run the tests simply run `pytest` from the source root folder - no further configuration required.
+
 ---
 
 ## Funding
