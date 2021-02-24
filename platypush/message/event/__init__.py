@@ -138,7 +138,7 @@ class Event(Message):
 
                 condition_tokens.pop(0)
             else:
-                m = re.match(r'[^\\\]*\${(.+?)}', condition_token)
+                m = re.match(r'[^\\]*\${(.+?)}', condition_token)
                 if m:
                     argname = m.group(1)
                     if argname not in result.parsed_args:
