@@ -431,7 +431,7 @@ button {
     @include until ($desktop) {
       display: flex;
       align-items: center;
-      justify-content: right;
+      justify-content: flex-end;
     }
   }
 

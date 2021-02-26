@@ -87,7 +87,8 @@ export default {
       align-items: center;
 
       &.right {
-        justify-content: right;
+        justify-content: flex-end;
+        margin-right: .5em;
       }
 
       ::v-deep(.dropdown-container) {

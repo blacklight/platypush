@@ -11,10 +11,6 @@
         </div>
 
         <div class="col-4 buttons">
-          <button title="Add track" @click="addTrack">
-            <i class="fa fa-plus"></i>
-          </button>
-
           <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
             <DropdownItem text="Save as playlist" icon-class="fa fa-save" :disabled="!tracks?.length"
                           @click="playlistSave" />
@@ -30,6 +26,10 @@
                           @click="$emit('remove', [...(new Set(selectedTracks))])" />
             <DropdownItem text="Clear playlist" icon-class="fa fa-ban" :disabled="!tracks?.length" @click="$emit('clear')" />
           </Dropdown>
+
+          <button title="Add track" @click="addTrack">
+            <i class="fa fa-plus"></i>
+          </button>
         </div>
       </MusicHeader>
     </div>
@@ -85,11 +85,12 @@ import MusicHeader from "@/components/panels/Music/Header";
 import MediaUtils from "@/components/Media/Utils";
 import Dropdown from "@/components/elements/Dropdown";
 import DropdownItem from "@/components/elements/DropdownItem";
+import Loading from "@/components/Loading";
 
 export default {
   name: "Playlist",
   mixins: [MediaUtils],
-  components: {DropdownItem, Dropdown, MusicHeader},
+  components: {DropdownItem, Dropdown, MusicHeader, Loading},
   emits: ['play', 'clear', 'add', 'remove', 'swap', 'search', 'move', 'save', 'info'],
   props: {
     tracks: {
@@ -251,8 +252,11 @@ export default {
     }
 
     .buttons {
-      display: flex;
-      justify-content: right;
+      direction: rtl;
+
+      .dropdown-container {
+        direction: ltr;
+      }
     }
   }
 

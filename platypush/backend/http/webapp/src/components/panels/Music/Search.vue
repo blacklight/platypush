@@ -256,7 +256,7 @@ export default {
     .buttons {
       width: 30%;
       display: inline-flex;
-      justify-content: right;
+      justify-content: flex-end;
       margin: 0;
     }
   }

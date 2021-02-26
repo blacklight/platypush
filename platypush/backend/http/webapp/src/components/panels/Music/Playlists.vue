@@ -102,11 +102,12 @@ import MusicHeader from "@/components/panels/Music/Header";
 import MediaUtils from "@/components/Media/Utils";
 import Dropdown from "@/components/elements/Dropdown";
 import DropdownItem from "@/components/elements/DropdownItem";
+import Loading from "@/components/Loading";
 
 export default {
   name: "Playlists",
   mixins: [MediaUtils],
-  components: {DropdownItem, Dropdown, MusicHeader},
+  components: {DropdownItem, Dropdown, MusicHeader, Loading},
   emits: ['play', 'load', 'remove', 'playlist-edit', 'search', 'remove-track', 'load-track', 'info',
     'playlist-add', 'add-to-playlist', 'track-move'],
 
@@ -295,7 +296,7 @@ export default {
 
     .right-side {
       display: flex;
-      justify-content: right;
+      justify-content: flex-end;
     }
   }
 }
