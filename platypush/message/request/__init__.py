@@ -129,7 +129,7 @@ class Request(Message):
             except:
                 if isinstance(v, str):
                     try:
-                        exec('{}="{}"'.format(k, re.sub(r'(^|[^\\\])"', '\1\\"', v)))
+                        exec('{}="{}"'.format(k, re.sub(r'(^|[^\\])"', '\1\\"', v)))
                     except:
                         pass
 

@@ -339,7 +339,7 @@ class WhileProcedure(LoopProcedure):
                 if isinstance(v, str):
                     # noinspection PyBroadException
                     try:
-                        context[k] = eval('"{}"'.format(re.sub(r'(^|[^\\\])"', '\1\\"', v)))
+                        context[k] = eval('"{}"'.format(re.sub(r'(^|[^\\])"', '\1\\"', v)))
                     except:
                         pass
 
@@ -452,7 +452,7 @@ class IfProcedure(Procedure):
             except:
                 if isinstance(v, str):
                     try:
-                        exec('{}="{}"'.format(k, re.sub(r'(^|[^\\\])"', '\1\\"', v)))
+                        exec('{}="{}"'.format(k, re.sub(r'(^|[^\\])"', '\1\\"', v)))
                     except:
                         pass
 
