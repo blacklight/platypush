@@ -1,4 +1,5 @@
 import enum
+import json
 import logging
 import re
 from functools import wraps
@@ -340,8 +341,10 @@ class WhileProcedure(LoopProcedure):
                     # noinspection PyBroadException
                     try:
                         context[k] = eval('"{}"'.format(re.sub(r'(^|[^\\])"', '\1\\"', v)))
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.warning('Could not parse value for context variable {}={}'.format(k, v))
+                        logger.warning('Context: {}'.format(json.dumps(context)))
+                        logger.exception(e)
 
         return context
 
@@ -453,8 +456,10 @@ class IfProcedure(Procedure):
                 if isinstance(v, str):
                     try:
                         exec('{}="{}"'.format(k, re.sub(r'(^|[^\\])"', '\1\\"', v)))
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.warning('Could not set context variable {}={}'.format(k, v))
+                        logger.warning('Context: {}'.format(json.dumps(context)))
+                        logger.exception(e)
 
         condition_true = eval(self.condition)
         response = Response()

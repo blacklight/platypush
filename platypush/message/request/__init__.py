@@ -130,8 +130,10 @@ class Request(Message):
                 if isinstance(v, str):
                     try:
                         exec('{}="{}"'.format(k, re.sub(r'(^|[^\\])"', '\1\\"', v)))
-                    except:
-                        pass
+                    except Exception as e:
+                        logger.warning('Could not set context variable {}={}'.format(k, v))
+                        logger.warning('Context: {}'.format(json.dumps(context)))
+                        logger.exception(e)
 
         parsed_value = ''
         if not isinstance(_value, str):
