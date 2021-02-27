@@ -1,12 +1,15 @@
+import os
 import unittest
 
 from platypush.event.hook import EventCondition
 from platypush.message.event.ping import PingEvent
 
-from . import BaseTest
+from . import BaseTest, conf_dir
 
 
 class TestEventParse(BaseTest):
+    config_file = os.path.join(conf_dir, 'test_http_config.yaml')
+
     def setUp(self):
         self.condition = EventCondition.build({
             'type': 'platypush.message.event.ping.PingEvent',
