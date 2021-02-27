@@ -5,6 +5,8 @@ import re
 from functools import wraps
 
 from queue import LifoQueue
+
+from ..common import exec_wrapper
 from ..config import Config
 from ..message.request import Request
 from ..message.response import Response
@@ -477,15 +479,7 @@ def procedure(f):
 
     @wraps(f)
     def _execute_procedure(*args, **kwargs):
-        try:
-            ret = f(*args, **kwargs)
-            if isinstance(ret, Response):
-                return ret
-
-            return Response(output=ret)
-        except Exception as e:
-            logger.exception(e)
-            return Response(errors=[str(e)])
+        return exec_wrapper(f, *args, **kwargs)
 
     return _execute_procedure
 

@@ -77,6 +77,7 @@ class Request(Message):
 
         proc_config = procedures[proc_name]
         if is_functional_procedure(proc_config):
+            self._expand_context(self.args, **kwargs)
             kwargs = {**self.args, **kwargs}
             if 'n_tries' in kwargs:
                 del kwargs['n_tries']

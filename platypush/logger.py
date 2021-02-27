@@ -1,5 +1,3 @@
-import sys
-
 class Logger:
     def __init__(self, level):
         self.level = level
@@ -16,6 +14,13 @@ class Logger:
             self.level(message)
 
     def flush(self):
+        pass
+
+    def getvalue(self):
+        """
+        This function only serves to prevent PyCharm unit tests from failing when the stdout is redirected to the
+        Logger.
+        """
         pass
 
 

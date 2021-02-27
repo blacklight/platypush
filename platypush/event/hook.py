@@ -4,6 +4,7 @@ import logging
 import threading
 from functools import wraps
 
+from platypush.common import exec_wrapper
 from platypush.config import Config
 from platypush.message.event import Event
 from platypush.message.request import Request
@@ -172,17 +173,7 @@ def hook(event_type=Event, **condition):
 
         @wraps(f)
         def wrapped(*args, **kwargs):
-            from platypush import Response
-
-            try:
-                ret = f(*args, **kwargs)
-                if isinstance(ret, Response):
-                    return ret
-
-                return Response(output=ret)
-            except Exception as e:
-                logger.exception(e)
-                return Response(errors=[str(e)])
+            return exec_wrapper(f, *args, **kwargs)
 
         return wrapped
 
