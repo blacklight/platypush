@@ -20,12 +20,15 @@ class ZeroconfListener(zeroconf.ServiceListener):
     @classmethod
     def get_service_info(cls, zc: Zeroconf, type_: str, name: str) -> dict:
         info = zc.get_service_info(type_, name)
+        if not info:
+            return {}
+
         return cls.parse_service_info(info)
 
     @staticmethod
     def parse_service_info(info: ServiceInfo) -> dict:
         return {
-            'addresses': [socket.inet_ntoa(addr) for addr in info.addresses if info.addresses] if info else [],
+            'addresses': [socket.inet_ntoa(addr) for addr in info.addresses if info.addresses],
             'port': info.port,
             'host_ttl': info.host_ttl,
             'other_ttl': info.other_ttl,

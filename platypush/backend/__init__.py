@@ -347,6 +347,10 @@ class Backend(Thread, EventGenerator):
                                          priority=0,
                                          properties=srv_desc)
 
+        if not self.zeroconf_info:
+            self.logger.warning('Could not register Zeroconf service')
+            return
+
         self.zeroconf.register_service(self.zeroconf_info)
         self.bus.post(ZeroconfServiceAddedEvent(service_type=srv_type, service_name=srv_name,
                                                 service_info=ZeroconfListener.parse_service_info(self.zeroconf_info)))
