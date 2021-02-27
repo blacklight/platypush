@@ -9,12 +9,10 @@ from . import BaseTest, conf_dir
 
 class TestEventParse(BaseTest):
     config_file = os.path.join(conf_dir, 'test_http_config.yaml')
-
-    def setUp(self):
-        self.condition = EventCondition.build({
-            'type': 'platypush.message.event.ping.PingEvent',
-            'message': 'This is (the)? answer: ${answer}'
-        })
+    condition = EventCondition.build({
+        'type': 'platypush.message.event.ping.PingEvent',
+        'message': 'This is (the)? answer: ${answer}'
+    })
 
     def test_event_parse(self):
         message = "GARBAGE GARBAGE this is the answer: 42"
