@@ -24,7 +24,7 @@ from .utils import set_thread_name
 
 
 __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
-__version__ = '0.13.9'
+__version__ = '0.20.0'
 
 logger = logging.getLogger('platypush')
 
@@ -185,8 +185,6 @@ class Daemon:
             logger.info('SIGINT received, terminating application')
         finally:
             self.stop_app()
-
-        sys.exit(0)
 
 
 def main():

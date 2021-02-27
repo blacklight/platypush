@@ -11,7 +11,7 @@ do
     if [[ $test_ret != 0 ]]; then
         tests_ret=$test_ret
         echo "-------------" >&2
-        echo "Test FAILED: $testcase" >&2
+        echo "FAILED: $testcase" >&2
         echo "-------------" >&2
     fi
 done

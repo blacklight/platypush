@@ -1,5 +1,5 @@
 main.db:
-    engine: sqlite:////tmp/platypush-tests.db
+    engine: sqlite:////tmp/platypush-test-http.db
 
 backend.http:
     port: 8123

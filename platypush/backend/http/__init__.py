@@ -279,7 +279,7 @@ class HttpBackend(Backend):
                 self.server_proc.kill()
                 self.server_proc.wait(timeout=10)
                 if self.server_proc.poll() is not None:
-                    self.logger.warning('HTTP server process still alive at termination')
+                    self.logger.info('HTTP server process may be still alive at termination')
                 else:
                     self.logger.info('HTTP server process terminated')
             else:
@@ -288,7 +288,7 @@ class HttpBackend(Backend):
                 if self.server_proc.is_alive():
                     self.server_proc.kill()
                 if self.server_proc.is_alive():
-                    self.logger.warning('HTTP server process still alive at termination')
+                    self.logger.info('HTTP server process may be still alive at termination')
                 else:
                     self.logger.info('HTTP server process terminated')
 

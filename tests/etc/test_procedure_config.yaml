@@ -1,0 +1,22 @@
+main.db:
+  engine: sqlite:////tmp/platypush-test-procedure.db
+
+backend.http:
+  port: 8124
+  disable_websocket: True
+
+procedure.write_file:
+  - action: file.write
+    args:
+      file: ${file}
+      content: ${content}
+
+event.hook.OnCustomEvent:
+  if:
+    type: platypush.message.event.custom.CustomEvent
+    subtype: platypush_test_procedure_from_event
+  then:
+    - action: procedure.write_file
+      args:
+        file: ${file}
+        content: ${content}

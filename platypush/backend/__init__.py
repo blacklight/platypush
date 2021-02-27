@@ -356,7 +356,12 @@ class Backend(Thread, EventGenerator):
         Unregister the Zeroconf service configuration if available.
         """
         if self.zeroconf and self.zeroconf_info:
-            self.zeroconf.unregister_service(self.zeroconf_info)
+            try:
+                self.zeroconf.unregister_service(self.zeroconf_info)
+            except Exception as e:
+                self.logger.warning('Could not register Zeroconf service {}: {}: {}'.format(
+                    self.zeroconf_info.name, type(e).__name__, str(e)))
+
             if self.zeroconf:
                 self.zeroconf.close()
 
