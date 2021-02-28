@@ -1,5 +1,7 @@
 import os
+import threading
 import urllib.parse
+from typing import Optional
 
 from platypush.context import get_bus
 from platypush.plugins.media import PlayerState, MediaPlugin
@@ -47,6 +49,8 @@ class MediaVlcPlugin(MediaPlugin):
         self._on_stop_callbacks = []
         self._title = None
         self._filename = None
+        self._monitor_thread: Optional[threading.Thread] = None
+        self._on_stop_event = threading.Event()
 
     @classmethod
     def _watched_event_types(cls):
@@ -64,11 +68,18 @@ class MediaVlcPlugin(MediaPlugin):
 
     def _init_vlc(self, resource):
         import vlc
+
+        if self._instance:
+            self.logger.info('Another instance is running, waiting for it to terminate')
+            self._on_stop_event.wait()
+
         self._reset_state()
 
         for k, v in self._env.items():
             os.environ[k] = v
 
+        self._monitor_thread = threading.Thread(target=self._player_monitor)
+        self._monitor_thread.start()
         self._instance = vlc.Instance(*self._args)
         self._player = self._instance.media_player_new(resource)
 
@@ -76,16 +87,24 @@ class MediaVlcPlugin(MediaPlugin):
             self._player.event_manager().event_attach(
                 eventtype=evt, callback=self._event_callback())
 
+    def _player_monitor(self):
+        self._on_stop_event.wait()
+        self.logger.info('VLC stream terminated')
+        self._reset_state()
+
     def _reset_state(self):
         self._latest_seek = None
         self._title = None
         self._filename = None
+        self._on_stop_event.clear()
 
         if self._player:
+            self.logger.info('Releasing VLC player resource')
             self._player.release()
             self._player = None
 
         if self._instance:
+            self.logger.info('Releasing VLC instance resource')
             self._instance.release()
             self._instance = None
 
@@ -105,7 +124,7 @@ class MediaVlcPlugin(MediaPlugin):
                 self._post_event(MediaPauseEvent)
             elif event.type == EventType.MediaPlayerStopped or \
                     event.type == EventType.MediaPlayerEndReached:
-                self._reset_state()
+                self._on_stop_event.set()
                 self._post_event(MediaStopEvent)
                 for cbk in self._on_stop_callbacks:
                     cbk()
