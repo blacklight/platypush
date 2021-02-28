@@ -51,6 +51,7 @@ class MediaVlcPlugin(MediaPlugin):
         self._filename = None
         self._monitor_thread: Optional[threading.Thread] = None
         self._on_stop_event = threading.Event()
+        self._stop_lock = threading.RLock()
 
     @classmethod
     def _watched_event_types(cls):
@@ -93,20 +94,21 @@ class MediaVlcPlugin(MediaPlugin):
         self._reset_state()
 
     def _reset_state(self):
-        self._latest_seek = None
-        self._title = None
-        self._filename = None
-        self._on_stop_event.clear()
+        with self._stop_lock:
+            self._latest_seek = None
+            self._title = None
+            self._filename = None
+            self._on_stop_event.clear()
 
-        if self._player:
-            self.logger.info('Releasing VLC player resource')
-            self._player.release()
-            self._player = None
+            if self._player:
+                self.logger.info('Releasing VLC player resource')
+                self._player.release()
+                self._player = None
 
-        if self._instance:
-            self.logger.info('Releasing VLC instance resource')
-            self._instance.release()
-            self._instance = None
+            if self._instance:
+                self.logger.info('Releasing VLC instance resource')
+                self._instance.release()
+                self._instance = None
 
     @staticmethod
     def _post_event(evt_type, **evt):
