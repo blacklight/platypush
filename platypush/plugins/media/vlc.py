@@ -210,14 +210,14 @@ class MediaVlcPlugin(MediaPlugin):
         """ Volume down by (default: 10)% """
         if not self._player:
             return None, 'No vlc instance is running'
-        return self.set_volume(self._player.audio_get_volume()-step)
+        return self.set_volume(int(max(0, self._player.audio_get_volume()-step)))
 
     @action
     def volup(self, step=10.0):
         """ Volume up by (default: 10)% """
         if not self._player:
             return None, 'No vlc instance is running'
-        return self.set_volume(self._player.audio_get_volume()+step)
+        return self.set_volume(int(min(100, self._player.audio_get_volume()+step)))
 
     @action
     def set_volume(self, volume):
