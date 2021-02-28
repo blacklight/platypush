@@ -304,3 +304,6 @@ croniter
 
 # Generic support for cameras
 # Pillow
+
+# VLC integration
+# python-vlc

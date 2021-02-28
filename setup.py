@@ -243,5 +243,7 @@ setup(
         'nextcloud': ['nextcloud-API @ git+https://github.com/EnterpriseyIntranet/nextcloud-API.git'],
         # Support for GStreamer integration
         'gstreamer': ['gst-python'],
+        # Support for VLC integration
+        'vlc': ['python-vlc'],
     },
 )
