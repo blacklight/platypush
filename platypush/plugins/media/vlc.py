@@ -1,7 +1,7 @@
 import os
 import urllib.parse
 
-from platypush.context import get_bus, get_plugin
+from platypush.context import get_bus
 from platypush.plugins.media import PlayerState, MediaPlugin
 from platypush.message.event.media import MediaPlayEvent, MediaPlayRequestEvent, \
     MediaPauseEvent, MediaStopEvent, MediaSeekEvent, MediaVolumeChangedEvent, \
@@ -135,11 +135,11 @@ class MediaVlcPlugin(MediaPlugin):
         return callback
 
     @action
-    def play(self, resource, subtitles=None, fullscreen=None, volume=None):
+    def play(self, resource=None, subtitles=None, fullscreen=None, volume=None):
         """
         Play a resource.
 
-        :param resource: Resource to play - can be a local file or a remote URL
+        :param resource: Resource to play - can be a local file or a remote URL (default: None == toggle play).
         :type resource: str
 
         :param subtitles: Path to optional subtitle file
@@ -154,7 +154,10 @@ class MediaVlcPlugin(MediaPlugin):
         :type fullscreen: bool
         """
 
-        get_bus().post(MediaPlayRequestEvent(resource=resource))
+        if not resource:
+            return self.pause()
+
+        self._post_event(MediaPlayRequestEvent, resource=resource)
         resource = self._get_resource(resource)
 
         if resource.startswith('file://'):
