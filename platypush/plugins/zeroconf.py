@@ -1,14 +1,14 @@
 import queue
 import socket
 import time
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 
 import zeroconf
 from zeroconf import Zeroconf, ServiceInfo, ServiceBrowser
 
 from platypush.context import get_bus
 from platypush.message.event.zeroconf import ZeroconfServiceAddedEvent, ZeroconfServiceRemovedEvent, \
-    ZeroconfServiceUpdatedEvent, ZeroconfEvent
+    ZeroconfServiceUpdatedEvent
 from platypush.plugins import Plugin, action
 
 
@@ -82,11 +82,11 @@ class ZeroconfPlugin(Plugin):
         return list(zeroconf.ZeroconfServiceTypes.find(timeout=timeout))
 
     @action
-    def discover_service(self, service: str, timeout: Optional[int] = 5) -> Dict[str, Any]:
+    def discover_service(self, service: Union[str, list], timeout: Optional[int] = 5) -> Dict[str, Any]:
         """
         Find all the services matching the specified type.
 
-        :param service: Service type (e.g. ``_http._tcp.local.``).
+        :param service: Service type (e.g. ``_http._tcp.local.``) or list of service types.
         :param timeout: Browser timeout in seconds (default: 5). Specify None for no timeout - in such case the
             discovery will loop forever and generate events upon service changes.
         :return: A ``service_type -> [service_names]`` mapping. Example:
@@ -121,11 +121,13 @@ class ZeroconfPlugin(Plugin):
         evt_queue = queue.Queue()
         zc = Zeroconf()
         listener = ZeroconfListener(evt_queue=evt_queue)
-        browser = ServiceBrowser(zc, service, listener)
         discovery_start = time.time()
         services = {}
+        browser = None
 
         try:
+            browser = ServiceBrowser(zc, service, listener)
+
             while timeout and time.time() - discovery_start < timeout:
                 to = discovery_start + timeout - time.time() if timeout else None
                 try:
@@ -145,7 +147,8 @@ class ZeroconfPlugin(Plugin):
                     if not services:
                         self.logger.warning('No such service discovered: {}'.format(service))
         finally:
-            browser.cancel()
+            if browser:
+                browser.cancel()
             zc.close()
             self._discovery_in_progress = False
 

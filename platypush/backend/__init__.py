@@ -10,7 +10,7 @@ import threading
 import time
 
 from threading import Thread
-from typing import Optional
+from typing import Optional, Dict
 
 from platypush.bus import Bus
 from platypush.config import Config
@@ -313,9 +313,31 @@ class Backend(Thread, EventGenerator):
         s.close()
         return addr
 
-    def register_service(self, port: Optional[int] = None, name: Optional[str] = None, udp: bool = False):
+    def register_service(self,
+                         port: Optional[int] = None,
+                         name: Optional[str] = None,
+                         srv_type: Optional[str] = None,
+                         srv_name: Optional[str] = None,
+                         udp: bool = False,
+                         properties: Optional[Dict] = None):
         """
         Initialize the Zeroconf service configuration for this backend.
+
+        :param port: Service listen port (default: the backend ``port`` attribute if available, or ``None``).
+        :param name: Service short name (default: backend name).
+        :param srv_type: Service type (default: ``_platypush-{name}._{proto}.local.``).
+        :param srv_name: Full service name (default: ``{hostname or device_id}.{type}``).
+        :param udp: Set to True if this is a UDP service.
+        :param properties: Extra properties to be passed on the service. Default:
+
+            .. code-block:: json
+
+                {
+                    "name": "Platypush",
+                    "vendor": "Platypush",
+                    "version": "{platypush_version}"
+                }
+
         """
         try:
             from zeroconf import ServiceInfo, Zeroconf
@@ -329,11 +351,12 @@ class Backend(Thread, EventGenerator):
             'name': 'Platypush',
             'vendor': 'Platypush',
             'version': __version__,
+            **(properties or {}),
         }
 
         name = name or re.sub(r'Backend$', '', self.__class__.__name__).lower()
-        srv_type = '_platypush-{name}._{proto}.local.'.format(name=name, proto='udp' if udp else 'tcp')
-        srv_name = '{host}.{type}'.format(host=self.device_id, type=srv_type)
+        srv_type = srv_type or '_platypush-{name}._{proto}.local.'.format(name=name, proto='udp' if udp else 'tcp')
+        srv_name = srv_name or '{host}.{type}'.format(host=self.device_id, type=srv_type)
 
         if port:
             srv_port = port
