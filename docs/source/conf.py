@@ -263,6 +263,8 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'RPi.GPIO',
                         'RPLCD',
                         'imapclient',
+                        'pysmartthings',
+                        'aiohttp',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))

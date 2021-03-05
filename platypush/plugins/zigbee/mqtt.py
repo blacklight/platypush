@@ -611,9 +611,7 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):
     @action
     def devices_get(self, devices: Optional[List[str]] = None, **kwargs) -> Dict[str, dict]:
         """
-        Get the properties of the devices connected to the network. *NOTE*: Use this function instead of :meth:`.status`
-        if you want to retrieve the status of *all* the components associated to the network - :meth:`.status` only
-        returns the status of the devices with a writable ``ON``/``OFF`` ``state`` property.
+        Get the properties of the devices connected to the network.
 
         :param devices: If set, then only the status of these devices (by friendly name) will be retrieved (default:
             retrieve all).
@@ -664,6 +662,15 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):
                     device, str(e)))
 
         return response
+
+    @action
+    def status(self, device: Optional[str] = None, *args, **kwargs):
+        """
+        Get the status of a device (by friendly name) or of all the connected devices (it wraps :meth:`.devices_get`).
+
+        :param device: Device friendly name (default: get all devices).
+        """
+        return self.devices_get([device], *args, **kwargs)
 
     # noinspection PyShadowingBuiltins,DuplicatedCode
     @action

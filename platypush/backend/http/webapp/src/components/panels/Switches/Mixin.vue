@@ -52,7 +52,7 @@ export default {
     async refresh() {
       this.loading = true
       try {
-        this.devices = (await this.request(`${this.pluginName}.status`)).reduce((obj, device) => {
+        this.devices = (await this.request(`${this.pluginName}.switch_status`)).reduce((obj, device) => {
           const name = device.name?.length ? device.name : device.id
           obj[name] = device
           return obj

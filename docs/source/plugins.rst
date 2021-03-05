@@ -27,6 +27,7 @@ Plugins
     platypush/plugins/camera.pi.rst
     platypush/plugins/chat.telegram.rst
     platypush/plugins/clipboard.rst
+    platypush/plugins/config.rst
     platypush/plugins/covid19.rst
     platypush/plugins/csv.rst
     platypush/plugins/db.rst
@@ -110,6 +111,7 @@ Plugins
     platypush/plugins/sensor.rst
     platypush/plugins/serial.rst
     platypush/plugins/shell.rst
+    platypush/plugins/smartthings.rst
     platypush/plugins/sound.rst
     platypush/plugins/ssh.rst
     platypush/plugins/stt.rst

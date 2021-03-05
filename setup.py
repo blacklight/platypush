@@ -245,5 +245,7 @@ setup(
         'gstreamer': ['gst-python'],
         # Support for VLC integration
         'vlc': ['python-vlc'],
+        # Support for SmartThings integration
+        'smartthings': ['pysmartthings', 'aiohttp'],
     },
 )

@@ -27,17 +27,25 @@ class SwitchPlugin(Plugin):
         raise NotImplementedError()
 
     @action
-    def status(self, device=None, *args, **kwargs):
+    def switch_status(self, device=None):
         """ Get the status of a specified device or of all the configured devices (default)"""
         devices = self.switches
         if device:
             devices = [d for d in self.switches if d.get('id') == device or d.get('name') == device]
             if devices:
-                return self.switches.pop(0)
+                return devices[0]
             else:
                 return None
 
         return devices
+
+    @action
+    def status(self, device=None, *args, **kwargs):
+        """
+        Status function - if not overridden it calls :meth:`.switch_status`. You may want to override it if your plugin
+        does not handle only switches.
+        """
+        return self.switch_status(device)
 
     @property
     def switches(self) -> List[dict]:

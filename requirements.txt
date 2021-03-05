@@ -307,3 +307,7 @@ croniter
 
 # VLC integration
 # python-vlc
+
+# SmartThings integration
+# pysmartthings
+# aiohttp
