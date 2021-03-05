@@ -69,38 +69,26 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
         from icalendar import Calendar
 
         events = []
-        try:
-            response = requests.get(self.url)
-        except Exception as e:
-            self.logger.exception(e)
-            return events
+        response = requests.get(self.url)
+        assert response.ok, \
+                "HTTP error while getting events from {}: {}".format(self.url, response.text)
 
-        if response.ok:
-            calendar = None
+        calendar = Calendar.from_ical(response.text)
+        for event in calendar.walk():
+            if event.name != 'VEVENT':
+                continue  # Not an event
 
-            try:
-                calendar = Calendar.from_ical(response.text)
-            except Exception as e:
-                self.logger.exception(e)
-                return events
+            event = self._translate_event(event)
 
-            for event in calendar.walk():
-                if event.name != 'VEVENT':
-                    continue  # Not an event
-
-                event = self._translate_event(event)
-
-                if event['status'] and event['responseStatus'] \
-                        and dateutil.parser.parse(event['end']['dateTime']) >= \
-                            datetime.datetime.now(pytz.timezone('UTC')) \
-                        and (
-                            (only_participating
-                             and event['status'] == 'confirmed'
-                             and event['responseStatus'] in ['accepted', 'tentative'])
-                            or not only_participating):
-                    events.append(event)
-        else:
-            self.logger.error("HTTP error while getting {}: {}".format(self.url, response))
+            if event['status'] and event['responseStatus'] \
+                    and dateutil.parser.parse(event['end']['dateTime']) >= \
+                        datetime.datetime.now(pytz.timezone('UTC')) \
+                    and (
+                        (only_participating
+                         and event['status'] == 'confirmed'
+                         and event['responseStatus'] in ['accepted', 'tentative'])
+                        or not only_participating):
+                events.append(event)
 
         return events
 

@@ -110,8 +110,11 @@ class CalendarPlugin(Plugin, CalendarInterface):
         events = []
 
         for calendar in self.calendars:
-            cal_events = calendar.get_upcoming_events().output or []
-            events.extend(cal_events)
+            try:
+                cal_events = calendar.get_upcoming_events().output or []
+                events.extend(cal_events)
+            except Exception as e:
+                self.logger.warning('Could not retrieve events: {}'.format(str(e)))
 
         events = sorted(events, key=lambda event:
                         dateutil.parser.parse(
