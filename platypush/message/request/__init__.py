@@ -133,7 +133,7 @@ class Request(Message):
                         exec('{}="{}"'.format(k, re.sub(r'(^|[^\\])"', '\1\\"', v)))
                     except Exception as e:
                         logger.warning('Could not set context variable {}={}'.format(k, v))
-                        logger.warning('Context: {}'.format(json.dumps(context)))
+                        logger.warning('Context: {}'.format(context))
                         logger.exception(e)
 
         parsed_value = ''
