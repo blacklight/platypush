@@ -489,36 +489,43 @@ class SmartthingsPlugin(SwitchPlugin):
                 loop.stop()
 
     @action
-    def on(self, device: str, *args, **kwargs):
+    def on(self, device: str, *args, **kwargs) -> dict:
         """
         Turn on a device with ``switch`` capability.
 
         :param device: Device name or ID.
+        :return: Device status
         """
-        return self.execute(device, 'switch', 'on')
+        self.execute(device, 'switch', 'on')
+        # noinspection PyUnresolvedReferences
+        return self.status(device).output[0]
 
     @action
-    def off(self, device: str, *args, **kwargs):
+    def off(self, device: str, *args, **kwargs) -> dict:
         """
         Turn off a device with ``switch`` capability.
 
         :param device: Device name or ID.
+        :return: Device status
         """
-        return self.execute(device, 'switch', 'off')
+        self.execute(device, 'switch', 'off')
+        # noinspection PyUnresolvedReferences
+        return self.status(device).output[0]
 
     @action
-    def toggle(self, device: str, *args, **kwargs):
+    def toggle(self, device: str, *args, **kwargs) -> dict:
         """
         Toggle a device with ``switch`` capability.
 
         :param device: Device name or ID.
+        :return: Device status
         """
         import pysmartthings
 
         device = self._get_device(device)
         device_id = device.device_id
 
-        async def _toggle():
+        async def _toggle() -> bool:
             async with aiohttp.ClientSession(timeout=self._timeout) as session:
                 api = pysmartthings.SmartThings(session, self._access_token)
                 dev = await api.device(device_id)
@@ -529,10 +536,16 @@ class SmartthingsPlugin(SwitchPlugin):
                 ret = await dev.command(component_id='main', capability='switch', command=state, args=args)
 
             assert ret, 'The command switch={state} failed on device {device}'.format(state=state, device=dev.label)
+            return not dev.status.switch
 
         with self._refresh_lock:
             loop = asyncio.new_event_loop()
-            loop.run_until_complete(_toggle())
+            state = loop.run_until_complete(_toggle())
+            return {
+                'id': device_id,
+                'name': device.label,
+                'on': state,
+            }
 
     @property
     def switches(self) -> List[dict]:
