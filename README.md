@@ -438,6 +438,11 @@ platyvdock rm device_id
 ## Tests
 
 To run the tests simply run `pytest` either from the project root folder or the `tests/` folder.
+Or run the following command from the project root folder:
+
+```shell
+python -m tests
+```
 
 ---
 
