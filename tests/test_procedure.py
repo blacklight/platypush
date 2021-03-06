@@ -29,12 +29,24 @@ def tmp_file(*_):
             os.unlink(f)
 
 
-def check_file_content(expected_content: str, tmp_file: str):
-    assert os.path.isfile(tmp_file), 'The expected output file was not created'
-    with open(tmp_file, 'r') as f:
-        content = f.read()
+def check_file_content(expected_content: str, tmp_file: str, timeout: int = 10):
+    error = None
+    start_time = time.time()
 
-    assert content == expected_content, 'The output file did not contain the expected text'
+    while time.time() - start_time < timeout:
+        try:
+            assert os.path.isfile(tmp_file), 'The expected output file was not created'
+            with open(tmp_file, 'r') as f:
+                content = f.read()
+
+            assert content == expected_content, 'The output file did not contain the expected text'
+            error = None
+            break
+        except Exception as e:
+            error = e
+
+    if error:
+        raise error
 
 
 def test_procedure_call(base_url):
@@ -60,7 +72,6 @@ def test_procedure_from_event(app, base_url):
     event_type = 'test_procedure'
     # noinspection PyUnresolvedReferences
     app.bus.post(CustomEvent(subtype=event_type, file=tmp_files[1], content=output_text))
-    time.sleep(3)
     check_file_content(expected_content=output_text, tmp_file=tmp_files[1])
 
 
