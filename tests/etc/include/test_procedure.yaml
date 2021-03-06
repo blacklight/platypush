@@ -7,7 +7,7 @@ procedure.write_file:
 event.hook.OnCustomEvent:
   if:
     type: platypush.message.event.custom.CustomEvent
-    subtype: platypush_test_procedure_from_event
+    subtype: test_procedure
   then:
     - action: procedure.write_file
       args:

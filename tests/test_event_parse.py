@@ -1,3 +1,5 @@
+import pytest
+
 from platypush.event.hook import EventCondition
 from platypush.message.event.ping import PingEvent
 
@@ -23,6 +25,10 @@ def test_event_parse():
     event = PingEvent(message=message)
     result = event.matches_condition(condition)
     assert not result.is_match
+
+
+if __name__ == '__main__':
+    pytest.main()
 
 
 # vim:sw=4:ts=4:et:

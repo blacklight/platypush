@@ -59,4 +59,8 @@ def test_request_with_wrong_credentials(base_url, expected_login_redirect):
     assert expected_login_redirect == response.url, 'A request with wrong credentials should fail'
 
 
+if __name__ == '__main__':
+    pytest.main()
+
+
 # vim:sw=4:ts=4:et:
