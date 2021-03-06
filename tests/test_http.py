@@ -1,57 +1,62 @@
-import os
-import unittest
+import pytest
 
-from . import BaseHttpTest, conf_dir
+from .utils import register_user, send_request as _send_request
 
 
-class TestHttp(BaseHttpTest):
+@pytest.fixture(scope='module')
+def expected_registration_redirect(base_url):
+    yield '{base_url}/register?redirect={base_url}/execute'.format(base_url=base_url)
+
+
+@pytest.fixture(scope='module')
+def expected_login_redirect(base_url):
+    yield '{base_url}/login?redirect={base_url}/execute'.format(base_url=base_url)
+
+
+def send_request(**kwargs):
+    return _send_request('shell.exec', args={'cmd': 'echo ping'}, **kwargs)
+
+
+def test_request_with_no_registered_users(base_url, expected_registration_redirect):
     """
-    Tests the full flow of a request/response on the HTTP backend.
-    Runs a remote command over HTTP via shell.exec plugin and gets the output.
+    An /execute request performed before any user is registered should redirect to the registration page.
     """
-
-    config_file = os.path.join(conf_dir, 'test_http_config.yaml')
-
-    def __init__(self, *args, **kwargs):
-        super(TestHttp, self).__init__(*args, **kwargs)
-
-    def test_http_flow(self):
-        # An /execute request performed before any user is registered should redirect to the registration page.
-        expected_registration_redirect = '{base_url}/register?redirect={base_url}/execute'.format(
-            base_url=self.base_url)
-        expected_login_redirect = '{base_url}/login?redirect={base_url}/execute'.format(
-            base_url=self.base_url)
-
-        response = self.send_request(authenticate=False, parse_response=False)
-        self.assertEqual(expected_registration_redirect, response.url,
-                         'No users registered, but the application did not redirect us to the registration page')
-
-        # Emulate a first user registration through form and get the session_token.
-        response = self.register_user()
-        self.assertGreater(len(response.history), 0, 'Redirect missing from the history')
-        self.assertTrue('session_token' in response.history[0].cookies, 'No session_token returned upon registration')
-        self.assertEqual('{base_url}/'.format(base_url=self.base_url), response.url,
-                         'The registration form did not redirect to the main panel')
-
-        # After a first user has been registered any unauthenticated call to /execute should redirect to /login.
-        response = self.send_request(authenticate=False, parse_response=False)
-        self.assertEqual(expected_login_redirect, response.url,
-                         'An unauthenticated request after user registration should result in a login redirect')
-
-        # A request authenticated with user/pass should succeed.
-        response = self.send_request(authenticate=True)
-        self.assertEqual(response.output.strip(), 'ping', 'The request did not return the expected output')
-
-        # A request with the wrong user/pass should fail.
-        response = self.send_request(authenticate=False, auth=('wrong', 'wrong'), parse_response=False)
-        self.assertEqual(expected_login_redirect, response.url, 'A request with wrong credentials should fail')
-
-    def send_request(self, **kwargs):
-        return super().send_request('shell.exec', args={'cmd': 'echo ping'}, **kwargs)
+    response = send_request(authenticate=False, parse_json=False)
+    assert expected_registration_redirect == response.url, \
+        'No users registered, but the application did not redirect us to the registration page'
 
 
-if __name__ == '__main__':
-    unittest.main()
+def test_first_user_registration(base_url):
+    """
+    Emulate a first user registration through form and get the session_token.
+    """
+    response = register_user()
+
+    assert len(response.history) > 0, 'Redirect missing from the history'
+    assert 'session_token' in response.history[0].cookies, 'No session_token returned upon registration'
+    assert '{base_url}/'.format(base_url=base_url) == response.url, \
+        'The registration form did not redirect to the main panel'
+
+
+def test_unauthorized_request_with_registered_user(base_url, expected_login_redirect):
+    """
+    After a first user has been registered any unauthenticated call to /execute should redirect to /login.
+    """
+    response = send_request(authenticate=False, parse_json=False)
+    assert expected_login_redirect == response.url, \
+        'An unauthenticated request after user registration should result in a login redirect'
+
+
+def test_authorized_request_with_registered_user(base_url):
+    # A request authenticated with user/pass should succeed.
+    response = send_request(authenticate=True)
+    assert response.output.strip() == 'ping', 'The request did not return the expected output'
+
+
+def test_request_with_wrong_credentials(base_url, expected_login_redirect):
+    # A request with the wrong user/pass should fail.
+    response = send_request(authenticate=False, auth=('wrong', 'wrong'), parse_json=False)
+    assert expected_login_redirect == response.url, 'A request with wrong credentials should fail'
 
 
 # vim:sw=4:ts=4:et:

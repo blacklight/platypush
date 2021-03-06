@@ -1,3 +1,6 @@
+include:
+    - include/test_procedure.yaml
+
 main.db:
     engine: sqlite:////tmp/platypush-test-http.db
 

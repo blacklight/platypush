@@ -437,7 +437,7 @@ platyvdock rm device_id
 
 ## Tests
 
-To run the tests run the `run_tests.sh` from the source root folder - no further configuration is required.
+To run the tests simply run `pytest` either from the project root folder or the `tests/` folder.
 
 ---
 

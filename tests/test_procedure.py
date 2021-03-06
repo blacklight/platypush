@@ -1,60 +1,59 @@
 import os
+import pytest
 import tempfile
 import time
-import unittest
 
 from platypush.message.event.custom import CustomEvent
-from . import BaseHttpTest, conf_dir
+
+from .utils import register_user, send_request
 
 
-@unittest.skip('Skipped until I can find a way to properly clean up the environment from the previous tests and start '
-               'a new platform')
-class TestProcedure(BaseHttpTest):
+@pytest.fixture(scope='module', autouse=True)
+def user(*_):
+    register_user()
+
+
+@pytest.fixture(scope='module')
+def tmp_file(*_):
+    tmp_file = tempfile.NamedTemporaryFile(prefix='platypush-test-procedure-', suffix='.txt', delete=False)
+    yield tmp_file
+    if os.path.isfile(tmp_file.name):
+        os.unlink(tmp_file.name)
+
+
+def check_file_content(expected_content: str, tmp_file):
+    assert os.path.isfile(tmp_file.name), 'The expected output file was not created'
+    with open(tmp_file.name, 'r') as f:
+        content = f.read()
+
+    assert content == expected_content, 'The output file did not contain the expected text'
+
+
+def test_procedure_call(tmp_file):
     """
-    Test the execution of configured procedures.
+    Test the result of a procedure invoked directly over HTTP.
     """
+    output_text = 'Procedure test'
+    send_request(
+        action='procedure.write_file',
+        args={
+            'file': tmp_file.name,
+            'content': output_text,
+        })
 
-    config_file = os.path.join(conf_dir, 'test_procedure_config.yaml')
-
-    def setUp(self) -> None:
-        super().setUp()
-        self.register_user()
-        self.tmp_file = tempfile.NamedTemporaryFile(prefix='platypush-test-procedure-', suffix='.txt', delete=False)
-
-    def tearDown(self):
-        if os.path.isfile(self.tmp_file.name):
-            os.unlink(self.tmp_file.name)
-        super().tearDown()
-
-    def check_file_content(self, expected_content: str):
-        self.assertTrue(os.path.isfile(self.tmp_file.name), 'The expected output file was not created')
-        with open(self.tmp_file.name, 'r') as f:
-            content = f.read()
-
-        self.assertEqual(content, expected_content, 'The output file did not contain the expected text',
-                         expected=expected_content, actual=content)
-
-    def test_procedure_call(self):
-        output_text = 'Procedure test'
-        self.send_request(
-            action='procedure.write_file',
-            args={
-                'file': self.tmp_file.name,
-                'content': output_text,
-            })
-
-        self.check_file_content(expected_content=output_text)
-
-    def test_procedure_from_event(self):
-        output_text = 'Procedure from event test'
-        event_type = 'platypush_test_procedure_from_event'
-        self.app.bus.post(CustomEvent(subtype=event_type, file=self.tmp_file.name, content=output_text))
-        time.sleep(3)
-        self.check_file_content(output_text)
+    check_file_content(expected_content=output_text, tmp_file=tmp_file)
 
 
-if __name__ == '__main__':
-    unittest.main()
+def test_procedure_from_event(app, tmp_file):
+    """
+    Test the result of a procedure triggered by an event.
+    """
+    output_text = 'Procedure from event test'
+    event_type = 'platypush_test_procedure_from_event'
+    # noinspection PyUnresolvedReferences
+    app.bus.post(CustomEvent(subtype=event_type, file=tmp_file.name, content=output_text))
+    time.sleep(2)
+    check_file_content(expected_content=output_text, tmp_file=tmp_file)
 
 
 # vim:sw=4:ts=4:et:
