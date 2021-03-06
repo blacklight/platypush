@@ -5,7 +5,7 @@ python:
 
 install: "pip install -r .travis.requirements"
 
-script: ./run_tests.sh
+script: pytest
 
 notifications:
     email:
