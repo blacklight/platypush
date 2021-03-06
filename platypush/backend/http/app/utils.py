@@ -3,7 +3,7 @@ import logging
 import os
 
 from functools import wraps
-from flask import abort, request, redirect, Response
+from flask import abort, request, redirect, Response, current_app
 from redis import Redis
 
 # NOTE: The HTTP service will *only* work on top of a Redis bus. The default
@@ -23,7 +23,7 @@ _logger = None
 def bus():
     global _bus
     if _bus is None:
-        _bus = RedisBus()
+        _bus = RedisBus(redis_queue=current_app.config['redis_queue'])
     return _bus
 
 

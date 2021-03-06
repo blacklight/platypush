@@ -391,6 +391,7 @@ class HttpBackend(Backend):
                 'debug': False,
             }
 
+            application.config['redis_queue'] = self.bus.redis_queue
             if self.ssl_context:
                 kwargs['ssl_context'] = self.ssl_context
 

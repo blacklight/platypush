@@ -16,8 +16,7 @@ class RedisBus(Bus):
     """ Overrides the in-process in-memory local bus with a Redis bus """
     _DEFAULT_REDIS_QUEUE = 'platypush/bus'
 
-    def __init__(self, on_message=None, redis_queue=_DEFAULT_REDIS_QUEUE,
-                 *args, **kwargs):
+    def __init__(self, on_message=None, redis_queue=None, *args, **kwargs):
         super().__init__(on_message=on_message)
 
         if not args and not kwargs:
@@ -25,7 +24,7 @@ class RedisBus(Bus):
 
         self.redis = Redis(*args, **kwargs)
         self.redis_args = kwargs
-        self.redis_queue = redis_queue
+        self.redis_queue = redis_queue or self._DEFAULT_REDIS_QUEUE
         self.on_message = on_message
         self.thread_id = threading.get_ident()
 

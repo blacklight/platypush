@@ -41,6 +41,9 @@ class Daemon:
     # - plugins will post the responses they process
     bus = None
 
+    # Default bus queue name
+    _default_redis_queue = 'platypush/bus'
+
     pidfile = None
 
     # backend_name => backend_obj map
@@ -50,7 +53,7 @@ class Daemon:
     n_tries = 2
 
     def __init__(self, config_file=None, pidfile=None, requests_to_process=None,
-                 no_capture_stdout=False, no_capture_stderr=False):
+                 no_capture_stdout=False, no_capture_stderr=False, redis_queue=None):
         """
         Constructor
         Params:
@@ -64,6 +67,7 @@ class Daemon:
                                  capture by the logging system
             no_capture_stderr -- Set to true if you want to disable the stderr
                                  capture by the logging system
+            redis_queue -- Name of the (Redis) queue used for dispatching messages (default: platypush/bus).
         """
 
         if pidfile:
@@ -71,12 +75,15 @@ class Daemon:
             with open(self.pidfile, 'w') as f:
                 f.write(str(os.getpid()))
 
+        self.redis_queue = redis_queue or self._default_redis_queue
         self.config_file = config_file
         Config.init(self.config_file)
         logging.basicConfig(**Config.get('logging'))
 
         redis_conf = Config.get('backend.redis') or {}
-        self.bus = RedisBus(on_message=self.on_message(), **redis_conf.get('redis_args', {}))
+        self.bus = RedisBus(redis_queue=self.redis_queue, on_message=self.on_message(),
+                            **redis_conf.get('redis_args', {}))
+
         self.no_capture_stdout = no_capture_stdout
         self.no_capture_stderr = no_capture_stderr
         self.event_processor = EventProcessor()
@@ -108,11 +115,17 @@ class Daemon:
                             help="Set this flag if you have max stack depth " +
                             "exceeded errors so stderr won't be captured by " +
                             "the logging system")
+        parser.add_argument('--redis-queue', dest='redis_queue',
+                            required=False, action='store_true',
+                            default=cls._default_redis_queue,
+                            help="Name of the Redis queue to be used to internally deliver messages "
+                                 "(default: platypush/bus)")
 
         opts, args = parser.parse_known_args(args)
         return cls(config_file=opts.config, pidfile=opts.pidfile,
                    no_capture_stdout=opts.no_capture_stdout,
-                   no_capture_stderr=opts.no_capture_stderr)
+                   no_capture_stderr=opts.no_capture_stderr,
+                   redis_queue=opts.redis_queue)
 
     def on_message(self):
         """

@@ -28,7 +28,8 @@ base_folder = os.path.abspath(os.path.join(
 template_folder = os.path.join(base_folder, 'webapp/dist')
 static_folder = os.path.join(base_folder, 'webapp/dist/static')
 
-application = Flask('platypush', template_folder=template_folder,
+application = Flask('platypush',
+                    template_folder=template_folder,
                     static_folder=static_folder)
 
 for route in get_routes():
