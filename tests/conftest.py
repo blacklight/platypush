@@ -11,6 +11,21 @@ from .utils import config_file, set_base_url
 app_start_timeout = 5
 
 
+def clear_loggers():
+    """
+    Remove handlers from all loggers at teardown.
+    This is to prevent pytest spitting out logging errors on teardown if the logging objects have been deinitialized
+    (see https://github.com/pytest-dev/pytest/issues/5502#issuecomment-647157873).
+    """
+    import logging
+    # noinspection PyUnresolvedReferences
+    loggers = [logging.getLogger()] + list(logging.Logger.manager.loggerDict.values())
+    for logger in loggers:
+        handlers = getattr(logger, 'handlers', [])
+        for handler in handlers:
+            logger.removeHandler(handler)
+
+
 @pytest.fixture(scope='session', autouse=True)
 def app():
     logging.info('Starting Platypush test service')
@@ -24,6 +39,7 @@ def app():
 
     logging.info('Stopping Platypush test service')
     app.stop_app()
+    clear_loggers()
     db_file = (Config.get('main.db') or {}).get('engine', '')[len('sqlite:///'):]
 
     if db_file and os.path.isfile(db_file):
