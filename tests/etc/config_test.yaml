@@ -2,7 +2,7 @@ include:
     - include/test_procedure.yaml
 
 main.db:
-    engine: sqlite:////tmp/platypush-test-http.db
+    engine: sqlite:////tmp/platypush-tests.db
 
 backend.http:
     port: 8123

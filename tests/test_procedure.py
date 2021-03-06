@@ -52,7 +52,7 @@ def test_procedure_from_event(app, tmp_file):
     event_type = 'platypush_test_procedure_from_event'
     # noinspection PyUnresolvedReferences
     app.bus.post(CustomEvent(subtype=event_type, file=tmp_file.name, content=output_text))
-    time.sleep(2)
+    time.sleep(3)
     check_file_content(expected_content=output_text, tmp_file=tmp_file)
 
 

@@ -24,7 +24,7 @@ test_user = 'platypush'
 test_pass = 'test'
 
 # Base URL
-base_url = 'http://localhost:8123'
+base_url = None
 
 
 def set_base_url(url: str):
