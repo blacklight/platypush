@@ -1,7 +1,7 @@
 Platypush
 =========
 
-[![Build Status](https://travis-ci.org/BlackLight/platypush.svg?branch=master)](https://travis-ci.org/BlackLight/platypush)
+[![Build Status](https://ci.platypush.tech/status.svg)](https://ci.platypush.tech)
 [![Documentation Status](https://readthedocs.org/projects/platypush/badge/?version=latest)](https://docs.platypush.tech/en/latest/)
 [![pip version](https://img.shields.io/pypi/v/platypush.svg?style=flat)](https://pypi.python.org/pypi/platypush/)
 [![License](https://img.shields.io/github/license/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/-/blob/master/LICENSE.txt)
