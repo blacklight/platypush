@@ -17,6 +17,7 @@ def app():
 
     Config.init(config_file)
     app = Daemon(config_file=config_file)
+    app.bus.redis_queue = 'platypush-tests/bus'
     Thread(target=lambda: app.run()).start()
     logging.info('Sleeping {} seconds while waiting for the daemon to start up'.format(app_start_timeout))
     time.sleep(app_start_timeout)
