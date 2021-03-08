@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [0.20.4] - 2021-03-08
+
+### Added
+
+- Added SmartThings integration.
+- Support for custom Redis message queue name over the `--redis-queue` argument.
+
+### Fixed
+
+- Refactored tests to use `pytest` instead of `unittest`.
+- Some major bug fixes on procedures and hooks context evaluation.
+
 ## [0.20.3] - 2021-02-28
 
 ### Fixed
