@@ -1,9 +1,10 @@
+import datetime
 import enum
 import logging
 import threading
-import time
 
 import croniter
+from dateutil.tz import gettz
 
 from platypush.procedure import Procedure
 from platypush.utils import is_functional_cron
@@ -56,16 +57,10 @@ class Cronjob(threading.Thread):
             self.state = CronjobState.ERROR
 
     def wait(self):
-        now = int(time.time())
+        now = datetime.datetime.now().replace(tzinfo=gettz())
         cron = croniter.croniter(self.cron_expression, now)
-        next_run = int(cron.get_next())
-        self._should_stop.wait(next_run - now)
-
-    def should_run(self):
-        now = int(time.time())
-        cron = croniter.croniter(self.cron_expression, now)
-        next_run = int(cron.get_next())
-        return now == next_run
+        next_run = cron.get_next()
+        self._should_stop.wait(next_run - now.timestamp())
 
     def stop(self):
         self._should_stop.set()
@@ -117,7 +112,7 @@ class CronScheduler(threading.Thread):
                 if job.state == CronjobState.IDLE:
                     job.start()
 
-            time.sleep(0.5)
+            self._should_stop.wait(timeout=0.5)
 
         logger.info('Terminating cron scheduler')
 

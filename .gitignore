@@ -18,5 +18,4 @@ platypush/notebooks
 platypush/requests
 /http-client.env.json
 /platypush/backend/http/static/css/dist
-/tests/etc/scripts
 /tests/etc/dashboards

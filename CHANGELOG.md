@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [unreleased]
+
+### Fixed
+
+- Cron expressions should adhere to the UNIX cronjob standard and use the machine local time,
+  not UTC, as a reference (closes [#173](https://git.platypush.tech/platypush/platypush/-/issues/173)).
+
 ## [0.20.4] - 2021-03-08
 
 ### Added
