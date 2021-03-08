@@ -18,8 +18,9 @@ def tmp_file(*_):
     tmp_files_ready.set()
     yield tmp_file.name
 
-    if os.path.isfile(tmp_files[0]):
-        os.unlink(tmp_files[0])
+    for f in tmp_files:
+        if os.path.isfile(f):
+            os.unlink(f)
 
 
 def test_cron_execution(tmp_file):
