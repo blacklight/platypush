@@ -118,7 +118,7 @@ class BluetoothPlugin(SensorPlugin):
         """
         from bluetooth import lookup_name
 
-        self.logger.info('Looking up name for device {}'.format(addr))
+        self.logger.debug('Looking up name for device {}'.format(addr))
         name = lookup_name(addr, timeout=timeout)
 
         dev = {
