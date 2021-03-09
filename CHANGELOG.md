@@ -5,6 +5,11 @@ Given the high speed of development in the first phase, changes are being report
 
 ## [unreleased]
 
+### Added
+
+- Added `active_scan` parameter to `bluetooth.scanner` backend to perform active scans (i.e. via `lookup_name`)
+  on the discovered devices (see [#174](https://git.platypush.tech/platypush/platypush/-/issues/174)).
+
 ### Fixed
 
 - Cron expressions should adhere to the UNIX cronjob standard and use the machine local time,
