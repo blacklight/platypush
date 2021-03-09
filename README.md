@@ -277,6 +277,48 @@ curl -XPOST -H 'Content-Type: application/json' -H "Authorization: Bearer $YOUR_
   }' http://host:8008/execute
 ```
 
+### Cronjobs
+
+Cronjobs are pieces of logic that will be run at regular intervals, expressed in crontab-compatible syntax.
+They can be defined either in the `config.yaml` or as Python scripts stored under `~/.config/platypush/scripts` as
+functions labelled by the `@cron` decorator.
+
+Note that seconds are also supported (unlike the standard crontab definition), but, for back-compatibility with the
+standard crontab format, they are at the end of the cron expression, so the expression is actually in the format
+`<minute> <hour> <day_of_month> <month> <day_of_week> <second>`.
+
+YAML example for a cronjob that is executed every 30 seconds and checks if a Bluetooth device is nearby:
+
+```yaml
+cron.check_bt_device:
+  cron_expression: '* * * * * */30'
+  actions:
+    - action: bluetooth.lookup_name
+      args:
+        addr: XX:XX:XX:XX:XX:XX
+
+    - if ${name}:
+        - action: procedure.on_device_on
+    - else:
+        - action: procedure.on_device_off
+```
+
+Python example:
+
+```python
+# Content of ~/.config/platypush/scripts/bt_cron.py
+from platypush.cron import cron
+from platypush.utils import run
+
+@cron('* * * * * */30')
+def check_bt_device(**context):
+  name = run('bluetooth.lookup_name').get('name')
+  if name:
+    # on_device_on logic here
+  else:
+    # on_device_off logic here
+```
+
 ### The web interface
 
 If [`backend.http`](https://docs.platypush.tech/en/latest/platypush/backend/http.html) is enabled then a web interface
