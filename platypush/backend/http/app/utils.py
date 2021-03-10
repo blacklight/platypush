@@ -23,7 +23,7 @@ _logger = None
 def bus():
     global _bus
     if _bus is None:
-        _bus = RedisBus(redis_queue=current_app.config['redis_queue'])
+        _bus = RedisBus(redis_queue=current_app.config.get('redis_queue'))
     return _bus
 
 
