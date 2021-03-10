@@ -34,7 +34,8 @@
                 </label>
               </div>
 
-              <div class="numeric slider-container" v-else-if="['Byte', 'Decimal', 'Short'].indexOf(value.type) >= 0">
+              <div class="numeric slider-container"
+                   v-else-if="['Int', 'Long', 'Byte', 'Decimal', 'Short'].indexOf(value.type) >= 0">
                 <div class="col-10">
                   <div class="row">
                     <span class="value-min" v-text="value.min" />
@@ -57,7 +58,11 @@
                 <ToggleSwitch :value="value.data" @input="onValueChange" />
               </div>
 
-              <div class="value-data" v-text="value.data" v-else />
+              <div class="value-data" v-else>
+                <label>
+                  <input type="text" :value="value.data" @change="onValueChange" />
+                </label>
+              </div>
             </div>
 
             <div class="col-1 unit" v-text="value.units" v-if="value.units?.length" />
@@ -192,7 +197,28 @@ export default {
     async onValueChange(event) {
       const target = event.target ? event.target : event.event.target.parentElement
       const value = this.node.values[this.value.id_on_network]
-      const data = value.type === 'List' ? value.data_items[event.target.value] : (target.value || event.value)
+      let data = target.value != null ? target.value : event.value
+      switch (value.type) {
+        case 'List':
+          data = value.data_items[event.target.value]
+          break
+
+        case 'Int':
+        case 'Short':
+        case 'Long':
+        case 'Byte':
+          data = parseInt(data)
+          break
+
+        case 'Button':
+        case 'Bool':
+          data = !!parseInt(data)
+          break
+
+        case 'Decimal':
+          data = parseFloat(data)
+          break
+      }
 
       this.commandRunning = true
       try {
