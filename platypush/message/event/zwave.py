@@ -154,6 +154,7 @@ class ZwaveValueEvent(ZwaveEvent):
     Abstract class for Z-Wave value events.
     """
     def __init__(self, node: Dict[str, Any], value: Dict[str, Any], *args, **kwargs):
+        kwargs['disable_logging'] = True
         super().__init__(*args, node=node, value=value, **kwargs)
 
 
