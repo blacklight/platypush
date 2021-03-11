@@ -63,7 +63,7 @@ class ZigbeeMqttBackend(MqttBackend):
                  tls_cafile: Optional[str] = None, tls_certfile: Optional[str] = None,
                  tls_keyfile: Optional[str] = None, tls_version: Optional[str] = None,
                  tls_ciphers: Optional[str] = None, username: Optional[str] = None,
-                 password: Optional[str] = None, *args, **kwargs):
+                 password: Optional[str] = None, client_id: Optional[str] = None, *args, **kwargs):
         """
         :param host: MQTT broker host (default: host configured on the ``zigbee.mqtt`` plugin).
         :param port: MQTT broker port (default: 1883).
@@ -80,6 +80,8 @@ class ZigbeeMqttBackend(MqttBackend):
             required, specify it here (default: None)
         :param username: Specify it if the MQTT server requires authentication (default: None)
         :param password: Specify it if the MQTT server requires authentication (default: None)
+        :param client_id: MQTT client ID (default: ``<device_id>-zigbee-mqtt``, to prevent clashes with the
+            :class:`platypush.backend.mqtt.MqttBackend` ``client_id``.
         """
 
         plugin = get_plugin('zigbee.mqtt')
@@ -107,7 +109,9 @@ class ZigbeeMqttBackend(MqttBackend):
             ],
         }]
 
-        super().__init__(subscribe_default_topic=False, listeners=listeners, *args, **kwargs)
+        super().__init__(subscribe_default_topic=False, listeners=listeners, client_id=client_id, *args, **kwargs)
+        if not client_id:
+            self.client_id += '-zigbee-mqtt'
 
     def _process_state_message(self, client, msg):
         if msg == self._last_state:
