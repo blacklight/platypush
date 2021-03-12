@@ -90,7 +90,7 @@ export default {
       default: true,
     },
 
-    // Weather con color.
+    // Weather icon color.
     weatherIconColor: {
       type: String,
       default: 'white',

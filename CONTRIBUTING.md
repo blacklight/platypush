@@ -11,10 +11,11 @@ Guidelines:
 - The code should ideally have no LINT warnings/issues.
 
 - Project conventions:
-  - 4 spaces to indent
+  - 4 spaces to indent.
   - RST format for classes and methods documentation 
-  - Run `generate_missing_docs.sh` if you are adding new plugins/backends to automatically
-    generate the doc templates
+  - Run `python generate_missing_docs.py` if you are adding new plugins/backends to automatically
+    generate the doc templates. Make sure that you don't accidentally remove lines elements from
+    the docs because of missing dependencies on the machine you use to generate the docs.
   - Naming conventions: plugin classes are named `<Module>Plugin` and backend classes are
     named `<Module>Backend`, with `<Module>` being the (camel-case) representation of the
     Python module of the plugin without the prefix - for example, the plugin under

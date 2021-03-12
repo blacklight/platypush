@@ -1,19 +1,22 @@
 from platypush.plugins import action
 from platypush.plugins.http.request import HttpRequestPlugin
+from platypush.plugins.weather import WeatherPlugin
 
 
-class WeatherDarkskyPlugin(HttpRequestPlugin):
+class WeatherDarkskyPlugin(HttpRequestPlugin, WeatherPlugin):
     """
-    Plugin for getting weather updates through Darksky API
+    Plugin for getting weather updates through Darksky API.
 
-    Requires:
+    **NOTE**: Shortly after being acquired by Apple, Darksky has [shut down their API](https://darksky.net/dev).
+    If you have an API token already then it should keep working until the end of 2021, but no new signups are allowed -
+    and yet again Apple hasn't lost a chance to stand against the developers.
 
-        * **requests** (``pip install requests``)
+    Please use the :class:`platypush.plugins.weather.openweathermap.WeatherOpenweathermapPlugin` plugin instead of this.
     """
 
     def __init__(self, darksky_token, lat, long, units='si', **kwargs):
         """
-        :param darksky_token: Your token for using the darksky API, see https://darksky.net/dev
+        :param darksky_token: Your token for using the Darksky API, see https://darksky.net/dev
         :type darksky_token: str
 
         :param lat: Default forecast latitude
@@ -34,7 +37,8 @@ class WeatherDarkskyPlugin(HttpRequestPlugin):
         :type units: str
         """
 
-        super().__init__(method='get', output='json')
+        HttpRequestPlugin.__init__(self, method='get', output='json')
+        WeatherPlugin.__init__(self, **kwargs)
         self.darksky_token = darksky_token
         self.units = units
         self.lat = lat
@@ -87,7 +91,7 @@ class WeatherDarkskyPlugin(HttpRequestPlugin):
         return response.output['currently']
 
     @action
-    def get_hourly_forecast(self, lat=None, long=None, **kwargs):
+    def get_hourly_forecast(self, lat=None, long=None):
         """
         Get the hourly forecast.
 
@@ -151,7 +155,7 @@ class WeatherDarkskyPlugin(HttpRequestPlugin):
         return response.output['hourly']
 
     @action
-    def get_daily_forecast(self, lat=None, long=None, **kwargs):
+    def get_daily_forecast(self, lat=None, long=None):
         """
         Get the daily forecast.
 
@@ -257,4 +261,3 @@ class WeatherDarkskyPlugin(HttpRequestPlugin):
 
 
 # vim:sw=4:ts=4:et:
-

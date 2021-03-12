@@ -236,7 +236,7 @@ class InspectPlugin(Plugin):
                 if type(obj) == Event:
                     continue
 
-                if inspect.isclass(obj) and issubclass(obj, Event):
+                if inspect.isclass(obj) and issubclass(obj, Event) and obj != Event:
                     event = EventModel(event=obj, html_doc=self._html_doc)
                     if event.package not in self._events:
                         self._events[event.package] = {event.name: event}
@@ -260,7 +260,7 @@ class InspectPlugin(Plugin):
                 if type(obj) == Response:
                     continue
 
-                if inspect.isclass(obj) and issubclass(obj, Response):
+                if inspect.isclass(obj) and issubclass(obj, Response) and obj != Response:
                     response = ResponseModel(response=obj, html_doc=self._html_doc)
                     if response.package not in self._responses:
                         self._responses[response.package] = {response.name: response}

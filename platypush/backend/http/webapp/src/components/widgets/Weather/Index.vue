@@ -4,7 +4,10 @@
 
     <h1 v-else>
       <skycons :condition="weatherIcon" :paused="!animate" :size="iconSize" :color="iconColor"
-               v-if="_showIcon && weatherIcon" />
+               v-if="_showIcon && weatherIcon && weatherPlugin === 'weather.darksky'" />
+      <img :src="`/icons/openweathermap/${iconColor || 'dark'}/${weatherIcon}.png`" :alt="weather?.summary"
+           :width="iconSize * 1.5" :height="iconSize * 1.5" class="owm-icon"
+           v-else-if="_showIcon && weatherIcon && weatherPlugin === 'weather.openweathermap'" />
       <span class="temperature" v-if="_showTemperature && weather">
         {{ Math.round(parseFloat(weather.temperature)) + '&deg;' }}
       </span>
@@ -40,6 +43,8 @@ export default {
     },
 
     // Icon color.
+    // If Darksky is used as a plugin it can be any HTML-formatted color.
+    // If OpenWeatherMap is used it can be one theme between dark and light.
     iconColor: {
       type: String,
       required: false,
@@ -75,7 +80,12 @@ export default {
     return {
       weather: undefined,
       weatherIcon: undefined,
+      weatherPlugin: undefined,
       loading: false,
+      weatherPlugins: [
+        'weather.openweathermap',
+        'weather.darksky',
+      ],
     };
   },
 
@@ -98,7 +108,7 @@ export default {
       this.loading = true
 
       try {
-        const weather = (await this.request('weather.darksky.get_hourly_forecast')).data[0]
+        const weather = await this.request(`${this.weatherPlugin}.get_current_weather`)
         this.onWeatherChange(weather)
       } finally {
         this.loading = false
@@ -112,9 +122,23 @@ export default {
       this.weather = {...this.weather, ...event}
       this.weatherIcon = this.weather.icon
     },
+
+    initWeatherPlugin() {
+      for (const plugin of this.weatherPlugins) {
+        if (this.$root.config[plugin]) {
+          this.weatherPlugin = plugin
+          console.debug(`Initialized weather UI - plugin: ${plugin}`)
+          break
+        }
+      }
+
+      if (!this.weatherPlugin)
+        console.warn(`No weather plugins configured. Compatible plugins: ${this.weatherPlugins}`)
+    },
   },
 
   mounted: function() {
+    this.initWeatherPlugin()
     this.refresh()
     this.subscribe(this.onWeatherChange, null, 'platypush.message.event.weather.NewWeatherConditionEvent')
     setInterval(this.refresh, parseInt((this.refreshSeconds*1000).toFixed(0)))
@@ -141,6 +165,10 @@ export default {
   .summary {
     font-size: 1.1em;
     margin-top: .75em;
+  }
+
+  .owm-icon {
+      margin-right: -.5em;
   }
 }
 </style>

@@ -7,13 +7,26 @@ Given the high speed of development in the first phase, changes are being report
 
 ### Added
 
-- Added `active_scan` parameter to `bluetooth.scanner` backend to perform active scans (i.e. via `lookup_name`)
-  on the discovered devices (see [#174](https://git.platypush.tech/platypush/platypush/-/issues/174)).
+- Added support for a static list of devices to actively scan to the `bluetooth.scanner` backend
+  (see [#174](https://git.platypush.tech/platypush/platypush/-/issues/174)).
+  
+- Added `weather.openweathermap` plugin and backend, which replaces `weather.darksky`, since the
+  Darksky API will be completely shut down by the end of 2021.
 
 ### Fixed
 
 - Cron expressions should adhere to the UNIX cronjob standard and use the machine local time,
   not UTC, as a reference (closes [#173](https://git.platypush.tech/platypush/platypush/-/issues/173)).
+  
+- Better management of Z-Wave values types from the UI.
+
+- Disable logging for `ZwaveValueEvent` events - they tend to be very verbose and
+  can impact the performance on slower devices. They will still be published to the
+  websocket clients though, so you can still debug Z-Wave values issues from the browser
+  developer console (enable debug traces).
+  
+- Added suffix to the `zigbee.mqtt` backend default `client_id` to prevent clashes with
+  the default `mqtt` backend `client_id`.
 
 ## [0.20.4] - 2021-03-08
 
