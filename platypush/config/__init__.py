@@ -360,17 +360,6 @@ class Config(object):
             _default_config_instance = Config()
         return _default_config_instance.cronjobs
 
-    @staticmethod
-    def get_default_pusher_backend():
-        """
-        Gets the default pusher backend from the config
-        """
-        backends = [k for k in Config.get_backends().keys()
-                    if 'pusher' in Config.get_backends()[k]
-                    and Config.get_backends()[k]['pusher'] is True]
-
-        return backends[0] if backends else None
-
     @classmethod
     def _get_default_cfgfile(cls):
         for location in cls._cfgfile_locations:

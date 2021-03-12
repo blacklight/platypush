@@ -41,7 +41,6 @@ setup(
     entry_points={
         'console_scripts': [
             'platypush=platypush:main',
-            'pusher=platypush.pusher:main',
             'platydock=platypush.platydock:main',
         ],
     },
