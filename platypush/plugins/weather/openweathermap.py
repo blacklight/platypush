@@ -6,10 +6,29 @@ from platypush.plugins.weather import WeatherPlugin
 
 
 class WeatherOpenweathermapPlugin(HttpRequestPlugin, WeatherPlugin):
+    """
+    OpenWeatherMap plugin. This is the advised plugin to use for weather forecasts since Darksky has officially
+    shut down their API.
+
+    You'll need an API token from `OpenWeatherMap <https://openweathermap.org/api>`_ in order to use this API.
+    """
     base_url = 'https://api.openweathermap.org/data/2.5/weather'
 
     def __init__(self, token: str, location: Optional[str] = None, city_id: Optional[int] = None,
-                 lat: Optional[float] = None, long: Optional[float] = None, units: str = 'metric', **kwargs):
+                 lat: Optional[float] = None, long: Optional[float] = None,
+                 zip_code: Optional[str] = None, units: str = 'metric', **kwargs):
+        """
+        :param token: OpenWeatherMap API token.
+        :param location: If set, then this location will be used by default for weather lookup. If multiple locations
+            share the same name you can disambiguate by specifying the country code as well - e.g. ``London,GB``.
+        :param city_id: If set, then this city ID will be used by default for weather lookup. The full list of city IDs
+            is available `here <http://bulk.openweathermap.org/sample/>`_.
+        :param lat: If lat/long are set, then the weather by default will be retrieved for the specified geo location.
+        :param long: If lat/long are set, then the weather by default will be retrieved for the specified geo location.
+        :param zip_code: If set, then this ZIP code (should be in the form ``zip,country_code``) will be used by default
+            for weather lookup.
+        :param units: Supported: ``metric`` (default), ``standard`` and ``imperial``.
+        """
         HttpRequestPlugin.__init__(self, method='get', output='json')
         WeatherPlugin.__init__(self, **kwargs)
         self._token = token
@@ -18,11 +37,14 @@ class WeatherOpenweathermapPlugin(HttpRequestPlugin, WeatherPlugin):
         self.units = units
 
     def _get_location_query(self, location: Optional[str] = None, city_id: Optional[int] = None,
-                            lat: Optional[float] = None, long: Optional[float] = None) -> dict:
+                            lat: Optional[float] = None, long: Optional[float] = None,
+                            zip_code: Optional[str] = None) -> dict:
         if city_id:
             return {'id': city_id}
         if lat and long:
             return {'lat': lat, 'lon': long}
+        if zip_code:
+            return {'zip': zip_code}
         if location:
             return {'q': location}
 
@@ -81,8 +103,18 @@ class WeatherOpenweathermapPlugin(HttpRequestPlugin, WeatherPlugin):
 
     @action
     def get_current_weather(self, *, location: Optional[str] = None, city_id: Optional[int] = None,
-                            lat: Optional[float] = None, long: Optional[float] = None,
-                            units: Optional[str] = None, **kwargs):
+                            lat: Optional[float] = None, long: Optional[float] = None, zip_code: Optional[str] = None,
+                            units: Optional[str] = None, **kwargs) -> dict:
+        """
+        Returns the current weather.
+
+        :param location: Override the ``location`` configuration value.
+        :param city_id: Override the ``city_id`` configuration value.
+        :param lat: Override the ``lat`` configuration value.
+        :param long: Override the ``long`` configuration value.
+        :param zip_code: Override the ``zip_code`` configuration value.
+        :param units: Override the ``units`` configuration value.
+        """
         params = {
             'units': units or self.units,
             **self._get_location_query(location=location, city_id=city_id, lat=lat, long=long)
