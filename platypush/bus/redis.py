@@ -1,5 +1,3 @@
-import ast
-import json
 import logging
 import threading
 
@@ -39,13 +37,7 @@ class RedisBus(Bus):
             if not msg or msg[1] is None:
                 return
 
-            msg = msg[1].decode('utf-8')
-            try:
-                msg = json.loads(msg)
-            except json.decoder.JSONDecodeError:
-                msg = ast.literal_eval(msg)
-
-            msg = Message.build(msg)
+            msg = Message.build(msg[1].decode('utf-8'))
         except Exception as e:
             logger.exception(e)
 
