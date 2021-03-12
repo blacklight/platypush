@@ -96,6 +96,7 @@ class ZwaveNodeGroupEvent(ZwaveNodeEvent):
     Triggered when a node is associated/de-associated to a group.
     """
     def __init__(self, group_index: Optional[int] = None, *args, **kwargs):
+        kwargs['disable_logging'] = True
         super().__init__(*args, group_index=group_index, **kwargs)
 
 
