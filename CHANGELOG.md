@@ -5,6 +5,11 @@ Given the high speed of development in the first phase, changes are being report
 
 ## [Unreleased]
 
+### Added
+
+- Added `file.monitor` backend, which replaces the `inotify` backend
+  (see [#172](https://git.platypush.tech/platypush/platypush/-/issues/172)).
+
 ### Removed
 
 - Removed legacy `pusher` script and `local` backend.

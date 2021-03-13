@@ -18,6 +18,7 @@ Events
     platypush/events/covid19.rst
     platypush/events/custom.rst
     platypush/events/distance.rst
+    platypush/events/file.rst
     platypush/events/foursquare.rst
     platypush/events/geo.rst
     platypush/events/github.rst

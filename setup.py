@@ -246,5 +246,7 @@ setup(
         'vlc': ['python-vlc'],
         # Support for SmartThings integration
         'smartthings': ['pysmartthings', 'aiohttp'],
+        # Support for file.monitor backend
+        'filemonitor': ['watchdog'],
     },
 )

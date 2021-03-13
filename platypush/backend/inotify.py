@@ -7,6 +7,8 @@ from platypush.message.event.inotify import InotifyCreateEvent, InotifyDeleteEve
 
 class InotifyBackend(Backend):
     """
+    **NOTE**: This backend is *deprecated* in favour of :class:`platypush.backend.file.monitor.FileMonitorBackend`.
+
     (Linux only) This backend will listen for events on the filesystem (whether
     a file/directory on a watch list is opened, modified, created, deleted,
     closed or had its permissions changed) and will trigger a relevant event.

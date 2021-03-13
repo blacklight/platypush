@@ -311,3 +311,6 @@ croniter
 # SmartThings integration
 # pysmartthings
 # aiohttp
+
+# Support for file.monitor backend
+#watchdog

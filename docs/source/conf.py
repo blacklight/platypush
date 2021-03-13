@@ -23,7 +23,7 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = 'platypush'
-copyright = '2017-2020, Fabio Manganiello'
+copyright = '2017-2021, Fabio Manganiello'
 author = 'Fabio Manganiello'
 
 # The short X.Y version
@@ -265,6 +265,7 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'imapclient',
                         'pysmartthings',
                         'aiohttp',
+                        'watchdog',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))
