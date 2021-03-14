@@ -212,7 +212,7 @@ export default {
 
         case 'Button':
         case 'Bool':
-          data = !!parseInt(data)
+          data = !parseInt(data)
           break
 
         case 'Decimal':
