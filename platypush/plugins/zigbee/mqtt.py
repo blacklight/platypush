@@ -23,9 +23,11 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):
     Instructions:
 
         - Install `cc-tool <https://github.com/dashesy/cc-tool>`_ either from sources or from a package manager.
-        - Connect the Zigbee to your PC/RaspberryPi in this way:
+        - Connect the Zigbee to your PC/RaspberryPi in this way: ::
+
             USB -> CC debugger -> downloader cable -> CC2531 -> USB
-          The debugger and the adapter should be connected *at the same time*. If the later ``cc-tool`` command throws
+
+        - The debugger and the adapter should be connected *at the same time*. If the later ``cc-tool`` command throws
           up an error, put the device in sync while connected by pressing the _Reset_ button on the debugger.
         - Check where the device is mapped. On Linux it will usually be ``/dev/ttyACM0``.
         - Download the latest `Z-Stack firmware <https://github.com/Koenkk/Z-Stack-firmware/tree/master/coordinator>`_

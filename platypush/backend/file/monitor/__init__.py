@@ -74,17 +74,18 @@ class FileMonitorBackend(Backend):
                     backend.file.monitor:
                         paths:
                             # Recursively monitor changes on the ~/my-images folder that include all
-                            # the files matching the "\.jpe?g$" pattern in case-insensitive mode,
+                            # the files matching a JPEG extension in case-insensitive mode,
                             # excluding those whose name starts with tmp_ and
                             # all the files contained in the __MACOSX folders
                             - path: ~/my-images
                               recursive: True
+                              case_sensitive: False
                               regexes:
-                                - ".*\.jpe?g$"
+                                - '.*\.jpe?g$'
                               ignore_patterns:
-                                - "^tmp_.*"
+                                - '^tmp_.*'
                               ignore_directories:
-                                - "__MACOSX"
+                                - '__MACOSX'
 
         """
 

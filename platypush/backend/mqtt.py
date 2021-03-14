@@ -46,6 +46,9 @@ class MqttClient(mqtt.Client, threading.Thread):
         self._stop_scheduled = False
 
     def subscribe(self, *topics, **kwargs):
+        """
+        Client subscription handler.
+        """
         if not topics:
             topics = self.topics
 
@@ -54,6 +57,9 @@ class MqttClient(mqtt.Client, threading.Thread):
             super().subscribe(topic, **kwargs)
 
     def unsubscribe(self, *topics, **kwargs):
+        """
+        Client unsubscription handler.
+        """
         if not topics:
             topics = self.topics
 
