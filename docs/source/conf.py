@@ -22,7 +22,7 @@ import sys
 
 # -- Project information -----------------------------------------------------
 
-project = 'platypush'
+project = 'Platypush'
 copyright = '2017-2021, Fabio Manganiello'
 author = 'Fabio Manganiello'
 
@@ -86,7 +86,8 @@ pygments_style = 'sphinx'
 # a list of builtin themes.
 #
 # html_theme = 'haiku'
-html_theme = 'sphinx_rtd_theme'
+# html_theme = 'sphinx_rtd_theme'
+html_theme = 'sphinx_material'
 
 html_domain_indices = True
 
@@ -94,7 +95,47 @@ html_domain_indices = True
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    'nav_title': 'Platypush documentation',
+    'repo_url': 'https://git.platypush.tech/platypush/platypush',
+    'repo_name': 'Source code',
+    'repo_type': 'gitlab',
+    'color_primary': 'green',
+    'color_accent': 'light-green',
+    'logo_icon': '&#128366',
+    'nav_links': [
+        {
+            'href': 'https://platypush.tech/',
+            'title': 'Homepage',
+            'internal': False,
+        },
+        {
+            'href': 'https://blog.platypush.tech/',
+            'title': 'Blog',
+            'internal': False,
+        },
+        {
+            'href': 'https://git.platypush.tech/platypush/platypush',
+            'title': 'Repository',
+            'internal': False,
+        },
+        {
+            'href': 'https://git.platypush.tech/platypush/platypush/-/wikis/home',
+            'title': 'Wiki',
+            'internal': False,
+        },
+        {
+            'href': 'https://chrome.google.com/webstore/detail/platypush/aphldjclndofhflbbdnmpejbjgomkbie',
+            'title': 'Chrome Extension',
+            'internal': False,
+        },
+        {
+            'href': 'https://addons.mozilla.org/en-US/firefox/addon/platypush/',
+            'title': 'Firefox Extension',
+            'internal': False,
+        },
+    ],
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -109,8 +150,9 @@ html_domain_indices = True
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-# html_sidebars = {}
-
+html_sidebars = {
+    '**': ['logo-text.html', 'globaltoc.html', 'localtoc.html', 'searchbox.html']
+}
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
@@ -278,3 +320,5 @@ def skip(app, what, name, obj, skip, options):
 def setup(app):
     app.connect("autodoc-skip-member", skip)
 
+
+# vim:sw=4:ts=4:et:
