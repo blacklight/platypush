@@ -14,7 +14,7 @@ Platypush
 
 - The [wiki](https://git.platypush.tech/platypush/platypush/-/wikis/home) also contains many resources on getting started.
 
-- Extensive documentation for all the available integrations and messages is available on [ReadTheDocs](https://docs.platypush.tech/en/latest/).
+- Extensive documentation for all the available integrations and messages [is available](https://docs.platypush.tech/).
 
 - If you have issues/feature requests/enhancement ideas please [create an issue](https://git.platypush.tech/platypush/platypush/-/issues).
 
