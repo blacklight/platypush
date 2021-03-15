@@ -7,6 +7,9 @@ Given the high speed of development in the first phase, changes are being report
 
 ### Added
 
+- Added `log.http` backend to monitor changes to HTTP log files
+  (see [#167](https://git.platypush.tech/platypush/platypush/-/issues/167)).
+
 - Added `file.monitor` backend, which replaces the `inotify` backend
   (see [#172](https://git.platypush.tech/platypush/platypush/-/issues/172)).
 
