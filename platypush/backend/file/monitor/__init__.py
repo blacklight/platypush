@@ -1,10 +1,10 @@
-from typing import List, Dict, Union, Any
+from typing import Iterable, Dict, Union, Any
 
 from watchdog.observers import Observer
 
 from platypush.backend import Backend
-from .entities.handlers import EventHandlerFactory
-from .entities.resources import MonitoredResource
+from .entities.handlers import EventHandler
+from .entities.resources import MonitoredResource, MonitoredPattern, MonitoredRegex
 
 
 class FileMonitorBackend(Backend):
@@ -23,7 +23,26 @@ class FileMonitorBackend(Backend):
 
     """
 
-    def __init__(self, paths: List[Union[str, Dict[str, Any], MonitoredResource]], **kwargs):
+    class EventHandlerFactory:
+        """
+        Create a file system event handler from a string, dictionary or ``MonitoredResource`` resource.
+        """
+
+        @staticmethod
+        def from_resource(resource: Union[str, Dict[str, Any], MonitoredResource]) -> EventHandler:
+            if isinstance(resource, str):
+                resource = MonitoredResource(resource)
+            elif isinstance(resource, dict):
+                if 'patterns' in resource or 'ignore_patterns' in resource:
+                    resource = MonitoredPattern(**resource)
+                elif 'regexes' in resource or 'ignore_regexes' in resource:
+                    resource = MonitoredRegex(**resource)
+                else:
+                    resource = MonitoredResource(**resource)
+
+            return EventHandler.from_resource(resource)
+
+    def __init__(self, paths: Iterable[Union[str, Dict[str, Any], MonitoredResource]], **kwargs):
         """
         :param paths: List of paths to monitor. Paths can either be expressed in any of the following ways:
 
@@ -81,7 +100,7 @@ class FileMonitorBackend(Backend):
                               recursive: True
                               case_sensitive: False
                               regexes:
-                                - '.*\.jpe?g$'
+                                - '.*\\.jpe?g$'
                               ignore_patterns:
                                 - '^tmp_.*'
                               ignore_directories:
@@ -93,7 +112,7 @@ class FileMonitorBackend(Backend):
         self._observer = Observer()
 
         for path in paths:
-            handler = EventHandlerFactory.from_resource(path)
+            handler = self.EventHandlerFactory.from_resource(path)
             self._observer.schedule(handler, handler.resource.path, recursive=handler.resource.recursive)
 
     def run(self):

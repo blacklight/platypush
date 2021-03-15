@@ -1,5 +1,4 @@
 import os
-from typing import Dict, Union, Any
 
 from watchdog.events import FileSystemEventHandler, PatternMatchingEventHandler, RegexMatchingEventHandler
 
@@ -57,22 +56,3 @@ class RegexEventHandler(EventHandler, RegexMatchingEventHandler):
                          ignore_regexes=resource.ignore_regexes,
                          ignore_directories=resource.ignore_directories,
                          case_sensitive=resource.case_sensitive)
-
-
-class EventHandlerFactory:
-    """
-    Create a file system event handler from a string, dictionary or ``MonitoredResource`` resource.
-    """
-    @staticmethod
-    def from_resource(resource: Union[str, Dict[str, Any], MonitoredResource]) -> EventHandler:
-        if isinstance(resource, str):
-            resource = MonitoredResource(resource)
-        elif isinstance(resource, dict):
-            if 'patterns' in resource or 'ignore_patterns' in resource:
-                resource = MonitoredPattern(**resource)
-            elif 'regexes' in resource or 'ignore_regexes' in resource:
-                resource = MonitoredRegex(**resource)
-            else:
-                resource = MonitoredResource(**resource)
-
-        return EventHandler.from_resource(resource)
