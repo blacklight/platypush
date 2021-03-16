@@ -48,7 +48,7 @@ export default {
       if (id == null)
         id = device
 
-      const response = await this.request(`${this.pluginName}.toggle`, {device: device})
+      const response = await this.request(`${this.pluginName}.toggle`, {device: id})
       this.devices[device].on = response.on
     },
 
