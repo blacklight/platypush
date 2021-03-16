@@ -222,6 +222,7 @@ class MediaVlcPlugin(MediaPlugin):
                 return None, 'No vlc instance is running'
 
             self._player.stop()
+            self._on_stop_event.wait(timeout=5)
             self._reset_state()
             return self.status()
 
