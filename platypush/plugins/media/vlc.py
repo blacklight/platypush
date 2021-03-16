@@ -217,12 +217,13 @@ class MediaVlcPlugin(MediaPlugin):
     @action
     def quit(self):
         """ Quit the player (same as `stop`) """
-        if not self._player:
-            return None, 'No vlc instance is running'
+        with self._stop_lock:
+            if not self._player:
+                return None, 'No vlc instance is running'
 
-        self._player.stop()
-        self._player = None
-        return self.status()
+            self._player.stop()
+            self._reset_state()
+            return self.status()
 
     @action
     def stop(self):
