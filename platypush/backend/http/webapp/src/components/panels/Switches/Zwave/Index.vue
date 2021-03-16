@@ -1,5 +1,5 @@
 <template>
-  <div class="switches zigbee-mqtt-switches">
+  <div class="switches zwave-switches">
     <Loading v-if="loading" />
     <div class="no-content" v-else-if="!Object.keys(devices).length">No Z-Wave switches found.</div>
 
