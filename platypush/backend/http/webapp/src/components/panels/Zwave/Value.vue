@@ -55,7 +55,7 @@
               </div>
 
               <div class="boolean" v-else-if="['Bool', 'Button'].indexOf(value.type) >= 0">
-                <ToggleSwitch :value="value.data" @input="onValueChange" />
+                <ToggleSwitch :value="value.data" @input="onValueChange($event, !value.data)" />
               </div>
 
               <div class="value-data" v-else>
@@ -194,10 +194,13 @@ export default {
       })
     },
 
-    async onValueChange(event) {
+    async onValueChange(event, data) {
       const target = event.target ? event.target : event.event.target.parentElement
       const value = this.node.values[this.value.id_on_network]
-      let data = target.value != null ? target.value : event.value
+
+      if (data === undefined)
+        data = target.value != null ? target.value : event.value
+
       switch (value.type) {
         case 'List':
           data = value.data_items[event.target.value]
@@ -212,7 +215,7 @@ export default {
 
         case 'Button':
         case 'Bool':
-          data = !parseInt(data)
+          data = !!parseInt(data)
           break
 
         case 'Decimal':
