@@ -44,7 +44,10 @@ export default {
       this.refresh()
     },
 
-    async toggle(device) {
+    async toggle(device, id) {
+      if (id == null)
+        id = device
+
       const response = await this.request(`${this.pluginName}.toggle`, {device: device})
       this.devices[device].on = response.on
     },

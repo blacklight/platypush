@@ -392,6 +392,8 @@ export default {
 
     onNodeUpdate(event) {
       this.nodes[event.node.node_id] = event.node
+      if (event.value)
+        this.nodes[event.node.node_id].values[event.value.id_on_network] = event.value
     },
 
     onNodeClick(nodeId) {

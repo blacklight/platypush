@@ -7,10 +7,11 @@ from openzwave.value import ZWaveValue
 
 from platypush.backend.zwave import ZwaveBackend
 from platypush.context import get_backend
-from platypush.plugins import Plugin, action
+from platypush.plugins import action
+from platypush.plugins.switch import SwitchPlugin
 
 
-class ZwavePlugin(Plugin):
+class ZwavePlugin(SwitchPlugin):
     """
     This plugin interacts with the devices on a Z-Wave network started through the
     :class:`platypush.backend.zwave.ZwaveBackend` backend.
@@ -202,12 +203,13 @@ class ZwavePlugin(Plugin):
         if not node:
             return {}
 
+        # noinspection PyProtectedMember
         return {
             'node_id': node.node_id,
             'home_id': node.home_id,
             'capabilities': list(node.capabilities),
             'command_classes': [node.get_command_class_as_string(cc) for cc in node.command_classes if cc]
-                if hasattr(node, 'command_classes') else [],
+            if hasattr(node, 'command_classes') else [],
             'device_type': node.device_type if hasattr(node, 'device_type') else '',
             'groups': {
                 group_id: cls.group_to_dict(group)
@@ -454,8 +456,8 @@ class ZwavePlugin(Plugin):
                    node_id: Optional[int] = None, node_name: Optional[str] = None, value_label: Optional[str] = None) \
             -> ZWaveValue:
         assert (value_id is not None or id_on_network is not None) or \
-               ((node_id is not None or node_name is not None) and value_label is not None),\
-            'Specify either value_id, id_on_network, or [node_id/node_name, value_label]'
+               ((node_id is not None or node_name is not None) and value_label is not None), \
+               'Specify either value_id, id_on_network, or [node_id/node_name, value_label]'
 
         if value_id is not None:
             return self._get_network().get_value(value_id)
@@ -970,6 +972,56 @@ class ZwavePlugin(Plugin):
         Store the current configuration of the network to the user directory.
         """
         self._get_network().write_config()
+
+    @action
+    def on(self, device: str, *args, **kwargs):
+        """
+        Turn on a switch on a device.
+
+        :param device: ``id_on_network`` of the value to be switched on.
+        """
+        # noinspection PyUnresolvedReferences
+        switches = self.get_switches().output
+        assert device in switches, 'No such id_on_network associated to a switch: {}'.format(device)
+        return self.set_value(data=True, id_on_network=device)
+
+    @action
+    def off(self, device: str, *args, **kwargs):
+        """
+        Turn on a switch on a device.
+
+        :param device: ``id_on_network`` of the value to be switched off.
+        """
+        # noinspection PyUnresolvedReferences
+        switches = self.get_switches().output
+        assert device in switches, 'No such id_on_network associated to a switch: {}'.format(device)
+        return self.set_value(data=False, id_on_network=device)
+
+    @action
+    def toggle(self, device: str, *args, **kwargs):
+        """
+        Toggle a switch on a device.
+
+        :param device: ``id_on_network`` of the value to be toggled.
+        """
+        # noinspection PyUnresolvedReferences
+        switches = self.get_switches().output
+        assert device in switches, 'No such id_on_network associated to a switch: {}'.format(device)
+        data = switches[device]['data']
+        return self.set_value(data=not data, id_on_network=device)
+
+    @property
+    def switches(self) -> List[dict]:
+        # noinspection PyUnresolvedReferences
+        devices = self.get_switches().output.values()
+        return [
+            {
+                'name': '{} - {}'.format(dev.get('node_name', '[No Name]'), dev.get('label', '[No Label]')),
+                'on': dev.get('data'),
+                'id': dev.get('id_on_network'),
+            }
+            for dev in devices
+        ]
 
 
 # vim:sw=4:ts=4:et:
