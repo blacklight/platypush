@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
-## [Unreleased]
+## [0.20.6] - 2021-03-16
 
 ### Added
 
@@ -16,6 +16,12 @@ Given the high speed of development in the first phase, changes are being report
 ### Removed
 
 - Removed legacy `pusher` script and `local` backend.
+
+### Fixed
+
+- Fixed support for Z-Wave switches.
+
+- Fixed possible race condition on VLC stop.
 
 ## [0.20.5] - 2021-03-12
 
