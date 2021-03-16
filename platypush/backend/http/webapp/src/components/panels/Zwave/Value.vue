@@ -195,22 +195,10 @@ export default {
     },
 
     async onValueChange(event, data) {
-      console.debug('DATA (1)')
-      console.debug(data)
-
       const target = event.target ? event.target : event.event.target.parentElement
-      console.debug('TARGET')
-      console.debug(target)
-
       const value = this.node.values[this.value.id_on_network]
-      console.debug('VALUE')
-      console.debug(value)
-
       if (data === undefined)
         data = target.value != null ? target.value : event.value
-
-      console.debug('DATA (2)')
-      console.debug(data)
 
       switch (value.type) {
         case 'List':
@@ -224,18 +212,10 @@ export default {
           data = parseInt(data)
           break
 
-        case 'Button':
-        case 'Bool':
-          data = !!parseInt(data)
-          break
-
         case 'Decimal':
           data = parseFloat(data)
           break
       }
-
-      console.debug('DATA (3)')
-      console.debug(data)
 
       this.commandRunning = true
       try {
