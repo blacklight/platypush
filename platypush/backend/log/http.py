@@ -50,6 +50,9 @@ class LogEventHandler(EventHandler):
     def on_deleted(self, event):
         self._reset_file(event.src_path)
 
+    def on_moved(self, event):
+        self._reset_file(event.src_path)
+
     def _reset_file(self, path: str):
         file_info = self._monitored_files.get(path)
         if not file_info:

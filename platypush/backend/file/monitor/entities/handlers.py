@@ -25,6 +25,9 @@ class EventHandler(FileSystemEventHandler):
     def on_modified(self, event):
         get_bus().post(FileSystemModifyEvent(path=event.src_path, is_directory=event.is_directory))
 
+    def on_moved(self, event):
+        pass
+
     @classmethod
     def from_resource(cls, resource: MonitoredResource):
         if isinstance(resource, MonitoredPattern):
