@@ -78,9 +78,9 @@ class LogEventHandler(EventHandler):
                 f.seek(file_info.pos)
                 for line in f.readlines():
                     evt = self._build_event(file=event.src_path, line=line)
-                    if evt and (not file_info.last_timestamp or evt.args['timestamp'] >= file_info.last_timestamp):
+                    if evt and (not file_info.last_timestamp or evt.args['time'] >= file_info.last_timestamp):
                         get_bus().post(evt)
-                        file_info.last_timestamp = evt.args['timestamp']
+                        file_info.last_timestamp = evt.args['time']
 
                 file_info.pos = f.tell()
         except OSError as e:
