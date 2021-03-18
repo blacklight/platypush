@@ -100,6 +100,13 @@ class LogEventHandler(EventHandler):
             logger.warning('Could not parse log line from {}: {}'.format(file, line))
             return
 
+        http_version = '1.0'
+        version_string = m.group(5).split(' ')
+        if version_string:
+            version_string = version_string[2].split('/')
+            if version_string:
+                http_version = version_string[1]
+
         info = {
             'address': m.group(1),
             'user_identifier': m.group(2),
@@ -107,7 +114,7 @@ class LogEventHandler(EventHandler):
             'time': datetime.datetime.strptime(m.group(4), '%d/%b/%Y:%H:%M:%S %z'),
             'method': m.group(5).split(' ')[0],
             'url': m.group(5).split(' ')[1],
-            'http_version': m.group(5).split(' ')[2].split('/')[1],
+            'http_version': http_version,
             'status': int(m.group(6)),
             'size': int(m.group(7)),
             'referrer': m.group(9),
