@@ -25,7 +25,7 @@ export default {
 
   computed: {
     classes() {
-      return (this.class && this.class.length ? this.class.split(' ') : ['col-3']).concat(['widget', 'column'])
+      return (this.class?.length ? this.class.split(' ') : ['col-3']).concat(['widget', 'column'])
     },
   },
 }

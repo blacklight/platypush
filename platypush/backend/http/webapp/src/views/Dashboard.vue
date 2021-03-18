@@ -5,7 +5,7 @@
     <Row v-for="(row, i) in rows" :key="i" :class="row.class" :style="row.style">
       <keep-alive v-for="(widget, j) in row.widgets" :key="j">
         <Widget :style="widget.style" :class="widget.class">
-          <component :is="widget.component" v-bind="widget.props" />
+          <component :is="widget.component" v-bind="getWidgetProps(widget)" />
         </Widget>
       </keep-alive>
     </Row>
@@ -48,6 +48,14 @@ export default {
   },
 
   methods: {
+    getWidgetProps(widget) {
+      const props = {...widget.props}
+      if (props.class)
+        delete props.class
+
+      return props
+    },
+
     parseTemplate(name, tmpl) {
       const node = new DOMParser().parseFromString(tmpl, 'text/xml').childNodes[0]
       const self = this
