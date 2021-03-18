@@ -100,12 +100,10 @@ class LogEventHandler(EventHandler):
             logger.warning('Could not parse log line from {}: {}'.format(file, line))
             return
 
-        http_version = '1.0'
-        version_string = m.group(5).split(' ')
-        if version_string:
-            version_string = version_string[2].split('/')
-            if version_string:
-                http_version = version_string[1]
+        try:
+            http_version = m.group(5).split(' ')[2].split('/')[1]
+        except:
+            http_version = '1.0'
 
         info = {
             'address': m.group(1),
