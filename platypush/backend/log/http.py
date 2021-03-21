@@ -100,18 +100,27 @@ class LogEventHandler(EventHandler):
             logger.warning('Could not parse log line from {}: {}'.format(file, line))
             return
 
+        url = None
+        method = 'GET'
+        http_version = '1.0'
+
         try:
+            url = m.group(5).split(' ')[1]
+            method = m.group(5).split(' ')[0]
             http_version = m.group(5).split(' ')[2].split('/')[1]
         except:
-            http_version = '1.0'
+            pass
+
+        if not url:
+            return
 
         info = {
             'address': m.group(1),
             'user_identifier': m.group(2),
             'user_id': m.group(3),
             'time': datetime.datetime.strptime(m.group(4), '%d/%b/%Y:%H:%M:%S %z'),
-            'method': m.group(5).split(' ')[0],
-            'url': m.group(5).split(' ')[1],
+            'method': method,
+            'url': url,
             'http_version': http_version,
             'status': int(m.group(6)),
             'size': int(m.group(7)),
