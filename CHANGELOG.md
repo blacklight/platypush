@@ -11,8 +11,6 @@ Given the high speed of development in the first phase, changes are being report
 
 - Fixed dashboard widgets custom classes being propagated both to the container and to the widget content [see #179]
 
-- Added reconnection logic to `backend.mqtt` listeners in case of temporary MQTT server-side errors.
-
 ## [0.20.6] - 2021-03-16
 
 ### Added

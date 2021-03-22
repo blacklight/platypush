@@ -1,8 +1,6 @@
 import json
-import logging
 import os
 import threading
-import time
 from typing import Optional, List, Callable
 
 import paho.mqtt.client as mqtt
@@ -18,8 +16,6 @@ from platypush.utils import set_thread_name
 
 
 class MqttClient(mqtt.Client, threading.Thread):
-    _reconnect_timeout = 10.0
-
     def __init__(self, *args, host: str, port: int, topics: Optional[List[str]] = None,
                  on_message: Optional[Callable] = None, username: Optional[str] = None, password: Optional[str] = None,
                  client_id: Optional[str] = None, tls_cafile: Optional[str] = None, tls_certfile: Optional[str] = None,
@@ -33,8 +29,6 @@ class MqttClient(mqtt.Client, threading.Thread):
         self.topics = set(topics or [])
         self.keepalive = keepalive
         self.on_connect = self.connect_hndl()
-        self.on_disconnect = self.disconnect_hndl()
-        self.logger = logging.getLogger(__name__)
 
         if on_message:
             self.on_message = on_message
@@ -76,20 +70,6 @@ class MqttClient(mqtt.Client, threading.Thread):
     def connect_hndl(self):
         def handler(*_, **__):
             self.subscribe()
-
-        return handler
-
-    def disconnect_hndl(self):
-        # noinspection PyUnusedLocal
-        def handler(client, userdata, rc):
-            if not self._stop_scheduled and rc in {mqtt.MQTT_ERR_INVAL, mqtt.MQTT_ERR_AGAIN, mqtt.MQTT_ERR_CONN_LOST,
-                                                   mqtt.MQTT_ERR_CONN_REFUSED, mqtt.MQTT_ERR_ERRNO,
-                                                   mqtt.MQTT_ERR_NO_CONN, mqtt.MQTT_ERR_PAYLOAD_SIZE,
-                                                   mqtt.MQTT_ERR_QUEUE_SIZE, mqtt.MQTT_ERR_UNKNOWN}:
-                self.logger.warning('Unexpected disconnection from {}:{}. MQTT error: {}'.format(
-                    self.host, self.port, rc))
-                time.sleep(self._reconnect_timeout)
-                self.connect(host=self.host, port=self.port, keepalive=self.keepalive)
 
         return handler
 
