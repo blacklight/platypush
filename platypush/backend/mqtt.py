@@ -83,7 +83,7 @@ class MqttClient(mqtt.Client, threading.Thread):
         # noinspection PyUnusedLocal
         def handler(client, userdata, rc):
             if not self._stop_scheduled and rc in {mqtt.MQTT_ERR_INVAL, mqtt.MQTT_ERR_AGAIN, mqtt.MQTT_ERR_CONN_LOST,
-                                                   mqtt.MQTT_ERR_CONN_REFUSED, mqtt.MQTT_ERR_NOMEM, mqtt.MQTT_ERR_ERRNO,
+                                                   mqtt.MQTT_ERR_CONN_REFUSED, mqtt.MQTT_ERR_ERRNO,
                                                    mqtt.MQTT_ERR_NO_CONN, mqtt.MQTT_ERR_PAYLOAD_SIZE,
                                                    mqtt.MQTT_ERR_QUEUE_SIZE, mqtt.MQTT_ERR_UNKNOWN}:
                 self.logger.warning('Unexpected disconnection from {}:{}. MQTT error: {}'.format(
