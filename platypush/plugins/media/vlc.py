@@ -403,37 +403,39 @@ class MediaVlcPlugin(MediaPlugin):
             }
         """
         import vlc
-        if not self._player:
-            return {'state': PlayerState.STOP.value}
 
-        status = {}
-        vlc_state = self._player.get_state()
+        with self._stop_lock:
+            if not self._player:
+                return {'state': PlayerState.STOP.value}
 
-        if vlc_state == vlc.State.Playing:
-            status['state'] = PlayerState.PLAY.value
-        elif vlc_state == vlc.State.Paused:
-            status['state'] = PlayerState.PAUSE.value
-        else:
-            status['state'] = PlayerState.STOP.value
+            status = {}
+            vlc_state = self._player.get_state()
 
-        status['url'] = urllib.parse.unquote(self._player.get_media().get_mrl()) if self._player.get_media() else None
-        status['position'] = float(self._player.get_time()/1000) if self._player.get_time() is not None else None
+            if vlc_state == vlc.State.Playing:
+                status['state'] = PlayerState.PLAY.value
+            elif vlc_state == vlc.State.Paused:
+                status['state'] = PlayerState.PAUSE.value
+            else:
+                status['state'] = PlayerState.STOP.value
 
-        media = self._player.get_media()
-        status['duration'] = media.get_duration()/1000 if media and media.get_duration() is not None else None
+            status['url'] = urllib.parse.unquote(self._player.get_media().get_mrl()) if self._player.get_media() else None
+            status['position'] = float(self._player.get_time()/1000) if self._player.get_time() is not None else None
 
-        status['seekable'] = status['duration'] is not None
-        status['fullscreen'] = self._player.get_fullscreen()
-        status['mute'] = self._player.audio_get_mute()
-        status['path'] = status['url']
-        status['pause'] = status['state'] == PlayerState.PAUSE.value
-        status['percent_pos'] = self._player.get_position()*100
-        status['filename'] = self._filename
-        status['title'] = self._title
-        status['volume'] = self._player.audio_get_volume()
-        status['volume_max'] = 100
+            media = self._player.get_media()
+            status['duration'] = media.get_duration()/1000 if media and media.get_duration() is not None else None
 
-        return status
+            status['seekable'] = status['duration'] is not None
+            status['fullscreen'] = self._player.get_fullscreen()
+            status['mute'] = self._player.audio_get_mute()
+            status['path'] = status['url']
+            status['pause'] = status['state'] == PlayerState.PAUSE.value
+            status['percent_pos'] = self._player.get_position()*100
+            status['filename'] = self._filename
+            status['title'] = self._title
+            status['volume'] = self._player.audio_get_volume()
+            status['volume_max'] = 100
+
+            return status
 
     def on_stop(self, callback):
         self._on_stop_callbacks.append(callback)
