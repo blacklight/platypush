@@ -234,7 +234,7 @@ class UserManager:
 
     def _get_db_session(self):
         Base.metadata.create_all(self._engine)
-        session = scoped_session(sessionmaker())
+        session = scoped_session(sessionmaker(expire_on_commit=False))
         session.configure(bind=self._engine)
         return session()
 
