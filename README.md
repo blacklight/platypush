@@ -477,6 +477,12 @@ platydock stop device_id
 platyvdock rm device_id
 ```
 
+## Mobile app
+
+An [official Android app](https://f-droid.org/en/packages/tech.platypush.platypush/) is provided on the F-Droid store.
+It allows to easily discover and manage multiple Platypush services on a network through the web interface, and it
+easily brings the power of Platypush to your fingertips.
+
 ## Tests
 
 To run the tests simply run `pytest` either from the project root folder or the `tests/` folder.
