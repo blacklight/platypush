@@ -474,7 +474,7 @@ platydock stop device_id
 4. Remove the instance:
 
 ```shell
-platyvdock rm device_id
+platydock rm device_id
 ```
 
 ## Mobile app
