@@ -59,27 +59,29 @@ export default {
     parseTemplate(name, tmpl) {
       const node = new DOMParser().parseFromString(tmpl, 'text/xml').childNodes[0]
       const self = this
-      this.style = node.attributes.style ? node.attributes.style.nodeValue : undefined
-      this.class = node.attributes.class ? node.attributes.class.nodeValue : undefined
+      this.style = node.attributes.style?.nodeValue
+      this.class = node.attributes.class?.nodeValue
 
       this.rows = [...node.getElementsByTagName('Row')].map((row) => {
         return {
-          style: row.attributes.style ? row.attributes.style.nodeValue : undefined,
-          class: row.attributes.class ? row.attributes.class.nodeValue : undefined,
+          style: row.attributes.style?.nodeValue,
+          class: row.attributes.class?.nodeValue,
           widgets: [...row.children].map((el) => {
             const component = defineAsyncComponent(
                 () => import(`@/components/widgets/${el.nodeName}/Index`)
             )
 
-            const style = el.attributes.style ? el.attributes.style.nodeValue : undefined
-            const classes = el.attributes.class ? el.attributes.class.nodeValue : undefined
+            const style = el.attributes.style?.nodeValue
+            const classes = el.attributes.class?.nodeValue
             const attrs = [...el.attributes].reduce((obj, node) => {
               if (node.nodeName !== 'style') {
                 obj[node.nodeName] = node.nodeValue
               }
 
               return obj
-            }, {})
+            }, {
+              content: el.innerHTML,
+            })
 
             const widget = {
               component: component,
