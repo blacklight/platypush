@@ -1,6 +1,10 @@
 <template>
   <div class="slider-root component-row">
-    <div class="col-7" v-text="name" />
+    <div class="col-1 icon-container" v-if="hasIcon">
+      <img class="icon" :src="iconUrl" :alt="name" v-if="iconUrl?.length">
+      <i class="icon" :class="iconClass" :style="iconStyle" v-else />
+    </div>
+    <div :class="{'col-6': hasIcon, 'col-7': !hasIcon}" v-text="name" />
     <div class="col-5 slider-container">
       <div class="slider">
         <SliderElement :value="value" :range="[parseFloat(min), parseFloat(max)]" @mouseup="run" />
@@ -22,14 +26,6 @@ export default {
   components: {SliderElement},
   mixins: [mixins],
   props: {
-    /**
-     * Display name for this slider.
-     */
-    name: {
-      type: String,
-      default: '[Unnamed slider]',
-    },
-
     /**
      * Minimum value for the slider (default: 0).
      */
@@ -59,12 +55,6 @@ export default {
         await this.handlers.afterActions(this)
       }
     },
-  },
-
-  data() {
-    return {
-      value: undefined,
-    }
   },
 }
 </script>

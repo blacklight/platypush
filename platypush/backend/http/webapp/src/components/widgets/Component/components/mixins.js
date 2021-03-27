@@ -3,51 +3,88 @@ import Utils from "@/Utils";
 export default {
     mixins: [Utils],
     props: {
-        // Actions to run upon interaction with the widget. Format:
-        //
-        // [
-        //   {
-        //     "action": "light.hue.toggle",
-        //     "args": {
-        //       "lights": ["Bulb 1", "Bulb 2"]
-        //     }
-        //   },
-        //   {
-        //     "action": "music.mpd.pause"
-        //   }
-        // ]
+        /**
+         * Component name
+         */
+        name: {
+            type: String,
+            default: '[Unnamed sensor]',
+        },
+
+        /**
+         * Action (FontAwesome) icon class (default: `fa fa-play`)
+         */
+        iconClass: {
+            type: String,
+        },
+
+        /**
+         * Action icon URL (default: `fa fa-play`)
+         */
+        iconUrl: {
+            type: String,
+        },
+
+        /**
+         * Action icon color override, for FontAwesome icons
+         */
+        iconColor: {
+            type: String,
+        },
+
+        /**
+         * Actions to run upon interaction with the widget. Format:
+         *
+         * [
+         *   {
+         *     "action": "light.hue.toggle",
+         *     "args": {
+         *       "lights": ["Bulb 1", "Bulb 2"]
+         *     }
+         *   },
+         *   {
+         *     "action": "music.mpd.pause"
+         *   }
+         * ]
+         */
         actions: {
             type: Array,
             default: () => { return [] },
         },
 
-        // Map of variables used by this component, in the form
-        // of variable_name -> variable_value.
+        /**
+         * Map of variables used by this component, in the form
+         * variable_name -> variable_value.
+         */
         _vars: {
             type: Object,
             default: () => { return {} },
         },
 
-        // Map of handlers, in the form of event_type -> functions.
-        // Supported event handler types:
-        //
-        //   - mounted: Function to execute when the component is mounted.
-        //   - beforeActions: Function to execute before the component action is run.
-        //   - afterActions: Function to execute after the component action is run.
-        //   - refresh: Function to be called at startup (if mounted is also specified
-        //              then refresh will be called after mounted when the component is
-        //              first mounted) and at regular intervals defined on the
-        //              interval property (default: 10 seconds).
-        //   - events: This is a mapping of functions that react to Platypush
-        //             platform events published on the websocket (e.g. lights or
-        //             switches toggles, media events etc.). The form is
-        //             platypush_event_type -> function.
+        /**
+         * Map of handlers, in the form of event_type -> functions.
+         * Supported event handler types:
+         *
+         *   - mounted: Function to execute when the component is mounted.
+         *   - beforeActions: Function to execute before the component action is run.
+         *   - afterActions: Function to execute after the component action is run.
+         *   - refresh: Function to be called at startup (if mounted is also specified
+         *              then refresh will be called after mounted when the component is
+         *              first mounted) and at regular intervals defined on the
+         *              interval property (default: 10 seconds).
+         *   - events: This is a mapping of functions that react to Platypush
+         *             platform events published on the websocket (e.g. lights or
+         *             switches toggles, media events etc.). The form is
+         *             platypush_event_type -> function.
+         */
         handlers: {
             type: Object,
             default: () => { return {} },
         },
 
-        // Event bus
+        /**
+         * Event bus
+         */
         bus: {
             type: Object,
         },
@@ -60,7 +97,21 @@ export default {
             refresh: null,
             refreshInterval: null,
             value: null,
+            loading: false,
         }
+    },
+
+    computed: {
+        iconStyle() {
+            if (!this.iconClass?.length && this.iconColor?.length)
+                return
+
+            return {'color': this.iconColor}
+        },
+
+        hasIcon() {
+            return this.iconUrl?.length || this.iconClass?.length
+        },
     },
 
     methods: {

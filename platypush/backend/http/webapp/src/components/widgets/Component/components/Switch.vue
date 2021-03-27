@@ -1,6 +1,10 @@
 <template>
   <div class="switch component-row" @click="run">
-    <div class="col-10" v-text="name" />
+    <div class="col-1 icon-container" v-if="hasIcon">
+      <img class="icon" :src="iconUrl" :alt="name" v-if="iconUrl?.length">
+      <i class="icon" :class="iconClass" :style="iconStyle" v-else />
+    </div>
+    <div :class="{'col-9': hasIcon, 'col-10': !hasIcon}" v-text="name" />
     <div class="col-2 toggle-container">
       <div class="toggle">
         <ToggleSwitch :value="value" @input.stop="run" />
@@ -21,21 +25,6 @@ export default {
   name: "Switch",
   components: {ToggleSwitch},
   mixins: [mixins],
-  props: {
-    /**
-     * Display name for this switch.
-     */
-    name: {
-      type: String,
-      default: '[Unnamed switch]',
-    },
-  },
-
-  data() {
-    return {
-      value: undefined,
-    }
-  },
 }
 </script>
 
