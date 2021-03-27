@@ -40,7 +40,7 @@ export default {
     },
 
     generateId() {
-      return btoa([...Array(16).keys()].forEach(() => String.fromCharCode(Math.round(Math.random() * 255))))
+      return btoa([...Array(11).keys()].map(() => String.fromCharCode(Math.round(Math.random() * 255))))
     },
   }
 }

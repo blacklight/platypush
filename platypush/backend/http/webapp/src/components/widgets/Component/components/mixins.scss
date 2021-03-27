@@ -1,0 +1,15 @@
+@mixin component-row {
+  width: 100%;
+  display: flex;
+  cursor: pointer;
+  padding: .75em .5em;
+  border-bottom: $default-border;
+
+  &:hover {
+    background: $hover-bg;
+  }
+}
+
+.component-row {
+  @include component-row;
+}
