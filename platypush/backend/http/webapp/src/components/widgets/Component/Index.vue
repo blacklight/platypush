@@ -176,12 +176,17 @@ export default {
           props.handlers = this._parseHandlers(element)
           props._vars = this._parseVars(element)
 
+          const newEl = document.createElement('div')
+          newEl.setAttribute('class', 'component')
+          newEl.innerHTML = element.innerHTML
+          element.parentNode.replaceChild(newEl, element)
+
           createApp({
             render() { return h(component, props) },
             data() {
               return { bus: bus }
             },
-          }).mount(element)
+          }).mount(newEl)
         })
       })
 

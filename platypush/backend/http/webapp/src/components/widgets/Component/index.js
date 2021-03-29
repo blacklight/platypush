@@ -1,11 +1,11 @@
 import Run from './components/Run'
-import Switch from './components/Switch'
+import Sensor from "./components/Sensor";
 import Slider from './components/Slider'
-import Sensor from "@/components/widgets/Component/components/Sensor";
+import Switch from './components/Switch'
 
 export default {
     Run,
-    Switch,
-    Slider,
     Sensor,
+    Slider,
+    Switch,
 }

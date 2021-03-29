@@ -7,6 +7,8 @@ Given the high speed of development in the first phase, changes are being report
 
 ### Added
 
+- Added `<Camera>` dashboard widget.
+
 - Added support for custom dashboard widgets with customized (see https://git.platypush.tech/platypush/platypush/-/wikis/Backends#creating-custom-widgets).
 
 ## [0.20.7] - 2021-03-26
