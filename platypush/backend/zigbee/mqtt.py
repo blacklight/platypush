@@ -229,6 +229,8 @@ class ZigbeeMqttBackend(MqttBackend):
         def handler(client, _, msg):
             topic = msg.topic[len(self.base_topic)+1:]
             data = msg.payload.decode()
+            if not data:
+                return
 
             # noinspection PyBroadException
             try:
