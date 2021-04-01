@@ -11,6 +11,10 @@ Given the high speed of development in the first phase, changes are being report
 
 - Added support for custom dashboard widgets with customized (see https://git.platypush.tech/platypush/platypush/-/wikis/Backends#creating-custom-widgets).
 
+### Fixed
+
+- Fixed zigbee2mqtt backend error in case of messages with empty payload (see [#184](https://git.platypush.tech/platypush/platypush/-/issues/184)).
+
 ## [0.20.7] - 2021-03-26
 
 ### Fixed
