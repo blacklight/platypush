@@ -15,6 +15,9 @@ Given the high speed of development in the first phase, changes are being report
 
 - Fixed zigbee2mqtt backend error in case of messages with empty payload (see [#184](https://git.platypush.tech/platypush/platypush/-/issues/184)).
 
+- Fixed compatibility with all versions of websocket-client - versions >= 0.58.0 pass a `WebSocketApp` object as a first
+  argument to the callbacks, as well as versions < 0.54.0 do, but the versions in between don't pass this argument.
+
 ## [0.20.7] - 2021-03-26
 
 ### Fixed
