@@ -65,9 +65,12 @@ export default {
       }
 
       for (let handler of handlers) {
+        if (!handler)
+          continue
+
         if (handler instanceof Array)
           handler = handler[0]
-        else if (handler instanceof Object)
+        else if (handler instanceof Object && !(handler instanceof Function))
           handler = Object.values(handler)[0]
 
         handler(event.args)
