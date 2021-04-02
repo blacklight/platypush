@@ -50,8 +50,8 @@ class TodoistBackend(Backend):
         self._event_handled = False
 
     def _on_msg(self):
-        # noinspection PyUnusedLocal
-        def hndl(ws, msg):
+        def hndl(*args):
+            msg = args[1] if len(args) > 1 else args[0]
             msg = json.loads(msg)
             if msg.get('type') == 'sync_needed':
                 self._refresh_all()
@@ -68,15 +68,15 @@ class TodoistBackend(Backend):
             time.sleep(10)
 
     def _on_error(self):
-        # noinspection PyUnusedLocal
-        def hndl(ws, error):
+        def hndl(*args):
+            error = args[1] if len(args) > 1 else args[0]
             self.logger.warning('Todoist websocket error: {}'.format(error))
             self._retry_hndl()
 
         return hndl
 
     def _on_close(self):
-        def hndl(*_, **__):
+        def hndl(*_):
             self.logger.info('Todoist websocket closed')
             self._retry_hndl()
 

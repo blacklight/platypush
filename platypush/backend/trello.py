@@ -57,7 +57,9 @@ class TrelloBackend(Backend):
 
         for b in boards:
             b = self._plugin.get_board(b).board
+            # noinspection PyUnresolvedReferences
             self._boards_by_id[b.id] = b
+            # noinspection PyUnresolvedReferences
             self._boards_by_name[b.name] = b
 
         self.url = self._websocket_url_base.format(token=self.token)
@@ -79,8 +81,13 @@ class TrelloBackend(Backend):
         self.logger.info('Trello boards subscribed')
 
     def _on_msg(self):
-        # noinspection PyUnusedLocal
-        def hndl(ws: WebSocketApp, msg):
+        def hndl(*args):
+            if len(args) < 2:
+                self.logger.warning('Missing websocket argument - make sure that you are using '
+                                    'a version of websocket-client < 0.53.0 or >= 0.58.0')
+                return
+
+            ws, msg = args[:2]
             if not msg:
                 # Reply back with an empty message when the server sends an empty message
                 ws.send('')
@@ -89,8 +96,8 @@ class TrelloBackend(Backend):
             # noinspection PyBroadException
             try:
                 msg = json.loads(msg)
-            except:
-                self.logger.warning('Received invalid JSON message from Trello: {}'.format(msg))
+            except Exception as e:
+                self.logger.warning('Received invalid JSON message from Trello: {}: {}'.format(msg, e))
                 return
 
             if 'error' in msg:
@@ -141,15 +148,14 @@ class TrelloBackend(Backend):
         return hndl
 
     def _on_error(self):
-        # noinspection PyUnusedLocal
-        def hndl(ws: WebSocketApp, error):
+        def hndl(*args):
+            error = args[1] if len(args) > 1 else args[0]
             self.logger.warning('Trello websocket error: {}'.format(error))
 
         return hndl
 
     def _on_close(self):
-        # noinspection PyUnusedLocal
-        def hndl(ws: WebSocketApp):
+        def hndl(*_):
             self.logger.warning('Trello websocket connection closed')
             self._connected.clear()
             self._req_id = 0
@@ -166,9 +172,11 @@ class TrelloBackend(Backend):
 
     def _on_open(self):
         # noinspection PyUnusedLocal
-        def hndl(ws: WebSocketApp):
+        def hndl(*args):
+            ws = args[0] if args else None
             self._connected.set()
-            self._send(ws, {'type': 'ping'})
+            if ws:
+                self._send(ws, {'type': 'ping'})
             self.logger.info('Trello websocket connected')
 
         return hndl

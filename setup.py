@@ -74,7 +74,7 @@ setup(
         # Support for Kafka backend and plugin
         'kafka': ['kafka-python'],
         # Support for Pushbullet backend and plugin
-        'pushbullet': ['pushbullet.py @ https://github.com/rbrcsk/pushbullet.py/tarball/master'],
+        'pushbullet': ['pushbullet.py @ https://github.com/BlackLight/pushbullet.py/tarball/master'],
         # Support for HTTP backend
         'http': ['flask', 'frozendict', 'bcrypt'],
         # Support for uWSGI HTTP backend

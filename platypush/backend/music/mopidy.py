@@ -117,7 +117,8 @@ class MusicMopidyBackend(Backend):
         }
 
     def _on_msg(self):
-        def hndl(ws, msg):
+        def hndl(*args):
+            msg = args[1] if len(args) > 1 else args[0]
             msg = json.loads(msg)
             event = msg.get('event')
             if not event:
@@ -213,14 +214,17 @@ class MusicMopidyBackend(Backend):
             self._reconnect_thread.start()
 
     def _on_error(self):
-        def hndl(ws, error):
+        def hndl(*args):
+            error = args[1] if len(args) > 1 else args[0]
+            ws = args[0] if len(args) > 1 else None
             self.logger.warning('Mopidy websocket error: {}'.format(error))
-            ws.close()
+            if ws:
+                ws.close()
 
         return hndl
 
     def _on_close(self):
-        def hndl(ws):
+        def hndl(*_):
             self._connected_event.clear()
             self._ws = None
             self.logger.warning('Mopidy websocket connection closed')
@@ -231,7 +235,7 @@ class MusicMopidyBackend(Backend):
         return hndl
 
     def _on_open(self):
-        def hndl(ws):
+        def hndl(*_):
             self._connected_event.set()
             self.logger.info('Mopidy websocket connected')
 

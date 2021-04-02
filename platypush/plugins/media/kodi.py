@@ -100,7 +100,8 @@ class MediaKodiPlugin(MediaPlugin):
         bus.post(evt_type(player=self.host, plugin='media.kodi', **evt))
 
     def _on_ws_msg(self):
-        def hndl(ws, msg):
+        def hndl(*args):
+            msg = args[1] if len(args) > 1 else args[0]
             self.logger.info("Received Kodi message: {}".format(msg))
             msg = json.loads(msg)
             method = msg.get('method')
@@ -129,12 +130,13 @@ class MediaKodiPlugin(MediaPlugin):
         return hndl
 
     def _on_ws_error(self):
-        def hndl(ws, error):
+        def hndl(*args):
+            error = args[1] if len(args) > 1 else args[0]
             self.logger.warning("Kodi websocket connection error: {}".format(error))
         return hndl
 
     def _on_ws_close(self):
-        def hndl(ws):
+        def hndl(*_):
             self._ws = None
             self.logger.warning("Kodi websocket connection closed")
             time.sleep(5)

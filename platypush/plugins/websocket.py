@@ -1,6 +1,4 @@
-import asyncio
 import json
-import os
 import websockets
 
 from platypush.context import get_or_create_event_loop
@@ -18,30 +16,30 @@ class WebsocketPlugin(Plugin):
         * **websockets** (``pip install websockets``)
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @action
-    def send(self, url, msg, ssl_cert=None, ssl_key=None, ssl_cafile=None,
-             ssl_capath=None, *args, **kwargs):
+    def send(self, url, msg, ssl_cert=None, ssl_key=None, ssl_cafile=None, ssl_capath=None):
         """
         Sends a message to a websocket.
 
         :param url: Websocket URL, e.g. ws://localhost:8765 or wss://localhost:8765
-        :type topic: str
+        :type url: str
 
         :param msg: Message to be sent. It can be a list, a dict, or a Message object
 
-        :param ssl_cert: Path to the SSL certificate to be used, if the SSL connection requires client authentication as well (default: None)
-        :type ssl_cert: str
+        :param ssl_cert: Path to the SSL certificate to be used, if the SSL connection requires client authentication
+            as well (default: None) :type ssl_cert: str
 
-        :param ssl_key: Path to the SSL key to be used, if the SSL connection requires client authentication as well (default: None)
-        :type ssl_key: str
+        :param ssl_key: Path to the SSL key to be used, if the SSL connection requires client authentication as well
+            (default: None) :type ssl_key: str
 
         :param ssl_cafile: Path to the certificate authority file if required by the SSL configuration (default: None)
         :type ssl_cafile: str
 
-        :param ssl_capath: Path to the certificate authority directory if required by the SSL configuration (default: None)
+        :param ssl_capath: Path to the certificate authority directory if required by the SSL configuration
+            (default: None)
         :type ssl_capath: str
         """
 
@@ -56,19 +54,21 @@ class WebsocketPlugin(Plugin):
             async with websockets.connect(url, **websocket_args) as websocket:
                 try:
                     await websocket.send(str(msg))
-                except websockets.exceptions.ConnectionClosed:
+                except websockets.exceptions.ConnectionClosed as err:
                     self.logger.warning('Error on websocket {}: {}'.
-                                        format(url, e))
+                                        format(url, err))
 
-        try: msg = json.dumps(msg)
-        except: pass
+        try:
+            msg = json.dumps(msg)
+        except Exception as e:
+            self.logger.debug(e)
 
-        try: msg = Message.build(json.loads(msg))
-        except: pass
+        try:
+            msg = Message.build(json.loads(msg))
+        except Exception as e:
+            self.logger.debug(e)
 
         loop = get_or_create_event_loop()
         loop.run_until_complete(send())
 
-
 # vim:sw=4:ts=4:et:
-
