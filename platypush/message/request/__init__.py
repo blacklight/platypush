@@ -132,9 +132,8 @@ class Request(Message):
                     try:
                         exec('{}="{}"'.format(k, re.sub(r'(^|[^\\])"', '\1\\"', v)))
                     except Exception as e:
-                        logger.warning('Could not set context variable {}={}'.format(k, v))
-                        logger.warning('Context: {}'.format(context))
-                        logger.exception(e)
+                        logger.debug('Could not set context variable {}={}: {}'.format(k, v, str(e)))
+                        logger.debug('Context: {}'.format(context))
 
         parsed_value = ''
         if not isinstance(_value, str):
