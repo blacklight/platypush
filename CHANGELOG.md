@@ -3,13 +3,15 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
-## [Unreleased]
+## [0.20.8] - 2021-04-04
 
 ### Added
 
 - Added `<Camera>` dashboard widget.
 
 - Added support for custom dashboard widgets with customized (see https://git.platypush.tech/platypush/platypush/-/wikis/Backends#creating-custom-widgets).
+
+- Added support for controls on `music.mpd` dashboard widget.
 
 ### Fixed
 
