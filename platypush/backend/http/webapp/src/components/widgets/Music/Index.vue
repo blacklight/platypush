@@ -22,6 +22,22 @@
       </div>
     </div>
 
+    <div class="controls" v-if="_withControls && status">
+      <button @click="prev">
+        <i class="fa fa-step-backward" />
+      </button>
+      <button class="play-pause" @click="playPause">
+        <i class="fa fa-pause" v-if="status.state === 'play'" />
+        <i class="fa fa-play" v-else />
+      </button>
+      <button @click="stop" v-if="status.state !== 'stop'">
+        <i class="fa fa-stop" />
+      </button>
+      <button @click="next">
+        <i class="fa fa-step-forward" />
+      </button>
+    </div>
+
     <div class="playback-status" v-if="status">
       <div class="status-property col-4">
         <i class="fa fa-volume-up"></i>&nbsp; <span v-text="status.volume + '%'"></span>
@@ -55,9 +71,14 @@ export default {
     // Refresh interval in seconds.
     refreshSeconds: {
       type: Number,
-      required: false,
       default: 60,
     },
+
+    // Set to true if you also want to include music controls in the widget.
+    withControls: {
+      type: Boolean,
+      default: true,
+    }
   },
 
   data() {
@@ -72,6 +93,12 @@ export default {
         elapsed: null,
       },
     }
+  },
+
+  computed: {
+    _withControls() {
+      return this.parseBoolean(this.withControls)
+    },
   },
 
   methods: {
@@ -281,6 +308,28 @@ export default {
       this.status.elapsed = this.syncTime.elapsed +
           ((new Date()).getTime()/1000) - (this.syncTime.timestamp.getTime()/1000)
     },
+
+    async _run(action, args) {
+      args = args || {}
+      await this.request(`music.mpd.${action}`, args)
+      await this.refresh()
+    },
+
+    async playPause() {
+      return await this._run('pause')
+    },
+
+    async stop() {
+      return await this._run('stop')
+    },
+
+    async prev() {
+      return await this._run('previous')
+    },
+
+    async next() {
+      return await this._run('next')
+    },
   },
 
   mounted() {
@@ -392,6 +441,25 @@ $playback-status-color: #757f70;
 
     .active {
       color: $default-hover-fg;
+    }
+  }
+
+  .controls {
+    margin-top: .5em;
+    font-size: 1.2em;
+
+    button {
+      background: none;
+      border: none;
+
+      &:hover {
+        color: $default-hover-fg;
+      }
+
+      &.play-pause {
+        color: $selected-fg;
+        font-size: 1.5em;
+      }
     }
   }
 }
