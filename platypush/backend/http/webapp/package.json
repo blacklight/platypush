@@ -17,7 +17,7 @@
     "node-sass": "^5.0.0",
     "sass-loader": "^10.1.0",
     "vue": "^3.0.0",
-    "vue-router": "^4.0.0-rc.3",
+    "vue-router": "^4.0.4",
     "vue-skycons": "^4.0.3",
     "w3css": "^2.7.0"
   },
