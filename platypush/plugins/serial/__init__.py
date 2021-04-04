@@ -8,7 +8,6 @@ from platypush.plugins import action
 from platypush.plugins.sensor import SensorPlugin
 
 
-# noinspection PyBroadException
 class SerialPlugin(SensorPlugin):
     """
     The serial plugin can read data from a serial device, as long as the serial
@@ -129,7 +128,8 @@ class SerialPlugin(SensorPlugin):
             if serial_available:
                 try:
                     ser = self._get_serial(device=device, baud_rate=baud_rate)
-                except:
+                except Exception as e:
+                    self.logger.debug(e)
                     time.sleep(1)
                     ser = self._get_serial(device=device, baud_rate=baud_rate, reset=True)
 
@@ -137,16 +137,15 @@ class SerialPlugin(SensorPlugin):
 
                 try:
                     data = json.loads(data)
-                except:
-                    self.logger.warning('Invalid JSON message from {}: {}'.
-                                        format(self.device, data))
+                except (ValueError, TypeError):
+                    self.logger.warning('Invalid JSON message from {}: {}'.format(self.device, data))
             else:
                 data = self.last_measurement
         finally:
             try:
                 self.serial_lock.release()
-            except:
-                pass
+            except Exception as e:
+                self.logger.debug(e)
 
         if data:
             self.last_measurement = data
@@ -194,7 +193,8 @@ class SerialPlugin(SensorPlugin):
             if serial_available:
                 try:
                     ser = self._get_serial(device=device, baud_rate=baud_rate)
-                except:
+                except Exception as e:
+                    self.logger.debug(e)
                     time.sleep(1)
                     ser = self._get_serial(device=device, baud_rate=baud_rate, reset=True)
 
@@ -216,12 +216,12 @@ class SerialPlugin(SensorPlugin):
         finally:
             try:
                 self.serial_lock.release()
-            except:
-                pass
+            except Exception as e:
+                self.logger.debug(e)
 
         try:
             data = data.decode()
-        except:
+        except (ValueError, TypeError):
             data = base64.encodebytes(data)
 
         return data
@@ -261,7 +261,8 @@ class SerialPlugin(SensorPlugin):
             if serial_available:
                 try:
                     ser = self._get_serial(device=device, baud_rate=baud_rate)
-                except:
+                except Exception as e:
+                    self.logger.debug(e)
                     time.sleep(1)
                     ser = self._get_serial(device=device, baud_rate=baud_rate, reset=True)
 
@@ -270,8 +271,8 @@ class SerialPlugin(SensorPlugin):
         finally:
             try:
                 self.serial_lock.release()
-            except:
-                pass
+            except Exception as e:
+                self.logger.debug(e)
 
 
 # vim:sw=4:ts=4:et:

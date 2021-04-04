@@ -114,11 +114,10 @@ class StreamWriter(VideoWriter, ABC):
     def close(self):
         self.buffer.close()
         if self.sock:
-            # noinspection PyBroadException
             try:
                 self.sock.close()
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning('Could not close camera resource: {}'.format(str(e)))
 
         super().close()
 

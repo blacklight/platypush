@@ -232,10 +232,9 @@ class ZigbeeMqttBackend(MqttBackend):
             if not data:
                 return
 
-            # noinspection PyBroadException
             try:
                 data = json.loads(data)
-            except:
+            except (ValueError, TypeError):
                 pass
 
             if topic == 'bridge/state':

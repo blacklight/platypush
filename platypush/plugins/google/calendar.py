@@ -2,9 +2,7 @@
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
 """
 
-import base64
 import datetime
-import os
 
 from platypush.plugins import action
 from platypush.plugins.google import GooglePlugin
@@ -20,7 +18,6 @@ class GoogleCalendarPlugin(GooglePlugin, CalendarInterface):
 
     def __init__(self, *args, **kwargs):
         super().__init__(scopes=self.scopes, *args, **kwargs)
-
 
     @action
     def get_upcoming_events(self, max_results=10):
@@ -40,4 +37,3 @@ class GoogleCalendarPlugin(GooglePlugin, CalendarInterface):
 
 
 # vim:sw=4:ts=4:et:
-

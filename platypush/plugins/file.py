@@ -19,7 +19,7 @@ class FilePlugin(Plugin):
     def _to_string(cls, content):
         try:
             return json.dumps(content)
-        except:
+        except (ValueError, TypeError):
             return str(content)
 
     @action

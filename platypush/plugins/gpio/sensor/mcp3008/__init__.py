@@ -12,7 +12,7 @@ class MCP3008Mode(enum.Enum):
 class GpioSensorMcp3008Plugin(GpioSensorPlugin):
     """
     Plugin to read analog sensor values from an MCP3008 chipset.  The MCP3008
-    chipset is a circuit that allows you to read measuremnts from multiple
+    chipset is a circuit that allows you to read measurements from multiple
     analog sources (e.g. sensors) and multiplex them to a digital device like a
     Raspberry Pi or a regular laptop.  See
     https://learn.adafruit.com/raspberry-pi-analog-to-digital-converters/mcp3008
@@ -25,8 +25,9 @@ class GpioSensorMcp3008Plugin(GpioSensorPlugin):
 
     N_CHANNELS = 8
 
+    # noinspection PyPep8Naming
     def __init__(self, CLK=None, MISO=None, MOSI=None, CS=None, spi_port=None,
-                 spi_device=None, channels=None, Vdd=3.3, *args, **kwargs):
+                 spi_device=None, channels=None, Vdd=3.3, **kwargs):
         """
         The MCP3008 can be connected in two modes:
 
@@ -54,8 +55,8 @@ class GpioSensorMcp3008Plugin(GpioSensorPlugin):
         :param spi_device: (hardware SPI mode) SPI device name
         :type spi_device: str
 
-        :param channels: name-value mapping between MCP3008 output PINs and sensor names. This mapping will be used when you get values through :func:`.get_measurement()`.
-            Example::
+        :param channels: name-value mapping between MCP3008 output PINs and sensor names. This mapping will be used
+            when you get values through :func:`.get_measurement()`. Example::
 
                 channels = {
                     "0": {
@@ -83,7 +84,7 @@ class GpioSensorMcp3008Plugin(GpioSensorPlugin):
         :type Vdd: float
         """
 
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
         if CLK and MISO and MOSI and CS:
             self.CLK = CLK
@@ -154,6 +155,7 @@ class GpioSensorMcp3008Plugin(GpioSensorPlugin):
                 if i in self.channels:
                     channel = self.channels[i]
                     if 'conv_function' in channel:
+                        # noinspection PyUnusedLocal
                         x = value
                         value = eval(channel['conv_function'])
 

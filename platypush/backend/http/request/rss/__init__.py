@@ -238,15 +238,15 @@ class RssUpdates(HttpRequest):
                     with open(digest_filename, 'w', encoding='utf-8') as f:
                         f.write(content)
                 elif self.digest_format == 'pdf':
-                    import weasyprint
+                    from weasyprint import HTML, CSS
                     from weasyprint.fonts import FontConfiguration
 
-                    body_style = 'body { {body_style} }'.format(body_style=self.body_style)
+                    body_style = 'body { ' + self.body_style + ' }'
                     font_config = FontConfiguration()
-                    css = [weasyprint.CSS('https://fonts.googleapis.com/css?family=Merriweather'),
-                           weasyprint.CSS(string=body_style, font_config=font_config)]
+                    css = [CSS('https://fonts.googleapis.com/css?family=Merriweather'),
+                           CSS(string=body_style, font_config=font_config)]
 
-                    weasyprint.HTML(string=content).write_pdf(digest_filename, stylesheets=css)
+                    HTML(string=content).write_pdf(digest_filename, stylesheets=css)
                 else:
                     raise RuntimeError('Unsupported format: {}. Supported formats: ' +
                                        'html or pdf'.format(self.digest_format))

@@ -57,7 +57,7 @@ class Cronjob(threading.Thread):
             self.state = CronjobState.ERROR
 
     def wait(self):
-        now = datetime.datetime.now().replace(tzinfo=gettz())
+        now = datetime.datetime.now().replace(tzinfo=gettz())  # lgtm [py/call-to-non-callable]
         cron = croniter.croniter(self.cron_expression, now)
         next_run = cron.get_next()
         self._should_stop.wait(next_run - now.timestamp())

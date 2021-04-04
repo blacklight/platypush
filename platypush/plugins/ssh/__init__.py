@@ -221,10 +221,9 @@ class SshPlugin(Plugin):
         client = self._connect(**kwargs)
 
         def decode(buf: bytes) -> str:
-            # noinspection PyBroadException
             try:
                 buf = buf.decode()
-            except:
+            except (ValueError, TypeError):
                 buf = base64.encodebytes(buf).decode()
 
             if buf.endswith('\n'):
@@ -341,11 +340,10 @@ class SshPlugin(Plugin):
 
         try:
             if os.path.isdir(local_path):
-                # noinspection PyBroadException
                 try:
                     sftp.mkdir(remote_path)
-                except:
-                    pass
+                except Exception as e:
+                    self.logger.warning(f'mkdir {remote_path}: {e}')
 
                 assert recursive, '{} is a directory but recursive has been set to False'.format(local_path)
                 assert self.is_directory(sftp, remote_path), \
@@ -355,11 +353,10 @@ class SshPlugin(Plugin):
                 os.chdir(local_path)
 
                 for path, folders, files in os.walk('.'):
-                    # noinspection PyBroadException
                     try:
                         sftp.mkdir(path)
-                    except:
-                        pass
+                    except Exception as e:
+                        self.logger.warning(f'mkdir {remote_path}: {e}')
 
                     for file in files:
                         src = os.path.join(path, file)

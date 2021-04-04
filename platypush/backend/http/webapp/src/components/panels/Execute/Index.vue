@@ -380,20 +380,16 @@ export default {
 
         this.request(this.action.name, args).then(this.onResponse).catch(this.onError).finally(this.onDone)
       } else {
-        let request = this.rawRequest
         try {
-          request = JSON.parse(this.rawRequest)
+          const request = JSON.parse(this.rawRequest)
+          this.execute(request).then(this.onResponse).catch(this.onError).finally(this.onDone)
         } catch (e) {
           this.notify({
             error: true,
             title: 'Invalid JSON request',
             text: e.toString(),
           })
-
-          return
         }
-
-        this.execute(request).then(this.onResponse).catch(this.onError).finally(this.onDone)
       }
     },
 

@@ -51,11 +51,10 @@ class GooglePubsubBackend(Backend):
     def _message_callback(self, topic):
         def callback(msg):
             data = msg.data.decode()
-            # noinspection PyBroadException
             try:
                 data = json.loads(data)
-            except:
-                pass
+            except Exception as e:
+                self.logger.debug('Not a valid JSON: {}: {}'.format(data, str(e)))
 
             msg.ack()
             self.bus.post(GooglePubsubMessageEvent(topic=topic, msg=data))

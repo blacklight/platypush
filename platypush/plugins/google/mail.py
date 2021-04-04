@@ -3,7 +3,6 @@
 """
 
 import base64
-import httplib2
 import mimetypes
 import os
 
@@ -28,7 +27,6 @@ class GoogleMailPlugin(GooglePlugin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(scopes=self.scopes, *args, **kwargs)
-
 
     @action
     def compose(self, sender, to, subject, body, files=None):
@@ -66,9 +64,11 @@ class GoogleMailPlugin(GooglePlugin):
                     content_type = 'application/octet-stream'
 
                 main_type, sub_type = content_type.split('/', 1)
-                with open(file, 'rb') as fp: content = fp.read()
+                with open(file, 'rb') as fp:
+                    content = fp.read()
 
                 if main_type == 'text':
+                    # noinspection PyUnresolvedReferences
                     msg = mimetypes.MIMEText(content, _subtype=sub_type)
                 elif main_type == 'image':
                     msg = MIMEImage(content, _subtype=sub_type)
@@ -86,12 +86,11 @@ class GoogleMailPlugin(GooglePlugin):
                 message.attach(msg)
 
         service = self.get_service('gmail', 'v1')
-        body = { 'raw': base64.urlsafe_b64encode(message.as_bytes()).decode() }
+        body = {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}
         message = (service.users().messages().send(
             userId='me', body=body).execute())
 
         return message
-
 
     @action
     def get_labels(self):
@@ -102,6 +101,5 @@ class GoogleMailPlugin(GooglePlugin):
         results = service.users().labels().list(userId='me').execute()
         labels = results.get('labels', [])
         return labels
-
 
 # vim:sw=4:ts=4:et:

@@ -119,7 +119,6 @@ class Request(Message):
 
         return event_args
 
-    # noinspection PyBroadException
     @classmethod
     def expand_value_from_context(cls, _value, **context):
         for (k, v) in context.items():
@@ -127,7 +126,8 @@ class Request(Message):
                 v = json.loads(str(v))
             try:
                 exec('{}={}'.format(k, v))
-            except:
+            except Exception as e:
+                logger.debug(str(e))
                 if isinstance(v, str):
                     try:
                         exec('{}="{}"'.format(k, re.sub(r'(^|[^\\])"', '\1\\"', v)))
@@ -171,7 +171,7 @@ class Request(Message):
 
         try:
             return json.loads(parsed_value)
-        except:
+        except (ValueError, TypeError):
             return parsed_value
 
     def _send_response(self, response):

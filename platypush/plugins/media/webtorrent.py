@@ -97,8 +97,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
                 if Config.get(plugin_name):
                     self._media_plugin = get_plugin(plugin_name)
                     break
-            except:
-                pass
+            except Exception as e:
+                self.logger.debug(f'Could not get media plugin {plugin_name}: {str(e)}')
 
         if not self._media_plugin:
             raise RuntimeError(('No media player specified and no ' +
@@ -109,7 +109,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
     def _read_process_line(self):
         line = self._webtorrent_process.stdout.readline().decode().strip()
         # Strip output of the colors
-        return re.sub('\x1b\[(([0-9]+m)|(.{1,2}))', '', line).strip()
+        return re.sub(r'\x1b\[(([0-9]+m)|(.{1,2}))', '', line).strip()
 
     def _process_monitor(self, resource, download_dir, download_only,
                          player_type, player_args):
@@ -142,7 +142,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
                         and state == TorrentState.IDLE:
                     # IDLE -> DOWNLOADING_METADATA
                     state = TorrentState.DOWNLOADING_METADATA
-                    bus.post(TorrentDownloadedMetadataEvent(resource=resource))
+                    bus.post(TorrentDownloadedMetadataEvent(url=webtorrent_url, resource=resource))
                 elif 'downloading: ' in line.lower() \
                         and media_file is None:
                     # Find video files in torrent directory
@@ -177,10 +177,9 @@ class MediaWebtorrentPlugin(MediaPlugin):
                 if state.value <= TorrentState.DOWNLOADING_METADATA.value \
                         and media_file and webtorrent_url:
                     # DOWNLOADING_METADATA -> DOWNLOADING
-                    state = TorrentState.DOWNLOADING
                     bus.post(TorrentDownloadStartEvent(
                         resource=resource, media_file=media_file,
-                        stream_url=webtorrent_url))
+                        stream_url=webtorrent_url, url=webtorrent_url))
                     break
 
             if not output_dir:
@@ -193,8 +192,11 @@ class MediaWebtorrentPlugin(MediaPlugin):
                     self.logger.warning('WebTorrent could not start streaming')
 
                 # Keep downloading but don't start the player
-                try: self._webtorrent_process.wait()
-                except: pass
+                try:
+                    self._webtorrent_process.wait()
+                except Exception as e:
+                    self.logger.warning(f'WebTorrent process error: {str(e)}')
+
                 return
 
             player = None
@@ -237,10 +239,14 @@ class MediaWebtorrentPlugin(MediaPlugin):
             self.logger.info('Torrent player terminated')
             bus.post(TorrentDownloadCompletedEvent(resource=resource,
                                                    output_dir=output_dir,
-                                                   media_file=media_file))
+                                                   media_file=media_file,
+                                                   url=webtorrent_url))
 
-            try: self.quit()
-            except: pass
+            try:
+                self.quit()
+            except Exception as e:
+                self.logger.warning(f'Could not terminate WebTorrent process: {str(e)}')
+
             self.logger.info('WebTorrent process terminated')
 
         return _thread
@@ -252,6 +258,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
             media_cls = player.__class__.__name__
 
             if media_cls == 'MediaMplayerPlugin':
+                # noinspection PyProtectedMember
                 stop_evt = player._mplayer_stopped_event
             elif media_cls == 'MediaMpvPlugin' or media_cls == 'MediaVlcPlugin':
                 stop_evt = threading.Event()
@@ -359,8 +366,8 @@ class MediaWebtorrentPlugin(MediaPlugin):
             stream_url = self._torrent_stream_urls.get(resource)
 
         if not stream_url:
-            return (None, ('The webtorrent process hasn\'t started ' +
-                           'streaming after {} seconds').format(
+            return (None, ("The webtorrent process hasn't started " +
+                           "streaming after {} seconds").format(
                 self._web_stream_ready_timeout))
 
         return {'resource': resource, 'url': stream_url}
@@ -380,8 +387,10 @@ class MediaWebtorrentPlugin(MediaPlugin):
         if self._is_process_alive():
             self._webtorrent_process.terminate()
             self._webtorrent_process.wait()
-            try: self._webtorrent_process.kill()
-            except: pass
+            try:
+                self._webtorrent_process.kill()
+            except Exception as e:
+                self.logger.warning(f'Error on WebTorrent process kill: {str(e)}')
 
         self._webtorrent_process = None
 

@@ -106,10 +106,9 @@ class Message(object):
         if isinstance(msg, bytes) or isinstance(msg, bytearray):
             msg = msg.decode('utf-8')
         if isinstance(msg, str):
-            # noinspection PyBroadException
             try:
                 msg = json.loads(msg.strip())
-            except:
+            except (ValueError, TypeError):
                 logger.warning('Invalid JSON message: {}'.format(msg))
 
         assert isinstance(msg, dict)

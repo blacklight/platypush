@@ -164,8 +164,9 @@ Warning, this new I?C address will still be used after resetting the power on th
             print('Missing ZeroBorg at %02X' % oldAddress)
     except KeyboardInterrupt:
         raise
-    except:
+    except Exception as e:
         foundChip = False
+        print(str(e))
         print('Missing ZeroBorg at %02X' % oldAddress)
     if foundChip:
         bus.RawWrite(COMMAND_SET_I2C_ADD, [newAddress])
@@ -188,8 +189,9 @@ Warning, this new I?C address will still be used after resetting the power on th
                 print('Missing ZeroBorg at %02X' % newAddress)
         except KeyboardInterrupt:
             raise
-        except:
+        except Exception as e:
             foundChip = False
+            print(str(e))
             print('Missing ZeroBorg at %02X' % newAddress)
     if foundChip:
         print('New I?C address of %02X set successfully' % newAddress)
@@ -332,9 +334,9 @@ the current busNumber.
                 self.Print('Missing ZeroBorg at %02X' % self.i2cAddress)
         except KeyboardInterrupt:
             raise
-        except:
+        except Exception as e:
             self.foundChip = False
-            self.Print('Missing ZeroBorg at %02X' % self.i2cAddress)
+            self.Print('Missing ZeroBorg at %02X: %s' % (self.i2cAddress, str(e)))
 
         # See if we are missing chips
         if not self.foundChip:
@@ -383,8 +385,8 @@ SetMotor1(1)     -> motor 1 moving forward at 100% power
             self.RawWrite(command, [pwm])
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed sending motor 1 drive level!')
+        except Exception as e:
+            self.Print('Failed sending motor 1 drive level! {}'.format(str(e)))
 
     def GetMotor1(self):
         """
@@ -402,8 +404,8 @@ e.g.
             i2cRecv = self.RawRead(COMMAND_GET_A, I2C_NORM_LEN)
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed reading motor 1 drive level!')
+        except Exception as e:
+            self.Print('Failed reading motor 1 drive level! {}'.format(str(e)))
             return
 
         power = float(i2cRecv[2]) / float(PWM_MAX)
@@ -444,8 +446,8 @@ SetMotor2(1)     -> motor 2 moving forward at 100% power
             self.RawWrite(command, [pwm])
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed sending motor 2 drive level!')
+        except Exception as e:
+            self.Print('Failed sending motor 2 drive level! {}'.format(str(e)))
 
     def GetMotor2(self):
         """
@@ -463,8 +465,8 @@ e.g.
             i2cRecv = self.RawRead(COMMAND_GET_B, I2C_NORM_LEN)
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed reading motor 2 drive level!')
+        except Exception as e:
+            self.Print('Failed reading motor 2 drive level! {}'.format(str(e)))
             return
 
         power = float(i2cRecv[2]) / float(PWM_MAX)
@@ -505,8 +507,8 @@ SetMotor3(1)     -> motor 3 moving forward at 100% power
             self.RawWrite(command, [pwm])
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed sending motor 3 drive level!')
+        except Exception as e:
+            self.Print('Failed sending motor 3 drive level! {}'.format(str(e)))
 
     def GetMotor3(self):
         """
@@ -524,8 +526,8 @@ e.g.
             i2cRecv = self.RawRead(COMMAND_GET_C, I2C_NORM_LEN)
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed reading motor 3 drive level!')
+        except Exception as e:
+            self.Print('Failed reading motor 3 drive level! {}'.format(str(e)))
             return
 
         power = float(i2cRecv[2]) / float(PWM_MAX)
@@ -566,8 +568,8 @@ SetMotor4(1)     -> motor 4 moving forward at 100% power
             self.RawWrite(command, [pwm])
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed sending motor 4 drive level!')
+        except Exception as e:
+            self.Print('Failed sending motor 4 drive level! {}'.format(str(e)))
 
     def GetMotor4(self):
         """
@@ -585,8 +587,8 @@ e.g.
             i2cRecv = self.RawRead(COMMAND_GET_D, I2C_NORM_LEN)
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed reading motor 4 drive level!')
+        except Exception as e:
+            self.Print('Failed reading motor 4 drive level! {}'.format(str(e)))
             return
 
         power = float(i2cRecv[2]) / float(PWM_MAX)
@@ -627,8 +629,8 @@ SetMotors(1)     -> all motors are moving forward at 100% power
             self.RawWrite(command, [pwm])
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed sending all motors drive level!')
+        except Exception as e:
+            self.Print('Failed sending all motors drive level! {}'.format(str(e)))
 
     def MotorsOff(self):
         """
@@ -641,8 +643,8 @@ Sets all motors to stopped, useful when ending a program
             self.RawWrite(COMMAND_ALL_OFF, [0])
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed sending motors off command!')
+        except Exception as e:
+            self.Print('Failed sending motors off command! {}'.format(str(e)))
 
     def SetLed(self, state):
         """
@@ -674,8 +676,8 @@ Reads the current state of the LED, False for off, True for on
             i2cRecv = self.RawRead(COMMAND_GET_LED, I2C_NORM_LEN)
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed reading LED state!')
+        except Exception as e:
+            self.Print('Failed reading LED state! {}'.format(str(e)))
             return
 
         if i2cRecv[1] == COMMAND_VALUE_OFF:
@@ -694,8 +696,8 @@ Resets the EPO latch state, use to allow movement again after the EPO has been t
             self.RawWrite(COMMAND_RESET_EPO, [0])
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed resetting EPO!')
+        except Exception as e:
+            self.Print('Failed resetting EPO! {}'.format(str(e)))
 
     def GetEpo(self):
         """
@@ -711,8 +713,8 @@ If True the EPO has been tripped, movement is disabled if the EPO is not ignored
             i2cRecv = self.RawRead(COMMAND_GET_EPO, I2C_NORM_LEN)
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed reading EPO ignore state!')
+        except Exception as e:
+            self.Print('Failed reading EPO ignore state! {}'.format(str(e)))
             return
 
         if i2cRecv[1] == COMMAND_VALUE_OFF:
@@ -736,8 +738,8 @@ Sets the system to ignore or use the EPO latch, set to False if you have an EPO 
             self.RawWrite(COMMAND_SET_EPO_IGNORE, [level])
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed sending EPO ignore state!')
+        except Exception as e:
+            self.Print('Failed sending EPO ignore state! {}'.format(str(e)))
 
     def GetEpoIgnore(self):
         """
@@ -750,8 +752,8 @@ Reads the system EPO ignore state, False for using the EPO latch, True for ignor
             i2cRecv = self.RawRead(COMMAND_GET_EPO_IGNORE, I2C_NORM_LEN)
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed reading EPO ignore state!')
+        except Exception as e:
+            self.Print('Failed reading EPO ignore state! {}'.format(str(e)))
             return
 
         if i2cRecv[1] == COMMAND_VALUE_OFF:
@@ -793,8 +795,8 @@ Use HasNewIrMessage() to see if there has been a new IR message since the last c
             i2cRecv = self.RawRead(COMMAND_GET_LAST_IR, I2C_LONG_LEN)
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed reading IR message!')
+        except Exception as e:
+            self.Print('Failed reading IR message! {}'.format(str(e)))
             return
 
         message = ''
@@ -818,8 +820,8 @@ Sets if IR messages control the state of the LED, False for no effect, True for 
             self.RawWrite(COMMAND_SET_LED_IR, [level])
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed sending LED state!')
+        except Exception as e:
+            self.Print('Failed sending LED state! {}'.format(str(e)))
 
     def GetLedIr(self):
         """
@@ -832,8 +834,8 @@ Reads if IR messages control the state of the LED, False for no effect, True for
             i2cRecv = self.RawRead(COMMAND_GET_LED_IR, I2C_NORM_LEN)
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed reading LED state!')
+        except Exception as e:
+            self.Print('Failed reading LED state! {}'.format(str(e)))
             return
 
         if i2cRecv[1] == COMMAND_VALUE_OFF:
@@ -853,8 +855,8 @@ Returns the value as a voltage based on the 3.3 V reference pin (pin 1).
             i2cRecv = self.RawRead(COMMAND_GET_ANALOG_1, I2C_NORM_LEN)
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed reading analog level #1!')
+        except Exception as e:
+            self.Print('Failed reading analog level #1! {}'.format(str(e)))
             return
 
         raw = (i2cRecv[1] << 8) + i2cRecv[2]
@@ -873,8 +875,8 @@ Returns the value as a voltage based on the 3.3 V reference pin (pin 1).
             i2cRecv = self.RawRead(COMMAND_GET_ANALOG_2, I2C_NORM_LEN)
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed reading analog level #2!')
+        except Exception as e:
+            self.Print('Failed reading analog level #2! {}'.format(str(e)))
             return
 
         raw = (i2cRecv[1] << 8) + i2cRecv[2]
@@ -900,8 +902,8 @@ The failsafe is disabled at power on
             self.RawWrite(COMMAND_SET_FAILSAFE, [level])
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed sending communications failsafe state!')
+        except Exception as e:
+            self.Print('Failed sending communications failsafe state! {}'.format(str(e)))
 
     def GetCommsFailsafe(self):
         """
@@ -915,8 +917,8 @@ The failsafe will turn the motors off unless it is commanded at least once every
             i2cRecv = self.RawRead(COMMAND_GET_FAILSAFE, I2C_NORM_LEN)
         except KeyboardInterrupt:
             raise
-        except:
-            self.Print('Failed reading communications failsafe state!')
+        except Exception as e:
+            self.Print('Failed reading communications failsafe state! {}'.format(str(e)))
             return
 
         if i2cRecv[1] == COMMAND_VALUE_OFF:
@@ -930,6 +932,7 @@ Help()
 
 Displays the names and descriptions of the various functions and settings provided
         """
+        # noinspection PyTypeChecker
         funcList = [ZeroBorg.__dict__.get(a) for a in dir(ZeroBorg) if
                     isinstance(ZeroBorg.__dict__.get(a), types.FunctionType)]
         funcListSorted = sorted(funcList, key=lambda x: x.func_code.co_firstlineno)

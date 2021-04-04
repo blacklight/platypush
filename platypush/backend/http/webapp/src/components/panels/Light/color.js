@@ -110,6 +110,7 @@ export class ColorConverter {
         if (isNaN(blue))
             blue = 0;
 
+        // lgtm [js/automatic-semicolon-insertion]
         return [red, green, blue].map((c) => Math.min(Math.max(0, c), 255))
     }
 

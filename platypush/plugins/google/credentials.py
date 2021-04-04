@@ -23,12 +23,12 @@ def get_credentials(scope):
     credentials_file = get_credentials_filename(*sorted(scope.split(' ')))
     if not os.path.exists(credentials_file):
         raise RuntimeError(('Credentials file {} not found. Generate it through:\n' +
-                           '\tpython -m platypush.plugins.google.credentials "{}" ' +
-                           '<path to client_secret.json>\n' +
-                           '\t\t[--auth_host_name AUTH_HOST_NAME]\n' +
-                           '\t\t[--noauth_local_webserver]\n' +
-                           '\t\t[--auth_host_port [AUTH_HOST_PORT [AUTH_HOST_PORT ...]]]\n' +
-                           '\t\t[--logging_level [DEBUG,INFO,WARNING,ERROR,CRITICAL]]\n').
+                            '\tpython -m platypush.plugins.google.credentials "{}" ' +
+                            '<path to client_secret.json>\n' +
+                            '\t\t[--auth_host_name AUTH_HOST_NAME]\n' +
+                            '\t\t[--noauth_local_webserver]\n' +
+                            '\t\t[--auth_host_port [AUTH_HOST_PORT [AUTH_HOST_PORT ...]]]\n' +
+                            '\t\t[--logging_level [DEBUG,INFO,WARNING,ERROR,CRITICAL]]\n').
                            format(credentials_file, scope))
 
     store = Storage(credentials_file)
@@ -48,7 +48,7 @@ def generate_credentials(client_secret_path, scope):
     flow.user_agent = 'Platypush'
     flow.access_type = 'offline'
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-    credentials = tools.run_flow(flow, store, flags)
+    tools.run_flow(flow, store, flags)
     print('Storing credentials to ' + credentials_file)
 
 
@@ -61,7 +61,7 @@ def main():
     """
 
     scope = sys.argv.pop(1) if len(sys.argv) > 1 \
-              else input('Space separated list of OAuth scopes: ')
+        else input('Space separated list of OAuth scopes: ')
 
     client_secret_path = os.path.expanduser(
         sys.argv.pop(1) if len(sys.argv) > 1
@@ -76,6 +76,4 @@ def main():
 if __name__ == '__main__':
     main()
 
-
 # vim:sw=4:ts=4:et:
-

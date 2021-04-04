@@ -28,7 +28,6 @@ Events
     platypush/events/gps.rst
     platypush/events/http.rst
     platypush/events/http.hook.rst
-    platypush/events/http.ota.booking.rst
     platypush/events/http.rss.rst
     platypush/events/inotify.rst
     platypush/events/joystick.rst

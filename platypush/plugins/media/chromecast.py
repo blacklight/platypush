@@ -2,7 +2,7 @@ import datetime
 import re
 import time
 
-from platypush.context import get_plugin, get_bus
+from platypush.context import get_bus
 from platypush.plugins import action
 from platypush.plugins.media import MediaPlugin
 from platypush.utils import get_mime_type
@@ -91,6 +91,7 @@ class MediaChromecastPlugin(MediaPlugin):
                     post_event(MediaStopEvent, device=self.name)
             if status.get('volume') != self.status.get('volume'):
                 post_event(MediaVolumeChangedEvent, volume=status.get('volume'), device=self.name)
+            # noinspection PyUnresolvedReferences
             if abs(status.get('position') - self.status.get('position')) > time.time() - self.last_status_timestamp + 5:
                 post_event(MediaSeekEvent, position=status.get('position'), device=self.name)
 
@@ -104,7 +105,7 @@ class MediaChromecastPlugin(MediaPlugin):
             self.initialized = False
 
         # pylint: disable=unused-argument
-        def new_media_status(self, status):
+        def new_media_status(self, *_):
             if self.subtitle_id and not self.initialized:
                 self.mc.update_status()
                 self.mc.enable_subtitle(self.subtitle_id)
@@ -327,9 +328,9 @@ class MediaChromecastPlugin(MediaPlugin):
 
     @classmethod
     def _get_youtube_url(cls, url):
-        m = re.match('https?://www.youtube.com/watch\?v=([^&]+).*', url)
+        m = re.match(r'https?://(www\.)?youtube\.com/watch\?v=([^&]+).*', url)
         if m:
-            return m.group(1)
+            return m.group(2)
 
         m = re.match('youtube:video:(.*)', url)
         if m:

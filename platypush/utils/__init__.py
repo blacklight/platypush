@@ -46,6 +46,7 @@ def get_message_class_by_type(msgtype):
     return msgclass
 
 
+# noinspection PyShadowingBuiltins
 def get_event_class_by_type(type):
     """ Gets an event class by type name """
     event_module = importlib.import_module('.'.join(type.split('.')[:-1]))
@@ -122,7 +123,7 @@ def set_timeout(seconds, on_timeout):
         on_timeout -- Function invoked on timeout unless clear_timeout is called before
     """
 
-    def _sighandler(signum, frame):
+    def _sighandler(*_):
         on_timeout()
 
     signal.signal(signal.SIGALRM, _sighandler)
@@ -230,6 +231,7 @@ def set_thread_name(name):
 
     try:
         import prctl
+        # noinspection PyUnresolvedReferences
         prctl.set_name(name)
     except ImportError:
         logger.debug('Unable to set thread name: prctl module is missing')
@@ -281,8 +283,8 @@ def get_ip_or_hostname():
             sock.connect(('10.255.255.255', 1))
             ip = sock.getsockname()[0]
             sock.close()
-        except:
-            pass
+        except Exception as e:
+            logger.debug(e)
 
     return ip
 
@@ -430,8 +432,8 @@ def get_enabled_plugins() -> dict:
             plugin = get_plugin(name)
             if plugin:
                 plugins[name] = plugin
-        except:
-            pass
+        except Exception as e:
+            logger.debug(f'Could not get plugin {name}: {e}')
 
     return plugins
 

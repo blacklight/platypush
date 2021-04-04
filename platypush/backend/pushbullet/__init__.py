@@ -49,10 +49,10 @@ class PushbulletBackend(Backend):
         from pushbullet import Pushbullet
         self.pb = Pushbullet(self.token)
 
-        # noinspection PyBroadException
         try:
             self.device = self.pb.get_device(self.device_name)
-        except:
+        except Exception as e:
+            self.logger.info('Device {} does not exist: {}. Creating it'.format(self.device_name, str(e)))
             self.device = self.pb.new_device(self.device_name)
 
         self.pb_device_id = self.get_device_id()

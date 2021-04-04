@@ -1,8 +1,6 @@
-import json
 import requests
 
 from platypush.config import Config
-from platypush.message import Message
 from platypush.plugins import Plugin, action
 
 
@@ -22,7 +20,7 @@ class AutoremotePlugin(Plugin):
     _AUTOREMOTE_MESSAGE_URL = _AUTOREMOTE_BASE_URL + '/sendmessage'
     _AUTOREMOTE_NOTIFICATION_URL = _AUTOREMOTE_BASE_URL + '/sendnotification'
 
-    def __init__(self, devices=None, key=None, password=None, *args, **kwargs):
+    def __init__(self, devices=None, key=None, password=None, **kwargs):
         """
         :param devices: Set this attribute if you want to control multiple AutoRemote devices.
             This will be a map in the format::
@@ -47,7 +45,7 @@ class AutoremotePlugin(Plugin):
         :type password: str
         """
 
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
         if key:
             self.devices = { key: { 'key': key, 'password': password } }

@@ -78,7 +78,7 @@ class DbPlugin(Plugin):
         engine = self._get_engine(engine, *args, **kwargs)
 
         with engine.connect() as connection:
-            result = connection.execute(statement)
+            connection.execute(statement)
 
     def _get_table(self, table, engine=None, *args, **kwargs):
         if not engine:

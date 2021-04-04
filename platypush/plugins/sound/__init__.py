@@ -166,8 +166,7 @@ class SoundPlugin(Plugin):
 
         is_raw_stream = streamtype == sd.RawOutputStream
 
-        # noinspection PyUnusedLocal
-        def audio_callback(outdata, frames, frame_time, status):
+        def audio_callback(outdata, frames, *, status):
             if self._get_playback_state(stream_index) == PlaybackState.STOPPED:
                 raise sd.CallbackStop
 
@@ -181,7 +180,7 @@ class SoundPlugin(Plugin):
 
             if status.output_underflow:
                 self.logger.warning('Output underflow: increase blocksize?')
-                outdata = (b'\x00' if is_raw_stream else 0.) * len(outdata)
+                outdata[:] = (b'\x00' if is_raw_stream else 0.) * len(outdata)
                 return
 
             if status:
@@ -397,7 +396,6 @@ class SoundPlugin(Plugin):
         finally:
             if f and not f.closed:
                 f.close()
-                f = None
 
             self.stop_playback([stream_index])
 

@@ -3,9 +3,9 @@ import functools
 import os
 import queue
 import re
+import requests
 from typing import Optional, List, Dict, Union
 
-import requests
 import subprocess
 import tempfile
 import threading
@@ -214,8 +214,8 @@ class MediaPlugin(Plugin):
         try:
             torrents = get_plugin(self.torrent_plugin)
             torrents.quit()
-        except:
-            pass
+        except Exception as e:
+            self.logger.warning(f'Could not stop torrent plugin: {str(e)}')
 
     @action
     def play(self, resource, *args, **kwargs):
@@ -423,7 +423,6 @@ class MediaPlugin(Plugin):
             }
 
         """
-        import requests
 
         http = get_backend('http')
         if not http:
@@ -445,8 +444,6 @@ class MediaPlugin(Plugin):
 
     @action
     def stop_streaming(self, media_id):
-        import requests
-
         http = get_backend('http')
         if not http:
             self.logger.warning('Cannot unregister {}: HTTP backend unavailable'.
@@ -536,9 +533,9 @@ class MediaPlugin(Plugin):
         return functools.reduce(
             lambda t, t_i: t + t_i,
             [float(t) * pow(60, i) for (i, t) in enumerate(re.search(
-                '^Duration:\s*([^,]+)', [x.decode()
-                                         for x in result.stdout.readlines()
-                                         if "Duration" in x.decode()].pop().strip()
+                r'^Duration:\s*([^,]+)', [x.decode()
+                                          for x in result.stdout.readlines()
+                                          if "Duration" in x.decode()].pop().strip()
             ).group(1).split(':')[::-1])]
         )
 

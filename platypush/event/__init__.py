@@ -13,7 +13,7 @@ class EventGenerator(object):
     logger = logging.getLogger('platypush')
 
     def __init__(self, *args, **kwargs):
-        self._event_handlers = {}   # Event type => callback map
+        self._event_handlers = {}  # Event type => callback map
 
     def fire_event(self, event):
         """
@@ -25,8 +25,8 @@ class EventGenerator(object):
         :type event: :class:`platypush.message.event.Event` or a subclass
         """
 
-        def hndl_thread():
-            hndl(event)
+        def hndl_thread(handler):
+            handler(event)
 
         from platypush.backend import Backend
         from platypush.context import get_bus
@@ -44,8 +44,7 @@ class EventGenerator(object):
                 handlers.update(self._event_handlers[cls])
 
         for hndl in handlers:
-            threading.Thread(target=hndl_thread).start()
-
+            threading.Thread(target=hndl_thread, args=(hndl,)).start()
 
     def register_handler(self, event_type, callback):
         """
@@ -63,7 +62,6 @@ class EventGenerator(object):
         if event_type not in self._event_handlers:
             self._event_handlers[event_type] = set()
         self._event_handlers[event_type].add(callback)
-
 
     def unregister_handler(self, event_type, callback):
         """

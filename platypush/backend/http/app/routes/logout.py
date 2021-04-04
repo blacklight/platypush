@@ -25,7 +25,7 @@ def logout():
     if not user:
         return abort(403, 'Invalid session token')
 
-    redirect_target = redirect(redirect_page, 302)
+    redirect_target = redirect(redirect_page, 302)  # lgtm [py/url-redirection]
     response = make_response(redirect_target)
     response.set_cookie('session_token', '', expires=0)
     return response

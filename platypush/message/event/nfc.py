@@ -1,5 +1,3 @@
-import json
-
 from platypush.message.event import Event
 
 

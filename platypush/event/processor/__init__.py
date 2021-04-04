@@ -61,7 +61,8 @@ class EventProcessor(object):
 
                 if hook.priority > max_priority:
                     priority_hooks = {hook}
-                elif hook.priority == max_priority and max_priority > 0:
+                    max_priority = hook.priority
+                elif hook.priority == max_priority:
                     priority_hooks.add(hook)
 
         matched_hooks.update(priority_hooks)

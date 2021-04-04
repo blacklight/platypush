@@ -108,8 +108,8 @@ class LogEventHandler(EventHandler):
             url = m.group(5).split(' ')[1]
             method = m.group(5).split(' ')[0]
             http_version = m.group(5).split(' ')[2].split('/')[1]
-        except:
-            pass
+        except Exception as e:
+            logger.debug(str(e))
 
         if not url:
             return

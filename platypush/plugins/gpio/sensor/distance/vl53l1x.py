@@ -78,8 +78,8 @@ class GpioSensorDistanceVl53L1XPlugin(GpioSensorPlugin):
             try:
                 self._device.stop_ranging()
                 self._device.close()
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning('Error while closing device: {}'.format(str(e)))
 
             self._device = None
             time.sleep(1)

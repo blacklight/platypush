@@ -275,8 +275,8 @@ class MqttBackend(Backend):
             try:
                 data = data.decode('utf-8')
                 data = json.loads(data)
-            except:
-                pass
+            except Exception as e:
+                self.logger.debug(str(e))
 
             # noinspection PyProtectedMember
             self.bus.post(MQTTMessageEvent(host=client._host, port=client._port, topic=msg.topic, msg=data))
@@ -303,8 +303,8 @@ class MqttBackend(Backend):
             try:
                 msg = json.loads(msg)
                 msg = Message.build(msg)
-            except:
-                pass
+            except Exception as e:
+                self.logger.debug(str(e))
 
             if not msg:
                 return

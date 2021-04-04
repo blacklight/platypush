@@ -270,12 +270,12 @@ class ForProcedure(LoopProcedure):
         self.iterable = iterable
 
     def execute(self, _async=None, **context):
-        # noinspection PyBroadException
         try:
             iterable = eval(self.iterable)
             assert hasattr(iterable, '__iter__'), 'Object of type {} is not iterable: {}'.\
                 format(type(iterable), iterable)
-        except:
+        except Exception as e:
+            logger.debug(f'Iterable {self.iterable} expansion error: {e}')
             iterable = Request.expand_value_from_context(self.iterable, **context)
 
         response = Response()
@@ -334,10 +334,10 @@ class WhileProcedure(LoopProcedure):
     @staticmethod
     def _get_context(**context):
         for (k, v) in context.items():
-            # noinspection PyBroadException
             try:
                 context[k] = eval(v)
-            except:
+            except Exception as e:
+                logger.debug(f'Evaluation error for {v}: {e}')
                 if isinstance(v, str):
                     # noinspection PyBroadException
                     try:
@@ -356,8 +356,8 @@ class WhileProcedure(LoopProcedure):
         for k, v in context.items():
             try:
                 exec('{}={}'.format(k, v))
-            except:
-                pass
+            except Exception as e:
+                logger.debug(f'Evaluation error: {k}={v}: {e}')
 
         while True:
             condition_true = eval(self.condition)
@@ -386,8 +386,8 @@ class WhileProcedure(LoopProcedure):
                     for k, v in new_context.items():
                         try:
                             exec('{}={}'.format(k, v))
-                        except:
-                            pass
+                        except Exception as e:
+                            logger.debug(f'Evaluation error: {k}={v}: {e}')
 
         return response
 
@@ -453,7 +453,8 @@ class IfProcedure(Procedure):
         for (k, v) in context.items():
             try:
                 exec('{}={}'.format(k, v))
-            except:
+            except Exception as e:
+                logger.debug(f'Evaluation error: {k}={v}: {e}')
                 if isinstance(v, str):
                     try:
                         exec('{}="{}"'.format(k, re.sub(r'(^|[^\\])"', '\1\\"', v)))

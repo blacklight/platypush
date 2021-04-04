@@ -1,6 +1,5 @@
 import json
 import os
-from typing import Optional
 
 import requests
 
@@ -101,6 +100,7 @@ class PushbulletPlugin(Plugin):
         kwargs['type'] = 'link' if url else 'note'
 
         if device:
+            # noinspection PyTypeChecker
             kwargs['device_iden'] = device['iden']
 
         resp = requests.post('https://api.pushbullet.com/v2/pushes',
@@ -143,6 +143,7 @@ class PushbulletPlugin(Plugin):
             raise Exception('Pushbullet file upload failed with status {}'.
                             format(resp.status_code))
 
+        # noinspection PyTypeChecker
         resp = requests.post('https://api.pushbullet.com/v2/pushes',
                              headers={'Authorization': 'Bearer ' + self.token,
                                       'Content-Type': 'application/json'},

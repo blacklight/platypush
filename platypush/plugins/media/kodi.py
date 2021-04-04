@@ -1,5 +1,4 @@
 import json
-import re
 import threading
 import time
 
@@ -7,7 +6,7 @@ from platypush.context import get_bus
 from platypush.plugins import action
 from platypush.plugins.media import MediaPlugin, PlayerState
 from platypush.message.event.media import MediaPlayEvent, MediaPauseEvent, MediaStopEvent, \
-    MediaSeekEvent, MediaVolumeChangedEvent, NewPlayingMediaEvent
+    MediaSeekEvent, MediaVolumeChangedEvent
 
 
 # noinspection PyUnusedLocal
@@ -602,7 +601,8 @@ class MediaKodiPlugin(MediaPlugin):
         try:
             kodi = self._get_kodi()
             players = kodi.Player.GetActivePlayers().get('result', [])
-        except:
+        except Exception as e:
+            self.logger.debug(f'Could not get active players: {str(e)}')
             return ret
 
         ret['state'] = PlayerState.STOP.value

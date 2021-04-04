@@ -55,15 +55,17 @@ class Alarm:
         self._runtime_snooze_interval = snooze_interval
 
     def get_next(self) -> float:
-        now = datetime.datetime.now().replace(tzinfo=gettz())
+        now = datetime.datetime.now().replace(tzinfo=gettz())  # lgtm [py/call-to-non-callable]
 
         try:
             cron = croniter.croniter(self.when, now)
             return cron.get_next()
         except (AttributeError, croniter.CroniterBadCronError):
             try:
+                # lgtm [py/call-to-non-callable]
                 timestamp = datetime.datetime.fromisoformat(self.when).replace(tzinfo=gettz())
             except (TypeError, ValueError):
+                # lgtm [py/call-to-non-callable]
                 timestamp = (datetime.datetime.now().replace(tzinfo=gettz()) +
                              datetime.timedelta(seconds=int(self.when)))
 

@@ -128,7 +128,6 @@ class SwitchSwitchbotPlugin(SwitchPlugin, BluetoothBlePlugin):
         compatible_devices = {}
 
         for dev in devices:
-            # noinspection PyBroadException
             try:
                 characteristics = [
                     chrc for chrc in self.discover_characteristics(
@@ -139,8 +138,8 @@ class SwitchSwitchbotPlugin(SwitchPlugin, BluetoothBlePlugin):
 
                 if characteristics:
                     compatible_devices[dev['addr']] = None
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning('Device scan error', e)
 
         return BluetoothScanResponse(devices=compatible_devices)
 

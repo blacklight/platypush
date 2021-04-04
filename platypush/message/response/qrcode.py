@@ -40,10 +40,9 @@ class RectModel(Mapping):
 class ResultModel(Mapping):
     def __init__(self, result: Decoded, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # noinspection PyBroadException
         try:
             data = result.data.decode()
-        except:
+        except (ValueError, TypeError):
             data = base64.encodebytes(result.data).decode()
 
         self.data = data

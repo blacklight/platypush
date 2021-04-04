@@ -6,10 +6,9 @@
 import logging
 import re
 import socket
-import threading
 import time
 
-from threading import Thread
+from threading import Thread, Event as ThreadEvent, get_ident
 from typing import Optional, Dict
 
 from platypush.bus import Bus
@@ -62,7 +61,7 @@ class Backend(Thread, EventGenerator):
         self.poll_seconds = float(poll_seconds) if poll_seconds else None
         self.device_id = Config.get('device_id')
         self.thread_id = None
-        self._stop_event = threading.Event()
+        self._stop_event = ThreadEvent()
         self._kwargs = kwargs
         self.logger = logging.getLogger('platypush:backend:' + get_backend_name_by_class(self.__class__))
         self.zeroconf = None
@@ -220,7 +219,7 @@ class Backend(Thread, EventGenerator):
 
     def run(self):
         """ Starts the backend thread. To be implemented in the derived classes if the loop method isn't defined. """
-        self.thread_id = threading.get_ident()
+        self.thread_id = get_ident()
         set_thread_name(self._thread_name)
         if not callable(self.loop):
             return

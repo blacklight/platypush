@@ -65,11 +65,11 @@ class AdafruitIoBackend(Backend):
     def on_message(self, msg):
         # noinspection PyUnusedLocal
         def _handler(client, feed, data):
-            # noinspection PyBroadException
             try:
                 data = float(data)
-            except:
-                pass
+            except Exception as e:
+                self.logger.debug('Not a number: {}: {}'.format(data, e))
+
             self.bus.post(FeedUpdateEvent(feed=feed, data=data))
 
         return _handler

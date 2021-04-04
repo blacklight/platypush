@@ -2,7 +2,6 @@
 .. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
 """
 
-import json
 import requests
 
 from platypush.plugins import action
@@ -18,13 +17,13 @@ class GoogleMapsPlugin(GooglePlugin):
 
     def __init__(self, api_key, *args, **kwargs):
         """
-        :param api_key: Server-side API key to be used for the requests, get one at https://console.developers.google.com
+        :param api_key: Server-side API key to be used for the requests, get one at
+            https://console.developers.google.com
         :type api_key: str
         """
 
         super().__init__(scopes=self.scopes, *args, **kwargs)
         self.api_key = api_key
-
 
     @action
     def get_address_from_latlng(self, latitude, longitude):
@@ -39,7 +38,7 @@ class GoogleMapsPlugin(GooglePlugin):
         """
 
         response = requests.get('https://maps.googleapis.com/maps/api/geocode/json',
-                                params = {
+                                params={
                                     'latlng': '{},{}'.format(latitude, longitude),
                                     'key': self.api_key,
                                 }).json()
@@ -54,7 +53,7 @@ class GoogleMapsPlugin(GooglePlugin):
         if 'results' in response and response['results']:
             result = response['results'][0]
             self.logger.info('Google Maps geocode response for latlng ({},{}): {}'.
-                         format(latitude, longitude, result))
+                             format(latitude, longitude, result))
 
             address['address'] = result['formatted_address'].split(',')[0]
             for addr_component in result['address_components']:
@@ -81,7 +80,7 @@ class GoogleMapsPlugin(GooglePlugin):
         """
 
         response = requests.get('https://maps.googleapis.com/maps/api/elevation/json',
-                                params = {
+                                params={
                                     'locations': '{},{}'.format(latitude, longitude),
                                     'key': self.api_key,
                                 }).json()
@@ -91,8 +90,6 @@ class GoogleMapsPlugin(GooglePlugin):
         if response.get('results'):
             elevation = response['results'][0]['elevation']
 
-        return { 'elevation': elevation }
-
+        return {'elevation': elevation}
 
 # vim:sw=4:ts=4:et:
-

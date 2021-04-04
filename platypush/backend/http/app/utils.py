@@ -123,7 +123,8 @@ def _authenticate_token():
     try:
         user_manager.validate_jwt_token(user_token)
         return True
-    except:
+    except Exception as e:
+        logger().debug(str(e))
         return token and user_token == token
 
 

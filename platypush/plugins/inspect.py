@@ -188,10 +188,10 @@ class InspectPlugin(Plugin):
         for _, modname, _ in pkgutil.walk_packages(path=package.__path__,
                                                    prefix=prefix,
                                                    onerror=lambda x: None):
-            # noinspection PyBroadException
             try:
                 module = importlib.import_module(modname)
-            except:
+            except Exception as e:
+                self.logger.debug(f'Could not import module {modname}: {str(e)}')
                 continue
 
             for _, obj in inspect.getmembers(module):
@@ -207,10 +207,10 @@ class InspectPlugin(Plugin):
         for _, modname, _ in pkgutil.walk_packages(path=package.__path__,
                                                    prefix=prefix,
                                                    onerror=lambda x: None):
-            # noinspection PyBroadException
             try:
                 module = importlib.import_module(modname)
-            except:
+            except Exception as e:
+                self.logger.debug(f'Could not import module {modname}: {str(e)}')
                 continue
 
             for _, obj in inspect.getmembers(module):
@@ -226,10 +226,10 @@ class InspectPlugin(Plugin):
         for _, modname, _ in pkgutil.walk_packages(path=package.__path__,
                                                    prefix=prefix,
                                                    onerror=lambda x: None):
-            # noinspection PyBroadException
             try:
                 module = importlib.import_module(modname)
-            except:
+            except Exception as e:
+                self.logger.debug(f'Could not import module {modname}: {str(e)}')
                 continue
 
             for _, obj in inspect.getmembers(module):
@@ -250,10 +250,10 @@ class InspectPlugin(Plugin):
         for _, modname, _ in pkgutil.walk_packages(path=package.__path__,
                                                    prefix=prefix,
                                                    onerror=lambda x: None):
-            # noinspection PyBroadException
             try:
                 module = importlib.import_module(modname)
-            except:
+            except Exception as e:
+                self.logger.debug(f'Could not import module {modname}: {str(e)}')
                 continue
 
             for _, obj in inspect.getmembers(module):

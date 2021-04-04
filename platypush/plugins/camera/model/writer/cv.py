@@ -24,12 +24,11 @@ class CvFileWriter(FileVideoWriter):
         if not self.writer:
             return
 
-        # noinspection PyBroadException
         try:
             if isinstance(img, ImageType):
                 # noinspection PyTypeChecker
                 img = np.array(img)
-        except:
+        except (ValueError, TypeError):
             pass
 
         self.writer.write(img)

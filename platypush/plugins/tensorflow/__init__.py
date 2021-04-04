@@ -83,11 +83,10 @@ class TensorflowPlugin(Plugin):
             assert success, 'Unable to acquire the model lock'
             yield
         finally:
-            # noinspection PyBroadException
             try:
                 self._model_locks[model_name].release()
-            except:
-                pass
+            except Exception as e:
+                self.logger.info(f'Model {model_name} lock release error: {e}')
 
     def _load_model(self, model_name: str, reload: bool = False) -> Model:
         if model_name in self.models and not reload:

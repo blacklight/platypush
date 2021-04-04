@@ -188,11 +188,10 @@ class EspPlugin(Plugin):
 
     def on_close(self, conn: Connection):
         def callback(ws):
-            # noinspection PyBroadException
             try:
                 ws.close()
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning('Could not close connection: {}'.format(str(e)))
 
             conn.on_close()
             self.logger.info('Connection to {}:{} closed'.format(conn.host, conn.port))
@@ -608,7 +607,8 @@ if {miso}:
         self.execute(code, **kwargs)
 
     @action
-    def i2c_open(self, scl: Optional[int] = None, sda: Optional[int] = None, id: int = -1, baudrate: int = 400000, **kwargs):
+    def i2c_open(self, scl: Optional[int] = None, sda: Optional[int] = None, id: int = -1, baudrate: int = 400000,
+                 **kwargs):
         """
         Open a connection to an I2C (or "two-wire") port.
 

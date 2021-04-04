@@ -3,9 +3,7 @@ import os
 import re
 import time
 
-from sqlalchemy import create_engine, func, or_, Column, Integer, String, \
-    DateTime, PrimaryKeyConstraint, ForeignKey
-
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, PrimaryKeyConstraint, ForeignKey
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.expression import func
@@ -16,6 +14,7 @@ from platypush.plugins.media.search import MediaSearcher
 
 Base = declarative_base()
 Session = scoped_session(sessionmaker())
+
 
 class LocalMediaSearcher(MediaSearcher):
     """
@@ -29,7 +28,7 @@ class LocalMediaSearcher(MediaSearcher):
         * **sqlalchemy** (``pip install sqlalchemy``)
     """
 
-    _filename_separators = '[.,_\-@()\[\]\{\}\s\'\"]+'
+    _filename_separators = r'[.,_\-@()\[\]\{\}\s\'\"]+'
 
     def __init__(self, dirs, *args, **kwargs):
         super().__init__()

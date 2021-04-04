@@ -31,8 +31,8 @@ def _hook(hook_name):
         # noinspection PyBroadException
         try:
             event_args['data'] = json.loads(event_args['data'])
-        except:
-            pass
+        except Exception as e:
+            logger().warning('Not a valid JSON string: {}: {}'.format(event_args['data'], str(e)))
 
     event = WebhookEvent(**event_args)
 

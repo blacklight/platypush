@@ -60,15 +60,17 @@ class RedisBackend(Backend):
         msg = data[1].decode()
         try:
             msg = Message.build(msg)
-        except:
+        except Exception as e:
+            self.logger.debug(str(e))
             try:
                 import ast
                 msg = Message.build(ast.literal_eval(msg))
-            except:
+            except Exception as ee:
+                self.logger.debug(str(ee))
                 try:
                     msg = json.loads(msg)
-                except Exception as e:
-                    self.logger.exception(e)
+                except Exception as eee:
+                    self.logger.exception(eee)
 
         return msg
 

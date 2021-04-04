@@ -142,7 +142,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
             )
         )
 
-        audio_sink = audio_device = (
+        audio_sink = (
             audio_device or audio_helpers.SoundDeviceStream(
                 sample_rate=self.audio_sample_rate,
                 sample_width=self.audio_sample_width,

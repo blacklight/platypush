@@ -50,15 +50,13 @@ class HttpUtils(object):
         for name, resource_path in resource_dirs.items():
             resource_path = os.path.abspath(os.path.expanduser(resource_path))
             if directory.startswith(resource_path):
-                subdir = re.sub('^{}(.*)$'.format(resource_path),
-                                '\\1', directory)
                 uri = '/resources/' + name
                 break
 
         if not uri:
             raise RuntimeError(('Directory {} not found among the available ' +
-                               'static resources on the webserver').format(
-                                   directory))
+                                'static resources on the webserver').format(
+                directory))
 
         results = [
             re.sub('^{}(.*)$'.format(resource_path), uri + '\\1', path)
@@ -92,10 +90,11 @@ class HttpUtils(object):
 
     @classmethod
     def plugin_name_to_tag(cls, module_name):
-        return module_name.replace('.','-')
+        return module_name.replace('.', '-')
 
     @classmethod
     def find_templates_in_dir(cls, directory):
+        # noinspection PyTypeChecker
         return [
             os.path.join(directory, file)
             for root, path, files in os.walk(os.path.abspath(os.path.join(template_folder, directory)))

@@ -19,13 +19,12 @@ class RedisPlugin(Plugin):
         self.kwargs = kwargs
 
         if not kwargs:
-            # noinspection PyBroadException
             try:
                 redis_backend = get_backend('redis')
                 if redis_backend and redis_backend.redis_args:
                     self.kwargs = redis_backend.redis_args
-            except:
-                pass
+            except Exception as e:
+                self.logger.debug(e)
 
     def _get_redis(self):
         return Redis(*self.args, **self.kwargs)

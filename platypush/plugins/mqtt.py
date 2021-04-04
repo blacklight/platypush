@@ -173,11 +173,10 @@ class MqttPlugin(Plugin):
             if isinstance(msg, (dict, list)):
                 msg = json.dumps(msg)
 
-                # noinspection PyBroadException
                 try:
                     msg = Message.build(json.loads(msg))
-                except:
-                    pass
+                except Exception as e:
+                    self.logger.debug(f'Not a valid JSON: {str(e)}')
 
             host = host or self.host
             port = port or self.port or 1883
@@ -209,11 +208,10 @@ class MqttPlugin(Plugin):
             response_buffer.close()
 
             if client:
-                # noinspection PyBroadException
                 try:
                     client.loop_stop()
-                except:
-                    pass
+                except Exception as e:
+                    self.logger.warning(f'Could not stop client loop: {e}')
 
                 client.disconnect()
 

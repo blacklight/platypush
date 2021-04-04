@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 
 from platypush.context import get_backend
 from platypush.plugins import Plugin, action
@@ -19,10 +18,14 @@ class KafkaPlugin(Plugin):
         * **kafka** (``pip install kafka-python``)
     """
 
-    def __init__(self, server=None, **kwargs):
+    def __init__(self, server=None, port=9092, **kwargs):
         """
-        :param server: Default Kafka server name or address + port (format: ``host:port``) to dispatch the messages to. If None (default), then it has to be specified upon message sending.
+        :param server: Default Kafka server name or address. If None (default), then it has to be specified upon
+            message sending.
         :type server: str
+
+        :param port: Default Kafka server port (default: 9092).
+        :type port: int
         """
 
         super().__init__(**kwargs)
@@ -35,13 +38,17 @@ class KafkaPlugin(Plugin):
         # Kafka can be veryyyy noisy
         logging.getLogger('kafka').setLevel(logging.ERROR)
 
-
     @action
-    def send_message(self, msg, topic, server=None, **kwargs):
+    def send_message(self, msg, topic, server=None):
         """
-        :param msg: Message to send - as a string, bytes stream, JSON, Platypush message, dictionary, or anything that implements ``__str__``
+        :param msg: Message to send - as a string, bytes stream, JSON, Platypush message, dictionary, or anything
+            that implements ``__str__``
 
-        :param server: Kafka server name or address + port (format: ``host:port``). If None, then the default server will be used
+        :param topic: Topic to send the message to.
+        :type topic: str
+
+        :param server: Kafka server name or address + port (format: ``host:port``). If None, then the default server
+            will be used
         :type server: str
         """
 
@@ -52,8 +59,8 @@ class KafkaPlugin(Plugin):
                 try:
                     kafka_backend = get_backend('kafka')
                     server = kafka_backend.server
-                except:
-                    raise RuntimeError('No Kafka server nor default server specified')
+                except Exception as e:
+                    raise RuntimeError(f'No Kafka server nor default server specified: {str(e)}')
             else:
                 server = self.server
 
@@ -67,4 +74,3 @@ class KafkaPlugin(Plugin):
 
 
 # vim:sw=4:ts=4:et:
-

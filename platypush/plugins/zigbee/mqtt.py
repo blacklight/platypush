@@ -125,9 +125,10 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):
         :param password: If the connection requires user authentication, specify the password (default: None)
         """
 
-        super().__init__(host=host, port=port, tls_certfile=tls_certfile, tls_keyfile=tls_keyfile,
-                         tls_version=tls_version, tls_ciphers=tls_ciphers, username=username,
-                         password=password, **kwargs)
+        SwitchPlugin.__init__(self)
+        MqttPlugin.__init__(self, host=host, port=port, tls_certfile=tls_certfile, tls_keyfile=tls_keyfile,
+                            tls_version=tls_version, tls_ciphers=tls_ciphers, username=username,
+                            password=password, **kwargs)
 
         self.base_topic = base_topic
         self.timeout = timeout

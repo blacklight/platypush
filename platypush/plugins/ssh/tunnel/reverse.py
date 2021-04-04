@@ -47,12 +47,11 @@ def reverse_tunnel(server_port, remote_host, remote_port, transport, bind_addr='
         should_run[key] = True
 
         while should_run.get(key):
-            # noinspection PyBroadException
             try:
                 chan = transport.accept(1)
-                if chan is None:
-                    raise AssertionError
-            except:
+                assert chan is not None
+            except Exception as e:
+                logger.warning(e)
                 continue
 
             thr = threading.Thread(

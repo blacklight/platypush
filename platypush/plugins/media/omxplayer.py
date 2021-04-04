@@ -1,5 +1,4 @@
 import enum
-import math
 import urllib.parse
 
 from platypush.context import get_bus
@@ -119,8 +118,8 @@ class MediaOmxplayerPlugin(MediaPlugin):
             try:
                 try:
                     self._player.stop()
-                except:
-                    pass
+                except Exception as e:
+                    self.logger.warning(f'Could not stop player: {str(e)}')
 
                 self._player.quit()
             except OMXPlayerDeadError:

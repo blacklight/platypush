@@ -61,7 +61,6 @@ Plugins
     platypush/plugins/graphite.rst
     platypush/plugins/homeseer.rst
     platypush/plugins/http.request.rst
-    platypush/plugins/http.request.ota.booking.rst
     platypush/plugins/http.request.rss.rst
     platypush/plugins/http.webpage.rst
     platypush/plugins/ifttt.rst
@@ -137,7 +136,6 @@ Plugins
     platypush/plugins/user.rst
     platypush/plugins/utils.rst
     platypush/plugins/variable.rst
-    platypush/plugins/video.torrentcast.rst
     platypush/plugins/weather.rst
     platypush/plugins/weather.buienradar.rst
     platypush/plugins/weather.darksky.rst

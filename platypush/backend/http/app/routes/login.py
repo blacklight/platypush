@@ -31,7 +31,7 @@ def login():
     if session_token:
         user, session = user_manager.authenticate_user_session(session_token)
         if user:
-            return redirect(redirect_page, 302)
+            return redirect(redirect_page, 302)  # lgtm [py/url-redirection]
 
     if request.form:
         username = request.form.get('username')
@@ -44,7 +44,7 @@ def login():
                                                    expires_at=expires)
 
         if session:
-            redirect_target = redirect(redirect_page, 302)
+            redirect_target = redirect(redirect_page, 302)  # lgtm [py/url-redirection]
             response = make_response(redirect_target)
             response.set_cookie('session_token', session.session_token, expires=expires)
             return response

@@ -6,11 +6,8 @@ import re
 import time
 
 from platypush.backend import Backend
-from platypush.message import Message
 from platypush.message.event.wiimote import WiimoteEvent, \
     WiimoteConnectionEvent, WiimoteDisconnectionEvent
-
-from platypush.message.request import Request
 
 
 class WiimoteBackend(Backend):
@@ -110,8 +107,8 @@ class WiimoteBackend(Backend):
 
         try:
             self._wiimote.close()
-        except:
-            pass
+        except Exception as e:
+            self.logger.warning('Could not close Wiimote connection: {}'.format(str(e)))
 
         self._wiimote = None
         self.bus.post(WiimoteDisconnectionEvent())

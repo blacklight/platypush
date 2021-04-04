@@ -34,7 +34,7 @@ class CameraPiBackend(Backend):
             return self.value == other
 
     # noinspection PyUnresolvedReferences,PyPackageRequirements
-    def __init__(self, listen_port, x_resolution=640, y_resolution=480,
+    def __init__(self, listen_port, bind_address='0.0.0.0', x_resolution=640, y_resolution=480,
                  redis_queue='platypush/camera/pi',
                  start_recording_on_startup=True,
                  framerate=24, hflip=False, vflip=False,
@@ -49,13 +49,17 @@ class CameraPiBackend(Backend):
 
         :param listen_port: Port where the camera process will provide the video output while recording
         :type listen_port: int
+
+        :param bind_address: Bind address (default: 0.0.0.0).
+        :type bind_address: str
         """
 
         super().__init__(**kwargs)
 
+        self.bind_address = bind_address
         self.listen_port = listen_port
         self.server_socket = socket.socket()
-        self.server_socket.bind(('0.0.0.0', self.listen_port))
+        self.server_socket.bind((self.bind_address, self.listen_port))
         self.server_socket.listen(0)
 
         import picamera
@@ -134,13 +138,13 @@ class CameraPiBackend(Backend):
                         self.logger.info('Client closed connection')
                         try:
                             self.stop_recording()
-                        except:
-                            pass
+                        except Exception as e:
+                            self.logger.warning('Could not stop recording: {}'.format(str(e)))
 
                         try:
                             connection.close()
-                        except:
-                            pass
+                        except Exception as e:
+                            self.logger.warning('Could not close connection: {}'.format(str(e)))
 
                         self.send_camera_action(self.CameraAction.START_RECORDING)
 

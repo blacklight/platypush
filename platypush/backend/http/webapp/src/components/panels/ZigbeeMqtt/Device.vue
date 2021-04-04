@@ -454,9 +454,10 @@ export default {
                 brightness: hsl[2],
                 color: {
                   hue: hsl[0],
-                  '`${satAttr}': hsl[1],
                 }
               }
+
+              request.value.color[satAttr] = hsl[1]
             }
           }
           break

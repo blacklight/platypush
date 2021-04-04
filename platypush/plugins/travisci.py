@@ -1,5 +1,5 @@
 import requests
-from typing import Callable, Dict, Any, List, Optional
+from typing import Callable, Dict, Any, List
 
 from platypush.plugins import Plugin, action
 

@@ -404,11 +404,10 @@ class CameraPlugin(Plugin, ABC):
             frame_queue.put(None)
             self.stop_preview(camera)
             for output in camera.get_outputs():
-                # noinspection PyBroadException
                 try:
                     output.close()
-                except:
-                    pass
+                except Exception as e:
+                    self.logger.warning('Could not close camera output: {}'.format(str(e)))
 
             self.close_device(camera, wait_capture=False)
             frame_processor.join(timeout=5.0)

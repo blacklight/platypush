@@ -62,7 +62,8 @@ class MusicMpdPlugin(MusicPlugin):
                     time.sleep(0.5)
 
         self.client = None
-        raise error
+        if error:
+            raise error
 
     def _exec(self, method, *args, **kwargs):
         error = None
@@ -383,14 +384,14 @@ class MusicMpdPlugin(MusicPlugin):
         if not resource:
             return
 
-        m = re.search('^https://open.spotify.com/([^?]+)', resource)
+        m = re.search(r'^https?://open\.spotify\.com/([^?]+)', resource)
         if m:
             resource = 'spotify:{}'.format(m.group(1).replace('/', ':'))
 
         if resource.startswith('spotify:'):
             resource = resource.split('?')[0]
 
-        m = re.match('spotify:playlist:(.*)', resource)
+        m = re.match(r'spotify:playlist:(.*)', resource)
         if m:
             # Old Spotify URI format, convert it to new
             resource = 'spotify:user:spotify:playlist:' + m.group(1)
@@ -423,8 +424,8 @@ class MusicMpdPlugin(MusicPlugin):
         """
         Seek to the specified position (DEPRECATED, use :meth:`.seek` instead).
 
-        :param value: Seek position in seconds, or delta string (e.g. '+15' or '-15') to indicate a seek relative to the current position
-        :type value: int
+        :param value: Seek position in seconds, or delta string (e.g. '+15' or '-15') to indicate a seek relative to
+            the current position :type value: int
         """
 
         return self.seek(value)
@@ -434,8 +435,8 @@ class MusicMpdPlugin(MusicPlugin):
         """
         Seek to the specified position
 
-        :param position: Seek position in seconds, or delta string (e.g. '+15' or '-15') to indicate a seek relative to the current position
-        :type position: int
+        :param position: Seek position in seconds, or delta string (e.g. '+15' or '-15') to indicate a seek relative
+            to the current position :type position: int
         """
 
         return self._exec('seekcur', position)
@@ -486,7 +487,8 @@ class MusicMpdPlugin(MusicPlugin):
             try:
                 n_tries -= 1
                 self._connect()
-                return self.client.status()
+                if self.client:
+                    return self.client.status()
             except Exception as e:
                 error = e
                 self.logger.warning('Exception while getting MPD status: {}'.
@@ -523,7 +525,7 @@ class MusicMpdPlugin(MusicPlugin):
                                  or not track['artist']
                                  or re.search('^https?://', track['file'])
                                  or re.search('^tunein:', track['file'])):
-            m = re.match('^\s*(.+?)\s+-\s+(.*)\s*$', track['title'])
+            m = re.match(r'^\s*(.+?)\s+-\s+(.*)\s*$', track['title'])
             if m and m.group(1) and m.group(2):
                 track['artist'] = m.group(1)
                 track['title'] = m.group(2)
@@ -781,10 +783,7 @@ class MusicMpdPlugin(MusicPlugin):
         items = self._exec('search', *filter, *args, return_status=False, **kwargs)
 
         # Spotify results first
-        items = sorted(items, key=lambda item:
-        0 if item['file'].startswith('spotify:') else 1)
-
-        return items
+        return sorted(items, key=lambda item: 0 if item['file'].startswith('spotify:') else 1)
 
     # noinspection PyShadowingBuiltins
     @action

@@ -169,14 +169,6 @@ class UserManager:
         """
         session = self._get_db_session()
         return session.query(User).join(UserSession).filter_by(session_token=session_token).first()
-        if not user:
-            return None
-
-        return {
-            'user_id': user.user_id,
-            'username': user.username,
-            'created_at': user.created_at,
-        }
 
     def generate_jwt_token(self, username: str, password: str, expires_at: Optional[datetime.datetime] = None) -> str:
         """

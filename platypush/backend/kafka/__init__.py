@@ -35,6 +35,7 @@ class KafkaBackend(Backend):
         self.topic_prefix = topic
         self.topic = self._topic_by_device_id(self.device_id)
         self.producer = None
+        self.consumer = None
 
         # Kafka can be veryyyy noisy
         logging.getLogger('kafka').setLevel(logging.ERROR)
@@ -47,8 +48,8 @@ class KafkaBackend(Backend):
         try:
             msg = Message.build(msg)
             is_platypush_message = True
-        except:
-            pass
+        except Exception as e:
+            self.logger.debug(str(e))
 
         self.logger.info('Received message on Kafka backend: {}'.format(msg))
 
@@ -60,7 +61,7 @@ class KafkaBackend(Backend):
     def _topic_by_device_id(self, device_id):
         return '{}.{}'.format(self.topic_prefix, device_id)
 
-    def send_message(self, msg):
+    def send_message(self, msg, **kwargs):
         target = msg.target
         kafka_plugin = get_plugin('kafka')
         kafka_plugin.send_message(msg=msg,

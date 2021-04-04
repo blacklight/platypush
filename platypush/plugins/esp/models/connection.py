@@ -150,11 +150,10 @@ class Connection:
             self._echo_received.set()
 
     def close(self):
-        # noinspection PyBroadException
         try:
             self.ws.close()
-        except:
-            pass
+        except Exception as e:
+            self.logger.warning('Could not close connection: {}'.format(str(e)))
 
         self.on_close()
 
@@ -243,6 +242,7 @@ class Connection:
                 chunk = self._downloaded_chunks.get(timeout=timeout)
             except queue.Empty:
                 self.on_timeout('File download timed out')
+                break
 
             if chunk is None:
                 break

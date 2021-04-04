@@ -32,8 +32,8 @@ def add_media():
     args = {}
     try:
         args = json.loads(request.data.decode('utf-8'))
-    except:
-        abort(400, 'Invalid JSON request')
+    except Exception as e:
+        abort(400, 'Invalid JSON request: {}'.format(str(e)))
 
     source = args.get('source')
     if not source:

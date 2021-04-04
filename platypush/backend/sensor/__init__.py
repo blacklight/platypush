@@ -119,12 +119,11 @@ class SensorBackend(Backend):
         if self.data is None or new_data is None:
             return new_data
 
-        # noinspection PyBroadException
         try:
             # Scalar data case
             new_data = self._get_value(new_data)
             return new_data if abs(new_data - self.data) >= self.tolerance else None
-        except:
+        except (ValueError, TypeError):
             # If it's not a scalar then it should be a dict
             assert isinstance(new_data, dict), 'Invalid type {} received for sensor data'.format(type(new_data))
 

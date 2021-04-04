@@ -96,6 +96,7 @@ class MusicSnapcastPlugin(Plugin):
             'method': 'Server.GetStatus'
         }
 
+        # noinspection PyTypeChecker
         self._send(sock, request)
         return (self._recv(sock) or {}).get('server', {})
 
@@ -214,8 +215,8 @@ class MusicSnapcastPlugin(Plugin):
         finally:
             try:
                 sock.close()
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning(f'Error on socket close: {e}')
 
     @action
     def mute(self, client=None, group=None, mute=None, host=None, port=None):
@@ -266,13 +267,14 @@ class MusicSnapcastPlugin(Plugin):
                 request['params']['volume']['percent'] = client['config']['volume']['percent']
                 request['params']['volume']['muted'] = not cur_muted if mute is None else mute
 
+            # noinspection PyTypeChecker
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
                 sock.close()
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning('Error on socket close', e)
 
     @action
     def volume(self, client, volume=None, delta=None, mute=None, host=None,
@@ -336,13 +338,14 @@ class MusicSnapcastPlugin(Plugin):
             request['params']['volume'] = {}
             request['params']['volume']['percent'] = volume
             request['params']['volume']['muted'] = mute
+            # noinspection PyTypeChecker
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
                 sock.close()
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning('Error on socket close', e)
 
     @action
     def set_client_name(self, client, name, host=None, port=None):
@@ -376,13 +379,14 @@ class MusicSnapcastPlugin(Plugin):
             client = self._get_client(sock, client)
             request['params']['id'] = client['id']
             request['params']['name'] = name
+            # noinspection PyTypeChecker
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
                 sock.close()
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning('Error on socket close', e)
 
     @action
     def set_group_name(self, group, name, host=None, port=None):
@@ -416,13 +420,14 @@ class MusicSnapcastPlugin(Plugin):
                 }
             }
 
+            # noinspection PyTypeChecker
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
                 sock.close()
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning('Error on socket close', e)
 
     @action
     def set_latency(self, client, latency, host=None, port=None):
@@ -457,13 +462,14 @@ class MusicSnapcastPlugin(Plugin):
 
             client = self._get_client(sock, client)
             request['params']['id'] = client['id']
+            # noinspection PyTypeChecker
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
                 sock.close()
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning('Error on socket close', e)
 
     @action
     def delete_client(self, client, host=None, port=None):
@@ -493,13 +499,14 @@ class MusicSnapcastPlugin(Plugin):
 
             client = self._get_client(sock, client)
             request['params']['id'] = client['id']
+            # noinspection PyTypeChecker
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
                 sock.close()
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning('Error on socket close', e)
 
     @action
     def group_set_clients(self, group, clients, host=None, port=None):
@@ -538,13 +545,14 @@ class MusicSnapcastPlugin(Plugin):
                 client = self._get_client(sock, client)
                 request['params']['clients'].append(client['id'])
 
+            # noinspection PyTypeChecker
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
                 sock.close()
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning('Error on socket close', e)
 
     @action
     def group_set_stream(self, group, stream_id, host=None, port=None):
@@ -579,13 +587,14 @@ class MusicSnapcastPlugin(Plugin):
                 }
             }
 
+            # noinspection PyTypeChecker
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
                 sock.close()
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning('Error on socket close', e)
 
     @action
     def get_backend_hosts(self):

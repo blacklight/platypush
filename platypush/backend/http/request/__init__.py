@@ -78,11 +78,11 @@ class HttpRequest(object):
 
     def get_new_items(self, response):
         """ Gets new items out of a response """
-        raise ("get_new_items must be implemented in a derived class")
+        raise NotImplementedError("get_new_items must be implemented in a derived class")
 
     def __iter__(self):
         for (key, value) in self.request_args.items():
-            yield (key, value)
+            yield key, value
 
 
 class JsonHttpRequest(HttpRequest):
@@ -96,7 +96,7 @@ class JsonHttpRequest(HttpRequest):
         new_entries = []
 
         if self.path:
-            m = re.match('\$\{\s*(.*)\s*\}', self.path)
+            m = re.match(r'\${\s*(.*)\s*}', self.path)
             response = eval(m.group(1))
 
         for entry in response:

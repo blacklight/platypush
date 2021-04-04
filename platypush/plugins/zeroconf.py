@@ -3,8 +3,7 @@ import socket
 import time
 from typing import List, Dict, Any, Optional, Union
 
-import zeroconf
-from zeroconf import Zeroconf, ServiceInfo, ServiceBrowser
+from zeroconf import Zeroconf, ServiceInfo, ServiceBrowser, ServiceListener, ZeroconfServiceTypes
 
 from platypush.context import get_bus
 from platypush.message.event.zeroconf import ZeroconfServiceAddedEvent, ZeroconfServiceRemovedEvent, \
@@ -12,7 +11,7 @@ from platypush.message.event.zeroconf import ZeroconfServiceAddedEvent, Zeroconf
 from platypush.plugins import Plugin, action
 
 
-class ZeroconfListener(zeroconf.ServiceListener):
+class ZeroconfListener(ServiceListener):
     def __init__(self, evt_queue: queue.Queue):
         super().__init__()
         self.evt_queue = evt_queue
@@ -79,7 +78,7 @@ class ZeroconfPlugin(Plugin):
         :param timeout: Discovery timeout in seconds (default: 5).
         :return: List of the services as strings.
         """
-        return list(zeroconf.ZeroconfServiceTypes.find(timeout=timeout))
+        return list(ZeroconfServiceTypes.find(timeout=timeout))
 
     @action
     def discover_service(self, service: Union[str, list], timeout: Optional[int] = 5) -> Dict[str, Any]:

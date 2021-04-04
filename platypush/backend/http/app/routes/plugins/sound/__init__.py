@@ -40,7 +40,7 @@ def audio_feed(device, fifo, sample_rate, blocksize, latency, channels):
                  channels=channels)
 
     try:
-        with open(fifo, 'rb') as f:
+        with open(fifo, 'rb') as f:  # lgtm [py/path-injection]
             send_header = True
 
             while True:

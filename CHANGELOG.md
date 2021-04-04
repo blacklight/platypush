@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [Unreleased]
+
+### Fixed
+
+- Major LINT fixes.
+
+- Removed unmaintained integrations: TorrentCast and Booking.com
+
 ## [0.20.8] - 2021-04-04
 
 ### Added

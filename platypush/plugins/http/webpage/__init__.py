@@ -24,14 +24,12 @@ class HttpWebpagePlugin(Plugin):
 
     _mercury_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mercury-parser.js')
 
-    def _parse(self, proc):
-        output = ''
-
+    @staticmethod
+    def _parse(proc):
         with subprocess.Popen(proc, stdout=subprocess.PIPE, stderr=None) as parser:
-            output = parser.communicate()[0].decode()
+            return parser.communicate()[0].decode()
 
-        return output
-
+    # noinspection PyShadowingBuiltins
     @action
     def simplify(self, url, type='html', html=None, outfile=None):
         """
@@ -124,15 +122,12 @@ class HttpWebpagePlugin(Plugin):
 
             weasyprint.HTML(string=content).write_pdf(outfile, stylesheets=css)
         else:
-            content = '''
-                <html>
+            content = '''<html>
                     <head>
                         <title>{title}</title>
                         <style>{style}</style>
-                    </head>
-                    <body>{{content}}</body>
-                </html>
-            '''.format(title=title, style=style, content=content)
+                    </head>'''.format(title=title, style=style, content=content) + \
+                    '<body>{{' + content + '}}</body></html>'
 
             with open(outfile, 'w', encoding='utf-8') as f:
                 f.write(content)
