@@ -16,7 +16,7 @@
     "mitt": "^2.1.0",
     "node-sass": "^5.0.0",
     "sass-loader": "^10.1.0",
-    "vue": "^3.0.0",
+    "vue": "^3.0.7",
     "vue-router": "^4.0.0-rc.3",
     "vue-skycons": "^4.0.3",
     "w3css": "^2.7.0"
