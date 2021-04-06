@@ -45,14 +45,12 @@ def get_args(kwargs):
         if k == 'resolution':
             v = json.loads('[{}]'.format(v))
         else:
-            # noinspection PyBroadException
             try:
                 v = int(v)
-            except:
-                # noinspection PyBroadException
+            except (ValueError, TypeError):
                 try:
                     v = float(v)
-                except:
+                except (ValueError, TypeError):
                     pass
 
         kwargs[k] = v

@@ -6,10 +6,10 @@ import re
 import threading
 from typing import Optional
 
-import platypush.backend
-import platypush.plugins
-import platypush.message.event
-import platypush.message.response
+import platypush.backend   # lgtm [py/import-and-import-from]
+import platypush.plugins   # lgtm [py/import-and-import-from]
+import platypush.message.event   # lgtm [py/import-and-import-from]
+import platypush.message.response   # lgtm [py/import-and-import-from]
 
 from platypush.backend import Backend
 from platypush.config import Config

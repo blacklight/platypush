@@ -52,9 +52,7 @@ class SwitchSwitchbotPlugin(SwitchPlugin, BluetoothBlePlugin):
         :param devices: Devices to control, as a MAC address -> name map
         :type devices: dict
         """
-
-        SwitchPlugin.__init__(self, **kwargs)
-        BluetoothBlePlugin.__init__(self, interface=interface)
+        super().__init__(interface=interface, **kwargs)
 
         self.connect_timeout = connect_timeout if connect_timeout else 5
         self.scan_timeout = scan_timeout if scan_timeout else 2

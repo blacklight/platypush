@@ -124,11 +124,9 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):
         :param username: If the connection requires user authentication, specify the username (default: None)
         :param password: If the connection requires user authentication, specify the password (default: None)
         """
-
-        SwitchPlugin.__init__(self)
-        MqttPlugin.__init__(self, host=host, port=port, tls_certfile=tls_certfile, tls_keyfile=tls_keyfile,
-                            tls_version=tls_version, tls_ciphers=tls_ciphers, username=username,
-                            password=password, **kwargs)
+        super().__init__(host=host, port=port, tls_certfile=tls_certfile, tls_keyfile=tls_keyfile,
+                         tls_version=tls_version, tls_ciphers=tls_ciphers, username=username,
+                         password=password, **kwargs)
 
         self.base_topic = base_topic
         self.timeout = timeout
@@ -197,19 +195,6 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):
                 client.disconnect()
             except Exception as e:
                 self.logger.warning('Error on MQTT client disconnection: {}'.format(str(e)))
-
-    def _mqtt_args(self, **kwargs):
-        return {
-            'host': kwargs.get('host', self.host),
-            'port': kwargs.get('port', self.port),
-            'timeout': kwargs.get('timeout', self.timeout),
-            'tls_certfile': kwargs.get('tls_certfile', self.tls_certfile),
-            'tls_keyfile': kwargs.get('tls_keyfile', self.tls_keyfile),
-            'tls_version': kwargs.get('tls_version', self.tls_version),
-            'tls_ciphers': kwargs.get('tls_ciphers', self.tls_ciphers),
-            'username': kwargs.get('username', self.username),
-            'password': kwargs.get('password', self.password),
-        }
 
     def _topic(self, topic):
         return self.base_topic + '/' + topic

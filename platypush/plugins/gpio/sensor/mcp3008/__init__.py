@@ -156,7 +156,7 @@ class GpioSensorMcp3008Plugin(GpioSensorPlugin):
                     channel = self.channels[i]
                     if 'conv_function' in channel:
                         # noinspection PyUnusedLocal
-                        x = value
+                        x = value  # lgtm [py/unused-local-variable]
                         value = eval(channel['conv_function'])
 
                     values[channel['name']] = value

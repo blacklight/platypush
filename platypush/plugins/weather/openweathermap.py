@@ -29,11 +29,11 @@ class WeatherOpenweathermapPlugin(HttpRequestPlugin, WeatherPlugin):
             for weather lookup.
         :param units: Supported: ``metric`` (default), ``standard`` and ``imperial``.
         """
-        HttpRequestPlugin.__init__(self, method='get', output='json')
-        WeatherPlugin.__init__(self, **kwargs)
+        super().__init__(method='get', output='json', **kwargs)
         self._token = token
         self._location_query = None
-        self._location_query = self._get_location_query(location=location, city_id=city_id, lat=lat, long=long)
+        self._location_query = self._get_location_query(location=location, city_id=city_id, lat=lat, long=long,
+                                                        zip_code=zip_code)
         self.units = units
 
     def _get_location_query(self, location: Optional[str] = None, city_id: Optional[int] = None,

@@ -191,11 +191,9 @@ export default {
 
       if (this.$refs.img.width > this.$refs.img.height) {
         const ratio = this.$refs.img.width / this.$refs.img.height
-        if (4/3 <= ratio <= 16/9) {
+        if (ratio >= 4/3 && ratio <= 16/9) {
           this.$refs.img.style.width = '100%'
-        }
-
-        if (ratio <= 4/3) {
+        } else if (ratio <= 4/3) {
           this.$refs.img.style.height = '100%'
         }
       }

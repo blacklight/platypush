@@ -90,8 +90,7 @@ class FFmpegFileWriter(FileVideoWriter, FFmpegWriter):
     """
 
     def __init__(self, *args, output_file: str, **kwargs):
-        FileVideoWriter.__init__(self, *args, output_file=output_file, **kwargs)
-        FFmpegWriter.__init__(self, *args, pix_fmt='rgb24', output_file=self.output_file, **kwargs)
+        super().__init__(*args, output_file=output_file, pix_fmt='rgb24', **kwargs)
 
 
 class FFmpegStreamWriter(StreamWriter, FFmpegWriter, ABC):
@@ -100,8 +99,7 @@ class FFmpegStreamWriter(StreamWriter, FFmpegWriter, ABC):
     """
 
     def __init__(self, *args, output_format: str, output_opts: Optional[Tuple] = None, **kwargs):
-        StreamWriter.__init__(self, *args, **kwargs)
-        FFmpegWriter.__init__(self, *args, pix_fmt='rgb24', output_format=output_format, output_opts=output_opts or (
+        super().__init__(*args, pix_fmt='rgb24', output_format=output_format, output_opts=output_opts or (
             '-tune', 'zerolatency', '-preset', 'superfast', '-trellis', '0',
             '-fflags', 'nobuffer'), **kwargs)
         self._reader = threading.Thread(target=self._reader_thread)

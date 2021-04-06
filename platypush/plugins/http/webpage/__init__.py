@@ -126,7 +126,7 @@ class HttpWebpagePlugin(Plugin):
                     <head>
                         <title>{title}</title>
                         <style>{style}</style>
-                    </head>'''.format(title=title, style=style, content=content) + \
+                    </head>'''.format(title=title, style=style) + \
                     '<body>{{' + content + '}}</body></html>'
 
             with open(outfile, 'w', encoding='utf-8') as f:

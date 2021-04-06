@@ -132,7 +132,7 @@ export default {
       const animations = Object.entries(this.animations?.groups || {}).reduce((obj, [groupId, animation]) => {
         obj[groupId] = {}
         if (animation)
-          obj[groupId][null] = animation
+          obj[groupId][null] = animation    // lgtm [js/implicit-operand-conversion]
 
         return obj
       }, {})

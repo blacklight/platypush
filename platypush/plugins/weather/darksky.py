@@ -37,8 +37,7 @@ class WeatherDarkskyPlugin(HttpRequestPlugin, WeatherPlugin):
         :type units: str
         """
 
-        HttpRequestPlugin.__init__(self, method='get', output='json')
-        WeatherPlugin.__init__(self, **kwargs)
+        super().__init__(method='get', output='json', **kwargs)
         self.darksky_token = darksky_token
         self.units = units
         self.lat = lat

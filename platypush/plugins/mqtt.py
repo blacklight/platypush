@@ -24,7 +24,7 @@ class MqttPlugin(Plugin):
     def __init__(self, host=None, port=1883, tls_cafile=None,
                  tls_certfile=None, tls_keyfile=None,
                  tls_version=None, tls_ciphers=None, tls_insecure=False,
-                 username=None, password=None, client_id=None, **kwargs):
+                 username=None, password=None, client_id=None, timeout=None, **kwargs):
         """
         :param host: If set, MQTT messages will by default routed to this host unless overridden in `send_message` (default: None)
         :type host: str
@@ -60,6 +60,9 @@ class MqttPlugin(Plugin):
         :param client_id: ID used to identify the client on the MQTT server (default: None).
             If None is specified then ``Config.get('device_id')`` will be used.
         :type client_id: str
+
+        :param timeout: Client timeout in seconds (default: None).
+        :type timeout: int
         """
 
         super().__init__(**kwargs)
@@ -75,6 +78,7 @@ class MqttPlugin(Plugin):
         self.tls_version = self.get_tls_version(tls_version)
         self.tls_insecure = tls_insecure
         self.tls_ciphers = tls_ciphers
+        self.timeout = timeout
 
     @staticmethod
     def get_tls_version(version: Optional[str] = None):
@@ -98,6 +102,19 @@ class MqttPlugin(Plugin):
             return ssl.PROTOCOL_TLSv1_2
 
         assert 'Unrecognized TLS version: {}'.format(version)
+
+    def _mqtt_args(self, **kwargs):
+        return {
+            'host': kwargs.get('host', self.host),
+            'port': kwargs.get('port', self.port),
+            'timeout': kwargs.get('timeout', self.timeout),
+            'tls_certfile': kwargs.get('tls_certfile', self.tls_certfile),
+            'tls_keyfile': kwargs.get('tls_keyfile', self.tls_keyfile),
+            'tls_version': kwargs.get('tls_version', self.tls_version),
+            'tls_ciphers': kwargs.get('tls_ciphers', self.tls_ciphers),
+            'username': kwargs.get('username', self.username),
+            'password': kwargs.get('password', self.password),
+        }
 
     @staticmethod
     def _expandpath(path: Optional[str] = None) -> Optional[str]:

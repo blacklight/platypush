@@ -62,11 +62,10 @@ class Alarm:
             return cron.get_next()
         except (AttributeError, croniter.CroniterBadCronError):
             try:
-                # lgtm [py/call-to-non-callable]
-                timestamp = datetime.datetime.fromisoformat(self.when).replace(tzinfo=gettz())
+                timestamp = datetime.datetime.fromisoformat(self.when).replace(
+                    tzinfo=gettz())  # lgtm [py/call-to-non-callable]
             except (TypeError, ValueError):
-                # lgtm [py/call-to-non-callable]
-                timestamp = (datetime.datetime.now().replace(tzinfo=gettz()) +
+                timestamp = (datetime.datetime.now().replace(tzinfo=gettz()) +  # lgtm [py/call-to-non-callable]
                              datetime.timedelta(seconds=int(self.when)))
 
             return timestamp.timestamp() if timestamp >= now else None

@@ -9,6 +9,8 @@ Given the high speed of development in the first phase, changes are being report
 
 - Major LINT fixes.
 
+### Removed
+
 - Removed unmaintained integrations: TorrentCast and Booking.com
 
 ## [0.20.8] - 2021-04-04

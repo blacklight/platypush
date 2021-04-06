@@ -1,8 +1,11 @@
+import logging
 import os
 import requests
 
 from platypush.message import Message
 from platypush.plugins import Plugin, action
+
+logger = logging.getLogger(__name__)
 
 
 class HttpRequestPlugin(Plugin):
@@ -63,12 +66,11 @@ class HttpRequestPlugin(Plugin):
         else:
             output = response.text
 
-        # noinspection PyBroadException
         try:
             # If the response is a Platypush JSON, extract it
             output = Message.build(output)
-        except:
-            pass
+        except Exception as e:
+            logger.debug(e)
 
         return output
 

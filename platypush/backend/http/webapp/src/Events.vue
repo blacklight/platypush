@@ -56,8 +56,8 @@ export default {
         return
       }
 
-      if (null in this.handlers) {
-        handlers.push(this.handlers[null])
+      if (null in this.handlers) {    // lgtm [js/implicit-operand-conversion]
+        handlers.push(this.handlers[null])    // lgtm [js/implicit-operand-conversion]
       }
 
       if (event.args.type in this.handlers) {
