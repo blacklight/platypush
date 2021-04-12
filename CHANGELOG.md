@@ -5,6 +5,10 @@ Given the high speed of development in the first phase, changes are being report
 
 ## [Unreleased]
 
+### Added
+
+- Added zwavejs2mqtt integration (see [#186](https://git.platypush.tech/platypush/platypush/-/issues/186).
+
 ### Fixed
 
 - Major LINT fixes.

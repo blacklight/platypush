@@ -1,5 +1,5 @@
 <template>
-  <Zwave plugin-name="zwave" />
+  <Zwave plugin-name="zwave.mqtt" />
 </template>
 
 <script>

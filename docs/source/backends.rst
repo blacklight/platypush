@@ -80,3 +80,4 @@ Backends
     platypush/backend/wiimote.rst
     platypush/backend/zigbee.mqtt.rst
     platypush/backend/zwave.rst
+    platypush/backend/zwave.mqtt.rst

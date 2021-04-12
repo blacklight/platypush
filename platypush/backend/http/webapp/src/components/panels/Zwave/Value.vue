@@ -25,10 +25,10 @@
                 <label>
                   <select @change="onValueChange">
                     <option v-for="(data, index) in value.data_items"
-                            v-text="data"
+                            v-text="typeof data === 'object' ? data.text : data"
                             :key="index"
-                            :selected="value.data === data"
-                            :value="index">
+                            :selected="typeof data === 'object' ? value.data === data.value : value.data === data"
+                            :value="typeof data === 'object' ? data.value : index">
                     </option>
                   </select>
                 </label>
@@ -99,19 +99,19 @@
         <div class="param-value" v-text="value.value_id"></div>
       </div>
 
-      <div class="row">
+      <div class="row" v-if="value.value_id !== value.id_on_network">
         <div class="param-name">ID on Network</div>
         <div class="param-value" v-text="value.id_on_network"></div>
       </div>
 
       <div class="row">
         <div class="param-name">Command Class</div>
-        <div class="param-value" v-text="value.command_class"></div>
+        <div class="param-value" v-text="value.command_class_name || value.command_class"></div>
       </div>
 
       <div class="row" v-if="value.last_update">
         <div class="param-name">Last Update</div>
-        <div class="param-value" v-text="value.last_update"></div>
+        <div class="param-value" v-text="formatDateTime(value.last_update)"></div>
       </div>
     </div>
   </div>
@@ -121,13 +121,13 @@
 import Dropdown from "@/components/elements/Dropdown";
 import DropdownItem from "@/components/elements/DropdownItem";
 import ToggleSwitch from "@/components/elements/ToggleSwitch";
-import Utils from "@/Utils";
 import Slider from "@/components/elements/Slider";
+import mixin from "@/components/panels/Zwave/mixin";
 
 export default {
   name: "Value",
   components: {Slider, Dropdown, DropdownItem, ToggleSwitch},
-  mixins: [Utils],
+  mixins: [mixin],
   emits: ['remove-from-scene', 'add-to-scene', 'refresh'],
 
   props: {
@@ -177,7 +177,7 @@ export default {
 
       this.commandRunning = true
       try {
-        await this.request('zwave.set_value_label', {
+        await this.zrequest('set_value_label', {
           id_on_network: value.id_on_network,
           new_label: name,
         })
@@ -217,9 +217,12 @@ export default {
           break
       }
 
+      if (typeof data === 'object')
+        data = data.value
+
       this.commandRunning = true
       try {
-        this.request('zwave.set_value', {
+        await this.zrequest('set_value', {
           id_on_network: value.id_on_network,
           data: data,
         })

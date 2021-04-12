@@ -145,3 +145,4 @@ Plugins
     platypush/plugins/zeroconf.rst
     platypush/plugins/zigbee.mqtt.rst
     platypush/plugins/zwave.rst
+    platypush/plugins/zwave.mqtt.rst

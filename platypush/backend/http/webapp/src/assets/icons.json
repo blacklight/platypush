@@ -68,6 +68,9 @@
     },
     "zwave": {
       "imgUrl": "/icons/z-wave.png"
+    },
+    "zwave.mqtt": {
+      "imgUrl": "/icons/z-wave.png"
     }
   }
 }

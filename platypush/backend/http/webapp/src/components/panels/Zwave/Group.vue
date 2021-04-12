@@ -4,6 +4,16 @@
          @click="$emit('select', group.index)" />
 
     <div class="params" v-if="selected">
+      <div class="section owner" v-if="owner && Object.keys(owner).length">
+        <div class="header">
+          <div class="title">Owner</div>
+        </div>
+
+        <div class="body">
+          <div class="row" v-text="owner.name" />
+        </div>
+      </div>
+
       <div class="section nodes">
         <div class="header">
           <div class="title col-10">Nodes</div>
@@ -50,17 +60,20 @@
 </template>
 
 <script>
-import Utils from "@/Utils";
+import mixin from "@/components/panels/Zwave/mixin";
 
 export default {
   name: "Group",
   emits: ['select', 'open-add-nodes-to-group'],
-  mixins: [Utils],
+  mixins: [mixin],
 
   props: {
     group: {
       type: Object,
       required: true,
+    },
+    owner: {
+      type: Object,
     },
     nodes: {
       type: Object,
@@ -84,11 +97,17 @@ export default {
         return
 
       this.commandRunning = true
+      const args = {
+        node_id: nodeId,
+      }
+
+      if (this.group.group_id != null)
+        args.group_id = this.group.group_id
+      else
+        args.group_index = this.group.index
+
       try {
-        await this.request('zwave.remove_node_from_group', {
-          node_id: nodeId,
-          group_index: this.group.index,
-        })
+        await this.zrequest('remove_node_from_group', args)
       } finally {
         this.commandRunning = false
       }
@@ -99,4 +118,17 @@ export default {
 
 <style lang="scss" scoped>
 @import "common";
+
+.section.nodes {
+  .header, .row {
+    position: relative;
+
+    .buttons {
+      position: absolute;
+      right: 0;
+      display: flex;
+      justify-content: right;
+    }
+  }
+}
 </style>

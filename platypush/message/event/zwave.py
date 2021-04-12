@@ -91,6 +91,20 @@ class ZwaveNodeReadyEvent(ZwaveNodeEvent):
     pass
 
 
+class ZwaveNodeAsleepEvent(ZwaveNodeEvent):
+    """
+    Triggered when a node goes in sleep mode.
+    """
+    pass
+
+
+class ZwaveNodeAwakeEvent(ZwaveNodeEvent):
+    """
+    Triggered when a node goes back into awake mode.
+    """
+    pass
+
+
 class ZwaveNodeGroupEvent(ZwaveNodeEvent):
     """
     Triggered when a node is associated/de-associated to a group.

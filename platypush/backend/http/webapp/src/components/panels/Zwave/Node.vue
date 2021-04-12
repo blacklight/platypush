@@ -36,9 +36,37 @@
         </div>
       </div>
 
-      <div class="row" v-if="node.location && node.location.length">
+      <div class="row">
         <div class="param-name">Location</div>
-        <div class="param-value" v-text="node.location" />
+        <div class="param-value">
+          <div class="edit-cell" :class="{hidden: !editMode.location}">
+            <form ref="locationForm" @submit.prevent="editLocation">
+              <label>
+                <input type="text" name="location" :value="node.location" :disabled="commandRunning">
+              </label>
+
+              <span class="buttons">
+                <button type="button" class="btn btn-default" @click="editMode.location = false">
+                  <i class="fas fa-times" />
+                </button>
+
+                <button type="submit" class="btn btn-default" :disabled="commandRunning">
+                  <i class="fa fa-check" />
+                </button>
+              </span>
+            </form>
+          </div>
+
+          <div :class="{hidden: editMode.location}">
+            <span v-text="node.location?.length ? node.location : ''" />
+            <span class="buttons">
+              <button type="button" class="btn btn-default" @click="onEditMode('location')"
+                      :disabled="commandRunning">
+                <i class="fa fa-edit"></i>
+              </button>
+            </span>
+          </div>
+        </div>
       </div>
 
       <div class="row">
@@ -113,7 +141,7 @@
         <div class="param-value" v-text="Object.values(node.groups).map((g) => g.label || '').join(', ')" />
       </div>
 
-      <div class="row">
+      <div class="row" v-if="node.home_id">
         <div class="param-name">Home ID</div>
         <div class="param-value" v-text="node.home_id.toString(16)" />
       </div>
@@ -123,17 +151,22 @@
         <div class="param-value" v-text="node.is_awake" />
       </div>
 
-      <div class="row">
+      <div class="row" v-if="node.is_locked != null">
         <div class="param-name">Is Locked</div>
         <div class="param-value" v-text="node.is_locked" />
       </div>
 
       <div class="row" v-if="node.last_update">
         <div class="param-name">Last Update</div>
-        <div class="param-value" v-text="node.last_update" />
+        <div class="param-value" v-text="formatDateTime(node.last_update)" />
       </div>
 
-      <div class="row" v-if="node.last_update">
+      <div class="row" v-if="node.baud_rate">
+        <div class="param-name">Baud Rate</div>
+        <div class="param-value" v-text="node.baud_rate" />
+      </div>
+
+      <div class="row" v-if="node.max_baud_rate">
         <div class="param-name">Max Baud Rate</div>
         <div class="param-value" v-text="node.max_baud_rate" />
       </div>
@@ -192,12 +225,12 @@
 </template>
 
 <script>
-import Utils from "@/Utils";
+import mixin from "@/components/panels/Zwave/mixin";
 
 export default {
   name: "Node",
   emits: ['select'],
-  mixins: [Utils],
+  mixins: [mixin],
 
   props: {
     node: {
@@ -216,6 +249,7 @@ export default {
       commandRunning: false,
       editMode: {
         name: false,
+        location: false,
       },
     }
   },
@@ -235,7 +269,7 @@ export default {
 
       this.commandRunning = true
       try {
-        await this.request('zwave.remove_node', {
+        await this.zrequest('remove_node', {
           node_id: this.node.node_id,
         })
       } finally {
@@ -257,7 +291,7 @@ export default {
 
       this.commandRunning = true
       try {
-        await this.request('zwave.replace_node', {
+        await this.zrequest('replace_node', {
           node_id: this.node.node_id,
         })
       } finally {
@@ -276,7 +310,7 @@ export default {
 
       this.commandRunning = true
       try {
-        await this.request('zwave.replication_send', {
+        await this.zrequest('replication_send', {
           node_id: this.node.node_id,
         })
       } finally {
@@ -295,7 +329,7 @@ export default {
 
       this.commandRunning = true
       try {
-        await this.request('zwave.request_network_update', {
+        await this.zrequest('request_network_update', {
           node_id: this.node.node_id,
         })
       } finally {
@@ -314,7 +348,7 @@ export default {
 
       this.commandRunning = true
       try {
-        await this.request('zwave.request_node_neighbour_update', {
+        await this.zrequest('request_node_neighbour_update', {
           node_id: this.node.node_id,
         })
       } finally {
@@ -338,7 +372,7 @@ export default {
       this.commandRunning = true
 
       try {
-        await this.request('zwave.set_node_name', {
+        await this.zrequest('set_node_name', {
           node_id: this.node.node_id,
           new_name: name,
         })
@@ -349,6 +383,22 @@ export default {
       this.editMode.name = false
     },
 
+    async editLocation(event) {
+      const location = event.target.querySelector('input[name=location]').value
+      this.commandRunning = true
+
+      try {
+        await this.zrequest('set_node_location', {
+          node_id: this.node.node_id,
+          location: location,
+        })
+      } finally {
+        this.commandRunning = false
+      }
+
+      this.editMode.location = false
+    },
+
     async heal() {
       if (this.commandRunning) {
         console.log('A command is already running')
@@ -357,7 +407,7 @@ export default {
 
       this.commandRunning = true
       try {
-        await this.request('zwave.node_heal', {
+        await this.zrequest('node_heal', {
           node_id: this.node.node_id,
         })
       } finally {

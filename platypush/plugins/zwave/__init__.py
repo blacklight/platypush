@@ -988,7 +988,7 @@ class ZwavePlugin(SwitchPlugin):
     @action
     def off(self, device: str, *args, **kwargs):
         """
-        Turn on a switch on a device.
+        Turn off a switch on a device.
 
         :param device: ``id_on_network`` of the value to be switched off.
         """
