@@ -9,9 +9,10 @@ from platypush.backend.zwave import ZwaveBackend
 from platypush.context import get_backend
 from platypush.plugins import action
 from platypush.plugins.switch import SwitchPlugin
+from platypush.plugins.zwave._base import ZwaveBasePlugin
 
 
-class ZwavePlugin(SwitchPlugin):
+class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
     """
     This plugin interacts with the devices on a Z-Wave network started through the
     :class:`platypush.backend.zwave.ZwaveBackend` backend.
@@ -156,7 +157,8 @@ class ZwavePlugin(SwitchPlugin):
             return {}
 
         return {
-            'command_class': value.node.get_command_class_as_string(value.command_class) if value.command_class else None,
+            'command_class': value.node.get_command_class_as_string(value.command_class)
+            if value.command_class else None,
             'data': value.data,
             'data_as_string': value.data_as_string,
             'data_items': list(value.data_items) if isinstance(value.data_items, set) else value.data_items,
@@ -218,7 +220,8 @@ class ZwavePlugin(SwitchPlugin):
             'is_awake': node.is_awake if hasattr(node, 'is_awake') else False,
             'is_failed': node.is_failed if hasattr(node, 'is_failed') else False,
             'is_beaming_device': node.is_beaming_device if hasattr(node, 'is_beaming_device') else False,
-            'is_frequent_listening_device': node.is_frequent_listening_device if hasattr(node, 'is_frequent_listening_device') else False,
+            'is_frequent_listening_device': node.is_frequent_listening_device
+            if hasattr(node, 'is_frequent_listening_device') else False,
             'is_info_received': node.is_info_received if hasattr(node, 'is_info_received') else False,
             'is_listening_device': node.is_listening_device if hasattr(node, 'is_listening_device') else False,
             'is_locked': node.is_locked if hasattr(node, 'is_locked') else False,

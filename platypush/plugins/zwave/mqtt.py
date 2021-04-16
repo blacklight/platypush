@@ -10,13 +10,13 @@ from platypush.message.event.zwave import ZwaveNodeRenamedEvent, ZwaveNodeEvent
 from platypush.context import get_backend, get_bus
 from platypush.message.response import Response
 from platypush.plugins.mqtt import MqttPlugin, action
-from platypush.plugins.zwave import ZwavePlugin
+from platypush.plugins.zwave._base import ZwaveBasePlugin
 from platypush.plugins.zwave._constants import command_class_by_name
 
 _NOT_IMPLEMENTED_ERR = NotImplementedError('Not implemented by zwave.mqtt')
 
 
-class ZwaveMqttPlugin(MqttPlugin, ZwavePlugin):
+class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     """
     This plugin allows you to manage a Z-Wave network over MQTT through
     `zwavejs2mqtt <https://github.com/zwave-js/zwavejs2mqtt>`_.
@@ -335,7 +335,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwavePlugin):
 
     def _get_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
                    value_label: Optional[str] = None, node_id: Optional[int] = None, node_name: Optional[str] = None,
-                   use_cache: bool = True, **kwargs) -> Dict[str, Any]:
+                   use_cache: bool = True, **_) -> Dict[str, Any]:
         # Unlike python-openzwave, value_id and id_on_network are the same on zwavejs2mqtt
         value_id = value_id or id_on_network
         assert value_id or value_label, 'Please provide either value_id, id_on_network or value_label'
@@ -1140,8 +1140,8 @@ class ZwaveMqttPlugin(MqttPlugin, ZwavePlugin):
         return self._filter_values(['user_code'], node_id=node_id, node_name=node_name, **kwargs)
 
     @action
-    def get_thermostats(self, node_id: Optional[int] = None, node_name: Optional[str] = None,
-                        **kwargs) -> Dict[str, Any]:
+    def get_thermostats(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) \
+            -> Dict[str, Any]:
         """
         Get the thermostats on the network or associated to a node.
 
@@ -1155,8 +1155,8 @@ class ZwaveMqttPlugin(MqttPlugin, ZwavePlugin):
                                     'thermostat_setback'], node_id=node_id, node_name=node_name, **kwargs)
 
     @action
-    def get_protections(self, node_id: Optional[int] = None, node_name: Optional[str] = None,
-                        **kwargs) -> Dict[str, Any]:
+    def get_protections(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) \
+            -> Dict[str, Any]:
         """
         Get the protection-compatible devices on the network or associated to a node.
 
