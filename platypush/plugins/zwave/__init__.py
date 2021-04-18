@@ -19,11 +19,6 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
 
     """
 
-    from openzwave.group import ZWaveGroup
-    from openzwave.node import ZWaveNode
-    from openzwave.scene import ZWaveScene
-    from openzwave.value import ZWaveValue
-
     @staticmethod
     def _get_backend() -> ZwaveBackend:
         backend = get_backend('zwave')
@@ -152,7 +147,7 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         controller.request_node_neighbor_update(node.node_id)
 
     @staticmethod
-    def value_to_dict(value: Optional[ZWaveValue]) -> Dict[str, Any]:
+    def value_to_dict(value) -> Dict[str, Any]:
         if not value:
             return {}
 
@@ -189,7 +184,7 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         }
 
     @staticmethod
-    def group_to_dict(group: Optional[ZWaveGroup]) -> Dict[str, Any]:
+    def group_to_dict(group) -> Dict[str, Any]:
         if not group:
             return {}
 
@@ -201,7 +196,7 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         }
 
     @classmethod
-    def node_to_dict(cls, node: Optional[ZWaveNode]) -> Dict[str, Any]:
+    def node_to_dict(cls, node) -> Dict[str, Any]:
         if not node:
             return {}
 
@@ -259,7 +254,7 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
             } if hasattr(node, 'values') else {},
         }
 
-    def _get_node(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> ZWaveNode:
+    def _get_node(self, node_id: Optional[int] = None, node_name: Optional[str] = None):
         assert node_id is not None or node_name is not None, 'Specify either node_id or name'
         nodes = self._get_backend().network.nodes
 
@@ -271,14 +266,14 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         assert nodes, 'No such node name: {}'.format(node_name)
         return nodes[0]
 
-    def _get_groups(self) -> Dict[int, ZWaveGroup]:
+    def _get_groups(self) -> dict:
         return {
             group_index: group
             for node in self._get_backend().network.nodes.values()
             for group_index, group in node.groups.items()
         }
 
-    def _get_group(self, group_index: Optional[int] = None, group_label: Optional[str] = None) -> ZWaveGroup:
+    def _get_group(self, group_index: Optional[int] = None, group_label: Optional[str] = None):
         assert group_index is not None or group_label is not None, 'Specify either group_index or label'
         groups = self._get_groups()
 
@@ -290,7 +285,7 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         assert groups, 'No such group label: {}'.format(group_label)
         return groups[0]
 
-    def _get_scene(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None) -> ZWaveScene:
+    def _get_scene(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None):
         assert scene_id is not None or scene_label is not None, 'Specify either scene_id or label'
         scenes = self._get_backend().network.get_scenes()
 
@@ -456,8 +451,7 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self._get_network().test(count)
 
     def _get_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
-                   node_id: Optional[int] = None, node_name: Optional[str] = None, value_label: Optional[str] = None) \
-            -> ZWaveValue:
+                   node_id: Optional[int] = None, node_name: Optional[str] = None, value_label: Optional[str] = None):
         assert (value_id is not None or id_on_network is not None) or \
                ((node_id is not None or node_name is not None) and value_label is not None), \
                'Specify either value_id, id_on_network, or [node_id/node_name, value_label]'
