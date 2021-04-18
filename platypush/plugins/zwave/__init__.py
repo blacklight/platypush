@@ -1,10 +1,5 @@
 from typing import Any, Dict, Optional, List, Union
 
-from openzwave.group import ZWaveGroup
-from openzwave.node import ZWaveNode
-from openzwave.scene import ZWaveScene
-from openzwave.value import ZWaveValue
-
 from platypush.backend.zwave import ZwaveBackend
 from platypush.context import get_backend
 from platypush.plugins import action
@@ -23,6 +18,11 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         * The :class:`platypush.backend.zwave.ZwaveBackend` backend configured and running.
 
     """
+
+    from openzwave.group import ZWaveGroup
+    from openzwave.node import ZWaveNode
+    from openzwave.scene import ZWaveScene
+    from openzwave.value import ZWaveValue
 
     @staticmethod
     def _get_backend() -> ZwaveBackend:
@@ -507,6 +507,7 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         :param node_id: Select value by [node_id/node_name, value_label]
         :param node_name: Select value by [node_id/node_name, value_label]
         """
+        from openzwave.node import ZWaveNode
         value = self._get_value(value_id=value_id, id_on_network=id_on_network,
                                 node_id=node_id, node_name=node_name, value_label=value_label)
         new_val = value.check_data(data)
