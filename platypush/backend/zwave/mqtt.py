@@ -78,7 +78,7 @@ class ZwaveMqttBackend(MqttBackend):
         if value and 'id' not in value:
             value_id = f"{value['commandClass']}-{value.get('endpoint', 0)}-{value['property']}"
             if 'propertyKey' in value:
-                value_id += '-' + value['propertyKey']
+                value_id += '-' + str(value['propertyKey'])
 
             if value_id not in node.get('values', {}):
                 self.logger.warning(f'value_id {value_id} not found on node {node["id"]}')
