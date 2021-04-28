@@ -3,7 +3,13 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
-## [Unreleased]
+## [0.20.10] - 2021-04-28
+
+### Fixed
+
+- Fixed zwave/zwavejs2mqtt interoperability.
+
+## [0.20.9] - 2021-04-12
 
 ### Added
 
