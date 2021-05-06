@@ -720,8 +720,8 @@ export default {
 
     .buttons {
       display: inline-flex;
-      justify-content: right;
       margin: 0 !important;
+      justify-content: flex-end;
 
       button {
         border: none;

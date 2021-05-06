@@ -8,6 +8,26 @@
     </div>
   </div>
 
+  <div class="row" v-if="item?.series">
+    <div class="left side">TV Series</div>
+    <div class="right side" v-text="item.series" />
+  </div>
+
+  <div class="row" v-if="item?.season">
+    <div class="left side">Season</div>
+    <div class="right side" v-text="item.season" />
+  </div>
+
+  <div class="row" v-if="item?.episode">
+    <div class="left side">Episode</div>
+    <div class="right side" v-text="item.episode" />
+  </div>
+
+  <div class="row" v-if="item?.num_seasons">
+    <div class="left side">Number of seasons</div>
+    <div class="right side" v-text="item.num_seasons" />
+  </div>
+
   <div class="row" v-if="item?.synopsis">
     <div class="left side">Synopsis</div>
     <div class="right side" v-text="item.synopsis" />
@@ -23,9 +43,39 @@
     <div class="right side" v-text="item.summary" />
   </div>
 
+  <div class="row" v-if="item?.overview">
+    <div class="left side">Overview</div>
+    <div class="right side" v-text="item.overview" />
+  </div>
+
   <div class="row" v-if="item?.duration">
     <div class="left side">Duration</div>
     <div class="right side" v-text="convertTime(item.duration)" />
+  </div>
+
+  <div class="row" v-if="item?.country">
+    <div class="left side">Country</div>
+    <div class="right side" v-text="item.country" />
+  </div>
+
+  <div class="row" v-if="item?.network">
+    <div class="left side">Network</div>
+    <div class="right side" v-text="item.network" />
+  </div>
+
+  <div class="row" v-if="item?.status">
+    <div class="left side">Status</div>
+    <div class="right side" v-text="item.status" />
+  </div>
+
+  <div class="row" v-if="item?.rating">
+    <div class="left side">Rating</div>
+    <div class="right side" v-text="item.rating.percentage" />
+  </div>
+
+  <div class="row" v-if="item?.rating">
+    <div class="left side">Votes</div>
+    <div class="right side" v-text="item.rating.votes" />
   </div>
 
   <div class="row" v-if="item?.genres">

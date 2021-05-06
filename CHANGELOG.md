@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [Unreleased]
+
+### Added
+
+- Support for custom PopcornTime API mirror/base URL.
+
+- Full support for TV series search.
+
+### Fixed
+
+- Fixed torrent search (now using a different PopcornTime API mirror).
+
+- Migrated SASS engine from `node-sass` (currently deprecated and broken on Node 16) to `sass`.
+
+- Fixed alignment of Z-Wave UI header on Chrome/Webkit.
+
 ## [0.20.10] - 2021-04-28
 
 ### Fixed

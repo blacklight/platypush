@@ -1,5 +1,8 @@
 import os
+import queue
 import random
+from typing import List, Optional
+
 import requests
 import threading
 import time
@@ -29,22 +32,28 @@ class TorrentPlugin(Plugin):
     categories = {
         'movies': None,
         'tv': None,
-        # 'anime': None,
     }
 
     torrent_state = {}
     transfers = {}
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36'
-    }
+    # noinspection HttpUrlsUsage
+    default_popcorn_base_url = 'http://popcorn-ru.tk'
 
-    def __init__(self, download_dir=None, torrent_ports=None, **kwargs):
+    def __init__(self, download_dir=None, torrent_ports=None, imdb_key=None, popcorn_base_url=default_popcorn_base_url,
+                 **kwargs):
         """
         :param download_dir: Directory where the videos/torrents will be downloaded (default: none)
         :type download_dir: str
 
         :param torrent_ports: Torrent ports to listen on (default: 6881 and 6891)
         :type torrent_ports: list[int]
+
+        :param imdb_key: The IMDb API (https://imdb-api.com/) is used to search for movies and series. Insert your
+            IMDb API key if you want support for content search.
+        :type imdb_key: str
+
+        :param popcorn_base_url: Custom base URL to use for the PopcornTime API.
+        :type popcorn_base_url: str
         """
 
         super().__init__(**kwargs)
@@ -55,24 +64,36 @@ class TorrentPlugin(Plugin):
         for category in self.categories.keys():
             self.categories[category] = getattr(self, 'search_' + category)
 
+        self.imdb_key = imdb_key
+        self.imdb_urls = {}
         self.torrent_ports = torrent_ports if torrent_ports else self.default_torrent_ports
         self.download_dir = None
         self._sessions = {}
         self._lt_session = None
+        self.popcorn_base_url = popcorn_base_url
+        self.torrent_base_urls = {
+            'movies': f'{popcorn_base_url}/movie/{{}}',
+            'tv': f'{popcorn_base_url}/show/{{}}',
+        }
+
+        if imdb_key:
+            self.imdb_urls = {
+                'movies': f'https://imdb-api.com/API/SearchMovie/{self.imdb_key}/{{}}',
+                'tv': f'https://imdb-api.com/API/SearchSeries/{self.imdb_key}/{{}}',
+            }
 
         if download_dir:
             self.download_dir = os.path.abspath(os.path.expanduser(download_dir))
 
-    # noinspection PyIncorrectDocstring
     @action
-    def search(self, query, category=None, *args, **kwargs):
+    def search(self, query, category=None, language=None, *args, **kwargs):
         """
         Perform a search of video torrents.
 
         :param query: Query string, video name or partial name
         :type query: str
 
-        :param category: Category to search. Supported types: "movies", "tv", "anime".
+        :param category: Category to search. Supported types: "movies", "tv".
             Default: None (search all categories)
         :type category: str or list
 
@@ -80,13 +101,10 @@ class TorrentPlugin(Plugin):
         :type language: str
         """
 
+        assert self.imdb_key, 'No imdb_key specified'
+        results = []
         if isinstance(category, str):
             category = [category]
-
-        results = {
-            category: []
-            for category in (category or self.categories.keys())
-        }
 
         # noinspection PyCallingNonCallable
         def worker(cat):
@@ -95,7 +113,7 @@ class TorrentPlugin(Plugin):
                                    format(cat, self.categories.keys()))
 
             self.logger.info('Searching {} torrents for "{}"'.format(cat, query))
-            results[cat] = self.categories[cat](query, *args, **kwargs)
+            results.extend(self.categories[cat](query, language=language, *args, **kwargs))
 
         workers = [
             threading.Thread(target=worker, kwargs={'cat': category})
@@ -104,133 +122,130 @@ class TorrentPlugin(Plugin):
 
         for worker in workers:
             worker.start()
-
         for worker in workers:
             worker.join()
 
-        ret = []
-        for (category, items) in results.items():
-            ret += items
-        return ret
+        return results
 
-    def search_movies(self, query, language=None):
-        response = requests.get(
-            'https://movies-v2.api-fetch.sh/movies/1', params={
-                'sort': 'relevance',
-                'keywords': query,
-            }, headers=self.headers
-        ).json()
+    def _imdb_query(self, query: str, category: str):
+        assert self.imdb_key, 'No imdb_key specified'
+        imdb_url = self.imdb_urls.get(category)
 
+        assert imdb_url, f'No such category: {category}'
+        imdb_url = imdb_url.format(query)
+        response = requests.get(imdb_url).json()
+
+        assert not response.get('errorMessage'), response['errorMessage']
+        return response.get('results', [])
+
+    def _torrent_search_worker(self, imdb_id: str, category: str, q: queue.Queue):
+        base_url = self.torrent_base_urls.get(category)
+        assert base_url, f'No such category: {category}'
+        q.put(requests.get(base_url.format(imdb_id)).json())
+
+    def _search_torrents(self, query, category):
+        imdb_results = self._imdb_query(query, category)
+        result_queues = [queue.Queue()] * len(imdb_results)
+        workers = [
+            threading.Thread(target=self._torrent_search_worker, kwargs={
+                'imdb_id': imdb_results[i]['id'],
+                'category': category,
+                'q': result_queues[i],
+            })
+            for i in range(len(imdb_results))
+        ]
+
+        results = []
+        for worker in workers:
+            worker.start()
+        for q in result_queues:
+            results.append(q.get())
+        for worker in workers:
+            worker.join()
+
+        return results
+
+    @staticmethod
+    def _results_to_movies_response(results: List[dict], language: Optional[str] = None):
         return sorted([
             {
                 'imdb_id': result.get('imdb_id'),
                 'type': 'movies',
+                'file': item.get('file'),
                 'title': '{title} [movies][{language}][{quality}]'.format(
                     title=result.get('title'), language=lang, quality=quality),
-                'year': result.get('year'),
+                'duration': int(result.get('runtime'), 0),
+                'year': int(result.get('year'), 0),
                 'synopsis': result.get('synopsis'),
                 'trailer': result.get('trailer'),
+                'genres': result.get('genres', []),
+                'images': result.get('images', []),
+                'rating': result.get('rating', {}),
                 'language': lang,
                 'quality': quality,
                 'size': item.get('size'),
+                'provider': item.get('provider'),
                 'seeds': item.get('seed'),
                 'peers': item.get('peer'),
                 'url': item.get('url'),
             }
-            for result in (response or [])
+            for result in results
             for (lang, items) in result.get('torrents', {}).items()
             if not language or language == lang
             for (quality, item) in items.items()
-        ], key=lambda _: _.get('seeds'), reverse=True)
+            if quality != '0'
+        ], key=lambda item: item.get('seeds', 0), reverse=True)
 
-    def search_tv(self, query):
-        shows = requests.get(
-            'https://tv-v2.api-fetch.sh/shows/1', params={
-                'sort': 'relevance',
-                'keywords': query,
-            }, headers=self.headers
-        ).json()
+    @staticmethod
+    def _results_to_tv_response(results: List[dict]):
+        return sorted([
+            {
+                'imdb_id': result.get('imdb_id'),
+                'tvdb_id': result.get('tvdb_id'),
+                'type': 'tv',
+                'file': item.get('file'),
+                'series': result.get('title'),
+                'title': '{series} [S{season:02d}E{episode:02d}] {title} [tv][{quality}]'.format(
+                    series=result.get('title'),
+                    season=episode.get('season'),
+                    episode=episode.get('episode'),
+                    title=episode.get('title'),
+                    quality=quality),
+                'duration': int(result.get('runtime'), 0),
+                'year': int(result.get('year'), 0),
+                'synopsis': result.get('synopsis'),
+                'overview': episode.get('overview'),
+                'season': episode.get('season'),
+                'episode': episode.get('episode'),
+                'num_seasons': result.get('num_seasons'),
+                'country': result.get('country'),
+                'network': result.get('network'),
+                'status': result.get('status'),
+                'genres': result.get('genres', []),
+                'images': result.get('images', []),
+                'rating': result.get('rating', {}),
+                'quality': quality,
+                'provider': item.get('provider'),
+                'seeds': item.get('seeds'),
+                'peers': item.get('peers'),
+                'url': item.get('url'),
+            }
+            for result in results
+            for episode in result.get('episodes', [])
+            for quality, item in episode.get('torrents', {}).items()
+            if quality != '0'
+        ], key=lambda item: '{series}.{quality}.{season:02d}.{episode:02d}'.format(
+            series=item.get('series'), quality=item.get('quality'),
+            season=item.get('season'), episode=item.get('episode')))
 
-        results = []
+    def search_movies(self, query, language=None):
+        return self._results_to_movies_response(
+            self._search_torrents(query, 'movies'), language=language)
 
-        for show in shows:
-            show = requests.get(
-                'https://tv-v2.api-fetch.website/show/' + show.get('_id'),
-                headers=self.headers
-            ).json()
+    def search_tv(self, query, **_):
+        return self._results_to_tv_response(
+            self._search_torrents(query, 'tv'))
 
-            results.extend(sorted([
-                {
-                    'imdb_id': show.get('imdb_id'),
-                    'tvdb_id': show.get('tvdb_id'),
-                    'type': 'tv',
-                    'title': '[{show}][s{season}e{episode:02d}] {title} [tv][{quality}]'.format(
-                        show=show.get('title'), season=episode.get('season', 0),
-                        episode=episode.get('episode', 0), title=episode.get('title'), quality=quality),
-                    'season': episode.get('season'),
-                    'episode': episode.get('episode'),
-                    'year': show.get('year'),
-                    'first_aired': episode.get('first_aired'),
-                    'quality': quality,
-                    'num_seasons': show.get('num_seasons'),
-                    'status': show.get('status'),
-                    'network': show.get('network'),
-                    'country': show.get('country'),
-                    'show_synopsis': show.get('synopsys'),
-                    'synopsis': episode.get('overview'),
-                    'provider': torrent.get('provider'),
-                    'seeds': torrent.get('seeds'),
-                    'peers': torrent.get('peers'),
-                    'url': torrent.get('url'),
-                }
-                for episode in show.get('episodes', [])
-                for quality, torrent in episode.get('torrents', {}).items()
-                if quality != '0'
-            ], key=lambda _: int(_.get('season')*100) + int(_.get('episode'))))
-
-        return results
-
-    def search_anime(self, query):
-        shows = requests.get(
-            'https://popcorn-api.io/animes/1', params={
-                'sort': 'relevance',
-                'keywords': query,
-            }, headers=self.headers
-        ).json()
-
-        results = []
-
-        for show in shows:
-            show = requests.get('https://anime.api-fetch.website/anime/' + show.get('_id'),
-                                headers=self.headers).json()
-
-            results.extend(sorted([
-                {
-                    'tvdb_id': episode.get('tvdb_id'),
-                    'type': 'anime',
-                    'title': '[{show}][s{season}e{episode:02d}] {title} [anime][{quality}]'.format(
-                        show=show.get('title'), season=int(episode.get('season', 0)),
-                        episode=int(episode.get('episode', 0)), title=episode.get('title'), quality=quality),
-                    'season': episode.get('season'),
-                    'episode': episode.get('episode'),
-                    'year': show.get('year'),
-                    'quality': quality,
-                    'num_seasons': show.get('num_seasons'),
-                    'status': show.get('status'),
-                    'show_synopsis': show.get('synopsys'),
-                    'synopsis': episode.get('overview'),
-                    'seeds': torrent.get('seeds'),
-                    'peers': torrent.get('peers'),
-                    'url': torrent.get('url'),
-                }
-                for episode in show.get('episodes', [])
-                for quality, torrent in episode.get('torrents', {}).items()
-                if quality != '0'
-            ], key=lambda _: int(_.get('season')*100) + int(_.get('episode'))))
-
-        return results
-
-    # noinspection PyArgumentList
     def _get_torrent_info(self, torrent, download_dir):
         import libtorrent as lt
 
@@ -239,6 +254,7 @@ class TorrentPlugin(Plugin):
         info = {}
         file_info = {}
 
+        # noinspection HttpUrlsUsage
         if torrent.startswith('magnet:?'):
             magnet = torrent
             magnet_info = lt.parse_magnet_uri(magnet)
@@ -250,7 +266,7 @@ class TorrentPlugin(Plugin):
                 'save_path': download_dir,
             }
         elif torrent.startswith('http://') or torrent.startswith('https://'):
-            response = requests.get(torrent, headers=self.headers, allow_redirects=True)
+            response = requests.get(torrent, allow_redirects=True)
             torrent_file = os.path.join(download_dir, self._generate_rand_filename())
 
             with open(torrent_file, 'wb') as f:
@@ -262,6 +278,7 @@ class TorrentPlugin(Plugin):
 
         if torrent_file:
             file_info = lt.torrent_info(torrent_file)
+            # noinspection PyArgumentList
             info = {
                 'name': file_info.name(),
                 'url': torrent,
@@ -309,7 +326,7 @@ class TorrentPlugin(Plugin):
                     if is_media:
                         from platypush.plugins.media import MediaPlugin
                         # noinspection PyProtectedMember
-                        files = [f for f in files if MediaPlugin._is_video_file(f)]
+                        files = [f for f in files if MediaPlugin.is_video_file(f)]
 
                 self.torrent_state[torrent]['download_rate'] = status.download_rate
                 self.torrent_state[torrent]['name'] = status.name

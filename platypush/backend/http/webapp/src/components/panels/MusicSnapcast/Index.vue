@@ -474,15 +474,15 @@ export default {
   }
 }
 
-@media #{map-get($widths, 's')} {
+@media screen and (max-width: calc(#{$tablet} - 1)) {
   .music-snapcast-container {
     .modal {
-      width: 80vw;
+      width: 95vw;
     }
   }
 }
 
-@media #{map-get($widths, 'm')} {
+@media screen and (min-width: $tablet) {
   .music-snapcast-container {
     .modal {
       width: 70vw;
@@ -490,7 +490,7 @@ export default {
   }
 }
 
-@media #{map-get($widths, 'l')} {
+@media screen and (min-width: $desktop) {
   .music-snapcast-container {
     .modal {
       width: 45vw;

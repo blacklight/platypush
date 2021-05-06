@@ -1,9 +1,8 @@
 $widths: (
-        s:  (max-width: $tablet),
-        m:  (min-width: $tablet),
-        l:  (min-width: $desktop),
-        xl:  (min-width: $widescreen),
-        xxl:  (min-width: $fullhd),
+        m:  $tablet,
+        l:  $desktop,
+        xl:  $widescreen,
+        xxl:  $fullhd,
 );
 
 @for $i from 1 through 12 {
@@ -41,8 +40,49 @@ $widths: (
     }
 }
 
+@media screen and (max-width: calc(#{$tablet} - 1)) {
+    @for $i from 1 through 12 {
+        .col-s-#{$i} {
+            float: left;
+            box-sizing: border-box;
+
+            @if $i < 12 {
+                width: (4.66666666667%*$i) + (4% * if($i > 1, $i - 1, 0));
+                margin-left: 4%;
+            } @else {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            &:first-child {
+                margin-left: 0;
+            }
+        }
+
+        @if $i < 12 {
+            .col-offset-s-#{$i} {
+                margin-left: (8.66666666667%*$i);
+            }
+        }
+
+        .col-no-margin-s-#{$i} {
+            float: left;
+            box-sizing: border-box;
+            width: ((100%/12)*$i);
+        }
+    }
+
+    .s-hidden {
+        display: none !important;
+    }
+
+    .s-visible {
+        display: block !important;
+    }
+}
+
 @each $size, $width in $widths {
-    @media #{$width} {
+    @media screen and (min-width: $width) {
         @for $i from 1 through 12 {
             .col-#{$size}-#{$i} {
                 float: left;

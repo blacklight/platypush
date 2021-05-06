@@ -1,4 +1,7 @@
 import logging
+from typing import Optional
+
+from .. import MediaPlugin
 
 
 class MediaSearcher:
@@ -6,8 +9,9 @@ class MediaSearcher:
     Base class for media searchers
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, media_plugin: Optional[MediaPlugin] = None, **kwargs):
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.media_plugin = media_plugin
 
     def search(self, query, *args, **kwargs):
         raise NotImplementedError('The search method should be implemented ' +

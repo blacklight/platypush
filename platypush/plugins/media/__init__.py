@@ -373,25 +373,25 @@ class MediaPlugin(Plugin):
     def _get_search_handler_by_type(self, search_type):
         if search_type == 'file':
             from .search import LocalMediaSearcher
-            return LocalMediaSearcher(self.media_dirs)
+            return LocalMediaSearcher(self.media_dirs, media_plugin=self)
         if search_type == 'torrent':
             from .search import TorrentMediaSearcher
-            return TorrentMediaSearcher()
+            return TorrentMediaSearcher(media_plugin=self)
         if search_type == 'youtube':
             from .search import YoutubeMediaSearcher
-            return YoutubeMediaSearcher()
+            return YoutubeMediaSearcher(media_plugin=self)
         if search_type == 'plex':
             from .search import PlexMediaSearcher
-            return PlexMediaSearcher()
+            return PlexMediaSearcher(media_plugin=self)
 
         self.logger.warning('Unsupported search type: {}'.format(search_type))
 
     @classmethod
-    def _is_video_file(cls, filename):
+    def is_video_file(cls, filename):
         return filename.lower().split('.')[-1] in cls.video_extensions
 
     @classmethod
-    def _is_audio_file(cls, filename):
+    def is_audio_file(cls, filename):
         return filename.lower().split('.')[-1] in cls.audio_extensions
 
     @action
