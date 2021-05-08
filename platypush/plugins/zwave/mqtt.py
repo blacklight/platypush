@@ -448,6 +448,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     def status(self, **kwargs) -> Dict[str, Any]:
         """
         Get the status of the controller.
+
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         :return: dict with the following fields: ``device`` and ``state``.
@@ -584,154 +585,154 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
         :return: List of paired devices. Example output:
 
-        .. code-block:: json
+            .. code-block:: json
 
-            {
-              "1": {
-                "node_id": 1,
-                "device_id": "0115-0400-0001",
-                "name": "Controller",
-                "capabilities": [
-                  "beaming",
-                  "routing"
-                ],
-                "manufacturer_id": "0x0115",
-                "manufacturer_name": "Z-Wave.Me",
-                "location": "Living Room",
-                "status": "Alive",
-                "is_available": true,
-                "is_awake": true,
-                "is_beaming_device": true,
-                "is_controller": true,
-                "is_failed": false,
-                "is_frequent_listening_device": false,
-                "is_info_received": true,
-                "is_initialized": true,
-                "is_listening_device": true,
-                "is_ready": true,
-                "is_routing_device": true,
-                "is_security_device": false,
-                "is_sleeping": false,
-                "last_update": "2021-04-05T19:38:07.202000",
-                "product_id": null,
-                "product_type": null,
-                "product_name": "UZB Z-Wave USB Stick",
-                "baud_rate": 100000,
-                "max_baud_rate": null,
-                "device_class": {
-                  "basic": 2,
-                  "generic": 2,
-                  "specific": 1
-                },
-                "specific": 1,
-                "firmware_version": null,
-                "keep_awake": false,
-                "db_link": "https://devices.zwave-js.io/?jumpTo=0x0115:0x0400:0x0001:0.0",
-                "zwave_plus_version": null,
-                "zwave_plus_node_type": null,
-                "zwave_plus_role_type": null,
-                "neighbours": [
-                  3,
-                  4
-                ],
-                "groups": {},
-                "values": {}
-              },
-              "4": {
-                "node_id": 4,
-                "device_id": "010f-0602-1003",
-                "name": "TV Switch",
-                "capabilities": [
-                  "beaming",
-                  "routing",
-                  "zwave_plus"
-                ],
-                "manufacturer_id": "0x010f",
-                "manufacturer_name": "Fibargroup",
-                "location": "Living Room",
-                "status": "Alive",
-                "is_available": true,
-                "is_awake": true,
-                "is_beaming_device": true,
-                "is_controller": false,
-                "is_failed": false,
-                "is_frequent_listening_device": false,
-                "is_info_received": true,
-                "is_initialized": true,
-                "is_listening_device": true,
-                "is_ready": true,
-                "is_routing_device": true,
-                "is_security_device": false,
-                "is_sleeping": false,
-                "last_update": "2021-04-06T00:07:44.081000",
-                "product_id": null,
-                "product_type": null,
-                "product_name": "Metered Wall Plug Switch",
-                "baud_rate": 100000,
-                "max_baud_rate": null,
-                "device_class": {
-                  "basic": 4,
-                  "generic": 16,
-                  "specific": 1
-                },
-                "specific": 1,
-                "firmware_version": "3.2",
-                "keep_awake": false,
-                "db_link": "https://devices.zwave-js.io/?jumpTo=0x010f:0x0602:0x1003:3.2",
-                "zwave_plus_version": 1,
-                "zwave_plus_node_type": 0,
-                "zwave_plus_role_type": 5,
-                "neighbours": [
-                  1
-                ],
-                "groups": {
+                {
                   "1": {
-                    "label": "Lifeline",
-                    "index": 1,
-                    "multichannel": true,
-                    "max_associations": 1
+                    "node_id": 1,
+                    "device_id": "0115-0400-0001",
+                    "name": "Controller",
+                    "capabilities": [
+                      "beaming",
+                      "routing"
+                    ],
+                    "manufacturer_id": "0x0115",
+                    "manufacturer_name": "Z-Wave.Me",
+                    "location": "Living Room",
+                    "status": "Alive",
+                    "is_available": true,
+                    "is_awake": true,
+                    "is_beaming_device": true,
+                    "is_controller": true,
+                    "is_failed": false,
+                    "is_frequent_listening_device": false,
+                    "is_info_received": true,
+                    "is_initialized": true,
+                    "is_listening_device": true,
+                    "is_ready": true,
+                    "is_routing_device": true,
+                    "is_security_device": false,
+                    "is_sleeping": false,
+                    "last_update": "2021-04-05T19:38:07.202000",
+                    "product_id": null,
+                    "product_type": null,
+                    "product_name": "UZB Z-Wave USB Stick",
+                    "baud_rate": 100000,
+                    "max_baud_rate": null,
+                    "device_class": {
+                      "basic": 2,
+                      "generic": 2,
+                      "specific": 1
+                    },
+                    "specific": 1,
+                    "firmware_version": null,
+                    "keep_awake": false,
+                    "db_link": "https://devices.zwave-js.io/?jumpTo=0x0115:0x0400:0x0001:0.0",
+                    "zwave_plus_version": null,
+                    "zwave_plus_node_type": null,
+                    "zwave_plus_role_type": null,
+                    "neighbours": [
+                      3,
+                      4
+                    ],
+                    "groups": {},
+                    "values": {}
                   },
-                  "2": {
-                    "label": "On/Off (Button)",
-                    "index": 2,
-                    "multichannel": true,
-                    "max_associations": 10
-                  },
-                  "3": {
-                    "label": "On/Off (Power)",
-                    "index": 3,
-                    "multichannel": true,
-                    "max_associations": 10
-                  }
-                },
-                "values": {
-                  "4-37-0-currentValue": {
-                    "id": "4-37-0-currentValue",
-                    "id_on_network": "4-37-0-currentValue",
-                    "value_id": "4-37-0-currentValue",
-                    "data": true,
-                    "data_items": null,
-                    "label": "Current value",
-                    "property_id": "currentValue",
-                    "help": null,
+                  "4": {
                     "node_id": 4,
-                    "parent_id": 4,
-                    "type": "Bool",
-                    "default": null,
-                    "endpoint": 0,
-                    "stateless": false,
-                    "command_class": 37,
-                    "command_class_name": "Binary Switch",
-                    "units": null,
-                    "min": null,
-                    "max": null,
-                    "is_read_only": true,
-                    "is_write_only": false,
-                    "last_update": "2021-04-05T19:38:07.587000"
+                    "device_id": "010f-0602-1003",
+                    "name": "TV Switch",
+                    "capabilities": [
+                      "beaming",
+                      "routing",
+                      "zwave_plus"
+                    ],
+                    "manufacturer_id": "0x010f",
+                    "manufacturer_name": "Fibargroup",
+                    "location": "Living Room",
+                    "status": "Alive",
+                    "is_available": true,
+                    "is_awake": true,
+                    "is_beaming_device": true,
+                    "is_controller": false,
+                    "is_failed": false,
+                    "is_frequent_listening_device": false,
+                    "is_info_received": true,
+                    "is_initialized": true,
+                    "is_listening_device": true,
+                    "is_ready": true,
+                    "is_routing_device": true,
+                    "is_security_device": false,
+                    "is_sleeping": false,
+                    "last_update": "2021-04-06T00:07:44.081000",
+                    "product_id": null,
+                    "product_type": null,
+                    "product_name": "Metered Wall Plug Switch",
+                    "baud_rate": 100000,
+                    "max_baud_rate": null,
+                    "device_class": {
+                      "basic": 4,
+                      "generic": 16,
+                      "specific": 1
+                    },
+                    "specific": 1,
+                    "firmware_version": "3.2",
+                    "keep_awake": false,
+                    "db_link": "https://devices.zwave-js.io/?jumpTo=0x010f:0x0602:0x1003:3.2",
+                    "zwave_plus_version": 1,
+                    "zwave_plus_node_type": 0,
+                    "zwave_plus_role_type": 5,
+                    "neighbours": [
+                      1
+                    ],
+                    "groups": {
+                      "1": {
+                        "label": "Lifeline",
+                        "index": 1,
+                        "multichannel": true,
+                        "max_associations": 1
+                      },
+                      "2": {
+                        "label": "On/Off (Button)",
+                        "index": 2,
+                        "multichannel": true,
+                        "max_associations": 10
+                      },
+                      "3": {
+                        "label": "On/Off (Power)",
+                        "index": 3,
+                        "multichannel": true,
+                        "max_associations": 10
+                      }
+                    },
+                    "values": {
+                      "4-37-0-currentValue": {
+                        "id": "4-37-0-currentValue",
+                        "id_on_network": "4-37-0-currentValue",
+                        "value_id": "4-37-0-currentValue",
+                        "data": true,
+                        "data_items": null,
+                        "label": "Current value",
+                        "property_id": "currentValue",
+                        "help": null,
+                        "node_id": 4,
+                        "parent_id": 4,
+                        "type": "Bool",
+                        "default": null,
+                        "endpoint": 0,
+                        "stateless": false,
+                        "command_class": 37,
+                        "command_class_name": "Binary Switch",
+                        "units": null,
+                        "min": null,
+                        "max": null,
+                        "is_read_only": true,
+                        "is_write_only": false,
+                        "last_update": "2021-04-05T19:38:07.587000"
+                      }
+                    }
                   }
                 }
-              }
-            }
 
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
@@ -973,7 +974,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     def node_update_neighbours(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
         """
         Ask a node to update its neighbours table
-        (same as :method:`platypush.plugins.zwave.mqtt.ZwaveMqttPlugin.node_heal`).
+        (same as :meth:`platypush.plugins.zwave.mqtt.ZwaveMqttPlugin.node_heal`).
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by label.
@@ -986,7 +987,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     def node_network_update(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
         """
         Update the controller with network information
-        (same as :method:`platypush.plugins.zwave.mqtt.ZwaveMqttPlugin.node_heal`).
+        (same as :meth:`platypush.plugins.zwave.mqtt.ZwaveMqttPlugin.node_heal`).
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by label.
@@ -1171,6 +1172,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     def get_groups(self, **kwargs) -> Dict[str, dict]:
         """
         Get the groups on the network.
+
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
 
@@ -1183,7 +1185,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
                 "label": "Motion",
                 "multichannel": true,
                 "max_associations": 10,
-                'group_id': '2-2',
+                "group_id": "2-2",
                 "node_id": 2,
                 "index": 2,
                 "associations": [
@@ -1195,7 +1197,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
                 "label": "Tamper",
                 "multichannel": true,
                 "max_associations": 10,
-                'group_id': '5-3',
+                "group_id": "5-3",
                 "node_id": 5,
                 "index": 3,
                 "associations": [
