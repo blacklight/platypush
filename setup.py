@@ -66,6 +66,7 @@ setup(
         'python-dateutil',
         'cryptography',
         'pyjwt',
+        'marshmallow',
     ],
 
     extras_require={

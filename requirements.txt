@@ -8,6 +8,9 @@
 # YAML configuration support
 pyyaml
 
+# Responses and schemas
+marshmallow
+
 # Support for setting thread/process name
 # python-prctl
 

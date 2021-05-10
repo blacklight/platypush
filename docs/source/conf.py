@@ -18,6 +18,7 @@ import sys
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath("./_ext"))
 
 
 # -- Project information -----------------------------------------------------
@@ -50,6 +51,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx_rtd_theme',
+    'sphinx_marshmallow',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -132,6 +134,11 @@ html_theme_options = {
         {
             'href': 'https://addons.mozilla.org/en-US/firefox/addon/platypush/',
             'title': 'Firefox Extension',
+            'internal': False,
+        },
+        {
+            'href': 'https://f-droid.org/en/packages/tech.platypush.platypush/',
+            'title': 'Android App',
             'internal': False,
         },
     ],
