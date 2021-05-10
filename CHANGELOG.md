@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [Unreleased]
+
+### Added
+
+- Added `switchbot` plugin to interact with Switchbot devices over the cloud API instead of
+  directly accessing the device's Bluetooth interface.
+  
+- Added `marshmallow` dependency - it will be used from now own to dump and document schemas
+  and responses instead of the currently mixed approach with `Response` objects and plain
+  dictionaries and lists.
+
+### Changed
+
+- `switch.switchbot` plugin renamed to `switchbot.bluetooth` plugin, while the new plugin
+  that uses the Switchbot API is simply named `switchbot`.
+
 ## [0.21.0] - 2021-05-06
 
 ### Added

@@ -35,7 +35,7 @@ import Switch from "@/components/panels/Switches/Switch";
 import Modal from "@/components/Modal";
 
 export default {
-  name: "SwitchSwitchbot",
+  name: "SwitchbotBluetooth",
   components: {Modal, Switch, Loading},
   mixins: [SwitchMixin],
 }

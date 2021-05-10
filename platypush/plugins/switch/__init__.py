@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from platypush.plugins import Plugin, action
 
@@ -27,46 +27,34 @@ class SwitchPlugin(Plugin):
         raise NotImplementedError()
 
     @action
-    def switch_status(self, device=None):
-        """ Get the status of a specified device or of all the configured devices (default)"""
+    def switch_status(self, device=None) -> Union[dict, List[dict]]:
+        """
+        Get the status of a specified device or of all the configured devices (default).
+
+        :param device: Filter by device name or ID.
+        :return: .. schema:: switch.SwitchStatusSchema(many=True)
+        """
         devices = self.switches
         if device:
             devices = [d for d in self.switches if d.get('id') == device or d.get('name') == device]
-            if devices:
-                return devices[0]
-            else:
-                return None
+            return devices[0] if devices else []
 
         return devices
 
     @action
-    def status(self, device=None, *args, **kwargs):
+    def status(self, device=None, *args, **kwargs) -> Union[dict, List[dict]]:
         """
-        Status function - if not overridden it calls :meth:`.switch_status`. You may want to override it if your plugin
-        does not handle only switches.
+        Get the status of all the devices, or filter by device name or ID (alias for :meth:`.switch_status`).
+
+        :param device: Filter by device name or ID.
+        :return: .. schema:: switch.SwitchStatusSchema(many=True)
         """
         return self.switch_status(device)
 
     @property
     def switches(self) -> List[dict]:
         """
-        This property must be implemented by the derived classes and must return a dictionary in the following format:
-
-            .. code-block:: json
-
-                [
-                    {
-                        "name": "switch_1",
-                        "on": true
-                    },
-                    {
-                        "name": "switch_2",
-                        "on": false
-                    },
-                ]
-
-        ``name`` and ``on`` are the minimum set of attributes that should be returned for a switch, but more attributes
-        can also be added.
+        :return: .. schema:: switch.SwitchStatusSchema(many=True)
         """
         raise NotImplementedError()
 

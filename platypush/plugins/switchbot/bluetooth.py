@@ -8,10 +8,10 @@ from platypush.plugins.bluetooth.ble import BluetoothBlePlugin
 from platypush.plugins.switch import SwitchPlugin
 
 
-class SwitchSwitchbotPlugin(SwitchPlugin, BluetoothBlePlugin):
+class SwitchbotBluetoothPlugin(SwitchPlugin, BluetoothBlePlugin):
     """
     Plugin to interact with a Switchbot (https://www.switch-bot.com/) device and
-    programmatically control buttons.
+    programmatically control switches over a Bluetooth interface.
 
     See :class:`platypush.plugins.bluetooth.ble.BluetoothBlePlugin` for how to enable BLE permissions for
     the platypush user (a simple solution may be to run it as root, but that's usually NOT a good idea).
@@ -21,6 +21,7 @@ class SwitchSwitchbotPlugin(SwitchPlugin, BluetoothBlePlugin):
         * **pybluez** (``pip install pybluez``)
         * **gattlib** (``pip install gattlib``)
         * **libboost** (on Debian ```apt-get install libboost-python-dev libboost-thread-dev``)
+
     """
 
     uuid = 'cba20002-224d-11e6-9fb8-0002a5d5c51b'

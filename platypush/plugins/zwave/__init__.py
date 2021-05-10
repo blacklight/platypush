@@ -53,6 +53,7 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
     def status(self) -> Dict[str, Any]:
         """
         Get the status of the controller.
+
         :return: dict
         """
         backend = self._get_backend()

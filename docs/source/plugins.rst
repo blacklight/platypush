@@ -118,9 +118,10 @@ Plugins
     platypush/plugins/stt.picovoice.hotword.rst
     platypush/plugins/stt.picovoice.speech.rst
     platypush/plugins/switch.rst
-    platypush/plugins/switch.switchbot.rst
     platypush/plugins/switch.tplink.rst
     platypush/plugins/switch.wemo.rst
+    platypush/plugins/switchbot.rst
+    platypush/plugins/switchbot.bluetooth.rst
     platypush/plugins/system.rst
     platypush/plugins/tcp.rst
     platypush/plugins/tensorflow.rst
@@ -145,4 +146,5 @@ Plugins
     platypush/plugins/zeroconf.rst
     platypush/plugins/zigbee.mqtt.rst
     platypush/plugins/zwave.rst
+    platypush/plugins/zwave._base.rst
     platypush/plugins/zwave.mqtt.rst
