@@ -19,6 +19,11 @@ Given the high speed of development in the first phase, changes are being report
 - `switch.switchbot` plugin renamed to `switchbot.bluetooth` plugin, while the new plugin
   that uses the Switchbot API is simply named `switchbot`.
 
+### Fixed
+
+- Added new sleep and heart rate read permissions/scopes to the Google Fit integration required
+  by the new Fit's policies.
+
 ## [0.21.0] - 2021-05-06
 
 ### Added
