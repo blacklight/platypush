@@ -13,6 +13,8 @@ Given the high speed of development in the first phase, changes are being report
 - Added `marshmallow` dependency - it will be used from now own to dump and document schemas
   and responses instead of the currently mixed approach with `Response` objects and plain
   dictionaries and lists.
+  
+- Support for custom MQTT timeout on all the `zwavejs2mqtt` calls.
 
 ### Changed
 
