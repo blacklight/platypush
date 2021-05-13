@@ -46,7 +46,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     """
 
     def __init__(self, name: str, host: str = 'localhost', port: int = 1883, topic_prefix: str = 'zwave',
-                 timeout: int = 60, tls_certfile: Optional[str] = None, tls_keyfile: Optional[str] = None,
+                 timeout: int = 10, tls_certfile: Optional[str] = None, tls_keyfile: Optional[str] = None,
                  tls_version: Optional[str] = None, tls_ciphers: Optional[str] = None, username: Optional[str] = None,
                  password: Optional[str] = None, **kwargs):
         """
@@ -125,7 +125,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         payload = json.dumps({'args': args})
         ret = self._parse_response(
             self.publish(topic=self._api_topic(api) + '/set', msg=payload, reply_topic=self._api_topic(api),
-                         **self._mqtt_args(**kwargs), timeout=self.timeout))
+                         **self._mqtt_args(**kwargs)))
 
         assert not ret or ret.get('success') is True, ret.get('message')
         return ret.get('result')
