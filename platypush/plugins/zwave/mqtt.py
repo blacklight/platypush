@@ -209,6 +209,8 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             'is_read_only': value['readable'] and not value['writeable'],
             'is_write_only': value['writeable'] and not value['readable'],
             'last_update': cls._convert_timestamp(value.get('lastUpdate')),
+            **({'property_key': value['propertyKey']} if 'propertyKey' in value else {}),
+            **({'property_key_name': value['propertyKeyName']} if 'propertyKeyName' in value else {}),
         }
 
     @staticmethod
@@ -932,7 +934,8 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             'nodeId': value['node_id'],
             'commandClass': value['command_class'],
             'endpoint': value.get('endpoint', 0),
-            'property': value['property_id']
+            'property': value['property_id'],
+            **({'propertyKey': value['property_key']} if 'property_key' in value else {}),
         }, data, **kwargs)
 
     @action
