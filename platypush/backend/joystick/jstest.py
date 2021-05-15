@@ -22,6 +22,9 @@ class JoystickState:
         return obj.axes == self.axes and obj.buttons == self.buttons
 
     def __sub__(self, obj) -> dict:
+        if len(obj.axes) < len(self.axes) or len(obj.buttons) < len(self.buttons):
+            return {}
+
         diff = {
             'axes': {
                 axis: obj.axes[axis]
@@ -114,7 +117,7 @@ class JoystickJstestBackend(Backend):
         buttons = []
         line = ''
 
-        while not self.should_stop():
+        while os.path.exists(self.device) and not self.should_stop():
             ch = self._process.stdout.read(1).decode()
             if not ch:
                 continue
@@ -127,7 +130,7 @@ class JoystickJstestBackend(Backend):
             if line.endswith('Axes:  '):
                 break
 
-        while not self.should_stop() and len(axes) < len(self._state.axes):
+        while os.path.exists(self.device) and not self.should_stop() and len(axes) < len(self._state.axes):
             ch = ' '
             while ch == ' ':
                 ch = self._process.stdout.read(1).decode()
@@ -135,7 +138,7 @@ class JoystickJstestBackend(Backend):
             self._process.stdout.read(len(f'{len(axes)}'))
             value = ''
 
-            while not self.should_stop():
+            while os.path.exists(self.device) and not self.should_stop():
                 ch = self._process.stdout.read(1).decode()
                 if ch == ' ':
                     if not value:
@@ -152,7 +155,7 @@ class JoystickJstestBackend(Backend):
 
         line = ''
 
-        while not self.should_stop():
+        while os.path.exists(self.device) and not self.should_stop():
             ch = self._process.stdout.read(1).decode()
             if not ch:
                 continue
@@ -161,7 +164,7 @@ class JoystickJstestBackend(Backend):
             if line.endswith('Buttons:  '):
                 break
 
-        while not self.should_stop() and len(buttons) < len(self._state.buttons):
+        while os.path.exists(self.device) and not self.should_stop() and len(buttons) < len(self._state.buttons):
             ch = ' '
             while ch == ' ':
                 ch = self._process.stdout.read(1).decode()
@@ -169,7 +172,7 @@ class JoystickJstestBackend(Backend):
             self._process.stdout.read(len(f'{len(buttons)}'))
             value = ''
 
-            while not self.should_stop():
+            while os.path.exists(self.device) and not self.should_stop():
                 ch = self._process.stdout.read(1).decode()
                 if ch == ' ':
                     continue
@@ -182,7 +185,7 @@ class JoystickJstestBackend(Backend):
         return JoystickState(axes=axes, buttons=buttons)
 
     def _initialize(self):
-        while not self.should_stop() and not self._state:
+        while os.path.exists(self.device) and not self.should_stop() and not self._state:
             line = b''
             ch = None
 
@@ -249,12 +252,12 @@ class JoystickJstestBackend(Backend):
                     self._initialize()
 
                     for state in self._read_states():
-                        self._process_state(state)
-
                         if not os.path.exists(self.device):
                             self.logger.warning(f'Connection to {self.device} lost')
                             self.bus.post(JoystickDisconnectedEvent(self.device))
                             break
+
+                        self._process_state(state)
         finally:
             self._process = None
 
