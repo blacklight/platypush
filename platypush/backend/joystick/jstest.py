@@ -230,7 +230,7 @@ class JoystickJstestBackend(Backend):
             evt_class = JoystickButtonPressedEvent if pressed else JoystickButtonReleasedEvent
             self.bus.post(evt_class(device=self.device, button=button))
 
-        for axis, value in diff.get('buttons', {}).items():
+        for axis, value in diff.get('axes', {}).items():
             self.bus.post(JoystickAxisEvent(device=self.device, axis=axis, value=value))
 
         self._state = state
