@@ -32,6 +32,7 @@ Backends
     platypush/backend/http.poll.rst
     platypush/backend/inotify.rst
     platypush/backend/joystick.rst
+    platypush/backend/joystick.jstest.rst
     platypush/backend/kafka.rst
     platypush/backend/light.hue.rst
     platypush/backend/linode.rst

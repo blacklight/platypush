@@ -16,6 +16,10 @@ Given the high speed of development in the first phase, changes are being report
   
 - Support for custom MQTT timeout on all the `zwavejs2mqtt` calls.
 
+- Added generic joystick backend `backend.joystick.jstest` which uses `jstest` from the
+  standard `joystick` system package to read the state of joysticks not compatible with
+  `python-inputs`.
+
 ### Changed
 
 - `switch.switchbot` plugin renamed to `switchbot.bluetooth` plugin, while the new plugin
