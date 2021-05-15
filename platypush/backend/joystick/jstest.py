@@ -5,7 +5,7 @@ import subprocess
 import time
 from typing import Optional, List
 
-from platypush.backend.joystick import JoystickBackend
+from platypush.backend import Backend
 from platypush.message.event.joystick import JoystickConnectedEvent, JoystickDisconnectedEvent, JoystickStateEvent, \
     JoystickButtonPressedEvent, JoystickButtonReleasedEvent, JoystickAxisEvent
 
@@ -40,7 +40,7 @@ class JoystickState:
         }
 
 
-class JoystickJstestBackend(JoystickBackend):
+class JoystickJstestBackend(Backend):
     """
     This backend can be used to intercept events from a joystick device if the device does not work with the standard
     :class:`platypush.backend.joystick.JoystickBackend` backend (this may especially happen with some Bluetooth
@@ -89,6 +89,7 @@ class JoystickJstestBackend(JoystickBackend):
         """
         super().__init__(device=device, **kwargs)
 
+        self.device = device
         self.jstest_path = jstest_path
         self._process: Optional[subprocess.Popen] = None
         self._state: Optional[JoystickState] = None
@@ -235,6 +236,8 @@ class JoystickJstestBackend(JoystickBackend):
         self._state = state
 
     def run(self):
+        super().run()
+
         try:
             while not self.should_stop():
                 self._wait_ready()
