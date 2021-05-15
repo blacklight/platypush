@@ -235,8 +235,6 @@ class JoystickJstestBackend(JoystickBackend):
         self._state = state
 
     def run(self):
-        super().run()
-
         try:
             while not self.should_stop():
                 self._wait_ready()
