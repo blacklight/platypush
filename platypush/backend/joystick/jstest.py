@@ -97,7 +97,7 @@ class JoystickJstestBackend(Backend):
     def _wait_ready(self):
         self.logger.info(f'Waiting for joystick device on {self.device}')
 
-        while not self.should_stop() or not os.path.exists(self.device):
+        while not self.should_stop() and not os.path.exists(self.device):
             time.sleep(1)
 
         if self.should_stop():
