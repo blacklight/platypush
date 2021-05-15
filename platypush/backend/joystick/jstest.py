@@ -87,17 +87,16 @@ class JoystickJstestBackend(JoystickBackend):
         :param jstest_path: Path to the ``jstest`` executable that comes with the ``joystick`` system package
             (default: ``/usr/bin/jstest``).
         """
-        super().__init__(**kwargs)
+        super().__init__(device=device, **kwargs)
 
-        self.device_path = device
         self.jstest_path = jstest_path
         self._process: Optional[subprocess.Popen] = None
         self._state: Optional[JoystickState] = None
 
     def _wait_ready(self):
-        self.logger.info(f'Waiting for joystick device on {self.device_path}')
+        self.logger.info(f'Waiting for joystick device on {self.device}')
 
-        while not self.should_stop() or not os.path.exists(self.device_path):
+        while not self.should_stop() or not os.path.exists(self.device):
             time.sleep(1)
 
         if self.should_stop():
@@ -243,7 +242,7 @@ class JoystickJstestBackend(JoystickBackend):
                 self._wait_ready()
 
                 with subprocess.Popen(
-                        [self.jstest_path, '--normal', self.device_path],
+                        [self.jstest_path, '--normal', self.device],
                         stdout=subprocess.PIPE) as self._process:
                     self.logger.info('Device opened')
                     self._initialize()
@@ -251,9 +250,9 @@ class JoystickJstestBackend(JoystickBackend):
                     for state in self._read_states():
                         self._process_state(state)
 
-                        if not os.path.exists(self.device_path):
-                            self.logger.warning(f'Connection to {self.device_path} lost')
-                            self.bus.post(JoystickDisconnectedEvent(self.device_path))
+                        if not os.path.exists(self.device):
+                            self.logger.warning(f'Connection to {self.device} lost')
+                            self.bus.post(JoystickDisconnectedEvent(self.device))
                             break
         finally:
             self._process = None
