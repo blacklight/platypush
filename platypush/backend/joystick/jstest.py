@@ -185,7 +185,10 @@ class JoystickJstestBackend(Backend):
         return JoystickState(axes=axes, buttons=buttons)
 
     def _initialize(self):
-        while os.path.exists(self.device) and not self.should_stop() and not self._state:
+        while self._process.poll() is None and \
+                os.path.exists(self.device) and \
+                not self.should_stop() and \
+                not self._state:
             line = b''
             ch = None
 
@@ -251,8 +254,11 @@ class JoystickJstestBackend(Backend):
                     self.logger.info('Device opened')
                     self._initialize()
 
+                    if self._process.poll() is not None:
+                        break
+
                     for state in self._read_states():
-                        if not os.path.exists(self.device):
+                        if self._process.poll() is not None or not os.path.exists(self.device):
                             self.logger.warning(f'Connection to {self.device} lost')
                             self.bus.post(JoystickDisconnectedEvent(self.device))
                             break
