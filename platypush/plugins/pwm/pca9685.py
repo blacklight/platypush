@@ -95,15 +95,17 @@ class PwmPca9685Plugin(Plugin):
             done = True
 
             for channel, value in values.items():
-                if value == pca.channels[channel].duty_cycle:
+                if abs(value - pca.channels[channel].duty_cycle) < 2:
                     continue
 
                 done = False
                 if value > pca.channels[channel].duty_cycle:
                     pca.channels[channel].duty_cycle = min(pca.channels[channel].duty_cycle + step_value,
+                                                           value,
                                                            self.MAX_PWM_VALUE)
                 else:
                     pca.channels[channel].duty_cycle = max(pca.channels[channel].duty_cycle - step_value,
+                                                           value,
                                                            self.MIN_PWM_VALUE)
 
             time.sleep(step_duration)
