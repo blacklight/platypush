@@ -32,6 +32,7 @@ class PwmPca9685Plugin(Plugin):
 
     MIN_PWM_VALUE = 0
     MAX_PWM_VALUE = 0xffff
+    N_CHANNELS = 16
 
     def __init__(self, frequency: float, step_value: float = 0.1, step_duration: float = 0.05, **kwargs):
         """
@@ -48,12 +49,22 @@ class PwmPca9685Plugin(Plugin):
     @staticmethod
     def _convert_percent_to_duty_cycle(value: float) -> int:
         """
-        Convert a duty cycle percentage value to a PCA9685 value between 0 and `0xffff`.
+        Convert a duty cycle percentage value to a PCA9685 value between 0 and ``0xffff``.
 
         :param value: Duty cycle value, between 0 and 1.
-        :return: Duty cycle 16-bit value, between 0 and `0xffff`.
+        :return: Duty cycle 16-bit value, between 0 and ``0xffff``.
         """
         return int(value * 65535)
+
+    @staticmethod
+    def _convert_duty_cycle_to_percent(value: int) -> float:
+        """
+        Convert a PCA9685 duty cycle value value to a percentage value.
+
+        :param value: Duty cycle 16-bit value, between 0 and ``0xffff``.
+        :return: Duty cycle percentage, between 0 and 1.
+        """
+        return value / 65535
 
     @action
     def execute(self, channels: Dict[int, float], frequency: Optional[float] = None, step_value: Optional[float] = None,
@@ -96,6 +107,22 @@ class PwmPca9685Plugin(Plugin):
                                                            self.MIN_PWM_VALUE)
 
             time.sleep(step_duration)
+
+    @action
+    def get_channels(self) -> Dict[int, float]:
+        """
+        Get the current duty cycle value of the channels.
+
+        :return: A map in the format ``channel_index -> value``, where ``value`` is the duty cycle of the associated
+            channel, as a percentage value between 0 and 1.
+        """
+        if not self._pca:
+            return {i: 0 for i in range(self.N_CHANNELS)}
+
+        return {
+            i: self._convert_duty_cycle_to_percent(channel.duty_cycle)
+            for i, channel in enumerate(self._pca.channels)
+        }
 
     @action
     def deinit(self):
