@@ -67,8 +67,8 @@ class PwmPca9685Plugin(Plugin):
         return value / 65535
 
     @action
-    def execute(self, channels: Dict[int, float], frequency: Optional[float] = None, step_value: Optional[float] = None,
-                step_duration: Optional[float] = None):
+    def write(self, channels: Dict[int, float], frequency: Optional[float] = None, step_value: Optional[float] = None,
+              step_duration: Optional[float] = None):
         """
         Send PWM values to the specified channels.
 
