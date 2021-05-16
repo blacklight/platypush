@@ -107,6 +107,7 @@ class PwmPca9685Plugin(Plugin):
             return
 
         self._pca.deinit()
+        self._pca = None
 
     @action
     def reset(self):
