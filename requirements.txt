@@ -317,3 +317,7 @@ croniter
 
 # Support for file.monitor backend
 #watchdog
+
+# Support for Adafruit PCA9685 PWM controller
+#adafruit-python-shell
+#adafruit-circuitpython-pca9685

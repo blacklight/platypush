@@ -249,5 +249,7 @@ setup(
         'smartthings': ['pysmartthings', 'aiohttp'],
         # Support for file.monitor backend
         'filemonitor': ['watchdog'],
+        # Support for Adafruit PCA9685 PWM controller
+        'pca9685': ['adafruit-python-shell', 'adafruit-circuitpython-pca9685'],
     },
 )

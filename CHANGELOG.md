@@ -19,6 +19,8 @@ Given the high speed of development in the first phase, changes are being report
 - Added generic joystick backend `backend.joystick.jstest` which uses `jstest` from the
   standard `joystick` system package to read the state of joysticks not compatible with
   `python-inputs`.
+  
+- Added PWM PCA9685 plugin.
 
 ### Changed
 
