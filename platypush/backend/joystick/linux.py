@@ -146,10 +146,10 @@ class JoystickLinuxBackend(Backend):
 
     def run(self):
         super().run()
+        self.logger.info(f'Opening {self.device}...')
 
         while not self.should_stop():
             # Open the joystick device.
-            self.logger.info(f'Opening {self.device}...')
             try:
                 jsdev = open(self.device, 'rb')
                 self._init_joystick(jsdev)
@@ -165,13 +165,16 @@ class JoystickLinuxBackend(Backend):
                     if evbuf:
                         _, value, evt_type, number = struct.unpack('IhBB', evbuf)
 
+                        if evt_type & 0x80:  # Initial state notification
+                            continue
+
                         if evt_type & 0x01:
                             button = self._button_map[number]
                             if button:
                                 self._button_states[button] = value
                                 evt_class = JoystickButtonPressedEvent if value else JoystickButtonReleasedEvent
                                 # noinspection PyTypeChecker
-                                self.bus.post(evt_class(button=button))
+                                self.bus.post(evt_class(device=self.device, button=button))
 
                         if evt_type & 0x02:
                             axis = self._axis_map[number]
@@ -179,7 +182,7 @@ class JoystickLinuxBackend(Backend):
                                 fvalue = value / 32767.0
                                 self._axis_states[axis] = fvalue
                                 # noinspection PyTypeChecker
-                                self.bus.post(JoystickAxisEvent(axis=axis, value=fvalue))
+                                self.bus.post(JoystickAxisEvent(device=self.device, axis=axis, value=fvalue))
                 except OSError as e:
                     self.logger.warning(f'Connection to {self.device} lost: {e}')
                     self.bus.post(JoystickDisconnectedEvent(device=self.device))
