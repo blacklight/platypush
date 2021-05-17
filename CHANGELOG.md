@@ -22,6 +22,9 @@ Given the high speed of development in the first phase, changes are being report
   
 - Added PWM PCA9685 plugin.
 
+- Added Linux native joystick plugin, ``backend.joystick.linux``, for the cases where
+  ``python-inputs`` doesn't work and ``jstest`` is too slow.
+
 ### Changed
 
 - `switch.switchbot` plugin renamed to `switchbot.bluetooth` plugin, while the new plugin

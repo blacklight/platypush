@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List
+from typing import Optional, Iterable, Union
 
 from platypush.message.event import Event
 
@@ -35,6 +35,18 @@ class JoystickConnectedEvent(_JoystickEvent):
     """
     Event triggered upon joystick connection.
     """
+    def __init__(self,
+                 *args,
+                 name: Optional[str] = None,
+                 axes: Optional[Iterable[Union[int, str]]] = None,
+                 buttons: Optional[Iterable[Union[int, str]]] = None,
+                 **kwargs):
+        """
+        :param name: Device name.
+        :param axes: List of the device axes, as indices or names.
+        :param buttons: List of the device buttons, as indices or names.
+        """
+        super().__init__(*args, name=name, axes=axes, buttons=buttons, **kwargs)
 
 
 class JoystickDisconnectedEvent(_JoystickEvent):
@@ -48,7 +60,7 @@ class JoystickStateEvent(_JoystickEvent):
     Event triggered when the state of the joystick changes.
     """
 
-    def __init__(self, *args, axes: List[int], buttons: List[bool], **kwargs):
+    def __init__(self, *args, axes: Iterable[int], buttons: Iterable[bool], **kwargs):
         """
         :param axes: Joystick axes values, as a list of integer values.
         :param buttons: Joystick buttons values, as a list of boolean values (True for pressed, False for released).
@@ -61,9 +73,9 @@ class JoystickButtonPressedEvent(_JoystickEvent):
     Event triggered when a joystick button is pressed.
     """
 
-    def __init__(self, *args, button: int, **kwargs):
+    def __init__(self, *args, button: Union[int, str], **kwargs):
         """
-        :param button: Button index.
+        :param button: Button index or name.
         """
         super().__init__(*args, button=button, **kwargs)
 
@@ -73,9 +85,9 @@ class JoystickButtonReleasedEvent(_JoystickEvent):
     Event triggered when a joystick button is released.
     """
 
-    def __init__(self, *args, button: int, **kwargs):
+    def __init__(self, *args, button: Union[int, str], **kwargs):
         """
-        :param button: Button index.
+        :param button: Button index or name.
         """
         super().__init__(*args, button=button, **kwargs)
 
@@ -85,9 +97,9 @@ class JoystickAxisEvent(_JoystickEvent):
     Event triggered when an axis value of the joystick changes.
     """
 
-    def __init__(self, *args, axis: int, value: int, **kwargs):
+    def __init__(self, *args, axis: Union[int, str], value: int, **kwargs):
         """
-        :param axis: Axis index.
+        :param axis: Axis index or name.
         :param value: Axis value.
         """
         super().__init__(*args, axis=axis, value=value, **kwargs)

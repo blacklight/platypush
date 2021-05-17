@@ -51,6 +51,10 @@ class JoystickJstestBackend(Backend):
 
     This backend only works on Linux and it requires the ``joystick`` package to be installed.
 
+    **NOTE**: This backend can be quite slow, since it has to run another program (``jstest``) and parse its output.
+    Consider it as a last resort if your joystick works with neither :class:`platypush.backend.joystick.JoystickBackend`
+    nor :class:`platypush.backend.joystick.JoystickLinuxBackend`.
+
     Instructions on Debian-based distros::
 
         # apt-get install joystick
