@@ -43,6 +43,7 @@ class PushbulletBackend(Backend):
         self.pb_device_id = None
         self.pb = None
         self.listener = None
+        self._retrying = False
 
     def _initialize(self):
         # noinspection PyPackageRequirements
@@ -132,16 +133,32 @@ class PushbulletBackend(Backend):
         self.close()
         self.logger.info('Pushbullet backend terminated')
 
-    def on_error(self, e):
-        self.logger.exception(e)
-        self.close()
-        self.run_listener()
+    def on_error(self, err=None):
+        if err:
+            self.logger.exception(err)
+            try:
+                self.close()
+            except Exception as e:
+                self.logger.warning(f'close() error: {e}')
+
+        if not self._retrying:
+            time.sleep(5)
+            self.logger.info('Retrying connection')
+            self._retrying = True
+            self.run_listener()
+
+    def on_open(self):
+        self.logger.info('Pushbullet service connected')
+        self._retrying = False
 
     def run_listener(self):
-        from pushbullet import Listener
+        from .listener import Listener
 
         self.logger.info('Initializing Pushbullet backend - device_id: {}'.format(self.device_name))
-        self.listener = Listener(account=self.pb, on_push=self.on_push(), on_error=self.on_error,
+        self.listener = Listener(account=self.pb, on_push=self.on_push(),
+                                 on_open=self.on_open,
+                                 on_close=self.on_error,
+                                 on_error=self.on_error,
                                  http_proxy_host=self.proxy_host,
                                  http_proxy_port=self.proxy_port)
 
