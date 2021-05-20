@@ -43,7 +43,6 @@ class PushbulletBackend(Backend):
         self.pb_device_id = None
         self.pb = None
         self.listener = None
-        self._retrying = False
 
     def _initialize(self):
         # noinspection PyPackageRequirements
@@ -133,23 +132,12 @@ class PushbulletBackend(Backend):
         self.close()
         self.logger.info('Pushbullet backend terminated')
 
-    def on_error(self, err=None):
-        if err:
-            self.logger.exception(err)
-            try:
-                self.close()
-            except Exception as e:
-                self.logger.warning(f'close() error: {e}')
-
-        if not self._retrying:
-            time.sleep(5)
-            self.logger.info('Retrying connection')
-            self._retrying = True
-            self.run_listener()
+    def on_close(self, err=None):
+        self.listener = None
+        raise RuntimeError(err or 'Connection closed')
 
     def on_open(self):
         self.logger.info('Pushbullet service connected')
-        self._retrying = False
 
     def run_listener(self):
         from .listener import Listener
@@ -157,8 +145,8 @@ class PushbulletBackend(Backend):
         self.logger.info('Initializing Pushbullet backend - device_id: {}'.format(self.device_name))
         self.listener = Listener(account=self.pb, on_push=self.on_push(),
                                  on_open=self.on_open,
-                                 on_close=self.on_error,
-                                 on_error=self.on_error,
+                                 on_close=self.on_close,
+                                 on_error=self.on_close,
                                  http_proxy_host=self.proxy_host,
                                  http_proxy_port=self.proxy_port)
 
@@ -176,9 +164,16 @@ class PushbulletBackend(Backend):
             except Exception as e:
                 self.logger.exception(e)
                 self.logger.error('Pushbullet initialization error: {}'.format(str(e)))
-                time.sleep(30)
+                time.sleep(10)
 
-        self.run_listener()
+        while not self.should_stop():
+            try:
+                self.run_listener()
+            except Exception as e:
+                self.logger.exception(e)
+                time.sleep(10)
+                self.logger.info('Retrying connection')
+
 
 
 # vim:sw=4:ts=4:et:
