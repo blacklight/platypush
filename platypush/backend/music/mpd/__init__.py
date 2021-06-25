@@ -1,4 +1,3 @@
-import re
 import time
 
 from platypush.backend import Backend
@@ -39,7 +38,6 @@ class MusicMpdBackend(Backend):
         self.port = port
         self.poll_seconds = poll_seconds
 
-
     def run(self):
         super().run()
 
@@ -47,16 +45,15 @@ class MusicMpdBackend(Backend):
         last_state = None
         last_track = None
         last_playlist = None
-        plugin = None
 
         while not self.should_stop():
             success = False
+            state = None
+            status = None
+            playlist = None
+            track = None
 
             while not success:
-                state = None
-                playlist = None
-                track = None
-
                 try:
                     plugin = get_plugin('music.mpd')
                     if not plugin:
@@ -73,9 +70,12 @@ class MusicMpdBackend(Backend):
                 except Exception as e:
                     self.logger.debug(e)
                     get_plugin('music.mpd', reload=True)
-                    if not state: state = last_state
-                    if not playlist: playlist = last_playlist
-                    if not track: track = last_track
+                    if not state:
+                        state = last_state
+                    if not playlist:
+                        playlist = last_playlist
+                    if not track:
+                        track = last_track
                 finally:
                     time.sleep(self.poll_seconds)
 
@@ -124,6 +124,4 @@ class MusicMpdBackend(Backend):
             last_track = track
             time.sleep(self.poll_seconds)
 
-
 # vim:sw=4:ts=4:et:
-

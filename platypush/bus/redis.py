@@ -26,9 +26,8 @@ class RedisBus(Bus):
         self.on_message = on_message
         self.thread_id = threading.get_ident()
 
-    def get(self):
+    def get(self, parse: bool = True):
         """ Reads one message from the Redis queue """
-        msg = None
         try:
             if self.should_stop():
                 return
@@ -37,11 +36,12 @@ class RedisBus(Bus):
             if not msg or msg[1] is None:
                 return
 
-            msg = Message.build(msg[1].decode('utf-8'))
+            msg = msg[1].decode('utf-8')
+            if parse:
+                return Message.build(msg)
+            return msg
         except Exception as e:
             logger.exception(e)
-
-        return msg
 
     def post(self, msg):
         """ Sends a message to the Redis queue """
