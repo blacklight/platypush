@@ -42,7 +42,6 @@ class MusicSpotifyConnectBackend(Backend):
                  device_type: str = 'speaker',
                  audio_backend: str = 'alsa',
                  audio_device: Optional[str] = None,
-                 audio_format: str = 'S16',
                  mixer: str = 'softvol',
                  mixer_name: str = 'PCM',
                  mixer_card: str = 'default',
@@ -78,8 +77,6 @@ class MusicSpotifyConnectBackend(Backend):
             ``alsa``, ``portaudio``, ``pulseaudio``, ``jackaudio``, ``gstreamer``, ``rodio``, ``rodiojack``,
             ``sdl`` (default: ``alsa``).
         :param audio_device: Output audio device. Type ``librespot --device ?`` to get a list of the available devices.
-        :param audio_format: Output audio format. Supported values: ``F32``, ``S32``, ``S24``, ``S24_3`` or ``S16``
-            (default: ``S16``).
         :param mixer: Mixer to be used to control the volume. Supported values: ``alsa`` or ``softvol``
             (default: ``softvol``).
         :param mixer_name: Mixer name if using the ALSA mixer. Supported values: ``PCM`` or ``Master``
@@ -119,7 +116,7 @@ class MusicSpotifyConnectBackend(Backend):
         self._librespot_args = [
             librespot_path, '--name', self.device_name, '--backend', audio_backend,
             '--device-type', device_type, '--mixer', mixer, '--mixer-name', mixer_name, '--initial-volume', str(volume),
-            '--volume-ctrl', volume_ctrl, '--bitrate', str(bitrate), '--format', audio_format, '--emit-sink-events',
+            '--volume-ctrl', volume_ctrl, '--bitrate', str(bitrate), '--emit-sink-events',
             '--onevent', 'python -m platypush.backend.music.spotify.connect.event',
         ]
 
