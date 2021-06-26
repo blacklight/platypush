@@ -1,7 +1,8 @@
 import json
 import os
 
-from . import get_redis
+from platypush.utils import get_redis
+from . import status_queue
 
 environ_variables = [
     'PLAYER_EVENT',
@@ -14,7 +15,7 @@ environ_variables = [
 
 
 def on_librespot_event():
-    get_redis().post(json.dumps({
+    get_redis().rpush(status_queue, json.dumps({
         var: os.environ[var]
         for var in environ_variables
         if var in os.environ

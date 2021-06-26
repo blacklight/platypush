@@ -11,8 +11,9 @@ from platypush.backend import Backend
 from platypush.config import Config
 from platypush.message.event.music import MusicPlayEvent, MusicPauseEvent, MusicStopEvent, \
     NewPlayingTrackEvent, SeekChangeEvent, VolumeChangeEvent
+from platypush.utils import get_redis
 
-from .event import get_redis, status_queue
+from .event import status_queue
 
 
 class MusicSpotifyConnectBackend(Backend):
@@ -205,11 +206,11 @@ class MusicSpotifyConnectBackend(Backend):
             redis = get_redis()
 
             while not self.should_stop():
-                msg = redis.get(parse=False)
+                msg = redis.blpop(status_queue, timeout=1)
                 if not msg:
                     continue
 
-                self._process_status_msg(json.loads(msg))
+                self._process_status_msg(json.loads(msg[1]))
 
         return loop
 

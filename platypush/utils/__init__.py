@@ -12,6 +12,8 @@ import ssl
 import urllib.request
 from typing import Optional, Tuple
 
+from redis import Redis
+
 logger = logging.getLogger('utils')
 
 
@@ -436,6 +438,11 @@ def get_enabled_plugins() -> dict:
             logger.debug(f'Could not get plugin {name}: {e}')
 
     return plugins
+
+
+def get_redis() -> Redis:
+    from platypush.config import Config
+    return Redis(**(Config.get('backend.redis') or {}).get('redis_args', {}))
 
 
 # vim:sw=4:ts=4:et:
