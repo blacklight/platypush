@@ -93,6 +93,8 @@ class AdafruitIoPlugin(Plugin):
         from redis.exceptions import TimeoutError as QueueTimeoutError
 
         def run():
+            from Adafruit_IO import ThrottlingError
+
             redis = self._get_redis()
             last_processed_batch_timestamp = None
             data = {}
