@@ -37,12 +37,16 @@ class WeatherBuienradarBackend(Backend):
             del weather['measured']
 
             if precip != self.last_precip:
-                self.bus.post(NewPrecipitationForecastEvent(average=precip.get('average'),
+                self.bus.post(NewPrecipitationForecastEvent(plugin_name='weather.buienradar',
+                                                            average=precip.get('average'),
                                                             total=precip.get('total'),
                                                             time_frame=precip.get('time_frame')))
 
             if weather != self.last_weather:
-                self.bus.post(NewWeatherConditionEvent(**weather))
+                self.bus.post(NewWeatherConditionEvent(**{
+                    **weather,
+                    'plugin_name': 'weather.buienradar',
+                }))
 
             self.last_weather = weather
             self.last_precip = precip
