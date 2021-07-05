@@ -110,8 +110,7 @@ def generate_dockerfile(deps, ports, cfgfile, devdir, python_version):
 
         RUN git clone --recursive https://git.platypush.tech/platypush/platypush.git /app \\
             && cd /app \\
-            && pip install -r requirements.txt \\
-            && python setup.py web_build
+            && pip install -r requirements.txt
 
         RUN apt-get remove -y git \\
             && apt-get remove -y build-essential \\
