@@ -89,8 +89,11 @@ pygments_style = 'sphinx'
 #
 # html_theme = 'haiku'
 # html_theme = 'sphinx_rtd_theme'
-html_theme = 'sphinx_material'
+html_theme = 'sphinx_book_theme'
 
+html_title = 'Platypush Documentation'
+html_logo = '../../assets/logo-64.png'
+html_favicon = '../../platypush/backend/http/webapp/public/favicon.ico'
 html_domain_indices = True
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -98,50 +101,12 @@ html_domain_indices = True
 # documentation.
 #
 html_theme_options = {
-    'nav_title': 'Platypush documentation',
-    'repo_url': 'https://git.platypush.tech/platypush/platypush',
-    'repo_name': 'Source code',
-    'repo_type': 'gitlab',
-    'color_primary': 'green',
-    'color_accent': 'light-green',
-    'logo_icon': '&#128366',
-    'nav_links': [
-        {
-            'href': 'https://platypush.tech/',
-            'title': 'Homepage',
-            'internal': False,
-        },
-        {
-            'href': 'https://blog.platypush.tech/',
-            'title': 'Blog',
-            'internal': False,
-        },
-        {
-            'href': 'https://git.platypush.tech/platypush/platypush',
-            'title': 'Repository',
-            'internal': False,
-        },
-        {
-            'href': 'https://git.platypush.tech/platypush/platypush/-/wikis/home',
-            'title': 'Wiki',
-            'internal': False,
-        },
-        {
-            'href': 'https://chrome.google.com/webstore/detail/platypush/aphldjclndofhflbbdnmpejbjgomkbie',
-            'title': 'Chrome Extension',
-            'internal': False,
-        },
-        {
-            'href': 'https://addons.mozilla.org/en-US/firefox/addon/platypush/',
-            'title': 'Firefox Extension',
-            'internal': False,
-        },
-        {
-            'href': 'https://f-droid.org/en/packages/tech.platypush.platypush/',
-            'title': 'Android App',
-            'internal': False,
-        },
-    ],
+    'toc_title': 'Platypush documentation',
+    'repository_url': 'https://git.platypush.tech/platypush/platypush',
+    'use_repository_button': True,
+    'use_issues_button': True,
+    'use_fullscreen_button': True,
+    'home_page_in_toc': True,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -157,9 +122,9 @@ html_theme_options = {
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-html_sidebars = {
-    '**': ['logo-text.html', 'globaltoc.html', 'localtoc.html', 'searchbox.html']
-}
+# html_sidebars = {
+#     '**': ['logo-text.html', 'globaltoc.html', 'localtoc.html', 'searchbox.html']
+# }
 
 # -- Options for HTMLHelp output ---------------------------------------------
 

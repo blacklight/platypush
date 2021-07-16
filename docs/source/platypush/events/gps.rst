@@ -1,4 +1,4 @@
-``platypush.message.event.gps``
+``gps``
 ===============================
 
 .. automodule:: platypush.message.event.gps

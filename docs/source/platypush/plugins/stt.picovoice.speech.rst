@@ -1,4 +1,4 @@
-``platypush.plugins.stt.picovoice.speech``
+``stt.picovoice.speech``
 ==========================================
 
 .. automodule:: platypush.plugins.stt.picovoice.speech

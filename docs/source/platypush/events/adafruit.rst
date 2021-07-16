@@ -1,4 +1,4 @@
-``platypush.message.event.adafruit``
+``adafruit``
 ====================================
 
 .. automodule:: platypush.message.event.adafruit

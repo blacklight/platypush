@@ -1,4 +1,4 @@
-``platypush.plugins.inspect``
+``inspect``
 =============================
 
 .. automodule:: platypush.plugins.inspect

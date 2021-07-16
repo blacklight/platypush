@@ -1,4 +1,4 @@
-``platypush.plugins.udp``
+``udp``
 =========================
 
 .. automodule:: platypush.plugins.udp

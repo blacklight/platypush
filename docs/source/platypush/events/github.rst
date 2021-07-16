@@ -1,4 +1,4 @@
-``platypush.message.event.github``
+``github``
 ==================================
 
 .. automodule:: platypush.message.event.github

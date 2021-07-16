@@ -1,4 +1,4 @@
-``platypush.plugins.tts``
+``tts``
 =========================
 
 .. automodule:: platypush.plugins.tts

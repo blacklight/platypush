@@ -1,4 +1,4 @@
-``platypush.plugins.logger``
+``logger``
 ============================
 
 .. automodule:: platypush.plugins.logger

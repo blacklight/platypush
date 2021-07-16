@@ -1,4 +1,4 @@
-``platypush.backend.mail``
+``mail``
 ==========================
 
 .. automodule:: platypush.backend.mail

@@ -1,4 +1,4 @@
-``platypush.backend.inotify``
+``inotify``
 =============================
 
 .. automodule:: platypush.backend.inotify

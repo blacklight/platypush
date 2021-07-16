@@ -1,4 +1,4 @@
-``platypush.plugins.nmap``
+``nmap``
 ==========================
 
 .. automodule:: platypush.plugins.nmap

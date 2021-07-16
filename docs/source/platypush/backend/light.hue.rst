@@ -1,4 +1,4 @@
-``platypush.backend.light.hue``
+``light.hue``
 ===============================
 
 .. automodule:: platypush.backend.light.hue

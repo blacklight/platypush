@@ -1,4 +1,4 @@
-``platypush.plugins.zeroconf``
+``zeroconf``
 ==============================
 
 .. automodule:: platypush.plugins.zeroconf

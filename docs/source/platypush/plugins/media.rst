@@ -1,4 +1,4 @@
-``platypush.plugins.media``
+``media``
 ===========================
 
 .. automodule:: platypush.plugins.media

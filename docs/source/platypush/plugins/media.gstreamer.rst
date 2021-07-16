@@ -1,4 +1,4 @@
-``platypush.plugins.media.gstreamer``
+``media.gstreamer``
 =====================================
 
 .. automodule:: platypush.plugins.media.gstreamer

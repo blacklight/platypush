@@ -1,4 +1,4 @@
-``platypush.plugins.config``
+``config``
 ============================
 
 .. automodule:: platypush.plugins.config

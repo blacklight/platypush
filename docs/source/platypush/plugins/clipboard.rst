@@ -1,4 +1,4 @@
-``platypush.plugins.clipboard``
+``clipboard``
 ===============================
 
 .. automodule:: platypush.plugins.clipboard

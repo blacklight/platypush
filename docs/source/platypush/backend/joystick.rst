@@ -1,4 +1,4 @@
-``platypush.backend.joystick``
+``joystick``
 ==============================
 
 .. automodule:: platypush.backend.joystick

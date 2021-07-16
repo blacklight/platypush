@@ -1,4 +1,4 @@
-``platypush.plugins.alarm``
+``alarm``
 ===========================
 
 .. automodule:: platypush.plugins.alarm

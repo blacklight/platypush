@@ -1,4 +1,4 @@
-``platypush.plugins.google.maps``
+``google.maps``
 =================================
 
 .. automodule:: platypush.plugins.google.maps

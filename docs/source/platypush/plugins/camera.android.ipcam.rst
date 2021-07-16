@@ -1,4 +1,4 @@
-``platypush.plugins.camera.android.ipcam``
+``camera.android.ipcam``
 ==========================================
 
 .. automodule:: platypush.plugins.camera.android.ipcam

@@ -1,4 +1,4 @@
-``platypush.backend.sensor.ir.zeroborg``
+``sensor.ir.zeroborg``
 ========================================
 
 .. automodule:: platypush.backend.sensor.ir.zeroborg

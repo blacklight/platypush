@@ -1,4 +1,4 @@
-``platypush.message.event.weather``
+``weather``
 ===================================
 
 .. automodule:: platypush.message.event.weather

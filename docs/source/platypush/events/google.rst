@@ -1,4 +1,4 @@
-``platypush.message.event.google``
+``google``
 ==================================
 
 .. automodule:: platypush.message.event.google

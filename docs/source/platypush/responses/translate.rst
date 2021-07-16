@@ -1,4 +1,4 @@
-``platypush.message.response.translate``
+``translate``
 ========================================
 
 .. automodule:: platypush.message.response.translate

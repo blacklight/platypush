@@ -1,4 +1,4 @@
-``platypush.message.event.http.rss``
+``http.rss``
 ====================================
 
 .. automodule:: platypush.message.event.http.rss

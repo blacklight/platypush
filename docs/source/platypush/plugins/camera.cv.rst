@@ -1,4 +1,4 @@
-``platypush.plugins.camera.cv``
+``camera.cv``
 ===============================
 
 .. automodule:: platypush.plugins.camera.cv

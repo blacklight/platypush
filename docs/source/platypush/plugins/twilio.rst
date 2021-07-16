@@ -1,4 +1,4 @@
-``platypush.plugins.twilio``
+``twilio``
 ============================
 
 .. automodule:: platypush.plugins.twilio

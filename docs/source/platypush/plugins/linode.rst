@@ -1,4 +1,4 @@
-``platypush.plugins.linode``
+``linode``
 ============================
 
 .. automodule:: platypush.plugins.linode

@@ -1,4 +1,4 @@
-``platypush.backend.http.poll``
+``http.poll``
 ===============================
 
 .. automodule:: platypush.backend.http.poll

@@ -1,4 +1,4 @@
-``platypush.plugins.weather.openweathermap``
+``weather.openweathermap``
 ============================================
 
 .. automodule:: platypush.plugins.weather.openweathermap

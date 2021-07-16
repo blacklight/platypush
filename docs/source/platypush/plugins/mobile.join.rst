@@ -1,4 +1,4 @@
-``platypush.plugins.mobile.join``
+``mobile.join``
 =================================
 
 .. automodule:: platypush.plugins.mobile.join

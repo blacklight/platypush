@@ -1,4 +1,4 @@
-``platypush.plugins.switch.wemo``
+``switch.wemo``
 =================================
 
 .. automodule:: platypush.plugins.switch.wemo

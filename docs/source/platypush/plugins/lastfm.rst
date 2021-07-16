@@ -1,4 +1,4 @@
-``platypush.plugins.lastfm``
+``lastfm``
 ============================
 
 .. automodule:: platypush.plugins.lastfm

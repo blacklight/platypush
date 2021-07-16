@@ -1,4 +1,4 @@
-``platypush.message.event.zeroconf``
+``zeroconf``
 ====================================
 
 .. automodule:: platypush.message.event.zeroconf

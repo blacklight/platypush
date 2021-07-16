@@ -1,4 +1,4 @@
-``platypush.plugins.midi``
+``midi``
 ==========================
 
 .. automodule:: platypush.plugins.midi

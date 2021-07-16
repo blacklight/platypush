@@ -1,4 +1,4 @@
-``platypush.plugins.sensor``
+``sensor``
 ============================
 
 .. automodule:: platypush.plugins.sensor

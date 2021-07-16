@@ -1,4 +1,4 @@
-``platypush.backend.zwave``
+``zwave``
 ===========================
 
 .. automodule:: platypush.backend.zwave

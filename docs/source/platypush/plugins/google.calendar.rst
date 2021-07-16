@@ -1,4 +1,4 @@
-``platypush.plugins.google.calendar``
+``google.calendar``
 =====================================
 
 .. automodule:: platypush.plugins.google.calendar

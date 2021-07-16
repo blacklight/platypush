@@ -1,4 +1,4 @@
-``platypush.message.event.web.widget``
+``web.widget``
 ======================================
 
 .. automodule:: platypush.message.event.web.widget

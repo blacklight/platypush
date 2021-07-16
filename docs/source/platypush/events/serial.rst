@@ -1,4 +1,4 @@
-``platypush.message.event.serial``
+``serial``
 ==================================
 
 .. automodule:: platypush.message.event.serial

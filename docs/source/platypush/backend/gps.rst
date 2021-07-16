@@ -1,4 +1,4 @@
-``platypush.backend.gps``
+``gps``
 =========================
 
 .. automodule:: platypush.backend.gps

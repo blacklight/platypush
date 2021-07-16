@@ -1,4 +1,4 @@
-``platypush.plugins.mqtt``
+``mqtt``
 ==========================
 
 .. automodule:: platypush.plugins.mqtt

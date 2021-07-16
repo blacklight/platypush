@@ -1,4 +1,4 @@
-``platypush.backend.zigbee.mqtt``
+``zigbee.mqtt``
 =================================
 
 .. automodule:: platypush.backend.zigbee.mqtt

@@ -1,4 +1,4 @@
-``platypush.plugins.homeseer``
+``homeseer``
 ==============================
 
 .. automodule:: platypush.plugins.homeseer

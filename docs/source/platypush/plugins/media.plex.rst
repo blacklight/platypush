@@ -1,4 +1,4 @@
-``platypush.plugins.media.plex``
+``media.plex``
 ================================
 
 .. automodule:: platypush.plugins.media.plex

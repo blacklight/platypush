@@ -1,4 +1,4 @@
-``platypush.message.event.tensorflow``
+``tensorflow``
 ======================================
 
 .. automodule:: platypush.message.event.tensorflow

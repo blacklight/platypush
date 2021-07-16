@@ -1,4 +1,4 @@
-``platypush.backend.trello``
+``trello``
 ============================
 
 .. automodule:: platypush.backend.trello

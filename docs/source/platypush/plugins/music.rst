@@ -1,4 +1,4 @@
-``platypush.plugins.music``
+``music``
 ===========================
 
 .. automodule:: platypush.plugins.music

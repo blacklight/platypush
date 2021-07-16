@@ -1,4 +1,4 @@
-``platypush.plugins.media.kodi``
+``media.kodi``
 ================================
 
 .. automodule:: platypush.plugins.media.kodi

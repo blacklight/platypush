@@ -1,4 +1,4 @@
-``platypush.backend.file.monitor``
+``file.monitor``
 ==================================
 
 .. automodule:: platypush.backend.file.monitor

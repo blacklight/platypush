@@ -1,4 +1,4 @@
-``platypush.message.event.clipboard``
+``clipboard``
 =====================================
 
 .. automodule:: platypush.message.event.clipboard

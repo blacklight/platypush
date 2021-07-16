@@ -1,4 +1,4 @@
-``platypush.message.response.ssh``
+``ssh``
 ==================================
 
 .. automodule:: platypush.message.response.ssh

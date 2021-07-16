@@ -1,4 +1,4 @@
-``platypush.backend.music.mpd``
+``music.mpd``
 ===============================
 
 .. automodule:: platypush.backend.music.mpd

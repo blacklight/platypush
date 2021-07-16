@@ -1,4 +1,4 @@
-``platypush.plugins.switchbot.bluetooth``
+``switchbot.bluetooth``
 =========================================
 
 .. automodule:: platypush.plugins.switchbot.bluetooth

@@ -1,4 +1,4 @@
-``platypush.plugins.bluetooth.ble``
+``bluetooth.ble``
 ===================================
 
 .. automodule:: platypush.plugins.bluetooth.ble

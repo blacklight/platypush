@@ -1,4 +1,4 @@
-``platypush.plugins.luma.oled``
+``luma.oled``
 ===============================
 
 .. automodule:: platypush.plugins.luma.oled

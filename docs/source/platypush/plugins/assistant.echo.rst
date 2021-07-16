@@ -1,4 +1,4 @@
-``platypush.plugins.assistant.echo``
+``assistant.echo``
 ====================================
 
 .. automodule:: platypush.plugins.assistant.echo

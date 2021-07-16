@@ -1,4 +1,4 @@
-``platypush.plugins.kafka``
+``kafka``
 ===========================
 
 .. automodule:: platypush.plugins.kafka

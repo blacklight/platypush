@@ -1,4 +1,4 @@
-``platypush.plugins.media.mpv``
+``media.mpv``
 ===============================
 
 .. automodule:: platypush.plugins.media.mpv

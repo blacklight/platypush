@@ -1,4 +1,4 @@
-``platypush.message.event.linode``
+``linode``
 ==================================
 
 .. automodule:: platypush.message.event.linode

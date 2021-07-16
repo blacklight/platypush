@@ -1,4 +1,4 @@
-``platypush.message.event.video``
+``video``
 =================================
 
 .. automodule:: platypush.message.event.video

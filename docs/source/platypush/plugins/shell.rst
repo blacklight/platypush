@@ -1,4 +1,4 @@
-``platypush.plugins.shell``
+``shell``
 ===========================
 
 .. automodule:: platypush.plugins.shell

@@ -1,4 +1,4 @@
-``platypush.plugins.stt.picovoice.hotword``
+``stt.picovoice.hotword``
 ===========================================
 
 .. automodule:: platypush.plugins.stt.picovoice.hotword

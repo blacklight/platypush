@@ -1,4 +1,4 @@
-``platypush.backend.assistant.google``
+``assistant.google``
 ======================================
 
 .. automodule:: platypush.backend.assistant.google

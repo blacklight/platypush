@@ -1,4 +1,4 @@
-``platypush.message.response.stt``
+``stt``
 ==================================
 
 .. automodule:: platypush.message.response.stt

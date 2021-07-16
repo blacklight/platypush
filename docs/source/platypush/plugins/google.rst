@@ -1,4 +1,4 @@
-``platypush.plugins.google``
+``google``
 ============================
 
 .. automodule:: platypush.plugins.google

@@ -1,4 +1,4 @@
-``platypush.backend.github``
+``github``
 ============================
 
 .. automodule:: platypush.backend.github

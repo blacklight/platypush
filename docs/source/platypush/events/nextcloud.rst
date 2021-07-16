@@ -1,4 +1,4 @@
-``platypush.message.event.nextcloud``
+``nextcloud``
 =====================================
 
 .. automodule:: platypush.message.event.nextcloud

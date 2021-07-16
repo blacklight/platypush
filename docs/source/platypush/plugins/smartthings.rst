@@ -1,4 +1,4 @@
-``platypush.plugins.smartthings``
+``smartthings``
 =================================
 
 .. automodule:: platypush.plugins.smartthings

@@ -1,4 +1,4 @@
-``platypush.plugins.lcd.i2c``
+``lcd.i2c``
 =============================
 
 .. automodule:: platypush.plugins.lcd.i2c

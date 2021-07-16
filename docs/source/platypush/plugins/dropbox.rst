@@ -1,4 +1,4 @@
-``platypush.plugins.dropbox``
+``dropbox``
 =============================
 
 .. automodule:: platypush.plugins.dropbox

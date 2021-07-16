@@ -1,4 +1,4 @@
-``platypush.plugins.google.youtube``
+``google.youtube``
 ====================================
 
 .. automodule:: platypush.plugins.google.youtube

@@ -1,4 +1,4 @@
-``platypush.plugins.media.chromecast``
+``media.chromecast``
 ======================================
 
 .. automodule:: platypush.plugins.media.chromecast

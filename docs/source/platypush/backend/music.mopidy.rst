@@ -1,4 +1,4 @@
-``platypush.backend.music.mopidy``
+``music.mopidy``
 ==================================
 
 .. automodule:: platypush.backend.music.mopidy

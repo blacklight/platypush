@@ -1,4 +1,4 @@
-``platypush.backend.todoist``
+``todoist``
 =============================
 
 .. automodule:: platypush.backend.todoist

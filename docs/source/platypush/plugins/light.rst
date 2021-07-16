@@ -1,4 +1,4 @@
-``platypush.plugins.light``
+``light``
 ===========================
 
 .. automodule:: platypush.plugins.light

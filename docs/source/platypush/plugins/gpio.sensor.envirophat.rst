@@ -1,4 +1,4 @@
-``platypush.plugins.gpio.sensor.envirophat``
+``gpio.sensor.envirophat``
 ============================================
 
 .. automodule:: platypush.plugins.gpio.sensor.envirophat

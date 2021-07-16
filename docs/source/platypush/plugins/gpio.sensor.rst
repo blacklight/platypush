@@ -1,4 +1,4 @@
-``platypush.plugins.gpio.sensor``
+``gpio.sensor``
 =================================
 
 .. automodule:: platypush.plugins.gpio.sensor

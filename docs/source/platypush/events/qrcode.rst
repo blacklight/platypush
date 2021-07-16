@@ -1,4 +1,4 @@
-``platypush.message.event.qrcode``
+``qrcode``
 ==================================
 
 .. automodule:: platypush.message.event.qrcode

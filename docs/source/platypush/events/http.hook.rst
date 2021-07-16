@@ -1,4 +1,4 @@
-``platypush.message.event.http.hook``
+``http.hook``
 =====================================
 
 .. automodule:: platypush.message.event.http.hook

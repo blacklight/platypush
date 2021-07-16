@@ -1,4 +1,4 @@
-``platypush.message.response.chat.telegram``
+``chat.telegram``
 ============================================
 
 .. automodule:: platypush.message.response.chat.telegram

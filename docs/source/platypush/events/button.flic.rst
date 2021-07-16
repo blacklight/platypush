@@ -1,4 +1,4 @@
-``platypush.message.event.button.flic``
+``button.flic``
 =======================================
 
 .. automodule:: platypush.message.event.button.flic

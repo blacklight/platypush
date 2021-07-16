@@ -1,4 +1,4 @@
-``platypush.plugins.switch``
+``switch``
 ============================
 
 .. automodule:: platypush.plugins.switch

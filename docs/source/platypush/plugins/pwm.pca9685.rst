@@ -1,4 +1,4 @@
-``platypush.plugins.pwm.pca9685``
+``pwm.pca9685``
 =================================
 
 .. automodule:: platypush.plugins.pwm.pca9685

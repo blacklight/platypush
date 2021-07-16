@@ -1,4 +1,4 @@
-``platypush.message.event.zwave``
+``zwave``
 =================================
 
 .. automodule:: platypush.message.event.zwave

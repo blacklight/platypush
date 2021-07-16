@@ -1,4 +1,4 @@
-``platypush.message.event.distance``
+``distance``
 ====================================
 
 .. automodule:: platypush.message.event.distance

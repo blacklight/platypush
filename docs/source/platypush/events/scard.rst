@@ -1,4 +1,4 @@
-``platypush.message.event.scard``
+``scard``
 =================================
 
 .. automodule:: platypush.message.event.scard

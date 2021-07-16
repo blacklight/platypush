@@ -1,4 +1,4 @@
-``platypush.message.event.geo``
+``geo``
 ===============================
 
 .. automodule:: platypush.message.event.geo

@@ -1,4 +1,4 @@
-``platypush.backend.camera.pi``
+``camera.pi``
 ===============================
 
 .. automodule:: platypush.backend.camera.pi

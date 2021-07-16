@@ -1,4 +1,4 @@
-``platypush.plugins.stt``
+``stt``
 =========================
 
 .. automodule:: platypush.plugins.stt

@@ -1,4 +1,4 @@
-``platypush.message.event.sensor.ir``
+``sensor.ir``
 =====================================
 
 .. automodule:: platypush.message.event.sensor.ir

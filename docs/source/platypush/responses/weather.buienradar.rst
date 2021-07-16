@@ -1,4 +1,4 @@
-``platypush.message.response.weather.buienradar``
+``weather.buienradar``
 =================================================
 
 .. automodule:: platypush.message.response.weather.buienradar

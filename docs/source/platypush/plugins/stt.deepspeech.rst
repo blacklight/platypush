@@ -1,4 +1,4 @@
-``platypush.plugins.stt.deepspeech``
+``stt.deepspeech``
 ====================================
 
 .. automodule:: platypush.plugins.stt.deepspeech

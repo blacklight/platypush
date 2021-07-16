@@ -1,4 +1,4 @@
-``platypush.plugins.media.mplayer``
+``media.mplayer``
 ===================================
 
 .. automodule:: platypush.plugins.media.mplayer

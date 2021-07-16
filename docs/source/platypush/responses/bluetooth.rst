@@ -1,4 +1,4 @@
-``platypush.message.response.bluetooth``
+``bluetooth``
 ========================================
 
 .. automodule:: platypush.message.response.bluetooth

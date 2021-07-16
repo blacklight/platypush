@@ -1,4 +1,4 @@
-``platypush.message.event.application``
+``application``
 =======================================
 
 .. automodule:: platypush.message.event.application

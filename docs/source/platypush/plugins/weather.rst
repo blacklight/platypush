@@ -1,4 +1,4 @@
-``platypush.plugins.weather``
+``weather``
 =============================
 
 .. automodule:: platypush.plugins.weather

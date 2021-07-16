@@ -1,4 +1,4 @@
-``platypush.message.event.foursquare``
+``foursquare``
 ======================================
 
 .. automodule:: platypush.message.event.foursquare

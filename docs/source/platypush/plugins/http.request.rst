@@ -1,4 +1,4 @@
-``platypush.plugins.http.request``
+``http.request``
 ==================================
 
 .. automodule:: platypush.plugins.http.request

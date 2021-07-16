@@ -1,4 +1,4 @@
-``platypush.backend.joystick.linux``
+``joystick.linux``
 ====================================
 
 .. automodule:: platypush.backend.joystick.linux

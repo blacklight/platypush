@@ -1,4 +1,4 @@
-``platypush.plugins.ssh``
+``ssh``
 =========================
 
 .. automodule:: platypush.plugins.ssh

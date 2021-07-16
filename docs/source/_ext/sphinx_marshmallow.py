@@ -32,7 +32,7 @@ class SchemaDirective(Directive):
         schema_module_name = '.'.join(['platypush.schemas', *(m.group(1).split('.')[:-1])])
         schema_module = importlib.import_module(schema_module_name)
         schema_class = getattr(schema_module, m.group(1).split('.')[-1])
-        schema_args = eval(f'dict({m.group(3)})')
+        schema_args = eval(f'dict({m.group(3)})') if m.group(3) else {}
         schema = schema_class(**schema_args)
         output = {
             name: self._get_field_value(field)

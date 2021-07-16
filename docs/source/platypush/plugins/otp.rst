@@ -1,4 +1,4 @@
-``platypush.plugins.otp``
+``otp``
 =========================
 
 .. automodule:: platypush.plugins.otp

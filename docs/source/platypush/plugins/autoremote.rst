@@ -1,4 +1,4 @@
-``platypush.plugins.autoremote``
+``autoremote``
 ================================
 
 .. automodule:: platypush.plugins.autoremote

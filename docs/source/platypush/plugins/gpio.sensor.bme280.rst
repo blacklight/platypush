@@ -1,4 +1,4 @@
-``platypush.plugins.gpio.sensor.bme280``
+``gpio.sensor.bme280``
 ========================================
 
 .. automodule:: platypush.plugins.gpio.sensor.bme280

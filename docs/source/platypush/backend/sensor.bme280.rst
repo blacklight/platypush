@@ -1,4 +1,4 @@
-``platypush.backend.sensor.bme280``
+``sensor.bme280``
 ===================================
 
 .. automodule:: platypush.backend.sensor.bme280

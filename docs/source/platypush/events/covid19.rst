@@ -1,4 +1,4 @@
-``platypush.message.event.covid19``
+``covid19``
 ===================================
 
 .. automodule:: platypush.message.event.covid19

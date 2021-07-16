@@ -1,4 +1,4 @@
-``platypush.message.event.mqtt``
+``mqtt``
 ================================
 
 .. automodule:: platypush.message.event.mqtt

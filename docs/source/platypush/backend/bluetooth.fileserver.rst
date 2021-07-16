@@ -1,4 +1,4 @@
-``platypush.backend.bluetooth.fileserver``
+``bluetooth.fileserver``
 ==========================================
 
 .. automodule:: platypush.backend.bluetooth.fileserver

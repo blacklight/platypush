@@ -1,4 +1,4 @@
-``platypush.plugins.gpio.zeroborg``
+``gpio.zeroborg``
 ===================================
 
 .. automodule:: platypush.plugins.gpio.zeroborg

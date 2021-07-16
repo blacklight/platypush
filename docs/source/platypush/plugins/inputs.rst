@@ -1,4 +1,4 @@
-``platypush.plugins.inputs``
+``inputs``
 ============================
 
 .. automodule:: platypush.plugins.inputs

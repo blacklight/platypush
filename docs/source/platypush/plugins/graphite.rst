@@ -1,4 +1,4 @@
-``platypush.plugins.graphite``
+``graphite``
 ==============================
 
 .. automodule:: platypush.plugins.graphite

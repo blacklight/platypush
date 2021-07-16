@@ -1,4 +1,4 @@
-``platypush.backend.alarm``
+``alarm``
 ===========================
 
 .. automodule:: platypush.backend.alarm

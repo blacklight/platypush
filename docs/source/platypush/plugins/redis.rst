@@ -1,4 +1,4 @@
-``platypush.plugins.redis``
+``redis``
 ===========================
 
 .. automodule:: platypush.plugins.redis

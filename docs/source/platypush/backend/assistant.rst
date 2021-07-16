@@ -1,4 +1,4 @@
-``platypush.backend.assistant``
+``assistant``
 ===============================
 
 .. automodule:: platypush.backend.assistant

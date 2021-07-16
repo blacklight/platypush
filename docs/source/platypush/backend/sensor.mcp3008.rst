@@ -1,4 +1,4 @@
-``platypush.backend.sensor.mcp3008``
+``sensor.mcp3008``
 ====================================
 
 .. automodule:: platypush.backend.sensor.mcp3008

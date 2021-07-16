@@ -1,4 +1,4 @@
-``platypush.message.event.chat.telegram``
+``chat.telegram``
 =========================================
 
 .. automodule:: platypush.message.event.chat.telegram

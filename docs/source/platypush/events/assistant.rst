@@ -1,4 +1,4 @@
-``platypush.message.event.assistant``
+``assistant``
 =====================================
 
 .. automodule:: platypush.message.event.assistant

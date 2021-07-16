@@ -1,4 +1,4 @@
-``platypush.plugins.file``
+``file``
 ==========================
 
 .. automodule:: platypush.plugins.file

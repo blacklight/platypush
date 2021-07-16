@@ -1,4 +1,4 @@
-``platypush.message.event.google.pubsub``
+``google.pubsub``
 =========================================
 
 .. automodule:: platypush.message.event.google.pubsub

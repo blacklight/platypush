@@ -1,4 +1,4 @@
-``platypush.message.event.log.http``
+``log.http``
 ====================================
 
 .. automodule:: platypush.message.event.log.http

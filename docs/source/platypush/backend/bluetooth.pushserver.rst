@@ -1,4 +1,4 @@
-``platypush.backend.bluetooth.pushserver``
+``bluetooth.pushserver``
 ==========================================
 
 .. automodule:: platypush.backend.bluetooth.pushserver

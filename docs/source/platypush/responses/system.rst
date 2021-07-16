@@ -1,4 +1,4 @@
-``platypush.message.response.system``
+``system``
 =====================================
 
 .. automodule:: platypush.message.response.system

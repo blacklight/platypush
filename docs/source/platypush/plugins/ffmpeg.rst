@@ -1,4 +1,4 @@
-``platypush.plugins.ffmpeg``
+``ffmpeg``
 ============================
 
 .. automodule:: platypush.plugins.ffmpeg

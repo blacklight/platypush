@@ -1,4 +1,4 @@
-``platypush.backend.stt``
+``stt``
 =========================
 
 .. automodule:: platypush.backend.stt

@@ -1,4 +1,4 @@
-``platypush.message.response.pihole``
+``pihole``
 =====================================
 
 .. automodule:: platypush.message.response.pihole

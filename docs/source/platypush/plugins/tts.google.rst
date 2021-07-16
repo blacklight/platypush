@@ -1,4 +1,4 @@
-``platypush.plugins.tts.google``
+``tts.google``
 ================================
 
 .. automodule:: platypush.plugins.tts.google

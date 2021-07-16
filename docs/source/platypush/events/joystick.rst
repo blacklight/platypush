@@ -1,4 +1,4 @@
-``platypush.message.event.joystick``
+``joystick``
 ====================================
 
 .. automodule:: platypush.message.event.joystick

@@ -1,4 +1,4 @@
-``platypush.backend.wiimote``
+``wiimote``
 =============================
 
 .. automodule:: platypush.backend.wiimote

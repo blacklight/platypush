@@ -1,4 +1,4 @@
-``platypush.backend.weather.buienradar``
+``weather.buienradar``
 ========================================
 
 .. automodule:: platypush.backend.weather.buienradar

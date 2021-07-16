@@ -1,4 +1,4 @@
-``platypush.message.event.trello``
+``trello``
 ==================================
 
 .. automodule:: platypush.message.event.trello

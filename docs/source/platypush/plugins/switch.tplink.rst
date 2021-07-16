@@ -1,4 +1,4 @@
-``platypush.plugins.switch.tplink``
+``switch.tplink``
 ===================================
 
 .. automodule:: platypush.plugins.switch.tplink

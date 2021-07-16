@@ -1,4 +1,4 @@
-``platypush.backend.dbus``
+``dbus``
 ==========================
 
 .. automodule:: platypush.backend.dbus

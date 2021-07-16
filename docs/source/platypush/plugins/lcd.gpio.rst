@@ -1,4 +1,4 @@
-``platypush.plugins.lcd.gpio``
+``lcd.gpio``
 ==============================
 
 .. automodule:: platypush.plugins.lcd.gpio

@@ -1,4 +1,4 @@
-``platypush.plugins.rtorrent``
+``rtorrent``
 ==============================
 
 .. automodule:: platypush.plugins.rtorrent

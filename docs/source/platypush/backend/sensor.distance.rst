@@ -1,4 +1,4 @@
-``platypush.backend.sensor.distance``
+``sensor.distance``
 =====================================
 
 .. automodule:: platypush.backend.sensor.distance

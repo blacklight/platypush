@@ -1,4 +1,4 @@
-``platypush.backend.sensor.arduino``
+``sensor.arduino``
 ====================================
 
 .. automodule:: platypush.backend.sensor.arduino

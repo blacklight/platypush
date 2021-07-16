@@ -1,4 +1,4 @@
-``platypush.message.event.inotify``
+``inotify``
 ===================================
 
 .. automodule:: platypush.message.event.inotify

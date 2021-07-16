@@ -1,4 +1,4 @@
-``platypush.backend.nfc``
+``nfc``
 =========================
 
 .. automodule:: platypush.backend.nfc

@@ -1,4 +1,4 @@
-``platypush.plugins.utils``
+``utils``
 ===========================
 
 .. automodule:: platypush.plugins.utils

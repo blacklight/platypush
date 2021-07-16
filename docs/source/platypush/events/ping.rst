@@ -1,4 +1,4 @@
-``platypush.message.event.ping``
+``ping``
 ================================
 
 .. automodule:: platypush.message.event.ping

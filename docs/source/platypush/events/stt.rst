@@ -1,4 +1,4 @@
-``platypush.message.event.stt``
+``stt``
 ===============================
 
 .. automodule:: platypush.message.event.stt

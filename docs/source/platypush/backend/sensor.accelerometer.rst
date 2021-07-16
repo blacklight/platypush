@@ -1,4 +1,4 @@
-``platypush.backend.sensor.accelerometer``
+``sensor.accelerometer``
 ==========================================
 
 .. automodule:: platypush.backend.sensor.accelerometer

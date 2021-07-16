@@ -1,4 +1,4 @@
-``platypush.plugins.weather.darksky``
+``weather.darksky``
 =====================================
 
 .. automodule:: platypush.plugins.weather.darksky

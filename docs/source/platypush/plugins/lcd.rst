@@ -1,4 +1,4 @@
-``platypush.plugins.lcd``
+``lcd``
 =========================
 
 .. automodule:: platypush.plugins.lcd

@@ -1,4 +1,4 @@
-``platypush.backend.sensor.dht``
+``sensor.dht``
 ================================
 
 .. automodule:: platypush.backend.sensor.dht

@@ -1,4 +1,4 @@
-``platypush.message.event.torrent``
+``torrent``
 ===================================
 
 .. automodule:: platypush.message.event.torrent

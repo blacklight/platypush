@@ -1,4 +1,4 @@
-``platypush.backend.weather``
+``weather``
 =============================
 
 .. automodule:: platypush.backend.weather

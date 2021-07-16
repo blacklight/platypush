@@ -1,4 +1,4 @@
-``platypush.plugins.assistant.google.pushtotalk``
+``assistant.google.pushtotalk``
 =================================================
 
 .. automodule:: platypush.plugins.assistant.google.pushtotalk

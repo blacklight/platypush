@@ -1,4 +1,4 @@
-``platypush.plugins.switchbot``
+``switchbot``
 ===============================
 
 .. automodule:: platypush.plugins.switchbot

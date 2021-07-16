@@ -1,4 +1,4 @@
-``platypush.plugins.mail.smtp``
+``mail.smtp``
 ===============================
 
 .. automodule:: platypush.plugins.mail.smtp

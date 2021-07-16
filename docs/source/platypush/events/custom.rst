@@ -1,4 +1,4 @@
-``platypush.message.event.custom``
+``custom``
 ==================================
 
 .. automodule:: platypush.message.event.custom

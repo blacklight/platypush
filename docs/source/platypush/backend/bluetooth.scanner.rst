@@ -1,4 +1,4 @@
-``platypush.backend.bluetooth.scanner``
+``bluetooth.scanner``
 =======================================
 
 .. automodule:: platypush.backend.bluetooth.scanner

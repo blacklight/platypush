@@ -1,4 +1,4 @@
-``platypush.backend.adafruit.io``
+``adafruit.io``
 =================================
 
 .. automodule:: platypush.backend.adafruit.io

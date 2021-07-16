@@ -1,4 +1,4 @@
-``platypush.message.event.sound``
+``sound``
 =================================
 
 .. automodule:: platypush.message.event.sound

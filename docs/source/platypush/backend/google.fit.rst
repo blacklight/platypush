@@ -1,4 +1,4 @@
-``platypush.backend.google.fit``
+``google.fit``
 ================================
 
 .. automodule:: platypush.backend.google.fit

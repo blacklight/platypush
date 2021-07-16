@@ -1,4 +1,4 @@
-``platypush.backend.covid19``
+``covid19``
 =============================
 
 .. automodule:: platypush.backend.covid19

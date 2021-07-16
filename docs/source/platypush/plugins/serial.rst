@@ -1,4 +1,4 @@
-``platypush.plugins.serial``
+``serial``
 ============================
 
 .. automodule:: platypush.plugins.serial

@@ -1,4 +1,4 @@
-``platypush.plugins.printer.cups``
+``printer.cups``
 ==================================
 
 .. automodule:: platypush.plugins.printer.cups

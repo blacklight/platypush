@@ -1,4 +1,4 @@
-``platypush.message.event.pushbullet``
+``pushbullet``
 ======================================
 
 .. automodule:: platypush.message.event.pushbullet

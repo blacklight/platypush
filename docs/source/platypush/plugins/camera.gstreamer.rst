@@ -1,4 +1,4 @@
-``platypush.plugins.camera.gstreamer``
+``camera.gstreamer``
 ======================================
 
 .. automodule:: platypush.plugins.camera.gstreamer

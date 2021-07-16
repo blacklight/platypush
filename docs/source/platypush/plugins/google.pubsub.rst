@@ -1,4 +1,4 @@
-``platypush.plugins.google.pubsub``
+``google.pubsub``
 ===================================
 
 .. automodule:: platypush.plugins.google.pubsub

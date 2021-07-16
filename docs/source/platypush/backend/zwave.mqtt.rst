@@ -1,4 +1,4 @@
-``platypush.backend.zwave.mqtt``
+``zwave.mqtt``
 ================================
 
 .. automodule:: platypush.backend.zwave.mqtt

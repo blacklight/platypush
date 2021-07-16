@@ -1,4 +1,4 @@
-``platypush.plugins.ml.cv``
+``ml.cv``
 ===========================
 
 .. automodule:: platypush.plugins.ml.cv

@@ -1,4 +1,4 @@
-``platypush.message.event.alarm``
+``alarm``
 =================================
 
 .. automodule:: platypush.message.event.alarm

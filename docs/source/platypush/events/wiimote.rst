@@ -1,4 +1,4 @@
-``platypush.message.event.wiimote``
+``wiimote``
 ===================================
 
 .. automodule:: platypush.message.event.wiimote

@@ -1,4 +1,4 @@
-``platypush.plugins.websocket``
+``websocket``
 ===============================
 
 .. automodule:: platypush.plugins.websocket

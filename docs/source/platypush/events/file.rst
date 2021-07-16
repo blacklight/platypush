@@ -1,4 +1,4 @@
-``platypush.message.event.file``
+``file``
 ================================
 
 .. automodule:: platypush.message.event.file

@@ -1,4 +1,4 @@
-``platypush.message.response.todoist``
+``todoist``
 ======================================
 
 .. automodule:: platypush.message.response.todoist

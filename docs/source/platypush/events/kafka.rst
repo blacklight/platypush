@@ -1,4 +1,4 @@
-``platypush.message.event.kafka``
+``kafka``
 =================================
 
 .. automodule:: platypush.message.event.kafka

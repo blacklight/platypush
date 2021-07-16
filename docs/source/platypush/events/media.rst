@@ -1,4 +1,4 @@
-``platypush.message.event.media``
+``media``
 =================================
 
 .. automodule:: platypush.message.event.media

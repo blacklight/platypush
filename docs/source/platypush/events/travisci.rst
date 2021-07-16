@@ -1,4 +1,4 @@
-``platypush.message.event.travisci``
+``travisci``
 ====================================
 
 .. automodule:: platypush.message.event.travisci

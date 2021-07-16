@@ -1,4 +1,4 @@
-``platypush.message.event.music.snapcast``
+``music.snapcast``
 ==========================================
 
 .. automodule:: platypush.message.event.music.snapcast

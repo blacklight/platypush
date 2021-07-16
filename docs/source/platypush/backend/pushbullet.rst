@@ -1,4 +1,4 @@
-``platypush.backend.pushbullet``
+``pushbullet``
 ================================
 
 .. automodule:: platypush.backend.pushbullet

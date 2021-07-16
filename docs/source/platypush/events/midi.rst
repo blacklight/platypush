@@ -1,4 +1,4 @@
-``platypush.message.event.midi``
+``midi``
 ================================
 
 .. automodule:: platypush.message.event.midi

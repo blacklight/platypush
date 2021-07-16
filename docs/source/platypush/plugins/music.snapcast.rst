@@ -1,4 +1,4 @@
-``platypush.plugins.music.snapcast``
+``music.snapcast``
 ====================================
 
 .. automodule:: platypush.plugins.music.snapcast

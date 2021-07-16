@@ -1,4 +1,4 @@
-``platypush.plugins.sound``
+``sound``
 ===========================
 
 .. automodule:: platypush.plugins.sound

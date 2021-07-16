@@ -1,4 +1,4 @@
-``platypush.backend.joystick.jstest``
+``joystick.jstest``
 =====================================
 
 .. automodule:: platypush.backend.joystick.jstest

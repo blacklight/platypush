@@ -1,4 +1,4 @@
-``platypush.backend.log.http``
+``log.http``
 ==============================
 
 .. automodule:: platypush.backend.log.http

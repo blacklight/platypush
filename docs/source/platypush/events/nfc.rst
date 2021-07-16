@@ -1,4 +1,4 @@
-``platypush.message.event.nfc``
+``nfc``
 ===============================
 
 .. automodule:: platypush.message.event.nfc

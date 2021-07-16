@@ -1,4 +1,4 @@
-``platypush.plugins.variable``
+``variable``
 ==============================
 
 .. automodule:: platypush.plugins.variable

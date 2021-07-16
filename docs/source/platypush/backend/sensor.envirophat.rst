@@ -1,4 +1,4 @@
-``platypush.backend.sensor.envirophat``
+``sensor.envirophat``
 =======================================
 
 .. automodule:: platypush.backend.sensor.envirophat

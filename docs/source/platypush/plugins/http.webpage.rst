@@ -1,4 +1,4 @@
-``platypush.plugins.http.webpage``
+``http.webpage``
 ==================================
 
 .. automodule:: platypush.plugins.http.webpage

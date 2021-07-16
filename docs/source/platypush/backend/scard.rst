@@ -1,4 +1,4 @@
-``platypush.backend.scard``
+``scard``
 ===========================
 
 .. automodule:: platypush.backend.scard

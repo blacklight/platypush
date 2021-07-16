@@ -1,4 +1,4 @@
-``platypush.plugins.adafruit.io``
+``adafruit.io``
 =================================
 
 .. automodule:: platypush.plugins.adafruit.io

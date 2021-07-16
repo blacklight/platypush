@@ -1,4 +1,4 @@
-``platypush.message.response.google.drive``
+``google.drive``
 ===========================================
 
 .. automodule:: platypush.message.response.google.drive

@@ -1,4 +1,4 @@
-``platypush.plugins.media.subtitles``
+``media.subtitles``
 =====================================
 
 .. automodule:: platypush.plugins.media.subtitles

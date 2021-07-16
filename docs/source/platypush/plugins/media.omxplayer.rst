@@ -1,4 +1,4 @@
-``platypush.plugins.media.omxplayer``
+``media.omxplayer``
 =====================================
 
 .. automodule:: platypush.plugins.media.omxplayer

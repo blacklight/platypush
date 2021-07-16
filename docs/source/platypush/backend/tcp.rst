@@ -1,4 +1,4 @@
-``platypush.backend.tcp``
+``tcp``
 =========================
 
 .. automodule:: platypush.backend.tcp

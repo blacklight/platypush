@@ -1,4 +1,4 @@
-``platypush.plugins.pihole``
+``pihole``
 ============================
 
 .. automodule:: platypush.plugins.pihole

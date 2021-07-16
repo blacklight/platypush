@@ -1,4 +1,4 @@
-``platypush.plugins.tensorflow``
+``tensorflow``
 ================================
 
 .. automodule:: platypush.plugins.tensorflow

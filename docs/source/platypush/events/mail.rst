@@ -1,4 +1,4 @@
-``platypush.message.event.mail``
+``mail``
 ================================
 
 .. automodule:: platypush.message.event.mail

@@ -1,4 +1,4 @@
-``platypush.plugins.user``
+``user``
 ==========================
 
 .. automodule:: platypush.plugins.user

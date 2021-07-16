@@ -1,4 +1,4 @@
-``platypush.plugins.media.webtorrent``
+``media.webtorrent``
 ======================================
 
 .. automodule:: platypush.plugins.media.webtorrent

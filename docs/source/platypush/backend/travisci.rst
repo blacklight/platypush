@@ -1,4 +1,4 @@
-``platypush.backend.travisci``
+``travisci``
 ==============================
 
 .. automodule:: platypush.backend.travisci

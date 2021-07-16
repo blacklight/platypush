@@ -1,4 +1,4 @@
-``platypush.message.event.light``
+``light``
 =================================
 
 .. automodule:: platypush.message.event.light

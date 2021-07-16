@@ -1,4 +1,4 @@
-``platypush.plugins.csv``
+``csv``
 =========================
 
 .. automodule:: platypush.plugins.csv

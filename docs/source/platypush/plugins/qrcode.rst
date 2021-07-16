@@ -1,4 +1,4 @@
-``platypush.plugins.qrcode``
+``qrcode``
 ============================
 
 .. automodule:: platypush.plugins.qrcode

@@ -1,4 +1,4 @@
-``platypush.plugins.assistant``
+``assistant``
 ===============================
 
 .. automodule:: platypush.plugins.assistant

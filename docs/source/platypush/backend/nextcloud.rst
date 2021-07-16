@@ -1,4 +1,4 @@
-``platypush.backend.nextcloud``
+``nextcloud``
 ===============================
 
 .. automodule:: platypush.backend.nextcloud

@@ -1,4 +1,4 @@
-``platypush.plugins.arduino``
+``arduino``
 =============================
 
 .. automodule:: platypush.plugins.arduino

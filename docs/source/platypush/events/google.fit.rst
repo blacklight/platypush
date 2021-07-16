@@ -1,4 +1,4 @@
-``platypush.message.event.google.fit``
+``google.fit``
 ======================================
 
 .. automodule:: platypush.message.event.google.fit

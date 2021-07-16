@@ -1,4 +1,4 @@
-``platypush.plugins.google.mail``
+``google.mail``
 =================================
 
 .. automodule:: platypush.plugins.google.mail

@@ -1,4 +1,4 @@
-``platypush.message.response.linode``
+``linode``
 =====================================
 
 .. automodule:: platypush.message.response.linode

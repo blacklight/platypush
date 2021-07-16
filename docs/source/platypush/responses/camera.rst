@@ -1,4 +1,4 @@
-``platypush.message.response.camera``
+``camera``
 =====================================
 
 .. automodule:: platypush.message.response.camera

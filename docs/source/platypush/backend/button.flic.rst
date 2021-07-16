@@ -1,4 +1,4 @@
-``platypush.backend.button.flic``
+``button.flic``
 =================================
 
 .. automodule:: platypush.backend.button.flic

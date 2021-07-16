@@ -1,4 +1,4 @@
-``platypush.backend.clipboard``
+``clipboard``
 ===============================
 
 .. automodule:: platypush.backend.clipboard

@@ -1,4 +1,4 @@
-``platypush.message.event.zeroborg``
+``zeroborg``
 ====================================
 
 .. automodule:: platypush.message.event.zeroborg

@@ -1,4 +1,4 @@
-``platypush.backend.foursquare``
+``foursquare``
 ================================
 
 .. automodule:: platypush.backend.foursquare

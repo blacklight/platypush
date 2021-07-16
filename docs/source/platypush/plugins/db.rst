@@ -1,4 +1,4 @@
-``platypush.plugins.db``
+``db``
 ========================
 
 .. automodule:: platypush.plugins.db

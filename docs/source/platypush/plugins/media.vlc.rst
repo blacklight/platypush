@@ -1,4 +1,4 @@
-``platypush.plugins.media.vlc``
+``media.vlc``
 ===============================
 
 .. automodule:: platypush.plugins.media.vlc

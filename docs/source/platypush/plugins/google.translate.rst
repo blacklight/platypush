@@ -1,4 +1,4 @@
-``platypush.plugins.google.translate``
+``google.translate``
 ======================================
 
 .. automodule:: platypush.plugins.google.translate

@@ -1,4 +1,4 @@
-``platypush.plugins.calendar.ical``
+``calendar.ical``
 ======================================
 
 .. automodule:: platypush.plugins.calendar.ical

@@ -1,4 +1,4 @@
-``platypush.backend.ping``
+``ping``
 ==========================
 
 .. automodule:: platypush.backend.ping

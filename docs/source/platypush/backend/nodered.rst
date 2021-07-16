@@ -1,4 +1,4 @@
-``platypush.backend.nodered``
+``nodered``
 =============================
 
 .. automodule:: platypush.backend.nodered

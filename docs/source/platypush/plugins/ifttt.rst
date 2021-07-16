@@ -1,4 +1,4 @@
-``platypush.plugins.ifttt``
+``ifttt``
 ===========================
 
 .. automodule:: platypush.plugins.ifttt
