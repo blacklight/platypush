@@ -66,7 +66,7 @@ class SpotifyTrackSchema(SpotifySchema):
     track = fields.Int(attribute='track_number', metadata=dict(description='Album track number'))
     duration = fields.Float(metadata=dict(description='Track duration in seconds'))
     popularity = fields.Int(metadata=dict(description='Popularity between 0 and 100'))
-    type = fields.Constant('track')
+    type = fields.Constant('track', metadata=dict(description='track'))
 
     @pre_dump
     def normalize_fields(self, data, **_):
@@ -100,7 +100,7 @@ class SpotifyAlbumSchema(SpotifySchema):
     date = fields.Int(metadata=dict(description='Release date'))
     tracks = fields.Nested(SpotifyTrackSchema, many=True, metadata=dict(description='List of tracks on the album'))
     popularity = fields.Int(metadata=dict(description='Popularity between 0 and 100'))
-    type = fields.Constant('album')
+    type = fields.Constant('album', metadata=dict(description='album'))
 
     @pre_dump
     def normalize(self, data, **_):
@@ -134,7 +134,7 @@ class SpotifyPlaylistTrackSchema(SpotifyTrackSchema):
     position = fields.Int(validate=Range(min=1), metadata=dict(description='Position of the track in the playlist'))
     added_at = fields.DateTime(metadata=dict(description='When the track was added to the playlist'))
     added_by = fields.Nested(SpotifyUserSchema, metadata=dict(description='User that added the track'))
-    type = fields.Constant('playlist')
+    type = fields.Constant('playlist', metadata=dict(description='playlist'))
 
 
 class SpotifyStatusSchema(SpotifySchema):
@@ -238,7 +238,7 @@ class SpotifyPlaylistSchema(SpotifySchema):
 class SpotifyEpisodeSchema(SpotifyTrackSchema):
     description = fields.String(metadata=dict(description='Episode description'))
     show = fields.String(metadata=dict(description='Episode show name'))
-    type = fields.Constant('episode')
+    type = fields.Constant('episode', metadata=dict(description='episode'))
 
     @pre_dump
     def normalize_fields(self, data, **_):
@@ -258,7 +258,7 @@ class SpotifyEpisodeSchema(SpotifyTrackSchema):
 class SpotifyShowSchema(SpotifyAlbumSchema):
     description = fields.String(metadata=dict(description='Show description'))
     publisher = fields.String(metadata=dict(description='Show publisher name'))
-    type = fields.Constant('show')
+    type = fields.Constant('show', metadata=dict(description='show'))
 
     @pre_dump
     def normalize_fields(self, data, **_):
@@ -280,7 +280,7 @@ class SpotifyArtistSchema(SpotifySchema):
     genres = fields.List(fields.String, metadata=dict(description='Artist genres'))
     popularity = fields.Int(metadata=dict(description='Popularity between 0 and 100'))
     image_url = fields.String(metadata=dict(description='Image URL'))
-    type = fields.Constant('artist')
+    type = fields.Constant('artist', metadata=dict(description='artist'))
 
     @pre_dump
     def normalize_fields(self, data, **_):
