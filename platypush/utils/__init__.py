@@ -279,7 +279,7 @@ def is_process_alive(pid):
 
 def get_ip_or_hostname():
     ip = socket.gethostbyname(socket.gethostname())
-    if ip.startswith('127.'):
+    if ip.startswith('127.') or ip.startswith('::1'):
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.connect(('10.255.255.255', 1))

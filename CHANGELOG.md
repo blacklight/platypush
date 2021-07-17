@@ -5,7 +5,9 @@ Given the high speed of development in the first phase, changes are being report
 
 ## [Unreleased]
 
-- Added `music.spotify.connect` backend to emulate a Spotify Connect receiver through Platypush.
+- Added `music.spotify` backend to emulate a Spotify Connect receiver through Platypush.
+
+- Added `music.spotify` plugin.
 
 ## [0.21.1] - 2021-06-22
 

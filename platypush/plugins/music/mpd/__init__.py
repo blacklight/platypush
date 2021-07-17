@@ -1,6 +1,7 @@
 import re
 import threading
 import time
+from typing import Optional, Union
 
 from platypush.plugins import action
 from platypush.plugins.music import MusicPlugin
@@ -290,7 +291,6 @@ class MusicMpdPlugin(MusicPlugin):
         """
         Shuffles the current playlist
         """
-
         return self._exec('shuffle')
 
     @action
@@ -478,6 +478,7 @@ class MusicMpdPlugin(MusicPlugin):
                 "elapsed": "161.967",
                 "bitrate": "320"
             }
+
         """
 
         n_tries = 2
@@ -497,9 +498,16 @@ class MusicMpdPlugin(MusicPlugin):
 
         return None, error
 
-    # noinspection PyTypeChecker
     @action
     def currentsong(self):
+        """
+        Legacy alias for :meth:`.current_track`.
+        """
+        return self.current_track()
+
+    # noinspection PyTypeChecker
+    @action
+    def current_track(self):
         """
         :returns: The currently played track.
 
@@ -572,7 +580,7 @@ class MusicMpdPlugin(MusicPlugin):
         return self._exec('playlistinfo', return_status=False)
 
     @action
-    def listplaylists(self):
+    def get_playlists(self):
         """
         :returns: The playlists available on the server as a list of dicts.
 
@@ -592,75 +600,96 @@ class MusicMpdPlugin(MusicPlugin):
                 }
             ]
         """
-
         return sorted(self._exec('listplaylists', return_status=False),
                       key=lambda p: p['playlist'])
 
     @action
+    def listplaylists(self):
+        """
+        Deprecated alias for :meth:`.playlists`.
+        """
+        return self.get_playlists()
+
+    @action
+    def get_playlist(self, playlist, with_tracks=False):
+        """
+        List the items in the specified playlist.
+
+        :param playlist: Name of the playlist
+        :type playlist: str
+        :param with_tracks: If True then the list of tracks in the playlist will be returned as well (default: False).
+        :type with_tracks: bool
+        """
+        return self._exec(
+            'listplaylistinfo' if with_tracks else 'listplaylist',
+            playlist, return_status=False)
+
+    @action
     def listplaylist(self, name):
         """
-        List the items in the specified playlist (without metadata)
-
-        :param name: Name of the playlist
-        :type name: str
+        Deprecated alias for :meth:`.playlist`.
         """
         return self._exec('listplaylist', name, return_status=False)
 
     @action
     def listplaylistinfo(self, name):
         """
-        List the items in the specified playlist (with metadata)
-
-        :param name: Name of the playlist
-        :type name: str
+        Deprecated alias for :meth:`.playlist` with `with_tracks=True`.
         """
-        return self._exec('listplaylistinfo', name, return_status=False)
+        return self.get_playlist(name, with_tracks=True)
+
+    @action
+    def add_to_playlist(self, playlist, resources):
+        """
+        Add one or multiple resources to a playlist.
+
+        :param playlist: Playlist name
+        :type playlist: str
+
+        :param resources: URI or path of the resource(s) to be added
+        :type resources: str or list[str]
+        """
+
+        if isinstance(resources, str):
+            resources = [resources]
+
+        for res in resources:
+            self._exec('playlistadd', playlist, res)
 
     @action
     def playlistadd(self, name, uri):
         """
-        Add one or multiple resources to a playlist.
-
-        :param name: Playlist name
-        :type name: str
-
-        :param uri: URI or path of the resource(s) to be added
-        :type uri: str or list[str]
+        Deprecated alias for :meth:`.add_to_playlist`.
         """
-
-        if isinstance(uri, str):
-            uri = [uri]
-
-        for res in uri:
-            self._exec('playlistadd', name, res)
+        return self.add_to_playlist(name, uri)
 
     @action
-    def playlistdelete(self, name, pos):
+    def remove_from_playlist(self, playlist, resources):
         """
         Remove one or multiple tracks from a playlist.
 
-        :param name: Playlist name
-        :type name: str
+        :param playlist: Playlist name
+        :type playlist: str
 
-        :param pos: Position or list of positions to remove
-        :type pos: int or list[int]
+        :param resources: Position or list of positions to remove
+        :type resources: int or list[int]
         """
 
-        if isinstance(pos, str):
-            pos = int(pos)
-        if isinstance(pos, int):
-            pos = [pos]
+        if isinstance(resources, str):
+            resources = int(resources)
+        if isinstance(resources, int):
+            resources = [resources]
 
-        for p in sorted(pos, reverse=True):
-            self._exec('playlistdelete', name, p)
+        for p in sorted(resources, reverse=True):
+            self._exec('playlistdelete', playlist, p)
 
     @action
-    def playlistmove(self, name, from_pos, to_pos):
+    def playlist_move(self, playlist, from_pos, to_pos):
         """
-        Change the position of a track in the specified playlist
+        Change the position of a track in the specified playlist.
 
-        :param name: Playlist name
-        :type name: str
+        :param playlist: Playlist name
+        :type playlist: str
 
         :param from_pos: Original track position
         :type from_pos: int
@@ -668,7 +697,21 @@ class MusicMpdPlugin(MusicPlugin):
         :param to_pos: New track position
         :type to_pos: int
         """
-        self._exec('playlistmove', name, from_pos, to_pos)
+        self._exec('playlistmove', playlist, from_pos, to_pos)
+
+    @action
+    def playlistdelete(self, name, pos):
+        """
+        Deprecated alias for :meth:`.remove_from_playlist`.
+        """
+        return self.remove_from_playlist(name, pos)
+
+    @action
+    def playlistmove(self, name, from_pos, to_pos):
+        """
+        Deprecated alias for :meth:`.playlist_move`.
+        """
+        return self.playlist_move(name, from_pos=from_pos, to_pos=to_pos)
 
     @action
     def playlistclear(self, name):
@@ -771,15 +814,16 @@ class MusicMpdPlugin(MusicPlugin):
 
     # noinspection PyShadowingBuiltins
     @action
-    def search(self, filter: dict, *args, **kwargs):
+    def search(self, query: Optional[Union[str, dict]] = None, filter: Optional[dict] = None, *args, **kwargs):
         """
         Free search by filter.
 
-        :param filter: Search filter (e.g. ``{"artist": "Led Zeppelin", "album": "IV"}``)
+        :param query: Free-text query or search structured filter (e.g. ``{"artist": "Led Zeppelin", "album": "IV"}``).
+        :param filter: Structured search filter (e.g. ``{"artist": "Led Zeppelin", "album": "IV"}``) - same as
+            ``query``, it's still here for back-compatibility reasons.
         :returns: list[dict]
         """
-
-        filter = self._make_filter(filter)
+        filter = self._make_filter(query or filter)
         items = self._exec('search', *filter, *args, return_status=False, **kwargs)
 
         # Spotify results first

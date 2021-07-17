@@ -107,7 +107,7 @@ export default {
 
       try {
         let status = await this.request('music.mpd.status')
-        let track = await this.request('music.mpd.currentsong')
+        let track = await this.request('music.mpd.current_track')
 
         this._parseStatus(status)
         this._parseTrack(track)
@@ -170,7 +170,7 @@ export default {
 
     async _parseTrack(track) {
       if (!track || track.length === 0) {
-        track = await this.request('music.mpd.currentsong')
+        track = await this.request('music.mpd.current_track')
       }
 
       if (!this.track)

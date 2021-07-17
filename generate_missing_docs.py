@@ -29,7 +29,7 @@ def generate_plugins_doc():
         plugin_file = os.path.join(plugins_dir, plugin + '.rst')
         if not os.path.exists(plugin_file):
             plugin = 'platypush.plugins.' + plugin
-            header = '``{}``'.format(plugin)
+            header = '``{}``'.format('.'.join(plugin.split('.')[2:]))
             divider = '=' * len(header)
             body = '\n.. automodule:: {}\n    :members:\n'.format(plugin)
             out = '\n'.join([header, divider, body])
@@ -62,7 +62,7 @@ def generate_backends_doc():
         backend_file = os.path.join(backends_dir, backend + '.rst')
         if not os.path.exists(backend_file):
             backend = 'platypush.backend.' + backend
-            header = '``{}``'.format(backend)
+            header = '``{}``'.format('.'.join(backend.split('.')[2:]))
             divider = '=' * len(header)
             body = '\n.. automodule:: {}\n    :members:\n'.format(backend)
             out = '\n'.join([header, divider, body])
