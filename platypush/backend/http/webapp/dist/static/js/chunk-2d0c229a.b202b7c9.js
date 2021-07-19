@@ -1,0 +1,2 @@
+(window["webpackJsonp"]=window["webpackJsonp"]||[]).push([["chunk-2d0c229a"],{"48aa":function(e,a,r){"use strict";r.r(a);var n=r("7a23");function t(e,a,r,t,c,u){var m=Object(n["z"])("Camera");return Object(n["r"])(),Object(n["e"])(m,{"camera-plugin":"gstreamer"})}var c=r("1ed9"),u={name:"CameraGstreamer",components:{Camera:c["default"]}};u.render=t;a["default"]=u}}]);
+//# sourceMappingURL=chunk-2d0c229a.b202b7c9.js.map

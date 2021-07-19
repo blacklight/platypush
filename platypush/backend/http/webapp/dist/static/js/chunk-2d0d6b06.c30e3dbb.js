@@ -1,0 +1,2 @@
+(window["webpackJsonp"]=window["webpackJsonp"]||[]).push([["chunk-2d0d6b06"],{"742e":function(e,n,t){"use strict";t.r(n);var a=t("7a23");function c(e,n,t,c,o,r){var s=Object(a["z"])("Panel");return Object(a["r"])(),Object(a["e"])(s,{"plugin-name":"tts.google"})}var o=t("3f9c"),r={name:"Tts",components:{Panel:o["a"]}};r.render=c;n["default"]=r}}]);
+//# sourceMappingURL=chunk-2d0d6b06.c30e3dbb.js.map

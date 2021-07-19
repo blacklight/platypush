@@ -37,6 +37,14 @@ class SpotifySchema(Schema):
 
         return t
 
+    @pre_dump
+    def _extract_url(self, data, **_):
+        url = data.get('external_urls', {}).get('spotify')
+        if url:
+            data['url'] = url
+
+        return data
+
 
 class SpotifyDeviceSchema(SpotifySchema):
     id = fields.String(required=True, dump_only=True, metadata=dict(description='Device unique ID'))
@@ -56,6 +64,7 @@ class SpotifyDeviceSchema(SpotifySchema):
 class SpotifyTrackSchema(SpotifySchema):
     id = fields.String(required=True, dump_only=True, metadata=dict(description='Spotify ID'))
     uri = fields.String(required=True, dump_only=True, metadata=dict(description='Spotify URI'))
+    url = fields.String(dump_only=True, metadata=dict(description='Spotify URL'))
     file = fields.String(required=True, dump_only=True,
                          metadata=dict(description='Cross-compatibility file ID (same as uri)'))
     title = fields.String(attribute='name', required=True, metadata=dict(description='Track title'))
@@ -94,6 +103,7 @@ class SpotifyTrackSchema(SpotifySchema):
 class SpotifyAlbumSchema(SpotifySchema):
     id = fields.String(required=True, dump_only=True, metadata=dict(description='Spotify ID'))
     uri = fields.String(required=True, dump_only=True, metadata=dict(description='Spotify URI'))
+    url = fields.String(dump_only=True, metadata=dict(description='Spotify URL'))
     name = fields.String(required=True, metadata=dict(description='Name/title'))
     artist = fields.String(metadata=dict(description='Artist'))
     image_url = fields.String(metadata=dict(description='Image URL'))
@@ -147,7 +157,7 @@ class SpotifyStatusSchema(SpotifySchema):
     elapsed = fields.Float(required=False, metadata=dict(description='Time elapsed into the current track'))
     time = fields.Float(required=False, metadata=dict(description='Duration of the current track'))
     repeat = fields.Boolean(metadata=dict(description='True if the device is in repeat mode'))
-    random = fields.Boolean(attribute='shuffle_mode',
+    random = fields.Boolean(attribute='shuffle_state',
                             metadata=dict(description='True if the device is in shuffle mode'))
     track = fields.Nested(SpotifyTrackSchema, metadata=dict(description='Information about the current track'))
 
@@ -167,10 +177,9 @@ class SpotifyStatusSchema(SpotifySchema):
         track = data.pop('item', {})
         if track:
             data['track'] = track
-
-        duration = track.get('duration_ms')
-        if duration is not None:
-            data['time'] = int(duration)/1000.
+            duration = track.get('duration_ms')
+            if duration is not None:
+                data['time'] = int(duration)/1000.
 
         is_playing = data.pop('is_playing', None)
         if is_playing is True:
@@ -179,9 +188,7 @@ class SpotifyStatusSchema(SpotifySchema):
             data['state'] = PlayerState.PAUSE.value
 
         repeat = data.pop('repeat_state', None)
-        if repeat is not None:
-            data['repeat'] = False if repeat == 'off' else True
-
+        data['repeat'] = False if (not repeat or repeat == 'off') else True
         return data
 
 
@@ -202,6 +209,7 @@ class SpotifyPlaylistSchema(SpotifySchema):
     uri = fields.String(required=True, dump_only=True, metadata=dict(
         description='Playlist unique Spotify URI'
     ))
+    url = fields.String(dump_only=True, metadata=dict(description='Spotify URL'))
     name = fields.String(required=True)
     description = fields.String()
     owner = fields.Nested(SpotifyUserSchema, metadata=dict(
@@ -276,6 +284,7 @@ class SpotifyShowSchema(SpotifyAlbumSchema):
 class SpotifyArtistSchema(SpotifySchema):
     id = fields.String(metadata=dict(description='Spotify ID'))
     uri = fields.String(metadata=dict(description='Spotify URI'))
+    url = fields.String(dump_only=True, metadata=dict(description='Spotify URL'))
     name = fields.String(metadata=dict(description='Artist name'))
     genres = fields.List(fields.String, metadata=dict(description='Artist genres'))
     popularity = fields.Int(metadata=dict(description='Popularity between 0 and 100'))

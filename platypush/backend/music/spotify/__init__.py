@@ -175,6 +175,8 @@ class MusicSpotifyBackend(Backend, SpotifyMixin):
 
         self.track = {
             'file': None,
+            'url': None,
+            'uri': None,
             'time': None,
             'artist': None,
             'album': None,

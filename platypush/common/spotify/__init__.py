@@ -318,12 +318,14 @@ class SpotifyMixin:
             )
 
         return SpotifyTrackSchema().dump({
+            **info,
             'file': info['uri'],
             'time': info['duration_ms']/1000. if info.get('duration_ms') is not None else None,
             'artist': '; '.join([
                 artist['name'] for artist in info.get('artists', [])
             ]),
             'album': info.get('album', {}).get('name'),
+            'name': info.get('name'),
             'title': info.get('name'),
             'date': int(info.get('album', {}).get('release_date', '').split('-')[0]),
             'track': info.get('track_number'),

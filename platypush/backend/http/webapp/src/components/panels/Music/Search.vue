@@ -1,42 +1,44 @@
 <template>
   <div class="search fade-in" :class="{'form-collapsed': formCollapsed}">
-    <form class="search-form" v-if="!formCollapsed" @submit.prevent="$emit('search', filteredQuery)">
-      <div class="row">
-        <label>
-          <input type="text" placeholder="Any" v-model="query.any" />
-        </label>
-      </div>
+    <div class="form-container" v-if="!formCollapsed" @submit.prevent="$emit('search', filteredQuery)">
+      <form class="search-form">
+        <div class="row">
+          <label>
+            <input type="text" placeholder="Any" v-model="query.any" />
+          </label>
+        </div>
 
-      <div class="row">
-        <label>
-          <input type="text" placeholder="Artist" v-model="query.artist" />
-        </label>
-      </div>
+        <div class="row">
+          <label>
+            <input type="text" placeholder="Artist" v-model="query.artist" />
+          </label>
+        </div>
 
-      <div class="row">
-        <label>
-          <input type="text" placeholder="Title" v-model="query.title" />
-        </label>
-      </div>
+        <div class="row">
+          <label>
+            <input type="text" placeholder="Title" v-model="query.title" />
+          </label>
+        </div>
 
-      <div class="row">
-        <label>
-          <input type="text" placeholder="Album" v-model="query.album" />
-        </label>
-      </div>
+        <div class="row">
+          <label>
+            <input type="text" placeholder="Album" v-model="query.album" />
+          </label>
+        </div>
 
-      <FormFooter>
-        <button @click="clear">
-          <i class="icon fa fa-times" />
-          <span class="btn-title">Clear</span>
-        </button>
+        <FormFooter>
+          <button @click="clear">
+            <i class="icon fa fa-times" />
+            <span class="btn-title">Clear</span>
+          </button>
 
-        <button type="submit">
-          <i class="icon fa fa-search" />
-          <span class="btn-title">Search</span>
-        </button>
-      </FormFooter>
-    </form>
+          <button type="submit">
+            <i class="icon fa fa-search" />
+            <span class="btn-title">Search</span>
+          </button>
+        </FormFooter>
+      </form>
+    </div>
 
     <MusicHeader v-else>
       <label class="search-box">
@@ -91,7 +93,7 @@ export default {
   name: "Search",
   components: {Dropdown, DropdownItem, FormFooter, MusicHeader},
   mixins: [MediaUtils],
-  emits: ['search', 'clear', 'play', 'load', 'add-to-playlist', 'info'],
+  emits: ['search', 'clear', 'play', 'load', 'add-to-playlist', 'info', 'refresh-status', 'select-device'],
   props: {
     loading: {
       type: Boolean,
@@ -100,6 +102,18 @@ export default {
 
     results: {
       type: Array,
+    },
+
+    devices: {
+      type: Object,
+    },
+
+    selectedDevice: {
+      type: String,
+    },
+
+    activeDevice: {
+      type: String,
     },
   },
 
@@ -187,16 +201,28 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import 'vars.scss';
 @import 'track.scss';
+@import '../../Media/vars.scss';
 
 .search {
   width: 100%;
+  height: calc(100% - #{$media-ctrl-panel-height});
   display: flex;
   flex-direction: column;
 
   &:not(.form-collapsed) {
     justify-content: center;
     align-items: center;
+  }
+
+  .form-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
   }
 
   form {
@@ -237,6 +263,8 @@ export default {
   }
 
   .results {
+    height: calc(100% - #{$music-header-height});
+    flex-grow: 1;
     overflow: auto;
   }
 

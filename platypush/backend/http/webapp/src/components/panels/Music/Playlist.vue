@@ -30,6 +30,16 @@
           <button title="Add track" @click="addTrack">
             <i class="fa fa-plus"></i>
           </button>
+
+          <button title="Refresh status" @click="$emit('refresh-status')" v-if="devices != null">
+            <i class="fa fa-sync"></i>
+          </button>
+
+          <Dropdown title="Players" icon-class="fa fa-volume-up" v-if="Object.keys(devices || {}).length">
+            <DropdownItem v-for="(device, id) in devices" :key="id" v-text="device.name"
+                          :item-class="{active: activeDevice === id, selected: selectedDevice === id}"
+                          icon-class="fa fa-volume-up" @click="$emit('select-device', id)" />
+          </Dropdown>
         </div>
       </MusicHeader>
     </div>
@@ -91,7 +101,8 @@ export default {
   name: "Playlist",
   mixins: [MediaUtils],
   components: {DropdownItem, Dropdown, MusicHeader, Loading},
-  emits: ['play', 'clear', 'add', 'remove', 'swap', 'search', 'move', 'save', 'info'],
+  emits: ['play', 'clear', 'add', 'remove', 'swap', 'search', 'move', 'save', 'info', 'refresh-status',
+    'select-device'],
   props: {
     tracks: {
       type: Array,
@@ -106,7 +117,19 @@ export default {
     status: {
       type: Object,
       default: () => {},
-    }
+    },
+
+    devices: {
+      type: Object,
+    },
+
+    selectedDevice: {
+      type: String,
+    },
+
+    activeDevice: {
+      type: String,
+    },
   },
 
   data() {
@@ -233,6 +256,7 @@ export default {
 <style lang="scss" scoped>
 @import 'vars.scss';
 @import 'track.scss';
+@import '../../Media/vars.scss';
 
 .playlist {
   width: 100%;
@@ -261,7 +285,7 @@ export default {
   }
 
   .body {
-    height: calc(100% - #{$music-header-height});
+    height: calc(100% - #{$music-header-height} - #{$media-ctrl-panel-height});
     overflow: auto;
   }
 

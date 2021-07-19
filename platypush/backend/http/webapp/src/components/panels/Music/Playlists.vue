@@ -1,20 +1,34 @@
 <template>
   <Loading v-if="loading" />
 
-  <div class="editor-container fade-in" v-else-if="editedPlaylist">
+  <div class="editor-container fade-in" v-else-if="editedPlaylist != null">
     <div class="header-container">
       <MusicHeader ref="header">
-        <button class="back-btn" title="Back" @click="$emit('playlist-edit', null)">
-          <i class="fas fa-arrow-left" />
-        </button>
+        <div class="col-8 filter">
+          <button class="back-btn" title="Back" @click="$emit('playlist-edit', null)">
+            <i class="fas fa-arrow-left" />
+          </button>
 
-        <label class="search-box">
-          <input type="search" placeholder="Filter" v-model="trackFilter">
-        </label>
+          <label class="search-box">
+            <input type="search" placeholder="Filter" v-model="trackFilter">
+          </label>
+        </div>
 
-        <button class="add-btn" title="Add track" @click="addTrack">
-          <i class="fas fa-plus" />
-        </button>
+        <div class="buttons pull-right">
+          <Dropdown title="Players" icon-class="fa fa-volume-up" v-if="Object.keys(devices || {}).length">
+            <DropdownItem v-for="(device, id) in devices" :key="id" v-text="device.name"
+                          :item-class="{active: activeDevice === id, selected: selectedDevice === id}"
+                          icon-class="fa fa-volume-up" @click="$emit('select-device', id)" />
+          </Dropdown>
+
+          <button title="Refresh status" @click="$emit('refresh-status')" v-if="devices != null">
+            <i class="fa fa-sync"></i>
+          </button>
+
+          <button class="add-btn" title="Add track" @click="addTrack">
+            <i class="fas fa-plus" />
+          </button>
+        </div>
       </MusicHeader>
     </div>
 
@@ -67,6 +81,18 @@
             <input type="search" placeholder="Filter" v-model="filter">
           </label>
         </div>
+
+        <div class="col-4 buttons">
+          <Dropdown title="Players" icon-class="fa fa-volume-up" v-if="Object.keys(devices || {}).length">
+            <DropdownItem v-for="(device, id) in devices" :key="id" v-text="device.name"
+                          :item-class="{active: activeDevice === id, selected: selectedDevice === id}"
+                          icon-class="fa fa-volume-up" @click="$emit('select-device', id)" />
+          </Dropdown>
+
+          <button title="Refresh status" @click="$emit('refresh-status')" v-if="devices != null">
+            <i class="fa fa-sync"></i>
+          </button>
+        </div>
       </MusicHeader>
     </div>
 
@@ -109,7 +135,7 @@ export default {
   mixins: [MediaUtils],
   components: {DropdownItem, Dropdown, MusicHeader, Loading},
   emits: ['play', 'load', 'remove', 'playlist-edit', 'search', 'remove-track', 'load-track', 'info',
-    'playlist-add', 'add-to-playlist', 'track-move'],
+    'playlist-add', 'add-to-playlist', 'track-move', 'refresh-status', 'select-device'],
 
   props: {
     playlists: {
@@ -129,6 +155,18 @@ export default {
 
     editedPlaylist: {
       type: Number,
+    },
+
+    devices: {
+      type: Object,
+    },
+
+    selectedDevice: {
+      type: String,
+    },
+
+    activeDevice: {
+      type: String,
     },
   },
 
@@ -252,6 +290,7 @@ export default {
 <style lang="scss" scoped>
 @import 'vars.scss';
 @import 'track.scss';
+@import '../../Media/vars.scss';
 
 .playlists {
   width: 100%;
@@ -267,7 +306,7 @@ export default {
   }
 
   .body {
-    height: calc(100% - #{$music-header-height});
+    height: calc(100% - #{$music-header-height} - #{$media-ctrl-panel-height});
     overflow: auto;
   }
 
@@ -296,6 +335,13 @@ export default {
 
     .right-side {
       display: flex;
+      justify-content: flex-end;
+    }
+  }
+
+  .header {
+    .buttons {
+      align-items: flex-end;
       justify-content: flex-end;
     }
   }
@@ -329,7 +375,7 @@ export default {
 
   .editor {
     width: 100%;
-    height: calc(100% - #{$music-header-height});
+    height: calc(100% - #{$music-header-height} - #{$media-ctrl-panel-height});
     display: flex;
     flex-direction: column;
     overflow: auto;

@@ -87,6 +87,7 @@ export default {
       status: undefined,
       timer: undefined,
       loading: false,
+      musicPlugin: 'music.mpd',
 
       syncTime: {
         timestamp: null,
@@ -106,8 +107,8 @@ export default {
       this.loading = true
 
       try {
-        let status = await this.request('music.mpd.status')
-        let track = await this.request('music.mpd.current_track')
+        let status = await this.request(`${this.musicPlugin}.status`)
+        let track = await this.request(`${this.musicPlugin}.current_track`)
 
         this._parseStatus(status)
         this._parseTrack(track)
@@ -149,8 +150,9 @@ export default {
 
     async _parseStatus(status) {
       if (!status || status.length === 0)
-        status = await this.request('music.mpd.status')
-
+        status = await this.request(`${this.musicPlugin}.status`)
+      if (status?.pluginName)
+        this.musicPlugin = status.pluginName
       if (!this.status)
         this.status = {}
 
@@ -170,7 +172,7 @@ export default {
 
     async _parseTrack(track) {
       if (!track || track.length === 0) {
-        track = await this.request('music.mpd.current_track')
+        track = await this.request(`${this.musicPlugin}.current_track`)
       }
 
       if (!this.track)
@@ -211,7 +213,7 @@ export default {
       this.track = {}
       this._parseTrack(event.track)
 
-      let status = event.status ? event.status : await this.request('music.mpd.status')
+      let status = event.status ? event.status : await this.request(`${this.musicPlugin}.status`)
       this._parseStatus(status)
       this.startTimer()
 

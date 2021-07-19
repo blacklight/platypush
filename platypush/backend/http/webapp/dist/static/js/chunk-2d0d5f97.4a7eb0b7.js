@@ -1,0 +1,2 @@
+(window["webpackJsonp"]=window["webpackJsonp"]||[]).push([["chunk-2d0d5f97"],{7129:function(e,a,n){"use strict";n.r(a);var r=n("7a23");function c(e,a,n,c,t,u){var d=Object(r["z"])("Camera");return Object(r["r"])(),Object(r["e"])(d,{"camera-plugin":"pi"})}var t=n("1ed9"),u={name:"CameraPi",components:{Camera:t["default"]}};u.render=c;a["default"]=u}}]);
+//# sourceMappingURL=chunk-2d0d5f97.4a7eb0b7.js.map

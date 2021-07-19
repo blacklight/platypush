@@ -1,3 +1,5 @@
+@use "sass:math";
+
 $widths: (
         m:  $tablet,
         l:  $desktop,
@@ -26,7 +28,7 @@ $widths: (
     .col-no-margin-#{$i} {
         float: left;
         box-sizing: border-box;
-        width: ((100%/12)*$i);
+        width: ((math.div(100%, 12))*$i);
         margin: 0;
     }
 
@@ -68,7 +70,7 @@ $widths: (
         .col-no-margin-s-#{$i} {
             float: left;
             box-sizing: border-box;
-            width: ((100%/12)*$i);
+            width: (math.div(100%, 12)*$i);
         }
     }
 
@@ -89,7 +91,7 @@ $widths: (
                 box-sizing: border-box;
 
                 @if $i < 12 {
-                    width: (4.66666666667%*$i) + (4% * if($i > 1, $i - 1, 0));
+                    width: #{(4.66666666667%*$i) + (4% * if($i > 1, $i - 1, 0))};
                     margin-left: 4%;
                 } @else {
                     width: 100%;
@@ -103,14 +105,14 @@ $widths: (
 
             @if $i < 12 {
                 .col-offset-#{$size}-#{$i} {
-                    margin-left: (8.66666666667%*$i);
+                    margin-left: #{(8.66666666667%*$i)};
                 }
             }
 
             .col-no-margin-#{$size}-#{$i} {
                 float: left;
                 box-sizing: border-box;
-                width: ((100%/12)*$i);
+                width: (math.div(100%, 12)*$i);
             }
         }
 

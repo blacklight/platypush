@@ -1,5 +1,5 @@
 <template>
-  <div class="row item" @click="clicked">
+  <div class="row item" :class="itemClass" @click="clicked">
     <div class="col-1 icon" v-if="iconClass">
       <i :class="iconClass" />
     </div>
@@ -23,6 +23,10 @@ export default {
       type: Boolean,
       default: false,
     },
+
+    itemClass: {
+      type: String,
+    }
   },
 
   methods: {

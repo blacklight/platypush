@@ -11,30 +11,37 @@
       </div>
 
       <div class="view-container">
-        <Playlist :tracks="tracks" :status="status" :loading="loading" v-if="selectedView === 'playing'"
+        <Playlist :tracks="tracks" :status="status" :loading="loading" :devices="devices"
+                  :selected-device="selectedDevice" :active-device="activeDevice" v-if="selectedView === 'playing'"
                   @play="$emit('play', $event)" @clear="$emit('clear')" @swap="$emit('swap-tracks', $event)"
                   @add="$emit('add-to-tracklist', $event)" @remove="$emit('remove-from-tracklist', $event)"
                   @move="$emit('tracklist-move', $event)" @save="$emit('tracklist-save', $event)"
-                  @info="$emit('info', $event)" @add-to-playlist="openAddToPlaylist" @search="search" />
+                  @info="$emit('info', $event)" @add-to-playlist="openAddToPlaylist" @search="search"
+                  @refresh-status="refreshStatus" @select-device="selectDevice" />
 
-        <Playlists :playlists="playlists" :loading="loading" v-else-if="selectedView === 'playlists'"
+        <Playlists :playlists="playlists" :loading="loading" :devices="devices"
+                   :selected-device="selectedDevice" :active-device="activeDevice" v-else-if="selectedView === 'playlists'"
                    :edited-playlist="editedPlaylist" :tracks="editedPlaylistTracks"
                    @play="$emit('play-playlist', $event)" @load="$emit('load-playlist', $event)"
                    @remove="$emit('remove-playlist', $event)" @playlist-edit="$emit('playlist-edit', $event)"
                    @load-track="$emit('add-to-tracklist-from-edited-playlist', $event)"
                    @remove-track="$emit('remove-from-playlist', $event)" @info="$emit('info', $event)"
                    @playlist-add="$emit('playlist-add', $event)" @add-to-playlist="openAddToPlaylist"
-                   @track-move="$emit('playlist-track-move', $event)" @search="search" />
+                   @track-move="$emit('playlist-track-move', $event)" @search="search"
+                   @refresh-status="refreshStatus" @select-device="selectDevice" />
 
-        <Search :loading="loading" v-else-if="selectedView === 'search'" @search="search"
+        <Search :loading="loading" v-else-if="selectedView === 'search'" :devices="devices"
+                :selected-device="selectedDevice" :active-device="activeDevice" @search="search"
                 :results="searchResults" @clear="$emit('search-clear')" @info="$emit('info', $event)"
                 @play="$emit('play', $event)" @load="$emit('add-to-tracklist', $event)"
-                @add-to-playlist="openAddToPlaylist" />
+                @add-to-playlist="openAddToPlaylist" @refresh-status="refreshStatus" @select-device="selectDevice" />
 
-        <Library :loading="loading" v-else-if="selectedView === 'library'" @search="search"
+        <Library :loading="loading" v-else-if="selectedView === 'library'" :devices="devices"
+                 :selected-device="selectedDevice" :active-device="activeDevice" @search="search"
                  :results="libraryResults" :path="path" @clear="$emit('search-clear')" @info="$emit('info', $event)"
                  @play="$emit('play', $event)" @load="$emit('add-to-tracklist', $event)"
-                 @add-to-playlist="openAddToPlaylist" @cd="$emit('cd', $event)" />
+                 @add-to-playlist="openAddToPlaylist" @cd="$emit('cd', $event)" @refresh-status="refreshStatus"
+                 @select-device="selectDevice" />
       </div>
     </main>
   </MediaView>
@@ -86,6 +93,13 @@
           <div class="col-3 attr">Disc</div>
           <div class="col-9 value" v-text="trackInfo.disc" />
         </div>
+
+        <div class="row url" v-if="trackInfo.url">
+          <div class="col-3 attr">URL</div>
+          <div class="col-9 value">
+            <a :href="trackInfo.url" v-text="trackInfo.uri || trackInfo.url" target="_blank" />
+          </div>
+        </div>
       </div>
     </Modal>
   </div>
@@ -136,7 +150,7 @@ export default {
     'status-update', 'playlist-update', 'new-playing-track', 'add-to-tracklist', 'remove-from-tracklist',
     'swap-tracks', 'play-playlist', 'load-playlist', 'remove-playlist', 'tracklist-move', 'tracklist-save',
     'add-to-tracklist-from-edited-playlist', 'remove-from-playlist', 'info', 'playlist-add', 'add-to-playlist',
-    'playlist-track-move', 'search', 'search-clear', 'cd'],
+    'playlist-track-move', 'search', 'search-clear', 'cd', 'refresh-status', 'select-device'],
 
   mixins: [Utils, MediaUtils],
   components: {Loading, Modal, Nav, MediaView, Playlist, Playlists, FormFooter, Search, Library},
@@ -193,6 +207,18 @@ export default {
     },
 
     path: {
+      type: String,
+    },
+
+    devices: {
+      type: Object,
+    },
+
+    activeDevice: {
+      type: String,
+    },
+
+    selectedDevice: {
       type: String,
     },
   },
@@ -264,6 +290,14 @@ export default {
       this.$emit('search', filter)
       this.$refs.trackInfo.isVisible = false
       this.selectedView = 'search'
+    },
+
+    selectDevice(id) {
+      this.$emit('select-device', id)
+    },
+
+    refreshStatus() {
+      this.$emit('refresh-status')
     },
   },
 

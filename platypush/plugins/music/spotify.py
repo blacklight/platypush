@@ -56,7 +56,7 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
     def _get_device(self, device: str):
         dev = self._players_by_id.get(device, self._players_by_name.get(device))
         if not dev:
-            self.devices()
+            self.get_devices()
 
         dev = self._players_by_id.get(device, self._players_by_name.get(device))
         assert dev, f'No such device: {device}'
@@ -76,7 +76,7 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
         return dt
 
     @action
-    def devices(self) -> List[dict]:
+    def get_devices(self) -> List[dict]:
         """
         Get the list of players associated to the Spotify account.
 
@@ -112,10 +112,14 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
         if device:
             device = self._get_device(device)['id']
 
-        self.spotify_user_call('/v1/me/player/volume', params={
-            'volume_percent': volume,
-            **({'device_id': device} if device else {}),
-        })
+        self.spotify_user_call(
+            '/v1/me/player/volume',
+            method='put',
+            params={
+                'volume_percent': volume,
+                **({'device_id': device} if device else {}),
+            }
+        )
 
     def _get_volume(self, device: Optional[str] = None) -> Optional[int]:
         if device:
@@ -170,12 +174,10 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
         self.spotify_user_call(
             '/v1/me/player/play',
             method='put',
+            json={'uris': [resource]} if resource else {},
             params={
                 **({'device_id': device} if device else {}),
             },
-            data={
-                'uris': [resource],
-            } if resource else {},
         )
 
     @action
@@ -261,7 +263,7 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
         self.spotify_user_call(
             f'/v1/me/player',
             method='put',
-            data={
+            json={
                 'device_ids': [device],
             },
         )
@@ -345,7 +347,7 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
             f'/v1/me/player/repeat',
             method='put',
             params={
-                'state': state,
+                'state': 'context' if state else 'off',
                 **({'device_id': device} if device else {}),
             },
         )

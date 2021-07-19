@@ -6,7 +6,7 @@
 
 <script>
 export default {
-  name: "Header"
+  name: "Header",
 }
 </script>
 
@@ -19,5 +19,15 @@ export default {
   background: $menu-panel-bg;
   padding: .5em;
   box-shadow: $border-shadow-bottom;
+
+  ::v-deep(.dropdown) {
+    .item.active {
+      color: $default-hover-fg;
+    }
+
+    .item.selected {
+      font-weight: bold;
+    }
+  }
 }
 </style>

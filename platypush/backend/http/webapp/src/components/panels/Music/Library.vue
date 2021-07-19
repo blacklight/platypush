@@ -67,7 +67,7 @@ export default {
   name: "Library",
   components: {Dropdown, DropdownItem, MusicHeader, Loading},
   mixins: [MediaUtils],
-  emits: ['search', 'play', 'load', 'add-to-playlist', 'info', 'cd'],
+  emits: ['search', 'play', 'load', 'add-to-playlist', 'info', 'cd', 'refresh-status', 'select-device'],
   props: {
     loading: {
       type: Boolean,
@@ -79,6 +79,18 @@ export default {
     },
 
     path: {
+      type: String,
+    },
+
+    devices: {
+      type: Object,
+    },
+
+    selectedDevice: {
+      type: String,
+    },
+
+    activeDevice: {
       type: String,
     },
   },

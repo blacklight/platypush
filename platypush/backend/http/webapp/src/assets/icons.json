@@ -42,6 +42,9 @@
     "music.snapcast": {
       "class": "fa fa-volume-up"
     },
+    "music.spotify": {
+      "class": "fab fa-spotify"
+    },
     "torrent": {
       "class": "fa fa-magnet"
     },

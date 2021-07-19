@@ -56,7 +56,7 @@
           <span class="elapsed-time"
                 v-text="elapsed != null && (status.state === 'play' || status.state === 'pause') ? convertTime(elapsed) : '-:--'"></span>
       </div>
-      <div class="col-s-8 col-m-10">
+      <div class="col-s-8 col-m-10 time-bar">
         <Slider :value="elapsed" :range="[0, duration]" :disabled="!duration || status.state === 'stop'"
                 @mouseup="$emit('seek', $event.target.value)" />
       </div>
@@ -322,7 +322,7 @@ button {
   }
 
   .volume-slider {
-    margin-left: 2.25em;
+    flex-grow: 1;
   }
 }
 
@@ -432,6 +432,7 @@ button {
       display: flex;
       align-items: center;
       justify-content: flex-end;
+      flex: 1;
     }
   }
 
@@ -465,6 +466,11 @@ button {
 .elapsed-time {
   text-align: right;
   float: right;
+}
+
+.time-bar {
+  flex-grow: 1;
+  margin: 0 .5em;
 }
 
 .mobile {
