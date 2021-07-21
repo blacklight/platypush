@@ -1,11 +1,12 @@
 from datetime import datetime
-from typing import Union, Optional
+from typing import Union
 
 from marshmallow import fields, pre_dump
 from marshmallow.schema import Schema
 from marshmallow.validate import OneOf, Range
 
 from platypush.plugins.media import PlayerState
+from platypush.schemas import normalize_datetime
 
 device_types = [
     'Unknown',
@@ -18,14 +19,6 @@ device_types = [
     'STB',
     'Audio dongle',
 ]
-
-
-def normalize_datetime(dt: str) -> Optional[datetime]:
-    if not dt:
-        return
-    if dt.endswith('Z'):
-        dt = dt[:-1] + '+00:00'
-    return datetime.fromisoformat(dt)
 
 
 class SpotifySchema(Schema):

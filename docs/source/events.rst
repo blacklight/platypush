@@ -54,6 +54,7 @@ Events
     platypush/events/serial.rst
     platypush/events/sound.rst
     platypush/events/stt.rst
+    platypush/events/sun.rst
     platypush/events/tensorflow.rst
     platypush/events/todoist.rst
     platypush/events/torrent.rst

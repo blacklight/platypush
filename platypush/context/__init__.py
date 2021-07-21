@@ -5,6 +5,7 @@ import logging
 from threading import RLock
 
 from ..config import Config
+from ..utils import get_enabled_plugins
 
 logger = logging.getLogger('platypush:context')
 
@@ -20,6 +21,7 @@ plugins_init_locks = {}
 
 # Reference to the main application bus
 main_bus = None
+
 
 def register_backends(bus=None, global_scope=False, **kwargs):
     """ Initialize the backend objects based on the configuration and returns
@@ -58,6 +60,16 @@ def register_backends(bus=None, global_scope=False, **kwargs):
             raise RuntimeError(e)
 
     return backends
+
+
+def register_plugins(bus=None):
+    from ..plugins import RunnablePlugin
+
+    for plugin in get_enabled_plugins().values():
+        if isinstance(plugin, RunnablePlugin):
+            plugin.bus = bus
+            plugin.start()
+
 
 def get_backend(name):
     """ Returns the backend instance identified by name if it exists """

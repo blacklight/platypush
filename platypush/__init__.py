@@ -12,7 +12,7 @@ import sys
 
 from .bus.redis import RedisBus
 from .config import Config
-from .context import register_backends
+from .context import register_backends, register_plugins
 from .cron.scheduler import CronScheduler
 from .event.processor import EventProcessor
 from .logger import Logger
@@ -20,8 +20,7 @@ from .message.event import Event
 from .message.event.application import ApplicationStartedEvent
 from .message.request import Request
 from .message.response import Response
-from .utils import set_thread_name
-
+from .utils import set_thread_name, get_enabled_plugins
 
 __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
 __version__ = '0.21.2'
@@ -160,8 +159,14 @@ class Daemon:
 
     def stop_app(self):
         """ Stops the backends and the bus """
+        from .plugins import RunnablePlugin
+
         for backend in self.backends.values():
             backend.stop()
+
+        for plugin in get_enabled_plugins().values():
+            if isinstance(plugin, RunnablePlugin):
+                plugin.stop()
 
         self.bus.stop()
         if self.cron_scheduler:
@@ -183,6 +188,9 @@ class Daemon:
         # Start the backend threads
         for backend in self.backends.values():
             backend.start()
+
+        # Initialize the plugins
+        register_plugins(bus=self.bus)
 
         # Start the cron scheduler
         if Config.get_cronjobs():

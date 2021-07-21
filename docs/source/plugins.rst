@@ -119,6 +119,7 @@ Plugins
     platypush/plugins/stt.deepspeech.rst
     platypush/plugins/stt.picovoice.hotword.rst
     platypush/plugins/stt.picovoice.speech.rst
+    platypush/plugins/sun.rst
     platypush/plugins/switch.rst
     platypush/plugins/switch.tplink.rst
     platypush/plugins/switch.wemo.rst
