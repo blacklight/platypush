@@ -30,7 +30,11 @@ class Listener(_Listener):
         def callback(*_):
             self.connected = False
             if self._on_close_hndl:
-                self._on_close_hndl()
+                # noinspection PyBroadException
+                try:
+                    self._on_close_hndl()
+                except:
+                    pass
 
         return callback
 
