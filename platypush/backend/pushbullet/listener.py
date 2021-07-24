@@ -1,3 +1,4 @@
+import time
 from typing import Callable, Optional
 
 from pushbullet import Listener as _Listener
