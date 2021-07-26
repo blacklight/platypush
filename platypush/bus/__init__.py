@@ -84,7 +84,7 @@ class Bus(object):
 
             threading.Thread(target=self._msg_executor(msg)).start()
 
-        logger.info('Bus service stoppped')
+        logger.info('Bus service stopped')
 
     def register_handler(self, event_type: Type[Event], handler: Callable[[Event], None]) -> Callable[[], None]:
         """
