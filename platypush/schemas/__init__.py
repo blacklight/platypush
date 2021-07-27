@@ -1,6 +1,19 @@
 from datetime import datetime
 from typing import Optional
 
+from marshmallow import fields
+
+
+class StrippedString(fields.Function):
+    def __init__(self, *args, **kwargs):
+        kwargs['serialize'] = self._strip
+        kwargs['deserialize'] = self._strip
+        super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def _strip(value: str):
+        return value.strip()
+
 
 def normalize_datetime(dt: str) -> Optional[datetime]:
     if not dt:

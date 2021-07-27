@@ -13,6 +13,7 @@ Events
     platypush/events/bluetooth.rst
     platypush/events/button.flic.rst
     platypush/events/camera.rst
+    platypush/events/chat.slack.rst
     platypush/events/chat.telegram.rst
     platypush/events/clipboard.rst
     platypush/events/covid19.rst

@@ -13,7 +13,8 @@ from telegram.user import User as TelegramUser
 
 from platypush.message.response.chat.telegram import TelegramMessageResponse, TelegramFileResponse, \
     TelegramChatResponse, TelegramUserResponse, TelegramUsersResponse
-from platypush.plugins import Plugin, action
+from platypush.plugins import action
+from platypush.plugins.chat import ChatPlugin
 
 
 class Resource:
@@ -36,7 +37,7 @@ class Resource:
             self._file.close()
 
 
-class ChatTelegramPlugin(Plugin):
+class ChatTelegramPlugin(ChatPlugin):
     """
     Plugin to programmatically send Telegram messages through a Telegram bot. In order to send messages to contacts,
     groups or channels you'll first need to register a bot. To do so:

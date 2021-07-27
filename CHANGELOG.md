@@ -3,11 +3,13 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
-## [Unreleased]
+## [0.21.3] - 2021-07-28
 
 ### Added
 
 - Added `sun` plugin for sunrise/sunset events.
+
+- Added `slack` integration.
 
 ## [0.21.2] - 2021-07-20
 
