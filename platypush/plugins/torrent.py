@@ -258,13 +258,22 @@ class TorrentPlugin(Plugin):
         if torrent.startswith('magnet:?'):
             magnet = torrent
             magnet_info = lt.parse_magnet_uri(magnet)
-            info = {
-                'name': magnet_info.name,
-                'url': magnet,
-                'magnet': magnet,
-                'trackers': magnet_info.trackers,
-                'save_path': download_dir,
-            }
+            if isinstance(magnet_info, dict):
+                info = {
+                    'name': magnet_info.get('name'),
+                    'url': magnet,
+                    'magnet': magnet,
+                    'trackers': magnet_info.get('trackers', []),
+                    'save_path': download_dir,
+                }
+            else:
+                info = {
+                    'name': magnet_info.name,
+                    'url': magnet,
+                    'magnet': magnet,
+                    'trackers': magnet_info.trackers,
+                    'save_path': download_dir,
+                }
         elif torrent.startswith('http://') or torrent.startswith('https://'):
             response = requests.get(torrent, allow_redirects=True)
             torrent_file = os.path.join(download_dir, self._generate_rand_filename())
