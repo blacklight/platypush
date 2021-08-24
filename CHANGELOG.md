@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [0.21.4] - 2021-08-24
+
+### Fixed
+
+- Fixed JWT token generation, since python-jwt >= 2.0 always returns strings (not bytes) upon `jwt.encode`.
+
 ## [0.21.3] - 2021-07-28
 
 ### Added
