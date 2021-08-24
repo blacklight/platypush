@@ -191,7 +191,10 @@ class UserManager:
             'expires_at': expires_at.timestamp() if expires_at else None,
         }
 
-        return jwt.encode(payload, priv_key, algorithm='RS256').decode()
+        token = jwt.encode(payload, priv_key, algorithm='RS256')
+        if isinstance(token, bytes):
+            token = token.decode()
+        return token
 
     @staticmethod
     def validate_jwt_token(token: str) -> Dict[str, str]:
