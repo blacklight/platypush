@@ -7,6 +7,11 @@ from typing import Optional, Dict
 import bcrypt
 import jwt
 
+try:
+    from jwt.exceptions import PyJWTError
+except ImportError:
+    from jwt import PyJWTError
+
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
@@ -150,11 +155,19 @@ class UserManager:
 
     @staticmethod
     def _encrypt_password(pwd):
-        return bcrypt.hashpw(pwd.encode(), bcrypt.gensalt(12))
+        if isinstance(pwd, str):
+            pwd = pwd.encode()
+        return bcrypt.hashpw(pwd, bcrypt.gensalt(12)).decode()
+
+    @classmethod
+    def _check_password(cls, pwd, hashed_pwd):
+        return bcrypt.checkpw(cls._to_bytes(pwd), cls._to_bytes(hashed_pwd))
 
     @staticmethod
-    def _check_password(pwd, hashed_pwd):
-        return bcrypt.checkpw(pwd.encode(), hashed_pwd)
+    def _to_bytes(data) -> bytes:
+        if isinstance(data, str):
+            data = data.encode()
+        return data
 
     @staticmethod
     def generate_session_token():
@@ -218,7 +231,7 @@ class UserManager:
 
         try:
             payload = jwt.decode(token.encode(), pub_key, algorithms=['RS256'])
-        except jwt.exceptions.PyJWTError as e:
+        except PyJWTError as e:
             raise InvalidJWTTokenException(str(e))
 
         expires_at = payload.get('expires_at')

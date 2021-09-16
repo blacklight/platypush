@@ -141,21 +141,14 @@ class Config(object):
         self.constants = {}
         self.cronjobs = {}
         self.dashboards = {}
+        self._plugin_manifests = {}
+        self._backend_manifests = {}
 
+        self._init_manifests()
         self._init_constants()
         self._load_scripts()
         self._init_components()
         self._init_dashboards(self._config['dashboards_dir'])
-
-    @staticmethod
-    def _is_special_token(token):
-        return token == 'main.db' or \
-               token == 'token' or \
-               token == 'token_hash' or \
-               token == 'logging' or \
-               token == 'workdir' or \
-               token == 'device_id' or \
-               token == 'environment'
 
     def _read_config_file(self, cfgfile):
         cfgfile_dir = os.path.dirname(os.path.abspath(
@@ -232,7 +225,7 @@ class Config(object):
 
     def _init_components(self):
         for key in self._config.keys():
-            if key.startswith('backend.'):
+            if key.startswith('backend.') and '.'.join(key.split('.')[1:]) in self._backend_manifests:
                 backend_name = '.'.join(key.split('.')[1:])
                 self.backends[backend_name] = self._config[key]
             elif key.startswith('event.hook.'):
@@ -261,8 +254,23 @@ class Config(object):
                     'actions': self._config[key],
                     'args': args,
                 }
-            elif not self._is_special_token(key):
+            elif key in self._plugin_manifests:
                 self.plugins[key] = self._config[key]
+
+    def _init_manifests(self, base_dir: Optional[str] = None):
+        if not base_dir:
+            base_dir = os.path.abspath(os.path.join(__file__, '..', '..'))
+            plugins_dir = os.path.join(base_dir, 'plugins')
+            backends_dir = os.path.join(base_dir, 'backend')
+            self._init_manifests(plugins_dir)
+            self._init_manifests(backends_dir)
+        else:
+            manifests_map = self._plugin_manifests if base_dir.endswith('plugins') else self._backend_manifests
+            for mf in pathlib.Path(base_dir).rglob('manifest.yaml'):
+                with open(mf, 'r') as f:
+                    manifest = yaml.safe_load(f)['manifest']
+                    comp_name = '.'.join(manifest['package'].split('.')[2:])
+                    manifests_map[comp_name] = manifest
 
     def _init_constants(self):
         if 'constants' in self._config:

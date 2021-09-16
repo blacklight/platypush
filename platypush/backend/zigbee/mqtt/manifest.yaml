@@ -1,0 +1,45 @@
+manifest:
+  events:
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBannedEvent: when a device
+      is bannedfrom the network.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBindEvent: when a device bind
+      eventoccurs.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceConnectedEvent: when a device
+      connectsto the network.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePairingEvent: when a device
+      is pairing.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePropertySetEvent: when the
+      properties of aconnected device change.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedEvent: when a device
+      is removedfrom the network.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedFailedEvent: when a
+      request toremove a device from the network fails.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRenamedEvent: when a device
+      isrenamed on the network.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceUnbindEvent: when a device
+      unbind eventoccurs.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceWhitelistedEvent: when a device
+      iswhitelisted on the network.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttErrorEvent: when an internal error
+      occurson the zigbee2mqtt service.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedEvent: when a group is
+      added.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedFailedEvent: when a request
+      toadd a new group fails.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllEvent: when all the
+      devicesare removed from a group.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllFailedEvent: when
+      a request toremove all the devices from a group fails.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedEvent: when a group
+      is removed.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedFailedEvent: when a
+      request toremove a group fails.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttOfflineEvent: when the service goes
+      offline.
+    platypush.message.event.zigbee.mqtt.ZigbeeMqttOnlineEvent: when the service comes
+      online.
+  install:
+    pip:
+    - paho-mqtt
+  package: platypush.backend.zigbee.mqtt
+  type: backend

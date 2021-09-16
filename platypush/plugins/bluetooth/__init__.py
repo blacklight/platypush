@@ -27,6 +27,7 @@ class BluetoothPlugin(SensorPlugin):
 
     class _DeviceDiscoverer(bluetooth.DeviceDiscoverer):
         def __init__(self, name, *args, **kwargs):
+            # noinspection PyArgumentList
             super().__init__(*args, **kwargs)
             self.name = name
             self.device = {}
@@ -35,6 +36,7 @@ class BluetoothPlugin(SensorPlugin):
         def pre_inquiry(self):
             self.done = False
 
+        # noinspection PyUnusedLocal
         def device_discovered(self, dev_addr, dev_class, rssi, dev_name):
             dev_name = dev_name.decode()
             if dev_name == self.name:

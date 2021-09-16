@@ -1,0 +1,9 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - flask
+    - bcrypt
+    - python-magic
+  package: platypush.backend.http
+  type: backend

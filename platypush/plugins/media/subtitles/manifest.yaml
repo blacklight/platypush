@@ -1,0 +1,8 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - python-opensubtitles
+    - webvtt-py
+  package: platypush.plugins.media.subtitles
+  type: plugin

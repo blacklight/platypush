@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - python-libtorrent-bin
+  package: platypush.plugins.torrent
+  type: plugin

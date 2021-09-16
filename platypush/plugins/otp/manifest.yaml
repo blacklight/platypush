@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - pyotp
+  package: platypush.plugins.otp
+  type: plugin

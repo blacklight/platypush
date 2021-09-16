@@ -13,7 +13,8 @@ class GpioPlugin(Plugin):
     Plugin to handle raw read/write operation on the Raspberry Pi GPIO pins.
 
     Requires:
-        * **RPi.GPIO** (`pip install RPi.GPIO`)
+
+        * **RPi.GPIO** (``pip install RPi.GPIO``)
     """
 
     def __init__(self, pins: Optional[Dict[str, int]] = None, mode: str = 'board', **kwargs):

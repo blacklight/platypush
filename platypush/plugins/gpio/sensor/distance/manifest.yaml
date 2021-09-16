@@ -1,0 +1,9 @@
+manifest:
+  events:
+    platypush.message.event.distance.DistanceSensorEvent: when a new distance measurement
+      is available
+  install:
+    pip:
+    - RPi.GPIO
+  package: platypush.plugins.gpio.sensor.distance
+  type: plugin

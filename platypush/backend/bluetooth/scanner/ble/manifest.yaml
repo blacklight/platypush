@@ -1,0 +1,10 @@
+manifest:
+  events:
+    platypush.message.event.bluetooth.BluetoothDeviceFoundEvent: when a new bluetooth
+      device is found.
+    platypush.message.event.bluetooth.BluetoothDeviceLostEvent: when a bluetooth device
+      is lost.
+  install:
+    pip: []
+  package: platypush.backend.bluetooth.scanner.ble
+  type: backend

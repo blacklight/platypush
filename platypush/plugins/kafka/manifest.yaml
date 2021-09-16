@@ -1,0 +1,9 @@
+manifest:
+  events:
+    platypush.message.event.kafka.KafkaMessageEvent: when a new message is received
+      on the consumer topic.
+  install:
+    pip:
+    - kafka
+  package: platypush.plugins.kafka
+  type: plugin

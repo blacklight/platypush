@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - dbus-python
+  package: platypush.plugins.dbus
+  type: plugin

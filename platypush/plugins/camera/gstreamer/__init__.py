@@ -14,7 +14,15 @@ class CameraGstreamerPlugin(CameraPlugin):
 
     Requires:
 
-        * **gst-python** (``pip install gst-python``)
+        * **gst-python**
+
+    On Debian and derived systems:
+
+        * ``[sudo] apt-get install python3-gi python3-gst-1.0
+
+    On Arch and derived systems:
+
+        * ``[sudo] pacman -S gst-python
 
     """
 

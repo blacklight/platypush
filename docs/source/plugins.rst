@@ -9,7 +9,6 @@ Plugins
     platypush/plugins/adafruit.io.rst
     platypush/plugins/alarm.rst
     platypush/plugins/arduino.rst
-    platypush/plugins/assistant.rst
     platypush/plugins/assistant.echo.rst
     platypush/plugins/assistant.google.rst
     platypush/plugins/assistant.google.pushtotalk.rst
@@ -18,14 +17,12 @@ Plugins
     platypush/plugins/bluetooth.ble.rst
     platypush/plugins/calendar.rst
     platypush/plugins/calendar.ical.rst
-    platypush/plugins/camera.rst
     platypush/plugins/camera.android.ipcam.rst
     platypush/plugins/camera.cv.rst
     platypush/plugins/camera.ffmpeg.rst
     platypush/plugins/camera.gstreamer.rst
     platypush/plugins/camera.ir.mlx90640.rst
     platypush/plugins/camera.pi.rst
-    platypush/plugins/chat.rst
     platypush/plugins/chat.telegram.rst
     platypush/plugins/clipboard.rst
     platypush/plugins/config.rst
@@ -38,7 +35,6 @@ Plugins
     platypush/plugins/ffmpeg.rst
     platypush/plugins/file.rst
     platypush/plugins/foursquare.rst
-    platypush/plugins/google.rst
     platypush/plugins/google.calendar.rst
     platypush/plugins/google.drive.rst
     platypush/plugins/google.fit.rst
@@ -48,7 +44,6 @@ Plugins
     platypush/plugins/google.translate.rst
     platypush/plugins/google.youtube.rst
     platypush/plugins/gpio.rst
-    platypush/plugins/gpio.sensor.rst
     platypush/plugins/gpio.sensor.accelerometer.rst
     platypush/plugins/gpio.sensor.bme280.rst
     platypush/plugins/gpio.sensor.dht.rst
@@ -69,18 +64,14 @@ Plugins
     platypush/plugins/inspect.rst
     platypush/plugins/kafka.rst
     platypush/plugins/lastfm.rst
-    platypush/plugins/lcd.rst
     platypush/plugins/lcd.gpio.rst
     platypush/plugins/lcd.i2c.rst
-    platypush/plugins/light.rst
     platypush/plugins/light.hue.rst
     platypush/plugins/linode.rst
     platypush/plugins/logger.rst
     platypush/plugins/luma.oled.rst
-    platypush/plugins/mail.rst
     platypush/plugins/mail.imap.rst
     platypush/plugins/mail.smtp.rst
-    platypush/plugins/media.rst
     platypush/plugins/media.chromecast.rst
     platypush/plugins/media.gstreamer.rst
     platypush/plugins/media.kodi.rst
@@ -95,7 +86,6 @@ Plugins
     platypush/plugins/ml.cv.rst
     platypush/plugins/mobile.join.rst
     platypush/plugins/mqtt.rst
-    platypush/plugins/music.rst
     platypush/plugins/music.mpd.rst
     platypush/plugins/music.snapcast.rst
     platypush/plugins/music.spotify.rst
@@ -110,19 +100,16 @@ Plugins
     platypush/plugins/qrcode.rst
     platypush/plugins/redis.rst
     platypush/plugins/rtorrent.rst
-    platypush/plugins/sensor.rst
     platypush/plugins/serial.rst
     platypush/plugins/shell.rst
     platypush/plugins/slack.rst
     platypush/plugins/smartthings.rst
     platypush/plugins/sound.rst
     platypush/plugins/ssh.rst
-    platypush/plugins/stt.rst
     platypush/plugins/stt.deepspeech.rst
     platypush/plugins/stt.picovoice.hotword.rst
     platypush/plugins/stt.picovoice.speech.rst
     platypush/plugins/sun.rst
-    platypush/plugins/switch.rst
     platypush/plugins/switch.tplink.rst
     platypush/plugins/switch.wemo.rst
     platypush/plugins/switchbot.rst
@@ -142,7 +129,6 @@ Plugins
     platypush/plugins/user.rst
     platypush/plugins/utils.rst
     platypush/plugins/variable.rst
-    platypush/plugins/weather.rst
     platypush/plugins/weather.buienradar.rst
     platypush/plugins/weather.darksky.rst
     platypush/plugins/weather.openweathermap.rst
@@ -151,5 +137,4 @@ Plugins
     platypush/plugins/zeroconf.rst
     platypush/plugins/zigbee.mqtt.rst
     platypush/plugins/zwave.rst
-    platypush/plugins/zwave._base.rst
     platypush/plugins/zwave.mqtt.rst

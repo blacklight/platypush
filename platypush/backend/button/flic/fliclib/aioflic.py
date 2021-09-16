@@ -15,6 +15,7 @@ from enum import Enum
 from collections import namedtuple
 import struct
 import itertools
+import threading
 
 
 class CreateConnectionChannelError(Enum):

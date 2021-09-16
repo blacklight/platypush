@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - pyfirmata2
+  package: platypush.plugins.arduino
+  type: plugin

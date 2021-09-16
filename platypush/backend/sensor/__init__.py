@@ -17,6 +17,7 @@ class SensorBackend(Backend):
             gone above a configured threshold
         * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent` if the measurements of a sensor have
             gone below a configured threshold
+
     """
 
     default_tolerance = 1e-7

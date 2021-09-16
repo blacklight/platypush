@@ -1,0 +1,8 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - RPLCD
+    - RPi.GPIO
+  package: platypush.plugins.lcd.i2c
+  type: plugin

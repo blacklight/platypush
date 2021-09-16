@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - Adafruit-GPIO
+  package: platypush.plugins.gpio.sensor.accelerometer
+  type: plugin

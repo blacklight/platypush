@@ -1,0 +1,8 @@
+manifest:
+  events:
+    platypush.message.event.foursquare.FoursquareCheckinEvent: when a new check-in
+      occurs.
+  install:
+    pip: []
+  package: platypush.backend.foursquare
+  type: backend

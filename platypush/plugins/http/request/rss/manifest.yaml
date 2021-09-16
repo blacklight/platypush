@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - feedparser
+  package: platypush.plugins.http.request.rss
+  type: plugin

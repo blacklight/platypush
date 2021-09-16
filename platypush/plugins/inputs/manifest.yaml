@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - pyuserinput
+  package: platypush.plugins.inputs
+  type: plugin

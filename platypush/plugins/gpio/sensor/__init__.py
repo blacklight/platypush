@@ -3,7 +3,7 @@ from abc import ABC
 from platypush.plugins.sensor import SensorPlugin
 
 
-class GpioSensorPlugin(ABC, SensorPlugin):
+class GpioSensorPlugin(SensorPlugin, ABC):
     pass
 
 

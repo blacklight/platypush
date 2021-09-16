@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - icalendar
+  package: platypush.plugins.calendar.ical
+  type: plugin

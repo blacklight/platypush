@@ -1,0 +1,6 @@
+manifest:
+  events: {}
+  install:
+    pip: []
+  package: platypush.plugins.camera.android.ipcam
+  type: plugin

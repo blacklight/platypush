@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - twilio
+  package: platypush.plugins.twilio
+  type: plugin

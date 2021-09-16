@@ -1,0 +1,8 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - pybluez
+    - pyobex
+  package: platypush.plugins.bluetooth
+  type: plugin

@@ -389,7 +389,7 @@ class SoundPlugin(Plugin):
                             raise e
 
                 completed_callback_event.wait()
-        except queue.Full as e:
+        except queue.Full:
             if stream_index is None or \
                     self._get_playback_state(stream_index) != PlaybackState.STOPPED:
                 self.logger.warning('Playback timeout: audio callback failed?')
@@ -721,7 +721,7 @@ class SoundPlugin(Plugin):
 
                 time.sleep(0.1)
 
-        except queue.Empty as e:
+        except queue.Empty:
             self.logger.warning('Recording timeout: audio callback failed?')
         finally:
             self.stop_playback([stream_index])
@@ -774,7 +774,7 @@ class SoundPlugin(Plugin):
                                                     completed_callback_event),
                         True)
 
-            return (stream_index, False)
+            return stream_index, False
 
     def _allocate_stream_index(self, stream_name=None,
                                completed_callback_event=None):
@@ -885,7 +885,6 @@ class SoundPlugin(Plugin):
                                      format(i))
                     continue
 
-                stream = self.active_streams[i]
                 if self.playback_state[i] == PlaybackState.PAUSED:
                     self.playback_state[i] = PlaybackState.PLAYING
                 elif self.playback_state[i] == PlaybackState.PLAYING:

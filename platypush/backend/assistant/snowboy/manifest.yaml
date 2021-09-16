@@ -1,0 +1,9 @@
+manifest:
+  events:
+    platypush.message.event.assistant.HotwordDetectedEvent: whenever the hotword has
+      been detected
+  install:
+    pip:
+    - snowboy
+  package: platypush.backend.assistant.snowboy
+  type: backend

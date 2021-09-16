@@ -1,0 +1,10 @@
+manifest:
+  events:
+    platypush.message.event.travisci.TravisciBuildFailedEvent: when the build of a
+      project owned bythe user fails.
+    platypush.message.event.travisci.TravisciBuildPassedEvent: when the build of a
+      project owned bythe user passes.
+  install:
+    pip: []
+  package: platypush.backend.travisci
+  type: backend

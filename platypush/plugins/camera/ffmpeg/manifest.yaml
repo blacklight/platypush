@@ -1,0 +1,9 @@
+manifest:
+  events: {}
+  install:
+    apt:
+      - ffmpeg
+    pacman:
+      - ffmpeg
+  package: platypush.plugins.camera.ffmpeg
+  type: plugin

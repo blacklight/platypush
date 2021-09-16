@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - python-telegram-bot
+  package: platypush.plugins.chat.telegram
+  type: plugin

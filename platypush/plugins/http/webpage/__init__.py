@@ -16,10 +16,10 @@ class HttpWebpagePlugin(Plugin):
 
     Requires:
 
-        * **requests** (``pip install requests``)
         * **weasyprint** (``pip install weasyprint``), optional, for HTML->PDF conversion
         * **node** and **npm** installed on your system (to use the mercury-parser interface)
         * The mercury-parser library installed (``npm install @postlight/mercury-parser``)
+
     """
 
     _mercury_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mercury-parser.js')
@@ -114,7 +114,10 @@ class HttpWebpagePlugin(Plugin):
 
         if outfile.lower().endswith('.pdf'):
             import weasyprint
-            from weasyprint.fonts import FontConfiguration
+            try:
+                from weasyprint.fonts import FontConfiguration
+            except ImportError:
+                from weasyprint.document import FontConfiguration
 
             font_config = FontConfiguration()
             css = [weasyprint.CSS('https://fonts.googleapis.com/css?family=Merriweather'),

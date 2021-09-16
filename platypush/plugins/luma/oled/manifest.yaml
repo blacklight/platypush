@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - luma.oled
+  package: platypush.plugins.luma.oled
+  type: plugin

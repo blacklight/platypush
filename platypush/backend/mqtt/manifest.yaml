@@ -1,0 +1,9 @@
+manifest:
+  events:
+    platypush.message.event.mqtt.MQTTMessageEvent: when a newmessage is received on
+      one of the custom listeners
+  install:
+    pip:
+    - paho-mqtt
+  package: platypush.backend.mqtt
+  type: backend

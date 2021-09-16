@@ -15,9 +15,6 @@ class DbPlugin(Plugin):
     Database plugin. It allows you to programmatically select, insert, update
     and delete records on a database backend through requests, procedures and
     event hooks.
-
-    Requires:
-        * **sqlalchemy** (``pip install sqlalchemy``)
     """
 
     engine = None
@@ -28,8 +25,8 @@ class DbPlugin(Plugin):
         """
         :param engine: Default SQLAlchemy connection engine string (e.g.  ``sqlite:///:memory:`` or ``mysql://user:pass@localhost/test``) that will be used. You can override the default engine in the db actions.
         :type engine: str
-        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
-        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see https://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (seehttps:///docs.sqlalchemy.org/en/latest/core/engines.html)
         """
 
         super().__init__()
@@ -46,6 +43,7 @@ class DbPlugin(Plugin):
 
         return self.engine
 
+    # noinspection PyUnusedLocal
     @staticmethod
     def _build_condition(table, column, value):
         if isinstance(value, str):
@@ -71,8 +69,8 @@ class DbPlugin(Plugin):
         :type statement: str
         :param engine: Engine to be used (default: default class engine)
         :type engine: str
-        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
-        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see https://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (seehttps:///docs.sqlalchemy.org/en/latest/core/engines.html)
         """
 
         engine = self._get_engine(engine, *args, **kwargs)
@@ -124,9 +122,9 @@ class DbPlugin(Plugin):
         :param engine: Engine to be used (default: default class engine)
         :type engine: str
         :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine``
-            (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+            (see https://docs.sqlalchemy.org/en/latest/core/engines.html)
         :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine``
-            (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+            (seehttps:///docs.sqlalchemy.org/en/latest/core/engines.html)
         :returns: List of hashes representing the result rows.
 
         Examples:
@@ -206,8 +204,8 @@ class DbPlugin(Plugin):
         :type key_columns: list
         :param on_duplicate_update: If set, update the records in case of duplicate rows (default: False). If set, you'll need to specify ``key_columns`` as well.
         :type on_duplicate_update: bool
-        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
-        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see https://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (seehttps:///docs.sqlalchemy.org/en/latest/core/engines.html)
 
         Example:
 
@@ -267,8 +265,8 @@ class DbPlugin(Plugin):
         :type key_columns: list
         :param engine: Engine to be used (default: default class engine)
         :type engine: str
-        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
-        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see https://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (seehttps:///docs.sqlalchemy.org/en/latest/core/engines.html)
 
         Example:
 
@@ -323,8 +321,8 @@ class DbPlugin(Plugin):
         :type records: list
         :param engine: Engine to be used (default: default class engine)
         :type engine: str
-        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
-        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (see http://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param args: Extra arguments that will be passed to ``sqlalchemy.create_engine`` (see https://docs.sqlalchemy.org/en/latest/core/engines.html)
+        :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (seehttps:///docs.sqlalchemy.org/en/latest/core/engines.html)
 
         Example:
 

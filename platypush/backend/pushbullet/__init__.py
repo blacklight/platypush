@@ -21,8 +21,8 @@ class PushbulletBackend(Backend):
 
     Requires:
 
-        * **requests** (``pip install requests``)
-        * **pushbullet.py** (``pip install git+https://github.com/rbrcsk/pushbullet.py``)
+        * **pushbullet.py** (``pip install git+https://github.com/pushbullet.py/pushbullet.py``)
+
     """
 
     def __init__(self, token: str, device: str = 'Platypush', proxy_host: Optional[str] = None,
@@ -52,7 +52,7 @@ class PushbulletBackend(Backend):
         try:
             self.device = self.pb.get_device(self.device_name)
         except Exception as e:
-            self.logger.info('Device {} does not exist: {}. Creating it'.format(self.device_name, str(e)))
+            self.logger.info(f'Device {self.device_name} does not exist: {e}. Creating it')
             self.device = self.pb.new_device(self.device_name)
 
         self.pb_device_id = self.get_device_id()
@@ -91,17 +91,15 @@ class PushbulletBackend(Backend):
 
                 if 'body' not in push:
                     return
-                self.logger.debug('Received push: {}'.format(push))
+                self.logger.debug(f'Received push: {push}')
 
                 body = push['body']
                 try:
                     body = json.loads(body)
                     self.on_message(body)
                 except Exception as e:
-                    self.logger.debug(('Unexpected message received on the ' +
-                                       'Pushbullet backend: {}. Message: {}')
-                                      .format(str(e), body))
-
+                    self.logger.debug('Unexpected message received on the ' +
+                                      f'Pushbullet backend: {e}. Message: {body}')
             except Exception as e:
                 self.logger.exception(e)
                 return
@@ -116,9 +114,7 @@ class PushbulletBackend(Backend):
             device = self.pb.new_device(self.device_name, model='Platypush virtual device',
                                         manufacturer='platypush', icon='system')
 
-            self.logger.info('Created Pushbullet device {}'.format(
-                self.device_name))
-
+            self.logger.info(f'Created Pushbullet device {self.device_name}')
             return device.device_iden
 
     def close(self):
@@ -133,27 +129,33 @@ class PushbulletBackend(Backend):
         self.logger.info('Pushbullet backend terminated')
 
     def on_close(self, err=None):
-        self.listener = None
-        raise RuntimeError(err or 'Connection closed')
+        def callback(*_):
+            self.listener = None
+            raise RuntimeError(err or 'Connection closed')
+
+        return callback
 
     def on_open(self):
-        self.logger.info('Pushbullet service connected')
+        def callback(*_):
+            self.logger.info('Pushbullet service connected')
+
+        return callback
 
     def run_listener(self):
         from .listener import Listener
 
-        self.logger.info('Initializing Pushbullet backend - device_id: {}'.format(self.device_name))
-        self.listener = Listener(account=self.pb, on_push=self.on_push(),
-                                 on_open=self.on_open,
-                                 on_close=self.on_close,
-                                 on_error=self.on_close,
+        self.logger.info(f'Initializing Pushbullet backend - device_id: {self.device_name}')
+        self.listener = Listener(account=self.pb,
+                                 on_push=self.on_push(),
+                                 on_open=self.on_open(),
+                                 on_close=self.on_close(),
+                                 on_error=self.on_close(),
                                  http_proxy_host=self.proxy_host,
                                  http_proxy_port=self.proxy_port)
 
         self.listener.run_forever()
 
     def run(self):
-        # noinspection PyPackageRequirements
         super().run()
         initialized = False
 
@@ -163,7 +165,7 @@ class PushbulletBackend(Backend):
                 initialized = True
             except Exception as e:
                 self.logger.exception(e)
-                self.logger.error('Pushbullet initialization error: {}'.format(str(e)))
+                self.logger.error(f'Pushbullet initialization error: {e}')
                 time.sleep(10)
 
         while not self.should_stop():
@@ -173,7 +175,6 @@ class PushbulletBackend(Backend):
                 self.logger.exception(e)
                 time.sleep(10)
                 self.logger.info('Retrying connection')
-
 
 
 # vim:sw=4:ts=4:et:

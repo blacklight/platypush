@@ -1,0 +1,10 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - numpy
+    - qrcode
+    - pyzbar
+    - Pillow
+  package: platypush.plugins.qrcode
+  type: plugin

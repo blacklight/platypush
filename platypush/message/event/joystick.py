@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABCMeta
 from typing import Optional, Iterable, Union
 
 from platypush.message.event import Event
@@ -22,7 +22,7 @@ class JoystickEvent(Event):
         super().__init__(*args, code=code, state=state, **kwargs)
 
 
-class _JoystickEvent(Event, ABC):
+class _JoystickEvent(Event, ABCMeta):
     """
     Base joystick event class.
     """

@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - pyperclip
+  package: platypush.plugins.clipboard
+  type: plugin

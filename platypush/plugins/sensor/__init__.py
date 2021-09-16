@@ -1,7 +1,9 @@
+from abc import ABC, abstractmethod
+
 from platypush.plugins import Plugin, action
 
 
-class SensorPlugin(Plugin):
+class SensorPlugin(Plugin, ABC):
     """
     Sensor abstract plugin. Any plugin that interacts with sensors
     should implement this class (and the get_measurement() method)
@@ -10,6 +12,7 @@ class SensorPlugin(Plugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+    @abstractmethod
     @action
     def get_measurement(self, *args, **kwargs):
         """
@@ -43,7 +46,6 @@ class SensorPlugin(Plugin):
         """
         Alias for ``get_measurement``
         """
-
         return self.get_measurement(*args, **kwargs).output
 
     @action

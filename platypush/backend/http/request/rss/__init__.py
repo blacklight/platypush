@@ -239,7 +239,10 @@ class RssUpdates(HttpRequest):
                         f.write(content)
                 elif self.digest_format == 'pdf':
                     from weasyprint import HTML, CSS
-                    from weasyprint.fonts import FontConfiguration
+                    try:
+                        from weasyprint.fonts import FontConfiguration
+                    except ImportError:
+                        from weasyprint.document import FontConfiguration
 
                     body_style = 'body { ' + self.body_style + ' }'
                     font_config = FontConfiguration()

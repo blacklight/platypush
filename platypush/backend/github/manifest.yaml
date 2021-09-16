@@ -1,0 +1,32 @@
+manifest:
+  events:
+    platypush.message.event.github.GithubCommitCommentEvent: when a new commit comment
+      is created.
+    platypush.message.event.github.GithubCreateEvent: when a tag or branch is created.
+    platypush.message.event.github.GithubDeleteEvent: when a tag or branch is deleted.
+    platypush.message.event.github.GithubEvent: for any event that doesn't fall in
+      the above categories(``event_type`` will be set accordingly).
+    platypush.message.event.github.GithubForkEvent: when a user forks a repository.
+    platypush.message.event.github.GithubIssueCommentEvent: when new activity happens
+      on an issue comment.
+    platypush.message.event.github.GithubIssueEvent: when new repository issue activity
+      happens.
+    platypush.message.event.github.GithubMemberEvent: when new repository collaborators
+      activity happens.
+    platypush.message.event.github.GithubPublicEvent: when a repository goes public.
+    platypush.message.event.github.GithubPullRequestEvent: when new pull request related
+      activity happens.
+    platypush.message.event.github.GithubPullRequestReviewCommentEvent: when activity
+      happens on a pullrequest commit.
+    platypush.message.event.github.GithubPushEvent: when a new push is created.
+    platypush.message.event.github.GithubReleaseEvent: when a new release happens.
+    platypush.message.event.github.GithubSponsorshipEvent: when new sponsorship related
+      activity happens.
+    platypush.message.event.github.GithubWatchEvent: when someone stars/starts watching
+      a repository.
+    platypush.message.event.github.GithubWikiEvent: when new activity happens on a
+      repository wiki.
+  install:
+    pip: []
+  package: platypush.backend.github
+  type: backend

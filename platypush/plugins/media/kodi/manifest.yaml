@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - kodi-json
+  package: platypush.plugins.media.kodi
+  type: plugin

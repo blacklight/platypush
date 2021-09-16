@@ -1,0 +1,26 @@
+manifest:
+  events:
+    platypush.message.event.assistant.AlarmEndEvent: when an alarm ends
+    platypush.message.event.assistant.AlarmStartedEvent: when an alarm starts
+    platypush.message.event.assistant.ConversationEndEvent: when a new conversation
+      ends
+    platypush.message.event.assistant.ConversationStartEvent: when a new conversation
+      starts
+    platypush.message.event.assistant.ConversationTimeoutEvent: when a conversation
+      times out
+    platypush.message.event.assistant.MicMutedEvent: when the microphone is muted.
+    platypush.message.event.assistant.MicUnmutedEvent: when the microphone is un-muted.
+    platypush.message.event.assistant.NoResponse: when a conversation returned no
+      response
+    platypush.message.event.assistant.ResponseEvent: when the assistant is speaking
+      a response
+    platypush.message.event.assistant.SpeechRecognizedEvent: when a new voice command
+      is recognized
+    platypush.message.event.assistant.TimerEndEvent: when a timer ends
+    platypush.message.event.assistant.TimerStartedEvent: when a timer starts
+  install:
+    pip:
+    - google-assistant-library
+    - google-assistant-sdk[samples]
+  package: platypush.backend.assistant.google
+  type: backend

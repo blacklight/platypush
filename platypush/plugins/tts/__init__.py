@@ -65,7 +65,7 @@ class TtsPlugin(Plugin):
         """
         language = language or self.language
         player_args = player_args or self.player_args
-        url = 'http://translate.google.com/translate_tts?{}'.format(
+        url = 'https://translate.google.com/translate_tts?{}'.format(
             urllib.parse.urlencode({
                 'ie': 'UTF-8',
                 'client': 'tw-ob',

@@ -1,0 +1,10 @@
+manifest:
+  events:
+    platypush.message.event.mail.MailFlaggedEvent: when a message is marked as flagged/starred.
+    platypush.message.event.mail.MailReceivedEvent: when a new message is received.
+    platypush.message.event.mail.MailSeenEvent: when a message is marked as seen.
+    platypush.message.event.mail.MailUnflaggedEvent: when a message is marked as unflagged/unstarred.
+  install:
+    pip: []
+  package: platypush.backend.mail
+  type: backend

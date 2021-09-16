@@ -1,0 +1,7 @@
+manifest:
+  events:
+    platypush.message.event.covid19.Covid19UpdateEvent: when new data is available.
+  install:
+    pip: []
+  package: platypush.backend.covid19
+  type: backend

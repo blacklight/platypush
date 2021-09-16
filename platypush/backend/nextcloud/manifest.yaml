@@ -1,0 +1,10 @@
+manifest:
+  events:
+    platypush.message.event.nextcloud.NextCloudActivityEvent: 'when new activity occurs
+      on the instance.The field ``activity_type`` identifies the activity type (e.g.
+      ``file_created``, ``file_deleted``,``file_changed``). Example in the case of
+      the creation of new files:'
+  install:
+    pip: []
+  package: platypush.backend.nextcloud
+  type: backend

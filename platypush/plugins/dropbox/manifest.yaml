@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - dropbox
+  package: platypush.plugins.dropbox
+  type: plugin

@@ -7,7 +7,7 @@ class ConnectedEvent(Event):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, feed=feed, data=data, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class DisconnectedEvent(Event):
@@ -16,7 +16,7 @@ class DisconnectedEvent(Event):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, feed=feed, data=data, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class FeedUpdateEvent(Event):

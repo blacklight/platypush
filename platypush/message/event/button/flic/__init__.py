@@ -12,17 +12,17 @@ class FlicButtonEvent(Event):
         :param btn_addr: Physical address of the button that originated the event
         :type btn_addr: str
 
-        :param sequence: Detected sequence, as a list of Flic button event types (either "ShortPressEvent" or "LongPressEvent")
+        :param sequence: Detected sequence, as a list of Flic button event types (either "ShortPressEvent" or
+            "LongPressEvent")
         :type sequence: list[str]
         """
 
         super().__init__(btn_addr=btn_addr, sequence=sequence, *args, **kwargs)
 
-
     def matches_condition(self, condition):
         """
-        :param condition: Condition to be checked against, as a sequence of button presses ("ShortPressEvent" and "LongPressEvent")
-        :type condition: list
+        :param condition: Condition to be checked against, as a sequence of button presses ("ShortPressEvent" and
+            "LongPressEvent")
         """
 
         result = EventMatchResult(is_match=False)
@@ -47,6 +47,4 @@ class FlicButtonEvent(Event):
         result.is_match = len(cond_sequence) == 0
         return result
 
-
 # vim:sw=4:ts=4:et:
-

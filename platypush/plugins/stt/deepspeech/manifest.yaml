@@ -1,0 +1,9 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - deepspeech
+    - numpy
+    - sounddevice
+  package: platypush.plugins.stt.deepspeech
+  type: plugin

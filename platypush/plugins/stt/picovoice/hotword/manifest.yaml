@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - pvporcupine
+  package: platypush.plugins.stt.picovoice.hotword
+  type: plugin

@@ -17,6 +17,7 @@ class NoderedBackend(Backend):
     Requires:
 
         * **pynodered** (``pip install pynodered``)
+
     """
 
     def __init__(self, port: int = 5051, *args, **kwargs):

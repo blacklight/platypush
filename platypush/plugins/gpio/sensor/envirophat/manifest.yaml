@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - envirophat
+  package: platypush.plugins.gpio.sensor.envirophat
+  type: plugin

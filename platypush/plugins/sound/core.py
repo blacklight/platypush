@@ -3,15 +3,16 @@
 """
 
 import enum
+import logging
 import json
 import math
 
 
 class WaveShape(enum.Enum):
-    SIN='sin'
-    SQUARE='square'
-    SAWTOOTH='sawtooth'
-    TRIANG='triang'
+    SIN = 'sin'
+    SQUARE = 'square'
+    SAWTOOTH = 'sawtooth'
+    TRIANG = 'triang'
 
 
 class Sound(object):
@@ -99,7 +100,7 @@ class Sound(object):
         """
 
         return (2.0 ** ((midi_note - cls.STANDARD_A_MIDI_NOTE) / 12.0)) \
-            * A_frequency
+               * A_frequency
 
     @classmethod
     def freq_to_note(cls, frequency, A_frequency=STANDARD_A_FREQUENCY):
@@ -107,7 +108,7 @@ class Sound(object):
         Converts a frequency in Hz to its closest MIDI note
 
         :param frequency: Frequency in Hz
-        :type midi_note: float
+        :type frequency: float
 
         :param A_frequency: Reference A4 frequency (default: 440 Hz)
         :type A_frequency: float
@@ -115,7 +116,7 @@ class Sound(object):
 
         # TODO return also the offset in % between the provided frequency
         # and the standard MIDI note frequency
-        return int(12.0 * math.log(frequency/A_frequency, 2)
+        return int(12.0 * math.log(frequency / A_frequency, 2)
                    + cls.STANDARD_A_MIDI_NOTE)
 
     def get_wave(self, t_start=0., t_end=0., samplerate=_DEFAULT_SAMPLERATE):
@@ -136,26 +137,25 @@ class Sound(object):
         """
 
         import numpy as np
-        x = np.linspace(t_start, t_end, int((t_end-t_start)*samplerate))
+        x = np.linspace(t_start, t_end, int((t_end - t_start) * samplerate))
 
         x = x.reshape(len(x), 1)
 
         if self.shape == WaveShape.SIN or self.shape == WaveShape.SQUARE:
-            wave = np.sin((2*np.pi*self.frequency*x) + np.pi*self.phase)
+            wave = np.sin((2 * np.pi * self.frequency * x) + np.pi * self.phase)
 
             if self.shape == WaveShape.SQUARE:
                 wave[wave < 0] = -1
                 wave[wave >= 0] = 1
         elif self.shape == WaveShape.SAWTOOTH or self.shape == WaveShape.TRIANG:
-            wave = 2 * (self.frequency*x -
-                        np.floor(0.5 + self.frequency*x))
+            wave = 2 * (self.frequency * x -
+                        np.floor(0.5 + self.frequency * x))
             if self.shape == WaveShape.TRIANG:
                 wave = 2 * np.abs(wave) - 1
         else:
             raise RuntimeError('Unsupported wave shape: {}'.format(self.shape))
 
         return self.gain * wave
-
 
     def fft(self, t_start=0., t_end=0., samplerate=_DEFAULT_SAMPLERATE,
             freq_range=None, freq_buckets=None):
@@ -186,7 +186,7 @@ class Sound(object):
         import numpy as np
 
         if not freq_range:
-            freq_range = (0, int(samplerate/2))
+            freq_range = (0, int(samplerate / 2))
 
         wave = self.get_wave(t_start=t_start, t_end=t_end, samplerate=samplerate)
         fft = np.fft.fft(wave.reshape(len(wave)))
@@ -199,12 +199,10 @@ class Sound(object):
 
     def __iter__(self):
         for attr in ['midi_note', 'frequency', 'gain', 'duration']:
-            yield (attr, getattr(self, attr))
-
+            yield attr, getattr(self, attr)
 
     def __str__(self):
         return json.dumps(dict(self))
-
 
     @classmethod
     def build(cls, *args, **kwargs):
@@ -236,23 +234,20 @@ class Mix(object):
 
     def __init__(self, *sounds):
         self._sounds = []
+        self.logger = logging.getLogger(__name__)
 
         for sound in sounds:
             self.add(sound)
-
 
     def __iter__(self):
         for sound in self._sounds:
             yield dict(sound)
 
-
     def __str__(self):
         return json.dumps(list(self))
 
-
     def add(self, sound):
         self._sounds.append(Sound.build(sound))
-
 
     def remove(self, sound_index):
         if sound_index >= len(self._sounds):
@@ -262,7 +257,7 @@ class Mix(object):
 
         self._sounds.pop(sound_index)
 
-
+    # noinspection PyProtectedMember
     def get_wave(self, t_start=0., t_end=0., normalize_range=(-1.0, 1.0),
                  on_clip='scale', samplerate=Sound._DEFAULT_SAMPLERATE):
         """
@@ -303,8 +298,8 @@ class Mix(object):
                 wave += sound_wave
 
         if normalize_range and len(wave):
-            scale_factor = (normalize_range[1]-normalize_range[0]) / \
-                (wave.max()-wave.min())
+            scale_factor = (normalize_range[1] - normalize_range[0]) / \
+                           (wave.max() - wave.min())
 
             if scale_factor < 1.0:  # Wave clipping
                 if on_clip == 'scale':
@@ -318,7 +313,7 @@ class Mix(object):
 
         return wave
 
-
+    # noinspection PyProtectedMember
     def fft(self, t_start=0., t_end=0., samplerate=Sound._DEFAULT_SAMPLERATE,
             freq_range=None, freq_buckets=None):
         """
@@ -348,7 +343,7 @@ class Mix(object):
         import numpy as np
 
         if not freq_range:
-            freq_range = (0, int(samplerate/2))
+            freq_range = (0, int(samplerate / 2))
 
         wave = self.get_wave(t_start=t_start, t_end=t_end, samplerate=samplerate)
         fft = np.fft.fft(wave.reshape(len(wave)))
@@ -358,7 +353,6 @@ class Mix(object):
             fft = np.histogram(fft, bins=freq_buckets)
 
         return fft
-
 
     def duration(self):
         """
@@ -375,6 +369,5 @@ class Mix(object):
             duration = max(duration, sound.duration)
 
         return duration
-
 
 # vim:sw=4:ts=4:et:

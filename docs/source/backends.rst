@@ -8,10 +8,8 @@ Backends
 
     platypush/backend/adafruit.io.rst
     platypush/backend/alarm.rst
-    platypush/backend/assistant.rst
     platypush/backend/assistant.google.rst
     platypush/backend/assistant.snowboy.rst
-    platypush/backend/bluetooth.rst
     platypush/backend/bluetooth.fileserver.rst
     platypush/backend/bluetooth.pushserver.rst
     platypush/backend/bluetooth.scanner.rst
@@ -52,7 +50,6 @@ Backends
     platypush/backend/pushbullet.rst
     platypush/backend/redis.rst
     platypush/backend/scard.rst
-    platypush/backend/sensor.rst
     platypush/backend/sensor.accelerometer.rst
     platypush/backend/sensor.arduino.rst
     platypush/backend/sensor.battery.rst
@@ -67,7 +64,6 @@ Backends
     platypush/backend/sensor.mcp3008.rst
     platypush/backend/sensor.motion.pwm3901.rst
     platypush/backend/sensor.serial.rst
-    platypush/backend/stt.rst
     platypush/backend/stt.deepspeech.rst
     platypush/backend/stt.picovoice.hotword.rst
     platypush/backend/stt.picovoice.speech.rst
@@ -75,7 +71,6 @@ Backends
     platypush/backend/todoist.rst
     platypush/backend/travisci.rst
     platypush/backend/trello.rst
-    platypush/backend/weather.rst
     platypush/backend/weather.buienradar.rst
     platypush/backend/weather.darksky.rst
     platypush/backend/weather.openweathermap.rst

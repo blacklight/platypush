@@ -1,0 +1,8 @@
+manifest:
+  events:
+    platypush.message.event.ping.HostDownEvent: if a host stops responding ping requests
+    platypush.message.event.ping.HostUpEvent: if a host starts responding ping requests
+  install:
+    pip: []
+  package: platypush.backend.ping
+  type: backend

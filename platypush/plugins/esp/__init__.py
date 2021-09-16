@@ -2,8 +2,9 @@ import base64
 import io
 import os
 import threading
-
 from typing import Dict, Optional, List, Any, Union
+
+import websocket
 
 from platypush import Response
 from platypush.message.response.esp import EspWifiScanResult, EspWifiConfigResult
@@ -60,11 +61,6 @@ class EspPlugin(Plugin):
 
             - Follow the instructions, set a password and reset your device. A websocket service should be available
               by default on the port 8266 of your ESP8266/ESP32 and it can accept commands sent by platypush.
-
-        Requires:
-
-            * **websocket-client** (``pip install websocket-client``)
-
         """
 
     def __init__(self, devices: List[Union[Device, dict]] = None, **kwargs):
@@ -114,14 +110,15 @@ class EspPlugin(Plugin):
             conn.close()
 
     def on_open(self, conn: Connection):
-        def callback(ws):
+        def callback(*_):
             conn.on_connect()
-            self.logger.info('Connection to {} opened'.format(ws.url))
+            self.logger.info('Connection to {} opened'.format(conn.ws.url))
 
         return callback
 
     def on_message(self, conn: Connection):
-        def handler(ws, msg):
+        def handler(*args):
+            msg = args[1] if len(args) > 1 else args[0]
             if not isinstance(msg, str):
                 # Bytes sequences will be handled by on_data
                 return
@@ -147,7 +144,7 @@ class EspPlugin(Plugin):
 
                 return
 
-            self.logger.debug('Message received on {}: {}'.format(ws.url, msg))
+            self.logger.debug('Message received on {}: {}'.format(conn.ws.url, msg))
 
         def callback(ws, msg):
             try:
@@ -174,9 +171,7 @@ class EspPlugin(Plugin):
                 return
 
         # noinspection PyUnusedLocal
-        def callback(ws, data, data_type, continue_flag):
-            import websocket
-
+        def callback(ws, data, data_type, *_):
             try:
                 if data_type == websocket.ABNF.OPCODE_BINARY:
                     handler(ws, data)
@@ -187,9 +182,9 @@ class EspPlugin(Plugin):
         return callback
 
     def on_close(self, conn: Connection):
-        def callback(ws):
+        def callback(*_):
             try:
-                ws.close()
+                conn.ws.close()
             except Exception as e:
                 self.logger.warning('Could not close connection: {}'.format(str(e)))
 
@@ -199,9 +194,10 @@ class EspPlugin(Plugin):
         return callback
 
     def on_error(self, conn: Connection):
-        def callback(ws, err):
+        def callback(*args):
+            err = args[1] if len(args) > 1 else args[0]
             conn.on_close()
-            self.logger.warning('Error on the connection to {}: {}'.format(ws.url, err))
+            self.logger.warning('Websocket connection error: {}'.format(err))
 
         return callback
 
@@ -242,8 +238,6 @@ class EspPlugin(Plugin):
         :param password: ESP WebREPL password.
         :param timeout: Connection timeout (default: 10 seconds).
         """
-        import websocket
-
         device = self._get_device(device=device, host=host, port=port, password=password)
         host = device['host']
         port = device['port']

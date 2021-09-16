@@ -14,7 +14,15 @@ class MediaGstreamerPlugin(MediaPlugin):
 
     Requires:
 
-        * **gst-python** (``pip install gst-python``)
+        * **gst-python**
+
+    On Debian and derived systems:
+
+        * ``[sudo] apt-get install python3-gi python3-gst-1.0
+
+    On Arch and derived systems:
+
+        * ``[sudo] pacman -S gst-python
 
     """
 
@@ -216,6 +224,15 @@ class MediaGstreamerPlugin(MediaPlugin):
         if state == Gst.State.PLAYING:
             return PlayerState.PLAY
         return PlayerState.IDLE
+
+    def toggle_subtitles(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def set_subtitles(self, filename, *args, **kwargs):
+        raise NotImplementedError
+
+    def remove_subtitles(self, *args, **kwargs):
+        raise NotImplementedError
 
 
 # vim:sw=4:ts=4:et:

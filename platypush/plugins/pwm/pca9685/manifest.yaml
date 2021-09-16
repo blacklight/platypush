@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - adafruit-circuitpython-pca9685
+  package: platypush.plugins.pwm.pca9685
+  type: plugin

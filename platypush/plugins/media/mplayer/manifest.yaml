@@ -1,0 +1,9 @@
+manifest:
+  events: {}
+  install:
+    apt:
+      - mplayer
+    pacman:
+      - mplayer
+  package: platypush.plugins.media.mplayer
+  type: plugin

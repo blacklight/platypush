@@ -1,0 +1,13 @@
+manifest:
+  events:
+    platypush.message.event.assistant.ConversationEndEvent: when a new conversation
+      ends
+    platypush.message.event.assistant.ConversationStartEvent: when a new conversation
+      starts
+    platypush.message.event.assistant.SpeechRecognizedEvent: when a new voice command
+      is recognized
+  install:
+    pip:
+    - avs
+  package: platypush.plugins.assistant.echo
+  type: plugin

@@ -1,0 +1,9 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - picamera
+    - numpy
+    - Pillow
+  package: platypush.plugins.camera.pi
+  type: plugin

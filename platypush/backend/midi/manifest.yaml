@@ -1,0 +1,8 @@
+manifest:
+  events:
+    platypush.message.event.midi.MidiMessageEvent: when a new MIDI event is received
+  install:
+    pip:
+    - rtmidi
+  package: platypush.backend.midi
+  type: backend

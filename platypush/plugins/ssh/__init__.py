@@ -9,8 +9,13 @@ from binascii import hexlify
 from stat import S_ISDIR, S_ISREG, S_ISLNK, S_ISCHR, S_ISFIFO, S_ISSOCK, S_ISBLK, S_ISDOOR
 from typing import Optional, Dict, Tuple, List, Union, Any
 
-from paramiko import DSSKey, RSAKey, SSHClient, WarningPolicy, GSS_AUTH_AVAILABLE, SFTPClient
+from paramiko import DSSKey, RSAKey, SSHClient, WarningPolicy, SFTPClient
 from paramiko.py3compat import u
+
+try:
+    from paramiko import GSS_AUTH_AVAILABLE
+except ImportError:
+    from paramiko.ssh_gss import GSS_AUTH_AVAILABLE
 
 from platypush import Response
 from platypush.message.response.ssh import SSHKeygenResponse
@@ -21,7 +26,7 @@ from platypush.plugins.ssh.tunnel.reverse import reverse_tunnel, close_tunnel
 
 class SshPlugin(Plugin):
     """
-    SSh plugin.
+    SSH plugin.
 
     Requires:
 

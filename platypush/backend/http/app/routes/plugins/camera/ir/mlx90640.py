@@ -4,7 +4,7 @@ from platypush.backend.http.app import template_folder
 from platypush.backend.http.app.routes.plugins.camera import get_photo, get_video
 from platypush.backend.http.app.utils import authenticate
 
-camera_ir_mlx90640 = Blueprint('camera.ir.mlx90640', __name__, template_folder=template_folder)
+camera_ir_mlx90640 = Blueprint('camera-ir-mlx90640', __name__, template_folder=template_folder)
 
 # Declare routes list
 __routes__ = [

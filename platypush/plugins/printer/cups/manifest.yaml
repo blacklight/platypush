@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - pycups
+  package: platypush.plugins.printer.cups
+  type: plugin

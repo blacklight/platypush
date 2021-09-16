@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - RPi.GPIO
+  package: platypush.plugins.gpio
+  type: plugin

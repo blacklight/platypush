@@ -10,6 +10,15 @@ class SensorDistanceBackend(SensorBackend):
 
         * ``RPi.GPIO`` (``pip install RPi.GPIO``)
         * The :mod:`platypush.plugins.gpio.sensor.distance` plugin configured
+
+    Triggers:
+
+        * :class:`platypush.message.event.sensor.SensorDataChangeEvent` if the measurements of a sensor have changed
+        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent` if the measurements of a sensor have
+            gone above a configured threshold
+        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent` if the measurements of a sensor have
+            gone below a configured threshold
+
     """
 
     def get_measurement(self):

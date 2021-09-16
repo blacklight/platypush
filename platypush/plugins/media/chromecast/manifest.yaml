@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - pychromecast
+  package: platypush.plugins.media.chromecast
+  type: plugin
