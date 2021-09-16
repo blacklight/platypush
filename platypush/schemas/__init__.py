@@ -4,7 +4,7 @@ from typing import Optional
 from marshmallow import fields
 
 
-class StrippedString(fields.Function):
+class StrippedString(fields.Function):   # lgtm [py/missing-call-to-init]
     def __init__(self, *args, **kwargs):
         kwargs['serialize'] = self._strip
         kwargs['deserialize'] = self._strip

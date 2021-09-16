@@ -143,7 +143,7 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
 
             try:
                 rs.raise_for_status()
-            except:
+            except:   # lgtm [py/catch-base-exception]
                 if rs.status_code == 401 or rs.status_code == 403:
                     self.logger.error('Unauthorized/Forbidden Slack API request, stopping the service')
                     self.stop()

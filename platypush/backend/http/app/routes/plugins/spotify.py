@@ -1,6 +1,6 @@
 import json
 
-from flask import abort, request, Response, Blueprint
+from flask import abort, request, Response, Blueprint, escape
 
 from platypush.backend.http.app import template_folder
 from platypush.common.spotify import SpotifyMixin
@@ -31,7 +31,7 @@ def auth_callback():
     get_redis().rpush(SpotifyMixin.get_spotify_queue_for_state(state), json.dumps(msg))
 
     if error:
-        return Response(f'Authentication failed: {error}')
+        return Response(f'Authentication failed: {escape(error)}')
 
     return Response('Authentication successful. You can now close this window')
 

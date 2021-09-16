@@ -23,7 +23,7 @@ class SlackEvent(Event, ABCMeta):
         if not (isinstance(timestamp, int) or isinstance(timestamp, float)):
             return timestamp
 
-        return datetime.fromtimestamp(timestamp, tz=gettz())
+        return datetime.fromtimestamp(timestamp, tz=gettz())   # lgtm [py/call-to-non-callable]
 
 
 class SlackMessageEvent(SlackEvent, ABCMeta):

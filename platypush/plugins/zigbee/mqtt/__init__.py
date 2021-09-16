@@ -9,7 +9,7 @@ from platypush.plugins.mqtt import MqttPlugin, action
 from platypush.plugins.switch import SwitchPlugin
 
 
-class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):
+class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):   # lgtm [py/missing-call-to-init]
     """
     This plugin allows you to interact with Zigbee devices over MQTT through any Zigbee sniffer and
     `zigbee2mqtt <https://www.zigbee2mqtt.io/>`_.

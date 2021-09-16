@@ -1,3 +1,4 @@
+import logging
 import time
 from typing import Callable, Optional
 
@@ -16,6 +17,7 @@ class Listener(_Listener):
         super().__init__(*args, **kwargs)
         self._on_open_hndl = on_open
         self._on_close_hndl = on_close
+        self.logger = logging.getLogger(__name__)
 
     def _on_open(self):
         def callback(*_):
@@ -30,11 +32,10 @@ class Listener(_Listener):
         def callback(*_):
             self.connected = False
             if self._on_close_hndl:
-                # noinspection PyBroadException
                 try:
                     self._on_close_hndl()
-                except:
-                    pass
+                except Exception as e:
+                    self.logger.warning(f'Pushbullet listener close error: {e}')
 
         return callback
 

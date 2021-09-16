@@ -29,9 +29,11 @@ Guidelines:
 
 - If the feature requires an optional dependency then make sure to document it:
 
-  - In the class docstring (see other plugins and backends for examples)
+  - In the class docstring (see other plugins and backends for examples).
   - In [`setup.py`](https://git.platypush.tech/platypush/platypush/-/blob/master/setup.py#L72) as
-    an `extras_require` entry
-  - In [`requirements.txt`](https://git.platypush.tech/platypush/platypush/-/blob/master/requirements.txt) -
-    if the feature is optional then leave it commented and add a one-line comment to explain which
-    plugin or backend requires it.
+    an `extras_require` entry.
+  - In the plugin/backend class pydoc string.
+  - In the `manifest.yaml` - refer to the Wiki (how to write
+    [plugins](https://git.platypush.tech/platypush/platypush/-/wikis/writing-your-own-plugins)
+    and [backends](https://git.platypush.tech/platypush/platypush/-/wikis/writing-your-own-backends))
+    for examples on how to write an extension manifest file.

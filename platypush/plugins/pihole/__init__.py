@@ -39,7 +39,7 @@ class PiholePlugin(Plugin):
     def _get_token(password: Optional[str] = None, api_key: Optional[str] = None) -> str:
         if not password:
             return api_key or ''
-        return hashlib.sha256(hashlib.sha256(str(password).encode()).hexdigest().encode()).hexdigest()
+        return hashlib.sha256(hashlib.sha256(str(password).encode()).hexdigest().encode()).hexdigest()  # lgtm [py/weak-sensitive-data-hashing]
 
     def _get_url(self, name: str, server: Optional[str] = None, password: Optional[str] = None,
                  ssl: Optional[bool] = None, api_key: Optional[str] = None, **kwargs) -> str:
@@ -116,10 +116,10 @@ class PiholePlugin(Plugin):
 
         try:
             status = (response.json() or {}).get('status')
+            assert status == 'enabled', 'Wrong credentials'
         except Exception as e:
             raise AssertionError('Could not enable the server: {}'.format(response.text or str(e)))
 
-        assert status == 'enabled', 'Could not enable the server: Wrong credentials'
         return response.json()
 
     @action
@@ -143,10 +143,10 @@ class PiholePlugin(Plugin):
 
         try:
             status = (response.json() or {}).get('status')
+            assert status == 'disabled', 'Wrong credentials'
         except Exception as e:
             raise AssertionError('Could not disable the server: {}'.format(response.text or str(e)))
 
-        assert status == 'disabled', 'Could not disable the server: Wrong credentials'
         return response.json()
 
     def _list_manage(self, domain: str, list_name: str, endpoint: str, server: Optional[str] = None,

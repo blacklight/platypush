@@ -87,11 +87,10 @@ class RunnablePlugin(Plugin):
         self._should_stop.set()
         if self._thread and self._thread.is_alive():
             self.logger.info(f'Waiting for {self.__class__.__name__} to stop')
-            # noinspection PyBroadException
             try:
                 self._thread.join()
-            except:
-                pass
+            except Exception as e:
+                self.logger.warning(f'Could not join thread on stop: {e}')
 
         self.logger.info(f'{self.__class__.__name__} stopped')
 

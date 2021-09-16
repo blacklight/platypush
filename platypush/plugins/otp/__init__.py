@@ -80,7 +80,7 @@ class OtpPlugin(Plugin):
         os.makedirs(os.path.dirname(os.path.abspath(os.path.expanduser(secret_path))), exist_ok=True)
         secret = pyotp.random_base32()
         with open(secret_path, 'w') as f:
-            f.writelines([secret])
+            f.writelines([secret])    # lgtm [py/clear-text-storage-sensitive-data]
         os.chmod(secret_path, 0o600)
         return secret
 

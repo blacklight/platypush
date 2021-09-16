@@ -8,7 +8,7 @@ from platypush.plugins.bluetooth.ble import BluetoothBlePlugin
 from platypush.plugins.switch import SwitchPlugin
 
 
-class SwitchbotBluetoothPlugin(SwitchPlugin, BluetoothBlePlugin):
+class SwitchbotBluetoothPlugin(SwitchPlugin, BluetoothBlePlugin):   # lgtm [py/missing-call-to-init]
     """
     Plugin to interact with a Switchbot (https://www.switch-bot.com/) device and
     programmatically control switches over a Bluetooth interface.
