@@ -389,16 +389,6 @@ cd $DIR_TO_PLATYPUSH
 If you follow this route then simply run the commands listed in the plugin/backend documentation to get the dependencies
 installed.
 
-#### Check/uncomment the associated lines in [`requirements.txt`](https://git.platypush.tech/platypush/platypush/-/blob/master/requirements.txt).
-
-If you follow this route then uncomment the lines in
-[`requirements.txt`](https://git.platypush.tech/platypush/platypush/-/blob/master/requirements.txt) associated to the
-plugins/backends that you want to use and run:
-
-```shell
-[sudo] pip3 install -r requirements.txt
-```
-
 After installing the dependencies, create a configuration file under `~/.config/platypush/config.yaml` (the application
 can load the configuration from another location through the `-c` option) containing the configuration of the backend
 and plugins that you want to use, and add any hooks and procedures for your use case.
@@ -478,6 +468,10 @@ platydock stop device_id
 ```shell
 platydock rm device_id
 ```
+
+Note that both the virtual environment and Docker container option offer the possibility to include extra YAML configuration
+files in the main `config.yaml` through the `include` directive (as long as they are in the same folder as the main
+`config.yaml`), as well as external Python scripts in a `scripts` directory in the same folder as the `config.yaml`.
 
 ## Mobile app
 
