@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - python-mpd2
+  package: platypush.plugins.music.mpd
+  type: plugin

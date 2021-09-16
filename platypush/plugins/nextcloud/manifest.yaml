@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - nextcloud-api-wrapper
+  package: platypush.plugins.nextcloud
+  type: plugin

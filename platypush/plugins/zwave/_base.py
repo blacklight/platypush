@@ -1,23 +1,26 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, List, Union
 
 from platypush.plugins import action
 from platypush.plugins.switch import SwitchPlugin
 
 
-class ZwaveBasePlugin(ABC, SwitchPlugin):
+class ZwaveBasePlugin(SwitchPlugin, ABC):
     """
     Base class for Z-Wave plugins.
     """
 
+    @abstractmethod
     @action
     def start_network(self):
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def stop_network(self):
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def status(self) -> Dict[str, Any]:
         """
@@ -25,6 +28,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def add_node(self, *args, **kwargs):
         """
@@ -32,6 +36,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def remove_node(self):
         """
@@ -39,6 +44,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def remove_failed_node(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
         """
@@ -49,6 +55,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def replace_failed_node(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
         """
@@ -59,6 +66,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def replication_send(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
         """
@@ -69,6 +77,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def request_network_update(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
         """
@@ -79,6 +88,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def request_node_neighbour_update(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
         """
@@ -89,6 +99,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_nodes(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[str, Any]:
         """
@@ -99,6 +110,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_node_stats(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) \
             -> Dict[str, Any]:
@@ -110,6 +122,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def set_node_name(self, new_name: str, node_id: Optional[int] = None, node_name: Optional[str] = None):
         """
@@ -121,6 +134,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def set_node_product_name(self, product_name: str, node_id: Optional[int] = None, node_name: Optional[str] = None,
                               **kwargs):
@@ -133,6 +147,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def set_node_manufacturer_name(self, manufacturer_name: str, node_id: Optional[int] = None,
                                    node_name: Optional[str] = None, **kwargs):
@@ -145,6 +160,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def set_node_location(self, location: str, node_id: Optional[int] = None, node_name: Optional[str] = None,
                           **kwargs):
@@ -157,6 +173,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def cancel_command(self):
         """
@@ -164,6 +181,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def kill_command(self):
         """
@@ -171,6 +189,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def set_controller_name(self, name: str, **kwargs):
         """
@@ -180,6 +199,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_capabilities(self, **kwargs) -> List[str]:
         """
@@ -187,6 +207,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def receive_configuration(self, **kwargs):
         """
@@ -194,6 +215,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def transfer_primary_role(self, **kwargs):
         """
@@ -202,6 +224,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def heal(self, refresh_routes: bool = False, **kwargs):
         """
@@ -211,6 +234,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def switch_all(self, state: bool, **kwargs):
         """
@@ -220,6 +244,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def test(self, count: int = 1, **kwargs):
         """
@@ -229,6 +254,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
                   value_label: Optional[str] = None, node_id: Optional[int] = None, node_name: Optional[str] = None,
@@ -244,6 +270,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def set_value(self, data, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
                   value_label: Optional[str] = None, node_id: Optional[int] = None, node_name: Optional[str] = None,
@@ -260,6 +287,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def set_value_label(self, new_label: str, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
                         value_label: Optional[str] = None, node_id: Optional[int] = None,
@@ -276,6 +304,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def node_add_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
                        value_label: Optional[str] = None, node_id: Optional[int] = None,
@@ -291,6 +320,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def node_remove_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
                           value_label: Optional[str] = None, node_id: Optional[int] = None,
@@ -306,6 +336,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def node_heal(self, node_id: Optional[int] = None, node_name: Optional[str] = None, refresh_routes: bool = False,
                   **kwargs):
@@ -318,6 +349,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def node_update_neighbours(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
         """
@@ -328,6 +360,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def node_network_update(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
         """
@@ -338,6 +371,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def node_refresh_info(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
         """
@@ -348,6 +382,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_dimmers(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[int, Any]:
         """
@@ -358,6 +393,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_node_config(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) \
             -> Dict[int, Any]:
@@ -369,6 +405,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_battery_levels(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) \
             -> Dict[int, Any]:
@@ -380,6 +417,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_power_levels(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) \
             -> Dict[int, Any]:
@@ -391,6 +429,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_bulbs(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[int, Any]:
         """
@@ -401,6 +440,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_switches(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[int, Any]:
         """
@@ -411,6 +451,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_sensors(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[int, Any]:
         """
@@ -421,6 +462,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_doorlocks(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[int, Any]:
         """
@@ -431,6 +473,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_usercodes(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[int, Any]:
         """
@@ -441,6 +484,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_thermostats(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) \
             -> Dict[int, Any]:
@@ -452,6 +496,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_protections(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) \
             -> Dict[int, Any]:
@@ -463,6 +508,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_groups(self, **kwargs) -> Dict[int, Any]:
         """
@@ -470,6 +516,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_scenes(self, **kwargs) -> Dict[str, Any]:
         """
@@ -477,6 +524,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def create_scene(self, label: str, **kwargs):
         """
@@ -486,6 +534,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def remove_scene(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None, **kwargs):
         """
@@ -496,6 +545,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def activate_scene(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None, **kwargs):
         """
@@ -506,6 +556,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def set_scene_label(self, new_label: str, scene_id: Optional[int] = None, scene_label: Optional[str] = None,
                         **kwargs):
@@ -518,6 +569,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def scene_add_value(self, data: Optional[Any] = None,
                         value_id: Optional[int] = None, id_on_network: Optional[str] = None,
@@ -538,6 +590,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def scene_remove_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
                            value_label: Optional[str] = None, scene_id: Optional[int] = None,
@@ -556,6 +609,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_scene_values(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None, **kwargs) -> dict:
         """
@@ -567,6 +621,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def get_scene_values(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None, **kwargs) -> dict:
         """
@@ -577,6 +632,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def create_button(self, button_id: Union[int, str], node_id: Optional[int] = None, node_name: Optional[str] = None,
                       **kwargs):
@@ -589,6 +645,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def delete_button(self, button_id: Union[int, str], node_id: Optional[int] = None, node_name: Optional[str] = None,
                       **kwargs):
@@ -601,6 +658,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def add_node_to_group(self, group_index: Optional[int] = None, group_label: Optional[str] = None,
                           node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
@@ -614,6 +672,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def remove_node_from_group(self, group_index: Optional[int] = None, group_label: Optional[str] = None,
                                node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
@@ -627,6 +686,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def create_new_primary(self, **kwargs):
         """
@@ -634,6 +694,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def hard_reset(self, **kwargs):
         """
@@ -642,6 +703,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def soft_reset(self, **kwargs):
         """
@@ -650,6 +712,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def write_config(self, **kwargs):
         """
@@ -657,6 +720,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def on(self, device: str, *args, **kwargs):
         """
@@ -666,6 +730,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def off(self, device: str, *args, **kwargs):
         """
@@ -675,6 +740,7 @@ class ZwaveBasePlugin(ABC, SwitchPlugin):
         """
         raise NotImplementedError
 
+    @abstractmethod
     @action
     def toggle(self, device: str, *args, **kwargs):
         """

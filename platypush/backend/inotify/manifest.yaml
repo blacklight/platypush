@@ -1,0 +1,15 @@
+manifest:
+  events:
+    platypush.message.event.inotify.InotifyAccessEvent: if a resource is accessed
+    platypush.message.event.inotify.InotifyCloseEvent: if a resource is closed
+    platypush.message.event.inotify.InotifyCreateEvent: if a resource is created
+    platypush.message.event.inotify.InotifyDeleteEvent: if a resource is removed
+    platypush.message.event.inotify.InotifyModifyEvent: if a resource is modified
+    platypush.message.event.inotify.InotifyOpenEvent: if a resource is opened
+    platypush.message.event.inotify.InotifyPermissionsChangeEvent: if the permissions
+      of a resource are changed
+  install:
+    pip:
+    - inotify
+  package: platypush.backend.inotify
+  type: backend

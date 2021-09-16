@@ -1,0 +1,20 @@
+manifest:
+  events:
+    platypush.message.event.zwave.ZwaveNodeAddedEvent: when a node is added to the
+      network.
+    platypush.message.event.zwave.ZwaveNodeAsleepEvent: when a node goes into sleep
+      mode.
+    platypush.message.event.zwave.ZwaveNodeAwakeEvent: when a node goes back into
+      awake mode.
+    platypush.message.event.zwave.ZwaveNodeEvent: when a node attribute changes.
+    platypush.message.event.zwave.ZwaveNodeReadyEvent: when a node is ready.
+    platypush.message.event.zwave.ZwaveNodeRemovedEvent: when a node is removed from
+      the network.
+    platypush.message.event.zwave.ZwaveNodeRenamedEvent: when a node is renamed.
+    platypush.message.event.zwave.ZwaveValueChangedEvent: when the value of a node
+      on the networkchanges.
+  install:
+    pip:
+    - paho-mqtt
+  package: platypush.backend.zwave.mqtt
+  type: backend

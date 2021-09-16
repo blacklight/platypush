@@ -1,0 +1,8 @@
+manifest:
+  events:
+    platypush.message.event.linode.LinodeInstanceStatusChanged: when the status of
+      an instance changes.
+  install:
+    pip: []
+  package: platypush.backend.linode
+  type: backend

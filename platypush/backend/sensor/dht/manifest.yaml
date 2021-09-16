@@ -1,0 +1,13 @@
+manifest:
+  events:
+    platypush.message.event.sensor.SensorDataAboveThresholdEvent: if the measurements
+      of a sensor havegone above a configured threshold
+    platypush.message.event.sensor.SensorDataBelowThresholdEvent: if the measurements
+      of a sensor havegone below a configured threshold
+    platypush.message.event.sensor.SensorDataChangeEvent: if the measurements of a
+      sensor have changed
+  install:
+    pip:
+    - Adafruit_Python_DHT
+  package: platypush.backend.sensor.dht
+  type: backend

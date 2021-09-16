@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 from platypush.plugins import action
 from platypush.plugins.switch import SwitchPlugin
@@ -10,16 +10,19 @@ class LightPlugin(SwitchPlugin, ABC):
     """
 
     @action
+    @abstractmethod
     def on(self):
         """ Turn the light on """
         raise NotImplementedError()
 
     @action
+    @abstractmethod
     def off(self):
         """ Turn the light off """
         raise NotImplementedError()
 
     @action
+    @abstractmethod
     def toggle(self):
         """ Toggle the light status (on/off) """
         raise NotImplementedError()

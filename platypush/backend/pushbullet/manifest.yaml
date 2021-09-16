@@ -1,0 +1,8 @@
+manifest:
+  events:
+    platypush.message.event.pushbullet.PushbulletEvent: if a new push is received
+  install:
+    pip:
+    - git+https://github.com/rbrcsk/pushbullet.py
+  package: platypush.backend.pushbullet
+  type: backend

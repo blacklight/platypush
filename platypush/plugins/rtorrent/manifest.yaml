@@ -1,0 +1,23 @@
+manifest:
+  events:
+    platypush.message.event.torrent.TorrentDownloadCompletedEvent: when a transfer
+      is completed.
+    platypush.message.event.torrent.TorrentDownloadProgressEvent: when a transfer
+      is progressing.
+    platypush.message.event.torrent.TorrentDownloadStartEvent: when a torrent transfer
+      starts.
+    platypush.message.event.torrent.TorrentDownloadedMetadataEvent: when the metadata
+      of a torrenttransfer has been downloaded.
+    platypush.message.event.torrent.TorrentPausedEvent: when a transfer is paused.
+    platypush.message.event.torrent.TorrentQueuedEvent: when a new torrent transfer
+      is queued.
+    platypush.message.event.torrent.TorrentRemovedEvent: when a torrent transfer is
+      removed.
+    platypush.message.event.torrent.TorrentResumedEvent: when a transfer is resumed.
+  install:
+    apt:
+      - rtorrent
+    pacman:
+      - rtorrent
+  package: platypush.plugins.rtorrent
+  type: plugin

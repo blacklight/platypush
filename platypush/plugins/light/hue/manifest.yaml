@@ -1,0 +1,11 @@
+manifest:
+  events:
+    platypush.message.event.light.LightAnimationStartedEvent: when an animation is
+      started.
+    platypush.message.event.light.LightAnimationStoppedEvent: when an animation is
+      stopped.
+  install:
+    pip:
+    - phue
+  package: platypush.plugins.light.hue
+  type: plugin

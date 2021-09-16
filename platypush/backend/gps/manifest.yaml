@@ -1,0 +1,16 @@
+manifest:
+  events:
+    platypush.message.event.gps.GPSDeviceEvent: when a GPS device is connected or
+      updated
+    platypush.message.event.gps.GPSUpdateEvent: when a GPS device has new data
+    platypush.message.event.gps.GPSVersionEvent: when a GPS device advertises its
+      version data
+  install:
+    pip:
+      - gps
+    pacman:
+      - gpsd
+    apt:
+      - gpsd
+  package: platypush.backend.gps
+  type: backend

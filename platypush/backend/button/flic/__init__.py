@@ -1,6 +1,3 @@
-import importlib
-
-from enum import Enum
 from threading import Timer
 from time import time
 
@@ -17,11 +14,14 @@ class ButtonFlicBackend(Backend):
 
     Triggers:
 
-        * :class:`platypush.message.event.button.flic.FlicButtonEvent` when a button is pressed. The event will also contain the press sequence (e.g. ``["ShortPressEvent", "LongPressEvent", "ShortPressEvent"]``)
+        * :class:`platypush.message.event.button.flic.FlicButtonEvent` when a button is pressed.
+            The event will also contain the press sequence
+            (e.g. ``["ShortPressEvent", "LongPressEvent", "ShortPressEvent"]``)
 
     Requires:
 
         * **fliclib** (https://github.com/50ButtonsEach/fliclib-linux-hci). For the backend to work properly you need to have the ``flicd`` daemon from the fliclib running, and you have to first pair the buttons with your device using any of the scanners provided by the library.
+
     """
 
     _long_press_timeout = 0.3
@@ -87,6 +87,7 @@ class ButtonFlicBackend(Backend):
         return _f
 
     def _on_event(self):
+        # noinspection PyUnusedLocal
         def _f(bd_addr, channel, click_type, was_queued, time_diff):
             if was_queued:
                 return

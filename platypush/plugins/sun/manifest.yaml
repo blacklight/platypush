@@ -1,0 +1,8 @@
+manifest:
+  events:
+    platypush.message.event.sun.SunriseEvent: on sunrise.
+    platypush.message.event.sun.SunsetEvent: on sunset.
+  install:
+    pip: []
+  package: platypush.plugins.sun
+  type: plugin

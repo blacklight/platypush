@@ -1,0 +1,11 @@
+manifest:
+  events: {}
+  install:
+    pip:
+      - python-vlc
+    apt:
+      - vlc
+    pacman:
+      - vlc
+  package: platypush.plugins.media.vlc
+  type: plugin

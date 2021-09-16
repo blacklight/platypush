@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABCMeta
 from datetime import datetime
 from typing import Union, Optional, Iterable
 
@@ -7,7 +7,7 @@ from dateutil.tz import gettz
 from platypush.message.event import Event
 
 
-class SlackEvent(Event, ABC):
+class SlackEvent(Event, ABCMeta):
     """
     Base class for Slack events.
     """
@@ -26,7 +26,7 @@ class SlackEvent(Event, ABC):
         return datetime.fromtimestamp(timestamp, tz=gettz())
 
 
-class SlackMessageEvent(SlackEvent, ABC):
+class SlackMessageEvent(SlackEvent, ABCMeta):
     """
     Base class for message-related events.
     """

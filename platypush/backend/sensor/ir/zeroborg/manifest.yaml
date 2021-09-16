@@ -1,0 +1,8 @@
+manifest:
+  events:
+    platypush.message.event.sensor.ir.IrKeyDownEvent: when a key is pressed
+    platypush.message.event.sensor.ir.IrKeyUpEvent: when a key is released
+  install:
+    pip: []
+  package: platypush.backend.sensor.ir.zeroborg
+  type: backend

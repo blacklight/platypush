@@ -1,0 +1,15 @@
+manifest:
+  events:
+    platypush.message.event.sensor.leap.LeapConnectEvent: when a Leap Motion device
+      is connected
+    platypush.message.event.sensor.leap.LeapDisconnectEvent: when a Leap Motion device
+      disconnects
+    platypush.message.event.sensor.leap.LeapFrameEvent: when a new frame is received
+    platypush.message.event.sensor.leap.LeapFrameStartEvent: when a new sequence of
+      frame starts
+    platypush.message.event.sensor.leap.LeapFrameStopEvent: when a sequence of frame
+      stops
+  install:
+    pip: []
+  package: platypush.backend.sensor.leap
+  type: backend

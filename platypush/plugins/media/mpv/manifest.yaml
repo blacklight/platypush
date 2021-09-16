@@ -1,0 +1,11 @@
+manifest:
+  events: {}
+  install:
+    pip:
+      - python-mpv
+    apt:
+      - mpv
+    pacman:
+      - mpv
+  package: platypush.plugins.media.mpv
+  type: plugin

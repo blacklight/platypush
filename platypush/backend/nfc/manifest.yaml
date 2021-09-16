@@ -1,0 +1,13 @@
+manifest:
+  events:
+    platypush.message.event.nfc.NFCDeviceConnectedEvent: when an NFC reader/writer
+      is connected
+    platypush.message.event.nfc.NFCDeviceDisconnectedEvent: when an NFC reader/writer
+      is disconnected
+    platypush.message.event.nfc.NFCTagDetectedEvent: when an NFC tag is detected
+    platypush.message.event.nfc.NFCTagRemovedEvent: when an NFC tag is removed
+  install:
+    pip:
+    - ndef
+  package: platypush.backend.nfc
+  type: backend

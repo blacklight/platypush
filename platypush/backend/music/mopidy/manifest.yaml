@@ -1,0 +1,17 @@
+manifest:
+  events:
+    platypush.message.event.music.MusicPauseEvent: if the playback state changed to
+      pause
+    platypush.message.event.music.MusicPlayEvent: if the playback state changed to
+      play
+    platypush.message.event.music.MusicStopEvent: if the playback state changed to
+      stop
+    platypush.message.event.music.MuteChangeEvent: if the mute status has changed
+    platypush.message.event.music.NewPlayingTrackEvent: if a new track is being played
+    platypush.message.event.music.PlaylistChangeEvent: if the main playlist has changed
+    platypush.message.event.music.SeekChangeEvent: if a track seek event occurs
+    platypush.message.event.music.VolumeChangeEvent: if the main volume has changed
+  install:
+    pip: []
+  package: platypush.backend.music.mopidy
+  type: backend

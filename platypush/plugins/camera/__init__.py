@@ -490,6 +490,7 @@ class CameraPlugin(Plugin, ABC):
 
         return image_file
 
+    # noinspection PyUnusedLocal
     @action
     def take_picture(self, image_file: str, preview: bool = False, **camera) -> str:
         """

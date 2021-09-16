@@ -83,7 +83,7 @@ class BluetoothBackend(Backend, Server):
             self.connect(connection, request)
             self.bus.post(BluetoothDeviceConnectedEvent(address=address[0], port=address[1]))
         elif isinstance(request, requests.Disconnect):
-            self.disconnect(connection)
+            self.disconnect(connection, request)
             self.bus.post(BluetoothDeviceDisconnectedEvent(address=address[0], port=address[1]))
         elif isinstance(request, requests.Put):
             self.bus.post(BluetoothFilePutRequestEvent(address=address[0], port=address[1]))

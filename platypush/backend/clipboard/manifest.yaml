@@ -1,0 +1,8 @@
+manifest:
+  events:
+    platypush.message.event.clipboard.ClipboardEvent: on clipboard update.
+  install:
+    pip:
+    - pyperclip
+  package: platypush.backend.clipboard
+  type: backend

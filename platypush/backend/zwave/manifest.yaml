@@ -1,0 +1,48 @@
+manifest:
+  events:
+    platypush.message.event.zwave.ZwaveButtonCreatedEvent: when a button is added
+      to the network.
+    platypush.message.event.zwave.ZwaveButtonOffEvent: when a button is released.
+    platypush.message.event.zwave.ZwaveButtonOnEvent: when a button is pressed.
+    platypush.message.event.zwave.ZwaveButtonRemovedEvent: when a button is removed
+      from the network.
+    platypush.message.event.zwave.ZwaveCommandEvent: when a command is received on
+      the network.
+    platypush.message.event.zwave.ZwaveCommandWaitingEvent: when a command is waiting
+      for a messageto complete.
+    platypush.message.event.zwave.ZwaveNetworkErrorEvent: when an error occurs on
+      the network.
+    platypush.message.event.zwave.ZwaveNetworkReadyEvent: when the network is up and
+      running.
+    platypush.message.event.zwave.ZwaveNetworkResetEvent: when the network is reset.
+    platypush.message.event.zwave.ZwaveNetworkStoppedEvent: when the network goes
+      down.
+    platypush.message.event.zwave.ZwaveNodeAddedEvent: when a node is added to the
+      network.
+    platypush.message.event.zwave.ZwaveNodeEvent: when a node attribute changes.
+    platypush.message.event.zwave.ZwaveNodeGroupEvent: when a node is associated/de-associated
+      to agroup.
+    platypush.message.event.zwave.ZwaveNodePollingDisabledEvent: when the polling
+      is successfully turnedoff a node.
+    platypush.message.event.zwave.ZwaveNodePollingEnabledEvent: when the polling is
+      successfully turnedon a node.
+    platypush.message.event.zwave.ZwaveNodeQueryCompletedEvent: when all the nodes
+      on the networkhave been queried.
+    platypush.message.event.zwave.ZwaveNodeReadyEvent: when a node is ready.
+    platypush.message.event.zwave.ZwaveNodeRemovedEvent: when a node is removed from
+      the network.
+    platypush.message.event.zwave.ZwaveNodeRenamedEvent: when a node is renamed.
+    platypush.message.event.zwave.ZwaveNodeSceneEvent: when a scene is set on a node.
+    platypush.message.event.zwave.ZwaveValueAddedEvent: when a value is added to a
+      node on the network.
+    platypush.message.event.zwave.ZwaveValueChangedEvent: when the value of a node
+      on the networkchanges.
+    platypush.message.event.zwave.ZwaveValueRefreshedEvent: when the value of a node
+      on the networkis refreshed.
+    platypush.message.event.zwave.ZwaveValueRemovedEvent: when the value of a node
+      on the networkis removed.
+  install:
+    pip:
+    - python-openzwave
+  package: platypush.backend.zwave
+  type: backend

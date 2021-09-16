@@ -1,5 +1,3 @@
-import json
-
 from platypush.backend import Backend
 from platypush.message.event.scard import SmartCardDetectedEvent, SmartCardRemovedEvent
 
@@ -41,10 +39,15 @@ class ScardBackend(Backend):
                                    "supported types: string, list".format(
                                        atr, type(atr)))
 
-            self.cardtype = ATRCardType( *[toBytes(atr) for atr in self.ATRs] )
+            self.cardtype = ATRCardType(*[self._to_bytes(atr) for atr in self.ATRs])
         else:
             self.cardtype = AnyCardType()
 
+    @staticmethod
+    def _to_bytes(data) -> bytes:
+        if isinstance(data, str):
+            data = data.encode()
+        return data
 
     def run(self):
         from smartcard.CardRequest import CardRequest
@@ -54,7 +57,7 @@ class ScardBackend(Backend):
         super().run()
 
         self.logger.info('Initialized smart card reader backend - ATR filter: {}'.
-                     format(self.ATRs))
+                         format(self.ATRs))
 
         prev_atr = None
         reader = None
@@ -70,7 +73,7 @@ class ScardBackend(Backend):
 
                 if atr != prev_atr:
                     self.logger.info('Smart card detected on reader {}, ATR: {}'.
-                                format(reader, atr))
+                                     format(reader, atr))
 
                     self.bus.post(SmartCardDetectedEvent(atr=atr, reader=reader))
                     prev_atr = atr
@@ -82,6 +85,4 @@ class ScardBackend(Backend):
 
                 prev_atr = None
 
-
 # vim:sw=4:ts=4:et:
-

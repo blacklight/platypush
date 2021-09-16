@@ -2,7 +2,6 @@ import inspect
 import os
 import subprocess
 
-from abc import ABC
 from dataclasses import dataclass
 from datetime import datetime
 from email.message import Message
@@ -62,7 +61,7 @@ class Mail(JSONAble):
         }
 
 
-class MailPlugin(Plugin, ABC):
+class MailPlugin(Plugin):
     """
     Base class for mail plugins.
     """
@@ -112,7 +111,7 @@ class MailPlugin(Plugin, ABC):
         return info
 
 
-class MailInPlugin(MailPlugin, ABC):
+class MailInPlugin(MailPlugin):
     """
     Base class for mail in plugins.
     """
@@ -141,7 +140,7 @@ class MailInPlugin(MailPlugin, ABC):
         raise NotImplementedError()
 
 
-class MailOutPlugin(MailPlugin, ABC):
+class MailOutPlugin(MailPlugin):
     """
     Base class for mail out plugins.
     """

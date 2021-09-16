@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - py-trello
+  package: platypush.plugins.trello
+  type: plugin

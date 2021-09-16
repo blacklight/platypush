@@ -1,0 +1,8 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - google-api-python-client
+    - oauth2client
+  package: platypush.plugins.google.maps
+  type: plugin

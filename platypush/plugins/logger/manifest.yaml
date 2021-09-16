@@ -1,0 +1,6 @@
+manifest:
+  events: {}
+  install:
+    pip: []
+  package: platypush.plugins.logger
+  type: plugin

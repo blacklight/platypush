@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - dbus-python
+  package: platypush.backend.dbus
+  type: backend

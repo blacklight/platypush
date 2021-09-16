@@ -4,6 +4,7 @@ import os
 import queue
 import re
 import requests
+from abc import ABC, abstractmethod
 from typing import Optional, List, Dict, Union
 
 import subprocess
@@ -22,17 +23,17 @@ class PlayerState(enum.Enum):
     IDLE = 'idle'
 
 
-class MediaPlugin(Plugin):
+class MediaPlugin(Plugin, ABC):
     """
     Generic plugin to interact with a media player.
 
     Requires:
 
         * A media player installed (supported so far: mplayer, vlc, mpv, omxplayer, chromecast)
-        * **python-libtorrent** (``pip install python-libtorrent``), optional, for torrent support over native library
+        * **python-libtorrent-bin** (``pip install python-libtorrent-bin``), optional, for torrent support over native
+            library
         * *rtorrent* installed - optional, for torrent support over rtorrent
         * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
-        * **requests** (``pip install requests``), optional, for local files over HTTP streaming supporting
         * **ffmpeg**,optional, to get media files metadata
 
     To start the local media stream service over HTTP you will also need the
@@ -218,34 +219,42 @@ class MediaPlugin(Plugin):
             self.logger.warning(f'Could not stop torrent plugin: {str(e)}')
 
     @action
+    @abstractmethod
     def play(self, resource, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def pause(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def stop(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def quit(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def voldown(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def volup(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def back(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def forward(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
@@ -259,42 +268,52 @@ class MediaPlugin(Plugin):
             return self.play(video)
 
     @action
+    @abstractmethod
     def toggle_subtitles(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def set_subtitles(self, filename, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def remove_subtitles(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def is_playing(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def load(self, resource, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def mute(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def seek(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def set_position(self, *args, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def set_volume(self, volume):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
+    @abstractmethod
     def status(self):
         raise self._NOT_IMPLEMENTED_ERR
 

@@ -12,6 +12,7 @@ from threading import Thread, Event as ThreadEvent, get_ident
 from typing import Optional, Dict
 
 from platypush.bus import Bus
+from platypush.common import ExtensionWithManifest
 from platypush.config import Config
 from platypush.context import get_backend
 from platypush.message.event.zeroconf import ZeroconfServiceAddedEvent, ZeroconfServiceRemovedEvent
@@ -26,7 +27,7 @@ from platypush.message.request import Request
 from platypush.message.response import Response
 
 
-class Backend(Thread, EventGenerator):
+class Backend(Thread, EventGenerator, ExtensionWithManifest):
     """
     Parent class for backends.
 
@@ -53,6 +54,7 @@ class Backend(Thread, EventGenerator):
 
         self._thread_name = self.__class__.__name__
         EventGenerator.__init__(self)
+        ExtensionWithManifest.__init__(self)
         Thread.__init__(self, name=self._thread_name, daemon=True)
 
         # If no bus is specified, create an internal queue where

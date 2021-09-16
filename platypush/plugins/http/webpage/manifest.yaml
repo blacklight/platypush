@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - weasyprint
+  package: platypush.plugins.http.webpage
+  type: plugin

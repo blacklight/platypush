@@ -2,7 +2,7 @@ import hashlib
 import json
 import threading
 
-from flask import Response, render_template
+from flask import Response
 
 from platypush.backend.http.app.utils import get_remote_base_url, logger, \
     send_message

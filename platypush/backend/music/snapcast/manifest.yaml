@@ -1,0 +1,15 @@
+manifest:
+  events:
+    platypush.message.event.music.snapcast.ClientConnectedEvent: ''
+    platypush.message.event.music.snapcast.ClientDisconnectedEvent: ''
+    platypush.message.event.music.snapcast.ClientLatencyChangeEvent: ''
+    platypush.message.event.music.snapcast.ClientNameChangeEvent: ''
+    platypush.message.event.music.snapcast.ClientVolumeChangeEvent: ''
+    platypush.message.event.music.snapcast.GroupMuteChangeEvent: ''
+    platypush.message.event.music.snapcast.GroupStreamChangeEvent: ''
+    platypush.message.event.music.snapcast.ServerUpdateEvent: ''
+    platypush.message.event.music.snapcast.StreamUpdateEvent: ''
+  install:
+    pip: []
+  package: platypush.backend.music.snapcast
+  type: backend

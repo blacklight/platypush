@@ -1,0 +1,10 @@
+manifest:
+  events:
+    platypush.message.event.ArchivedCardEvent: when a card is archived/closed.
+    platypush.message.event.MoveCardEvent: when a card is moved.
+    platypush.message.event.UnarchivedCardEvent: when a card is un-archived/opened.
+    platypush.message.event.trello.NewCardEvent: when a card is created.
+  install:
+    pip: []
+  package: platypush.backend.trello
+  type: backend

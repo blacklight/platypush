@@ -12,7 +12,7 @@ Version 1.2 - 21/01/18 (holzfigure) Using new Adafruit library Adafruit_GPIO;
                                     Replacing variable name "range"
                                       (which is a keyword) with "g-range";
 
-Requires the Adafruit_Python_GPIO library
+Requires the Adafruit-GPIO library
 https://github.com/adafruit/Adafruit_Python_GPIO
 
 Inspiration and assistance from:

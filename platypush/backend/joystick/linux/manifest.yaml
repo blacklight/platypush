@@ -1,0 +1,16 @@
+manifest:
+  events:
+    platypush.message.event.joystick.JoystickAxisEvent: when an axis value of the
+      joystick changes.
+    platypush.message.event.joystick.JoystickButtonPressedEvent: when a joystick button
+      is pressed.
+    platypush.message.event.joystick.JoystickButtonReleasedEvent: when a joystick
+      button is released.
+    platypush.message.event.joystick.JoystickConnectedEvent: when the joystick is
+      connected.
+    platypush.message.event.joystick.JoystickDisconnectedEvent: when the joystick
+      is disconnected.
+  install:
+    pip: []
+  package: platypush.backend.joystick.linux
+  type: backend

@@ -1,0 +1,8 @@
+manifest:
+  events:
+    platypush.message.event.log.http.HttpLogEvent: when a new log line is created.
+  install:
+    pip:
+    - watchdog
+  package: platypush.backend.log.http
+  type: backend

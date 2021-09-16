@@ -1,0 +1,8 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - numpy
+    - opencv-python
+  package: platypush.plugins.ml.cv
+  type: plugin

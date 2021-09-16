@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - adafruit-io
+  package: platypush.plugins.adafruit.io
+  type: plugin

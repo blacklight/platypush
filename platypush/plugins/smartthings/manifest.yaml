@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - pysmartthings
+  package: platypush.plugins.smartthings
+  type: plugin

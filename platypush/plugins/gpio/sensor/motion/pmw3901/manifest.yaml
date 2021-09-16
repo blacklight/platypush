@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - pmw3901
+  package: platypush.plugins.gpio.sensor.motion.pmw3901
+  type: plugin

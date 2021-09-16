@@ -1,0 +1,10 @@
+manifest:
+  events:
+    platypush.message.event.alarm.AlarmDismissedEvent: when an alarm is dismissed.
+    platypush.message.event.alarm.AlarmSnoozedEvent: when an alarm is snoozed.
+    platypush.message.event.alarm.AlarmStartedEvent: when an alarm starts.
+    platypush.message.event.alarm.AlarmTimeoutEvent: when an alarm times out.
+  install:
+    pip: []
+  package: platypush.backend.alarm
+  type: backend

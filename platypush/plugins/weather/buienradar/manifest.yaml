@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - buienradar
+  package: platypush.plugins.weather.buienradar
+  type: plugin

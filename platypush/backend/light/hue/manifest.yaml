@@ -1,0 +1,8 @@
+manifest:
+  events:
+    platypush.message.event.light.LightStatusChangeEvent: when thestatus of a lightbulb
+      changes
+  install:
+    pip: []
+  package: platypush.backend.light.hue
+  type: backend

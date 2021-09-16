@@ -12,10 +12,6 @@ class HttpRequestPlugin(Plugin):
     """
     Plugin for executing custom HTTP requests.
 
-    Requires:
-
-        * **requests** (``pip install requests``)
-
     Some example usages::
 
         # Execute a GET request on a JSON endpoint
@@ -84,7 +80,7 @@ class HttpRequestPlugin(Plugin):
 
         :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including
             but not limited to query params, data, JSON, headers etc.
-            (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
+            (see https://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
         :type kwargs: dict
         """
 
@@ -100,7 +96,7 @@ class HttpRequestPlugin(Plugin):
 
         :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including
             but not limited to query params, data, JSON, headers etc.
-            (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
+            (see https://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
         :type kwargs: dict
         """
 
@@ -116,7 +112,7 @@ class HttpRequestPlugin(Plugin):
 
         :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including
             but not limited to query params, data, JSON, headers etc.
-            (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
+            (see https://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
         :type kwargs: dict
         """
 
@@ -132,7 +128,7 @@ class HttpRequestPlugin(Plugin):
 
         :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including
             but not limited to query params, data, JSON, headers etc.
-            (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
+            (see https://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
         :type kwargs: dict
         """
 
@@ -148,7 +144,7 @@ class HttpRequestPlugin(Plugin):
 
         :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including
             but not limited to query params, data, JSON, headers etc.
-            (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
+            (see https://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
         :type kwargs: dict
         """
 
@@ -164,7 +160,7 @@ class HttpRequestPlugin(Plugin):
 
         :param kwargs: Additional arguments that will be transparently provided to the ``requests`` object, including
             but not limited to query params, data, JSON, headers etc.
-            (see http://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
+            (see https://docs.python-requests.org/en/master/user/quickstart/#make-a-request)
         :type kwargs: dict
         """
 

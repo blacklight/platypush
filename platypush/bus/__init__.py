@@ -92,7 +92,7 @@ class Bus(object):
 
         :param event_type: Event type to subscribe (event inheritance also works).
         :param handler: Event handler - a function that takes an Event object as parameter.
-        :return: A function that can be called to remove the handler (no paramters required).
+        :return: A function that can be called to remove the handler (no parameters required).
         """
         if event_type not in self.event_handlers:
             self.event_handlers[event_type] = set()

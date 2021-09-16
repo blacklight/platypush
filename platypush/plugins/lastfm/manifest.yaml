@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - pylast
+  package: platypush.plugins.lastfm
+  type: plugin

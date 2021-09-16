@@ -1,0 +1,8 @@
+manifest:
+  events:
+    platypush.message.event.zeroborg.ZeroborgDriveEvent: when motors direction changes
+    platypush.message.event.zeroborg.ZeroborgStopEvent: upon motors stop
+  install:
+    pip: []
+  package: platypush.plugins.gpio.zeroborg
+  type: plugin

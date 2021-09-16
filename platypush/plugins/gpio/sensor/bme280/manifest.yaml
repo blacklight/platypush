@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - pimoroni-bme280
+  package: platypush.plugins.gpio.sensor.bme280
+  type: plugin

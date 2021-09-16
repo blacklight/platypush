@@ -8,7 +8,7 @@ from platypush.backend.http.app.utils import authenticate, send_request
 from platypush.config import Config
 from platypush.plugins.camera.pi import CameraPiPlugin
 
-camera_pi = Blueprint('camera.pi', __name__, template_folder=template_folder)
+camera_pi = Blueprint('camera-pi', __name__, template_folder=template_folder)
 
 # Declare routes list
 __routes__ = [

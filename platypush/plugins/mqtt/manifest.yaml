@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - paho-mqtt
+  package: platypush.plugins.mqtt
+  type: plugin

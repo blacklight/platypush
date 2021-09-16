@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 from platypush.plugins import Plugin, action
 
@@ -9,5 +9,6 @@ class WeatherPlugin(Plugin, ABC):
     """
 
     @action
+    @abstractmethod
     def get_current_weather(self, *args, **kwargs):
         raise NotImplementedError

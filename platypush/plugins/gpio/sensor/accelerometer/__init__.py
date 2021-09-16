@@ -10,10 +10,10 @@ class GpioSensorAccelerometerPlugin(GpioSensorPlugin):
 
     Requires:
 
-        * ``Adafruit_Python_GPIO`` (``pip install Adafruit_Python_GPIO``)
+        * ``Adafruit-GPIO`` (``pip install Adafruit-GPIO``)
     """
 
-    def __init__(self, g=4, precision=None, *args, **kwargs):
+    def __init__(self, g=4, precision=None, **kwargs):
         """
         Only LIS3DH in I2C mode is currently supported: https://learn.adafruit.com/assets/59080.
 
@@ -25,7 +25,7 @@ class GpioSensorAccelerometerPlugin(GpioSensorPlugin):
         :type precision: int
         """
 
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         from platypush.plugins.gpio.sensor.accelerometer.lib.LIS3DH import LIS3DH
 
         if g == 2:

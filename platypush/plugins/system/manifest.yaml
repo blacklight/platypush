@@ -1,0 +1,8 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - py-cpuinfo
+    - psutil
+  package: platypush.plugins.system
+  type: plugin

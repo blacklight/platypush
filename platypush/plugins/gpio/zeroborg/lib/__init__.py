@@ -354,7 +354,7 @@ the current busNumber.
                     'drivers are running?')
                 self.bus = None
         else:
-            self.Print('ZeroBorg loaded on bus %d' % (self.busNumber))
+            self.Print('ZeroBorg loaded on bus %d' % self.busNumber)
 
     def SetMotor1(self, power):
         """

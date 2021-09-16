@@ -1,0 +1,8 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - pybluez
+    - gattlib
+  package: platypush.plugins.bluetooth.ble
+  type: plugin

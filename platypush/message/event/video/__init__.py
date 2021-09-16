@@ -1,4 +1,3 @@
-from platypush.message.event import Event
 from platypush.message.event.media import MediaEvent
 
 

@@ -1,0 +1,9 @@
+manifest:
+  events:
+    platypush.message.event.button.flic.FlicButtonEvent: when a button is pressed.The
+      event will also contain the press sequence(e.g. ``["ShortPressEvent", "LongPressEvent",
+      "ShortPressEvent"]``)
+  install:
+    pip: []
+  package: platypush.backend.button.flic
+  type: backend

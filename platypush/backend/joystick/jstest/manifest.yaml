@@ -1,0 +1,21 @@
+manifest:
+  events:
+    platypush.message.event.joystick.JoystickAxisEvent: when an axis value of the
+      joystick changes.
+    platypush.message.event.joystick.JoystickButtonPressedEvent: when a joystick button
+      is pressed.
+    platypush.message.event.joystick.JoystickButtonReleasedEvent: when a joystick
+      button is released.
+    platypush.message.event.joystick.JoystickConnectedEvent: when the joystick is
+      connected.
+    platypush.message.event.joystick.JoystickDisconnectedEvent: when the joystick
+      is disconnected.
+    platypush.message.event.joystick.JoystickStateEvent: when the state of the joystick
+      (i.e. some of itsaxes or buttons values) changes.
+  install:
+    apt:
+      - joystick
+    pacman:
+      - jsutils
+  package: platypush.backend.joystick.jstest
+  type: backend

@@ -1,0 +1,9 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - google-api-python-client
+    - oauth2client
+    - google-cloud-translate
+  package: platypush.plugins.google.translate
+  type: plugin

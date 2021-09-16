@@ -1,4 +1,3 @@
-import abc
 import time
 
 from platypush.backend import Backend
@@ -6,7 +5,7 @@ from platypush.context import get_plugin
 from platypush.message.event.weather import NewWeatherConditionEvent
 
 
-class WeatherBackend(Backend, abc.ABC):
+class WeatherBackend(Backend):
     """
     Abstract class for weather update backends.
     """

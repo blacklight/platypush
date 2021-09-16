@@ -2,11 +2,11 @@ import logging
 import threading
 import time
 
-from abc import ABC
 from functools import wraps
 from typing import Optional
 
 from platypush.bus import Bus
+from platypush.common import ExtensionWithManifest
 from platypush.event import EventGenerator
 from platypush.message.response import Response
 from platypush.utils import get_decorators, get_plugin_name_by_class, set_thread_name
@@ -39,7 +39,7 @@ def action(f):
     return _execute_action
 
 
-class Plugin(EventGenerator):
+class Plugin(EventGenerator, ExtensionWithManifest):
     """ Base plugin class """
 
     def __init__(self, **kwargs):
@@ -58,7 +58,7 @@ class Plugin(EventGenerator):
         return getattr(self, method)(*args, **kwargs)
 
 
-class RunnablePlugin(ABC, Plugin):
+class RunnablePlugin(Plugin):
     """
     Class for runnable plugins - i.e. plugins that have a start/stop method and can be started.
     """

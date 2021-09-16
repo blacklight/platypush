@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - picamera
+  package: platypush.backend.camera.pi
+  type: backend

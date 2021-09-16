@@ -12,10 +12,6 @@ class SwitchWemoPlugin(SwitchPlugin):
     """
     Plugin to control a Belkin WeMo smart switches
     (https://www.belkin.com/us/Products/home-automation/c/wemo-home-automation/)
-
-    Requires:
-
-        * **requests** (``pip install requests``)
     """
 
     _default_port = 49153

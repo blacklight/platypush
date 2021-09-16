@@ -22,10 +22,6 @@ class LocalMediaSearcher(MediaSearcher):
     will index the media files for a faster search, it will detect which
     directories have been changed since the last scan and re-index their content
     if needed.
-
-    Requires:
-
-        * **sqlalchemy** (``pip install sqlalchemy``)
     """
 
     _filename_separators = r'[.,_\-@()\[\]\{\}\s\'\"]+'

@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - samsungtvws
+  package: platypush.plugins.tv.samsung.ws
+  type: plugin

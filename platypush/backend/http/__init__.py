@@ -4,6 +4,11 @@ import threading
 
 from multiprocessing import Process
 
+try:
+    from websockets.exceptions import ConnectionClosed
+except ImportError:
+    from websockets import ConnectionClosed
+
 from platypush.backend import Backend
 from platypush.backend.http.app import application
 from platypush.context import get_or_create_event_loop
@@ -146,9 +151,7 @@ class HttpBackend(Backend):
     Requires:
 
         * **flask** (``pip install flask``)
-        * **redis** (``pip install redis``)
-        * **websockets** (``pip install websockets``)
-        * **python-dateutil** (``pip install python-dateutil``)
+        * **bcrypt** (``pip install bcrypt``)
         * **magic** (``pip install python-magic``), optional, for MIME type
             support if you want to enable media streaming
         * **uwsgi** (``pip install uwsgi`` plus uwsgi server installed on your
@@ -328,8 +331,6 @@ class HttpBackend(Backend):
 
     def notify_web_clients(self, event):
         """ Notify all the connected web clients (over websocket) of a new event """
-        import websockets
-
         async def send_event(ws):
             try:
                 self._acquire_websocket_lock(ws)
@@ -345,7 +346,7 @@ class HttpBackend(Backend):
         for _ws in wss:
             try:
                 loop.run_until_complete(send_event(_ws))
-            except websockets.exceptions.ConnectionClosed:
+            except ConnectionClosed:
                 self.logger.warning('Websocket client {} connection lost'.format(_ws.remote_address))
                 self.active_websockets.remove(_ws)
                 if _ws.remote_address in self._websocket_locks:
@@ -365,7 +366,7 @@ class HttpBackend(Backend):
 
             try:
                 await websocket.recv()
-            except websockets.exceptions.ConnectionClosed:
+            except ConnectionClosed:
                 self.logger.info('Websocket client {} closed connection'.format(address))
                 self.active_websockets.remove(websocket)
                 if address in self._websocket_locks:

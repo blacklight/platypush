@@ -1,0 +1,9 @@
+manifest:
+  events:
+    platypush.message.event.scard.SmartCardDetectedEvent: when a smart card is detected
+    platypush.message.event.scard.SmartCardRemovedEvent: when a smart card is removed
+  install:
+    pip:
+    - pyscard
+  package: platypush.backend.scard
+  type: backend

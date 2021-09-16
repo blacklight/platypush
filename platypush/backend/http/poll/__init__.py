@@ -34,7 +34,7 @@ class HttpPollBackend(Backend):
                 -
                     # Poll for updates on an RSS feed
                     type: platypush.backend.http.request.rss.RssUpdates
-                    url: http://www.theguardian.com/rss/world
+                    url: https://www.theguardian.com/rss/world
                     title: The Guardian - World News
                     poll_seconds: 120
                     max_entries: 10

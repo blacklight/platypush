@@ -1,0 +1,13 @@
+manifest:
+  events:
+    platypush.message.event.zeroconf.ZeroconfServiceAddedEvent: when a new service
+      is discovered.
+    platypush.message.event.zeroconf.ZeroconfServiceRemovedEvent: when a service is
+      removed.
+    platypush.message.event.zeroconf.ZeroconfServiceUpdatedEvent: when a service is
+      updated.
+  install:
+    pip:
+    - zeroconf
+  package: platypush.plugins.zeroconf
+  type: plugin

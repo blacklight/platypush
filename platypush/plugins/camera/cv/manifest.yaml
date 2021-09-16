@@ -1,0 +1,8 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - opencv-python
+    - Pillow
+  package: platypush.plugins.camera.cv
+  type: plugin

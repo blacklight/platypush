@@ -1,0 +1,9 @@
+manifest:
+  events:
+    platypush.message.event.google.pubsub.GooglePubsubMessageEvent: when a new message
+      is received ona subscribed topic.
+  install:
+    pip:
+    - google-cloud-pubsub
+  package: platypush.backend.google.pubsub
+  type: backend

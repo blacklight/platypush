@@ -1,0 +1,8 @@
+manifest:
+  events:
+    platypush.message.event.google.fit.GoogleFitEvent: when a newdata point is received
+      on one of the registered streams.
+  install:
+    pip: []
+  package: platypush.backend.google.fit
+  type: backend

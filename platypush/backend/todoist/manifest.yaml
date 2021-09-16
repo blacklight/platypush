@@ -1,0 +1,16 @@
+manifest:
+  events:
+    platypush.message.event.todoist.CheckedItemEvent: when an item is checked.
+    platypush.message.event.todoist.ItemContentChangeEvent: when the content of an
+      item is changed.
+    platypush.message.event.todoist.ModifiedItemEvent: when an item is changed and
+      the changedoesn't fall into the categories above.
+    platypush.message.event.todoist.NewItemEvent: when a new item is created.
+    platypush.message.event.todoist.RemovedItemEvent: when an item is removed.
+    platypush.message.event.todoist.TodoistSyncRequiredEvent: when an update has occurred
+      that doesn'tfall into the categories above and a sync is required to get up-to-date.
+  install:
+    pip:
+    - todoist-python
+  package: platypush.backend.todoist
+  type: backend

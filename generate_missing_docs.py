@@ -1,14 +1,27 @@
 import os
 
+from platypush.backend import Backend
 from platypush.context import get_plugin
+from platypush.plugins import Plugin
+from platypush.utils.manifest import get_manifests
 
 
 def get_all_plugins():
-    return get_plugin('inspect').get_all_plugins().output
+    manifests = {mf.component_name for mf in get_manifests(Plugin)}
+    return {
+        plugin_name: plugin_info
+        for plugin_name, plugin_info in get_plugin('inspect').get_all_plugins().output.items()
+        if plugin_name in manifests
+    }
 
 
 def get_all_backends():
-    return get_plugin('inspect').get_all_backends().output
+    manifests = {mf.component_name for mf in get_manifests(Backend)}
+    return {
+        backend_name: backend_info
+        for backend_name, backend_info in get_plugin('inspect').get_all_backends().output.items()
+        if backend_name in manifests
+    }
 
 
 def get_all_events():

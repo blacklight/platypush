@@ -81,7 +81,7 @@ class EventAction(Request):
     def __init__(self, target=None, action=None, **args):
         if target is None:
             target = Config.get('device_id')
-        args_copy = copy.deepcopy(args)
+        args_copy = dict(copy.deepcopy(args))
         super().__init__(target=target, action=action, **args_copy)
 
     @classmethod

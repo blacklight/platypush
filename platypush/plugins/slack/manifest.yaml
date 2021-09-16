@@ -1,0 +1,14 @@
+manifest:
+  events:
+    platypush.message.event.chat.slack.SlackAppMentionReceivedEvent: when a message
+      that mentionsthe app is received on a monitored channel.
+    platypush.message.event.chat.slack.SlackMessageDeletedEvent: when a message is
+      deleted from amonitored channel.
+    platypush.message.event.chat.slack.SlackMessageEditedEvent: when a message is
+      edited on amonitored channel.
+    platypush.message.event.chat.slack.SlackMessageReceivedEvent: when a message is
+      received on amonitored channel.
+  install:
+    pip: []
+  package: platypush.plugins.slack
+  type: plugin

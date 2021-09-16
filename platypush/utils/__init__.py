@@ -138,22 +138,27 @@ def clear_timeout():
 
 
 def get_hash(s):
-    """ Get the SHA256 hash hexdigest of a string input """
+    """ Get the SHA256 hash hex digest of a string input """
     return hashlib.sha256(s.encode('utf-8')).hexdigest()
 
 
 def get_decorators(cls, climb_class_hierarchy=False):
     """
     Get the decorators of a class as a {"decorator_name": [list of methods]} dictionary
-    :param climb_class_hierarchy: If set to True (default: False), it will search return the decorators in the parent classes as well
+
+    :param cls: Class type
+    :param climb_class_hierarchy: If set to True (default: False), it will search return the decorators in the parent
+        classes as well
     :type climb_class_hierarchy: bool
     """
 
     decorators = {}
 
+    # noinspection PyPep8Naming
     def visit_FunctionDef(node):
         for n in node.decorator_list:
             if isinstance(n, ast.Call):
+                # noinspection PyUnresolvedReferences
                 name = n.func.attr if isinstance(n.func, ast.Attribute) else n.func.id
             else:
                 name = n.attr if isinstance(n, ast.Attribute) else n.id
@@ -228,6 +233,7 @@ def get_ssl_client_context(ssl_cert=None, ssl_key=None, ssl_cafile=None,
                             ssl_cert=ssl_cert, ssl_key=ssl_key,
                             ssl_cafile=ssl_cafile, ssl_capath=ssl_capath)
 
+
 def set_thread_name(name):
     global logger
 
@@ -263,7 +269,7 @@ def find_files_by_ext(directory, *exts):
     result = []
 
     for root, dirs, files in os.walk(directory):
-        for i in range(min_len, max_len+1):
+        for i in range(min_len, max_len + 1):
             result += [f for f in files if f[-i:] in exts]
 
     return result
@@ -296,6 +302,7 @@ def get_mime_type(resource):
     if resource.startswith('file://'):
         resource = resource[len('file://'):]
 
+    # noinspection HttpUrlsUsage
     if resource.startswith('http://') or resource.startswith('https://'):
         with urllib.request.urlopen(resource) as response:
             return response.info().get_content_type()
@@ -443,6 +450,5 @@ def get_enabled_plugins() -> dict:
 def get_redis() -> Redis:
     from platypush.config import Config
     return Redis(**(Config.get('backend.redis') or {}).get('redis_args', {}))
-
 
 # vim:sw=4:ts=4:et:

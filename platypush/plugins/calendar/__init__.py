@@ -22,9 +22,6 @@ class CalendarPlugin(Plugin, CalendarInterface):
     """
     The CalendarPlugin allows you to keep track of multiple calendars (Google or
     iCal URLs) and get joined events from all of them.
-
-    Requires:
-        * **dateutil** (``pip install python-dateutil``)
     """
 
     def __init__(self, calendars=None, *args, **kwargs):

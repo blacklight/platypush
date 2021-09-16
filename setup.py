@@ -34,7 +34,7 @@ setup(
     description="Platypush service",
     license="MIT",
     python_requires='>= 3.6',
-    keywords="home-automation iot mqtt websockets redis dashboard notificaions",
+    keywords="home-automation automation iot mqtt websockets redis dashboard notifications",
     url="https://platypush.tech",
     packages=find_packages(),
     include_package_data=True,
@@ -67,6 +67,7 @@ setup(
         'cryptography',
         'pyjwt',
         'marshmallow',
+        'frozendict',
     ],
 
     extras_require={
@@ -75,11 +76,11 @@ setup(
         # Support for Kafka backend and plugin
         'kafka': ['kafka-python'],
         # Support for Pushbullet backend and plugin
-        'pushbullet': ['pushbullet.py @ https://github.com/BlackLight/pushbullet.py/tarball/master'],
+        'pushbullet': ['pushbullet.py @ https://github.com/rbrcsk/pushbullet.py/tarball/master'],
         # Support for HTTP backend
-        'http': ['flask', 'frozendict', 'bcrypt'],
+        'http': ['flask', 'bcrypt', 'python-magic'],
         # Support for uWSGI HTTP backend
-        'uwsgi': ['flask', 'frozendict', 'uwsgi', 'bcrypt'],
+        'uwsgi': ['flask', 'uwsgi', 'bcrypt', 'python-magic'],
         # Support for MQTT backends
         'mqtt': ['paho-mqtt'],
         # Support for RSS feeds parser
@@ -97,7 +98,7 @@ setup(
         # Support for YouTube
         'youtube': ['youtube-dl'],
         # Support for torrents download
-        'torrent': ['python-libtorrent'],
+        'torrent': ['python-libtorrent-bin'],
         # Generic support for cameras
         'camera': ['numpy', 'Pillow'],
         # Support for RaspberryPi camera
@@ -167,12 +168,12 @@ setup(
                       'pyobex @ https://github.com/BlackLight/PyOBEX/tarball/master'],
         # Support for TP-Link devices
         'tplink': ['pyHS100'],
-        # Support for PWM3901 2-Dimensional Optical Flow Sensor
-        'pwm3901': ['pwm3901'],
+        # Support for PMW3901 2-Dimensional Optical Flow Sensor
+        'pmw3901': ['pmw3901'],
         # Support for MLX90640 thermal camera
         'mlx90640': ['Pillow'],
         # Support for machine learning models and cameras over OpenCV
-        'cv': ['cv2', 'numpy', 'Pillow'],
+        'cv': ['opencv-python', 'numpy', 'Pillow'],
         # Support for the generation of HTML documentation from docstring
         'htmldoc': ['docutils'],
         # Support for Node-RED integration
@@ -240,9 +241,7 @@ setup(
         # Support for IMAP mail integration
         'imap': ['imapclient'],
         # Support for NextCloud integration
-        'nextcloud': ['nextcloud-API @ git+https://github.com/EnterpriseyIntranet/nextcloud-API.git'],
-        # Support for GStreamer integration
-        'gstreamer': ['gst-python'],
+        'nextcloud': ['nextcloud-api-wrapper'],
         # Support for VLC integration
         'vlc': ['python-vlc'],
         # Support for SmartThings integration

@@ -1,0 +1,9 @@
+manifest:
+  events: {}
+  install:
+    pip:
+      - omxplayer-wrapper
+    apt:
+      - omxplayer
+  package: platypush.plugins.media.omxplayer
+  type: plugin

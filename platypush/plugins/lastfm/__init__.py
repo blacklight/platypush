@@ -2,6 +2,7 @@ import time
 
 from platypush.plugins import Plugin, action
 
+
 class LastfmPlugin(Plugin):
     """
     Plugin to interact with your Last.FM (https://last.fm) account, update your
@@ -36,14 +37,13 @@ class LastfmPlugin(Plugin):
         self.password = password
 
         self.lastfm = pylast.LastFMNetwork(
-            api_key = self.api_key,
-            api_secret = self.api_secret,
-            username = self.username,
-            password_hash = pylast.md5(self.password))
-
+            api_key=self.api_key,
+            api_secret=self.api_secret,
+            username=self.username,
+            password_hash=pylast.md5(self.password))
 
     @action
-    def scrobble(self, artist, title, album=None, **kwargs):
+    def scrobble(self, artist, title, album=None):
         """
         Scrobble a track to Last.FM
 
@@ -56,15 +56,14 @@ class LastfmPlugin(Plugin):
         """
 
         self.lastfm.scrobble(
-            artist = artist,
-            title = title,
-            album = album,
-            timestamp = int(time.time()),
+            artist=artist,
+            title=title,
+            album=album,
+            timestamp=int(time.time()),
         )
 
-
     @action
-    def update_now_playing(self, artist, title, album=None, **kwargs):
+    def update_now_playing(self, artist, title, album=None):
         """
         Update the currently playing track
 
@@ -77,11 +76,9 @@ class LastfmPlugin(Plugin):
         """
 
         self.lastfm.update_now_playing(
-            artist = artist,
-            title = title,
-            album = album,
+            artist=artist,
+            title=title,
+            album=album,
         )
 
-
 # vim:sw=4:ts=4:et:
-

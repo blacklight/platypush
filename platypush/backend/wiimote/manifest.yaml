@@ -1,0 +1,8 @@
+manifest:
+  events:
+    platypush.message.event.Wiimote.WiimoteEvent: when the state of the Wiimote (battery,
+      buttons, acceleration etc.) changes
+  install:
+    pip: []
+  package: platypush.backend.wiimote
+  type: backend

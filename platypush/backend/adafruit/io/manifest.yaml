@@ -1,0 +1,12 @@
+manifest:
+  events:
+    platypush.message.event.adafruit.ConnectedEvent: when thebackend connects to the
+      Adafruit queue
+    platypush.message.event.adafruit.DisconnectedEvent: when thebackend disconnects
+      from the Adafruit queue
+    platypush.message.event.adafruit.FeedUpdateEvent: when anupdate event is received
+      on a monitored feed
+  install:
+    pip: []
+  package: platypush.backend.adafruit.io
+  type: backend

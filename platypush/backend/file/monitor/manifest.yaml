@@ -1,0 +1,10 @@
+manifest:
+  events:
+    platypush.message.event.file.FileSystemCreateEvent: if a resource is created.
+    platypush.message.event.file.FileSystemDeleteEvent: if a resource is removed.
+    platypush.message.event.file.FileSystemModifyEvent: if a resource is modified.
+  install:
+    pip:
+    - watchdog
+  package: platypush.backend.file.monitor
+  type: backend

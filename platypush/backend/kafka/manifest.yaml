@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - kafka
+  package: platypush.backend.kafka
+  type: backend

@@ -1,0 +1,9 @@
+manifest:
+  events: {}
+  install:
+    apt:
+      - libi2c-dev
+    pacman:
+      - i2c-tools
+  package: platypush.plugins.camera.ir.mlx90640
+  type: plugin

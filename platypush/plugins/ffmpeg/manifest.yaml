@@ -1,0 +1,11 @@
+manifest:
+  events: {}
+  install:
+    pip:
+      - ffmpeg-python
+    apt:
+      - ffmpeg
+    pacman:
+      - ffmpeg
+  package: platypush.plugins.ffmpeg
+  type: plugin

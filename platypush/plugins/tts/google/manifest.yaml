@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - google-cloud-texttospeech
+  package: platypush.plugins.tts.google
+  type: plugin

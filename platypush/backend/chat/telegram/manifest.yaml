@@ -1,0 +1,19 @@
+manifest:
+  events:
+    platypush.message.event.chat.telegram.CommandMessageEvent: when a command message
+      is received.
+    platypush.message.event.chat.telegram.ContactMessageEvent: when a contact is received.
+    platypush.message.event.chat.telegram.DocumentMessageEvent: when a document is
+      received.
+    platypush.message.event.chat.telegram.GroupCreatedEvent: when the bot is invited
+      to a new group.
+    platypush.message.event.chat.telegram.LocationMessageEvent: when a location is
+      received.
+    platypush.message.event.chat.telegram.PhotoMessageEvent: when a photo is received.
+    platypush.message.event.chat.telegram.TextMessageEvent: when a text message is
+      received.
+    platypush.message.event.chat.telegram.VideoMessageEvent: when a video is received.
+  install:
+    pip: []
+  package: platypush.backend.chat.telegram
+  type: backend

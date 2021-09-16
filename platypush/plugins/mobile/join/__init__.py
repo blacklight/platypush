@@ -359,7 +359,7 @@ class MobileJoinPlugin(Plugin):
             Default is 2.
         :param vibration_pattern: If the notification is received on an Android device, the vibration pattern in this
             field will change the way the device vibrates with it. You can easily create a pattern by going to the
-            `AutoRemote notification page <http://autoremotejoaomgcd.appspot.com/AutoRemoteNotification.html>`_
+            `AutoRemote notification page <https://autoremotejoaomgcd.appspot.com/AutoRemoteNotification.html>`_
             and generate the pattern in the Vibration Pattern field
         :type vibration_pattern: str (comma-separated float values) or list[float]
         :param dismiss_on_touch: If set the notification will be dismissed when touched (default: False)
