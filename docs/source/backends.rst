@@ -62,7 +62,7 @@ Backends
     platypush/backend/sensor.leap.rst
     platypush/backend/sensor.ltr559.rst
     platypush/backend/sensor.mcp3008.rst
-    platypush/backend/sensor.motion.pwm3901.rst
+    platypush/backend/sensor.motion.pmw3901.rst
     platypush/backend/sensor.serial.rst
     platypush/backend/stt.deepspeech.rst
     platypush/backend/stt.picovoice.hotword.rst

@@ -117,7 +117,6 @@ function start {
 
     env=$1
     envdir="${workdir}/${env}"
-    logsdir="${envdir}/var/log/platypush"
     rundir="${envdir}/var/run"
     pidfile="${rundir}/platypush.pid"
     cfgfile="${envdir}/etc/platypush/config.yaml"
@@ -127,7 +126,6 @@ function start {
         exit 1
     fi
 
-    mkdir -p "${logsdir}"
     mkdir -p "${rundir}"
 
     if [[ -f "$pidfile" ]]; then
@@ -143,7 +141,7 @@ function start {
     python3 -m venv "${envdir}"
     cd "${envdir}" || exit 1
     source bin/activate
-    bin/platypush -c "$cfgfile" -P "$pidfile" > "${logsdir}/stdout.log" 2> "${logsdir}/stderr.log" &
+    bin/platypush -c "$cfgfile" -P "$pidfile" &
     start_time=$(date +'%s')
     timeout=30
 
@@ -162,7 +160,9 @@ function start {
 
     pid=$(cat "$pidfile")
     echo
-    echo "Platypush environment $env started with PID $pid, logs dir: $logsdir"
+    echo "Platypush environment $env started with PID $pid"
+    wait "${pid}"
+    echo "Platypush environment $env terminated"
 }
 
 function stop {

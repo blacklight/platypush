@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [0.22.0] - 2021-09-16
+
+### Changed
+
+- Platypush now uses manifest files to describe plugins and backends. Each extension is now
+  expected to provide a `manifest.yaml` file in its folder, reporting its package name, pip
+  dependencies, required system packages and optional extra installation commands.
+
+- Refactored `platyvenv`, `platydock`, documentation generation and plugin management engine.
+  They are now both faster and more robust, since they can rely on the manifest definition to
+  operate instead of pydoc strings conventions or `config.yaml` conventions.
+
+- `platyvenv start`  now starts the environment process synchronously and it prints
+  stdout/stderr instead of redirecting it to the logs dir (previous behaviour: 
+  `platyvenv start` used to start the process asynchronously and the logs were stored
+  to `~/.local/share/platypush/venv/<env>/logs/<stdout|stderr>.log`).
+
+### Removed
+
+- Removed `Homeseer` integration - it was based on a Python integration that has now been
+  pulled out of PyPI and GitHub. A new integration may come in the future if there is enough
+  demand for it.
+
 ## [0.21.4] - 2021-08-24
 
 ### Fixed

@@ -52,10 +52,9 @@ Plugins
     platypush/plugins/gpio.sensor.envirophat.rst
     platypush/plugins/gpio.sensor.ltr559.rst
     platypush/plugins/gpio.sensor.mcp3008.rst
-    platypush/plugins/gpio.sensor.motion.pwm3901.rst
+    platypush/plugins/gpio.sensor.motion.pmw3901.rst
     platypush/plugins/gpio.zeroborg.rst
     platypush/plugins/graphite.rst
-    platypush/plugins/homeseer.rst
     platypush/plugins/http.request.rst
     platypush/plugins/http.request.rss.rst
     platypush/plugins/http.webpage.rst
