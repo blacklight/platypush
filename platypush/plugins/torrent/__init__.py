@@ -190,7 +190,7 @@ class TorrentPlugin(Plugin):
                 'url': item.get('url'),
             }
             for result in results
-            for (lang, items) in result.get('torrents', {}).items()
+            for (lang, items) in (result.get('torrents', {}) or {}).items()
             if not language or language == lang
             for (quality, item) in items.items()
             if quality != '0'
@@ -232,7 +232,7 @@ class TorrentPlugin(Plugin):
             }
             for result in results
             for episode in result.get('episodes', [])
-            for quality, item in episode.get('torrents', {}).items()
+            for quality, item in (episode.get('torrents', {}) or {}).items()
             if quality != '0'
         ], key=lambda item: '{series}.{quality}.{season:02d}.{episode:02d}'.format(
             series=item.get('series'), quality=item.get('quality'),
