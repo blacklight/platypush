@@ -101,6 +101,11 @@ class ZigbeeMqttBackend(MqttBackend):
             'password': password or plugin.password,
         }
 
+        kwargs = {
+            **kwargs,
+            **self.server_info,
+        }
+
         listeners = [{
             **self.server_info,
             'topics': [
@@ -109,7 +114,11 @@ class ZigbeeMqttBackend(MqttBackend):
             ],
         }]
 
-        super().__init__(subscribe_default_topic=False, listeners=listeners, client_id=client_id, *args, **kwargs)
+        super().__init__(
+            *args, subscribe_default_topic=False,
+            listeners=listeners, client_id=client_id, **kwargs
+        )
+
         if not client_id:
             self.client_id += '-zigbee-mqtt'
 
