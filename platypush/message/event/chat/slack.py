@@ -26,7 +26,7 @@ class SlackEvent(Event, ABCMeta):
         return datetime.fromtimestamp(timestamp, tz=gettz())   # lgtm [py/call-to-non-callable]
 
 
-class SlackMessageEvent(SlackEvent, ABCMeta):
+class SlackMessageEvent(SlackEvent, ABCMeta):  # lgtm [py/conflicting-attributes]
     """
     Base class for message-related events.
     """

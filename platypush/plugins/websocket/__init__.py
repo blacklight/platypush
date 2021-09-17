@@ -1,10 +1,10 @@
 import json
-import websockets
 
 try:
     from websockets.exceptions import ConnectionClosed
+    from websockets import connect as websocket_connect
 except ImportError:
-    from websockets import ConnectionClosed
+    from websockets import ConnectionClosed, connect as websocket_connect
 
 from platypush.context import get_or_create_event_loop
 from platypush.message import Message
@@ -52,7 +52,7 @@ class WebsocketPlugin(Plugin):
                                                                ssl_cafile=ssl_cafile,
                                                                ssl_capath=ssl_capath)
 
-            async with websockets.connect(url, **websocket_args) as websocket:
+            async with websocket_connect(url, **websocket_args) as websocket:
                 try:
                     await websocket.send(str(msg))
                 except ConnectionClosed as err:

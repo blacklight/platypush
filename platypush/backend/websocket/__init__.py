@@ -1,4 +1,10 @@
 from platypush.backend import Backend
+try:
+    from websockets.exceptions import ConnectionClosed
+    from websockets import serve as websocket_serve
+except ImportError:
+    from websockets import ConnectionClosed, serve as websocket_serve
+
 from platypush.context import get_plugin, get_or_create_event_loop
 from platypush.message import Message
 from platypush.message.request import Request
@@ -73,10 +79,6 @@ class WebsocketBackend(Backend):
 
     def notify_web_clients(self, event):
         """ Notify all the connected web clients (over websocket) of a new event """
-        try:
-            from websockets.exceptions import ConnectionClosed
-        except ImportError:
-            from websockets import ConnectionClosed
 
         async def send_event(websocket):
             try:
@@ -96,12 +98,6 @@ class WebsocketBackend(Backend):
 
     def run(self):
         import asyncio
-        import websockets
-
-        try:
-            from websockets.exceptions import ConnectionClosed
-        except ImportError:
-            from websockets import ConnectionClosed
 
         super().run()
         self.register_service(port=self.port, name='ws')
@@ -152,8 +148,7 @@ class WebsocketBackend(Backend):
             websocket_args['ssl'] = self.ssl_context
 
         self._loop = get_or_create_event_loop()
-        server = websockets.serve(serve_client, self.bind_address, self.port,
-                                  **websocket_args)
+        server = websocket_serve(serve_client, self.bind_address, self.port, **websocket_args)
 
         self._loop.run_until_complete(server)
         self._loop.run_forever()

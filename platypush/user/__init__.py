@@ -5,12 +5,12 @@ import time
 from typing import Optional, Dict
 
 import bcrypt
-import jwt
 
 try:
     from jwt.exceptions import PyJWTError
+    from jwt import encode as jwt_encode, decode as jwt_decode
 except ImportError:
-    from jwt import PyJWTError
+    from jwt import PyJWTError, encode as jwt_encode, decode as jwt_decode
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -204,7 +204,7 @@ class UserManager:
             'expires_at': expires_at.timestamp() if expires_at else None,
         }
 
-        token = jwt.encode(payload, priv_key, algorithm='RS256')
+        token = jwt_encode(payload, priv_key, algorithm='RS256')
         if isinstance(token, bytes):
             token = token.decode()
         return token
@@ -230,7 +230,7 @@ class UserManager:
         pub_key, priv_key = get_or_generate_jwt_rsa_key_pair()
 
         try:
-            payload = jwt.decode(token.encode(), pub_key, algorithms=['RS256'])
+            payload = jwt_decode(token.encode(), pub_key, algorithms=['RS256'])
         except PyJWTError as e:
             raise InvalidJWTTokenException(str(e))
 

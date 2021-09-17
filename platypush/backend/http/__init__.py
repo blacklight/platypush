@@ -6,8 +6,9 @@ from multiprocessing import Process
 
 try:
     from websockets.exceptions import ConnectionClosed
+    from websockets import serve as websocket_serve
 except ImportError:
-    from websockets import ConnectionClosed
+    from websockets import ConnectionClosed, serve as websocket_serve
 
 from platypush.backend import Backend
 from platypush.backend.http.app import application
@@ -354,7 +355,6 @@ class HttpBackend(Backend):
 
     def websocket(self):
         """ Websocket main server """
-        import websockets
         set_thread_name('WebsocketServer')
 
         async def register_websocket(websocket, path):
@@ -378,7 +378,7 @@ class HttpBackend(Backend):
 
         self._websocket_loop = get_or_create_event_loop()
         self._websocket_loop.run_until_complete(
-            websockets.serve(register_websocket, self.bind_address, self.websocket_port,
+            websocket_serve(register_websocket, self.bind_address, self.websocket_port,
                              **websocket_args))
         self._websocket_loop.run_forever()
 

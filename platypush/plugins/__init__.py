@@ -39,7 +39,7 @@ def action(f):
     return _execute_action
 
 
-class Plugin(EventGenerator, ExtensionWithManifest):
+class Plugin(EventGenerator, ExtensionWithManifest):   # lgtm [py/missing-call-to-init]
     """ Base plugin class """
 
     def __init__(self, **kwargs):
