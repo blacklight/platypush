@@ -1,0 +1,62 @@
+sync-to-github:
+  stage: build
+  script:
+    - echo "Synchronizing repo state to Github"
+    - export REPO_DIR="$(mktemp -d /tmp/platypush-XXXXX)"
+    - git clone git@git.platypush.tech:platypush/platypush.git "$REPO_DIR"
+    - cd "$REPO_DIR"
+    - git remote add github git@github.com:/BlackLight/platypush.git
+    - git checkout $CI_COMMIT_BRANCH
+    - git pull
+    - git push --mirror -v github
+
+run-tests:
+  stage: test
+  script:
+    - ./.gitlab/run_ci_tests.sh
+
+rebuild-docs:
+  stage: deploy
+  only:
+    - master
+  script:
+    - ./.gitlab/rebuild_docs.sh
+
+update-aur-packages:
+  stage: deploy
+  only:
+    - master
+  script:
+    - echo "Updating AUR packages"
+    - export REPO_DIR="$(mktemp -d /tmp/platypush-distutils-XXXXX)"
+    - git clone git@fabiomanganiello.com:/home/git/platypush-distutils.git "$REPO_DIR"
+    - cd "$REPO_DIR"
+    - git submodule init
+    - git submodule update
+    - cd distro/arch/git
+    - git checkout master
+    - git pull --rebase
+    - cd ../../../
+    - cd distro/arch/stable
+    - git checkout master
+    - git pull --rebase
+    - cd ../../../
+    - ./update.sh
+    - cd distro/arch/git
+    - changes="$(git status --porcelain --untracked-files=no)"
+    - "[[ -n \"$changes\" ]] && git commit -a -m '[Automatic] Package updated' && git push || echo 'No changes'"
+    - cd ../../../
+    - cd distro/arch/stable
+    - changes="$(git status --porcelain --untracked-files=no)"
+    - "[[ -n \"$changes\" ]] && git commit -a -m '[Automatic] Package updated' && git push || echo 'No changes'"
+
+upload-pip-package:
+  stage: deploy
+  only:
+    - tags
+  script:
+    - rm -rf build dist *.egg-info
+    - export VERSION=$(grep -e '^\s*__version__\s*=' platypush/__init__.py | sed -r -e 's/^\s*__version__\s*=\s*.(.+?).\s*$/\1/')
+    - source ~/.credentials/pypi.env
+    - python setup.py sdist bdist_wheel
+    - twine upload ./dist/platypush-${VERSION}.tar.gz
