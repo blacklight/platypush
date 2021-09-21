@@ -26,6 +26,7 @@ update-aur-packages:
   stage: deploy
   only:
     - master
+    - tags
   script:
     - echo "Updating AUR packages"
     - export REPO_DIR="$(mktemp -d /tmp/platypush-distutils-XXXXX)"
