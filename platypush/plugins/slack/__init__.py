@@ -19,8 +19,8 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
     You'll have to generate your own Slack app and tokens in order to use this plugin. Steps:
 
         - Create a new Slack app `here <https://api.slack.com/apps>` and associate a Slack workspace to it.
-        - In the configuration panel of your app scroll to Socket Mode and select Enable Socket Mode_.
-        - Scroll to Event Subscriptions and select Enable Events_.
+        - In the configuration panel of your app scroll to Socket Mode and select Enable Socket Mode.
+        - Scroll to Event Subscriptions and select Enable Events.
         - Choose the type of events that you want to subscribe to. You can select bot events (i.e. when somebody in
           the channel mentions the name of your app) or any of the workspace events (e.g. creation of messages, user
           events etc.).
@@ -32,7 +32,7 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
         - If you changed scopes and settings, you may have to reinstall the app in the workspace through the
           Install App menu.
         - Navigate to the Install App menu. If the app has been correctly installed in your workspace then you should
-          see a Bot User OAuth Token_, used to authenticate API calls performed as the app/bot. If you also granted
+          see a Bot User OAuth Token, used to authenticate API calls performed as the app/bot. If you also granted
           user permissions to the app then you should also see a User OAuth Token on the page.
 
     Triggers:
