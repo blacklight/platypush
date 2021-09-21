@@ -18,11 +18,11 @@ class MediaGstreamerPlugin(MediaPlugin):
 
     On Debian and derived systems:
 
-        * ``[sudo] apt-get install python3-gi python3-gst-1.0
+        * ``[sudo] apt-get install python3-gi python3-gst-1.0``
 
     On Arch and derived systems:
 
-        * ``[sudo] pacman -S gst-python
+        * ``[sudo] pacman -S gst-python``
 
     """
 

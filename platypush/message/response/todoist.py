@@ -199,13 +199,13 @@ class TodoistItemsResponse(TodoistResponse):
 
 class TodoistFilter(Mapping):
     def __init__(self,
-                 color: [int],
-                 id: [int],
-                 is_deleted: [bool],
-                 is_favorite: [bool],
-                 item_order: [int],
-                 name: [str],
-                 query: [str],
+                 color: int,
+                 id: int,
+                 is_deleted: bool,
+                 is_favorite: bool,
+                 item_order: int,
+                 name: str,
+                 query: str,
                  legacy_id: Optional[int] = None,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -230,12 +230,12 @@ class TodoistFiltersResponse(TodoistResponse):
 
 class TodoistLiveNotification(Mapping):
     def __init__(self,
-                 id: [int],
-                 is_deleted: [bool],
-                 created: [str],
-                 is_unread: [bool],
-                 notification_key: [str],
-                 notification_type: [str],
+                 id: int,
+                 is_deleted: bool,
+                 created: str,
+                 is_unread: bool,
+                 notification_key: str,
+                 notification_type: str,
                  completed_last_month: Optional[int] = None,
                  karma_level: Optional[int] = None,
                  promo_img: Optional[str] = None,
