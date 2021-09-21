@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [0.22.1] - 2021-09-22
+
+### Fixed
+
+- `zigbee.mqtt` backend now no longer requires the MQTT backend/plugin to be enabled.
+
+- Fixed bug on empty popcorn API responses.
+
+## Changed
+
+- Created CI Gitlab pipeline to replace the Platypush event-based pre-existing pipeline.
+
+## Removed
+
+- Removed docs references to removed/abstract integrations.
+
 ## [0.22.0] - 2021-09-16
 
 ### Changed
