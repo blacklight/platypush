@@ -58,7 +58,7 @@ class CameraPiBackend(Backend):
         self.bind_address = bind_address
         self.listen_port = listen_port
         self.server_socket = socket.socket()
-        self.server_socket.bind((self.bind_address, self.listen_port))
+        self.server_socket.bind((self.bind_address, self.listen_port))   # lgtm [py/bind-socket-all-network-interfaces]
         self.server_socket.listen(0)
 
         import picamera
