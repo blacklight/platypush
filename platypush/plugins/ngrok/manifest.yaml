@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+    - pyngrok
+  package: platypush.plugins.ngrok
+  type: plugin
