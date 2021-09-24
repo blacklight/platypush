@@ -250,5 +250,7 @@ setup(
         'filemonitor': ['watchdog'],
         # Support for Adafruit PCA9685 PWM controller
         'pca9685': ['adafruit-python-shell', 'adafruit-circuitpython-pca9685'],
+        # Support for ngrok integration
+        'ngrok': ['pyngrok'],
     },
 )

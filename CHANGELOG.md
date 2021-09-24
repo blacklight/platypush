@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [Unreleased]
+
+## Added
+
+- `ngrok` integration (see #196).
+
 ## [0.22.1] - 2021-09-22
 
 ### Fixed
