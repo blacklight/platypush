@@ -89,6 +89,7 @@ Plugins
     platypush/plugins/music.snapcast.rst
     platypush/plugins/music.spotify.rst
     platypush/plugins/nextcloud.rst
+    platypush/plugins/ngrok.rst
     platypush/plugins/nmap.rst
     platypush/plugins/otp.rst
     platypush/plugins/pihole.rst

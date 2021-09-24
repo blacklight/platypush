@@ -44,6 +44,7 @@ Events
     platypush/events/music.snapcast.rst
     platypush/events/nextcloud.rst
     platypush/events/nfc.rst
+    platypush/events/ngrok.rst
     platypush/events/ping.rst
     platypush/events/pushbullet.rst
     platypush/events/qrcode.rst
