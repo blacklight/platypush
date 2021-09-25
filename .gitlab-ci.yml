@@ -60,4 +60,7 @@ upload-pip-package:
     - export VERSION=$(grep -e '^\s*__version__\s*=' platypush/__init__.py | sed -r -e 's/^\s*__version__\s*=\s*.(.+?).\s*$/\1/')
     - source ~/.credentials/pypi.env
     - python setup.py sdist bdist_wheel
+    # Upload to PyPI
     - twine upload ./dist/platypush-${VERSION}.tar.gz
+    # Upload to the local package repository
+    - TWINE_PASSWORD=$LOCAL_TWINE_PASSWORD TWINE_USERNAME=$LOCAL_TWINE_USERNAME twine upload --repository-url https://git.platypush.tech/api/v4/projects/3/packages/pypi dist/platypush-${VERSION}.tar.gz
