@@ -9,7 +9,7 @@ class NgrokEvent(Event):
         super().__init__(*args, **kwargs)
 
 
-class NgrokProcessStartedEvent(Event):
+class NgrokProcessStartedEvent(NgrokEvent):
     """
     Event triggered when the ``ngrok`` process is started.
     """
@@ -17,7 +17,7 @@ class NgrokProcessStartedEvent(Event):
         super().__init__(*args, **kwargs)
 
 
-class NgrokTunnelStartedEvent(Event):
+class NgrokTunnelStartedEvent(NgrokEvent):
     """
     Event triggered when a tunnel is started.
     """
@@ -25,7 +25,7 @@ class NgrokTunnelStartedEvent(Event):
         super().__init__(*args, name=name, url=url, protocol=protocol, **kwargs)
 
 
-class NgrokTunnelStoppedEvent(Event):
+class NgrokTunnelStoppedEvent(NgrokEvent):
     """
     Event triggered when a tunnel is stopped.
     """
@@ -33,7 +33,7 @@ class NgrokTunnelStoppedEvent(Event):
         super().__init__(*args, name=name, url=url, protocol=protocol, **kwargs)
 
 
-class NgrokProcessStoppedEvent(Event):
+class NgrokProcessStoppedEvent(NgrokEvent):
     """
     Event triggered when the ngrok process is stopped.
     """
