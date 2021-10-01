@@ -43,6 +43,7 @@ Plugins
     platypush/plugins/google.pubsub.rst
     platypush/plugins/google.translate.rst
     platypush/plugins/google.youtube.rst
+    platypush/plugins/gotify.rst
     platypush/plugins/gpio.rst
     platypush/plugins/gpio.sensor.accelerometer.rst
     platypush/plugins/gpio.sensor.bme280.rst
