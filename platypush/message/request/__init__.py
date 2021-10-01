@@ -207,21 +207,29 @@ class Request(Message):
         def _thread_func(_n_tries, errors=None):
             response = None
 
-            if self.action.startswith('procedure.'):
-                context['n_tries'] = _n_tries
-                response = self._execute_procedure(**context)
-                if response is not None:
+            try:
+                if self.action.startswith('procedure.'):
+                    context['n_tries'] = _n_tries
+                    response = self._execute_procedure(**context)
+                    if response is not None:
+                        self._send_response(response)
+                    return response
+                # utils.get_context is a special action that simply returns the current context
+                elif self.action == 'utils.get_context':
+                    response = Response(output=context)
                     self._send_response(response)
-                return response
-            # utils.get_context is a special action that simply returns the current context
-            elif self.action == 'utils.get_context':
-                response = Response(output=context)
+                    return response
+                else:
+                    action = self.expand_value_from_context(self.action, **context)
+                    (module_name, method_name) = get_module_and_method_from_action(action)
+                    plugin = get_plugin(module_name)
+            except Exception as e:
+                logger.exception(e)
+                msg = 'Uncaught pre-processing exception from action [{}]: {}'.format(self.action, str(e))
+                logger.warning(msg)
+                response = Response(output=None, errors=[msg])
                 self._send_response(response)
                 return response
-            else:
-                action = self.expand_value_from_context(self.action, **context)
-                (module_name, method_name) = get_module_and_method_from_action(action)
-                plugin = get_plugin(module_name)
 
             try:
                 # Run the action
