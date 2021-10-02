@@ -75,7 +75,21 @@ class SwitchbotPlugin(SwitchPlugin):
 
         :return: .. schema:: switchbot.DeviceSchema(many=True)
         """
-        devices = DeviceSchema().dump(self._run('get', 'devices').get('deviceList', []), many=True)
+        devices = self._run('get', 'devices')
+        devices = [
+            DeviceSchema().dump({
+                **device,
+                'is_virtual': False,
+            })
+            for device in devices.get('deviceList', [])
+        ] + [
+            DeviceSchema().dump({
+                **device,
+                'is_virtual': True,
+            })
+            for device in devices.get('infraredRemoteList', [])
+        ]
+
         for device in devices:
             self._devices_by_id[device['id']] = device
             self._devices_by_name[device['name']] = device
@@ -127,6 +141,7 @@ class SwitchbotPlugin(SwitchPlugin):
                 **devices_by_id.get(response.get('id'), {}),
                 **response,
             })
+
         for worker in workers:
             worker.join()
 
@@ -209,30 +224,295 @@ class SwitchbotPlugin(SwitchPlugin):
         })
 
     @action
-    def set_fan(self, device: str, speed: Optional[int] = None, swing_range: Optional[int] = None,
-                mode: Optional[int] = None):
+    def set_fan_speed(self, device: str, speed: int):
         """
-        Set properties of a smart fan device.
+        Set the speed of a fan.
 
         :param device: Device name or ID.
         :param speed: Speed between 1 and 4.
-        :param swing_range: Swing range angle, between 0 and 120.
-        :param mode: Fan mode (1 or 2).
         """
         # noinspection PyUnresolvedReferences
         status = self.status(device=device).output
-
-        if speed is None:
-            speed = status.get('speed')
-        if mode is None:
-            mode = status.get('mode')
-        if swing_range is None:
-            swing_range = status.get('swing_range')
-
+        mode = status.get('mode')
+        swing_range = status.get('swing_range')
         return self._run('post', 'commands', device=device, json={
             'command': 'set',
             'commandType': 'command',
             'parameter': ','.join(['on', str(mode), str(speed), str(swing_range)]),
+        })
+
+    @action
+    def set_fan_mode(self, device: str, mode: int):
+        """
+        Set the mode of a fan.
+
+        :param device: Device name or ID.
+        :param mode: Fan mode (1 or 2).
+        """
+        # noinspection PyUnresolvedReferences
+        status = self.status(device=device).output
+        speed = status.get('speed')
+        swing_range = status.get('swing_range')
+        return self._run('post', 'commands', device=device, json={
+            'command': 'set',
+            'commandType': 'command',
+            'parameter': ','.join(['on', str(mode), str(speed), str(swing_range)]),
+        })
+
+    @action
+    def set_swing_range(self, device: str, swing_range: int):
+        """
+        Set the swing range of a fan.
+
+        :param device: Device name or ID.
+        :param swing_range: Swing range angle, between 0 and 120.
+        """
+        # noinspection PyUnresolvedReferences
+        status = self.status(device=device).output
+        speed = status.get('speed')
+        mode = status.get('mode')
+        return self._run('post', 'commands', device=device, json={
+            'command': 'set',
+            'commandType': 'command',
+            'parameter': ','.join(['on', str(mode), str(speed), str(swing_range)]),
+        })
+
+    @action
+    def set_temperature(self, device: str, temperature: float):
+        """
+        Set the temperature of an air conditioner.
+
+        :param device: Device name or ID.
+        :param temperature: Temperature, in Celsius.
+        """
+        # noinspection PyUnresolvedReferences
+        status = self.status(device=device).output
+        mode = status.get('mode')
+        fan_speed = status.get('fan_speed')
+        return self._run('post', 'commands', device=device, json={
+            'command': 'setAll',
+            'commandType': 'command',
+            'parameter': ','.join([str(temperature), str(mode), str(fan_speed), 'on']),
+        })
+
+    @action
+    def set_ac_mode(self, device: str, mode: int):
+        """
+        Set the mode of an air conditioner.
+
+        :param device: Device name or ID.
+        :param mode: Air conditioner mode. Supported values:
+
+            * 1: ``auto``
+            * 2: ``cool``
+            * 3: ``dry``
+            * 4: ``fan``
+            * 5: ``heat``
+
+        """
+        # noinspection PyUnresolvedReferences
+        status = self.status(device=device).output
+        temperature = status.get('temperature')
+        fan_speed = status.get('fan_speed')
+        return self._run('post', 'commands', device=device, json={
+            'command': 'setAll',
+            'commandType': 'command',
+            'parameter': ','.join([str(temperature), str(mode), str(fan_speed), 'on']),
+        })
+
+    @action
+    def set_ac_fan_speed(self, device: str, fan_speed: int):
+        """
+        Set the fan speed for an air conditioner.
+
+        :param device: Device name or ID.
+        :param fan_speed: Possible values:
+
+            * 1: ``auto``
+            * 2: ``low``
+            * 3: ``medium``
+            * 4: ``high``
+
+        """
+        # noinspection PyUnresolvedReferences
+        status = self.status(device=device).output
+        temperature = status.get('temperature')
+        mode = status.get('mode')
+        return self._run('post', 'commands', device=device, json={
+            'command': 'setAll',
+            'commandType': 'command',
+            'parameter': ','.join([str(temperature), str(mode), str(fan_speed), 'on']),
+        })
+
+    @action
+    def set_channel(self, device: str, channel: int):
+        """
+        Set the channel on a TV, IPTV/Streamer, Set Top Box device.
+
+        :param device: Device name or ID.
+        :param channel: Channel number.
+        """
+        device = self._get_device(device)
+        return self._run('post', 'commands', device=device, json={
+            'command': 'SetChannel',
+            'commandType': 'command',
+            'parameter': [str(channel)],
+        })
+
+    @action
+    def volup(self, device: str):
+        """
+        Send volume up IR event to a device (for TV, IPTV/Streamer, Set Top Box, DVD and Speaker).
+
+        :param device: Device name or ID.
+        """
+        device = self._get_device(device)
+        return self._run('post', 'commands', device=device, json={
+            'command': 'volumeAdd',
+            'commandType': 'command',
+        })
+
+    @action
+    def voldown(self, device: str):
+        """
+        Send volume down IR event to a device (for TV, IPTV/Streamer, Set Top Box, DVD and Speaker).
+
+        :param device: Device name or ID.
+        """
+        device = self._get_device(device)
+        return self._run('post', 'commands', device=device, json={
+            'command': 'volumeSub',
+            'commandType': 'command',
+        })
+
+    @action
+    def mute(self, device: str):
+        """
+        Send mute/unmute IR event to a device (for TV, IPTV/Streamer, Set Top Box, DVD and Speaker).
+
+        :param device: Device name or ID.
+        """
+        device = self._get_device(device)
+        return self._run('post', 'commands', device=device, json={
+            'command': 'setMute',
+            'commandType': 'command',
+        })
+
+    @action
+    def channel_next(self, device: str):
+        """
+        Send next channel IR event to a device (for TV, IPTV/Streamer, and Set Top Box).
+
+        :param device: Device name or ID.
+        """
+        device = self._get_device(device)
+        return self._run('post', 'commands', device=device, json={
+            'command': 'channelAdd',
+            'commandType': 'command',
+        })
+
+    @action
+    def channel_prev(self, device: str):
+        """
+        Send previous channel IR event to a device (for TV, IPTV/Streamer, and Set Top Box).
+
+        :param device: Device name or ID.
+        """
+        device = self._get_device(device)
+        return self._run('post', 'commands', device=device, json={
+            'command': 'channelSub',
+            'commandType': 'command',
+        })
+
+    @action
+    def play(self, device: str):
+        """
+        Send play IR event to a device (for DVD and Speaker).
+
+        :param device: Device name or ID.
+        """
+        device = self._get_device(device)
+        return self._run('post', 'commands', device=device, json={
+            'command': 'Play',
+            'commandType': 'command',
+        })
+
+    @action
+    def pause(self, device: str):
+        """
+        Send pause IR event to a device (for DVD and Speaker).
+
+        :param device: Device name or ID.
+        """
+        device = self._get_device(device)
+        return self._run('post', 'commands', device=device, json={
+            'command': 'Pause',
+            'commandType': 'command',
+        })
+
+    @action
+    def stop(self, device: str):
+        """
+        Send stop IR event to a device (for DVD and Speaker).
+
+        :param device: Device name or ID.
+        """
+        device = self._get_device(device)
+        return self._run('post', 'commands', device=device, json={
+            'command': 'Stop',
+            'commandType': 'command',
+        })
+
+    @action
+    def forward(self, device: str):
+        """
+        Send forward IR event to a device (for DVD and Speaker).
+
+        :param device: Device name or ID.
+        """
+        device = self._get_device(device)
+        return self._run('post', 'commands', device=device, json={
+            'command': 'FastForward',
+            'commandType': 'command',
+        })
+
+    @action
+    def back(self, device: str):
+        """
+        Send backward IR event to a device (for DVD and Speaker).
+
+        :param device: Device name or ID.
+        """
+        device = self._get_device(device)
+        return self._run('post', 'commands', device=device, json={
+            'command': 'Rewind',
+            'commandType': 'command',
+        })
+
+    @action
+    def next(self, device: str):
+        """
+        Send next IR event to a device (for DVD and Speaker).
+
+        :param device: Device name or ID.
+        """
+        device = self._get_device(device)
+        return self._run('post', 'commands', device=device, json={
+            'command': 'Next',
+            'commandType': 'command',
+        })
+
+    @action
+    def previous(self, device: str):
+        """
+        Send previous IR event to a device (for DVD and Speaker).
+
+        :param device: Device name or ID.
+        """
+        device = self._get_device(device)
+        return self._run('post', 'commands', device=device, json={
+            'command': 'Previous',
+            'commandType': 'command',
         })
 
     @action
