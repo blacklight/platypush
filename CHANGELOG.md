@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [Unreleased]
+
+## Added
+
+- Support for IR virtual devices in Switchbot plugin.
+
 ## [0.22.3] - 2021-10-01
 
 ## Added
