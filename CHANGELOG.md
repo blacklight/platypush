@@ -5,19 +5,19 @@ Given the high speed of development in the first phase, changes are being report
 
 ## [Unreleased]
 
-## Added
+### Added
 
 - Support for IR virtual devices in Switchbot plugin.
 
 ## [0.22.3] - 2021-10-01
 
-## Added
+### Added
 
 - `gotify` integration (see #198).
 
 ## [0.22.2] - 2021-09-25
 
-## Added
+### Added
 
 - `ngrok` integration (see #196).
 
@@ -29,11 +29,11 @@ Given the high speed of development in the first phase, changes are being report
 
 - Fixed bug on empty popcorn API responses.
 
-## Changed
+### Changed
 
 - Created CI Gitlab pipeline to replace the Platypush event-based pre-existing pipeline.
 
-## Removed
+### Removed
 
 - Removed docs references to removed/abstract integrations.
 
