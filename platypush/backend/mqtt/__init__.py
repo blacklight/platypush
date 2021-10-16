@@ -296,7 +296,7 @@ class MqttBackend(Backend):
                 self.logger.info('Processing response on the MQTT topic {}: {}'.
                                  format(response_topic, response))
 
-                self.send_message(response)
+                self.send_message(response, topic=response_topic)
 
             msg = msg.payload.decode('utf-8')
             # noinspection PyBroadException
