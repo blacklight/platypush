@@ -1,4 +1,5 @@
 import ast
+import datetime
 import hashlib
 import importlib
 import inspect
@@ -10,8 +11,9 @@ import signal
 import socket
 import ssl
 import urllib.request
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
+from dateutil import parser, tz
 from redis import Redis
 
 logger = logging.getLogger('utils')
@@ -450,5 +452,14 @@ def get_enabled_plugins() -> dict:
 def get_redis() -> Redis:
     from platypush.config import Config
     return Redis(**(Config.get('backend.redis') or {}).get('redis_args', {}))
+
+
+def to_datetime(t: Union[str, int, float, datetime.datetime]) -> datetime.datetime:
+    if isinstance(t, int) or isinstance(t, float):
+        return datetime.datetime.fromtimestamp(t, tz=tz.tzutc())
+    if isinstance(t, str):
+        return parser.parse(t)
+    return t
+
 
 # vim:sw=4:ts=4:et:
