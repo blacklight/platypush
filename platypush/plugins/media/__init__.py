@@ -76,6 +76,7 @@ class MediaPlugin(Plugin, ABC):
                  env: Optional[Dict[str, str]] = None,
                  volume: Optional[Union[float, int]] = None,
                  torrent_plugin: str = 'torrent',
+                 youtube_format: str = 'best',
                  *args, **kwargs):
         """
         :param media_dirs: Directories that will be scanned for media files when
@@ -95,6 +96,9 @@ class MediaPlugin(Plugin, ABC):
             - ``rtorrent`` - torrent support over rtorrent RPC/XML interface (recommended)
             - ``webtorrent`` - torrent support over webtorrent (unstable)
 
+        :param youtube_format: Select the preferred video/audio format for YouTube videos (default: ``best``).
+            See the `youtube-dl documentation <https://github.com/ytdl-org/youtube-dl#format-selection>`_ for
+            more info on supported formats.
         """
 
         super().__init__(**kwargs)
@@ -150,6 +154,7 @@ class MediaPlugin(Plugin, ABC):
         self._videos_queue = []
         self._youtube_proc = None
         self.torrent_plugin = torrent_plugin
+        self.youtube_format = youtube_format
 
     @staticmethod
     def _torrent_event_handler(evt_queue):
@@ -496,9 +501,8 @@ class MediaPlugin(Plugin, ABC):
         # noinspection PyProtectedMember
         return YoutubeMediaSearcher()._youtube_search_html_parse(query)
 
-    @staticmethod
-    def get_youtube_video_url(url):
-        youtube_dl = subprocess.Popen(['youtube-dl', '-f', 'best', '-g', url], stdout=subprocess.PIPE)
+    def get_youtube_video_url(self, url):
+        youtube_dl = subprocess.Popen(['youtube-dl', '-f', self.youtube_format, '-g', url], stdout=subprocess.PIPE)
         url = youtube_dl.communicate()[0].decode().strip()
         youtube_dl.wait()
         return url
@@ -521,11 +525,13 @@ class MediaPlugin(Plugin, ABC):
                 return m.group(1)
 
     @action
-    def get_youtube_url(self, url):
+    def get_youtube_url(self, url, youtube_format: Optional[str] = None):
         youtube_id = self.get_youtube_id(url)
         if youtube_id:
             url = 'https://www.youtube.com/watch?v={}'.format(youtube_id)
-            proc = subprocess.Popen(['youtube-dl', '-f', 'best', '-g', url], stdout=subprocess.PIPE)
+            proc = subprocess.Popen([
+                'youtube-dl', '-f', youtube_format or self.youtube_format, '-g', url], stdout=subprocess.PIPE
+            )
             raw_url = proc.stdout.read().decode("utf-8", "strict")[:-1]
             return raw_url if raw_url else url
 
