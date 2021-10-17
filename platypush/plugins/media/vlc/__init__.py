@@ -130,18 +130,17 @@ class MediaVlcPlugin(MediaPlugin):
                 self._post_event(MediaStopEvent)
                 for cbk in self._on_stop_callbacks:
                     cbk()
-            elif event.type == EventType.MediaPlayerTitleChanged:
-                self._filename = event.u.filename
-                self._title = event.u.new_title
-                self._post_event(NewPlayingMediaEvent, resource=event.u.new_title)
-            elif event.type == EventType.MediaPlayerMediaChanged:
-                self._filename = event.u.filename
-                self._title = event.u.new_title
-                self._post_event(NewPlayingMediaEvent, resource=event.u.filename)
+            elif (
+                    event.type == EventType.MediaPlayerTitleChanged or
+                    event.type == EventType.MediaPlayerMediaChanged
+            ):
+                self._title = self._player.get_title() or self._filename
+                if event.type == EventType.MediaPlayerMediaChanged:
+                    self._post_event(NewPlayingMediaEvent, resource=self._title)
             elif event.type == EventType.MediaPlayerLengthChanged:
                 self._post_event(NewPlayingMediaEvent, resource=self._get_current_resource())
             elif event.type == EventType.MediaPlayerTimeChanged:
-                pos = float(event.u.new_time/1000)
+                pos = float(self._player.get_time()/1000)
                 if self._latest_seek is None or \
                         abs(pos-self._latest_seek) > 5:
                     self._post_event(MediaSeekEvent, position=pos)
@@ -184,6 +183,7 @@ class MediaVlcPlugin(MediaPlugin):
         if resource.startswith('file://'):
             resource = resource[len('file://'):]
 
+        self._filename = resource
         self._init_vlc(resource)
         if subtitles:
             if subtitles.startswith('file://'):
