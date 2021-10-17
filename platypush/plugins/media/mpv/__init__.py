@@ -129,7 +129,7 @@ class MediaMpvPlugin(MediaPlugin):
         :type args: dict[str,str]
         """
 
-        get_bus().post(MediaPlayRequestEvent(resource=resource))
+        self._post_event(MediaPlayRequestEvent, resource=resource)
         self._init_mpv(args)
 
         resource = self._get_resource(resource)
