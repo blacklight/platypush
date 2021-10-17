@@ -12,6 +12,12 @@ Given the high speed of development in the first phase, changes are being report
   method (closes #115).
 - Support for custom YouTube video/audio formats on media plugins.
 
+### Fixed
+
+- Responses for requests received over an MQTT backend are now delivered to the right topic
+  (`<device_base_topic>/responses/<msg_id>`).
+- Various fixes on media plugins.
+
 ## [0.22.3] - 2021-10-01
 
 ### Added

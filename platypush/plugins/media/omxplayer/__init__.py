@@ -25,13 +25,14 @@ class MediaOmxplayerPlugin(MediaPlugin):
         * **omxplayer-wrapper** (``pip install omxplayer-wrapper``)
     """
 
-    def __init__(self, args=None, *argv, **kwargs):
+    def __init__(self, args=None, *argv, timeout: float = 20., **kwargs):
         """
         :param args: Arguments that will be passed to the OMXPlayer constructor
             (e.g. subtitles, volume, start position, window size etc.) see
             https://github.com/popcornmix/omxplayer#synopsis and
             https://python-omxplayer-wrapper.readthedocs.io/en/latest/omxplayer/#omxplayer.player.OMXPlayer
         :type args: list
+        :param timeout: How long the plugin should wait for a video to start upon play request (default: 20 seconds).
         """
 
         super().__init__(*argv, **kwargs)
@@ -40,6 +41,7 @@ class MediaOmxplayerPlugin(MediaPlugin):
             args = []
 
         self.args = args
+        self.timeout = timeout
         self._player = None
         self._handlers = {e.value: [] for e in PlayerEvent}
         self._play_started = threading.Event()
@@ -95,6 +97,8 @@ class MediaOmxplayerPlugin(MediaPlugin):
 
         self._post_event(MediaPlayEvent, resource=resource)
         self._init_player_handlers()
+        if not self._play_started.wait(timeout=self.timeout):
+            self.logger.warning(f'The player has not sent a play started event within {self.timeout}')
         return self.status()
 
     @action
@@ -308,6 +312,7 @@ class MediaOmxplayerPlugin(MediaPlugin):
         """
 
         from omxplayer.player import OMXPlayerDeadError
+        from dbus import DBusException
 
         if not self._player:
             return {
@@ -316,8 +321,11 @@ class MediaOmxplayerPlugin(MediaPlugin):
 
         try:
             state = self._player.playback_status().lower()
-        except OMXPlayerDeadError:
-            self._player = None
+        except (OMXPlayerDeadError, DBusException) as e:
+            self.logger.warning(f'Could not retrieve player status: {e}')
+            if isinstance(e, OMXPlayerDeadError):
+                self._player = None
+
             return {
                 'state': PlayerState.STOP.value
             }
