@@ -10,6 +10,7 @@ Given the high speed of development in the first phase, changes are being report
 - Support for IR virtual devices in Switchbot plugin.
 - Added [`google.maps.get_travel_time`](https://docs.platypush.tech/platypush/plugins/google.maps.html#platypush.plugins.google.maps.GoogleMapsPlugin.get_travel_time)
   method (closes #115).
+- Support for custom YouTube video/audio formats on media plugins.
 
 ## [0.22.3] - 2021-10-01
 
