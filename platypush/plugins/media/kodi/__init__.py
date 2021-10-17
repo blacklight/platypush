@@ -158,7 +158,7 @@ class MediaKodiPlugin(MediaPlugin):
         youtube_id = self.get_youtube_id(resource)
         if youtube_id:
             try:
-                resource = self.get_youtube_url('https://www.youtube.com/watch?v=' + youtube_id).output
+                resource = self.get_youtube_url(youtube_id).output
             except Exception as e:
                 self.logger.warning('youtube-dl error, falling back to Kodi YouTube plugin: {}'.format(str(e)))
                 resource = 'plugin://plugin.video.youtube/?action=play_video&videoid=' + youtube_id

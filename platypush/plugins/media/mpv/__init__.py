@@ -4,7 +4,7 @@ import threading
 from platypush.context import get_bus
 from platypush.plugins.media import PlayerState, MediaPlugin
 from platypush.message.event.media import MediaPlayEvent, MediaPlayRequestEvent, \
-    MediaPauseEvent, MediaStopEvent, NewPlayingMediaEvent, MediaSeekEvent
+    MediaPauseEvent, MediaStopEvent, NewPlayingMediaEvent, MediaSeekEvent, MediaResumeEvent
 
 from platypush.plugins import action
 
@@ -81,10 +81,11 @@ class MediaMpvPlugin(MediaPlugin):
                                  title=self._player.filename)
             elif evt == Event.PLAYBACK_RESTART:
                 self._playback_rebounce_event.set()
+                self._post_event(MediaPlayEvent, resource=self._get_current_resource(), title=self._player.filename)
             elif evt == Event.PAUSE:
                 self._post_event(MediaPauseEvent, resource=self._get_current_resource(), title=self._player.filename)
             elif evt == Event.UNPAUSE:
-                self._post_event(MediaPlayEvent, resource=self._get_current_resource(), title=self._player.filename)
+                self._post_event(MediaResumeEvent, resource=self._get_current_resource(), title=self._player.filename)
             elif evt == Event.SHUTDOWN or evt == Event.IDLE or (
                     evt == Event.END_FILE and event.get('event', {}).get('reason') in
                     [EndFile.EOF, EndFile.ABORTED, EndFile.QUIT]):

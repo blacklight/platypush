@@ -54,6 +54,15 @@ class MediaPauseEvent(MediaEvent):
         super().__init__(*args, player=player, plugin=plugin, **kwargs)
 
 
+class MediaResumeEvent(MediaEvent):
+    """
+    Event triggered when a media playback is resumed
+    """
+
+    def __init__(self, player=None, plugin=None, *args, **kwargs):
+        super().__init__(*args, player=player, plugin=plugin, **kwargs)
+
+
 class MediaSeekEvent(MediaEvent):
     """
     Event triggered when the time position in the media changes

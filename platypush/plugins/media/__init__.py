@@ -501,8 +501,10 @@ class MediaPlugin(Plugin, ABC):
         # noinspection PyProtectedMember
         return YoutubeMediaSearcher()._youtube_search_html_parse(query)
 
-    def get_youtube_video_url(self, url):
-        youtube_dl = subprocess.Popen(['youtube-dl', '-f', self.youtube_format, '-g', url], stdout=subprocess.PIPE)
+    def get_youtube_video_url(self, url, youtube_format: Optional[str] = None):
+        ytdl_cmd = ['youtube-dl', '-f', youtube_format or self.youtube_format, '-g', url]
+        self.logger.info(f'Executing command {" ".join(ytdl_cmd)}')
+        youtube_dl = subprocess.Popen(ytdl_cmd, stdout=subprocess.PIPE)
         url = youtube_dl.communicate()[0].decode().strip()
         youtube_dl.wait()
         return url
@@ -529,11 +531,7 @@ class MediaPlugin(Plugin, ABC):
         youtube_id = self.get_youtube_id(url)
         if youtube_id:
             url = 'https://www.youtube.com/watch?v={}'.format(youtube_id)
-            proc = subprocess.Popen([
-                'youtube-dl', '-f', youtube_format or self.youtube_format, '-g', url], stdout=subprocess.PIPE
-            )
-            raw_url = proc.stdout.read().decode("utf-8", "strict")[:-1]
-            return raw_url if raw_url else url
+            return self.get_youtube_video_url(url, youtube_format=youtube_format)
 
     @action
     def get_youtube_info(self, url):
