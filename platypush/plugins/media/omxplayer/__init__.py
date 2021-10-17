@@ -1,4 +1,5 @@
 import enum
+import threading
 import urllib.parse
 
 from platypush.context import get_bus
@@ -41,6 +42,7 @@ class MediaOmxplayerPlugin(MediaPlugin):
         self.args = args
         self._player = None
         self._handlers = {e.value: [] for e in PlayerEvent}
+        self._play_started = threading.Event()
 
     @action
     def play(self, resource=None, subtitles=None, *args, **kwargs):
@@ -63,6 +65,8 @@ class MediaOmxplayerPlugin(MediaPlugin):
                 self._player.play()
 
             return self.status()
+        else:
+            self._play_started.clear()
 
         self._post_event(MediaPlayRequestEvent, resource=resource)
 
@@ -89,12 +93,8 @@ class MediaOmxplayerPlugin(MediaPlugin):
                                 'be able to control the media')
             self.logger.exception(e)
 
-        if self.volume:
-            self.set_volume(self.volume)
-
         self._post_event(MediaPlayEvent, resource=resource)
         self._init_player_handlers()
-
         return self.status()
 
     @action
@@ -359,6 +359,10 @@ class MediaOmxplayerPlugin(MediaPlugin):
 
     def on_play(self):
         def _f(player):
+            if self.volume and not self._play_started.is_set():
+                self.set_volume(self.volume)
+            self._play_started.set()
+
             resource = player.get_source()
             self._post_event(MediaPlayEvent, resource=resource)
             for callback in self._handlers[PlayerEvent.PLAY.value]:
