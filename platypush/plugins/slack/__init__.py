@@ -53,8 +53,8 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
     def __init__(self, app_token: str, bot_token: str, user_token: Optional[str] = None, **kwargs):
         """
         :param app_token: Your Slack app token.
-        :param bot_token: Bot OAuth token reported on the _Install App_ menu.
-        :param user_token: User OAuth token reported on the _Install App_ menu.
+        :param bot_token: Bot OAuth token reported on the *Install App* menu.
+        :param user_token: User OAuth token reported on the *Install App* menu.
         """
         super().__init__(**kwargs)
         self._app_token = app_token

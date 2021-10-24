@@ -3,10 +3,12 @@ import json
 import os
 import re
 import sys
+from random import randint
 from typing import Union, List
 
 from docutils import nodes
 from docutils.parsers.rst import Directive
+from marshmallow import fields
 
 
 class SchemaDirective(Directive):
@@ -22,10 +24,29 @@ class SchemaDirective(Directive):
 
     sys.path.insert(0, _schemas_path)
 
-    @staticmethod
-    def _get_field_value(field) -> str:
+    @classmethod
+    def _get_field_value(cls, field):
         metadata = getattr(field, 'metadata', {})
-        return metadata.get('example', metadata.get('description', str(field.__class__.__name__).lower()))
+        if metadata.get('example'):
+            return metadata['example']
+        if metadata.get('description'):
+            return metadata['description']
+
+        if isinstance(field, fields.Number):
+            return randint(1, 99)
+        if isinstance(field, fields.Boolean):
+            return bool(randint(0, 1))
+        if isinstance(field, fields.URL):
+            return 'https://example.org'
+        if isinstance(field, fields.Nested):
+            ret = {
+                name: cls._get_field_value(f)
+                for name, f in field.nested().fields.items()
+            }
+
+            return [ret] if field.many else ret
+
+        return str(field.__class__.__name__).lower()
 
     def _parse_schema(self) -> Union[dict, List[dict]]:
         m = self._schema_regex.match('\n'.join(self.content))
