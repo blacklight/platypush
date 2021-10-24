@@ -402,7 +402,11 @@ class HttpBackend(Backend):
 
     def run(self):
         super().run()
-        self.register_service(port=self.port)
+        try:
+            self.register_service(port=self.port)
+        except Exception as e:
+            self.logger.warning('Could not register the Zeroconf service')
+            self.logger.exception(e)
 
         if not self.disable_websocket:
             self.logger.info('Initializing websocket interface')
