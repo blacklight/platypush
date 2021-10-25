@@ -38,6 +38,13 @@ class SchemaDirective(Directive):
             return bool(randint(0, 1))
         if isinstance(field, fields.URL):
             return 'https://example.org'
+        if isinstance(field, fields.List):
+            return [cls._get_field_value(field.inner)]
+        if isinstance(field, fields.Dict):
+            return {
+                cls._get_field_value(field.key_field) if field.key_field else 'key':
+                    cls._get_field_value(field.value_field) if field.value_field else 'value'
+            }
         if isinstance(field, fields.Nested):
             ret = {
                 name: cls._get_field_value(f)

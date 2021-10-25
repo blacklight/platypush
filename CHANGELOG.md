@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [Unreleased]
+
+### Fixed
+
+- Fixed `switchbot.status` method in case of virtual devices.
+
 ## [0.22.4] - 2021-10-19
 
 ### Added

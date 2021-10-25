@@ -1,6 +1,5 @@
 from marshmallow import fields
 from marshmallow.schema import Schema
-from marshmallow.validate import OneOf
 
 
 device_types = [
@@ -26,6 +25,7 @@ device_types = [
     'Speaker',
     'Water Heater',
     'Vacuum Cleaner',
+    'Remote',
     'Others',
 ]
 
@@ -51,12 +51,12 @@ class DeviceSchema(Schema):
     id = fields.String(attribute='deviceId', required=True, metadata=dict(description='Device unique ID'))
     name = fields.String(attribute='deviceName', metadata=dict(description='Device name'))
     device_type = fields.String(
-        attribute='deviceType', validate=OneOf(device_types),
-        metadata=dict(description=f'Supported types: [{", ".join(device_types)}]')
+        attribute='deviceType',
+        metadata=dict(description=f'Default types: [{", ".join(device_types)}]')
     )
     remote_type = fields.String(
-        attribute='remoteType', validate=OneOf(remote_types),
-        metadata=dict(description=f'Supported types: [{", ".join(remote_types)}]')
+        attribute='remoteType',
+        metadata=dict(description=f'Default types: [{", ".join(remote_types)}]')
     )
     hub_id = fields.String(attribute='hubDeviceId', metadata=dict(description='Parent hub device unique ID'))
     cloud_service_enabled = fields.Boolean(

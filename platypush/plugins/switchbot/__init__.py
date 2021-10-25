@@ -96,10 +96,15 @@ class SwitchbotPlugin(SwitchPlugin):
 
         return devices
 
-    def _worker(self, q: queue.Queue, method: str = 'get', *args, device=None, **kwargs):
+    def _worker(self, q: queue.Queue, method: str = 'get', *args, device: Optional[dict] = None, **kwargs):
+        schema = DeviceStatusSchema()
         try:
-            res = self._run(method, *args, device=device, **kwargs)
-            q.put(DeviceStatusSchema().dump(res))
+            if method == 'get' and args and args[0] == 'status' and device and device.get('is_virtual'):
+                res = schema.load(device)
+            else:
+                res = self._run(method, *args, device=device, **kwargs)
+
+            q.put(schema.dump(res))
         except Exception as e:
             self.logger.exception(e)
             q.put(e)
@@ -115,15 +120,21 @@ class SwitchbotPlugin(SwitchPlugin):
         # noinspection PyUnresolvedReferences
         devices = self.devices().output
         if device:
+            device_info = self._get_device(device)
+            status = {} if device_info['is_virtual'] else self._run('get', 'status', device=device_info)
             return {
-                **device,
-                **self._run('get', 'status', device=self._get_device(device)),
+                **device_info,
+                **status,
             }
 
         devices_by_id = {dev['id']: dev for dev in devices}
         queues = [queue.Queue()] * len(devices)
         workers = [
-            threading.Thread(target=self._worker, args=(queues[i], 'get', 'status'), kwargs={'device': dev})
+            threading.Thread(
+                target=self._worker,
+                args=(queues[i], 'get', 'status'),
+                kwargs={'device': dev}
+            )
             for i, dev in enumerate(devices)
         ]
 
