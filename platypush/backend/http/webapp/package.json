@@ -18,7 +18,7 @@
     "sass-loader": "^10.1.0",
     "vue": "^3.0.0",
     "vue-router": "^4.0.5",
-    "vue-skycons": "^4.0.3",
+    "vue-skycons": "^4.1.1",
     "w3css": "^2.7.0"
   },
   "devDependencies": {
