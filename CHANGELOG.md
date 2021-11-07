@@ -5,6 +5,10 @@ Given the high speed of development in the first phase, changes are being report
 
 ## [Unreleased]
 
+### Added
+
+- Added Mastodon integration.
+
 ### Fixed
 
 - Fixed `switchbot.status` method in case of virtual devices.

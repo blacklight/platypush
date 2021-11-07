@@ -1,7 +1,6 @@
 import datetime
 import json
 import logging
-from typing import Dict, Optional
 
 from flask import Blueprint, request, abort, jsonify
 
@@ -18,7 +17,7 @@ __routes__ = [
 
 
 @auth.route('/auth', methods=['POST'])
-def auth_endpoint() -> Dict[str, Optional[str]]:
+def auth_endpoint():
     """
     Authentication endpoint. It validates the user credentials provided over a JSON payload with the following
     structure:
