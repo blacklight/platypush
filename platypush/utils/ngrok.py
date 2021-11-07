@@ -17,7 +17,7 @@ def _get_http_port() -> int:
     return http.port
 
 
-def create_ngrok_tunnel() -> str:
+def get_or_create_ngrok_tunnel() -> str:
     """
     This method creates an ngrok tunnel for the local web application,
     useful to register public HTTPS callback URLs on the fly from plugins
