@@ -162,7 +162,7 @@ setup(
         # Support for Flic buttons
         'flic': ['flic @ https://github.com/50ButtonsEach/fliclib-linux-hci/tarball/master'],
         # Support for Alexa/Echo plugin
-        'alexa': ['avs @ https://github.com:BlackLight/avs/tarball/master'],
+        'alexa': ['avs @ https://github.com/BlackLight/avs/tarball/master'],
         # Support for bluetooth devices
         'bluetooth': ['pybluez', 'gattlib',
                       'pyobex @ https://github.com/BlackLight/PyOBEX/tarball/master'],
