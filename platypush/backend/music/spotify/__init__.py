@@ -122,15 +122,17 @@ class MusicSpotifyBackend(Backend, SpotifyMixin):
         self.device_name = device_name or Config.get('device_id')
         self._librespot_args = [
             librespot_path, '--name', self.device_name, '--backend', audio_backend,
-            '--device-type', device_type, '--mixer', mixer, '--mixer-name', mixer_name, '--initial-volume', str(volume),
-            '--volume-ctrl', volume_ctrl, '--bitrate', str(bitrate), '--emit-sink-events',
-            '--onevent', 'python -m platypush.backend.music.spotify.event',
+            '--device-type', device_type, '--mixer', mixer, '--alsa-mixer-control', mixer_name,
+            '--initial-volume', str(volume), '--volume-ctrl', volume_ctrl, '--bitrate', str(bitrate),
+            '--emit-sink-events', '--onevent', 'python -m platypush.backend.music.spotify.event',
         ]
 
         if audio_device:
-            self._librespot_args += ['--device', audio_device]
+            self._librespot_args += ['--alsa-mixer-device', audio_device]
         else:
-            self._librespot_args += ['--mixer-card', mixer_card, '--mixer-index', str(mixer_index)]
+            self._librespot_args += [
+                '--alsa-mixer-device', mixer_card, '--alsa-mixer-index', str(mixer_index)
+            ]
         if autoplay:
             self._librespot_args += ['--autoplay']
         if disable_gapless:
