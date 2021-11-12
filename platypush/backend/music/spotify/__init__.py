@@ -204,7 +204,8 @@ class MusicSpotifyBackend(Backend, SpotifyMixin):
 
                 while not self.should_stop():
                     try:
-                        self._librespot_proc.wait(timeout=1.0)
+                        if self._librespot_proc:
+                            self._librespot_proc.wait(timeout=1.0)
                     except subprocess.TimeoutExpired:
                         pass
             except Exception as e:
