@@ -281,6 +281,12 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'aiohttp',
                         'watchdog',
                         'pyngrok',
+                        'irc',
+                        'irc.bot',
+                        'irc.strings',
+                        'irc.client',
+                        'irc.connection',
+                        'irc.events',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))

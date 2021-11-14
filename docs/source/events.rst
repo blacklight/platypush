@@ -32,6 +32,7 @@ Events
     platypush/events/http.hook.rst
     platypush/events/http.rss.rst
     platypush/events/inotify.rst
+    platypush/events/irc.rst
     platypush/events/joystick.rst
     platypush/events/kafka.rst
     platypush/events/light.rst
