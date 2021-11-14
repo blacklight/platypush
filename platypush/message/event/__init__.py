@@ -39,7 +39,9 @@ class Event(Message):
         self.disable_web_clients_notification = disable_web_clients_notification
 
         for arg, value in self.args.items():
-            if arg != 'args':
+            if arg not in [
+                'id', 'args', 'origin', 'target', 'type', 'timestamp', 'disable_logging'
+            ] and not arg.startswith('_'):
                 self.__setattr__(arg, value)
 
     @classmethod

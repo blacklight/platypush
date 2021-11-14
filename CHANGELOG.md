@@ -7,10 +7,12 @@ Given the high speed of development in the first phase, changes are being report
 
 ### Added
 
-- Added Mastodon integration.
+- Added `mastodon` plugin.
+- Added `chat.irc` plugin.
 
 ### Fixed
 
+- Fixed `switchbot.status` method in case of virtual devices.
 - Fixed `switchbot.status` method in case of virtual devices.
 
 ## [0.22.4] - 2021-10-19

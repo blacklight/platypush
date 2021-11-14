@@ -252,5 +252,7 @@ setup(
         'pca9685': ['adafruit-python-shell', 'adafruit-circuitpython-pca9685'],
         # Support for ngrok integration
         'ngrok': ['pyngrok'],
+        # Support for IRC integration
+        'irc': ['irc'],
     },
 )
