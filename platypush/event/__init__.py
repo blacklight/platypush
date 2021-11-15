@@ -47,33 +47,11 @@ class EventGenerator(object):
             threading.Thread(target=hndl_thread, args=(hndl,)).start()
 
     def register_handler(self, event_type, callback):
-        """
-        Registers a callback handler for a camera event type.
-
-        :param event_type: Event type to listen to. Must be a subclass of
-            :class:`platypush.message.event.Event`
-        :type event_type: :class:`platypush.message.event.Event` or a subclass
-
-        :param callback: Callback function. It will take an event of type
-            :class:`platypush.message.event.Event` as a parameter
-        :type callback: function
-        """
-
         if event_type not in self._event_handlers:
             self._event_handlers[event_type] = set()
         self._event_handlers[event_type].add(callback)
 
     def unregister_handler(self, event_type, callback):
-        """
-        Unregisters a callback handler from a camera event type.
-
-        :param event_type: Event type the callback is registered to
-        :type event_type: :class:`platypush.message.event.Event` or a subclass
-
-        :param callback: Callback function to unregister
-        :type callback: function
-        """
-
         if event_type not in self._event_handlers:
             return
         if callback not in self._event_handlers[event_type]:
