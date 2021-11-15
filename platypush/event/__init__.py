@@ -18,8 +18,8 @@ class EventGenerator(object):
     def fire_event(self, event):
         """
         Fires an event (instance of :class:`platypush.message.event.Event` or a
-            subclass) to the internal bus and triggers any handler callback
-            associated to the event type or any of its super-classes.
+        subclass) to the internal bus and triggers any handler callback
+        associated to the event type or any of its super-classes.
 
         :param event: Event to fire
         :type event: :class:`platypush.message.event.Event` or a subclass
