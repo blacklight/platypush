@@ -195,6 +195,10 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
+autodoc_default_options = {
+    'inherited-members': True,
+}
+
 autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'google.assistant.embedded',
                         'google.assistant.library',

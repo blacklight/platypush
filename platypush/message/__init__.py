@@ -20,7 +20,9 @@ class JSONAble(ABC):
 
 
 class Message(object):
-    """ Message generic class """
+    """
+    Message generic class
+    """
 
     class Encoder(json.JSONEncoder):
         @staticmethod
