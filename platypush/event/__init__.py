@@ -16,14 +16,9 @@ class EventGenerator(object):
         self._event_handlers = {}  # Event type => callback map
 
     def fire_event(self, event):
-        """
-        Fires an event (instance of :class:`platypush.message.event.Event` or a
-        subclass) to the internal bus and triggers any handler callback
-        associated to the event type or any of its super-classes.
-
-        :param event: Event to fire
-        :type event: :class:`platypush.message.event.Event` or a subclass
-        """
+        # Fires an event (instance of :class:`platypush.message.event.Event` or a
+        # subclass) to the internal bus and triggers any handler callback
+        # associated to the event type or any of its super-classes.
 
         def hndl_thread(handler):
             handler(event)
