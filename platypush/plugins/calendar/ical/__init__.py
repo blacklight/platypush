@@ -79,14 +79,16 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
 
             event = self._translate_event(event)
 
-            if event['status'] and event['responseStatus'] \
-                    and dateutil.parser.parse(event['end']['dateTime']) >= \
-                    datetime.datetime.now(pytz.timezone('UTC')) \
+            if (
+                    event['status'] != 'cancelled'
+                    and event['end']['dateTime']
+                    and dateutil.parser.parse(event['end']['dateTime']).replace(tzinfo=pytz.timezone('UTC')) >=
+                    datetime.datetime.now(pytz.timezone('UTC'))
                     and (
                     (only_participating
-                     and event['status'] == 'confirmed'
-                     and event['responseStatus'] in ['accepted', 'tentative'])
-                    or not only_participating):
+                     and event.get('responseStatus') in [None, 'accepted', 'tentative'])
+                    or not only_participating)
+            ):
                 events.append(event)
 
         return events
