@@ -97,7 +97,10 @@ class PushbulletPlugin(Plugin):
 
         kwargs['body'] = body
         kwargs['title'] = title
-        kwargs['type'] = 'link' if url else 'note'
+        kwargs['type'] = 'note'
+        if url:
+            kwargs['type'] = 'link'
+            kwargs['url'] = url
 
         if device:
             # noinspection PyTypeChecker
