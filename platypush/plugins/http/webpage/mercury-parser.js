@@ -10,7 +10,7 @@ const fs = require('fs');
 const Mercury = require('@postlight/mercury-parser');
 
 if (process.argv.length < 3) {
-    console.error('Usage: ' + process.argv[1] + ' <url to parse> [markdown|html] [Pre-fetched HTML content file]');
+    console.error('Usage: ' + process.argv[1] + ' <url to parse> [markdown|html|text] [Pre-fetched HTML content file]');
     process.exit(1);
 }
 

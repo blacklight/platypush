@@ -18,7 +18,7 @@ class HttpWebpagePlugin(Plugin):
 
         * **weasyprint** (``pip install weasyprint``), optional, for HTML->PDF conversion
         * **node** and **npm** installed on your system (to use the mercury-parser interface)
-        * The mercury-parser library installed (``npm install @postlight/mercury-parser``)
+        * The mercury-parser library installed (``npm install -g @postlight/mercury-parser``)
 
     """
 
@@ -33,17 +33,17 @@ class HttpWebpagePlugin(Plugin):
     @action
     def simplify(self, url, type='html', html=None, outfile=None):
         """
-        Parse the content of a web page removing any extra elements using Mercury
+        Parse the readable content of a web page removing any extra HTML elements using Mercury.
 
         :param url: URL to parse.
-        :param type: Input type. Supported types: html, markdown, text (default: html).
+        :param type: Output format. Supported types: ``html``, ``markdown``, ``text`` (default: ``html``).
         :param html: Set this parameter if you want to parse some HTML content already fetched. Note
             that URL is still required by Mercury to properly style the output, but it won't be used
             to actually fetch the content.
 
-        :param outfile: If set then the output will be written to the specified file
-            (supported formats: pdf, html, plain (default)). The plugin will guess
-            the format from the extension
+        :param outfile: If set then the output will be written to the specified file. If the file extension
+            is ``.pdf`` then the content will be exported in PDF format. If the output ``type`` is not
+            specified then it can also be inferred from the extension of the output file.
         :return: dict
 
         Example if outfile is not specified::
@@ -67,6 +67,20 @@ class HttpWebpagePlugin(Plugin):
         """
 
         self.logger.info('Parsing URL {}'.format(url))
+        wants_pdf = False
+
+        if outfile:
+            wants_pdf = outfile.lower().endswith('.pdf')
+            if (
+                    wants_pdf   # HTML will be exported to PDF
+                    or outfile.lower().split('.')[-1].startswith('htm')
+            ):
+                type = 'html'
+            elif outfile.lower().endswith('.md'):
+                type = 'markdown'
+            elif outfile.lower().endswith('.txt'):
+                type = 'text'
+
         proc = ['node', self._mercury_script, url, type]
         f = None
 
@@ -102,9 +116,6 @@ class HttpWebpagePlugin(Plugin):
             }
 
         outfile = os.path.abspath(os.path.expanduser(outfile))
-        content = '''<h1>{title}</h1><div class="_parsed-content">{content}</div>'''.\
-            format(title=title, content=content)
-
         style = '''
             body {
                 font-size: 22px;
@@ -112,7 +123,27 @@ class HttpWebpagePlugin(Plugin):
             }
             '''
 
-        if outfile.lower().endswith('.pdf'):
+        if type == 'html':
+            content = (
+                '''
+                    <h1><a href="{url}" target="_blank">{title}</a></h1>
+                    <div class="_parsed-content">{content}</div>
+                '''.format(title=title, url=url, content=content)
+            )
+
+            if not wants_pdf:
+                content = '''<html>
+                        <head>
+                            <title>{title}</title>
+                            <style>{style}</style>
+                        </head>'''.format(title=title, style=style) + \
+                          '<body>{{' + content + '}}</body></html>'
+        elif type == 'markdown':
+            content = '# [{title}]({url})\n\n{content}'.format(
+                title=title, url=url, content=content
+            )
+
+        if wants_pdf:
             import weasyprint
             try:
                 from weasyprint.fonts import FontConfiguration
@@ -125,13 +156,6 @@ class HttpWebpagePlugin(Plugin):
 
             weasyprint.HTML(string=content).write_pdf(outfile, stylesheets=css)
         else:
-            content = '''<html>
-                    <head>
-                        <title>{title}</title>
-                        <style>{style}</style>
-                    </head>'''.format(title=title, style=style) + \
-                    '<body>{{' + content + '}}</body></html>'
-
             with open(outfile, 'w', encoding='utf-8') as f:
                 f.write(content)
 
