@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [0.22.6] - 2021-11-27
+
+### Added
+
+- Added support for converting webpages to markdown in `http.webpage.simplify`
+  even if no `outfile` is specified.
+
+### Fixed
+
+- Improved robustness of the ICal calendar parser in case some fields (e.g. `*status`)
+  are not defined.
+
 ## [0.22.5] - 2021-11-15
 
 ### Added
