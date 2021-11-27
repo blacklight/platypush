@@ -110,7 +110,7 @@ class HttpWebpagePlugin(Plugin):
             raise RuntimeError('Could not parse JSON: {}. Response: {}'.format(str(e), response))
 
         if type == 'markdown':
-            self._fix_relative_links(response['content'], url)
+            response['content'] = self._fix_relative_links(response['content'], url)
 
         self.logger.debug('Got response from Mercury API: {}'.format(response))
         title = response.get('title', '{} on {}'.format(
