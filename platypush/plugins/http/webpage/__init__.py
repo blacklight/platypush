@@ -35,7 +35,7 @@ class HttpWebpagePlugin(Plugin):
     def _fix_relative_links(markdown: str, url: str) -> str:
         url = urlparse(url)
         base_url = f'{url.scheme}://{url.netloc}'
-        return re.sub(r'(!?\[.+?])\((/.+?)\)', f'\1({base_url}\2)', markdown)
+        return re.sub(r'(\[.+?])\((/.+?)\)', fr'\1({base_url}\2)', markdown)
 
     # noinspection PyShadowingBuiltins
     @action
