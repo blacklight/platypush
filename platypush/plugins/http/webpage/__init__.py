@@ -1,8 +1,10 @@
 import datetime
 import json
 import os
+import re
 import subprocess
 import tempfile
+from urllib.parse import urlparse
 
 from platypush.plugins import action
 from platypush.plugins.http.request import Plugin
@@ -28,6 +30,12 @@ class HttpWebpagePlugin(Plugin):
     def _parse(proc):
         with subprocess.Popen(proc, stdout=subprocess.PIPE, stderr=None) as parser:
             return parser.communicate()[0].decode()
+
+    @staticmethod
+    def _fix_relative_links(markdown: str, url: str) -> str:
+        url = urlparse(url)
+        base_url = f'{url.scheme}://{url.netloc}'
+        return re.sub(r'(!?\[.+?])\((/.+?)\)', f'\1({base_url}\2)', markdown)
 
     # noinspection PyShadowingBuiltins
     @action
@@ -100,6 +108,9 @@ class HttpWebpagePlugin(Plugin):
             response = json.loads(response.strip())
         except Exception as e:
             raise RuntimeError('Could not parse JSON: {}. Response: {}'.format(str(e), response))
+
+        if type == 'markdown':
+            self._fix_relative_links(response['content'], url)
 
         self.logger.debug('Got response from Mercury API: {}'.format(response))
         title = response.get('title', '{} on {}'.format(
