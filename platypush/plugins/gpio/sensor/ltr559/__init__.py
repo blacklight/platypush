@@ -31,7 +31,8 @@ class GpioSensorLtr559Plugin(GpioSensorPlugin):
         """
 
         import ltr559
-        ltr559.set_proximity_active()
+        ltr = ltr559.LTR559()
+        ltr.update_sensor()
 
         return {
             'light': ltr559.get_lux(),
