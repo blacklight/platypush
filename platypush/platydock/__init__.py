@@ -139,6 +139,7 @@ RUN dpkg --configure -a \\
     && apt-get install --no-install-recommends -y git \\
     && apt-get install --no-install-recommends -y sudo \\
     && apt-get install --no-install-recommends -y libffi-dev \\
+    && apt-get install --no-install-recommends -y libcap-dev \\
     && apt-get install --no-install-recommends -y libjpeg-dev \\{pkg_cmd}{pip_cmd}'''
 
     for exec_cmd in exec_cmds:
@@ -154,6 +155,7 @@ RUN apt-get remove -y git \\
     && apt-get remove -y build-essential \\
     && apt-get remove -y libffi-dev \\
     && apt-get remove -y libjpeg-dev \\
+    && apt-get remove -y libcap-dev \\
     && apt-get remove -y zlib1g-dev \\
     && apt-get remove -y apt-utils \\
     && apt-get clean \\
