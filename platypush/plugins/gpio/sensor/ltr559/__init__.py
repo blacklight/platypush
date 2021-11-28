@@ -13,7 +13,9 @@ class GpioSensorLtr559Plugin(GpioSensorPlugin):
     """
 
     def __init__(self, **kwargs):
+        import ltr559
         super().__init__(**kwargs)
+        self.ltr = ltr559.LTR559()
 
     # noinspection PyUnresolvedReferences
     @action
@@ -29,14 +31,10 @@ class GpioSensorLtr559Plugin(GpioSensorPlugin):
              }
 
         """
-
-        import ltr559
-        ltr = ltr559.LTR559()
-        ltr.update_sensor()
-
+        self.ltr.update_sensor()
         return {
-            'light': ltr.get_lux(),
-            'proximity': ltr.get_proximity(),
+            'light': self.ltr.get_lux(),
+            'proximity': self.ltr.get_proximity(),
         }
 
 
