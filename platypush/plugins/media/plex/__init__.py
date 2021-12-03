@@ -349,6 +349,7 @@ class MediaPlexPlugin(Plugin):
         return self.client(client).pageUp()
 
     def _flatten_item(self, item):
+        from plexapi.audio import Track
         from plexapi.video import Movie, Show
 
         _item = {
@@ -383,6 +384,7 @@ class MediaPlexPlugin(Plugin):
                     'parts': [
                         {
                             'file': part.file,
+                            'size': part.size,
                             'duration': (part.duration or 0) / 1000,
                             'url': self.plex.url(part.key) + '?' + urllib.parse.urlencode({
                                 'X-Plex-Token': self.plex._token,
@@ -423,6 +425,7 @@ class MediaPlexPlugin(Plugin):
                                     'parts': [
                                         {
                                             'file': part.file,
+                                            'size': part.size,
                                             'duration': part.duration / 1000,
                                             'url': self.plex.url(part.key) + '?' + urllib.parse.urlencode({
                                                 'X-Plex-Token': self.plex._token,
@@ -434,6 +437,44 @@ class MediaPlexPlugin(Plugin):
                         } for episode in season.episodes()
                     ]
                 } for season in item.seasons()
+            ]
+
+        elif isinstance(item, Track):
+            _item.update({
+                'artist': item.grandparentTitle,
+                'album': item.parentTitle,
+                'title': item.title,
+                'name': item.title,
+                'duration': item.duration / 1000.,
+                'index': item.index,
+                'track_number': item.trackNumber,
+                'year': item.year,
+                'locations': [item.locations],
+            })
+
+            _item['media'] = [
+                {
+                    'title': media.title,
+                    'duration': media.duration / 1000.,
+                    'bitrate': media.bitrate,
+                    'width': media.width,
+                    'height': media.height,
+                    'audio_channels': media.audioChannels,
+                    'audio_codec': media.audioCodec,
+                    'video_codec': media.videoCodec,
+                    'video_resolution': media.videoResolution,
+                    'video_frame_rate': media.videoFrameRate,
+                    'parts': [
+                        {
+                            'file': part.file,
+                            'duration': part.duration / 1000,
+                            'size': part.size,
+                            'url': self.plex.url(part.key) + '?' + urllib.parse.urlencode({
+                                'X-Plex-Token': self.plex._token,
+                            }),
+                        } for part in media.parts
+                    ]
+                } for media in item.media
             ]
 
         return _item
