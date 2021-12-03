@@ -141,7 +141,11 @@ class TorrentPlugin(Plugin):
     def _torrent_search_worker(self, imdb_id: str, category: str, q: queue.Queue):
         base_url = self.torrent_base_urls.get(category)
         assert base_url, f'No such category: {category}'
-        q.put(requests.get(base_url.format(imdb_id)).json())
+        try:
+            results = requests.get(base_url.format(imdb_id)).json()
+            q.put(results)
+        except Exception as e:
+            q.put(e)
 
     def _search_torrents(self, query, category):
         imdb_results = self._imdb_query(query, category)
@@ -156,12 +160,21 @@ class TorrentPlugin(Plugin):
         ]
 
         results = []
+        errors = []
+
         for worker in workers:
             worker.start()
         for q in result_queues:
-            results.append(q.get())
+            res_ = q.get()
+            if isinstance(res_, Exception):
+                errors.append(res_)
+            else:
+                results.append(res_)
         for worker in workers:
             worker.join()
+
+        if errors:
+            self.logger.warning(f'Torrent search errors: {[str(e) for e in errors]}')
 
         return results
 

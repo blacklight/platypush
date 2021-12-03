@@ -362,11 +362,18 @@ class MediaPlugin(Plugin, ABC):
 
         for media_type in types:
             try:
-                results[media_type].extend(
-                    results_queues[media_type].get(timeout=search_timeout))
+                items = results_queues[media_type].get(timeout=search_timeout)
+                if isinstance(items, Exception):
+                    raise items
+
+                results[media_type].extend(items)
             except queue.Empty:
                 self.logger.warning('Search for "{}" media type {} timed out'.
                                     format(query, media_type))
+            except Exception as e:
+                self.logger.warning('Error while searching for "{}", media type {}'.
+                                    format(query, media_type))
+                self.logger.exception(e)
 
         flattened_results = []
 
@@ -391,7 +398,10 @@ class MediaPlugin(Plugin, ABC):
     @staticmethod
     def _search_worker(query, search_hndl, results_queue):
         def thread():
-            results_queue.put(search_hndl.search(query))
+            try:
+                results_queue.put(search_hndl.search(query))
+            except Exception as e:
+                results_queue.put(e)
         return thread
 
     def _get_search_handler_by_type(self, search_type):
