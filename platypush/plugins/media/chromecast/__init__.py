@@ -132,6 +132,12 @@ class MediaChromecastPlugin(MediaPlugin):
             return chromecasts[0]
         return chromecasts
 
+    @staticmethod
+    def _get_device_property(cc, prop: str):
+        if hasattr(cc, 'device'):    # Previous pychromecast API
+            return getattr(cc.device, prop)
+        return getattr(cc.cast_info, prop)
+
     @action
     def get_chromecasts(self, tries=2, retry_wait=10, timeout=60,
                         blocking=True, callback=None):
@@ -156,9 +162,8 @@ class MediaChromecastPlugin(MediaPlugin):
             will be invoked when a new device is discovered
         :type callback: func
         """
-
         self.chromecasts.update({
-            cast.device.friendly_name: cast
+            self._get_device_property(cast, 'friendly_name'): cast
             for cast in self._get_chromecasts(tries=tries, retry_wait=retry_wait,
                                               timeout=timeout, blocking=blocking,
                                               callback=callback)
@@ -170,9 +175,9 @@ class MediaChromecastPlugin(MediaPlugin):
         return [{
             'type': cc.cast_type,
             'name': cc.name,
-            'manufacturer': cc.device.manufacturer,
+            'manufacturer': self._get_device_property(cc, 'manufacturer'),
             'model_name': cc.model_name,
-            'uuid': str(cc.device.uuid),
+            'uuid': str(cc.uuid),
             'address': cc.host if hasattr(cc, 'host') else cc.uri.split(':')[0],
             'port': cc.port if hasattr(cc, 'port') else int(cc.uri.split(':')[1]),
 
@@ -213,7 +218,7 @@ class MediaChromecastPlugin(MediaPlugin):
             while n_tries > 0:
                 n_tries -= 1
                 casts.update({
-                    cast.device.friendly_name: cast
+                    self._get_device_property(cast, 'friendly_name'): cast
                     for cast in self._get_chromecasts()
                 })
 
