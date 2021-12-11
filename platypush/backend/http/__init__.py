@@ -155,19 +155,20 @@ class HttpBackend(Backend):
         * **bcrypt** (``pip install bcrypt``)
         * **magic** (``pip install python-magic``), optional, for MIME type
             support if you want to enable media streaming
-        * **uwsgi** (``pip install uwsgi`` plus uwsgi server installed on your
-            system if required) - optional but recommended. By default the
-            Platypush web server will run in a process spawned on the fly by
-            the HTTP backend. However, being a Flask app, it will serve clients
-            in a single thread and won't support many features of a full-blown
-            web server.
+        * **gunicorn** (``pip install gunicorn``) - optional but recommended.
 
-    Base command to run the web server over uwsgi::
+    By default the Platypush web server will run in a
+    process spawned on the fly by the HTTP backend. However, being a
+    Flask app, it will serve clients in a single thread and it won't
+    support many features of a full-blown web server. gunicorn allows
+    you to easily spawn the web server in a uWSGI wrapper, separate
+    from the main Platypush daemon, and the uWSGI layer can be easily
+    exposed over an nginx/lighttpd web server.
 
-        uwsgi --http :8008 --module platypush.backend.http.uwsgi --master --processes 4 --threads 4
+    Command to run the web server over a gunicorn uWSGI wrapper::
 
-    Bear in mind that the main webapp is defined in ``platypush.backend.http.app:application``
-    and the WSGI startup script is stored under ``platypush/backend/http/uwsgi.py``.
+        gunicorn -w <n_workers> -b <bind_address>:8008 platypush.backend.http.uwsgi
+
     """
 
     _DEFAULT_HTTP_PORT = 8008

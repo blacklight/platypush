@@ -78,9 +78,7 @@ setup(
         # Support for Pushbullet backend and plugin
         'pushbullet': ['pushbullet.py @ https://github.com/rbrcsk/pushbullet.py/tarball/master'],
         # Support for HTTP backend
-        'http': ['flask', 'bcrypt', 'python-magic'],
-        # Support for uWSGI HTTP backend
-        'uwsgi': ['flask', 'uwsgi', 'bcrypt', 'python-magic'],
+        'http': ['flask', 'bcrypt', 'python-magic', 'gunicorn'],
         # Support for MQTT backends
         'mqtt': ['paho-mqtt'],
         # Support for RSS feeds parser
