@@ -267,6 +267,7 @@ class MqttBackend(Backend):
                     tls_certfile: Optional[str] = None, tls_keyfile: Optional[str] = None, tls_version: Optional = None,
                     tls_ciphers: Optional = None, tls_insecure: bool = False, on_message: Optional[Callable] = None) \
             -> MqttClient:
+        on_message = on_message or self.on_mqtt_message()
         client_id = self._get_client_id(host=host, port=port, topics=topics, client_id=client_id, on_message=on_message)
         client = self._listeners.get(client_id)
 
