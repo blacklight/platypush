@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [0.22.7] - 2021-12-13
+
+### Added
+
+- Added support for audio tracks in Plex integration.
+
+### Changed
+
+- Web server uWSGI wrapper changed from `uwsgi` to `gunicorn`.
+
+### Fixed
+
+- Fixed client ID assignment logic in MQTT backends to prevent client ID clashes and reconnections
+  (closes #205).
+- Updated LTR559 integration to be compatible with the new API.
+- Updated Chromecast integration to be compatible with `pychromecast >= 10`.
+- Better handling of media errors.
+
 ## [0.22.6] - 2021-11-27
 
 ### Added
