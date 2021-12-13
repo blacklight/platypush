@@ -23,7 +23,7 @@ from .message.response import Response
 from .utils import set_thread_name, get_enabled_plugins
 
 __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
-__version__ = '0.22.6'
+__version__ = '0.22.7'
 
 logger = logging.getLogger('platypush')
 
