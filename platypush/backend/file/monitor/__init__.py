@@ -33,10 +33,10 @@ class FileMonitorBackend(Backend):
             if isinstance(resource, str):
                 resource = MonitoredResource(resource)
             elif isinstance(resource, dict):
-                if 'patterns' in resource or 'ignore_patterns' in resource:
-                    resource = MonitoredPattern(**resource)
-                elif 'regexes' in resource or 'ignore_regexes' in resource:
+                if 'regexes' in resource or 'ignore_regexes' in resource:
                     resource = MonitoredRegex(**resource)
+                elif 'patterns' in resource or 'ignore_patterns' in resource or 'ignore_directories' in resource:
+                    resource = MonitoredPattern(**resource)
                 else:
                     resource = MonitoredResource(**resource)
 
