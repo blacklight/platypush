@@ -1,0 +1,8 @@
+manifest:
+  events:
+    platypush.message.event.rss.NewFeedEntryEvent: when a new entry is received on a subscribed feed.
+  install:
+    pip:
+      - feedparser
+  package: platypush.plugins.rss
+  type: plugin

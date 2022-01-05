@@ -7,6 +7,9 @@ from platypush.backend.http.request import HttpRequest
 
 class HttpPollBackend(Backend):
     """
+    WARNING: This integration is deprecated, since it was practically only used for RSS subscriptions.
+    RSS feeds integration has been replaced by :class:`platypush.plugins.rss.RSSPlugin`.
+
     This backend will poll multiple HTTP endpoints/services and return events
     the bus whenever something new happened. Supported types:
     :class:`platypush.backend.http.request.JsonHttpRequest` (for polling updates on

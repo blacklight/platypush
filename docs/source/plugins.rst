@@ -103,6 +103,7 @@ Plugins
     platypush/plugins/pwm.pca9685.rst
     platypush/plugins/qrcode.rst
     platypush/plugins/redis.rst
+    platypush/plugins/rss.rst
     platypush/plugins/rtorrent.rst
     platypush/plugins/serial.rst
     platypush/plugins/shell.rst

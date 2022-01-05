@@ -105,7 +105,6 @@ class DbPlugin(Plugin):
 
         return table, engine
 
-
     @action
     def select(self, query=None, table=None, filter=None, engine=None, *args, **kwargs):
         """
@@ -179,10 +178,9 @@ class DbPlugin(Plugin):
 
         with engine.connect() as connection:
             result = connection.execute(query)
-
             columns = result.keys()
             rows = [
-                { columns[i]: row[i] for i in range(0, len(columns)) }
+                {col: row[i] for i, col in enumerate(list(columns))}
                 for row in result.fetchall()
             ]
 

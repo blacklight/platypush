@@ -50,6 +50,7 @@ Events
     platypush/events/ping.rst
     platypush/events/pushbullet.rst
     platypush/events/qrcode.rst
+    platypush/events/rss.rst
     platypush/events/scard.rst
     platypush/events/sensor.rst
     platypush/events/sensor.ir.rst

@@ -1,7 +1,7 @@
 <template>
   <div class="rss-news">
     <div class="article" v-if="currentArticle">
-      <div class="source" v-text="currentArticle.source"></div>
+      <div class="source" v-text="currentArticle.feed_title || currentArticle.feed_url"></div>
       <div class="title" v-text="currentArticle.title"></div>
       <div class="published" v-text="new Date(currentArticle.published).toDateString() + ', ' + new Date(currentArticle.published).toTimeString().substring(0,5)"></div>
     </div>
@@ -12,21 +12,13 @@
 import Utils from "@/Utils";
 
 /**
- * In order to use this widget you need to configure the `backend.http.poll` backend to
- * poll a list of RSS sources.
+ * In order to use this widget you need to configure the `rss` plugin
+ * with a list of subscriptions.
  */
 export default {
   name: "RssNews",
   mixins: [Utils],
   props: {
-    // Database engine string pointing to the source of the RSS feeds.
-    // If not otherwise configured, you should set this to
-    // `sqlite:///<HOME>/.local/share/platypush/feeds/rss.db`.
-    db: {
-      type: String,
-      required: true,
-    },
-
     // Maximum number of items to be shown in a cycle.
     limit: {
       type: Number,
@@ -53,16 +45,11 @@ export default {
   methods: {
     refresh: async function() {
       if (!this.queue.length) {
-        this.articles = await this.request('db.select', {
-          engine: this.db,
-          query: `
-            select s.title as source, e.title, e.summary,
-                   strftime('%Y-%m-%dT%H:%M:%fZ', e.published) as published
-            from FeedEntry e join FeedSource s
-              on e.source_id = s.id order by e.published desc limit ${this.limit}`,
+        this.articles = await this.request('rss.get_latest_entries', {
+          limit: this.limit
         })
 
-        this.queue = [...this.articles]
+        this.queue = [...this.articles].reverse()
       }
 
       if (!this.queue.length)
