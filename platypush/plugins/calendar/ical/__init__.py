@@ -39,7 +39,7 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
         return (
             dateutil.parser.isoparse(t.dt.isoformat())
             .replace(tzinfo=pytz.timezone('UTC'))
-        )
+        ).isoformat()
 
     @classmethod
     def _translate_event(cls, event):
