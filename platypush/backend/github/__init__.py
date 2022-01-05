@@ -4,7 +4,6 @@ import threading
 
 from typing import Optional, List
 
-import pytz
 import requests
 from sqlalchemy import create_engine, Column, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
@@ -129,7 +128,7 @@ class GithubBackend(Backend):
     def _get_last_event_time(self, uri: str):
         with self.db_lock:
             record = self._get_or_create_resource(uri=uri, session=Session())
-            return record.last_updated_at.replace(tzinfo=pytz.UTC) if record.last_updated_at else None
+            return record.last_updated_at.replace(tzinfo=datetime.timezone.utc) if record.last_updated_at else None
 
     def _update_last_event_time(self, uri: str, last_updated_at: datetime.datetime):
         with self.db_lock:

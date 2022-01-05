@@ -3,9 +3,8 @@
 """
 
 import datetime
-import dateutil.parser
 import requests
-from typing import Union, Optional
+from typing import Optional
 
 from platypush.plugins import Plugin, action
 from platypush.plugins.calendar import CalendarInterface
@@ -30,16 +29,22 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
         self.url = url
 
     @staticmethod
-    def _convert_timestamp(event, attribute: str) -> datetime.datetime:
-        import pytz
+    def _convert_timestamp(event, attribute: str) -> Optional[str]:
         t = event.get(attribute)
         if not t:
             return
 
+        if type(t.dt) == datetime.date:
+            return (
+                datetime.datetime(
+                    t.dt.year, t.dt.month, t.dt.day, tzinfo=datetime.timezone.utc
+                ).isoformat()
+            )
+
         return (
-            dateutil.parser.isoparse(t.dt.isoformat())
-            .replace(tzinfo=pytz.timezone('UTC'))
-        ).isoformat()
+                datetime.datetime.utcfromtimestamp(t.dt.timestamp())
+                .replace(tzinfo=datetime.timezone.utc).isoformat()
+        )
 
     @classmethod
     def _translate_event(cls, event):
@@ -77,7 +82,6 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
         :func:`~platypush.plugins.calendar.CalendarPlugin.get_upcoming_events`.
         """
 
-        import pytz
         from icalendar import Calendar
 
         events = []
@@ -95,7 +99,7 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
             if (
                     event['status'] != 'cancelled'
                     and event['end'].get('dateTime')
-                    and event['end']['dateTime'] >= datetime.datetime.now(pytz.timezone('UTC')).isoformat()
+                    and event['end']['dateTime'] >= datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
                     and (
                     (only_participating
                      and event.get('responseStatus') in [None, 'accepted', 'tentative'])
