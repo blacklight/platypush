@@ -53,14 +53,18 @@ class RssPlugin(RunnablePlugin):
     def _get_feed_latest_timestamp_varname(url: str) -> str:
         return f'LATEST_FEED_TIMESTAMP[{url}]'
 
+    @classmethod
+    def _get_feed_latest_timestamp(cls, url: str) -> Optional[datetime.datetime]:
+        t = get_plugin('variable').get(
+            cls._get_feed_latest_timestamp_varname(url)
+        ).output.get(cls._get_feed_latest_timestamp_varname(url))
+
+        if t:
+            return dateutil.parser.isoparse(t)
+
     def _get_latest_timestamps(self) -> dict:
-        variable = get_plugin('variable')
         return {
-            url: dateutil.parser.isoparse(
-                variable.get(
-                    self._get_feed_latest_timestamp_varname(url)
-                ).output.get(self._get_feed_latest_timestamp_varname(url))
-            )
+            url: self._get_feed_latest_timestamp(url)
             for url in self.subscriptions
         }
 
