@@ -95,7 +95,7 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
             if (
                     event['status'] != 'cancelled'
                     and event['end'].get('dateTime')
-                    and event['end']['dateTime'] >= datetime.datetime.now(pytz.timezone('UTC'))
+                    and event['end']['dateTime'] >= datetime.datetime.now(pytz.timezone('UTC')).isoformat()
                     and (
                     (only_participating
                      and event.get('responseStatus') in [None, 'accepted', 'tentative'])
