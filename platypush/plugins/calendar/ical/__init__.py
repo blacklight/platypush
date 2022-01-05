@@ -5,6 +5,7 @@
 import datetime
 import dateutil.parser
 import requests
+from typing import Union, Optional
 
 from platypush.plugins import Plugin, action
 from platypush.plugins.calendar import CalendarInterface
@@ -29,7 +30,19 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
         self.url = url
 
     @staticmethod
-    def _translate_event(event):
+    def _convert_timestamp(event, attribute: str) -> datetime.datetime:
+        import pytz
+        t = event.get(attribute)
+        if not t:
+            return
+
+        return (
+            dateutil.parser.isoparse(t.dt.isoformat())
+            .replace(tzinfo=pytz.timezone('UTC'))
+        )
+
+    @classmethod
+    def _translate_event(cls, event):
         return {
             'id': str(event.get('uid')) if event.get('uid') else None,
             'kind': 'calendar#event',
@@ -44,15 +57,15 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
                 'displayName': event.get('organizer').params['cn']
             } if event.get('organizer') else None,
 
-            'created': event.get('created').dt.isoformat() if event.get('created') else None,
-            'updated': event.get('last-modified').dt.isoformat() if event.get('last-modified') else None,
+            'created': cls._convert_timestamp(event, 'created'),
+            'updated': cls._convert_timestamp(event, 'last-modified'),
             'start': {
-                'dateTime': event.get('dtstart').dt.isoformat() if event.get('dtstart') else None,
-                'timeZone': 'UTC',  # TODO Support multiple timezone IDs
+                'dateTime': cls._convert_timestamp(event, 'dtstart'),
+                'timeZone': 'UTC',
             },
 
             'end': {
-                'dateTime': event.get('dtend').dt.isoformat() if event.get('dtend') else None,
+                'dateTime': cls._convert_timestamp(event, 'dtend'),
                 'timeZone': 'UTC',
             },
         }
@@ -81,9 +94,8 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
 
             if (
                     event['status'] != 'cancelled'
-                    and event['end']['dateTime']
-                    and dateutil.parser.parse(event['end']['dateTime']).replace(tzinfo=pytz.timezone('UTC')) >=
-                    datetime.datetime.now(pytz.timezone('UTC'))
+                    and event['end'].get('dateTime')
+                    and event['end']['dateTime'] >= datetime.datetime.now(pytz.timezone('UTC'))
                     and (
                     (only_participating
                      and event.get('responseStatus') in [None, 'accepted', 'tentative'])
