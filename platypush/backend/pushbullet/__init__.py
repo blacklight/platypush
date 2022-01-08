@@ -135,6 +135,20 @@ class PushbulletBackend(Backend):
 
         return callback
 
+    def on_error(self, *_):
+        def callback(*args):
+            self.logger.error(f'Pushbullet error: {args}')
+            try:
+                if self.listener:
+                    self.listener.close()
+            except Exception as e:
+                self.logger.error('Error on Pushbullet connection close upon error')
+                self.logger.exception(e)
+            finally:
+                self.listener = None
+
+        return callback
+
     def on_open(self):
         def callback(*_):
             self.logger.info('Pushbullet service connected')
@@ -149,7 +163,7 @@ class PushbulletBackend(Backend):
                                  on_push=self.on_push(),
                                  on_open=self.on_open(),
                                  on_close=self.on_close(),
-                                 on_error=self.on_close(),
+                                 on_error=self.on_error(),
                                  http_proxy_host=self.proxy_host,
                                  http_proxy_port=self.proxy_port)
 
