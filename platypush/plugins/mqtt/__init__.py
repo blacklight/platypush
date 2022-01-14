@@ -21,7 +21,7 @@ class MqttPlugin(Plugin):
 
     """
 
-    def __init__(self, host=None, port=1883, ssl=False, tls_cafile=None,
+    def __init__(self, host=None, port=1883, tls_cafile=None,
                  tls_certfile=None, tls_keyfile=None,
                  tls_version=None, tls_ciphers=None, tls_insecure=False,
                  username=None, password=None, client_id=None, timeout=None, **kwargs):
@@ -31,9 +31,6 @@ class MqttPlugin(Plugin):
 
         :param port: If a default host is set, specify the listen port (default: 1883)
         :type port: int
-
-        :param ssl: Set to true if the connection uses TLS/SSL (default: False).
-            This flag is automatically set if any other tls_* parameters are passed.
 
         :param tls_cafile: If a default host is set and requires TLS/SSL, specify the certificate authority file (default: None)
         :type tls_cafile: str
@@ -74,7 +71,6 @@ class MqttPlugin(Plugin):
         self.port = port
         self.username = username
         self.password = password
-        self.timeout = timeout
         self.client_id = client_id or Config.get('device_id')
         self.tls_cafile = self._expandpath(tls_cafile) if tls_cafile else None
         self.tls_certfile = self._expandpath(tls_certfile) if tls_certfile else None
@@ -82,10 +78,7 @@ class MqttPlugin(Plugin):
         self.tls_version = self.get_tls_version(tls_version)
         self.tls_insecure = tls_insecure
         self.tls_ciphers = tls_ciphers
-        self.ssl = bool(
-            ssl or tls_cafile or tls_certfile or
-            tls_keyfile or tls_insecure or tls_ciphers
-        )
+        self.timeout = timeout
 
     @staticmethod
     def get_tls_version(version: Optional[str] = None):
@@ -108,14 +101,13 @@ class MqttPlugin(Plugin):
         if version == 'tlsv1.2':
             return ssl.PROTOCOL_TLSv1_2
 
-        assert f'Unrecognized TLS version: {version}'
+        assert 'Unrecognized TLS version: {}'.format(version)
 
     def _mqtt_args(self, **kwargs):
         return {
             'host': kwargs.get('host', self.host),
             'port': kwargs.get('port', self.port),
             'timeout': kwargs.get('timeout', self.timeout),
-            'ssl': kwargs.get('ssl', self.ssl),
             'tls_certfile': kwargs.get('tls_certfile', self.tls_certfile),
             'tls_keyfile': kwargs.get('tls_keyfile', self.tls_keyfile),
             'tls_version': kwargs.get('tls_version', self.tls_version),
@@ -131,31 +123,27 @@ class MqttPlugin(Plugin):
     def _get_client(self, tls_cafile: Optional[str] = None, tls_certfile: Optional[str] = None,
                     tls_keyfile: Optional[str] = None, tls_version: Optional[str] = None,
                     tls_ciphers: Optional[str] = None, tls_insecure: Optional[bool] = None,
-                    username: Optional[str] = None, password: Optional[str] = None,
-                    ssl: Optional[bool] = None):
+                    username: Optional[str] = None, password: Optional[str] = None):
         from paho.mqtt.client import Client
 
         tls_cafile = self._expandpath(tls_cafile or self.tls_cafile)
         tls_certfile = self._expandpath(tls_certfile or self.tls_certfile)
         tls_keyfile = self._expandpath(tls_keyfile or self.tls_keyfile)
         tls_ciphers = tls_ciphers or self.tls_ciphers
-        tls_version = tls_version or self.tls_version
-        ssl = ssl if ssl is not None else self.ssl
         username = username or self.username
         password = password or self.password
 
+        tls_version = tls_version or self.tls_version
         if tls_version:
             tls_version = self.get_tls_version(tls_version)
         if tls_insecure is None:
             tls_insecure = self.tls_insecure
-        if ssl or tls_cafile or tls_certfile or tls_keyfile or tls_ciphers or tls_version:
-            ssl = True
 
         client = Client()
 
         if username and password:
             client.username_pw_set(username, password)
-        if ssl:
+        if tls_cafile:
             client.tls_set(ca_certs=tls_cafile, certfile=tls_certfile, keyfile=tls_keyfile,
                            tls_version=tls_version, ciphers=tls_ciphers)
 
@@ -165,7 +153,7 @@ class MqttPlugin(Plugin):
 
     @action
     def publish(self, topic: str, msg: Any, host: Optional[str] = None, port: Optional[int] = None,
-                reply_topic: Optional[str] = None, timeout: int = 60, ssl: Optional[bool] = None,
+                reply_topic: Optional[str] = None, timeout: int = 60,
                 tls_cafile: Optional[str] = None, tls_certfile: Optional[str] = None,
                 tls_keyfile: Optional[str] = None, tls_version: Optional[str] = None,
                 tls_ciphers: Optional[str] = None, tls_insecure: Optional[bool] = None,
@@ -182,7 +170,6 @@ class MqttPlugin(Plugin):
             wait for a response (default: 60 seconds).
         :param tls_cafile: If TLS/SSL is enabled on the MQTT server and the certificate requires a certificate authority
             to authenticate it, `ssl_cafile` will point to the provided ca.crt file (default: None).
-        :param ssl: SSL flag override.
         :param tls_certfile: If TLS/SSL is enabled on the MQTT server and a client certificate it required, specify it
             here (default: None).
         :param tls_keyfile: If TLS/SSL is enabled on the MQTT server and a client certificate key it required, specify
@@ -214,7 +201,7 @@ class MqttPlugin(Plugin):
 
             client = self._get_client(tls_cafile=tls_cafile, tls_certfile=tls_certfile, tls_keyfile=tls_keyfile,
                                       tls_version=tls_version, tls_ciphers=tls_ciphers, tls_insecure=tls_insecure,
-                                      username=username, password=password, ssl=ssl)
+                                      username=username, password=password)
 
             client.connect(host, port, keepalive=timeout)
             response_received = threading.Event()
