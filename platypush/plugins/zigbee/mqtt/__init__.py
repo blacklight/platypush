@@ -104,7 +104,7 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):   # lgtm [py/missing-call-to-i
     """
 
     def __init__(self, host: str = 'localhost', port: int = 1883, base_topic: str = 'zigbee2mqtt', timeout: int = 10,
-                 tls_certfile: Optional[str] = None, tls_keyfile: Optional[str] = None,
+                 ssl: bool = False, tls_certfile: Optional[str] = None, tls_keyfile: Optional[str] = None,
                  tls_version: Optional[str] = None, tls_ciphers: Optional[str] = None,
                  username: Optional[str] = None, password: Optional[str] = None, **kwargs):
         """
@@ -113,6 +113,7 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):   # lgtm [py/missing-call-to-i
         :param base_topic: Topic prefix, as specified in ``/opt/zigbee2mqtt/data/configuration.yaml``
             (default: '``base_topic``').
         :param timeout: If the command expects from a response, then this timeout value will be used
+        :param ssl: Set to true if SSL is enabled on the server.
             (default: 60 seconds).
         :param tls_cafile: If the connection requires TLS/SSL, specify the certificate authority file
             (default: None)
@@ -126,7 +127,7 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):   # lgtm [py/missing-call-to-i
         """
         super().__init__(host=host, port=port, tls_certfile=tls_certfile, tls_keyfile=tls_keyfile,
                          tls_version=tls_version, tls_ciphers=tls_ciphers, username=username,
-                         password=password, **kwargs)
+                         password=password, ssl=ssl, **kwargs)
 
         self.base_topic = base_topic
         self.timeout = timeout

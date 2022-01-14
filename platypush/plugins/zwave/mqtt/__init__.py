@@ -48,7 +48,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     def __init__(self, name: str, host: str = 'localhost', port: int = 1883, topic_prefix: str = 'zwave',
                  timeout: int = 10, tls_certfile: Optional[str] = None, tls_keyfile: Optional[str] = None,
                  tls_version: Optional[str] = None, tls_ciphers: Optional[str] = None, username: Optional[str] = None,
-                 password: Optional[str] = None, **kwargs):
+                 password: Optional[str] = None, ssl: bool = False, **kwargs):
         """
         :param name: Gateway name, as configured from the zwavejs2mqtt web panel from Mqtt -> Name.
         :param host: MQTT broker host, as configured from the zwavejs2mqtt web panel from Mqtt -> Host
@@ -59,6 +59,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             (default: ``zwave``).
         :param timeout: If the command expects from a response, then this timeout value will be used
             (default: 60 seconds).
+        :param ssl: Set to True if SSL is enabled on the server.
         :param tls_cafile: If the connection requires TLS/SSL, specify the certificate authority file
             (default: None)
         :param tls_certfile: If the connection requires TLS/SSL, specify the certificate file (default: None)
