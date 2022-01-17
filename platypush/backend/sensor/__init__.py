@@ -175,7 +175,7 @@ class SensorBackend(Backend):
             plugin.close()
 
     def process_data(self, data, new_data):
-        if new_data is not None and data not in ({}, []):
+        if new_data is not None and new_data not in ({}, []):
             self.bus.post(SensorDataChangeEvent(data=new_data, source=self.plugin or self.__class__.__name__))
 
     def run(self):
