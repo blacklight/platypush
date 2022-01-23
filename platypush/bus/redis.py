@@ -14,7 +14,7 @@ class RedisBus(Bus):
     """ Overrides the in-process in-memory local bus with a Redis bus """
     _DEFAULT_REDIS_QUEUE = 'platypush/bus'
 
-    def __init__(self, on_message=None, redis_queue=None, *args, **kwargs):
+    def __init__(self, *args, on_message=None, redis_queue=None, **kwargs):
         super().__init__(on_message=on_message)
 
         if not args and not kwargs:
@@ -26,7 +26,7 @@ class RedisBus(Bus):
         self.on_message = on_message
         self.thread_id = threading.get_ident()
 
-    def get(self, parse: bool = True):
+    def get(self):
         """ Reads one message from the Redis queue """
         try:
             if self.should_stop():
@@ -37,9 +37,7 @@ class RedisBus(Bus):
                 return
 
             msg = msg[1].decode('utf-8')
-            if parse:
-                return Message.build(msg)
-            return msg
+            return Message.build(msg)
         except Exception as e:
             logger.exception(e)
 

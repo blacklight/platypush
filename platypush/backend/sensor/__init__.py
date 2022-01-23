@@ -1,3 +1,4 @@
+import threading
 import time
 
 from platypush.backend import Backend
@@ -174,7 +175,7 @@ class SensorBackend(Backend):
         if plugin and hasattr(plugin, 'close'):
             plugin.close()
 
-    def process_data(self, data, new_data):
+    def process_data(self, new_data):
         if new_data is not None and new_data not in ({}, []):
             self.bus.post(SensorDataChangeEvent(data=new_data, source=self.plugin or self.__class__.__name__))
 
@@ -186,7 +187,7 @@ class SensorBackend(Backend):
             try:
                 data = self.get_measurement()
                 new_data = self.get_new_data(data)
-                self.process_data(data, new_data)
+                self.process_data(new_data)
 
                 data_below_threshold = {}
                 data_above_threshold = {}
