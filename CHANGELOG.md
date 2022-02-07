@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [0.22.10] - 2022-02-07
+
+### Added
+
+- Refactored the `dbus` integration. The plugin and backend have been merged into a
+  single plugin component, and the ability to subscribe to custom signals has been
+  added.
+
+### Fixed
+
+- Proper support for empty payloads on the integrations that trigger a `SensorDataChangeEvent`.
+- Fixed possible infinite recursion on the Pushbullet integration in case of errors where the
+  error and close handlers keep calling each other in a loop.
+
 ## [0.22.9] - 2022-01-06
 
 ### Added
