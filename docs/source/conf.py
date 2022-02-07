@@ -52,7 +52,6 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx_rtd_theme',
     'sphinx_marshmallow',
-    'defusedxml',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -291,6 +290,7 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'irc.client',
                         'irc.connection',
                         'irc.events',
+                        'defusedxml',
                         ]
 
 sys.path.insert(0, os.path.abspath('../..'))
