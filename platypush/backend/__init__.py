@@ -99,6 +99,7 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         if self._is_expected_response(msg):
             # Expected response, trigger the response handler
             clear_timeout()
+            # pylint: disable=unsubscriptable-object
             self._request_context['on_response'](msg)
             self.stop()
             return
@@ -110,12 +111,13 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         """ Internal only - returns true if we are expecting for a response
             and msg is that response """
 
+        # pylint: disable=unsubscriptable-object
         return self._request_context \
             and isinstance(msg, Response) \
             and msg.id == self._request_context['request'].id
 
     def _get_backend_config(self):
-        config_name = 'backend.' + self.__class__.__name__.split('Backend')[0].lower()
+        config_name = 'backend.' + self.__class__.__name__.split('Backend', maxsplit=1)[0].lower()
         return Config.get(config_name)
 
     def _setup_response_handler(self, request, on_response, response_timeout):
@@ -196,7 +198,7 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
 
         self.send_message(response, **kwargs)
 
-    def send_message(self, msg, queue_name=None, **kwargs):
+    def send_message(self, msg, queue_name=None, **_):
         """
         Sends a platypush.message.Message to a node.
         To be implemented in the derived classes. By default, if the Redis
@@ -213,8 +215,10 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
             if not redis:
                 raise KeyError()
         except KeyError:
-            self.logger.warning("Backend {} does not implement send_message " +
-                                "and the fallback Redis backend isn't configured")
+            self.logger.warning((
+                "Backend {} does not implement send_message " +
+                "and the fallback Redis backend isn't configured"
+            ).format(self.__class__.__name__))
             return
 
         redis.send_message(msg, queue_name=queue_name)
@@ -233,6 +237,7 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
 
                     while not self.should_stop() and not has_error:
                         try:
+                            # pylint: disable=not-callable
                             self.loop()
                         except Exception as e:
                             has_error = True
@@ -259,7 +264,6 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
 
     def on_stop(self):
         """ Callback invoked when the process stops """
-        pass
 
     def stop(self):
         """ Stops the backend thread by sending a STOP event on its bus """
@@ -281,7 +285,7 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
 
         redis_backend = get_backend('redis')
         if not redis_backend:
-            self.logger.warning('Redis backend not configured - some ' +
+            self.logger.warning('Redis backend not configured - some '
                                 'web server features may not be working properly')
             redis_args = {}
         else:

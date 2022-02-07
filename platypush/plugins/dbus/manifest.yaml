@@ -1,7 +1,9 @@
 manifest:
-  events: {}
+  events:
+    platypush.message.event.dbus.DbusSignalEvent: When a signal is received
   install:
     pip:
-    - dbus-python
+    - pydbus
+    - defusedxml
   package: platypush.plugins.dbus
   type: plugin

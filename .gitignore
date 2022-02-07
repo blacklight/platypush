@@ -19,3 +19,6 @@ platypush/requests
 /http-client.env.json
 /platypush/backend/http/static/css/dist
 /tests/etc/dashboards
+.coverage
+coverage.xml
+.vimsessions

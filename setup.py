@@ -227,7 +227,7 @@ setup(
         # Support for luma.oled display drivers
         'luma-oled': ['luma.oled @ git+https://github.com/rm-hull/luma.oled'],
         # Support for DBus integration
-        'dbus': ['dbus-python'],
+        'dbus': ['pydbus', 'defusedxml'],
         # Support for Twilio integration
         'twilio': ['twilio'],
         # Support for DHT11/DHT22/AM2302 temperature/humidity sensors

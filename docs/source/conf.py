@@ -52,6 +52,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx_rtd_theme',
     'sphinx_marshmallow',
+    'defusedxml',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -216,7 +217,7 @@ autodoc_mock_imports = ['googlesamples.assistant.grpc.audio_helpers',
                         'gevent.wsgi',
                         'Adafruit_IO',
                         'pyperclip',
-                        'dbus',
+                        'pydbus',
                         'inputs',
                         'inotify',
                         'omxplayer',

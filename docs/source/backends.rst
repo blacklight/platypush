@@ -19,7 +19,6 @@ Backends
     platypush/backend/chat.telegram.rst
     platypush/backend/clipboard.rst
     platypush/backend/covid19.rst
-    platypush/backend/dbus.rst
     platypush/backend/file.monitor.rst
     platypush/backend/foursquare.rst
     platypush/backend/github.rst

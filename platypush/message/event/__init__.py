@@ -1,8 +1,10 @@
 import copy
+import hashlib
 import json
 import random
 import re
 import time
+import uuid
 
 from datetime import date
 
@@ -18,6 +20,7 @@ class Event(Message):
     # will be disabled. Logging is usually disabled for events with a very
     # high frequency that would otherwise pollute the logs e.g. camera capture
     # events
+    # pylint: disable=redefined-builtin
     def __init__(self, target=None, origin=None, id=None, timestamp=None,
                  disable_logging=False, disable_web_clients_notification=False, **kwargs):
         """
@@ -63,10 +66,7 @@ class Event(Message):
     @staticmethod
     def _generate_id():
         """ Generate a unique event ID """
-        id = ''
-        for i in range(0, 16):
-            id += '%.2x' % random.randint(0, 255)
-        return id
+        return hashlib.md5(str(uuid.uuid1()).encode()).hexdigest()
 
     def matches_condition(self, condition):
         """
@@ -205,13 +205,13 @@ def flatten(args):
         for (key, value) in args.items():
             if isinstance(value, date):
                 args[key] = value.isoformat()
-            elif isinstance(value, dict) or isinstance(value, list):
+            elif isinstance(value, (dict, list)):
                 flatten(args[key])
     elif isinstance(args, list):
-        for i in range(0, len(args)):
-            if isinstance(args[i], date):
-                args[i] = args[i].isoformat()
-            elif isinstance(args[i], dict) or isinstance(args[i], list):
+        for i, arg in enumerate(args):
+            if isinstance(arg, date):
+                args[i] = arg.isoformat()
+            elif isinstance(arg, (dict, list)):
                 flatten(args[i])
 
 # vim:sw=4:ts=4:et:
