@@ -205,7 +205,7 @@ setup(
         # Support for Z-Wave
         'zwave': ['python-openzwave'],
         # Support for Mozilla DeepSpeech speech-to-text engine
-        'deepspeech': ['deepspeech', 'numpy','sounddevice'],
+        'deepspeech': ['deepspeech', 'numpy', 'sounddevice'],
         # Support for PicoVoice hotword detection engine
         'picovoice-hotword': ['pvporcupine'],
         # Support for PicoVoice speech-to-text engine
@@ -215,7 +215,7 @@ setup(
         # Support for Linode integration
         'linode': ['linode_api4'],
         # Support for QR codes
-        'qrcode': ['numpy','qrcode[pil]', 'Pillow', 'pyzbar'],
+        'qrcode': ['numpy', 'qrcode[pil]', 'Pillow', 'pyzbar'],
         # Support for Tensorflow
         'tensorflow': ['numpy', 'tensorflow>=2.0', 'keras', 'pandas'],
         # Support for Samsung TizenOS-based smart TVs

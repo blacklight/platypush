@@ -216,7 +216,7 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
                 raise KeyError()
         except KeyError:
             self.logger.warning((
-                "Backend {} does not implement send_message " +
+                "Backend {} does not implement send_message "
                 "and the fallback Redis backend isn't configured"
             ).format(self.__class__.__name__))
             return
