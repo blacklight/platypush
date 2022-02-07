@@ -4,6 +4,7 @@ import logging
 
 from threading import RLock
 
+from ..bus import Bus
 from ..config import Config
 from ..utils import get_enabled_plugins
 
@@ -129,8 +130,9 @@ def get_plugin(plugin_name, reload=False):
     return plugins[plugin_name]
 
 
-def get_bus():
+def get_bus() -> Bus:
     global main_bus
+    assert main_bus, 'The bus is not registered'
     return main_bus
 
 

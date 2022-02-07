@@ -191,7 +191,8 @@ class InspectPlugin(Plugin):
             try:
                 module = importlib.import_module(modname)
             except Exception as e:
-                self.logger.debug(f'Could not import module {modname}: {str(e)}')
+                self.logger.warning(f'Could not import module {modname}')
+                self.logger.exception(e)
                 continue
 
             for _, obj in inspect.getmembers(module):
