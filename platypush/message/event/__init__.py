@@ -65,7 +65,7 @@ class Event(Message):
     @staticmethod
     def _generate_id():
         """ Generate a unique event ID """
-        return hashlib.md5(str(uuid.uuid1()).encode()).hexdigest()
+        return hashlib.md5(str(uuid.uuid1()).encode()).hexdigest()  # lgtm [py/weak-sensitive-data-hashing]
 
     def matches_condition(self, condition):
         """

@@ -41,8 +41,11 @@ def resources_path(path):
     real_base_path = os.path.abspath(os.path.expanduser(resource_dirs[base_path]))
     real_path = real_base_path
 
-    file_path = [s for s in re.sub(r'^{}(.*)$'.format(base_path), '\\1', path)
-                 .split('/') if s]
+    file_path = [
+        s for s in re.sub(
+            r'^{}(.*)$'.format(base_path), '\\1', path   # lgtm [py/regex-injection]
+        ).split('/') if s
+    ]
 
     for p in file_path[:-1]:
         real_path += os.sep + p

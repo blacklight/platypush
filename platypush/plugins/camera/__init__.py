@@ -24,7 +24,7 @@ from platypush.plugins.camera.model.writer.preview import PreviewWriter, Preview
 from platypush.utils import get_plugin_name_by_class
 
 __all__ = ['Camera', 'CameraInfo', 'CameraException', 'CameraPlugin', 'CaptureAlreadyRunningException',
-           'StreamWriter']
+           'VideoWriter', 'StreamWriter', 'PreviewWriter']
 
 
 class CameraPlugin(Plugin, ABC):
@@ -539,7 +539,10 @@ class CameraPlugin(Plugin, ABC):
     def _prepare_server_socket(camera: Camera) -> socket.socket:
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_socket.bind((camera.info.bind_address or '0.0.0.0', camera.info.listen_port))
+        server_socket.bind((
+            camera.info.bind_address or '0.0.0.0',  # lgtm [py/bind-socket-all-network-interfaces]
+            camera.info.listen_port
+        ))
         server_socket.listen(1)
         server_socket.settimeout(1)
         return server_socket
@@ -653,7 +656,8 @@ class CameraPlugin(Plugin, ABC):
         return {
             **camera.info.to_dict(),
             'active': True if camera.capture_thread and camera.capture_thread.is_alive() else False,
-            'capturing': True if camera.capture_thread and camera.capture_thread.is_alive() and camera.start_event.is_set() else False,
+            'capturing': True if camera.capture_thread and camera.capture_thread.is_alive() and
+            camera.start_event.is_set() else False,
             'streaming': camera.stream_thread and camera.stream_thread.is_alive() and camera.stream_event.is_set(),
         }
 

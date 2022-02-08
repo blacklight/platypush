@@ -21,7 +21,7 @@ class StrippedString(fields.Function):   # lgtm [py/missing-call-to-init]
         return value.strip()
 
 
-class DateTime(fields.Function):
+class DateTime(fields.Function):   # lgtm [py/missing-call-to-init]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = {
@@ -38,7 +38,7 @@ class DateTime(fields.Function):
         return normalize_datetime(value)
 
 
-class Date(fields.Function):
+class Date(fields.Function):   # lgtm [py/missing-call-to-init]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = {
