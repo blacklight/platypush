@@ -84,7 +84,9 @@ class BluetoothScannerBackend(SensorBackend):
         with self._bt_lock:
             return super().get_measurement()
 
-    def process_data(self, data: Dict[str, dict], new_data: Dict[str, dict]):
+    def process_data(  # lgtm [py/inheritance/signature-mismatch]
+        self, *, data: Dict[str, dict], new_data: Dict[str, dict]
+    ):
         for addr, dev in data.items():
             self._add_last_seen_device(dev)
 

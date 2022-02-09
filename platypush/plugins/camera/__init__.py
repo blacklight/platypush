@@ -539,8 +539,8 @@ class CameraPlugin(Plugin, ABC):
     def _prepare_server_socket(camera: Camera) -> socket.socket:
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_socket.bind((
-            camera.info.bind_address or '0.0.0.0',  # lgtm [py/bind-socket-all-network-interfaces]
+        server_socket.bind((  # lgtm [py/bind-socket-all-network-interfaces]
+            camera.info.bind_address or '0.0.0.0',
             camera.info.listen_port
         ))
         server_socket.listen(1)
