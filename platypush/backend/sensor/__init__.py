@@ -174,9 +174,9 @@ class SensorBackend(Backend):
         if plugin and hasattr(plugin, 'close'):
             plugin.close()
 
-    def process_data(self, new_data, *_, **__):
-        if new_data is not None and new_data not in ({}, []):
-            self.bus.post(SensorDataChangeEvent(data=new_data, source=self.plugin or self.__class__.__name__))
+    def process_data(self, data, new_data=None, **__):
+        if data is not None and data not in ({}, []):
+            self.bus.post(SensorDataChangeEvent(data=data, source=self.plugin or self.__class__.__name__))
 
     def run(self):
         super().run()

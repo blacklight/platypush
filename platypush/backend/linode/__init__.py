@@ -25,7 +25,7 @@ class LinodeBackend(SensorBackend):
         super().__init__(plugin='linode', poll_seconds=poll_seconds, **kwargs)
         self.instances = set(instances or [])
 
-    def process_data(self, *, data: Dict[str, dict], **kwargs):
+    def process_data(self, data: Dict[str, dict], new_data: Optional[Dict[str, dict]] = None, **kwargs):
         instances = data['instances']
         old_instances = (self.data or {}).get('instances', {})
 
