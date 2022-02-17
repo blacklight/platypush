@@ -59,7 +59,7 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
             'htmlLink': str(event.get('url')) if event.get('url') else None,
             'organizer': {
                 'email': str(event.get('organizer')).replace('MAILTO:', ''),
-                'displayName': event.get('organizer').params['cn']
+                'displayName': event.get('organizer').params.get('cn')
             } if event.get('organizer') else None,
 
             'created': cls._convert_timestamp(event, 'created'),
