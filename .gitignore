@@ -21,4 +21,4 @@ platypush/requests
 /tests/etc/dashboards
 .coverage
 coverage.xml
-.vimsessions
+Session.vim
