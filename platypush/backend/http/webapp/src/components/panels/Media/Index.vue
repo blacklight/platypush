@@ -351,6 +351,9 @@ export default {
 
     if ('media.plex' in this.$root.config)
       this.sources.plex = true
+
+    if ('media.jellyfin' in this.$root.config)
+      this.sources.jellyfin = true
   },
 
   destroy() {

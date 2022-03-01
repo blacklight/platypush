@@ -59,6 +59,7 @@ export default {
         'torrent': 'fa fa-magnet',
         'youtube': 'fab fa-youtube',
         'plex': 'fa fa-plex',
+        'jellyfin': 'fa fa-jellyfin',
       },
     }
   },

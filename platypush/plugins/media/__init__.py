@@ -67,7 +67,7 @@ class MediaPlugin(Plugin, ABC):
     _supported_media_plugins = {'media.mplayer', 'media.omxplayer', 'media.mpv',
                                 'media.vlc', 'media.chromecast', 'media.gstreamer'}
 
-    _supported_media_types = ['file', 'plex', 'torrent', 'youtube']
+    _supported_media_types = ['file', 'jellyfin', 'plex', 'torrent', 'youtube']
     _default_search_timeout = 60  # 60 seconds
 
     def __init__(self,
@@ -417,6 +417,9 @@ class MediaPlugin(Plugin, ABC):
         if search_type == 'plex':
             from .search import PlexMediaSearcher
             return PlexMediaSearcher(media_plugin=self)
+        if search_type == 'jellyfin':
+            from .search import JellyfinMediaSearcher
+            return JellyfinMediaSearcher(media_plugin=self)
 
         self.logger.warning('Unsupported search type: {}'.format(search_type))
 

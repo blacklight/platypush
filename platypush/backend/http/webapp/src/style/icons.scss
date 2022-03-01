@@ -15,3 +15,8 @@
   @include icon;
   background: url('/icons/plex.svg');
 }
+
+.fa.fa-jellyfin:before {
+  @include icon;
+  background: url('/icons/jellyfin.svg');
+}

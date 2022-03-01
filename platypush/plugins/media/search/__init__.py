@@ -22,8 +22,12 @@ from .local import LocalMediaSearcher
 from .youtube import YoutubeMediaSearcher
 from .torrent import TorrentMediaSearcher
 from .plex import PlexMediaSearcher
+from .jellyfin import JellyfinMediaSearcher
 
-__all__ = ['MediaSearcher', 'LocalMediaSearcher', 'TorrentMediaSearcher', 'YoutubeMediaSearcher', 'PlexMediaSearcher']
+__all__ = [
+    'MediaSearcher', 'LocalMediaSearcher', 'TorrentMediaSearcher',
+    'YoutubeMediaSearcher', 'PlexMediaSearcher', 'JellyfinMediaSearcher',
+]
 
 
 # vim:sw=4:ts=4:et:

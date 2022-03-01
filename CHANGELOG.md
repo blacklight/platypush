@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [0.23.0] - 2022-03-01
+
+### Added
+
+- Added [Jellyfin integration](https://git.platypush.tech/platypush/platypush/-/issues/208).
+
+### Fixed
+
+- Merged several PRs from `dependabot`.
+
+- Fixed management of the `CN` field in the `calendar.ical` plugin.
+
 ## [0.22.10] - 2022-02-07
 
 ### Added
