@@ -71,7 +71,7 @@ class Message(object):
                 logger.warning('Could not serialize object type {}: {}: {}'.format(
                     type(obj), str(e), obj))
 
-    def __init__(self, timestamp=None, *args, **kwargs):
+    def __init__(self, timestamp=None, *_, **__):
         self.timestamp = timestamp or time.time()
 
     def __str__(self):
@@ -98,9 +98,9 @@ class Message(object):
     def parse(cls, msg):
         """
         Parse a generic message into a key-value dictionary
-        Params:
-            msg -- Original message - can be a dictionary, a Message,
-                   or a string/bytearray, as long as it's valid UTF-8 JSON
+
+        :param msg: Original message. It can be a dictionary, a Message,
+           or a string/bytearray, as long as it's valid UTF-8 JSON
         """
 
         if isinstance(msg, cls):
@@ -124,8 +124,8 @@ class Message(object):
     def build(cls, msg):
         """
         Builds a Message object from a dictionary.
-        Params:
-            msg -- The message as a key-value dictionary, Message object or JSON string
+
+        :param msg: The message as a key-value dictionary, Message object or JSON string
         """
         from platypush.utils import get_message_class_by_type
 

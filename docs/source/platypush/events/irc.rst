@@ -1,5 +1,5 @@
-``platypush.message.event.irc``
-===============================
+``irc``
+=======
 
 .. automodule:: platypush.message.event.irc
     :members:

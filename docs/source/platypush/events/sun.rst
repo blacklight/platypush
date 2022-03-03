@@ -1,5 +1,5 @@
-``platypush.message.event.sun``
-===============================
+``sun``
+=======
 
 .. automodule:: platypush.message.event.sun
     :members:

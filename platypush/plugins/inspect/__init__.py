@@ -4,6 +4,7 @@ import json
 import pkgutil
 import re
 import threading
+from abc import ABC, abstractmethod
 from typing import Optional
 
 import platypush.backend   # lgtm [py/import-and-import-from]
@@ -19,8 +20,7 @@ from platypush.message.response import Response
 from platypush.utils import get_decorators
 
 
-# noinspection PyTypeChecker
-class Model:
+class Model(ABC):
     def __str__(self):
         return json.dumps(dict(self), indent=2, sort_keys=True)
 
@@ -37,6 +37,10 @@ class Model:
 
         return docutils.core.publish_parts(doc, writer_name='html')['html_body']
 
+    @abstractmethod
+    def __iter__(self):
+        raise NotImplementedError()
+
 
 class ProcedureEncoder(json.JSONEncoder):
     def default(self, o):
@@ -49,7 +53,7 @@ class ProcedureEncoder(json.JSONEncoder):
 
 
 class BackendModel(Model):
-    def __init__(self, backend, prefix='', html_doc: bool = False):
+    def __init__(self, backend, prefix='', html_doc: Optional[bool] = False):
         self.name = backend.__module__[len(prefix):]
         self.html_doc = html_doc
         self.doc = self.to_html(backend.__doc__) if html_doc and backend.__doc__ else backend.__doc__
@@ -60,11 +64,11 @@ class BackendModel(Model):
 
 
 class PluginModel(Model):
-    def __init__(self, plugin, prefix='', html_doc: bool = False):
+    def __init__(self, plugin, prefix='', html_doc: Optional[bool] = False):
         self.name = plugin.__module__[len(prefix):]
         self.html_doc = html_doc
         self.doc = self.to_html(plugin.__doc__) if html_doc and plugin.__doc__ else plugin.__doc__
-        self.actions = {action_name: ActionModel(getattr(plugin, action_name), html_doc=html_doc)
+        self.actions = {action_name: ActionModel(getattr(plugin, action_name), html_doc=html_doc or False)
                         for action_name in get_decorators(plugin, climb_class_hierarchy=True).get('action', [])}
 
     def __iter__(self):
@@ -77,8 +81,8 @@ class PluginModel(Model):
 
 
 class EventModel(Model):
-    def __init__(self, event, html_doc: bool = False):
-        self.package = event.__module__
+    def __init__(self, event, prefix='', html_doc: Optional[bool] = False):
+        self.package = event.__module__[len(prefix):]
         self.name = event.__name__
         self.html_doc = html_doc
         self.doc = self.to_html(event.__doc__) if html_doc and event.__doc__ else event.__doc__
@@ -89,8 +93,8 @@ class EventModel(Model):
 
 
 class ResponseModel(Model):
-    def __init__(self, response, html_doc: bool = False):
-        self.package = response.__module__
+    def __init__(self, response, prefix='', html_doc: Optional[bool] = False):
+        self.package = response.__module__[len(prefix):]
         self.name = response.__name__
         self.html_doc = html_doc
         self.doc = self.to_html(response.__doc__) if html_doc and response.__doc__ else response.__doc__
@@ -187,7 +191,7 @@ class InspectPlugin(Plugin):
 
         for _, modname, _ in pkgutil.walk_packages(path=package.__path__,
                                                    prefix=prefix,
-                                                   onerror=lambda x: None):
+                                                   onerror=lambda _: None):
             try:
                 module = importlib.import_module(modname)
             except Exception as e:
@@ -207,7 +211,7 @@ class InspectPlugin(Plugin):
 
         for _, modname, _ in pkgutil.walk_packages(path=package.__path__,
                                                    prefix=prefix,
-                                                   onerror=lambda x: None):
+                                                   onerror=lambda _: None):
             try:
                 module = importlib.import_module(modname)
             except Exception as e:
@@ -226,7 +230,7 @@ class InspectPlugin(Plugin):
 
         for _, modname, _ in pkgutil.walk_packages(path=package.__path__,
                                                    prefix=prefix,
-                                                   onerror=lambda x: None):
+                                                   onerror=lambda _: None):
             try:
                 module = importlib.import_module(modname)
             except Exception as e:
@@ -238,7 +242,7 @@ class InspectPlugin(Plugin):
                     continue
 
                 if inspect.isclass(obj) and issubclass(obj, Event) and obj != Event:
-                    event = EventModel(event=obj, html_doc=self._html_doc)
+                    event = EventModel(event=obj, html_doc=self._html_doc, prefix=prefix)
                     if event.package not in self._events:
                         self._events[event.package] = {event.name: event}
                     else:
@@ -250,7 +254,7 @@ class InspectPlugin(Plugin):
 
         for _, modname, _ in pkgutil.walk_packages(path=package.__path__,
                                                    prefix=prefix,
-                                                   onerror=lambda x: None):
+                                                   onerror=lambda _: None):
             try:
                 module = importlib.import_module(modname)
             except Exception as e:
@@ -262,14 +266,14 @@ class InspectPlugin(Plugin):
                     continue
 
                 if inspect.isclass(obj) and issubclass(obj, Response) and obj != Response:
-                    response = ResponseModel(response=obj, html_doc=self._html_doc)
+                    response = ResponseModel(response=obj, html_doc=self._html_doc, prefix=prefix)
                     if response.package not in self._responses:
                         self._responses[response.package] = {response.name: response}
                     else:
                         self._responses[response.package][response.name] = response
 
     @action
-    def get_all_plugins(self, html_doc: bool = None):
+    def get_all_plugins(self, html_doc: Optional[bool] = None):
         """
         :param html_doc: If True then the docstring will be parsed into HTML (default: False)
         """
@@ -284,7 +288,7 @@ class InspectPlugin(Plugin):
             })
 
     @action
-    def get_all_backends(self, html_doc: bool = None):
+    def get_all_backends(self, html_doc: Optional[bool] = None):
         """
         :param html_doc: If True then the docstring will be parsed into HTML (default: False)
         """
@@ -299,7 +303,7 @@ class InspectPlugin(Plugin):
             })
 
     @action
-    def get_all_events(self, html_doc: bool = None):
+    def get_all_events(self, html_doc: Optional[bool] = None):
         """
         :param html_doc: If True then the docstring will be parsed into HTML (default: False)
         """
@@ -311,13 +315,13 @@ class InspectPlugin(Plugin):
             return json.dumps({
                 package: {
                     name: dict(event)
-                    for name, event in self._events[package].items()
+                    for name, event in events.items()
                 }
                 for package, events in self._events.items()
             })
 
     @action
-    def get_all_responses(self, html_doc: bool = None):
+    def get_all_responses(self, html_doc: Optional[bool] = None):
         """
         :param html_doc: If True then the docstring will be parsed into HTML (default: False)
         """
@@ -329,9 +333,9 @@ class InspectPlugin(Plugin):
             return json.dumps({
                 package: {
                     name: dict(event)
-                    for name, event in self._responses[package].items()
+                    for name, event in responses.items()
                 }
-                for package, events in self._responses.items()
+                for package, responses in self._responses.items()
             })
 
     @action
@@ -342,7 +346,7 @@ class InspectPlugin(Plugin):
         return json.loads(json.dumps(Config.get_procedures(), cls=ProcedureEncoder))
 
     @action
-    def get_config(self, entry: Optional[str] = None) -> dict:
+    def get_config(self, entry: Optional[str] = None) -> Optional[dict]:
         """
         Return the configuration of the application or of a section.
 

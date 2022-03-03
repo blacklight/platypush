@@ -182,7 +182,7 @@ class MediaJellyfinPlugin(Plugin):
         :param genres: Filter results by (a list of) genres.
         :param tags: Filter results by (a list of) tags.
         :param years: Filter results by (a list of) years.
-        :return: .. schema:: jellyfin.JellyfinArtistSchema(many=True)
+        :return: .. schema:: media.jellyfin.JellyfinArtistSchema(many=True)
         """
         return self._query(
             '/Artists', schema_class=JellyfinArtistSchema,
@@ -196,7 +196,7 @@ class MediaJellyfinPlugin(Plugin):
         """
         Get the list of collections associated to the user on the server (Movies, Series, Channels etc.)
 
-        :return: .. schema:: jellyfin.JellyfinCollectionSchema(many=True)
+        :return: .. schema:: media.jellyfin.JellyfinCollectionSchema(many=True)
         """
         return self._query(
             f'/Users/{self._user_id}/Items',
@@ -242,6 +242,20 @@ class MediaJellyfinPlugin(Plugin):
         :param genres: Filter results by (a list of) genres.
         :param tags: Filter results by (a list of) tags.
         :param years: Filter results by (a list of) years.
+        :return: The list of matching results.
+
+        Schema for artists:
+            .. schema:: media.jellyfin.JellyfinArtistSchema
+
+        Schema for collections:
+            .. schema:: media.jellyfin.JellyfinCollectionSchema
+
+        Schema for movies:
+            .. schema:: media.jellyfin.JellyfinMovieSchema
+
+        Schema for episodes:
+            .. schema:: media.jellyfin.JellyfinEpisodeSchema
+
         """
         if collection:
             collections = self.get_collections().output   # type: ignore

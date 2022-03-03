@@ -1,5 +1,5 @@
-``platypush.message.event.dbus``
-================================
+``dbus``
+========
 
 .. automodule:: platypush.message.event.dbus
     :members:

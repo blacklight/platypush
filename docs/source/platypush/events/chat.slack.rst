@@ -1,5 +1,5 @@
-``platypush.message.event.chat.slack``
-======================================
+``chat.slack``
+==============
 
 .. automodule:: platypush.message.event.chat.slack
     :members:

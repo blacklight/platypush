@@ -1,5 +1,5 @@
-``platypush.message.event.gotify``
-==================================
+``gotify``
+==========
 
 .. automodule:: platypush.message.event.gotify
     :members:
