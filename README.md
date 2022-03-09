@@ -10,7 +10,7 @@ Platypush
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/BlackLight/platypush.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/BlackLight/platypush/context:python)
 [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/BlackLight/platypush.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/BlackLight/platypush/context:javascript)
 
-[[__TOC__]]
+[[_TOC_]]
 
 - Recommended read: [**Getting started with Platypush**](https://blog.platypush.tech/article/Ultimate-self-hosted-automation-with-Platypush).
 
