@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [Unreleased]
+
+### Added
+
+- Simplified script API to interact with platform variables (https://git.platypush.tech/platypush/platypush/-/issues/206).
+
 ## [0.23.0] - 2022-03-01
 
 ### Added
@@ -139,7 +145,7 @@ Given the high speed of development in the first phase, changes are being report
   operate instead of pydoc strings conventions or `config.yaml` conventions.
 
 - `platyvenv start`  now starts the environment process synchronously and it prints
-  stdout/stderr instead of redirecting it to the logs dir (previous behaviour: 
+  stdout/stderr instead of redirecting it to the logs dir (previous behaviour:
   `platyvenv start` used to start the process asynchronously and the logs were stored
   to `~/.local/share/platypush/venv/<env>/logs/<stdout|stderr>.log`).
 
@@ -179,17 +185,17 @@ Given the high speed of development in the first phase, changes are being report
 
 - Added `switchbot` plugin to interact with Switchbot devices over the cloud API instead of
   directly accessing the device's Bluetooth interface.
-  
+
 - Added `marshmallow` dependency - it will be used from now own to dump and document schemas
   and responses instead of the currently mixed approach with `Response` objects and plain
   dictionaries and lists.
-  
+
 - Support for custom MQTT timeout on all the `zwavejs2mqtt` calls.
 
 - Added generic joystick backend `backend.joystick.jstest` which uses `jstest` from the
   standard `joystick` system package to read the state of joysticks not compatible with
   `python-inputs`.
-  
+
 - Added PWM PCA9685 plugin.
 
 - Added Linux native joystick plugin, ``backend.joystick.linux``, for the cases where
@@ -293,7 +299,7 @@ Given the high speed of development in the first phase, changes are being report
 
 - Added support for a static list of devices to actively scan to the `bluetooth.scanner` backend
   (see [#174](https://git.platypush.tech/platypush/platypush/-/issues/174)).
-  
+
 - Added `weather.openweathermap` plugin and backend, which replaces `weather.darksky`, since the
   Darksky API will be completely shut down by the end of 2021.
 
@@ -301,14 +307,14 @@ Given the high speed of development in the first phase, changes are being report
 
 - Cron expressions should adhere to the UNIX cronjob standard and use the machine local time,
   not UTC, as a reference (closes [#173](https://git.platypush.tech/platypush/platypush/-/issues/173)).
-  
+
 - Better management of Z-Wave values types from the UI.
 
 - Disable logging for `ZwaveValueEvent` events - they tend to be very verbose and
   can impact the performance on slower devices. They will still be published to the
   websocket clients though, so you can still debug Z-Wave values issues from the browser
   developer console (enable debug traces).
-  
+
 - Added suffix to the `zigbee.mqtt` backend default `client_id` to prevent clashes with
   the default `mqtt` backend `client_id`.
 

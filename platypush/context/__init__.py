@@ -3,7 +3,7 @@ import importlib
 import logging
 
 from threading import RLock
-from typing import Optional, Callable, Any
+from typing import Optional, Any
 
 from ..bus import Bus
 from ..config import Config
