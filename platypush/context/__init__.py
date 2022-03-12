@@ -3,6 +3,7 @@ import importlib
 import logging
 
 from threading import RLock
+from typing import Optional, Callable, Any
 
 from ..bus import Bus
 from ..config import Config
@@ -144,6 +145,35 @@ def get_or_create_event_loop():
         asyncio.set_event_loop(loop)
 
     return loop
+
+
+class Variable:
+    """
+    Utility class to wrap platform variables in your custom scripts.
+    Usage:
+
+        .. code-block:: python
+
+            # Pass `persisted=False` to get/set an in-memory variable
+            # on the Redis instance (default: the variable is
+            # persisted on the internal database)
+            var = Variable('myvar')
+            value = var.get()
+            var.set('new value')
+
+    """
+
+    def __init__(self, name: str, persisted: bool = True):
+        self.name = name
+        plugin = get_plugin('variable')
+        self._get_action = getattr(plugin, 'get' if persisted else 'mget')
+        self._set_action = getattr(plugin, 'set' if persisted else 'mset')
+
+    def get(self) -> Optional[Any]:
+        return self._get_action(self.name).output.get(self.name)
+
+    def set(self, value: Any):
+        self._set_action(**{self.name: value})
 
 
 # vim:sw=4:ts=4:et:
