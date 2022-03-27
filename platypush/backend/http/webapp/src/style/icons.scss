@@ -8,15 +8,15 @@
 
 .fa.fa-kodi:before {
   @include icon;
-  background: url('/icons/kodi.svg');
+  background: url('@/assets/icons/kodi.svg');
 }
 
 .fa.fa-plex:before {
   @include icon;
-  background: url('/icons/plex.svg');
+  background: url('@/assets/icons/plex.svg');
 }
 
 .fa.fa-jellyfin:before {
   @include icon;
-  background: url('/icons/jellyfin.svg');
+  background: url('@/assets/icons/jellyfin.svg');
 }

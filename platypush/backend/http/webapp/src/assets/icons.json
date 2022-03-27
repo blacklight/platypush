@@ -1,79 +1,86 @@
 {
-  "icons": {
-    "camera.android.ipcam": {
-      "class": "fab fa-android"
-    },
-    "camera.cv": {
-      "class": "fas fa-camera"
-    },
-    "camera.ffmpeg": {
-      "class": "fas fa-camera"
-    },
-    "camera.gstreamer": {
-      "class": "fas fa-camera"
-    },
-    "camera.ir.mlx90640": {
-      "class": "fas fa-sun"
-    },
-    "camera.pi": {
-      "class": "fas fa-camera"
-    },
-    "execute": {
-      "class": "fa fa-play"
-    },
-    "light.hue": {
-      "class": "fas fa-lightbulb"
-    },
-    "media.omxplayer": {
-      "class": "fa fa-film"
-    },
-    "media.mplayer": {
-      "class": "fa fa-film"
-    },
-    "media.mpv": {
-      "class": "fa fa-film"
-    },
-    "media.vlc": {
-      "class": "fa fa-film"
-    },
-    "music.mpd": {
-      "class": "fas fa-music"
-    },
-    "music.snapcast": {
-      "class": "fa fa-volume-up"
-    },
-    "music.spotify": {
-      "class": "fab fa-spotify"
-    },
-    "torrent": {
-      "class": "fa fa-magnet"
-    },
-    "rtorrent": {
-      "class": "fa fa-magnet"
-    },
-    "switches": {
-      "class": "fas fa-toggle-on"
-    },
-    "sound": {
-      "class": "fa fa-microphone"
-    },
-    "tts": {
-      "class": "far fa-comment"
-    },
-    "tts.google": {
-      "class": "fas fa-comment"
-    },
-    "tv.samsung.ws": {
-      "class": "fas fa-tv"
-    },
-    "zigbee.mqtt": {
-      "imgUrl": "/icons/zigbee.svg"
-    },
-    "zwave": {
-      "imgUrl": "/icons/z-wave.png"
-    },
-    "zwave.mqtt": {
-      "imgUrl": "/icons/z-wave.png"
-    }
+  "camera.android.ipcam": {
+    "class": "fab fa-android"
+  },
+  "camera.cv": {
+    "class": "fas fa-camera"
+  },
+  "camera.ffmpeg": {
+    "class": "fas fa-camera"
+  },
+  "camera.gstreamer": {
+    "class": "fas fa-camera"
+  },
+  "camera.ir.mlx90640": {
+    "class": "fas fa-sun"
+  },
+  "camera.pi": {
+    "class": "fas fa-camera"
+  },
+  "execute": {
+    "class": "fa fa-play"
+  },
+  "light.hue": {
+    "class": "fas fa-lightbulb"
+  },
+  "media.jellyfin": {
+    "imgUrl": "/icons/jellyfin.svg"
+  },
+  "media.kodi": {
+    "imgUrl": "/icons/kodi.svg"
+  },
+  "media.omxplayer": {
+    "class": "fa fa-film"
+  },
+  "media.mplayer": {
+    "class": "fa fa-film"
+  },
+  "media.mpv": {
+    "class": "fa fa-film"
+  },
+  "media.plex": {
+    "imgUrl": "/icons/plex.svg"
+  },
+  "media.vlc": {
+    "class": "fa fa-film"
+  },
+  "music.mpd": {
+    "class": "fas fa-music"
+  },
+  "music.snapcast": {
+    "class": "fa fa-volume-up"
+  },
+  "music.spotify": {
+    "class": "fab fa-spotify"
+  },
+  "torrent": {
+    "class": "fa fa-magnet"
+  },
+  "rtorrent": {
+    "class": "fa fa-magnet"
+  },
+  "switches": {
+    "class": "fas fa-toggle-on"
+  },
+  "sound": {
+    "class": "fa fa-microphone"
+  },
+  "tts": {
+    "class": "far fa-comment"
+  },
+  "tts.google": {
+    "class": "fas fa-comment"
+  },
+  "tv.samsung.ws": {
+    "class": "fas fa-tv"
+  },
+  "zigbee.mqtt": {
+    "imgUrl": "/icons/zigbee.svg"
+  },
+  "zwave": {
+    "imgUrl": "/icons/z-wave.png"
+  },
+  "zwave.mqtt": {
+    "imgUrl": "/icons/z-wave.png"
   }
 }

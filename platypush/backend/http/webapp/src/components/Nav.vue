@@ -44,7 +44,7 @@
 </template>
 
 <script>
-import { icons } from '@/assets/icons.json'
+import icons from '@/assets/icons.json'
 import Utils from "@/Utils";
 
 export default {
