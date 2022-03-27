@@ -1,4 +1,3 @@
-import inspect
 import os
 
 from platypush.backend import Backend
