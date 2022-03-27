@@ -28,6 +28,7 @@ Events
     platypush/events/google.fit.rst
     platypush/events/google.pubsub.rst
     platypush/events/gotify.rst
+    platypush/events/gpio.rst
     platypush/events/gps.rst
     platypush/events/http.rst
     platypush/events/http.hook.rst
