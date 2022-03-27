@@ -3,11 +3,33 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
-## [Unreleased]
+## [0.23.2] - 2022-03-27
 
 ### Added
 
-- Simplified script API to interact with platform variables (https://git.platypush.tech/platypush/platypush/-/issues/206).
+- Support for asynchronous events over GPIO PINs. It is now possible to specify
+  a list of `monitored_pins` in the [`gpio`
+  plugin](https://git.platypush.tech/platypush/platypush/-/blob/master/platypush/plugins/gpio/__init__.py)
+  configuration. A change in the value on those GPIO PINs (caused by e.g. a
+  button, a binary sensor or a probe) will trigger a
+  `platypush.message.event.gpio.GPIOEvent` that you can use in your automation
+  scripts.
+
+- Simplified script API to interact with platform variables
+  (closes [#206](https://git.platypush.tech/platypush/platypush/-/issues/206)).
+  You can now read and write stored variables in your Platypush scripts through
+  a much more intuitive interface compared to explicitly using the `variable`
+  plugin explicitly:
+
+```python
+from platypush.context import Variable
+
+# ...
+
+my_var = Variable.get('my_var')
+my_var = int(my_var) + 1
+Variable.set(my_var=my_var)
+```
 
 ## [0.23.0] - 2022-03-01
 
