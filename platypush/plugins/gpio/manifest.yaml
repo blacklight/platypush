@@ -1,5 +1,7 @@
 manifest:
-  events: {}
+  events:
+    - platypush.message.event.gpio.GPIOEvent:
+        When the value of a monitored PIN changes.
   install:
     pip:
     - RPi.GPIO

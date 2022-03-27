@@ -88,7 +88,8 @@ class RunnablePlugin(Plugin):
         if self._thread and self._thread.is_alive():
             self.logger.info(f'Waiting for {self.__class__.__name__} to stop')
             try:
-                self._thread.join()
+                if self._thread:
+                    self._thread.join()
             except Exception as e:
                 self.logger.warning(f'Could not join thread on stop: {e}')
 
