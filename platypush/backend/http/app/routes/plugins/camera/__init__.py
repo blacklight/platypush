@@ -1,7 +1,8 @@
 import json
 from typing import Optional
 
-from flask import Response, Blueprint, request
+from flask import Blueprint, request
+from flask.wrappers import Response
 
 from platypush.backend.http.app import template_folder
 from platypush.backend.http.app.utils import authenticate
@@ -17,19 +18,22 @@ __routes__ = [
 
 
 def get_camera(plugin: str) -> CameraPlugin:
-    return get_plugin('camera.' + plugin)
+    plugin_name = f'camera.{plugin}'
+    p = get_plugin(plugin_name)
+    assert p, f'No such plugin: {plugin_name}'
+    return p
 
 
-def get_frame(session: Camera, timeout: Optional[float] = None) -> bytes:
-    with session.stream.ready:
-        session.stream.ready.wait(timeout=timeout)
-        return session.stream.frame
+def get_frame(session: Camera, timeout: Optional[float] = None) -> Optional[bytes]:
+    if session.stream:
+        with session.stream.ready:
+            session.stream.ready.wait(timeout=timeout)
+            return session.stream.frame
 
 
-def feed(plugin: str, **kwargs):
-    plugin = get_camera(plugin)
-    with plugin.open(stream=True, **kwargs) as session:
-        plugin.start_camera(session)
+def feed(camera: CameraPlugin, **kwargs):
+    with camera.open(**kwargs) as session:
+        camera.start_camera(session)
         while True:
             frame = get_frame(session, timeout=5.0)
             if frame:
@@ -77,8 +81,12 @@ def get_photo(plugin, extension):
 @authenticate()
 def get_video(plugin, extension):
     stream_class = StreamWriter.get_class_by_name(extension)
-    return Response(feed(plugin, stream_format=extension, frames_dir=None, **get_args(request.args)),
-                    mimetype=stream_class.mimetype)
+    camera = get_camera(plugin)
+    return Response(
+        feed(camera, stream=True, stream_format=extension, frames_dir=None,
+            **get_args(request.args)
+        ), mimetype=stream_class.mimetype
+    )
 
 
 @camera.route('/camera/<plugin>/photo', methods=['GET'])
