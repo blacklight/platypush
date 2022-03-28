@@ -359,6 +359,7 @@ $progress-bar-bg: #ddd;
 $playback-status-color: #757f70;
 
 .music {
+  width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;

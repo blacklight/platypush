@@ -85,6 +85,7 @@ export default {
 <style lang="scss" scoped>
 .calendar {
   display: flex;
+  padding: 1em;
   flex-direction: column;
   width: 100%;
   height: 100%;
