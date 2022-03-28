@@ -1,10 +1,15 @@
 @use "sass:math";
 
+$tablet: 769px;
+$desktop: 1024px;
+$widescreen: 1216px;
+$fullhd: 1408px;
+
 $widths: (
-        m:  $tablet,
-        l:  $desktop,
-        xl:  $widescreen,
-        xxl:  $fullhd,
+    m:    $tablet,
+    l:    $desktop,
+    xl:   $widescreen,
+    xxl:  $fullhd,
 );
 
 @for $i from 1 through 12 {
@@ -42,7 +47,7 @@ $widths: (
     }
 }
 
-@media screen and (max-width: calc(#{$tablet} - 1)) {
+@media screen and (max-width: calc(#{$tablet} - 1px)) {
     @for $i from 1 through 12 {
         .col-s-#{$i} {
             float: left;
@@ -123,6 +128,24 @@ $widths: (
         .#{$size}-visible {
             display: block !important;
         }
+    }
+}
+
+@mixin from($device) {
+    @media screen and (min-width: $device) {
+        @content;
+    }
+}
+
+@mixin until($device) {
+    @media screen and (max-width: calc(#{$device} - 1px)) {
+        @content;
+    }
+}
+
+@mixin between($from, $until) {
+    @media screen and (min-width: $from) and (max-width: calc(#{$until} - 1px)) {
+        @content;
     }
 }
 

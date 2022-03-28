@@ -1,7 +1,7 @@
 <template>
   <Loading v-if="loading" />
 
-  <div id="dashboard" class="columns is-mobile" :class="classes" :style="style">
+  <div id="dashboard" class="col-12" :class="classes" :style="style">
     <Row v-for="(row, i) in rows" :key="i" :class="row.class" :style="row.style">
       <keep-alive v-for="(widget, j) in row.widgets" :key="j">
         <Widget :style="widget.style" :class="widget.class">

@@ -106,7 +106,7 @@ nav {
       position: absolute;
       top: 0;
       left: 0;
-      z-index: 2;
+      z-index: 5;
     }
   }
 
@@ -132,7 +132,7 @@ nav {
     a {
       display: block;
       color: $nav-fg;
-      padding: 1em 0.25em;
+      padding: 1em 0.5em;
       &:hover {
         color: $nav-fg;
       }
@@ -168,6 +168,7 @@ nav {
 
   .hostname {
     font-size: 0.7em;
+    margin-top: -0.2em;
 
     @media screen and (min-width: $tablet) {
       margin-left: 1em;

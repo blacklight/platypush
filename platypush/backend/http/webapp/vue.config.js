@@ -5,7 +5,6 @@ module.exports = {
     loaderOptions: {
       sass: {
         additionalData: `
-          @import '~bulma';
           @import '~w3css/w3.css';
           @import "@/style/common.scss";
         `
