@@ -1,17 +1,23 @@
 <template>
-  <div class="range-slider">
-    <label>
-      <input class="slider" type="range" :value="v" :min="range[0]" :max="range[1]"
-             :disabled="disabled" @input="input" @change="changed" @mouseup="mouseup" @mousedown="mousedown"
-             @touchstart="mouseup" @touchend="mousedown" :ref="`input_${i}`" v-for="(v, i) in value" :key="i">
-    </label>
+  <div class="range-wrapper">
+    <input class="slider" type="range" :value="v" :min="range[0]" :max="range[1]" :step="step"
+           :disabled="disabled" ref="ranges"
+           @input.stop="onUpdate"
+           @change.stop="onUpdate"
+           @mouseup.stop="onUpdate"
+           @mousedown.stop="onUpdate"
+           @touchstart.stop="onUpdate"
+           @touchend.stop="onUpdate"
+           @keyup.stop="onUpdate"
+           @keydown.stop="onUpdate"
+           v-for="(v, i) in value" :key="i">
   </div>
 </template>
 
 <script>
 export default {
   name: "RangeSlider",
-  emits: ['input', 'change', 'mouseup', 'mousedown'],
+  emits: ['input', 'change', 'mouseup', 'mousedown', 'touchstart', 'touchend', 'keyup', 'keydown'],
   props: {
     disabled: {
       type: Boolean,
@@ -23,6 +29,11 @@ export default {
       default: () => [0, 100],
     },
 
+    step: {
+      type: Number,
+      default: 1,
+    },
+
     value: {
       type: Array,
       default: () => [0, 100],
@@ -30,115 +41,103 @@ export default {
   },
 
   methods: {
-    getEvent(event) {
-      return {
+    onUpdate(event) {
+      this.$emit(event.type, {
         ...event,
         target: {
           ...event.target,
-          value: Object.values(this.$refs).map((input) => parseFloat(input.value)).sort(),
+          value: this.$refs.ranges.map((input) => parseFloat(input.value)).sort(),
         }
-      }
-    },
-
-    input(event) {
-      this.$emit('input', this.getEvent(event))
-    },
-
-    changed(event) {
-      this.$emit('change', this.getEvent(event))
-    },
-
-    mouseup(event) {
-      this.$emit('mouseup', this.getEvent(event))
-    },
-
-    mousedown(event) {
-      this.$emit('mousedown', this.getEvent(event))
-    },
-  },
-
-  mounted() {
-    if (this.value) {
-      const self = this
-      this.value.forEach((v, i) => {
-        self.$refs[`input_${i}`].value = v
       })
-    }
+    },
   },
 }
 </script>
 
 <style lang="scss" scoped>
-.range-slider {
+.range-wrapper {
+  width: 100%;
   position: relative;
-  display: flex;
 
-  label {
-    height: 2em;
+  @mixin runnable-track {
+    width: 100%;
+    height: 0.75em;
+    cursor: pointer;
+    animate: 0.2s;
+    background: $slider-bg;
+    border-radius: 0.5em;
+    box-shadow: inset 1px 0px 3px 0 $slider-track-shadow;
+    border: 0;
   }
 
-  .slider {
-    @include appearance(none);
-    @include transition(opacity .2s);
-    background: none;
+  @mixin thumb {
+    width: 1.25em;
+    height: 1.25em;
+    background: $slider-thumb-bg;
+    position: relative;
+    z-index: 2;
+    border-radius: 50%;
+    box-shadow: 1px 0px 2px 0 $slider-thumb-shadow;
+    cursor: pointer;
+  }
+
+  input[type=range] {
     width: 100%;
-    height: 2em;
     position: absolute;
     left: 0;
-    top: 0;
-    margin: 0;
-    padding: 0;
-    border-radius: 1em;
+    bottom: 0;
     outline: none;
-    pointer-events: none;
-    overflow: hidden;
-    z-index: 20;
+    @include appearance(none);
 
-    @mixin slider-thumb {
-      @include appearance(none);
-      position: relative;
-      width: 1.5em;
-      height: 1.5em;
-      pointer-events: all;
-      border-radius: 50%;
+    &:focus, &:hover {
+      outline: none;
       border: 0;
-      background: $slider-thumb-bg;
-      cursor: pointer;
-      z-index: 10;
-      outline: 0;
     }
 
-    &::-webkit-slider-thumb { @include slider-thumb }
-    &::-moz-range-thumb { @include slider-thumb}
+    &::-webkit-slider-runnable-track {
+      @include runnable-track;
+    }
+
     &::-moz-range-track {
-      @include appearance(none);
-      position: relative;
+      @include runnable-track;
+    }
+
+    &::-moz-range-progress {
+      background: $slider-progress-bg;
+    }
+
+    &::-ms-track {
+      width: 100%;
+      height: 0.75em;
+      cursor: pointer;
+      animate: 0.2s;
+      background: transparent;
+      border-color: transparent;
+      color: transparent;
+    }
+
+    &::-ms-fill-lower,
+    &::-ms-fill-upper {
+      background: $slider-progress-bg;
+      border-radius: 1px;
+      box-shadow: none;
       border: 0;
     }
 
-    &::-moz-range-progress { height: 1em; }
-
-    &:first-child {
-      z-index: 21;
-      &::-moz-range-progress { background: $slider-bg; }
+    &::-webkit-slider-thumb {
+      @include thumb;
+      @include appearance(none);
+      margin-top: -0.25em;
     }
 
-    &:last-child {
-      background: $slider-bg;
-      &::-moz-range-progress { background: $slider-progress-bg; }
+    &::-moz-range-thumb {
+      @include thumb;
     }
 
-    &[disabled] {
-      @mixin no-thumb {
-        display: none;
-        width: 0;
-      }
-
-      &::-moz-range-progress { background: none; }
-      &::-webkit-slider-runnable-track { background: none; }
-      &::-moz-range-thumb { @include no-thumb; }
-      &::-webkit-slider-thumb { @include no-thumb; }
+    &::-ms-thumb {
+      @include thumb;
     }
   }
 }
 </style>
+

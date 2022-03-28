@@ -23,7 +23,9 @@ input[type=text], input[type=password] {
 
 input, button {
   outline: none;
+}
 
+textarea, input[type=text] {
   &:hover {
     border: 1px solid $active-glow-bg-2;
   }

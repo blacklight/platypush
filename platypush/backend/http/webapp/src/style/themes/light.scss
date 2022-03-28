@@ -117,10 +117,13 @@ $toggle-selected-dot-bg: white;
 
 //// Slider element
 $slider-bg: #e4e4e4 !default;
-$slider-thumb-bg: rgba(0,215,80,1.0) !default;
+$slider-track-shadow: #a5a2a2;
+$slider-thumb-bg: #37d560 !default;
 $slider-thumb-disabled-bg: rgba(0,215,80,0.3) !default;
+$slider-thumb-shadow: #475c40 !default;
+$slider-thumb-border: #83997896 !default;
 $slider-hover-on-hover-bg: #d2d2d2 !default;
-$slider-progress-bg: rgba(0,215,80,0.2) !default;
+$slider-progress-bg: rgba(0,215,80,0.5) !default;
 
 //// Input element
 $input-icon-fg: #888;
