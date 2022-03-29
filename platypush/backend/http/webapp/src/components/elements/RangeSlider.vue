@@ -102,10 +102,6 @@ export default {
       @include runnable-track;
     }
 
-    &::-moz-range-progress {
-      background: $slider-progress-bg;
-    }
-
     &::-ms-track {
       width: 100%;
       height: 0.75em;

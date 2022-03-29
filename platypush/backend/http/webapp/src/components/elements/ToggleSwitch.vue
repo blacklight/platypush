@@ -1,5 +1,5 @@
 <template>
-  <div class="power-switch" :class="{disabled: disabled}" @click="onInput">
+  <div class="power-switch" :class="{disabled: disabled}" @click.stop="onInput">
     <!--suppress HtmlFormInputWithoutLabel -->
     <input type="checkbox" :checked="value">
     <label>
@@ -32,7 +32,6 @@ export default {
 
   methods: {
     onInput(event) {
-      event.stopPropagation()
       if (this.disabled)
         return false
 
@@ -85,8 +84,8 @@ export default {
         height: 1.4em;
         width: 2.5em;
         border-radius: 1em;
-        background: $toggle-bg;
-        box-shadow: $toggle-shadow;
+        background: $slider-bg;
+        box-shadow: inset 1px 0px 3px 0 $slider-track-shadow;
 
         &:before {
           content: '';
@@ -96,7 +95,7 @@ export default {
           right: 0;
           bottom: 0;
           border-radius: inherit;
-          background: $toggle-selected-bg;
+          background: $slider-progress-bg;
           opacity: var(--gradient, 0);
           transition: opacity .4s;
         }
@@ -107,7 +106,7 @@ export default {
           width: 1.5em;
           height: 1.5em;
           border-radius: 50%;
-          box-shadow: $toggle-dot-shadow;
+          box-shadow: 1px 0px 3.5px 0 $slider-thumb-shadow;
           left: -0.25em;
           top: -0.05em;
           transform: translateX(var(--offset, 0));
@@ -122,7 +121,6 @@ export default {
             bottom: 0;
             border-radius: inherit;
             background: $toggle-selected-dot-bg;
-            box-shadow: $toggle-dot-shadow;
             opacity: var(--gradient, 0);
             transition: opacity .4s;
           }
@@ -151,7 +149,7 @@ export default {
         opacity: 0;
         font-size: 1em;
         font-weight: 500;
-        color: #A6ACCD;
+        color: $slider-bg;
         transform: translateY(0.2em);
         transition: opacity .4s, transform .4s;
       }
@@ -170,7 +168,7 @@ export default {
     &:checked {
       & + label {
         --offset: 1.5em;
-        --text: #406046;
+        --text: $slider-progress-bg;
         --gradient: 1;
         --shadow: rgba(0, 39, 6, .1);
       }
