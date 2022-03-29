@@ -97,7 +97,7 @@ export default {
 <style lang="scss" scoped>
 .dropdown-container {
   position: relative;
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
 
   .dropdown {

@@ -400,11 +400,12 @@ button {
 
     .buttons {
       height: 50%;
+      margin-bottom: .5em;
       align-items: center;
     }
 
     button {
-      padding: 0;
+      padding: 0.5em;
       margin: 0 .75em;
 
       .play-pause {
@@ -438,10 +439,13 @@ button {
 
   .pull-right {
     button {
-      padding: 0;
+      padding: 0.5em;
     }
 
     .volume-container {
+      align-items: center;
+      margin-top: -1.25em;
+
       button {
         background: none;
       }
@@ -454,7 +458,7 @@ button {
 
   .volume-slider {
     width: 75%;
-    margin-right: 1rem;
+    margin-right: .5em;
   }
 }
 

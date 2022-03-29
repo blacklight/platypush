@@ -9,6 +9,10 @@ button, .btn, .btn-default {
     color: $selected-fg;
     border: $selected-border;
   }
+
+  .icon {
+    margin-right: .5em;
+  }
 }
 
 input[type=text], input[type=password] {
