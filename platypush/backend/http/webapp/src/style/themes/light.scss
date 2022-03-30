@@ -137,3 +137,9 @@ $play-btn-fg: #27ee5e !default;
 $dropdown-bg: rgb(241, 243, 242) !default;
 $dropdown-disabled-color: #999 !default;
 $dropdown-shadow: 1px 1px 1px #bbb !default;
+
+//// Scrollbars
+$scrollbar-track-bg: $slider-bg !default;
+$scrollbar-track-shadow: inset 1px 0px 3px 0 $slider-track-shadow !default;
+$scrollbar-thumb-bg: #50ca80 !default;
+

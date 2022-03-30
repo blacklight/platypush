@@ -45,3 +45,24 @@ a {
   cursor: pointer;
   text-decoration: none;
 }
+
+::-webkit-scrollbar {
+  width: 0.75em;
+}
+
+::-webkit-scrollbar-track {
+  background: $scrollbar-track-bg;
+  box-shadow: $scrollbar-track-shadow;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $scrollbar-thumb-bg;
+  border-radius: 1em;
+  cursor: pointer;
+}
+
+body {
+  scrollbar-width: thin;
+  scrollbar-color: $scrollbar-thumb-bg $scrollbar-track-bg;
+}
+
