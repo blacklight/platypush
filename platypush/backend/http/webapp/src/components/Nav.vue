@@ -193,6 +193,19 @@ nav {
     margin: 0;
   }
 
+  ul {
+    li {
+      .icon {
+        margin-right: 0;
+
+        & img {
+          width: 1.25em;
+          height: 1.25em;
+        }
+      }
+    }
+  }
+
   &.collapsed {
     display: flex;
     flex-direction: column;
@@ -282,11 +295,6 @@ nav {
 
         .icon {
           margin-right: 0;
-
-          & img {
-            width: 1.25em;
-            height: 1.25em;
-          }
         }
 
         @media screen and (max-width: $tablet) {
