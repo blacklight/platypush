@@ -41,6 +41,13 @@ class LoggerPlugin(Plugin):
         """
         self.logger.error(msg, *args, **kwargs)
 
+    @action
+    def exception(self, exception, *args, **kwargs):
+        """
+        logger.exception wrapper
+        """
+        self.logger.exception(exception, *args, **kwargs)
+
 
 # vim:sw=4:ts=4:et:
 
