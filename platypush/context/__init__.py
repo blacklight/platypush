@@ -133,8 +133,11 @@ def get_plugin(plugin_name, reload=False):
 
 def get_bus() -> Bus:
     global main_bus
-    assert main_bus, 'The bus is not registered'
-    return main_bus
+    if main_bus:
+        return main_bus
+
+    from platypush.bus.redis import RedisBus
+    return RedisBus()
 
 
 def get_or_create_event_loop():
