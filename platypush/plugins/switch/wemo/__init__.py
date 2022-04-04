@@ -1,9 +1,11 @@
+import contextlib
 import ipaddress
-from typing import List
+from typing import List, Optional
 
 from platypush.plugins import action
 from platypush.plugins.switch import SwitchPlugin
 from platypush.utils.workers import Workers
+
 from .lib import WemoRunner
 from .scanner import Scanner
 
@@ -16,7 +18,13 @@ class SwitchWemoPlugin(SwitchPlugin):
 
     _default_port = 49153
 
-    def __init__(self, devices=None, netmask: str = None, port: int = _default_port, **kwargs):
+    def __init__(
+        self,
+        devices=None,
+        netmask: Optional[str] = None,
+        port: int = _default_port,
+        **kwargs
+    ):
         """
         :param devices: List of IP addresses or name->address map containing the WeMo Switch devices to control.
             This plugin previously used ouimeaux for auto-discovery but it's been dropped because
@@ -37,8 +45,11 @@ class SwitchWemoPlugin(SwitchPlugin):
 
     def _init_devices(self, devices):
         if devices:
-            self._devices.update(devices if isinstance(devices, dict) else
-                                 {addr: addr for addr in devices})
+            self._devices.update(
+                devices
+                if isinstance(devices, dict)
+                else {addr: addr for addr in devices}
+            )
         else:
             self._devices = {}
 
@@ -68,37 +79,53 @@ class SwitchWemoPlugin(SwitchPlugin):
         """
 
         return [
-                self.status(device).output
-                for device in self._devices.values()
+            self.status(device).output  # type: ignore
+            for device in self._devices.values()
         ]
 
     def _get_address(self, device: str) -> str:
         if device not in self._addresses:
-            try:
+            with contextlib.suppress(KeyError):
                 return self._devices[device]
-            except KeyError:
-                pass
 
         return device
 
     @action
-    def status(self, device: str = None, *args, **kwargs):
+    def status(self, device: Optional[str] = None, *_, **__):
         devices = {device: device} if device else self._devices.copy()
 
         ret = [
             {
-                'id': addr,
-                'ip': addr,
-                'name': name if name != addr else WemoRunner.get_name(addr),
-                'on': WemoRunner.get_state(addr),
+                "id": addr,
+                "ip": addr,
+                "name": name if name != addr else WemoRunner.get_name(addr),
+                "on": WemoRunner.get_state(addr),
             }
             for (name, addr) in devices.items()
         ]
 
+        self.publish_entities(ret)  # type: ignore
         return ret[0] if device else ret
 
+    def transform_entities(self, devices: List[dict]):
+        from platypush.entities.switches import Switch
+
+        return super().transform_entities(  # type: ignore
+            [
+                Switch(
+                    id=dev["id"],
+                    name=dev["name"],
+                    state=dev["on"],
+                    data={
+                        "ip": dev["ip"],
+                    },
+                )
+                for dev in (devices or [])
+            ]
+        )
+
     @action
-    def on(self, device: str, **kwargs):
+    def on(self, device: str, **_):
         """
         Turn a switch on
 
@@ -109,7 +136,7 @@ class SwitchWemoPlugin(SwitchPlugin):
         return self.status(device)
 
     @action
-    def off(self, device: str, **kwargs):
+    def off(self, device: str, **_):
         """
         Turn a switch off
 
@@ -120,7 +147,7 @@ class SwitchWemoPlugin(SwitchPlugin):
         return self.status(device)
 
     @action
-    def toggle(self, device: str, *args, **kwargs):
+    def toggle(self, device: str, *_, **__):
         """
         Toggle a device on/off state
 
@@ -151,19 +178,16 @@ class SwitchWemoPlugin(SwitchPlugin):
         return WemoRunner.get_name(device)
 
     @action
-    def scan(self, netmask: str = None):
+    def scan(self, netmask: Optional[str] = None):
         netmask = netmask or self.netmask
-        assert netmask, 'Scan not supported: No netmask specified'
+        assert netmask, "Scan not supported: No netmask specified"
 
         workers = Workers(10, Scanner, port=self.port)
         with workers:
             for addr in ipaddress.IPv4Network(netmask):
                 workers.put(addr.exploded)
 
-        devices = {
-            dev.name: dev.addr
-            for dev in workers.responses
-        }
+        devices = {dev.name: dev.addr for dev in workers.responses}
 
         self._init_devices(devices)
         return self.status()
