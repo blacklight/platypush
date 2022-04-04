@@ -43,16 +43,21 @@ class SwitchbotPlugin(SwitchPlugin):
         return url
 
     def _run(self, method: str = 'get', *args, device=None, **kwargs):
-        response = getattr(requests, method)(self._url_for(*args, device=device), headers={
-            'Authorization': self._api_token,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json; charset=utf-8',
-        }, **kwargs)
+        response = getattr(requests, method)(
+            self._url_for(*args, device=device),
+            headers={
+                'Authorization': self._api_token,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json; charset=utf-8',
+            },
+            **kwargs,
+        )
 
         response.raise_for_status()
         response = response.json()
-        assert response.get('statusCode') == 100, \
-            f'Switchbot API request failed: {response.get("statusCode")}: {response.get("message")}'
+        assert (
+            response.get('statusCode') == 100
+        ), f'Switchbot API request failed: {response.get("statusCode")}: {response.get("message")}'
 
         return response.get('body')
 
@@ -77,16 +82,20 @@ class SwitchbotPlugin(SwitchPlugin):
         """
         devices = self._run('get', 'devices')
         devices = [
-            DeviceSchema().dump({
-                **device,
-                'is_virtual': False,
-            })
+            DeviceSchema().dump(
+                {
+                    **device,
+                    'is_virtual': False,
+                }
+            )
             for device in devices.get('deviceList', [])
         ] + [
-            DeviceSchema().dump({
-                **device,
-                'is_virtual': True,
-            })
+            DeviceSchema().dump(
+                {
+                    **device,
+                    'is_virtual': True,
+                }
+            )
             for device in devices.get('infraredRemoteList', [])
         ]
 
@@ -96,10 +105,43 @@ class SwitchbotPlugin(SwitchPlugin):
 
         return devices
 
-    def _worker(self, q: queue.Queue, method: str = 'get', *args, device: Optional[dict] = None, **kwargs):
+    def transform_entities(self, devices: List[dict]):
+        from platypush.entities.switches import Switch
+
+        return super().transform_entities(  # type: ignore
+            [
+                Switch(
+                    id=dev["id"],
+                    name=dev["name"],
+                    state=dev.get("on"),
+                    data={
+                        "device_type": dev.get("device_type"),
+                        "is_virtual": dev.get("is_virtual", False),
+                        "hub_id": dev.get("hub_id"),
+                    },
+                )
+                for dev in (devices or [])
+                if dev.get('device_type') == 'Bot'
+            ]
+        )
+
+    def _worker(
+        self,
+        q: queue.Queue,
+        method: str = 'get',
+        *args,
+        device: Optional[dict] = None,
+        **kwargs,
+    ):
         schema = DeviceStatusSchema()
         try:
-            if method == 'get' and args and args[0] == 'status' and device and device.get('is_virtual'):
+            if (
+                method == 'get'
+                and args
+                and args[0] == 'status'
+                and device
+                and device.get('is_virtual')
+            ):
                 res = schema.load(device)
             else:
                 res = self._run(method, *args, device=device, **kwargs)
@@ -121,7 +163,11 @@ class SwitchbotPlugin(SwitchPlugin):
         devices = self.devices().output
         if device:
             device_info = self._get_device(device)
-            status = {} if device_info['is_virtual'] else self._run('get', 'status', device=device_info)
+            status = (
+                {}
+                if device_info['is_virtual']
+                else self._run('get', 'status', device=device_info)
+            )
             return {
                 **device_info,
                 **status,
@@ -133,7 +179,7 @@ class SwitchbotPlugin(SwitchPlugin):
             threading.Thread(
                 target=self._worker,
                 args=(queues[i], 'get', 'status'),
-                kwargs={'device': dev}
+                kwargs={'device': dev},
             )
             for i, dev in enumerate(devices)
         ]
@@ -148,14 +194,17 @@ class SwitchbotPlugin(SwitchPlugin):
                 continue
 
             assert not isinstance(response, Exception), str(response)
-            results.append({
-                **devices_by_id.get(response.get('id'), {}),
-                **response,
-            })
+            results.append(
+                {
+                    **devices_by_id.get(response.get('id'), {}),
+                    **response,
+                }
+            )
 
         for worker in workers:
             worker.join()
 
+        self.publish_entities(results)  # type: ignore
         return results
 
     @action
@@ -200,9 +249,7 @@ class SwitchbotPlugin(SwitchPlugin):
     @property
     def switches(self) -> List[dict]:
         # noinspection PyUnresolvedReferences
-        return [
-            dev for dev in self.status().output if 'on' in dev
-        ]
+        return [dev for dev in self.status().output if 'on' in dev]
 
     @action
     def set_curtain_position(self, device: str, position: int):
@@ -213,11 +260,16 @@ class SwitchbotPlugin(SwitchPlugin):
         :param position: An integer between 0 (open) and 100 (closed).
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'setPosition',
-            'commandType': 'command',
-            'parameter': f'0,ff,{position}',
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'setPosition',
+                'commandType': 'command',
+                'parameter': f'0,ff,{position}',
+            },
+        )
 
     @action
     def set_humidifier_efficiency(self, device: str, efficiency: Union[int, str]):
@@ -228,11 +280,16 @@ class SwitchbotPlugin(SwitchPlugin):
         :param efficiency: An integer between 0 (open) and 100 (closed) or `auto`.
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'setMode',
-            'commandType': 'command',
-            'parameter': efficiency,
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'setMode',
+                'commandType': 'command',
+                'parameter': efficiency,
+            },
+        )
 
     @action
     def set_fan_speed(self, device: str, speed: int):
@@ -246,11 +303,16 @@ class SwitchbotPlugin(SwitchPlugin):
         status = self.status(device=device).output
         mode = status.get('mode')
         swing_range = status.get('swing_range')
-        return self._run('post', 'commands', device=device, json={
-            'command': 'set',
-            'commandType': 'command',
-            'parameter': ','.join(['on', str(mode), str(speed), str(swing_range)]),
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'set',
+                'commandType': 'command',
+                'parameter': ','.join(['on', str(mode), str(speed), str(swing_range)]),
+            },
+        )
 
     @action
     def set_fan_mode(self, device: str, mode: int):
@@ -264,11 +326,16 @@ class SwitchbotPlugin(SwitchPlugin):
         status = self.status(device=device).output
         speed = status.get('speed')
         swing_range = status.get('swing_range')
-        return self._run('post', 'commands', device=device, json={
-            'command': 'set',
-            'commandType': 'command',
-            'parameter': ','.join(['on', str(mode), str(speed), str(swing_range)]),
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'set',
+                'commandType': 'command',
+                'parameter': ','.join(['on', str(mode), str(speed), str(swing_range)]),
+            },
+        )
 
     @action
     def set_swing_range(self, device: str, swing_range: int):
@@ -282,11 +349,16 @@ class SwitchbotPlugin(SwitchPlugin):
         status = self.status(device=device).output
         speed = status.get('speed')
         mode = status.get('mode')
-        return self._run('post', 'commands', device=device, json={
-            'command': 'set',
-            'commandType': 'command',
-            'parameter': ','.join(['on', str(mode), str(speed), str(swing_range)]),
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'set',
+                'commandType': 'command',
+                'parameter': ','.join(['on', str(mode), str(speed), str(swing_range)]),
+            },
+        )
 
     @action
     def set_temperature(self, device: str, temperature: float):
@@ -300,11 +372,18 @@ class SwitchbotPlugin(SwitchPlugin):
         status = self.status(device=device).output
         mode = status.get('mode')
         fan_speed = status.get('fan_speed')
-        return self._run('post', 'commands', device=device, json={
-            'command': 'setAll',
-            'commandType': 'command',
-            'parameter': ','.join([str(temperature), str(mode), str(fan_speed), 'on']),
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'setAll',
+                'commandType': 'command',
+                'parameter': ','.join(
+                    [str(temperature), str(mode), str(fan_speed), 'on']
+                ),
+            },
+        )
 
     @action
     def set_ac_mode(self, device: str, mode: int):
@@ -325,11 +404,18 @@ class SwitchbotPlugin(SwitchPlugin):
         status = self.status(device=device).output
         temperature = status.get('temperature')
         fan_speed = status.get('fan_speed')
-        return self._run('post', 'commands', device=device, json={
-            'command': 'setAll',
-            'commandType': 'command',
-            'parameter': ','.join([str(temperature), str(mode), str(fan_speed), 'on']),
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'setAll',
+                'commandType': 'command',
+                'parameter': ','.join(
+                    [str(temperature), str(mode), str(fan_speed), 'on']
+                ),
+            },
+        )
 
     @action
     def set_ac_fan_speed(self, device: str, fan_speed: int):
@@ -349,11 +435,18 @@ class SwitchbotPlugin(SwitchPlugin):
         status = self.status(device=device).output
         temperature = status.get('temperature')
         mode = status.get('mode')
-        return self._run('post', 'commands', device=device, json={
-            'command': 'setAll',
-            'commandType': 'command',
-            'parameter': ','.join([str(temperature), str(mode), str(fan_speed), 'on']),
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'setAll',
+                'commandType': 'command',
+                'parameter': ','.join(
+                    [str(temperature), str(mode), str(fan_speed), 'on']
+                ),
+            },
+        )
 
     @action
     def set_channel(self, device: str, channel: int):
@@ -364,11 +457,16 @@ class SwitchbotPlugin(SwitchPlugin):
         :param channel: Channel number.
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'SetChannel',
-            'commandType': 'command',
-            'parameter': [str(channel)],
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'SetChannel',
+                'commandType': 'command',
+                'parameter': [str(channel)],
+            },
+        )
 
     @action
     def volup(self, device: str):
@@ -378,10 +476,15 @@ class SwitchbotPlugin(SwitchPlugin):
         :param device: Device name or ID.
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'volumeAdd',
-            'commandType': 'command',
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'volumeAdd',
+                'commandType': 'command',
+            },
+        )
 
     @action
     def voldown(self, device: str):
@@ -391,10 +494,15 @@ class SwitchbotPlugin(SwitchPlugin):
         :param device: Device name or ID.
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'volumeSub',
-            'commandType': 'command',
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'volumeSub',
+                'commandType': 'command',
+            },
+        )
 
     @action
     def mute(self, device: str):
@@ -404,10 +512,15 @@ class SwitchbotPlugin(SwitchPlugin):
         :param device: Device name or ID.
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'setMute',
-            'commandType': 'command',
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'setMute',
+                'commandType': 'command',
+            },
+        )
 
     @action
     def channel_next(self, device: str):
@@ -417,10 +530,15 @@ class SwitchbotPlugin(SwitchPlugin):
         :param device: Device name or ID.
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'channelAdd',
-            'commandType': 'command',
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'channelAdd',
+                'commandType': 'command',
+            },
+        )
 
     @action
     def channel_prev(self, device: str):
@@ -430,10 +548,15 @@ class SwitchbotPlugin(SwitchPlugin):
         :param device: Device name or ID.
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'channelSub',
-            'commandType': 'command',
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'channelSub',
+                'commandType': 'command',
+            },
+        )
 
     @action
     def play(self, device: str):
@@ -443,10 +566,15 @@ class SwitchbotPlugin(SwitchPlugin):
         :param device: Device name or ID.
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'Play',
-            'commandType': 'command',
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'Play',
+                'commandType': 'command',
+            },
+        )
 
     @action
     def pause(self, device: str):
@@ -456,10 +584,15 @@ class SwitchbotPlugin(SwitchPlugin):
         :param device: Device name or ID.
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'Pause',
-            'commandType': 'command',
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'Pause',
+                'commandType': 'command',
+            },
+        )
 
     @action
     def stop(self, device: str):
@@ -469,10 +602,15 @@ class SwitchbotPlugin(SwitchPlugin):
         :param device: Device name or ID.
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'Stop',
-            'commandType': 'command',
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'Stop',
+                'commandType': 'command',
+            },
+        )
 
     @action
     def forward(self, device: str):
@@ -482,10 +620,15 @@ class SwitchbotPlugin(SwitchPlugin):
         :param device: Device name or ID.
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'FastForward',
-            'commandType': 'command',
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'FastForward',
+                'commandType': 'command',
+            },
+        )
 
     @action
     def back(self, device: str):
@@ -495,10 +638,15 @@ class SwitchbotPlugin(SwitchPlugin):
         :param device: Device name or ID.
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'Rewind',
-            'commandType': 'command',
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'Rewind',
+                'commandType': 'command',
+            },
+        )
 
     @action
     def next(self, device: str):
@@ -508,10 +656,15 @@ class SwitchbotPlugin(SwitchPlugin):
         :param device: Device name or ID.
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'Next',
-            'commandType': 'command',
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'Next',
+                'commandType': 'command',
+            },
+        )
 
     @action
     def previous(self, device: str):
@@ -521,10 +674,15 @@ class SwitchbotPlugin(SwitchPlugin):
         :param device: Device name or ID.
         """
         device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={
-            'command': 'Previous',
-            'commandType': 'command',
-        })
+        return self._run(
+            'post',
+            'commands',
+            device=device,
+            json={
+                'command': 'Previous',
+                'commandType': 'command',
+            },
+        )
 
     @action
     def scenes(self) -> List[dict]:
@@ -544,7 +702,8 @@ class SwitchbotPlugin(SwitchPlugin):
         """
         # noinspection PyUnresolvedReferences
         scenes = [
-            s for s in self.scenes().output
+            s
+            for s in self.scenes().output
             if s.get('id') == scene or s.get('name') == scene
         ]
 
