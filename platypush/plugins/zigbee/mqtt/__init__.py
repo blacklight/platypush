@@ -160,6 +160,10 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
 
         compatible_entities = []
         for dev in devices:
+            if not dev:
+                continue
+
+            dev_def = dev.get("definition") or {}
             dev_info = {
                 "type": dev.get("type"),
                 "date_code": dev.get("date_code"),
@@ -168,10 +172,10 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
                 "power_source": dev.get("power_source"),
                 "software_build_id": dev.get("software_build_id"),
                 "model_id": dev.get("model_id"),
-                "model": dev.get("definition", {}).get("model"),
-                "vendor": dev.get("definition", {}).get("vendor"),
+                "model": dev_def.get("model"),
+                "vendor": dev_def.get("vendor"),
                 "supported": dev.get("supported"),
-                "description": dev.get("definition", {}).get("description"),
+                "description": dev_def.get("description"),
             }
 
             switch_info = self._get_switch_info(dev)
@@ -185,7 +189,7 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
                     )
                 )
 
-        return compatible_entities
+        return super().transform_entities(compatible_entities)  # type: ignore
 
     def _get_network_info(self, **kwargs):
         self.logger.info('Fetching Zigbee network information')
@@ -738,10 +742,8 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
 
         if not devices:
             devices = {
-                [
-                    device['friendly_name'] or device['ieee_address']
-                    for device in self.devices(**kwargs).output
-                ]
+                device['friendly_name'] or device['ieee_address']
+                for device in self.devices(**kwargs).output
             }
 
         def worker(device: str, q: Queue):
