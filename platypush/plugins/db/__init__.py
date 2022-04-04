@@ -1,11 +1,11 @@
-"""
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-"""
-
 import time
+from contextlib import contextmanager
+from multiprocessing import RLock
+from typing import Generator
 
 from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session, sessionmaker, scoped_session
 
 from platypush.plugins import Plugin, action
 
@@ -30,22 +30,23 @@ class DbPlugin(Plugin):
         """
 
         super().__init__()
-        self.engine = self._get_engine(engine, *args, **kwargs)
+        self.engine = self.get_engine(engine, *args, **kwargs)
+        self._session_locks = {}
 
-    def _get_engine(self, engine=None, *args, **kwargs):
+    def get_engine(self, engine=None, *args, **kwargs) -> Engine:
         if engine:
             if isinstance(engine, Engine):
                 return engine
             if engine.startswith('sqlite://'):
                 kwargs['connect_args'] = {'check_same_thread': False}
 
-            return create_engine(engine, *args, **kwargs)
+            return create_engine(engine, *args, **kwargs)  # type: ignore
 
+        assert self.engine
         return self.engine
 
-    # noinspection PyUnusedLocal
     @staticmethod
-    def _build_condition(table, column, value):
+    def _build_condition(_, column, value):
         if isinstance(value, str):
             value = "'{}'".format(value)
         elif not isinstance(value, int) and not isinstance(value, float):
@@ -73,14 +74,14 @@ class DbPlugin(Plugin):
         :param kwargs: Extra kwargs that will be passed to ``sqlalchemy.create_engine`` (seehttps:///docs.sqlalchemy.org/en/latest/core/engines.html)
         """
 
-        engine = self._get_engine(engine, *args, **kwargs)
+        engine = self.get_engine(engine, *args, **kwargs)
 
         with engine.connect() as connection:
             connection.execute(statement)
 
     def _get_table(self, table, engine=None, *args, **kwargs):
         if not engine:
-            engine = self._get_engine(engine, *args, **kwargs)
+            engine = self.get_engine(engine, *args, **kwargs)
 
         db_ok = False
         n_tries = 0
@@ -98,7 +99,7 @@ class DbPlugin(Plugin):
                 self.logger.exception(e)
                 self.logger.info('Waiting {} seconds before retrying'.format(wait_time))
                 time.sleep(wait_time)
-                engine = self._get_engine(engine, *args, **kwargs)
+                engine = self.get_engine(engine, *args, **kwargs)
 
         if not db_ok and last_error:
             raise last_error
@@ -163,7 +164,7 @@ class DbPlugin(Plugin):
                 ]
         """
 
-        engine = self._get_engine(engine, *args, **kwargs)
+        engine = self.get_engine(engine, *args, **kwargs)
 
         if table:
             table, engine = self._get_table(table, engine=engine, *args, **kwargs)
@@ -234,7 +235,7 @@ class DbPlugin(Plugin):
         if key_columns is None:
             key_columns = []
 
-        engine = self._get_engine(engine, *args, **kwargs)
+        engine = self.get_engine(engine, *args, **kwargs)
 
         for record in records:
             table, engine = self._get_table(table, engine=engine, *args, **kwargs)
@@ -293,7 +294,7 @@ class DbPlugin(Plugin):
                 }
         """
 
-        engine = self._get_engine(engine, *args, **kwargs)
+        engine = self.get_engine(engine, *args, **kwargs)
 
         for record in records:
             table, engine = self._get_table(table, engine=engine, *args, **kwargs)
@@ -341,7 +342,7 @@ class DbPlugin(Plugin):
                 }
         """
 
-        engine = self._get_engine(engine, *args, **kwargs)
+        engine = self.get_engine(engine, *args, **kwargs)
 
         for record in records:
             table, engine = self._get_table(table, engine=engine, *args, **kwargs)
@@ -351,6 +352,23 @@ class DbPlugin(Plugin):
                 delete = delete.where(self._build_condition(table, k, v))
 
             engine.execute(delete)
+
+    def create_all(self, engine, base):
+        self._session_locks[engine.url] = self._session_locks.get(engine.url, RLock())
+        with self._session_locks[engine.url]:
+            base.metadata.create_all(engine)
+
+    @contextmanager
+    def get_session(self, engine=None, *args, **kwargs) -> Generator[Session, None, None]:
+        engine = self.get_engine(engine, *args, **kwargs)
+        self._session_locks[engine.url] = self._session_locks.get(engine.url, RLock())
+        with self._session_locks[engine.url]:
+            session = scoped_session(sessionmaker(expire_on_commit=False))
+            session.configure(bind=engine)
+            s = session()
+            yield s
+            s.commit()
+            s.close()
 
 
 # vim:sw=4:ts=4:et:

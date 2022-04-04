@@ -9,11 +9,13 @@ import argparse
 import logging
 import os
 import sys
+from typing import Optional
 
 from .bus.redis import RedisBus
 from .config import Config
 from .context import register_backends, register_plugins
 from .cron.scheduler import CronScheduler
+from .entities import init_entities_engine, EntitiesEngine
 from .event.processor import EventProcessor
 from .logger import Logger
 from .message.event import Event
@@ -86,6 +88,7 @@ class Daemon:
         self.no_capture_stdout = no_capture_stdout
         self.no_capture_stderr = no_capture_stderr
         self.event_processor = EventProcessor()
+        self.entities_engine: Optional[EntitiesEngine] = None
         self.requests_to_process = requests_to_process
         self.processed_requests = 0
         self.cron_scheduler = None
@@ -161,16 +164,25 @@ class Daemon:
         """ Stops the backends and the bus """
         from .plugins import RunnablePlugin
 
-        for backend in self.backends.values():
-            backend.stop()
+        if self.backends:
+            for backend in self.backends.values():
+                backend.stop()
 
         for plugin in get_enabled_plugins().values():
             if isinstance(plugin, RunnablePlugin):
                 plugin.stop()
 
-        self.bus.stop()
+        if self.bus:
+            self.bus.stop()
+            self.bus = None
+
         if self.cron_scheduler:
             self.cron_scheduler.stop()
+            self.cron_scheduler = None
+
+        if self.entities_engine:
+            self.entities_engine.stop()
+            self.entities_engine = None
 
     def run(self):
         """ Start the daemon """
@@ -191,6 +203,9 @@ class Daemon:
 
         # Initialize the plugins
         register_plugins(bus=self.bus)
+
+        # Initialize the entities engine
+        self.entities_engine = init_entities_engine()
 
         # Start the cron scheduler
         if Config.get_cronjobs():

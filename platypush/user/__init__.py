@@ -13,7 +13,7 @@ except ImportError:
     from jwt import PyJWTError, encode as jwt_encode, decode as jwt_decode
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import make_transient
 from sqlalchemy.ext.declarative import declarative_base
 
 from platypush.context import get_plugin
@@ -28,126 +28,124 @@ class UserManager:
     Main class for managing platform users
     """
 
-    # noinspection PyProtectedMember
     def __init__(self):
-        db_plugin = get_plugin('db')
-        if not db_plugin:
-            raise ModuleNotFoundError('Please enable/configure the db plugin for multi-user support')
+        self.db = get_plugin('db')
+        assert self.db
+        self._engine = self.db.get_engine()
+        self.db.create_all(self._engine, Base)
 
-        self._engine = db_plugin._get_engine()
-
-    def get_user(self, username):
-        session = self._get_db_session()
-        user = self._get_user(session, username)
-        if not user:
-            return None
-
-        # Hide password
+    @staticmethod
+    def _mask_password(user):
+        make_transient(user)
         user.password = None
         return user
 
+    def get_user(self, username):
+        with self.db.get_session() as session:
+            user = self._get_user(session, username)
+            if not user:
+                return None
+
+            session.expunge(user)
+            return self._mask_password(user)
+
     def get_user_count(self):
-        session = self._get_db_session()
-        return session.query(User).count()
+        with self.db.get_session() as session:
+            return session.query(User).count()
 
     def get_users(self):
-        session = self._get_db_session()
-        return session.query(User)
+        with self.db.get_session() as session:
+            return session.query(User)
 
     def create_user(self, username, password, **kwargs):
-        session = self._get_db_session()
         if not username:
             raise ValueError('Invalid or empty username')
         if not password:
             raise ValueError('Please provide a password for the user')
 
-        user = self._get_user(session, username)
-        if user:
-            raise NameError('The user {} already exists'.format(username))
+        with self.db.get_session() as session:
+            user = self._get_user(session, username)
+            if user:
+                raise NameError('The user {} already exists'.format(username))
 
-        record = User(username=username, password=self._encrypt_password(password),
-                      created_at=datetime.datetime.utcnow(), **kwargs)
+            record = User(username=username, password=self._encrypt_password(password),
+                          created_at=datetime.datetime.utcnow(), **kwargs)
 
-        session.add(record)
-        session.commit()
-        user = self._get_user(session, username)
+            session.add(record)
+            session.commit()
+            user = self._get_user(session, username)
 
-        # Hide password
-        user.password = None
-        return user
+        return self._mask_password(user)
 
     def update_password(self, username, old_password, new_password):
-        session = self._get_db_session()
-        if not self._authenticate_user(session, username, old_password):
-            return False
+        with self.db.get_session() as session:
+            if not self._authenticate_user(session, username, old_password):
+                return False
 
-        user = self._get_user(session, username)
-        user.password = self._encrypt_password(new_password)
-        session.commit()
-        return True
+            user = self._get_user(session, username)
+            user.password = self._encrypt_password(new_password)
+            session.commit()
+            return True
 
     def authenticate_user(self, username, password):
-        session = self._get_db_session()
-        return self._authenticate_user(session, username, password)
+        with self.db.get_session() as session:
+            return self._authenticate_user(session, username, password)
 
     def authenticate_user_session(self, session_token):
-        session = self._get_db_session()
-        user_session = session.query(UserSession).filter_by(session_token=session_token).first()
+        with self.db.get_session() as session:
+            user_session = session.query(UserSession).filter_by(session_token=session_token).first()
 
-        if not user_session or (
-                user_session.expires_at and user_session.expires_at < datetime.datetime.utcnow()):
-            return None, None
+            if not user_session or (
+                    user_session.expires_at and user_session.expires_at < datetime.datetime.utcnow()):
+                return None, None
 
-        user = session.query(User).filter_by(user_id=user_session.user_id).first()
-
-        # Hide password
-        user.password = None
-        return user, session
+            user = session.query(User).filter_by(user_id=user_session.user_id).first()
+            return self._mask_password(user), user_session
 
     def delete_user(self, username):
-        session = self._get_db_session()
-        user = self._get_user(session, username)
-        if not user:
-            raise NameError('No such user: {}'.format(username))
+        with self.db.get_session() as session:
+            user = self._get_user(session, username)
+            if not user:
+                raise NameError('No such user: {}'.format(username))
 
-        user_sessions = session.query(UserSession).filter_by(user_id=user.user_id).all()
-        for user_session in user_sessions:
-            session.delete(user_session)
+            user_sessions = session.query(UserSession).filter_by(user_id=user.user_id).all()
+            for user_session in user_sessions:
+                session.delete(user_session)
 
-        session.delete(user)
-        session.commit()
-        return True
+            session.delete(user)
+            session.commit()
+            return True
 
     def delete_user_session(self, session_token):
-        session = self._get_db_session()
-        user_session = session.query(UserSession).filter_by(session_token=session_token).first()
+        with self.db.get_session() as session:
+            user_session = session.query(UserSession).filter_by(session_token=session_token).first()
 
-        if not user_session:
-            return False
+            if not user_session:
+                return False
 
-        session.delete(user_session)
-        session.commit()
-        return True
+            session.delete(user_session)
+            session.commit()
+            return True
 
     def create_user_session(self, username, password, expires_at=None):
-        session = self._get_db_session()
-        user = self._authenticate_user(session, username, password)
-        if not user:
-            return None
+        with self.db.get_session() as session:
+            user = self._authenticate_user(session, username, password)
+            if not user:
+                return None
 
-        if expires_at:
-            if isinstance(expires_at, int) or isinstance(expires_at, float):
-                expires_at = datetime.datetime.fromtimestamp(expires_at)
-            elif isinstance(expires_at, str):
-                expires_at = datetime.datetime.fromisoformat(expires_at)
+            if expires_at:
+                if isinstance(expires_at, int) or isinstance(expires_at, float):
+                    expires_at = datetime.datetime.fromtimestamp(expires_at)
+                elif isinstance(expires_at, str):
+                    expires_at = datetime.datetime.fromisoformat(expires_at)
 
-        user_session = UserSession(user_id=user.user_id, session_token=self.generate_session_token(),
-                                   csrf_token=self.generate_session_token(), created_at=datetime.datetime.utcnow(),
-                                   expires_at=expires_at)
+            user_session = UserSession(user_id=user.user_id, session_token=self.generate_session_token(),
+                                       csrf_token=self.generate_session_token(), created_at=datetime.datetime.utcnow(),
+                                       expires_at=expires_at)
 
-        session.add(user_session)
-        session.commit()
-        return user_session
+            session.add(user_session)
+            session.commit()
+            return user_session
 
     @staticmethod
     def _get_user(session, username):
@@ -180,8 +178,8 @@ class UserManager:
 
         :param session_token: Session token.
         """
-        session = self._get_db_session()
-        return session.query(User).join(UserSession).filter_by(session_token=session_token).first()
+        with self.db.get_session() as session:
+            return session.query(User).join(UserSession).filter_by(session_token=session_token).first()
 
     def generate_jwt_token(self, username: str, password: str, expires_at: Optional[datetime.datetime] = None) -> str:
         """
@@ -239,12 +237,6 @@ class UserManager:
             raise InvalidJWTTokenException('Expired JWT token')
 
         return payload
-
-    def _get_db_session(self):
-        Base.metadata.create_all(self._engine)
-        session = scoped_session(sessionmaker(expire_on_commit=False))
-        session.configure(bind=self._engine)
-        return session()
 
     def _authenticate_user(self, session, username, password):
         """

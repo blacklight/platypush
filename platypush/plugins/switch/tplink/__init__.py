@@ -1,4 +1,4 @@
-from typing import Union, Dict, List
+from typing import Union, Mapping, List, Collection, Optional
 
 from pyHS100 import SmartDevice, SmartPlug, SmartBulb, SmartStrip, Discover, SmartDeviceException
 
@@ -20,8 +20,12 @@ class SwitchTplinkPlugin(SwitchPlugin):
     _ip_to_dev = {}
     _alias_to_dev = {}
 
-    def __init__(self, plugs: Union[Dict[str, str], List[str]] = None, bulbs: Union[Dict[str, str], List[str]] = None,
-                 strips: Union[Dict[str, str], List[str]] = None, **kwargs):
+    def __init__(
+        self,
+        plugs: Optional[Union[Mapping[str, str], List[str]]] = None,
+        bulbs: Optional[Union[Mapping[str, str], List[str]]] = None,
+        strips: Optional[Union[Mapping[str, str], List[str]]] = None, **kwargs
+    ):
         """
         :param plugs: Optional list of IP addresses or name->address mapping if you have a static list of
             TpLink plugs and you want to save on the scan time.
@@ -62,7 +66,7 @@ class SwitchTplinkPlugin(SwitchPlugin):
 
         self._update_devices()
 
-    def _update_devices(self, devices: Dict[str, SmartDevice] = None):
+    def _update_devices(self, devices: Optional[Mapping[str, SmartDevice]] = None):
         for (addr, info) in self._static_devices.items():
             try:
                 dev = info['type'](addr)
@@ -74,6 +78,26 @@ class SwitchTplinkPlugin(SwitchPlugin):
         for (ip, dev) in (devices or {}).items():
             self._ip_to_dev[ip] = dev
             self._alias_to_dev[dev.alias] = dev
+
+        if devices:
+            self.publish_entities(devices.values())  # type: ignore
+
+    def transform_entities(self, devices: Collection[SmartDevice]):
+        from platypush.entities.switches import Switch
+        return super().transform_entities([   # type: ignore
+            Switch(
+                id=dev.host,
+                name=dev.alias,
+                state=dev.is_on,
+                data={
+                    'current_consumption': dev.current_consumption(),
+                    'ip': dev.host,
+                    'host': dev.host,
+                    'hw_info': dev.hw_info,
+                }
+            )
+            for dev in (devices or [])
+        ])
 
     def _scan(self):
         devices = Discover.discover()
@@ -95,8 +119,15 @@ class SwitchTplinkPlugin(SwitchPlugin):
         else:
             raise RuntimeError('Device {} not found'.format(device))
 
+    def _set(self, device: SmartDevice, state: bool):
+        action_name = 'turn_on' if state else 'turn_off'
+        action = getattr(device, action_name)
+        action()
+        self.publish_entities([device])   # type: ignore
+        return self._serialize(device)
+
     @action
-    def on(self, device, **kwargs):
+    def on(self, device, **_):
         """
         Turn on a device
 
@@ -105,11 +136,10 @@ class SwitchTplinkPlugin(SwitchPlugin):
         """
 
         device = self._get_device(device)
-        device.turn_on()
-        return self.status(device)
+        return self._set(device, True)
 
     @action
-    def off(self, device, **kwargs):
+    def off(self, device, **_):
         """
         Turn off a device
 
@@ -118,11 +148,10 @@ class SwitchTplinkPlugin(SwitchPlugin):
         """
 
         device = self._get_device(device)
-        device.turn_off()
-        return self.status(device)
+        return self._set(device, False)
 
     @action
-    def toggle(self, device, **kwargs):
+    def toggle(self, device, **_):
         """
         Toggle the state of a device (on/off)
 
@@ -131,12 +160,10 @@ class SwitchTplinkPlugin(SwitchPlugin):
         """
 
         device = self._get_device(device)
+        return self._set(device, not device.is_on)
 
-        if device.is_on:
-            device.turn_off()
-        else:
-            device.turn_on()
-
+    @staticmethod
+    def _serialize(device: SmartDevice) -> dict:
         return {
             'current_consumption': device.current_consumption(),
             'id': device.host,
@@ -150,15 +177,8 @@ class SwitchTplinkPlugin(SwitchPlugin):
     @property
     def switches(self) -> List[dict]:
         return [
-            {
-                'current_consumption': dev.current_consumption(),
-                'id': ip,
-                'ip': ip,
-                'host': dev.host,
-                'hw_info': dev.hw_info,
-                'name': dev.alias,
-                'on': dev.is_on,
-            } for (ip, dev) in self._scan().items()
+            self._serialize(dev)
+            for dev in self._scan().values()
         ]
 
 

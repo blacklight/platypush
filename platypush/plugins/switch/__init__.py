@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import List, Union
 
+from platypush.entities import manages
+from platypush.entities.switches import Switch
 from platypush.plugins import Plugin, action
 
 
+@manages(Switch)
 class SwitchPlugin(Plugin, ABC):
     """
     Abstract class for interacting with switch devices
@@ -46,7 +49,7 @@ class SwitchPlugin(Plugin, ABC):
         return devices
 
     @action
-    def status(self, device=None, *args, **kwargs) -> Union[dict, List[dict]]:
+    def status(self, device=None, *_, **__) -> Union[dict, List[dict]]:
         """
         Get the status of all the devices, or filter by device name or ID (alias for :meth:`.switch_status`).
 
