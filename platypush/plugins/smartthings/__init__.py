@@ -18,7 +18,7 @@ class SmartthingsPlugin(SwitchPlugin):
 
     """
 
-    _timeout = aiohttp.ClientTimeout(total=20.)
+    _timeout = aiohttp.ClientTimeout(total=20.0)
 
     def __init__(self, access_token: str, **kwargs):
         """
@@ -44,45 +44,30 @@ class SmartthingsPlugin(SwitchPlugin):
     async def _refresh_locations(self, api):
         self._locations = await api.locations()
 
-        self._locations_by_id = {
-            loc.location_id: loc
-            for loc in self._locations
-        }
+        self._locations_by_id = {loc.location_id: loc for loc in self._locations}
 
-        self._locations_by_name = {
-            loc.name: loc
-            for loc in self._locations
-        }
+        self._locations_by_name = {loc.name: loc for loc in self._locations}
 
     async def _refresh_devices(self, api):
         self._devices = await api.devices()
 
-        self._devices_by_id = {
-            dev.device_id: dev
-            for dev in self._devices
-        }
+        self._devices_by_id = {dev.device_id: dev for dev in self._devices}
 
-        self._devices_by_name = {
-            dev.label: dev
-            for dev in self._devices
-        }
+        self._devices_by_name = {dev.label: dev for dev in self._devices}
 
     async def _refresh_rooms(self, api, location_id: str):
         self._rooms_by_location[location_id] = await api.rooms(location_id=location_id)
 
-        self._rooms_by_id.update(**{
-            room.room_id: room
-            for room in self._rooms_by_location[location_id]
-        })
+        self._rooms_by_id.update(
+            **{room.room_id: room for room in self._rooms_by_location[location_id]}
+        )
 
         self._rooms_by_location_and_id[location_id] = {
-            room.room_id: room
-            for room in self._rooms_by_location[location_id]
+            room.room_id: room for room in self._rooms_by_location[location_id]
         }
 
         self._rooms_by_location_and_name[location_id] = {
-            room.name: room
-            for room in self._rooms_by_location[location_id]
+            room.name: room for room in self._rooms_by_location[location_id]
         }
 
     async def _refresh_info(self):
@@ -127,7 +112,7 @@ class SmartthingsPlugin(SwitchPlugin):
             'rooms': {
                 room.room_id: self._room_to_dict(room)
                 for room in self._rooms_by_location.get(location.location_id, {})
-            }
+            },
         }
 
     @staticmethod
@@ -257,12 +242,18 @@ class SmartthingsPlugin(SwitchPlugin):
         """
         self.refresh_info()
         return {
-            'locations': {loc.location_id: self._location_to_dict(loc) for loc in self._locations},
-            'devices': {dev.device_id: self._device_to_dict(dev) for dev in self._devices},
+            'locations': {
+                loc.location_id: self._location_to_dict(loc) for loc in self._locations
+            },
+            'devices': {
+                dev.device_id: self._device_to_dict(dev) for dev in self._devices
+            },
         }
 
     @action
-    def get_location(self, location_id: Optional[str] = None, name: Optional[str] = None) -> dict:
+    def get_location(
+        self, location_id: Optional[str] = None, name: Optional[str] = None
+    ) -> dict:
         """
         Get the info of a location by ID or name.
 
@@ -296,10 +287,15 @@ class SmartthingsPlugin(SwitchPlugin):
 
         """
         assert location_id or name, 'Specify either location_id or name'
-        if location_id not in self._locations_by_id or name not in self._locations_by_name:
+        if (
+            location_id not in self._locations_by_id
+            or name not in self._locations_by_name
+        ):
             self.refresh_info()
 
-        location = self._locations_by_id.get(location_id, self._locations_by_name.get(name))
+        location = self._locations_by_id.get(
+            location_id, self._locations_by_name.get(name)
+        )
         assert location, 'Location {} not found'.format(location_id or name)
         return self._location_to_dict(location)
 
@@ -340,24 +336,41 @@ class SmartthingsPlugin(SwitchPlugin):
         device = self._get_device(device)
         return self._device_to_dict(device)
 
-    async def _execute(self, device_id: str, capability: str, command, component_id: str, args: Optional[list]):
+    async def _execute(
+        self,
+        device_id: str,
+        capability: str,
+        command,
+        component_id: str,
+        args: Optional[list],
+    ):
         import pysmartthings
 
         async with aiohttp.ClientSession(timeout=self._timeout) as session:
             api = pysmartthings.SmartThings(session, self._access_token)
             device = await api.device(device_id)
-            ret = await device.command(component_id=component_id, capability=capability, command=command, args=args)
+            ret = await device.command(
+                component_id=component_id,
+                capability=capability,
+                command=command,
+                args=args,
+            )
 
-        assert ret, 'The command {capability}={command} failed on device {device}'.format(
-            capability=capability, command=command, device=device_id)
+        assert (
+            ret
+        ), 'The command {capability}={command} failed on device {device}'.format(
+            capability=capability, command=command, device=device_id
+        )
 
     @action
-    def execute(self,
-                device: str,
-                capability: str,
-                command,
-                component_id: str = 'main',
-                args: Optional[list] = None):
+    def execute(
+        self,
+        device: str,
+        capability: str,
+        command,
+        component_id: str = 'main',
+        args: Optional[list] = None,
+    ):
         """
         Execute a command on a device.
 
@@ -388,16 +401,38 @@ class SmartthingsPlugin(SwitchPlugin):
             loop = asyncio.new_event_loop()
             try:
                 asyncio.set_event_loop(loop)
-                loop.run_until_complete(self._execute(
-                    device_id=device.device_id, capability=capability, command=command,
-                    component_id=component_id, args=args))
+                loop.run_until_complete(
+                    self._execute(
+                        device_id=device.device_id,
+                        capability=capability,
+                        command=command,
+                        component_id=component_id,
+                        args=args,
+                    )
+                )
             finally:
                 loop.stop()
 
-    @staticmethod
-    async def _get_device_status(api, device_id: str) -> dict:
+    async def _get_device_status(self, api, device_id: str) -> dict:
+        from platypush.entities.switches import Switch
+
         device = await api.device(device_id)
         await device.status.refresh()
+
+        if 'switch' in device.capabilities:
+            self.publish_entities(
+                [  # type: ignore
+                    Switch(
+                        id=device_id,
+                        name=device.label,
+                        state=device.status.switch,
+                        data={
+                            'location_id': getattr(device, 'location_id', None),
+                            'room_id': getattr(device, 'room_id', None),
+                        },
+                    )
+                ]
+            )
 
         return {
             'device_id': device_id,
@@ -407,7 +442,7 @@ class SmartthingsPlugin(SwitchPlugin):
                 for cap in device.capabilities
                 if hasattr(device.status, cap)
                 and not callable(getattr(device.status, cap))
-            }
+            },
         }
 
     async def _refresh_status(self, devices: List[str]) -> List[dict]:
@@ -434,7 +469,9 @@ class SmartthingsPlugin(SwitchPlugin):
             parse_device_id(dev)
 
         # Fail if some devices haven't been found after refreshing
-        assert not missing_device_ids, 'Could not find the following devices: {}'.format(list(missing_device_ids))
+        assert (
+            not missing_device_ids
+        ), 'Could not find the following devices: {}'.format(list(missing_device_ids))
 
         async with aiohttp.ClientSession(timeout=self._timeout) as session:
             api = pysmartthings.SmartThings(session, self._access_token)
@@ -529,13 +566,19 @@ class SmartthingsPlugin(SwitchPlugin):
             async with aiohttp.ClientSession(timeout=self._timeout) as session:
                 api = pysmartthings.SmartThings(session, self._access_token)
                 dev = await api.device(device_id)
-                assert 'switch' in dev.capabilities, 'The device {} has no switch capability'.format(dev.label)
+                assert (
+                    'switch' in dev.capabilities
+                ), 'The device {} has no switch capability'.format(dev.label)
 
                 await dev.status.refresh()
                 state = 'off' if dev.status.switch else 'on'
-                ret = await dev.command(component_id='main', capability='switch', command=state, args=args)
+                ret = await dev.command(
+                    component_id='main', capability='switch', command=state, args=args
+                )
 
-            assert ret, 'The command switch={state} failed on device {device}'.format(state=state, device=dev.label)
+            assert ret, 'The command switch={state} failed on device {device}'.format(
+                state=state, device=dev.label
+            )
             return not dev.status.switch
 
         with self._refresh_lock:
