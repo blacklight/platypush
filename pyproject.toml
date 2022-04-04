@@ -1,0 +1,4 @@
+[tool.black]
+skip-string-normalization = true
+skip-numeric-underscore-normalization = true
+
