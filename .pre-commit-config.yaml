@@ -2,14 +2,31 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
+    rev: v4.1.0
     hooks:
     # -   id: trailing-whitespace
     # -   id: end-of-file-fixer
     -   id: check-yaml
+    -   id: check-json
+    -   id: check-xml
+    -   id: check-symlinks
     -   id: check-added-large-files
 
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-nodejs
-    rev: v1.1.1
+    rev: v1.1.2
     hooks:
     -   id: markdown-toc
+
+- repo: https://github.com/pycqa/flake8
+  rev: 4.0.1
+  hooks:
+    - id: flake8
+      additional_dependencies:
+        - flake8-bugbear
+        - flake8-comprehensions
+        - flake8-simplify
+
+-   repo: https://github.com/psf/black
+    rev: 22.3.0
+    hooks:
+    -   id: black
