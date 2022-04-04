@@ -420,8 +420,8 @@ class SmartthingsPlugin(SwitchPlugin):
         await device.status.refresh()
 
         if 'switch' in device.capabilities:
-            self.publish_entities(
-                [  # type: ignore
+            self.publish_entities(  # type: ignore
+                [
                     Switch(
                         id=device_id,
                         name=device.label,
