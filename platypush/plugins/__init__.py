@@ -19,12 +19,12 @@ def action(f):
         result = f(*args, **kwargs)
 
         if result and isinstance(result, Response):
-            result.errors = result.errors \
-                if isinstance(result.errors, list) else [result.errors]
+            result.errors = (
+                result.errors if isinstance(result.errors, list) else [result.errors]
+            )
             response = result
         elif isinstance(result, tuple) and len(result) == 2:
-            response.errors = result[1] \
-                if isinstance(result[1], list) else [result[1]]
+            response.errors = result[1] if isinstance(result[1], list) else [result[1]]
 
             if len(response.errors) == 1 and response.errors[0] is None:
                 response.errors = []
@@ -39,12 +39,14 @@ def action(f):
     return _execute_action
 
 
-class Plugin(EventGenerator, ExtensionWithManifest):   # lgtm [py/missing-call-to-init]
-    """ Base plugin class """
+class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to-init]
+    """Base plugin class"""
 
     def __init__(self, **kwargs):
         super().__init__()
-        self.logger = logging.getLogger('platypush:plugin:' + get_plugin_name_by_class(self.__class__))
+        self.logger = logging.getLogger(
+            'platypush:plugin:' + get_plugin_name_by_class(self.__class__)
+        )
         if 'logging' in kwargs:
             self.logger.setLevel(getattr(logging, kwargs['logging'].upper()))
 
@@ -53,8 +55,9 @@ class Plugin(EventGenerator, ExtensionWithManifest):   # lgtm [py/missing-call-t
         )
 
     def run(self, method, *args, **kwargs):
-        assert method in self.registered_actions, '{} is not a registered action on {}'.\
-            format(method, self.__class__.__name__)
+        assert (
+            method in self.registered_actions
+        ), '{} is not a registered action on {}'.format(method, self.__class__.__name__)
         return getattr(self, method)(*args, **kwargs)
 
 
@@ -62,6 +65,7 @@ class RunnablePlugin(Plugin):
     """
     Class for runnable plugins - i.e. plugins that have a start/stop method and can be started.
     """
+
     def __init__(self, poll_interval: Optional[float] = None, **kwargs):
         """
         :param poll_interval: How often the :meth:`.loop` function should be execute (default: None, no pause/interval).
@@ -77,6 +81,9 @@ class RunnablePlugin(Plugin):
 
     def should_stop(self):
         return self._should_stop.is_set()
+
+    def wait_stop(self, timeout=None):
+        return self._should_stop.wait(timeout)
 
     def start(self):
         set_thread_name(self.__class__.__name__)

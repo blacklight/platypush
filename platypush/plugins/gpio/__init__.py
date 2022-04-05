@@ -27,11 +27,11 @@ class GpioPlugin(RunnablePlugin):
     """
 
     def __init__(
-            self,
-            pins: Optional[Dict[str, int]] = None,
-            monitored_pins: Optional[Collection[Union[str, int]]] = None,
-            mode: str = 'board',
-            **kwargs
+        self,
+        pins: Optional[Dict[str, int]] = None,
+        monitored_pins: Optional[Collection[Union[str, int]]] = None,
+        mode: str = 'board',
+        **kwargs
     ):
         """
         :param mode: Specify ``board`` if you want to use the board PIN numbers,
@@ -64,8 +64,9 @@ class GpioPlugin(RunnablePlugin):
         self._initialized_pins = {}
         self._monitored_pins = monitored_pins or []
         self.pins_by_name = pins if pins else {}
-        self.pins_by_number = {number: name
-                               for (name, number) in self.pins_by_name.items()}
+        self.pins_by_number = {
+            number: name for (name, number) in self.pins_by_name.items()
+        }
 
     def _init_board(self):
         import RPi.GPIO as GPIO
@@ -98,6 +99,7 @@ class GpioPlugin(RunnablePlugin):
     def on_gpio_event(self):
         def callback(pin: int):
             import RPi.GPIO as GPIO
+
             value = GPIO.input(pin)
             pin = self.pins_by_number.get(pin, pin)
             get_bus().post(GPIOEvent(pin=pin, value=value))
@@ -106,23 +108,23 @@ class GpioPlugin(RunnablePlugin):
 
     def main(self):
         import RPi.GPIO as GPIO
+
         if not self._monitored_pins:
             return  # No need to start the monitor
 
         self._init_board()
-        monitored_pins = [
-            self._get_pin_number(pin) for pin in self._monitored_pins
-        ]
+        monitored_pins = [self._get_pin_number(pin) for pin in self._monitored_pins]
 
         for pin in monitored_pins:
             GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
             GPIO.add_event_detect(pin, GPIO.BOTH, callback=self.on_gpio_event())
 
-        self._should_stop.wait()
+        self.wait_stop()
 
     @action
-    def write(self, pin: Union[int, str], value: Union[int, bool],
-              name: Optional[str] = None) -> Dict[str, Any]:
+    def write(
+        self, pin: Union[int, str], value: Union[int, bool], name: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Write a byte value to a pin.
 

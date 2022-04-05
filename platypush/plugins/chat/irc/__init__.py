@@ -2,7 +2,11 @@ import os
 from typing import Sequence, Dict, Tuple, Union, Optional
 
 from platypush.plugins import RunnablePlugin, action
-from platypush.schemas.irc import IRCServerSchema, IRCServerStatusSchema, IRCChannelSchema
+from platypush.schemas.irc import (
+    IRCServerSchema,
+    IRCServerStatusSchema,
+    IRCChannelSchema,
+)
 
 from ._bot import IRCBot
 from .. import ChatPlugin
@@ -59,29 +63,19 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
 
     @property
     def _bots_by_server(self) -> Dict[str, IRCBot]:
-        return {
-            bot.server: bot
-            for srv, bot in self._bots.items()
-        }
+        return {bot.server: bot for srv, bot in self._bots.items()}
 
     @property
     def _bots_by_server_and_port(self) -> Dict[Tuple[str, int], IRCBot]:
-        return {
-            (bot.server, bot.port): bot
-            for srv, bot in self._bots.items()
-        }
+        return {(bot.server, bot.port): bot for srv, bot in self._bots.items()}
 
     @property
     def _bots_by_alias(self) -> Dict[str, IRCBot]:
-        return {
-            bot.alias: bot
-            for srv, bot in self._bots.items()
-            if bot.alias
-        }
+        return {bot.alias: bot for srv, bot in self._bots.items() if bot.alias}
 
     def main(self):
         self._connect()
-        self._should_stop.wait()
+        self.wait_stop()
 
     def _connect(self):
         for srv, bot in self._bots.items():
@@ -109,7 +103,11 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
 
     @action
     def send_file(
-            self, file: str, server: Union[str, Tuple[str, int]], nick: str, bind_address: Optional[str] = None
+        self,
+        file: str,
+        server: Union[str, Tuple[str, int]],
+        nick: str,
+        bind_address: Optional[str] = None,
     ):
         """
         Send a file to an IRC user over DCC connection.
@@ -127,7 +125,10 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
 
     @action
     def send_message(
-            self, text: str, server: Union[str, Tuple[str, int]], target: Union[str, Sequence[str]]
+        self,
+        text: str,
+        server: Union[str, Tuple[str, int]],
+        target: Union[str, Sequence[str]],
     ):
         """
         Send a message to a channel or a nick.
@@ -139,15 +140,14 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
         """
         bot = self._get_bot(server)
         method = (
-            bot.connection.privmsg if isinstance(target, str)
+            bot.connection.privmsg
+            if isinstance(target, str)
             else bot.connection.privmsg_many
         )
         method(target, text)
 
     @action
-    def send_notice(
-            self, text: str, server: Union[str, Tuple[str, int]], target: str
-    ):
+    def send_notice(self, text: str, server: Union[str, Tuple[str, int]], target: str):
         """
         Send a notice to a channel or a nick.
 
@@ -192,22 +192,28 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
         channel_name = channel
         channel = bot.channels.get(channel)
         assert channel, f'Not connected to channel {channel}'
-        return IRCChannelSchema().dump({
-            'is_invite_only': channel.is_invite_only(),
-            'is_moderated': channel.is_moderated(),
-            'is_protected': channel.is_protected(),
-            'is_secret': channel.is_secret(),
-            'name': channel_name,
-            'modes': channel.modes,
-            'opers': list(channel.opers()),
-            'owners': channel.owners(),
-            'users': list(channel.users()),
-            'voiced': list(channel.voiced()),
-        })
+        return IRCChannelSchema().dump(
+            {
+                'is_invite_only': channel.is_invite_only(),
+                'is_moderated': channel.is_moderated(),
+                'is_protected': channel.is_protected(),
+                'is_secret': channel.is_secret(),
+                'name': channel_name,
+                'modes': channel.modes,
+                'opers': list(channel.opers()),
+                'owners': channel.owners(),
+                'users': list(channel.users()),
+                'voiced': list(channel.voiced()),
+            }
+        )
 
     @action
     def send_ctcp_message(
-            self, ctcp_type: str, body: str, server: Union[str, Tuple[str, int]], target: str
+        self,
+        ctcp_type: str,
+        body: str,
+        server: Union[str, Tuple[str, int]],
+        target: str,
     ):
         """
         Send a CTCP message to a target.
@@ -222,7 +228,7 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
 
     @action
     def send_ctcp_reply(
-            self, body: str, server: Union[str, Tuple[str, int]], target: str
+        self, body: str, server: Union[str, Tuple[str, int]], target: str
     ):
         """
         Send a CTCP REPLY command.
@@ -235,7 +241,9 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
         bot.connection.ctcp_reply(target, body)
 
     @action
-    def disconnect(self, server: Union[str, Tuple[str, int]], message: Optional[str] = None):
+    def disconnect(
+        self, server: Union[str, Tuple[str, int]], message: Optional[str] = None
+    ):
         """
         Disconnect from a server.
 
@@ -246,9 +254,7 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
         bot.connection.disconnect(message or bot.stop_message)
 
     @action
-    def invite(
-            self, nick: str, channel: str, server: Union[str, Tuple[str, int]]
-    ):
+    def invite(self, nick: str, channel: str, server: Union[str, Tuple[str, int]]):
         """
         Invite a nick to a channel.
 
@@ -272,7 +278,11 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
 
     @action
     def kick(
-            self, nick: str, channel: str, server: Union[str, Tuple[str, int]], reason: Optional[str] = None
+        self,
+        nick: str,
+        channel: str,
+        server: Union[str, Tuple[str, int]],
+        reason: Optional[str] = None,
     ):
         """
         Kick a nick from a channel.
@@ -286,9 +296,7 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
         bot.connection.kick(channel, nick, reason)
 
     @action
-    def mode(
-            self, target: str, command: str, server: Union[str, Tuple[str, int]]
-    ):
+    def mode(self, target: str, command: str, server: Union[str, Tuple[str, int]]):
         """
         Send a MODE command on the selected target.
 
@@ -324,8 +332,10 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
 
     @action
     def part(
-            self, channel: Union[str, Sequence[str]], server: Union[str, Tuple[str, int]],
-            message: Optional[str] = None
+        self,
+        channel: Union[str, Sequence[str]],
+        server: Union[str, Tuple[str, int]],
+        message: Optional[str] = None,
     ):
         """
         Parts/exits a channel.
@@ -339,9 +349,7 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
         bot.connection.part(channels=channels, message=message or bot.stop_message)
 
     @action
-    def quit(
-            self, server: Union[str, Tuple[str, int]], message: Optional[str] = None
-    ):
+    def quit(self, server: Union[str, Tuple[str, int]], message: Optional[str] = None):
         """
         Send a QUIT command.
 
@@ -363,7 +371,12 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
         bot.connection.send_raw(message)
 
     @action
-    def topic(self, channel: str, server: Union[str, Tuple[str, int]], topic: Optional[str] = None) -> str:
+    def topic(
+        self,
+        channel: str,
+        server: Union[str, Tuple[str, int]],
+        topic: Optional[str] = None,
+    ) -> str:
         """
         Get/set the topic of an IRC channel.
 
