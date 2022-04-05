@@ -54,7 +54,11 @@ class EntitiesEngine(Thread):
             if not msgs or self.should_stop:
                 continue
 
-            self._process_entities(*msgs)
+            try:
+                self._process_entities(*msgs)
+            except Exception as e:
+                self.logger.error('Error while processing entity updates: ' + str(e))
+                self.logger.exception(e)
 
         self.logger.info('Stopped entities engine')
 
