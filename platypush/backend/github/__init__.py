@@ -6,15 +6,28 @@ from typing import Optional, List
 
 import requests
 from sqlalchemy import create_engine, Column, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
 from platypush.backend import Backend
 from platypush.config import Config
-from platypush.message.event.github import GithubPushEvent, GithubCommitCommentEvent, GithubCreateEvent, \
-    GithubDeleteEvent, GithubEvent, GithubForkEvent, GithubWikiEvent, GithubIssueCommentEvent, GithubIssueEvent, \
-    GithubMemberEvent, GithubPublicEvent, GithubPullRequestEvent, GithubPullRequestReviewCommentEvent, \
-    GithubReleaseEvent, GithubSponsorshipEvent, GithubWatchEvent
+from platypush.message.event.github import (
+    GithubPushEvent,
+    GithubCommitCommentEvent,
+    GithubCreateEvent,
+    GithubDeleteEvent,
+    GithubEvent,
+    GithubForkEvent,
+    GithubWikiEvent,
+    GithubIssueCommentEvent,
+    GithubIssueEvent,
+    GithubMemberEvent,
+    GithubPublicEvent,
+    GithubPullRequestEvent,
+    GithubPullRequestReviewCommentEvent,
+    GithubReleaseEvent,
+    GithubSponsorshipEvent,
+    GithubWatchEvent,
+)
 
 Base = declarative_base()
 Session = scoped_session(sessionmaker())
@@ -71,8 +84,17 @@ class GithubBackend(Backend):
 
     _base_url = 'https://api.github.com'
 
-    def __init__(self, user: str, user_token: str, repos: Optional[List[str]] = None, org: Optional[str] = None,
-                 poll_seconds: int = 60, max_events_per_scan: Optional[int] = 10, *args, **kwargs):
+    def __init__(
+        self,
+        user: str,
+        user_token: str,
+        repos: Optional[List[str]] = None,
+        org: Optional[str] = None,
+        poll_seconds: int = 60,
+        max_events_per_scan: Optional[int] = 10,
+        *args,
+        **kwargs
+    ):
         """
         If neither ``repos`` nor ``org`` is specified then the backend will monitor all new events on user level.
 
@@ -102,17 +124,23 @@ class GithubBackend(Backend):
 
     def _request(self, uri: str, method: str = 'get') -> dict:
         method = getattr(requests, method.lower())
-        return method(self._base_url + uri, auth=(self.user, self.user_token),
-                      headers={'Accept': 'application/vnd.github.v3+json'}).json()
+        return method(
+            self._base_url + uri,
+            auth=(self.user, self.user_token),
+            headers={'Accept': 'application/vnd.github.v3+json'},
+        ).json()
 
     def _init_db(self):
-        engine = create_engine('sqlite:///{}'.format(self.dbfile), connect_args={'check_same_thread': False})
+        engine = create_engine(
+            'sqlite:///{}'.format(self.dbfile),
+            connect_args={'check_same_thread': False},
+        )
         Base.metadata.create_all(engine)
         Session.configure(bind=engine)
 
     @staticmethod
     def _to_datetime(time_string: str) -> datetime.datetime:
-        """ Convert ISO 8061 string format with leading 'Z' into something understandable by Python """
+        """Convert ISO 8061 string format with leading 'Z' into something understandable by Python"""
         return datetime.datetime.fromisoformat(time_string[:-1] + '+00:00')
 
     @staticmethod
@@ -128,7 +156,11 @@ class GithubBackend(Backend):
     def _get_last_event_time(self, uri: str):
         with self.db_lock:
             record = self._get_or_create_resource(uri=uri, session=Session())
-            return record.last_updated_at.replace(tzinfo=datetime.timezone.utc) if record.last_updated_at else None
+            return (
+                record.last_updated_at.replace(tzinfo=datetime.timezone.utc)
+                if record.last_updated_at
+                else None
+            )
 
     def _update_last_event_time(self, uri: str, last_updated_at: datetime.datetime):
         with self.db_lock:
@@ -158,9 +190,18 @@ class GithubBackend(Backend):
             'WatchEvent': GithubWatchEvent,
         }
 
-        event_type = event_mapping[event['type']] if event['type'] in event_mapping else GithubEvent
-        return event_type(event_type=event['type'], actor=event['actor'], repo=event.get('repo', {}),
-                          payload=event['payload'], created_at=cls._to_datetime(event['created_at']))
+        event_type = (
+            event_mapping[event['type']]
+            if event['type'] in event_mapping
+            else GithubEvent
+        )
+        return event_type(
+            event_type=event['type'],
+            actor=event['actor'],
+            repo=event.get('repo', {}),
+            payload=event['payload'],
+            created_at=cls._to_datetime(event['created_at']),
+        )
 
     def _events_monitor(self, uri: str, method: str = 'get'):
         def thread():
@@ -175,7 +216,10 @@ class GithubBackend(Backend):
                     fired_events = []
 
                     for event in events:
-                        if self.max_events_per_scan and len(fired_events) >= self.max_events_per_scan:
+                        if (
+                            self.max_events_per_scan
+                            and len(fired_events) >= self.max_events_per_scan
+                        ):
                             break
 
                         event_time = self._to_datetime(event['created_at'])
@@ -189,14 +233,19 @@ class GithubBackend(Backend):
                     for event in fired_events:
                         self.bus.post(event)
 
-                    self._update_last_event_time(uri=uri, last_updated_at=new_last_event_time)
+                    self._update_last_event_time(
+                        uri=uri, last_updated_at=new_last_event_time
+                    )
                 except Exception as e:
-                    self.logger.warning('Encountered exception while fetching events from {}: {}'.format(
-                        uri, str(e)))
+                    self.logger.warning(
+                        'Encountered exception while fetching events from {}: {}'.format(
+                            uri, str(e)
+                        )
+                    )
                     self.logger.exception(e)
-                finally:
-                    if self.wait_stop(timeout=self.poll_seconds):
-                        break
+
+                if self.wait_stop(timeout=self.poll_seconds):
+                    break
 
         return thread
 
@@ -206,12 +255,30 @@ class GithubBackend(Backend):
 
         if self.repos:
             for repo in self.repos:
-                monitors.append(threading.Thread(target=self._events_monitor('/networks/{repo}/events'.format(repo=repo))))
+                monitors.append(
+                    threading.Thread(
+                        target=self._events_monitor(
+                            '/networks/{repo}/events'.format(repo=repo)
+                        )
+                    )
+                )
         if self.org:
-            monitors.append(threading.Thread(target=self._events_monitor('/orgs/{org}/events'.format(org=self.org))))
+            monitors.append(
+                threading.Thread(
+                    target=self._events_monitor(
+                        '/orgs/{org}/events'.format(org=self.org)
+                    )
+                )
+            )
 
         if not (self.repos or self.org):
-            monitors.append(threading.Thread(target=self._events_monitor('/users/{user}/events'.format(user=self.user))))
+            monitors.append(
+                threading.Thread(
+                    target=self._events_monitor(
+                        '/users/{user}/events'.format(user=self.user)
+                    )
+                )
+            )
 
         for monitor in monitors:
             monitor.start()
@@ -221,5 +288,6 @@ class GithubBackend(Backend):
             monitor.join()
 
         self.logger.info('Github backend terminated')
+
 
 # vim:sw=4:ts=4:et:

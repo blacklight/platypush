@@ -3,9 +3,16 @@ import os
 import re
 import time
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, PrimaryKeyConstraint, ForeignKey
-from sqlalchemy.orm import sessionmaker, scoped_session
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    DateTime,
+    PrimaryKeyConstraint,
+    ForeignKey,
+)
+from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 from sqlalchemy.sql.expression import func
 
 from platypush.config import Config
@@ -38,7 +45,8 @@ class LocalMediaSearcher(MediaSearcher):
         if not self._db_engine:
             self._db_engine = create_engine(
                 'sqlite:///{}'.format(self.db_file),
-                connect_args={'check_same_thread': False})
+                connect_args={'check_same_thread': False},
+            )
 
             Base.metadata.create_all(self._db_engine)
             Session.configure(bind=self._db_engine)
@@ -57,27 +65,30 @@ class LocalMediaSearcher(MediaSearcher):
 
     @classmethod
     def _get_last_modify_time(cls, path, recursive=False):
-        return max([os.path.getmtime(p) for p, _, _ in os.walk(path)]) \
-            if recursive else os.path.getmtime(path)
+        return (
+            max([os.path.getmtime(p) for p, _, _ in os.walk(path)])
+            if recursive
+            else os.path.getmtime(path)
+        )
 
     @classmethod
-    def _has_directory_changed_since_last_indexing(self, dir_record):
+    def _has_directory_changed_since_last_indexing(cls, dir_record):
         if not dir_record.last_indexed_at:
             return True
 
-        return datetime.datetime.fromtimestamp(
-            self._get_last_modify_time(dir_record.path)) > dir_record.last_indexed_at
+        return (
+            datetime.datetime.fromtimestamp(cls._get_last_modify_time(dir_record.path))
+            > dir_record.last_indexed_at
+        )
 
     @classmethod
     def _matches_query(cls, filename, query):
         filename = filename.lower()
-        query_tokens = [_.lower() for _ in re.split(
-            cls._filename_separators, query.strip())]
+        query_tokens = [
+            _.lower() for _ in re.split(cls._filename_separators, query.strip())
+        ]
 
-        for token in query_tokens:
-            if token not in filename:
-                return False
-        return True
+        return all(token in filename for token in query_tokens)
 
     @classmethod
     def _sync_token_records(cls, session, *tokens):
@@ -85,9 +96,12 @@ class LocalMediaSearcher(MediaSearcher):
         if not tokens:
             return []
 
-        records = {record.token: record for record in
-                   session.query(MediaToken).filter(
-                       MediaToken.token.in_(tokens)).all()}
+        records = {
+            record.token: record
+            for record in session.query(MediaToken)
+            .filter(MediaToken.token.in_(tokens))
+            .all()
+        }
 
         for token in tokens:
             if token in records:
@@ -97,13 +111,11 @@ class LocalMediaSearcher(MediaSearcher):
             records[token] = record
 
         session.commit()
-        return session.query(MediaToken).filter(
-            MediaToken.token.in_(tokens)).all()
+        return session.query(MediaToken).filter(MediaToken.token.in_(tokens)).all()
 
     @classmethod
     def _get_file_records(cls, dir_record, session):
-        return session.query(MediaFile).filter_by(
-            directory_id=dir_record.id).all()
+        return session.query(MediaFile).filter_by(directory_id=dir_record.id).all()
 
     def scan(self, media_dir, session=None, dir_record=None):
         """
@@ -121,17 +133,19 @@ class LocalMediaSearcher(MediaSearcher):
             dir_record = self._get_or_create_dir_entry(session, media_dir)
 
         if not os.path.isdir(media_dir):
-            self.logger.info('Directory {} is no longer accessible, removing it'.
-                             format(media_dir))
-            session.query(MediaDirectory) \
-                .filter(MediaDirectory.path == media_dir) \
-                .delete(synchronize_session='fetch')
+            self.logger.info(
+                'Directory {} is no longer accessible, removing it'.format(media_dir)
+            )
+            session.query(MediaDirectory).filter(
+                MediaDirectory.path == media_dir
+            ).delete(synchronize_session='fetch')
             return
 
         stored_file_records = {
-            f.path: f for f in self._get_file_records(dir_record, session)}
+            f.path: f for f in self._get_file_records(dir_record, session)
+        }
 
-        for path, dirs, files in os.walk(media_dir):
+        for path, _, files in os.walk(media_dir):
             for filename in files:
                 filepath = os.path.join(path, filename)
 
@@ -142,26 +156,32 @@ class LocalMediaSearcher(MediaSearcher):
                     del stored_file_records[filepath]
                     continue
 
-                if not MediaPlugin.is_video_file(filename) and \
-                        not MediaPlugin.is_audio_file(filename):
+                if not MediaPlugin.is_video_file(
+                    filename
+                ) and not MediaPlugin.is_audio_file(filename):
                     continue
 
                 self.logger.debug('Syncing item {}'.format(filepath))
-                tokens = [_.lower() for _ in re.split(self._filename_separators,
-                                                      filename.strip())]
+                tokens = [
+                    _.lower()
+                    for _ in re.split(self._filename_separators, filename.strip())
+                ]
 
                 token_records = self._sync_token_records(session, *tokens)
-                file_record = MediaFile.build(directory_id=dir_record.id,
-                                              path=filepath)
+                file_record = MediaFile.build(directory_id=dir_record.id, path=filepath)
 
                 session.add(file_record)
                 session.commit()
-                file_record = session.query(MediaFile).filter_by(
-                    directory_id=dir_record.id, path=filepath).one()
+                file_record = (
+                    session.query(MediaFile)
+                    .filter_by(directory_id=dir_record.id, path=filepath)
+                    .one()
+                )
 
                 for token_record in token_records:
-                    file_token = MediaFileToken.build(file_id=file_record.id,
-                                                      token_id=token_record.id)
+                    file_token = MediaFileToken.build(
+                        file_id=file_record.id, token_id=token_record.id
+                    )
                     session.add(file_token)
 
         # stored_file_records should now only contain the records of the files
@@ -169,15 +189,20 @@ class LocalMediaSearcher(MediaSearcher):
         if stored_file_records:
             self.logger.info(
                 'Removing references to {} deleted media items from {}'.format(
-                    len(stored_file_records), media_dir))
+                    len(stored_file_records), media_dir
+                )
+            )
 
-            session.query(MediaFile).filter(MediaFile.id.in_(
-                [record.id for record in stored_file_records.values()]
-            )).delete(synchronize_session='fetch')
+            session.query(MediaFile).filter(
+                MediaFile.id.in_([record.id for record in stored_file_records.values()])
+            ).delete(synchronize_session='fetch')
 
         dir_record.last_indexed_at = datetime.datetime.now()
-        self.logger.info('Scanned {} in {} seconds'.format(
-            media_dir, int(time.time() - index_start_time)))
+        self.logger.info(
+            'Scanned {} in {} seconds'.format(
+                media_dir, int(time.time() - index_start_time)
+            )
+        )
 
         session.commit()
 
@@ -197,25 +222,30 @@ class LocalMediaSearcher(MediaSearcher):
             dir_record = self._get_or_create_dir_entry(session, media_dir)
 
             if self._has_directory_changed_since_last_indexing(dir_record):
-                self.logger.info('{} has changed since last indexing, '.format(
-                    media_dir) + 're-indexing')
+                self.logger.info(
+                    '{} has changed since last indexing, '.format(media_dir)
+                    + 're-indexing'
+                )
 
                 self.scan(media_dir, session=session, dir_record=dir_record)
 
-            query_tokens = [_.lower() for _ in re.split(
-                self._filename_separators, query.strip())]
+            query_tokens = [
+                _.lower() for _ in re.split(self._filename_separators, query.strip())
+            ]
 
-            for file_record in session.query(MediaFile.path). \
-                    join(MediaFileToken). \
-                    join(MediaToken). \
-                    filter(MediaToken.token.in_(query_tokens)). \
-                    group_by(MediaFile.path). \
-                    having(func.count(MediaFileToken.token_id) >= len(query_tokens)):
+            for file_record in (
+                session.query(MediaFile.path)
+                .join(MediaFileToken)
+                .join(MediaToken)
+                .filter(MediaToken.token.in_(query_tokens))
+                .group_by(MediaFile.path)
+                .having(func.count(MediaFileToken.token_id) >= len(query_tokens))
+            ):
                 if os.path.isfile(file_record.path):
                     results[file_record.path] = {
                         'url': 'file://' + file_record.path,
                         'title': os.path.basename(file_record.path),
-                        'size': os.path.getsize(file_record.path)
+                        'size': os.path.getsize(file_record.path),
                     }
 
         return results.values()
@@ -223,11 +253,12 @@ class LocalMediaSearcher(MediaSearcher):
 
 # --- Table definitions
 
+
 class MediaDirectory(Base):
-    """ Models the MediaDirectory table """
+    """Models the MediaDirectory table"""
 
     __tablename__ = 'MediaDirectory'
-    __table_args__ = ({'sqlite_autoincrement': True})
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = Column(Integer, primary_key=True)
     path = Column(String)
@@ -243,14 +274,15 @@ class MediaDirectory(Base):
 
 
 class MediaFile(Base):
-    """ Models the MediaFile table """
+    """Models the MediaFile table"""
 
     __tablename__ = 'MediaFile'
-    __table_args__ = ({'sqlite_autoincrement': True})
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = Column(Integer, primary_key=True)
-    directory_id = Column(Integer, ForeignKey(
-        'MediaDirectory.id', ondelete='CASCADE'), nullable=False)
+    directory_id = Column(
+        Integer, ForeignKey('MediaDirectory.id', ondelete='CASCADE'), nullable=False
+    )
     path = Column(String, nullable=False, unique=True)
     indexed_at = Column(DateTime)
 
@@ -265,10 +297,10 @@ class MediaFile(Base):
 
 
 class MediaToken(Base):
-    """ Models the MediaToken table """
+    """Models the MediaToken table"""
 
     __tablename__ = 'MediaToken'
-    __table_args__ = ({'sqlite_autoincrement': True})
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = Column(Integer, primary_key=True)
     token = Column(String, nullable=False, unique=True)
@@ -282,14 +314,16 @@ class MediaToken(Base):
 
 
 class MediaFileToken(Base):
-    """ Models the MediaFileToken table """
+    """Models the MediaFileToken table"""
 
     __tablename__ = 'MediaFileToken'
 
-    file_id = Column(Integer, ForeignKey('MediaFile.id', ondelete='CASCADE'),
-                     nullable=False)
-    token_id = Column(Integer, ForeignKey('MediaToken.id', ondelete='CASCADE'),
-                      nullable=False)
+    file_id = Column(
+        Integer, ForeignKey('MediaFile.id', ondelete='CASCADE'), nullable=False
+    )
+    token_id = Column(
+        Integer, ForeignKey('MediaToken.id', ondelete='CASCADE'), nullable=False
+    )
 
     __table_args__ = (PrimaryKeyConstraint(file_id, token_id), {})
 
@@ -300,5 +334,6 @@ class MediaFileToken(Base):
         record.file_id = file_id
         record.token_id = token_id
         return record
+
 
 # vim:sw=4:ts=4:et:

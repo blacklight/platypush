@@ -3,8 +3,7 @@ import os
 from typing import Optional, Union, List, Dict, Any
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
-from sqlalchemy.orm import sessionmaker, scoped_session
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
 from platypush.backend import Backend
 from platypush.config import Config
@@ -17,10 +16,10 @@ Session = scoped_session(sessionmaker())
 
 
 class Covid19Update(Base):
-    """ Models the Covid19Data table """
+    """Models the Covid19Data table"""
 
     __tablename__ = 'covid19data'
-    __table_args__ = ({'sqlite_autoincrement': True})
+    __table_args__ = {'sqlite_autoincrement': True}
 
     country = Column(String, primary_key=True)
     confirmed = Column(Integer, nullable=False, default=0)
@@ -40,7 +39,12 @@ class Covid19Backend(Backend):
     """
 
     # noinspection PyProtectedMember
-    def __init__(self, country: Optional[Union[str, List[str]]], poll_seconds: Optional[float] = 3600.0, **kwargs):
+    def __init__(
+        self,
+        country: Optional[Union[str, List[str]]],
+        poll_seconds: Optional[float] = 3600.0,
+        **kwargs
+    ):
         """
         :param country: Default country (or list of countries) to retrieve the stats for. It can either be the full
             country name or the country code. Special values:
@@ -56,7 +60,9 @@ class Covid19Backend(Backend):
         super().__init__(poll_seconds=poll_seconds, **kwargs)
         self._plugin: Covid19Plugin = get_plugin('covid19')
         self.country: List[str] = self._plugin._get_countries(country)
-        self.workdir = os.path.join(os.path.expanduser(Config.get('workdir')), 'covid19')
+        self.workdir = os.path.join(
+            os.path.expanduser(Config.get('workdir')), 'covid19'
+        )
         self.dbfile = os.path.join(self.workdir, 'data.db')
         os.makedirs(self.workdir, exist_ok=True)
 
@@ -67,22 +73,30 @@ class Covid19Backend(Backend):
         self.logger.info('Stopped Covid19 backend')
 
     def _process_update(self, summary: Dict[str, Any], session: Session):
-        update_time = datetime.datetime.fromisoformat(summary['Date'].replace('Z', '+00:00'))
+        update_time = datetime.datetime.fromisoformat(
+            summary['Date'].replace('Z', '+00:00')
+        )
 
-        self.bus.post(Covid19UpdateEvent(
-            country=summary['Country'],
-            country_code=summary['CountryCode'],
-            confirmed=summary['TotalConfirmed'],
-            deaths=summary['TotalDeaths'],
-            recovered=summary['TotalRecovered'],
-            update_time=update_time,
-        ))
+        self.bus.post(
+            Covid19UpdateEvent(
+                country=summary['Country'],
+                country_code=summary['CountryCode'],
+                confirmed=summary['TotalConfirmed'],
+                deaths=summary['TotalDeaths'],
+                recovered=summary['TotalRecovered'],
+                update_time=update_time,
+            )
+        )
 
-        session.merge(Covid19Update(country=summary['CountryCode'],
-                                    confirmed=summary['TotalConfirmed'],
-                                    deaths=summary['TotalDeaths'],
-                                    recovered=summary['TotalRecovered'],
-                                    last_updated_at=update_time))
+        session.merge(
+            Covid19Update(
+                country=summary['CountryCode'],
+                confirmed=summary['TotalConfirmed'],
+                deaths=summary['TotalDeaths'],
+                recovered=summary['TotalRecovered'],
+                last_updated_at=update_time,
+            )
+        )
 
     def loop(self):
         # noinspection PyUnresolvedReferences
@@ -90,23 +104,30 @@ class Covid19Backend(Backend):
         if not summaries:
             return
 
-        engine = create_engine('sqlite:///{}'.format(self.dbfile), connect_args={'check_same_thread': False})
+        engine = create_engine(
+            'sqlite:///{}'.format(self.dbfile),
+            connect_args={'check_same_thread': False},
+        )
         Base.metadata.create_all(engine)
         Session.configure(bind=engine)
         session = Session()
 
         last_records = {
             record.country: record
-            for record in session.query(Covid19Update).filter(Covid19Update.country.in_(self.country)).all()
+            for record in session.query(Covid19Update)
+            .filter(Covid19Update.country.in_(self.country))
+            .all()
         }
 
         for summary in summaries:
             country = summary['CountryCode']
             last_record = last_records.get(country)
-            if not last_record or \
-                    summary['TotalConfirmed'] != last_record.confirmed or \
-                    summary['TotalDeaths'] != last_record.deaths or \
-                    summary['TotalRecovered'] != last_record.recovered:
+            if (
+                not last_record
+                or summary['TotalConfirmed'] != last_record.confirmed
+                or summary['TotalDeaths'] != last_record.deaths
+                or summary['TotalRecovered'] != last_record.recovered
+            ):
                 self._process_update(summary=summary, session=session)
 
         session.commit()

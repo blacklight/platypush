@@ -5,7 +5,7 @@ from typing import Mapping, Type
 
 import pkgutil
 from sqlalchemy import Column, Index, Integer, String, DateTime, JSON, UniqueConstraint
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 entities_registry: Mapping[Type['Entity'], Mapping] = {}
@@ -24,14 +24,16 @@ class Entity(Base):
     type = Column(String, nullable=False, index=True)
     plugin = Column(String, nullable=False)
     data = Column(JSON, default=dict)
-    created_at = Column(DateTime(timezone=False), default=datetime.utcnow(), nullable=False)
-    updated_at = Column(DateTime(timezone=False), default=datetime.utcnow(), onupdate=datetime.now())
+    created_at = Column(
+        DateTime(timezone=False), default=datetime.utcnow(), nullable=False
+    )
+    updated_at = Column(
+        DateTime(timezone=False), default=datetime.utcnow(), onupdate=datetime.now()
+    )
 
     UniqueConstraint(external_id, plugin)
 
-    __table_args__ = (
-        Index(name, plugin),
-    )
+    __table_args__ = (Index(name, plugin),)
 
     __mapper_args__ = {
         'polymorphic_identity': __tablename__,
@@ -41,13 +43,14 @@ class Entity(Base):
 
 def _discover_entity_types():
     from platypush.context import get_plugin
+
     logger = get_plugin('logger')
     assert logger
 
     for loader, modname, _ in pkgutil.walk_packages(
         path=[str(pathlib.Path(__file__).parent.absolute())],
         prefix=__package__ + '.',
-        onerror=lambda _: None
+        onerror=lambda _: None,
     ):
         try:
             mod_loader = loader.find_module(modname)  # type: ignore
@@ -65,9 +68,9 @@ def _discover_entity_types():
 
 def init_entities_db():
     from platypush.context import get_plugin
+
     _discover_entity_types()
     db = get_plugin('db')
     assert db
     engine = db.get_engine()
     db.create_all(engine, Base)
-

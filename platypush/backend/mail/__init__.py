@@ -8,15 +8,18 @@ from queue import Queue, Empty
 from threading import Thread, RLock
 from typing import List, Dict, Any, Optional, Tuple
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
-import sqlalchemy.engine as engine
-from sqlalchemy.orm import sessionmaker, scoped_session
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import engine, create_engine, Column, Integer, String, DateTime
+from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
 from platypush.backend import Backend
 from platypush.config import Config
 from platypush.context import get_plugin
-from platypush.message.event.mail import MailReceivedEvent, MailSeenEvent, MailFlaggedEvent, MailUnflaggedEvent
+from platypush.message.event.mail import (
+    MailReceivedEvent,
+    MailSeenEvent,
+    MailFlaggedEvent,
+    MailUnflaggedEvent,
+)
 from platypush.plugins.mail import MailInPlugin, Mail
 
 # <editor-fold desc="Database tables">
@@ -25,7 +28,8 @@ Session = scoped_session(sessionmaker())
 
 
 class MailboxStatus(Base):
-    """ Models the MailboxStatus table, containing information about the state of a monitored mailbox. """
+    """Models the MailboxStatus table, containing information about the state of a monitored mailbox."""
+
     __tablename__ = 'MailboxStatus'
 
     mailbox_id = Column(Integer, primary_key=True)
@@ -64,8 +68,13 @@ class MailBackend(Backend):
 
     """
 
-    def __init__(self, mailboxes: List[Dict[str, Any]], timeout: Optional[int] = 60, poll_seconds: Optional[int] = 60,
-                 **kwargs):
+    def __init__(
+        self,
+        mailboxes: List[Dict[str, Any]],
+        timeout: Optional[int] = 60,
+        poll_seconds: Optional[int] = 60,
+        **kwargs
+    ):
         """
         :param mailboxes: List of mailboxes to be monitored. Each mailbox entry contains a ``plugin`` attribute to
             identify the :class:`platypush.plugins.mail.MailInPlugin` plugin that will be used (e.g. ``mail.imap``)
@@ -128,9 +137,13 @@ class MailBackend(Backend):
 
         # Parse mailboxes
         for i, mbox in enumerate(mailboxes):
-            assert 'plugin' in mbox, 'No plugin attribute specified for mailbox n.{}'.format(i)
+            assert (
+                'plugin' in mbox
+            ), 'No plugin attribute specified for mailbox n.{}'.format(i)
             plugin = get_plugin(mbox.pop('plugin'))
-            assert isinstance(plugin, MailInPlugin), '{} is not a MailInPlugin'.format(plugin)
+            assert isinstance(plugin, MailInPlugin), '{} is not a MailInPlugin'.format(
+                plugin
+            )
             name = mbox.pop('name') if 'name' in mbox else 'Mailbox #{}'.format(i + 1)
             self.mailboxes.append(Mailbox(plugin=plugin, name=name, args=mbox))
 
@@ -144,7 +157,10 @@ class MailBackend(Backend):
 
     # <editor-fold desc="Database methods">
     def _db_get_engine(self) -> engine.Engine:
-        return create_engine('sqlite:///{}'.format(self.dbfile), connect_args={'check_same_thread': False})
+        return create_engine(
+            'sqlite:///{}'.format(self.dbfile),
+            connect_args={'check_same_thread': False},
+        )
 
     def _db_load_mailboxes_status(self) -> None:
         mailbox_ids = list(range(len(self.mailboxes)))
@@ -153,12 +169,18 @@ class MailBackend(Backend):
             session = Session()
             records = {
                 record.mailbox_id: record
-                for record in session.query(MailboxStatus).filter(MailboxStatus.mailbox_id.in_(mailbox_ids)).all()
+                for record in session.query(MailboxStatus)
+                .filter(MailboxStatus.mailbox_id.in_(mailbox_ids))
+                .all()
             }
 
-            for mbox_id, mbox in enumerate(self.mailboxes):
+            for mbox_id, _ in enumerate(self.mailboxes):
                 if mbox_id not in records:
-                    record = MailboxStatus(mailbox_id=mbox_id, unseen_message_ids='[]', flagged_message_ids='[]')
+                    record = MailboxStatus(
+                        mailbox_id=mbox_id,
+                        unseen_message_ids='[]',
+                        flagged_message_ids='[]',
+                    )
                     session.add(record)
                 else:
                     record = records[mbox_id]
@@ -170,19 +192,25 @@ class MailBackend(Backend):
 
             session.commit()
 
-    def _db_get_mailbox_status(self, mailbox_ids: List[int]) -> Dict[int, MailboxStatus]:
+    def _db_get_mailbox_status(
+        self, mailbox_ids: List[int]
+    ) -> Dict[int, MailboxStatus]:
         with self._db_lock:
             session = Session()
             return {
                 record.mailbox_id: record
-                for record in session.query(MailboxStatus).filter(MailboxStatus.mailbox_id.in_(mailbox_ids)).all()
+                for record in session.query(MailboxStatus)
+                .filter(MailboxStatus.mailbox_id.in_(mailbox_ids))
+                .all()
             }
 
     # </editor-fold>
 
     # <editor-fold desc="Parse unread messages logic">
     @staticmethod
-    def _check_thread(unread_queue: Queue, flagged_queue: Queue, plugin: MailInPlugin, **args):
+    def _check_thread(
+        unread_queue: Queue, flagged_queue: Queue, plugin: MailInPlugin, **args
+    ):
         def thread():
             # noinspection PyUnresolvedReferences
             unread = plugin.search_unseen_messages(**args).output
@@ -194,8 +222,9 @@ class MailBackend(Backend):
 
         return thread
 
-    def _get_unread_seen_msgs(self, mailbox_idx: int, unread_msgs: Dict[int, Mail]) \
-            -> Tuple[Dict[int, Mail], Dict[int, Mail]]:
+    def _get_unread_seen_msgs(
+        self, mailbox_idx: int, unread_msgs: Dict[int, Mail]
+    ) -> Tuple[Dict[int, Mail], Dict[int, Mail]]:
         prev_unread_msgs = self._unread_msgs[mailbox_idx]
 
         return {
@@ -208,35 +237,51 @@ class MailBackend(Backend):
             if msg_id not in unread_msgs
         }
 
-    def _get_flagged_unflagged_msgs(self, mailbox_idx: int, flagged_msgs: Dict[int, Mail]) \
-            -> Tuple[Dict[int, Mail], Dict[int, Mail]]:
+    def _get_flagged_unflagged_msgs(
+        self, mailbox_idx: int, flagged_msgs: Dict[int, Mail]
+    ) -> Tuple[Dict[int, Mail], Dict[int, Mail]]:
         prev_flagged_msgs = self._flagged_msgs[mailbox_idx]
 
         return {
-                   msg_id: flagged_msgs[msg_id]
-                   for msg_id in flagged_msgs
-                   if msg_id not in prev_flagged_msgs
-               }, {
-                   msg_id: prev_flagged_msgs[msg_id]
-                   for msg_id in prev_flagged_msgs
-                   if msg_id not in flagged_msgs
-               }
+            msg_id: flagged_msgs[msg_id]
+            for msg_id in flagged_msgs
+            if msg_id not in prev_flagged_msgs
+        }, {
+            msg_id: prev_flagged_msgs[msg_id]
+            for msg_id in prev_flagged_msgs
+            if msg_id not in flagged_msgs
+        }
 
-    def _process_msg_events(self, mailbox_id: int, unread: List[Mail], seen: List[Mail],
-                            flagged: List[Mail], unflagged: List[Mail], last_checked_date: Optional[datetime] = None):
+    def _process_msg_events(
+        self,
+        mailbox_id: int,
+        unread: List[Mail],
+        seen: List[Mail],
+        flagged: List[Mail],
+        unflagged: List[Mail],
+        last_checked_date: Optional[datetime] = None,
+    ):
         for msg in unread:
             if msg.date and last_checked_date and msg.date < last_checked_date:
                 continue
-            self.bus.post(MailReceivedEvent(mailbox=self.mailboxes[mailbox_id].name, message=msg))
+            self.bus.post(
+                MailReceivedEvent(mailbox=self.mailboxes[mailbox_id].name, message=msg)
+            )
 
         for msg in seen:
-            self.bus.post(MailSeenEvent(mailbox=self.mailboxes[mailbox_id].name, message=msg))
+            self.bus.post(
+                MailSeenEvent(mailbox=self.mailboxes[mailbox_id].name, message=msg)
+            )
 
         for msg in flagged:
-            self.bus.post(MailFlaggedEvent(mailbox=self.mailboxes[mailbox_id].name, message=msg))
+            self.bus.post(
+                MailFlaggedEvent(mailbox=self.mailboxes[mailbox_id].name, message=msg)
+            )
 
         for msg in unflagged:
-            self.bus.post(MailUnflaggedEvent(mailbox=self.mailboxes[mailbox_id].name, message=msg))
+            self.bus.post(
+                MailUnflaggedEvent(mailbox=self.mailboxes[mailbox_id].name, message=msg)
+            )
 
     def _check_mailboxes(self) -> List[Tuple[Dict[int, Mail], Dict[int, Mail]]]:
         workers = []
@@ -245,8 +290,14 @@ class MailBackend(Backend):
 
         for mbox in self.mailboxes:
             unread_queue, flagged_queue = [Queue()] * 2
-            worker = Thread(target=self._check_thread(unread_queue=unread_queue, flagged_queue=flagged_queue,
-                                                      plugin=mbox.plugin, **mbox.args))
+            worker = Thread(
+                target=self._check_thread(
+                    unread_queue=unread_queue,
+                    flagged_queue=flagged_queue,
+                    plugin=mbox.plugin,
+                    **mbox.args
+                )
+            )
             worker.start()
             workers.append(worker)
             queues.append((unread_queue, flagged_queue))
@@ -260,7 +311,11 @@ class MailBackend(Backend):
                 flagged = flagged_queue.get(timeout=self.timeout)
                 results.append((unread, flagged))
             except Empty:
-                self.logger.warning('Checks on mailbox #{} timed out after {} seconds'.format(i + 1, self.timeout))
+                self.logger.warning(
+                    'Checks on mailbox #{} timed out after {} seconds'.format(
+                        i + 1, self.timeout
+                    )
+                )
                 continue
 
         return results
@@ -276,16 +331,25 @@ class MailBackend(Backend):
         for i, (unread, flagged) in enumerate(results):
             unread_msgs, seen_msgs = self._get_unread_seen_msgs(i, unread)
             flagged_msgs, unflagged_msgs = self._get_flagged_unflagged_msgs(i, flagged)
-            self._process_msg_events(i, unread=list(unread_msgs.values()), seen=list(seen_msgs.values()),
-                                     flagged=list(flagged_msgs.values()), unflagged=list(unflagged_msgs.values()),
-                                     last_checked_date=mailbox_statuses[i].last_checked_date)
+            self._process_msg_events(
+                i,
+                unread=list(unread_msgs.values()),
+                seen=list(seen_msgs.values()),
+                flagged=list(flagged_msgs.values()),
+                unflagged=list(unflagged_msgs.values()),
+                last_checked_date=mailbox_statuses[i].last_checked_date,
+            )
 
             self._unread_msgs[i] = unread
             self._flagged_msgs[i] = flagged
-            records.append(MailboxStatus(mailbox_id=i,
-                                         unseen_message_ids=json.dumps([msg_id for msg_id in unread.keys()]),
-                                         flagged_message_ids=json.dumps([msg_id for msg_id in flagged.keys()]),
-                                         last_checked_date=datetime.now()))
+            records.append(
+                MailboxStatus(
+                    mailbox_id=i,
+                    unseen_message_ids=json.dumps(list(unread.keys())),
+                    flagged_message_ids=json.dumps(list(flagged.keys())),
+                    last_checked_date=datetime.now(),
+                )
+            )
 
         with self._db_lock:
             session = Session()

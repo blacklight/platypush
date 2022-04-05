@@ -13,11 +13,13 @@ except ImportError:
     from jwt import PyJWTError, encode as jwt_encode, decode as jwt_decode
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import make_transient
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import make_transient, declarative_base
 
 from platypush.context import get_plugin
-from platypush.exceptions.user import InvalidJWTTokenException, InvalidCredentialsException
+from platypush.exceptions.user import (
+    InvalidJWTTokenException,
+    InvalidCredentialsException,
+)
 from platypush.utils import get_or_generate_jwt_rsa_key_pair
 
 Base = declarative_base()
@@ -68,8 +70,12 @@ class UserManager:
             if user:
                 raise NameError('The user {} already exists'.format(username))
 
-            record = User(username=username, password=self._encrypt_password(password),
-                          created_at=datetime.datetime.utcnow(), **kwargs)
+            record = User(
+                username=username,
+                password=self._encrypt_password(password),
+                created_at=datetime.datetime.utcnow(),
+                **kwargs
+            )
 
             session.add(record)
             session.commit()
@@ -93,10 +99,16 @@ class UserManager:
 
     def authenticate_user_session(self, session_token):
         with self.db.get_session() as session:
-            user_session = session.query(UserSession).filter_by(session_token=session_token).first()
+            user_session = (
+                session.query(UserSession)
+                .filter_by(session_token=session_token)
+                .first()
+            )
 
             if not user_session or (
-                    user_session.expires_at and user_session.expires_at < datetime.datetime.utcnow()):
+                user_session.expires_at
+                and user_session.expires_at < datetime.datetime.utcnow()
+            ):
                 return None, None
 
             user = session.query(User).filter_by(user_id=user_session.user_id).first()
@@ -108,7 +120,9 @@ class UserManager:
             if not user:
                 raise NameError('No such user: {}'.format(username))
 
-            user_sessions = session.query(UserSession).filter_by(user_id=user.user_id).all()
+            user_sessions = (
+                session.query(UserSession).filter_by(user_id=user.user_id).all()
+            )
             for user_session in user_sessions:
                 session.delete(user_session)
 
@@ -118,7 +132,11 @@ class UserManager:
 
     def delete_user_session(self, session_token):
         with self.db.get_session() as session:
-            user_session = session.query(UserSession).filter_by(session_token=session_token).first()
+            user_session = (
+                session.query(UserSession)
+                .filter_by(session_token=session_token)
+                .first()
+            )
 
             if not user_session:
                 return False
@@ -134,14 +152,18 @@ class UserManager:
                 return None
 
             if expires_at:
-                if isinstance(expires_at, int) or isinstance(expires_at, float):
+                if isinstance(expires_at, (int, float)):
                     expires_at = datetime.datetime.fromtimestamp(expires_at)
                 elif isinstance(expires_at, str):
                     expires_at = datetime.datetime.fromisoformat(expires_at)
 
-            user_session = UserSession(user_id=user.user_id, session_token=self.generate_session_token(),
-                                       csrf_token=self.generate_session_token(), created_at=datetime.datetime.utcnow(),
-                                       expires_at=expires_at)
+            user_session = UserSession(
+                user_id=user.user_id,
+                session_token=self.generate_session_token(),
+                csrf_token=self.generate_session_token(),
+                created_at=datetime.datetime.utcnow(),
+                expires_at=expires_at,
+            )
 
             session.add(user_session)
             session.commit()
@@ -179,9 +201,19 @@ class UserManager:
         :param session_token: Session token.
         """
         with self.db.get_session() as session:
-            return session.query(User).join(UserSession).filter_by(session_token=session_token).first()
+            return (
+                session.query(User)
+                .join(UserSession)
+                .filter_by(session_token=session_token)
+                .first()
+            )
 
-    def generate_jwt_token(self, username: str, password: str, expires_at: Optional[datetime.datetime] = None) -> str:
+    def generate_jwt_token(
+        self,
+        username: str,
+        password: str,
+        expires_at: Optional[datetime.datetime] = None,
+    ) -> str:
         """
         Create a user JWT token for API usage.
 
@@ -253,10 +285,10 @@ class UserManager:
 
 
 class User(Base):
-    """ Models the User table """
+    """Models the User table"""
 
     __tablename__ = 'user'
-    __table_args__ = ({'sqlite_autoincrement': True})
+    __table_args__ = {'sqlite_autoincrement': True}
 
     user_id = Column(Integer, primary_key=True)
     username = Column(String, unique=True, nullable=False)
@@ -265,10 +297,10 @@ class User(Base):
 
 
 class UserSession(Base):
-    """ Models the UserSession table """
+    """Models the UserSession table"""
 
     __tablename__ = 'user_session'
-    __table_args__ = ({'sqlite_autoincrement': True})
+    __table_args__ = {'sqlite_autoincrement': True}
 
     session_id = Column(Integer, primary_key=True)
     session_token = Column(String, unique=True, nullable=False)
