@@ -1,11 +1,20 @@
 import inspect
 import pathlib
 from datetime import datetime
-from typing import Mapping, Type
+from typing import Mapping, Type, Tuple
 
 import pkgutil
-from sqlalchemy import Column, Index, Integer, String, DateTime, JSON, UniqueConstraint
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import (
+    Column,
+    Index,
+    Integer,
+    String,
+    DateTime,
+    JSON,
+    UniqueConstraint,
+    inspect as schema_inspect,
+)
+from sqlalchemy.orm import declarative_base, ColumnProperty
 
 Base = declarative_base()
 entities_registry: Mapping[Type['Entity'], Mapping] = {}
@@ -39,6 +48,12 @@ class Entity(Base):
         'polymorphic_identity': __tablename__,
         'polymorphic_on': type,
     }
+
+    @classmethod
+    @property
+    def columns(cls) -> Tuple[ColumnProperty]:
+        inspector = schema_inspect(cls)
+        return tuple(inspector.mapper.column_attrs)
 
 
 def _discover_entity_types():

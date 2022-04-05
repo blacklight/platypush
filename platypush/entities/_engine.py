@@ -4,7 +4,7 @@ from threading import Thread, Event
 from time import time
 from typing import Iterable, List
 
-from sqlalchemy import and_, or_, inspect as schema_inspect
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from ._base import Entity
@@ -93,8 +93,7 @@ class EntitiesEngine(Thread):
         self, entities: List[Entity], existing_entities: List[Entity]
     ) -> List[Entity]:
         def merge(entity: Entity, existing_entity: Entity) -> Entity:
-            inspector = schema_inspect(entity.__class__)
-            columns = [col.key for col in inspector.mapper.column_attrs]
+            columns = [col.key for col in entity.columns]
             for col in columns:
                 if col not in ('id', 'created_at'):
                     setattr(existing_entity, col, getattr(entity, col))
