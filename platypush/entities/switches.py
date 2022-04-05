@@ -13,3 +13,11 @@ class Switch(Device):
         'polymorphic_identity': __tablename__,
     }
 
+    def on(self):
+        return self.get_plugin().on(self)
+
+    def off(self):
+        return self.get_plugin().off(self)
+
+    def toggle(self):
+        return self.get_plugin().toggle(self)

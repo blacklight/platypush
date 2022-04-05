@@ -1,7 +1,15 @@
 from typing import Union, Mapping, List, Collection, Optional
 
-from pyHS100 import SmartDevice, SmartPlug, SmartBulb, SmartStrip, Discover, SmartDeviceException
+from pyHS100 import (
+    SmartDevice,
+    SmartPlug,
+    SmartBulb,
+    SmartStrip,
+    Discover,
+    SmartDeviceException,
+)
 
+from platypush.entities import Entity
 from platypush.plugins import action
 from platypush.plugins.switch import SwitchPlugin
 
@@ -24,7 +32,8 @@ class SwitchTplinkPlugin(SwitchPlugin):
         self,
         plugs: Optional[Union[Mapping[str, str], List[str]]] = None,
         bulbs: Optional[Union[Mapping[str, str], List[str]]] = None,
-        strips: Optional[Union[Mapping[str, str], List[str]]] = None, **kwargs
+        strips: Optional[Union[Mapping[str, str], List[str]]] = None,
+        **kwargs
     ):
         """
         :param plugs: Optional list of IP addresses or name->address mapping if you have a static list of
@@ -73,7 +82,9 @@ class SwitchTplinkPlugin(SwitchPlugin):
                 self._alias_to_dev[info.get('name', dev.alias)] = dev
                 self._ip_to_dev[addr] = dev
             except SmartDeviceException as e:
-                self.logger.warning('Could not communicate with device {}: {}'.format(addr, str(e)))
+                self.logger.warning(
+                    'Could not communicate with device {}: {}'.format(addr, str(e))
+                )
 
         for (ip, dev) in (devices or {}).items():
             self._ip_to_dev[ip] = dev
@@ -84,20 +95,23 @@ class SwitchTplinkPlugin(SwitchPlugin):
 
     def transform_entities(self, devices: Collection[SmartDevice]):
         from platypush.entities.switches import Switch
-        return super().transform_entities([   # type: ignore
-            Switch(
-                id=dev.host,
-                name=dev.alias,
-                state=dev.is_on,
-                data={
-                    'current_consumption': dev.current_consumption(),
-                    'ip': dev.host,
-                    'host': dev.host,
-                    'hw_info': dev.hw_info,
-                }
-            )
-            for dev in (devices or [])
-        ])
+
+        return super().transform_entities(  # type: ignore
+            [
+                Switch(
+                    id=dev.host,
+                    name=dev.alias,
+                    state=dev.is_on,
+                    data={
+                        'current_consumption': dev.current_consumption(),
+                        'ip': dev.host,
+                        'host': dev.host,
+                        'hw_info': dev.hw_info,
+                    },
+                )
+                for dev in (devices or [])
+            ]
+        )
 
     def _scan(self):
         devices = Discover.discover()
@@ -107,6 +121,9 @@ class SwitchTplinkPlugin(SwitchPlugin):
     def _get_device(self, device, use_cache=True):
         if not use_cache:
             self._scan()
+
+        if isinstance(device, Entity):
+            device = device.external_id or device.name
 
         if device in self._ip_to_dev:
             return self._ip_to_dev[device]
@@ -123,7 +140,7 @@ class SwitchTplinkPlugin(SwitchPlugin):
         action_name = 'turn_on' if state else 'turn_off'
         action = getattr(device, action_name)
         action()
-        self.publish_entities([device])   # type: ignore
+        self.publish_entities([device])  # type: ignore
         return self._serialize(device)
 
     @action
@@ -176,10 +193,7 @@ class SwitchTplinkPlugin(SwitchPlugin):
 
     @property
     def switches(self) -> List[dict]:
-        return [
-            self._serialize(dev)
-            for dev in self._scan().values()
-        ]
+        return [self._serialize(dev) for dev in self._scan().values()]
 
 
 # vim:sw=4:ts=4:et:

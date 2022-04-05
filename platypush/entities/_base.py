@@ -55,6 +55,13 @@ class Entity(Base):
         inspector = schema_inspect(cls)
         return tuple(inspector.mapper.column_attrs)
 
+    def get_plugin(self):
+        from platypush.context import get_plugin
+
+        plugin = get_plugin(self.plugin)
+        assert plugin, f'No such plugin: {plugin}'
+        return plugin
+
 
 def _discover_entity_types():
     from platypush.context import get_plugin
