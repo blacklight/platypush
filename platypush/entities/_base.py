@@ -16,13 +16,15 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, ColumnProperty
 
+from platypush.message import JSONAble
+
 Base = declarative_base()
 entities_registry: Mapping[Type['Entity'], Mapping] = {}
 
 
 class Entity(Base):
     """
-    Model for a general-purpose platform entity
+    Model for a general-purpose platform entity.
     """
 
     __tablename__ = 'entity'
@@ -55,12 +57,20 @@ class Entity(Base):
         inspector = schema_inspect(cls)
         return tuple(inspector.mapper.column_attrs)
 
+    def to_json(self) -> dict:
+        return {col.key: getattr(self, col.key) for col in self.columns}
+
     def get_plugin(self):
         from platypush.context import get_plugin
 
         plugin = get_plugin(self.plugin)
         assert plugin, f'No such plugin: {plugin}'
         return plugin
+
+
+# Inject the JSONAble mixin (Python goes nuts if done through
+# standard multiple inheritance with an SQLAlchemy ORM class)
+Entity.__bases__ = Entity.__bases__ + (JSONAble,)
 
 
 def _discover_entity_types():
@@ -86,6 +96,10 @@ def _discover_entity_types():
         for _, obj in inspect.getmembers(module):
             if inspect.isclass(obj) and issubclass(obj, Entity):
                 entities_registry[obj] = {}
+
+
+def get_entities_registry():
+    return entities_registry.copy()
 
 
 def init_entities_db():
