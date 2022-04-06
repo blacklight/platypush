@@ -1,24 +1,38 @@
+import json
 from datetime import datetime
-from typing import Optional, Mapping, Dict, Collection, Type
+from typing import Optional, Dict, Collection, Type
 
 from platypush.plugins import Plugin
-from platypush.utils import get_plugin_name_by_class
+from platypush.utils import get_plugin_name_by_class, get_redis
 
 from ._base import Entity
 
-_entity_plugin_registry: Mapping[Type[Entity], Dict[str, Plugin]] = {}
+_entity_registry_varname = '_platypush/plugin_entity_registry'
 
 
 def register_entity_plugin(entity_type: Type[Entity], plugin: Plugin):
-    plugins = _entity_plugin_registry.get(entity_type, {})
-    plugin_name = get_plugin_name_by_class(plugin.__class__)
-    assert plugin_name
-    plugins[plugin_name] = plugin
-    _entity_plugin_registry[entity_type] = plugins
+    plugin_name = get_plugin_name_by_class(plugin.__class__) or ''
+    entity_type_name = entity_type.__name__.lower()
+    redis = get_redis()
+    registry = get_plugin_entity_registry()
+    registry_by_plugin = set(registry['by_plugin'].get(plugin_name, []))
+
+    registry_by_entity_type = set(registry['by_entity_type'].get(entity_type_name, []))
+
+    registry_by_plugin.add(entity_type_name)
+    registry_by_entity_type.add(plugin_name)
+    registry['by_plugin'][plugin_name] = list(registry_by_plugin)
+    registry['by_entity_type'][entity_type_name] = list(registry_by_entity_type)
+    redis.mset({_entity_registry_varname: json.dumps(registry)})
 
 
-def get_plugin_registry():
-    return _entity_plugin_registry.copy()
+def get_plugin_entity_registry() -> Dict[str, Dict[str, Collection[str]]]:
+    redis = get_redis()
+    registry = redis.mget([_entity_registry_varname])[0]
+    try:
+        return json.loads((registry or b'').decode())
+    except (TypeError, ValueError):
+        return {'by_plugin': {}, 'by_entity_type': {}}
 
 
 class EntityManagerMixin:
@@ -37,6 +51,7 @@ class EntityManagerMixin:
 
     def publish_entities(self, entities: Optional[Collection[Entity]]):
         from . import publish_entities
+
         entities = self.transform_entities(entities)
         publish_entities(entities)
 
@@ -59,4 +74,3 @@ def manages(*entities: Type[Entity]):
         return plugin
 
     return wrapper
-

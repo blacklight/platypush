@@ -1,15 +1,16 @@
 import warnings
 from typing import Collection, Optional
 
-from ._base import Entity
+from ._base import Entity, get_entities_registry
 from ._engine import EntitiesEngine
-from ._registry import manages, register_entity_plugin, get_plugin_registry
+from ._registry import manages, register_entity_plugin, get_plugin_entity_registry
 
 _engine: Optional[EntitiesEngine] = None
 
 
 def init_entities_engine() -> EntitiesEngine:
     from ._base import init_entities_db
+
     global _engine
     init_entities_db()
     _engine = EntitiesEngine()
@@ -24,13 +25,14 @@ def publish_entities(entities: Collection[Entity]):
 
     _engine.post(*entities)
 
+
 __all__ = (
     'Entity',
     'EntitiesEngine',
     'init_entities_engine',
     'publish_entities',
     'register_entity_plugin',
-    'get_plugin_registry',
+    'get_plugin_entity_registry',
+    'get_entities_registry',
     'manages',
 )
-
