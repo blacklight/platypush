@@ -32,6 +32,7 @@ Plugins
     platypush/plugins/db.rst
     platypush/plugins/dbus.rst
     platypush/plugins/dropbox.rst
+    platypush/plugins/entities.rst
     platypush/plugins/esp.rst
     platypush/plugins/ffmpeg.rst
     platypush/plugins/file.rst

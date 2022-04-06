@@ -20,6 +20,7 @@ Events
     platypush/events/custom.rst
     platypush/events/dbus.rst
     platypush/events/distance.rst
+    platypush/events/entities.rst
     platypush/events/file.rst
     platypush/events/foursquare.rst
     platypush/events/geo.rst
