@@ -7,6 +7,9 @@ from typing import Iterable, List
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
+from platypush.context import get_bus
+from platypush.message.event.entities import EntityUpdateEvent
+
 from ._base import Entity
 
 
@@ -130,3 +133,6 @@ class EntitiesEngine(Thread):
             entities = self._merge_entities(entities, existing_entities)  # type: ignore
             session.add_all(entities)
             session.commit()
+
+        for entity in entities:
+            get_bus().post(EntityUpdateEvent(entity=entity))
