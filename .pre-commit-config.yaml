@@ -17,11 +17,6 @@ repos:
     hooks:
     -   id: markdown-toc
 
--   repo: https://github.com/psf/black
-    rev: 22.3.0
-    hooks:
-    -   id: black
-
 - repo: https://github.com/pycqa/flake8
   rev: 4.0.1
   hooks:
@@ -31,3 +26,7 @@ repos:
         - flake8-comprehensions
         - flake8-simplify
 
+-   repo: https://github.com/psf/black
+    rev: 22.3.0
+    hooks:
+    -   id: black
