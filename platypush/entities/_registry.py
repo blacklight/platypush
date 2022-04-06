@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from typing import Optional, Dict, Collection, Type
 
+from platypush.config import Config
 from platypush.plugins import Plugin
 from platypush.utils import get_plugin_name_by_class, get_redis
 
@@ -30,9 +31,23 @@ def get_plugin_entity_registry() -> Dict[str, Dict[str, Collection[str]]]:
     redis = get_redis()
     registry = redis.mget([_entity_registry_varname])[0]
     try:
-        return json.loads((registry or b'').decode())
+        registry = json.loads((registry or b'').decode())
     except (TypeError, ValueError):
         return {'by_plugin': {}, 'by_entity_type': {}}
+
+    enabled_plugins = set(Config.get_plugins().keys())
+
+    return {
+        'by_plugin': {
+            plugin_name: entity_types
+            for plugin_name, entity_types in registry['by_plugin'].items()
+            if plugin_name in enabled_plugins
+        },
+        'by_entity_type': {
+            entity_type: [p for p in plugins if p in enabled_plugins]
+            for entity_type, plugins in registry['by_entity_type'].items()
+        },
+    }
 
 
 class EntityManagerMixin:
