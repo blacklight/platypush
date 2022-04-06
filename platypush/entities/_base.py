@@ -1,7 +1,7 @@
 import inspect
 import pathlib
 from datetime import datetime
-from typing import Mapping, Type, Tuple
+from typing import Mapping, Type, Tuple, Any
 
 import pkgutil
 from sqlalchemy import (
@@ -57,8 +57,16 @@ class Entity(Base):
         inspector = schema_inspect(cls)
         return tuple(inspector.mapper.column_attrs)
 
+    def _serialize_value(self, col: ColumnProperty) -> Any:
+        val = getattr(self, col.key)
+        if isinstance(val, datetime):
+            # All entity timestamps are in UTC
+            val = val.isoformat() + '+00:00'
+
+        return val
+
     def to_json(self) -> dict:
-        return {col.key: getattr(self, col.key) for col in self.columns}
+        return {col.key: self._serialize_value(col) for col in self.columns}
 
     def get_plugin(self):
         from platypush.context import get_plugin
