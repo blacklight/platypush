@@ -12,6 +12,11 @@ _entity_registry_varname = '_platypush/plugin_entity_registry'
 
 
 def register_entity_plugin(entity_type: Type[Entity], plugin: Plugin):
+    """
+    Associates a plugin as a manager for a certain entity type.
+    If you use the `@manages` decorator then you usually don't have
+    to call this method directly.
+    """
     plugin_name = get_plugin_name_by_class(plugin.__class__) or ''
     entity_type_name = entity_type.__name__.lower()
     redis = get_redis()
@@ -28,6 +33,10 @@ def register_entity_plugin(entity_type: Type[Entity], plugin: Plugin):
 
 
 def get_plugin_entity_registry() -> Dict[str, Dict[str, Collection[str]]]:
+    """
+    Get the `plugin->entity_types` and `entity_type->plugin`
+    mappings supported by the current configuration.
+    """
     redis = get_redis()
     registry = redis.mget([_entity_registry_varname])[0]
     try:
@@ -51,7 +60,23 @@ def get_plugin_entity_registry() -> Dict[str, Dict[str, Collection[str]]]:
 
 
 class EntityManagerMixin:
+    """
+    This mixin is injected on the fly into any plugin class declared with
+    the @manages decorator. The class will therefore implement the
+    `publish_entities` and `transform_entities` methods, which can be
+    overridden if required.
+    """
+
     def transform_entities(self, entities):
+        """
+        This method takes a list of entities in any (plugin-specific)
+        format and converts them into a standardized collection of
+        `Entity` objects. Since this method is called by
+        :meth:`.publish_entities` before entity updates are published,
+        you may usually want to extend it to pre-process the entities
+        managed by your extension into the standard format before they
+        are stored and published to all the consumers.
+        """
         entities = entities or []
         for entity in entities:
             if entity.id:
@@ -65,6 +90,20 @@ class EntityManagerMixin:
         return entities
 
     def publish_entities(self, entities: Optional[Collection[Entity]]):
+        """
+        Publishes a list of entities. The downstream consumers include:
+
+            - The entity persistence manager
+            - The web server
+            - Any consumer subscribed to
+                :class:`platypush.message.event.entities.EntityUpdateEvent`
+                events (e.g. web clients)
+
+        If your extension class uses the `@manages` decorator then you usually
+        don't need to override this class (but you may want to extend
+        :meth:`.transform_entities` instead if your extension doesn't natively
+        handle `Entity` objects).
+        """
         from . import publish_entities
 
         entities = self.transform_entities(entities)
@@ -72,6 +111,11 @@ class EntityManagerMixin:
 
 
 def manages(*entities: Type[Entity]):
+    """
+    This decorator is used to register a plugin/backend class as a
+    manager of one or more types of entities.
+    """
+
     def wrapper(plugin: Type[Plugin]):
         init = plugin.__init__
 
