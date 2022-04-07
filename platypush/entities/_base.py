@@ -53,6 +53,13 @@ class Entity(Base):
 
     @classmethod
     @property
+    def meta(cls) -> Mapping:
+        return {
+            'icon_class': 'fa-solid fa-circle-question',
+        }
+
+    @classmethod
+    @property
     def columns(cls) -> Tuple[ColumnProperty]:
         inspector = schema_inspect(cls)
         return tuple(inspector.mapper.column_attrs)
@@ -66,7 +73,10 @@ class Entity(Base):
         return val
 
     def to_json(self) -> dict:
-        return {col.key: self._serialize_value(col) for col in self.columns}
+        return {
+            **{col.key: self._serialize_value(col) for col in self.columns},
+            'meta': self.meta,
+        }
 
     def get_plugin(self):
         from platypush.context import get_plugin

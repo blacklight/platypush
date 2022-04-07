@@ -12,3 +12,9 @@ class Light(Device):
         'polymorphic_identity': __tablename__,
     }
 
+    @classmethod
+    @property
+    def meta(cls):
+        return {
+            'icon_class': 'fa-solid fa-lightbulb',
+        }

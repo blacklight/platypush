@@ -13,6 +13,13 @@ class Switch(Device):
         'polymorphic_identity': __tablename__,
     }
 
+    @classmethod
+    @property
+    def meta(cls):
+        return {
+            'icon_class': 'fa-solid fa-light-switch',
+        }
+
     def on(self):
         return self.get_plugin().on(self)
 
