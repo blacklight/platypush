@@ -35,6 +35,7 @@ class Entity(Base):
     type = Column(String, nullable=False, index=True)
     plugin = Column(String, nullable=False)
     data = Column(JSON, default=dict)
+    meta = Column(JSON, default=dict)
     created_at = Column(
         DateTime(timezone=False), default=datetime.utcnow(), nullable=False
     )
@@ -51,9 +52,8 @@ class Entity(Base):
         'polymorphic_on': type,
     }
 
-    @classmethod
     @property
-    def meta(cls) -> Mapping:
+    def _meta(self) -> dict:
         return {
             'icon_class': 'fa-solid fa-circle-question',
         }
@@ -75,7 +75,10 @@ class Entity(Base):
     def to_json(self) -> dict:
         return {
             **{col.key: self._serialize_value(col) for col in self.columns},
-            'meta': self.meta,
+            'meta': {
+                **self._meta,
+                **(self.meta or {}),
+            },
         }
 
     def get_plugin(self):
