@@ -52,12 +52,6 @@ class Entity(Base):
         'polymorphic_on': type,
     }
 
-    @property
-    def _meta(self) -> dict:
-        return {
-            'icon_class': 'fa-solid fa-circle-question',
-        }
-
     @classmethod
     @property
     def columns(cls) -> Tuple[ColumnProperty]:
@@ -73,13 +67,7 @@ class Entity(Base):
         return val
 
     def to_json(self) -> dict:
-        return {
-            **{col.key: self._serialize_value(col) for col in self.columns},
-            'meta': {
-                **self._meta,
-                **(self.meta or {}),
-            },
-        }
+        return {col.key: self._serialize_value(col) for col in self.columns}
 
     def get_plugin(self):
         from platypush.context import get_plugin
@@ -87,6 +75,12 @@ class Entity(Base):
         plugin = get_plugin(self.plugin)
         assert plugin, f'No such plugin: {plugin}'
         return plugin
+
+    def run(self, action: str, *args, **kwargs):
+        plugin = self.get_plugin()
+        method = getattr(plugin, action, None)
+        assert method, f'No such action: {self.plugin}.{action}'
+        return method(self.external_id or self.name, *args, **kwargs)
 
 
 # Inject the JSONAble mixin (Python goes nuts if done through

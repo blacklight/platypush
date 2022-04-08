@@ -11,10 +11,3 @@ class Light(Device):
     __mapper_args__ = {
         'polymorphic_identity': __tablename__,
     }
-
-    @property
-    def _meta(self):
-        return {
-            **super()._meta,
-            'icon_class': 'fa-solid fa-lightbulb',
-        }

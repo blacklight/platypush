@@ -12,19 +12,3 @@ class Switch(Device):
     __mapper_args__ = {
         'polymorphic_identity': __tablename__,
     }
-
-    @property
-    def _meta(self):
-        return {
-            **super()._meta,
-            'icon_class': 'fa-solid fa-light-switch',
-        }
-
-    def on(self):
-        return self.get_plugin().on(self)
-
-    def off(self):
-        return self.get_plugin().off(self)
-
-    def toggle(self):
-        return self.get_plugin().toggle(self)

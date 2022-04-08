@@ -1,10 +1,10 @@
 from queue import Queue, Empty
 from threading import Thread
 from time import time
-from typing import Optional
+from typing import Optional, Any
 
 from platypush.context import get_plugin
-from platypush.entities import get_plugin_entity_registry, get_entities_registry
+from platypush.entities import Entity, get_plugin_entity_registry, get_entities_registry
 from platypush.plugins import Plugin, action
 
 
@@ -16,6 +16,11 @@ class EntitiesPlugin(Plugin):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+    def _get_db(self):
+        db = get_plugin('db')
+        assert db
+        return db
 
     @action
     def get(self, type: str = 'entity', **filter):
@@ -35,9 +40,7 @@ class EntitiesPlugin(Plugin):
             entity_type
         ), f'No such entity type: {type}. Supported types: {list(all_types.keys())}'
 
-        db = get_plugin('db')
-        assert db
-
+        db = self._get_db()
         with db.get_session() as session:
             query = session.query(entity_type)
             if filter:
@@ -126,6 +129,26 @@ class EntitiesPlugin(Plugin):
             w.join(timeout=max(0, timeout - (time() - start_time)) if timeout else None)
 
         return self.get(**filter)
+
+    @action
+    def execute(self, id: Any, action: str, *args, **kwargs):
+        """
+        Execute an action on an entity (for example `on`/`off` on a switch, or `get`
+        on a sensor).
+
+        :param id: Entity ID (i.e. the entity's db primary key, not the plugin's external
+            or "logical" key)
+        :param action: Action that should be run. It should be a method implemented
+            by the entity's class.
+        :param args: Action's extra positional arguments.
+        :param kwargs: Action's extra named arguments.
+        """
+        db = self._get_db()
+        with db.get_session() as session:
+            entity = session.query(Entity).filter_by(id=id).one_or_none()
+
+        assert entity, f'No such entity ID: {id}'
+        return entity.run(action, *args, **kwargs)
 
 
 # vim:sw=4:ts=4:et:
