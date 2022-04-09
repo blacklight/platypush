@@ -17,6 +17,9 @@
   "camera.pi": {
     "class": "fas fa-camera"
   },
+  "entities": {
+    "class": "fa fa-home"
+  },
   "execute": {
     "class": "fa fa-play"
   },
@@ -59,7 +62,19 @@
   "rtorrent": {
     "class": "fa fa-magnet"
   },
+  "smartthings": {
+    "imgUrl": "/icons/smartthings.png"
+  },
   "switches": {
+    "class": "fas fa-toggle-on"
+  },
+  "switch.switchbot": {
+    "class": "fas fa-toggle-on"
+  },
+  "switch.tplink": {
+    "class": "fas fa-toggle-on"
+  },
+  "switchbot": {
     "class": "fas fa-toggle-on"
   },
   "sound": {
