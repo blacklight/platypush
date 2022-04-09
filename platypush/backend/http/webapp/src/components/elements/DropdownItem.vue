@@ -1,17 +1,24 @@
 <template>
   <div class="row item" :class="itemClass" @click="clicked">
-    <div class="col-1 icon" v-if="iconClass">
-      <i :class="iconClass" />
+    <div class="col-1 icon" v-if="iconClass?.length || iconUrl?.length">
+      <Icon :class="iconClass" :url="iconUrl" />
     </div>
     <div class="text" :class="{'col-11': iconClass != null}" v-text="text" />
   </div>
 </template>
 
 <script>
+import Icon from "@/components/elements/Icon";
+
 export default {
   name: "DropdownItem",
+  components: {Icon},
   props: {
     iconClass: {
+      type: String,
+    },
+
+    iconUrl: {
       type: String,
     },
 
@@ -31,8 +38,12 @@ export default {
 
   methods: {
     clicked(event) {
+      if (this.disabled)
+        return false
+
       this.$parent.$emit('click', event)
-      this.$parent.visible = false
+      if (!this.$parent.keepOpenOnItemClick)
+        this.$parent.visible = false
     }
   }
 }
@@ -55,7 +66,18 @@ export default {
   }
 
   .icon {
-    margin: 0 .5em;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  ::v-deep(.icon-container) {
+    width: 2em;
+    display: inline-flex;
+    align-items: center;
+
+    .icon {
+      margin: 0 1.5em 0 .5em;
+    }
   }
 }
 </style>

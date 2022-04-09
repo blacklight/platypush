@@ -37,6 +37,11 @@ export default {
     title: {
       type: String,
     },
+
+    keepOpenOnItemClick: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data() {
