@@ -7,7 +7,8 @@
     </div>
 
     <div class="groups-canvas">
-      <div class="groups-container">
+      <NoItems v-if="!Object.keys(displayGroups || {})?.length">No entities found</NoItems>
+      <div class="groups-container" v-else>
         <div class="group fade-in" v-for="group in displayGroups" :key="group.name">
           <div class="frame">
             <div class="header">
@@ -43,6 +44,7 @@
 import Utils from "@/Utils"
 import Loading from "@/components/Loading";
 import Icon from "@/components/elements/Icon";
+import NoItems from "@/components/elements/NoItems";
 import Entity from "./Entity.vue";
 import Selector from "./Selector.vue";
 import icons from '@/assets/icons.json'
@@ -50,7 +52,7 @@ import meta from './meta.json'
 
 export default {
   name: "Entities",
-  components: {Loading, Icon, Entity, Selector},
+  components: {Loading, Icon, Entity, Selector, NoItems},
   mixins: [Utils],
 
   data() {
