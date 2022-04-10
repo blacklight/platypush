@@ -113,7 +113,7 @@ class EntitiesEngine(Thread):
         self.logger.info('Entities cache initialized')
 
     def _process_event(self, entity: Entity):
-        if self._entity_has_changes(entity):
+        if self._entity_has_changes(entity) and entity.id:
             get_bus().post(EntityUpdateEvent(entity=entity))
 
     def post(self, *entities: Entity):
