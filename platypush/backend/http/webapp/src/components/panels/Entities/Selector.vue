@@ -17,6 +17,10 @@
           @click.stop="toggleGroup(g)" />
       </Dropdown>
     </div>
+
+    <div class="selector" v-if="Object.keys(entityGroups.id || {}).length">
+      <input ref="search" type="text" class="search-bar" placeholder="🔎" v-model="searchTerm">
+    </div>
   </div>
 </template>
 
@@ -47,6 +51,7 @@ export default {
   data() {
     return {
       selectedGroups: {},
+      searchTerm: '',
     }
   },
 
@@ -70,9 +75,22 @@ export default {
     },
 
     selectedEntities() {
-      return Object.values(this.entityGroups.id).filter((entity) =>
-         !!this.selectedGroups[entity[this.value?.grouping]]
-      ).reduce((obj,  entity) => {
+      return Object.values(this.entityGroups.id).filter((entity) => {
+        if (!this.selectedGroups[entity[this.value?.grouping]])
+         return false
+
+        if (this.searchTerm?.length) {
+          const searchTerm = this.searchTerm.toLowerCase()
+          return (
+            ((entity.name || '').toLowerCase()).indexOf(searchTerm) >= 0 ||
+            ((entity.plugin || '').toLowerCase()).indexOf(searchTerm) >= 0 ||
+            ((entity.external_id || '').toLowerCase()).indexOf(searchTerm) >= 0 ||
+            (entity.id || 0).toString() == searchTerm
+          )
+        }
+
+        return true
+      }).reduce((obj,  entity) => {
         obj[entity.id] = entity
         return obj
       }, {})
@@ -99,6 +117,13 @@ export default {
 
     synchronizeSelectedEntities() {
       const value = {...this.value}
+      value.selectedEntities = this.selectedEntities
+      this.$emit('input', value)
+    },
+
+    updateSearchTerm() {
+      const value = {...this.value}
+      value.searchTerm = this.searchTerm
       value.selectedEntities = this.selectedEntities
       this.$emit('input', value)
     },
@@ -138,6 +163,7 @@ export default {
   mounted() {
     this.resetGroupFilter()
     this.$watch(() => this.value?.grouping, this.resetGroupFilter)
+    this.$watch(() => this.searchTerm, this.updateSearchTerm)
     this.$watch(() => this.entityGroups, this.resetGroupFilter)
   },
 }

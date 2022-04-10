@@ -95,7 +95,9 @@ export default {
         ([grouping, entities]) => {
           return {
             name: grouping,
-            entities: entities,
+            entities: entities.filter(
+              (e) => e.id in this.selector.selectedEntities
+            ),
           }
         }
       )
@@ -190,10 +192,7 @@ export default {
     padding: $main-margin 0;
     display: flex;
     break-inside: avoid;
-
-    @include from($tablet) {
-      padding: $main-margin;
-    }
+    padding: $main-margin;
 
     .frame {
       max-height: calc(100% - #{2 * $main-margin});
