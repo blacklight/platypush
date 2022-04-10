@@ -22,6 +22,10 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     This plugin allows you to manage a Z-Wave network over MQTT through
     `zwavejs2mqtt <https://github.com/zwave-js/zwavejs2mqtt>`_.
 
+    For historical reasons, it is advised to enabled this plugin together
+    with the ``zwave.mqtt`` backend, or you may lose the ability to listen
+    to asynchronous events.
+
     Configuration required on the zwavejs2mqtt gateway:
 
         * Install the gateway following the instructions reported
@@ -1124,21 +1128,21 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         )
 
     @action
-    def set_value_label(self, **kwargs):
+    def set_value_label(self, **_):
         """
         Change the label/name of a value (not implemented by zwavejs2mqtt).
         """
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def node_add_value(self, **kwargs):
+    def node_add_value(self, **_):
         """
         Add a value to a node (not implemented by zwavejs2mqtt).
         """
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def node_remove_value(self, **kwargs):
+    def node_remove_value(self, **_):
         """
         Remove a value from a node (not implemented by zwavejs2mqtt).
         """
@@ -1492,7 +1496,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         return self._groups_cache
 
     @action
-    def get_scenes(self, **kwargs) -> Dict[int, Dict[str, Any]]:
+    def get_scenes(self, **_) -> Dict[int, Dict[str, Any]]:
         """
         Get the scenes configured on the network.
 
@@ -1528,7 +1532,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         }
 
     @action
-    def create_scene(self, label: str, **kwargs):
+    def create_scene(self, label: str, **_):
         """
         Create a new scene.
 
@@ -1788,7 +1792,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         )
 
     @action
-    def create_new_primary(self, **kwargs):
+    def create_new_primary(self, **_):
         """
         Create a new primary controller on the network when the previous primary fails
         (not implemented by zwavejs2mqtt).
@@ -1799,7 +1803,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def hard_reset(self, **kwargs):
+    def hard_reset(self, **_):
         """
         Perform a hard reset of the controller. It erases its network configuration settings.
         The controller becomes a primary controller ready to add devices to a new network.
@@ -1810,7 +1814,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self._api_request('hardReset')
 
     @action
-    def soft_reset(self, **kwargs):
+    def soft_reset(self, **_):
         """
         Perform a soft reset of the controller.
         Resets a controller without erasing its network configuration settings (not implemented by zwavejs2).
@@ -1821,7 +1825,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def write_config(self, **kwargs):
+    def write_config(self, **_):
         """
         Store the current configuration of the network to the user directory (not implemented by zwavejs2mqtt).
 
@@ -1831,7 +1835,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def on(self, device: str, *args, **kwargs):
+    def on(self, device: str, *_, **kwargs):
         """
         Turn on a switch on a device.
 
@@ -1842,7 +1846,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self.set_value(data=True, id_on_network=device, **kwargs)
 
     @action
-    def off(self, device: str, *args, **kwargs):
+    def off(self, device: str, *_, **kwargs):
         """
         Turn off a switch on a device.
 
@@ -1853,7 +1857,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self.set_value(data=False, id_on_network=device, **kwargs)
 
     @action
-    def toggle(self, device: str, *args, **kwargs) -> dict:
+    def toggle(self, device: str, *_, **kwargs) -> dict:
         """
         Toggle a switch on a device.
 

@@ -1,3 +1,4 @@
+import contextlib
 import json
 from queue import Queue, Empty
 from typing import Optional, Type
@@ -5,14 +6,24 @@ from typing import Optional, Type
 from platypush.backend.mqtt import MqttBackend
 from platypush.context import get_plugin
 
-from platypush.message.event.zwave import ZwaveEvent, ZwaveNodeAddedEvent, ZwaveValueChangedEvent, \
-    ZwaveNodeRemovedEvent, ZwaveNodeRenamedEvent, ZwaveNodeReadyEvent, ZwaveNodeEvent, ZwaveNodeAsleepEvent, \
-    ZwaveNodeAwakeEvent
+from platypush.message.event.zwave import (
+    ZwaveEvent,
+    ZwaveNodeAddedEvent,
+    ZwaveValueChangedEvent,
+    ZwaveNodeRemovedEvent,
+    ZwaveNodeRenamedEvent,
+    ZwaveNodeReadyEvent,
+    ZwaveNodeEvent,
+    ZwaveNodeAsleepEvent,
+    ZwaveNodeAwakeEvent,
+)
 
 
 class ZwaveMqttBackend(MqttBackend):
     """
     Listen for events on a `zwavejs2mqtt <https://github.com/zwave-js/zwavejs2mqtt>`_ service.
+    For historical reasons, this should be enabled together with the ``zwave.mqtt`` plugin,
+    even though the actual configuration is only specified on the plugin.
 
     Triggers:
 
@@ -41,6 +52,7 @@ class ZwaveMqttBackend(MqttBackend):
         """
 
         from platypush.plugins.zwave.mqtt import ZwaveMqttPlugin
+
         self.plugin: ZwaveMqttPlugin = get_plugin('zwave.mqtt')
         assert self.plugin, 'The zwave.mqtt plugin is not configured'
 
@@ -61,27 +73,48 @@ class ZwaveMqttBackend(MqttBackend):
             'password': self.plugin.password,
         }
 
-        listeners = [{
-            **self.server_info,
-            'topics': [
-                self.plugin.events_topic + '/node/' + topic
-                for topic in ['node_ready', 'node_sleep', 'node_value_updated', 'node_metadata_updated', 'node_wakeup']
-            ],
-        }]
+        listeners = [
+            {
+                **self.server_info,
+                'topics': [
+                    self.plugin.events_topic + '/node/' + topic
+                    for topic in [
+                        'node_ready',
+                        'node_sleep',
+                        'node_value_updated',
+                        'node_metadata_updated',
+                        'node_wakeup',
+                    ]
+                ],
+            }
+        ]
 
-        super().__init__(*args, subscribe_default_topic=False, listeners=listeners, client_id=client_id, **kwargs)
+        super().__init__(
+            *args,
+            subscribe_default_topic=False,
+            listeners=listeners,
+            client_id=client_id,
+            **kwargs,
+        )
         if not client_id:
             self.client_id += '-zwavejs-mqtt'
 
-    def _dispatch_event(self, event_type: Type[ZwaveEvent], node: Optional[dict] = None, value: Optional[dict] = None,
-                        **kwargs):
+    def _dispatch_event(
+        self,
+        event_type: Type[ZwaveEvent],
+        node: Optional[dict] = None,
+        value: Optional[dict] = None,
+        **kwargs,
+    ):
         if value and 'id' not in value:
             value_id = f"{value['commandClass']}-{value.get('endpoint', 0)}-{value['property']}"
             if 'propertyKey' in value:
                 value_id += '-' + str(value['propertyKey'])
 
             if value_id not in node.get('values', {}):
-                self.logger.warning(f'value_id {value_id} not found on node {node["id"]}')
+                self.logger.warning(
+                    f'value_id {value_id} not found on node {node["id"]}'
+                )
                 return
 
             value = node['values'][value_id]
@@ -107,41 +140,47 @@ class ZwaveMqttBackend(MqttBackend):
         evt = event_type(**kwargs)
         self._events_queue.put(evt)
 
-        # zwavejs2mqtt currently treats some values (e.g. binary switches) in an inconsistent way,
-        # using two values - a read-only value called currentValue that gets updated on the
-        # node_value_updated topic, and a writable value called targetValue that doesn't get updated
-        # (see https://github.com/zwave-js/zwavejs2mqtt/blob/4a6a5c5f1274763fd3aced4cae2c72ea060716b5/docs/guide/migrating.md).
-        # To properly manage updates on writable values, propagate an event for both.
-        if event_type == ZwaveValueChangedEvent and kwargs.get('value', {}).get('property_id') == 'currentValue':
-            value = kwargs['value'].copy()
-            target_value_id = f'{kwargs["node"]["node_id"]}-{value["command_class"]}-{value.get("endpoint", 0)}' \
-                              f'-targetValue'
-            kwargs['value'] = kwargs['node'].get('values', {}).get(target_value_id)
+        if event_type == ZwaveValueChangedEvent:
+            # zwavejs2mqtt currently treats some values (e.g. binary switches) in an inconsistent way,
+            # using two values - a read-only value called currentValue that gets updated on the
+            # node_value_updated topic, and a writable value called targetValue that doesn't get updated
+            # (see https://github.com/zwave-js/zwavejs2mqtt/blob/4a6a5c5f1274763fd3aced4cae2c72ea060716b5 \
+            # /docs/guide/migrating.md).
+            # To properly manage updates on writable values, propagate an event for both.
+            if kwargs.get('value', {}).get('property_id') == 'currentValue':
+                value = kwargs['value'].copy()
+                target_value_id = (
+                    f'{kwargs["node"]["node_id"]}-{value["command_class"]}-{value.get("endpoint", 0)}'
+                    f'-targetValue'
+                )
+                kwargs['value'] = kwargs['node'].get('values', {}).get(target_value_id)
 
-            if kwargs['value']:
-                kwargs['value']['data'] = value['data']
-                kwargs['node']['values'][target_value_id] = kwargs['value']
-                evt = event_type(**kwargs)
-                self._events_queue.put(evt)
+                if kwargs['value']:
+                    kwargs['value']['data'] = value['data']
+                    kwargs['node']['values'][target_value_id] = kwargs['value']
+                    evt = event_type(**kwargs)
+                    self._events_queue.put(evt)
+
+            self.plugin.publish_entities([kwargs['value']])  # type: ignore
 
     def on_mqtt_message(self):
         def handler(_, __, msg):
             if not msg.topic.startswith(self.events_topic):
                 return
 
-            topic = msg.topic[len(self.events_topic) + 1:].split('/').pop()
+            topic = msg.topic[len(self.events_topic) + 1 :].split('/').pop()
             data = msg.payload.decode()
             if not data:
                 return
 
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 data = json.loads(data)['data']
-            except (ValueError, TypeError):
-                pass
 
             try:
                 if topic == 'node_value_updated':
-                    self._dispatch_event(ZwaveValueChangedEvent, node=data[0], value=data[1])
+                    self._dispatch_event(
+                        ZwaveValueChangedEvent, node=data[0], value=data[1]
+                    )
                 elif topic == 'node_metadata_updated':
                     self._dispatch_event(ZwaveNodeEvent, node=data[0])
                 elif topic == 'node_sleep':
