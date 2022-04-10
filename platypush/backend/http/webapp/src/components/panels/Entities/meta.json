@@ -1,0 +1,33 @@
+{
+  "entity": {
+    "name": "Entity",
+    "name_plural": "Entities",
+    "icon": {
+      "class": "fas fa-circle-question"
+    }
+  },
+
+  "device": {
+    "name": "Device",
+    "name_plural": "Devices",
+    "icon": {
+      "class": "fas fa-gear"
+    }
+  },
+
+  "switch": {
+    "name": "Switch",
+    "name_plural": "Switches",
+    "icon": {
+      "class": "fas fa-toggle-on"
+    }
+  },
+
+  "light": {
+    "name": "Light",
+    "name_plural": "Lights",
+    "icon": {
+      "class": "fas fa-lightbulb"
+    }
+  }
+}

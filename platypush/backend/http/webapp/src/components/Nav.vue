@@ -6,7 +6,7 @@
     </div>
 
     <ul class="plugins">
-      <li v-for="name in Object.keys(panels).sort()" :key="name" class="entry" :class="{selected: name === selectedPanel}"
+      <li v-for="name in panelNames" :key="name" class="entry" :class="{selected: name === selectedPanel}"
           :title="name" @click="onItemClick(name)">
         <a :href="`/#${name}`">
         <span class="icon">
@@ -14,7 +14,7 @@
           <img :src="icons[name].imgUrl" v-else-if="icons[name]?.imgUrl"  alt="name"/>
           <i class="fas fa-puzzle-piece" v-else />
         </span>
-        <span class="name" v-if="!collapsed" v-text="name" />
+        <span class="name" v-if="!collapsed" v-text="name == 'entities' ? 'Home' : name" />
         </a>
       </li>
     </ul>
@@ -63,6 +63,16 @@ export default {
 
     hostname: {
       type: String,
+    },
+  },
+
+  computed: {
+    panelNames() {
+      let panelNames = Object.keys(this.panels)
+      const homeIdx = panelNames.indexOf('entities')
+      if (homeIdx >= 0)
+        return ['entities'].concat((panelNames.slice(0, homeIdx).concat(panelNames.slice(homeIdx+1))).sort())
+      return panelNames.sort()
     },
   },
 

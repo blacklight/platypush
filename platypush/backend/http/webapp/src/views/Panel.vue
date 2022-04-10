@@ -90,7 +90,7 @@ export default {
 
     initializeDefaultViews() {
       this.plugins.execute = {}
-      this.plugins.switches = {}
+      this.plugins.entities = {}
     },
   },
 

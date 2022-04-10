@@ -10,6 +10,7 @@ $default-bg-7: #e4e4e4 !default;
 $default-fg: black !default;
 $default-fg-2: #23513a !default;
 $default-fg-3: #195331b3 !default;
+$header-bg: linear-gradient(0deg, #c0e8e4, #e4f8f4) !default;
 
 //// Notifications
 $notification-bg: rgba(185, 255, 193, 0.9) !default;
@@ -51,6 +52,8 @@ $border-shadow-bottom: 0 3px 2px -1px $default-shadow-color;
 $border-shadow-left: -2.5px 0 4px 0 $default-shadow-color;
 $border-shadow-right: 2.5px 0 4px 0 $default-shadow-color;
 $border-shadow-bottom-right: 2.5px 2.5px 3px 0 $default-shadow-color;
+$header-shadow: 0px 1px 3px 1px #bbb !default;
+$group-shadow: 3px -2px 6px 1px #98b0a0;
 
 //// Modals
 $modal-header-bg: #e0e0e0 !default;
@@ -141,5 +144,5 @@ $dropdown-shadow: 1px 1px 1px #bbb !default;
 //// Scrollbars
 $scrollbar-track-bg: $slider-bg !default;
 $scrollbar-track-shadow: inset 1px 0px 3px 0 $slider-track-shadow !default;
-$scrollbar-thumb-bg: #50ca80 !default;
+$scrollbar-thumb-bg: #a5a2a2 !default;
 
