@@ -413,17 +413,16 @@ class SmartthingsPlugin(SwitchPlugin):
             finally:
                 loop.stop()
 
-    async def _get_device_status(self, api, device_id: str) -> dict:
+    def transform_entities(self, entities):
         from platypush.entities.switches import Switch
 
-        device = await api.device(device_id)
-        await device.status.refresh()
+        compatible_entities = []
 
-        if 'switch' in device.capabilities:
-            self.publish_entities(  # type: ignore
-                [
+        for device in entities:
+            if 'switch' in device.capabilities:
+                compatible_entities.append(
                     Switch(
-                        id=device_id,
+                        id=device.device_id,
                         name=device.label,
                         state=device.status.switch,
                         data={
@@ -431,8 +430,14 @@ class SmartthingsPlugin(SwitchPlugin):
                             'room_id': getattr(device, 'room_id', None),
                         },
                     )
-                ]
-            )
+                )
+
+        return super().transform_entities(compatible_entities)  # type: ignore
+
+    async def _get_device_status(self, api, device_id: str) -> dict:
+        device = await api.device(device_id)
+        await device.status.refresh()
+        self.publish_entities([device])  # type: ignore
 
         return {
             'device_id': device_id,
@@ -526,7 +531,7 @@ class SmartthingsPlugin(SwitchPlugin):
                 loop.stop()
 
     @action
-    def on(self, device: str, *args, **kwargs) -> dict:
+    def on(self, device: str, *_, **__) -> dict:
         """
         Turn on a device with ``switch`` capability.
 
@@ -534,11 +539,10 @@ class SmartthingsPlugin(SwitchPlugin):
         :return: Device status
         """
         self.execute(device, 'switch', 'on')
-        # noinspection PyUnresolvedReferences
-        return self.status(device).output[0]
+        return self.status(device).output[0]  # type: ignore
 
     @action
-    def off(self, device: str, *args, **kwargs) -> dict:
+    def off(self, device: str, *_, **__) -> dict:
         """
         Turn off a device with ``switch`` capability.
 
@@ -546,11 +550,10 @@ class SmartthingsPlugin(SwitchPlugin):
         :return: Device status
         """
         self.execute(device, 'switch', 'off')
-        # noinspection PyUnresolvedReferences
-        return self.status(device).output[0]
+        return self.status(device).output[0]  # type: ignore
 
     @action
-    def toggle(self, device: str, *args, **kwargs) -> dict:
+    def toggle(self, device: str, *args, **__) -> dict:
         """
         Toggle a device with ``switch`` capability.
 
@@ -584,6 +587,8 @@ class SmartthingsPlugin(SwitchPlugin):
         with self._refresh_lock:
             loop = asyncio.new_event_loop()
             state = loop.run_until_complete(_toggle())
+            device.status.switch = state
+            self.publish_entities([device])  # type: ignore
             return {
                 'id': device_id,
                 'name': device.label,
