@@ -3,6 +3,7 @@ import threading
 
 from queue import Queue
 from typing import Optional, List, Any, Dict, Union
+from platypush.message import Mapping
 
 from platypush.message.response import Response
 from platypush.plugins.mqtt import MqttPlugin, action
@@ -153,6 +154,7 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
         self._info = {
             'devices': {},
             'groups': {},
+            'devices_by_addr': {},
         }
 
     def transform_entities(self, devices):
@@ -163,6 +165,7 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
             if not dev:
                 continue
 
+            converted_entity = None
             dev_def = dev.get("definition") or {}
             dev_info = {
                 "type": dev.get("type"),
@@ -178,16 +181,17 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
                 "description": dev_def.get("description"),
             }
 
-            switch_info = self._get_switch_info(dev)
+            switch_info = self._get_switch_meta(dev)
             if switch_info:
-                compatible_entities.append(
-                    Switch(
-                        id=dev['ieee_address'],
-                        name=dev.get('friendly_name'),
-                        state=switch_info['property'] == switch_info['value_on'],
-                        data=dev_info,
-                    )
+                converted_entity = Switch(
+                    id=dev['ieee_address'],
+                    name=dev.get('friendly_name'),
+                    state=dev.get('state', {}).get('state') == 'ON',
+                    data=dev_info,
                 )
+
+            if converted_entity:
+                compatible_entities.append(converted_entity)
 
         return super().transform_entities(compatible_entities)  # type: ignore
 
@@ -244,11 +248,14 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
                 for device in info.get('devices', [])
             }
 
+            self._info['devices_by_addr'] = {
+                device['ieee_address']: device for device in info.get('devices', [])
+            }
+
             self._info['groups'] = {
                 group.get('name'): group for group in info.get('groups', [])
             }
 
-            self.publish_entities(self._info['devices'].values())  # type: ignore
             self.logger.info('Zigbee network configuration updated')
             return info
         finally:
@@ -659,6 +666,11 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
 
         return ret
 
+    def _get_device_info(self, device: str) -> Mapping:
+        return self._info['devices'].get(
+            device, self._info['devices_by_addr'].get(device, {})
+        )
+
     # noinspection PyShadowingBuiltins
     @action
     def device_get(
@@ -676,6 +688,9 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
         :return: Key->value map of the device properties.
         """
         kwargs = self._mqtt_args(**kwargs)
+        device_info = self._get_device_info(device)
+        if device_info:
+            device = device_info.get('friendly_name') or device_info['ieee_address']
 
         if property:
             properties = self.publish(
@@ -688,11 +703,9 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
             assert property in properties, f'No such property: {property}'
             return {property: properties[property]}
 
-        refreshed = False
         if device not in self._info.get('devices', {}):
             # Refresh devices info
             self._get_network_info(**kwargs)
-            refreshed = True
 
         assert self._info.get('devices', {}).get(device), f'No such device: {device}'
         exposes = (
@@ -701,17 +714,24 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
         if not exposes:
             return {}
 
-        device_info = self.publish(
+        device_state = self.publish(
             topic=self._topic(device) + '/get',
             reply_topic=self._topic(device),
             msg=self.build_device_get_request(exposes),
             **kwargs,
-        )
+        ).output
 
-        if not refreshed:
-            self.publish_entities([device_info])  # type: ignore
+        if device_info:
+            self.publish_entities(
+                [
+                    {  # type: ignore
+                        **device_info,
+                        'state': device_state,
+                    }
+                ]
+            )
 
-        return device_info
+        return device_state
 
     @action
     def devices_get(
@@ -1242,8 +1262,9 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
         Implements :meth:`platypush.plugins.switch.plugin.SwitchPlugin.on` and turns on a Zigbee device with a writable
         binary property.
         """
-        switch_info = self._get_switches_info().get(device)
+        switch_info = self._get_switch_info(device)
         assert switch_info, '{} is not a valid switch'.format(device)
+        device = switch_info.get('friendly_name') or switch_info['ieee_address']
         props = self.device_set(
             device, switch_info['property'], switch_info['value_on']
         ).output
@@ -1257,8 +1278,9 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
         Implements :meth:`platypush.plugins.switch.plugin.SwitchPlugin.off` and turns off a Zigbee device with a
         writable binary property.
         """
-        switch_info = self._get_switches_info().get(device)
+        switch_info = self._get_switch_info(device)
         assert switch_info, '{} is not a valid switch'.format(device)
+        device = switch_info.get('friendly_name') or switch_info['ieee_address']
         props = self.device_set(
             device, switch_info['property'], switch_info['value_off']
         ).output
@@ -1272,14 +1294,26 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
         Implements :meth:`platypush.plugins.switch.plugin.SwitchPlugin.toggle` and toggles a Zigbee device with a
         writable binary property.
         """
-        switch_info = self._get_switches_info().get(device)
+        switch_info = self._get_switch_info(device)
         assert switch_info, '{} is not a valid switch'.format(device)
+        device = switch_info.get('friendly_name') or switch_info['ieee_address']
         props = self.device_set(
             device, switch_info['property'], switch_info['value_toggle']
         ).output
         return self._properties_to_switch(
             device=device, props=props, switch_info=switch_info
         )
+
+    def _get_switch_info(self, device: str):
+        switches_info = self._get_switches_info()
+        info = switches_info.get(device)
+        if info:
+            return info
+
+        device_info = self._get_device_info(device)
+        if device_info:
+            device = device_info.get('friendly_name') or device_info['ieee_address']
+            return switches_info.get(device)
 
     @staticmethod
     def _properties_to_switch(device: str, props: dict, switch_info: dict) -> dict:
@@ -1291,7 +1325,7 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
         }
 
     @staticmethod
-    def _get_switch_info(device_info: dict) -> dict:
+    def _get_switch_meta(device_info: dict) -> dict:
         exposes = (device_info.get('definition', {}) or {}).get('exposes', [])
         for exposed in exposes:
             for feature in exposed.get('features', []):
@@ -1302,6 +1336,8 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
                     and feature.get('access', 0) & 2
                 ):
                     return {
+                        'friendly_name': device_info.get('friendly_name'),
+                        'ieee_address': device_info.get('friendly_name'),
                         'property': feature['property'],
                         'value_on': feature['value_on'],
                         'value_off': feature['value_off'],
@@ -1316,7 +1352,7 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
         switches_info = {}
 
         for device in devices:
-            info = self._get_switch_info(device)
+            info = self._get_switch_meta(device)
             if not info:
                 continue
 

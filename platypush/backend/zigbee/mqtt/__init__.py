@@ -1,20 +1,37 @@
+import contextlib
 import json
-from typing import Optional
+from typing import Optional, Mapping
 
 from platypush.backend.mqtt import MqttBackend
 from platypush.context import get_plugin
-from platypush.message.event.zigbee.mqtt import ZigbeeMqttOnlineEvent, ZigbeeMqttOfflineEvent, \
-        ZigbeeMqttDevicePropertySetEvent, ZigbeeMqttDevicePairingEvent, ZigbeeMqttDeviceConnectedEvent, \
-        ZigbeeMqttDeviceBannedEvent, ZigbeeMqttDeviceRemovedEvent, ZigbeeMqttDeviceRemovedFailedEvent, \
-        ZigbeeMqttDeviceWhitelistedEvent, ZigbeeMqttDeviceRenamedEvent, ZigbeeMqttDeviceBindEvent, \
-        ZigbeeMqttDeviceUnbindEvent, ZigbeeMqttGroupAddedEvent, ZigbeeMqttGroupAddedFailedEvent, \
-        ZigbeeMqttGroupRemovedEvent, ZigbeeMqttGroupRemovedFailedEvent, ZigbeeMqttGroupRemoveAllEvent, \
-        ZigbeeMqttGroupRemoveAllFailedEvent, ZigbeeMqttErrorEvent
+from platypush.message.event.zigbee.mqtt import (
+    ZigbeeMqttOnlineEvent,
+    ZigbeeMqttOfflineEvent,
+    ZigbeeMqttDevicePropertySetEvent,
+    ZigbeeMqttDevicePairingEvent,
+    ZigbeeMqttDeviceConnectedEvent,
+    ZigbeeMqttDeviceBannedEvent,
+    ZigbeeMqttDeviceRemovedEvent,
+    ZigbeeMqttDeviceRemovedFailedEvent,
+    ZigbeeMqttDeviceWhitelistedEvent,
+    ZigbeeMqttDeviceRenamedEvent,
+    ZigbeeMqttDeviceBindEvent,
+    ZigbeeMqttDeviceUnbindEvent,
+    ZigbeeMqttGroupAddedEvent,
+    ZigbeeMqttGroupAddedFailedEvent,
+    ZigbeeMqttGroupRemovedEvent,
+    ZigbeeMqttGroupRemovedFailedEvent,
+    ZigbeeMqttGroupRemoveAllEvent,
+    ZigbeeMqttGroupRemoveAllFailedEvent,
+    ZigbeeMqttErrorEvent,
+)
 
 
 class ZigbeeMqttBackend(MqttBackend):
     """
     Listen for events on a zigbee2mqtt service.
+
+    For historical reasons, this backend should be enabled together with the `zigbee.mqtt` plugin.
 
     Triggers:
 
@@ -59,11 +76,22 @@ class ZigbeeMqttBackend(MqttBackend):
 
     """
 
-    def __init__(self, host: Optional[str] = None, port: Optional[int] = None, base_topic='zigbee2mqtt',
-                 tls_cafile: Optional[str] = None, tls_certfile: Optional[str] = None,
-                 tls_keyfile: Optional[str] = None, tls_version: Optional[str] = None,
-                 tls_ciphers: Optional[str] = None, username: Optional[str] = None,
-                 password: Optional[str] = None, client_id: Optional[str] = None, *args, **kwargs):
+    def __init__(
+        self,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        base_topic='zigbee2mqtt',
+        tls_cafile: Optional[str] = None,
+        tls_certfile: Optional[str] = None,
+        tls_keyfile: Optional[str] = None,
+        tls_version: Optional[str] = None,
+        tls_ciphers: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        client_id: Optional[str] = None,
+        *args,
+        **kwargs
+    ):
         """
         :param host: MQTT broker host (default: host configured on the ``zigbee.mqtt`` plugin).
         :param port: MQTT broker port (default: 1883).
@@ -87,6 +115,7 @@ class ZigbeeMqttBackend(MqttBackend):
         plugin = get_plugin('zigbee.mqtt')
         self.base_topic = base_topic or plugin.base_topic
         self._devices = {}
+        self._devices_info = {}
         self._groups = {}
         self._last_state = None
         self.server_info = {
@@ -106,17 +135,28 @@ class ZigbeeMqttBackend(MqttBackend):
             **self.server_info,
         }
 
-        listeners = [{
-            **self.server_info,
-            'topics': [
-                self.base_topic + '/' + topic
-                for topic in ['bridge/state', 'bridge/log', 'bridge/logging', 'bridge/devices', 'bridge/groups']
-            ],
-        }]
+        listeners = [
+            {
+                **self.server_info,
+                'topics': [
+                    self.base_topic + '/' + topic
+                    for topic in [
+                        'bridge/state',
+                        'bridge/log',
+                        'bridge/logging',
+                        'bridge/devices',
+                        'bridge/groups',
+                    ]
+                ],
+            }
+        ]
 
         super().__init__(
-            *args, subscribe_default_topic=False,
-            listeners=listeners, client_id=client_id, **kwargs
+            *args,
+            subscribe_default_topic=False,
+            listeners=listeners,
+            client_id=client_id,
+            **kwargs
         )
 
         if not client_id:
@@ -146,7 +186,7 @@ class ZigbeeMqttBackend(MqttBackend):
 
         if msg_type == 'devices':
             devices = {}
-            for dev in (text or []):
+            for dev in text or []:
                 devices[dev['friendly_name']] = dev
                 client.subscribe(self.base_topic + '/' + dev['friendly_name'])
         elif msg_type == 'pairing':
@@ -155,7 +195,9 @@ class ZigbeeMqttBackend(MqttBackend):
             self.bus.post(ZigbeeMqttDeviceBannedEvent(device=text, **args))
         elif msg_type in ['device_removed_failed', 'device_force_removed_failed']:
             force = msg_type == 'device_force_removed_failed'
-            self.bus.post(ZigbeeMqttDeviceRemovedFailedEvent(device=text, force=force, **args))
+            self.bus.post(
+                ZigbeeMqttDeviceRemovedFailedEvent(device=text, force=force, **args)
+            )
         elif msg_type == 'device_whitelisted':
             self.bus.post(ZigbeeMqttDeviceWhitelistedEvent(device=text, **args))
         elif msg_type == 'device_renamed':
@@ -181,7 +223,11 @@ class ZigbeeMqttBackend(MqttBackend):
             self.bus.post(ZigbeeMqttErrorEvent(error=text, **args))
         elif msg.get('level') in ['warning', 'error']:
             log = getattr(self.logger, msg['level'])
-            log('zigbee2mqtt {}: {}'.format(msg['level'], text or msg.get('error', msg.get('warning'))))
+            log(
+                'zigbee2mqtt {}: {}'.format(
+                    msg['level'], text or msg.get('error', msg.get('warning'))
+                )
+            )
 
     def _process_devices(self, client, msg):
         devices_info = {
@@ -191,10 +237,9 @@ class ZigbeeMqttBackend(MqttBackend):
 
         # noinspection PyProtectedMember
         event_args = {'host': client._host, 'port': client._port}
-        client.subscribe(*[
-            self.base_topic + '/' + device
-            for device in devices_info.keys()
-        ])
+        client.subscribe(
+            *[self.base_topic + '/' + device for device in devices_info.keys()]
+        )
 
         for name, device in devices_info.items():
             if name not in self._devices:
@@ -203,7 +248,7 @@ class ZigbeeMqttBackend(MqttBackend):
             exposes = (device.get('definition', {}) or {}).get('exposes', [])
             client.publish(
                 self.base_topic + '/' + name + '/get',
-                json.dumps(get_plugin('zigbee.mqtt').build_device_get_request(exposes))
+                json.dumps(self._plugin.build_device_get_request(exposes)),
             )
 
         devices_copy = [*self._devices.keys()]
@@ -213,13 +258,13 @@ class ZigbeeMqttBackend(MqttBackend):
                 del self._devices[name]
 
         self._devices = {device: {} for device in devices_info.keys()}
+        self._devices_info = devices_info
 
     def _process_groups(self, client, msg):
         # noinspection PyProtectedMember
         event_args = {'host': client._host, 'port': client._port}
         groups_info = {
-            group.get('friendly_name', group.get('id')): group
-            for group in msg
+            group.get('friendly_name', group.get('id')): group for group in msg
         }
 
         for name in groups_info.keys():
@@ -236,15 +281,13 @@ class ZigbeeMqttBackend(MqttBackend):
 
     def on_mqtt_message(self):
         def handler(client, _, msg):
-            topic = msg.topic[len(self.base_topic)+1:]
+            topic = msg.topic[len(self.base_topic) + 1 :]
             data = msg.payload.decode()
             if not data:
                 return
 
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 data = json.loads(data)
-            except (ValueError, TypeError):
-                pass
 
             if topic == 'bridge/state':
                 self._process_state_message(client, data)
@@ -260,16 +303,44 @@ class ZigbeeMqttBackend(MqttBackend):
                     return
 
                 name = suffix
-                changed_props = {k: v for k, v in data.items() if v != self._devices[name].get(k)}
+                changed_props = {
+                    k: v for k, v in data.items() if v != self._devices[name].get(k)
+                }
 
                 if changed_props:
-                    # noinspection PyProtectedMember
-                    self.bus.post(ZigbeeMqttDevicePropertySetEvent(host=client._host, port=client._port,
-                                                                   device=name, properties=changed_props))
+                    self._process_property_update(name, changed_props)
+                    self.bus.post(
+                        ZigbeeMqttDevicePropertySetEvent(
+                            host=client._host,
+                            port=client._port,
+                            device=name,
+                            properties=changed_props,
+                        )
+                    )
 
                 self._devices[name].update(data)
 
         return handler
+
+    @property
+    def _plugin(self):
+        plugin = get_plugin('zigbee.mqtt')
+        assert plugin, 'The zigbee.mqtt plugin is not configured'
+        return plugin
+
+    def _process_property_update(self, device_name: str, properties: Mapping):
+        device_info = self._devices_info.get(device_name)
+        if not (device_info and properties):
+            return
+
+        self._plugin.publish_entities(
+            [
+                {
+                    **device_info,
+                    'state': properties,
+                }
+            ]
+        )
 
     def run(self):
         super().run()
