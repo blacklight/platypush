@@ -5,9 +5,12 @@
       <Icon v-bind="value.meta?.icon || {}" v-else />
     </div>
     <div class="component-container">
-      <component :is="component" :value="value"
+      <component :is="component"
+        :value="value"
         @input="$emit('input', $event)"
-        @loading="$emit('loading', $event)" />
+        :loading="loading"
+        @loading="$emit('loading', $event)"
+      />
     </div>
   </div>
 </template>

@@ -42,7 +42,7 @@
                   :value="entity"
                   @input="onEntityInput"
                   :loading="!!loadingEntities[entity.id]"
-                  @loading="loadingEntities[entity.id] = true"
+                  @loading="loadingEntities[entity.id] = $event"
                 />
               </div>
             </div>

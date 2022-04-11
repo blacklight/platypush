@@ -5,7 +5,8 @@
     </div>
 
     <div class="col-2 switch pull-right">
-      <ToggleSwitch :value="value.state" @input="toggle" />
+      <ToggleSwitch :value="value.state" @input="toggle"
+        :disabled="loading" />
     </div>
   </div>
 </template>
@@ -24,20 +25,26 @@ export default {
       type: Object,
       required: true,
     },
-  },
 
-  data() {
-    return {
-      component: null,
-    }
+    loading: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   methods: {
-    async toggle() {
-      await this.request('entities.execute', {
-        id: this.value.id,
-        action: 'toggle',
-      })
+    async toggle(event) {
+      event.stopPropagation()
+      this.$emit('loading', true)
+
+      try {
+        await this.request('entities.execute', {
+          id: this.value.id,
+          action: 'toggle',
+        })
+      } finally {
+        this.$emit('loading', false)
+      }
     },
   },
 }
