@@ -34,14 +34,9 @@ export default {
 
   methods: {
     async toggle() {
-      const response = await this.request('entities.execute', {
+      await this.request('entities.execute', {
         id: this.value.id,
         action: 'toggle',
-      })
-
-      this.$emit('input', {
-        ...this.value,
-        state: response.on,
       })
     },
   },

@@ -136,9 +136,29 @@ export default {
         this.loading = false
       }
     },
+
+    onEntityUpdate(event) {
+      const entityId = event.entity.id
+      if (entityId == null)
+        return
+
+      this.entities[entityId] = {
+        ...event.entity,
+        meta: {
+          ...(this.entities[entityId]?.meta || {}),
+          ...(event.entity?.meta || {}),
+        },
+      }
+    },
   },
 
   mounted() {
+    this.subscribe(
+      this.onEntityUpdate,
+      'on-entity-update',
+      'platypush.message.event.entities.EntityUpdateEvent'
+    )
+
     this.refresh()
   },
 }
