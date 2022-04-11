@@ -87,19 +87,13 @@ class EntitiesEngine(Thread):
                     (entity.name, entity.plugin)
                 ] = e
 
-    def _entity_has_changes(self, new_entity: Entity) -> bool:
+    def _populate_entity_id_from_cache(self, new_entity: Entity):
         with self._entities_cache_lock:
             cached_entity = self._get_cached_entity(new_entity)
-            if cached_entity:
-                if cached_entity.get('id'):
-                    new_entity.id = cached_entity['id']
-                if cached_entity == self._cache_repr(new_entity):
-                    return False
-
+            if cached_entity and cached_entity.get('id'):
+                new_entity.id = cached_entity['id']
             if new_entity.id:
                 self._cache_entities(new_entity)
-
-            return True
 
     def _init_entities_cache(self):
         with self._get_db().get_session() as session:
@@ -113,7 +107,8 @@ class EntitiesEngine(Thread):
         self.logger.info('Entities cache initialized')
 
     def _process_event(self, entity: Entity):
-        if self._entity_has_changes(entity) and entity.id:
+        self._populate_entity_id_from_cache(entity)
+        if entity.id:
             get_bus().post(EntityUpdateEvent(entity=entity))
 
     def post(self, *entities: Entity):
