@@ -1,9 +1,13 @@
 <template>
   <div class="row item entity">
-    <Loading v-if="loading" />
-    <Icon v-bind="value.meta?.icon || {}" />
+    <div class="status-container">
+      <img src="@/assets/img/spinner.gif" class="loading" v-if="loading">
+      <Icon v-bind="value.meta?.icon || {}" v-else />
+    </div>
     <div class="component-container">
-      <component :is="component" :value="value" @input="$emit('input', $event)" />
+      <component :is="component" :value="value"
+        @input="$emit('input', $event)"
+        @loading="$emit('loading', $event)" />
     </div>
   </div>
 </template>
@@ -11,14 +15,13 @@
 <script>
 import { defineAsyncComponent } from 'vue'
 import Utils from "@/Utils"
-import Loading from "@/components/Loading"
 import Icon from "@/components/elements/Icon";
 
 export default {
   name: "Entity",
-  components: {Loading, Icon},
+  components: {Icon},
   mixins: [Utils],
-  emits: ['input'],
+  emits: ['input', 'loading'],
   props: {
     loading: {
       type: Boolean,
@@ -53,12 +56,28 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 @import "vars";
 
 .entity {
   width: 100%;
   display: table;
+
+  .status-container {
+    width: 2.5em;
+    height: 1.5em;
+    display: table-cell;
+    vertical-align: middle;
+    position: relative;
+
+    .loading {
+      position: absolute;
+      bottom: 0;
+      transform: translate(50%, -50%);
+      width: 1em;
+      height: 1em;
+    }
+  }
 
   .icon-container,
   .component-container {

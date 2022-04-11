@@ -2,9 +2,17 @@
   <div class="row plugin entities-container">
     <Loading v-if="loading" />
 
-    <div class="entity-selector-container">
-      <Selector :entity-groups="entityGroups" :value="selector" @input="selector = $event" />
-    </div>
+    <header>
+      <div class="col-11">
+        <Selector :entity-groups="entityGroups" :value="selector" @input="selector = $event" />
+      </div>
+
+      <div class="col-1 pull-right">
+        <button title="Refresh" @click="refresh">
+          <i class="fa fa-sync-alt" />
+        </button>
+      </div>
+    </header>
 
     <div class="groups-canvas">
       <NoItems v-if="!Object.keys(displayGroups || {})?.length">No entities found</NoItems>
@@ -30,7 +38,12 @@
 
             <div class="body">
               <div class="entity-frame" v-for="entity in group.entities" :key="entity.id">
-                <Entity :value="entity" @input="entities[entity.id] = $event" />
+                <Entity
+                  :value="entity"
+                  @input="onEntityInput"
+                  :loading="!!loadingEntities[entity.id]"
+                  @loading="loadingEntities[entity.id] = true"
+                />
               </div>
             </div>
           </div>
@@ -58,6 +71,7 @@ export default {
   data() {
     return {
       loading: false,
+      loadingEntities: {},
       entities: {},
       selector: {
         grouping: 'type',
@@ -118,6 +132,27 @@ export default {
     },
 
     async refresh() {
+      const actions = Object.keys(
+          Object.values(this.selector.selectedEntities).reduce((obj, entity) => {
+            if (entity.plugin)
+              obj[entity.plugin] = true
+              return obj
+          }, {})
+      ).map((plugin) => `${plugin}.status`)
+
+      this.loadingEntities = {
+        ...this.loadingEntities,
+        ...Object.keys(this.selector.selectedEntities).reduce((obj, id) => {
+            obj[id] = true
+            return obj
+        }, {}),
+      }
+
+      // Force refresh by calling `.status` on all the selected plugins
+      await Promise.all(actions.map((act) => this.request(act)))
+    },
+
+    async sync() {
       this.loading = true
 
       try {
@@ -137,10 +172,19 @@ export default {
       }
     },
 
+    onEntityInput(entity) {
+      const entityId = entity.id
+      this.entities[entityId] = entity
+      if (this.loadingEntities[entity.id])
+        delete this.loadingEntities[entity.id]
+    },
+
     onEntityUpdate(event) {
       const entityId = event.entity.id
       if (entityId == null)
         return
+      if (this.loadingEntities[entityId])
+        delete this.loadingEntities[entityId]
 
       this.entities[entityId] = {
         ...event.entity,
@@ -159,7 +203,7 @@ export default {
       'platypush.message.event.entities.EntityUpdateEvent'
     )
 
-    this.refresh()
+    this.sync()
   },
 }
 </script>
@@ -187,8 +231,21 @@ export default {
   color: $default-fg-2;
   font-weight: 400;
 
-  .entity-selector-container {
+  button {
+    background: #ffffff00;
+    border: 0;
+
+    &:hover {
+      color: $default-hover-fg;
+    }
+  }
+
+  header {
+    width: 100%;
     height: $selector-height;
+    display: flex;
+    background: $default-bg-2;
+    box-shadow: $border-shadow-bottom;
   }
 
   .groups-canvas {

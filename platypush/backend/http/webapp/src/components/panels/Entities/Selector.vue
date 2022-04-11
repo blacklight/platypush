@@ -172,10 +172,8 @@ export default {
 <style lang="scss" scoped>
 .entities-selectors-container {
   width: 100%;
-  background: $default-bg-2;
   display: flex;
   align-items: center;
-  box-shadow: $border-shadow-bottom;
 
   .selector {
     height: 100%;
