@@ -182,7 +182,7 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
             }
 
             switch_info = self._get_switch_meta(dev)
-            if switch_info:
+            if switch_info and dev.get('state', {}).get('state') is not None:
                 converted_entity = Switch(
                     id=dev['ieee_address'],
                     name=dev.get('friendly_name'),
@@ -722,9 +722,9 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
         ).output
 
         if device_info:
-            self.publish_entities(
+            self.publish_entities(  # type: ignore
                 [
-                    {  # type: ignore
+                    {
                         **device_info,
                         'state': device_state,
                     }
