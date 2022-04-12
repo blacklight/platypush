@@ -496,7 +496,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
     def _filter_values(
         self,
-        command_classes: Iterable[str],
+        command_classes: Optional[Iterable[str]] = None,
         filter_callback: Optional[Callable[[dict], bool]] = None,
         node_id: Optional[int] = None,
         node_name: Optional[str] = None,
@@ -509,16 +509,18 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         )
 
         command_classes = {
-            command_class_by_name[command_name] for command_name in command_classes
+            command_class_by_name[command_name]
+            for command_name in (command_classes or [])
         }
 
         values = {}
 
         for node in nodes:
             for value in node.get('values', {}).values():
-                if value.get('command_class') not in command_classes or (
-                    filter_callback and not filter_callback(value)
-                ):
+                if (
+                    command_classes
+                    and value.get('command_class') not in command_classes
+                ) or (filter_callback and not filter_callback(value)):
                     continue
 
                 value_id = value['id_on_network']
@@ -571,14 +573,23 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     @action
     def status(self, **kwargs) -> Dict[str, Any]:
         """
+        Get the current status of the Z-Wave values.
+
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+            (default: query the default configured device).
+        """
+        return self._filter_values(**kwargs)
+
+    @action
+    def controller_status(self, **kwargs) -> Dict[str, Any]:
+        """
         Get the status of the controller.
 
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
-        :return: dict with the following fields: ``device`` and ``state``.
         """
         msg_queue = queue.Queue()
-        topic = f'{self.topic_prefix}/Controller/status'
+        topic = f'{self.topic_prefix}/driver/status'
         client = self._get_client(**kwargs)
 
         def on_message(_, __, msg):
@@ -606,9 +617,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             client.loop_stop()
 
         return {
-            'device': status['nodeId'],
-            'state': status['status'],
-            'stats': {},
+            'state': status,
         }
 
     @action

@@ -356,7 +356,7 @@ export default {
     async refreshStatus() {
       this.loading.status = true
       try {
-        this.status = await this.zrequest('status')
+        this.status = await this.zrequest('controller_status')
       } finally {
         this.loading.status = false
       }
