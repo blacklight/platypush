@@ -1,5 +1,5 @@
 <template>
-  <div class="switch">
+  <div class="switch-container">
     <div class="col-10 label">
       <div class="name" v-text="value.name" />
     </div>
@@ -52,4 +52,10 @@ export default {
 
 <style lang="scss" scoped>
 @import "vars";
+
+.switch-container {
+  .switch {
+    direction: rtl;
+  }
+}
 </style>

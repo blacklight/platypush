@@ -3,11 +3,11 @@
     <Loading v-if="loading" />
 
     <header>
-      <div class="col-11">
+      <div class="col-11 left">
         <Selector :entity-groups="entityGroups" :value="selector" @input="selector = $event" />
       </div>
 
-      <div class="col-1 pull-right">
+      <div class="col-1 right">
         <button title="Refresh" @click="refresh">
           <i class="fa fa-sync-alt" />
         </button>
@@ -230,8 +230,8 @@ export default {
       this.entities[entityId] = {
         ...event.entity,
         meta: {
-          ...(event.entity?.meta || {}),
           ...(this.entities[entityId]?.meta || {}),
+          ...(event.entity?.meta || {}),
         },
       }
     },
@@ -266,8 +266,6 @@ export default {
 
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
   overflow: auto;
   color: $default-fg-2;
   font-weight: 400;
@@ -287,17 +285,28 @@ export default {
     display: flex;
     background: $default-bg-2;
     box-shadow: $border-shadow-bottom;
+    position: relative;
+
+    .right {
+      position: absolute;
+      right: 0;
+      text-align: right;
+      margin-right: 0.5em;
+      padding-right: 0.5em;
+
+      button {
+        padding: 0.5em 0;
+      }
+    }
   }
 
   .groups-canvas {
     width: 100%;
     height: calc(100% - #{$selector-height});
-    display: flex;
-    flex-direction: column;
+    overflow: auto;
   }
 
   .groups-container {
-    overflow: auto;
     @include from($desktop) {
       column-count: var(--groups-per-row);
     }
@@ -310,10 +319,16 @@ export default {
     padding: $main-margin 0;
     display: flex;
     break-inside: avoid;
-    padding: $main-margin;
+
+    @include from ($tablet) {
+      padding: $main-margin;
+    }
 
     .frame {
-      max-height: calc(100% - #{2 * $main-margin});
+      @include from($desktop) {
+        max-height: calc(100vh - #{$header-height} - #{$main-margin});
+      }
+
       display: flex;
       flex-direction: column;
       flex-grow: 1;

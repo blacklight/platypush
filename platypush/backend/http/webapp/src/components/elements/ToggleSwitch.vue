@@ -59,7 +59,7 @@ export default {
     display: none;
     & + label {
       border-radius: 1em;
-      display: block;
+      display: inline-flex;
       cursor: pointer;
       position: relative;
       transition: box-shadow .4s;

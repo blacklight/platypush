@@ -1,8 +1,7 @@
 <template>
   <div class="entities-selectors-container">
     <div class="selector">
-      <Dropdown title="Group by" icon-class="fas fa-layer-group"
-          :text="prettifyGroupingName(value.grouping)" ref="groupingSelector">
+      <Dropdown title="Group by" icon-class="fas fa-eye" ref="groupingSelector">
         <DropdownItem v-for="g in visibleGroupings" :key="g" :text="prettifyGroupingName(g)"
           :item-class="{selected: value?.grouping === g}"
           @click="onGroupingChanged(g)" />
@@ -180,7 +179,7 @@ export default {
     display: inline-flex;
 
     &.active {
-      ::v-deep(.dropdown-container) {
+      :deep(.dropdown-container) {
         button {
           color: $default-hover-fg;
         }
@@ -188,7 +187,13 @@ export default {
     }
   }
 
-  ::v-deep(.dropdown-container) {
+  @media (max-width: 330px) {
+    .search-bar {
+      display: none;
+    }
+  }
+
+  :deep(.dropdown-container) {
     height: 100%;
     display: flex;
 
@@ -207,6 +212,10 @@ export default {
       padding: 0.5em 4em 0.5em 0.5em;
       border: 0;
       box-shadow: none;
+
+      .col-1.icon {
+        width: 1.5em;
+      }
 
       &.selected {
         font-weight: bold;
