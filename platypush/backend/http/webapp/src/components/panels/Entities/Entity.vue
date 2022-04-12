@@ -2,6 +2,7 @@
   <div class="row item entity">
     <div class="status-container">
       <img src="@/assets/img/spinner.gif" class="loading" v-if="loading">
+      <i class="fas fa-circle-exclamation error" v-else-if="error" />
       <Icon v-bind="value.meta?.icon || {}" v-else />
     </div>
     <div class="component-container">
@@ -27,6 +28,11 @@ export default {
   emits: ['input', 'loading'],
   props: {
     loading: {
+      type: Boolean,
+      default: false,
+    },
+
+    error: {
       type: Boolean,
       default: false,
     },
@@ -79,6 +85,11 @@ export default {
       transform: translate(50%, -50%);
       width: 1em;
       height: 1em;
+    }
+
+    .error {
+      color: $error-fg;
+      margin-left: .5em;
     }
   }
 

@@ -41,6 +41,7 @@
                 <Entity
                   :value="entity"
                   @input="onEntityInput"
+                  :error="!!errorEntities[entity.id]"
                   :loading="!!loadingEntities[entity.id]"
                   @loading="loadingEntities[entity.id] = $event"
                 />
@@ -68,10 +69,20 @@ export default {
   components: {Loading, Icon, Entity, Selector, NoItems},
   mixins: [Utils],
 
+  props: {
+    // Entity scan timeout in seconds
+    entityScanTimeout: {
+      type: Number,
+      default: 30,
+    },
+  },
+
   data() {
     return {
       loading: false,
       loadingEntities: {},
+      errorEntities: {},
+      entityTimeouts: {},
       entities: {},
       selector: {
         grouping: 'type',
@@ -143,6 +154,26 @@ export default {
       this.loadingEntities = {
         ...this.loadingEntities,
         ...Object.keys(this.selector.selectedEntities).reduce((obj, id) => {
+            const self = this
+            const entity = this.entities[id]
+
+            if (this.entityTimeouts[id])
+              clearTimeout(this.entityTimeouts[id])
+
+            this.entityTimeouts[id] = setTimeout(() => {
+                if (self.loadingEntities[id])
+                  delete self.loadingEntities[id]
+                if (self.entityTimeouts[id])
+                  delete self.entityTimeouts[id]
+
+                self.errorEntities[id] = entity
+                self.notify({
+                  error: true,
+                  title: entity.plugin,
+                  text: `Scan timeout for ${entity.name}`,
+                })
+            }, this.entityScanTimeout * 1000)
+
             obj[id] = true
             return obj
         }, {}),
@@ -172,9 +203,20 @@ export default {
       }
     },
 
+    clearEntityTimeouts(entityId) {
+      if (this.errorEntities[entityId])
+        delete this.errorEntities[entityId]
+      if (this.loadingEntities[entityId])
+        delete this.loadingEntities[entityId]
+      if (this.entityTimeouts[entityId]) {
+        clearTimeout(this.entityTimeouts[entityId])
+        delete this.entityTimeouts[entityId]
+      }
+    },
+
     onEntityInput(entity) {
-      const entityId = entity.id
-      this.entities[entityId] = entity
+      this.entities[entity.id] = entity
+      this.clearEntityTimeouts(entity.id)
       if (this.loadingEntities[entity.id])
         delete this.loadingEntities[entity.id]
     },
@@ -183,14 +225,13 @@ export default {
       const entityId = event.entity.id
       if (entityId == null)
         return
-      if (this.loadingEntities[entityId])
-        delete this.loadingEntities[entityId]
 
+      this.clearEntityTimeouts(entityId)
       this.entities[entityId] = {
         ...event.entity,
         meta: {
-          ...(this.entities[entityId]?.meta || {}),
           ...(event.entity?.meta || {}),
+          ...(this.entities[entityId]?.meta || {}),
         },
       }
     },
