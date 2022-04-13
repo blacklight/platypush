@@ -6,7 +6,7 @@ from .devices import Device
 class Light(Device):
     __tablename__ = 'light'
 
-    id = Column(Integer, ForeignKey(Device.id), primary_key=True)
+    id = Column(Integer, ForeignKey(Device.id, ondelete='CASCADE'), primary_key=True)
 
     __mapper_args__ = {
         'polymorphic_identity': __tablename__,

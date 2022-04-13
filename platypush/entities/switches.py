@@ -6,7 +6,7 @@ from .devices import Device
 class Switch(Device):
     __tablename__ = 'switch'
 
-    id = Column(Integer, ForeignKey(Device.id), primary_key=True)
+    id = Column(Integer, ForeignKey(Device.id, ondelete='CASCADE'), primary_key=True)
     state = Column(Boolean)
 
     __mapper_args__ = {

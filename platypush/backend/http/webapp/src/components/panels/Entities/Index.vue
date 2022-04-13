@@ -143,44 +143,30 @@ export default {
     },
 
     async refresh() {
-      const actions = Object.keys(
-          Object.values(this.selector.selectedEntities).reduce((obj, entity) => {
-            if (entity.plugin)
-              obj[entity.plugin] = true
-              return obj
-          }, {})
-      ).map((plugin) => `${plugin}.status`)
+      this.loadingEntities = Object.entries(this.entities).reduce((obj, [id, entity]) => {
+          const self = this
+          if (this.entityTimeouts[id])
+            clearTimeout(this.entityTimeouts[id])
 
-      this.loadingEntities = {
-        ...this.loadingEntities,
-        ...Object.keys(this.selector.selectedEntities).reduce((obj, id) => {
-            const self = this
-            const entity = this.entities[id]
+          this.entityTimeouts[id] = setTimeout(() => {
+              if (self.loadingEntities[id])
+                delete self.loadingEntities[id]
+              if (self.entityTimeouts[id])
+                delete self.entityTimeouts[id]
 
-            if (this.entityTimeouts[id])
-              clearTimeout(this.entityTimeouts[id])
+              self.errorEntities[id] = entity
+              self.notify({
+                error: true,
+                title: entity.plugin,
+                text: `Scan timeout for ${entity.name}`,
+              })
+          }, this.entityScanTimeout * 1000)
 
-            this.entityTimeouts[id] = setTimeout(() => {
-                if (self.loadingEntities[id])
-                  delete self.loadingEntities[id]
-                if (self.entityTimeouts[id])
-                  delete self.entityTimeouts[id]
+          obj[id] = true
+          return obj
+      }, {})
 
-                self.errorEntities[id] = entity
-                self.notify({
-                  error: true,
-                  title: entity.plugin,
-                  text: `Scan timeout for ${entity.name}`,
-                })
-            }, this.entityScanTimeout * 1000)
-
-            obj[id] = true
-            return obj
-        }, {}),
-      }
-
-      // Force refresh by calling `.status` on all the selected plugins
-      await Promise.all(actions.map((act) => this.request(act)))
+      await this.request('entities.scan')
     },
 
     async sync() {
@@ -231,6 +217,7 @@ export default {
         ...event.entity,
         meta: {
           ...(this.entities[entityId]?.meta || {}),
+          ...(meta[event.entity.type] || {}),
           ...(event.entity?.meta || {}),
         },
       }

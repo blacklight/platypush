@@ -1,3 +1,4 @@
+import json
 from logging import getLogger
 from queue import Queue, Empty
 from threading import Thread, Event, RLock
@@ -23,6 +24,7 @@ class EntitiesEngine(Thread):
         self.logger = getLogger(name=obj_name)
         self._queue = Queue()
         self._should_stop = Event()
+        self._entities_awaiting_flush = set()
         self._entities_cache_lock = RLock()
         self._entities_cache = {
             'by_id': {},
@@ -110,6 +112,16 @@ class EntitiesEngine(Thread):
         self._populate_entity_id_from_cache(entity)
         if entity.id:
             get_bus().post(EntityUpdateEvent(entity=entity))
+        else:
+            self._entities_awaiting_flush.add(self._to_entity_awaiting_flush(entity))
+
+    @staticmethod
+    def _to_entity_awaiting_flush(entity: Entity):
+        e = entity.to_json()
+        return json.dumps(
+            {k: v for k, v in e.items() if k in {'external_id', 'name', 'plugin'}},
+            sort_keys=True,
+        )
 
     def post(self, *entities: Entity):
         for entity in entities:
@@ -226,3 +238,10 @@ class EntitiesEngine(Thread):
         with self._entities_cache_lock:
             for entity in entities:
                 self._cache_entities(entity, overwrite_cache=True)
+
+        entities_awaiting_flush = {*self._entities_awaiting_flush}
+        for entity in entities:
+            e = self._to_entity_awaiting_flush(entity)
+            if e in entities_awaiting_flush:
+                self._process_event(entity)
+                self._entities_awaiting_flush.remove(e)
