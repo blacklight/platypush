@@ -33,7 +33,11 @@
                 <div class="title" v-text="group.name" v-else-if="selector.grouping === 'plugin'"/>
               </span>
 
-              <span class="section right" />
+              <span class="section right">
+                <button title="Refresh" @click="refresh(group)">
+                  <i class="fa fa-sync-alt" />
+                </button>
+              </span>
             </div>
 
             <div class="body">
@@ -142,8 +146,16 @@ export default {
       }, {})
     },
 
-    async refresh() {
-      this.loadingEntities = Object.entries(this.entities).reduce((obj, [id, entity]) => {
+    async refresh(group) {
+      const entities = group ? group.entities : this.entities
+      const args = {}
+      if (group)
+        args.plugins = Object.keys(entities.reduce((obj, entity) => {
+          obj[entity.plugin] = true
+          return obj
+        }, {}))
+
+      this.loadingEntities = Object.entries(entities).reduce((obj, [id, entity]) => {
           const self = this
           if (this.entityTimeouts[id])
             clearTimeout(this.entityTimeouts[id])
@@ -166,7 +178,7 @@ export default {
           return obj
       }, {})
 
-      await this.request('entities.scan')
+      await this.request('entities.scan', args)
     },
 
     async sync() {
