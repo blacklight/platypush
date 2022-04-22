@@ -46,6 +46,7 @@ export default {
   data() {
     return {
       component: null,
+      modalVisible: false,
     }
   },
 

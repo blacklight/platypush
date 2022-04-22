@@ -6,7 +6,7 @@
 
     <div class="col-2 switch pull-right">
       <ToggleSwitch :value="value.state" @input="toggle"
-        :disabled="loading" />
+        @click.stop :disabled="loading" />
     </div>
   </div>
 </template>

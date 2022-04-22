@@ -80,3 +80,43 @@ $header-height: 3.5em;
     }
   }
 }
+
+:deep(.table-row) {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: $row-shadow;
+
+  &:hover {
+    background: $hover-bg;
+  }
+
+  @include from($tablet) {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .title,
+  .value {
+    width: 100%;
+    display: flex;
+
+    @include from($tablet) {
+      display: inline-flex;
+    }
+  }
+
+  .title {
+    font-weight: bold;
+
+    @include from($tablet) {
+      width: 30%;
+    }
+  }
+
+  .value {
+    @include from($tablet) {
+      justify-content: right;
+    }
+  }
+}

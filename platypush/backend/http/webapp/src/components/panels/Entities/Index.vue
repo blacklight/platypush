@@ -8,14 +8,20 @@
       </div>
 
       <div class="col-1 right">
-        <button title="Refresh" @click="refresh">
+        <button title="Refresh" @click="refresh(null)">
           <i class="fa fa-sync-alt" />
         </button>
       </div>
     </header>
 
     <div class="groups-canvas">
+      <EntityModal :entity="entities[modalEntityId]"
+        :visible="modalVisible" @close="onEntityModal(null)"
+        v-if="modalEntityId"
+      />
+
       <NoItems v-if="!Object.keys(displayGroups || {})?.length">No entities found</NoItems>
+
       <div class="groups-container" v-else>
         <div class="group fade-in" v-for="group in displayGroups" :key="group.name">
           <div class="frame">
@@ -41,7 +47,8 @@
             </div>
 
             <div class="body">
-              <div class="entity-frame" v-for="entity in group.entities" :key="entity.id">
+              <div class="entity-frame" @click="onEntityModal(entity.id)"
+                  v-for="entity in group.entities" :key="entity.id">
                 <Entity
                   :value="entity"
                   @input="onEntityInput"
@@ -65,12 +72,13 @@ import Icon from "@/components/elements/Icon";
 import NoItems from "@/components/elements/NoItems";
 import Entity from "./Entity.vue";
 import Selector from "./Selector.vue";
+import EntityModal from "./Modal"
 import icons from '@/assets/icons.json'
 import meta from './meta.json'
 
 export default {
   name: "Entities",
-  components: {Loading, Icon, Entity, Selector, NoItems},
+  components: {Loading, Icon, Entity, Selector, NoItems, EntityModal},
   mixins: [Utils],
 
   props: {
@@ -88,6 +96,8 @@ export default {
       errorEntities: {},
       entityTimeouts: {},
       entities: {},
+      modalEntityId: null,
+      modalVisible: false,
       selector: {
         grouping: 'type',
         selectedEntities: {},
@@ -147,7 +157,7 @@ export default {
     },
 
     async refresh(group) {
-      const entities = group ? group.entities : this.entities
+      const entities = (group ? group.entities : this.entities) || {}
       const args = {}
       if (group)
         args.plugins = Object.keys(entities.reduce((obj, entity) => {
@@ -155,8 +165,9 @@ export default {
           return obj
         }, {}))
 
-      this.loadingEntities = Object.entries(entities).reduce((obj, [id, entity]) => {
+      this.loadingEntities = Object.values(entities).reduce((obj, entity) => {
           const self = this
+          const id = entity.id
           if (this.entityTimeouts[id])
             clearTimeout(this.entityTimeouts[id])
 
@@ -186,6 +197,7 @@ export default {
 
       try {
         this.entities = (await this.request('entities.get')).reduce((obj, entity) => {
+          entity.name = entity?.meta?.name_override || entity.name
           entity.meta = {
             ...(meta[entity.type] || {}),
             ...(entity.meta || {}),
@@ -225,13 +237,30 @@ export default {
         return
 
       this.clearEntityTimeouts(entityId)
-      this.entities[entityId] = {
-        ...event.entity,
-        meta: {
-          ...(this.entities[entityId]?.meta || {}),
-          ...(meta[event.entity.type] || {}),
-          ...(event.entity?.meta || {}),
-        },
+      const entity = {...event.entity}
+      if (entity.meta?.name_override?.length)
+        entity.name = entity.meta.name_override
+      else if (this.entities[entityId]?.meta?.name_override?.length)
+        entity.name = this.entities[entityId].meta.name_override
+      else
+        entity.name = event.entity?.name || this.entities[entityId]?.name
+
+      entity.meta = {
+        ...(this.entities[entityId]?.meta || {}),
+        ...(meta[event.entity.type] || {}),
+        ...(event.entity?.meta || {}),
+      }
+
+      this.entities[entityId] = entity
+    },
+
+    onEntityModal(entityId) {
+      if (entityId) {
+        this.modalEntityId = entityId
+        this.modalVisible = true
+      } else {
+        this.modalEntityId = null
+        this.modalVisible = false
       }
     },
   },
@@ -368,6 +397,30 @@ export default {
 
       .entity-frame:last-child {
         border-radius: 0 0 1em 1em;
+      }
+    }
+  }
+
+  :deep(.modal) {
+    @include until($tablet) {
+      width: 95%;
+    }
+
+    .content {
+      @include until($tablet) {
+        width: 100%;
+      }
+
+      @include from($tablet) {
+        min-width: 30em;
+      }
+
+      .body {
+        padding: 0;
+
+        .table-row {
+          padding: 0.5em;
+        }
       }
     }
   }

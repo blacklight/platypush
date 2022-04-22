@@ -1,10 +1,13 @@
 from queue import Queue, Empty
 from threading import Thread
 from time import time
-from typing import Optional, Any, Collection
+from typing import Optional, Any, Collection, Mapping
 
-from platypush.context import get_plugin
+from sqlalchemy.orm import make_transient
+
+from platypush.context import get_plugin, get_bus
 from platypush.entities import Entity, get_plugin_entity_registry, get_entities_registry
+from platypush.message.event.entities import EntityUpdateEvent
 from platypush.plugins import Plugin, action
 
 
@@ -164,6 +167,47 @@ class EntitiesPlugin(Plugin):
 
         assert entity, f'No such entity ID: {id}'
         return entity.run(action, *args, **kwargs)
+
+    @action
+    def rename(self, **entities: Mapping[str, str]):
+        """
+        Rename a sequence of entities.
+        Renaming, as of now, is actually done by setting the ``.meta.name_override``
+        property of an entity rather than fully renaming the entity (which may be owned
+        by a plugin that doesn't support renaming, therefore the next entity update may
+        overwrite the name).
+
+        :param entities: Entity `id` -> `new_name` mapping.
+        """
+        return self.set_meta(
+            **{
+                entity_id: {'name_override': name}
+                for entity_id, name in entities.items()
+            }
+        )
+
+    @action
+    def set_meta(self, **entities):
+        """
+        Update the metadata of a set of entities.
+
+        :param entities: Entity `id` -> `new_metadata_fields` mapping.
+        :return: The updated entities.
+        """
+        entities = {str(k): v for k, v in entities.items()}
+        with self._get_db().get_session() as session:
+            objs = session.query(Entity).filter(Entity.id.in_(entities.keys())).all()
+            for obj in objs:
+                obj.meta = {**(obj.meta or {}), **(entities.get(str(obj.id), {}))}
+                session.add(obj)
+
+            session.commit()
+
+        for obj in objs:
+            make_transient(obj)
+            get_bus().post(EntityUpdateEvent(obj))
+
+        return [obj.to_json() for obj in objs]
 
 
 # vim:sw=4:ts=4:et:

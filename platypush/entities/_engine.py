@@ -16,7 +16,7 @@ from ._base import Entity
 
 class EntitiesEngine(Thread):
     # Processing queue timeout in seconds
-    _queue_timeout = 5.0
+    _queue_timeout = 2.0
 
     def __init__(self):
         obj_name = self.__class__.__name__
@@ -205,7 +205,12 @@ class EntitiesEngine(Thread):
         def merge(entity: Entity, existing_entity: Entity) -> Entity:
             columns = [col.key for col in entity.columns]
             for col in columns:
-                if col not in ('id', 'created_at'):
+                if col == 'meta':
+                    existing_entity.meta = {  # type: ignore
+                        **(existing_entity.meta or {}),
+                        **(entity.meta or {}),
+                    }
+                elif col not in ('id', 'created_at'):
                     setattr(existing_entity, col, getattr(entity, col))
 
             return existing_entity
