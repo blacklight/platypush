@@ -180,8 +180,16 @@ export default {
     display: inline-flex;
     align-items: center;
 
-    .icon-container {
-      justify-content: right;
+    @include until($tablet) {
+      .icon-container {
+        justify-content: left;
+      }
+    }
+
+    @include from($tablet) {
+      .icon-container {
+        justify-content: right;
+      }
     }
   }
 
