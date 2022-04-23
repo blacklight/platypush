@@ -1,7 +1,8 @@
 <template>
   <div class="icon-container">
     <img class="icon" :src="url" :alt="alt" v-if="url?.length">
-    <i class="icon" :class="className" v-else-if="className?.length" />
+    <i class="icon" :class="className" :style="{color: color}"
+      v-else-if="className?.length" />
   </div>
 </template>
 
@@ -13,6 +14,10 @@ export default {
     },
     url: {
       type: String,
+    },
+    color: {
+      type: String,
+      default: '',
     },
     alt: {
       type: String,

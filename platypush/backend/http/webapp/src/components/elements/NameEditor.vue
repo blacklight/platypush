@@ -7,6 +7,7 @@
     <button class="cancel" @click="$emit('cancel')" @touch="$emit('cancel')">
       <i class="fas fa-ban" />
     </button>
+    <slot />
   </form>
 </template>
 

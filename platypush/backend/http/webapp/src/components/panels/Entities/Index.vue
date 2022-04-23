@@ -246,8 +246,8 @@ export default {
         entity.name = event.entity?.name || this.entities[entityId]?.name
 
       entity.meta = {
-        ...(this.entities[entityId]?.meta || {}),
         ...(meta[event.entity.type] || {}),
+        ...(this.entities[entityId]?.meta || {}),
         ...(event.entity?.meta || {}),
       }
 

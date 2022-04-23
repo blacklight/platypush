@@ -13,9 +13,39 @@
     </div>
 
     <div class="table-row">
-      <div class="title">Icon</div>
-      <div class="value icon-container">
-        <i class="icon" :class="entity.meta.icon.class" v-if="entity?.meta?.icon?.class" />
+      <div class="title">
+        Icon
+        <EditButton @click="editIcon = true" v-if="!editIcon" />
+      </div>
+      <div class="value icon-canvas">
+        <span class="icon-editor" v-if="editIcon">
+          <NameEditor :value="entity.meta?.icon?.class || entity.meta?.icon?.url" @input="onIconEdit"
+            @cancel="editIcon = false" :disabled="loading">
+            <button type="button" title="Reset" @click="onIconEdit(null)"
+                @touch="onIconEdit(null)">
+              <i class="fas fa-rotate-left" />
+            </button>
+          </NameEditor>
+          <span class="help">
+            Supported: image URLs or
+            <a href="https://fontawesome.com/icons" target="_blank">FontAwesome icon classes</a>.
+          </span>
+        </span>
+
+        <Icon v-bind="entity?.meta?.icon || {}" v-else />
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="title">
+        Icon color
+      </div>
+      <div class="value icon-color-picker">
+        <input type="color" :value="entity.meta?.icon?.color" @change="onIconColorEdit">
+        <button type="button" title="Reset" @click="onIconColorEdit(null)"
+            @touch="onIconColorEdit(null)">
+          <i class="fas fa-rotate-left" />
+        </button>
       </div>
     </div>
 
@@ -53,13 +83,15 @@
 
 <script>
 import Modal from "@/components/Modal";
+import Icon from "@/components/elements/Icon";
 import EditButton from "@/components/elements/EditButton";
 import NameEditor from "@/components/elements/NameEditor";
 import Utils from "@/Utils";
+import meta from './meta.json'
 
 export default {
   name: "Entity",
-  components: {Modal, EditButton, NameEditor},
+  components: {Modal, EditButton, NameEditor, Icon},
   mixins: [Utils],
   emits: ['input', 'loading'],
   props: {
@@ -94,16 +126,78 @@ export default {
         this.loading = false
         this.editName = false
       }
-    }
+    },
+
+    async onIconEdit(newIcon) {
+      this.loading = true
+
+      try {
+        const icon = {url: null, class: null}
+        if (newIcon?.length) {
+          if (newIcon.startsWith('http'))
+            icon.url = newIcon
+          else
+            icon.class = newIcon
+        } else {
+          icon.url = (meta[this.entity.type] || {})?.icon?.url
+          icon.class = (meta[this.entity.type] || {})?.icon?.['class']
+        }
+
+        const req = {}
+        req[this.entity.id] = {icon: icon}
+        await this.request('entities.set_meta', req)
+      } finally {
+        this.loading = false
+        this.editIcon = false
+      }
+    },
+
+    async onIconColorEdit(event) {
+      this.loading = true
+
+      try {
+        const icon = this.entity.meta?.icon || {}
+        if (event)
+          icon.color = event.target.value
+        else
+          icon.color = null
+
+        const req = {}
+        req[this.entity.id] = {icon: icon}
+        await this.request('entities.set_meta', req)
+      } finally {
+        this.loading = false
+        this.editIcon = false
+      }
+    },
   },
 }
 </script>
 
 <style lang="scss" scoped>
 :deep(.modal) {
-  .icon-container {
+  .icon-canvas {
     display: inline-flex;
     align-items: center;
+
+    .icon-container {
+      justify-content: right;
+    }
+  }
+
+  .icon-editor {
+    display: flex;
+    flex-direction: column;
+  }
+
+  button {
+    border: none;
+    background: none;
+    padding: 0 0.5em;
+  }
+
+  .help {
+    font-size: 0.75em;
   }
 }
 </style>
