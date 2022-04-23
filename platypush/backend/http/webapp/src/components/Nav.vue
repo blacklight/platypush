@@ -90,11 +90,6 @@ export default {
       host: null,
     }
   },
-
-  mounted() {
-    if (this.isMobile() && !this.$root.$route.hash.length)
-      this.collapsed = false
-  },
 }
 </script>
 

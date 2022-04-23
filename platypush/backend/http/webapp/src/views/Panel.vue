@@ -45,10 +45,7 @@ export default {
   methods: {
     initSelectedPanel() {
       const match = this.$route.hash.match('#?([a-zA-Z0-9.]+)[?]?(.*)')
-      if (!match)
-        return
-
-      const plugin = match[1]
+      const plugin = match ? match[1] : 'entities'
       if (plugin?.length)
         this.selectedPanel = plugin
     },
@@ -113,7 +110,7 @@ main {
   height: 100%;
   display: flex;
 
-  @media screen and (max-width: $tablet) {
+  @include until($tablet) {
     flex-direction: column;
   }
 
