@@ -238,6 +238,8 @@ export default {
 
       this.clearEntityTimeouts(entityId)
       const entity = {...event.entity}
+      if (event.entity?.state == null)
+        entity.state = this.entities[entityId]?.state
       if (entity.meta?.name_override?.length)
         entity.name = entity.meta.name_override
       else if (this.entities[entityId]?.meta?.name_override?.length)
