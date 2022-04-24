@@ -5,6 +5,7 @@ from typing import Mapping, Type, Tuple, Any
 
 import pkgutil
 from sqlalchemy import (
+    Boolean,
     Column,
     Index,
     Integer,
@@ -32,10 +33,13 @@ class Entity(Base):
     id = Column(Integer, autoincrement=True, primary_key=True)
     external_id = Column(String, nullable=True)
     name = Column(String, nullable=False, index=True)
+    description = Column(String)
     type = Column(String, nullable=False, index=True)
     plugin = Column(String, nullable=False)
     data = Column(JSON, default=dict)
     meta = Column(JSON, default=dict)
+    is_read_only = Column(Boolean, default=False)
+    is_write_only = Column(Boolean, default=False)
     created_at = Column(
         DateTime(timezone=False), default=datetime.utcnow(), nullable=False
     )

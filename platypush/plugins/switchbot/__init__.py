@@ -114,6 +114,7 @@ class SwitchbotPlugin(SwitchPlugin):
                     id=dev["id"],
                     name=dev["name"],
                     state=dev.get("on"),
+                    is_write_only=True,
                     data={
                         "device_type": dev.get("device_type"),
                         "is_virtual": dev.get("is_virtual", False),

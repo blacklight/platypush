@@ -479,10 +479,10 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
                             value_name=value["label"],
                         ),
                         state=value['data'],
+                        description=value.get('help'),
+                        is_read_only=value.get('is_read_only'),
+                        is_write_only=value.get('is_write_only'),
                         data={
-                            'help': value.get('help'),
-                            'is_read_only': value.get('is_read_only'),
-                            'is_write_only': value.get('is_write_only'),
                             'label': value.get('label'),
                             'node_id': value.get('node_id'),
                         },

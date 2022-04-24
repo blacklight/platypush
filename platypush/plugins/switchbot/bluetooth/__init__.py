@@ -184,6 +184,7 @@ class SwitchbotBluetoothPlugin(  # lgtm [py/missing-call-to-init]
                     id=addr,
                     name=name,
                     state=False,
+                    is_write_only=True,
                 )
                 for addr, name in devices.items()
             ]

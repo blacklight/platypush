@@ -178,7 +178,6 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
                 "model": dev_def.get("model"),
                 "vendor": dev_def.get("vendor"),
                 "supported": dev.get("supported"),
-                "description": dev_def.get("description"),
             }
 
             switch_info = self._get_switch_meta(dev)
@@ -187,6 +186,7 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
                     id=dev['ieee_address'],
                     name=dev.get('friendly_name'),
                     state=dev.get('state', {}).get('state') == 'ON',
+                    description=dev_def.get("description"),
                     data=dev_info,
                 )
 
