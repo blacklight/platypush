@@ -1,5 +1,12 @@
 <template>
   <Modal :visible="visible" :title="entity.name || entity.external_id">
+    <ConfirmDialog ref="deleteConfirmDiag" title="Confirm entity deletion" @input="onDelete">
+      Are you <b>sure</b> that you want to delete this entity? <br/><br/>
+      Note: you should only delete an entity if its plugin has been disabled
+      or the entity is no longer reachable.<br/><br/>
+      Otherwise, the entity will simply be created again upon the next scan.
+    </ConfirmDialog>
+
     <div class="table-row">
       <div class="title">
         Name
@@ -78,12 +85,22 @@
       <div class="title">Updated at</div>
       <div class="value" v-text="formatDateTime(entity.updated_at)" />
     </div>
+
+    <div class="table-row delete-entity-container">
+      <div class="title">Delete Entity</div>
+      <div class="value">
+        <button @click="$refs.deleteConfirmDiag.show()">
+          <i class="fas fa-trash" />
+        </button>
+      </div>
+    </div>
   </Modal>
 </template>
 
 <script>
 import Modal from "@/components/Modal";
 import Icon from "@/components/elements/Icon";
+import ConfirmDialog from "@/components/elements/ConfirmDialog";
 import EditButton from "@/components/elements/EditButton";
 import NameEditor from "@/components/elements/NameEditor";
 import Utils from "@/Utils";
@@ -91,7 +108,7 @@ import meta from './meta.json'
 
 export default {
   name: "Entity",
-  components: {Modal, EditButton, NameEditor, Icon},
+  components: {Modal, EditButton, NameEditor, Icon, ConfirmDialog},
   mixins: [Utils],
   emits: ['input', 'loading'],
   props: {
@@ -125,6 +142,16 @@ export default {
       } finally {
         this.loading = false
         this.editName = false
+      }
+    },
+
+    async onDelete() {
+      this.loading = true
+
+      try {
+        await this.request('entities.delete', [this.entity.id])
+      } finally {
+        this.loading = false
       }
     },
 
@@ -206,6 +233,13 @@ export default {
 
   .help {
     font-size: 0.75em;
+  }
+
+  .delete-entity-container {
+    color: $error-fg;
+    button {
+      color: $error-fg;
+    }
   }
 }
 </style>

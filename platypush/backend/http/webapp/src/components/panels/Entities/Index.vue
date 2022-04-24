@@ -256,6 +256,16 @@ export default {
       this.entities[entityId] = entity
     },
 
+    onEntityDelete(event) {
+      const entityId = event.entity?.id
+      if (entityId == null)
+        return
+      if (entityId === this.modalEntityId)
+        this.modalEntityId = null
+      if (this.entities[entityId])
+        delete this.entities[entityId]
+    },
+
     onEntityModal(entityId) {
       if (entityId) {
         this.modalEntityId = entityId
@@ -272,6 +282,12 @@ export default {
       this.onEntityUpdate,
       'on-entity-update',
       'platypush.message.event.entities.EntityUpdateEvent'
+    )
+
+    this.subscribe(
+      this.onEntityDelete,
+      'on-entity-delete',
+      'platypush.message.event.entities.EntityDeleteEvent'
     )
 
     this.sync()
