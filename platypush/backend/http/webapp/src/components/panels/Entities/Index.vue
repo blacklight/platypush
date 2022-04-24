@@ -384,6 +384,10 @@ export default {
           width: 10%;
         }
 
+        &.right {
+          text-align: right;
+        }
+
         &.center {
           width: 80%;
           text-align: center;
