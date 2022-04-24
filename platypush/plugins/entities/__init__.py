@@ -7,7 +7,7 @@ from sqlalchemy.orm import make_transient
 
 from platypush.context import get_plugin, get_bus
 from platypush.entities import Entity, get_plugin_entity_registry, get_entities_registry
-from platypush.message.event.entities import EntityUpdateEvent
+from platypush.message.event.entities import EntityUpdateEvent, EntityDeleteEvent
 from platypush.plugins import Plugin, action
 
 
@@ -167,6 +167,32 @@ class EntitiesPlugin(Plugin):
 
         assert entity, f'No such entity ID: {id}'
         return entity.run(action, *args, **kwargs)
+
+    @action
+    def delete(self, *entities: int):  # type: ignore
+        """
+        Delete a set of entity IDs.
+
+        Note: this should only be done if the entity is no longer available or
+        the associated plugin has been disabled, otherwise the entities will be
+        re-created by the plugins on the next scan.
+
+        :param entities: IDs of the entities to be removed.
+        :return: The payload of the deleted entities.
+        """
+        with self._get_db().get_session() as session:
+            entities: Collection[Entity] = (
+                session.query(Entity).filter(Entity.id.in_(entities)).all()
+            )
+            for entity in entities:
+                session.delete(entity)
+            session.commit()
+
+        for entity in entities:
+            make_transient(entity)
+            get_bus().post(EntityDeleteEvent(entity))
+
+        return entities
 
     @action
     def rename(self, **entities: Mapping[str, str]):
