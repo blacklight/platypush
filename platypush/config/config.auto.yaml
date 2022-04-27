@@ -3,5 +3,4 @@
 # instead
 
 backend.http:
-  port: 8008
-  websocket_port: 8009
+  enabled: True
