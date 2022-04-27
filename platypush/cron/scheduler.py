@@ -17,8 +17,8 @@ def get_now() -> datetime.datetime:
     :return: A timezone-aware representation of `now`
     """
     return datetime.datetime.now().replace(
-        tzinfo=gettz()
-    )  # lgtm [py/call-to-non-callable]
+        tzinfo=gettz()  # lgtm [py/call-to-non-callable]
+    )
 
 
 class CronjobState(enum.IntEnum):
