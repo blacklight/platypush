@@ -91,14 +91,16 @@ class HttpBackend(Backend):
                                  other music plugin enabled. -->
                             <Music class="col-3" />
 
-                            <!-- Show current date, time and weather. It requires a `weather` plugin or backend enabled -->
+                            <!-- Show current date, time and weather.
+                                 It requires a `weather` plugin or backend enabled -->
                             <DateTimeWeather class="col-3" />
                         </Row>
 
                         <!-- Display the following widgets on a second row -->
                         <Row>
                             <!-- Show a carousel of images from a local folder. For security reasons, the folder must be
-                                 explicitly exposed as an HTTP resource through the backend `resource_dirs` attribute. -->
+                                 explicitly exposed as an HTTP resource through the backend
+                                 `resource_dirs` attribute. -->
                             <ImageCarousel class="col-6" img-dir="/mnt/hd/photos/carousel" />
 
                             <!-- Show the news headlines parsed from a list of RSS feed and stored locally through the
@@ -151,11 +153,7 @@ class HttpBackend(Backend):
 
     Requires:
 
-        * **flask** (``pip install flask``)
-        * **bcrypt** (``pip install bcrypt``)
-        * **magic** (``pip install python-magic``), optional, for MIME type
-            support if you want to enable media streaming
-        * **gunicorn** (``pip install gunicorn``) - optional but recommended.
+        * **gunicorn** (``pip install gunicorn``) - optional, to run the Platypush webapp over uWSGI.
 
     By default the Platypush web server will run in a
     process spawned on the fly by the HTTP backend. However, being a
@@ -174,12 +172,22 @@ class HttpBackend(Backend):
     _DEFAULT_HTTP_PORT = 8008
     _DEFAULT_WEBSOCKET_PORT = 8009
 
-    def __init__(self, port=_DEFAULT_HTTP_PORT,
-                 websocket_port=_DEFAULT_WEBSOCKET_PORT,
-                 bind_address='0.0.0.0',
-                 disable_websocket=False, resource_dirs=None,
-                 ssl_cert=None, ssl_key=None, ssl_cafile=None, ssl_capath=None,
-                 maps=None, run_externally=False, uwsgi_args=None, **kwargs):
+    def __init__(
+        self,
+        port=_DEFAULT_HTTP_PORT,
+        websocket_port=_DEFAULT_WEBSOCKET_PORT,
+        bind_address='0.0.0.0',
+        disable_websocket=False,
+        resource_dirs=None,
+        ssl_cert=None,
+        ssl_key=None,
+        ssl_cafile=None,
+        ssl_capath=None,
+        maps=None,
+        run_externally=False,
+        uwsgi_args=None,
+        **kwargs
+    ):
         """
         :param port: Listen port for the web server (default: 8008)
         :type port: int
@@ -246,26 +254,37 @@ class HttpBackend(Backend):
         self.bind_address = bind_address
 
         if resource_dirs:
-            self.resource_dirs = {name: os.path.abspath(
-                os.path.expanduser(d)) for name, d in resource_dirs.items()}
+            self.resource_dirs = {
+                name: os.path.abspath(os.path.expanduser(d))
+                for name, d in resource_dirs.items()
+            }
         else:
             self.resource_dirs = {}
 
         self.active_websockets = set()
         self.run_externally = run_externally
         self.uwsgi_args = uwsgi_args or []
-        self.ssl_context = get_ssl_server_context(ssl_cert=ssl_cert,
-                                                  ssl_key=ssl_key,
-                                                  ssl_cafile=ssl_cafile,
-                                                  ssl_capath=ssl_capath) \
-            if ssl_cert else None
+        self.ssl_context = (
+            get_ssl_server_context(
+                ssl_cert=ssl_cert,
+                ssl_key=ssl_key,
+                ssl_cafile=ssl_cafile,
+                ssl_capath=ssl_capath,
+            )
+            if ssl_cert
+            else None
+        )
 
         if self.uwsgi_args:
-            self.uwsgi_args = [str(_) for _ in self.uwsgi_args] + \
-                ['--module', 'platypush.backend.http.uwsgi', '--enable-threads']
+            self.uwsgi_args = [str(_) for _ in self.uwsgi_args] + [
+                '--module',
+                'platypush.backend.http.uwsgi',
+                '--enable-threads',
+            ]
 
-        self.local_base_url = '{proto}://localhost:{port}'.\
-            format(proto=('https' if ssl_cert else 'http'), port=self.port)
+        self.local_base_url = '{proto}://localhost:{port}'.format(
+            proto=('https' if ssl_cert else 'http'), port=self.port
+        )
 
         self._websocket_lock_timeout = 10
         self._websocket_lock = threading.RLock()
@@ -275,7 +294,7 @@ class HttpBackend(Backend):
         self.logger.warning('Use cURL or any HTTP client to query the HTTP backend')
 
     def on_stop(self):
-        """ On backend stop """
+        """On backend stop"""
         super().on_stop()
         self.logger.info('Received STOP event on HttpBackend')
 
@@ -284,7 +303,9 @@ class HttpBackend(Backend):
                 self.server_proc.kill()
                 self.server_proc.wait(timeout=10)
                 if self.server_proc.poll() is not None:
-                    self.logger.info('HTTP server process may be still alive at termination')
+                    self.logger.info(
+                        'HTTP server process may be still alive at termination'
+                    )
                 else:
                     self.logger.info('HTTP server process terminated')
             else:
@@ -293,17 +314,25 @@ class HttpBackend(Backend):
                 if self.server_proc.is_alive():
                     self.server_proc.kill()
                 if self.server_proc.is_alive():
-                    self.logger.info('HTTP server process may be still alive at termination')
+                    self.logger.info(
+                        'HTTP server process may be still alive at termination'
+                    )
                 else:
                     self.logger.info('HTTP server process terminated')
 
-        if self.websocket_thread and self.websocket_thread.is_alive() and self._websocket_loop:
+        if (
+            self.websocket_thread
+            and self.websocket_thread.is_alive()
+            and self._websocket_loop
+        ):
             self._websocket_loop.stop()
             self.logger.info('HTTP websocket service terminated')
 
     def _acquire_websocket_lock(self, ws):
         try:
-            acquire_ok = self._websocket_lock.acquire(timeout=self._websocket_lock_timeout)
+            acquire_ok = self._websocket_lock.acquire(
+                timeout=self._websocket_lock_timeout
+            )
             if not acquire_ok:
                 raise TimeoutError('Websocket lock acquire timeout')
 
@@ -313,13 +342,19 @@ class HttpBackend(Backend):
         finally:
             self._websocket_lock.release()
 
-        acquire_ok = self._websocket_locks[addr].acquire(timeout=self._websocket_lock_timeout)
+        acquire_ok = self._websocket_locks[addr].acquire(
+            timeout=self._websocket_lock_timeout
+        )
         if not acquire_ok:
-            raise TimeoutError('Websocket on address {} not ready to receive data'.format(addr))
+            raise TimeoutError(
+                'Websocket on address {} not ready to receive data'.format(addr)
+            )
 
     def _release_websocket_lock(self, ws):
         try:
-            acquire_ok = self._websocket_lock.acquire(timeout=self._websocket_lock_timeout)
+            acquire_ok = self._websocket_lock.acquire(
+                timeout=self._websocket_lock_timeout
+            )
             if not acquire_ok:
                 raise TimeoutError('Websocket lock acquire timeout')
 
@@ -327,12 +362,15 @@ class HttpBackend(Backend):
             if addr in self._websocket_locks:
                 self._websocket_locks[addr].release()
         except Exception as e:
-            self.logger.warning('Unhandled exception while releasing websocket lock: {}'.format(str(e)))
+            self.logger.warning(
+                'Unhandled exception while releasing websocket lock: {}'.format(str(e))
+            )
         finally:
             self._websocket_lock.release()
 
     def notify_web_clients(self, event):
-        """ Notify all the connected web clients (over websocket) of a new event """
+        """Notify all the connected web clients (over websocket) of a new event"""
+
         async def send_event(ws):
             try:
                 self._acquire_websocket_lock(ws)
@@ -349,26 +387,35 @@ class HttpBackend(Backend):
             try:
                 loop.run_until_complete(send_event(_ws))
             except ConnectionClosed:
-                self.logger.warning('Websocket client {} connection lost'.format(_ws.remote_address))
+                self.logger.warning(
+                    'Websocket client {} connection lost'.format(_ws.remote_address)
+                )
                 self.active_websockets.remove(_ws)
                 if _ws.remote_address in self._websocket_locks:
                     del self._websocket_locks[_ws.remote_address]
 
     def websocket(self):
-        """ Websocket main server """
+        """Websocket main server"""
         set_thread_name('WebsocketServer')
 
         async def register_websocket(websocket, path):
-            address = websocket.remote_address if websocket.remote_address \
+            address = (
+                websocket.remote_address
+                if websocket.remote_address
                 else '<unknown client>'
+            )
 
-            self.logger.info('New websocket connection from {} on path {}'.format(address, path))
+            self.logger.info(
+                'New websocket connection from {} on path {}'.format(address, path)
+            )
             self.active_websockets.add(websocket)
 
             try:
                 await websocket.recv()
             except ConnectionClosed:
-                self.logger.info('Websocket client {} closed connection'.format(address))
+                self.logger.info(
+                    'Websocket client {} closed connection'.format(address)
+                )
                 self.active_websockets.remove(websocket)
                 if address in self._websocket_locks:
                     del self._websocket_locks[address]
@@ -379,8 +426,13 @@ class HttpBackend(Backend):
 
         self._websocket_loop = get_or_create_event_loop()
         self._websocket_loop.run_until_complete(
-            websocket_serve(register_websocket, self.bind_address, self.websocket_port,
-                             **websocket_args))
+            websocket_serve(
+                register_websocket,
+                self.bind_address,
+                self.websocket_port,
+                **websocket_args
+            )
+        )
         self._websocket_loop.run_forever()
 
     def _start_web_server(self):
@@ -415,8 +467,9 @@ class HttpBackend(Backend):
             self.websocket_thread.start()
 
         if not self.run_externally:
-            self.server_proc = Process(target=self._start_web_server(),
-                                       name='WebServer')
+            self.server_proc = Process(
+                target=self._start_web_server(), name='WebServer'
+            )
             self.server_proc.start()
             self.server_proc.join()
         elif self.uwsgi_args:
@@ -424,9 +477,11 @@ class HttpBackend(Backend):
             self.logger.info('Starting uWSGI with arguments {}'.format(uwsgi_cmd))
             self.server_proc = subprocess.Popen(uwsgi_cmd)
         else:
-            self.logger.info('The web server is configured to be launched externally but ' +
-                             'no uwsgi_args were provided. Make sure that you run another external service' +
-                             'for the webserver (e.g. nginx)')
+            self.logger.info(
+                'The web server is configured to be launched externally but '
+                + 'no uwsgi_args were provided. Make sure that you run another external service'
+                + 'for the webserver (e.g. nginx)'
+            )
 
 
 # vim:sw=4:ts=4:et:

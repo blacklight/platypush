@@ -1,43 +1,61 @@
-import os
+import datetime
+import queue
 import pytest
-import tempfile
-import threading
 import time
 
-tmp_files = []
-tmp_files_ready = threading.Event()
+from dateutil.tz import gettz
+from mock import patch
+
 test_timeout = 10
-expected_cron_file_content = 'The cronjob ran successfully!'
+cron_queue = queue.Queue()
 
 
-@pytest.fixture(scope='module', autouse=True)
-def tmp_file(*_):
-    tmp_file = tempfile.NamedTemporaryFile(prefix='platypush-test-cron-',
-                                           suffix='.txt', delete=False)
-    tmp_files.append(tmp_file.name)
-    tmp_files_ready.set()
-    yield tmp_file.name
+class MockDatetime(datetime.datetime):
+    timedelta = datetime.timedelta()
 
-    for f in tmp_files:
-        if os.path.isfile(f):
-            os.unlink(f)
+    @classmethod
+    def now(cls):
+        return super().now(tz=gettz()) + cls.timedelta
 
 
-def test_cron_execution(tmp_file):
+def _test_cron_queue(expected_msg: str):
+    msg = None
+    test_start = time.time()
+    while time.time() - test_start <= test_timeout and msg != expected_msg:
+        try:
+            msg = cron_queue.get(block=True, timeout=test_timeout)
+        except queue.Empty:
+            break
+
+    assert msg == expected_msg, 'The expected cronjob has not been executed'
+
+
+def test_cron_execution():
     """
     Test that the cronjob in ``../etc/scripts/test_cron.py`` runs successfully.
     """
-    actual_cron_file_content = None
-    test_start = time.time()
+    _test_cron_queue('cron_test')
 
-    while actual_cron_file_content != expected_cron_file_content and \
-            time.time() - test_start < test_timeout:
-        with open(tmp_file, 'r') as f:
-            actual_cron_file_content = f.read()
-        time.sleep(0.5)
 
-    assert actual_cron_file_content == expected_cron_file_content, \
-        'cron_test failed to run within {} seconds'.format(test_timeout)
+def test_cron_execution_upon_system_clock_change():
+    """
+    Test that the cronjob runs at the right time even upon DST or other
+    system clock changes.
+    """
+    # Mock datetime.datetime with a class that has overridable timedelta
+    patcher = patch('datetime.datetime', MockDatetime)
+
+    try:
+        patcher.start()
+        time.sleep(1)
+        # Simulate a +1hr shift on the system clock
+        MockDatetime.timedelta = datetime.timedelta(hours=1)
+        time.sleep(1)
+    finally:
+        patcher.stop()
+
+    # Ensure that the cronjob that was supposed to run in an hour is now running
+    _test_cron_queue('cron_1hr_test')
 
 
 if __name__ == '__main__':

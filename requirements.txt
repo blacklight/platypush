@@ -20,3 +20,4 @@ zeroconf
 paho-mqtt
 websocket-client
 croniter
+python-magic

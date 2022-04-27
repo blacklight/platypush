@@ -1,4 +1,5 @@
 import datetime
+import glob
 import importlib
 import inspect
 import logging
@@ -6,19 +7,25 @@ import os
 import pathlib
 import pkgutil
 import re
+import shutil
 import socket
 import sys
 from typing import Optional
 
 import yaml
 
-from platypush.utils import get_hash, is_functional_procedure, is_functional_hook, is_functional_cron
+from platypush.utils import (
+    get_hash,
+    is_functional_procedure,
+    is_functional_hook,
+    is_functional_cron,
+)
 
 """ Config singleton instance """
 _default_config_instance = None
 
 
-class Config(object):
+class Config:
     """
     Configuration base class
     Usage:
@@ -45,7 +52,9 @@ class Config(object):
         'now': datetime.datetime.now,
     }
 
-    _workdir_location = os.path.join(os.path.expanduser('~'), '.local', 'share', 'platypush')
+    _workdir_location = os.path.join(
+        os.path.expanduser('~'), '.local', 'share', 'platypush'
+    )
     _included_files = set()
 
     def __init__(self, cfgfile=None):
@@ -61,14 +70,12 @@ class Config(object):
             cfgfile = self._get_default_cfgfile()
 
         if cfgfile is None:
-            raise RuntimeError('No config file specified and nothing found in {}'
-                               .format(self._cfgfile_locations))
+            cfgfile = self._create_default_config()
 
         self._cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
         self._config = self._read_config_file(self._cfgfile)
 
         if 'token' in self._config:
-            self._config['token'] = self._config['token']
             self._config['token_hash'] = get_hash(self._config['token'])
 
         if 'workdir' not in self._config:
@@ -76,11 +83,15 @@ class Config(object):
         os.makedirs(self._config['workdir'], exist_ok=True)
 
         if 'scripts_dir' not in self._config:
-            self._config['scripts_dir'] = os.path.join(os.path.dirname(cfgfile), 'scripts')
+            self._config['scripts_dir'] = os.path.join(
+                os.path.dirname(cfgfile), 'scripts'
+            )
         os.makedirs(self._config['scripts_dir'], mode=0o755, exist_ok=True)
 
         if 'dashboards_dir' not in self._config:
-            self._config['dashboards_dir'] = os.path.join(os.path.dirname(cfgfile), 'dashboards')
+            self._config['dashboards_dir'] = os.path.join(
+                os.path.dirname(cfgfile), 'dashboards'
+            )
         os.makedirs(self._config['dashboards_dir'], mode=0o755, exist_ok=True)
 
         init_py = os.path.join(self._config['scripts_dir'], '__init__.py')
@@ -90,13 +101,20 @@ class Config(object):
 
         # Include scripts_dir parent in sys.path so members can be imported in scripts
         # through the `scripts` package
-        scripts_parent_dir = str(pathlib.Path(self._config['scripts_dir']).absolute().parent)
+        scripts_parent_dir = str(
+            pathlib.Path(self._config['scripts_dir']).absolute().parent
+        )
         sys.path = [scripts_parent_dir] + sys.path
 
-        self._config['db'] = self._config.get('main.db', {
-            'engine': 'sqlite:///' + os.path.join(
-                os.path.expanduser('~'), '.local', 'share', 'platypush', 'main.db')
-        })
+        self._config['db'] = self._config.get(
+            'main.db',
+            {
+                'engine': 'sqlite:///'
+                + os.path.join(
+                    os.path.expanduser('~'), '.local', 'share', 'platypush', 'main.db'
+                )
+            },
+        )
 
         logging_config = {
             'level': logging.INFO,
@@ -112,8 +130,11 @@ class Config(object):
                     try:
                         os.makedirs(logdir, exist_ok=True)
                     except Exception as e:
-                        print('Unable to create logs directory {}: {}'.format(
-                            logdir, str(e)))
+                        print(
+                            'Unable to create logs directory {}: {}'.format(
+                                logdir, str(e)
+                            )
+                        )
 
                     v = logfile
                     del logging_config['stream']
@@ -150,9 +171,18 @@ class Config(object):
         self._init_components()
         self._init_dashboards(self._config['dashboards_dir'])
 
+    def _create_default_config(self):
+        cfg_mod_dir = os.path.dirname(os.path.abspath(__file__))
+        cfgfile = self._cfgfile_locations[0]
+        cfgdir = pathlib.Path(cfgfile).parent
+        cfgdir.mkdir(parents=True, exist_ok=True)
+        for cfgfile in glob.glob(os.path.join(cfg_mod_dir, 'config*.yaml')):
+            shutil.copy(cfgfile, str(cfgdir))
+
+        return cfgfile
+
     def _read_config_file(self, cfgfile):
-        cfgfile_dir = os.path.dirname(os.path.abspath(
-            os.path.expanduser(cfgfile)))
+        cfgfile_dir = os.path.dirname(os.path.abspath(os.path.expanduser(cfgfile)))
 
         config = {}
 
@@ -164,9 +194,11 @@ class Config(object):
 
         for section in file_config:
             if section == 'include':
-                include_files = file_config[section] \
-                    if isinstance(file_config[section], list) \
+                include_files = (
+                    file_config[section]
+                    if isinstance(file_config[section], list)
                     else [file_config[section]]
+                )
 
                 for include_file in include_files:
                     if not os.path.isabs(include_file):
@@ -178,9 +210,13 @@ class Config(object):
                         config[incl_section] = included_config[incl_section]
             elif section == 'scripts_dir':
                 assert isinstance(file_config[section], str)
-                config['scripts_dir'] = os.path.abspath(os.path.expanduser(file_config[section]))
-            elif 'disabled' not in file_config[section] \
-                    or file_config[section]['disabled'] is False:
+                config['scripts_dir'] = os.path.abspath(
+                    os.path.expanduser(file_config[section])
+                )
+            elif (
+                'disabled' not in file_config[section]
+                or file_config[section]['disabled'] is False
+            ):
                 config[section] = file_config[section]
 
         return config
@@ -189,27 +225,37 @@ class Config(object):
         try:
             module = importlib.import_module(modname)
         except Exception as e:
-            print('Unhandled exception while importing module {}: {}'.format(modname, str(e)))
+            print(
+                'Unhandled exception while importing module {}: {}'.format(
+                    modname, str(e)
+                )
+            )
             return
 
         prefix = modname + '.' if prefix is None else prefix
-        self.procedures.update(**{
-            prefix + name: obj
-            for name, obj in inspect.getmembers(module)
-            if is_functional_procedure(obj)
-        })
+        self.procedures.update(
+            **{
+                prefix + name: obj
+                for name, obj in inspect.getmembers(module)
+                if is_functional_procedure(obj)
+            }
+        )
 
-        self.event_hooks.update(**{
-            prefix + name: obj
-            for name, obj in inspect.getmembers(module)
-            if is_functional_hook(obj)
-        })
+        self.event_hooks.update(
+            **{
+                prefix + name: obj
+                for name, obj in inspect.getmembers(module)
+                if is_functional_hook(obj)
+            }
+        )
 
-        self.cronjobs.update(**{
-            prefix + name: obj
-            for name, obj in inspect.getmembers(module)
-            if is_functional_cron(obj)
-        })
+        self.cronjobs.update(
+            **{
+                prefix + name: obj
+                for name, obj in inspect.getmembers(module)
+                if is_functional_cron(obj)
+            }
+        )
 
     def _load_scripts(self):
         scripts_dir = self._config['scripts_dir']
@@ -218,14 +264,19 @@ class Config(object):
         scripts_modname = os.path.basename(scripts_dir)
         self._load_module(scripts_modname, prefix='')
 
-        for _, modname, _ in pkgutil.walk_packages(path=[scripts_dir], onerror=lambda x: None):
+        for _, modname, _ in pkgutil.walk_packages(
+            path=[scripts_dir], onerror=lambda _: None
+        ):
             self._load_module(modname)
 
         sys.path = sys_path
 
     def _init_components(self):
         for key in self._config.keys():
-            if key.startswith('backend.') and '.'.join(key.split('.')[1:]) in self._backend_manifests:
+            if (
+                key.startswith('backend.')
+                and '.'.join(key.split('.')[1:]) in self._backend_manifests
+            ):
                 backend_name = '.'.join(key.split('.')[1:])
                 self.backends[backend_name] = self._config[key]
             elif key.startswith('event.hook.'):
@@ -236,7 +287,7 @@ class Config(object):
                 self.cronjobs[cron_name] = self._config[key]
             elif key.startswith('procedure.'):
                 tokens = key.split('.')
-                _async = True if len(tokens) > 2 and tokens[1] == 'async' else False
+                _async = bool(len(tokens) > 2 and tokens[1] == 'async')
                 procedure_name = '.'.join(tokens[2:] if len(tokens) > 2 else tokens[1:])
                 args = []
                 m = re.match(r'^([^(]+)\(([^)]+)\)\s*', procedure_name)
@@ -265,7 +316,11 @@ class Config(object):
             self._init_manifests(plugins_dir)
             self._init_manifests(backends_dir)
         else:
-            manifests_map = self._plugin_manifests if base_dir.endswith('plugins') else self._backend_manifests
+            manifests_map = (
+                self._plugin_manifests
+                if base_dir.endswith('plugins')
+                else self._backend_manifests
+            )
             for mf in pathlib.Path(base_dir).rglob('manifest.yaml'):
                 with open(mf, 'r') as f:
                     manifest = yaml.safe_load(f)['manifest']
@@ -279,12 +334,11 @@ class Config(object):
         for (key, value) in self._default_constants.items():
             self.constants[key] = value
 
-    @staticmethod
-    def get_dashboard(name: str, dashboards_dir: Optional[str] = None) -> Optional[str]:
-        global _default_config_instance
-
-        # noinspection PyProtectedMember,PyProtectedMember,PyUnresolvedReferences
-        dashboards_dir = dashboards_dir or _default_config_instance._config['dashboards_dir']
+    def _get_dashboard(
+        self, name: str, dashboards_dir: Optional[str] = None
+    ) -> Optional[str]:
+        dashboards_dir = dashboards_dir or self._config['dashboards_dir']
+        assert dashboards_dir
         abspath = os.path.join(dashboards_dir, name + '.xml')
         if not os.path.isfile(abspath):
             return
@@ -292,24 +346,37 @@ class Config(object):
         with open(abspath, 'r') as fp:
             return fp.read()
 
-    @classmethod
-    def get_dashboards(cls, dashboards_dir: Optional[str] = None) -> dict:
-        global _default_config_instance
+    def _get_dashboards(self, dashboards_dir: Optional[str] = None) -> dict:
         dashboards = {}
-        # noinspection PyProtectedMember,PyProtectedMember,PyUnresolvedReferences
-        dashboards_dir = dashboards_dir or _default_config_instance._config['dashboards_dir']
+        dashboards_dir = dashboards_dir or self._config['dashboards_dir']
+        assert dashboards_dir
+
         for f in os.listdir(dashboards_dir):
             abspath = os.path.join(dashboards_dir, f)
             if not os.path.isfile(abspath) or not abspath.endswith('.xml'):
                 continue
 
             name = f.split('.xml')[0]
-            dashboards[name] = cls.get_dashboard(name, dashboards_dir)
+            dashboards[name] = self._get_dashboard(name, dashboards_dir)
 
         return dashboards
 
+    @staticmethod
+    def get_dashboard(name: str, dashboards_dir: Optional[str] = None) -> Optional[str]:
+        global _default_config_instance
+        if _default_config_instance is None:
+            _default_config_instance = Config()
+        return _default_config_instance._get_dashboard(name, dashboards_dir)
+
+    @classmethod
+    def get_dashboards(cls, dashboards_dir: Optional[str] = None) -> dict:
+        global _default_config_instance
+        if _default_config_instance is None:
+            _default_config_instance = Config()
+        return _default_config_instance._get_dashboards(dashboards_dir)
+
     def _init_dashboards(self, dashboards_dir: str):
-        self.dashboards = self.get_dashboards(dashboards_dir)
+        self.dashboards = self._get_dashboards(dashboards_dir)
 
     @staticmethod
     def get_backends():
@@ -399,5 +466,6 @@ class Config(object):
             return _default_config_instance._config.get(key)
 
         return _default_config_instance._config
+
 
 # vim:sw=4:ts=4:et:

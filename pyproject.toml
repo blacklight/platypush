@@ -1,3 +1,8 @@
 [tool.black]
 skip-string-normalization = true
 skip-numeric-underscore-normalization = true
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    'ignore:There is no current event loop:DeprecationWarning',
+]

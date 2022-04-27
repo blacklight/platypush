@@ -50,8 +50,13 @@ class NextcloudPlugin(Plugin):
 
     """
 
-    def __init__(self, url: Optional[str] = None, username: Optional[str] = None, password: Optional[str] = None,
-                 **kwargs):
+    def __init__(
+        self,
+        url: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        **kwargs
+    ):
         """
         :param url: URL to the index of your default NextCloud instance.
         :param username: Default NextCloud username.
@@ -61,8 +66,13 @@ class NextcloudPlugin(Plugin):
         self.conf = ClientConfig(url=url, username=username, password=password)
         self._client = self._get_client(**self.conf.to_dict())
 
-    def _get_client(self, url: Optional[str] = None, username: Optional[str] = None, password: Optional[str] = None,
-                    raise_on_empty: bool = False):
+    def _get_client(
+        self,
+        url: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        raise_on_empty: bool = False,
+    ):
         from nextcloud import NextCloud
 
         if not url:
@@ -71,19 +81,25 @@ class NextcloudPlugin(Plugin):
                     raise AssertionError('No url/username/password provided')
                 return None
 
-            return NextCloud(endpoint=self.conf.url, user=self.conf.username, password=self.conf.password,
-                             json_output=True)
+            return NextCloud(
+                endpoint=self.conf.url,
+                user=self.conf.username,
+                password=self.conf.password,
+            )
 
-        return NextCloud(endpoint=url, user=username, password=password, json_output=True)
+        return NextCloud(endpoint=url, user=username, password=password)
 
     @staticmethod
     def _get_permissions(permissions: Optional[List[str]]) -> int:
         int_perm = 0
 
-        for perm in (permissions or []):
+        for perm in permissions or []:
             perm = perm.upper()
-            assert hasattr(Permission, perm), 'Unknown permissions type: {}. Supported permissions: {}'.format(
-                perm, [p.name.lower() for p in Permission])
+            assert hasattr(
+                Permission, perm
+            ), 'Unknown permissions type: {}. Supported permissions: {}'.format(
+                perm, [p.name.lower() for p in Permission]
+            )
 
             if perm == 'ALL':
                 int_perm = Permission.ALL.value
@@ -96,8 +112,11 @@ class NextcloudPlugin(Plugin):
     @staticmethod
     def _get_share_type(share_type: str) -> int:
         share_type = share_type.upper()
-        assert hasattr(ShareType, share_type), 'Unknown share type: {}. Supported share types: {}'.format(
-            share_type, [s.name.lower() for s in ShareType])
+        assert hasattr(
+            ShareType, share_type
+        ), 'Unknown share type: {}. Supported share types: {}'.format(
+            share_type, [s.name.lower() for s in ShareType]
+        )
 
         return getattr(ShareType, share_type).value
 
@@ -114,13 +133,23 @@ class NextcloudPlugin(Plugin):
             args=', '.join(args),
             sep=', ' if args and kwargs else '',
             kwargs=', '.join(['{}={}'.format(k, v) for k, v in kwargs.items()]),
-            error=response.meta.get('message', '[No message]') if hasattr(response, 'meta') else response.raw.reason)
+            error=response.meta.get('message', '[No message]')
+            if hasattr(response, 'meta')
+            else response.raw.reason,
+        )
 
-        return response.data
+        return response.json_data
 
     @action
-    def get_activities(self, since: Optional[id] = None, limit: Optional[int] = None, object_type: Optional[str] = None,
-                       object_id: Optional[int] = None, sort: str = 'desc', **server_args) -> List[str]:
+    def get_activities(
+        self,
+        since: Optional[id] = None,
+        limit: Optional[int] = None,
+        object_type: Optional[str] = None,
+        object_id: Optional[int] = None,
+        sort: str = 'desc',
+        **server_args
+    ) -> List[str]:
         """
         Get the list of recent activities on an instance.
 
@@ -132,9 +161,15 @@ class NextcloudPlugin(Plugin):
         :param server_args: Override the default server settings (see :meth:`._get_client` arguments).
         :return: The list of selected activities.
         """
-        return self._execute(server_args, 'get_activities', since=since, limit=limit, object_type=object_type,
-                             object_id=object_id,
-                             sort=sort)
+        return self._execute(
+            server_args,
+            'get_activities',
+            since=since,
+            limit=limit,
+            object_type=object_type,
+            object_id=object_id,
+            sort=sort,
+        )
 
     @action
     def get_apps(self, **server_args) -> List[str]:
@@ -216,8 +251,13 @@ class NextcloudPlugin(Plugin):
         return self._execute(server_args, 'get_group', group_id)
 
     @action
-    def get_groups(self, search: Optional[str] = None, limit: Optional[int] = None, offset: Optional[int] = None,
-                   **server_args) -> List[str]:
+    def get_groups(
+        self,
+        search: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        **server_args
+    ) -> List[str]:
         """
         Search for groups.
 
@@ -226,7 +266,9 @@ class NextcloudPlugin(Plugin):
         :param offset: Start offset.
         :param server_args: Override the default server settings (see :meth:`._get_client` arguments).
         """
-        return self._execute(server_args, 'get_groups', search=search, limit=limit, offset=offset).get('groups', [])
+        return self._execute(
+            server_args, 'get_groups', search=search, limit=limit, offset=offset
+        ).get('groups', [])
 
     @action
     def create_group_folder(self, name: str, **server_args):
@@ -268,7 +310,9 @@ class NextcloudPlugin(Plugin):
         return self._execute(server_args, 'get_group_folders')
 
     @action
-    def rename_group_folder(self, folder_id: Union[int, str], new_name: str, **server_args):
+    def rename_group_folder(
+        self, folder_id: Union[int, str], new_name: str, **server_args
+    ):
         """
         Rename a group folder.
 
@@ -279,7 +323,9 @@ class NextcloudPlugin(Plugin):
         self._execute(server_args, 'rename_group_folder', folder_id, new_name)
 
     @action
-    def grant_access_to_group_folder(self, folder_id: Union[int, str], group_id: str, **server_args):
+    def grant_access_to_group_folder(
+        self, folder_id: Union[int, str], group_id: str, **server_args
+    ):
         """
         Grant access to a group folder to a given group.
 
@@ -290,7 +336,9 @@ class NextcloudPlugin(Plugin):
         self._execute(server_args, 'grant_access_to_group_folder', folder_id, group_id)
 
     @action
-    def revoke_access_to_group_folder(self, folder_id: Union[int, str], group_id: str, **server_args):
+    def revoke_access_to_group_folder(
+        self, folder_id: Union[int, str], group_id: str, **server_args
+    ):
         """
         Revoke access to a group folder to a given group.
 
@@ -301,7 +349,9 @@ class NextcloudPlugin(Plugin):
         self._execute(server_args, 'revoke_access_to_group_folder', folder_id, group_id)
 
     @action
-    def set_group_folder_quota(self, folder_id: Union[int, str], quota: Optional[int], **server_args):
+    def set_group_folder_quota(
+        self, folder_id: Union[int, str], quota: Optional[int], **server_args
+    ):
         """
         Set the quota of a group folder.
 
@@ -309,11 +359,21 @@ class NextcloudPlugin(Plugin):
         :param quota: Quota in bytes - set None for unlimited.
         :param server_args: Override the default server settings (see :meth:`._get_client` arguments).
         """
-        self._execute(server_args, 'set_quota_of_group_folder', folder_id, quota if quota is not None else -3)
+        self._execute(
+            server_args,
+            'set_quota_of_group_folder',
+            folder_id,
+            quota if quota is not None else -3,
+        )
 
     @action
-    def set_group_folder_permissions(self, folder_id: Union[int, str], group_id: str, permissions: List[str],
-                                     **server_args):
+    def set_group_folder_permissions(
+        self,
+        folder_id: Union[int, str],
+        group_id: str,
+        permissions: List[str],
+        **server_args
+    ):
         """
         Set the permissions on a folder for a group.
 
@@ -330,8 +390,13 @@ class NextcloudPlugin(Plugin):
 
         :param server_args: Override the default server settings (see :meth:`._get_client` arguments).
         """
-        self._execute(server_args, 'set_permissions_to_group_folder', folder_id, group_id,
-                      self._get_permissions(permissions))
+        self._execute(
+            server_args,
+            'set_permissions_to_group_folder',
+            folder_id,
+            group_id,
+            self._get_permissions(permissions),
+        )
 
     @action
     def get_notifications(self, **server_args) -> list:
@@ -372,8 +437,16 @@ class NextcloudPlugin(Plugin):
         self._execute(server_args, 'delete_notification', notification_id)
 
     @action
-    def create_share(self, path: str, share_type: str, share_with: Optional[str] = None, public_upload: bool = False,
-                     password: Optional[str] = None, permissions: Optional[List[str]] = None, **server_args) -> dict:
+    def create_share(
+        self,
+        path: str,
+        share_type: str,
+        share_with: Optional[str] = None,
+        public_upload: bool = False,
+        password: Optional[str] = None,
+        permissions: Optional[List[str]] = None,
+        **server_args
+    ) -> dict:
         """
         Share a file/folder with a user/group or a public link.
 
@@ -442,9 +515,16 @@ class NextcloudPlugin(Plugin):
         """
         share_type = self._get_share_type(share_type)
         permissions = self._get_permissions(permissions or ['read'])
-        return self._execute(server_args, 'create_share', path, share_type=share_type, share_with=share_with,
-                             public_upload=public_upload,
-                             password=password, permissions=permissions)
+        return self._execute(
+            server_args,
+            'create_share',
+            path,
+            share_type=share_type,
+            share_with=share_with,
+            public_upload=public_upload,
+            password=password,
+            permissions=permissions,
+        )
 
     @action
     def get_shares(self, **server_args) -> List[dict]:
@@ -516,8 +596,15 @@ class NextcloudPlugin(Plugin):
         return self._execute(server_args, 'get_share_info', str(share_id))
 
     @action
-    def update_share(self, share_id: int, public_upload: Optional[bool] = None, password: Optional[str] = None,
-                     permissions: Optional[List[str]] = None, expire_date: Optional[str] = None, **server_args):
+    def update_share(
+        self,
+        share_id: int,
+        public_upload: Optional[bool] = None,
+        password: Optional[str] = None,
+        permissions: Optional[List[str]] = None,
+        expire_date: Optional[str] = None,
+        **server_args
+    ):
         """
         Update the permissions of a shared resource.
 
@@ -539,8 +626,15 @@ class NextcloudPlugin(Plugin):
         if permissions:
             permissions = self._get_permissions(permissions)
 
-        self._execute(server_args, 'update_share', share_id, public_upload=public_upload, password=password,
-                      permissions=permissions, expire_date=expire_date)
+        self._execute(
+            server_args,
+            'update_share',
+            share_id,
+            public_upload=public_upload,
+            password=password,
+            permissions=permissions,
+            expire_date=expire_date,
+        )
 
     @action
     def create_user(self, user_id: str, password: str, **server_args):
@@ -611,8 +705,13 @@ class NextcloudPlugin(Plugin):
         return self._execute(server_args, 'get_user', user_id)
 
     @action
-    def get_users(self, search: Optional[str] = None, limit: Optional[int] = None, offset: Optional[int] = None,
-                  **server_args) -> List[str]:
+    def get_users(
+        self,
+        search: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        **server_args
+    ) -> List[str]:
         """
         Get the list of users matching some search criteria.
 
@@ -621,7 +720,9 @@ class NextcloudPlugin(Plugin):
         :param offset: Search results offset (default: None).
         :return: List of the matched user IDs.
         """
-        return self._execute(server_args, 'get_users', search=search, limit=limit, offset=offset)
+        return self._execute(
+            server_args, 'get_users', search=search, limit=limit, offset=offset
+        )
 
     @action
     def delete_user(self, user_id: str, **server_args):
@@ -733,8 +834,15 @@ class NextcloudPlugin(Plugin):
         self._execute(server_args, 'delete_path', user_id, path)
 
     @action
-    def upload_file(self, remote_path: str, local_path: Optional[str] = None, content: Optional[str] = None,
-                    user_id: Optional[str] = None, timestamp: Optional[Union[datetime, int, str]] = None, **server_args):
+    def upload_file(
+        self,
+        remote_path: str,
+        local_path: Optional[str] = None,
+        content: Optional[str] = None,
+        user_id: Optional[str] = None,
+        timestamp: Optional[Union[datetime, int, str]] = None,
+        **server_args
+    ):
         """
         Upload a file.
 
@@ -753,17 +861,32 @@ class NextcloudPlugin(Plugin):
         if isinstance(timestamp, datetime):
             timestamp = int(timestamp.timestamp())
 
-        assert (local_path or content) and not (local_path and content), 'Please specify either local_path or content'
+        assert (local_path or content) and not (
+            local_path and content
+        ), 'Please specify either local_path or content'
         if local_path:
             method = 'upload_file'
             local_path = os.path.abspath(os.path.expanduser(local_path))
         else:
             method = 'upload_file_contents'
 
-        return self._execute(server_args, method, user_id, local_path or content, remote_path, timestamp=timestamp)
+        return self._execute(
+            server_args,
+            method,
+            user_id,
+            local_path or content,
+            remote_path,
+            timestamp=timestamp,
+        )
 
     @action
-    def download_file(self, remote_path: str, local_path: str, user_id: Optional[str] = None, **server_args):
+    def download_file(
+        self,
+        remote_path: str,
+        local_path: str,
+        user_id: Optional[str] = None,
+        **server_args
+    ):
         """
         Download a file.
 
@@ -783,8 +906,14 @@ class NextcloudPlugin(Plugin):
             os.chdir(cur_dir)
 
     @action
-    def list(self, path: str, user_id: Optional[str] = None, depth: int = 1, all_properties: bool = False,
-             **server_args) -> List[dict]:
+    def list(
+        self,
+        path: str,
+        user_id: Optional[str] = None,
+        depth: int = 1,
+        all_properties: bool = False,
+        **server_args
+    ) -> List[dict]:
         """
         List the content of a folder on the NextCloud instance.
 
@@ -795,10 +924,19 @@ class NextcloudPlugin(Plugin):
         :param server_args: Override the default server settings (see :meth:`._get_client` arguments).
         """
         user_id = user_id or server_args.get('username', self.conf.username)
-        return self._execute(server_args, 'list_folders', user_id, path, depth=depth, all_properties=all_properties)
+        return self._execute(
+            server_args,
+            'list_folders',
+            user_id,
+            path,
+            depth=depth,
+            all_properties=all_properties,
+        )
 
     @action
-    def list_favorites(self, path: Optional[str] = None, user_id: Optional[str] = None, **server_args) -> List[dict]:
+    def list_favorites(
+        self, path: Optional[str] = None, user_id: Optional[str] = None, **server_args
+    ) -> List[dict]:
         """
         List the favorite items for a user.
 
@@ -810,7 +948,9 @@ class NextcloudPlugin(Plugin):
         return self._execute(server_args, 'list_folders', user_id, path)
 
     @action
-    def mark_favorite(self, path: Optional[str] = None, user_id: Optional[str] = None, **server_args):
+    def mark_favorite(
+        self, path: Optional[str] = None, user_id: Optional[str] = None, **server_args
+    ):
         """
         Add a path to a user's favorites.
 
@@ -822,7 +962,14 @@ class NextcloudPlugin(Plugin):
         self._execute(server_args, 'set_favorites', user_id, path)
 
     @action
-    def copy(self, path: str, destination: str, user_id: Optional[str] = None, overwrite: bool = False, **server_args):
+    def copy(
+        self,
+        path: str,
+        destination: str,
+        user_id: Optional[str] = None,
+        overwrite: bool = False,
+        **server_args
+    ):
         """
         Copy a resource to another path.
 
@@ -833,10 +980,19 @@ class NextcloudPlugin(Plugin):
         :param server_args: Override the default server settings (see :meth:`._get_client` arguments).
         """
         user_id = user_id or server_args.get('username', self.conf.username)
-        self._execute(server_args, 'copy_path', user_id, path, destination, overwrite=overwrite)
+        self._execute(
+            server_args, 'copy_path', user_id, path, destination, overwrite=overwrite
+        )
 
     @action
-    def move(self, path: str, destination: str, user_id: Optional[str] = None, overwrite: bool = False, **server_args):
+    def move(
+        self,
+        path: str,
+        destination: str,
+        user_id: Optional[str] = None,
+        overwrite: bool = False,
+        **server_args
+    ):
         """
         Move a resource to another path.
 
@@ -847,7 +1003,9 @@ class NextcloudPlugin(Plugin):
         :param server_args: Override the default server settings (see :meth:`._get_client` arguments).
         """
         user_id = user_id or server_args.get('username', self.conf.username)
-        self._execute(server_args, 'move_path', user_id, path, destination, overwrite=overwrite)
+        self._execute(
+            server_args, 'move_path', user_id, path, destination, overwrite=overwrite
+        )
 
 
 # vim:sw=4:ts=4:et:

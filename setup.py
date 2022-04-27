@@ -17,7 +17,7 @@ def readfile(fname):
 def pkg_files(dir):
     paths = []
     # noinspection PyShadowingNames
-    for (path, dirs, files) in os.walk(dir):
+    for (path, _, files) in os.walk(dir):
         for file in files:
             paths.append(os.path.join('..', path, file))
     return paths
@@ -68,17 +68,21 @@ setup(
         'pyjwt',
         'marshmallow',
         'frozendict',
+        'flask',
+        'bcrypt',
+        'python-magic',
     ],
-
     extras_require={
         # Support for thread custom name
         'threadname': ['python-prctl'],
         # Support for Kafka backend and plugin
         'kafka': ['kafka-python'],
         # Support for Pushbullet backend and plugin
-        'pushbullet': ['pushbullet.py @ https://github.com/rbrcsk/pushbullet.py/tarball/master'],
-        # Support for HTTP backend
-        'http': ['flask', 'bcrypt', 'python-magic', 'gunicorn'],
+        'pushbullet': [
+            'pushbullet.py @ https://github.com/rbrcsk/pushbullet.py/tarball/master'
+        ],
+        # Support for HTTP backend over uWSGI
+        'http': ['gunicorn'],
         # Support for MQTT backends
         'mqtt': ['paho-mqtt'],
         # Support for RSS feeds parser
@@ -90,7 +94,11 @@ setup(
         # Support for MPD/Mopidy music server plugin and backend
         'mpd': ['python-mpd2'],
         # Support for Google text2speech plugin
-        'google-tts': ['oauth2client', 'google-api-python-client', 'google-cloud-texttospeech'],
+        'google-tts': [
+            'oauth2client',
+            'google-api-python-client',
+            'google-cloud-texttospeech',
+        ],
         # Support for OMXPlayer plugin
         'omxplayer': ['omxplayer-wrapper'],
         # Support for YouTube
@@ -138,7 +146,8 @@ setup(
         # Support for web media subtitles
         'subtitles': [
             'webvtt-py',
-            'python-opensubtitles @ https://github.com/agonzalezro/python-opensubtitles/tarball/master'],
+            'python-opensubtitles @ https://github.com/agonzalezro/python-opensubtitles/tarball/master',
+        ],
         # Support for mpv player plugin
         'mpv': ['python-mpv'],
         # Support for NFC tags
@@ -156,14 +165,21 @@ setup(
         # Support for Dropbox integration
         'dropbox': ['dropbox'],
         # Support for Leap Motion backend
-        'leap': ['leap-sdk @ https://github.com/BlackLight/leap-sdk-python3/tarball/master'],
+        'leap': [
+            'leap-sdk @ https://github.com/BlackLight/leap-sdk-python3/tarball/master'
+        ],
         # Support for Flic buttons
-        'flic': ['flic @ https://github.com/50ButtonsEach/fliclib-linux-hci/tarball/master'],
+        'flic': [
+            'flic @ https://github.com/50ButtonsEach/fliclib-linux-hci/tarball/master'
+        ],
         # Support for Alexa/Echo plugin
         'alexa': ['avs @ https://github.com/BlackLight/avs/tarball/master'],
         # Support for bluetooth devices
-        'bluetooth': ['pybluez', 'gattlib',
-                      'pyobex @ https://github.com/BlackLight/PyOBEX/tarball/master'],
+        'bluetooth': [
+            'pybluez',
+            'gattlib',
+            'pyobex @ https://github.com/BlackLight/PyOBEX/tarball/master',
+        ],
         # Support for TP-Link devices
         'tplink': ['pyHS100'],
         # Support for PMW3901 2-Dimensional Optical Flow Sensor
@@ -231,7 +247,9 @@ setup(
         # Support for Twilio integration
         'twilio': ['twilio'],
         # Support for DHT11/DHT22/AM2302 temperature/humidity sensors
-        'dht': ['Adafruit_Python_DHT @ git+https://github.com/adafruit/Adafruit_Python_DHT'],
+        'dht': [
+            'Adafruit_Python_DHT @ git+https://github.com/adafruit/Adafruit_Python_DHT'
+        ],
         # Support for LCD display integration
         'lcd': ['RPi.GPIO', 'RPLCD'],
         # Support for IMAP mail integration

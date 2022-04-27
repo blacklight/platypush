@@ -26,7 +26,7 @@ class LinodeBackend(SensorBackend):
         self.instances = set(instances or [])
 
     def process_data(self, data: Dict[str, dict], new_data: Optional[Dict[str, dict]] = None, **kwargs):
-        instances = data['instances']
+        instances = data.get('instances', {})
         old_instances = (self.data or {}).get('instances', {})
 
         if self.instances:

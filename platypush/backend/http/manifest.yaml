@@ -2,9 +2,6 @@ manifest:
   events: {}
   install:
     pip:
-    - flask
-    - bcrypt
-    - python-magic
     - gunicorn
   package: platypush.backend.http
   type: backend
