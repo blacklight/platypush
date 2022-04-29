@@ -44,7 +44,7 @@ class Entity(Base):
         DateTime(timezone=False), default=datetime.utcnow(), nullable=False
     )
     updated_at = Column(
-        DateTime(timezone=False), default=datetime.utcnow(), onupdate=datetime.now()
+        DateTime(timezone=False), default=datetime.utcnow(), onupdate=datetime.utcnow()
     )
 
     UniqueConstraint(external_id, plugin)
