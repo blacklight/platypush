@@ -172,7 +172,12 @@ class EntitiesEngine(Thread):
         self, session: Session, entities: Iterable[Entity]
     ) -> Iterable[Entity]:
         existing_entities = {
-            (entity.external_id or entity.name, entity.plugin): entity
+            (
+                str(entity.external_id)
+                if entity.external_id is not None
+                else entity.name,
+                entity.plugin,
+            ): entity
             for entity in session.query(Entity)
             .filter(
                 or_(
@@ -194,7 +199,13 @@ class EntitiesEngine(Thread):
 
         return [
             existing_entities.get(
-                (entity.external_id or entity.name, entity.plugin), None
+                (
+                    str(entity.external_id)
+                    if entity.external_id is not None
+                    else entity.name,
+                    entity.plugin,
+                ),
+                None,
             )
             for entity in entities
         ]
@@ -207,8 +218,8 @@ class EntitiesEngine(Thread):
             for col in columns:
                 if col == 'meta':
                     existing_entity.meta = {  # type: ignore
-                        **(existing_entity.meta or {}),
-                        **(entity.meta or {}),
+                        **(existing_entity.meta or {}),  # type: ignore
+                        **(entity.meta or {}),  # type: ignore
                     }
                 elif col not in ('id', 'created_at'):
                     setattr(existing_entity, col, getattr(entity, col))
