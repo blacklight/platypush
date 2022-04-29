@@ -90,8 +90,8 @@ class Cronjob(threading.Thread):
             now = get_now()
             self._event_type = CronjobEvent.NONE
             cron = croniter.croniter(self.cron_expression, now)
-            next_run = cron.get_next()
-            self._event.wait(max(0, next_run - now.timestamp()))
+            next_run = cron.get_next(datetime.datetime)
+            self._event.wait(max(0, (next_run - now).total_seconds()))
 
     def stop(self):
         self._event_type = CronjobEvent.STOP
