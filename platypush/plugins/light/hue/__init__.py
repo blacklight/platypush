@@ -1076,17 +1076,17 @@ class LightHuePlugin(LightPlugin):
         assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
         lights = self.bridge.get_light()
         self.publish_entities(lights)  # type: ignore
-        return lights
+        return {id: light for id, light in lights.items() if not light.get('recycle')}
 
     def _get_groups(self) -> dict:
         assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
         groups = self.bridge.get_group() or {}
-        return groups
+        return {id: group for id, group in groups.items() if not group.get('recycle')}
 
     def _get_scenes(self) -> dict:
         assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
         scenes = self.bridge.get_scene() or {}
-        return scenes
+        return {id: scene for id, scene in scenes.items() if not scene.get('recycle')}
 
     @action
     def status(self) -> Iterable[LightEntity]:
