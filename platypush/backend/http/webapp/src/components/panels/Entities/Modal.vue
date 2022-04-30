@@ -76,6 +76,13 @@
       <div class="value" v-text="entity.description" />
     </div>
 
+    <div v-for="value, attr in entity.data || {}" :key="attr">
+      <div class="table-row" v-if="value != null">
+        <div class="title" v-text="attr" />
+        <div class="value" v-text="'' + value" />
+      </div>
+    </div>
+
     <div class="table-row" v-if="entity.created_at">
       <div class="title">Created at</div>
       <div class="value" v-text="formatDateTime(entity.created_at)" />
