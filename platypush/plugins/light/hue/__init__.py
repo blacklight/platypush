@@ -1068,7 +1068,7 @@ class LightHuePlugin(LightPlugin):
                         hue=entity.get('state', {}).get('hue'),
                         temperature=entity.get('state', {}).get('ct'),
                         colormode=entity.get('colormode'),
-                        reachable=entity.get('reachable'),
+                        reachable=entity.get('state', {}).get('reachable'),
                         x=entity['state']['xy'][0]
                         if entity.get('state', {}).get('xy')
                         else None,
