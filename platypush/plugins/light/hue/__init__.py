@@ -36,6 +36,8 @@ class LightHuePlugin(LightPlugin):
     MAX_BRI = 255
     MAX_SAT = 255
     MAX_HUE = 65535
+    MIN_CT = 154
+    MAX_CT = 500
     ANIMATION_CTRL_QUEUE_NAME = 'platypush/light/hue/AnimationCtrl'
     _BRIDGE_RECONNECT_SECONDS = 5
     _MAX_RECONNECT_TRIES = 5
@@ -379,6 +381,8 @@ class LightHuePlugin(LightPlugin):
             self.bridge = None
             raise e
 
+        return self._get_lights()
+
     @action
     def set_light(self, light, **kwargs):
         """
@@ -499,18 +503,20 @@ class LightHuePlugin(LightPlugin):
             lights = self.lights
 
         if lights:
-            all_lights = self._get_lights().values()
+            all_lights = self._get_lights()
 
             lights_on = [
                 light['name']
-                for light in all_lights
-                if light['name'] in lights and light['state']['on'] is True
+                for light_id, light in all_lights.items()
+                if (light_id in lights or light['name'] in lights)
+                and light['state']['on'] is True
             ]
 
             lights_off = [
                 light['name']
-                for light in all_lights
-                if light['name'] in lights and light['state']['on'] is False
+                for light_id, light in all_lights.items()
+                if (light_id in lights or light['name'] in lights)
+                and light['state']['on'] is False
             ]
 
         if lights_on or groups_on:
@@ -606,7 +612,7 @@ class LightHuePlugin(LightPlugin):
         """
         Set lights/groups color temperature.
 
-        :param value: Temperature value (range: 0-255)
+        :param value: Temperature value (range: 154-500)
         :type value: int
         :param lights: List of lights.
         :param groups: List of groups.
@@ -1055,7 +1061,7 @@ class LightHuePlugin(LightPlugin):
                     LightEntity(
                         id=entity['id'],
                         name=entity['name'],
-                        description=entity['type'],
+                        description=entity.get('type'),
                         on=entity.get('state', {}).get('on', False),
                         brightness=entity.get('state', {}).get('bri'),
                         saturation=entity.get('state', {}).get('sat'),
@@ -1063,10 +1069,57 @@ class LightHuePlugin(LightPlugin):
                         temperature=entity.get('state', {}).get('ct'),
                         colormode=entity.get('colormode'),
                         reachable=entity.get('reachable'),
-                        data={
-                            'effect': entity.get('state', {}).get('effect'),
-                            'xy': entity.get('state', {}).get('xy'),
-                        },
+                        x=entity['state']['xy'][0]
+                        if entity.get('state', {}).get('xy')
+                        else None,
+                        y=entity['state']['xy'][1]
+                        if entity.get('state', {}).get('xy')
+                        else None,
+                        effect=entity.get('state', {}).get('effect'),
+                        **(
+                            {
+                                'hue_min': 0,
+                                'hue_max': self.MAX_HUE,
+                            }
+                            if entity.get('state', {}).get('hue') is not None
+                            else {
+                                'hue_min': None,
+                                'hue_max': None,
+                            }
+                        ),
+                        **(
+                            {
+                                'saturation_min': 0,
+                                'saturation_max': self.MAX_SAT,
+                            }
+                            if entity.get('state', {}).get('sat') is not None
+                            else {
+                                'saturation_min': None,
+                                'saturation_max': None,
+                            }
+                        ),
+                        **(
+                            {
+                                'brightness_min': 0,
+                                'brightness_max': self.MAX_BRI,
+                            }
+                            if entity.get('state', {}).get('bri') is not None
+                            else {
+                                'brightness_min': None,
+                                'brightness_max': None,
+                            }
+                        ),
+                        **(
+                            {
+                                'temperature_min': self.MIN_CT,
+                                'temperature_max': self.MAX_CT,
+                            }
+                            if entity.get('state', {}).get('ct') is not None
+                            else {
+                                'temperature_min': None,
+                                'temperature_max': None,
+                            }
+                        ),
                     )
                 )
 
