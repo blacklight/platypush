@@ -62,7 +62,7 @@ export default {
     },
 
     update(value) {
-      const percent = (value * 100) / (this.range[1] - this.range[0])
+      const percent = ((value - this.range[0]) * 100) / (this.range[1] - this.range[0])
       this.$refs.thumb.style.left = `${percent}%`
       this.$refs.thumb.style.transform = `translate(-${percent}%, -50%)`
       this.$refs.track.style.width = `${percent}%`
