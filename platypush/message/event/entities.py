@@ -6,10 +6,14 @@ from platypush.message.event import Event
 
 
 class EntityEvent(Event, ABC):
-    def __init__(self, entity: Union[Entity, dict], *args, **kwargs):
+    def __init__(
+        self, entity: Union[Entity, dict], *args, disable_logging=True, **kwargs
+    ):
         if isinstance(entity, Entity):
             entity = entity.to_json()
-        super().__init__(entity=entity, *args, **kwargs)
+        super().__init__(
+            entity=entity, *args, disable_logging=disable_logging, **kwargs
+        )
 
 
 class EntityUpdateEvent(EntityEvent):
