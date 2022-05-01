@@ -211,4 +211,21 @@ export class ColorConverter {
         console.debug('Could not determine color space')
         console.debug(color)
     }
+
+    hexToRgb(hex) {
+        return [
+          hex.slice(1, 3),
+          hex.slice(3, 5),
+          hex.slice(5, 7),
+        ].map(_ => parseInt(_, 16))
+    }
+
+    rgbToHex(rgb) {
+      return '#' + rgb.map((x) => {
+          let hex = x.toString(16)
+          if (hex.length < 2)
+            hex = '0' + hex
+          return hex
+        }).join('')
+    }
 }
