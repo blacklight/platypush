@@ -4,6 +4,8 @@ manifest:
       started.
     platypush.message.event.light.LightAnimationStoppedEvent: when an animation is
       stopped.
+    platypush.message.event.light.LightStatusChangeEvent: when the status of a
+      lightbulb changes.
   install:
     pip:
     - phue

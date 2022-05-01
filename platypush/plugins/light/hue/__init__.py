@@ -12,13 +12,14 @@ from platypush.entities.lights import Light as LightEntity
 from platypush.message.event.light import (
     LightAnimationStartedEvent,
     LightAnimationStoppedEvent,
+    LightStatusChangeEvent,
 )
-from platypush.plugins import action
+from platypush.plugins import action, RunnablePlugin
 from platypush.plugins.light import LightPlugin
 from platypush.utils import set_thread_name
 
 
-class LightHuePlugin(LightPlugin):
+class LightHuePlugin(RunnablePlugin, LightPlugin):
     """
     Philips Hue lights plugin.
 
@@ -30,6 +31,8 @@ class LightHuePlugin(LightPlugin):
 
         - :class:`platypush.message.event.light.LightAnimationStartedEvent` when an animation is started.
         - :class:`platypush.message.event.light.LightAnimationStoppedEvent` when an animation is stopped.
+        - :class:`platypush.message.event.light.LightStatusChangeEvent` when the status of a lightbulb
+          changes.
 
     """
 
@@ -53,7 +56,7 @@ class LightHuePlugin(LightPlugin):
             elif isinstance(other, self.__class__):
                 return self == other
 
-    def __init__(self, bridge, lights=None, groups=None):
+    def __init__(self, bridge, lights=None, groups=None, poll_seconds: float = 20.0):
         """
         :param bridge: Bridge address or hostname
         :type bridge: str
@@ -63,6 +66,9 @@ class LightHuePlugin(LightPlugin):
 
         :param groups Default groups to be controlled (default: all)
         :type groups: list[str]
+
+        :param poll_seconds: How often the plugin should check the bridge for light
+            updates (default: 20 seconds).
         """
 
         super().__init__()
@@ -76,6 +82,7 @@ class LightHuePlugin(LightPlugin):
         self.connect()
         self.lights = set()
         self.groups = set()
+        self.poll_seconds = poll_seconds
         self._cached_lights = {}
 
         if lights:
@@ -1174,6 +1181,34 @@ class LightHuePlugin(LightPlugin):
             del light.data
 
         return lights
+
+    def main(self):
+        lights_prev = self._get_lights()  # Initialize the lights
+
+        while not self.should_stop():
+            try:
+                lights_new = self._get_lights()
+                for light_id, light in lights_new.items():
+                    event_args = {}
+                    new_state = light.get('state', {})
+                    prev_state = lights_prev.get(light_id, {}).get('state', {})
+
+                    for attr in ['on', 'bri', 'sat', 'hue', 'ct', 'xy']:
+                        if attr in new_state and new_state.get(attr) != prev_state.get(
+                            attr
+                        ):
+                            event_args[attr] = new_state.get(attr)
+
+                    if event_args:
+                        event_args['plugin_name'] = 'light.hue'
+                        event_args['light_id'] = light_id
+                        event_args['light_name'] = light.get('name')
+                        get_bus().post(LightStatusChangeEvent(**event_args))
+                        self.publish_entities([{'id': light_id, **light}])  # type: ignore
+
+                lights_prev = lights_new
+            finally:
+                self.wait_stop(self.poll_seconds)
 
 
 # vim:sw=4:ts=4:et:
