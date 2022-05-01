@@ -58,7 +58,7 @@ export default {
   .loading {
     position: absolute;
     bottom: 0;
-    transform: translate(50%, -50%);
+    transform: translate(0%, -50%);
     width: 1em;
     height: 1em;
   }
