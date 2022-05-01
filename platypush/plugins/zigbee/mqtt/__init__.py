@@ -3,14 +3,17 @@ import threading
 
 from queue import Queue
 from typing import Optional, List, Any, Dict, Union
-from platypush.message import Mapping
 
+from platypush.entities import manages
+from platypush.entities.lights import Light
+from platypush.entities.switches import Switch
+from platypush.message import Mapping
 from platypush.message.response import Response
 from platypush.plugins.mqtt import MqttPlugin, action
-from platypush.plugins.switch import SwitchPlugin
 
 
-class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-init]
+@manages(Light, Switch)
+class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
     """
     This plugin allows you to interact with Zigbee devices over MQTT through any Zigbee sniffer and
     `zigbee2mqtt <https://www.zigbee2mqtt.io/>`_.
@@ -180,12 +183,28 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
                 "supported": dev.get("supported"),
             }
 
+            light_info = self._get_light_meta(dev)
             switch_info = self._get_switch_meta(dev)
-            if switch_info and dev.get('state', {}).get('state') is not None:
+
+            if light_info:
+                converted_entity = Light(
+                    id=dev['ieee_address'],
+                    name=dev.get('friendly_name'),
+                    on=dev.get('state', {}).get('state') == switch_info.get('value_on'),
+                    brightness=dev.get('state', {}).get('brightness'),
+                    brightness_min=light_info.get('brightness_min'),
+                    brightness_max=light_info.get('brightness_max'),
+                    temperature=dev.get('state', {}).get('temperature'),
+                    temperature_min=light_info.get('temperature_min'),
+                    temperature_max=light_info.get('temperature_max'),
+                    description=dev_def.get('description'),
+                    data=dev_info,
+                )
+            elif switch_info and dev.get('state', {}).get('state') is not None:
                 converted_entity = Switch(
                     id=dev['ieee_address'],
                     name=dev.get('friendly_name'),
-                    state=dev.get('state', {}).get('state') == 'ON',
+                    state=dev.get('state', {}).get('state') == switch_info['value_on'],
                     description=dev_def.get("description"),
                     data=dev_info,
                 )
@@ -707,7 +726,11 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
             # Refresh devices info
             self._get_network_info(**kwargs)
 
-        assert self._info.get('devices', {}).get(device), f'No such device: {device}'
+        dev = self._info.get('devices', {}).get(
+            device, self._info.get('devices_by_addr', {}).get(device)
+        )
+
+        assert dev, f'No such device: {device}'
         exposes = (
             self._info.get('devices', {}).get(device, {}).get('definition', {}) or {}
         ).get('exposes', [])
@@ -1330,10 +1353,10 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
         for exposed in exposes:
             for feature in exposed.get('features', []):
                 if (
-                    feature.get('type') == 'binary'
+                    feature.get('property') == 'state'
+                    and feature.get('type') == 'binary'
                     and 'value_on' in feature
                     and 'value_off' in feature
-                    and feature.get('access', 0) & 2
                 ):
                     return {
                         'friendly_name': device_info.get('friendly_name'),
@@ -1342,7 +1365,71 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
                         'value_on': feature['value_on'],
                         'value_off': feature['value_off'],
                         'value_toggle': feature.get('value_toggle', None),
+                        'is_read_only': not bool(feature.get('access', 0) & 2),
+                        'is_write_only': not bool(feature.get('access', 0) & 1),
                     }
+
+        return {}
+
+    @staticmethod
+    def _get_light_meta(device_info: dict) -> dict:
+        exposes = (device_info.get('definition', {}) or {}).get('exposes', [])
+        for exposed in exposes:
+            if exposed.get('type') == 'light':
+                features = exposed.get('features', [])
+                switch = {}
+                brightness = {}
+                temperature = {}
+
+                for feature in features:
+                    if (
+                        feature.get('property') == 'state'
+                        and feature.get('type') == 'binary'
+                        and 'value_on' in feature
+                        and 'value_off' in feature
+                    ):
+                        switch = {
+                            'value_on': feature['value_on'],
+                            'value_off': feature['value_off'],
+                            'state_name': feature['name'],
+                            'value_toggle': feature.get('value_toggle', None),
+                            'is_read_only': not bool(feature.get('access', 0) & 2),
+                            'is_write_only': not bool(feature.get('access', 0) & 1),
+                        }
+                    elif (
+                        feature.get('property') == 'brightness'
+                        and feature.get('type') == 'numeric'
+                        and 'value_min' in feature
+                        and 'value_max' in feature
+                    ):
+                        brightness = {
+                            'brightness_name': feature['name'],
+                            'brightness_min': feature['value_min'],
+                            'brightness_max': feature['value_max'],
+                            'is_read_only': not bool(feature.get('access', 0) & 2),
+                            'is_write_only': not bool(feature.get('access', 0) & 1),
+                        }
+                    elif (
+                        feature.get('property') == 'color_temp'
+                        and feature.get('type') == 'numeric'
+                        and 'value_min' in feature
+                        and 'value_max' in feature
+                    ):
+                        temperature = {
+                            'temperature_name': feature['name'],
+                            'temperature_min': feature['value_min'],
+                            'temperature_max': feature['value_max'],
+                            'is_read_only': not bool(feature.get('access', 0) & 2),
+                            'is_write_only': not bool(feature.get('access', 0) & 1),
+                        }
+
+                return {
+                    'friendly_name': device_info.get('friendly_name'),
+                    'ieee_address': device_info.get('friendly_name'),
+                    **switch,
+                    **brightness,
+                    **temperature,
+                }
 
         return {}
 
@@ -1379,6 +1466,30 @@ class ZigbeeMqttPlugin(MqttPlugin, SwitchPlugin):  # lgtm [py/missing-call-to-in
                 list(switches_info.keys())
             ).output.items()
         ]
+
+    @action
+    def set_lights(self, lights, **kwargs):
+        devices = [
+            dev
+            for dev in self._get_network_info().get('devices', [])
+            if dev.get('ieee_address') in lights or dev.get('friendly_name') in lights
+        ]
+
+        for dev in devices:
+            light_meta = self._get_light_meta(dev)
+            assert light_meta, f'{dev["name"]} is not a light'
+
+            for attr, value in kwargs.items():
+                if attr == 'on':
+                    attr = light_meta['state_name']
+                elif attr in {'brightness', 'bri'}:
+                    attr = light_meta['brightness_name']
+                elif attr in {'temperature', 'ct'}:
+                    attr = light_meta['temperature_name']
+
+                self.device_set(
+                    dev.get('friendly_name', dev.get('ieee_address')), attr, value
+                )
 
 
 # vim:sw=4:ts=4:et:
