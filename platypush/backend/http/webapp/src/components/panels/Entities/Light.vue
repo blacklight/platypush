@@ -161,8 +161,6 @@ export default {
           ...attrs,
         }
       })
-
-      this.$emit('input', attrs)
     },
   },
 
