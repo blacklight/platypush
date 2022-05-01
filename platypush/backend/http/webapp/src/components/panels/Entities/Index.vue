@@ -277,7 +277,7 @@ export default {
     },
   },
 
-  mounted() {
+  async mounted() {
     this.subscribe(
       this.onEntityUpdate,
       'on-entity-update',
@@ -290,7 +290,8 @@ export default {
       'platypush.message.event.entities.EntityDeleteEvent'
     )
 
-    this.sync()
+    await this.sync()
+    await this.refresh()
   },
 }
 </script>
