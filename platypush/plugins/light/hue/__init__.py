@@ -76,6 +76,7 @@ class LightHuePlugin(LightPlugin):
         self.connect()
         self.lights = set()
         self.groups = set()
+        self._cached_lights = {}
 
         if lights:
             self.lights = set(lights)
@@ -384,22 +385,21 @@ class LightHuePlugin(LightPlugin):
         return self._get_lights()
 
     @action
-    def set_light(self, light, **kwargs):
+    def set_lights(self, lights, **kwargs):
         """
-        Set a light (or lights) property.
+        Set a set of properties on a set of lights.
 
-        :param light: Light or lights to set. Can be a string representing the light name,
-            a light object, a list of string, or a list of light objects.
-        :param kwargs: key-value list of parameters to set.
+        :param light: List of lights to set. Each item can represent a light
+            name or ID.
+        :param kwargs: key-value list of the parameters to set.
 
         Example call::
 
             {
                 "type": "request",
-                "target": "hostname",
                 "action": "light.hue.set_light",
                 "args": {
-                    "light": "Bulb 1",
+                    "lights": ["Bulb 1", "Bulb 2"],
                     "sat": 255
                 }
             }
@@ -408,7 +408,27 @@ class LightHuePlugin(LightPlugin):
 
         self.connect()
         assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
-        self.bridge.set_light(light, **kwargs)
+        all_lights = self._get_lights()
+
+        for i, l in enumerate(lights):
+            if str(l) in all_lights:
+                lights[i] = all_lights[str(l)]['name']
+
+        # Convert entity attributes to local attributes
+        if kwargs.get('saturation') is not None:
+            kwargs['sat'] = kwargs.pop('saturation')
+        if kwargs.get('brightness') is not None:
+            kwargs['bri'] = kwargs.pop('brightness')
+        if kwargs.get('temperature') is not None:
+            kwargs['ct'] = kwargs.pop('temperature')
+
+        # "Unroll" the map
+        args = []
+        for arg, value in kwargs.items():
+            args += [arg, value]
+
+        self.bridge.set_light(lights, *args)
+        return self._get_lights()
 
     @action
     def set_group(self, group, **kwargs):
@@ -423,7 +443,6 @@ class LightHuePlugin(LightPlugin):
 
             {
                 "type": "request",
-                "target": "hostname",
                 "action": "light.hue.set_group",
                 "args": {
                     "light": "Living Room",
@@ -1128,8 +1147,10 @@ class LightHuePlugin(LightPlugin):
     def _get_lights(self) -> dict:
         assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
         lights = self.bridge.get_light()
+        lights = {id: light for id, light in lights.items() if not light.get('recycle')}
+        self._cached_lights = lights
         self.publish_entities(lights)  # type: ignore
-        return {id: light for id, light in lights.items() if not light.get('recycle')}
+        return lights
 
     def _get_groups(self) -> dict:
         assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
