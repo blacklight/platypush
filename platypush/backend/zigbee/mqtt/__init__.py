@@ -308,7 +308,7 @@ class ZigbeeMqttBackend(MqttBackend):
                 }
 
                 if changed_props:
-                    self._process_property_update(name, changed_props)
+                    self._process_property_update(name, data)
                     self.bus.post(
                         ZigbeeMqttDevicePropertySetEvent(
                             host=client._host,
