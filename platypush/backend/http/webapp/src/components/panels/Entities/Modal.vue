@@ -78,7 +78,7 @@
 
     <div v-for="value, attr in entity.data || {}" :key="attr">
       <div class="table-row" v-if="value != null">
-        <div class="title" v-text="attr" />
+        <div class="title" v-text="prettify(attr)" />
         <div class="value" v-text="'' + value" />
       </div>
     </div>

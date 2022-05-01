@@ -1,60 +1,28 @@
 <template>
-  <div class="row item entity">
-    <div class="status-container">
-      <img src="@/assets/img/spinner.gif" class="loading" v-if="loading">
-      <i class="fas fa-circle-exclamation error" v-else-if="error" />
-      <Icon v-bind="value.meta?.icon || {}" v-else />
-    </div>
-    <div class="component-container">
-      <component :is="component"
-        :value="value"
-        @input="$emit('input', $event)"
-        :loading="loading"
-        @loading="$emit('loading', $event)"
-      />
-    </div>
+  <div class="row item entity-container">
+    <component :is="component"
+      :value="value"
+      :loading="loading"
+      :error="error || value?.reachable == false"
+      @input="$emit('input', $event)"
+      @loading="$emit('loading', $event)"
+    />
   </div>
 </template>
 
 <script>
 import { defineAsyncComponent } from 'vue'
-import Utils from "@/Utils"
-import Icon from "@/components/elements/Icon";
+import EntityMixin from "./EntityMixin"
 
 export default {
   name: "Entity",
-  components: {Icon},
-  mixins: [Utils],
+  mixins: [EntityMixin],
   emits: ['input', 'loading'],
-  props: {
-    loading: {
-      type: Boolean,
-      default: false,
-    },
-
-    error: {
-      type: Boolean,
-      default: false,
-    },
-
-    value: {
-      type: Object,
-      required: true,
-    },
-  },
 
   data() {
     return {
       component: null,
-      modalVisible: false,
     }
-  },
-
-  computed: {
-    type() {
-      let entityType = (this.value.type || '')
-      return entityType.charAt(0).toUpperCase() + entityType.slice(1)
-    },
   },
 
   mounted() {
@@ -67,42 +35,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "vars";
+@import "common";
 
-.entity {
+.entity-container {
   width: 100%;
-  display: table;
-
-  .status-container {
-    width: 2.5em;
-    height: 1.5em;
-    display: table-cell;
-    vertical-align: middle;
-    position: relative;
-
-    .loading {
-      position: absolute;
-      bottom: 0;
-      transform: translate(50%, -50%);
-      width: 1em;
-      height: 1em;
-    }
-
-    .error {
-      color: $error-fg;
-      margin-left: .5em;
-    }
-  }
-
-  .icon-container,
-  .component-container {
-    height: 100%;
-    display: table-cell;
-    vertical-align: middle;
-  }
-
-  .component-container {
-    width: calc(100% - #{$icon-container-size});
-  }
+  position: relative;
+  padding: 0 !important;
 }
 </style>

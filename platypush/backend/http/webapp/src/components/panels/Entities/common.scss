@@ -1,0 +1,52 @@
+@import "vars";
+
+.entity {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .head {
+    padding: 0.75em 0.25em;
+
+    .label {
+      margin-top: 0.25em;
+    }
+
+    &.expanded {
+      background: $selected-bg;
+      font-weight: bold;
+    }
+
+    .pull-right {
+      display: inline-flex;
+      align-items: center;
+      direction: rtl;
+      padding-right: 0.5em;
+
+      :deep(.power-switch) {
+        margin-top: 0.25em;
+      }
+    }
+  }
+
+  .body {
+    @extend .fade-in;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5em;
+    background: linear-gradient(0deg, $default-bg-5, $default-bg-2);
+    border-top: 1px solid $border-color-1;
+    box-shadow: $border-shadow-bottom;
+  }
+
+  button {
+    height: 2em;
+    background: none;
+    border: none;
+    padding: 0 0 0 1em;
+
+    &:hover {
+      color: $default-hover-fg;
+    }
+  }
+}
