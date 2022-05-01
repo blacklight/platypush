@@ -462,7 +462,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
     @staticmethod
     def _is_switch(value: Mapping):
-        return value.get('command_class_name', '').endswith('Switch')
+        return (
+            value.get('command_class_name', '').endswith('Switch') if value else False
+        )
 
     def transform_entities(self, values: Iterable[Mapping]):
         entities = []
