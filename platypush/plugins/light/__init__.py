@@ -13,25 +13,37 @@ class LightPlugin(Plugin, ABC):
 
     @action
     @abstractmethod
-    def on(self):
+    def on(self, lights=None, *args, **kwargs):
         """Turn the light on"""
         raise NotImplementedError()
 
     @action
     @abstractmethod
-    def off(self):
+    def off(self, lights=None, *args, **kwargs):
         """Turn the light off"""
         raise NotImplementedError()
 
     @action
     @abstractmethod
-    def toggle(self):
+    def toggle(self, lights=None, *args, **kwargs):
         """Toggle the light status (on/off)"""
         raise NotImplementedError()
 
     @action
     @abstractmethod
-    def status(self):
+    def set_lights(self, lights=None, *args, **kwargs):
+        """
+        Set a set of properties on a set of lights.
+
+        :param light: List of lights to set. Each item can represent a light
+            name or ID.
+        :param kwargs: key-value list of the parameters to set.
+        """
+        raise NotImplementedError()
+
+    @action
+    @abstractmethod
+    def status(self, *args, **kwargs):
         """
         Get the current status of the lights.
         """
