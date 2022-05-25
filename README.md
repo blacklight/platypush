@@ -6,6 +6,7 @@ Platypush
 [![pip version](https://img.shields.io/pypi/v/platypush.svg?style=flat)](https://pypi.python.org/pypi/platypush/)
 [![License](https://img.shields.io/github/license/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/-/blob/master/LICENSE.txt)
 [![Last Commit](https://img.shields.io/github/last-commit/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/-/commits/master/)
+[![Join chat on Matrix](https://img.shields.io/matrix/:platypush?server_fqdn=matrix.platypush.tech)](https://matrix.to/#/#platypush:matrix.platypush.tech)
 [![Contributions](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://git.platypush.tech/platypush/platypush/-/blob/master/CONTRIBUTING.md)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/BlackLight/platypush.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/BlackLight/platypush/context:python)
 [![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/BlackLight/platypush.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/BlackLight/platypush/context:javascript)
@@ -23,6 +24,9 @@ Platypush
   * [The web interface](#the-web-interface)
 - [Installation](#installation)
   * [System installation](#system-installation)
+    + [Install through `pip`](#install-through-pip)
+    + [Install through a system package manager](#install-through-a-system-package-manager)
+    + [Install from sources](#install-from-sources)
   * [Installing the dependencies for your extensions](#installing-the-dependencies-for-your-extensions)
     + [Install via `extras` name](#install-via-extras-name)
     + [Install via `manifest.yaml`](#install-via-manifestyaml)
@@ -440,15 +444,33 @@ Platypush uses Redis to deliver and store requests and temporary messages:
 [sudo] systemctl start redis
 ```
 
-To install the core platform:
-
-- The `pip` way:
+#### Install through `pip`
 
 ```shell
 [sudo] pip3 install platypush
 ```
 
-- The sources way:
+#### Install through a system package manager
+
+Note: currently only Arch Linux and derived distributions are supported.
+
+You can either install the
+[`platypush`](https://aur.archlinux.org/packages/platypush) package (for the
+latest stable version) or the
+[`platypush-git`](https://aur.archlinux.org/packages/platypush-git) package
+(for the latest git version) through your favourite AUR package manager. For
+example, using `yay`:
+
+```shell
+yay platypush
+# Or
+yay platypush-git
+```
+
+The Arch Linux packages on AUR are automatically updated upon new git commits
+or tags.
+
+#### Install from sources
 
 ```shell
 git clone https://git.platypush.tech/platypush/platypush.git

@@ -31,7 +31,7 @@ logger = logging.getLogger('platypush')
 
 
 class Daemon:
-    """ Main class for the Platypush daemon """
+    """Main class for the Platypush daemon"""
 
     # Configuration file (default: either ~/.config/platypush/config.yaml or
     # /etc/platypush/config.yaml
@@ -53,8 +53,15 @@ class Daemon:
     # number of executions retries before a request fails
     n_tries = 2
 
-    def __init__(self, config_file=None, pidfile=None, requests_to_process=None,
-                 no_capture_stdout=False, no_capture_stderr=False, redis_queue=None):
+    def __init__(
+        self,
+        config_file=None,
+        pidfile=None,
+        requests_to_process=None,
+        no_capture_stdout=False,
+        no_capture_stderr=False,
+        redis_queue=None,
+    ):
         """
         Constructor
         Params:
@@ -82,8 +89,11 @@ class Daemon:
         logging.basicConfig(**Config.get('logging'))
 
         redis_conf = Config.get('backend.redis') or {}
-        self.bus = RedisBus(redis_queue=self.redis_queue, on_message=self.on_message(),
-                            **redis_conf.get('redis_args', {}))
+        self.bus = RedisBus(
+            redis_queue=self.redis_queue,
+            on_message=self.on_message(),
+            **redis_conf.get('redis_args', {})
+        )
 
         self.no_capture_stdout = no_capture_stdout
         self.no_capture_stderr = no_capture_stderr
@@ -101,33 +111,59 @@ class Daemon:
             args -- Your sys.argv[1:] [List of strings]
         """
         parser = argparse.ArgumentParser()
-        parser.add_argument('--config', '-c', dest='config', required=False,
-                            default=None, help=cls.config_file.__doc__)
-        parser.add_argument('--pidfile', '-P', dest='pidfile', required=False,
-                            default=None, help="File where platypush will " +
-                            "store its PID, useful if you're planning to " +
-                            "integrate it in a service")
-        parser.add_argument('--no-capture-stdout', dest='no_capture_stdout',
-                            required=False, action='store_true',
-                            help="Set this flag if you have max stack depth " +
-                            "exceeded errors so stdout won't be captured by " +
-                            "the logging system")
-        parser.add_argument('--no-capture-stderr', dest='no_capture_stderr',
-                            required=False, action='store_true',
-                            help="Set this flag if you have max stack depth " +
-                            "exceeded errors so stderr won't be captured by " +
-                            "the logging system")
-        parser.add_argument('--redis-queue', dest='redis_queue',
-                            required=False, action='store_true',
-                            default=cls._default_redis_queue,
-                            help="Name of the Redis queue to be used to internally deliver messages "
-                                 "(default: platypush/bus)")
+        parser.add_argument(
+            '--config',
+            '-c',
+            dest='config',
+            required=False,
+            default=None,
+            help=cls.config_file.__doc__,
+        )
+        parser.add_argument(
+            '--pidfile',
+            '-P',
+            dest='pidfile',
+            required=False,
+            default=None,
+            help="File where platypush will "
+            + "store its PID, useful if you're planning to "
+            + "integrate it in a service",
+        )
+        parser.add_argument(
+            '--no-capture-stdout',
+            dest='no_capture_stdout',
+            required=False,
+            action='store_true',
+            help="Set this flag if you have max stack depth "
+            + "exceeded errors so stdout won't be captured by "
+            + "the logging system",
+        )
+        parser.add_argument(
+            '--no-capture-stderr',
+            dest='no_capture_stderr',
+            required=False,
+            action='store_true',
+            help="Set this flag if you have max stack depth "
+            + "exceeded errors so stderr won't be captured by "
+            + "the logging system",
+        )
+        parser.add_argument(
+            '--redis-queue',
+            dest='redis_queue',
+            required=False,
+            default=cls._default_redis_queue,
+            help="Name of the Redis queue to be used to internally deliver messages "
+            "(default: platypush/bus)",
+        )
 
         opts, args = parser.parse_known_args(args)
-        return cls(config_file=opts.config, pidfile=opts.pidfile,
-                   no_capture_stdout=opts.no_capture_stdout,
-                   no_capture_stderr=opts.no_capture_stderr,
-                   redis_queue=opts.redis_queue)
+        return cls(
+            config_file=opts.config,
+            pidfile=opts.pidfile,
+            no_capture_stdout=opts.no_capture_stdout,
+            no_capture_stderr=opts.no_capture_stderr,
+            redis_queue=opts.redis_queue,
+        )
 
     def on_message(self):
         """
@@ -148,8 +184,10 @@ class Daemon:
                     logger.info('Dropped unauthorized request: {}'.format(msg))
 
                 self.processed_requests += 1
-                if self.requests_to_process \
-                        and self.processed_requests >= self.requests_to_process:
+                if (
+                    self.requests_to_process
+                    and self.processed_requests >= self.requests_to_process
+                ):
                     self.stop_app()
             elif isinstance(msg, Response):
                 logger.info('Received response: {}'.format(msg))
@@ -161,7 +199,7 @@ class Daemon:
         return _f
 
     def stop_app(self):
-        """ Stops the backends and the bus """
+        """Stops the backends and the bus"""
         from .plugins import RunnablePlugin
 
         if self.backends:
@@ -185,7 +223,7 @@ class Daemon:
             self.entities_engine = None
 
     def run(self):
-        """ Start the daemon """
+        """Start the daemon"""
         if not self.no_capture_stdout:
             sys.stdout = Logger(logger.info)
         if not self.no_capture_stderr:

@@ -102,7 +102,7 @@ class RssPlugin(RunnablePlugin):
                 {
                     'feed_url': url,
                     'feed_title': getattr(feed.feed, 'title', None),
-                    'id': entry.id,
+                    'id': getattr(entry, 'id', None),
                     'url': entry.link,
                     'published': datetime.datetime.fromtimestamp(time.mktime(entry.published_parsed)),
                     'title': entry.title,
