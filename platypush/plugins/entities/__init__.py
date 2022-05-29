@@ -3,8 +3,10 @@ from threading import Thread
 from time import time
 from typing import Optional, Any, Collection, Mapping
 
+from sqlalchemy import or_
 from sqlalchemy.orm import make_transient
 
+from platypush.config import Config
 from platypush.context import get_plugin, get_bus
 from platypush.entities import Entity, get_plugin_entity_registry, get_entities_registry
 from platypush.message.event.entities import EntityUpdateEvent, EntityDeleteEvent
@@ -57,8 +59,18 @@ class EntitiesPlugin(Plugin):
             selected_types = entity_types.keys()
 
         db = self._get_db()
+        enabled_plugins = list(
+            {
+                *Config.get_plugins().keys(),
+                *Config.get_backends().keys(),
+            }
+        )
+
         with db.get_session() as session:
-            query = session.query(Entity)
+            query = session.query(Entity).filter(
+                or_(Entity.plugin.in_(enabled_plugins), Entity.plugin.is_(None))
+            )
+
             if selected_types:
                 query = query.filter(Entity.type.in_(selected_types))
             if plugins:
