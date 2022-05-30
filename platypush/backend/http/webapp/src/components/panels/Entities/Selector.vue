@@ -127,25 +127,27 @@ export default {
       this.$emit('input', value)
     },
 
-    resetGroupFilter() {
-      this.selectedGroups = Object.keys(
-        this.entityGroups[this.value?.grouping] || {}
-      ).reduce(
-        (obj, group) => {
-          obj[group] = true
-          return obj
-        }, {}
-      )
+    refreshGroupFilter(reset) {
+      if (reset)
+        this.selectedGroups = Object.keys(
+          this.entityGroups[this.value?.grouping] || {}
+        ).reduce(
+          (obj, group) => {
+            obj[group] = true
+            return obj
+          }, {}
+        )
+      else {
+        for (const group of Object.keys(this.entityGroups[this.value?.grouping]))
+          if (this.selectedGroups[group] == null)
+            this.selectedGroups[group] = true
+      }
 
       this.synchronizeSelectedEntities()
     },
 
     toggleGroup(group) {
-      if (this.selectedGroups[group])
-        delete this.selectedGroups[group]
-      else
-        this.selectedGroups[group] = true
-
+      this.selectedGroups[group] = !this.selectedGroups[group]
       this.synchronizeSelectedEntities()
     },
 
@@ -160,10 +162,10 @@ export default {
   },
 
   mounted() {
-    this.resetGroupFilter()
-    this.$watch(() => this.value?.grouping, this.resetGroupFilter)
+    this.refreshGroupFilter(true)
+    this.$watch(() => this.value?.grouping, () => { this.refreshGroupFilter(true) })
     this.$watch(() => this.searchTerm, this.updateSearchTerm)
-    this.$watch(() => this.entityGroups, this.resetGroupFilter)
+    this.$watch(() => this.entityGroups, () => { this.refreshGroupFilter(false) })
   },
 }
 </script>
