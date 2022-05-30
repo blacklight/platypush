@@ -188,7 +188,9 @@ class EntitiesEngine(Thread):
                         )
                         if entity.external_id is not None
                         else and_(
-                            Entity.name == entity.name, Entity.plugin == entity.plugin
+                            Entity.name == entity.name,
+                            Entity.type == entity.type,
+                            Entity.plugin == entity.plugin,
                         )
                         for entity in entities
                     ]
@@ -246,6 +248,10 @@ class EntitiesEngine(Thread):
 
     def _process_entities(self, *entities: Entity):
         with self._get_db().get_session() as session:
+            # Ensure that the internal IDs are set to null before the merge
+            for e in entities:
+                e.id = None  # type: ignore
+
             existing_entities = self._get_if_exist(session, entities)
             entities = self._merge_entities(entities, existing_entities)  # type: ignore
             session.add_all(entities)

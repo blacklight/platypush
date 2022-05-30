@@ -2,7 +2,8 @@
   <div class="entity light-container">
     <div class="head" :class="{expanded: expanded}">
       <div class="col-1 icon">
-        <EntityIcon :icon="icon" :loading="loading" :error="error" />
+        <EntityIcon :icon="icon" :hasColorFill="true"
+          :loading="loading" :error="error" />
       </div>
 
       <div class="col-s-8 col-m-9 label">
@@ -10,13 +11,13 @@
       </div>
 
       <div class="col-s-3 col-m-2 buttons pull-right">
+        <ToggleSwitch :value="value.on" @input="toggle"
+          @click.stop :disabled="loading || value.is_read_only" />
+
         <button @click.stop="expanded = !expanded">
           <i class="fas"
             :class="{'fa-angle-up': expanded, 'fa-angle-down': !expanded}" />
         </button>
-
-        <ToggleSwitch :value="value.on" @input="toggle"
-          @click.stop :disabled="loading || value.is_read_only" />
       </div>
     </div>
 
@@ -84,13 +85,16 @@ export default {
 
   computed: {
     rgbColor() {
-      if (
-        !this.colorConverter || this.value.hue == null ||
-        (this.value.x == null && this.value.y == null)
-      )
-        return
       if (this.value.meta?.icon?.color)
         return this.value.meta.icon.color
+
+      if (
+        !this.colorConverter || (
+          this.value.hue == null &&
+          (this.value.x == null || this.value.y == null)
+        )
+      )
+        return
 
       if (this.value.x && this.value.y)
         return this.colorConverter.xyToRgb(
@@ -184,6 +188,14 @@ export default {
 @import "common";
 
 .light-container {
+  .head {
+    .buttons {
+      button {
+        margin-right: 0.5em;
+      }
+    }
+  }
+
   .body {
     .row {
       display: flex;

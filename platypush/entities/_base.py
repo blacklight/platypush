@@ -49,7 +49,7 @@ class Entity(Base):
 
     UniqueConstraint(external_id, plugin)
 
-    __table_args__ = (Index(name, plugin),)
+    __table_args__ = (Index(name, plugin), Index(name, type, plugin))
 
     __mapper_args__ = {
         'polymorphic_identity': __tablename__,
