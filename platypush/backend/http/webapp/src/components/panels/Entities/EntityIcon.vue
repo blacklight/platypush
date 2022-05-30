@@ -1,8 +1,10 @@
 <template>
-  <div class="entity-icon-container">
+  <div class="entity-icon-container"
+      :class="{'with-color-fill': !!colorFill}"
+      :style="colorFillStyle">
     <img src="@/assets/img/spinner.gif" class="loading" v-if="loading">
     <i class="fas fa-circle-exclamation error" v-else-if="error" />
-    <Icon v-bind="icon" v-else />
+    <Icon v-bind="computedIcon" v-else />
   </div>
 </template>
 
@@ -27,6 +29,11 @@ export default {
       type: Object,
       required: true,
     },
+
+    hasColorFill: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data() {
@@ -37,6 +44,21 @@ export default {
   },
 
   computed: {
+    colorFill() {
+      return (this.hasColorFill && this.icon.color) ? this.icon.color : null
+    },
+
+    colorFillStyle() {
+      return this.colorFill ? {'background': this.colorFill} : {}
+    },
+
+    computedIcon() {
+      const icon = {...this.icon}
+      if (this.colorFill)
+        delete icon.color
+      return icon
+    },
+
     type() {
       let entityType = (this.entity.type || '')
       return entityType.charAt(0).toUpperCase() + entityType.slice(1)
@@ -49,11 +71,19 @@ export default {
 @import "vars";
 
 .entity-icon-container {
-  width: 2.5em;
+  width: 1.625em;
   height: 1.5em;
+  display: inline-flex;
   margin-top: 0.25em;
+  margin-left: 0.25em;
   position: relative;
   text-align: center;
+  justify-content: center;
+  align-items: center;
+
+  &.with-color-fill {
+    border-radius: 1em;
+  }
 
   .loading {
     position: absolute;
