@@ -96,6 +96,7 @@ Plugins
     platypush/plugins/nextcloud.rst
     platypush/plugins/ngrok.rst
     platypush/plugins/nmap.rst
+    platypush/plugins/ntfy.rst
     platypush/plugins/otp.rst
     platypush/plugins/pihole.rst
     platypush/plugins/ping.rst
