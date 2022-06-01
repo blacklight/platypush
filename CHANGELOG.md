@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [0.23.3] - 2022-06-01
+
+### Added
+
+- Added `ntfy` integration (see #219).
+- Support for a default `config.yaml` if one isn't specified in the default
+  locations.
+
+### Changed
+
+- The HTTP server dependencies are now marked as required, since the default
+  `config.yaml` will have the HTTP backend enabled by default in order to allow
+  the creation of a first user.
+- Updated Vue.js frontend dependencies to the latest version.
+- Removed bulma from the frontend dependencies, making the frontend much
+  lighter and loading times much faster.
+- Other UI improvements.
+
+### Fixed
+
+- More reliable cronjobs in case of DST change or any clock changes in general
+  (see #217).
+- Fixed `--redis-queue` argument.
+
 ## [0.23.2] - 2022-03-27
 
 ### Added

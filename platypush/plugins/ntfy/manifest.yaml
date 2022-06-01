@@ -1,0 +1,5 @@
+manifest:
+  events:
+    platypush.message.event.ntfy.NotificationEvent: when a notification is received.
+  package: platypush.plugins.ntfy
+  type: plugin

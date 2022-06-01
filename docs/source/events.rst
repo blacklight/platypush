@@ -50,6 +50,7 @@ Events
     platypush/events/nextcloud.rst
     platypush/events/nfc.rst
     platypush/events/ngrok.rst
+    platypush/events/ntfy.rst
     platypush/events/ping.rst
     platypush/events/pushbullet.rst
     platypush/events/qrcode.rst
