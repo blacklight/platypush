@@ -21,7 +21,7 @@ class NotificationEvent(Event):
         attachment: Optional[Mapping] = None,
         actions: Optional[Collection[Mapping]] = None,
         tags: Optional[Collection[str]] = None,
-        click_url: Optional[str] = None,
+        url: Optional[str] = None,
         **kwargs
     ):
         """
@@ -32,7 +32,7 @@ class NotificationEvent(Event):
         :param priority: Message priority.
         :param time: Message UNIX timestamp.
         :param tags: Notification tags.
-        :param click_url: URL spawned when the notification is clicked.
+        :param url: URL spawned when the notification is clicked.
         :param actions: List of actions associated to the notification.
             Example:
 
@@ -89,6 +89,6 @@ class NotificationEvent(Event):
             tags=tags,
             attachment=attachment,
             actions=actions,
-            click_url=click_url,
+            url=url,
             **kwargs
         )
