@@ -95,7 +95,7 @@ class NtfyPlugin(RunnablePlugin):
                                     message=msg.get('message'),
                                     title=msg.get('title'),
                                     tags=msg.get('tags'),
-                                    click_url=msg.get('click'),
+                                    url=msg.get('click'),
                                     actions=msg.get('actions'),
                                     attachment=msg.get('attachment'),
                                 )
@@ -142,7 +142,7 @@ class NtfyPlugin(RunnablePlugin):
         username: Optional[str] = None,
         password: Optional[str] = None,
         title: Optional[str] = None,
-        click_url: Optional[str] = None,
+        url: Optional[str] = None,
         attachment: Optional[str] = None,
         filename: Optional[str] = None,
         actions: Optional[Collection[Mapping[str, str]]] = None,
@@ -160,7 +160,7 @@ class NtfyPlugin(RunnablePlugin):
         :param username: Set if publishing to the topic requires authentication
         :param password: Set if publishing to the topic requires authentication
         :param title: Custom notification title.
-        :param click_url: URL that should be opened when the user clicks the
+        :param url: URL that should be opened when the user clicks the
             notification. It can be an ``http(s)://`` URL, a ``mailto:`, a
             ``geo:``, a link to another ntfy topic (e.g. ``ntfy://mytopic``) or
             a Twitter link (e.g. ``twitter://user?screen_name=myname``).
@@ -240,7 +240,7 @@ class NtfyPlugin(RunnablePlugin):
             args['headers'] = {
                 'Filename': filename,
                 **({'X-Title': title} if title else {}),
-                **({'X-Click': click_url} if click_url else {}),
+                **({'X-Click': url} if url else {}),
                 **({'X-Email': email} if email else {}),
                 **({'X-Priority': priority} if priority else {}),
                 **({'X-Tags': ','.join(tags)} if tags else {}),
@@ -255,7 +255,7 @@ class NtfyPlugin(RunnablePlugin):
                 'topic': topic,
                 'message': message,
                 **({'title': title} if title else {}),
-                **({'click': click_url} if click_url else {}),
+                **({'click': url} if url else {}),
                 **({'email': email} if email else {}),
                 **({'priority': priority} if priority else {}),
                 **({'tags': tags} if tags else {}),
