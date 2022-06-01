@@ -226,6 +226,7 @@ class NtfyPlugin(RunnablePlugin):
 
         """
         method = requests.post
+        click_url = url
         url = server_url or self._server_url
         args = {}
         if username and password:
@@ -240,7 +241,7 @@ class NtfyPlugin(RunnablePlugin):
             args['headers'] = {
                 'Filename': filename,
                 **({'X-Title': title} if title else {}),
-                **({'X-Click': url} if url else {}),
+                **({'X-Click': click_url} if click_url else {}),
                 **({'X-Email': email} if email else {}),
                 **({'X-Priority': priority} if priority else {}),
                 **({'X-Tags': ','.join(tags)} if tags else {}),
@@ -255,7 +256,7 @@ class NtfyPlugin(RunnablePlugin):
                 'topic': topic,
                 'message': message,
                 **({'title': title} if title else {}),
-                **({'click': url} if url else {}),
+                **({'click': click_url} if click_url else {}),
                 **({'email': email} if email else {}),
                 **({'priority': priority} if priority else {}),
                 **({'tags': tags} if tags else {}),
