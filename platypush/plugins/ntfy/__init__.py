@@ -226,6 +226,7 @@ class NtfyPlugin(RunnablePlugin):
 
         """
         method = requests.post
+        click_url = url
         url = server_url or self._server_url
         args = {}
         if username and password:
