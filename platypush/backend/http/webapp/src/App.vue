@@ -3,6 +3,7 @@
   <Notifications ref="notifications" />
   <VoiceAssistant ref="voice-assistant" v-if="hasAssistant" />
   <Pushbullet ref="pushbullet" v-if="hasPushbullet" />
+  <Ntfy ref="ntfy" v-if="hasNtfy" />
 
   <router-view />
 </template>
@@ -13,12 +14,15 @@ import Utils from "@/Utils";
 import Events from "@/Events";
 import VoiceAssistant from "@/components/VoiceAssistant";
 import { bus } from "@/bus";
+import Ntfy from "@/components/Ntfy";
 import Pushbullet from "@/components/Pushbullet";
 
 export default {
   name: 'App',
   mixins: [Utils],
-  components: {Pushbullet, Notifications, Events, VoiceAssistant},
+  components: {
+    Pushbullet, Ntfy, Notifications, Events, VoiceAssistant
+  },
 
   data() {
     return {
@@ -42,6 +46,10 @@ export default {
           'pushbullet' in this.config ||
           'backend.pushbullet' in this.config
       )
+    },
+
+    hasNtfy() {
+      return this.hasWebsocket && 'ntfy' in this.config
     },
   },
 
