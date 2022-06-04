@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [Unreleased]
+
+- Removed `clipboard` backend. Enabling the `clipboard` plugin will also enable
+  clipboard monitoring, with no need for an additional backend.
+
 ## [0.23.3] - 2022-06-01
 
 ### Added
