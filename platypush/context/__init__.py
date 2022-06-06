@@ -171,15 +171,17 @@ class Variable:
 
     def __init__(self, name: str, persisted: bool = True):
         self.name = name
-        plugin = get_plugin('variable')
-        self._get_action = getattr(plugin, 'get' if persisted else 'mget')
-        self._set_action = getattr(plugin, 'set' if persisted else 'mset')
+        self._persisted = persisted
 
     def get(self) -> Optional[Any]:
-        return self._get_action(self.name).output.get(self.name)
+        plugin = get_plugin('variable')
+        getter = getattr(plugin, 'get' if self._persisted else 'mget')
+        return getter(self.name).output.get(self.name)
 
     def set(self, value: Any):
-        self._set_action(**{self.name: value})
+        plugin = get_plugin('variable')
+        setter = getattr(plugin, 'set' if self._persisted else 'mset')
+        setter(**{self.name: value})
 
 
 # vim:sw=4:ts=4:et:
