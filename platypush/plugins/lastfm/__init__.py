@@ -164,12 +164,16 @@ class LastfmPlugin(Plugin):
         }
 
     @action
-    def get_similar_tracks(self, artist: str, title: str) -> List[dict]:
+    def get_similar_tracks(
+        self, artist: str, title: str, limit: Optional[int] = None
+    ) -> List[dict]:
         """
         Get the tracks that are similar to a specific track.
 
         :param artist: Track artist.
         :param title: Track title.
+        :param limit: Maximum number of suggested tracks to be returned
+            (default: None).
         :return: A list of similar tracks, each with a ``match`` score between
             0 and 1. Example:
 
@@ -209,7 +213,7 @@ class LastfmPlugin(Plugin):
                 'title': t.item.title,
                 'score': t.match,
             }
-            for t in track.get_similar()
+            for t in track.get_similar(limit=limit)
         ]
 
 
