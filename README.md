@@ -57,6 +57,9 @@ Platypush
 - A [Reddit channel](https://www.reddit.com/r/platypush) is also available for
   more general questions.
 
+- A [Matrix instance](https://matrix.to/#/#platypush:matrix.platypush.tech) is
+  also available if you are looking for more interactive support.
+
 ---
 
 Platypush is a general-purpose extensible platform for automation and
