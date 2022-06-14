@@ -1,3 +1,4 @@
+from time import time
 from typing import Optional
 
 from platypush.context import get_bus
@@ -47,13 +48,22 @@ class ClipboardPlugin(RunnablePlugin):
     def main(self):
         import pyperclip
 
-        while not self.should_stop():
-            text = pyperclip.paste()
-            if text and text != self._last_text:
-                get_bus().post(ClipboardEvent(text=text))
-                self._last_text = text
+        last_error_time = 0
 
-            self._should_stop.wait(0.1)
+        while not self.should_stop():
+            try:
+                text = pyperclip.paste()
+                if text and text != self._last_text:
+                    get_bus().post(ClipboardEvent(text=text))
+                    self._last_text = text
+            except Exception as e:
+                if time() - last_error_time > 60:
+                    last_error_time = time()
+                    self.logger.error(
+                        'Could not access the clipboard: %s: %s', type(e), e
+                    )
+            finally:
+                self._should_stop.wait(0.1)
 
         self.logger.info('Stopped clipboard monitor backend')
 
