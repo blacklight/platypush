@@ -303,7 +303,7 @@ Variable.set(my_var=my_var)
 
 - Added `<Camera>` dashboard widget.
 
-- Added support for custom dashboard widgets with customized (see https://git.platypush.tech/platypush/platypush/-/wikis/Backends#creating-custom-widgets).
+- Added support for custom dashboard widgets with customized (see https://git.platypush.tech/platypush/platypush/wiki/Backends#creating-custom-widgets).
 
 - Added support for controls on `music.mpd` dashboard widget.
 

@@ -34,6 +34,6 @@ Guidelines:
     an `extras_require` entry.
   - In the plugin/backend class pydoc string.
   - In the `manifest.yaml` - refer to the Wiki (how to write
-    [plugins](https://git.platypush.tech/platypush/platypush/-/wikis/writing-your-own-plugins)
-    and [backends](https://git.platypush.tech/platypush/platypush/-/wikis/writing-your-own-backends))
+    [plugins](https://git.platypush.tech/platypush/platypush/wiki/Writing-your-own-plugins)
+    and [backends](https://git.platypush.tech/platypush/platypush/wiki/Writing-your-own-backends))
     for examples on how to write an extension manifest file.

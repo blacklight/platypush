@@ -45,7 +45,7 @@ Platypush
   more insights on what you can build with it and inspiration about possible
   usages.
 
-- The [wiki](https://git.platypush.tech/platypush/platypush/-/wikis/home) also
+- The [wiki](https://git.platypush.tech/platypush/platypush/wiki) also
   contains many resources on getting started.
 
 - Extensive documentation for all the available integrations and messages [is
@@ -576,7 +576,7 @@ by the configured integrations.
     platyvenv rm device_id
     ```
 
-[Wiki instructions](https://git.platypush.tech/platypush/platypush/-/wikis/Run-platypush-in-a-virtual-environment)
+[Wiki instructions](https://git.platypush.tech/platypush/platypush/wiki/Run-platypush-in-a-virtual-environment)
 
 ### Docker installation
 
@@ -615,7 +615,7 @@ through the `include` directive (as long as they are in the same folder as the
 main `config.yaml`), as well as external Python scripts in a `scripts`
 directory in the same folder as the `config.yaml`.
 
-[Wiki instructions](https://git.platypush.tech/platypush/platypush/-/wikis/Run-platypush-in-a-container)
+[Wiki instructions](https://git.platypush.tech/platypush/platypush/wiki/Run-platypush-in-a-container)
 
 ## Mobile app
 
