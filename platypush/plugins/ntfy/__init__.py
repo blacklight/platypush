@@ -53,15 +53,12 @@ class NtfyPlugin(RunnablePlugin):
         self._ws_proc = None
 
     def _connect(self):
-        if self.should_stop():
+        if self.should_stop() or (self._ws_proc and self._ws_proc.is_alive()):
             self.logger.debug('Already connected')
             return
 
         self._ws_proc = multiprocessing.Process(target=self._ws_process)
         self._ws_proc.start()
-
-        while not self._should_stop.is_set():
-            self._should_stop.wait(timeout=1)
 
     async def _get_ws_handler(self, url):
         reconnect_wait_secs = 1
@@ -124,6 +121,9 @@ class NtfyPlugin(RunnablePlugin):
     def main(self):
         if self._subscriptions:
             self._connect()
+
+        while not self._should_stop.is_set():
+            self._should_stop.wait(timeout=1)
 
     def stop(self):
         if self._ws_proc:

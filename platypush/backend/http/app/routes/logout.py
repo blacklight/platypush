@@ -13,17 +13,19 @@ __routes__ = [
 
 @logout.route('/logout', methods=['GET', 'POST'])
 def logout():
-    """ Logout page """
+    """Logout page"""
     user_manager = UserManager()
-    redirect_page = request.args.get('redirect', request.headers.get('Referer', '/login'))
+    redirect_page = request.args.get(
+        'redirect', request.headers.get('Referer', '/login')
+    )
     session_token = request.cookies.get('session_token')
 
     if not session_token:
-        return abort(417, 'Not logged in')
+        abort(417, 'Not logged in')
 
-    user, session = user_manager.authenticate_user_session(session_token)
+    user, _ = user_manager.authenticate_user_session(session_token)
     if not user:
-        return abort(403, 'Invalid session token')
+        abort(403, 'Invalid session token')
 
     redirect_target = redirect(redirect_page, 302)  # lgtm [py/url-redirection]
     response = make_response(redirect_target)

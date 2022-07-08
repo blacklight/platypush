@@ -137,5 +137,84 @@ class LastfmPlugin(Plugin):
             )
         ]
 
+    @action
+    def get_track(self, artist: str, title: str) -> Optional[dict]:
+        """
+        Get the information about a track.
+
+        :param artist: Track artist.
+        :param title: Track title.
+        :return: The retrieved track, with the title corrected if required, if
+            it exists on Last.FM. Example:
+
+                .. code-block:: json
+
+                    {
+                        "artist": "Led Zeppelin",
+                        "title": "Stairway to Heaven",
+                        "tags": ["rock", "hard rock", "70s"]
+                    }
+
+        """
+        track = self.lastfm.get_track(artist, title)
+        return {
+            'title': track.get_correction(),
+            'tags': track.get_tags(),
+            **({'artist': track.artist.name} if track.artist else {'artist': None}),
+        }
+
+    @action
+    def get_similar_tracks(
+        self, artist: str, title: str, limit: Optional[int] = None
+    ) -> List[dict]:
+        """
+        Get the tracks that are similar to a specific track.
+
+        :param artist: Track artist.
+        :param title: Track title.
+        :param limit: Maximum number of suggested tracks to be returned
+            (default: None).
+        :return: A list of similar tracks, each with a ``match`` score between
+            0 and 1. Example:
+
+                .. code-block:: json
+
+                    [
+                      {
+                        "artist": "Led Zeppelin",
+                        "title": "Black Dog",
+                        "score": 1.0
+                      },
+                      {
+                        "artist": "Led Zeppelin",
+                        "title": "Rock and Roll",
+                        "score": 0.89
+                      },
+                      {
+                        "artist": "Eagles",
+                        "title": "Hotel California",
+                        "score": 0.471
+                      },
+                      {
+                        "artist": "Deep Purple",
+                        "title": "Smoke on the Water",
+                        "score": 0.393
+                      }
+                    ]
+
+        """
+        track = self.lastfm.get_track(artist, title)
+        if not track:
+            return []
+
+        return [
+            {
+                'artist': t.item.artist.name,
+                'title': t.item.title,
+                'score': t.match,
+            }
+            for t in track.get_similar(limit=limit)
+        ]
+
 
 # vim:sw=4:ts=4:et:

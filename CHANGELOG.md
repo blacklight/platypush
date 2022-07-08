@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
 
+## [Unreleased]
+
+- Removed `clipboard` backend. Enabling the `clipboard` plugin will also enable
+  clipboard monitoring, with no need for an additional backend.
+
 ## [0.23.3] - 2022-06-01
 
 ### Added
@@ -298,7 +303,7 @@ Variable.set(my_var=my_var)
 
 - Added `<Camera>` dashboard widget.
 
-- Added support for custom dashboard widgets with customized (see https://git.platypush.tech/platypush/platypush/-/wikis/Backends#creating-custom-widgets).
+- Added support for custom dashboard widgets with customized (see https://git.platypush.tech/platypush/platypush/wiki/Backends#creating-custom-widgets).
 
 - Added support for controls on `music.mpd` dashboard widget.
 

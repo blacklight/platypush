@@ -63,7 +63,7 @@ class EventCondition(object):
         else:
             rule = parse(rule)
 
-        assert isinstance(rule, dict)
+        assert isinstance(rule, dict), f'Not a valid rule: {rule}'
         type = get_event_class_by_type(
             rule.pop('type') if 'type' in rule else 'Event')
 
