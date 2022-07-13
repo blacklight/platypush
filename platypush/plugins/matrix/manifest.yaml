@@ -1,0 +1,10 @@
+manifest:
+  events:
+    platypush.message.event.matrix.MatrixMessageEvent: when a message is received.
+    platypush.message.event.matrix.MatrixRoomJoinEvent: when a user joins a room.
+    platypush.message.event.matrix.MatrixRoomLeaveEvent: when a user leaves a room.
+    platypush.message.event.matrix.MatrixRoomInviteEvent: when a user (other than the currently logged one) is invited to a room.
+    platypush.message.event.matrix.MatrixRoomMeInviteEvent: when the currently logged in user is invited to a room.
+    platypush.message.event.matrix.MatrixRoomTopicChangeEvent: when the topic/title of a room changes.
+  package: platypush.plugins.matrix
+  type: plugin
