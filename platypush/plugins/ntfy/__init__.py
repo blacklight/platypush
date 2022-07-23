@@ -121,9 +121,7 @@ class NtfyPlugin(RunnablePlugin):
     def main(self):
         if self._subscriptions:
             self._connect()
-
-        while not self._should_stop.is_set():
-            self._should_stop.wait(timeout=1)
+        self.wait_stop()
 
     def stop(self):
         if self._ws_proc:
