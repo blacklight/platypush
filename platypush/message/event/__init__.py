@@ -2,6 +2,7 @@ import copy
 import hashlib
 import json
 import re
+import sys
 import time
 import uuid
 
@@ -13,15 +14,23 @@ from platypush.utils import get_event_class_by_type
 
 
 class Event(Message):
-    """ Event message class """
+    """Event message class"""
 
     # If this class property is set to false then the logging of these events
     # will be disabled. Logging is usually disabled for events with a very
     # high frequency that would otherwise pollute the logs e.g. camera capture
     # events
     # pylint: disable=redefined-builtin
-    def __init__(self, target=None, origin=None, id=None, timestamp=None,
-                 disable_logging=False, disable_web_clients_notification=False, **kwargs):
+    def __init__(
+        self,
+        target=None,
+        origin=None,
+        id=None,
+        timestamp=None,
+        disable_logging=False,
+        disable_web_clients_notification=False,
+        **kwargs
+    ):
         """
         Params:
             target  -- Target node [String]
@@ -34,22 +43,27 @@ class Event(Message):
         self.id = id if id else self._generate_id()
         self.target = target if target else Config.get('device_id')
         self.origin = origin if origin else Config.get('device_id')
-        self.type = '{}.{}'.format(self.__class__.__module__,
-                                   self.__class__.__name__)
+        self.type = '{}.{}'.format(self.__class__.__module__, self.__class__.__name__)
         self.args = kwargs
         self.disable_logging = disable_logging
         self.disable_web_clients_notification = disable_web_clients_notification
 
         for arg, value in self.args.items():
             if arg not in [
-                'id', 'args', 'origin', 'target', 'type', 'timestamp', 'disable_logging'
+                'id',
+                'args',
+                'origin',
+                'target',
+                'type',
+                'timestamp',
+                'disable_logging',
             ] and not arg.startswith('_'):
                 self.__setattr__(arg, value)
 
     @classmethod
     def build(cls, msg):
-        """ Builds an event message from a JSON UTF-8 string/bytearray, a
-        dictionary, or another Event """
+        """Builds an event message from a JSON UTF-8 string/bytearray, a
+        dictionary, or another Event"""
 
         msg = super().parse(msg)
         event_type = msg['args'].pop('type')
@@ -64,8 +78,10 @@ class Event(Message):
 
     @staticmethod
     def _generate_id():
-        """ Generate a unique event ID """
-        return hashlib.md5(str(uuid.uuid1()).encode()).hexdigest()  # lgtm [py/weak-sensitive-data-hashing]
+        """Generate a unique event ID"""
+        return hashlib.md5(
+            str(uuid.uuid1()).encode()
+        ).hexdigest()  # lgtm [py/weak-sensitive-data-hashing]
 
     def matches_condition(self, condition):
         """
@@ -120,7 +136,13 @@ class Event(Message):
         """
 
         result = EventMatchResult(is_match=False)
-        event_tokens = re.split(r'\s+', self.args[argname].strip().lower())
+        if self.args.get(argname) == condition_value:
+            # In case of an exact match, return immediately
+            result.is_match = True
+            result.score = sys.maxsize
+            return result
+
+        event_tokens = re.split(r'\s+', self.args.get(argname, '').strip().lower())
         condition_tokens = re.split(r'\s+', condition_value.strip().lower())
 
         while event_tokens and condition_tokens:
@@ -148,9 +170,11 @@ class Event(Message):
                     else:
                         result.parsed_args[argname] += ' ' + event_token
 
-                    if (len(condition_tokens) == 1 and len(event_tokens) == 1) \
-                            or (len(event_tokens) > 1 and len(condition_tokens) > 1
-                                and event_tokens[1] == condition_tokens[1]):
+                    if (len(condition_tokens) == 1 and len(event_tokens) == 1) or (
+                        len(event_tokens) > 1
+                        and len(condition_tokens) > 1
+                        and event_tokens[1] == condition_tokens[1]
+                    ):
                         # Stop appending tokens to this argument, as the next
                         # condition will be satisfied as well
                         condition_tokens.pop(0)
@@ -173,30 +197,30 @@ class Event(Message):
         args = copy.deepcopy(self.args)
         flatten(args)
 
-        return json.dumps({
-            'type': 'event',
-            'target': self.target,
-            'origin': self.origin if hasattr(self, 'origin') else None,
-            'id': self.id if hasattr(self, 'id') else None,
-            '_timestamp': self.timestamp,
-            'args': {
-                'type': self.type,
-                **args
+        return json.dumps(
+            {
+                'type': 'event',
+                'target': self.target,
+                'origin': self.origin if hasattr(self, 'origin') else None,
+                'id': self.id if hasattr(self, 'id') else None,
+                '_timestamp': self.timestamp,
+                'args': {'type': self.type, **args},
             },
-        }, cls=self.Encoder)
+            cls=self.Encoder,
+        )
 
 
-class EventMatchResult(object):
-    """ When comparing an event against an event condition, you want to
-        return this object. It contains the match status (True or False),
-        any parsed arguments, and a match_score that identifies how "strong"
-        the match is - in case of multiple event matches, the ones with the
-        highest score will win """
+class EventMatchResult:
+    """When comparing an event against an event condition, you want to
+    return this object. It contains the match status (True or False),
+    any parsed arguments, and a match_score that identifies how "strong"
+    the match is - in case of multiple event matches, the ones with the
+    highest score will win"""
 
     def __init__(self, is_match, score=0, parsed_args=None):
         self.is_match = is_match
         self.score = score
-        self.parsed_args = {} if not parsed_args else parsed_args
+        self.parsed_args = parsed_args or {}
 
 
 def flatten(args):
@@ -212,5 +236,6 @@ def flatten(args):
                 args[i] = arg.isoformat()
             elif isinstance(arg, (dict, list)):
                 flatten(args[i])
+
 
 # vim:sw=4:ts=4:et:
