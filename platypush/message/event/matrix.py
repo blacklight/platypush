@@ -67,6 +67,92 @@ class MatrixMessageEvent(MatrixEvent):
         super().__init__(*args, body=body, **kwargs)
 
 
+class MatrixMediaMessageEvent(MatrixMessageEvent):
+    """
+    Event triggered when a media message is received on a subscribed room.
+    """
+
+    def __init__(self, *args, url: str, **kwargs):
+        """
+        :param url: The URL of the media file.
+        """
+        super().__init__(*args, url=url, **kwargs)
+
+
+class MatrixStickerEvent(MatrixMediaMessageEvent):
+    """
+    Event triggered when a sticker is sent to a room.
+    """
+
+
+class MatrixReactionEvent(MatrixEvent):
+    """
+    Event triggered when a user submits a reaction to an event.
+    """
+
+    def __init__(self, *args, in_response_to_event_id: str, **kwargs):
+        """
+        :param in_response_to_event_id: The ID of the URL related to the reaction.
+        """
+        super().__init__(
+            *args, in_response_to_event_id=in_response_to_event_id, **kwargs
+        )
+
+
+class MatrixEncryptedMessageEvent(MatrixMessageEvent):
+    """
+    Event triggered when a message is received but the client doesn't
+    have the E2E keys to decrypt it, or encryption has not been enabled.
+    """
+
+
+class MatrixCallEvent(MatrixEvent):
+    """
+    Base class for Matrix call events.
+    """
+
+    def __init__(
+        self, *args, call_id: str, version: int, sdp: str | None = None, **kwargs
+    ):
+        """
+        :param call_id: The unique ID of the call.
+        :param version: An increasing integer representing the version of the call.
+        :param sdp: SDP text of the session description.
+        """
+        super().__init__(*args, call_id=call_id, version=version, sdp=sdp, **kwargs)
+
+
+class MatrixCallInviteEvent(MatrixCallEvent):
+    """
+    Event triggered when the user is invited to a call.
+    """
+
+    def __init__(self, *args, invite_validity: float | None = None, **kwargs):
+        """
+        :param invite_validity: For how long the invite will be valid, in seconds.
+        :param sdp: SDP text of the session description.
+        """
+        super().__init__(*args, invite_validity=invite_validity, **kwargs)
+
+
+class MatrixCallAnswerEvent(MatrixCallEvent):
+    """
+    Event triggered by the callee when they wish to answer the call.
+    """
+
+
+class MatrixCallHangupEvent(MatrixCallEvent):
+    """
+    Event triggered when a participant in the call exists.
+    """
+
+
+class MatrixRoomCreatedEvent(MatrixEvent):
+    """
+    Event triggered when a room is created.
+    """
+
+
 class MatrixRoomJoinEvent(MatrixEvent):
     """
     Event triggered when a user joins a room.
@@ -81,17 +167,11 @@ class MatrixRoomLeaveEvent(MatrixEvent):
 
 class MatrixRoomInviteEvent(MatrixEvent):
     """
-    Event triggered when a user is invited to a room.
+    Event triggered when the user is invited to a room.
     """
 
 
-class MatrixRoomInviteMeEvent(MatrixEvent):
-    """
-    Event triggered when the currently logged in user is invited to a room.
-    """
-
-
-class MatrixRoomTopicChangeEvent(MatrixEvent):
+class MatrixRoomTopicChangedEvent(MatrixEvent):
     """
     Event triggered when the topic/title of a room changes.
     """
