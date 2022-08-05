@@ -8,8 +8,6 @@ import re
 
 from aiohttp import ClientConnectionError, ServerDisconnectedError
 from dataclasses import dataclass
-from functools import wraps
-from typing import Callable
 
 from async_lru import alru_cache
 from nio import (
@@ -61,7 +59,6 @@ from platypush.message.event.matrix import (
     MatrixStickerEvent,
 )
 
-from platypush.message.response import Response
 from platypush.plugins import RunnablePlugin, action
 from platypush.schemas.matrix import (
     MatrixDeviceSchema,
@@ -88,18 +85,6 @@ class Credentials:
             'access_token': self.access_token,
             'device_id': self.device_id,
         }
-
-
-def _action_wrapper(f: Callable) -> Callable:
-    @wraps(f)
-    def _wrapper(*args, **kwargs):
-        try:
-            return f(*args, **kwargs)
-        except Exception as e:
-            logger.exception(e)
-            return Response(errors=[str(e)])
-
-    return _wrapper
 
 
 class MatrixClient(AsyncClient):
@@ -576,7 +561,6 @@ class MatrixPlugin(RunnablePlugin):
                 self._connect()
 
     @action
-    @_action_wrapper
     def send_message(
         self,
         room_id: str,
@@ -610,7 +594,6 @@ class MatrixPlugin(RunnablePlugin):
         )
 
     @action
-    @_action_wrapper
     def get_profile(self, user_id: str):
         """
         Retrieve the details about a user.
@@ -623,7 +606,6 @@ class MatrixPlugin(RunnablePlugin):
         return MatrixProfileSchema().dump(profile)
 
     @action
-    @_action_wrapper
     def get_room(self, room_id: str):
         """
         Retrieve the details about a room.
@@ -654,7 +636,6 @@ class MatrixPlugin(RunnablePlugin):
         return MatrixRoomSchema().dump(room)
 
     @action
-    @_action_wrapper
     def get_devices(self):
         """
         Get the list of devices associated to the current user.
@@ -666,7 +647,6 @@ class MatrixPlugin(RunnablePlugin):
         return MatrixDeviceSchema().dump(response.devices, many=True)
 
     @action
-    @_action_wrapper
     def get_joined_rooms(self):
         """
         Retrieve the rooms that the user has joined.
@@ -677,7 +657,6 @@ class MatrixPlugin(RunnablePlugin):
         return [self.get_room(room_id).output for room_id in response.rooms]
 
     @action
-    @_action_wrapper
     def upload_keys(self):
         """
         Synchronize the E2EE keys with the homeserver.
