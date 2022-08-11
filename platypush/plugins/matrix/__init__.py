@@ -94,7 +94,7 @@ class MatrixClient(AsyncClient):
         credentials_file: str,
         store_path: str | None = None,
         config: AsyncClientConfig | None = None,
-        autojoin_on_invite=False,
+        autojoin_on_invite=True,
         **kwargs,
     ):
         credentials_file = os.path.abspath(os.path.expanduser(credentials_file))
@@ -458,7 +458,7 @@ class MatrixPlugin(RunnablePlugin):
         access_token: str | None = None,
         device_name: str | None = 'platypush',
         device_id: str | None = None,
-        autojoin_on_invite: bool = False,
+        autojoin_on_invite: bool = True,
         **kwargs,
     ):
         """
@@ -480,7 +480,7 @@ class MatrixPlugin(RunnablePlugin):
         :param device_name: The name of this device/connection (default: ``platypush``).
         :param device_id: Use an existing ``device_id`` for the sessions.
         :param autojoin_on_invite: Whether the account should automatically join rooms
-            upon invite. If false (default value), then you may want to implement your own
+            upon invite. If false, then you may want to implement your own
             logic in an event hook when a :class:`platypush.message.event.matrix.MatrixRoomInviteEvent`
             event is received, and call the :meth:`.join` method if required.
         """
