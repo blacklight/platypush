@@ -135,9 +135,9 @@ class WebsocketPlugin(Plugin):
         time_start = time.time()
         time_end = time_start + timeout if timeout else 0
         url = 'ws{secure}://{host}:{port}{path}'.format(
-            secure='s' if ws.secure else '',
-            host=ws.host,
-            port=ws.port,
+            secure='s' if ws._secure else '',
+            host=ws.remote_address[0],
+            port=ws.remote_address[1],
             path=ws.path,
         )
 
