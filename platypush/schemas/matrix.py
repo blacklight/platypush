@@ -4,6 +4,16 @@ from marshmallow.schema import Schema
 from platypush.schemas import DateTime
 
 
+class MatrixEventIdSchema(Schema):
+    event_id = fields.String(
+        required=True,
+        metadata={
+            'description': 'Event ID',
+            'example': '$24KT_aQz6sSKaZH8oTCibRTl62qywDgQXMpz5epXsW5',
+        },
+    )
+
+
 class MatrixProfileSchema(Schema):
     user_id = fields.String(
         required=True,
