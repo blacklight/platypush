@@ -21,11 +21,11 @@ from nio import (
     InviteNameEvent,
     JoinedRoomsError,
     KeyVerificationStart,
-    KeyVerificationEvent,
     KeyVerificationAccept,
     KeyVerificationMac,
     KeyVerificationKey,
     KeyVerificationCancel,
+    LocalProtocolError,
     LoginResponse,
     MatrixRoom,
     MegolmEvent,
@@ -34,19 +34,19 @@ from nio import (
     RoomGetEventError,
     RoomGetStateError,
     RoomGetStateResponse,
-    RoomKeyRequest,
     RoomMemberEvent,
     RoomMessageText,
     RoomMessageMedia,
     RoomTopicEvent,
     RoomUpgradeEvent,
     StickerEvent,
-    ToDeviceEvent,
+    ToDeviceError,
     UnknownEncryptedEvent,
     UnknownEvent,
 )
 
 from nio.client.async_client import client_session
+from nio.exceptions import OlmUnverifiedDeviceError
 
 from platypush.config import Config
 from platypush.context import get_bus
@@ -169,10 +169,6 @@ class MatrixClient(AsyncClient):
                 self.user_id,
             )
 
-            if self.should_upload_keys:
-                self.logger.info('Uploading encryption keys')
-                await self.keys_upload()
-
             login_res = LoginResponse(
                 user_id=self.user_id,
                 device_id=self.device_id,
@@ -204,12 +200,16 @@ class MatrixClient(AsyncClient):
                 json.dump(credentials.to_dict(), f)
             os.chmod(self._credentials_file, 0o600)
 
+        if self.should_upload_keys:
+            self.logger.info('Uploading encryption keys')
+            await self.keys_upload()
+
         self.logger.info('Synchronizing rooms')
         self._first_sync_performed.clear()
         sync_token = self.loaded_sync_token
         self.loaded_sync_token = ''
-        self._add_callbacks()
         await self.sync(sync_filter={'room': {'timeline': {'limit': 1}}})
+        self._add_callbacks()
 
         self.loaded_sync_token = sync_token
         self._first_sync_performed.set()
@@ -231,14 +231,10 @@ class MatrixClient(AsyncClient):
         self.add_event_callback(self._on_unknown_encrypted_event, UnknownEncryptedEvent)  # type: ignore
         self.add_event_callback(self._on_unknown_encrypted_event, MegolmEvent)  # type: ignore
         self.add_to_device_callback(self._on_key_verification_start, KeyVerificationStart)  # type: ignore
-        self.add_to_device_callback(self._on_to_device_event, RoomKeyRequest)  # type: ignore
-        self.add_to_device_callback(self._on_to_device_event, ToDeviceEvent)
-        self.add_to_device_callback(self._on_to_device_event, KeyVerificationStart)
-        self.add_to_device_callback(self._on_to_device_event, KeyVerificationKey)
-        self.add_to_device_callback(self._on_to_device_event, KeyVerificationMac)
-        self.add_to_device_callback(self._on_to_device_event, KeyVerificationAccept)
-        self.add_to_device_callback(self._on_to_device_event, KeyVerificationCancel)
-        self.add_to_device_callback(self._on_to_device_event, KeyVerificationEvent)
+        self.add_to_device_callback(self._on_key_verification_cancel, KeyVerificationCancel)  # type: ignore
+        self.add_to_device_callback(self._on_key_verification_key, KeyVerificationKey)  # type: ignore
+        self.add_to_device_callback(self._on_key_verification_mac, KeyVerificationMac)  # type: ignore
+        self.add_to_device_callback(self._on_key_verification_accept, KeyVerificationAccept)  # type: ignore
 
         if self._autojoin_on_invite:
             self.add_event_callback(self._autojoin_room_callback, InviteNameEvent)  # type: ignore
@@ -390,12 +386,75 @@ class MatrixClient(AsyncClient):
                 )
             )
 
-    def _on_key_verification_start(self, event: KeyVerificationStart):
+    async def _on_key_verification_start(self, event: KeyVerificationStart):
         assert self.olm, 'OLM state machine not initialized'
         self.olm.handle_key_verification(event)
+        self.logger.info(f'Received a key verification request from {event.sender}')
 
-    def _on_to_device_event(self, event: ToDeviceEvent):
-        pass  # TODO
+        if 'emoji' not in event.short_authentication_string:
+            self.logger.warning(
+                'Only emoji verification is supported, but the verifying device '
+                'provided the following authentication methods: %r',
+                event.short_authentication_string,
+            )
+            return
+
+        rs = await self.accept_key_verification(event.transaction_id)
+        assert not isinstance(
+            rs, ToDeviceError
+        ), f'accept_key_verification failed: {rs}'
+
+        sas = self.key_verifications[event.transaction_id]
+        rs = await self.to_device(sas.share_key())
+        assert not isinstance(rs, ToDeviceError), f'Shared key exchange failed: {rs}'
+
+    async def _on_key_verification_accept(self, event: KeyVerificationAccept):
+        self.logger.info('Key verification from device %s accepted', event.sender)
+
+    async def _on_key_verification_cancel(self, event: KeyVerificationCancel):
+        self.logger.info(
+            'The device %s cancelled a key verification request. ' 'Reason: %s',
+            event.sender,
+            event.reason,
+        )
+
+    async def _on_key_verification_key(self, event: KeyVerificationKey):
+        sas = self.key_verifications[event.transaction_id]
+        self.logger.info(
+            'Received emoji verification from device %s: %s',
+            event.sender,
+            sas.get_emoji(),
+        )
+
+        # TODO Support user interaction instead of blindly confirming?
+        # await asyncio.sleep(5)
+        print('***** SENDING AUTH STRING')
+        rs = await self.confirm_short_auth_string(event.transaction_id)
+        assert not isinstance(
+            rs, ToDeviceError
+        ), f'confirm_short_auth_string failed: {rs}'
+
+    async def _on_key_verification_mac(self, event: KeyVerificationMac):
+        self.logger.info('Received MAC verification request from %s', event.sender)
+        sas = self.key_verifications[event.transaction_id]
+
+        try:
+            mac = sas.get_mac()
+        except LocalProtocolError as e:
+            self.logger.warning(
+                'Verification from %s cancelled or unexpected protocol error. '
+                'Reason: %s',
+                e,
+                event.sender,
+            )
+            return
+
+        rs = await self.to_device(mac)
+        assert not isinstance(
+            rs, ToDeviceError
+        ), f'Sending of the verification MAC to {event.sender} failed: {rs}'
+
+        self.logger.info('This device has been successfully verified!')
 
     async def _on_room_upgrade(self, room: MatrixRoom, event: RoomUpgradeEvent):
         self.logger.info(
@@ -570,7 +629,10 @@ class MatrixPlugin(AsyncRunnablePlugin):
 
     def _loop_execute(self, coro: Coroutine):
         assert self._loop, 'The loop is not running'
-        ret = asyncio.run_coroutine_threadsafe(coro, self._loop).result()
+        try:
+            ret = asyncio.run_coroutine_threadsafe(coro, self._loop).result()
+        except OlmUnverifiedDeviceError as e:
+            raise AssertionError(str(e))
 
         if hasattr(ret, 'transport_response'):
             response = ret.transport_response
