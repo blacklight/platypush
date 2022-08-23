@@ -386,9 +386,16 @@ class MatrixClient(AsyncClient):
                 )
             )
 
+    def _get_sas(self, event):
+        sas = self.key_verifications.get(event.transaction_id)
+        if not sas:
+            self.logger.debug(
+                'Received a key verification event with no associated transaction ID'
+            )
+
+        return sas
+
     async def _on_key_verification_start(self, event: KeyVerificationStart):
-        assert self.olm, 'OLM state machine not initialized'
-        self.olm.handle_key_verification(event)
         self.logger.info(f'Received a key verification request from {event.sender}')
 
         if 'emoji' not in event.short_authentication_string:
@@ -399,12 +406,15 @@ class MatrixClient(AsyncClient):
             )
             return
 
-        rs = await self.accept_key_verification(event.transaction_id)
+        sas = self._get_sas(event)
+        if not sas:
+            return
+
+        rs = await self.accept_key_verification(sas.transaction_id)
         assert not isinstance(
             rs, ToDeviceError
         ), f'accept_key_verification failed: {rs}'
 
-        sas = self.key_verifications[event.transaction_id]
         rs = await self.to_device(sas.share_key())
         assert not isinstance(rs, ToDeviceError), f'Shared key exchange failed: {rs}'
 
@@ -419,24 +429,26 @@ class MatrixClient(AsyncClient):
         )
 
     async def _on_key_verification_key(self, event: KeyVerificationKey):
-        sas = self.key_verifications[event.transaction_id]
+        sas = self._get_sas(event)
+        if not sas:
+            return
+
         self.logger.info(
             'Received emoji verification from device %s: %s',
             event.sender,
             sas.get_emoji(),
         )
 
-        # TODO Support user interaction instead of blindly confirming?
-        # await asyncio.sleep(5)
-        print('***** SENDING AUTH STRING')
-        rs = await self.confirm_short_auth_string(event.transaction_id)
+        rs = await self.confirm_short_auth_string(sas.transaction_id)
         assert not isinstance(
             rs, ToDeviceError
         ), f'confirm_short_auth_string failed: {rs}'
 
     async def _on_key_verification_mac(self, event: KeyVerificationMac):
         self.logger.info('Received MAC verification request from %s', event.sender)
-        sas = self.key_verifications[event.transaction_id]
+        sas = self._get_sas(event)
+        if not sas:
+            return
 
         try:
             mac = sas.get_mac()
@@ -516,6 +528,30 @@ class MatrixPlugin(AsyncRunnablePlugin):
 
     Note that ``libolm`` and the ``[e2e]`` module are only required if you want E2E encryption
     support.
+
+    Unless you configure the extension to use the token of an existing trusted
+    device, it is recommended that you mark the virtual device used by this
+    integration as trusted through a device that is already trusted. You may
+    encounter errors when sending or receiving messages on encrypted rooms if
+    your user has some untrusted devices. The easiest way to mark the device as
+    trusted is the following:
+
+        - Configure the integration with your credentials and start Platypush.
+        - Use the same credentials to log in through a Matrix app or web client
+          (Element, Hydrogen, etc.) that has already been trusted.
+        - You should see a notification that prompts you to review the
+          untrusted devices logged in to your account. Dismiss it for now -
+          that verification path is currently broken on the underlying library
+          used by this integration.
+        - Instead, select a room that you have already joined, select the list
+          of users in the room and select yourself.
+        - In the _Security_ section, you should see that at least one device is
+          marked as unverified, and you can start the verification process by
+          clicking on it.
+        - Select "_Verify through emoji_". A list of emojis should be prompted.
+          Optionally, verify the logs of the application to check that you see
+          the same list. Then confirm that you see the same emojis, and your
+          device will be automatically marked as trusted.
 
     Triggers:
 
