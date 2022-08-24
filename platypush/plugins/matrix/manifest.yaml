@@ -2,6 +2,8 @@ manifest:
   events:
     platypush.message.event.matrix.MatrixMessageEvent: when a message is received.
     platypush.message.event.matrix.MatrixMediaMessageEvent: when a media message is received.
+    platypush.message.event.matrix.MatrixSyncEvent: when the startup
+      synchronization has been completed and the plugin is ready to use.
     platypush.message.event.matrix.MatrixRoomCreatedEvent: when a room is created.
     platypush.message.event.matrix.MatrixRoomJoinEvent: when a user joins a room.
     platypush.message.event.matrix.MatrixRoomLeaveEvent: when a user leaves a room.

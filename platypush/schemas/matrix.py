@@ -97,6 +97,46 @@ class MatrixDeviceSchema(Schema):
         },
     )
 
+    user_id = fields.String(
+        required=True,
+        metadata={
+            'description': 'User ID associated to the device',
+            'example': '@myuser:matrix.example.org',
+        },
+    )
+
+    display_name = fields.String(
+        metadata={
+            'description': 'Display name of the device',
+            'example': 'Element Android',
+        },
+    )
+
+    blacklisted = fields.Boolean()
+    deleted = fields.Boolean(default=False)
+    ignored = fields.Boolean()
+    verified = fields.Boolean()
+
+    keys = fields.Dict(
+        metadata={
+            'description': 'Encryption keys supported by the device',
+            'example': {
+                'curve25519': 'BtlB0vaQmtYFsvOYkmxyzw9qP5yGjuAyRh4gXh3q',
+                'ed25519': 'atohIK2FeVlYoY8xxpZ1bhDbveD+HA2DswNFqUxP',
+            },
+        },
+    )
+
+
+class MatrixMyDeviceSchema(Schema):
+    device_id = fields.String(
+        required=True,
+        attribute='id',
+        metadata={
+            'description': 'ABCDEFG',
+        },
+    )
+
     display_name = fields.String(
         metadata={
             'description': 'Device display name',

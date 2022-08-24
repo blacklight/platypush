@@ -1,11 +1,10 @@
-from abc import ABC
 from datetime import datetime
 from typing import Dict, Any
 
 from platypush.message.event import Event
 
 
-class MatrixEvent(Event, ABC):
+class MatrixEvent(Event):
     """
     Base matrix event.
     """
@@ -53,6 +52,13 @@ class MatrixEvent(Event, ABC):
             evt_args['server_timestamp'] = server_timestamp
 
         super().__init__(*args, **evt_args, **kwargs)
+
+
+class MatrixSyncEvent(MatrixEvent):
+    """
+    Event triggered when the startup synchronization has been completed and the
+    plugin is ready to use.
+    """
 
 
 class MatrixMessageEvent(MatrixEvent):
