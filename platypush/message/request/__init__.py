@@ -293,9 +293,8 @@ class Request(Message):
                             )
                         )
             except (AssertionError, TimeoutError) as e:
-                plugin.logger.exception(e)
                 logger.warning(
-                    '{} from action [{}]: {}'.format(type(e), action, str(e))
+                    '%s from action [%s]: %s', e.__class__.__name__, action, str(e)
                 )
                 response = Response(output=None, errors=[str(e)])
             except Exception as e:
