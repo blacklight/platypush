@@ -34,7 +34,7 @@ class MatrixProfileSchema(Schema):
     avatar_url = fields.URL(
         metadata={
             'description': 'User avatar URL',
-            'example': 'mxc://matrix.platypush.tech/AbCdEfG0123456789',
+            'example': 'mxc://matrix.example.org/AbCdEfG0123456789',
         }
     )
 
@@ -73,7 +73,7 @@ class MatrixRoomSchema(Schema):
         attribute='room_avatar_url',
         metadata={
             'description': 'Room avatar URL',
-            'example': 'mxc://matrix.platypush.tech/AbCdEfG0123456789',
+            'example': 'mxc://matrix.example.org/AbCdEfG0123456789',
         },
     )
 
@@ -155,5 +155,35 @@ class MatrixMyDeviceSchema(Schema):
         metadata={
             'description': 'The last time that the device was reported online',
             'example': '2022-07-23T17:20:01.254223',
+        }
+    )
+
+
+class MatrixDownloadedFileSchema(Schema):
+    url = fields.String(
+        metadata={
+            'description': 'Matrix URL of the original resource',
+            'example': 'mxc://matrix.example.org/YhQycHvFOvtiDDbEeWWtEhXx',
+        },
+    )
+
+    path = fields.String(
+        metadata={
+            'description': 'Local path where the file has been saved',
+            'example': '/home/user/Downloads/image.png',
+        }
+    )
+
+    content_type = fields.String(
+        metadata={
+            'description': 'Content type of the downloaded file',
+            'example': 'image/png',
+        }
+    )
+
+    size = fields.Int(
+        metadata={
+            'description': 'Length in bytes of the output file',
+            'example': 1024,
         }
     )

@@ -66,28 +66,58 @@ class MatrixMessageEvent(MatrixEvent):
     Event triggered when a message is received on a subscribed room.
     """
 
-    def __init__(self, *args, body: str, **kwargs):
+    def __init__(
+        self,
+        *args,
+        body: str = '',
+        url: str | None = None,
+        thumbnail_url: str | None = None,
+        mimetype: str | None = None,
+        formatted_body: str | None = None,
+        format: str | None = None,
+        **kwargs
+    ):
         """
         :param body: The body of the message.
+        :param url: The URL of the media file, if the message includes media.
+        :param thumbnail_url: The URL of the thumbnail, if the message includes media.
+        :param mimetype: The MIME type of the media file, if the message includes media.
+        :param formatted_body: The formatted body, if ``format`` is specified.
+        :param format: The format of the message (e.g. ``html`` or ``markdown``).
         """
-        super().__init__(*args, body=body, **kwargs)
+        super().__init__(
+            *args,
+            body=body,
+            url=url,
+            thumbnail_url=thumbnail_url,
+            mimetype=mimetype,
+            formatted_body=formatted_body,
+            format=format,
+            **kwargs
+        )
 
 
-class MatrixMediaMessageEvent(MatrixMessageEvent):
+class MatrixMessageImageEvent(MatrixEvent):
     """
-    Event triggered when a media message is received on a subscribed room.
+    Event triggered when a message containing an image is received.
     """
 
-    def __init__(self, *args, url: str, **kwargs):
-        """
-        :param url: The URL of the media file.
-        """
-        super().__init__(*args, url=url, **kwargs)
 
-
-class MatrixStickerEvent(MatrixMediaMessageEvent):
+class MatrixMessageFileEvent(MatrixEvent):
     """
-    Event triggered when a sticker is sent to a room.
+    Event triggered when a message containing a generic file is received.
+    """
+
+
+class MatrixMessageAudioEvent(MatrixEvent):
+    """
+    Event triggered when a message containing an audio file is received.
+    """
+
+
+class MatrixMessageVideoEvent(MatrixEvent):
+    """
+    Event triggered when a message containing a video file is received.
     """
 
 
