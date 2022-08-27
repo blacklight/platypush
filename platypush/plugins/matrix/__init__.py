@@ -21,7 +21,7 @@ from nio import (
     CallInviteEvent,
     ErrorResponse,
     Event,
-    InviteNameEvent,
+    InviteEvent,
     KeyVerificationStart,
     KeyVerificationAccept,
     KeyVerificationMac,
@@ -359,7 +359,7 @@ class MatrixClient(AsyncClient):
 
     def _add_callbacks(self):
         self.add_event_callback(self._event_catch_all, Event)
-        self.add_event_callback(self._on_invite, InviteNameEvent)  # type: ignore
+        self.add_event_callback(self._on_invite, InviteEvent)  # type: ignore
         self.add_event_callback(self._on_message, RoomMessageText)  # type: ignore
         self.add_event_callback(self._on_message, RoomMessageMedia)  # type: ignore
         self.add_event_callback(self._on_message, RoomEncryptedMedia)  # type: ignore
@@ -379,7 +379,7 @@ class MatrixClient(AsyncClient):
         self.add_to_device_callback(self._on_key_verification_accept, KeyVerificationAccept)  # type: ignore
 
         if self._autojoin_on_invite:
-            self.add_event_callback(self._autojoin_room_callback, InviteNameEvent)  # type: ignore
+            self.add_event_callback(self._autojoin_room_callback, InviteEvent)  # type: ignore
 
     def _sync_store(self):
         self.logger.info('Synchronizing keystore')
@@ -1280,6 +1280,34 @@ class MatrixPlugin(AsyncRunnablePlugin):
         )
 
         return rs[0].content_uri
+
+    @action
+    def invite_to_room(self, room_id: str, user_id: str):
+        """
+        Invite a user to a room.
+
+        :param room_id: Room ID.
+        :param user_id: User ID.
+        """
+        self._loop_execute(self.client.room_invite(room_id, user_id))
+
+    @action
+    def join_room(self, room_id: str):
+        """
+        Join a room.
+
+        :param room_id: Room ID.
+        """
+        self._loop_execute(self.client.join(room_id))
+
+    @action
+    def leave_room(self, room_id: str):
+        """
+        Leave a joined room.
+
+        :param room_id: Room ID.
+        """
+        self._loop_execute(self.client.room_leave(room_id))
 
 
 # vim:sw=4:ts=4:et:
