@@ -8,7 +8,7 @@ import re
 import threading
 
 from dataclasses import dataclass
-from typing import Collection, Coroutine, Dict
+from typing import Collection, Coroutine, Dict, Sequence
 from urllib.parse import urlparse
 
 from async_lru import alru_cache
@@ -58,6 +58,7 @@ from nio import (
 
 import aiofiles
 import aiofiles.os
+from nio.api import RoomVisibility
 
 from nio.client.async_client import client_session
 from nio.crypto import decrypt_attachment
@@ -93,6 +94,7 @@ from platypush.schemas.matrix import (
     MatrixEventIdSchema,
     MatrixMyDeviceSchema,
     MatrixProfileSchema,
+    MatrixRoomIdSchema,
     MatrixRoomSchema,
 )
 
@@ -1112,7 +1114,7 @@ class MatrixPlugin(AsyncRunnablePlugin):
             if evt.get('type') == 'm.room.create':
                 room_args['own_user_id'] = evt.get('content', {}).get('creator')
             elif evt.get('type') == 'm.room.encryption':
-                room_args['encrypted'] = False
+                room_args['encrypted'] = True
             elif evt.get('type') == 'm.room.name':
                 room_params['name'] = evt.get('content', {}).get('name')
             elif evt.get('type') == 'm.room.topic':
@@ -1146,6 +1148,8 @@ class MatrixPlugin(AsyncRunnablePlugin):
     def get_joined_rooms(self):
         """
         Retrieve the rooms that the user has joined.
+
+        :return: .. schema:: matrix.MatrixRoomSchema(many=True)
         """
         response = self._loop_execute(self.client.joined_rooms())
         return [self.get_room(room_id).output for room_id in response.rooms]  # type: ignore
@@ -1280,6 +1284,62 @@ class MatrixPlugin(AsyncRunnablePlugin):
         )
 
         return rs[0].content_uri
+
+    @action
+    def create_room(
+        self,
+        name: str | None = None,
+        alias: str | None = None,
+        topic: str | None = None,
+        is_public: bool = False,
+        is_direct: bool = False,
+        federate: bool = True,
+        encrypted: bool = False,
+        invite_users: Sequence[str] = (),
+    ):
+        """
+        Create a new room on the server.
+
+        :param name: Room name.
+        :param alias: Custom alias for the canonical name. For example, if set
+            to ``foo``, the alias for this room will be
+            ``#foo:matrix.example.org``.
+        :param topic: Room topic.
+        :param is_public: Set to True if you want the room to be public and
+            discoverable (default: False).
+        :param is_direct: Set to True if this should be considered a direct
+            room with only one user (default: False).
+        :param federate: Whether you want to allow users from other servers to
+            join the room (default: True).
+        :param encrypted: Whether the room should be encrypted (default: False).
+        :param invite_users: A list of user IDs to invite to the room.
+        :return: .. schema:: matrix.MatrixRoomIdSchema
+        """
+        rs = self._loop_execute(
+            self.client.room_create(
+                name=name,
+                alias=alias,
+                topic=topic,
+                is_direct=is_direct,
+                federate=federate,
+                invite=invite_users,
+                visibility=(
+                    RoomVisibility.public if is_public else RoomVisibility.private
+                ),
+                initial_state=[
+                    {
+                        'type': 'm.room.encryption',
+                        'content': {
+                            'algorithm': 'm.megolm.v1.aes-sha2',
+                        },
+                    }
+                ]
+                if encrypted
+                else (),
+            )
+        )
+
+        return MatrixRoomIdSchema().dump(rs)
 
     @action
     def invite_to_room(self, room_id: str, user_id: str):

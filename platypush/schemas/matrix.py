@@ -14,6 +14,16 @@ class MatrixEventIdSchema(Schema):
     )
 
 
+class MatrixRoomIdSchema(Schema):
+    room_id = fields.String(
+        required=True,
+        metadata={
+            'description': 'Room ID',
+            'example': '!aBcDeFgHiJkMnO:matrix.example.org',
+        },
+    )
+
+
 class MatrixProfileSchema(Schema):
     user_id = fields.String(
         required=True,
