@@ -56,6 +56,9 @@ from nio import (
     UnknownEvent,
 )
 
+import aiofiles
+import aiofiles.os
+
 from nio.client.async_client import client_session
 from nio.crypto import decrypt_attachment
 from nio.crypto.device import OlmDevice
@@ -92,6 +95,8 @@ from platypush.schemas.matrix import (
     MatrixProfileSchema,
     MatrixRoomSchema,
 )
+
+from platypush.utils import get_mime_type
 
 logger = logging.getLogger(__name__)
 
@@ -730,6 +735,27 @@ class MatrixClient(AsyncClient):
                 'Received an unknown event on room %s: %r', room.room_id, event
             )
 
+    async def upload_file(
+        self,
+        file: str,
+        name: str | None = None,
+        content_type: str | None = None,
+        encrypt: bool = False,
+    ):
+        file = os.path.expanduser(file)
+        file_stat = await aiofiles.os.stat(file)
+
+        async with aiofiles.open(file, 'rb') as f:
+            return await super().upload(
+                f,  # type: ignore
+                content_type=(
+                    content_type or get_mime_type(file) or 'application/octet-stream'
+                ),
+                filename=name or os.path.basename(file),
+                encrypt=encrypt,
+                filesize=file_stat.st_size,
+            )
+
 
 class MatrixPlugin(AsyncRunnablePlugin):
     """
@@ -955,12 +981,65 @@ class MatrixPlugin(AsyncRunnablePlugin):
 
         return ret
 
+    def _process_local_attachment(self, attachment: str, room_id: str) -> dict:
+        attachment = os.path.expanduser(attachment)
+        assert os.path.isfile(attachment), f'{attachment} is not a valid file'
+
+        filename = os.path.basename(attachment)
+        mime_type = get_mime_type(attachment) or 'application/octet-stream'
+        message_type = mime_type.split('/')[0]
+        if message_type not in {'audio', 'video', 'image'}:
+            message_type = 'text'
+
+        encrypted = self.get_room(room_id).output.get('encrypted', False)  # type: ignore
+        url = self.upload(
+            attachment, name=filename, content_type=mime_type, encrypt=encrypted
+        ).output  # type: ignore
+
+        return {
+            'url': url,
+            'msgtype': 'm.' + message_type,
+            'body': filename,
+            'info': {
+                'size': os.stat(attachment).st_size,
+                'mimetype': mime_type,
+            },
+        }
+
+    def _process_remote_attachment(self, attachment: str) -> dict:
+        parsed_url = urlparse(attachment)
+        server = parsed_url.netloc.strip('/')
+        media_id = parsed_url.path.strip('/')
+
+        response = self._loop_execute(self.client.download(server, media_id))
+
+        content_type = response.content_type
+        message_type = content_type.split('/')[0]
+        if message_type not in {'audio', 'video', 'image'}:
+            message_type = 'text'
+
+        return {
+            'url': attachment,
+            'msgtype': 'm.' + message_type,
+            'body': response.filename,
+            'info': {
+                'size': len(response.body),
+                'mimetype': content_type,
+            },
+        }
+
+    def _process_attachment(self, attachment: str, room_id: str):
+        if attachment.startswith('mxc://'):
+            return self._process_remote_attachment(attachment)
+        return self._process_local_attachment(attachment, room_id=room_id)
+
     @action
     def send_message(
         self,
         room_id: str,
         message_type: str = 'text',
         body: str | None = None,
+        attachment: str | None = None,
         tx_id: str | None = None,
         ignore_unverified_devices: bool = False,
     ):
@@ -969,6 +1048,12 @@ class MatrixPlugin(AsyncRunnablePlugin):
 
         :param room_id: Room ID.
         :param body: Message body.
+        :param attachment: Path to a local file to send as an attachment, or
+            URL of an existing Matrix media ID in the format
+            ``mxc://<server>/<media_id>``. If the attachment is a local file,
+            the file will be automatically uploaded, ``message_type`` will be
+            automatically inferred from the file and the ``body`` will be
+            replaced by the filename.
         :param message_type: Message type. Supported: `text`, `audio`, `video`,
             `image`. Default: `text`.
         :param tx_id: Unique transaction ID to associate to this message.
@@ -978,16 +1063,21 @@ class MatrixPlugin(AsyncRunnablePlugin):
             delivery may fail (default: False).
         :return: .. schema:: matrix.MatrixEventIdSchema
         """
+        content = {
+            'msgtype': 'm.' + message_type,
+            'body': body,
+        }
+
+        if attachment:
+            content.update(self._process_attachment(attachment, room_id=room_id))
+
         ret = self._loop_execute(
             self.client.room_send(
                 message_type='m.room.message',
                 room_id=room_id,
                 tx_id=tx_id,
                 ignore_unverified_devices=ignore_unverified_devices,
-                content={
-                    'msgtype': 'm.' + message_type,
-                    'body': body,
-                },
+                content=content,
             )
         )
 
@@ -1126,7 +1216,14 @@ class MatrixPlugin(AsyncRunnablePlugin):
         Note that URLs that point to encrypted resources will be automatically
         decrypted only if they were received on a room joined by this account.
 
-        :param url: Matrix URL, in the format
+        :param url: Matrix URL, in the format ``mxc://<server>/<media_id>``.
+        :param download_path: Override the default ``download_path`` (output
+            directory for the downloaded file).
+        :param filename: Name of the output file (default: inferred from the
+            remote resource).
+        :param allow_remote: Indicates to the server that it should not attempt
+            to fetch the media if it is deemed remote. This is to prevent
+            routing loops where the server contacts itself.
         :return: .. schema:: matrix.MatrixDownloadedFileSchema
         """
         parsed_url = urlparse(url)
@@ -1158,6 +1255,31 @@ class MatrixPlugin(AsyncRunnablePlugin):
                 'content_type': response.content_type,
             }
         )
+
+    @action
+    def upload(
+        self,
+        file: str,
+        name: str | None = None,
+        content_type: str | None = None,
+        encrypt: bool = False,
+    ) -> str:
+        """
+        Upload a file to the server.
+
+        :param file: Path to the file to upload.
+        :param name: Filename to be used for the remote file (default: same as
+            the local file).
+        :param content_type: Specify a content type for the file (default:
+            inferred from the file's extension and content).
+        :param encrypt: Encrypt the file (default: False).
+        :return: The Matrix URL of the uploaded resource.
+        """
+        rs = self._loop_execute(
+            self.client.upload_file(file, name, content_type, encrypt)
+        )
+
+        return rs[0].content_uri
 
 
 # vim:sw=4:ts=4:et:

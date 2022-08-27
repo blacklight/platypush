@@ -292,6 +292,8 @@ autodoc_mock_imports = [
     'irc.events',
     'defusedxml',
     'nio',
+    'aiofiles',
+    'aiofiles.os',
 ]
 
 sys.path.insert(0, os.path.abspath('../..'))
