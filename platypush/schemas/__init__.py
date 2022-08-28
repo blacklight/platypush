@@ -6,7 +6,7 @@ from dateutil.tz import tzutc
 from marshmallow import fields
 
 
-class StrippedString(fields.Function):   # lgtm [py/missing-call-to-init]
+class StrippedString(fields.Function):  # lgtm [py/missing-call-to-init]
     def __init__(self, *args, **kwargs):
         kwargs['serialize'] = self._strip
         kwargs['deserialize'] = self._strip
@@ -21,7 +21,17 @@ class StrippedString(fields.Function):   # lgtm [py/missing-call-to-init]
         return value.strip()
 
 
-class DateTime(fields.Function):   # lgtm [py/missing-call-to-init]
+class Function(fields.Function):  # lgtm [py/missing-call-to-init]
+    def _get_attr(self, obj, attr: str, _recursive=True):
+        if self.attribute and _recursive:
+            return self._get_attr(obj, self.attribute, False)
+        if hasattr(obj, attr):
+            return getattr(obj, attr)
+        elif hasattr(obj, 'get'):
+            return obj.get(attr)
+
+
+class DateTime(Function):  # lgtm [py/missing-call-to-init]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = {
@@ -30,7 +40,7 @@ class DateTime(fields.Function):   # lgtm [py/missing-call-to-init]
         }
 
     def _serialize(self, value, attr, obj, **kwargs) -> Optional[str]:
-        value = normalize_datetime(obj.get(attr))
+        value = normalize_datetime(self._get_attr(obj, attr))
         if value:
             return value.isoformat()
 
@@ -38,7 +48,7 @@ class DateTime(fields.Function):   # lgtm [py/missing-call-to-init]
         return normalize_datetime(value)
 
 
-class Date(fields.Function):   # lgtm [py/missing-call-to-init]
+class Date(Function):  # lgtm [py/missing-call-to-init]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = {
@@ -47,7 +57,7 @@ class Date(fields.Function):   # lgtm [py/missing-call-to-init]
         }
 
     def _serialize(self, value, attr, obj, **kwargs) -> Optional[str]:
-        value = normalize_datetime(obj.get(attr))
+        value = normalize_datetime(self._get_attr(obj, attr))
         if value:
             return date(value.year, value.month, value.day).isoformat()
 
@@ -56,10 +66,12 @@ class Date(fields.Function):   # lgtm [py/missing-call-to-init]
         return date.fromtimestamp(dt.timestamp())
 
 
-def normalize_datetime(dt: Union[str, date, datetime]) -> Optional[Union[date, datetime]]:
+def normalize_datetime(
+    dt: Optional[Union[str, date, datetime]]
+) -> Optional[Union[date, datetime]]:
     if not dt:
         return
-    if isinstance(dt, datetime) or isinstance(dt, date):
+    if isinstance(dt, (datetime, date)):
         return dt
 
     try:

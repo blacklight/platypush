@@ -28,7 +28,7 @@ backend = pkg_files('platypush/backend')
 
 setup(
     name="platypush",
-    version="0.23.3",
+    version="0.23.4",
     author="Fabio Manganiello",
     author_email="info@fabiomanganiello.com",
     description="Platypush service",
@@ -268,5 +268,7 @@ setup(
         'ngrok': ['pyngrok'],
         # Support for IRC integration
         'irc': ['irc'],
+        # Support for the Matrix integration
+        'matrix': ['matrix-nio'],
     },
 )

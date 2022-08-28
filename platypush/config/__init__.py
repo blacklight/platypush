@@ -213,11 +213,10 @@ class Config:
                 config['scripts_dir'] = os.path.abspath(
                     os.path.expanduser(file_config[section])
                 )
-            elif (
-                'disabled' not in file_config[section]
-                or file_config[section]['disabled'] is False
-            ):
-                config[section] = file_config[section]
+            else:
+                section_config = file_config.get(section, {}) or {}
+                if not section_config.get('disabled'):
+                    config[section] = section_config
 
         return config
 

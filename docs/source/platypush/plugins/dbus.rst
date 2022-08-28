@@ -2,4 +2,4 @@
 ==========================
 
 .. automodule:: platypush.plugins.dbus
-    :members:
+    :exclude-members: DBusService, BusType
