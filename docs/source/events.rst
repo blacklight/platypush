@@ -41,6 +41,7 @@ Events
     platypush/events/linode.rst
     platypush/events/log.http.rst
     platypush/events/mail.rst
+    platypush/events/matrix.rst
     platypush/events/media.rst
     platypush/events/midi.rst
     platypush/events/mqtt.rst
@@ -72,6 +73,7 @@ Events
     platypush/events/weather.rst
     platypush/events/web.rst
     platypush/events/web.widget.rst
+    platypush/events/websocket.rst
     platypush/events/wiimote.rst
     platypush/events/zeroborg.rst
     platypush/events/zeroconf.rst
