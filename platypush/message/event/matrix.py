@@ -217,3 +217,34 @@ class MatrixRoomTopicChangedEvent(MatrixEvent):
         :param topic: New room topic.
         """
         super().__init__(*args, topic=topic, **kwargs)
+
+
+class MatrixRoomTypingStartEvent(MatrixEvent):
+    """
+    Event triggered when a user in a room starts typing.
+    """
+
+
+class MatrixRoomTypingStopEvent(MatrixEvent):
+    """
+    Event triggered when a user in a room stops typing.
+    """
+
+
+class MatrixRoomSeenReceiptEvent(MatrixEvent):
+    """
+    Event triggered when the last message seen by a user in a room is updated.
+    """
+
+
+class MatrixUserPresenceEvent(MatrixEvent):
+    """
+    Event triggered when a user comes online or goes offline.
+    """
+
+    def __init__(self, *args, is_active: bool, last_active: datetime | None, **kwargs):
+        """
+        :param is_active: True if the user is currently online.
+        :param topic: When the user was last active.
+        """
+        super().__init__(*args, is_active=is_active, last_active=last_active, **kwargs)

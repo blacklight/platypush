@@ -66,6 +66,8 @@ from nio.client.async_client import client_session
 from nio.client.base_client import logged_in
 from nio.crypto import decrypt_attachment
 from nio.crypto.device import OlmDevice
+from nio.events.ephemeral import ReceiptEvent, TypingNoticeEvent
+from nio.events.presence import PresenceEvent
 from nio.exceptions import OlmUnverifiedDeviceError
 from nio.responses import DownloadResponse, RoomMessagesResponse
 
@@ -86,8 +88,12 @@ from platypush.message.event.matrix import (
     MatrixRoomInviteEvent,
     MatrixRoomJoinEvent,
     MatrixRoomLeaveEvent,
+    MatrixRoomSeenReceiptEvent,
     MatrixRoomTopicChangedEvent,
+    MatrixRoomTypingStartEvent,
+    MatrixRoomTypingStopEvent,
     MatrixSyncEvent,
+    MatrixUserPresenceEvent,
 )
 
 from platypush.plugins import AsyncRunnablePlugin, action
@@ -165,6 +171,7 @@ class MatrixClient(AsyncClient):
         self._autotrust_users_whitelist = autotrust_users_whitelist or set()
         self._first_sync_performed = asyncio.Event()
         self._last_batches_by_room = {}
+        self._typing_users_by_room = {}
 
         self._encrypted_attachments_keystore_path = os.path.join(
             store_path, 'attachment_keys.json'
@@ -417,6 +424,9 @@ class MatrixClient(AsyncClient):
         self.add_to_device_callback(self._on_key_verification_key, KeyVerificationKey)  # type: ignore
         self.add_to_device_callback(self._on_key_verification_mac, KeyVerificationMac)  # type: ignore
         self.add_to_device_callback(self._on_key_verification_accept, KeyVerificationAccept)  # type: ignore
+        self.add_ephemeral_callback(self._on_typing, TypingNoticeEvent)  # type: ignore
+        self.add_ephemeral_callback(self._on_receipt, ReceiptEvent)  # type: ignore
+        self.add_presence_callback(self._on_presence, PresenceEvent)  # type: ignore
 
         if self._autojoin_on_invite:
             self.add_event_callback(self._autojoin_room_callback, InviteEvent)  # type: ignore
@@ -498,9 +508,9 @@ class MatrixClient(AsyncClient):
         return response
 
     async def _event_base_args(
-        self, room: MatrixRoom, event: Event | None = None
+        self, room: MatrixRoom | None, event: Event | None = None
     ) -> dict:
-        sender_id = event.sender if event else None
+        sender_id = getattr(event, 'sender', None)
         sender = (
             await self.get_profile(sender_id) if sender_id else None  # type: ignore
         )
@@ -510,9 +520,15 @@ class MatrixClient(AsyncClient):
             'sender_id': sender_id,
             'sender_display_name': sender.displayname if sender else None,
             'sender_avatar_url': sender.avatar_url if sender else None,
-            'room_id': room.room_id,
-            'room_name': room.name,
-            'room_topic': room.topic,
+            **(
+                {
+                    'room_id': room.room_id,
+                    'room_name': room.name,
+                    'room_topic': room.topic,
+                }
+                if room
+                else {}
+            ),
             'server_timestamp': (
                 datetime.datetime.fromtimestamp(event.server_timestamp / 1000)
                 if event and getattr(event, 'server_timestamp', None)
@@ -738,16 +754,72 @@ class MatrixClient(AsyncClient):
         await self.room_leave(room.room_id)
         await self.join(event.replacement_room)
 
+    async def _on_typing(self, room: MatrixRoom, event: TypingNoticeEvent):
+        users = set(event.users)
+        typing_users = self._typing_users_by_room.get(room.room_id, set())
+        start_typing_users = users.difference(typing_users)
+        stop_typing_users = typing_users.difference(users)
+
+        for user in start_typing_users:
+            event.sender = user  # type: ignore
+            get_bus().post(
+                MatrixRoomTypingStartEvent(
+                    **(await self._event_base_args(room, event)),  # type: ignore
+                    sender=user,
+                )
+            )
+
+        for user in stop_typing_users:
+            event.sender = user  # type: ignore
+            get_bus().post(
+                MatrixRoomTypingStopEvent(
+                    **(await self._event_base_args(room, event)),  # type: ignore
+                )
+            )
+
+        self._typing_users_by_room[room.room_id] = users
+
+    async def _on_receipt(self, room: MatrixRoom, event: ReceiptEvent):
+        if self._first_sync_performed.is_set():
+            for receipt in event.receipts:
+                event.sender = receipt.user_id  # type: ignore
+                get_bus().post(
+                    MatrixRoomSeenReceiptEvent(
+                        **(await self._event_base_args(room, event)),  # type: ignore
+                    )
+                )
+
+    async def _on_presence(self, event: PresenceEvent):
+        if self._first_sync_performed.is_set():
+            last_active = (
+                (
+                    datetime.datetime.now()
+                    - datetime.timedelta(seconds=event.last_active_ago / 1000)
+                )
+                if event.last_active_ago
+                else None
+            )
+
+            event.sender = event.user_id  # type: ignore
+            get_bus().post(
+                MatrixUserPresenceEvent(
+                    **(await self._event_base_args(None, event)),  # type: ignore
+                    is_active=event.currently_active or False,
+                    last_active=last_active,
+                )
+            )
+
     async def _on_unknown_encrypted_event(
         self, room: MatrixRoom, event: UnknownEncryptedEvent | MegolmEvent
     ):
-        body = getattr(event, 'ciphertext', '')
-        get_bus().post(
-            MatrixEncryptedMessageEvent(
-                body=body,
-                **(await self._event_base_args(room, event)),
+        if self._first_sync_performed.is_set():
+            body = getattr(event, 'ciphertext', '')
+            get_bus().post(
+                MatrixEncryptedMessageEvent(
+                    body=body,
+                    **(await self._event_base_args(room, event)),
+                )
             )
-        )
 
     async def _on_unknown_event(self, room: MatrixRoom, event: UnknownEvent):
         evt = None
@@ -875,6 +947,14 @@ class MatrixPlugin(AsyncRunnablePlugin):
         * :class:`platypush.message.event.matrix.MatrixEncryptedMessageEvent`:
             when a message is received but the client doesn't have the E2E keys
             to decrypt it, or encryption has not been enabled.
+        * :class:`platypush.message.event.matrix.MatrixRoomTypingStartEvent`:
+            when a user in a room starts typing.
+        * :class:`platypush.message.event.matrix.MatrixRoomTypingStopEvent`:
+            when a user in a room stops typing.
+        * :class:`platypush.message.event.matrix.MatrixRoomSeenReceiptEvent`:
+            when the last message seen by a user in a room is updated.
+        * :class:`platypush.message.event.matrix.MatrixUserPresenceEvent`:
+            when a user comes online or goes offline.
 
     """
 
@@ -1001,6 +1081,8 @@ class MatrixPlugin(AsyncRunnablePlugin):
                 pass
             except Exception as e:
                 self.logger.exception(e)
+                self.logger.info('Waiting 10 seconds before reconnecting')
+                await asyncio.sleep(10)
             finally:
                 try:
                     await self.client.close()
@@ -1185,7 +1267,7 @@ class MatrixPlugin(AsyncRunnablePlugin):
             first returned message will be the oldest and messages will be
             returned in ascending order.
         :param limit: Maximum number of messages to be returned (default: 10).
-        # :return: .. schema:: matrix.MatrixMessagesResponseSchema
+        :return: .. schema:: matrix.MatrixMessagesResponseSchema
         """
         response = self._loop_execute(
             self.client.room_messages(
@@ -1569,6 +1651,24 @@ class MatrixPlugin(AsyncRunnablePlugin):
         :param room_id: Room ID.
         """
         self._loop_execute(self.client.room_forget(room_id))
+
+    @action
+    def set_display_name(self, display_name: str):
+        """
+        Set/change the display name for the current user.
+
+        :param display_name: New display name.
+        """
+        self._loop_execute(self.client.set_displayname(display_name))
+
+    @action
+    def set_avatar(self, url: str):
+        """
+        Set/change the avatar URL for the current user.
+
+        :param url: New avatar URL. It must be a valid ``mxc://`` link.
+        """
+        self._loop_execute(self.client.set_avatar(url))
 
 
 # vim:sw=4:ts=4:et:
