@@ -22,7 +22,9 @@ class StrippedString(fields.Function):  # lgtm [py/missing-call-to-init]
 
 
 class Function(fields.Function):  # lgtm [py/missing-call-to-init]
-    def _get_attr(self, obj, attr: str):
+    def _get_attr(self, obj, attr: str, _recursive=True):
+        if self.attribute and _recursive:
+            return self._get_attr(obj, self.attribute, False)
         if hasattr(obj, attr):
             return getattr(obj, attr)
         elif hasattr(obj, 'get'):
