@@ -71,7 +71,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -195,7 +195,8 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 todo_include_todos = True
 
 autodoc_default_options = {
-    'inherited-members': True,
+    'members': True,
+    'show-inheritance': True,
 }
 
 autodoc_mock_imports = [
@@ -294,6 +295,7 @@ autodoc_mock_imports = [
     'nio',
     'aiofiles',
     'aiofiles.os',
+    'async_lru',
 ]
 
 sys.path.insert(0, os.path.abspath('../..'))

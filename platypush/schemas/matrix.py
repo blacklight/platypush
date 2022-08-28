@@ -340,7 +340,7 @@ class MatrixMessageSchema(Schema):
 
 class MatrixMessagesResponseSchema(Schema):
     messages = fields.Nested(
-        MatrixMessageSchema(),
+        MatrixMessageSchema,
         many=True,
         required=True,
         attribute='chunk',

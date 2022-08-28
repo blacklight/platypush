@@ -2,4 +2,4 @@
 ==========
 
 .. automodule:: platypush.plugins.matrix
-    :members:
+    :members: MatrixPlugin
