@@ -268,5 +268,7 @@ setup(
         'ngrok': ['pyngrok'],
         # Support for IRC integration
         'irc': ['irc'],
+        # Support for the Matrix integration
+        'matrix': ['matrix-nio'],
     },
 )

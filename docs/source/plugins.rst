@@ -75,6 +75,7 @@ Plugins
     platypush/plugins/mail.smtp.rst
     platypush/plugins/mailgun.rst
     platypush/plugins/mastodon.rst
+    platypush/plugins/matrix.rst
     platypush/plugins/media.chromecast.rst
     platypush/plugins/media.gstreamer.rst
     platypush/plugins/media.jellyfin.rst

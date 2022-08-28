@@ -1,0 +1,50 @@
+manifest:
+  events:
+    platypush.message.event.matrix.MatrixMessageEvent: when a message is
+      received.
+    platypush.message.event.matrix.MatrixMessageImageEvent: when a message
+      containing an image is received.
+    platypush.message.event.matrix.MatrixMessageAudioEvent: when a message
+      containing an audio file is received.
+    platypush.message.event.matrix.MatrixMessageVideoEvent: when a message
+      containing a video file is received.
+    platypush.message.event.matrix.MatrixMessageFileEvent: when a message
+      containing a generic file is received.
+    platypush.message.event.matrix.MatrixSyncEvent: when the startup
+      synchronization has been completed and the plugin is ready to use.
+    platypush.message.event.matrix.MatrixRoomCreatedEvent: when a room is
+      created.
+    platypush.message.event.matrix.MatrixRoomJoinEvent: when a user joins a
+      room.
+    platypush.message.event.matrix.MatrixRoomLeaveEvent: when a user leaves a
+      room.
+    platypush.message.event.matrix.MatrixRoomInviteEvent: when the user is
+      invited to a room.
+    platypush.message.event.matrix.MatrixRoomTopicChangedEvent: when the
+      topic/title of a room changes.
+    platypush.message.event.matrix.MatrixCallInviteEvent: when the user is
+      invited to a call.
+    platypush.message.event.matrix.MatrixCallAnswerEvent: when a called user
+      wishes to pick the call.
+    platypush.message.event.matrix.MatrixCallHangupEvent: when a called user
+      exits the call.
+    platypush.message.event.matrix.MatrixEncryptedMessageEvent: when a message
+      is received but the client doesn't have the E2E keys to decrypt it, or
+      encryption has not been enabled.
+    platypush.message.event.matrix.MatrixRoomTypingStartEvent: when a user in a
+      room starts typing.
+    platypush.message.event.matrix.MatrixRoomTypingStopEvent: when a user in a
+      room stops typing.
+    platypush.message.event.matrix.MatrixRoomSeenReceiptEvent: when the last
+      message seen by a user in a room is updated.
+    platypush.message.event.matrix.MatrixUserPresenceEvent: when a user comes
+      online or goes offline.
+  apt:
+    - libolm-devel
+  pacman:
+    - libolm
+  pip:
+    - matrix-nio[e2e]
+    - async_lru
+  package: platypush.plugins.matrix
+  type: plugin
