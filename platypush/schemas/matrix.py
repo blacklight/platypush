@@ -4,6 +4,14 @@ from marshmallow.schema import Schema
 from platypush.schemas import DateTime
 
 
+class MillisecondsTimestamp(DateTime):
+    def _get_attr(self, *args, **kwargs):
+        value = super()._get_attr(*args, **kwargs)
+        if isinstance(value, int):
+            value = float(value / 1000)
+        return value
+
+
 class MatrixEventIdSchema(Schema):
     event_id = fields.String(
         required=True,
@@ -47,6 +55,12 @@ class MatrixProfileSchema(Schema):
             'example': 'mxc://matrix.example.org/AbCdEfG0123456789',
         }
     )
+
+
+class MatrixMemberSchema(MatrixProfileSchema):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['display_name'].attribute = 'display_name'
 
 
 class MatrixRoomSchema(Schema):
@@ -196,4 +210,176 @@ class MatrixDownloadedFileSchema(Schema):
             'description': 'Length in bytes of the output file',
             'example': 1024,
         }
+    )
+
+
+class MatrixMessageSchema(Schema):
+    event_id = fields.String(
+        required=True,
+        metadata={
+            'description': 'Event ID associated to this message',
+            'example': '$2eOQ5ueafANj91GnPCRkRUOOjM7dI5kFDOlfMNCD2ly',
+        },
+    )
+
+    room_id = fields.String(
+        required=True,
+        metadata={
+            'description': 'The ID of the room containing the message',
+            'example': '!aBcDeFgHiJkMnO:matrix.example.org',
+        },
+    )
+
+    user_id = fields.String(
+        required=True,
+        attribute='sender',
+        metadata={
+            'description': 'ID of the user who sent the message',
+            'example': '@myuser:matrix.example.org',
+        },
+    )
+
+    body = fields.String(
+        required=True,
+        metadata={
+            'description': 'Message body',
+            'example': 'Hello world!',
+        },
+    )
+
+    format = fields.String(
+        metadata={
+            'description': 'Message format',
+            'example': 'markdown',
+        },
+    )
+
+    formatted_body = fields.String(
+        metadata={
+            'description': 'Formatted body',
+            'example': '**Hello world!**',
+        },
+    )
+
+    url = fields.String(
+        metadata={
+            'description': 'mxc:// URL if this message contains an attachment',
+            'example': 'mxc://matrix.example.org/oarGdlpvcwppARPjzNlmlXkD',
+        },
+    )
+
+    content_type = fields.String(
+        attribute='mimetype',
+        metadata={
+            'description': 'If the message contains an attachment, this field '
+            'will contain its MIME type',
+            'example': 'image/jpeg',
+        },
+    )
+
+    transaction_id = fields.String(
+        metadata={
+            'description': 'Set if this message a unique transaction_id associated',
+            'example': 'mQ8hZR6Dx8I8YDMwONYmBkf7lTgJSMV/ZPqosDNM',
+        },
+    )
+
+    decrypted = fields.Bool(
+        metadata={
+            'description': 'True if the message was encrypted and has been '
+            'successfully decrypted',
+        },
+    )
+
+    verified = fields.Bool(
+        metadata={
+            'description': 'True if this is an encrypted message coming from a '
+            'verified source'
+        },
+    )
+
+    hashes = fields.Dict(
+        metadata={
+            'description': 'If the message has been decrypted, this field '
+            'contains a mapping of its hashes',
+            'example': {'sha256': 'yoQLQwcURq6/bJp1xQ/uhn9Z2xeA27KhMhPd/mfT8tR'},
+        },
+    )
+
+    iv = fields.String(
+        metadata={
+            'description': 'If the message has been decrypted, this field '
+            'contains the encryption initial value',
+            'example': 'NqJMMdijlLvAAAAAAAAAAA',
+        },
+    )
+
+    key = fields.Dict(
+        metadata={
+            'description': 'If the message has been decrypted, this field '
+            'contains the encryption/decryption key',
+            'example': {
+                'alg': 'A256CTR',
+                'ext': True,
+                'k': 'u6jjAyNvJoBHE55P5ZfvX49m3oSt9s_L4PSQdprRSJI',
+                'key_ops': ['encrypt', 'decrypt'],
+                'kty': 'oct',
+            },
+        },
+    )
+
+    timestamp = MillisecondsTimestamp(
+        required=True,
+        attribute='server_timestamp',
+        metadata={
+            'description': 'When the event was registered on the server',
+            'example': '2022-07-23T17:20:01.254223',
+        },
+    )
+
+
+class MatrixMessagesResponseSchema(Schema):
+    messages = fields.Nested(
+        MatrixMessageSchema(),
+        many=True,
+        required=True,
+        attribute='chunk',
+    )
+
+    start = fields.String(
+        required=True,
+        nullable=True,
+        metadata={
+            'description': 'Pointer to the first message. It can be used as a '
+            '``start``/``end`` for another ``get_messages`` query.',
+            'example': 's10226_143893_619_3648_5951_5_555_7501_0',
+        },
+    )
+
+    end = fields.String(
+        required=True,
+        nullable=True,
+        metadata={
+            'description': 'Pointer to the last message. It can be used as a '
+            '``start``/``end`` for another ``get_messages`` query.',
+            'example': 't2-10202_143892_626_3663_5949_6_558_7501_0',
+        },
+    )
+
+    start_time = MillisecondsTimestamp(
+        required=True,
+        nullable=True,
+        metadata={
+            'description': 'The oldest timestamp of the returned messages',
+            'example': '2022-07-23T16:20:01.254223',
+        },
+    )
+
+    end_time = MillisecondsTimestamp(
+        required=True,
+        nullable=True,
+        metadata={
+            'description': 'The newest timestamp of the returned messages',
+            'example': '2022-07-23T18:20:01.254223',
+        },
     )
