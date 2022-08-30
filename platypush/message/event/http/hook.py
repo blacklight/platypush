@@ -64,7 +64,9 @@ class WebhookEvent(Event):
         get_redis().rpush(self.args['response_queue'], output)
 
     def wait_response(self, timeout=None):
-        return get_redis().blpop(self.args['response_queue'], timeout=timeout)[1]
+        rs = get_redis().blpop(self.args['response_queue'], timeout=timeout)
+        if rs and len(rs) > 1:
+            return rs[1]
 
 
 # vim:sw=4:ts=4:et:

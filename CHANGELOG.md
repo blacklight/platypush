@@ -1,7 +1,15 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
+Given the high speed of development in the first phase, changes are being
+reported only starting from v0.20.2.
+
+## [Unreleased]
+
+### Added
+
+- Added support for web hooks returning their hook method responses back to the
+  HTTP client.
 
 ## [0.23.4] - 2022-08-28
 
