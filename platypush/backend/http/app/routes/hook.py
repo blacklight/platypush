@@ -6,6 +6,7 @@ from flask.wrappers import Response
 from platypush.backend.http.app import template_folder
 from platypush.backend.http.app.utils import logger, send_message
 from platypush.config import Config
+from platypush.event.hook import EventCondition
 from platypush.message.event.http.hook import WebhookEvent
 
 
@@ -15,6 +16,16 @@ hook = Blueprint('hook', __name__, template_folder=template_folder)
 __routes__ = [
     hook,
 ]
+
+
+def matches_condition(event: WebhookEvent, hook):
+    if isinstance(hook, dict):
+        condition = hook.get('condition', {})
+    else:
+        condition = hook.condition
+
+    condition = EventCondition.build(condition)
+    return event.matches_condition(condition)
 
 
 @hook.route(
@@ -43,10 +54,7 @@ def hook_route(hook_name):
     matching_hooks = [
         hook
         for hook in Config.get_event_hooks().values()
-        if hook.condition.type == WebhookEvent
-        and hook.condition.args.get('hook') == hook_name
-        and request.method.lower()
-        == hook.condition.args.get('method', request.method).lower()
+        if matches_condition(event, hook)
     ]
 
     try:
