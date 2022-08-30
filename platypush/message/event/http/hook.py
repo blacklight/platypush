@@ -1,11 +1,26 @@
+import json
+import uuid
+
 from platypush.message.event import Event
+from platypush.utils import get_redis
+
 
 class WebhookEvent(Event):
     """
     Event triggered when a custom webhook is called.
     """
 
-    def __init__(self, *argv, hook, method, data=None, args=None, headers=None, **kwargs):
+    def __init__(
+        self,
+        *argv,
+        hook,
+        method,
+        data=None,
+        args=None,
+        headers=None,
+        response=None,
+        **kwargs,
+    ):
         """
         :param hook: Name of the invoked web hook, from http://host:port/hook/<hook>
         :type hook: str
@@ -21,10 +36,35 @@ class WebhookEvent(Event):
 
         :param headers: Request headers
         :type args: dict
-        """
 
-        super().__init__(hook=hook, method=method, data=data, args=args or {},
-                         headers=headers or {}, *argv, **kwargs)
+        :param response: Response returned by the hook.
+        :type args: dict | list | str
+        """
+        # This queue is used to synchronize with the hook and wait for its completion
+        kwargs['response_queue'] = kwargs.get(
+            'response_queue', f'platypush/webhook/{str(uuid.uuid1())}'
+        )
+
+        super().__init__(
+            *argv,
+            hook=hook,
+            method=method,
+            data=data,
+            args=args or {},
+            headers=headers or {},
+            response=response,
+            **kwargs,
+        )
+
+    def send_response(self, response):
+        output = response.output
+        if isinstance(output, (dict, list)):
+            output = json.dumps(output)
+
+        get_redis().rpush(self.args['response_queue'], output)
+
+    def wait_response(self, timeout=None):
+        return get_redis().blpop(self.args['response_queue'], timeout=timeout)[1]
 
 
 # vim:sw=4:ts=4:et:

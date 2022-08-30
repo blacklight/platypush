@@ -1,9 +1,11 @@
 import json
 
-from flask import Blueprint, abort, request, Response
+from flask import Blueprint, abort, request
+from flask.wrappers import Response
 
 from platypush.backend.http.app import template_folder
 from platypush.backend.http.app.utils import logger, send_message
+from platypush.config import Config
 from platypush.message.event.http.hook import WebhookEvent
 
 
@@ -15,9 +17,11 @@ __routes__ = [
 ]
 
 
-@hook.route('/hook/<hook_name>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'])
-def _hook(hook_name):
-    """ Endpoint for custom webhooks """
+@hook.route(
+    '/hook/<hook_name>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
+)
+def hook_route(hook_name):
+    """Endpoint for custom webhooks"""
 
     event_args = {
         'hook': hook_name,
@@ -28,20 +32,36 @@ def _hook(hook_name):
     }
 
     if event_args['data']:
-        # noinspection PyBroadException
         try:
             event_args['data'] = json.loads(event_args['data'])
         except Exception as e:
-            logger().warning('Not a valid JSON string: {}: {}'.format(event_args['data'], str(e)))
+            logger().warning(
+                'Not a valid JSON string: %s: %s', event_args['data'], str(e)
+            )
 
     event = WebhookEvent(**event_args)
+    matching_hooks = [
+        hook
+        for hook in Config.get_event_hooks().values()
+        if hook.condition.type == WebhookEvent
+        and hook.condition.args.get('hook') == hook_name
+        and request.method.lower()
+        == hook.condition.args.get('method', request.method).lower()
+    ]
 
     try:
         send_message(event)
-        return Response(json.dumps({'status': 'ok', **event_args}), mimetype='application/json')
+
+        # If there are matching hooks, wait for their completion before returning
+        if matching_hooks:
+            return event.wait_response(timeout=60)
+
+        return Response(
+            json.dumps({'status': 'ok', **event_args}), mimetype='application/json'
+        )
     except Exception as e:
         logger().exception(e)
-        logger().error('Error while dispatching webhook event {}: {}'.format(event, str(e)))
+        logger().error('Error while dispatching webhook event %s: %s', event, str(e))
         abort(500, str(e))
 
 
