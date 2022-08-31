@@ -1,7 +1,6 @@
 import json
 
-from flask import Blueprint, abort, request
-from flask.wrappers import Response
+from flask import Blueprint, abort, request, make_response
 
 from platypush.backend.http.app import template_folder
 from platypush.backend.http.app.utils import logger, send_message
@@ -61,14 +60,31 @@ def hook_route(hook_name):
 
     try:
         send_message(event)
+        rs = make_response(json.dumps({'status': 'ok', **event_args}))
+        headers = {}
+        status_code = 200
 
         # If there are matching hooks, wait for their completion before returning
         if matching_hooks:
-            return event.wait_response(timeout=60)
+            rs = event.wait_response(timeout=60)
+            try:
+                rs = json.loads(rs.decode())  # type: ignore
+            except Exception:
+                pass
 
-        return Response(
-            json.dumps({'status': 'ok', **event_args}), mimetype='application/json'
-        )
+            if isinstance(rs, dict) and '___data___' in rs:
+                # data + http_code + custom_headers return format
+                headers = rs.get('___headers___', {})
+                status_code = rs.get('___code___', status_code)
+                rs = rs['___data___']
+
+            rs = make_response(rs)
+        else:
+            headers = {'Content-Type': 'application/json'}
+
+        rs.status_code = status_code
+        rs.headers.update(headers)
+        return rs
     except Exception as e:
         logger().exception(e)
         logger().error('Error while dispatching webhook event %s: %s', event, str(e))

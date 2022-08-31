@@ -58,6 +58,23 @@ class WebhookEvent(Event):
 
     def send_response(self, response):
         output = response.output
+        if isinstance(output, tuple):
+            # A 3-sized tuple where the second element is an int and the third
+            # is a dict represents an HTTP response in the format `(data,
+            # http_code headers)`.
+            if (
+                len(output) == 3
+                and isinstance(output[1], int)
+                and isinstance(output[2], dict)
+            ):
+                output = {
+                    '___data___': output[0],
+                    '___code___': output[1],
+                    '___headers___': output[2],
+                }
+            else:
+                # Normalize tuples to lists before serialization
+                output = list(output)
         if isinstance(output, (dict, list)):
             output = json.dumps(output)
 
