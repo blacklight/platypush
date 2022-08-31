@@ -20,11 +20,13 @@ __routes__ = [
 
 def matches_condition(event: WebhookEvent, hook):
     if isinstance(hook, dict):
-        condition = hook.get('condition', {})
+        if_ = hook['if'].copy()
+        if_['type'] = '.'.join([event.__module__, event.__class__.__qualname__])
+
+        condition = EventCondition.build(if_)
     else:
         condition = hook.condition
 
-    condition = EventCondition.build(condition)
     return event.matches_condition(condition)
 
 
