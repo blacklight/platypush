@@ -86,7 +86,7 @@ setup(
         # Support for MQTT backends
         'mqtt': ['paho-mqtt'],
         # Support for RSS feeds parser
-        'rss': ['feedparser'],
+        'rss': ['feedparser', 'defusedxml'],
         # Support for PDF generation
         'pdf': ['weasyprint'],
         # Support for Philips Hue plugin
