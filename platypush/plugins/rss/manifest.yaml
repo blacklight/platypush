@@ -4,5 +4,6 @@ manifest:
   install:
     pip:
       - feedparser
+      - defusedxml
   package: platypush.plugins.rss
   type: plugin
