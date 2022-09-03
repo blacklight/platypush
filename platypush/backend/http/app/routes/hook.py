@@ -60,7 +60,7 @@ def hook_route(hook_name):
 
     try:
         send_message(event)
-        rs = make_response(json.dumps({'status': 'ok', **event_args}))
+        rs = default_rs = make_response(json.dumps({'status': 'ok', **event_args}))
         headers = {}
         status_code = 200
 
@@ -77,6 +77,10 @@ def hook_route(hook_name):
                 headers = rs.get('___headers___', {})
                 status_code = rs.get('___code___', status_code)
                 rs = rs['___data___']
+
+            if rs is None:
+                rs = default_rs
+                headers = {'Content-Type': 'application/json'}
 
             rs = make_response(rs)
         else:
