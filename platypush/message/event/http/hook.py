@@ -78,6 +78,8 @@ class WebhookEvent(Event):
         if isinstance(output, (dict, list)):
             output = json.dumps(output)
 
+        if output is None:
+            output = ''
         get_redis().rpush(self.args['response_queue'], output)
 
     def wait_response(self, timeout=None):
