@@ -292,6 +292,11 @@ class DbPlugin(Plugin):
                 }
         """
 
+        if on_duplicate_update:
+            assert (
+                key_columns
+            ), 'on_duplicate_update requires key_columns to be specified'
+
         if key_columns is None:
             key_columns = []
 
