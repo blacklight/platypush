@@ -1,0 +1,7 @@
+manifest:
+  events: {}
+  install:
+    pip:
+      - tidalapi
+  package: platypush.plugins.music.tidal
+  type: plugin
