@@ -22,21 +22,21 @@ class MusicTidalPlugin(MusicPlugin):
 
     _base_url = 'https://api.tidalhifi.com/v1/'
 
-    def __init__(self, client_id: Optional[str] = None, client_secret: Optional[str] = None, **kwargs):
+    def __init__(self, quality: str = 'high', **kwargs):
+        """
+        :param quality: Default audio quality. Default: ``high``.
+            Supported: [``loseless``, ``master``, ``high``, ``low``].
+        """
+        from tidalapi import Quality
+
         super().__init__(self, **kwargs)
-        self._players_by_id = {}
-        self._players_by_name = {}
-        # Playlist ID -> snapshot ID and tracks cache
-        self._playlist_snapshots = {}
-
-    def _get_device(self, device: str):
-        dev = self._players_by_id.get(device, self._players_by_name.get(device))
-        if not dev:
-            self.get_devices()
-
-        dev = self._players_by_id.get(device, self._players_by_name.get(device))
-        assert dev, f'No such device: {device}'
-        return dev
+        try:
+            self._quality = getattr(Quality, quality.lower())
+        except AttributeError:
+            raise AssertionError(
+                f'Invalid quality: {quality}. Supported values: '
+                f'{[q.name for q in Quality]}'
+            )
 
     @staticmethod
     def _parse_datetime(dt: Optional[Union[str, datetime, int, float]]) -> Optional[datetime]:
