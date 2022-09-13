@@ -1,6 +1,9 @@
+import os
+
 from datetime import datetime
 from typing import List, Optional, Union, Iterable
 
+from platypush.config import Config
 from platypush.message.response import Response
 from platypush.plugins import action
 from platypush.plugins.media import PlayerState
@@ -21,6 +24,10 @@ class MusicTidalPlugin(MusicPlugin):
     """
 
     _base_url = 'https://api.tidalhifi.com/v1/'
+    _oauth_file = os.path.join(
+        str(Config.get('workdir')),
+        'tidal', 'credentials.json'
+    )
 
     def __init__(self, quality: str = 'high', **kwargs):
         """
