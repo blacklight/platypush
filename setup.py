@@ -64,7 +64,7 @@ setup(
         'zeroconf>=0.27.0',
         'tz',
         'python-dateutil',
-        'cryptography',
+        # 'cryptography',
         'pyjwt',
         'marshmallow',
         'frozendict',

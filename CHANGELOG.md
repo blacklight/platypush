@@ -11,6 +11,8 @@ reported only starting from v0.20.2.
 - Added support for web hooks returning their hook method responses back to the
   HTTP client.
 
+- Added [Tidal integration](https://git.platypush.tech/platypush/platypush/pulls/223)
+
 ## [0.23.4] - 2022-08-28
 
 ### Added
