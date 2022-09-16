@@ -5,12 +5,20 @@ import requests
 
 from datetime import datetime
 from urllib.parse import urljoin
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Union
 
 from platypush.config import Config
 from platypush.context import Variable, get_bus
 from platypush.message.event.music.tidal import TidalPlaylistUpdatedEvent
 from platypush.plugins import RunnablePlugin, action
+from platypush.plugins.music.tidal.workers import get_items
+from platypush.schemas.tidal import (
+    TidalAlbumSchema,
+    TidalPlaylistSchema,
+    TidalArtistSchema,
+    TidalSearchResultsSchema,
+    TidalTrackSchema,
+)
 
 
 class MusicTidalPlugin(RunnablePlugin):
@@ -113,8 +121,17 @@ class MusicTidalPlugin(RunnablePlugin):
             # Create a new session if we couldn't load an existing one
             self._oauth_create_new_session()
 
-        assert self._session.check_login(), 'Could not connect to TIDAL'
+        assert (
+            self._session.user and self._session.check_login()
+        ), 'Could not connect to TIDAL'
+
         return self._session
+
+    @property
+    def user(self):
+        user = self.session.user
+        assert user, 'Not logged in'
+        return user
 
     def _api_request(self, url, *args, method='get', **kwargs):
         method = getattr(requests, method.lower())
@@ -149,15 +166,18 @@ class MusicTidalPlugin(RunnablePlugin):
 
         :param name: Playlist name.
         :param description: Optional playlist description.
+        :return: .. schema:: tidal.TidalPlaylistSchema
         """
-        return self._api_request(
-            url=f'users/{self.session.user.id}/playlists',
+        ret = self._api_request(
+            url=f'users/{self.user.id}/playlists',
             method='post',
             data={
                 'title': name,
                 'description': description,
             },
         )
+
+        return TidalPlaylistSchema().dump(ret.json())
 
     @action
     def delete_playlist(self, playlist_id: str):
@@ -167,6 +187,124 @@ class MusicTidalPlugin(RunnablePlugin):
         :param playlist_id: ID of the playlist to delete.
         """
         self._api_request(url=f'playlists/{playlist_id}', method='delete')
+
+    @action
+    def edit_playlist(self, playlist_id: str, title=None, description=None):
+        """
+        Edit a playlist's metadata.
+
+        :param name: New name.
+        :param description: New description.
+        """
+        pl = self.user.playlist(playlist_id)
+        pl.edit(title=title, description=description)
+
+    @action
+    def get_playlists(self):
+        """
+        Get the user's playlists (track lists are excluded).
+
+        :return: .. schema:: tidal.TidalPlaylistSchema(many=True)
+        """
+        ret = self.user.playlists() + self.user.favorites.playlists()
+
+        return TidalPlaylistSchema().dump(ret, many=True)
+
+    @action
+    def get_playlist(self, playlist_id: str):
+        """
+        Get the details of a playlist (including tracks).
+
+        :param playlist_id: Playlist ID.
+        :return: .. schema:: tidal.TidalPlaylistSchema
+        """
+        pl = self.session.playlist(playlist_id)
+        pl._tracks = get_items(pl.tracks)
+        return TidalPlaylistSchema().dump(pl)
+
+    @action
+    def get_artist(self, artist_id: Union[str, int]):
+        """
+        Get the details of an artist.
+
+        :param artist_id: Artist ID.
+        :return: .. schema:: tidal.TidalArtistSchema
+        """
+        ret = self.session.artist(artist_id)
+        ret.albums = get_items(ret.get_albums)
+        return TidalArtistSchema().dump(ret)
+
+    @action
+    def get_album(self, album_id: Union[str, int]):
+        """
+        Get the details of an album.
+
+        :param artist_id: Album ID.
+        :return: .. schema:: tidal.TidalAlbumSchema
+        """
+        ret = self.session.album(album_id)
+        return TidalAlbumSchema().dump(ret)
+
+    @action
+    def get_track(self, track_id: Union[str, int]):
+        """
+        Get the details of an track.
+
+        :param artist_id: Track ID.
+        :return: .. schema:: tidal.TidalTrackSchema
+        """
+        ret = self.session.album(track_id)
+        return TidalTrackSchema().dump(ret)
+
+    @action
+    def search(
+        self,
+        query: str,
+        limit: int = 50,
+        offset: int = 0,
+        type: Optional[str] = None,
+    ):
+        """
+        Perform a search.
+
+        :param query: Query string.
+        :param limit: Maximum results that should be returned (default: 50).
+        :param offset: Search offset (default: 0).
+        :param type: Type of results that should be returned. Default: None
+            (return all the results that match the query). Supported:
+            ``artist``, ``album``, ``track`` and ``playlist``.
+        :return: .. schema:: tidal.TidalSearchResultsSchema
+        """
+        from tidalapi.artist import Artist
+        from tidalapi.album import Album
+        from tidalapi.media import Track
+        from tidalapi.playlist import Playlist
+
+        models = None
+        if type is not None:
+            if type == 'artist':
+                models = [Artist]
+            elif type == 'album':
+                models = [Album]
+            elif type == 'track':
+                models = [Track]
+            elif type == 'playlist':
+                models = [Playlist]
+            else:
+                raise AssertionError(f'Unsupported search type: {type}')
+
+        ret = self.session.search(query, models=models, limit=limit, offset=offset)
+
+        return TidalSearchResultsSchema().dump(ret)
+
+    @action
+    def get_download_url(self, track_id: str) -> str:
+        """
+        Get the direct download URL of a track.
+
+        :param artist_id: Track ID.
+        """
+        return self.session.track(track_id).get_url()
 
     @action
     def add_to_playlist(self, playlist_id: str, track_ids: Iterable[str]):
@@ -188,6 +326,78 @@ class MusicTidalPlugin(RunnablePlugin):
                 'trackIds': ','.join(map(str, track_ids)),
             },
         )
+
+    @action
+    def add_track(self, track_id: Union[str, int]):
+        """
+        Add a track to the user's collection.
+
+        :param track_id: Track ID.
+        """
+        self.user.favorites.add_track(track_id)
+
+    @action
+    def add_album(self, album_id: Union[str, int]):
+        """
+        Add an album to the user's collection.
+
+        :param album_id: Album ID.
+        """
+        self.user.favorites.add_album(album_id)
+
+    @action
+    def add_artist(self, artist_id: Union[str, int]):
+        """
+        Add an artist to the user's collection.
+
+        :param artist_id: Artist ID.
+        """
+        self.user.favorites.add_artist(artist_id)
+
+    @action
+    def add_playlist(self, playlist_id: str):
+        """
+        Add a playlist to the user's collection.
+
+        :param playlist_id: Playlist ID.
+        """
+        self.user.favorites.add_playlist(playlist_id)
+
+    @action
+    def remove_track(self, track_id: Union[str, int]):
+        """
+        Remove a track from the user's collection.
+
+        :param track_id: Track ID.
+        """
+        self.user.favorites.remove_track(track_id)
+
+    @action
+    def remove_album(self, album_id: Union[str, int]):
+        """
+        Remove an album from the user's collection.
+
+        :param album_id: Album ID.
+        """
+        self.user.favorites.remove_album(album_id)
+
+    @action
+    def remove_artist(self, artist_id: Union[str, int]):
+        """
+        Remove an artist from the user's collection.
+
+        :param artist_id: Artist ID.
+        """
+        self.user.favorites.remove_artist(artist_id)
+
+    @action
+    def remove_playlist(self, playlist_id: str):
+        """
+        Remove a playlist from the user's collection.
+
+        :param playlist_id: Playlist ID.
+        """
+        self.user.favorites.remove_playlist(playlist_id)
 
     def main(self):
         while not self.should_stop():
