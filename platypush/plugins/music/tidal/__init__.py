@@ -55,7 +55,7 @@ class MusicTidalPlugin(RunnablePlugin):
         :param quality: Default audio quality. Default: ``high``.
             Supported: [``loseless``, ``master``, ``high``, ``low``].
         :param credentials_file: Path to the file where the OAuth session
-        parameters will be stored (default:
+            parameters will be stored (default:
             ``<WORKDIR>/tidal/credentials.json``).
         """
         from tidalapi import Quality

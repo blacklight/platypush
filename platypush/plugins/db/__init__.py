@@ -154,7 +154,7 @@ class DbPlugin(Plugin):
             ``sqlalchemy.create_engine`` (see
             https://docs.sqlalchemy.org/en/latest/core/engines.html)
         :param kwargs: Extra kwargs that will be passed to
-        ``sqlalchemy.create_engine`` (see
+            ``sqlalchemy.create_engine`` (see
             https:///docs.sqlalchemy.org/en/latest/core/engines.html)
         :returns: List of hashes representing the result rows.
 

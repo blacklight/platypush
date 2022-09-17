@@ -27,7 +27,6 @@ class TidalArtistSchema(TidalSchema):
     )
 
     name = fields.String(required=True)
-    albums = fields.Nested("TidalAlbumSchema", many=True)
 
     @pre_dump
     def _prefill_url(self, data, *_, **__):
