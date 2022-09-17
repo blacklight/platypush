@@ -61,7 +61,7 @@ class MusicTidalPlugin(RunnablePlugin):
         from tidalapi import Quality
 
         super().__init__(**kwargs)
-        self._credentials_file = credentials_file
+        self._credentials_file = os.path.expanduser(credentials_file)
         self._user_playlists = {}
 
         try:
