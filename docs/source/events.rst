@@ -47,6 +47,7 @@ Events
     platypush/events/mqtt.rst
     platypush/events/music.rst
     platypush/events/music.snapcast.rst
+    platypush/events/music.tidal.rst
     platypush/events/nextcloud.rst
     platypush/events/nfc.rst
     platypush/events/ngrok.rst
