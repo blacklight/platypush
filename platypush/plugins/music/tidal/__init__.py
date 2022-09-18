@@ -1,10 +1,8 @@
 import json
 import os
 import pathlib
-import requests
 
 from datetime import datetime
-from urllib.parse import urljoin
 from typing import Iterable, Optional, Union
 
 from platypush.config import Config
@@ -133,32 +131,6 @@ class MusicTidalPlugin(RunnablePlugin):
         assert user, 'Not logged in'
         return user
 
-    def _api_request(self, url, *args, method='get', **kwargs):
-        method = getattr(requests, method.lower())
-        url = urljoin(self._base_url, url)
-        kwargs['headers'] = kwargs.get('headers', {})
-        kwargs['params'] = kwargs.get('params', {})
-        kwargs['params'].update(
-            {
-                'sessionId': self.session.session_id,
-                'countryCode': self.session.country_code,
-            }
-        )
-
-        rs = None
-        kwargs['headers']['Authorization'] = '{type} {token}'.format(
-            type=self.session.token_type, token=self.session.access_token
-        )
-
-        try:
-            rs = method(url, *args, **kwargs)
-            rs.raise_for_status()
-            return rs
-        except requests.HTTPError as e:
-            if rs:
-                self.logger.error(rs.text)
-            raise e
-
     @action
     def create_playlist(self, name: str, description: Optional[str] = None):
         """
@@ -168,16 +140,8 @@ class MusicTidalPlugin(RunnablePlugin):
         :param description: Optional playlist description.
         :return: .. schema:: tidal.TidalPlaylistSchema
         """
-        ret = self._api_request(
-            url=f'users/{self.user.id}/playlists',
-            method='post',
-            data={
-                'title': name,
-                'description': description,
-            },
-        )
-
-        return TidalPlaylistSchema().dump(ret.json())
+        ret = self.user.create_playlist(name, description)
+        return TidalPlaylistSchema().dump(ret)
 
     @action
     def delete_playlist(self, playlist_id: str):
@@ -186,7 +150,7 @@ class MusicTidalPlugin(RunnablePlugin):
 
         :param playlist_id: ID of the playlist to delete.
         """
-        pl = self.user.playlist(playlist_id)
+        pl = self.session.playlist(playlist_id)
         pl.delete()
 
     @action
@@ -197,7 +161,7 @@ class MusicTidalPlugin(RunnablePlugin):
         :param name: New name.
         :param description: New description.
         """
-        pl = self.user.playlist(playlist_id)
+        pl = self.session.playlist(playlist_id)
         pl.edit(title=title, description=description)
 
     @action
@@ -314,7 +278,7 @@ class MusicTidalPlugin(RunnablePlugin):
         :param playlist_id: Target playlist ID.
         :param track_ids: List of track IDs to append.
         """
-        pl = self.user.playlist(playlist_id)
+        pl = self.session.playlist(playlist_id)
         pl.add(track_ids)
 
     @action
@@ -337,7 +301,7 @@ class MusicTidalPlugin(RunnablePlugin):
             track_id is None and index is None
         ), 'Please specify either track_id or index'
 
-        pl = self.user.playlist(playlist_id)
+        pl = self.session.playlist(playlist_id)
         if index:
             pl.remove_by_index(index)
         if track_id:
