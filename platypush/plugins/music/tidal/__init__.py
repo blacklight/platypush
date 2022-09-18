@@ -36,7 +36,7 @@ class MusicTidalPlugin(RunnablePlugin):
 
     Requires:
 
-        * **tidalapi** (``pip install tidalapi``)
+        * **tidalapi** (``pip install 'tidalapi >= 0.7.0'``)
 
     """
 
@@ -186,7 +186,8 @@ class MusicTidalPlugin(RunnablePlugin):
 
         :param playlist_id: ID of the playlist to delete.
         """
-        self._api_request(url=f'playlists/{playlist_id}', method='delete')
+        pl = self.user.playlist(playlist_id)
+        pl.delete()
 
     @action
     def edit_playlist(self, playlist_id: str, title=None, description=None):
@@ -207,7 +208,6 @@ class MusicTidalPlugin(RunnablePlugin):
         :return: .. schema:: tidal.TidalPlaylistSchema(many=True)
         """
         ret = self.user.playlists() + self.user.favorites.playlists()
-
         return TidalPlaylistSchema().dump(ret, many=True)
 
     @action
@@ -307,25 +307,41 @@ class MusicTidalPlugin(RunnablePlugin):
         return self.session.track(track_id).get_url()
 
     @action
-    def add_to_playlist(self, playlist_id: str, track_ids: Iterable[str]):
+    def add_to_playlist(self, playlist_id: str, track_ids: Iterable[Union[str, int]]):
         """
         Append one or more tracks to a playlist.
 
         :param playlist_id: Target playlist ID.
         :param track_ids: List of track IDs to append.
         """
-        return self._api_request(
-            url=f'playlists/{playlist_id}/items',
-            method='post',
-            headers={
-                'If-None-Match': None,
-            },
-            data={
-                'onArtifactNotFound': 'SKIP',
-                'onDupes': 'SKIP',
-                'trackIds': ','.join(map(str, track_ids)),
-            },
-        )
+        pl = self.user.playlist(playlist_id)
+        pl.add(track_ids)
+
+    @action
+    def remove_from_playlist(
+        self,
+        playlist_id: str,
+        track_id: Optional[Union[str, int]] = None,
+        index: Optional[int] = None,
+    ):
+        """
+        Remove a track from a playlist.
+
+        Specify either the ``track_id`` or the ``index``.
+
+        :param playlist_id: Target playlist ID.
+        :param track_id: ID of the track to remove.
+        :param index: Index of the track to remove.
+        """
+        assert not (
+            track_id is None and index is None
+        ), 'Please specify either track_id or index'
+
+        pl = self.user.playlist(playlist_id)
+        if index:
+            pl.remove_by_index(index)
+        if track_id:
+            pl.remove_by_id(track_id)
 
     @action
     def add_track(self, track_id: Union[str, int]):

@@ -4,6 +4,6 @@ manifest:
         is updated.
   install:
     pip:
-      - tidalapi
+      - tidalapi >= 0.7.0
   package: platypush.plugins.music.tidal
   type: plugin
