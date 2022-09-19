@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields, pre_dump
+from marshmallow import Schema, fields, pre_dump, post_dump
 
 from platypush.schemas import DateTime
 
@@ -35,10 +35,13 @@ class TidalArtistSchema(TidalSchema):
 
 
 class TidalAlbumSchema(TidalSchema):
+    def __init__(self, *args, with_tracks=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._with_tracks = with_tracks
+
     id = fields.String(
         required=True,
         dump_only=True,
-        attribute='uuid',
         metadata={
             'example': '45288612',
             'description': 'Album ID',
@@ -59,10 +62,30 @@ class TidalAlbumSchema(TidalSchema):
     duration = fields.Int(metadata={'description': 'Album duration, in seconds'})
     year = fields.Integer(metadata={'example': 2003})
     num_tracks = fields.Int(metadata={'example': 10})
+    tracks = fields.List(fields.Dict(), attribute='_tracks')
 
     @pre_dump
     def _prefill_url(self, data, *_, **__):
         data.url = f'https://tidal.com/album/{data.id}'
+        return data
+
+    @pre_dump
+    def _cache_tracks(self, data, *_, **__):
+        if self._with_tracks:
+            album_id = str(data.id)
+            self.context[album_id] = {
+                'tracks': data.tracks(),
+            }
+
+        return data
+
+    @post_dump
+    def _dump_tracks(self, data, *_, **__):
+        if self._with_tracks:
+            album_id = str(data['id'])
+            ctx = self.context.pop(album_id, {})
+            data['tracks'] = TidalTrackSchema().dump(ctx.pop('tracks', []), many=True)
+
         return data
 
 

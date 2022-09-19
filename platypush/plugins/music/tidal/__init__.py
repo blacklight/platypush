@@ -207,7 +207,7 @@ class MusicTidalPlugin(RunnablePlugin):
         :return: .. schema:: tidal.TidalAlbumSchema
         """
         ret = self.session.album(album_id)
-        return TidalAlbumSchema().dump(ret)
+        return TidalAlbumSchema(with_tracks=True).dump(ret)
 
     @action
     def get_track(self, track_id: Union[str, int]):
