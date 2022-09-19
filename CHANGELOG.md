@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being
 reported only starting from v0.20.2.
 
+## [0.23.6] - 2022-09-19
+
+### Fixed
+
+- Fixed album_id and list of tracks on `music.tidal.get_album`.
+
 ## [0.23.5] - 2022-09-18
 
 ### Added
