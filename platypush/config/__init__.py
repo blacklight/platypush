@@ -215,7 +215,9 @@ class Config:
                 )
             else:
                 section_config = file_config.get(section, {}) or {}
-                if not section_config.get('disabled'):
+                if not (
+                    hasattr(section_config, 'get') and section_config.get('disabled')
+                ):
                     config[section] = section_config
 
         return config

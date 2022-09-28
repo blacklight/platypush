@@ -15,10 +15,10 @@ logger = logging.getLogger('platypush')
 
 
 def parse(msg):
-    """ Builds a dict given another dictionary or
-        a JSON UTF-8 encoded string/bytearray """
+    """Builds a dict given another dictionary or
+    a JSON UTF-8 encoded string/bytearray"""
 
-    if isinstance(msg, bytes) or isinstance(msg, bytearray):
+    if isinstance(msg, (bytes, bytearray)):
         msg = msg.decode('utf-8')
     if isinstance(msg, str):
         try:
@@ -30,8 +30,8 @@ def parse(msg):
     return msg
 
 
-class EventCondition(object):
-    """ Event hook condition class """
+class EventCondition:
+    """Event hook condition class"""
 
     def __init__(self, type=Event.__class__, priority=None, **kwargs):
         """
@@ -55,8 +55,8 @@ class EventCondition(object):
 
     @classmethod
     def build(cls, rule):
-        """ Builds a rule given either another EventRule, a dictionary or
-            a JSON UTF-8 encoded string/bytearray """
+        """Builds a rule given either another EventRule, a dictionary or
+        a JSON UTF-8 encoded string/bytearray"""
 
         if isinstance(rule, cls):
             return rule
@@ -64,8 +64,7 @@ class EventCondition(object):
             rule = parse(rule)
 
         assert isinstance(rule, dict), f'Not a valid rule: {rule}'
-        type = get_event_class_by_type(
-            rule.pop('type') if 'type' in rule else 'Event')
+        type = get_event_class_by_type(rule.pop('type') if 'type' in rule else 'Event')
 
         args = {}
         for (key, value) in rule.items():
@@ -75,8 +74,8 @@ class EventCondition(object):
 
 
 class EventAction(Request):
-    """ Event hook action class. It is a special type of runnable request
-        whose fields can be configured later depending on the event context """
+    """Event hook action class. It is a special type of runnable request
+    whose fields can be configured later depending on the event context"""
 
     def __init__(self, target=None, action=None, **args):
         if target is None:
@@ -99,16 +98,16 @@ class EventAction(Request):
         return super().build(action)
 
 
-class EventHook(object):
-    """ Event hook class. It consists of one conditions and
-        one or multiple actions to be executed """
+class EventHook:
+    """Event hook class. It consists of one conditions and
+    one or multiple actions to be executed"""
 
     def __init__(self, name, priority=None, condition=None, actions=None):
-        """ Constructor. Takes a name, a EventCondition object and an event action
-            procedure as input. It may also have a priority attached
-            as a positive number. If multiple hooks match against an event,
-            only the ones that have either the maximum match score or the
-            maximum pre-configured priority will be run. """
+        """Constructor. Takes a name, a EventCondition object and an event action
+        procedure as input. It may also have a priority attached
+        as a positive number. If multiple hooks match against an event,
+        only the ones that have either the maximum match score or the
+        maximum pre-configured priority will be run."""
 
         self.name = name
         self.condition = EventCondition.build(condition or {})
@@ -118,8 +117,8 @@ class EventHook(object):
 
     @classmethod
     def build(cls, name, hook):
-        """ Builds a rule given either another EventRule, a dictionary or
-            a JSON UTF-8 encoded string/bytearray """
+        """Builds a rule given either another EventRule, a dictionary or
+        a JSON UTF-8 encoded string/bytearray"""
 
         if isinstance(hook, cls):
             return hook
@@ -146,14 +145,14 @@ class EventHook(object):
         return cls(name=name, condition=condition, actions=actions, priority=priority)
 
     def matches_event(self, event):
-        """ Returns an EventMatchResult object containing the information
-            about the match between the event and this hook """
+        """Returns an EventMatchResult object containing the information
+        about the match between the event and this hook"""
 
         return event.matches_condition(self.condition)
 
     def run(self, event):
-        """ Checks the condition of the hook against a particular event and
-            runs the hook actions if the condition is met """
+        """Checks the condition of the hook against a particular event and
+        runs the hook actions if the condition is met"""
 
         def _thread_func(result):
             set_thread_name('Event-' + self.name)
@@ -163,7 +162,9 @@ class EventHook(object):
 
         if result.is_match:
             logger.info('Running hook {} triggered by an event'.format(self.name))
-            threading.Thread(target=_thread_func, name='Event-' + self.name, args=(result,)).start()
+            threading.Thread(
+                target=_thread_func, name='Event-' + self.name, args=(result,)
+            ).start()
 
 
 def hook(event_type=Event, **condition):
@@ -172,8 +173,14 @@ def hook(event_type=Event, **condition):
         f.condition = EventCondition(type=event_type, **condition)
 
         @wraps(f)
-        def wrapped(*args, **kwargs):
-            return exec_wrapper(f, *args, **kwargs)
+        def wrapped(event, *args, **kwargs):
+            from platypush.message.event.http.hook import WebhookEvent
+
+            response = exec_wrapper(f, event, *args, **kwargs)
+            if isinstance(event, WebhookEvent):
+                event.send_response(response)
+
+            return response
 
         return wrapped
 

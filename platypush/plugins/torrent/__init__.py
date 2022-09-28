@@ -37,7 +37,7 @@ class TorrentPlugin(Plugin):
     torrent_state = {}
     transfers = {}
     # noinspection HttpUrlsUsage
-    default_popcorn_base_url = 'http://popcorn-ru.tk'
+    default_popcorn_base_url = 'http://popcorn-time.ga'
 
     def __init__(self, download_dir=None, torrent_ports=None, imdb_key=None, popcorn_base_url=default_popcorn_base_url,
                  **kwargs):

@@ -1,10 +1,9 @@
 import copy
-import hashlib
 import json
+import random
 import re
 import sys
 import time
-import uuid
 
 from datetime import date
 
@@ -79,9 +78,7 @@ class Event(Message):
     @staticmethod
     def _generate_id():
         """Generate a unique event ID"""
-        return hashlib.md5(
-            str(uuid.uuid1()).encode()
-        ).hexdigest()  # lgtm [py/weak-sensitive-data-hashing]
+        return ''.join(['{:02x}'.format(random.randint(0, 255)) for _ in range(16)])
 
     def matches_condition(self, condition):
         """

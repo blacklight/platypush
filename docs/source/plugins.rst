@@ -95,6 +95,7 @@ Plugins
     platypush/plugins/music.mpd.rst
     platypush/plugins/music.snapcast.rst
     platypush/plugins/music.spotify.rst
+    platypush/plugins/music.tidal.rst
     platypush/plugins/nextcloud.rst
     platypush/plugins/ngrok.rst
     platypush/plugins/nmap.rst

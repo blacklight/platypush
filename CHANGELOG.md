@@ -1,7 +1,33 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
-Given the high speed of development in the first phase, changes are being reported only starting from v0.20.2.
+Given the high speed of development in the first phase, changes are being
+reported only starting from v0.20.2.
+
+## [0.23.6] - 2022-09-19
+
+### Fixed
+
+- Fixed album_id and list of tracks on `music.tidal.get_album`.
+
+## [0.23.5] - 2022-09-18
+
+### Added
+
+- Added support for web hooks returning their hook method responses back to the
+  HTTP client.
+
+- Added [Tidal integration](https://git.platypush.tech/platypush/platypush/pulls/223)
+
+- Added support for [OPML
+  subscriptions](https://git.platypush.tech/platypush/platypush/pulls/220) to
+  the `rss` plugin.
+
+- Better support for bulk database operations on the `db` plugin.
+
+### Fixed
+
+- Now supporting YAML sections with empty configurations.
 
 ## [0.23.4] - 2022-08-28
 

@@ -28,7 +28,7 @@ backend = pkg_files('platypush/backend')
 
 setup(
     name="platypush",
-    version="0.23.4",
+    version="0.23.6",
     author="Fabio Manganiello",
     author_email="info@fabiomanganiello.com",
     description="Platypush service",
@@ -64,7 +64,7 @@ setup(
         'zeroconf>=0.27.0',
         'tz',
         'python-dateutil',
-        'cryptography',
+        # 'cryptography',
         'pyjwt',
         'marshmallow',
         'frozendict',
@@ -86,7 +86,7 @@ setup(
         # Support for MQTT backends
         'mqtt': ['paho-mqtt'],
         # Support for RSS feeds parser
-        'rss': ['feedparser'],
+        'rss': ['feedparser', 'defusedxml'],
         # Support for PDF generation
         'pdf': ['weasyprint'],
         # Support for Philips Hue plugin
