@@ -3,8 +3,15 @@ import threading
 
 from platypush.context import get_bus
 from platypush.plugins.media import PlayerState, MediaPlugin
-from platypush.message.event.media import MediaPlayEvent, MediaPlayRequestEvent, \
-    MediaPauseEvent, MediaStopEvent, NewPlayingMediaEvent, MediaSeekEvent, MediaResumeEvent
+from platypush.message.event.media import (
+    MediaPlayEvent,
+    MediaPlayRequestEvent,
+    MediaPauseEvent,
+    MediaStopEvent,
+    NewPlayingMediaEvent,
+    MediaSeekEvent,
+    MediaResumeEvent,
+)
 
 from platypush.plugins import action
 
@@ -66,29 +73,58 @@ class MediaMpvPlugin(MediaPlugin):
 
     def _event_callback(self):
         def callback(event):
-            from mpv import MpvEventID as Event
-            from mpv import MpvEventEndFile as EndFile
+            from mpv import (
+                MpvEvent,
+                MpvEventID as Event,
+                MpvEventEndFile as EndFile,
+            )
 
             self.logger.info('Received mpv event: {}'.format(event))
+
+            if isinstance(event, MpvEvent):
+                event = event.as_dict()
 
             evt = event.get('event_id')
             if not evt:
                 return
 
-            if (evt == Event.FILE_LOADED or evt == Event.START_FILE) and self._get_current_resource():
+            if (
+                evt == Event.FILE_LOADED or evt == Event.START_FILE
+            ) and self._get_current_resource():
                 self._playback_rebounce_event.set()
-                self._post_event(NewPlayingMediaEvent, resource=self._get_current_resource(),
-                                 title=self._player.filename)
+                self._post_event(
+                    NewPlayingMediaEvent,
+                    resource=self._get_current_resource(),
+                    title=self._player.filename,
+                )
             elif evt == Event.PLAYBACK_RESTART:
                 self._playback_rebounce_event.set()
-                self._post_event(MediaPlayEvent, resource=self._get_current_resource(), title=self._player.filename)
+                self._post_event(
+                    MediaPlayEvent,
+                    resource=self._get_current_resource(),
+                    title=self._player.filename,
+                )
             elif evt == Event.PAUSE:
-                self._post_event(MediaPauseEvent, resource=self._get_current_resource(), title=self._player.filename)
+                self._post_event(
+                    MediaPauseEvent,
+                    resource=self._get_current_resource(),
+                    title=self._player.filename,
+                )
             elif evt == Event.UNPAUSE:
-                self._post_event(MediaResumeEvent, resource=self._get_current_resource(), title=self._player.filename)
-            elif evt == Event.SHUTDOWN or evt == Event.IDLE or (
-                    evt == Event.END_FILE and event.get('event', {}).get('reason') in
-                    [EndFile.EOF, EndFile.ABORTED, EndFile.QUIT]):
+                self._post_event(
+                    MediaResumeEvent,
+                    resource=self._get_current_resource(),
+                    title=self._player.filename,
+                )
+            elif (
+                evt == Event.SHUTDOWN
+                or evt == Event.IDLE
+                or (
+                    evt == Event.END_FILE
+                    and event.get('event', {}).get('reason')
+                    in [EndFile.EOF, EndFile.ABORTED, EndFile.QUIT]
+                )
+            ):
                 playback_rebounced = self._playback_rebounce_event.wait(timeout=0.5)
                 if playback_rebounced:
                     self._playback_rebounce_event.clear()
@@ -147,7 +183,7 @@ class MediaMpvPlugin(MediaPlugin):
 
     @action
     def pause(self):
-        """ Toggle the paused state """
+        """Toggle the paused state"""
         if not self._player:
             return None, 'No mpv instance is running'
 
@@ -156,7 +192,7 @@ class MediaMpvPlugin(MediaPlugin):
 
     @action
     def quit(self):
-        """ Stop and quit the player """
+        """Stop and quit the player"""
         if not self._player:
             return None, 'No mpv instance is running'
 
@@ -167,19 +203,19 @@ class MediaMpvPlugin(MediaPlugin):
 
     @action
     def stop(self):
-        """ Stop and quit the player """
+        """Stop and quit the player"""
         return self.quit()
 
     @action
     def voldown(self, step=10.0):
-        """ Volume down by (default: 10)% """
+        """Volume down by (default: 10)%"""
         if not self._player:
             return None, 'No mpv instance is running'
         return self.set_volume(self._player.volume - step)
 
     @action
     def volup(self, step=10.0):
-        """ Volume up by (default: 10)% """
+        """Volume up by (default: 10)%"""
         if not self._player:
             return None, 'No mpv instance is running'
         return self.set_volume(self._player.volume + step)
@@ -211,14 +247,13 @@ class MediaMpvPlugin(MediaPlugin):
             return None, 'No mpv instance is running'
         if not self._player.seekable:
             return None, 'The resource is not seekable'
-        pos = min(self._player.time_pos + self._player.time_remaining,
-                  max(0, position))
+        pos = min(self._player.time_pos + self._player.time_remaining, max(0, position))
         self._player.time_pos = pos
         return self.status()
 
     @action
     def back(self, offset=30.0):
-        """ Back by (default: 30) seconds """
+        """Back by (default: 30) seconds"""
         if not self._player:
             return None, 'No mpv instance is running'
         if not self._player.seekable:
@@ -228,47 +263,44 @@ class MediaMpvPlugin(MediaPlugin):
 
     @action
     def forward(self, offset=30.0):
-        """ Forward by (default: 30) seconds """
+        """Forward by (default: 30) seconds"""
         if not self._player:
             return None, 'No mpv instance is running'
         if not self._player.seekable:
             return None, 'The resource is not seekable'
-        pos = min(self._player.time_pos + self._player.time_remaining,
-                  self._player.time_pos + offset)
+        pos = min(
+            self._player.time_pos + self._player.time_remaining,
+            self._player.time_pos + offset,
+        )
         return self.seek(pos)
 
     @action
     def next(self):
-        """ Play the next item in the queue """
+        """Play the next item in the queue"""
         if not self._player:
             return None, 'No mpv instance is running'
         self._player.playlist_next()
 
     @action
     def prev(self):
-        """ Play the previous item in the queue """
+        """Play the previous item in the queue"""
         if not self._player:
             return None, 'No mpv instance is running'
         self._player.playlist_prev()
 
     @action
     def toggle_subtitles(self, visible=None):
-        """ Toggle the subtitles visibility """
+        """Toggle the subtitles visibility"""
         return self.toggle_property('sub_visibility')
 
     @action
     def add_subtitles(self, filename):
-        """ Add a subtitles file """
+        """Add a subtitles file"""
         return self._player.sub_add(filename)
 
     @action
-    def remove_subtitles(self, sub_id):
-        """ Remove a subtitles track by id """
-        return self._player.sub_remove(sub_id)
-
-    @action
     def toggle_fullscreen(self):
-        """ Toggle the fullscreen mode """
+        """Toggle the fullscreen mode"""
         return self.toggle_property('fullscreen')
 
     # noinspection PyShadowingBuiltins
@@ -319,15 +351,17 @@ class MediaMpvPlugin(MediaPlugin):
 
     @action
     def set_subtitles(self, filename, *args, **kwargs):
-        """ Sets media subtitles from filename """
+        """Sets media subtitles from filename"""
         # noinspection PyTypeChecker
         return self.set_property(subfile=filename, sub_visibility=True)
 
     @action
-    def remove_subtitles(self):
-        """ Removes (hides) the subtitles """
+    def remove_subtitles(self, sub_id=None):
+        """Removes (hides) the subtitles"""
         if not self._player:
             return None, 'No mpv instance is running'
+        if sub_id:
+            return self._player.sub_remove(sub_id)
         self._player.sub_visibility = False
 
     @action
@@ -350,7 +384,7 @@ class MediaMpvPlugin(MediaPlugin):
 
     @action
     def mute(self):
-        """ Toggle mute state """
+        """Toggle mute state"""
         if not self._player:
             return None, 'No mpv instance is running'
         mute = not self._player.mute
@@ -382,28 +416,35 @@ class MediaMpvPlugin(MediaPlugin):
             return {'state': PlayerState.STOP.value}
 
         return {
-            'audio_channels': getattr(self._player, 'audio_channels'),
-            'audio_codec': getattr(self._player, 'audio_codec_name'),
-            'delay': getattr(self._player, 'delay'),
-            'duration': getattr(self._player, 'playback_time', 0) + getattr(self._player, 'playtime_remaining', 0)
-            if getattr(self._player, 'playtime_remaining') else None,
-            'filename': getattr(self._player, 'filename'),
-            'file_size': getattr(self._player, 'file_size'),
-            'fullscreen': getattr(self._player, 'fs'),
-            'mute': getattr(self._player, 'mute'),
-            'name': getattr(self._player, 'name'),
-            'pause': getattr(self._player, 'pause'),
-            'percent_pos': getattr(self._player, 'percent_pos'),
-            'position': getattr(self._player, 'playback_time'),
-            'seekable': getattr(self._player, 'seekable'),
-            'state': (PlayerState.PAUSE.value if self._player.pause else PlayerState.PLAY.value),
-            'title': getattr(self._player, 'media_title') or getattr(self._player, 'filename'),
+            'audio_channels': getattr(self._player, 'audio_channels', None),
+            'audio_codec': getattr(self._player, 'audio_codec_name', None),
+            'delay': getattr(self._player, 'delay', None),
+            'duration': getattr(self._player, 'playback_time', 0)
+            + getattr(self._player, 'playtime_remaining', 0)
+            if getattr(self._player, 'playtime_remaining', None)
+            else None,
+            'filename': getattr(self._player, 'filename', None),
+            'file_size': getattr(self._player, 'file_size', None),
+            'fullscreen': getattr(self._player, 'fs', None),
+            'mute': getattr(self._player, 'mute', None),
+            'name': getattr(self._player, 'name', None),
+            'pause': getattr(self._player, 'pause', None),
+            'percent_pos': getattr(self._player, 'percent_pos', None),
+            'position': getattr(self._player, 'playback_time', None),
+            'seekable': getattr(self._player, 'seekable', None),
+            'state': (
+                PlayerState.PAUSE.value
+                if self._player.pause
+                else PlayerState.PLAY.value
+            ),
+            'title': getattr(self._player, 'media_title', None)
+            or getattr(self._player, 'filename', None),
             'url': self._get_current_resource(),
-            'video_codec': getattr(self._player, 'video_codec'),
-            'video_format': getattr(self._player, 'video_format'),
-            'volume': getattr(self._player, 'volume'),
-            'volume_max': getattr(self._player, 'volume_max'),
-            'width': getattr(self._player, 'width'),
+            'video_codec': getattr(self._player, 'video_codec', None),
+            'video_format': getattr(self._player, 'video_format', None),
+            'volume': getattr(self._player, 'volume', None),
+            'volume_max': getattr(self._player, 'volume_max', None),
+            'width': getattr(self._player, 'width', None),
         }
 
     def on_stop(self, callback):
@@ -413,12 +454,13 @@ class MediaMpvPlugin(MediaPlugin):
         if not self._player or not self._player.stream_path:
             return
 
-        return ('file://' if os.path.isfile(self._player.stream_path)
-                else '') + self._player.stream_path
+        return (
+            'file://' if os.path.isfile(self._player.stream_path) else ''
+        ) + self._player.stream_path
 
     def _get_resource(self, resource):
         if self._is_youtube_resource(resource):
-            return resource   # mpv can handle YouTube streaming natively
+            return resource  # mpv can handle YouTube streaming natively
 
         return super()._get_resource(resource)
 

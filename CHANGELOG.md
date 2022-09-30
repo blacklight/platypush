@@ -9,6 +9,7 @@ reported only starting from v0.20.2.
 ### Added
 
 - Added [Wallabag integration](https://git.platypush.tech/platypush/platypush/issues/224).
+- Added [Mimic3 TTS integration](https://git.platypush.tech/platypush/platypush/issues/226).
 
 ## [0.23.6] - 2022-09-19
 
