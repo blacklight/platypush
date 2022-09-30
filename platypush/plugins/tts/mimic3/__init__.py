@@ -48,7 +48,7 @@ class TtsMimic3Plugin(TtsPlugin):
         :param server_url: Base URL of the web server that runs the Mimic3 engine.
         :param voice: Default voice to be used (default: ``en_UK/apope_low``).
             You can get a full list of the voices available on the server
-            through :method:`.voices`.
+            through :meth:`.voices`.
         :param media_plugin: Media plugin to be used for audio playback. Supported:
 
             - ``media.gstreamer``
