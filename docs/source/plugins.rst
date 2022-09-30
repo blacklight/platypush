@@ -3,7 +3,7 @@ Plugins
 =======
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :caption: Plugins:
 
     platypush/plugins/adafruit.io.rst
