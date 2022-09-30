@@ -108,7 +108,7 @@ class TtsMimic3Plugin(TtsPlugin):
         List the voices available on the server.
 
         :param server_url: Default ``server_url`` override.
-        :return: .. schema:: tts.mimi3.Mimic3VoiceSchema(many=True)
+        :return: .. schema:: tts.mimic3.Mimic3VoiceSchema(many=True)
         """
         server_url = server_url or self.server_url
         rs = requests.get(urljoin(server_url, '/api/voices'))
