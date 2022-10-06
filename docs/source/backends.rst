@@ -3,7 +3,7 @@ Backends
 ========
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :caption: Backends:
 
     platypush/backend/adafruit.io.rst

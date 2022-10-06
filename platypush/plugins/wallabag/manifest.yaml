@@ -1,0 +1,3 @@
+manifest:
+  package: platypush.plugins.wallabag
+  type: plugin

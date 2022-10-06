@@ -1,0 +1,6 @@
+manifest:
+  events: {}
+  install:
+    pip: []
+  package: platypush.plugins.tts.mimic3
+  type: plugin

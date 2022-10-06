@@ -3,7 +3,7 @@ Plugins
 =======
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :caption: Plugins:
 
     platypush/plugins/adafruit.io.rst
@@ -133,12 +133,14 @@ Plugins
     platypush/plugins/trello.rst
     platypush/plugins/tts.rst
     platypush/plugins/tts.google.rst
+    platypush/plugins/tts.mimic3.rst
     platypush/plugins/tv.samsung.ws.rst
     platypush/plugins/twilio.rst
     platypush/plugins/udp.rst
     platypush/plugins/user.rst
     platypush/plugins/utils.rst
     platypush/plugins/variable.rst
+    platypush/plugins/wallabag.rst
     platypush/plugins/weather.buienradar.rst
     platypush/plugins/weather.darksky.rst
     platypush/plugins/weather.openweathermap.rst

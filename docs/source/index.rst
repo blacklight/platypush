@@ -16,7 +16,7 @@ For more information on Platypush check out:
 .. _Blog articles: https://blog.platypush.tech
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 2
     :caption: Contents:
 
     backends
