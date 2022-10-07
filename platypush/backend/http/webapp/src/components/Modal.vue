@@ -1,6 +1,6 @@
 <template>
   <div class="modal-container fade-in" :id="id" :class="{hidden: !isVisible}" :style="{'--z-index': zIndex}" @click="close">
-    <div class="modal">
+    <div class="modal" :class="$attrs.class">
       <div class="content" :style="{'--width': width, '--height': height}" @click="$event.stopPropagation()">
         <div class="header" v-text="title" v-if="title"></div>
         <div class="body">

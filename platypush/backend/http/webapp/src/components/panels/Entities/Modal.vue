@@ -1,5 +1,5 @@
 <template>
-  <Modal :visible="visible" :title="entity.name || entity.external_id">
+  <Modal :visible="visible" class="entity-modal" :title="entity.name || entity.external_id">
     <ConfirmDialog ref="deleteConfirmDiag" title="Confirm entity deletion" @input="onDelete">
       Are you <b>sure</b> that you want to delete this entity? <br/><br/>
       Note: you should only delete an entity if its plugin has been disabled
@@ -210,6 +210,14 @@ export default {
 
 <style lang="scss" scoped>
 :deep(.modal) {
+  .body {
+    padding: .5em !important;
+
+    .table-row {
+      box-shadow: none;
+    }
+  }
+
   .icon-canvas {
     display: inline-flex;
     align-items: center;
