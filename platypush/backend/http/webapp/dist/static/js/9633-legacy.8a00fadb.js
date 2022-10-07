@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[9633],{9633:function(e,a,n){n.r(a),n.d(a,{default:function(){return c}});var u=n(6252);function r(e,a,n,r,t,p){var i=(0,u.up)("Media");return(0,u.wg)(),(0,u.j4)(i,{"plugin-name":"media.omxplayer"})}var t=n(4196),p={name:"MediaMpv",components:{Media:t["default"]}},i=n(3744);const s=(0,i.Z)(p,[["render",r]]);var c=s}}]);
+//# sourceMappingURL=9633-legacy.8a00fadb.js.map

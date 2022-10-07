@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[9299],{9299:function(n,e,t){t.r(e),t.d(e,{default:function(){return o}});var r=t(6252);function u(n,e,t,u,a,p){const s=(0,r.up)("Panel");return(0,r.wg)(),(0,r.j4)(s,{"plugin-name":"torrent"})}var a=t(6899),p={name:"Torrent",components:{Panel:a.Z}},s=t(3744);const c=(0,s.Z)(p,[["render",u]]);var o=c}}]);
+//# sourceMappingURL=9299.710819a1.js.map
