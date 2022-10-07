@@ -8,22 +8,27 @@ from platypush.backend.http.app import template_folder
 
 
 img_folder = os.path.join(template_folder, 'img')
+fonts_folder = os.path.join(template_folder, 'fonts')
 icons_folder = os.path.join(template_folder, 'icons')
 resources = Blueprint('resources', __name__, template_folder=template_folder)
 favicon = Blueprint('favicon', __name__, template_folder=template_folder)
 img = Blueprint('img', __name__, template_folder=template_folder)
+icons = Blueprint('icons', __name__, template_folder=template_folder)
+fonts = Blueprint('fonts', __name__, template_folder=template_folder)
 
 # Declare routes list
 __routes__ = [
     resources,
     favicon,
     img,
+    icons,
+    fonts,
 ]
 
 
 @resources.route('/resources/<path:path>', methods=['GET'])
 def resources_path(path):
-    """ Custom static resources """
+    """Custom static resources"""
     path_tokens = path.split('/')
     http_conf = Config.get('backend.http')
     resource_dirs = http_conf.get('resource_dirs', {})
@@ -42,9 +47,11 @@ def resources_path(path):
     real_path = real_base_path
 
     file_path = [
-        s for s in re.sub(
-            r'^{}(.*)$'.format(base_path), '\\1', path   # lgtm [py/regex-injection]
-        ).split('/') if s
+        s
+        for s in re.sub(
+            r'^{}(.*)$'.format(base_path), '\\1', path  # lgtm [py/regex-injection]
+        ).split('/')
+        if s
     ]
 
     for p in file_path[:-1]:
@@ -61,20 +68,26 @@ def resources_path(path):
 
 @favicon.route('/favicon.ico', methods=['GET'])
 def serve_favicon():
-    """ favicon.ico icon """
+    """favicon.ico icon"""
     return send_from_directory(template_folder, 'favicon.ico')
 
 
 @img.route('/img/<path:path>', methods=['GET'])
 def imgpath(path):
-    """ Default static images """
+    """Default static images"""
     return send_from_directory(img_folder, path)
 
 
-@img.route('/icons/<path:path>', methods=['GET'])
+@icons.route('/icons/<path:path>', methods=['GET'])
 def iconpath(path):
-    """ Default static icons """
+    """Default static icons"""
     return send_from_directory(icons_folder, path)
+
+
+@fonts.route('/fonts/<path:path>', methods=['GET'])
+def fontpath(path):
+    """Default fonts"""
+    return send_from_directory(fonts_folder, path)
 
 
 # vim:sw=4:ts=4:et:

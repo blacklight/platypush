@@ -4,7 +4,7 @@ import axios from 'axios'
 export default {
   name: "Api",
   methods: {
-    execute(request, timeout=60000) {
+    execute(request, timeout=60000, showError=true) {
       const opts = {};
 
       if (!('target' in request) || !request['target']) {
@@ -36,22 +36,23 @@ export default {
               }
             })
             .catch((error) => {
-              this.notify({
-                text: error,
-                error: true,
-              })
+              if (showError)
+                this.notify({
+                  text: error,
+                  error: true,
+                })
 
               reject(error)
             })
       })
     },
 
-    request(action, args={}, timeout=60000) {
+    request(action, args={}, timeout=60000, showError=true) {
       return this.execute({
         type: 'request',
         action: action,
         args: args,
-      }, timeout);
+      }, timeout, showError);
     }
   },
 }

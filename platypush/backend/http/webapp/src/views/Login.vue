@@ -1,8 +1,9 @@
 <template>
   <div class="login-container">
     <form class="login" method="POST">
-      <div class="description">
-        {{ _register ? 'Welcome' : 'Authenticate' }} to platypush
+      <div class="header">
+        <span class="logo" />
+        <span class="text">Platypush</span>
       </div>
 
       <div class="row">
@@ -23,7 +24,7 @@
         </label>
       </div>
 
-      <div class="row pull-right">
+      <div class="row buttons">
         <input type="submit" class="btn btn-primary" :value="_register ? 'Register' : 'Login'">
       </div>
 
@@ -60,7 +61,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 body {
   width: 100vw;
   height: 100vh;
@@ -75,9 +76,25 @@ body {
   background: $default-bg-6;
 }
 
-.description {
+.header {
+  font-size: 1.2em;
   margin-bottom: 2em;
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .logo {
+    width: 3em;
+    height: 3em;
+    display: inline-flex;
+    background-image: url('@/assets/img/logo.png');
+    background-size: cover;
+  }
+
+  .text {
+    font-family: Poppins, sans-serif;
+    margin-left: .5em;
+  }
 }
 
 form {
@@ -110,6 +127,14 @@ form {
   .checkbox {
     display: flex;
     font-size: 0.8em;
+  }
+
+  .buttons {
+    text-align: center;
+
+    input[type=submit] {
+      padding: .5em .75em;
+    }
   }
 }
 

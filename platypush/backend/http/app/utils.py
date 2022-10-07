@@ -3,7 +3,8 @@ import logging
 import os
 
 from functools import wraps
-from flask import abort, request, redirect, Response, current_app
+from flask import abort, request, redirect, jsonify, current_app
+from flask.wrappers import Response
 from redis import Redis
 
 # NOTE: The HTTP service will *only* work on top of a Redis bus. The default
@@ -184,7 +185,25 @@ def _authenticate_csrf_token():
     )
 
 
-def authenticate(redirect_page='', skip_auth_methods=None, check_csrf_token=False):
+def authenticate(
+    redirect_page='',
+    skip_auth_methods=None,
+    check_csrf_token=False,
+    json=False,
+):
+    def on_auth_fail():
+        if json:
+            return (
+                jsonify(
+                    {
+                        'message': 'Not logged in',
+                    }
+                ),
+                401,
+            )
+
+        return redirect('/login?redirect=' + (redirect_page or request.url), 307)
+
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
@@ -213,9 +232,7 @@ def authenticate(redirect_page='', skip_auth_methods=None, check_csrf_token=Fals
                 if session_auth_ok:
                     return f(*args, **kwargs)
 
-                return redirect(
-                    '/login?redirect=' + (redirect_page or request.url), 307
-                )
+                return on_auth_fail()
 
             # CSRF token check
             if check_csrf_token:
@@ -224,9 +241,7 @@ def authenticate(redirect_page='', skip_auth_methods=None, check_csrf_token=Fals
                     return abort(403, 'Invalid or missing csrf_token')
 
             if n_users == 0 and 'session' not in skip_methods:
-                return redirect(
-                    '/register?redirect=' + (redirect_page or request.url), 307
-                )
+                return on_auth_fail()
 
             if (
                 ('http' not in skip_methods and http_auth_ok)

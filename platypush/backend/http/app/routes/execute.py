@@ -1,6 +1,7 @@
 import json
 
-from flask import Blueprint, abort, request, Response
+from flask import Blueprint, abort, request
+from flask.wrappers import Response
 
 from platypush.backend.http.app import template_folder
 from platypush.backend.http.app.utils import authenticate, logger, send_message
@@ -14,8 +15,8 @@ __routes__ = [
 
 
 @execute.route('/execute', methods=['POST'])
-@authenticate()
-def execute():
+@authenticate(json=True)
+def execute_route():
     """Endpoint to execute commands"""
     try:
         msg = json.loads(request.data.decode('utf-8'))
