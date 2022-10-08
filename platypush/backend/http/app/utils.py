@@ -191,15 +191,26 @@ def authenticate(
     check_csrf_token=False,
     json=False,
 ):
-    def on_auth_fail():
+    def on_auth_fail(has_users=True):
         if json:
+            if has_users:
+                return (
+                    jsonify(
+                        {
+                            'message': 'Not logged in',
+                        }
+                    ),
+                    401,
+                )
+
             return (
                 jsonify(
                     {
-                        'message': 'Not logged in',
+                        'message': 'Please register a user through '
+                        'the web panel first',
                     }
                 ),
-                401,
+                412,
             )
 
         return redirect('/login?redirect=' + (redirect_page or request.url), 307)
@@ -241,7 +252,7 @@ def authenticate(
                     return abort(403, 'Invalid or missing csrf_token')
 
             if n_users == 0 and 'session' not in skip_methods:
-                return on_auth_fail()
+                return on_auth_fail(has_users=False)
 
             if (
                 ('http' not in skip_methods and http_auth_ok)

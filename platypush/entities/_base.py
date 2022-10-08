@@ -1,5 +1,6 @@
 import inspect
 import pathlib
+import types
 from datetime import datetime
 from typing import Mapping, Type, Tuple, Any
 
@@ -49,7 +50,10 @@ class Entity(Base):
 
     UniqueConstraint(external_id, plugin)
 
-    __table_args__ = (Index(name, plugin), Index(name, type, plugin))
+    __table_args__ = (
+        Index('name_and_plugin_index', name, plugin),
+        Index('name_type_and_plugin_index', name, type, plugin),
+    )
 
     __mapper_args__ = {
         'polymorphic_identity': __tablename__,
@@ -104,9 +108,10 @@ def _discover_entity_types():
         onerror=lambda _: None,
     ):
         try:
-            mod_loader = loader.find_module(modname)  # type: ignore
-            assert mod_loader
-            module = mod_loader.load_module()  # type: ignore
+            mod_loader = loader.find_spec(modname, None)
+            assert mod_loader and mod_loader.loader
+            module = types.ModuleType(mod_loader.name)
+            mod_loader.loader.exec_module(module)
         except Exception as e:
             logger.warning(f'Could not import module {modname}')
             logger.exception(e)
