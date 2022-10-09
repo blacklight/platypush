@@ -2,7 +2,7 @@ import inspect
 import pathlib
 import types
 from datetime import datetime
-from typing import Mapping, Type, Tuple, Any
+from typing import Dict, Mapping, Type, Tuple, Any
 
 import pkgutil
 from sqlalchemy import (
@@ -22,6 +22,7 @@ from platypush.message import JSONAble
 
 Base = declarative_base()
 entities_registry: Mapping[Type['Entity'], Mapping] = {}
+entity_types_registry: Dict[str, Type['Entity']] = {}
 
 
 class Entity(Base):
@@ -30,7 +31,6 @@ class Entity(Base):
     """
 
     __tablename__ = 'entity'
-    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, autoincrement=True, primary_key=True)
     external_id = Column(String, nullable=True)
@@ -54,6 +54,7 @@ class Entity(Base):
     __table_args__ = (
         Index('name_and_plugin_index', name, plugin),
         Index('name_type_and_plugin_index', name, type, plugin),
+        {'extend_existing': True},
     )
 
     __mapper_args__ = {

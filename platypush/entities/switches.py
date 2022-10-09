@@ -1,14 +1,22 @@
 from sqlalchemy import Column, Integer, ForeignKey, Boolean
 
-from .devices import Device
+from .devices import Device, entity_types_registry
 
 
-class Switch(Device):
-    __tablename__ = 'switch'
+if not entity_types_registry.get('Switch'):
 
-    id = Column(Integer, ForeignKey(Device.id, ondelete='CASCADE'), primary_key=True)
-    state = Column(Boolean)
+    class Switch(Device):
+        __tablename__ = 'switch'
 
-    __mapper_args__ = {
-        'polymorphic_identity': __tablename__,
-    }
+        id = Column(
+            Integer, ForeignKey(Device.id, ondelete='CASCADE'), primary_key=True
+        )
+        state = Column(Boolean)
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }
+
+    entity_types_registry['Switch'] = Switch
+else:
+    Switch = entity_types_registry['Switch']
