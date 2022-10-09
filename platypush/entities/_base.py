@@ -30,6 +30,7 @@ class Entity(Base):
     """
 
     __tablename__ = 'entity'
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, autoincrement=True, primary_key=True)
     external_id = Column(String, nullable=True)
