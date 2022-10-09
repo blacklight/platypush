@@ -213,7 +213,8 @@ def authenticate(
                 412,
             )
 
-        return redirect('/login?redirect=' + (redirect_page or request.url), 307)
+        target_page = 'login' if has_users else 'register'
+        return redirect(f'/{target_page}?redirect={redirect_page or request.url}', 307)
 
     def decorator(f):
         @wraps(f)
