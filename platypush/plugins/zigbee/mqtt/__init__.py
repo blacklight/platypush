@@ -191,12 +191,44 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                     id=dev['ieee_address'],
                     name=dev.get('friendly_name'),
                     on=dev.get('state', {}).get('state') == switch_info.get('value_on'),
-                    brightness=dev.get('state', {}).get('brightness'),
                     brightness_min=light_info.get('brightness_min'),
                     brightness_max=light_info.get('brightness_max'),
-                    temperature=dev.get('state', {}).get('temperature'),
                     temperature_min=light_info.get('temperature_min'),
                     temperature_max=light_info.get('temperature_max'),
+                    hue_min=light_info.get('hue_min'),
+                    hue_max=light_info.get('hue_max'),
+                    saturation_min=light_info.get('saturation_min'),
+                    saturation_max=light_info.get('saturation_max'),
+                    brightness=(
+                        dev.get('state', {})
+                        .get('color', {})
+                        .get(light_info.get('brightness_name', 'brightness'))
+                    ),
+                    temperature=(
+                        dev.get('state', {})
+                        .get('color', {})
+                        .get(light_info.get('temperature_name', 'temperature'))
+                    ),
+                    hue=(
+                        dev.get('state', {})
+                        .get('color', {})
+                        .get(light_info.get('hue_name', 'hue'))
+                    ),
+                    saturation=(
+                        dev.get('state', {})
+                        .get('color', {})
+                        .get(light_info.get('saturation_name', 'saturation'))
+                    ),
+                    x=(
+                        dev.get('state', {})
+                        .get('color', {})
+                        .get(light_info.get('x_name', 'x'))
+                    ),
+                    y=(
+                        dev.get('state', {})
+                        .get('color', {})
+                        .get(light_info.get('y_name', 'y'))
+                    ),
                     description=dev_def.get('description'),
                     data=dev_info,
                 )
@@ -827,7 +859,14 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
 
     # noinspection PyShadowingBuiltins,DuplicatedCode
     @action
-    def device_set(self, device: str, property: str, value: Any, **kwargs):
+    def device_set(
+        self,
+        device: str,
+        property: Optional[str] = None,
+        value: Optional[Any] = None,
+        values: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ):
         """
         Set a properties on a device. The compatible properties vary depending on the device. For example, a light bulb
         may have the "``state``" and "``brightness``" properties, while an environment sensor may have the
@@ -836,13 +875,18 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         :param device: Display name of the device.
         :param property: Name of the property that should be set.
         :param value: New value of the property.
+        :param values: If you want to set multiple values, then pass this mapping instead of ``property``+``value``.
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
+        msg = (values or {}).copy()
+        if property:
+            msg[property] = value
+
         properties = self.publish(
             topic=self._topic(device + '/set'),
             reply_topic=self._topic(device),
-            msg={property: value},
+            msg=msg,
             **self._mqtt_args(**kwargs),
         ).output
 
@@ -1380,6 +1424,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 switch = {}
                 brightness = {}
                 temperature = {}
+                color = {}
 
                 for feature in features:
                     if (
@@ -1422,6 +1467,74 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                             'is_read_only': not bool(feature.get('access', 0) & 2),
                             'is_write_only': not bool(feature.get('access', 0) & 1),
                         }
+                    elif (
+                        feature.get('property') == 'color'
+                        and feature.get('type') == 'composite'
+                    ):
+                        color_features = feature.get('features', [])
+                        for color_feature in color_features:
+                            if color_feature.get('property') == 'hue':
+                                color.update(
+                                    {
+                                        'hue_name': color_feature['name'],
+                                        'hue_min': color_feature.get('value_min', 0),
+                                        'hue_max': color_feature.get(
+                                            'value_max', 65535
+                                        ),
+                                        'is_read_only': not bool(
+                                            feature.get('access', 0) & 2
+                                        ),
+                                        'is_write_only': not bool(
+                                            feature.get('access', 0) & 1
+                                        ),
+                                    }
+                                )
+                            elif color_feature.get('property') == 'saturation':
+                                color.update(
+                                    {
+                                        'saturation_name': color_feature['name'],
+                                        'saturation_min': color_feature.get(
+                                            'value_min', 0
+                                        ),
+                                        'saturation_max': color_feature.get(
+                                            'value_max', 255
+                                        ),
+                                        'is_read_only': not bool(
+                                            feature.get('access', 0) & 2
+                                        ),
+                                        'is_write_only': not bool(
+                                            feature.get('access', 0) & 1
+                                        ),
+                                    }
+                                )
+                            elif color_feature.get('property') == 'x':
+                                color.update(
+                                    {
+                                        'x_name': color_feature['name'],
+                                        'x_min': color_feature.get('value_min', 0.0),
+                                        'x_max': color_feature.get('value_max', 1.0),
+                                        'is_read_only': not bool(
+                                            feature.get('access', 0) & 2
+                                        ),
+                                        'is_write_only': not bool(
+                                            feature.get('access', 0) & 1
+                                        ),
+                                    }
+                                )
+                            elif color_feature.get('property') == 'y':
+                                color.update(
+                                    {
+                                        'y_name': color_feature['name'],
+                                        'y_min': color_feature.get('value_min', 0),
+                                        'y_max': color_feature.get('value_max', 255),
+                                        'is_read_only': not bool(
+                                            feature.get('access', 0) & 2
+                                        ),
+                                        'is_write_only': not bool(
+                                            feature.get('access', 0) & 1
+                                        ),
+                                    }
+                                )
 
                 return {
                     'friendly_name': device_info.get('friendly_name'),
@@ -1429,6 +1542,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                     **switch,
                     **brightness,
                     **temperature,
+                    **color,
                 }
 
         return {}
@@ -1469,6 +1583,10 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
 
     @action
     def set_lights(self, lights, **kwargs):
+        """
+        Set the state for one or more Zigbee lights.
+        """
+        lights = [lights] if isinstance(lights, str) else lights
         devices = [
             dev
             for dev in self._get_network_info().get('devices', [])
@@ -1478,18 +1596,47 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         for dev in devices:
             light_meta = self._get_light_meta(dev)
             assert light_meta, f'{dev["name"]} is not a light'
+            data = {}
 
             for attr, value in kwargs.items():
                 if attr == 'on':
-                    attr = light_meta['state_name']
+                    data[light_meta['state_name']] = value
                 elif attr in {'brightness', 'bri'}:
-                    attr = light_meta['brightness_name']
+                    data[light_meta['brightness_name']] = int(value)
                 elif attr in {'temperature', 'ct'}:
-                    attr = light_meta['temperature_name']
+                    data[light_meta['temperature_name']] = int(value)
+                elif attr in {'saturation', 'sat'}:
+                    data['color'] = {
+                        **data.get('color', {}),
+                        light_meta['saturation_name']: int(value),
+                    }
+                elif attr == 'hue':
+                    data['color'] = {
+                        **data.get('color', {}),
+                        light_meta['hue_name']: int(value),
+                    }
+                elif attr == 'xy':
+                    data['color'] = {
+                        **data.get('color', {}),
+                        light_meta['x_name']: float(value[0]),
+                        light_meta['y_name']: float(value[1]),
+                    }
+                elif attr == 'x':
+                    data['color'] = {
+                        **data.get('color', {}),
+                        light_meta['x_name']: float(value),
+                    }
+                elif attr == 'y':
+                    data['color'] = {
+                        **data.get('color', {}),
+                        light_meta['y_name']: float(value),
+                    }
+                else:
+                    data[attr] = value
 
-                self.device_set(
-                    dev.get('friendly_name', dev.get('ieee_address')), attr, value
-                )
+            self.device_set(
+                dev.get('friendly_name', dev.get('ieee_address')), values=data
+            )
 
 
 # vim:sw=4:ts=4:et:

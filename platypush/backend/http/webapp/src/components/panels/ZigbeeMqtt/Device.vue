@@ -436,10 +436,8 @@ export default {
 
               const xy = converter.rgbToXY(...rgb)
               request.value = {
-                color: {
-                  x: xy[0],
-                  y: xy[1],
-                }
+                x: xy[0],
+                y: xy[1],
               }
             } else {
               const satAttr = this.displayedValues.color.saturation != null ? 'saturation' : 'sat'
@@ -451,13 +449,10 @@ export default {
 
               const hsl = converter.rgbToHsl(...rgb)
               request.value = {
-                brightness: hsl[2],
-                color: {
-                  hue: hsl[0],
-                }
+                hue: hsl[0],
               }
 
-              request.value.color[satAttr] = hsl[1]
+              request.value[satAttr] = hsl[1]
             }
           }
           break
