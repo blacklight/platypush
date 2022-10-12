@@ -1,7 +1,14 @@
 <template>
   <label class="slider-wrapper">
-    <input class="slider" type="range" ref="range" :min="range[0]" :max="range[1]"
-           :step="step" :disabled="disabled" :value="value"
+    <input class="slider"
+           type="range"
+           :class="{'with-label': withLabel}"
+           :min="range[0]"
+           :max="range[1]"
+           :step="step"
+           :disabled="disabled"
+           :value="value"
+           ref="range"
            @input.stop="onUpdate"
            @change.stop="onUpdate"
            @mouseup.stop="onUpdate"
@@ -11,11 +18,11 @@
            @keyup.stop="onUpdate"
            @keydown.stop="onUpdate">
 
-   <div class="track">
+   <div class="track" :class="{'with-label': withLabel}">
      <div class="track-inner" ref="track"></div>
    </div>
    <div class="thumb" ref="thumb"></div>
-   <span class="label" v-if="withLabel" v-text="value"></span>
+   <span class="label" v-if="withLabel" v-text="value" ref="label"></span>
   </label>
 </template>
 
@@ -62,10 +69,14 @@ export default {
     },
 
     update(value) {
-      const percent = ((value - this.range[0]) * 100) / (this.range[1] - this.range[0])
-      this.$refs.thumb.style.left = `${percent}%`
+      const sliderWidth = this.$refs.range.clientWidth
+      const percent = (value - this.range[0]) / (this.range[1] - this.range[0])
+      const innerWidth = percent * sliderWidth
+      const thumb = this.$refs.thumb
+
+      thumb.style.left = `${innerWidth - thumb.clientWidth / 2}px`
       this.$refs.thumb.style.transform = `translate(-${percent}%, -50%)`
-      this.$refs.track.style.width = `${percent}%`
+      this.$refs.track.style.width = `${innerWidth}px`
     },
   },
 
@@ -77,6 +88,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+$label-width: 3em;
+
 .slider-wrapper {
   width: 100%;
   display: flex;
@@ -109,6 +122,10 @@ export default {
       background: $slider-progress-bg;
       border-radius: 0.5em 0 0 0.5em;
     }
+
+    &.with-label {
+      width: calc(100% - $label-width);
+    }
   }
 
   .thumb {
@@ -124,12 +141,11 @@ export default {
     pointer-events: none;
   }
 
-  label {
+  .label {
+    width: $label-width;
     position: relative;
-    .label {
-      font-weight: normal;
-      text-align: center;
-    }
+    font-weight: normal;
+    text-align: center;
   }
 }
 </style>
