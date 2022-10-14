@@ -201,6 +201,8 @@ class Config:
                 )
 
                 for include_file in include_files:
+                    if not include_file:
+                        continue
                     if not os.path.isabs(include_file):
                         include_file = os.path.join(cfgfile_dir, include_file)
                     self._included_files.add(include_file)
