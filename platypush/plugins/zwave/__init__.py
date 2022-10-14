@@ -33,6 +33,7 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         if not backend.network:
             backend.start_network()
 
+        assert backend.network
         return backend.network
 
     @classmethod
@@ -67,7 +68,7 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         }
 
     @action
-    def add_node(self, do_security=False):
+    def add_node(self, do_security=False, **_):
         """
         Start the inclusion process to add a node to the network.
 
@@ -77,7 +78,7 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         controller.add_node(do_security)
 
     @action
-    def remove_node(self):
+    def remove_node(self, **_):
         """
         Remove a node from the network.
         """
@@ -86,7 +87,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self.write_config()
 
     @action
-    def remove_failed_node(self, node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def remove_failed_node(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ):
         """
         Remove a failed node from the network.
 
@@ -99,7 +102,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self.write_config()
 
     @action
-    def replace_failed_node(self, node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def replace_failed_node(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ):
         """
         Replace a failed node on the network.
 
@@ -112,7 +117,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self.write_config()
 
     @action
-    def replication_send(self, node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def replication_send(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ):
         """
         Send node information from the primary to the secondary controller.
 
@@ -124,7 +131,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         controller.replication_send(node.node_id)
 
     @action
-    def request_network_update(self, node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def request_network_update(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ):
         """
         Request a network update to a node.
 
@@ -136,7 +145,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         controller.request_network_update(node.node_id)
 
     @action
-    def request_node_neighbour_update(self, node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def request_node_neighbour_update(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ):
         """
         Request a neighbours list update to a node.
 
@@ -154,15 +165,22 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
 
         return {
             'command_class': value.node.get_command_class_as_string(value.command_class)
-            if value.command_class else None,
+            if value.command_class
+            else None,
             'data': value.data,
             'data_as_string': value.data_as_string,
-            'data_items': list(value.data_items) if isinstance(value.data_items, set) else value.data_items,
+            'data_items': list(value.data_items)
+            if isinstance(value.data_items, set)
+            else value.data_items,
             'genre': value.genre,
             'help': value.help,
             'home_id': value.home_id,
-            'id_on_network': value.id_on_network if value.parent_id is not None and value.command_class is not None
-            and value.instance is not None and value.index is not None else None,
+            'id_on_network': value.id_on_network
+            if value.parent_id is not None
+            and value.command_class is not None
+            and value.instance is not None
+            and value.index is not None
+            else None,
             'index': value.index,
             'instance': value.instance,
             'is_polled': value.is_polled,
@@ -206,8 +224,13 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
             'node_id': node.node_id,
             'home_id': node.home_id,
             'capabilities': list(node.capabilities),
-            'command_classes': [node.get_command_class_as_string(cc) for cc in node.command_classes if cc]
-            if hasattr(node, 'command_classes') else [],
+            'command_classes': [
+                node.get_command_class_as_string(cc)
+                for cc in node.command_classes
+                if cc
+            ]
+            if hasattr(node, 'command_classes')
+            else [],
             'device_type': node.device_type if hasattr(node, 'device_type') else '',
             'groups': {
                 group_id: cls.group_to_dict(group)
@@ -215,27 +238,50 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
             },
             'is_awake': node.is_awake if hasattr(node, 'is_awake') else False,
             'is_failed': node.is_failed if hasattr(node, 'is_failed') else False,
-            'is_beaming_device': node.is_beaming_device if hasattr(node, 'is_beaming_device') else False,
+            'is_beaming_device': node.is_beaming_device
+            if hasattr(node, 'is_beaming_device')
+            else False,
             'is_frequent_listening_device': node.is_frequent_listening_device
-            if hasattr(node, 'is_frequent_listening_device') else False,
-            'is_info_received': node.is_info_received if hasattr(node, 'is_info_received') else False,
-            'is_listening_device': node.is_listening_device if hasattr(node, 'is_listening_device') else False,
+            if hasattr(node, 'is_frequent_listening_device')
+            else False,
+            'is_info_received': node.is_info_received
+            if hasattr(node, 'is_info_received')
+            else False,
+            'is_listening_device': node.is_listening_device
+            if hasattr(node, 'is_listening_device')
+            else False,
             'is_locked': node.is_locked if hasattr(node, 'is_locked') else False,
             'is_ready': node.is_ready if hasattr(node, 'is_ready') else False,
-            'is_routing_device': node.is_routing_device if hasattr(node, 'is_routing_device') else False,
-            'is_security_device': node.is_security_device if hasattr(node, 'is_security_device') else False,
+            'is_routing_device': node.is_routing_device
+            if hasattr(node, 'is_routing_device')
+            else False,
+            'is_security_device': node.is_security_device
+            if hasattr(node, 'is_security_device')
+            else False,
             'is_sleeping': node.is_sleeping if hasattr(node, 'is_sleeping') else False,
             'last_update': node.last_update if hasattr(node, 'last_update') else None,
             'location': node.location if hasattr(node, 'location') else None,
-            'manufacturer_id': node.manufacturer_id if hasattr(node, 'manufacturer_id') else None,
-            'manufacturer_name': node.manufacturer_name if hasattr(node, 'manufacturer_name') else None,
-            'max_baud_rate': node.max_baud_rate if hasattr(node, 'max_baud_rate') else None,
-            'neighbours': [node_id for node_id in node.neighbors] if hasattr(node, 'neighbours') else [],
+            'manufacturer_id': node.manufacturer_id
+            if hasattr(node, 'manufacturer_id')
+            else None,
+            'manufacturer_name': node.manufacturer_name
+            if hasattr(node, 'manufacturer_name')
+            else None,
+            'max_baud_rate': node.max_baud_rate
+            if hasattr(node, 'max_baud_rate')
+            else None,
+            'neighbours': list(node.neighbors or [])
+            if hasattr(node, 'neighbours')
+            else [],
             'name': node.name if hasattr(node, 'name') else None,
             'outdated': node.outdated if hasattr(node, 'outdated') else False,
             'product_id': node.product_id if hasattr(node, 'product_id') else None,
-            'product_name': node.product_name if hasattr(node, 'product_name') else None,
-            'product_type': node.product_type if hasattr(node, 'product_type') else None,
+            'product_name': node.product_name
+            if hasattr(node, 'product_name')
+            else None,
+            'product_type': node.product_type
+            if hasattr(node, 'product_type')
+            else None,
             'query_stage': node.query_stage if hasattr(node, 'query_stage') else None,
             'role': node.role if hasattr(node, 'role') else None,
             'security': node.security if hasattr(node, 'security') else None,
@@ -245,19 +291,23 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
             'version': node.version if hasattr(node, 'version') else None,
             'values': {
                 value.id_on_network: cls.value_to_dict(value)
-                for value_id, value in (node.values or {}).items()
+                for _, value in (node.values or {}).items()
                 if value.index is not None
                 and value.instance is not None
                 and value.command_class
                 and value.parent_id is not None
                 and value._network
                 and value._network.home_id is not None
-            } if hasattr(node, 'values') else {},
+            }
+            if hasattr(node, 'values')
+            else {},
         }
 
     def _get_node(self, node_id: Optional[int] = None, node_name: Optional[str] = None):
-        assert node_id is not None or node_name is not None, 'Specify either node_id or name'
-        nodes = self._get_backend().network.nodes
+        assert (
+            node_id is not None or node_name is not None
+        ), 'Specify either node_id or name'
+        nodes = self._get_network().nodes
 
         if node_id is not None:
             assert node_id in nodes, 'No such node_id: {}'.format(node_id)
@@ -270,12 +320,16 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
     def _get_groups(self) -> dict:
         return {
             group_index: group
-            for node in self._get_backend().network.nodes.values()
+            for node in self._get_network().nodes.values()
             for group_index, group in node.groups.items()
         }
 
-    def _get_group(self, group_index: Optional[int] = None, group_label: Optional[str] = None):
-        assert group_index is not None or group_label is not None, 'Specify either group_index or label'
+    def _get_group(
+        self, group_index: Optional[int] = None, group_label: Optional[str] = None
+    ):
+        assert (
+            group_index is not None or group_label is not None
+        ), 'Specify either group_index or label'
         groups = self._get_groups()
 
         if group_index is not None:
@@ -286,9 +340,13 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         assert groups, 'No such group label: {}'.format(group_label)
         return groups[0]
 
-    def _get_scene(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None):
-        assert scene_id is not None or scene_label is not None, 'Specify either scene_id or label'
-        scenes = self._get_backend().network.get_scenes()
+    def _get_scene(
+        self, scene_id: Optional[int] = None, scene_label: Optional[str] = None
+    ):
+        assert (
+            scene_id is not None or scene_label is not None
+        ), 'Specify either scene_id or label'
+        scenes = self._get_network().get_scenes()
 
         if scene_id is not None:
             assert scene_id in scenes, 'No such scene_id: {}'.format(scene_id)
@@ -299,7 +357,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         return scenes[0]
 
     @action
-    def get_nodes(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[str, Any]:
+    def get_nodes(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Get the nodes associated to the network.
 
@@ -307,15 +367,19 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         :param node_name: Filter by node name.
         """
         if node_id is not None or node_name is not None:
-            return self.node_to_dict(self._get_node(node_id=node_id, node_name=node_name))
+            return self.node_to_dict(
+                self._get_node(node_id=node_id, node_name=node_name)
+            )
 
         return {
             node_id: self.node_to_dict(node)
-            for node_id, node in self._get_backend().network.nodes.items()
+            for node_id, node in self._get_network().nodes.items()
         }
 
     @action
-    def get_node_stats(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[str, Any]:
+    def get_node_stats(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Get the statistics of a node on the network.
 
@@ -326,7 +390,12 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         return node.stats
 
     @action
-    def set_node_name(self, new_name: str, node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def set_node_name(
+        self,
+        new_name: str,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ):
         """
         Rename a node on the network.
 
@@ -339,7 +408,12 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self.write_config()
 
     @action
-    def set_node_product_name(self, product_name: str, node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def set_node_product_name(
+        self,
+        product_name: str,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ):
         """
         Set the product name of a node.
 
@@ -352,8 +426,12 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self.write_config()
 
     @action
-    def set_node_manufacturer_name(self, manufacturer_name: str, node_id: Optional[int] = None,
-                                   node_name: Optional[str] = None):
+    def set_node_manufacturer_name(
+        self,
+        manufacturer_name: str,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ):
         """
         Set the manufacturer name of a node.
 
@@ -366,7 +444,12 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self.write_config()
 
     @action
-    def set_node_location(self, location: str, node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def set_node_location(
+        self,
+        location: str,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ):
         """
         Set the location of a node.
 
@@ -451,19 +534,27 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         """
         self._get_network().test(count)
 
-    def _get_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
-                   node_id: Optional[int] = None, node_name: Optional[str] = None, value_label: Optional[str] = None):
-        assert (value_id is not None or id_on_network is not None) or \
-               ((node_id is not None or node_name is not None) and value_label is not None), \
-               'Specify either value_id, id_on_network, or [node_id/node_name, value_label]'
+    def _get_value(
+        self,
+        value_id: Optional[int] = None,
+        id_on_network: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+        value_label: Optional[str] = None,
+    ):
+        assert (value_id is not None or id_on_network is not None) or (
+            (node_id is not None or node_name is not None) and value_label is not None
+        ), 'Specify either value_id, id_on_network, or [node_id/node_name, value_label]'
 
         if value_id is not None:
             return self._get_network().get_value(value_id)
         if id_on_network is not None:
-            values = [value
-                      for node in self._get_network().nodes.values()
-                      for value in node.values.values()
-                      if value.id_on_network == id_on_network]
+            values = [
+                value
+                for node in self._get_network().nodes.values()
+                for value in node.values.values()
+                if value.id_on_network == id_on_network
+            ]
 
             assert values, 'No such value ID: {}'.format(id_on_network)
             return values[0]
@@ -474,9 +565,14 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         return values[0]
 
     @action
-    def get_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
-                  value_label: Optional[str] = None, node_id: Optional[int] = None, node_name: Optional[str] = None) \
-            -> Dict[str, Any]:
+    def get_value(
+        self,
+        value_id: Optional[int] = None,
+        id_on_network: Optional[str] = None,
+        value_label: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
         Get a value on the network.
 
@@ -486,12 +582,24 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         :param node_id: Select value by [node_id/node_name, value_label]
         :param node_name: Select value by [node_id/node_name, value_label]
         """
-        return self._get_value(value_id=value_id, id_on_network=id_on_network,
-                               node_id=node_id, node_name=node_name, value_label=value_label).to_dict()
+        return self._get_value(
+            value_id=value_id,
+            id_on_network=id_on_network,
+            node_id=node_id,
+            node_name=node_name,
+            value_label=value_label,
+        ).to_dict()
 
     @action
-    def set_value(self, data, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
-                  value_label: Optional[str] = None, node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def set_value(
+        self,
+        data,
+        value_id: Optional[int] = None,
+        id_on_network: Optional[str] = None,
+        value_label: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ):
         """
         Set a value.
 
@@ -503,8 +611,14 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         :param node_name: Select value by [node_id/node_name, value_label]
         """
         from openzwave.node import ZWaveNode
-        value = self._get_value(value_id=value_id, id_on_network=id_on_network,
-                                node_id=node_id, node_name=node_name, value_label=value_label)
+
+        value = self._get_value(
+            value_id=value_id,
+            id_on_network=id_on_network,
+            node_id=node_id,
+            node_name=node_name,
+            value_label=value_label,
+        )
         new_val = value.check_data(data)
         assert new_val is not None, 'Invalid value passed to the property'
         node: ZWaveNode = self._get_network().nodes[value.node.node_id]
@@ -512,9 +626,15 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self.write_config()
 
     @action
-    def set_value_label(self, new_label: str, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
-                        value_label: Optional[str] = None, node_id: Optional[int] = None,
-                        node_name: Optional[str] = None):
+    def set_value_label(
+        self,
+        new_label: str,
+        value_id: Optional[int] = None,
+        id_on_network: Optional[str] = None,
+        value_label: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ):
         """
         Change the label/name of a value.
 
@@ -525,15 +645,25 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         :param node_id: Select value by [node_id/node_name, value_label]
         :param node_name: Select value by [node_id/node_name, value_label]
         """
-        value = self._get_value(value_id=value_id, id_on_network=id_on_network,
-                                node_id=node_id, node_name=node_name, value_label=value_label)
+        value = self._get_value(
+            value_id=value_id,
+            id_on_network=id_on_network,
+            node_id=node_id,
+            node_name=node_name,
+            value_label=value_label,
+        )
         value.label = new_label
         self.write_config()
 
     @action
-    def node_add_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
-                       value_label: Optional[str] = None, node_id: Optional[int] = None,
-                       node_name: Optional[str] = None):
+    def node_add_value(
+        self,
+        value_id: Optional[int] = None,
+        id_on_network: Optional[str] = None,
+        value_label: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ):
         """
         Add a value to a node.
 
@@ -544,15 +674,24 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         :param node_name: Select node by label.
         """
         node = self._get_node(node_id=node_id, node_name=node_name)
-        value = self._get_value(value_id=value_id, id_on_network=id_on_network, node_id=node.node_id,
-                                value_label=value_label)
+        value = self._get_value(
+            value_id=value_id,
+            id_on_network=id_on_network,
+            node_id=node.node_id,
+            value_label=value_label,
+        )
         node.add_value(value.value_id)
         self.write_config()
 
     @action
-    def node_remove_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
-                          value_label: Optional[str] = None, node_id: Optional[int] = None,
-                          node_name: Optional[str] = None):
+    def node_remove_value(
+        self,
+        value_id: Optional[int] = None,
+        id_on_network: Optional[str] = None,
+        value_label: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ):
         """
         Remove a value from a node.
 
@@ -563,13 +702,22 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         :param node_name: Select node by label.
         """
         node = self._get_node(node_id=node_id, node_name=node_name)
-        value = self._get_value(value_id=value_id, id_on_network=id_on_network, node_id=node.node_id,
-                                value_label=value_label)
+        value = self._get_value(
+            value_id=value_id,
+            id_on_network=id_on_network,
+            node_id=node.node_id,
+            value_label=value_label,
+        )
         node.remove_value(value.value_id)
         self.write_config()
 
     @action
-    def node_heal(self, node_id: Optional[int] = None, node_name: Optional[str] = None, refresh_routes: bool = False):
+    def node_heal(
+        self,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+        refresh_routes: bool = False,
+    ):
         """
         Heal network node by requesting the node to rediscover their neighbours.
 
@@ -581,7 +729,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         node.heal(refresh_routes)
 
     @action
-    def node_update_neighbours(self, node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def node_update_neighbours(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ):
         """
         Ask a node to update its neighbours table.
 
@@ -592,7 +742,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         node.neighbor_update()
 
     @action
-    def node_network_update(self, node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def node_network_update(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ):
         """
         Update the controller with network information.
 
@@ -603,7 +755,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         node.network_update()
 
     @action
-    def node_refresh_info(self, node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def node_refresh_info(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ):
         """
         Fetch up-to-date information about the node.
 
@@ -613,22 +767,29 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         node = self._get_node(node_id=node_id, node_name=node_name)
         node.refresh_info()
 
-    def _get_values(self, item: str, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[int, Any]:
-        nodes = [self._get_node(node_id=node_id, node_name=node_name)] if node_id or node_name \
+    def _get_values(
+        self, item: str, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ) -> Dict[int, Any]:
+        nodes = (
+            [self._get_node(node_id=node_id, node_name=node_name)]
+            if node_id or node_name
             else self._get_network().nodes.values()
+        )
 
         return {
             value.id_on_network: {
                 'node_id': node.node_id,
                 'node_name': node.name,
-                **self.value_to_dict(value)
+                **self.value_to_dict(value),
             }
             for node in nodes
-            for value_id, value in getattr(node, 'get_' + item)().items()
+            for value in getattr(node, 'get_' + item)().values()
         }
 
     @action
-    def get_dimmers(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[int, Any]:
+    def get_dimmers(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ) -> Dict[int, Any]:
         """
         Get the dimmers on the network or associated to a node.
 
@@ -638,7 +799,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         return self._get_values('dimmers', node_id=node_id, node_name=node_name)
 
     @action
-    def get_node_config(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[int, Any]:
+    def get_node_config(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ) -> Dict[int, Any]:
         """
         Get the configuration values of a node or of all the nodes on the network.
 
@@ -648,7 +811,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         return self._get_values('configs', node_id=node_id, node_name=node_name)
 
     @action
-    def get_battery_levels(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[int, Any]:
+    def get_battery_levels(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ) -> Dict[int, Any]:
         """
         Get the battery levels of a node or of all the nodes on the network.
 
@@ -658,7 +823,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         return self._get_values('battery_levels', node_id=node_id, node_name=node_name)
 
     @action
-    def get_power_levels(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[int, Any]:
+    def get_power_levels(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ) -> Dict[int, Any]:
         """
         Get the power levels of this node.
 
@@ -668,7 +835,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         return self._get_values('power_levels', node_id=node_id, node_name=node_name)
 
     @action
-    def get_bulbs(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[int, Any]:
+    def get_bulbs(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ) -> Dict[int, Any]:
         """
         Get the bulbs/LEDs on the network or associated to a node.
 
@@ -678,7 +847,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         return self._get_values('rgbbulbs', node_id=node_id, node_name=node_name)
 
     @action
-    def get_switches(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[int, Any]:
+    def get_switches(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ) -> Dict[int, Any]:
         """
         Get the switches on the network or associated to a node.
 
@@ -688,7 +859,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         return self._get_values('switches', node_id=node_id, node_name=node_name)
 
     @action
-    def get_sensors(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[int, Any]:
+    def get_sensors(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ) -> Dict[int, Any]:
         """
         Get the sensors on the network or associated to a node.
 
@@ -698,7 +871,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         return self._get_values('sensors', node_id=node_id, node_name=node_name)
 
     @action
-    def get_doorlocks(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[int, Any]:
+    def get_doorlocks(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ) -> Dict[int, Any]:
         """
         Get the doorlocks on the network or associated to a node.
 
@@ -708,7 +883,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         return self._get_values('doorlocks', node_id=node_id, node_name=node_name)
 
     @action
-    def get_usercodes(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[int, Any]:
+    def get_usercodes(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ) -> Dict[int, Any]:
         """
         Get the usercodes on the network or associated to a node.
 
@@ -718,7 +895,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         return self._get_values('usercodes', node_id=node_id, node_name=node_name)
 
     @action
-    def get_thermostats(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[int, Any]:
+    def get_thermostats(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ) -> Dict[int, Any]:
         """
         Get the thermostats on the network or associated to a node.
 
@@ -728,7 +907,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         return self._get_values('thermostats', node_id=node_id, node_name=node_name)
 
     @action
-    def get_protections(self, node_id: Optional[int] = None, node_name: Optional[str] = None) -> Dict[int, Any]:
+    def get_protections(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None
+    ) -> Dict[int, Any]:
         """
         Get the protection-compatible devices on the network or associated to a node.
 
@@ -769,7 +950,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self.write_config()
 
     @action
-    def remove_scene(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None):
+    def remove_scene(
+        self, scene_id: Optional[int] = None, scene_label: Optional[str] = None
+    ):
         """
         Remove a scene.
 
@@ -781,7 +964,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self.write_config()
 
     @action
-    def activate_scene(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None):
+    def activate_scene(
+        self, scene_id: Optional[int] = None, scene_label: Optional[str] = None
+    ):
         """
         Activate a scene.
 
@@ -792,7 +977,12 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         scene.activate()
 
     @action
-    def set_scene_label(self, new_label: str, scene_id: Optional[int] = None, scene_label: Optional[str] = None):
+    def set_scene_label(
+        self,
+        new_label: str,
+        scene_id: Optional[int] = None,
+        scene_label: Optional[str] = None,
+    ):
         """
         Rename a scene/set the scene label.
 
@@ -805,16 +995,23 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self.write_config()
 
     @action
-    def scene_add_value(self, data: Optional[Any] = None,
-                        value_id: Optional[int] = None, id_on_network: Optional[str] = None,
-                        value_label: Optional[str] = None, scene_id: Optional[int] = None,
-                        scene_label: Optional[str] = None, node_id: Optional[int] = None,
-                        node_name: Optional[str] = None):
+    def scene_add_value(
+        self,
+        data: Optional[Any] = None,
+        value_id: Optional[int] = None,
+        id_on_network: Optional[str] = None,
+        value_label: Optional[str] = None,
+        scene_id: Optional[int] = None,
+        scene_label: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ):
         """
         Add a value to a scene.
 
         WARNING: This method actually doesn't work, by own admission of the
-        `OpenZWave developer <https://github.com/OpenZWave/python-openzwave/blob/master/src-lib/libopenzwave/libopenzwave.pyx#L4730>`_.
+        `OpenZWave developer
+        <https://github.com/OpenZWave/python-openzwave/blob/master/src-lib/libopenzwave/libopenzwave.pyx#L4730>`_.
 
 
         :param data: Data to set for the value (default: current value data).
@@ -826,8 +1023,13 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         :param scene_id: Select scene by scene_id.
         :param scene_label: Select scene by scene label.
         """
-        value = self._get_value(value_id=value_id, id_on_network=id_on_network, node_id=node_id, node_name=node_name,
-                                value_label=value_label)
+        value = self._get_value(
+            value_id=value_id,
+            id_on_network=id_on_network,
+            node_id=node_id,
+            node_name=node_name,
+            value_label=value_label,
+        )
         scene = self._get_scene(scene_id=scene_id, scene_label=scene_label)
         data = data if data is not None else value.data
         data = value.check_data(data)
@@ -837,10 +1039,16 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self.write_config()
 
     @action
-    def scene_remove_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
-                           value_label: Optional[str] = None, scene_id: Optional[int] = None,
-                           scene_label: Optional[str] = None, node_id: Optional[int] = None,
-                           node_name: Optional[str] = None):
+    def scene_remove_value(
+        self,
+        value_id: Optional[int] = None,
+        id_on_network: Optional[str] = None,
+        value_label: Optional[str] = None,
+        scene_id: Optional[int] = None,
+        scene_label: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ):
         """
         Remove a value from a scene.
 
@@ -852,14 +1060,21 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         :param scene_id: Select scene by scene_id.
         :param scene_label: Select scene by scene label.
         """
-        value = self._get_value(value_id=value_id, id_on_network=id_on_network, node_id=node_id, node_name=node_name,
-                                value_label=value_label)
+        value = self._get_value(
+            value_id=value_id,
+            id_on_network=id_on_network,
+            node_id=node_id,
+            node_name=node_name,
+            value_label=value_label,
+        )
         scene = self._get_scene(scene_id=scene_id, scene_label=scene_label)
         scene.remove_value(value.value_id)
         self.write_config()
 
     @action
-    def get_scene_values(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None) -> dict:
+    def get_scene_values(
+        self, scene_id: Optional[int] = None, scene_label: Optional[str] = None
+    ) -> dict:
         """
         Get the values associated to a scene.
 
@@ -871,18 +1086,12 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         return {v.value_id: v.to_dict() for v in scene.get_values().items()}
 
     @action
-    def get_scene_values(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None) -> dict:
-        """
-        Get the values associated to a scene.
-
-        :param scene_id: Select by scene_id.
-        :param scene_label: Select by scene label.
-        """
-        scene = self._get_scene(scene_id=scene_id, scene_label=scene_label)
-        return {v.value_id: v.to_dict() for v in scene.get_values().items()}
-
-    @action
-    def create_button(self, button_id: Union[int, str], node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def create_button(
+        self,
+        button_id: Union[int, str],
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ):
         """
         Create a handheld button on a device. Only intended for bridge firmware controllers.
 
@@ -895,7 +1104,12 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self.write_config()
 
     @action
-    def delete_button(self, button_id: Union[int, str], node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def delete_button(
+        self,
+        button_id: Union[int, str],
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ):
         """
         Delete a button association from a device. Only intended for bridge firmware controllers.
 
@@ -908,8 +1122,13 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self.write_config()
 
     @action
-    def add_node_to_group(self, group_index: Optional[int] = None, group_label: Optional[str] = None,
-                          node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def add_node_to_group(
+        self,
+        group_index: Optional[int] = None,
+        group_label: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ):
         """
         Add a node to a group.
 
@@ -925,8 +1144,13 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self.write_config()
 
     @action
-    def remove_node_from_group(self, group_index: Optional[int] = None, group_label: Optional[str] = None,
-                               node_id: Optional[int] = None, node_name: Optional[str] = None):
+    def remove_node_from_group(
+        self,
+        group_index: Optional[int] = None,
+        group_label: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+    ):
         """
         Remove a node from a group.
 
@@ -973,7 +1197,7 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         self._get_network().write_config()
 
     @action
-    def on(self, device: str, *args, **kwargs):
+    def on(self, device: str, *_, **__):
         """
         Turn on a switch on a device.
 
@@ -981,11 +1205,13 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         """
         # noinspection PyUnresolvedReferences
         switches = self.get_switches().output
-        assert device in switches, 'No such id_on_network associated to a switch: {}'.format(device)
+        assert (
+            device in switches
+        ), 'No such id_on_network associated to a switch: {}'.format(device)
         return self.set_value(data=True, id_on_network=device)
 
     @action
-    def off(self, device: str, *args, **kwargs):
+    def off(self, device: str, *_, **__):
         """
         Turn off a switch on a device.
 
@@ -993,11 +1219,13 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         """
         # noinspection PyUnresolvedReferences
         switches = self.get_switches().output
-        assert device in switches, 'No such id_on_network associated to a switch: {}'.format(device)
+        assert (
+            device in switches
+        ), 'No such id_on_network associated to a switch: {}'.format(device)
         return self.set_value(data=False, id_on_network=device)
 
     @action
-    def toggle(self, device: str, *args, **kwargs):
+    def toggle(self, device: str, *_, **__):
         """
         Toggle a switch on a device.
 
@@ -1005,7 +1233,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         """
         # noinspection PyUnresolvedReferences
         switches = self.get_switches().output
-        assert device in switches, 'No such id_on_network associated to a switch: {}'.format(device)
+        assert (
+            device in switches
+        ), 'No such id_on_network associated to a switch: {}'.format(device)
         data = switches[device]['data']
         return self.set_value(data=not data, id_on_network=device)
 
@@ -1015,7 +1245,9 @@ class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
         devices = self.get_switches().output.values()
         return [
             {
-                'name': '{} - {}'.format(dev.get('node_name', '[No Name]'), dev.get('label', '[No Label]')),
+                'name': '{} - {}'.format(
+                    dev.get('node_name', '[No Name]'), dev.get('label', '[No Label]')
+                ),
                 'on': dev.get('data'),
                 'id': dev.get('id_on_network'),
             }

@@ -53,6 +53,31 @@
       </div>
     </Modal>
 
+    <Alert title="" ref="noNodeNameModal">
+      No node name specified
+    </Alert>
+
+    <Modal title="Add new node" ref="addNodeModal">
+      <div class="node-add">
+        <div class="body">
+          <form class="add-node-form" ref="addNodeForm" @submit.prevent="addNode()">
+            <div class="fields">
+              <input type="text" name="name" placeholder="Node name">
+              <input type="text" name="location" placeholder="Node location (optional)">
+              <input type="number" name="timeout" value="30" placeholder="Timeout (in seconds)">
+            </div>
+
+            <div class="buttons">
+              <input type="submit" class="btn btn-primary" value="OK" :disabled="commandRunning">
+              <button class="btn btn-default" @click.prevent="closeAddNodeModal()">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Modal>
+
     <div class="view-options">
       <div class="view-selector col-s-6 col-m-8 col-l-9">
         <label>
@@ -73,7 +98,8 @@
           <DropdownItem text="Network Info" :disabled="commandRunning" @click="networkInfoModalOpen" />
           <DropdownItem text="Start Network" :disabled="commandRunning" @click="startNetwork" />
           <DropdownItem text="Stop Network" :disabled="commandRunning" @click="stopNetwork" />
-          <DropdownItem text="Add Node" :disabled="commandRunning" @click="addNode" v-if="selected.view === 'nodes'" />
+          <DropdownItem text="Add Node" :disabled="commandRunning"
+            @click="openAddNodeModal()" v-if="selected.view === 'nodes'" />
           <DropdownItem text="Remove Node" :disabled="commandRunning" @click="removeNode"
                         v-if="selected.view === 'nodes'" />
           <DropdownItem text="Switch All On" :disabled="commandRunning" @click="switchAll(true)" />
@@ -224,6 +250,7 @@
 import Group from "@/components/panels/Zwave/Group";
 import Node from "@/components/panels/Zwave/Node";
 import Modal from "@/components/Modal";
+import Alert from "@/components/elements/Alert";
 import Dropdown from "@/components/elements/Dropdown";
 import DropdownItem from "@/components/elements/DropdownItem";
 import Loading from "@/components/Loading";
@@ -233,8 +260,18 @@ import mixin from "@/components/panels/Zwave/mixin";
 
 export default {
   name: "Zwave",
-  components: {Value, ToggleSwitch, Loading, DropdownItem, Dropdown, Modal, Group, Node},
   mixins: [mixin],
+  components: {
+    Alert,
+    Dropdown,
+    DropdownItem,
+    Group,
+    Loading,
+    Modal,
+    Node,
+    ToggleSwitch,
+    Value,
+  },
 
   data() {
     return {
@@ -438,10 +475,44 @@ export default {
       }
     },
 
+    resetAddNodeModal() {
+      [...this.$refs.addNodeModal.$el.querySelectorAll('.fields input')].forEach(
+          (el) => { el.value = (el.attributes.name.value === 'timeout') ? 30 : '' }
+      )
+    },
+
+    openAddNodeModal() {
+      this.resetAddNodeModal()
+      this.$refs.addNodeModal.show()
+    },
+
+    closeAddNodeModal() {
+      this.resetAddNodeModal()
+      this.$refs.addNodeModal.close()
+    },
+
     async addNode() {
+      const form = this.$refs.addNodeForm
+      const name = form.querySelector('input[name=name]').value?.trim()
+      const location = form.querySelector('input[name=location]').value?.trim()
+      const timeout = parseInt(
+        form.querySelector('input[name=location]').value?.trim() || 30
+      )
+
+      if (!name?.length) {
+        this.$refs.noNodeNameModal.show()
+        return
+      }
+
       this.commandRunning = true
       try {
-        await this.zrequest('add_node')
+        await this.zrequest('add_node', {
+          name: name,
+          location: location,
+          timeout: timeout,
+        })
+
+        this.closeAddNodeModal()
       } finally {
         this.commandRunning = false
       }
@@ -738,6 +809,23 @@ export default {
 
   .network-info {
     margin: -1em;
+  }
+
+  .add-node-form, .fields {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    input {
+      margin: 0.5em;
+    }
+
+    .buttons {
+      box-shadow: 0 -1px $default-shadow-color;
+      margin-top: 0.75em;
+      padding-top: 0.75em;
+      justify-content: right;
+    }
   }
 }
 </style>

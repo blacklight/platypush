@@ -148,6 +148,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         return response
 
     def _api_request(self, api: str, *args, **kwargs):
+        if len(args) == 1 and isinstance(args[0], dict):
+            args = args[0]
+
         payload = json.dumps({'args': args})
         ret = self._parse_response(
             self.publish(
@@ -280,11 +283,11 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     @classmethod
     def node_to_dict(cls, node: dict) -> dict:
         capabilities = []
-        if node['supportsBeaming']:
+        if node.get('supportsBeaming'):
             capabilities += ['beaming']
-        if node['supportsSecurity']:
+        if node.get('supportsSecurity'):
             capabilities += ['security']
-        if node['isRouting']:
+        if node.get('isRouting'):
             capabilities += ['routing']
         if node.get('zwavePlusVersion'):
             capabilities += ['zwave_plus']
@@ -623,29 +626,51 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         }
 
     @action
-    def add_node(self, do_security: bool = False, timeout: int = 60, **kwargs):
+    def add_node(
+        self,
+        name: str,
+        location: str = '',
+        do_security: bool = False,
+        timeout: int = 30,
+        **kwargs,
+    ):
         """
         Start the inclusion process to add a node to the network.
 
+        :param name: Name of the node to be added.
+        :param location: Location of the node (default: empty).
         :param do_security: Whether to initialize the Network Key on the device if it supports the Security CC
-        :param timeout: How long the inclusion process should last, in seconds (default: 60). Specify zero or null
+        :param timeout: How long the inclusion process should last, in seconds (default: 30). Specify zero or null
             for no timeout.
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        self._api_request('startInclusion', **kwargs)
+        self._api_request(
+            'startInclusion',
+            0,
+            {
+                'name': name,
+                'location': location,
+                'force_security': do_security,
+            },
+            **kwargs,
+        )
+
         if timeout:
             Timer(timeout, lambda: self._api_request('stopInclusion', **kwargs)).start()
 
     @action
-    def remove_node(self, **kwargs):
+    def remove_node(self, timeout: int = 30, **kwargs):
         """
-        Remove a node from the network (not implemented on zwavejs2mqtt).
+        Remove a node from the network (or, better, start the exclusion process).
 
+        :param timeout: How long the exclusion process should last, in seconds (default: 30).
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        raise _NOT_IMPLEMENTED_ERR
+        self._api_request('startExclusion', **kwargs)
+        if timeout:
+            Timer(timeout, lambda: self._api_request('stopExclusion', **kwargs)).start()
 
     @action
     def remove_failed_node(
