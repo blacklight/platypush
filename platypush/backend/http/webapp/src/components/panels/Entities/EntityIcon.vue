@@ -49,7 +49,7 @@ export default {
     },
 
     colorFillStyle() {
-      return this.colorFill ? {'background': this.colorFill} : {}
+      return this.colorFill && !this.error ? {'background': this.colorFill} : {}
     },
 
     computedIcon() {
@@ -95,7 +95,6 @@ export default {
 
   .error {
     color: $error-fg;
-    margin-left: .5em;
   }
 }
 </style>
