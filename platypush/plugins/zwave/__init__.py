@@ -3,14 +3,21 @@ from typing import Any, Dict, Optional, List, Union
 from platypush.backend.zwave import ZwaveBackend
 from platypush.context import get_backend
 from platypush.plugins import action
-from platypush.plugins.switch import SwitchPlugin
 from platypush.plugins.zwave._base import ZwaveBasePlugin
 
 
-class ZwavePlugin(ZwaveBasePlugin, SwitchPlugin):
+class ZwavePlugin(ZwaveBasePlugin):
     """
     This plugin interacts with the devices on a Z-Wave network started through the
     :class:`platypush.backend.zwave.ZwaveBackend` backend.
+
+    .. note::
+
+        This plugin is deprecated, since the underlying ``python-openzwave`` is
+        quite buggy and largely unmaintained.
+
+        Use the `zwave.mqtt` plugin instead
+        (:class:`platypush.plugins.zwave.mqtt.ZwaveMqttPlugin`).
 
     Requires:
 

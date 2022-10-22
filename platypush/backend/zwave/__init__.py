@@ -8,13 +8,33 @@ from typing import Optional
 
 from platypush.backend import Backend
 from platypush.config import Config
-from platypush.message.event.zwave import ZwaveNetworkReadyEvent, ZwaveNetworkStoppedEvent, ZwaveEvent, \
-    ZwaveNodeAddedEvent, ZwaveValueAddedEvent, ZwaveNodeQueryCompletedEvent, ZwaveValueChangedEvent, \
-    ZwaveValueRefreshedEvent, ZwaveValueRemovedEvent, ZwaveNetworkResetEvent, ZwaveCommandEvent, \
-    ZwaveCommandWaitingEvent, ZwaveNodeRemovedEvent, ZwaveNodeRenamedEvent, ZwaveNodeReadyEvent, \
-    ZwaveButtonRemovedEvent, ZwaveButtonCreatedEvent, ZwaveButtonOnEvent, ZwaveButtonOffEvent, ZwaveNetworkErrorEvent, \
-    ZwaveNodeGroupEvent, ZwaveNodePollingEnabledEvent, ZwaveNodePollingDisabledEvent, ZwaveNodeSceneEvent, \
-    ZwaveNodeEvent
+from platypush.message.event.zwave import (
+    ZwaveNetworkReadyEvent,
+    ZwaveNetworkStoppedEvent,
+    ZwaveEvent,
+    ZwaveNodeAddedEvent,
+    ZwaveValueAddedEvent,
+    ZwaveNodeQueryCompletedEvent,
+    ZwaveValueChangedEvent,
+    ZwaveValueRefreshedEvent,
+    ZwaveValueRemovedEvent,
+    ZwaveNetworkResetEvent,
+    ZwaveCommandEvent,
+    ZwaveCommandWaitingEvent,
+    ZwaveNodeRemovedEvent,
+    ZwaveNodeRenamedEvent,
+    ZwaveNodeReadyEvent,
+    ZwaveButtonRemovedEvent,
+    ZwaveButtonCreatedEvent,
+    ZwaveButtonOnEvent,
+    ZwaveButtonOffEvent,
+    ZwaveNetworkErrorEvent,
+    ZwaveNodeGroupEvent,
+    ZwaveNodePollingEnabledEvent,
+    ZwaveNodePollingDisabledEvent,
+    ZwaveNodeSceneEvent,
+    ZwaveNodeEvent,
+)
 
 event_queue = queue.Queue()
 network_ready = threading.Event()
@@ -51,6 +71,14 @@ class ZwaveBackend(Backend):
 
         # Restart the udev service
         systemctl restart systemd-udevd.service
+
+    .. note::
+
+        This backend is deprecated, since the underlying ``python-openzwave`` is
+        quite buggy and largely unmaintained.
+
+        Use the `zwave.mqtt` backend instead
+        (:class:`platypush.backend.zwave.mqtt.ZwaveMqttBackend`).
 
     Triggers:
 
@@ -93,8 +121,15 @@ class ZwaveBackend(Backend):
 
     """
 
-    def __init__(self, device: str, config_path: Optional[str] = None, user_path: Optional[str] = None,
-                 ready_timeout: float = 10.0, *args, **kwargs):
+    def __init__(
+        self,
+        device: str,
+        config_path: Optional[str] = None,
+        user_path: Optional[str] = None,
+        ready_timeout: float = 10.0,
+        *args,
+        **kwargs
+    ):
         """
         :param device: Path to the Z-Wave adapter (e.g. /dev/ttyUSB0 or /dev/ttyACM0).
         :param config_path: Z-Wave configuration path (default: ``<OPENZWAVE_PATH>/ozw_config``).
@@ -110,7 +145,9 @@ class ZwaveBackend(Backend):
 
         if not config_path:
             # noinspection PyTypeChecker
-            config_path = os.path.join(os.path.dirname(inspect.getfile(python_openzwave)), 'ozw_config')
+            config_path = os.path.join(
+                os.path.dirname(inspect.getfile(python_openzwave)), 'ozw_config'
+            )
         if not user_path:
             user_path = os.path.join(Config.get('workdir'), 'zwave')
             os.makedirs(user_path, mode=0o770, exist_ok=True)
@@ -130,7 +167,9 @@ class ZwaveBackend(Backend):
 
         network_ready.clear()
         logging.getLogger('openzwave').addHandler(self.logger)
-        opts = ZWaveOption(self.device, config_path=self.config_path, user_path=self.user_path)
+        opts = ZWaveOption(
+            self.device, config_path=self.config_path, user_path=self.user_path
+        )
         opts.set_console_output(False)
         opts.lock()
 
@@ -139,7 +178,11 @@ class ZwaveBackend(Backend):
         ready = network_ready.wait(self.ready_timeout)
 
         if not ready:
-            self.logger.warning('Driver not ready after {} seconds: continuing anyway'.format(self.ready_timeout))
+            self.logger.warning(
+                'Driver not ready after {} seconds: continuing anyway'.format(
+                    self.ready_timeout
+                )
+            )
 
     def stop_network(self):
         if self.network:
@@ -149,47 +192,72 @@ class ZwaveBackend(Backend):
 
     def _process_event(self, event: _ZWEvent):
         from platypush.plugins.zwave import ZwavePlugin
-        network = event.network if hasattr(event, 'network') and event.network else self.network
 
-        if event.signal == network.SIGNAL_NETWORK_STOPPED or \
-                event.signal == network.SIGNAL_DRIVER_REMOVED:
+        network = (
+            event.network
+            if hasattr(event, 'network') and event.network
+            else self.network
+        )
+
+        if (
+            event.signal == network.SIGNAL_NETWORK_STOPPED
+            or event.signal == network.SIGNAL_DRIVER_REMOVED
+        ):
             event = ZwaveNetworkStoppedEvent(device=self.device)
-        elif event.signal == network.SIGNAL_ALL_NODES_QUERIED or \
-                event.signal == network.SIGNAL_ALL_NODES_QUERIED_SOME_DEAD:
+        elif (
+            event.signal == network.SIGNAL_ALL_NODES_QUERIED
+            or event.signal == network.SIGNAL_ALL_NODES_QUERIED_SOME_DEAD
+        ):
             event = ZwaveNodeQueryCompletedEvent(device=self.device)
         elif event.signal == network.SIGNAL_NETWORK_FAILED:
             event = ZwaveNetworkErrorEvent(device=self.device)
             self.logger.warning('Z-Wave network error')
-        elif event.signal == network.SIGNAL_NETWORK_RESETTED or \
-                event.signal == network.SIGNAL_DRIVER_RESET:
+        elif (
+            event.signal == network.SIGNAL_NETWORK_RESETTED
+            or event.signal == network.SIGNAL_DRIVER_RESET
+        ):
             event = ZwaveNetworkResetEvent(device=self.device)
         elif event.signal == network.SIGNAL_BUTTON_ON:
-            event = ZwaveButtonOnEvent(device=self.device,
-                                       node=ZwavePlugin.node_to_dict(event.args['node']))
+            event = ZwaveButtonOnEvent(
+                device=self.device, node=ZwavePlugin.node_to_dict(event.args['node'])
+            )
         elif event.signal == network.SIGNAL_BUTTON_OFF:
-            event = ZwaveButtonOffEvent(device=self.device,
-                                        node=ZwavePlugin.node_to_dict(event.args['node']))
+            event = ZwaveButtonOffEvent(
+                device=self.device, node=ZwavePlugin.node_to_dict(event.args['node'])
+            )
         elif event.signal == network.SIGNAL_CONTROLLER_COMMAND:
-            event = ZwaveCommandEvent(device=self.device,
-                                      state=event.args['state'],
-                                      state_description=event.args['state_full'],
-                                      error=event.args['error'] if event.args['error_int'] else None,
-                                      error_description=event.args['error_full'] if event.args['error_int'] else None,
-                                      node=ZwavePlugin.node_to_dict(event.args['node']) if event.args['node'] else None)
+            event = ZwaveCommandEvent(
+                device=self.device,
+                state=event.args['state'],
+                state_description=event.args['state_full'],
+                error=event.args['error'] if event.args['error_int'] else None,
+                error_description=event.args['error_full']
+                if event.args['error_int']
+                else None,
+                node=ZwavePlugin.node_to_dict(event.args['node'])
+                if event.args['node']
+                else None,
+            )
         elif event.signal == network.SIGNAL_CONTROLLER_WAITING:
-            event = ZwaveCommandWaitingEvent(device=self.device,
-                                             state=event.args['state'],
-                                             state_description=event.args['state_full'])
+            event = ZwaveCommandWaitingEvent(
+                device=self.device,
+                state=event.args['state'],
+                state_description=event.args['state_full'],
+            )
         elif event.signal == network.SIGNAL_CREATE_BUTTON:
-            event = ZwaveButtonCreatedEvent(device=self.device,
-                                            node=ZwavePlugin.node_to_dict(event.args['node']))
+            event = ZwaveButtonCreatedEvent(
+                device=self.device, node=ZwavePlugin.node_to_dict(event.args['node'])
+            )
         elif event.signal == network.SIGNAL_DELETE_BUTTON:
-            event = ZwaveButtonRemovedEvent(device=self.device,
-                                            node=ZwavePlugin.node_to_dict(event.args['node']))
+            event = ZwaveButtonRemovedEvent(
+                device=self.device, node=ZwavePlugin.node_to_dict(event.args['node'])
+            )
         elif event.signal == network.SIGNAL_GROUP:
-            event = ZwaveNodeGroupEvent(device=self.device,
-                                        node=ZwavePlugin.node_to_dict(event.args['node']),
-                                        group_index=event.args['groupidx'])
+            event = ZwaveNodeGroupEvent(
+                device=self.device,
+                node=ZwavePlugin.node_to_dict(event.args['node']),
+                group_index=event.args['groupidx'],
+            )
         elif event.signal == network.SIGNAL_NETWORK_AWAKED:
             event = ZwaveNetworkReadyEvent(
                 device=self.device,
@@ -202,46 +270,63 @@ class ZwaveBackend(Backend):
                 nodes_count=self.network.nodes_count,
             )
         elif event.signal == network.SIGNAL_NODE_EVENT:
-            event = ZwaveNodeEvent(device=self.device,
-                                   node=ZwavePlugin.node_to_dict(event.args['node']))
+            event = ZwaveNodeEvent(
+                device=self.device, node=ZwavePlugin.node_to_dict(event.args['node'])
+            )
         elif event.signal == network.SIGNAL_NODE_ADDED:
-            event = ZwaveNodeAddedEvent(device=self.device,
-                                        node=ZwavePlugin.node_to_dict(event.args['node']))
+            event = ZwaveNodeAddedEvent(
+                device=self.device, node=ZwavePlugin.node_to_dict(event.args['node'])
+            )
         elif event.signal == network.SIGNAL_NODE_NAMING:
-            event = ZwaveNodeRenamedEvent(device=self.device,
-                                          node=ZwavePlugin.node_to_dict(event.args['node']))
+            event = ZwaveNodeRenamedEvent(
+                device=self.device, node=ZwavePlugin.node_to_dict(event.args['node'])
+            )
         elif event.signal == network.SIGNAL_NODE_READY:
-            event = ZwaveNodeReadyEvent(device=self.device,
-                                        node=ZwavePlugin.node_to_dict(event.args['node']))
+            event = ZwaveNodeReadyEvent(
+                device=self.device, node=ZwavePlugin.node_to_dict(event.args['node'])
+            )
         elif event.signal == network.SIGNAL_NODE_REMOVED:
-            event = ZwaveNodeRemovedEvent(device=self.device,
-                                          node=ZwavePlugin.node_to_dict(event.args['node']))
+            event = ZwaveNodeRemovedEvent(
+                device=self.device, node=ZwavePlugin.node_to_dict(event.args['node'])
+            )
         elif event.signal == network.SIGNAL_POLLING_DISABLED:
-            event = ZwaveNodePollingEnabledEvent(device=self.device,
-                                                 node=ZwavePlugin.node_to_dict(event.args['node']))
+            event = ZwaveNodePollingEnabledEvent(
+                device=self.device, node=ZwavePlugin.node_to_dict(event.args['node'])
+            )
         elif event.signal == network.SIGNAL_POLLING_ENABLED:
-            event = ZwaveNodePollingDisabledEvent(device=self.device,
-                                                  node=ZwavePlugin.node_to_dict(event.args['node']))
+            event = ZwaveNodePollingDisabledEvent(
+                device=self.device, node=ZwavePlugin.node_to_dict(event.args['node'])
+            )
         elif event.signal == network.SIGNAL_SCENE_EVENT:
-            event = ZwaveNodeSceneEvent(device=self.device,
-                                        scene_id=event.args['scene_id'],
-                                        node=ZwavePlugin.node_to_dict(event.args['node']))
+            event = ZwaveNodeSceneEvent(
+                device=self.device,
+                scene_id=event.args['scene_id'],
+                node=ZwavePlugin.node_to_dict(event.args['node']),
+            )
         elif event.signal == network.SIGNAL_VALUE_ADDED:
-            event = ZwaveValueAddedEvent(device=self.device,
-                                         node=ZwavePlugin.node_to_dict(event.args['node']),
-                                         value=ZwavePlugin.value_to_dict(event.args['value']))
+            event = ZwaveValueAddedEvent(
+                device=self.device,
+                node=ZwavePlugin.node_to_dict(event.args['node']),
+                value=ZwavePlugin.value_to_dict(event.args['value']),
+            )
         elif event.signal == network.SIGNAL_VALUE_CHANGED:
-            event = ZwaveValueChangedEvent(device=self.device,
-                                           node=ZwavePlugin.node_to_dict(event.args['node']),
-                                           value=ZwavePlugin.value_to_dict(event.args['value']))
+            event = ZwaveValueChangedEvent(
+                device=self.device,
+                node=ZwavePlugin.node_to_dict(event.args['node']),
+                value=ZwavePlugin.value_to_dict(event.args['value']),
+            )
         elif event.signal == network.SIGNAL_VALUE_REFRESHED:
-            event = ZwaveValueRefreshedEvent(device=self.device,
-                                             node=ZwavePlugin.node_to_dict(event.args['node']),
-                                             value=ZwavePlugin.value_to_dict(event.args['value']))
+            event = ZwaveValueRefreshedEvent(
+                device=self.device,
+                node=ZwavePlugin.node_to_dict(event.args['node']),
+                value=ZwavePlugin.value_to_dict(event.args['value']),
+            )
         elif event.signal == network.SIGNAL_VALUE_REMOVED:
-            event = ZwaveValueRemovedEvent(device=self.device,
-                                           node=ZwavePlugin.node_to_dict(event.args['node']),
-                                           value=ZwavePlugin.value_to_dict(event.args['value']))
+            event = ZwaveValueRemovedEvent(
+                device=self.device,
+                node=ZwavePlugin.node_to_dict(event.args['node']),
+                value=ZwavePlugin.value_to_dict(event.args['value']),
+            )
         else:
             self.logger.info('Received unhandled ZWave event: {}'.format(event))
 
