@@ -29,5 +29,13 @@
     "icon": {
       "class": "fas fa-lightbulb"
     }
+  },
+
+  "dimmer": {
+    "name": "Dimmer",
+    "name_plural": "Dimmers",
+    "icon": {
+      "class": "fas fa-gauge"
+    }
   }
 }

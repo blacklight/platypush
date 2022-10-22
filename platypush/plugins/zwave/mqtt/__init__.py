@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import json
 import queue
 
@@ -5,6 +6,7 @@ from datetime import datetime
 from threading import Timer
 from typing import Optional, List, Any, Dict, Union, Iterable, Mapping, Callable
 
+from platypush.entities.dimmers import Dimmer
 from platypush.entities.switches import Switch
 from platypush.message.event.zwave import ZwaveNodeRenamedEvent, ZwaveNodeEvent
 
@@ -464,37 +466,119 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         return value
 
     @staticmethod
-    def _is_switch(value: Mapping):
-        return (
-            value.get('command_class_name', '').endswith('Switch') if value else False
-        )
+    def _matches_classes(value: Mapping, *names: str):
+        classes = {command_class_by_name[name] for name in names}
+
+        return value.get('command_class', '') in classes if value else False
+
+    @classmethod
+    def _is_switch(cls, value: Mapping):
+        return cls._matches_classes(
+            value, 'switch_binary', 'switch_toggle_binary', 'switch_all'
+        ) and not value.get('is_read_only')
+
+    @classmethod
+    def _is_dimmer(cls, value: Mapping):
+        return cls._matches_classes(
+            value, 'switch_multilevel', 'switch_toggle_multilevel'
+        ) and not value.get('is_read_only')
+
+    def _to_entity_args(self, value: Mapping) -> dict:
+        if value['id'].endswith('-targetValue'):
+            current_value_id = '-'.join(value['id'].split('-')[:-1] + ['currentValue'])
+            value = {
+                **value,
+                'id': current_value_id,
+                'label': 'Current Value',
+                'is_read_only': False,
+                'is_write_only': False,
+            }
+
+        return {
+            'id': value['id'],
+            'name': '{node_name} [{value_name}]'.format(
+                node_name=self._nodes_cache['by_id'][value['node_id']].get(
+                    'name', f'[Node {value["node_id"]}]'
+                ),
+                value_name=value.get('label'),
+            ),
+            'description': value.get('help'),
+            'is_read_only': value.get('is_read_only'),
+            'is_write_only': value.get('is_write_only'),
+            'data': {
+                'label': value.get('label'),
+                'node_id': value.get('node_id'),
+            },
+        }
 
     def transform_entities(self, values: Iterable[Mapping]):
         entities = []
 
         for value in values:
-            if self._is_switch(value):
-                entities.append(
-                    Switch(
-                        id=value['id'],
-                        name='{node_name} [{value_name}]'.format(
-                            node_name=self._nodes_cache['by_id'][value['node_id']].get(
-                                'name', f'[Node {value["node_id"]}]'
-                            ),
-                            value_name=value["label"],
-                        ),
-                        state=value['data'],
-                        description=value.get('help'),
-                        is_read_only=value.get('is_read_only'),
-                        is_write_only=value.get('is_write_only'),
-                        data={
-                            'label': value.get('label'),
-                            'node_id': value.get('node_id'),
-                        },
-                    )
-                )
+            if not value:
+                continue
+
+            entity_type = None
+            entity_args = self._to_entity_args(value)
+
+            if self._is_dimmer(value):
+                entity_type = Dimmer
+                entity_args['value'] = value['data']
+                entity_args['min'] = value['min']
+                entity_args['max'] = value['max']
+            elif self._is_switch(value):
+                entity_type = Switch
+                entity_args['state'] = value['data']
+
+            if entity_type:
+                entities.append(entity_type(**entity_args))
 
         return super().transform_entities(entities)  # type: ignore
+
+    @staticmethod
+    def _merge_current_and_target_values(values: Iterable[dict]) -> List[dict]:
+        values_by_id = OrderedDict({v.get('id'): v for v in values})
+
+        new_values = OrderedDict()
+        for value in values:
+            value_id = value.get('id')
+            if not value_id:
+                continue
+
+            associated_value_id = None
+            associated_value = None
+            value_id_prefix = '-'.join(value_id.split('-')[:-1])
+
+            if value_id.endswith('-currentValue'):
+                associated_value_id = value_id_prefix + '-targetValue'
+            elif value_id.endswith('-targetValue'):
+                associated_value_id = value_id_prefix + '-currentValue'
+            if associated_value_id:
+                associated_value = values_by_id.pop(associated_value_id, None)
+
+            if associated_value:
+                value = value.copy()
+                value_id = value_id_prefix + '-currentValue'
+                value['data'] = (
+                    value.get('data')
+                    if value.get('id', '').endswith('-currentValue')
+                    else associated_value.get('data')
+                )
+                value['id'] = value['value_id'] = value['id_on_network'] = value_id
+                value['is_read_only'] = value['is_write_only'] = False
+                value['label'] = 'Current Value'
+                value['property_id'] = 'currentValue'
+                value['last_update'] = (
+                    max(
+                        value.get('last_update') or 0,
+                        associated_value.get('last_update') or 0,
+                    )
+                    or None
+                )
+
+            new_values[value_id] = value
+
+        return list(new_values.values())
 
     def _topic_by_value_id(self, value_id: str) -> str:
         return self.topic_prefix + '/' + '/'.join(value_id.split('-'))
@@ -541,7 +625,8 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
                 values[value['id_on_network']] = value
 
-        self.publish_entities(values.values())  # type: ignore
+        entity_values = self._merge_current_and_target_values(values.values())
+        self.publish_entities(entity_values)  # type: ignore
         return values
 
     def _get_group(
@@ -1117,7 +1202,8 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     @action
     def set_value(
         self,
-        data,
+        *args,
+        data=None,
         value_id: Optional[int] = None,
         id_on_network: Optional[str] = None,
         value_label: Optional[str] = None,
@@ -1137,6 +1223,16 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
+        # Compatibility layer with the .set_value format used by
+        # the entities frontend
+        if args:
+            value_id = args[0]
+
+        id_ = str(value_id or id_on_network or '')
+        if id_.endswith('-currentValue'):
+            id_ = '-'.join(id_.split('-')[:-1] + ['targetValue'])
+            value_id = id_on_network = id_  # type: ignore
+
         value = self._get_value(
             value_id=value_id,
             value_label=value_label,
@@ -1354,7 +1450,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             (default: query the default configured device).
         """
         return self._filter_values(
-            ['switch_binary', 'switch_toggle_binary'],
+            ['switch_binary', 'switch_toggle_binary', 'switch_all'],
             filter_callback=lambda value: not value['is_read_only'],
             node_id=node_id,
             node_name=node_name,
