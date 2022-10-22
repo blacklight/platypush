@@ -10,13 +10,7 @@
            :value="value"
            ref="range"
            @input.stop="onUpdate"
-           @change.stop="onUpdate"
-           @mouseup.stop="onUpdate"
-           @mousedown.stop="onUpdate"
-           @touchstart.stop="onUpdate"
-           @touchend.stop="onUpdate"
-           @keyup.stop="onUpdate"
-           @keydown.stop="onUpdate">
+           @change.stop="onUpdate">
 
    <div class="track" :class="{'with-label': withLabel}">
      <div class="track-inner" ref="track"></div>
