@@ -228,13 +228,15 @@ class EntitiesEngine(Thread):
 
             return existing_entity
 
-        new_entities = []
+        def entity_key(entity: Entity):
+            return ((entity.external_id or entity.name), entity.plugin)
+
+        new_entities = {}
         entities_map = {}
 
         # Get the latest update for each ((id|name), plugin) record
         for e in entities:
-            key = ((e.external_id or e.name), e.plugin)
-            entities_map[key] = e
+            entities_map[entity_key(e)] = e
 
         # Retrieve existing records and merge them
         for i, entity in enumerate(entities):
@@ -242,9 +244,9 @@ class EntitiesEngine(Thread):
             if existing_entity:
                 entity = merge(entity, existing_entity)
 
-            new_entities.append(entity)
+            new_entities[entity_key(entity)] = entity
 
-        return new_entities
+        return list(new_entities.values())
 
     def _process_entities(self, *entities: Entity):
         with self._get_db().get_session() as session:
