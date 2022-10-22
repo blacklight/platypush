@@ -11,8 +11,11 @@
       </div>
 
       <div class="col-2 switch pull-right">
-        <ToggleSwitch :value="value.state" @input="toggle"
-          @click.stop :disabled="loading || value.is_read_only" />
+        <ToggleSwitch
+          :value="value.is_write_only ? false : value.state"
+          :disabled="loading || value.is_read_only" 
+          @input="toggle"
+          @click.stop />
       </div>
     </div>
   </div>
@@ -38,6 +41,13 @@ export default {
           id: this.value.id,
           action: 'toggle',
         })
+
+        if (this.value.is_write_only) {
+          // Show a quick on/off animation for write-only switches
+          const self = this
+          self.value.state = true
+          setTimeout(() => self.value.state = false, 250)
+        }
       } finally {
         this.$emit('loading', false)
       }
