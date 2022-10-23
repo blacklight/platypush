@@ -141,13 +141,13 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
     @staticmethod
     def _parse_response(response: Union[dict, Response]) -> dict:
-        if isinstance(response, Response):
-            response = response.output
+        rs: dict = (
+            response.output if isinstance(response, Response) else response
+        )  # type: ignore[reportGeneralTypeIssues]
 
-        assert response.get('success') is True, response.get(
-            'message', 'zwavejs2mqtt error'
-        )
-        return response
+        assert rs.get('success') is True, rs.get('message', 'zwavejs2mqtt error')
+
+        return rs
 
     def _api_request(self, api: str, *args, **kwargs):
         if len(args) == 1 and isinstance(args[0], dict):

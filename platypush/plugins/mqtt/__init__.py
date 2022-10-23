@@ -165,9 +165,9 @@ class MqttPlugin(Plugin):
         username = username or self.username
         password = password or self.password
 
-        tls_version = tls_version or self.tls_version
+        tls_version = tls_version or self.tls_version  # type: ignore[reportGeneralTypeIssues]
         if tls_version:
-            tls_version = self.get_tls_version(tls_version)
+            tls_version = self.get_tls_version(tls_version)  # type: ignore[reportGeneralTypeIssues]
         if tls_insecure is None:
             tls_insecure = self.tls_insecure
 
@@ -180,7 +180,7 @@ class MqttPlugin(Plugin):
                 ca_certs=tls_cafile,
                 certfile=tls_certfile,
                 keyfile=tls_keyfile,
-                tls_version=tls_version,
+                tls_version=tls_version,  # type: ignore[reportGeneralTypeIssues]
                 ciphers=tls_ciphers,
             )
 
