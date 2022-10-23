@@ -155,7 +155,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
         payload = json.dumps({'args': args})
         ret = self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._api_topic(api) + '/set',
                 msg=payload,
                 reply_topic=self._api_topic(api),
@@ -184,7 +184,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             return self._scenes_cache['by_label'][scene_label]
 
         # noinspection PyUnresolvedReferences
-        scenes = self.get_scenes(**kwargs).output
+        scenes = self.get_scenes(**kwargs).output  # type: ignore[reportGeneralTypeIssues]
         scene = None
 
         if scene_id in scenes:
@@ -372,7 +372,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
         response = {
             node['id']: self.node_to_dict(node)
-            for node in self._api_request('getNodes', **kwargs)
+            for node in (self._api_request('getNodes', **kwargs) or [])
         }
 
         node = None
@@ -397,7 +397,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
     def _get_value(
         self,
-        value_id: Optional[int] = None,
+        value_id: Optional[str] = None,
         id_on_network: Optional[str] = None,
         value_label: Optional[str] = None,
         node_id: Optional[int] = None,
@@ -424,8 +424,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             ]
 
         if not nodes:
-            # noinspection PyUnresolvedReferences
-            nodes = self.get_nodes().output
+            nodes = self.get_nodes().output  # type: ignore[reportGeneralTypeIssues]
             assert nodes, 'No nodes found on the network'
             nodes = nodes.values()
 
@@ -433,14 +432,14 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             values = [
                 node['values'][value_id]
                 for node in nodes
-                if value_id in node.get('values', {})
+                if node and value_id in node.get('values', {})
             ]
         else:
             values = [
                 value
                 for node in nodes
-                for value in node.get('values', {}).values()
-                if value.get('label') == value_label
+                for value in (node or {}).get('values', {}).values()
+                if node and value.get('label') == value_label
             ]
 
         assert values, f'No such value: {value_id or value_label}'
@@ -585,7 +584,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
     def _filter_values(
         self,
-        command_classes: Optional[Iterable[str]] = None,
+        command_classes: Optional[Iterable[str]] = None,  # type: ignore[reportGeneralTypeIssues]
         filter_callback: Optional[Callable[[dict], bool]] = None,
         node_id: Optional[int] = None,
         node_name: Optional[str] = None,
@@ -594,10 +593,10 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         nodes = (
             [self._get_node(node_name=node_name, use_cache=False, **kwargs)]
             if node_id or node_name
-            else self.get_nodes(**kwargs).output.values()
+            else self.get_nodes(**kwargs).output.values()  # type: ignore[reportGeneralTypeIssues]
         )
 
-        command_classes = {
+        command_classes: set = {
             command_class_by_name[command_name]
             for command_name in (command_classes or [])
         }
@@ -605,6 +604,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         values = {}
 
         for node in nodes:
+            if not node:
+                continue
+
             for value in node.get('values', {}).values():
                 if (
                     command_classes
@@ -635,26 +637,25 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         group_index: Optional[int] = None,
         **kwargs,
     ) -> dict:
-        group_id = group_id or group_index
+        group_id = group_id or str(group_index)
         assert group_id is not None, 'No group_id/group_index specified'
         group = self._groups_cache.get(group_id)
         if group:
             return group
 
-        # noinspection PyUnresolvedReferences
-        groups = self.get_groups(**kwargs).output
+        groups = self.get_groups(**kwargs).output  # type: ignore[reportGeneralTypeIssues]
         assert group_id in groups, f'No such group_id: {group_id}'
         return groups[group_id]
 
     @action
-    def start_network(self, **kwargs):
+    def start_network(self, **_):
         """
         Start the network (not implemented by zwavejs2mqtt).
         """
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def stop_network(self, **kwargs):
+    def stop_network(self, **_):
         """
         Stop the network (not implemented by zwavejs2mqtt).
         """
@@ -794,7 +795,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self._api_request('replaceFailedNode', node_id, **kwargs)
 
     @action
-    def replication_send(self, **kwargs):
+    def replication_send(self, **_):
         """
         Send node information from the primary to the secondary controller (not implemented by zwavejs2mqtt).
         """
@@ -1001,7 +1002,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
         nodes = {
             node['id']: self.node_to_dict(node)
-            for node in self._api_request('getNodes', **kwargs)
+            for node in (self._api_request('getNodes', **kwargs) or [])
         }
 
         self._nodes_cache['by_id'] = nodes
@@ -1010,7 +1011,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         return nodes
 
     @action
-    def get_node_stats(self, **kwargs):
+    def get_node_stats(self, **_):
         """
         Get the statistics of a node on the network (not implemented by zwavejs2mqtt).
         """
@@ -1034,28 +1035,30 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             (default: query the default configured device).
         """
         if node_name:
-            node_id = self._get_node(node_name=node_name, **kwargs).get('node_id')
+            node_id = (self._get_node(node_name=node_name, **kwargs) or {}).get(
+                'node_id'
+            )
 
         assert node_id, f'No such node: {node_id}'
         self._api_request('setNodeName', node_id, new_name, **kwargs)
         get_bus().post(
             ZwaveNodeRenamedEvent(
                 node={
-                    **self._get_node(node_id=node_id),
+                    **(self._get_node(node_id=node_id) or {}),
                     'name': new_name,
                 }
             )
         )
 
     @action
-    def set_node_product_name(self, **kwargs):
+    def set_node_product_name(self, **_):
         """
         Set the product name of a node (not implemented by zwavejs2mqtt).
         """
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def set_node_manufacturer_name(self, **kwargs):
+    def set_node_manufacturer_name(self, **_):
         """
         Set the manufacturer name of a node (not implemented by zwavejs2mqtt).
         """
@@ -1079,28 +1082,30 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             (default: query the default configured device).
         """
         if node_name:
-            node_id = self._get_node(node_name=node_name, **kwargs).get('node_id')
+            node = self._get_node(node_name=node_name, **kwargs)
+            assert node, f'No such node: {node_name}'
+            node_id = node.get('node_id')
 
         assert node_id, f'No such node: {node_id}'
         self._api_request('setNodeLocation', node_id, location, **kwargs)
         get_bus().post(
             ZwaveNodeEvent(
                 node={
-                    **self._get_node(node_id=node_id),
+                    **(self._get_node(node_id=node_id) or {}),
                     'location': location,
                 }
             )
         )
 
     @action
-    def cancel_command(self, **kwargs):
+    def cancel_command(self, **_):
         """
         Cancel the current running command (not implemented by zwavejs2mqtt).
         """
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def kill_command(self, **kwargs):
+    def kill_command(self, **_):
         """
         Immediately terminate any running command on the controller and release the lock (not implemented by
         zwavejs2mqtt).
@@ -1108,7 +1113,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def set_controller_name(self, **kwargs):
+    def set_controller_name(self, **_):
         """
         Set the name of the controller on the network (not implemented: use
         :meth:`platypush.plugin.zwave.mqtt.ZwaveMqttPlugin.set_node_name` instead).
@@ -1116,7 +1121,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def get_capabilities(self, **kwargs) -> List[str]:
+    def get_capabilities(self, **_) -> List[str]:
         """
         Get the capabilities of the controller (not implemented: use
         :meth:`platypush.plugin.zwave.mqtt.ZwaveMqttPlugin.get_nodes` instead).
@@ -1124,7 +1129,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def receive_configuration(self, **kwargs):
+    def receive_configuration(self, **_):
         """
         Receive the configuration from the primary controller on the network. Requires a primary controller active
         (not implemented by zwavejs2mqtt).
@@ -1132,7 +1137,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def transfer_primary_role(self, **kwargs):
+    def transfer_primary_role(self, **_):
         """
         Add a new controller to the network and make it the primary.
         The existing primary will become a secondary controller (not implemented by zwavejs2mqtt).
@@ -1155,14 +1160,14 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             ).start()
 
     @action
-    def switch_all(self, **kwargs):
+    def switch_all(self, **_):
         """
         Switch all the connected devices on/off (not implemented).
         """
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def test(self, count: int = 1, **kwargs):
+    def test(self, *_, **__):
         """
         Send a number of test messages to every node and record results (not implemented by zwavejs2mqtt).
         """
@@ -1171,7 +1176,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     @action
     def get_value(
         self,
-        value_id: Optional[int] = None,
+        value_id: Optional[str] = None,
         id_on_network: Optional[str] = None,
         value_label: Optional[str] = None,
         node_id: Optional[int] = None,
@@ -1204,7 +1209,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self,
         *args,
         data=None,
-        value_id: Optional[int] = None,
+        value_id: Optional[str] = None,
         id_on_network: Optional[str] = None,
         value_label: Optional[str] = None,
         node_id: Optional[int] = None,
@@ -1293,7 +1298,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             (default: query the default configured device).
         """
         if node_name:
-            node_id = self._get_node(node_name=node_name, **kwargs).get('node_id')
+            node = self._get_node(node_name=node_name, **kwargs)
+            assert node, f'No such node: {node_name}'
+            node_id = node.get('node_id')
         self._api_request('healNode', node_id, **kwargs)
 
     @action
@@ -1339,7 +1346,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             (default: query the default configured device).
         """
         if node_name:
-            node_id = self._get_node(node_name=node_name, **kwargs).get('node_id')
+            node = self._get_node(node_name=node_name, **kwargs)
+            assert node, f'No such node: {node_name}'
+            node_id = node.get('node_id')
         self._api_request('refreshInfo', node_id, **kwargs)
 
     @action
@@ -1609,15 +1618,15 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             ]
 
         """
-        # noinspection PyUnresolvedReferences
-        nodes = self.get_nodes(**kwargs).output
+        nodes = self.get_nodes(**kwargs).output  # type: ignore[reportGeneralTypeIssues]
         self._groups_cache = {
             group['group_id']: {
                 **group,
                 'associations': [
                     assoc['nodeId']
-                    for assoc in self._api_request(
-                        'getAssociations', node_id, group['index']
+                    for assoc in (
+                        self._api_request('getAssociations', node_id, group['index'])
+                        or []
                     )
                 ],
             }
@@ -1660,7 +1669,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         """
         return {
             scene.get('sceneid'): self.scene_to_dict(scene)
-            for scene in self._api_request('_getScenes')
+            for scene in (self._api_request('_getScenes') or [])
         }
 
     @action
@@ -1711,13 +1720,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self._api_request('_activateScene', scene['scene_id'])
 
     @action
-    def set_scene_label(
-        self,
-        new_label: str,
-        scene_id: Optional[int] = None,
-        scene_label: Optional[str] = None,
-        **kwargs,
-    ):
+    def set_scene_label(self, *_, **__):
         """
         Rename a scene/set the scene label.
 
@@ -1733,7 +1736,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     def scene_add_value(
         self,
         data: Optional[Any] = None,
-        value_id: Optional[int] = None,
+        value_id: Optional[str] = None,
         id_on_network: Optional[str] = None,
         value_label: Optional[str] = None,
         scene_id: Optional[int] = None,
@@ -1782,7 +1785,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     @action
     def scene_remove_value(
         self,
-        value_id: Optional[int] = None,
+        value_id: Optional[str] = None,
         id_on_network: Optional[str] = None,
         value_label: Optional[str] = None,
         scene_id: Optional[int] = None,
@@ -1834,13 +1837,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         return scene.get('values', {})
 
     @action
-    def create_button(
-        self,
-        button_id: Union[int, str],
-        node_id: Optional[int] = None,
-        node_name: Optional[str] = None,
-        **kwargs,
-    ):
+    def create_button(self, *_, **__):
         """
         Create a handheld button on a device. Only intended for bridge firmware controllers
         (not implemented by zwavejs2mqtt).
@@ -1854,13 +1851,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def delete_button(
-        self,
-        button_id: Union[int, str],
-        node_id: Optional[int] = None,
-        node_name: Optional[str] = None,
-        **kwargs,
-    ):
+    def delete_button(self, *_, **__):
         """
         Delete a button association from a device. Only intended for bridge firmware controllers.
         (not implemented by zwavejs2mqtt).
@@ -2015,7 +2006,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         # Repopulate the nodes cache
         self.get_nodes()
         # noinspection PyUnresolvedReferences
-        devices = self.get_switches().output.values()
+        devices = self.get_switches().output.values()  # type: ignore[reportGeneralTypeIssues]
         return [
             {
                 'name': '{} - {}'.format(
