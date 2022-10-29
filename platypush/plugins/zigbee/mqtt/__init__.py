@@ -169,7 +169,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             if not dev:
                 continue
 
-            converted_entity = None
+            converted_entities = []
             dev_def = dev.get("definition") or {}
             dev_info = {
                 "type": dev.get("type"),
@@ -186,64 +186,84 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
 
             light_info = self._get_light_meta(dev)
             switch_info = self._get_switch_meta(dev)
+            battery_info = self._get_battery_meta(dev)
 
             if light_info:
-                converted_entity = Light(
-                    id=dev['ieee_address'],
-                    name=dev.get('friendly_name'),
-                    on=dev.get('state', {}).get('state') == switch_info.get('value_on'),
-                    brightness_min=light_info.get('brightness_min'),
-                    brightness_max=light_info.get('brightness_max'),
-                    temperature_min=light_info.get('temperature_min'),
-                    temperature_max=light_info.get('temperature_max'),
-                    hue_min=light_info.get('hue_min'),
-                    hue_max=light_info.get('hue_max'),
-                    saturation_min=light_info.get('saturation_min'),
-                    saturation_max=light_info.get('saturation_max'),
-                    brightness=(
-                        dev.get('state', {})
-                        .get('color', {})
-                        .get(light_info.get('brightness_name', 'brightness'))
-                    ),
-                    temperature=(
-                        dev.get('state', {})
-                        .get('color', {})
-                        .get(light_info.get('temperature_name', 'temperature'))
-                    ),
-                    hue=(
-                        dev.get('state', {})
-                        .get('color', {})
-                        .get(light_info.get('hue_name', 'hue'))
-                    ),
-                    saturation=(
-                        dev.get('state', {})
-                        .get('color', {})
-                        .get(light_info.get('saturation_name', 'saturation'))
-                    ),
-                    x=(
-                        dev.get('state', {})
-                        .get('color', {})
-                        .get(light_info.get('x_name', 'x'))
-                    ),
-                    y=(
-                        dev.get('state', {})
-                        .get('color', {})
-                        .get(light_info.get('y_name', 'y'))
-                    ),
-                    description=dev_def.get('description'),
-                    data=dev_info,
+                converted_entities.append(
+                    Light(
+                        id=dev['ieee_address'],
+                        name=dev.get('friendly_name'),
+                        on=dev.get('state', {}).get('state')
+                        == switch_info.get('value_on'),
+                        brightness_min=light_info.get('brightness_min'),
+                        brightness_max=light_info.get('brightness_max'),
+                        temperature_min=light_info.get('temperature_min'),
+                        temperature_max=light_info.get('temperature_max'),
+                        hue_min=light_info.get('hue_min'),
+                        hue_max=light_info.get('hue_max'),
+                        saturation_min=light_info.get('saturation_min'),
+                        saturation_max=light_info.get('saturation_max'),
+                        brightness=(
+                            dev.get('state', {})
+                            .get('color', {})
+                            .get(light_info.get('brightness_name', 'brightness'))
+                        ),
+                        temperature=(
+                            dev.get('state', {})
+                            .get('color', {})
+                            .get(light_info.get('temperature_name', 'temperature'))
+                        ),
+                        hue=(
+                            dev.get('state', {})
+                            .get('color', {})
+                            .get(light_info.get('hue_name', 'hue'))
+                        ),
+                        saturation=(
+                            dev.get('state', {})
+                            .get('color', {})
+                            .get(light_info.get('saturation_name', 'saturation'))
+                        ),
+                        x=(
+                            dev.get('state', {})
+                            .get('color', {})
+                            .get(light_info.get('x_name', 'x'))
+                        ),
+                        y=(
+                            dev.get('state', {})
+                            .get('color', {})
+                            .get(light_info.get('y_name', 'y'))
+                        ),
+                        description=dev_def.get('description'),
+                        data=dev_info,
+                    )
                 )
             elif switch_info and dev.get('state', {}).get('state') is not None:
-                converted_entity = Switch(
-                    id=dev['ieee_address'],
-                    name=dev.get('friendly_name'),
-                    state=dev.get('state', {}).get('state') == switch_info['value_on'],
-                    description=dev_def.get("description"),
-                    data=dev_info,
+                converted_entities.append(
+                    Switch(
+                        id=dev['ieee_address'],
+                        name=dev.get('friendly_name'),
+                        state=dev.get('state', {}).get('state')
+                        == switch_info['value_on'],
+                        description=dev_def.get("description"),
+                        data=dev_info,
+                    )
                 )
 
-            if converted_entity:
-                compatible_entities.append(converted_entity)
+            if battery_info:
+                converted_entities.append(
+                    Battery(
+                        id=dev['ieee_address'],
+                        name=battery_info.get('friendly_name'),
+                        value=dev.get('battery'),
+                        description=battery_info.get('description'),
+                        min=battery_info['min'],
+                        max=battery_info['max'],
+                        data=dev_info,
+                    )
+                )
+
+            if converted_entities:
+                compatible_entities += converted_entities
 
         return super().transform_entities(compatible_entities)  # type: ignore
 
@@ -1417,6 +1437,32 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                         'value_on': feature['value_on'],
                         'value_off': feature['value_off'],
                         'value_toggle': feature.get('value_toggle', None),
+                        'is_read_only': not bool(feature.get('access', 0) & 2),
+                        'is_write_only': not bool(feature.get('access', 0) & 1),
+                    }
+
+        return {}
+
+    @staticmethod
+    def _get_battery_meta(device_info: dict) -> dict:
+        exposes = (device_info.get('definition', {}) or {}).get('exposes', [])
+        for exposed in exposes:
+            for feature in exposed.get('features', []):
+                if (
+                    feature.get('property') == 'battery'
+                    and feature.get('type') == 'numeric'
+                ):
+                    return {
+                        'friendly_name': (
+                            device_info.get('friendly_name', '[Unnamed device]')
+                            + ' [Battery]'
+                        ),
+                        'ieee_address': device_info.get('friendly_name'),
+                        'property': feature['property'],
+                        'description': feature.get('description'),
+                        'value_min': feature.get('value_min', 0),
+                        'value_max': feature.get('value_max', 100),
+                        'unit': feature.get('unit', '%'),
                         'is_read_only': not bool(feature.get('access', 0) & 2),
                         'is_write_only': not bool(feature.get('access', 0) & 1),
                     }
