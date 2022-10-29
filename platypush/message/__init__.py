@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import decimal
 import datetime
 import logging
 import inspect
@@ -19,7 +20,7 @@ class JSONAble(ABC):
         raise NotImplementedError()
 
 
-class Message(object):
+class Message:
     """
     Message generic class
     """
@@ -38,6 +39,8 @@ class Message(object):
                 return int(obj)
             if isinstance(obj, np.ndarray):
                 return obj.tolist()
+            if isinstance(obj, decimal.Decimal):
+                return float(obj)
             if callable(obj):
                 return '<function at {}.{}>'.format(obj.__module__, obj.__name__)
 
@@ -45,9 +48,7 @@ class Message(object):
 
         @staticmethod
         def parse_datetime(obj):
-            if isinstance(obj, datetime.datetime) or \
-                    isinstance(obj, datetime.date) or \
-                    isinstance(obj, datetime.time):
+            if isinstance(obj, (datetime.datetime, datetime.date, datetime.time)):
                 return obj.isoformat()
 
         def default(self, obj):
@@ -68,8 +69,11 @@ class Message(object):
             try:
                 return super().default(obj)
             except Exception as e:
-                logger.warning('Could not serialize object type {}: {}: {}'.format(
-                    type(obj), str(e), obj))
+                logger.warning(
+                    'Could not serialize object type {}: {}: {}'.format(
+                        type(obj), str(e), obj
+                    )
+                )
 
     def __init__(self, timestamp=None, *_, **__):
         self.timestamp = timestamp or time.time()
@@ -80,12 +84,15 @@ class Message(object):
         the message into a UTF-8 JSON string
         """
 
-        return json.dumps({
-            attr: getattr(self, attr)
-            for attr in self.__dir__()
-            if (attr != '_timestamp' or not attr.startswith('_'))
-            and not inspect.ismethod(getattr(self, attr))
-        }, cls=self.Encoder).replace('\n', ' ')
+        return json.dumps(
+            {
+                attr: getattr(self, attr)
+                for attr in self.__dir__()
+                if (attr != '_timestamp' or not attr.startswith('_'))
+                and not inspect.ismethod(getattr(self, attr))
+            },
+            cls=self.Encoder,
+        ).replace('\n', ' ')
 
     def __bytes__(self):
         """
@@ -105,7 +112,7 @@ class Message(object):
 
         if isinstance(msg, cls):
             msg = str(msg)
-        if isinstance(msg, bytes) or isinstance(msg, bytearray):
+        if isinstance(msg, (bytes, bytearray)):
             msg = msg.decode('utf-8')
         if isinstance(msg, str):
             try:
