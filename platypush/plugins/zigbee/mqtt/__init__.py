@@ -5,6 +5,7 @@ from queue import Queue
 from typing import Optional, List, Any, Dict, Union
 
 from platypush.entities import manages
+from platypush.entities.batteries import Battery
 from platypush.entities.lights import Light
 from platypush.entities.switches import Switch
 from platypush.message import Mapping
@@ -12,7 +13,7 @@ from platypush.message.response import Response
 from platypush.plugins.mqtt import MqttPlugin, action
 
 
-@manages(Light, Switch)
+@manages(Light, Switch, Battery)
 class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
     """
     This plugin allows you to interact with Zigbee devices over MQTT through any Zigbee sniffer and
@@ -246,7 +247,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
 
         return super().transform_entities(compatible_entities)  # type: ignore
 
-    def _get_network_info(self, **kwargs):
+    def _get_network_info(self, **kwargs) -> dict:
         self.logger.info('Fetching Zigbee network information')
         client = None
         mqtt_args = self._mqtt_args(**kwargs)
@@ -308,15 +309,17 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             }
 
             self.logger.info('Zigbee network configuration updated')
-            return info
         finally:
             try:
-                client.loop_stop()
-                client.disconnect()
+                if client:
+                    client.loop_stop()
+                    client.disconnect()
             except Exception as e:
                 self.logger.warning(
                     'Error on MQTT client disconnection: {}'.format(str(e))
                 )
+
+        return info
 
     def _topic(self, topic):
         return self.base_topic + '/' + topic
@@ -324,12 +327,12 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
     @staticmethod
     def _parse_response(response: Union[dict, Response]) -> dict:
         if isinstance(response, Response):
-            response = response.output
+            response = response.output  # type: ignore[reportGeneralTypeIssues]
 
-        assert response.get('status') != 'error', response.get(
+        assert response.get('status') != 'error', response.get(  # type: ignore[reportGeneralTypeIssues]
             'error', 'zigbee2mqtt error'
         )
-        return response
+        return response  # type: ignore[reportGeneralTypeIssues]
 
     @action
     def devices(self, **kwargs) -> List[Dict[str, Any]]:
@@ -503,7 +506,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             ]
 
         """
-        return self._get_network_info(**kwargs).get('devices')
+        return self._get_network_info(**kwargs).get('devices', {})
 
     @action
     def permit_join(
@@ -520,12 +523,13 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         """
         if timeout:
             return self._parse_response(
-                self.publish(
+                self.publish(  # type: ignore[reportGeneralTypeIssues]
                     topic=self._topic('bridge/request/permit_join'),
                     msg={'value': permit, 'time': timeout},
                     reply_topic=self._topic('bridge/response/permit_join'),
                     **self._mqtt_args(**kwargs),
                 )
+                or {}
             )
 
         return self.publish(
@@ -560,7 +564,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             (default: query the default configured device).
         """
         return self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic('bridge/request/config/log_level'),
                 msg={'value': level},
                 reply_topic=self._topic('bridge/response/config/log_level'),
@@ -580,7 +584,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             (default: query the default configured device).
         """
         return self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic('bridge/request/device/options'),
                 reply_topic=self._topic('bridge/response/device/options'),
                 msg={
@@ -606,7 +610,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             (default: query the default configured device).
         """
         return self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic('bridge/request/device/remove'),
                 msg={'id': device, 'force': force},
                 reply_topic=self._topic('bridge/response/device/remove'),
@@ -624,7 +628,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             (default: query the default configured device).
         """
         return self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic('bridge/request/device/ban'),
                 reply_topic=self._topic('bridge/response/device/ban'),
                 msg={'id': device},
@@ -643,7 +647,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             (default: query the default configured device).
         """
         return self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic('bridge/request/device/whitelist'),
                 reply_topic=self._topic('bridge/response/device/whitelist'),
                 msg={'id': device},
@@ -666,8 +670,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             self.logger.info('Old and new name are the same: nothing to do')
             return
 
-        # noinspection PyUnresolvedReferences
-        devices = self.devices().output
+        devices = self.devices().output  # type: ignore[reportGeneralTypeIssues]
         assert not [
             dev for dev in devices if dev.get('friendly_name') == name
         ], 'A device named {} already exists on the network'.format(name)
@@ -684,7 +687,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             }
 
         return self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic('bridge/request/device/rename'),
                 msg=req,
                 reply_topic=self._topic('bridge/response/device/rename'),
@@ -749,7 +752,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 reply_topic=self._topic(device),
                 msg={property: ''},
                 **kwargs,
-            ).output
+            ).output  # type: ignore[reportGeneralTypeIssues]
 
             assert property in properties, f'No such property: {property}'
             return {property: properties[property]}
@@ -774,7 +777,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             reply_topic=self._topic(device),
             msg=self.build_device_get_request(exposes),
             **kwargs,
-        ).output
+        ).output  # type: ignore[reportGeneralTypeIssues]
 
         if device_info:
             self.publish_entities(  # type: ignore
@@ -816,13 +819,15 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         kwargs = self._mqtt_args(**kwargs)
 
         if not devices:
-            devices = {
-                device['friendly_name'] or device['ieee_address']
-                for device in self.devices(**kwargs).output
-            }
+            devices = list(
+                {
+                    device['friendly_name'] or device['ieee_address']
+                    for device in self.devices(**kwargs).output  # type: ignore[reportGeneralTypeIssues]
+                }
+            )
 
         def worker(device: str, q: Queue):
-            q.put(self.device_get(device, **kwargs).output)
+            q.put(self.device_get(device, **kwargs).output)  # type: ignore[reportGeneralTypeIssues]
 
         queues = {}
         workers = {}
@@ -888,7 +893,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             reply_topic=self._topic(device),
             msg=msg,
             **self._mqtt_args(**kwargs),
-        ).output
+        ).output  # type: ignore[reportGeneralTypeIssues]
 
         if property:
             assert property in properties, 'No such property: ' + property
@@ -917,7 +922,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
 
         """
         ret = self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic('bridge/request/device/ota_update/check'),
                 reply_topic=self._topic('bridge/response/device/ota_update/check'),
                 msg={'id': device},
@@ -941,7 +946,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             (default: query the default configured device).
         """
         return self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic('bridge/request/device/ota_update/update'),
                 reply_topic=self._topic('bridge/response/device/ota_update/update'),
                 msg={'id': device},
@@ -957,7 +962,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        return self._get_network_info(**kwargs).get('groups')
+        return self._get_network_info(**kwargs).get('groups', [])
 
     @action
     def info(self, **kwargs) -> dict:
@@ -1113,7 +1118,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         )
 
         return self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic('bridge/request/group/add'),
                 reply_topic=self._topic('bridge/response/group/add'),
                 msg=payload,
@@ -1142,7 +1147,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             reply_topic=self._topic(group),
             msg=msg,
             **self._mqtt_args(**kwargs),
-        ).output
+        ).output  # type: ignore[reportGeneralTypeIssues]
 
         if property:
             assert property in properties, 'No such property: ' + property
@@ -1169,7 +1174,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             reply_topic=self._topic(group),
             msg={property: value},
             **self._mqtt_args(**kwargs),
-        ).output
+        ).output  # type: ignore[reportGeneralTypeIssues]
 
         if property:
             assert property in properties, 'No such property: ' + property
@@ -1191,14 +1196,17 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             self.logger.info('Old and new name are the same: nothing to do')
             return
 
-        # noinspection PyUnresolvedReferences
-        groups = {group.get('friendly_name'): group for group in self.groups().output}
+        groups = {
+            group.get('friendly_name'): group
+            for group in self.groups().output  # type: ignore[reportGeneralTypeIssues]
+        }
+
         assert (
             name not in groups
         ), 'A group named {} already exists on the network'.format(name)
 
         return self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic('bridge/request/group/rename'),
                 reply_topic=self._topic('bridge/response/group/rename'),
                 msg={'from': group, 'to': name} if group else name,
@@ -1216,7 +1224,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             (default: query the default configured device).
         """
         return self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic('bridge/request/group/remove'),
                 reply_topic=self._topic('bridge/response/group/remove'),
                 msg=name,
@@ -1235,7 +1243,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             (default: query the default configured device).
         """
         return self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic('bridge/request/group/members/add'),
                 reply_topic=self._topic('bridge/response/group/members/add'),
                 msg={
@@ -1258,7 +1266,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             (default: query the default configured device).
         """
         return self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic(
                     'bridge/request/group/members/remove{}'.format(
                         '_all' if device is None else ''
@@ -1294,7 +1302,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             (default: query the default configured device).
         """
         return self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic('bridge/request/device/bind'),
                 reply_topic=self._topic('bridge/response/device/bind'),
                 msg={'from': source, 'to': target},
@@ -1315,7 +1323,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             (default: query the default configured device).
         """
         return self._parse_response(
-            self.publish(
+            self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic('bridge/request/device/unbind'),
                 reply_topic=self._topic('bridge/response/device/unbind'),
                 msg={'from': source, 'to': target},
@@ -1324,7 +1332,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         )
 
     @action
-    def on(self, device, *args, **kwargs) -> dict:
+    def on(self, device, *_, **__) -> dict:
         """
         Implements :meth:`platypush.plugins.switch.plugin.SwitchPlugin.on` and turns on a Zigbee device with a writable
         binary property.
@@ -1334,13 +1342,13 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         device = switch_info.get('friendly_name') or switch_info['ieee_address']
         props = self.device_set(
             device, switch_info['property'], switch_info['value_on']
-        ).output
+        ).output  # type: ignore[reportGeneralTypeIssues]
         return self._properties_to_switch(
             device=device, props=props, switch_info=switch_info
         )
 
     @action
-    def off(self, device, *args, **kwargs) -> dict:
+    def off(self, device, *_, **__) -> dict:
         """
         Implements :meth:`platypush.plugins.switch.plugin.SwitchPlugin.off` and turns off a Zigbee device with a
         writable binary property.
@@ -1350,13 +1358,13 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         device = switch_info.get('friendly_name') or switch_info['ieee_address']
         props = self.device_set(
             device, switch_info['property'], switch_info['value_off']
-        ).output
+        ).output  # type: ignore[reportGeneralTypeIssues]
         return self._properties_to_switch(
             device=device, props=props, switch_info=switch_info
         )
 
     @action
-    def toggle(self, device, *args, **kwargs) -> dict:
+    def toggle(self, device, *_, **__) -> dict:
         """
         Implements :meth:`platypush.plugins.switch.plugin.SwitchPlugin.toggle` and toggles a Zigbee device with a
         writable binary property.
@@ -1366,7 +1374,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         device = switch_info.get('friendly_name') or switch_info['ieee_address']
         props = self.device_set(
             device, switch_info['property'], switch_info['value_toggle']
-        ).output
+        ).output  # type: ignore[reportGeneralTypeIssues]
         return self._properties_to_switch(
             device=device, props=props, switch_info=switch_info
         )
@@ -1548,8 +1556,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         return {}
 
     def _get_switches_info(self) -> dict:
-        # noinspection PyUnresolvedReferences
-        devices = self.devices().output
+        devices = self.devices().output  # type: ignore[reportGeneralTypeIssues]
         switches_info = {}
 
         for device in devices:
@@ -1578,7 +1585,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             )
             for name, switch in self.devices_get(
                 list(switches_info.keys())
-            ).output.items()
+            ).output.items()  # type: ignore[reportGeneralTypeIssues]
         ]
 
     @action
