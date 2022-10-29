@@ -6,6 +6,7 @@ from datetime import datetime
 from threading import Timer
 from typing import Optional, List, Any, Dict, Union, Iterable, Mapping, Callable
 
+from platypush.entities.batteries import Battery
 from platypush.entities.dimmers import Dimmer
 from platypush.entities.switches import Switch
 from platypush.message.event.zwave import ZwaveNodeRenamedEvent, ZwaveNodeEvent
@@ -482,6 +483,14 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             value, 'switch_multilevel', 'switch_toggle_multilevel'
         ) and not value.get('is_read_only')
 
+    @classmethod
+    def _is_battery(cls, value: Mapping):
+        return (
+            cls._matches_classes(value, 'battery')
+            and value.get('is_read_only')
+            and not value['id'].endswith('-isLow')
+        )
+
     def _to_entity_args(self, value: Mapping) -> dict:
         if value['id'].endswith('-targetValue'):
             current_value_id = '-'.join(value['id'].split('-')[:-1] + ['currentValue'])
@@ -525,6 +534,12 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
                 entity_args['value'] = value['data']
                 entity_args['min'] = value['min']
                 entity_args['max'] = value['max']
+            elif self._is_battery(value):
+                entity_type = Battery
+                entity_args['value'] = value['data']
+                entity_args['min'] = value['min']
+                entity_args['max'] = value['max']
+                entity_args['unit'] = value.get('units', '%')
             elif self._is_switch(value):
                 entity_type = Switch
                 entity_args['state'] = value['data']

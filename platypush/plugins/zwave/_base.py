@@ -2,13 +2,14 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, List, Union
 
 from platypush.entities import manages
+from platypush.entities.batteries import Battery
 from platypush.entities.dimmers import Dimmer
 from platypush.entities.lights import Light
 from platypush.entities.switches import Switch
 from platypush.plugins import Plugin, action
 
 
-@manages(Dimmer, Light, Switch)
+@manages(Battery, Dimmer, Light, Switch)
 class ZwaveBasePlugin(Plugin, ABC):
     """
     Base class for Z-Wave plugins.

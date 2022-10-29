@@ -1,9 +1,9 @@
 {
-  "entity": {
-    "name": "Entity",
-    "name_plural": "Entities",
+  "battery": {
+    "name": "Battery",
+    "name_plural": "Batteries",
     "icon": {
-      "class": "fas fa-circle-question"
+      "class": "fas fa-battery-full"
     }
   },
 
@@ -15,11 +15,19 @@
     }
   },
 
-  "switch": {
-    "name": "Switch",
-    "name_plural": "Switches",
+  "dimmer": {
+    "name": "Dimmer",
+    "name_plural": "Dimmers",
     "icon": {
-      "class": "fas fa-toggle-on"
+      "class": "fas fa-gauge"
+    }
+  },
+
+  "entity": {
+    "name": "Entity",
+    "name_plural": "Entities",
+    "icon": {
+      "class": "fas fa-circle-question"
     }
   },
 
@@ -31,11 +39,11 @@
     }
   },
 
-  "dimmer": {
-    "name": "Dimmer",
-    "name_plural": "Dimmers",
+  "switch": {
+    "name": "Switch",
+    "name_plural": "Switches",
     "icon": {
-      "class": "fas fa-gauge"
+      "class": "fas fa-toggle-on"
     }
   }
 }
