@@ -259,6 +259,9 @@ class EntitiesEngine(Thread):
             session.add_all(entities)
             session.commit()
 
+            for e in entities:
+                session.expunge(e)
+
         with self._entities_cache_lock:
             for entity in entities:
                 self._cache_entities(entity, overwrite_cache=True)
