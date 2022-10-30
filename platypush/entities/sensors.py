@@ -33,6 +33,7 @@ if not entity_types_registry.get('NumericSensor'):
         value = Column(Numeric)
         min = Column(Numeric)
         max = Column(Numeric)
+        unit = Column(String)
 
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,

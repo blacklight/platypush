@@ -39,6 +39,14 @@
     }
   },
 
+  "link_quality": {
+    "name": "Link Quality",
+    "name_plural": "Link Qualities",
+    "icon": {
+      "class": "fas fa-signal"
+    }
+  },
+
   "switch": {
     "name": "Switch",
     "name_plural": "Switches",

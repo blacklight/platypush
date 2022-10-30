@@ -7,13 +7,14 @@ from typing import Optional, List, Any, Dict, Union
 from platypush.entities import manages
 from platypush.entities.batteries import Battery
 from platypush.entities.lights import Light
+from platypush.entities.linkquality import LinkQuality
 from platypush.entities.switches import Switch
 from platypush.message import Mapping
 from platypush.message.response import Response
 from platypush.plugins.mqtt import MqttPlugin, action
 
 
-@manages(Light, Switch, Battery)
+@manages(Light, Switch, LinkQuality, Battery)
 class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
     """
     This plugin allows you to interact with Zigbee devices over MQTT through any Zigbee sniffer and
@@ -187,6 +188,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             light_info = self._get_light_meta(dev)
             switch_info = self._get_switch_meta(dev)
             battery_info = self._get_battery_meta(dev)
+            link_quality_info = self._get_link_quality_meta(dev)
 
             if light_info:
                 converted_entities.append(
@@ -246,6 +248,8 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                         == switch_info['value_on'],
                         description=dev_def.get("description"),
                         data=dev_info,
+                        is_read_only=link_quality_info['is_read_only'],
+                        is_write_only=link_quality_info['is_write_only'],
                     )
                 )
 
@@ -254,10 +258,28 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                     Battery(
                         id=dev['ieee_address'],
                         name=battery_info.get('friendly_name'),
-                        value=dev.get('battery'),
+                        value=dev.get('state', {}).get('battery'),
                         description=battery_info.get('description'),
                         min=battery_info['min'],
                         max=battery_info['max'],
+                        is_read_only=battery_info['is_read_only'],
+                        is_write_only=battery_info['is_write_only'],
+                        data=dev_info,
+                    )
+                )
+
+            if link_quality_info:
+                converted_entities.append(
+                    LinkQuality(
+                        id=dev['ieee_address'],
+                        name=link_quality_info.get('friendly_name'),
+                        value=dev.get('state', {}).get('linkquality'),
+                        description=link_quality_info.get('description'),
+                        min=link_quality_info['min'],
+                        max=link_quality_info['max'],
+                        unit=link_quality_info['unit'],
+                        is_read_only=link_quality_info['is_read_only'],
+                        is_write_only=link_quality_info['is_write_only'],
                         data=dev_info,
                     )
                 )
@@ -1455,17 +1477,46 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                     return {
                         'friendly_name': (
                             device_info.get('friendly_name', '[Unnamed device]')
-                            + ' [Battery]'
+                            + ' ['
+                            + feature.get('description', 'Battery')
+                            + ']'
                         ),
                         'ieee_address': device_info.get('friendly_name'),
                         'property': feature['property'],
                         'description': feature.get('description'),
-                        'value_min': feature.get('value_min', 0),
-                        'value_max': feature.get('value_max', 100),
+                        'min': feature.get('value_min', 0),
+                        'max': feature.get('value_max', 100),
                         'unit': feature.get('unit', '%'),
                         'is_read_only': not bool(feature.get('access', 0) & 2),
                         'is_write_only': not bool(feature.get('access', 0) & 1),
                     }
+
+        return {}
+
+    @staticmethod
+    def _get_link_quality_meta(device_info: dict) -> dict:
+        exposes = (device_info.get('definition', {}) or {}).get('exposes', [])
+        for exposed in exposes:
+            if (
+                exposed.get('property') == 'linkquality'
+                and exposed.get('type') == 'numeric'
+            ):
+                return {
+                    'friendly_name': (
+                        device_info.get('friendly_name', '[Unnamed device]')
+                        + ' ['
+                        + exposed.get('description', 'Link Quality')
+                        + ']'
+                    ),
+                    'ieee_address': device_info.get('friendly_name'),
+                    'property': exposed['property'],
+                    'description': exposed.get('description'),
+                    'min': exposed.get('value_min', 0),
+                    'max': exposed.get('value_max', 100),
+                    'unit': exposed.get('unit', '%'),
+                    'is_read_only': not bool(exposed.get('access', 0) & 2),
+                    'is_write_only': not bool(exposed.get('access', 0) & 1),
+                }
 
         return {}
 

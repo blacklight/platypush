@@ -4,10 +4,10 @@ from .devices import entity_types_registry
 from .sensors import NumericSensor
 
 
-if not entity_types_registry.get('Battery'):
+if not entity_types_registry.get('LinkQuality'):
 
-    class Battery(NumericSensor):
-        __tablename__ = 'battery'
+    class LinkQuality(NumericSensor):
+        __tablename__ = 'link_quality'
 
         def __init__(
             self, *args, unit: str = '%', min: float = 0, max: float = 100, **kwargs
@@ -22,6 +22,6 @@ if not entity_types_registry.get('Battery'):
             'polymorphic_identity': __tablename__,
         }
 
-    entity_types_registry['Battery'] = Battery
+    entity_types_registry['LinkQuality'] = LinkQuality
 else:
-    Battery = entity_types_registry['Battery']
+    LinkQuality = entity_types_registry['LinkQuality']
