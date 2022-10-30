@@ -26,10 +26,15 @@ export default {
   },
 
   mounted() {
-    if (this.type !== 'Entity')
+    if (this.type !== 'Entity') {
+      const type = this.type.split('_').map((t) =>
+          t[0].toUpperCase() + t.slice(1)
+      ).join('')
+
       this.component = defineAsyncComponent(
-        () => import(`@/components/panels/Entities/${this.type}`)
+        () => import(`@/components/panels/Entities/${type}`)
       )
+    }
   },
 }
 </script>
