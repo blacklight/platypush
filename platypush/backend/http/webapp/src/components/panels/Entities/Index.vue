@@ -27,16 +27,14 @@
           <div class="frame">
             <div class="header">
               <span class="section left">
-                <Icon v-bind="entitiesMeta[group.name].icon || {}"
-                  v-if="selector.grouping === 'type' && entitiesMeta[group.name]" />
+                <Icon v-bind="entitiesMeta[typesByCategory[group.name]].icon || {}"
+                  v-if="selector.grouping === 'category' && entitiesMeta[typesByCategory[group.name]]" />
                 <Icon :class="pluginIcons[group.name]?.class" :url="pluginIcons[group.name]?.imgUrl"
                   v-else-if="selector.grouping === 'plugin' && pluginIcons[group.name]" />
               </span>
 
               <span class="section center">
-                <div class="title" v-text="entitiesMeta[group.name].name_plural"
-                  v-if="selector.grouping === 'type' && entitiesMeta[group.name]"/>
-                <div class="title" v-text="group.name" v-else-if="selector.grouping === 'plugin'"/>
+                <div class="title" v-text="group.name" />
               </span>
 
               <span class="section right">
@@ -99,7 +97,7 @@ export default {
       modalEntityId: null,
       modalVisible: false,
       selector: {
-        grouping: 'type',
+        grouping: 'category',
         selectedEntities: {},
       },
     }
@@ -114,13 +112,24 @@ export default {
       return icons
     },
 
+    entityTypes() {
+      return this.groupEntities('type')
+    },
+
+    typesByCategory() {
+      return Object.entries(meta).reduce((obj, [type, meta]) => {
+          obj[meta.name_plural] = type
+          return obj
+      }, {})
+    },
+
     entityGroups() {
       return {
         'id': Object.entries(this.groupEntities('id')).reduce((obj, [id, entities]) => {
           obj[id] = entities[0]
           return obj
         }, {}),
-        'type': this.groupEntities('type'),
+        'category': this.groupEntities('category'),
         'plugin': this.groupEntities('plugin'),
       }
     },
@@ -148,6 +157,7 @@ export default {
       return Object.values(this.entities).reduce((obj, entity) => {
         const entities = obj[entity[attr]] || {}
         entities[entity.id] = entity
+
         obj[entity[attr]] = Object.values(entities).sort((a, b) => {
             return a.name.localeCompare(b.name)
           })
@@ -198,6 +208,7 @@ export default {
       try {
         this.entities = (await this.request('entities.get')).reduce((obj, entity) => {
           entity.name = entity?.meta?.name_override || entity.name
+          entity.category = meta[entity.type].name_plural
           entity.meta = {
             ...(meta[entity.type] || {}),
             ...(entity.meta || {}),
@@ -225,6 +236,7 @@ export default {
     },
 
     onEntityInput(entity) {
+      entity.category = meta[entity.type].name_plural
       this.entities[entity.id] = entity
       this.clearEntityTimeouts(entity.id)
       if (this.loadingEntities[entity.id])
@@ -247,6 +259,7 @@ export default {
       else
         entity.name = event.entity?.name || this.entities[entityId]?.name
 
+      entity.category = meta[entity.type].name_plural
       entity.meta = {
         ...(meta[event.entity.type] || {}),
         ...(this.entities[entityId]?.meta || {}),
