@@ -63,12 +63,6 @@ export default {
   components: {EntityIcon},
   mixins: [EntityMixin],
 
-  data() {
-    return {
-      expanded: false,
-    }
-  },
-
   computed: {
     valuePercent() {
       if (this.value?.value == null)
