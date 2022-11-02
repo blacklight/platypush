@@ -246,10 +246,12 @@ class ZigbeeMqttBackend(MqttBackend):
                 self.bus.post(ZigbeeMqttDeviceConnectedEvent(device=name, **event_args))
 
             exposes = (device.get('definition', {}) or {}).get('exposes', [])
-            client.publish(
-                self.base_topic + '/' + name + '/get',
-                json.dumps(self._plugin.build_device_get_request(exposes)),
-            )
+            payload = self._plugin.build_device_get_request(exposes)
+            if payload:
+                client.publish(
+                    self.base_topic + '/' + name + '/get',
+                    json.dumps(payload),
+                )
 
         devices_copy = [*self._devices.keys()]
         for name in devices_copy:
