@@ -98,7 +98,15 @@ export default {
 
   methods: {
     prettifyGroupingName(name) {
-      return name ? this.prettify(name) + 's' : ''
+      if (!name)
+        return ''
+
+      name = this.prettify(name)
+      if (name.endsWith('y'))
+        name = name.slice(0, name.length-1) + 'ie'
+
+      name += 's'
+      return name
     },
 
     iconForGroup(group) {
