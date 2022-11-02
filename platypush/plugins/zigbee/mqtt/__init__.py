@@ -1,4 +1,5 @@
 import json
+import re
 import threading
 
 from queue import Queue
@@ -1396,6 +1397,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         )
 
     def _get_switch_info(self, device: str):
+        device = self._ieee_address(device)
         switches_info = self._get_switches_info()
         info = switches_info.get(device)
         if info:
@@ -1430,11 +1432,19 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         )
 
     @staticmethod
-    def _ieee_address(device: dict) -> str:
+    def _ieee_address(device: Union[dict, str]) -> str:
         # Entity value IDs are stored in the `<address>:<property>`
         # format. Therefore, we need to split by `:` if we want to
         # retrieve the original address.
-        return device['ieee_address'].split(':')[0]
+        if isinstance(device, dict):
+            dev = device['ieee_address']
+        else:
+            dev = device
+
+        # IEEE address + property format
+        if re.search(r'^0x[0-9a-fA-F]{16}:', dev):
+            return dev.split(':')[0]
+        return dev
 
     @classmethod
     def _get_switch_meta(cls, device_info: dict) -> dict:
