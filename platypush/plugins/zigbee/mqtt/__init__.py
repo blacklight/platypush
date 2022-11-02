@@ -201,7 +201,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             if light_info:
                 compatible_entities.append(
                     Light(
-                        id=f'{dev["ieee_address"]}|light',
+                        id=f'{dev["ieee_address"]}:light',
                         name=dev.get('friendly_name'),
                         on=dev.get('state', {}).get('state')
                         == switch_info.get('value_on'),
@@ -214,14 +214,14 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                         saturation_min=light_info.get('saturation_min'),
                         saturation_max=light_info.get('saturation_max'),
                         brightness=(
-                            dev.get('state', {})
-                            .get('color', {})
-                            .get(light_info.get('brightness_name', 'brightness'))
+                            dev.get('state', {}).get(
+                                light_info.get('brightness_name', 'brightness')
+                            )
                         ),
                         temperature=(
-                            dev.get('state', {})
-                            .get('color', {})
-                            .get(light_info.get('temperature_name', 'temperature'))
+                            dev.get('state', {}).get(
+                                light_info.get('temperature_name', 'temperature')
+                            )
                         ),
                         hue=(
                             dev.get('state', {})
