@@ -188,11 +188,7 @@ export default {
                 delete self.entityTimeouts[id]
 
               self.errorEntities[id] = entity
-              self.notify({
-                error: true,
-                title: entity.plugin,
-                text: `Scan timeout for ${entity.name}`,
-              })
+              console.warn(`Scan timeout for ${entity.name}`)
           }, this.entityScanTimeout * 1000)
 
           obj[id] = true
