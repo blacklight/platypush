@@ -3,9 +3,13 @@ from sqlalchemy import Column, Integer, ForeignKey, Numeric, String
 from .devices import Device, entity_types_registry
 
 
+class Sensor(Device):
+    __abstract__ = True
+
+
 if not entity_types_registry.get('RawSensor'):
 
-    class RawSensor(Device):
+    class RawSensor(Sensor):
         __tablename__ = 'raw_sensor'
 
         id = Column(
@@ -24,7 +28,7 @@ else:
 
 if not entity_types_registry.get('NumericSensor'):
 
-    class NumericSensor(Device):
+    class NumericSensor(Sensor):
         __tablename__ = 'numeric_sensor'
 
         id = Column(

@@ -7,6 +7,14 @@
     }
   },
 
+  "current_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-bolt"
+    }
+  },
+
   "device": {
     "name": "Device",
     "name_plural": "Devices",
@@ -23,11 +31,27 @@
     }
   },
 
+  "energy_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-plug"
+    }
+  },
+
   "entity": {
     "name": "Entity",
     "name_plural": "Entities",
     "icon": {
       "class": "fas fa-circle-question"
+    }
+  },
+
+  "humidity_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-droplet"
     }
   },
 
@@ -43,7 +67,31 @@
     "name": "Link Quality",
     "name_plural": "Link Qualities",
     "icon": {
-      "class": "fas fa-signal"
+      "class": "fas fa-tower-broadcast"
+    }
+  },
+
+  "numeric_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-thermometer"
+    }
+  },
+
+  "power_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-plug"
+    }
+  },
+
+  "temperature_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-temperature-half"
     }
   },
 
@@ -52,6 +100,14 @@
     "name_plural": "Switches",
     "icon": {
       "class": "fas fa-toggle-on"
+    }
+  },
+
+  "voltage_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-car-battery"
     }
   }
 }
