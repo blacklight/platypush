@@ -716,9 +716,13 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
 
     @staticmethod
     def build_device_get_request(values: List[Dict[str, Any]]) -> dict:
-        def extract_value(value: dict, root: dict):
+        def extract_value(value: dict, root: dict, depth: int = 0):
             for feature in value.get('features', []):
-                extract_value(feature, root)
+                new_root = root
+                if depth > 0:
+                    new_root = root[value['property']] = root.get(value['property'], {})
+
+                extract_value(feature, new_root, depth=depth + 1)
 
             if not value.get('access', 1) & 0x4:
                 # Property not readable/query-able
