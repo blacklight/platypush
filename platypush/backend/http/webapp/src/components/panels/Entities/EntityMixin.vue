@@ -31,7 +31,8 @@ export default {
   computed: {
     type() {
       let entityType = (this.value.type || '')
-      return entityType.charAt(0).toUpperCase() + entityType.slice(1)
+      return entityType.split('_').
+        map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join('')
     },
   },
 }
