@@ -1,6 +1,10 @@
-from sqlalchemy import Column, Integer, ForeignKey, Numeric, String
+import logging
+
+from sqlalchemy import Column, Integer, ForeignKey, Boolean, Numeric, String
 
 from .devices import Device, entity_types_registry
+
+logger = logging.getLogger(__name__)
 
 
 class Sensor(Device):
@@ -46,3 +50,36 @@ if not entity_types_registry.get('NumericSensor'):
     entity_types_registry['NumericSensor'] = NumericSensor
 else:
     NumericSensor = entity_types_registry['NumericSensor']
+
+
+if not entity_types_registry.get('BinarySensor'):
+
+    class BinarySensor(Sensor):
+        __tablename__ = 'binary_sensor'
+
+        def __init__(self, *args, value=None, **kwargs):
+            if isinstance(value, str):
+                value = value.lower()
+
+            if value in {True, 1, '1', 't', 'true', 'on'}:
+                value = True
+            elif value in {False, 0, '0', 'f', 'false', 'off'}:
+                value = False
+            elif value is not None:
+                logger.warning(f'Unsupported value for BinarySensor type: {value}')
+                value = None
+
+            super().__init__(*args, value=value, **kwargs)
+
+        id = Column(
+            Integer, ForeignKey(Device.id, ondelete='CASCADE'), primary_key=True
+        )
+        value = Column(Boolean)
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }
+
+    entity_types_registry['BinarySensor'] = BinarySensor
+else:
+    BinarySensor = entity_types_registry['BinarySensor']

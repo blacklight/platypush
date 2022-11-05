@@ -71,14 +71,6 @@
     }
   },
 
-  "numeric_sensor": {
-    "name": "Sensor",
-    "name_plural": "Sensors",
-    "icon": {
-      "class": "fas fa-thermometer"
-    }
-  },
-
   "power_sensor": {
     "name": "Sensor",
     "name_plural": "Sensors",
@@ -108,6 +100,30 @@
     "name_plural": "Sensors",
     "icon": {
       "class": "fas fa-car-battery"
+    }
+  },
+
+  "binary_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-thermometer"
+    }
+  },
+
+  "numeric_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-thermometer"
+    }
+  },
+
+  "sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-thermometer"
     }
   }
 }

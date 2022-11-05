@@ -16,7 +16,7 @@ from platypush.entities.electricity import (
 from platypush.entities.humidity import HumiditySensor
 from platypush.entities.lights import Light
 from platypush.entities.linkquality import LinkQuality
-from platypush.entities.sensors import Sensor, NumericSensor
+from platypush.entities.sensors import Sensor, BinarySensor, NumericSensor
 from platypush.entities.switches import Switch
 from platypush.entities.temperature import TemperatureSensor
 from platypush.message import Mapping
@@ -1495,13 +1495,19 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 ),
                 'value': device_info.get('state', {}).get(exposed['property']),
                 'description': exposed.get('description'),
-                'min': exposed.get('value_min'),
-                'max': exposed.get('value_max'),
-                'unit': exposed.get('unit'),
                 'is_read_only': cls._is_read_only(exposed),
-                'is_write_only': cls._is_read_only(exposed),
+                'is_write_only': cls._is_write_only(exposed),
                 'data': device_info,
             }
+
+            if exposed.get('type') == 'numeric':
+                sensor_args.update(
+                    {
+                        'min': exposed.get('value_min'),
+                        'max': exposed.get('value_max'),
+                        'unit': exposed.get('unit'),
+                    }
+                )
 
             if exposed.get('property') == 'battery':
                 entity_type = Battery
@@ -1519,6 +1525,11 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 entity_type = TemperatureSensor
             elif exposed.get('property', '').endswith('humidity'):
                 entity_type = HumiditySensor
+            elif exposed.get('type') == 'binary':
+                entity_type = BinarySensor
+                sensor_args['value'] = sensor_args['value'] == exposed.get(
+                    'value_on', True
+                )
             elif exposed.get('type') == 'numeric':
                 entity_type = NumericSensor
 
