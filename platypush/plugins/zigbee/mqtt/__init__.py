@@ -257,6 +257,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                         data=dev_info,
                         is_read_only=switch_info['is_read_only'],
                         is_write_only=switch_info['is_write_only'],
+                        is_query_disabled=switch_info['is_query_disabled'],
                     )
                 )
 
@@ -1478,6 +1479,10 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         )
 
     @staticmethod
+    def _is_query_disabled(feature: dict) -> bool:
+        return bool(feature.get('access', 0) & 4) == 0
+
+    @staticmethod
     def _ieee_address(
         device: Union[dict, str], with_property=False
     ) -> Union[str, Tuple[str, Optional[str]]]:
@@ -1520,6 +1525,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                         'value_toggle': feature.get('value_toggle', None),
                         'is_read_only': cls._is_read_only(feature),
                         'is_write_only': cls._is_write_only(feature),
+                        'is_query_disabled': cls._is_query_disabled(feature),
                     }
 
         return {}
@@ -1547,6 +1553,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 'description': exposed.get('description'),
                 'is_read_only': cls._is_read_only(exposed),
                 'is_write_only': cls._is_write_only(exposed),
+                'is_query_disabled': cls._is_query_disabled(exposed),
                 'data': device_info,
             }
 
@@ -1617,6 +1624,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                     description=exposed.get('description'),
                     is_read_only=cls._is_read_only(exposed),
                     is_write_only=cls._is_write_only(exposed),
+                    is_query_disabled=cls._is_query_disabled(exposed),
                     data=device_info,
                 )
             )
@@ -1635,6 +1643,12 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 color = {}
 
                 for feature in features:
+                    data = {
+                        'is_read_only': cls._is_read_only(feature),
+                        'is_write_only': cls._is_write_only(feature),
+                        'is_query_disabled': cls._is_query_disabled(feature),
+                    }
+
                     if (
                         feature.get('property') == 'state'
                         and feature.get('type') == 'binary'
@@ -1646,8 +1660,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                             'value_off': feature['value_off'],
                             'state_name': feature['name'],
                             'value_toggle': feature.get('value_toggle', None),
-                            'is_read_only': cls._is_read_only(feature),
-                            'is_write_only': cls._is_write_only(feature),
+                            **data,
                         }
                     elif (
                         feature.get('property') == 'brightness'
@@ -1659,8 +1672,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                             'brightness_name': feature['name'],
                             'brightness_min': feature['value_min'],
                             'brightness_max': feature['value_max'],
-                            'is_read_only': cls._is_read_only(feature),
-                            'is_write_only': cls._is_write_only(feature),
+                            **data,
                         }
                     elif (
                         feature.get('property') == 'color_temp'
@@ -1672,8 +1684,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                             'temperature_name': feature['name'],
                             'temperature_min': feature['value_min'],
                             'temperature_max': feature['value_max'],
-                            'is_read_only': cls._is_read_only(feature),
-                            'is_write_only': cls._is_write_only(feature),
+                            **data,
                         }
                     elif (
                         feature.get('property') == 'color'
@@ -1689,8 +1700,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                                         'hue_max': color_feature.get(
                                             'value_max', 65535
                                         ),
-                                        'is_read_only': cls._is_read_only(feature),
-                                        'is_write_only': cls._is_write_only(feature),
+                                        **data,
                                     }
                                 )
                             elif color_feature.get('property') == 'saturation':
@@ -1703,8 +1713,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                                         'saturation_max': color_feature.get(
                                             'value_max', 255
                                         ),
-                                        'is_read_only': cls._is_read_only(feature),
-                                        'is_write_only': cls._is_write_only(feature),
+                                        **data,
                                     }
                                 )
                             elif color_feature.get('property') == 'x':
@@ -1713,8 +1722,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                                         'x_name': color_feature['name'],
                                         'x_min': color_feature.get('value_min', 0.0),
                                         'x_max': color_feature.get('value_max', 1.0),
-                                        'is_read_only': cls._is_read_only(feature),
-                                        'is_write_only': cls._is_write_only(feature),
+                                        **data,
                                     }
                                 )
                             elif color_feature.get('property') == 'y':
@@ -1723,8 +1731,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                                         'y_name': color_feature['name'],
                                         'y_min': color_feature.get('value_min', 0),
                                         'y_max': color_feature.get('value_max', 255),
-                                        'is_read_only': cls._is_read_only(feature),
-                                        'is_write_only': cls._is_write_only(feature),
+                                        **data,
                                     }
                                 )
 
