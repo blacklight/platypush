@@ -87,6 +87,14 @@
     }
   },
 
+  "enum_switch": {
+    "name": "Switch",
+    "name_plural": "Switches",
+    "icon": {
+      "class": "fas fa-gauge"
+    }
+  },
+
   "switch": {
     "name": "Switch",
     "name_plural": "Switches",

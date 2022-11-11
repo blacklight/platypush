@@ -3,7 +3,7 @@ import re
 import threading
 
 from queue import Queue
-from typing import Optional, List, Any, Dict, Union
+from typing import Optional, List, Any, Dict, Union, Tuple
 
 from platypush.entities import manages
 from platypush.entities.batteries import Battery
@@ -17,7 +17,7 @@ from platypush.entities.humidity import HumiditySensor
 from platypush.entities.lights import Light
 from platypush.entities.linkquality import LinkQuality
 from platypush.entities.sensors import Sensor, BinarySensor, NumericSensor
-from platypush.entities.switches import Switch
+from platypush.entities.switches import Switch, EnumSwitch
 from platypush.entities.temperature import TemperatureSensor
 from platypush.message import Mapping
 from platypush.message.response import Response
@@ -173,8 +173,6 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         }
 
     def transform_entities(self, devices):
-        from platypush.entities.switches import Switch
-
         compatible_entities = []
         for dev in devices:
             if not dev:
@@ -197,6 +195,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             light_info = self._get_light_meta(dev)
             switch_info = self._get_switch_meta(dev)
             sensors = self._get_sensors(dev)
+            enum_switches = self._get_enum_switches(dev)
 
             if light_info:
                 compatible_entities.append(
@@ -263,6 +262,8 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
 
             if sensors:
                 compatible_entities += sensors
+            if enum_switches:
+                compatible_entities += enum_switches
 
         return super().transform_entities(compatible_entities)  # type: ignore
 
@@ -906,21 +907,62 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             (default: query the default configured device).
         """
         msg = (values or {}).copy()
+        reply_topic = self._topic(device)
+
         if property:
             msg[property] = value
+            stored_property = next(
+                iter(
+                    exposed
+                    for exposed in (
+                        self._info.get('devices_by_addr', {})
+                        .get(device, {})
+                        .get('definition', {})
+                        .get('exposes', {})
+                    )
+                    if exposed.get('property') == property
+                ),
+                None,
+            )
+
+            if stored_property and self._is_write_only(stored_property):
+                # Don't wait for an update from a value that is not readable
+                reply_topic = None
 
         properties = self.publish(
             topic=self._topic(device + '/set'),
-            reply_topic=self._topic(device),
+            reply_topic=reply_topic,
             msg=msg,
             **self._mqtt_args(**kwargs),
         ).output  # type: ignore[reportGeneralTypeIssues]
 
-        if property:
+        if property and reply_topic:
             assert property in properties, 'No such property: ' + property
             return {property: properties[property]}
 
         return properties
+
+    @action
+    def set_value(
+        self, device: str, property: Optional[str] = None, data=None, **kwargs
+    ):
+        """
+        Entity-compatible way of setting a value on a node.
+
+        :param device: Device friendly name, IEEE address or internal entity ID
+            in ``<address>:<property>`` format.
+        :param property: Name of the property to set. If not specified here, it
+            should be specified on ``device`` in ``<address>:<property>``
+            format.
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
+        """
+        dev, prop = self._ieee_address(device, with_property=True)
+        if not property:
+            property = prop
+
+        self.device_set(dev, property, data, **kwargs)
 
     @action
     def device_check_ota_updates(self, device: str, **kwargs) -> dict:
@@ -1436,7 +1478,9 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         )
 
     @staticmethod
-    def _ieee_address(device: Union[dict, str]) -> str:
+    def _ieee_address(
+        device: Union[dict, str], with_property=False
+    ) -> Union[str, Tuple[str, Optional[str]]]:
         # Entity value IDs are stored in the `<address>:<property>`
         # format. Therefore, we need to split by `:` if we want to
         # retrieve the original address.
@@ -1447,8 +1491,14 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
 
         # IEEE address + property format
         if re.search(r'^0x[0-9a-fA-F]{16}:', dev):
-            return dev.split(':')[0]
-        return dev
+            parts = dev.split(':')
+            return (
+                (parts[0], parts[1] if len(parts) > 1 else None)
+                if with_property
+                else parts[0]
+            )
+
+        return (dev, None) if with_property else dev
 
     @classmethod
     def _get_switch_meta(cls, device_info: dict) -> dict:
@@ -1537,6 +1587,41 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 sensors.append(entity_type(**sensor_args))
 
         return sensors
+
+    @classmethod
+    def _get_enum_switches(cls, device_info: dict) -> List[Sensor]:
+        devices = []
+        exposes = [
+            exposed
+            for exposed in (device_info.get('definition', {}) or {}).get('exposes', [])
+            if (
+                exposed.get('property')
+                and exposed.get('access', 0) & 2
+                and exposed.get('type') == 'enum'
+                and exposed.get('values')
+            )
+        ]
+
+        for exposed in exposes:
+            devices.append(
+                EnumSwitch(
+                    id=f'{device_info["ieee_address"]}:{exposed["property"]}',
+                    name=(
+                        device_info.get('friendly_name', '[Unnamed device]')
+                        + ' ['
+                        + exposed.get('description', '')
+                        + ']'
+                    ),
+                    value=device_info.get(exposed['property']),
+                    values=exposed.get('values', []),
+                    description=exposed.get('description'),
+                    is_read_only=cls._is_read_only(exposed),
+                    is_write_only=cls._is_write_only(exposed),
+                    data=device_info,
+                )
+            )
+
+        return devices
 
     @classmethod
     def _get_light_meta(cls, device_info: dict) -> dict:
