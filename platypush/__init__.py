@@ -86,7 +86,7 @@ class Daemon:
         self.redis_queue = redis_queue or self._default_redis_queue
         self.config_file = config_file
         Config.init(self.config_file)
-        logging.basicConfig(**Config.get('logging'))
+        logging.basicConfig(**(Config.get('logging') or {}))
 
         redis_conf = Config.get('backend.redis') or {}
         self.bus = RedisBus(
@@ -250,6 +250,7 @@ class Daemon:
             self.cron_scheduler = CronScheduler(jobs=Config.get_cronjobs())
             self.cron_scheduler.start()
 
+        assert self.bus, 'The bus is not running'
         self.bus.post(ApplicationStartedEvent())
 
         # Poll for messages on the bus
