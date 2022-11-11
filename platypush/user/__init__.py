@@ -227,7 +227,7 @@ class UserManager:
         if not user:
             raise InvalidCredentialsException()
 
-        pub_key, priv_key = get_or_generate_jwt_rsa_key_pair()
+        _, priv_key = get_or_generate_jwt_rsa_key_pair()
         payload = {
             'username': username,
             'created_at': datetime.datetime.now().timestamp(),
@@ -257,7 +257,7 @@ class UserManager:
 
         :raises: :class:`platypush.exceptions.user.InvalidJWTTokenException` in case of invalid token.
         """
-        pub_key, priv_key = get_or_generate_jwt_rsa_key_pair()
+        pub_key, _ = get_or_generate_jwt_rsa_key_pair()
 
         try:
             payload = jwt_decode(token.encode(), pub_key, algorithms=['RS256'])
