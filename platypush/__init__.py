@@ -27,7 +27,7 @@ from .utils import set_thread_name, get_enabled_plugins
 __author__ = 'Fabio Manganiello <info@fabiomanganiello.com>'
 __version__ = '0.23.6'
 
-logger = logging.getLogger('platypush')
+log = logging.getLogger('platypush')
 
 
 class Daemon:
@@ -181,7 +181,7 @@ class Daemon:
                 try:
                     msg.execute(n_tries=self.n_tries)
                 except PermissionError:
-                    logger.info('Dropped unauthorized request: {}'.format(msg))
+                    log.info('Dropped unauthorized request: {}'.format(msg))
 
                 self.processed_requests += 1
                 if (
@@ -190,10 +190,10 @@ class Daemon:
                 ):
                     self.stop_app()
             elif isinstance(msg, Response):
-                logger.info('Received response: {}'.format(msg))
+                log.info('Received response: {}'.format(msg))
             elif isinstance(msg, Event):
                 if not msg.disable_logging:
-                    logger.info('Received event: {}'.format(msg))
+                    log.info('Received event: {}'.format(msg))
                 self.event_processor.process_event(msg)
 
         return _f
@@ -225,12 +225,12 @@ class Daemon:
     def run(self):
         """Start the daemon"""
         if not self.no_capture_stdout:
-            sys.stdout = Logger(logger.info)
+            sys.stdout = Logger(log.info)
         if not self.no_capture_stderr:
-            sys.stderr = Logger(logger.warning)
+            sys.stderr = Logger(log.warning)
 
         set_thread_name('platypush')
-        logger.info('---- Starting platypush v.{}'.format(__version__))
+        log.info('---- Starting platypush v.{}'.format(__version__))
 
         # Initialize the backends and link them to the bus
         self.backends = register_backends(bus=self.bus, global_scope=True)
@@ -256,7 +256,7 @@ class Daemon:
         try:
             self.bus.poll()
         except KeyboardInterrupt:
-            logger.info('SIGINT received, terminating application')
+            log.info('SIGINT received, terminating application')
         finally:
             self.stop_app()
 
