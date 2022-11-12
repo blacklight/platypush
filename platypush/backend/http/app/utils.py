@@ -57,7 +57,11 @@ def logger():
 
 def get_message_response(msg):
     redis = Redis(**bus().redis_args)
-    response = redis.blpop(get_redis_queue_name_by_message(msg), timeout=60)
+    redis_queue = get_redis_queue_name_by_message(msg)
+    if not redis_queue:
+        return
+
+    response = redis.blpop(redis_queue, timeout=60)
     if response and len(response) > 1:
         response = Message.build(response[1])
     else:
@@ -70,7 +74,7 @@ def get_message_response(msg):
 def get_http_port():
     from platypush.backend.http import HttpBackend
 
-    http_conf = Config.get('backend.http')
+    http_conf = Config.get('backend.http') or {}
     return http_conf.get('port', HttpBackend._DEFAULT_HTTP_PORT)
 
 
@@ -78,12 +82,14 @@ def get_http_port():
 def get_websocket_port():
     from platypush.backend.http import HttpBackend
 
-    http_conf = Config.get('backend.http')
+    http_conf = Config.get('backend.http') or {}
     return http_conf.get('websocket_port', HttpBackend._DEFAULT_WEBSOCKET_PORT)
 
 
 def send_message(msg, wait_for_response=True):
     msg = Message.build(msg)
+    if msg is None:
+        return
 
     if isinstance(msg, Request):
         msg.origin = 'http'
@@ -111,6 +117,7 @@ def send_request(action, wait_for_response=True, **kwargs):
 
 def _authenticate_token():
     token = Config.get('token')
+    user_token = None
 
     if 'X-Token' in request.headers:
         user_token = request.headers['X-Token']
@@ -120,7 +127,7 @@ def _authenticate_token():
         user_token = request.headers['Authorization'][7:]
     elif 'token' in request.args:
         user_token = request.args.get('token')
-    else:
+    if not user_token:
         return False
 
     try:
@@ -152,7 +159,7 @@ def _authenticate_session():
         user_session_token = request.cookies.get('session_token')
 
     if user_session_token:
-        user, session = user_manager.authenticate_user_session(user_session_token)
+        user, _ = user_manager.authenticate_user_session(user_session_token)
 
     return user is not None
 
@@ -172,7 +179,7 @@ def _authenticate_csrf_token():
     else:
         return False
 
-    if user is None:
+    if user is None or session is None:
         return False
 
     return (
