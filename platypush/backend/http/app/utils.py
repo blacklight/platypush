@@ -19,6 +19,7 @@ from platypush.utils import get_redis_queue_name_by_message, get_ip_or_hostname
 
 _bus = None
 _logger = None
+user_manager = UserManager()
 
 
 def bus():
@@ -110,7 +111,6 @@ def send_request(action, wait_for_response=True, **kwargs):
 
 def _authenticate_token():
     token = Config.get('token')
-    user_manager = UserManager()
 
     if 'X-Token' in request.headers:
         user_token = request.headers['X-Token']
@@ -132,8 +132,6 @@ def _authenticate_token():
 
 
 def _authenticate_http():
-    user_manager = UserManager()
-
     if not request.authorization:
         return False
 
@@ -143,7 +141,6 @@ def _authenticate_http():
 
 
 def _authenticate_session():
-    user_manager = UserManager()
     user_session_token = None
     user = None
 
@@ -161,7 +158,6 @@ def _authenticate_session():
 
 
 def _authenticate_csrf_token():
-    user_manager = UserManager()
     user_session_token = None
 
     if 'X-Session-Token' in request.headers:
@@ -219,7 +215,6 @@ def authenticate(
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            user_manager = UserManager()
             n_users = user_manager.get_user_count()
             skip_methods = skip_auth_methods or []
 
