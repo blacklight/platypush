@@ -1,5 +1,4 @@
 import inspect
-import os
 import pathlib
 import types
 from datetime import datetime
@@ -17,15 +16,13 @@ from sqlalchemy import (
     UniqueConstraint,
     inspect as schema_inspect,
 )
-from sqlalchemy.orm import declarative_base, ColumnProperty
+from sqlalchemy.orm import ColumnProperty
 
-from platypush.config import Config
+from platypush.common.db import Base
 from platypush.message import JSONAble
 
-Base = declarative_base()
 entities_registry: Mapping[Type['Entity'], Mapping] = {}
 entity_types_registry: Dict[str, Type['Entity']] = {}
-db_url = 'sqlite:///' + os.path.join(str(Config.get('workdir') or ''), 'entities.db')
 
 
 class Entity(Base):
@@ -138,8 +135,4 @@ def init_entities_db():
     _discover_entity_types()
     db = get_plugin('db')
     assert db
-
-    engine = db.get_engine(engine=db_url)
-    with db.get_session() as session:
-        db.create_all(engine, Base)
-        session.flush()
+    db.create_all(db.get_engine(), Base)

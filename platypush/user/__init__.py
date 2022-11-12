@@ -13,16 +13,15 @@ except ImportError:
     from jwt import PyJWTError, encode as jwt_encode, decode as jwt_decode
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import make_transient, declarative_base
+from sqlalchemy.orm import make_transient
 
+from platypush.common.db import Base
 from platypush.context import get_plugin
 from platypush.exceptions.user import (
     InvalidJWTTokenException,
     InvalidCredentialsException,
 )
 from platypush.utils import get_or_generate_jwt_rsa_key_pair
-
-Base = declarative_base()
 
 
 class UserManager:
@@ -31,13 +30,10 @@ class UserManager:
     """
 
     def __init__(self):
-        self.db = get_plugin('db')
-        assert self.db
-        self._engine = self.db.get_engine(engine=self.db.engine_url)
-
-        with self.db.get_session() as session:
-            self.db.create_all(self._engine, Base)
-            session.flush()
+        db_plugin = get_plugin('db')
+        assert db_plugin, 'Database plugin not configured'
+        self.db = db_plugin
+        self.db.create_all(self.db.get_engine(), Base)
 
     @staticmethod
     def _mask_password(user):
@@ -45,8 +41,11 @@ class UserManager:
         user.password = None
         return user
 
+    def _get_session(self, *args, **kwargs):
+        return self.db.get_session(self.db.get_engine(), *args, **kwargs)
+
     def get_user(self, username):
-        with self.db.get_session() as session:
+        with self._get_session() as session:
             user = self._get_user(session, username)
             if not user:
                 return None
@@ -55,11 +54,11 @@ class UserManager:
             return self._mask_password(user)
 
     def get_user_count(self):
-        with self.db.get_session() as session:
+        with self._get_session() as session:
             return session.query(User).count()
 
     def get_users(self):
-        with self.db.get_session() as session:
+        with self._get_session() as session:
             return session.query(User)
 
     def create_user(self, username, password, **kwargs):
@@ -68,7 +67,7 @@ class UserManager:
         if not password:
             raise ValueError('Please provide a password for the user')
 
-        with self.db.get_session() as session:
+        with self._get_session() as session:
             user = self._get_user(session, username)
             if user:
                 raise NameError('The user {} already exists'.format(username))
@@ -87,7 +86,7 @@ class UserManager:
         return self._mask_password(user)
 
     def update_password(self, username, old_password, new_password):
-        with self.db.get_session() as session:
+        with self._get_session() as session:
             if not self._authenticate_user(session, username, old_password):
                 return False
 
@@ -97,11 +96,11 @@ class UserManager:
             return True
 
     def authenticate_user(self, username, password):
-        with self.db.get_session() as session:
+        with self._get_session() as session:
             return self._authenticate_user(session, username, password)
 
     def authenticate_user_session(self, session_token):
-        with self.db.get_session() as session:
+        with self._get_session() as session:
             user_session = (
                 session.query(UserSession)
                 .filter_by(session_token=session_token)
@@ -118,7 +117,7 @@ class UserManager:
             return self._mask_password(user), user_session
 
     def delete_user(self, username):
-        with self.db.get_session() as session:
+        with self._get_session() as session:
             user = self._get_user(session, username)
             if not user:
                 raise NameError('No such user: {}'.format(username))
@@ -134,7 +133,7 @@ class UserManager:
             return True
 
     def delete_user_session(self, session_token):
-        with self.db.get_session() as session:
+        with self._get_session() as session:
             user_session = (
                 session.query(UserSession)
                 .filter_by(session_token=session_token)
@@ -149,7 +148,7 @@ class UserManager:
             return True
 
     def create_user_session(self, username, password, expires_at=None):
-        with self.db.get_session() as session:
+        with self._get_session() as session:
             user = self._authenticate_user(session, username, password)
             if not user:
                 return None
@@ -203,7 +202,7 @@ class UserManager:
 
         :param session_token: Session token.
         """
-        with self.db.get_session() as session:
+        with self._get_session() as session:
             return (
                 session.query(User)
                 .join(UserSession)
@@ -263,7 +262,7 @@ class UserManager:
         pub_key, _ = get_or_generate_jwt_rsa_key_pair()
 
         try:
-            payload = jwt_decode(token.encode(), pub_key, algorithms=['RS256'])
+            payload = jwt_decode(token.encode(), pub_key, algorithms=['RS256'])  # type: ignore[reportGeneralTypeIssues]
         except PyJWTError as e:
             raise InvalidJWTTokenException(str(e))
 

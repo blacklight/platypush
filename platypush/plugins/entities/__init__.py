@@ -12,7 +12,6 @@ from platypush.entities import (
     Entity,
     get_plugin_entity_registry,
     get_entities_registry,
-    db_url,
 )
 from platypush.message.event.entities import EntityUpdateEvent, EntityDeleteEvent
 from platypush.plugins import Plugin, action
@@ -30,7 +29,7 @@ class EntitiesPlugin(Plugin):
     def _get_session(self):
         db = get_plugin('db')
         assert db
-        return db.get_session(engine=db_url)
+        return db.get_session()
 
     @action
     def get(

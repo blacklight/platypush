@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, make_transient
 from platypush.context import get_bus, get_plugin
 from platypush.message.event.entities import EntityUpdateEvent
 
-from ._base import Entity, db_url
+from ._base import Entity
 
 
 class EntitiesEngine(Thread):
@@ -35,7 +35,7 @@ class EntitiesEngine(Thread):
     def _get_session(self):
         db = get_plugin('db')
         assert db
-        return db.get_session(engine=db_url)
+        return db.get_session()
 
     def _get_cached_entity(self, entity: Entity) -> Optional[dict]:
         if entity.id:

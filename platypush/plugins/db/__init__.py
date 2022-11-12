@@ -11,6 +11,8 @@ from sqlalchemy.sql import and_, or_, text
 
 from platypush.plugins import Plugin, action
 
+session_locks = {}
+
 
 class DbPlugin(Plugin):
     """
@@ -41,7 +43,6 @@ class DbPlugin(Plugin):
         super().__init__()
         self.engine_url = engine
         self.engine = self.get_engine(engine, *args, **kwargs)
-        self._session_locks = {}
 
     def get_engine(
         self, engine: Optional[Union[str, Engine]] = None, *args, **kwargs
@@ -60,7 +61,7 @@ class DbPlugin(Plugin):
             return create_engine(engine, *args, **kwargs)  # type: ignore
 
         if not self.engine:
-            return create_engine(self.engine_url, *args, **kwargs)  # type: ignore
+            self.engine = create_engine(self.engine_url, *args, **kwargs)  # type: ignore
 
         return self.engine
 
@@ -508,23 +509,26 @@ class DbPlugin(Plugin):
                 connection.execute(delete)
 
     def create_all(self, engine, base):
-        self._session_locks[engine.url] = self._session_locks.get(engine.url, RLock())
-        with self._session_locks[engine.url]:
-            base.metadata.create_all(engine)
+        with (self.get_session(engine) as session, session.begin()):
+            base.metadata.create_all(session.connection())
 
     @contextmanager
     def get_session(
         self, engine=None, *args, **kwargs
     ) -> Generator[Session, None, None]:
         engine = self.get_engine(engine, *args, **kwargs)
-        self._session_locks[engine.url] = self._session_locks.get(engine.url, RLock())
-        with self._session_locks[engine.url]:
-            session = scoped_session(sessionmaker(expire_on_commit=False))
-            session.configure(bind=engine)
-            s = session()
-            yield s
-            s.commit()
-            s.close()
+        session_locks[engine.url] = session_locks.get(engine.url, RLock())
+
+        with (session_locks[engine.url], engine.connect() as conn, conn.begin()):
+            session = scoped_session(
+                sessionmaker(
+                    expire_on_commit=False,
+                    autoflush=True,
+                )
+            )
+
+            session.configure(bind=conn)
+            yield session()
 
 
 # vim:sw=4:ts=4:et:
