@@ -176,6 +176,9 @@ export default {
         }, {}))
 
       this.loadingEntities = Object.values(entities).reduce((obj, entity) => {
+          if (entity.is_query_disabled || entity.is_write_only)
+            return obj
+
           const self = this
           const id = entity.id
           if (this.entityTimeouts[id])
