@@ -26,10 +26,10 @@ class EntitiesPlugin(Plugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def _get_session(self):
+    def _get_session(self, *args, **kwargs):
         db = get_plugin('db')
         assert db
-        return db.get_session()
+        return db.get_session(*args, **kwargs)
 
     @action
     def get(
@@ -194,7 +194,7 @@ class EntitiesPlugin(Plugin):
         :param entities: IDs of the entities to be removed.
         :return: The payload of the deleted entities.
         """
-        with self._get_session() as session:
+        with self._get_session(locked=True) as session:
             entities: Collection[Entity] = (
                 session.query(Entity).filter(Entity.id.in_(entities)).all()
             )
@@ -235,7 +235,7 @@ class EntitiesPlugin(Plugin):
         :return: The updated entities.
         """
         entities = {str(k): v for k, v in entities.items()}
-        with self._get_session() as session:
+        with self._get_session(locked=True) as session:
             objs = session.query(Entity).filter(Entity.id.in_(entities.keys())).all()
             for obj in objs:
                 obj.meta = {**(obj.meta or {}), **(entities.get(str(obj.id), {}))}

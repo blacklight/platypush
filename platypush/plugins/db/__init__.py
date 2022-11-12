@@ -509,17 +509,21 @@ class DbPlugin(Plugin):
                 connection.execute(delete)
 
     def create_all(self, engine, base):
-        with (self.get_session(engine) as session, session.begin()):
+        with (self.get_session(engine, locked=True) as session, session.begin()):
             base.metadata.create_all(session.connection())
 
     @contextmanager
     def get_session(
-        self, engine=None, *args, **kwargs
+        self, engine=None, locked=False, *args, **kwargs
     ) -> Generator[Session, None, None]:
         engine = self.get_engine(engine, *args, **kwargs)
-        session_locks[engine.url] = session_locks.get(engine.url, RLock())
+        if locked:
+            lock = session_locks[engine.url] = session_locks.get(engine.url, RLock())
+        else:
+            # Mock lock
+            lock = RLock()
 
-        with (session_locks[engine.url], engine.connect() as conn, conn.begin()):
+        with (lock, engine.connect() as conn, conn.begin()):
             session = scoped_session(
                 sessionmaker(
                     expire_on_commit=False,

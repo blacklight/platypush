@@ -32,10 +32,10 @@ class EntitiesEngine(Thread):
             'by_name_and_plugin': {},
         }
 
-    def _get_session(self):
+    def _get_session(self, *args, **kwargs):
         db = get_plugin('db')
         assert db
-        return db.get_session()
+        return db.get_session(*args, **kwargs)
 
     def _get_cached_entity(self, entity: Entity) -> Optional[dict]:
         if entity.id:
@@ -247,7 +247,7 @@ class EntitiesEngine(Thread):
         return list(new_entities.values())
 
     def _process_entities(self, *entities: Entity):
-        with self._get_session() as session:
+        with self._get_session(locked=True) as session:
             # Ensure that the internal IDs are set to null before the merge
             for e in entities:
                 e.id = None  # type: ignore
