@@ -8,7 +8,12 @@ from sqlalchemy.orm import make_transient
 
 from platypush.config import Config
 from platypush.context import get_plugin, get_bus
-from platypush.entities import Entity, get_plugin_entity_registry, get_entities_registry
+from platypush.entities import (
+    Entity,
+    get_plugin_entity_registry,
+    get_entities_registry,
+    db_url,
+)
 from platypush.message.event.entities import EntityUpdateEvent, EntityDeleteEvent
 from platypush.plugins import Plugin, action
 
@@ -22,10 +27,10 @@ class EntitiesPlugin(Plugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def _get_db(self):
+    def _get_session(self):
         db = get_plugin('db')
         assert db
-        return db
+        return db.get_session(engine=db_url)
 
     @action
     def get(
@@ -58,7 +63,6 @@ class EntitiesPlugin(Plugin):
 
             selected_types = entity_types.keys()
 
-        db = self._get_db()
         enabled_plugins = list(
             {
                 *Config.get_plugins().keys(),
@@ -66,7 +70,7 @@ class EntitiesPlugin(Plugin):
             }
         )
 
-        with db.get_session() as session:
+        with self._get_session() as session:
             query = session.query(Entity).filter(
                 or_(Entity.plugin.in_(enabled_plugins), Entity.plugin.is_(None))
             )
@@ -173,8 +177,7 @@ class EntitiesPlugin(Plugin):
         :param args: Action's extra positional arguments.
         :param kwargs: Action's extra named arguments.
         """
-        db = self._get_db()
-        with db.get_session() as session:
+        with self._get_session() as session:
             entity = session.query(Entity).filter_by(id=id).one_or_none()
 
         assert entity, f'No such entity ID: {id}'
@@ -192,7 +195,7 @@ class EntitiesPlugin(Plugin):
         :param entities: IDs of the entities to be removed.
         :return: The payload of the deleted entities.
         """
-        with self._get_db().get_session() as session:
+        with self._get_session() as session:
             entities: Collection[Entity] = (
                 session.query(Entity).filter(Entity.id.in_(entities)).all()
             )
@@ -233,7 +236,7 @@ class EntitiesPlugin(Plugin):
         :return: The updated entities.
         """
         entities = {str(k): v for k, v in entities.items()}
-        with self._get_db().get_session() as session:
+        with self._get_session() as session:
             objs = session.query(Entity).filter(Entity.id.in_(entities.keys())).all()
             for obj in objs:
                 obj.meta = {**(obj.meta or {}), **(entities.get(str(obj.id), {}))}

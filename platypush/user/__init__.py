@@ -33,8 +33,11 @@ class UserManager:
     def __init__(self):
         self.db = get_plugin('db')
         assert self.db
-        self._engine = self.db.get_engine()
-        self.db.create_all(self._engine, Base)
+        self._engine = self.db.get_engine(engine=self.db.engine_url)
+
+        with self.db.get_session() as session:
+            self.db.create_all(self._engine, Base)
+            session.flush()
 
     @staticmethod
     def _mask_password(user):

@@ -1,7 +1,7 @@
 import time
 from contextlib import contextmanager
 from multiprocessing import RLock
-from typing import Optional, Generator
+from typing import Optional, Generator, Union
 
 from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.engine import Engine
@@ -39,19 +39,29 @@ class DbPlugin(Plugin):
         """
 
         super().__init__()
+        self.engine_url = engine
         self.engine = self.get_engine(engine, *args, **kwargs)
         self._session_locks = {}
 
-    def get_engine(self, engine=None, *args, **kwargs) -> Engine:
-        if engine:
+    def get_engine(
+        self, engine: Optional[Union[str, Engine]] = None, *args, **kwargs
+    ) -> Engine:
+        if engine == self.engine_url and self.engine:
+            return self.engine
+
+        if engine or not self.engine:
             if isinstance(engine, Engine):
                 return engine
-            if engine.startswith('sqlite://'):
+            if not engine:
+                engine = self.engine_url
+            if isinstance(engine, str) and engine.startswith('sqlite://'):
                 kwargs['connect_args'] = {'check_same_thread': False}
 
             return create_engine(engine, *args, **kwargs)  # type: ignore
 
-        assert self.engine
+        if not self.engine:
+            return create_engine(self.engine_url, *args, **kwargs)  # type: ignore
+
         return self.engine
 
     @staticmethod

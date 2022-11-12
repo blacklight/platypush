@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, make_transient
 from platypush.context import get_bus
 from platypush.message.event.entities import EntityUpdateEvent
 
-from ._base import Entity
+from ._base import Entity, db_url
 
 
 class EntitiesEngine(Thread):
@@ -98,7 +98,7 @@ class EntitiesEngine(Thread):
                 self._cache_entities(new_entity)
 
     def _init_entities_cache(self):
-        with self._get_db().get_session() as session:
+        with self._get_db().get_session(engine=db_url) as session:
             entities = session.query(Entity).all()
             for entity in entities:
                 make_transient(entity)
@@ -249,7 +249,7 @@ class EntitiesEngine(Thread):
         return list(new_entities.values())
 
     def _process_entities(self, *entities: Entity):
-        with self._get_db().get_session() as session:
+        with self._get_db().get_session(engine=db_url) as session:
             # Ensure that the internal IDs are set to null before the merge
             for e in entities:
                 e.id = None  # type: ignore
