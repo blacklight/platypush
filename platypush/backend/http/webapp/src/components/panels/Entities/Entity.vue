@@ -26,6 +26,16 @@ export default {
     }
   },
 
+  methods: {
+    valuesEqual(a, b) {
+      a = {...a}
+      b = {...b}
+      delete a.updated_at
+      delete b.updated_at
+      return this.objectsEqual(a, b)
+    },
+  },
+
   mounted() {
     if (this.type !== 'Entity') {
       const type = this.type.split('_').map((t) =>
@@ -34,7 +44,10 @@ export default {
 
       this.$watch(
           () => this.value,
-          () => {
+          (newValue, oldValue) => {
+              if (this.valuesEqual(oldValue, newValue))
+                return false
+
               this.justUpdated = true
               const self = this;
               setTimeout(() => self.justUpdated = false, 1000)
@@ -63,8 +76,16 @@ export default {
 }
 
 @keyframes blink-animation {
-  to {
+  0% {
+    background: initial
+  }
+
+  50% {
     background: $active-bg;
+  }
+
+  100% {
+    background: initial
   }
 }
 </style>

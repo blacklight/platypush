@@ -36,7 +36,37 @@ export default {
       })
 
       return `${value.toFixed(2)} ${unit}`
-    }
+    },
+
+    objectsEqual(a, b) {
+      if (typeof(a) !== 'object' || typeof(b) !== 'object')
+        return false
+
+      for (const p of Object.keys(a || {})) {
+        switch(typeof(a[p])) {
+          case 'object':
+            if (!this.objectsEqual(a[p], b[p]))
+              return false
+            break
+
+          case 'function':
+            if (a[p].toString() != b[p]?.toString())
+              return false
+            break
+
+          default:
+            if (a[p] != b[p])
+              return false
+            break
+        }
+      }
+
+      for (const p of Object.keys(b || {}))
+        if (a[p] == null && b[p] != null)
+          return false
+
+      return true
+    },
   },
 }
 </script>
