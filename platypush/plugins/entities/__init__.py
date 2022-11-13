@@ -4,7 +4,7 @@ from time import time
 from typing import Optional, Any, Collection, Mapping
 
 from sqlalchemy import or_
-from sqlalchemy.orm import make_transient
+from sqlalchemy.orm import make_transient, Session
 
 from platypush.config import Config
 from platypush.context import get_plugin, get_bus
@@ -26,7 +26,7 @@ class EntitiesPlugin(Plugin):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def _get_session(self, *args, **kwargs):
+    def _get_session(self, *args, **kwargs) -> Session:
         db = get_plugin('db')
         assert db
         return db.get_session(*args, **kwargs)
@@ -195,6 +195,11 @@ class EntitiesPlugin(Plugin):
         :return: The payload of the deleted entities.
         """
         with self._get_session(locked=True) as session:
+            if str(session.connection().engine.url).startswith('sqlite://'):
+                # SQLite requires foreign_keys to be explicitly enabled
+                # in order to proper manage cascade deletions
+                session.execute('PRAGMA foreign_keys = ON')
+
             entities: Collection[Entity] = (
                 session.query(Entity).filter(Entity.id.in_(entities)).all()
             )
