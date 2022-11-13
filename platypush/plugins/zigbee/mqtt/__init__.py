@@ -13,6 +13,7 @@ from platypush.entities.electricity import (
     PowerSensor,
     VoltageSensor,
 )
+from platypush.entities.dimmers import Dimmer
 from platypush.entities.humidity import HumiditySensor
 from platypush.entities.lights import Light
 from platypush.entities.linkquality import LinkQuality
@@ -24,7 +25,7 @@ from platypush.message.response import Response
 from platypush.plugins.mqtt import MqttPlugin, action
 
 
-@manages(Light, Switch, LinkQuality, Battery, Sensor)
+@manages(Light, Switch, LinkQuality, Battery, Sensor, Dimmer)
 class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
     """
     This plugin allows you to interact with Zigbee devices over MQTT through any Zigbee sniffer and
@@ -194,8 +195,11 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
 
             light_info = self._get_light_meta(dev)
             switch_info = self._get_switch_meta(dev)
-            sensors = self._get_sensors(dev)
-            enum_switches = self._get_enum_switches(dev)
+            compatible_entities += (
+                self._get_sensors(dev)
+                + self._get_dimmers(dev)
+                + self._get_enum_switches(dev)
+            )
 
             if light_info:
                 compatible_entities.append(
@@ -260,11 +264,6 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                         is_query_disabled=switch_info['is_query_disabled'],
                     )
                 )
-
-            if sensors:
-                compatible_entities += sensors
-            if enum_switches:
-                compatible_entities += enum_switches
 
         return super().transform_entities(compatible_entities)  # type: ignore
 
@@ -1596,10 +1595,54 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         return sensors
 
     @classmethod
-    def _get_enum_switches(cls, device_info: dict) -> List[Sensor]:
-        devices = []
-        exposes = [
-            exposed
+    def _get_dimmers(cls, device_info: dict) -> List[Dimmer]:
+        return [
+            Dimmer(
+                id=f'{device_info["ieee_address"]}:{exposed["property"]}',
+                name=(
+                    device_info.get('friendly_name', '[Unnamed device]')
+                    + ' ['
+                    + exposed.get('description', '')
+                    + ']'
+                ),
+                value=device_info.get('state', {}).get(exposed['property']),
+                min=exposed.get('value_min'),
+                max=exposed.get('value_max'),
+                unit=exposed.get('unit'),
+                description=exposed.get('description'),
+                is_read_only=cls._is_read_only(exposed),
+                is_write_only=cls._is_write_only(exposed),
+                is_query_disabled=cls._is_query_disabled(exposed),
+                data=device_info,
+            )
+            for exposed in (device_info.get('definition', {}) or {}).get('exposes', [])
+            if (
+                exposed.get('property')
+                and exposed.get('type') == 'numeric'
+                and not cls._is_read_only(exposed)
+                and not cls._is_write_only(exposed)
+            )
+        ]
+
+    @classmethod
+    def _get_enum_switches(cls, device_info: dict) -> List[EnumSwitch]:
+        return [
+            EnumSwitch(
+                id=f'{device_info["ieee_address"]}:{exposed["property"]}',
+                name=(
+                    device_info.get('friendly_name', '[Unnamed device]')
+                    + ' ['
+                    + exposed.get('description', '')
+                    + ']'
+                ),
+                value=device_info.get(exposed['property']),
+                values=exposed.get('values', []),
+                description=exposed.get('description'),
+                is_read_only=cls._is_read_only(exposed),
+                is_write_only=cls._is_write_only(exposed),
+                is_query_disabled=cls._is_query_disabled(exposed),
+                data=device_info,
+            )
             for exposed in (device_info.get('definition', {}) or {}).get('exposes', [])
             if (
                 exposed.get('property')
@@ -1608,28 +1651,6 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 and exposed.get('values')
             )
         ]
-
-        for exposed in exposes:
-            devices.append(
-                EnumSwitch(
-                    id=f'{device_info["ieee_address"]}:{exposed["property"]}',
-                    name=(
-                        device_info.get('friendly_name', '[Unnamed device]')
-                        + ' ['
-                        + exposed.get('description', '')
-                        + ']'
-                    ),
-                    value=device_info.get(exposed['property']),
-                    values=exposed.get('values', []),
-                    description=exposed.get('description'),
-                    is_read_only=cls._is_read_only(exposed),
-                    is_write_only=cls._is_write_only(exposed),
-                    is_query_disabled=cls._is_query_disabled(exposed),
-                    data=device_info,
-                )
-            )
-
-        return devices
 
     @classmethod
     def _get_light_meta(cls, device_info: dict) -> dict:
