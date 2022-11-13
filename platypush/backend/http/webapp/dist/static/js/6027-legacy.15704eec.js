@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[6027],{8586:function(n,e,u){u.r(e),u.d(e,{default:function(){return v}});var a=u(6252);function r(n,e,u,r,t,p){var s=(0,a.up)("Zwave");return(0,a.wg)(),(0,a.j4)(s,{"plugin-name":"zwave"})}var t=u(906),p={components:{Zwave:t.Z}},s=u(3744);const c=(0,s.Z)(p,[["render",r]]);var v=c}}]);
+//# sourceMappingURL=6027-legacy.15704eec.js.map
