@@ -1,5 +1,5 @@
 <template>
-  <div class="row item entity-container">
+  <div class="row item entity-container" :class="{blink: justUpdated}">
     <component :is="component"
       :value="value"
       :loading="loading"
@@ -22,6 +22,7 @@ export default {
   data() {
     return {
       component: null,
+      justUpdated: false,
     }
   },
 
@@ -30,6 +31,15 @@ export default {
       const type = this.type.split('_').map((t) =>
           t[0].toUpperCase() + t.slice(1)
       ).join('')
+
+      this.$watch(
+          () => this.value,
+          () => {
+              this.justUpdated = true
+              const self = this;
+              setTimeout(() => self.justUpdated = false, 1000)
+          }
+      )
 
       this.component = defineAsyncComponent(
         () => import(`@/components/panels/Entities/${type}`)
@@ -46,5 +56,15 @@ export default {
   width: 100%;
   position: relative;
   padding: 0 !important;
+}
+
+.blink {
+  animation: blink-animation 1s steps(20, start);
+}
+
+@keyframes blink-animation {
+  to {
+    background: $active-bg;
+  }
 }
 </style>
