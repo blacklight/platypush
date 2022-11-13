@@ -25,7 +25,7 @@ from platypush.message.response import Response
 from platypush.plugins.mqtt import MqttPlugin, action
 
 
-@manages(Light, Switch, LinkQuality, Battery, Sensor, Dimmer)
+@manages(Battery, Dimmer, Light, LinkQuality, Sensor, Switch)
 class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
     """
     This plugin allows you to interact with Zigbee devices over MQTT through any Zigbee sniffer and
