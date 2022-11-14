@@ -7,13 +7,13 @@ from typing import Optional, List, Any, Dict, Union, Tuple
 
 from platypush.entities import manages
 from platypush.entities.batteries import Battery
+from platypush.entities.dimmers import Dimmer
 from platypush.entities.electricity import (
     CurrentSensor,
     EnergySensor,
     PowerSensor,
     VoltageSensor,
 )
-from platypush.entities.dimmers import Dimmer
 from platypush.entities.humidity import HumiditySensor
 from platypush.entities.lights import Light
 from platypush.entities.linkquality import LinkQuality
