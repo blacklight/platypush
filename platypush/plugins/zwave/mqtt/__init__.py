@@ -1,14 +1,34 @@
 from collections import OrderedDict
 import json
 import queue
+import re
 
 from datetime import datetime
 from threading import Timer
-from typing import Optional, List, Any, Dict, Union, Iterable, Mapping, Callable
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 from platypush.entities.batteries import Battery
 from platypush.entities.dimmers import Dimmer
+from platypush.entities.electricity import (
+    EnergySensor,
+    PowerSensor,
+    VoltageSensor,
+)
+from platypush.entities.humidity import HumiditySensor
+from platypush.entities.sensors import BinarySensor, NumericSensor
 from platypush.entities.switches import Switch
+from platypush.entities.temperature import TemperatureSensor
 from platypush.message.event.zwave import ZwaveNodeRenamedEvent, ZwaveNodeEvent
 
 from platypush.context import get_backend, get_bus
@@ -484,6 +504,51 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         ) and not value.get('is_read_only')
 
     @classmethod
+    def _get_sensor_args(
+        cls, value: Mapping
+    ) -> Tuple[Optional[Type], Optional[Mapping]]:
+        if not value.get('is_read_only'):
+            return None, None
+
+        if (
+            cls._matches_classes(value, 'sensor_binary', 'sensor_alarm', 'meter')
+            and value.get('type') == 'Bool'
+        ):
+            return (
+                BinarySensor,
+                {
+                    'value': value.get('data', False),
+                },
+            )
+
+        if (
+            cls._matches_classes(value, 'sensor_multilevel', 'sensor_alarm', 'meter')
+            and value.get('type') == 'Decimal'
+        ):
+            args = {
+                'value': value.get('data'),
+                'min': value.get('min'),
+                'max': value.get('max'),
+                'unit': value.get('units'),
+            }
+
+            sensor_type = NumericSensor
+            if re.search(r'\s*power$', value['property_id'], re.IGNORECASE):
+                sensor_type = PowerSensor
+            if re.search(r'\s*voltage$', value['property_id'], re.IGNORECASE):
+                sensor_type = VoltageSensor
+            elif re.search(r'Wh$', value.get('units', '')):
+                sensor_type = EnergySensor
+            elif re.search(r'\s*temperature$', value['property_id'], re.IGNORECASE):
+                sensor_type = TemperatureSensor
+            elif re.search(r'\s*humidity$', value['property_id'], re.IGNORECASE):
+                sensor_type = HumiditySensor
+
+            return sensor_type, args
+
+        return None, None
+
+    @classmethod
     def _is_battery(cls, value: Mapping):
         return (
             cls._matches_classes(value, 'battery')
@@ -502,7 +567,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
                 'is_write_only': False,
             }
 
-        return {
+        args = {
             'id': value['id'],
             'name': '{node_name} [{value_name}]'.format(
                 node_name=self._nodes_cache['by_id'][value['node_id']].get(
@@ -519,6 +584,11 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             },
         }
 
+        if value.get('last_update'):
+            args['updated_at'] = value['last_update']
+
+        return args
+
     def transform_entities(self, values: Iterable[Mapping]):
         entities = []
 
@@ -528,6 +598,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
             entity_type = None
             entity_args = self._to_entity_args(value)
+            sensor_type, sensor_args = self._get_sensor_args(value)
 
             if self._is_dimmer(value):
                 entity_type = Dimmer
@@ -543,6 +614,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             elif self._is_switch(value):
                 entity_type = Switch
                 entity_args['state'] = value['data']
+            elif sensor_args:
+                entity_type = sensor_type
+                entity_args.update(sensor_args)
 
             if entity_type:
                 entities.append(entity_type(**entity_args))
