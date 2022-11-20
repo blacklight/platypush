@@ -106,7 +106,7 @@ class ZwaveMqttBackend(MqttBackend):
         value: Optional[dict] = None,
         **kwargs,
     ):
-        if value and 'id' not in value:
+        if node and value and 'id' not in value:
             value_id = f"{value['commandClass']}-{value.get('endpoint', 0)}-{value['property']}"
             if 'propertyKey' in value:
                 value_id += '-' + str(value['propertyKey'])

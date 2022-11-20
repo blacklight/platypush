@@ -26,7 +26,7 @@ from platypush.entities.electricity import (
     VoltageSensor,
 )
 from platypush.entities.humidity import HumiditySensor
-from platypush.entities.sensors import BinarySensor, NumericSensor
+from platypush.entities.sensors import BinarySensor, EnumSensor, NumericSensor
 from platypush.entities.switches import Switch
 from platypush.entities.temperature import TemperatureSensor
 from platypush.message.event.zwave import ZwaveNodeRenamedEvent, ZwaveNodeEvent
@@ -507,46 +507,64 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     def _get_sensor_args(
         cls, value: Mapping
     ) -> Tuple[Optional[Type], Optional[Mapping]]:
-        if not value.get('is_read_only'):
-            return None, None
+        sensor_type, args = None, None
+        known_sensor_classes = {
+            'battery',
+            'door_lock',
+            'lock',
+            'meter',
+            'notification',
+            'sensor_alarm',
+            'sensor_binary',
+            'sensor_multilevel',
+            'thermostat_fan_mode',
+            'thermostat_fan_state',
+            'thermostat_heating',
+        }
 
-        if (
-            cls._matches_classes(value, 'sensor_binary', 'sensor_alarm', 'meter')
-            and value.get('type') == 'Bool'
+        if value.get('is_read_only') and cls._matches_classes(
+            value, *known_sensor_classes
         ):
-            return (
-                BinarySensor,
-                {
-                    'value': value.get('data', False),
-                },
-            )
+            if value.get('type') == 'Bool':
+                sensor_type, args = (
+                    BinarySensor,
+                    {
+                        'value': value.get('data', False),
+                    },
+                )
+            elif value.get('type') == 'List':
+                sensor_type, args = (
+                    EnumSensor,
+                    {
+                        'value': value.get('data'),
+                        'values': {
+                            i['value']: i['text'] for i in value.get('data_items', [])
+                        },
+                    },
+                )
+            elif value.get('type') == 'Decimal':
+                sensor_type = NumericSensor
+                if re.search(r'\s*power$', value['property_id'], re.IGNORECASE):
+                    sensor_type = PowerSensor
+                if re.search(r'\s*voltage$', value['property_id'], re.IGNORECASE):
+                    sensor_type = VoltageSensor
+                elif re.search(
+                    r'\s*consumption$', value['property_id'], re.IGNORECASE
+                ) or re.search(r'Wh$', (value.get('units') or '')):
+                    sensor_type = EnergySensor
+                elif re.search(r'\s*temperature$', value['property_id'], re.IGNORECASE):
+                    sensor_type = TemperatureSensor
+                elif re.search(r'\s*humidity$', value['property_id'], re.IGNORECASE):
+                    sensor_type = HumiditySensor
 
-        if (
-            cls._matches_classes(value, 'sensor_multilevel', 'sensor_alarm', 'meter')
-            and value.get('type') == 'Decimal'
-        ):
-            args = {
-                'value': value.get('data'),
-                'min': value.get('min'),
-                'max': value.get('max'),
-                'unit': value.get('units'),
-            }
+                args = {
+                    'value': value.get('data'),
+                    'min': value.get('min'),
+                    'max': value.get('max'),
+                    'unit': value.get('units'),
+                }
 
-            sensor_type = NumericSensor
-            if re.search(r'\s*power$', value['property_id'], re.IGNORECASE):
-                sensor_type = PowerSensor
-            if re.search(r'\s*voltage$', value['property_id'], re.IGNORECASE):
-                sensor_type = VoltageSensor
-            elif re.search(r'Wh$', value.get('units', '')):
-                sensor_type = EnergySensor
-            elif re.search(r'\s*temperature$', value['property_id'], re.IGNORECASE):
-                sensor_type = TemperatureSensor
-            elif re.search(r'\s*humidity$', value['property_id'], re.IGNORECASE):
-                sensor_type = HumiditySensor
-
-            return sensor_type, args
-
-        return None, None
+        return sensor_type, args
 
     @classmethod
     def _is_battery(cls, value: Mapping):

@@ -127,6 +127,14 @@
     }
   },
 
+  "enum_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-thermometer"
+    }
+  },
+
   "sensor": {
     "name": "Sensor",
     "name_plural": "Sensors",

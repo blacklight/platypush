@@ -1,6 +1,14 @@
 import logging
 
-from sqlalchemy import Column, Integer, ForeignKey, Boolean, Numeric, String
+from sqlalchemy import (
+    Boolean,
+    Column,
+    ForeignKey,
+    Integer,
+    JSON,
+    Numeric,
+    String,
+)
 
 from .devices import Device, entity_types_registry
 
@@ -83,3 +91,23 @@ if not entity_types_registry.get('BinarySensor'):
     entity_types_registry['BinarySensor'] = BinarySensor
 else:
     BinarySensor = entity_types_registry['BinarySensor']
+
+
+if not entity_types_registry.get('EnumSensor'):
+
+    class EnumSensor(Sensor):
+        __tablename__ = 'enum_sensor'
+
+        id = Column(
+            Integer, ForeignKey(Device.id, ondelete='CASCADE'), primary_key=True
+        )
+        value = Column(String)
+        values = Column(JSON)
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }
+
+    entity_types_registry['EnumSensor'] = EnumSensor
+else:
+    EnumSensor = entity_types_registry['EnumSensor']

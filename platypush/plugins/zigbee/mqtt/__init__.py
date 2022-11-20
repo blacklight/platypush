@@ -17,7 +17,12 @@ from platypush.entities.electricity import (
 from platypush.entities.humidity import HumiditySensor
 from platypush.entities.lights import Light
 from platypush.entities.linkquality import LinkQuality
-from platypush.entities.sensors import Sensor, BinarySensor, NumericSensor
+from platypush.entities.sensors import (
+    BinarySensor,
+    EnumSensor,
+    NumericSensor,
+    Sensor,
+)
 from platypush.entities.switches import Switch, EnumSwitch
 from platypush.entities.temperature import TemperatureSensor
 from platypush.message import Mapping
@@ -1586,6 +1591,9 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 sensor_args['value'] = sensor_args['value'] == exposed.get(
                     'value_on', True
                 )
+            elif exposed.get('type') == 'enum':
+                entity_type = EnumSensor
+                sensor_args['values'] = exposed.get('values', [])
             elif exposed.get('type') == 'numeric':
                 entity_type = NumericSensor
 
