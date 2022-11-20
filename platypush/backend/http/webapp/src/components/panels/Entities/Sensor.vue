@@ -1,5 +1,5 @@
 <template>
-  <div class="entity sensor-container">
+  <div class="entity sensor-container" :class="{hidden: value.value == null}">
     <div class="head">
       <div class="col-1 icon">
         <EntityIcon
