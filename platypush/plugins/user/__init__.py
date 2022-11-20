@@ -14,8 +14,15 @@ class UserPlugin(Plugin):
         self.user_manager = UserManager()
 
     @action
-    def create_user(self, username, password, executing_user=None, executing_user_password=None, session_token=None,
-                    **kwargs):
+    def create_user(
+        self,
+        username,
+        password,
+        executing_user=None,
+        executing_user_password=None,
+        session_token=None,
+        **kwargs
+    ):
         """
         Create a user. This action needs to be executed by an already existing user, who needs to authenticate with
             their own credentials, unless this is the first user created on the system.
@@ -32,11 +39,17 @@ class UserPlugin(Plugin):
 
         """
 
-        if self.user_manager.get_user_count() > 0 and not executing_user and not session_token:
+        if (
+            self.user_manager.get_user_count() > 0
+            and not executing_user
+            and not session_token
+        ):
             return None, "You need to authenticate in order to create another user"
 
-        if not self.user_manager.authenticate_user(executing_user, executing_user_password):
-            user, session = self.user_manager.authenticate_user_session(session_token)
+        if not self.user_manager.authenticate_user(
+            executing_user, executing_user_password
+        ):
+            user, _ = self.user_manager.authenticate_user_session(session_token)
             if not user:
                 return None, "Invalid credentials and/or session_token"
 
@@ -58,7 +71,7 @@ class UserPlugin(Plugin):
         :return: True if the provided username and password are correct, False otherwise
         """
 
-        return True if self.user_manager.authenticate_user(username, password) else False
+        return bool(self.user_manager.authenticate_user(username, password))
 
     @action
     def update_password(self, username, old_password, new_password):
@@ -70,13 +83,21 @@ class UserPlugin(Plugin):
         return self.user_manager.update_password(username, old_password, new_password)
 
     @action
-    def delete_user(self, username, executing_user=None, executing_user_password=None, session_token=None):
+    def delete_user(
+        self,
+        username,
+        executing_user=None,
+        executing_user_password=None,
+        session_token=None,
+    ):
         """
         Delete a user
         """
 
-        if not self.user_manager.authenticate_user(executing_user, executing_user_password):
-            user, session = self.user_manager.authenticate_user_session(session_token)
+        if not self.user_manager.authenticate_user(
+            executing_user, executing_user_password
+        ):
+            user, _ = self.user_manager.authenticate_user_session(session_token)
             if not user:
                 return None, "Invalid credentials and/or session_token"
 
@@ -100,9 +121,9 @@ class UserPlugin(Plugin):
 
         """
 
-        session = self.user_manager.create_user_session(username=username,
-                                                        password=password,
-                                                        expires_at=expires_at)
+        session = self.user_manager.create_user_session(
+            username=username, password=password, expires_at=expires_at
+        )
 
         if not session:
             return None, "Invalid credentials"
@@ -111,7 +132,9 @@ class UserPlugin(Plugin):
             'session_token': session.session_token,
             'user_id': session.user_id,
             'created_at': session.created_at.isoformat(),
-            'expires_at': session.expires_at.isoformat() if session.expires_at else None,
+            'expires_at': session.expires_at.isoformat()
+            if session.expires_at
+            else None,
         }
 
     @action
@@ -130,7 +153,9 @@ class UserPlugin(Plugin):
 
         """
 
-        user, session = self.user_manager.authenticate_user_session(session_token=session_token)
+        user, _ = self.user_manager.authenticate_user_session(
+            session_token=session_token
+        )
         if not user:
             return None, 'Invalid session token'
 
@@ -170,13 +195,14 @@ class UserPlugin(Plugin):
                 ]
 
         """
+        users = self.user_manager.get_users()
         return [
             {
                 'user_id': user.user_id,
                 'username': user.username,
                 'created_at': user.created_at.isoformat(),
             }
-            for user in self.user_manager.get_users().all()
+            for user in users
         ]
 
     @action

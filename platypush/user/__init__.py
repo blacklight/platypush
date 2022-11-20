@@ -59,7 +59,7 @@ class UserManager:
 
     def get_users(self):
         with self._get_session() as session:
-            return session.query(User)
+            return session.query(User).all()
 
     def create_user(self, username, password, **kwargs):
         if not username:
