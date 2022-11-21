@@ -1,16 +1,13 @@
+import base64
 import datetime
 import hashlib
+import json
 import random
+import rsa
 import time
 from typing import Optional, Dict
 
 import bcrypt
-
-try:
-    from jwt.exceptions import PyJWTError
-    from jwt import encode as jwt_encode, decode as jwt_decode
-except ImportError:
-    from jwt import PyJWTError, encode as jwt_encode, decode as jwt_decode
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -197,17 +194,20 @@ class UserManager:
         if not user:
             raise InvalidCredentialsException()
 
-        pub_key, priv_key = get_or_generate_jwt_rsa_key_pair()
-        payload = {
-            'username': username,
-            'created_at': datetime.datetime.now().timestamp(),
-            'expires_at': expires_at.timestamp() if expires_at else None,
-        }
+        pub_key, _ = get_or_generate_jwt_rsa_key_pair()
+        payload = json.dumps(
+            {
+                'username': username,
+                'created_at': datetime.datetime.now().timestamp(),
+                'expires_at': expires_at.timestamp() if expires_at else None,
+            },
+            sort_keys=True,
+            indent=None,
+        )
 
-        token = jwt_encode(payload, priv_key, algorithm='RS256')
-        if isinstance(token, bytes):
-            token = token.decode()
-        return token
+        return base64.b64encode(
+            rsa.encrypt(payload.encode('ascii'), pub_key)
+        ).decode()
 
     @staticmethod
     def validate_jwt_token(token: str) -> Dict[str, str]:
@@ -227,12 +227,17 @@ class UserManager:
 
         :raises: :class:`platypush.exceptions.user.InvalidJWTTokenException` in case of invalid token.
         """
-        pub_key, priv_key = get_or_generate_jwt_rsa_key_pair()
+        _, priv_key = get_or_generate_jwt_rsa_key_pair()
 
         try:
-            payload = jwt_decode(token.encode(), pub_key, algorithms=['RS256'])
-        except PyJWTError as e:
-            raise InvalidJWTTokenException(str(e))
+            payload = json.loads(
+                rsa.decrypt(
+                    base64.b64decode(token.encode('ascii')),
+                    priv_key
+                ).decode('ascii')
+            )
+        except (TypeError, ValueError) as e:
+            raise InvalidJWTTokenException(f'Could not decode JWT token: {e}')
 
         expires_at = payload.get('expires_at')
         if expires_at and time.time() > expires_at:

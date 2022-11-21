@@ -7,6 +7,7 @@ import logging
 import os
 import pathlib
 import re
+import rsa
 import signal
 import socket
 import ssl
@@ -15,6 +16,7 @@ from typing import Optional, Tuple, Union
 
 from dateutil import parser, tz
 from redis import Redis
+from rsa.key import PublicKey, PrivateKey
 
 logger = logging.getLogger('utils')
 
@@ -366,7 +368,8 @@ def run(action, *args, **kwargs):
     return response.output
 
 
-def generate_rsa_key_pair(key_file: Optional[str] = None, size: int = 2048) -> Tuple[str, str]:
+def generate_rsa_key_pair(key_file: Optional[str] = None, size: int = 2048) \
+        -> Tuple[PublicKey, PrivateKey]:
     """
     Generate an RSA key pair.
 
@@ -384,28 +387,11 @@ def generate_rsa_key_pair(key_file: Optional[str] = None, size: int = 2048) -> T
     :param size: Key size (default: 2048 bits).
     :return: A tuple with the generated ``(priv_key_str, pub_key_str)``.
     """
-    from cryptography.hazmat.primitives import serialization
-    from cryptography.hazmat.primitives.asymmetric import rsa
-    from cryptography.hazmat.backends import default_backend
-
-    public_exp = 65537
-    private_key = rsa.generate_private_key(
-        public_exponent=public_exp,
-        key_size=size,
-        backend=default_backend()
-    )
-
-    logger.info('Generating RSA {} key pair'.format(size))
-    private_key_str = private_key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.TraditionalOpenSSL,
-        encryption_algorithm=serialization.NoEncryption()
-    ).decode()
-
-    public_key_str = private_key.public_key().public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.PKCS1,
-    ).decode()
+    logger.info('Generating RSA keypair')
+    pub_key, priv_key = rsa.newkeys(size)
+    logger.info('Generated RSA keypair')
+    public_key_str = pub_key.save_pkcs1('PEM').decode()
+    private_key_str = priv_key.save_pkcs1('PEM').decode()
 
     if key_file:
         logger.info('Saving private key to {}'.format(key_file))
@@ -415,7 +401,7 @@ def generate_rsa_key_pair(key_file: Optional[str] = None, size: int = 2048) -> T
             f2.write(public_key_str)
             os.chmod(key_file, 0o600)
 
-    return public_key_str, private_key_str
+    return pub_key, priv_key
 
 
 def get_or_generate_jwt_rsa_key_pair():
@@ -426,9 +412,14 @@ def get_or_generate_jwt_rsa_key_pair():
     pub_key_file = priv_key_file + '.pub'
 
     if os.path.isfile(priv_key_file) and os.path.isfile(pub_key_file):
-        with open(pub_key_file, 'r') as f1, \
-                open(priv_key_file, 'r') as f2:
-            return f1.read(), f2.read()
+        with (
+            open(pub_key_file, 'r') as f1,
+            open(priv_key_file, 'r') as f2
+        ):
+            return (
+                rsa.PublicKey.load_pkcs1(f1.read().encode()),
+                rsa.PrivateKey.load_pkcs1(f2.read().encode()),
+            )
 
     pathlib.Path(key_dir).mkdir(parents=True, exist_ok=True, mode=0o755)
     return generate_rsa_key_pair(priv_key_file, size=2048)

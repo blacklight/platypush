@@ -14,8 +14,7 @@ frozendict
 requests
 sqlalchemy
 bcrypt
-cryptography
-pyjwt
+rsa
 zeroconf
 paho-mqtt
 websocket-client
