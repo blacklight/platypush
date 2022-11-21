@@ -158,7 +158,8 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
         asyncio.set_event_loop(self._loop)
 
         self._task = self._loop.create_task(self._listen())
-        self._task.set_name(self.__class__.__name__ + '.listen')
+        if hasattr(self._task, 'set_name'):
+            self._task.set_name(self.__class__.__name__ + '.listen')
         self._loop.run_forever()
 
     def main(self):
