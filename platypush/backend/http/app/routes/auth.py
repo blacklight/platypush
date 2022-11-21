@@ -50,7 +50,6 @@ def auth_endpoint():
     except Exception as e:
         log.warning('Invalid payload passed to the auth endpoint: ' + str(e))
         abort(400)
-        return jsonify({'token': None})
 
     expiry_days = payload.get('expiry_days')
     expires_at = None
@@ -65,4 +64,3 @@ def auth_endpoint():
         })
     except UserException as e:
         abort(401, str(e))
-        return jsonify({'token': None})

@@ -230,6 +230,7 @@ class UserManager:
         payload = json.dumps(
             {
                 'username': username,
+                'password': password,
                 'created_at': datetime.datetime.now().timestamp(),
                 'expires_at': expires_at.timestamp() if expires_at else None,
             },
@@ -241,8 +242,7 @@ class UserManager:
             rsa.encrypt(payload.encode('ascii'), pub_key)
         ).decode()
 
-    @staticmethod
-    def validate_jwt_token(token: str) -> Dict[str, str]:
+    def validate_jwt_token(self, token: str) -> Dict[str, str]:
         """
         Validate a JWT token.
 
@@ -274,6 +274,14 @@ class UserManager:
         expires_at = payload.get('expires_at')
         if expires_at and time.time() > expires_at:
             raise InvalidJWTTokenException('Expired JWT token')
+
+        user = self.authenticate_user(
+            payload.get('username', ''),
+            payload.get('password', '')
+        )
+
+        if not user:
+            raise InvalidCredentialsException()
 
         return payload
 
