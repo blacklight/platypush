@@ -153,7 +153,10 @@ class CronScheduler(threading.Thread):
             for (job_name, job_config) in self.jobs_config.items():
                 job = self._get_job(name=job_name, config=job_config)
                 if job.state == CronjobState.IDLE:
-                    job.start()
+                    try:
+                        job.start()
+                    except Exception as e:
+                        logger.warning(f'Could not start cronjob {job_name}: {e}')
 
             t_before_wait = get_now().timestamp()
             self._should_stop.wait(timeout=self._poll_seconds)
