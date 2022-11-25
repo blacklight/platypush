@@ -2,10 +2,14 @@
   <div class="settings-container">
     <header>
       <div class="col-8">
-        <select title="View" @change="selectedView = $event.target.value">
-          <option value="users" :selected="selectedView === 'users'">Users</option>
-          <option value="token" :selected="selectedView === 'token'">Generate Token</option>
-        </select>
+        <Dropdown title="Select a category" icon-class="fa fa-ellipsis-h">
+          <DropdownItem text="Users" icon-class="fa fa-user"
+            :item-class="{selected: selectedView === 'users'}"
+            @click="selectedView = 'users'" />
+          <DropdownItem text="Generate a token" icon-class="fa fa-key"
+            :item-class="{selected: selectedView === 'token'}"
+            @click="selectedView = 'token'" />
+        </Dropdown>
       </div>
 
       <div class="col-4 pull-right">
@@ -25,13 +29,15 @@
 </template>
 
 <script>
+import Dropdown from "@/components/elements/Dropdown";
+import DropdownItem from "@/components/elements/DropdownItem";
 import Token from "@/components/panels/Settings/Token";
 import Users from "@/components/panels/Settings/Users";
 import Utils from "@/Utils";
 
 export default {
   name: "Settings",
-  components: {Users, Token},
+  components: {Dropdown, DropdownItem, Users, Token},
   mixins: [Utils],
 
   data() {
