@@ -1,9 +1,9 @@
 <template>
   <div class="row item" :class="itemClass" @click="clicked">
-    <div class="col-1 icon" v-if="iconClass?.length || iconUrl?.length">
+    <div class="col-2 icon" v-if="iconClass?.length || iconUrl?.length">
       <Icon :class="iconClass" :url="iconUrl" />
     </div>
-    <div class="text" :class="{'col-11': iconClass != null}" v-text="text" />
+    <div class="text" :class="{'col-10': iconClass != null}" v-text="text" />
   </div>
 </template>
 
@@ -60,6 +60,10 @@ export default {
     background: $hover-bg;
   }
 
+  &.selected {
+    font-weight: bold;
+  }
+
   &.disabled {
     color: $dropdown-disabled-color;
     cursor: initial;
@@ -68,6 +72,7 @@ export default {
   .icon {
     display: inline-flex;
     align-items: center;
+    max-width: 2em;
   }
 
   ::v-deep(.icon-container) {
