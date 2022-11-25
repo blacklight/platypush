@@ -86,19 +86,20 @@ $active-bg: #8fefb7 !default;
 $disabled-fg: rgb(155, 155, 155);
 
 /// Navigator
-$nav-bg: #141a18 !default;
-$nav-fg: #e8f8e8 !default;
-$nav-toggler-bg: black !default;
-$nav-toggler-shadow: 0 1px 1px 2px #191d1a !default;
-$nav-footer-bg: black !default;
-$nav-entry-selected-bg: #205046 !default;
-$nav-entry-hover-bg: #104036 !default;
+$nav-bg: rgba(245, 245, 245, 0.9) !default;
+$nav-fg: #5a5e5b !default;
+$nav-toggler-bg: rgba(235, 235, 235, 0.9) !default;
+$nav-toggler-shadow: 0 0 1px 2px #c9cdca !default;
+$nav-footer-bg: rgba(240, 240, 240, 0.9) !default;
+$nav-entry-selected-bg: $selected-bg !default;
+$nav-entry-selected-border: 1px solid #b1ebba !default;
+$nav-entry-hover-bg: $hover-bg !default;
 $nav-entry-collapsed-selected-bg: rgba(160, 245, 178, 0.95) !default;
 $nav-entry-collapsed-hover-bg: rgba(160, 245, 178, 0.60) !default;
-$nav-box-shadow-main: 1px 0 2px #002626;
-$nav-box-shadow-entry: 0 0 1px 1px #103824 !default;
+$nav-box-shadow-main: 1px 0 2px #aaa;
+$nav-box-shadow-entry: 0 0 1px 1px #c9cdca !default;
 $nav-box-shadow-collapsed: 1px 0 2px 1px #bbb !default;
-$nav-entry-border: 1px solid #183020 !default;
+$nav-entry-border: 1px solid $border-color-3 !default;
 $nav-collapsed-bg: white;
 $nav-collapsed-fg: #5e5e5e;
 
