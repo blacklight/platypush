@@ -117,22 +117,25 @@ nav {
 
   @media screen and (min-width: $tablet) {
     width: calc(16em - 2vw);
+    min-width: calc(16em - 2vw);
     height: 100%;
     overflow: auto;
     background: $nav-bg;
     color: $nav-fg;
     box-shadow: $nav-box-shadow-main;
-    margin-right: 2px;
+    z-index: 1;
   }
 
   @media screen and (min-width: $desktop) {
     width: 16em;
+    min-width: 16em;
   }
 
   li {
     border: $nav-entry-border;
     cursor: pointer;
     list-style: none;
+    letter-spacing: 0.04em;
 
     a {
       display: block;
@@ -149,6 +152,7 @@ nav {
 
     &.selected {
       background: $nav-entry-selected-bg;
+      border: $nav-entry-selected-border;
     }
 
     .name {
@@ -217,8 +221,8 @@ nav {
 
     @media screen and (min-width: $tablet) {
       width: 2.5em;
-      min-width: unset;
-      max-width: unset;
+      min-width: 2.5em;
+      max-width: 2.5em;
       background: $nav-collapsed-bg;
       color: $nav-collapsed-fg;
       box-shadow: $nav-box-shadow-collapsed;
