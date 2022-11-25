@@ -12,8 +12,9 @@
       <label>
         <input type="password" name="confirm_password" placeholder="Confirm password" :disabled="commandRunning">
       </label>
-
-      <input type="submit" value="Create User" :disabled="commandRunning">
+      <label>
+        <input type="submit" class="btn btn-primary" value="Create User" :disabled="commandRunning">
+      </label>
     </form>
   </Modal>
 
@@ -31,7 +32,9 @@
       <label>
         <input type="password" name="confirm_new_password" placeholder="Confirm new password" :disabled="commandRunning">
       </label>
-      <input type="submit" value="Change Password" :disabled="commandRunning">
+      <label>
+        <input type="submit" class="btn btn-primary" value="Change Password" :disabled="commandRunning">
+      </label>
     </form>
   </modal>
 
@@ -138,32 +141,6 @@ export default {
       await this.refresh()
     },
 
-    // onTokenFocus(event) {
-    //   event.target.select()
-    //   this.document.execCommand('copy')
-    //   event.target.setAttribute('disabled', true)
-    //
-    //   this.notify({
-    //     text: 'Token copied to the clipboard',
-    //     image: {
-    //       iconClass: 'fas fa-copy',
-    //     },
-    //   })
-    // },
-    //
-    // onTokenBlur(event) {
-    //   event.target.select()
-    //   this.document.execCommand('copy')
-    //   event.target.removeAttribute('disabled')
-    //
-    //   this.notify({
-    //     text: 'Token copied to clipboard',
-    //     image: {
-    //       iconClass: 'fas fa-copy',
-    //     },
-    //   })
-    // },
-
     async changePassword(event) {
       event.preventDefault()
 
@@ -261,6 +238,13 @@ export default {
   .modal {
     .body {
       height: auto;
+    }
+  }
+
+  form {
+    label {
+      display: block;
+      text-align: center;
     }
   }
 

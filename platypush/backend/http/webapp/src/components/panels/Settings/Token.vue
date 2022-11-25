@@ -31,25 +31,33 @@
       <div class="form-container">
         <form @submit.prevent="generateToken" ref="generateTokenForm">
           <label>
-            Username
-            <input type="text" name="username" :value="currentUser.username" disabled>
+            <span>Username</span>
+            <span>
+              <input type="text" name="username" :value="currentUser.username" disabled>
+            </span>
           </label>
 
           <label>
-            Password
-            <input type="password" name="password">
+            <span>Confirm password</span>
+            <span>
+              <input type="password" name="password">
+            </span>
           </label>
 
           <label>
-            Token validity in days
-            <input type="text" name="validityDays">
+            <span>Token validity in days</span>
+            <span>
+              <input type="text" name="validityDays">
+            </span>
             <span class="note">
               Decimal values are also supported (e.g. <i>0.5</i> to identify 6 hours). An empty or zero value means that
               the token has no expiry date.
             </span>
           </label>
 
-          <input type="submit" value="Generate token">
+          <label>
+            <input type="submit" class="btn btn-primary" value="Generate token">
+          </label>
         </form>
       </div>
     </div>
@@ -161,6 +169,12 @@ export default {
       font-size: .75em;
       margin: -.75em 0 2em 0;
     }
+
+    span {
+      input {
+        width: 100%;
+      }
+    }
   }
 
   input[type=password] {
@@ -181,6 +195,11 @@ export default {
     label {
       display: flex;
       flex-direction: column;
+
+      span {
+        display: block;
+        width: 100%;
+      }
     }
 
     textarea {
@@ -219,6 +238,10 @@ export default {
       width: 50%;
       justify-content: right;
       padding: 1em;
+
+      label {
+        text-align: left;
+      }
     }
 
     .body {
