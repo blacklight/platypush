@@ -231,3 +231,11 @@ export default {
   },
 }
 </script>
+
+<style lang="scss" scoped>
+.lights-plugin {
+  @include until($tablet) {
+    padding: 0.5em;
+  }
+}
+</style>
