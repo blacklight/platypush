@@ -291,7 +291,6 @@ nav {
 
       &.plugins {
         @media screen and (min-width: $tablet) and (max-width: $desktop - 1px) {
-          justify-content: left;
           margin: 2em 0;
         }
       }
