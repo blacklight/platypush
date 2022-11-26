@@ -1,7 +1,7 @@
 <template>
   <div class="entities-selectors-container">
     <div class="selector">
-      <Dropdown title="Group by" icon-class="fas fa-eye" ref="groupingSelector">
+      <Dropdown title="Group by" icon-class="fas fa-object-ungroup" ref="groupingSelector">
         <DropdownItem v-for="g in visibleGroupings" :key="g" :text="prettifyGroupingName(g)"
           :item-class="{selected: value?.grouping === g}"
           @click="onGroupingChanged(g)" />
