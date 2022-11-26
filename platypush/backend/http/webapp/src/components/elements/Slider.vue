@@ -1,22 +1,29 @@
 <template>
   <label class="slider-wrapper">
-    <input class="slider"
-           type="range"
-           :class="{'with-label': withLabel}"
-           :min="range[0]"
-           :max="range[1]"
-           :step="step"
-           :disabled="disabled"
-           :value="value"
-           ref="range"
-           @input.stop="onUpdate"
-           @change.stop="onUpdate">
+    <span class="range-labels" :class="{'with-label': withLabel}" v-if="withRange">
+      <span class="label left" v-if="withRange" v-text="range[0]" />
+      <span class="label right" v-if="withRange" v-text="range[1]" />
+    </span>
 
-   <div class="track" :class="{'with-label': withLabel}">
-     <div class="track-inner" ref="track"></div>
-   </div>
-   <div class="thumb" ref="thumb"></div>
-   <span class="label" v-if="withLabel" v-text="value" ref="label"></span>
+    <span class="slider-container">
+      <input class="slider"
+             type="range"
+             :class="{'with-label': withLabel}"
+             :min="range[0]"
+             :max="range[1]"
+             :step="step"
+             :disabled="disabled"
+             :value="value"
+             ref="range"
+             @input.stop="onUpdate"
+             @change.stop="onUpdate">
+
+      <div class="track" :class="{'with-label': withLabel}">
+        <div class="track-inner" ref="track"></div>
+      </div>
+      <div class="thumb" ref="thumb"></div>
+      <span class="label" v-if="withLabel" v-text="value" ref="label"></span>
+    </span>
   </label>
 </template>
 
@@ -45,6 +52,11 @@ export default {
     },
 
     withLabel: {
+      type: Boolean,
+      default: false,
+    },
+
+    withRange: {
       type: Boolean,
       default: false,
     }
@@ -77,6 +89,7 @@ export default {
   mounted() {
     if (this.value != null)
       this.update(this.value)
+    this.$watch(() => this.value, (newValue) => this.update(newValue))
   },
 }
 </script>
@@ -88,6 +101,13 @@ $label-width: 3em;
   width: 100%;
   display: flex;
   position: relative;
+  flex-direction: column;
+
+  .slider-container {
+    width: 100%;
+    display: flex;
+    position: relative;
+  }
 
   .slider {
     width: 100%;
@@ -96,6 +116,18 @@ $label-width: 3em;
 
     &::-ms-tooltip {
       display: none;
+    }
+  }
+
+  .range-labels {
+    width: 100%;
+
+    &.with-label {
+      width: calc(100% - $label-width);
+    }
+
+    .right {
+      @extend .pull-right;
     }
   }
 
