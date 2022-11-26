@@ -345,6 +345,7 @@ export default {
     background: $default-bg-2;
     box-shadow: $border-shadow-bottom;
     position: relative;
+    z-index: 1;
 
     .right {
       position: absolute;
@@ -363,6 +364,10 @@ export default {
     width: 100%;
     height: calc(100% - #{$selector-height});
     overflow: auto;
+
+    @include until($tablet) {
+      padding: 0.5em;
+    }
   }
 
   .groups-container {
