@@ -30,8 +30,11 @@ export default {
     valuesEqual(a, b) {
       a = {...a}
       b = {...b}
-      delete a.updated_at
-      delete b.updated_at
+      for (const key of ['updated_at', 'data']) {
+        delete a[key]
+        delete b[key]
+      }
+
       return this.objectsEqual(a, b)
     },
   },
