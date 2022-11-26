@@ -118,7 +118,6 @@ nav {
     box-shadow: $nav-box-shadow-main;
 
     &.collapsed {
-      background: $nav-bg-collapsed-mobile;
       box-shadow: 1px 1px 1px 1px $default-shadow-color;
       margin-bottom: 2px;
       z-index: 1;
