@@ -18,16 +18,26 @@
             :class="{'fa-angle-up': expanded, 'fa-angle-down': !expanded}" />
         </button>
         <span class="value-percent"
-          v-text="valuePercent.toFixed(0) + '%'"
-          v-if="valuePercent != null" />
+          v-text="parsedValue"
+          v-if="parsedValue != null" />
       </div>
     </div>
 
     <div class="body" v-if="expanded" @click.stop="prevent">
       <div class="row">
-        <div class="input">
-          <Slider :range="[value.min, value.max]"
-            :value="value.value" @input="setValue" />
+        <div class="input" v-if="value?.min != null && value?.max != null">
+          <div class="col-10">
+            <Slider :range="[value.min, value.max]" with-range
+              :value="value.value" @input="setValue" />
+          </div>
+          <div class="col-2 value">
+            <input type="number" :value="value.value" @change="setValue">
+          </div>
+        </div>
+        <div class="input" v-else>
+          <div class="col-12 value">
+            <input type="number" :value="value.value" @change="setValue">
+          </div>
         </div>
       </div>
     </div>
@@ -51,13 +61,11 @@ export default {
   },
 
   computed: {
-    valuePercent() {
+    parsedValue() {
       if (this.value?.is_write_only || this.value?.value == null)
         return null
 
-      const min = this.value.min || 0
-      const max = this.value.max || 100
-      return (100 * this.value.value) / (max - min)
+      return this.value.value
     }
   },
 
@@ -68,8 +76,10 @@ export default {
     },
 
     async setValue(event) {
-      this.$emit('loading', true)
+      if (!event.target.value?.length)
+        return
 
+      this.$emit('loading', true)
       try {
         await this.request('entities.execute', {
           id: this.value.id,
@@ -112,10 +122,18 @@ export default {
       }
 
       .input {
-        width: calc(100% - 2em);
+        width: calc(100% - 1em);
+        display: flex;
+        align-items: center;
 
         :deep(.slider) {
           margin-top: 0.5em;
+        }
+
+        .value {
+          input {
+            width: 100%;
+          }
         }
       }
     }
