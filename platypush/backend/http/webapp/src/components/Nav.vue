@@ -74,12 +74,18 @@ export default {
         return ['entities'].concat((panelNames.slice(0, homeIdx).concat(panelNames.slice(homeIdx+1))).sort())
       return panelNames.sort()
     },
+
+    collapsedDefault() {
+      if (this.isMobile() || this.isTablet())
+        return true
+      return false
+    },
   },
 
   methods: {
     onItemClick(name) {
       this.$emit('select', name)
-      this.collapsed = true
+      this.collapsed = this.isMobile() ? true : this.collapsedDefault
     },
   },
 
@@ -89,6 +95,10 @@ export default {
       icons: icons,
       host: null,
     }
+  },
+
+  mounted() {
+    this.collapsed = this.collapsedDefault
   },
 }
 </script>
@@ -106,6 +116,13 @@ nav {
     background: $nav-bg;
     color: $nav-fg;
     box-shadow: $nav-box-shadow-main;
+
+    &.collapsed {
+      background: $nav-bg-collapsed-mobile;
+      box-shadow: 1px 1px 1px 1px $default-shadow-color;
+      margin-bottom: 2px;
+      z-index: 1;
+    }
 
     &:not(.collapsed) {
       position: absolute;
