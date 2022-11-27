@@ -55,6 +55,14 @@
     }
   },
 
+  "illuminance_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-sun"
+    }
+  },
+
   "light": {
     "name": "Light",
     "name_plural": "Lights",
