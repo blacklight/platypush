@@ -26,8 +26,9 @@ from platypush.entities.electricity import (
     VoltageSensor,
 )
 from platypush.entities.humidity import HumiditySensor
+from platypush.entities.illuminance import IlluminanceSensor
 from platypush.entities.sensors import BinarySensor, EnumSensor, NumericSensor
-from platypush.entities.switches import Switch
+from platypush.entities.switches import EnumSwitch, Switch
 from platypush.entities.temperature import TemperatureSensor
 from platypush.message.event.zwave import ZwaveNodeRenamedEvent, ZwaveNodeEvent
 
@@ -72,6 +73,33 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         * **paho-mqtt** (``pip install paho-mqtt``)
 
     """
+
+    # These classes are ignored by the entity parsing logic
+    _ignored_entity_classes = {
+        'application_status',
+        'association_command_configuration',
+        'configuration',
+        'controller_replication',
+        'crc16_encap',
+        'firmware_update_md',
+        'grouping_name',
+        'ip_configuration',
+        'manufacturer_proprietary',
+        'manufacturer_specific',
+        'multi_cmd',
+        'multi_instance',
+        'multi_instance_association',
+        'no_operation',
+        'node_naming',
+        'non_interoperable',
+        'proprietary',
+        'scene_actuator_conf',
+        'scene_controller_conf',
+        'sensor_configuration',
+        'version',
+        'wake_up',
+        'zwave_plus_info',
+    }
 
     def __init__(
         self,
@@ -488,43 +516,27 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     @staticmethod
     def _matches_classes(value: Mapping, *names: str):
         classes = {command_class_by_name[name] for name in names}
-
         return value.get('command_class', '') in classes if value else False
 
     @classmethod
     def _is_switch(cls, value: Mapping):
-        return cls._matches_classes(
-            value, 'switch_binary', 'switch_toggle_binary', 'switch_all'
-        ) and not value.get('is_read_only')
+        return value.get('type') == 'Bool' and not value.get('is_read_only')
 
     @classmethod
     def _is_dimmer(cls, value: Mapping):
-        return cls._matches_classes(
-            value, 'switch_multilevel', 'switch_toggle_multilevel'
-        ) and not value.get('is_read_only')
+        return value.get('type') == 'Decimal' and not value.get('is_read_only')
+
+    @classmethod
+    def _is_enum_switch(cls, value: Mapping):
+        return value.get('type') == 'List' and not value.get('is_read_only')
 
     @classmethod
     def _get_sensor_args(
         cls, value: Mapping
     ) -> Tuple[Optional[Type], Optional[Mapping]]:
         sensor_type, args = None, None
-        known_sensor_classes = {
-            'battery',
-            'door_lock',
-            'lock',
-            'meter',
-            'notification',
-            'sensor_alarm',
-            'sensor_binary',
-            'sensor_multilevel',
-            'thermostat_fan_mode',
-            'thermostat_fan_state',
-            'thermostat_heating',
-        }
 
-        if value.get('is_read_only') and cls._matches_classes(
-            value, *known_sensor_classes
-        ):
+        if value.get('is_read_only'):
             if value.get('type') == 'Bool':
                 sensor_type, args = (
                     BinarySensor,
@@ -554,8 +566,14 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
                     sensor_type = EnergySensor
                 elif re.search(r'\s*temperature$', value['property_id'], re.IGNORECASE):
                     sensor_type = TemperatureSensor
-                elif re.search(r'\s*humidity$', value['property_id'], re.IGNORECASE):
+                elif re.search(
+                    r'\s*(humidity|moisture)$', value['property_id'], re.IGNORECASE
+                ):
                     sensor_type = HumiditySensor
+                elif re.search(
+                    r'\s*(illuminance|luminosity)$', value['property_id'], re.IGNORECASE
+                ):
+                    sensor_type = IlluminanceSensor
 
                 args = {
                     'value': value.get('data'),
@@ -571,7 +589,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         return (
             cls._matches_classes(value, 'battery')
             and value.get('is_read_only')
-            and not value['id'].endswith('-isLow')
+            and value.get('type') == 'Decimal'
         )
 
     def _to_entity_args(self, value: Mapping) -> dict:
@@ -611,7 +629,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         entities = []
 
         for value in values:
-            if not value:
+            if not value or self._matches_classes(value, *self._ignored_entity_classes):
                 continue
 
             entity_type = None
@@ -623,6 +641,12 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
                 entity_args['value'] = value['data']
                 entity_args['min'] = value['min']
                 entity_args['max'] = value['max']
+            elif self._is_enum_switch(value):
+                entity_type = EnumSwitch
+                entity_args['value'] = value['data']
+                entity_args['values'] = {
+                    i['value']: i['text'] for i in value.get('data_items', [])
+                }
             elif self._is_battery(value):
                 entity_type = Battery
                 entity_args['value'] = value['data']
