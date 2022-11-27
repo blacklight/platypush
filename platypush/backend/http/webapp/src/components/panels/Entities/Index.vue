@@ -339,10 +339,11 @@ export default {
   }
 
   header {
-    width: 100%;
+    width: calc(100% - 2px);
     height: $selector-height;
     display: flex;
     background: $default-bg-2;
+    margin-left: 2px;
     box-shadow: $border-shadow-bottom;
     position: relative;
     z-index: 1;
