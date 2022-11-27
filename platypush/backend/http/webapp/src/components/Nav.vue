@@ -110,7 +110,7 @@ $footer-collapsed-height: 4em;
 $footer-expanded-height: 7.5em;
 
 nav {
-  @media screen and (max-width: $tablet) {
+  @media screen and (max-width: #{$tablet - 1px}) {
     width: 100%;
     height: 100vh;
     background: $nav-bg;
@@ -182,11 +182,12 @@ nav {
 
   .toggler {
     width: 100%;
+    height: $toggler-height;
     display: flex;
     background: $nav-toggler-bg;
     font-size: 1.5em;
     cursor: pointer;
-    padding: 0.6em;
+    padding: 0.4em;
     align-items: center;
     box-shadow: $nav-toggler-shadow;
   }
@@ -199,7 +200,7 @@ nav {
       margin-left: 1em;
     }
 
-    @media screen and (max-width: $tablet) {
+    @media screen and (max-width: #{$tablet - 1px}) {
       text-align: right;
       margin-right: 0.25em;
       flex-grow: 1;
@@ -248,7 +249,7 @@ nav {
       }
     }
 
-    @media screen and (max-width: $tablet) {
+    @media screen and (max-width: #{$tablet - 1px}) {
       height: auto;
     }
 
@@ -262,10 +263,14 @@ nav {
 
     .toggler {
       height: $toggler-height;
-      background: none;
       text-align: center;
-      padding: 0.4em;
       box-shadow: none;
+      background: $nav-toggler-collapsed-bg;
+
+      @media screen and (max-width: #{$tablet - 1px}) {
+        background: $nav-toggler-collapsed-mobile-bg;
+        color: $nav-toggler-collapsed-mobile-fg;
+      }
     }
 
     .footer {
@@ -275,7 +280,7 @@ nav {
       margin-bottom: .5em;
     }
 
-    @media screen and (max-width: $tablet) {
+    @media screen and (max-width: #{$tablet - 1px}) {
       .footer {
         display: none;
       }
@@ -289,7 +294,7 @@ nav {
       overflow: hidden;
 
       &.plugins {
-        @media screen and (min-width: $tablet) and (max-width: $desktop - 1px) {
+        @media screen and (min-width: $tablet) and (max-width: #{$desktop - 1px}) {
           margin: 2em 0;
         }
       }
@@ -321,7 +326,7 @@ nav {
           margin-right: 0;
         }
 
-        @media screen and (max-width: $tablet) {
+        @media screen and (max-width: #{$tablet - 1px}) {
           display: none;
         }
       }
