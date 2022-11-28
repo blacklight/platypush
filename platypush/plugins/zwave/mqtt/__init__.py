@@ -1,8 +1,8 @@
-from collections import OrderedDict
 import json
 import queue
 import re
 
+from collections import OrderedDict
 from datetime import datetime
 from threading import Timer
 from typing import (
@@ -18,7 +18,9 @@ from typing import (
     Union,
 )
 
+from platypush.entities import Entity
 from platypush.entities.batteries import Battery
+from platypush.entities.devices import Device
 from platypush.entities.dimmers import Dimmer
 from platypush.entities.electricity import (
     EnergySensor,
@@ -663,7 +665,40 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             if entity_type:
                 entities.append(entity_type(**entity_args))
 
+        self._process_parent_entities(values, entities)
         return super().transform_entities(entities)  # type: ignore
+
+    def _process_parent_entities(
+        self, values: Iterable[Mapping], entities: List[Entity]
+    ):
+        parent_entities: Dict[int, Device] = {}
+        entities_by_id: Dict[str, Entity] = {str(e.id): e for e in entities}
+
+        for value in values:
+            entity = entities_by_id.get(value['id'])
+            if not entity:
+                continue
+
+            parent_id = value.get('parent_id')
+            if parent_id is None:
+                continue
+
+            node = self._nodes_cache['by_id'].get(parent_id)
+            if not node:
+                continue
+
+            node_id = node['node_id']
+            if node_id not in parent_entities:
+                parent = parent_entities[node_id] = Device(
+                    id=node['device_id'],
+                    name=node.get('name'),
+                    reachable=(
+                        node.get('is_available', False) and node.get('is_ready', False)
+                    ),
+                )
+                entities.append(parent)
+
+            entity.parent = parent_entities[node_id]
 
     @staticmethod
     def _merge_current_and_target_values(values: Iterable[dict]) -> List[dict]:
