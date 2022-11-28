@@ -6,6 +6,7 @@ from time import time
 from typing import Iterable, List, Optional
 
 from sqlalchemy import and_, or_
+from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import Session, make_transient
 
 from platypush.context import get_bus, get_plugin
@@ -258,7 +259,10 @@ class EntitiesEngine(Thread):
             session.commit()
 
             for e in entities:
-                session.expunge(e)
+                try:
+                    session.expunge(e)
+                except InvalidRequestError:
+                    pass
 
         with self._entities_cache_lock:
             for entity in entities:

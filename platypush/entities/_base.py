@@ -8,6 +8,7 @@ import pkgutil
 from sqlalchemy import (
     Boolean,
     Column,
+    ForeignKey,
     Index,
     Integer,
     String,
@@ -16,7 +17,7 @@ from sqlalchemy import (
     UniqueConstraint,
     inspect as schema_inspect,
 )
-from sqlalchemy.orm import ColumnProperty
+from sqlalchemy.orm import ColumnProperty, Mapped, backref, relationship
 
 from platypush.common.db import Base
 from platypush.message import JSONAble
@@ -38,6 +39,12 @@ class Entity(Base):
     description = Column(String)
     type = Column(String, nullable=False, index=True)
     plugin = Column(String, nullable=False)
+    parent_id = Column(
+        Integer,
+        ForeignKey(f'{__tablename__}.id', ondelete='CASCADE'),
+        nullable=True,
+    )
+
     data = Column(JSON, default=dict)
     meta = Column(JSON, default=dict)
     is_read_only = Column(Boolean, default=False)
@@ -48,6 +55,19 @@ class Entity(Base):
     )
     updated_at = Column(
         DateTime(timezone=False), default=datetime.utcnow(), onupdate=datetime.utcnow()
+    )
+
+    parent: Mapped['Entity'] = relationship(
+        'Entity',
+        remote_side=[id],
+        uselist=False,
+        lazy=True,
+        backref=backref(
+            'children',
+            remote_side=[parent_id],
+            uselist=True,
+            cascade='all, delete-orphan',
+        ),
     )
 
     UniqueConstraint(external_id, plugin)
