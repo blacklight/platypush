@@ -7,6 +7,7 @@ from typing import Optional, List, Any, Dict, Union, Tuple
 
 from platypush.entities import manages
 from platypush.entities.batteries import Battery
+from platypush.entities.devices import Device
 from platypush.entities.dimmers import Dimmer
 from platypush.entities.electricity import (
     CurrentSensor,
@@ -30,7 +31,7 @@ from platypush.message.response import Response
 from platypush.plugins.mqtt import MqttPlugin, action
 
 
-@manages(Battery, Dimmer, Light, LinkQuality, Sensor, Switch)
+@manages(Battery, Device, Dimmer, Light, LinkQuality, Sensor, Switch)
 class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
     """
     This plugin allows you to interact with Zigbee devices over MQTT through any Zigbee sniffer and
@@ -184,30 +185,34 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             if not dev:
                 continue
 
-            dev_def = dev.get("definition") or {}
+            dev_def = dev.get('definition') or {}
             dev_info = {
-                "type": dev.get("type"),
-                "date_code": dev.get("date_code"),
-                "ieee_address": dev.get("ieee_address"),
-                "network_address": dev.get("network_address"),
-                "power_source": dev.get("power_source"),
-                "software_build_id": dev.get("software_build_id"),
-                "model_id": dev.get("model_id"),
-                "model": dev_def.get("model"),
-                "vendor": dev_def.get("vendor"),
-                "supported": dev.get("supported"),
+                attr: dev.get(attr)
+                for attr in (
+                    'type',
+                    'date_code',
+                    'ieee_address',
+                    'network_address',
+                    'power_source',
+                    'software_build_id',
+                    'model_id',
+                    'model',
+                    'vendor',
+                    'supported',
+                )
             }
 
+            reachable = dev.get('supported', False)
             light_info = self._get_light_meta(dev)
             switch_info = self._get_switch_meta(dev)
-            compatible_entities += (
-                self._get_sensors(dev)
-                + self._get_dimmers(dev)
-                + self._get_enum_switches(dev)
-            )
+            dev_entities = [
+                *self._get_sensors(dev),
+                *self._get_dimmers(dev),
+                *self._get_enum_switches(dev),
+            ]
 
             if light_info:
-                compatible_entities.append(
+                dev_entities.append(
                     Light(
                         id=f'{dev["ieee_address"]}:light',
                         name=dev.get('friendly_name'),
@@ -256,7 +261,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                     )
                 )
             elif switch_info and dev.get('state', {}).get('state') is not None:
-                compatible_entities.append(
+                dev_entities.append(
                     Switch(
                         id=f'{dev["ieee_address"]}:switch',
                         name=dev.get('friendly_name'),
@@ -269,6 +274,20 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                         is_query_disabled=switch_info['is_query_disabled'],
                     )
                 )
+
+            if dev_entities:
+                parent = Device(
+                    id=dev['ieee_address'],
+                    name=dev.get('friendly_name'),
+                    description=dev_def.get('description'),
+                    reachable=reachable,
+                )
+
+                for entity in dev_entities:
+                    entity.parent = parent
+                dev_entities.append(parent)
+
+            compatible_entities += dev_entities
 
         return super().transform_entities(compatible_entities)  # type: ignore
 
