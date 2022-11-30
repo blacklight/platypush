@@ -16,6 +16,7 @@ from platypush.entities.electricity import (
     VoltageSensor,
 )
 from platypush.entities.humidity import HumiditySensor
+from platypush.entities.illuminance import IlluminanceSensor
 from platypush.entities.lights import Light
 from platypush.entities.linkquality import LinkQuality
 from platypush.entities.sensors import (
@@ -1600,6 +1601,8 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 entity_type = TemperatureSensor
             elif re.search(r'(humidity|moisture)$', exposed.get('property' '')):
                 entity_type = HumiditySensor
+            elif re.search(r'(illuminance|luminosity)$', exposed.get('property' '')):
+                entity_type = IlluminanceSensor
             elif exposed.get('type') == 'binary':
                 entity_type = BinarySensor
                 sensor_args['value'] = sensor_args['value'] == exposed.get(
