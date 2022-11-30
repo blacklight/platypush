@@ -1598,7 +1598,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 entity_type = VoltageSensor
             elif exposed.get('property', '').endswith('temperature'):
                 entity_type = TemperatureSensor
-            elif exposed.get('property', '').endswith('humidity'):
+            elif re.search(r'(humidity|moisture)$', exposed.get('property' '')):
                 entity_type = HumiditySensor
             elif exposed.get('type') == 'binary':
                 entity_type = BinarySensor
