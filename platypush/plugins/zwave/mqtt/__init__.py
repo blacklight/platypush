@@ -600,31 +600,21 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             value = {
                 **value,
                 'id': current_value_id,
-                'label': 'Current Value',
+                'label': 'Value',
                 'is_read_only': False,
                 'is_write_only': False,
             }
 
         args = {
             'id': value['id'],
-            'name': '{node_name} [{value_name}]'.format(
-                node_name=self._nodes_cache['by_id'][value['node_id']].get(
-                    'name', f'[Node {value["node_id"]}]'
-                ),
-                value_name=value.get('label'),
-            ),
+            'name': value.get('label'),
             'description': value.get('help'),
             'is_read_only': value.get('is_read_only'),
             'is_write_only': value.get('is_write_only'),
-            'data': {
-                'label': value.get('label'),
-                'node_id': value.get('node_id'),
-            },
         }
 
         if value.get('last_update'):
             args['updated_at'] = value['last_update']
-
         return args
 
     def transform_entities(self, values: Iterable[Mapping]):
@@ -675,6 +665,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         entities_by_id: Dict[str, Entity] = {str(e.id): e for e in entities}
 
         for value in values:
+            if not (value and value.get('id')):
+                continue
+
             entity = entities_by_id.get(value['id'])
             if not entity:
                 continue
@@ -733,7 +726,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
                 )
                 value['id'] = value['value_id'] = value['id_on_network'] = value_id
                 value['is_read_only'] = value['is_write_only'] = False
-                value['label'] = 'Current Value'
+                value['label'] = 'Value'
                 value['property_id'] = 'currentValue'
                 value['last_update'] = (
                     max(

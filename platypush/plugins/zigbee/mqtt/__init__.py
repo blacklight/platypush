@@ -215,7 +215,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 dev_entities.append(
                     Light(
                         id=f'{dev["ieee_address"]}:light',
-                        name=dev.get('friendly_name'),
+                        name='Light',
                         on=dev.get('state', {}).get('state')
                         == switch_info.get('value_on'),
                         brightness_min=light_info.get('brightness_min'),
@@ -264,7 +264,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 dev_entities.append(
                     Switch(
                         id=f'{dev["ieee_address"]}:switch',
-                        name=dev.get('friendly_name'),
+                        name='Switch',
                         state=dev.get('state', {}).get('state')
                         == switch_info['value_on'],
                         description=dev_def.get("description"),
@@ -1566,12 +1566,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             entity_type = None
             sensor_args = {
                 'id': f'{device_info["ieee_address"]}:{exposed["property"]}',
-                'name': (
-                    device_info.get('friendly_name', '[Unnamed device]')
-                    + ' ['
-                    + exposed.get('description', '')
-                    + ']'
-                ),
+                'name': exposed.get('description', ''),
                 'value': device_info.get('state', {}).get(exposed['property']),
                 'description': exposed.get('description'),
                 'is_read_only': cls._is_read_only(exposed),
@@ -1626,12 +1621,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         return [
             Dimmer(
                 id=f'{device_info["ieee_address"]}:{exposed["property"]}',
-                name=(
-                    device_info.get('friendly_name', '[Unnamed device]')
-                    + ' ['
-                    + exposed.get('description', '')
-                    + ']'
-                ),
+                name=exposed.get('description', ''),
                 value=device_info.get('state', {}).get(exposed['property']),
                 min=exposed.get('value_min'),
                 max=exposed.get('value_max'),
@@ -1656,12 +1646,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         return [
             EnumSwitch(
                 id=f'{device_info["ieee_address"]}:{exposed["property"]}',
-                name=(
-                    device_info.get('friendly_name', '[Unnamed device]')
-                    + ' ['
-                    + exposed.get('description', '')
-                    + ']'
-                ),
+                name=exposed.get('description', ''),
                 value=device_info.get(exposed['property']),
                 values=exposed.get('values', []),
                 description=exposed.get('description'),
