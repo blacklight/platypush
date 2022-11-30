@@ -46,18 +46,18 @@ _NOT_IMPLEMENTED_ERR = NotImplementedError('Not implemented by zwave.mqtt')
 class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     """
     This plugin allows you to manage a Z-Wave network over MQTT through
-    `zwavejs2mqtt <https://github.com/zwave-js/zwavejs2mqtt>`_.
+    `zwave-js-ui <https://github.com/zwave-js/zwave-js-ui>`_.
 
     For historical reasons, it is advised to enabled this plugin together
     with the ``zwave.mqtt`` backend, or you may lose the ability to listen
     to asynchronous events.
 
-    Configuration required on the zwavejs2mqtt gateway:
+    Configuration required on the zwave-js-ui gateway:
 
         * Install the gateway following the instructions reported
-          `here <https://zwave-js.github.io/zwavejs2mqtt/#/getting-started/quick-start>`_.
+          `here <https://zwave-js.github.io/zwave-js-ui/#/getting-started/quick-start>`_.
 
-        * Configure the following settings from the zwavejs2mqtt web panel:
+        * Configure the following settings from the zwave-js-ui web panel:
 
             * Zwave -> Serial Port: The path to your Z-Wave adapter.
             * Disabled MQTT Gateway: Set to false.

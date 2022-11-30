@@ -21,9 +21,11 @@ from platypush.message.event.zwave import (
 
 class ZwaveMqttBackend(MqttBackend):
     """
-    Listen for events on a `zwavejs2mqtt <https://github.com/zwave-js/zwavejs2mqtt>`_ service.
-    For historical reasons, this should be enabled together with the ``zwave.mqtt`` plugin,
-    even though the actual configuration is only specified on the plugin.
+    Listen for events on a `zwave-js-ui <https://github.com/zwave-js/zwave-js-ui>`_
+    service. For historical reasons, this should be enabled together with the
+    ``zwave.mqtt`` plugin, even though the actual configuration is only
+    specified on the plugin. For this reason, this backend will be deprecated in
+    the near future and merged with its associated plugin.
 
     Triggers:
 
@@ -40,7 +42,7 @@ class ZwaveMqttBackend(MqttBackend):
     Requires:
 
         * **paho-mqtt** (``pip install paho-mqtt``)
-        * A `zwavejs2mqtt instance <https://github.com/zwave-js/zwavejs2mqtt>`_.
+        * A `zwave-js-ui instance <https://github.com/zwave-js/zwave-js-ui>`_.
         * The :class:`platypush.plugins.zwave.mqtt.ZwaveMqttPlugin` plugin configured.
 
     """
