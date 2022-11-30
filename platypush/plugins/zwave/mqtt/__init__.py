@@ -698,7 +698,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
                 )
                 entities.append(parent)
 
-            entity.parent = parent_entities[node_id]
+            parent = parent_entities[node_id]
+            entity.parent = parent
+            entity.reachable = parent.reachable
 
     @staticmethod
     def _merge_current_and_target_values(values: Iterable[dict]) -> List[dict]:
