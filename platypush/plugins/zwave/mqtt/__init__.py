@@ -17,6 +17,7 @@ from typing import (
     Type,
     Union,
 )
+from urllib.parse import parse_qs, urlparse
 
 from platypush.entities import Entity
 from platypush.entities.batteries import Battery
@@ -345,9 +346,21 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         if node.get('zwavePlusVersion'):
             capabilities += ['zwave_plus']
 
+        db_link = node.get('dbLink', node.get('db_link', ''))
+        device_id = node.get('hexId')
+        if not device_id:
+            if db_link:
+                device_id = ':'.join(
+                    parse_qs(urlparse(db_link).query)
+                    .get('jumpTo', '')[0]
+                    .split(':')[:-1]
+                )
+            else:
+                device_id = str(node['id'])
+
         return {
             'node_id': node['id'],
-            'device_id': node['hexId'].replace('0x', ''),
+            'device_id': device_id.replace('0x', ''),
             'name': node.get('name'),
             'capabilities': capabilities,
             'manufacturer_id': '0x{:04x}'.format(node['manufacturerId'])
