@@ -4,6 +4,7 @@ import queue
 from datetime import datetime
 from threading import Timer
 from typing import Optional, List, Any, Dict, Union, Iterable, Callable
+from urllib.parse import parse_qs, urlparse
 
 from platypush.message.event.zwave import ZwaveNodeRenamedEvent, ZwaveNodeEvent
 
@@ -45,10 +46,21 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
     """
 
-    def __init__(self, name: str, host: str = 'localhost', port: int = 1883, topic_prefix: str = 'zwave',
-                 timeout: int = 10, tls_certfile: Optional[str] = None, tls_keyfile: Optional[str] = None,
-                 tls_version: Optional[str] = None, tls_ciphers: Optional[str] = None, username: Optional[str] = None,
-                 password: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        name: str,
+        host: str = 'localhost',
+        port: int = 1883,
+        topic_prefix: str = 'zwave',
+        timeout: int = 10,
+        tls_certfile: Optional[str] = None,
+        tls_keyfile: Optional[str] = None,
+        tls_version: Optional[str] = None,
+        tls_ciphers: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        **kwargs,
+    ):
         """
         :param name: Gateway name, as configured from the zwavejs2mqtt web panel from Mqtt -> Name.
         :param host: MQTT broker host, as configured from the zwavejs2mqtt web panel from Mqtt -> Host
@@ -70,9 +82,17 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param password: If the connection requires user authentication, specify the password (default: None)
         """
 
-        super().__init__(host=host, port=port, tls_certfile=tls_certfile, tls_keyfile=tls_keyfile,
-                         tls_version=tls_version, tls_ciphers=tls_ciphers, username=username,
-                         password=password, **kwargs)
+        super().__init__(
+            host=host,
+            port=port,
+            tls_certfile=tls_certfile,
+            tls_keyfile=tls_keyfile,
+            tls_version=tls_version,
+            tls_ciphers=tls_ciphers,
+            username=username,
+            password=password,
+            **kwargs,
+        )
 
         self.topic_prefix = topic_prefix
         self.base_topic = topic_prefix + '/{}/ZWAVE_GATEWAY-' + name
@@ -118,14 +138,21 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         if isinstance(response, Response):
             response = response.output
 
-        assert response.get('success') is True, response.get('message', 'zwavejs2mqtt error')
+        assert response.get('success') is True, response.get(
+            'message', 'zwavejs2mqtt error'
+        )
         return response
 
     def _api_request(self, api: str, *args, **kwargs):
         payload = json.dumps({'args': args})
         ret = self._parse_response(
-            self.publish(topic=self._api_topic(api) + '/set', msg=payload, reply_topic=self._api_topic(api),
-                         **self._mqtt_args(**kwargs)))
+            self.publish(
+                topic=self._api_topic(api) + '/set',
+                msg=payload,
+                reply_topic=self._api_topic(api),
+                **self._mqtt_args(**kwargs),
+            )
+        )
 
         assert not ret or ret.get('success') is True, ret.get('message')
         return ret.get('result')
@@ -135,7 +162,12 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         if t:
             return datetime.fromtimestamp(t / 1000)
 
-    def _get_scene(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None, **kwargs) -> dict:
+    def _get_scene(
+        self,
+        scene_id: Optional[int] = None,
+        scene_label: Optional[str] = None,
+        **kwargs,
+    ) -> dict:
         assert scene_id or scene_label, 'No scene_id/scene_label specified'
         if scene_id in self._scenes_cache['by_id']:
             return self._scenes_cache['by_id'][scene_id]
@@ -191,8 +223,12 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             'id_on_network': value['id'],
             'value_id': value['id'],
             'data': value.get('value'),
-            'data_items': [state for state in value['states']] if len(value.get('states', [])) > 1 else None,
-            'label': value.get('label', value.get('propertyName', value.get('property'))),
+            'data_items': list(value['states'])
+            if len(value.get('states', [])) > 1
+            else None,
+            'label': value.get(
+                'label', value.get('propertyName', value.get('property'))
+            ),
             'property_id': value.get('property'),
             'help': value.get('description'),
             'node_id': value.get('nodeId'),
@@ -209,8 +245,14 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             'is_read_only': value['readable'] and not value['writeable'],
             'is_write_only': value['writeable'] and not value['readable'],
             'last_update': cls._convert_timestamp(value.get('lastUpdate')),
-            **({'property_key': value['propertyKey']} if 'propertyKey' in value else {}),
-            **({'property_key_name': value['propertyKeyName']} if 'propertyKeyName' in value else {}),
+            **(
+                {'property_key': value['propertyKey']} if 'propertyKey' in value else {}
+            ),
+            **(
+                {'property_key_name': value['propertyKeyName']}
+                if 'propertyKeyName' in value
+                else {}
+            ),
         }
 
     @staticmethod
@@ -245,12 +287,26 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         if node.get('zwavePlusVersion'):
             capabilities += ['zwave_plus']
 
+        db_link = node.get('dbLink', node.get('db_link', ''))
+        device_id = node.get('hexId')
+        if not device_id:
+            if db_link:
+                device_id = ':'.join(
+                    parse_qs(urlparse(db_link).query)
+                    .get('jumpTo', '')[0]
+                    .split(':')[:-1]
+                )
+            else:
+                device_id = str(node['id'])
+
         return {
             'node_id': node['id'],
-            'device_id': node['hexId'].replace('0x', ''),
+            'device_id': device_id.replace('0x', ''),
             'name': node.get('name'),
             'capabilities': capabilities,
-            'manufacturer_id': '0x{:04x}'.format(node['manufacturerId']) if node.get('manufacturerId') else None,
+            'manufacturer_id': '0x{:04x}'.format(node['manufacturerId'])
+            if node.get('manufacturerId')
+            else None,
             'manufacturer_name': node.get('manufacturer'),
             'location': node.get('loc'),
             'status': node.get('status'),
@@ -268,9 +324,15 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             'is_security_device': node.get('supportsSecurity'),
             'is_sleeping': node.get('ready') and node.get('status') == 'Asleep',
             'last_update': cls._convert_timestamp(node.get('lastActive')),
-            'product_id': '0x{:04x}'.format(node['productId']) if node.get('productId') else None,
-            'product_type': '0x{:04x}'.format(node['productType']) if node.get('productType') else None,
-            'product_name': ' '.join([node.get('productLabel', ''), node.get('productDescription', '')]),
+            'product_id': '0x{:04x}'.format(node['productId'])
+            if node.get('productId')
+            else None,
+            'product_type': '0x{:04x}'.format(node['productType'])
+            if node.get('productType')
+            else None,
+            'product_name': ' '.join(
+                [node.get('productLabel', ''), node.get('productDescription', '')]
+            ),
             'baud_rate': node.get('dataRate'),
             'max_baud_rate': node.get('maxBaudRate', node.get('dataRate')),
             'device_class': node.get('deviceClass'),
@@ -284,25 +346,28 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             'zwave_plus_node_type': node.get('zwavePlusNodeType'),
             'zwave_plus_role_type': node.get('zwavePlusRoleType'),
             'neighbours': node.get('neighbors', []),
-
             'command_classes': {
                 value['commandClassName']
-                for value in node.get('values', {}).values() if value.get('commandClassName')
+                for value in node.get('values', {}).values()
+                if value.get('commandClassName')
             },
-
             'groups': {
                 group['value']: cls.group_to_dict(group, node_id=node['id'])
                 for group in node.get('groups', [])
             },
-
             'values': {
                 value['id']: cls.value_to_dict(value)
                 for value in node.get('values', {}).values()
             },
         }
 
-    def _get_node(self, node_id: Optional[int] = None, node_name: Optional[str] = None, use_cache: bool = True,
-                  **kwargs) -> Optional[dict]:
+    def _get_node(
+        self,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+        use_cache: bool = True,
+        **kwargs,
+    ) -> Optional[dict]:
         assert node_id or node_name, 'Please provide either a node_id or node_name'
         if use_cache:
             if node_id and node_id in self._nodes_cache['by_id']:
@@ -335,12 +400,21 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
         return node
 
-    def _get_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
-                   value_label: Optional[str] = None, node_id: Optional[int] = None, node_name: Optional[str] = None,
-                   use_cache: bool = True, **_) -> Dict[str, Any]:
+    def _get_value(
+        self,
+        value_id: Optional[int] = None,
+        id_on_network: Optional[str] = None,
+        value_label: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+        use_cache: bool = True,
+        **_,
+    ) -> Dict[str, Any]:
         # Unlike python-openzwave, value_id and id_on_network are the same on zwavejs2mqtt
         value_id = value_id or id_on_network
-        assert value_id or value_label, 'Please provide either value_id, id_on_network or value_label'
+        assert (
+            value_id or value_label
+        ), 'Please provide either value_id, id_on_network or value_label'
 
         if use_cache:
             if value_id and value_id in self._values_cache['by_id']:
@@ -350,7 +424,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
         nodes = []
         if node_id or node_name:
-            nodes = [self._get_node(node_id=node_id, node_name=node_name, use_cache=False)]
+            nodes = [
+                self._get_node(node_id=node_id, node_name=node_name, use_cache=False)
+            ]
 
         if not nodes:
             # noinspection PyUnresolvedReferences
@@ -376,8 +452,14 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         value = values[0]
 
         if value.get('property_id') == 'targetValue':
-            cur_value_id = '-'.join(value['value_id'].split('-')[:-1] + ['currentValue'])
-            cur_value = self._nodes_cache['by_id'][value['node_id']].get('values', {}).get(cur_value_id)
+            cur_value_id = '-'.join(
+                value['value_id'].split('-')[:-1] + ['currentValue']
+            )
+            cur_value = (
+                self._nodes_cache['by_id'][value['node_id']]
+                .get('values', {})
+                .get(cur_value_id)
+            )
             if cur_value:
                 value['data'] = cur_value['data']
 
@@ -390,15 +472,23 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     def _topic_by_value_id(self, value_id: str) -> str:
         return self.topic_prefix + '/' + '/'.join(value_id.split('-'))
 
-    def _filter_values(self, command_classes: Iterable[str], filter_callback: Optional[Callable[[dict], bool]] = None,
-                       node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    def _filter_values(
+        self,
+        command_classes: Iterable[str],
+        filter_callback: Optional[Callable[[dict], bool]] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
         # noinspection PyUnresolvedReferences
-        nodes = [self._get_node(node_name=node_name, use_cache=False, **kwargs)] if node_id or node_name else \
-            self.get_nodes(**kwargs).output.values()
+        nodes = (
+            [self._get_node(node_name=node_name, use_cache=False, **kwargs)]
+            if node_id or node_name
+            else self.get_nodes(**kwargs).output.values()
+        )
 
         command_classes = {
-            command_class_by_name[command_name]
-            for command_name in command_classes
+            command_class_by_name[command_name] for command_name in command_classes
         }
 
         values = {}
@@ -406,13 +496,18 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         for node in nodes:
             for value in node.get('values', {}).values():
                 if value.get('command_class') not in command_classes or (
-                        filter_callback and not filter_callback(value)):
+                    filter_callback and not filter_callback(value)
+                ):
                     continue
 
                 value_id = value['id_on_network']
                 if value_id.split('-').pop() == 'targetValue':
                     value_id = '-'.join(value_id.split('-')[:-1]) + '-currentValue'
-                    cur_value = self._nodes_cache['by_id'][value['node_id']].get('values', {}).get(value_id)
+                    cur_value = (
+                        self._nodes_cache['by_id'][value['node_id']]
+                        .get('values', {})
+                        .get(value_id)
+                    )
                     if cur_value:
                         value['data'] = cur_value['data']
 
@@ -420,7 +515,12 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
         return values
 
-    def _get_group(self, group_id: Optional[str] = None, group_index: Optional[int] = None, **kwargs) -> dict:
+    def _get_group(
+        self,
+        group_id: Optional[str] = None,
+        group_index: Optional[int] = None,
+        **kwargs,
+    ) -> dict:
         group_id = group_id or group_index
         assert group_id is not None, 'No group_id/group_index specified'
         group = self._groups_cache.get(group_id)
@@ -465,14 +565,19 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             msg_queue.put(json.loads(msg.payload))
 
         client.on_message = on_message
-        client.connect(kwargs.get('host', self.host), kwargs.get('port', self.port),
-                       keepalive=kwargs.get('timeout', self.timeout))
+        client.connect(
+            kwargs.get('host', self.host),
+            kwargs.get('port', self.port),
+            keepalive=kwargs.get('timeout', self.timeout),
+        )
 
         client.subscribe(topic)
         client.loop_start()
 
         try:
-            status = msg_queue.get(block=True, timeout=kwargs.get('timeout', self.timeout))
+            status = msg_queue.get(
+                block=True, timeout=kwargs.get('timeout', self.timeout)
+            )
         except queue.Empty:
             raise TimeoutError('The request timed out')
         finally:
@@ -510,7 +615,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def remove_failed_node(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
+    def remove_failed_node(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ):
         """
         Remove a failed node from the network.
 
@@ -526,7 +633,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self._api_request('removeFailedNode', node_id, **kwargs)
 
     @action
-    def replace_failed_node(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
+    def replace_failed_node(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ):
         """
         Replace a failed node on the network.
 
@@ -549,7 +658,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def request_network_update(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
+    def request_network_update(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ):
         """
         Request a network update to a node.
 
@@ -575,8 +686,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self._api_request('refreshNeighbors', **kwargs)
 
     @action
-    def get_nodes(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) \
-            -> Optional[Dict[str, Any]]:
+    def get_nodes(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ) -> Optional[Dict[str, Any]]:
         """
         Get the nodes associated to the network.
 
@@ -740,7 +852,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             (default: query the default configured device).
         """
         if node_id or node_name:
-            return self._get_node(node_id=node_id, node_name=node_name, use_cache=False, **kwargs)
+            return self._get_node(
+                node_id=node_id, node_name=node_name, use_cache=False, **kwargs
+            )
 
         nodes = {
             node['id']: self.node_to_dict(node)
@@ -748,10 +862,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         }
 
         self._nodes_cache['by_id'] = nodes
-        self._nodes_cache['by_name'] = {
-            node['name']: node
-            for node in nodes.values()
-        }
+        self._nodes_cache['by_name'] = {node['name']: node for node in nodes.values()}
 
         return nodes
 
@@ -763,7 +874,13 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def set_node_name(self, new_name: str, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
+    def set_node_name(
+        self,
+        new_name: str,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Rename a node on the network.
 
@@ -778,10 +895,14 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
         assert node_id, f'No such node: {node_id}'
         self._api_request('setNodeName', node_id, new_name, **kwargs)
-        get_bus().post(ZwaveNodeRenamedEvent(node={
-            **self._get_node(node_id=node_id),
-            'name': new_name,
-        }))
+        get_bus().post(
+            ZwaveNodeRenamedEvent(
+                node={
+                    **self._get_node(node_id=node_id),
+                    'name': new_name,
+                }
+            )
+        )
 
     @action
     def set_node_product_name(self, **kwargs):
@@ -798,8 +919,13 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def set_node_location(self, location: str, node_id: Optional[int] = None, node_name: Optional[str] = None,
-                          **kwargs):
+    def set_node_location(
+        self,
+        location: str,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Set the location of a node.
 
@@ -814,10 +940,14 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
         assert node_id, f'No such node: {node_id}'
         self._api_request('setNodeLocation', node_id, location, **kwargs)
-        get_bus().post(ZwaveNodeEvent(node={
-            **self._get_node(node_id=node_id),
-            'location': location,
-        }))
+        get_bus().post(
+            ZwaveNodeEvent(
+                node={
+                    **self._get_node(node_id=node_id),
+                    'location': location,
+                }
+            )
+        )
 
     @action
     def cancel_command(self, **kwargs):
@@ -877,7 +1007,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         """
         self._api_request('beginHealingNetwork', **kwargs)
         if timeout:
-            Timer(timeout, lambda: self._api_request('stopHealingNetwork', **kwargs)).start()
+            Timer(
+                timeout, lambda: self._api_request('stopHealingNetwork', **kwargs)
+            ).start()
 
     @action
     def switch_all(self, **kwargs):
@@ -894,9 +1026,15 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def get_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
-                  value_label: Optional[str] = None, node_id: Optional[int] = None, node_name: Optional[str] = None,
-                  **kwargs) -> Dict[str, Any]:
+    def get_value(
+        self,
+        value_id: Optional[int] = None,
+        id_on_network: Optional[str] = None,
+        value_label: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+        **kwargs,
+    ) -> Dict[str, Any]:
         """
         Get a value on the network.
 
@@ -908,13 +1046,27 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        return self._get_value(value_id=value_id, value_label=value_label, id_on_network=id_on_network, node_id=node_id,
-                               node_name=node_name, use_cache=False, **kwargs)
+        return self._get_value(
+            value_id=value_id,
+            value_label=value_label,
+            id_on_network=id_on_network,
+            node_id=node_id,
+            node_name=node_name,
+            use_cache=False,
+            **kwargs,
+        )
 
     @action
-    def set_value(self, data, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
-                  value_label: Optional[str] = None, node_id: Optional[int] = None, node_name: Optional[str] = None,
-                  **kwargs):
+    def set_value(
+        self,
+        data,
+        value_id: Optional[int] = None,
+        id_on_network: Optional[str] = None,
+        value_label: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Set a value.
 
@@ -927,16 +1079,31 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        value = self._get_value(value_id=value_id, value_label=value_label, id_on_network=id_on_network,
-                                node_id=node_id, node_name=node_name, **kwargs)
+        value = self._get_value(
+            value_id=value_id,
+            value_label=value_label,
+            id_on_network=id_on_network,
+            node_id=node_id,
+            node_name=node_name,
+            **kwargs,
+        )
 
-        self._api_request('writeValue', {
-            'nodeId': value['node_id'],
-            'commandClass': value['command_class'],
-            'endpoint': value.get('endpoint', 0),
-            'property': value['property_id'],
-            **({'propertyKey': value['property_key']} if 'property_key' in value else {}),
-        }, data, **kwargs)
+        self._api_request(
+            'writeValue',
+            {
+                'nodeId': value['node_id'],
+                'commandClass': value['command_class'],
+                'endpoint': value.get('endpoint', 0),
+                'property': value['property_id'],
+                **(
+                    {'propertyKey': value['property_key']}
+                    if 'property_key' in value
+                    else {}
+                ),
+            },
+            data,
+            **kwargs,
+        )
 
     @action
     def set_value_label(self, **kwargs):
@@ -960,7 +1127,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def node_heal(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
+    def node_heal(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ):
         """
         Heal network node by requesting the node to rediscover their neighbours.
 
@@ -974,7 +1143,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self._api_request('healNode', node_id, **kwargs)
 
     @action
-    def node_update_neighbours(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
+    def node_update_neighbours(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ):
         """
         Ask a node to update its neighbours table
         (same as :meth:`platypush.plugins.zwave.mqtt.ZwaveMqttPlugin.node_heal`).
@@ -987,7 +1158,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self.node_heal(node_id=node_id, node_name=node_name, **kwargs)
 
     @action
-    def node_network_update(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
+    def node_network_update(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ):
         """
         Update the controller with network information
         (same as :meth:`platypush.plugins.zwave.mqtt.ZwaveMqttPlugin.node_heal`).
@@ -1000,7 +1173,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self.node_heal(node_id=node_id, node_name=node_name, **kwargs)
 
     @action
-    def node_refresh_info(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
+    def node_refresh_info(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ):
         """
         Fetch up-to-date information about the node.
 
@@ -1014,7 +1189,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self._api_request('refreshInfo', node_id, **kwargs)
 
     @action
-    def get_dimmers(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    def get_dimmers(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ) -> Dict[str, Any]:
         """
         Get the dimmers on the network or associated to a node.
 
@@ -1023,12 +1200,17 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        return self._filter_values(['switch_multilevel', 'switch_toggle_multilevel'], node_id=node_id,
-                                   node_name=node_name, **kwargs)
+        return self._filter_values(
+            ['switch_multilevel', 'switch_toggle_multilevel'],
+            node_id=node_id,
+            node_name=node_name,
+            **kwargs,
+        )
 
     @action
-    def get_node_config(self, node_id: Optional[int] = None, node_name: Optional[str] = None,
-                        **kwargs) -> Dict[str, Any]:
+    def get_node_config(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ) -> Dict[str, Any]:
         """
         Get the configuration values of a node or of all the nodes on the network.
 
@@ -1037,12 +1219,22 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        return self._filter_values(['configuration', 'ip_configuration', 'association_command_configuration',
-                                    'sensor_configuration'], node_id=node_id, node_name=node_name, **kwargs)
+        return self._filter_values(
+            [
+                'configuration',
+                'ip_configuration',
+                'association_command_configuration',
+                'sensor_configuration',
+            ],
+            node_id=node_id,
+            node_name=node_name,
+            **kwargs,
+        )
 
     @action
-    def get_battery_levels(self, node_id: Optional[int] = None, node_name: Optional[str] = None,
-                           **kwargs) -> Dict[str, Any]:
+    def get_battery_levels(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ) -> Dict[str, Any]:
         """
         Get the battery levels of a node or of all the nodes on the network.
 
@@ -1051,11 +1243,14 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        return self._filter_values(['battery'], node_id=node_id, node_name=node_name, **kwargs)
+        return self._filter_values(
+            ['battery'], node_id=node_id, node_name=node_name, **kwargs
+        )
 
     @action
-    def get_power_levels(self, node_id: Optional[int] = None, node_name: Optional[str] = None,
-                         **kwargs) -> Dict[str, Any]:
+    def get_power_levels(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ) -> Dict[str, Any]:
         """
         Get the power levels of this node.
 
@@ -1064,10 +1259,14 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        return self._filter_values(['powerlevel'], node_id=node_id, node_name=node_name, **kwargs)
+        return self._filter_values(
+            ['powerlevel'], node_id=node_id, node_name=node_name, **kwargs
+        )
 
     @action
-    def get_bulbs(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    def get_bulbs(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ) -> Dict[str, Any]:
         """
         Get the bulbs/LEDs on the network or associated to a node.
 
@@ -1076,11 +1275,18 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        return self._filter_values(['color'], filter_callback=lambda value: not value['is_read_only'], node_id=node_id,
-                                   node_name=node_name, **kwargs)
+        return self._filter_values(
+            ['color'],
+            filter_callback=lambda value: not value['is_read_only'],
+            node_id=node_id,
+            node_name=node_name,
+            **kwargs,
+        )
 
     @action
-    def get_switches(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    def get_switches(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ) -> Dict[str, Any]:
         """
         Get the switches on the network or associated to a node.
 
@@ -1089,12 +1295,18 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        return self._filter_values(['switch_binary', 'switch_toggle_binary'],
-                                   filter_callback=lambda value: not value['is_read_only'],
-                                   node_id=node_id, node_name=node_name, **kwargs)
+        return self._filter_values(
+            ['switch_binary', 'switch_toggle_binary'],
+            filter_callback=lambda value: not value['is_read_only'],
+            node_id=node_id,
+            node_name=node_name,
+            **kwargs,
+        )
 
     @action
-    def get_sensors(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    def get_sensors(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ) -> Dict[str, Any]:
         """
         Get the sensors on the network or associated to a node.
 
@@ -1103,12 +1315,18 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        return self._filter_values(['sensor_binary', 'sensor_multilevel', 'sensor_alarm', 'meter'],
-                                   filter_callback=lambda value: not value['is_write_only'],
-                                   node_id=node_id, node_name=node_name, **kwargs)
+        return self._filter_values(
+            ['sensor_binary', 'sensor_multilevel', 'sensor_alarm', 'meter'],
+            filter_callback=lambda value: not value['is_write_only'],
+            node_id=node_id,
+            node_name=node_name,
+            **kwargs,
+        )
 
     @action
-    def get_doorlocks(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    def get_doorlocks(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ) -> Dict[str, Any]:
         """
         Get the doorlocks on the network or associated to a node.
 
@@ -1117,10 +1335,14 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        return self._filter_values(['door_lock'], node_id=node_id, node_name=node_name, **kwargs)
+        return self._filter_values(
+            ['door_lock'], node_id=node_id, node_name=node_name, **kwargs
+        )
 
     @action
-    def get_locks(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    def get_locks(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ) -> Dict[str, Any]:
         """
         Get the locks on the network or associated to a node.
 
@@ -1129,10 +1351,14 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        return self._filter_values(['lock'], node_id=node_id, node_name=node_name, **kwargs)
+        return self._filter_values(
+            ['lock'], node_id=node_id, node_name=node_name, **kwargs
+        )
 
     @action
-    def get_usercodes(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    def get_usercodes(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ) -> Dict[str, Any]:
         """
         Get the usercodes on the network or associated to a node.
 
@@ -1141,11 +1367,14 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        return self._filter_values(['user_code'], node_id=node_id, node_name=node_name, **kwargs)
+        return self._filter_values(
+            ['user_code'], node_id=node_id, node_name=node_name, **kwargs
+        )
 
     @action
-    def get_thermostats(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) \
-            -> Dict[str, Any]:
+    def get_thermostats(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ) -> Dict[str, Any]:
         """
         Get the thermostats on the network or associated to a node.
 
@@ -1154,13 +1383,25 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        return self._filter_values(['thermostat_heating', 'thermostat_mode', 'thermostat_operating_state',
-                                    'thermostat_setpoint', 'thermostat_fan_mode', 'thermostat_fan_state',
-                                    'thermostat_setback'], node_id=node_id, node_name=node_name, **kwargs)
+        return self._filter_values(
+            [
+                'thermostat_heating',
+                'thermostat_mode',
+                'thermostat_operating_state',
+                'thermostat_setpoint',
+                'thermostat_fan_mode',
+                'thermostat_fan_state',
+                'thermostat_setback',
+            ],
+            node_id=node_id,
+            node_name=node_name,
+            **kwargs,
+        )
 
     @action
-    def get_protections(self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs) \
-            -> Dict[str, Any]:
+    def get_protections(
+        self, node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs
+    ) -> Dict[str, Any]:
         """
         Get the protection-compatible devices on the network or associated to a node.
 
@@ -1169,7 +1410,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        return self._filter_values(['protection'], node_id=node_id, node_name=node_name, **kwargs)
+        return self._filter_values(
+            ['protection'], node_id=node_id, node_name=node_name, **kwargs
+        )
 
     @action
     def get_groups(self, **kwargs) -> Dict[str, dict]:
@@ -1218,7 +1461,10 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             group['group_id']: {
                 **group,
                 'associations': [
-                    assoc['nodeId'] for assoc in self._api_request('getAssociations', node_id, group['index'])
+                    assoc['nodeId']
+                    for assoc in self._api_request(
+                        'getAssociations', node_id, group['index']
+                    )
                 ],
             }
             for node_id, node in nodes.items()
@@ -1275,7 +1521,12 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self._api_request('_createScene', label)
 
     @action
-    def remove_scene(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None, **kwargs):
+    def remove_scene(
+        self,
+        scene_id: Optional[int] = None,
+        scene_label: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Remove a scene.
 
@@ -1288,7 +1539,12 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self._api_request('_removeScene', scene['scene_id'])
 
     @action
-    def activate_scene(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None, **kwargs):
+    def activate_scene(
+        self,
+        scene_id: Optional[int] = None,
+        scene_label: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Activate a scene.
 
@@ -1301,8 +1557,13 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self._api_request('_activateScene', scene['scene_id'])
 
     @action
-    def set_scene_label(self, new_label: str, scene_id: Optional[int] = None, scene_label: Optional[str] = None,
-                        **kwargs):
+    def set_scene_label(
+        self,
+        new_label: str,
+        scene_id: Optional[int] = None,
+        scene_label: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Rename a scene/set the scene label.
 
@@ -1315,10 +1576,18 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def scene_add_value(self, data: Optional[Any] = None, value_id: Optional[int] = None,
-                        id_on_network: Optional[str] = None, value_label: Optional[str] = None,
-                        scene_id: Optional[int] = None, scene_label: Optional[str] = None,
-                        node_id: Optional[int] = None, node_name: Optional[str] = None, **kwargs):
+    def scene_add_value(
+        self,
+        data: Optional[Any] = None,
+        value_id: Optional[int] = None,
+        id_on_network: Optional[str] = None,
+        value_label: Optional[str] = None,
+        scene_id: Optional[int] = None,
+        scene_label: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Add a value to a scene.
 
@@ -1333,22 +1602,41 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        value = self._get_value(value_id=value_id, value_label=value_label, id_on_network=id_on_network,
-                                node_id=node_id, node_name=node_name, **kwargs)
+        value = self._get_value(
+            value_id=value_id,
+            value_label=value_label,
+            id_on_network=id_on_network,
+            node_id=node_id,
+            node_name=node_name,
+            **kwargs,
+        )
         scene = self._get_scene(scene_id=scene_id, scene_label=scene_label, **kwargs)
 
-        self._api_request('_addSceneValue', scene['scene_id'], {
-            'nodeId': value['node_id'],
-            'commandClass': value['command_class'],
-            'property': value['property_id'],
-            'endpoint': value['endpoint'],
-        }, data, kwargs.get('timeout', self.timeout))
+        self._api_request(
+            '_addSceneValue',
+            scene['scene_id'],
+            {
+                'nodeId': value['node_id'],
+                'commandClass': value['command_class'],
+                'property': value['property_id'],
+                'endpoint': value['endpoint'],
+            },
+            data,
+            kwargs.get('timeout', self.timeout),
+        )
 
     @action
-    def scene_remove_value(self, value_id: Optional[int] = None, id_on_network: Optional[str] = None,
-                           value_label: Optional[str] = None, scene_id: Optional[int] = None,
-                           scene_label: Optional[str] = None, node_id: Optional[int] = None,
-                           node_name: Optional[str] = None, **kwargs):
+    def scene_remove_value(
+        self,
+        value_id: Optional[int] = None,
+        id_on_network: Optional[str] = None,
+        value_label: Optional[str] = None,
+        scene_id: Optional[int] = None,
+        scene_label: Optional[str] = None,
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Remove a value from a scene.
 
@@ -1362,13 +1650,24 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
-        value = self._get_value(value_id=value_id, value_label=value_label, id_on_network=id_on_network,
-                                node_id=node_id, node_name=node_name, **kwargs)
+        value = self._get_value(
+            value_id=value_id,
+            value_label=value_label,
+            id_on_network=id_on_network,
+            node_id=node_id,
+            node_name=node_name,
+            **kwargs,
+        )
         scene = self._get_scene(scene_id=scene_id, scene_label=scene_label, **kwargs)
         self._api_request('_removeSceneValue', scene['scene_id'], value['value_id'])
 
     @action
-    def get_scene_values(self, scene_id: Optional[int] = None, scene_label: Optional[str] = None, **kwargs) -> dict:
+    def get_scene_values(
+        self,
+        scene_id: Optional[int] = None,
+        scene_label: Optional[str] = None,
+        **kwargs,
+    ) -> dict:
         """
         Get the values associated to a scene.
 
@@ -1381,8 +1680,13 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         return scene.get('values', {})
 
     @action
-    def create_button(self, button_id: Union[int, str], node_id: Optional[int] = None, node_name: Optional[str] = None,
-                      **kwargs):
+    def create_button(
+        self,
+        button_id: Union[int, str],
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Create a handheld button on a device. Only intended for bridge firmware controllers
         (not implemented by zwavejs2mqtt).
@@ -1396,8 +1700,13 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def delete_button(self, button_id: Union[int, str], node_id: Optional[int] = None, node_name: Optional[str] = None,
-                      **kwargs):
+    def delete_button(
+        self,
+        button_id: Union[int, str],
+        node_id: Optional[int] = None,
+        node_name: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Delete a button association from a device. Only intended for bridge firmware controllers.
         (not implemented by zwavejs2mqtt).
@@ -1411,8 +1720,13 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         raise _NOT_IMPLEMENTED_ERR
 
     @action
-    def add_node_to_group(self, group_id: Optional[str] = None, node_id: Optional[int] = None,
-                          endpoint: Optional[int] = None, **kwargs):
+    def add_node_to_group(
+        self,
+        group_id: Optional[str] = None,
+        node_id: Optional[int] = None,
+        endpoint: Optional[int] = None,
+        **kwargs,
+    ):
         """
         Add a node to a group.
 
@@ -1430,8 +1744,13 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self._api_request('addAssociations', group['node_id'], group['index'], [assoc])
 
     @action
-    def remove_node_from_group(self, group_id: Optional[str] = None, node_id: Optional[int] = None,
-                               endpoint: Optional[int] = None, **kwargs):
+    def remove_node_from_group(
+        self,
+        group_id: Optional[str] = None,
+        node_id: Optional[int] = None,
+        endpoint: Optional[int] = None,
+        **kwargs,
+    ):
         """
         Remove a node from a group.
 
@@ -1446,7 +1765,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         if endpoint is not None:
             assoc['endpoint'] = endpoint
 
-        self._api_request('removeAssociations', group['node_id'], group['index'], [assoc])
+        self._api_request(
+            'removeAssociations', group['node_id'], group['index'], [assoc]
+        )
 
     @action
     def create_new_primary(self, **kwargs):
@@ -1527,8 +1848,10 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self.set_value(data=value['data'], id_on_network=device, **kwargs)
 
         return {
-            'name': '{} - {}'.format(self._nodes_cache['by_id'][value['node_id']]['name'],
-                                     value.get('label', '[No Label]')),
+            'name': '{} - {}'.format(
+                self._nodes_cache['by_id'][value['node_id']]['name'],
+                value.get('label', '[No Label]'),
+            ),
             'on': value['data'],
             'id': value['value_id'],
         }
@@ -1541,11 +1864,14 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         devices = self.get_switches().output.values()
         return [
             {
-                'name': '{} - {}'.format(self._nodes_cache['by_id'][dev['node_id']]['name'],
-                                         dev.get('label', '[No Label]')),
+                'name': '{} - {}'.format(
+                    self._nodes_cache['by_id'][dev['node_id']]['name'],
+                    dev.get('label', '[No Label]'),
+                ),
                 'on': dev['data'],
                 'id': dev['value_id'],
-            } for dev in devices
+            }
+            for dev in devices
         ]
 
 
