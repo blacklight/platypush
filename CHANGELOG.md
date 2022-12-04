@@ -4,12 +4,24 @@ All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being
 reported only starting from v0.20.2.
 
-## [Unreleased]
+## [0.24.0]
 
 ### Added
 
 - Added [Wallabag integration](https://git.platypush.tech/platypush/platypush/issues/224).
 - Added [Mimic3 TTS integration](https://git.platypush.tech/platypush/platypush/issues/226).
+- Added `qos` attribute to `mqtt.publish` and all the plugins derived from `mqtt`.
+
+### Changed
+
+- Replaced PyJWT dependency with the Python-native `rsa` package. This will
+  make the installation much lighter, compatible with more systems and less
+  dependent on the platform-specific libraries required by `cryptography`.
+
+> **NOTE**: This is a breaking change for those who use the `backend.http` API
+> with JWT tokens. The new logic encrypts and encodes the payload in a
+> different format, therefore previously generated tokens are no longer
+> compatible.
 
 ## [0.23.6] - 2022-09-19
 
