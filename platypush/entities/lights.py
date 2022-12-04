@@ -1,9 +1,11 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Float
 
-from .devices import Device, entity_types_registry
+from platypush.common.db import Base
+
+from .devices import Device
 
 
-if not entity_types_registry.get('Light'):
+if 'light' not in Base.metadata:
 
     class Light(Device):
         __tablename__ = 'light'
@@ -18,6 +20,9 @@ if not entity_types_registry.get('Light'):
         temperature = Column(Float)
         x = Column(Float)
         y = Column(Float)
+        red = Column(Float)
+        green = Column(Float)
+        blue = Column(Float)
         colormode = Column(String)
         effect = Column(String)
         hue_min = Column(Float)
@@ -32,7 +37,3 @@ if not entity_types_registry.get('Light'):
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
-
-    entity_types_registry['Light'] = Light
-else:
-    Light = entity_types_registry['Light']

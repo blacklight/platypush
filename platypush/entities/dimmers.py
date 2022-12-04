@@ -1,9 +1,11 @@
 from sqlalchemy import Column, Integer, ForeignKey, Float
 
-from .devices import Device, entity_types_registry
+from platypush.common.db import Base
+
+from .devices import Device
 
 
-if not entity_types_registry.get('Dimmer'):
+if 'dimmer' not in Base.metadata:
 
     class Dimmer(Device):
         __tablename__ = 'dimmer'
@@ -19,7 +21,3 @@ if not entity_types_registry.get('Dimmer'):
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
-
-    entity_types_registry['Dimmer'] = Dimmer
-else:
-    Dimmer = entity_types_registry['Dimmer']

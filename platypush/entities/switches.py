@@ -1,9 +1,11 @@
 from sqlalchemy import Column, Integer, ForeignKey, Boolean, String, JSON
 
-from .devices import Device, entity_types_registry
+from platypush.common.db import Base
+
+from .devices import Device
 
 
-if not entity_types_registry.get('Switch'):
+if 'switch' not in Base.metadata:
 
     class Switch(Device):
         __tablename__ = 'switch'
@@ -17,12 +19,8 @@ if not entity_types_registry.get('Switch'):
             'polymorphic_identity': __tablename__,
         }
 
-    entity_types_registry['Switch'] = Switch
-else:
-    Switch = entity_types_registry['Switch']
 
-
-if not entity_types_registry.get('EnumSwitch'):
+if 'enum_switch' not in Base.metadata:
 
     class EnumSwitch(Device):
         __tablename__ = 'enum_switch'
@@ -36,7 +34,3 @@ if not entity_types_registry.get('EnumSwitch'):
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
-
-    entity_types_registry['EnumSwitch'] = EnumSwitch
-else:
-    EnumSwitch = entity_types_registry['EnumSwitch']

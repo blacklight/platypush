@@ -1,10 +1,11 @@
 from sqlalchemy import Column, Integer, ForeignKey
 
-from .devices import entity_types_registry
+from platypush.common.db import Base
+
 from .sensors import NumericSensor
 
 
-if not entity_types_registry.get('PowerSensor'):
+if 'power_sensor' not in Base.metadata:
 
     class PowerSensor(NumericSensor):
         __tablename__ = 'power_sensor'
@@ -17,12 +18,8 @@ if not entity_types_registry.get('PowerSensor'):
             'polymorphic_identity': __tablename__,
         }
 
-    entity_types_registry['PowerSensor'] = PowerSensor
-else:
-    PowerSensor = entity_types_registry['PowerSensor']
 
-
-if not entity_types_registry.get('CurrentSensor'):
+if 'current_sensor' not in Base.metadata:
 
     class CurrentSensor(NumericSensor):
         __tablename__ = 'current_sensor'
@@ -35,12 +32,8 @@ if not entity_types_registry.get('CurrentSensor'):
             'polymorphic_identity': __tablename__,
         }
 
-    entity_types_registry['CurrentSensor'] = CurrentSensor
-else:
-    CurrentSensor = entity_types_registry['CurrentSensor']
 
-
-if not entity_types_registry.get('VoltageSensor'):
+if 'voltage_sensor' not in Base.metadata:
 
     class VoltageSensor(NumericSensor):
         __tablename__ = 'voltage_sensor'
@@ -53,12 +46,8 @@ if not entity_types_registry.get('VoltageSensor'):
             'polymorphic_identity': __tablename__,
         }
 
-    entity_types_registry['VoltageSensor'] = VoltageSensor
-else:
-    VoltageSensor = entity_types_registry['VoltageSensor']
 
-
-if not entity_types_registry.get('EnergySensor'):
+if 'energy_sensor' not in Base.metadata:
 
     class EnergySensor(NumericSensor):
         __tablename__ = 'energy_sensor'
@@ -70,7 +59,3 @@ if not entity_types_registry.get('EnergySensor'):
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
-
-    entity_types_registry['EnergySensor'] = EnergySensor
-else:
-    EnergySensor = entity_types_registry['EnergySensor']

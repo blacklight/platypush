@@ -10,7 +10,9 @@ from sqlalchemy import (
     String,
 )
 
-from .devices import Device, entity_types_registry
+from platypush.common.db import Base
+
+from .devices import Device
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +21,7 @@ class Sensor(Device):
     __abstract__ = True
 
 
-if not entity_types_registry.get('RawSensor'):
+if 'raw_sensor' not in Base.metadata:
 
     class RawSensor(Sensor):
         __tablename__ = 'raw_sensor'
@@ -33,12 +35,8 @@ if not entity_types_registry.get('RawSensor'):
             'polymorphic_identity': __tablename__,
         }
 
-    entity_types_registry['RawSensor'] = RawSensor
-else:
-    RawSensor = entity_types_registry['RawSensor']
 
-
-if not entity_types_registry.get('NumericSensor'):
+if 'numeric_sensor' not in Base.metadata:
 
     class NumericSensor(Sensor):
         __tablename__ = 'numeric_sensor'
@@ -55,12 +53,8 @@ if not entity_types_registry.get('NumericSensor'):
             'polymorphic_identity': __tablename__,
         }
 
-    entity_types_registry['NumericSensor'] = NumericSensor
-else:
-    NumericSensor = entity_types_registry['NumericSensor']
 
-
-if not entity_types_registry.get('BinarySensor'):
+if 'binary_sensor' not in Base.metadata:
 
     class BinarySensor(Sensor):
         __tablename__ = 'binary_sensor'
@@ -88,12 +82,8 @@ if not entity_types_registry.get('BinarySensor'):
             'polymorphic_identity': __tablename__,
         }
 
-    entity_types_registry['BinarySensor'] = BinarySensor
-else:
-    BinarySensor = entity_types_registry['BinarySensor']
 
-
-if not entity_types_registry.get('EnumSensor'):
+if 'enum_sensor' not in Base.metadata:
 
     class EnumSensor(Sensor):
         __tablename__ = 'enum_sensor'
@@ -107,7 +97,3 @@ if not entity_types_registry.get('EnumSensor'):
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
-
-    entity_types_registry['EnumSensor'] = EnumSensor
-else:
-    EnumSensor = entity_types_registry['EnumSensor']

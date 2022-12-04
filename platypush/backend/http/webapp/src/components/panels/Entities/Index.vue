@@ -8,7 +8,7 @@
       </div>
 
       <div class="col-1 right">
-        <button title="Refresh" @click="refresh(null)">
+        <button title="Refresh" @click="refresh">
           <i class="fa fa-sync-alt" />
         </button>
       </div>
@@ -16,7 +16,7 @@
 
     <div class="groups-canvas">
       <EntityModal :entity="entities[modalEntityId]"
-        :visible="modalVisible" @close="onEntityModal(null)"
+        :visible="modalVisible" @close="onEntityModal"
         v-if="modalEntityId"
       />
 
