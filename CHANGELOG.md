@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being
 reported only starting from v0.20.2.
 
+## [0.24.1]
+
+### Fixed
+
+- Removed a parenthesized context manager that broke compatibility with
+  Python &lt; 3.10.
+
 ## [0.24.0]
 
 ### Added
