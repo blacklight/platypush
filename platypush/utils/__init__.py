@@ -412,10 +412,8 @@ def get_or_generate_jwt_rsa_key_pair():
     pub_key_file = priv_key_file + '.pub'
 
     if os.path.isfile(priv_key_file) and os.path.isfile(pub_key_file):
-        with (
-            open(pub_key_file, 'r') as f1,
-            open(priv_key_file, 'r') as f2
-        ):
+        with open(pub_key_file, 'r') as f1, \
+             open(priv_key_file, 'r') as f2:
             return (
                 rsa.PublicKey.load_pkcs1(f1.read().encode()),
                 rsa.PrivateKey.load_pkcs1(f2.read().encode()),
