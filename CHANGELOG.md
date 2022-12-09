@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being
 reported only starting from v0.20.2.
 
+## [Unreleased]
+
+## Fixed
+
+- The `main.db` configuration should use the configured `workdir` when no
+  values are specified.
+
 ## [0.24.1]
 
 ### Fixed

@@ -10,6 +10,7 @@ import re
 import shutil
 import socket
 import sys
+from urllib.parse import quote
 from typing import Optional
 
 import yaml
@@ -72,7 +73,7 @@ class Config:
         if cfgfile is None:
             cfgfile = self._create_default_config()
 
-        self._cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
+        cfgfile = self._cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
         self._config = self._read_config_file(self._cfgfile)
 
         if 'token' in self._config:
@@ -80,6 +81,7 @@ class Config:
 
         if 'workdir' not in self._config:
             self._config['workdir'] = self._workdir_location
+        self._config['workdir'] = os.path.expanduser(self._config['workdir'])
         os.makedirs(self._config['workdir'], exist_ok=True)
 
         if 'scripts_dir' not in self._config:
@@ -94,6 +96,7 @@ class Config:
             )
         os.makedirs(self._config['dashboards_dir'], mode=0o755, exist_ok=True)
 
+        # Create a default (empty) __init__.py in the scripts folder
         init_py = os.path.join(self._config['scripts_dir'], '__init__.py')
         if not os.path.isfile(init_py):
             with open(init_py, 'w') as f:
@@ -106,15 +109,21 @@ class Config:
         )
         sys.path = [scripts_parent_dir] + sys.path
 
-        self._config['db'] = self._config.get(
-            'main.db',
-            {
-                'engine': 'sqlite:///'
-                + os.path.join(
-                    os.path.expanduser('~'), '.local', 'share', 'platypush', 'main.db'
+        # Initialize the default db connection string
+        db_engine = self._config.get('main.db', '')
+        if db_engine:
+            if isinstance(db_engine, str):
+                db_engine = {
+                    'engine': db_engine,
+                }
+        else:
+            db_engine = {
+                'engine': 'sqlite:///' + os.path.join(
+                    quote(self._config['workdir']), 'main.db'
                 )
-            },
-        )
+            }
+
+        self._config['db'] = db_engine
 
         logging_config = {
             'level': logging.INFO,
