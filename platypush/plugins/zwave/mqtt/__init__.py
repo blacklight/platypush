@@ -264,7 +264,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
     @classmethod
     def _get_type(cls, value: dict) -> str:
-        if value['list']:
+        if value.get('list'):
             if len(value.get('states', [])) > 1:
                 return 'List'
             if value.get('min') is not None and value.get('max') is not None:
@@ -279,6 +279,18 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
     @classmethod
     def value_to_dict(cls, value: dict) -> dict:
+        is_read_only = (
+            value['is_read_only']
+            if 'is_read_only' in value
+            else value.get('readable') and not value.get('writeable')
+        )
+
+        is_write_only = (
+            value['is_write_only']
+            if 'is_write_only' in value
+            else not value.get('readable') and value.get('writeable')
+        )
+
         return {
             'id': value['id'],
             'id_on_network': value['id'],
@@ -289,7 +301,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
                 'label', value.get('propertyName', value.get('property'))
             ),
             'property_id': value.get('property'),
-            'help': value.get('description'),
+            'help': value.get('description', value.get('help')),
             'node_id': value.get('nodeId'),
             'parent_id': value.get('nodeId'),
             'type': cls._get_type(value),
@@ -301,8 +313,8 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             'units': value.get('unit'),
             'min': value.get('min'),
             'max': value.get('max'),
-            'is_read_only': value['readable'] and not value['writeable'],
-            'is_write_only': value['writeable'] and not value['readable'],
+            'is_read_only': is_read_only,
+            'is_write_only': is_write_only,
             'last_update': cls._convert_timestamp(value.get('lastUpdate')),
             **(
                 {'property_key': value['propertyKey']} if 'propertyKey' in value else {}
