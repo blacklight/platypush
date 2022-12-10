@@ -6,6 +6,7 @@ from typing import Optional, Type
 from platypush.backend.mqtt import MqttBackend
 from platypush.context import get_plugin
 
+from platypush.config import Config
 from platypush.message.event.zwave import (
     ZwaveEvent,
     ZwaveNodeAddedEvent,
@@ -55,8 +56,9 @@ class ZwaveMqttBackend(MqttBackend):
 
         from platypush.plugins.zwave.mqtt import ZwaveMqttPlugin
 
-        self.plugin: ZwaveMqttPlugin = get_plugin('zwave.mqtt')
-        assert self.plugin, 'The zwave.mqtt plugin is not configured'
+        plugin: Optional[ZwaveMqttPlugin] = get_plugin('zwave.mqtt')
+        assert plugin, 'The zwave.mqtt plugin is not configured'
+        self.plugin = plugin
 
         self._nodes = {}
         self._groups = {}
@@ -99,7 +101,9 @@ class ZwaveMqttBackend(MqttBackend):
             **kwargs,
         )
         if not client_id:
-            self.client_id += '-zwavejs-mqtt'
+            self.client_id = (
+                str(self.client_id or Config.get('device_id')) + '-zwavejs-mqtt'
+            )
 
     def _dispatch_event(
         self,
@@ -218,7 +222,7 @@ class ZwaveMqttBackend(MqttBackend):
     def run(self):
         super().run()
         self.logger.debug('Refreshing Z-Wave nodes')
-        self._nodes = self.plugin.get_nodes().output
+        self._nodes = self.plugin.get_nodes().output  # type: ignore
 
         while not self.should_stop():
             try:
