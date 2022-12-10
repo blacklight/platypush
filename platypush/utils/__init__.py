@@ -357,7 +357,7 @@ def grouper(n, iterable, fillvalue=None):
     args = [iter(iterable)] * n
 
     if fillvalue:
-        return zip_longest(fillvalue=fillvalue, *args)
+        return zip_longest(*args, fillvalue=fillvalue)
 
     for chunk in zip_longest(*args):
         yield filter(None, chunk)
@@ -389,8 +389,9 @@ def run(action, *args, **kwargs):
     return response.output
 
 
-def generate_rsa_key_pair(key_file: Optional[str] = None, size: int = 2048) \
-        -> Tuple[PublicKey, PrivateKey]:
+def generate_rsa_key_pair(
+    key_file: Optional[str] = None, size: int = 2048
+) -> Tuple[PublicKey, PrivateKey]:
     """
     Generate an RSA key pair.
 
@@ -434,10 +435,7 @@ def get_or_generate_jwt_rsa_key_pair():
     pub_key_file = priv_key_file + '.pub'
 
     if os.path.isfile(priv_key_file) and os.path.isfile(pub_key_file):
-        with (
-            open(pub_key_file, 'r') as f1,
-            open(priv_key_file, 'r') as f2
-        ):
+        with open(pub_key_file, 'r') as f1, open(priv_key_file, 'r') as f2:
             return (
                 rsa.PublicKey.load_pkcs1(f1.read().encode()),
                 rsa.PrivateKey.load_pkcs1(f2.read().encode()),

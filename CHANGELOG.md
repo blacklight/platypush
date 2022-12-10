@@ -4,7 +4,24 @@ All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being
 reported only starting from v0.20.2.
 
-## [0.24.0]
+## [0.24.2] - 2022-12-10
+
+## Fixed
+
+- The `main.db` configuration should use the configured `workdir` when no
+  values are specified.
+
+- The `zwave.mqtt` is now compatible both with older (i.e. `zwavejs2mqtt`) and
+  newer (i.e. `ZwaveJS`) versions of the backend.
+
+## [0.24.1] - 2022-12-08
+
+### Fixed
+
+- Removed a parenthesized context manager that broke compatibility with
+  Python &lt; 3.10.
+
+## [0.24.0] - 2022-11-22
 
 ### Added
 

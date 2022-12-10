@@ -185,7 +185,9 @@ class ZwaveMqttBackend(MqttBackend):
             if not msg.topic.startswith(self.events_topic):
                 return
 
-            topic = msg.topic[len(self.events_topic) + 1 :].split('/').pop()
+            topic = (
+                msg.topic[(len(self.events_topic) + 1) :].split('/').pop()  # noqa: E203
+            )
             data = msg.payload.decode()
             if not data:
                 return
