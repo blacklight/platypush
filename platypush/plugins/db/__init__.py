@@ -514,7 +514,7 @@ class DbPlugin(Plugin):
 
     @contextmanager
     def get_session(
-        self, engine=None, locked=False, *args, **kwargs
+        self, engine=None, locked=False, autoflush=True, *args, **kwargs
     ) -> Generator[Session, None, None]:
         engine = self.get_engine(engine, *args, **kwargs)
         if locked:
@@ -527,7 +527,7 @@ class DbPlugin(Plugin):
             session = scoped_session(
                 sessionmaker(
                     expire_on_commit=False,
-                    autoflush=True,
+                    autoflush=autoflush,
                 )
             )
 
