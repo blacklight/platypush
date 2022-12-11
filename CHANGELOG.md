@@ -4,9 +4,17 @@ All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being
 reported only starting from v0.20.2.
 
+## [Unreleased]
+
+### Added
+
+- Added `[-v|--verbose]` command-line option to override the default logging
+  configuration and enable debug logging.
+- Added `--version` command-line option to print the current version and exit.
+
 ## [0.24.2] - 2022-12-10
 
-## Fixed
+### Fixed
 
 - The `main.db` configuration should use the configured `workdir` when no
   values are specified.
