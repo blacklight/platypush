@@ -1,19 +1,15 @@
-from abc import ABC
+import logging
 from typing import Union
 
 from platypush.entities import Entity
 from platypush.message.event import Event
 
 
-class EntityEvent(Event, ABC):
-    def __init__(
-        self, entity: Union[Entity, dict], *args, disable_logging=True, **kwargs
-    ):
+class EntityEvent(Event):
+    def __init__(self, entity: Union[Entity, dict], *args, **kwargs):
         if isinstance(entity, Entity):
             entity = entity.to_json()
-        super().__init__(
-            entity=entity, *args, disable_logging=disable_logging, **kwargs
-        )
+        super().__init__(entity=entity, *args, **kwargs)
 
 
 class EntityUpdateEvent(EntityEvent):
@@ -21,6 +17,9 @@ class EntityUpdateEvent(EntityEvent):
     This event is triggered whenever an entity of any type (a switch, a light,
     a sensor, a media player etc.) updates its state.
     """
+
+    def __init__(self, *args, logging_level=logging.DEBUG, **kwargs):
+        super().__init__(*args, logging_level=logging_level, **kwargs)
 
 
 class EntityDeleteEvent(EntityEvent):
