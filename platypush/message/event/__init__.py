@@ -1,5 +1,6 @@
 import copy
 import json
+import logging
 import random
 import re
 import sys
@@ -10,6 +11,8 @@ from datetime import date
 from platypush.config import Config
 from platypush.message import Message
 from platypush.utils import get_event_class_by_type
+
+logger = logging.getLogger('platypush')
 
 
 class Event(Message):
@@ -26,7 +29,7 @@ class Event(Message):
         origin=None,
         id=None,
         timestamp=None,
-        disable_logging=False,
+        logging_level=logging.INFO,
         disable_web_clients_notification=False,
         **kwargs
     ):
@@ -36,15 +39,16 @@ class Event(Message):
             origin  -- Origin node (default: current node) [String]
             id      -- Event ID (default: auto-generated)
             kwargs  -- Additional arguments for the event [kwDict]
+            logging_level -- Logging level that should be applied to these
+                events (default: INFO).
         """
 
-        super().__init__(timestamp=timestamp)
+        super().__init__(timestamp=timestamp, logging_level=logging_level)
         self.id = id if id else self._generate_id()
         self.target = target if target else Config.get('device_id')
         self.origin = origin if origin else Config.get('device_id')
         self.type = '{}.{}'.format(self.__class__.__module__, self.__class__.__name__)
         self.args = kwargs
-        self.disable_logging = disable_logging
         self.disable_web_clients_notification = disable_web_clients_notification
 
         for arg, value in self.args.items():
@@ -55,7 +59,7 @@ class Event(Message):
                 'target',
                 'type',
                 'timestamp',
-                'disable_logging',
+                'logging_level',
             ] and not arg.startswith('_'):
                 self.__setattr__(arg, value)
 
@@ -152,7 +156,7 @@ class Event(Message):
                 result.score += 1.5
             elif re.search(condition_token, event_token):
                 m = re.search('({})'.format(condition_token), event_token)
-                if m.group(1):
+                if m and m.group(1):
                     event_tokens.pop(0)
                     result.score += 1.25
 
@@ -214,7 +218,7 @@ class EventMatchResult:
     the match is - in case of multiple event matches, the ones with the
     highest score will win"""
 
-    def __init__(self, is_match, score=0, parsed_args=None):
+    def __init__(self, is_match, score=0.0, parsed_args=None):
         self.is_match = is_match
         self.score = score
         self.parsed_args = parsed_args or {}

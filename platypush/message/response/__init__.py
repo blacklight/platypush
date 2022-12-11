@@ -1,14 +1,23 @@
 import json
+import logging
 import time
 
 from platypush.message import Message
 
 
 class Response(Message):
-    """ Response message class """
+    """Response message class"""
 
-    def __init__(self, target=None, origin=None, id=None, output=None, errors=None,
-                 timestamp=None, disable_logging=False):
+    def __init__(
+        self,
+        target=None,
+        origin=None,
+        id=None,
+        output=None,
+        errors=None,
+        timestamp=None,
+        logging_level=logging.INFO,
+    ):
         """
         :param target: Target
         :type target: str
@@ -22,21 +31,20 @@ class Response(Message):
         :type timestamp: float
         """
 
-        super().__init__(timestamp=timestamp)
+        super().__init__(timestamp=timestamp, logging_level=logging_level)
         self.target = target
         self.output = self._parse_msg(output)
         self.errors = self._parse_msg(errors or [])
         self.origin = origin
         self.id = id
-        self.disable_logging = disable_logging
 
     def is_error(self):
-        """ Returns True if the response has errors """
+        """Returns True if the response has errors"""
         return len(self.errors) != 0
 
     @classmethod
     def _parse_msg(cls, msg):
-        if isinstance(msg, bytes) or isinstance(msg, bytearray):
+        if isinstance(msg, (bytes, bytearray)):
             msg = msg.decode('utf-8')
         if isinstance(msg, str):
             try:
@@ -54,7 +62,7 @@ class Response(Message):
             'output': msg['response']['output'],
             'errors': msg['response']['errors'],
             'timestamp': msg['_timestamp'] if '_timestamp' in msg else time.time(),
-            'disable_logging': msg.get('_disable_logging', False),
+            'logging_level': msg.get('_logging_level', logging.INFO),
         }
 
         if 'id' in msg:
@@ -69,9 +77,9 @@ class Response(Message):
         Overrides the ``str()`` operator and converts
         the message into a UTF-8 JSON string
         """
-        output = self.output if self.output is not None else {
-            'success': True if not self.errors else False
-        }
+        output = (
+            self.output if self.output is not None else {'success': bool(self.errors)}
+        )
 
         response_dict = {
             'id': self.id,
@@ -85,10 +93,19 @@ class Response(Message):
             },
         }
 
-        if self.disable_logging:
-            response_dict['_disable_logging'] = self.disable_logging
+        if self.logging_level:
+            response_dict['_logging_level'] = self.logging_level
 
         return json.dumps(response_dict, cls=self.Encoder)
+
+    def log(self, action=None):
+        prefix = (
+            f'Processed response from action {action}: '
+            if action
+            else 'Received response: '
+        )
+
+        super().log(prefix)
 
 
 # vim:sw=4:ts=4:et:

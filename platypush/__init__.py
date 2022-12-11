@@ -216,10 +216,9 @@ class Daemon:
                 ):
                     self.stop_app()
             elif isinstance(msg, Response):
-                log.info('Received response: {}'.format(msg))
+                msg.log()
             elif isinstance(msg, Event):
-                if not msg.disable_logging:
-                    log.info('Received event: {}'.format(msg))
+                msg.log()
                 self.event_processor.process_event(msg)
 
         return _f

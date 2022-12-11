@@ -254,6 +254,7 @@ class Request(Message):
                         action
                     )
                     plugin = get_plugin(module_name)
+                    assert plugin, f'No such plugin: {module_name}'
             except Exception as e:
                 logger.exception(e)
                 msg = 'Uncaught pre-processing exception from action [{}]: {}'.format(
@@ -286,12 +287,8 @@ class Request(Message):
                                 'Response processed with errors from ' + 'action {}: {}'
                             ).format(action, str(response))
                         )
-                    elif not response.disable_logging:
-                        logger.info(
-                            'Processed response from action {}: {}'.format(
-                                action, str(response)
-                            )
-                        )
+                    else:
+                        response.log(action)
             except (AssertionError, TimeoutError) as e:
                 logger.warning(
                     '%s from action [%s]: %s', e.__class__.__name__, action, str(e)

@@ -75,8 +75,27 @@ class Message:
                     )
                 )
 
-    def __init__(self, timestamp=None, *_, **__):
+    def __init__(self, *_, timestamp=None, logging_level=logging.INFO, **__):
         self.timestamp = timestamp or time.time()
+        self.logging_level = logging_level
+
+    def log(self, prefix=''):
+        if self.logging_level is None:
+            return  # Skip logging
+
+        log_func = logger.info
+        if self.logging_level == logging.DEBUG:
+            log_func = logger.debug
+        elif self.logging_level == logging.WARNING:
+            log_func = logger.warning
+        elif self.logging_level == logging.ERROR:
+            log_func = logger.error
+        elif self.logging_level == logging.FATAL:
+            log_func = logger.fatal
+
+        if not prefix:
+            prefix = f'Received {self.__class__.__name__}: '
+        log_func(f'{prefix}{self}')
 
     def __str__(self):
         """
