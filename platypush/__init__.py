@@ -59,6 +59,7 @@ class Daemon:
         no_capture_stdout=False,
         no_capture_stderr=False,
         redis_queue=None,
+        verbose=False,
     ):
         """
         Constructor
@@ -74,6 +75,7 @@ class Daemon:
             no_capture_stderr -- Set to true if you want to disable the stderr
                                  capture by the logging system
             redis_queue -- Name of the (Redis) queue used for dispatching messages (default: platypush/bus).
+            verbose -- Enable debug/verbose logging, overriding the stored configuration (default: False).
         """
 
         if pidfile:
@@ -84,7 +86,10 @@ class Daemon:
         self.redis_queue = redis_queue or self._default_redis_queue
         self.config_file = config_file
         Config.init(self.config_file)
-        logging.basicConfig(**Config.get('logging'))
+        logging_conf = Config.get('logging') or {}
+        if verbose:
+            logging_conf['level'] = logging.DEBUG
+        logging.basicConfig(**logging_conf)
 
         redis_conf = Config.get('backend.redis') or {}
         self.bus = RedisBus(
@@ -115,6 +120,21 @@ class Daemon:
             required=False,
             default=None,
             help=cls.config_file.__doc__,
+        )
+        parser.add_argument(
+            '--version',
+            dest='version',
+            required=False,
+            action='store_true',
+            help="Print the current version and exit",
+        )
+        parser.add_argument(
+            '--verbose',
+            '-v',
+            dest='verbose',
+            required=False,
+            action='store_true',
+            help="Enable verbose/debug logging",
         )
         parser.add_argument(
             '--pidfile',
@@ -154,12 +174,18 @@ class Daemon:
         )
 
         opts, args = parser.parse_known_args(args)
+
+        if opts.version:
+            print(__version__)
+            sys.exit(0)
+
         return cls(
             config_file=opts.config,
             pidfile=opts.pidfile,
             no_capture_stdout=opts.no_capture_stdout,
             no_capture_stderr=opts.no_capture_stderr,
             redis_queue=opts.redis_queue,
+            verbose=opts.verbose,
         )
 
     def on_message(self):
