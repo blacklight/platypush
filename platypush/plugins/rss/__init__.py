@@ -129,6 +129,12 @@ class RssPlugin(RunnablePlugin):
                         'title': entry.title,
                         'summary': getattr(entry, 'summary', None),
                         'content': self._parse_content(entry),
+                        'author': getattr(entry, 'author', None),
+                        'tags': [
+                            tag['term']
+                            for tag in getattr(entry, 'tags', [])
+                            if tag.get('term')
+                        ],
                     }
                     for entry in feed.entries
                     if getattr(entry, 'published_parsed', None)
