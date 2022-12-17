@@ -1,19 +1,21 @@
 import inspect
+import json
 import pathlib
 import types
 from datetime import datetime
-from typing import Dict, Mapping, Type, Tuple, Any
+from dateutil.tz import tzutc
+from typing import Mapping, Type, Tuple, Any
 
 import pkgutil
 from sqlalchemy import (
     Boolean,
     Column,
+    DateTime,
     ForeignKey,
     Index,
     Integer,
-    String,
-    DateTime,
     JSON,
+    String,
     UniqueConstraint,
     inspect as schema_inspect,
 )
@@ -23,100 +25,136 @@ from platypush.common.db import Base
 from platypush.message import JSONAble
 
 entities_registry: Mapping[Type['Entity'], Mapping] = {}
-entity_types_registry: Dict[str, Type['Entity']] = {}
 
 
-class Entity(Base):
-    """
-    Model for a general-purpose platform entity.
-    """
+if 'entity' not in Base.metadata:
 
-    __tablename__ = 'entity'
+    class Entity(Base):
+        """
+        Model for a general-purpose platform entity.
+        """
 
-    id = Column(Integer, autoincrement=True, primary_key=True)
-    external_id = Column(String, nullable=True)
-    name = Column(String, nullable=False, index=True)
-    description = Column(String)
-    type = Column(String, nullable=False, index=True)
-    plugin = Column(String, nullable=False)
-    parent_id = Column(
-        Integer,
-        ForeignKey(f'{__tablename__}.id', ondelete='CASCADE'),
-        nullable=True,
-    )
+        __tablename__ = 'entity'
 
-    data = Column(JSON, default=dict)
-    meta = Column(JSON, default=dict)
-    is_read_only = Column(Boolean, default=False)
-    is_write_only = Column(Boolean, default=False)
-    is_query_disabled = Column(Boolean, default=False)
-    created_at = Column(
-        DateTime(timezone=False), default=datetime.utcnow(), nullable=False
-    )
-    updated_at = Column(
-        DateTime(timezone=False), default=datetime.utcnow(), onupdate=datetime.utcnow()
-    )
+        id = Column(Integer, autoincrement=True, primary_key=True)
+        external_id = Column(String, nullable=False)
+        name = Column(String, nullable=False, index=True)
+        description = Column(String)
+        type = Column(String, nullable=False, index=True)
+        plugin = Column(String, nullable=False)
+        parent_id = Column(
+            Integer,
+            ForeignKey(f'{__tablename__}.id', ondelete='CASCADE'),
+            nullable=True,
+        )
 
-    parent: Mapped['Entity'] = relationship(
-        'Entity',
-        remote_side=[id],
-        uselist=False,
-        lazy=True,
-        backref=backref(
-            'children',
-            remote_side=[parent_id],
-            uselist=True,
-            cascade='all, delete-orphan',
-        ),
-    )
+        data = Column(JSON, default=dict)
+        meta = Column(JSON, default=dict)
+        is_read_only = Column(Boolean, default=False)
+        is_write_only = Column(Boolean, default=False)
+        is_query_disabled = Column(Boolean, default=False)
+        created_at = Column(
+            DateTime(timezone=False), default=datetime.utcnow(), nullable=False
+        )
+        updated_at = Column(
+            DateTime(timezone=False),
+            default=datetime.utcnow(),
+            onupdate=datetime.utcnow(),
+        )
 
-    UniqueConstraint(external_id, plugin)
+        parent: Mapped['Entity'] = relationship(
+            'Entity',
+            remote_side=[id],
+            uselist=False,
+            lazy=True,
+            post_update=True,
+            backref=backref(
+                'children',
+                remote_side=[parent_id],
+                uselist=True,
+                cascade='all, delete-orphan',
+            ),
+        )
 
-    __table_args__ = (
-        Index('name_and_plugin_index', name, plugin),
-        Index('name_type_and_plugin_index', name, type, plugin),
-        {'extend_existing': True},
-    )
+        UniqueConstraint(external_id, plugin)
 
-    __mapper_args__ = {
-        'polymorphic_identity': __tablename__,
-        'polymorphic_on': type,
-    }
+        __table_args__ = (
+            Index('name_and_plugin_index', name, plugin),
+            Index('name_type_and_plugin_index', name, type, plugin),
+            {'extend_existing': True},
+        )
 
-    @classmethod
-    @property
-    def columns(cls) -> Tuple[ColumnProperty]:
-        inspector = schema_inspect(cls)
-        return tuple(inspector.mapper.column_attrs)
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+            'polymorphic_on': type,
+        }
 
-    def _serialize_value(self, col: ColumnProperty) -> Any:
-        val = getattr(self, col.key)
-        if isinstance(val, datetime):
-            # All entity timestamps are in UTC
-            val = val.isoformat() + '+00:00'
+        @classmethod
+        @property
+        def columns(cls) -> Tuple[ColumnProperty]:
+            inspector = schema_inspect(cls)
+            return tuple(inspector.mapper.column_attrs)
 
-        return val
+        @property
+        def entity_key(self) -> Tuple[str, str]:
+            """
+            This method returns the "external" key of an entity.
+            """
+            return (str(self.external_id), str(self.plugin))
 
-    def to_json(self) -> dict:
-        return {col.key: self._serialize_value(col) for col in self.columns}
+        def _serialize_value(self, col: ColumnProperty) -> Any:
+            val = getattr(self, col.key)
+            if isinstance(val, datetime):
+                # All entity timestamps are in UTC
+                val = val.replace(tzinfo=tzutc()).isoformat()
 
-    def get_plugin(self):
-        from platypush.context import get_plugin
+            return val
 
-        plugin = get_plugin(self.plugin)
-        assert plugin, f'No such plugin: {plugin}'
-        return plugin
+        def copy(self) -> 'Entity':
+            args = {c.key: getattr(self, c.key) for c in self.columns}
+            # if self.parent:
+            #     args['parent'] = self.parent.copy()
 
-    def run(self, action: str, *args, **kwargs):
-        plugin = self.get_plugin()
-        method = getattr(plugin, action, None)
-        assert method, f'No such action: {self.plugin}.{action}'
-        return method(self.external_id or self.name, *args, **kwargs)
+            # args['children'] = [c.copy() for c in self.children]
+            return self.__class__(**args)
 
+        def to_json(self) -> dict:
+            return {col.key: self._serialize_value(col) for col in self.columns}
 
-# Inject the JSONAble mixin (Python goes nuts if done through
-# standard multiple inheritance with an SQLAlchemy ORM class)
-Entity.__bases__ = Entity.__bases__ + (JSONAble,)
+        def __repr__(self):
+            return str(self)
+
+        def __str__(self):
+            return json.dumps(self.to_json())
+
+        def __setattr__(self, key, value):
+            matching_columns = [c for c in self.columns if c.expression.name == key]
+
+            if (
+                matching_columns
+                and issubclass(type(matching_columns[0].columns[0].type), DateTime)
+                and isinstance(value, str)
+            ):
+                value = datetime.fromisoformat(value)
+
+            return super().__setattr__(key, value)
+
+        def get_plugin(self):
+            from platypush.context import get_plugin
+
+            plugin = get_plugin(self.plugin)
+            assert plugin, f'No such plugin: {plugin}'
+            return plugin
+
+        def run(self, action: str, *args, **kwargs):
+            plugin = self.get_plugin()
+            method = getattr(plugin, action, None)
+            assert method, f'No such action: {self.plugin}.{action}'
+            return method(self.external_id or self.name, *args, **kwargs)
+
+    # Inject the JSONAble mixin (Python goes nuts if done through
+    # standard multiple inheritance with an SQLAlchemy ORM class)
+    Entity.__bases__ = Entity.__bases__ + (JSONAble,)
 
 
 def _discover_entity_types():
