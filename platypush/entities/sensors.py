@@ -3,10 +3,10 @@ import logging
 from sqlalchemy import (
     Boolean,
     Column,
+    Float,
     ForeignKey,
     Integer,
     JSON,
-    Numeric,
     String,
 )
 
@@ -44,9 +44,9 @@ if 'numeric_sensor' not in Base.metadata:
         id = Column(
             Integer, ForeignKey(Device.id, ondelete='CASCADE'), primary_key=True
         )
-        value = Column(Numeric)
-        min = Column(Numeric)
-        max = Column(Numeric)
+        value = Column(Float)
+        min = Column(Float)
+        max = Column(Float)
         unit = Column(String)
 
         __mapper_args__ = {
