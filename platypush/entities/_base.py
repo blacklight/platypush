@@ -73,6 +73,7 @@ if 'entity' not in Base.metadata:
                 remote_side=[parent_id],
                 uselist=True,
                 cascade='all, delete-orphan',
+                lazy='immediate',
             ),
         )
 
@@ -110,16 +111,10 @@ if 'entity' not in Base.metadata:
 
             return val
 
-        def copy(self) -> 'Entity':
-            args = {c.key: getattr(self, c.key) for c in self.columns}
-            # if self.parent:
-            #     args['parent'] = self.parent.copy()
-
-            # args['children'] = [c.copy() for c in self.children]
-            return self.__class__(**args)
-
         def to_json(self) -> dict:
-            return {col.key: self._serialize_value(col) for col in self.columns}
+            obj = {col.key: self._serialize_value(col) for col in self.columns}
+            obj['children_ids'] = [e.id for e in self.children]
+            return obj
 
         def __repr__(self):
             return str(self)
