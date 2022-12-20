@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being
 reported only starting from v0.20.2.
 
+## [0.24.4] - 2022-12-20
+
+### Fixed
+
+- Fixed cronjobs potentially being triggered even if it wasn't their slot in
+  case of clock synchronization events.
+
 ## [0.24.3] - 2022-12-17
 
 ### Added
