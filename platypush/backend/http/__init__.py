@@ -251,6 +251,7 @@ class HttpBackend(Backend):
         self.disable_websocket = disable_websocket
         self.websocket_thread = None
         self._websocket_loop = None
+        self._service_registry_thread = None
         self.bind_address = bind_address
 
         if resource_dirs:
@@ -327,6 +328,10 @@ class HttpBackend(Backend):
         ):
             self._websocket_loop.stop()
             self.logger.info('HTTP websocket service terminated')
+
+        if self._service_registry_thread and self._service_registry_thread.is_alive():
+            self._service_registry_thread.join(timeout=5)
+            self._service_registry_thread = None
 
     def _acquire_websocket_lock(self, ws):
         try:
@@ -453,13 +458,15 @@ class HttpBackend(Backend):
 
         return proc
 
-    def run(self):
-        super().run()
+    def _register_service(self):
         try:
             self.register_service(port=self.port)
         except Exception as e:
             self.logger.warning('Could not register the Zeroconf service')
             self.logger.exception(e)
+
+    def run(self):
+        super().run()
 
         if not self.disable_websocket:
             self.logger.info('Initializing websocket interface')
@@ -482,6 +489,9 @@ class HttpBackend(Backend):
                 + 'no uwsgi_args were provided. Make sure that you run another external service'
                 + 'for the webserver (e.g. nginx)'
             )
+
+        self._service_registry_thread = threading.Thread(target=self._register_service)
+        self._service_registry_thread.start()
 
 
 # vim:sw=4:ts=4:et:
