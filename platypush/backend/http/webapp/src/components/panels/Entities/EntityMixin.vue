@@ -20,6 +20,16 @@ export default {
       type: Object,
       required: true,
     },
+
+    children: {
+      type: Object,
+      default: () => {},
+    },
+
+    level: {
+      type: Number,
+      default: 0,
+    },
   },
 
   data() {

@@ -49,10 +49,12 @@
                   v-for="entity in group.entities" :key="entity.id">
                 <Entity
                   :value="entity"
-                  @input="onEntityInput"
+                  :children="childrenByParentId(entity.id)"
+                  @input="onEntityInput(entity)"
                   :error="!!errorEntities[entity.id]"
                   :loading="!!loadingEntities[entity.id]"
                   @loading="loadingEntities[entity.id] = $event"
+                  v-if="!entity.parent_id"
                 />
               </div>
             </div>
@@ -135,35 +137,41 @@ export default {
     },
 
     displayGroups() {
-      return Object.entries(this.entityGroups[this.selector.grouping]).filter(
-        (entry) => entry[1].filter(
-          (e) => !!this.selector.selectedEntities[e.id]
-        ).length > 0
-      ).sort((a, b) => a[0].localeCompare(b[0])).map(
-        ([grouping, entities]) => {
-          return {
-            name: grouping,
-            entities: entities.filter(
-              (e) => e.id in this.selector.selectedEntities
-            ),
+      return Object.entries(this.entityGroups[this.selector.grouping]).
+        filter(
+          (entry) => entry[1].filter(
+            (e) =>
+              !!this.selector.selectedEntities[e.id] && e.parent_id == null
+          ).length > 0
+        ).
+        map(
+          ([grouping, entities]) => {
+            return {
+              name: grouping,
+              entities: entities.filter(
+                (e) => e.id in this.selector.selectedEntities
+              ),
+            }
           }
-        }
-      )
+        ).
+        sort((a, b) => a.name.localeCompare(b.name))
     },
   },
 
   methods: {
     groupEntities(attr) {
-      return Object.values(this.entities).reduce((obj, entity) => {
-        const entities = obj[entity[attr]] || {}
-        entities[entity.id] = entity
+      return Object.values(this.entities).
+        filter((entity) => entity.parent_id == null).
+        reduce((obj, entity) => {
+          const entities = obj[entity[attr]] || {}
+          entities[entity.id] = entity
 
-        obj[entity[attr]] = Object.values(entities).sort((a, b) => {
-            return a.name.localeCompare(b.name)
-          })
+          obj[entity[attr]] = Object.values(entities).sort((a, b) => {
+              return a.name.localeCompare(b.name)
+            })
 
-        return obj
-      }, {})
+          return obj
+        }, {})
     },
 
     async refresh(group) {
@@ -221,6 +229,15 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+
+    childrenByParentId(parentId) {
+      return Object.values(this.entities).
+        filter((entity) => entity.parent_id === parentId).
+        reduce((obj, entity) => {
+          obj[entity.id] = entity
+          return obj
+        }, {})
     },
 
     clearEntityTimeouts(entityId) {

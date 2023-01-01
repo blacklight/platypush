@@ -1,12 +1,33 @@
 <template>
-  <div class="row item entity-container" :class="{blink: justUpdated}">
-    <component :is="component"
-      :value="value"
-      :loading="loading"
-      :error="error || value?.reachable == false"
-      @input="$emit('input', $event)"
-      @loading="$emit('loading', $event)"
-    />
+  <div class="entity-container-wrapper"
+      :class="{'with-children': hasChildren, collapsed: isCollapsed}">
+    <div class="row item entity-container"
+        :class="{blink: justUpdated, 'with-children': hasChildren, collapsed: isCollapsed}">
+      <div class="adjuster" :class="{'col-12': !hasChildren, 'col-11': hasChildren}">
+        <component :is="component"
+          :value="value"
+          :loading="loading"
+          :error="error || value?.reachable == false"
+          @input="$emit('input', $event)"
+          @loading="$emit('loading', $event)"
+        />
+      </div>
+
+      <div class="col-1 collapse-toggler" @click.stop="collapsed = !collapsed" v-if="hasChildren">
+        <i class="fas"
+          :class="{'fa-chevron-down': isCollapsed, 'fa-chevron-up': !isCollapsed}" />
+      </div>
+    </div>
+
+    <div class="children" v-if="!isCollapsed">
+      <div class="child" v-for="entity in computedChildren" :key="entity.id">
+        <Entity
+         :value="entity"
+         :loading="loading"
+         :level="level + 1"
+         @input="$emit('input', entity)" />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -22,8 +43,26 @@ export default {
   data() {
     return {
       component: null,
+      collapsed: true,
       justUpdated: false,
     }
+  },
+
+  computed: {
+    computedChildren() {
+      return Object.values(this.children || {}).filter((child) => child)
+    },
+
+    hasChildren() {
+      return !!this.computedChildren.length
+    },
+
+    isCollapsed() {
+      if (!this.hasChildren)
+        return true
+
+      return this.collapsed
+    },
   },
 
   methods: {
@@ -68,10 +107,47 @@ export default {
 <style lang="scss" scoped>
 @import "common";
 
+.entity-container-wrapper {
+  &.with-children:not(.collapsed) {
+    box-shadow: 0 3px 4px 0 $default-shadow-color;
+  }
+}
+
 .entity-container {
   width: 100%;
+  display: flex;
+  align-items: center;
   position: relative;
   padding: 0 !important;
+  border-bottom: $default-border-3;
+
+  &.with-children:not(.collapsed) {
+    background: $selected-bg;
+    font-weight: bold;
+    box-shadow: 0 0 3px 2px $default-shadow-color;
+  }
+
+  &:hover {
+    background: $hover-bg;
+  }
+
+  .collapse-toggler {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    min-height: 3em;
+    margin-left: 0;
+    cursor: pointer;
+
+    &:hover {
+      color: $default-hover-fg;
+    }
+  }
+
+  .adjuster {
+    cursor: pointer;
+  }
 }
 
 .blink {
