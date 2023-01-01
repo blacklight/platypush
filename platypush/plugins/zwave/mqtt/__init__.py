@@ -520,25 +520,56 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
 
         assert values, f'No such value: {value_id or value_label}'
         value = values[0]
-
-        if value.get('property_id') == 'targetValue':
-            cur_value_id = '-'.join(
-                value['value_id'].split('-')[:-1] + ['currentValue']
-            )
-            cur_value = (
-                self._nodes_cache['by_id'][value['node_id']]
-                .get('values', {})
-                .get(cur_value_id)
-            )
-            if cur_value:
-                value['data'] = cur_value['data']
-
         self._values_cache['by_id'][value['id']] = value
         if value['label']:
             self._values_cache['by_label'][value['label']] = value
 
-        self.publish_entities([value])  # type: ignore
+        self.publish_entities([self._to_current_value(value)])  # type: ignore
         return value
+
+    @staticmethod
+    def _is_target_value(value: Mapping):
+        return value.get('property_id') in {'targetValue', 'targetColor'}
+
+    @staticmethod
+    def _is_current_value(value: Mapping):
+        return value.get('property_id') in {'currentValue', 'currentColor'}
+
+    def _to_current_value(self, value: dict) -> dict:
+        return self._get_associated_value(value, 'current')
+
+    def _to_target_value(self, value: dict) -> dict:
+        return self._get_associated_value(value, 'target')
+
+    def _get_associated_value(self, value: dict, target: str) -> dict:
+        check_func = (
+            self._is_target_value if target == 'current' else self._is_current_value
+        )
+
+        if not check_func(value):
+            return value
+
+        replace_args = (
+            ('target', 'current') if target == 'current' else ('current', 'target')
+        )
+
+        associated_value_id = '-'.join(
+            value['value_id'].split('-')[:-1]
+            + [value['value_id'].split('-')[-1].replace(*replace_args)]
+        )
+
+        associated_value = self._values_cache['by_id'].get(
+            associated_value_id,
+            self._nodes_cache['by_id']
+            .get(value['node_id'], {})
+            .get('values', {})
+            .get(associated_value_id),
+        )
+
+        if associated_value:
+            value = associated_value
+
+        return value.copy()
 
     @staticmethod
     def _matches_classes(value: Mapping, *names: str):
@@ -619,17 +650,8 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             and value.get('type') == 'Decimal'
         )
 
-    def _to_entity_args(self, value: Mapping) -> dict:
-        if value['id'].endswith('-targetValue'):
-            current_value_id = '-'.join(value['id'].split('-')[:-1] + ['currentValue'])
-            value = {
-                **value,
-                'id': current_value_id,
-                'label': 'Value',
-                'is_read_only': False,
-                'is_write_only': False,
-            }
-
+    def _to_entity_args(self, value: dict) -> dict:
+        value = self._to_current_value(value)
         args = {
             'id': value['id'],
             'name': value.get('label'),
@@ -642,12 +664,26 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             args['updated_at'] = value['last_update']
         return args
 
-    def transform_entities(self, values: Iterable[Mapping]):
+    def transform_entities(self, values: Iterable[dict]):
         entities = []
 
         for value in values:
             if not value or self._matches_classes(value, *self._ignored_entity_classes):
                 continue
+
+            value = value.copy()
+            current_value = target_value = None
+            if self._is_current_value(value):
+                current_value = value
+                target_value = self._to_target_value(value)
+            elif self._is_target_value(value):
+                current_value = self._to_current_value(value)
+                target_value = value
+
+            if current_value and target_value:
+                value = self._merge_current_and_target_values(
+                    [current_value, target_value]
+                )[0]
 
             entity_type = None
             entity_args = self._to_entity_args(value)
@@ -720,39 +756,51 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             entity.parent = parent
             entity.reachable = parent.reachable
 
-    @staticmethod
-    def _merge_current_and_target_values(values: Iterable[dict]) -> List[dict]:
+    @classmethod
+    def _merge_current_and_target_values(cls, values: Iterable[dict]) -> List[dict]:
         values_by_id = OrderedDict({v.get('id'): v for v in values})
 
         new_values = OrderedDict()
         for value in values:
+            value = value.copy()
             value_id = value.get('id')
             if not value_id:
                 continue
 
             associated_value_id = None
             associated_value = None
+            associated_property_id = None
+            current_property_id = None
+            current_value = None
             value_id_prefix = '-'.join(value_id.split('-')[:-1])
 
-            if value_id.endswith('-currentValue'):
-                associated_value_id = value_id_prefix + '-targetValue'
-            elif value_id.endswith('-targetValue'):
-                associated_value_id = value_id_prefix + '-currentValue'
-            if associated_value_id:
+            if cls._is_current_value(value):
+                associated_property_id = value['property_id'].replace(
+                    'current', 'target'
+                )
+                current_property_id = value['property_id']
+                current_value = value
+            elif cls._is_target_value(value):
+                associated_property_id = value['property_id'].replace(
+                    'target', 'current'
+                )
+                current_property_id = associated_property_id
+
+            if associated_property_id:
+                associated_value_id = f'{value_id_prefix}-{associated_property_id}'
                 associated_value = values_by_id.pop(associated_value_id, None)
 
-            if associated_value:
+                if cls._is_target_value(value):
+                    current_value = associated_value
+
+            if current_value and associated_value and current_property_id:
                 value = value.copy()
-                value_id = value_id_prefix + '-currentValue'
-                value['data'] = (
-                    value.get('data')
-                    if value.get('id', '').endswith('-currentValue')
-                    else associated_value.get('data')
-                )
+                value_id = f'{value_id_prefix}-{current_property_id}'
+                value['data'] = current_value.get('data')
                 value['id'] = value['value_id'] = value['id_on_network'] = value_id
                 value['is_read_only'] = value['is_write_only'] = False
                 value['label'] = 'Value'
-                value['property_id'] = 'currentValue'
+                value['property_id'] = current_property_id
                 value['last_update'] = (
                     max(
                         value.get('last_update') or 0,
@@ -800,17 +848,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
                 ) or (filter_callback and not filter_callback(value)):
                     continue
 
-                value_id = value['id_on_network']
-                if value_id.split('-').pop() == 'targetValue':
-                    value_id = '-'.join(value_id.split('-')[:-1]) + '-currentValue'
-                    cur_value = (
-                        self._nodes_cache['by_id'][value['node_id']]
-                        .get('values', {})
-                        .get(value_id)
-                    )
-                    if cur_value:
-                        value['data'] = cur_value['data']
-
+                value = self._to_current_value(value)
                 values[value['id_on_network']] = value
 
         entity_values = self._merge_current_and_target_values(values.values())
@@ -1419,11 +1457,6 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         if args:
             value_id = args[0]
 
-        id_ = str(value_id or id_on_network or '')
-        if id_.endswith('-currentValue'):
-            id_ = '-'.join(id_.split('-')[:-1] + ['targetValue'])
-            value_id = id_on_network = id_  # type: ignore
-
         value = self._get_value(
             value_id=value_id,
             value_label=value_label,
@@ -1433,6 +1466,9 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             **kwargs,
         )
 
+        # Convert to target value if the value is in current value format,
+        # as that would usually be the writeable attribute
+        value = self._to_target_value(value)
         self._api_request(
             'writeValue',
             {
