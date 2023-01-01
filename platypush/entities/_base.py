@@ -112,9 +112,7 @@ if 'entity' not in Base.metadata:
             return val
 
         def to_json(self) -> dict:
-            obj = {col.key: self._serialize_value(col) for col in self.columns}
-            obj['children_ids'] = [e.id for e in self.children]
-            return obj
+            return {col.key: self._serialize_value(col) for col in self.columns}
 
         def __repr__(self):
             return str(self)
