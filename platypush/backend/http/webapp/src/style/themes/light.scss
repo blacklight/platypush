@@ -88,7 +88,7 @@ $disabled-fg: rgb(155, 155, 155);
 /// Navigator
 $nav-bg: white !default;
 $nav-fg: #5a5e5b !default;
-$nav-toggler-bg: rgb(235, 235, 235) !default;
+$nav-toggler-bg: linear-gradient(0deg, #c0e8e4, #e4f8f4) !default;
 $nav-toggler-collapsed-bg: $nav-bg !default;
 $nav-toggler-collapsed-mobile-bg: #3c3c3c !default;
 $nav-toggler-collapsed-mobile-fg: white !default;
