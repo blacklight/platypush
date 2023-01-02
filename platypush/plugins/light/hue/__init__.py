@@ -1177,8 +1177,10 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
             for attr, value in (light.data or {}).items():
                 setattr(light, attr, value)
 
-            del light.external_id
-            del light.data
+            if light.external_id is not None:
+                del light.external_id
+            if light.data is not None:
+                del light.data
 
         return lights
 
