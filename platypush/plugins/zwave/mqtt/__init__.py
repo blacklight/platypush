@@ -30,6 +30,7 @@ from platypush.entities.electricity import (
 )
 from platypush.entities.humidity import HumiditySensor
 from platypush.entities.illuminance import IlluminanceSensor
+from platypush.entities.lights import Light
 from platypush.entities.sensors import BinarySensor, EnumSensor, NumericSensor
 from platypush.entities.switches import EnumSwitch, Switch
 from platypush.entities.temperature import TemperatureSensor
@@ -589,6 +590,16 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         return value.get('type') == 'List' and not value.get('is_read_only')
 
     @classmethod
+    def _is_light(cls, value: Mapping):
+        return (
+            cls._matches_classes(value, 'color')
+            and not {'red', 'green', 'blue'}.difference(
+                set(value.get('value', {}).keys())
+            )
+            and not value.get('is_read_only')
+        )
+
+    @classmethod
     def _get_sensor_args(
         cls, value: Mapping
     ) -> Tuple[Optional[Type], Optional[Mapping]]:
@@ -689,7 +700,13 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             entity_args = self._to_entity_args(value)
             sensor_type, sensor_args = self._get_sensor_args(value)
 
-            if self._is_dimmer(value):
+            if self._is_light(value):
+                entity_type = Light
+                color = value['value']
+                entity_args['red'] = color['red']
+                entity_args['green'] = color['green']
+                entity_args['blue'] = color['blue']
+            elif self._is_dimmer(value):
                 entity_type = Dimmer
                 entity_args['value'] = value['data']
                 entity_args['min'] = value['min']
@@ -1485,6 +1502,15 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             data,
             **kwargs,
         )
+
+    @action
+    def set_lights(self, lights, **kwargs):
+        """
+        Set the state for one or more Z-Wave lights.
+        """
+        lights = [lights] if isinstance(lights, str) else lights
+        for light in lights:
+            self.set_value(light, kwargs)
 
     @action
     def set_value_label(self, **_):

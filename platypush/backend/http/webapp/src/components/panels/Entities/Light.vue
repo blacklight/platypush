@@ -88,11 +88,15 @@ export default {
       if (this.value.meta?.icon?.color)
         return this.value.meta.icon.color
 
+      if (this.value.red && this.value.green && this.value.blue)
+        return ['red', 'green', 'blue'].map((c) => this.value[c])
+
+      if (!this.colorConverter)
+        return
+
       if (
-        !this.colorConverter || (
-          this.value.hue == null &&
-          (this.value.x == null || this.value.y == null)
-        )
+        this.value.hue == null &&
+        (this.value.x == null || this.value.y == null)
       )
         return
 
@@ -150,11 +154,18 @@ export default {
         const rgb = this.colorConverter.hexToRgb(attrs.color)
         if (this.value.x != null && this.value.y != null) {
           attrs.xy = this.colorConverter.rgbToXY(...rgb)
-          delete attrs.color
         } else if (this.value.hue != null) {
           [attrs.hue, attrs.saturation, attrs.brightness] = this.colorConverter.rgbToHsl(...rgb)
-          delete attrs.color
+        } else if (
+          this.value.red != null && this.value.green != null && this.value.blue != null
+        ) {
+          [attrs.red, attrs.green, attrs.blue] = [rgb.red, rgb.green, rgb.blue]
+        } else {
+          console.warn('Unrecognized color format')
+          console.warn(attrs.color)
         }
+
+        delete attrs.color
       }
 
       this.execute({
