@@ -236,7 +236,11 @@ export default {
 
     childrenByParentId(parentId) {
       return Object.values(this.entities).
-        filter((entity) => entity.parent_id === parentId).
+        filter(
+          (entity) => entity
+            && entity.parent_id === parentId
+            && !entity.is_configuration
+        ).
         reduce((obj, entity) => {
           obj[entity.id] = entity
           return obj
