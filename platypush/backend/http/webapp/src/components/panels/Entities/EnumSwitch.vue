@@ -18,7 +18,7 @@
             :class="{'fa-angle-up': expanded, 'fa-angle-down': !expanded}" />
         </button>
         <span class="value"
-          v-text="value.value"
+          v-text="value.values[value.value] || value.value"
           v-if="value?.value != null" />
       </div>
     </div>
@@ -26,9 +26,15 @@
     <div class="body" v-if="expanded" @click.stop="prevent">
       <div class="row">
         <div class="input">
-          <select @input="setValue" ref="values">
+          <select @input="setValue" ref="values" :disabled="loading">
             <option value="" v-if="value.is_write_only" selected>--</option>
-            <option :value="v" v-for="v in value.values" :key="v" v-text="v" />
+            <option
+              :value="value_id"
+              :selected="value_id == value.value"
+              :key="value_id"
+              v-for="text, value_id in value.values"
+              v-text="text"
+            />
           </select>
         </div>
       </div>
@@ -53,7 +59,7 @@ export default {
 
   computed: {
     hasValues() {
-      return !!this?.value?.values?.length
+      return !!Object.values(this?.value?.values || {}).length
     }
   },
 
@@ -108,8 +114,13 @@ export default {
   }
 
   .body {
+    padding: 1em !important;
+    display: flex;
+
     .row {
+      width: 100%;
       display: flex;
+      text-align: center;
 
       .icon {
         width: 2em;
@@ -117,7 +128,7 @@ export default {
       }
 
       .input {
-        width: calc(100% - 2em);
+        width: 100%;
 
         select {
           width: 100%;
