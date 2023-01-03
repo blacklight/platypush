@@ -53,6 +53,7 @@ if 'entity' not in Base.metadata:
         is_read_only = Column(Boolean, default=False)
         is_write_only = Column(Boolean, default=False)
         is_query_disabled = Column(Boolean, default=False)
+        is_configuration = Column(Boolean, default=False)
         created_at = Column(
             DateTime(timezone=False), default=datetime.utcnow(), nullable=False
         )
