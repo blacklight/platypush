@@ -210,9 +210,12 @@ export default {
   .body {
     .row {
       display: flex;
+      align-items: center;
+      padding: 0.5em;
 
       .icon {
         width: 2em;
+        margin-left: -0.5em;
         text-align: center;
       }
 
