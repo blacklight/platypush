@@ -15,9 +15,12 @@
     </header>
 
     <div class="groups-canvas">
-      <EntityModal :entity="entities[modalEntityId]"
-        :visible="modalVisible" @close="onEntityModal"
-        v-if="modalEntityId"
+      <EntityModal
+        :entity="entities[modalEntityId]"
+        :visible="modalVisible"
+        :config-values="configValuesByParentId(modalEntityId)"
+        @close="onEntityModal"
+        v-if="modalEntityId && entities[modalEntityId]"
       />
 
       <NoItems v-if="!Object.keys(displayGroups || {})?.length">No entities found</NoItems>
@@ -234,6 +237,19 @@ export default {
     childrenByParentId(parentId) {
       return Object.values(this.entities).
         filter((entity) => entity.parent_id === parentId).
+        reduce((obj, entity) => {
+          obj[entity.id] = entity
+          return obj
+        }, {})
+    },
+
+    configValuesByParentId(parentId) {
+      return Object.values(this.entities).
+        filter(
+            (entity) => entity
+              && entity.parent_id === parentId
+              && entity.is_configuration
+        ).
         reduce((obj, entity) => {
           obj[entity.id] = entity
           return obj

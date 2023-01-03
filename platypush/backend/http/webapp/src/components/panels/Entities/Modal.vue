@@ -1,5 +1,5 @@
 <template>
-  <Modal :visible="visible" class="entity-modal" :title="entity.name || entity.external_id">
+  <Modal :visible="visible" class="entity-modal" :title="entity.name || entity.external_id" v-if="entity">
     <ConfirmDialog ref="deleteConfirmDiag" title="Confirm entity deletion" @input="onDelete">
       Are you <b>sure</b> that you want to delete this entity? <br/><br/>
       Note: you should only delete an entity if its plugin has been disabled
@@ -101,6 +101,30 @@
         </button>
       </div>
     </div>
+
+    <div class="config-container"
+      v-if="computedConfig.length">
+      <div class="title"
+        @click="configCollapsed = !configCollapsed">
+       <div class="col-11">
+         <i class="fas fa-screwdriver-wrench" /> &nbsp;
+         Configuration
+       </div>
+
+       <div class="col-1 pull-right">
+         <i class="fas"
+           :class="{'fa-chevron-down': configCollapsed, 'fa-chevron-up': !configCollapsed}" />
+       </div>
+      </div>
+
+      <div class="entities" v-if="!configCollapsed">
+        <Entity
+         v-for="entity in computedConfig"
+         :key="entity.id"
+         :value="entity"
+         @input="$emit('input', entity)" />
+      </div>
+    </div>
   </Modal>
 </template>
 
@@ -111,11 +135,12 @@ import ConfirmDialog from "@/components/elements/ConfirmDialog";
 import EditButton from "@/components/elements/EditButton";
 import NameEditor from "@/components/elements/NameEditor";
 import Utils from "@/Utils";
-import meta from './meta.json'
+import Entity from "./Entity";
+import meta from './meta.json';
 
 export default {
-  name: "Entity",
-  components: {Modal, EditButton, NameEditor, Icon, ConfirmDialog},
+  name: "EntityModal",
+  components: {Entity, Modal, EditButton, NameEditor, Icon, ConfirmDialog},
   mixins: [Utils],
   emits: ['input', 'loading'],
   props: {
@@ -128,6 +153,19 @@ export default {
       type: Boolean,
       default: false,
     },
+
+    configValues: {
+      type: Object,
+      default: () => {},
+    },
+  },
+
+  computed: {
+    computedConfig() {
+      return Object.values(this.configValues).sort(
+        (a, b) => (a.name || '').localeCompare(b.name || '')
+      )
+    },
   },
 
   data() {
@@ -135,6 +173,7 @@ export default {
       loading: false,
       editName: false,
       editIcon: false,
+      configCollapsed: true,
     }
   },
 
@@ -211,10 +250,11 @@ export default {
 <style lang="scss" scoped>
 :deep(.modal) {
   .body {
-    padding: .5em !important;
+    padding: 0;
 
     .table-row {
       box-shadow: none;
+      padding: 0.5em;
     }
   }
 
@@ -254,6 +294,24 @@ export default {
     color: $error-fg;
     button {
       color: $error-fg;
+    }
+  }
+
+  .config-container {
+    margin: 0;
+
+    .title {
+      display: flex;
+      padding: 1em;
+      text-transform: uppercase;
+      letter-spacing: 0.033em;
+      border-top: $default-border;
+      box-shadow: $border-shadow-bottom;
+      cursor: pointer;
+
+      &:hover {
+        background: $hover-bg;
+      }
     }
   }
 }
