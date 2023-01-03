@@ -82,7 +82,6 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     _ignored_entity_classes = {
         'application_status',
         'association_command_configuration',
-        'configuration',
         'controller_replication',
         'crc16_encap',
         'firmware_update_md',
@@ -600,6 +599,10 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         )
 
     @classmethod
+    def _is_configuration_value(cls, value: Mapping):
+        return cls._matches_classes(value, 'configuration')
+
+    @classmethod
     def _get_sensor_args(
         cls, value: Mapping
     ) -> Tuple[Optional[Type], Optional[Mapping]]:
@@ -669,6 +672,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             'description': value.get('help'),
             'is_read_only': value.get('is_read_only'),
             'is_write_only': value.get('is_write_only'),
+            'is_configuration': self._is_configuration_value(value),
         }
 
         if value.get('last_update'):
