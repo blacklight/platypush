@@ -50,7 +50,7 @@ class HidDeviceSchema(Schema):
 
 class HidMonitoredDeviceSchema(HidDeviceSchema):
     notify_only_if_changed = fields.Boolean(
-        missing=True,
+        load_default=True,
         metadata={
             'description': 'If set to true (default), only changes in the '
             'values of the device will trigger events. So if you are e.g. '
@@ -60,7 +60,7 @@ class HidMonitoredDeviceSchema(HidDeviceSchema):
     )
 
     data_size = fields.Integer(
-        missing=64,
+        load_default=64,
         metadata={
             'description': 'How many bytes should be read from the device on '
             'each iteration (default: 64)',
@@ -68,7 +68,7 @@ class HidMonitoredDeviceSchema(HidDeviceSchema):
     )
 
     poll_seconds = fields.Float(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'How often we should wait before data reads '
             '(default: no wait)'
