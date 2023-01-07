@@ -30,6 +30,7 @@ Events
     platypush/events/gotify.rst
     platypush/events/gpio.rst
     platypush/events/gps.rst
+    platypush/events/hid.rst
     platypush/events/http.rst
     platypush/events/http.hook.rst
     platypush/events/http.rss.rst

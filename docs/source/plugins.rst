@@ -57,6 +57,7 @@ Plugins
     platypush/plugins/gpio.sensor.motion.pmw3901.rst
     platypush/plugins/gpio.zeroborg.rst
     platypush/plugins/graphite.rst
+    platypush/plugins/hid.rst
     platypush/plugins/http.request.rst
     platypush/plugins/http.request.rss.rst
     platypush/plugins/http.webpage.rst
