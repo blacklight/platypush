@@ -213,7 +213,6 @@ class HidPlugin(RunnablePlugin):
         for path in new_device_paths:
             device = scanned_devices[path]
             get_bus().post(HidDeviceConnectedEvent(**device))
-
             monitor_rule = self._get_monitor_rule(device)
             if monitor_rule:
                 self._register_device_monitor(device, monitor_rule)
@@ -227,7 +226,10 @@ class HidPlugin(RunnablePlugin):
         lost_device_paths = available_device_paths.difference(scanned_device_paths)
 
         for path in lost_device_paths:
-            get_bus().post(HidDeviceDisconnectedEvent(**self._available_devices[path]))
+            device = self._available_devices.get(path)
+            if device:
+                get_bus().post(HidDeviceDisconnectedEvent(**device))
+                self._unregister_device_monitor(device['path'])
 
     def _handle_device_events(self, scanned_devices: dict):
         """
