@@ -158,9 +158,10 @@ class HidPlugin(RunnablePlugin):
                     device = hid.Device(dev_def['vendor_id'], dev_def['product_id'])  # type: ignore
                 data = device.read(data_size)
             except Exception as e:
-                self.logger.warning(f'Read error from {path}: {e}')
+                if device:
+                    self.logger.warning(f'Read error from {path}: {e}')
                 device = None
-                wait()
+                sleep(5)
                 continue
 
             if not notify_only_if_changed or data != last_data:
