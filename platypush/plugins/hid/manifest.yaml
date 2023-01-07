@@ -1,0 +1,10 @@
+manifest:
+  events:
+    platypush.message.event.hid.HidDeviceConnectedEvent: when a device is connected
+    platypush.message.event.hid.HidDeviceDisconnectedEvent: when a previously available device is disconnected
+    platypush.message.event.hid.HidDeviceDataEvent: when a monitored device sends some data
+  install:
+    pip:
+      - hid
+  package: platypush.plugins.hid
+  type: plugin

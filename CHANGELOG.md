@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being
 reported only starting from v0.20.2.
 
+## [Unreleased]
+
+### Added
+
+- Added `hid` plugin to support discoverability and data interaction with
+  generic HID devices - like Bluetooth/USB peripherals, joysticks, dongles and
+  any other type of devices that supports the HID interface.
+
+### Fixed
+
+- Running the Zeroconf registration logic in another thread in `backend.http`,
+  so failures in the Zeroconf logic don't affect the startup of the web server.
+
 ## [0.24.4] - 2022-12-20
 
 ### Fixed
