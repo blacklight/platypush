@@ -52,6 +52,8 @@ class HidPlugin(RunnablePlugin):
           device is connected
         * :class:`platypush.message.event.hid.HidDeviceDisconnectedEvent` when
           a previously available device is disconnected
+        * :class:`platypush.message.event.hid.HidDeviceDataEvent` when a
+          monitored device sends some data
 
     """
 
