@@ -142,6 +142,7 @@ class HidPlugin(RunnablePlugin):
         path = dev_def['path']
         data_size = rule['data_size']
         poll_seconds = rule['poll_seconds']
+        notify_only_if_changed = rule['notify_only_if_changed']
         last_data = None
         self.logger.info(f'Starting monitor for device {path}')
 
@@ -162,7 +163,7 @@ class HidPlugin(RunnablePlugin):
                 wait()
                 continue
 
-            if len(data) and data != last_data:
+            if not notify_only_if_changed or data != last_data:
                 data_dump = ''.join(f'{x:02x}' for x in data)
                 get_bus().post(HidDeviceDataEvent(data=data_dump, **dev_def))
                 last_data = data

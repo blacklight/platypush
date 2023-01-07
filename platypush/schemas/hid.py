@@ -68,10 +68,10 @@ class HidMonitoredDeviceSchema(HidDeviceSchema):
     )
 
     poll_seconds = fields.Float(
-        missing=0.1,
+        missing=0,
         metadata={
-            'description': 'How often we should check this device for new data '
-            '(default: 0.1 seconds)'
+            'description': 'How often we should wait before data reads '
+            '(default: no wait)'
         },
     )
 
