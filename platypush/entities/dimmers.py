@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, Float
+from sqlalchemy import Column, Integer, ForeignKey, Float, String
 
 from platypush.common.db import Base
 
@@ -17,6 +17,7 @@ if 'dimmer' not in Base.metadata:
         max = Column(Float)
         step = Column(Float, default=1.0)
         value = Column(Float)
+        unit = Column(String)
 
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
