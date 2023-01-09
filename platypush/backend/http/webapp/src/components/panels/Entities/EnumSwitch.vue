@@ -32,7 +32,7 @@
               :value="value_id"
               :selected="value_id == value.value"
               :key="value_id"
-              v-for="text, value_id in value.values"
+              v-for="text, value_id in displayValues"
               v-text="text"
             />
           </select>
@@ -60,6 +60,16 @@ export default {
   computed: {
     hasValues() {
       return !!Object.values(this?.value?.values || {}).length
+    },
+
+    displayValues() {
+      if (this.value?.values instanceof Array)
+        return this.value.values.reduce((obj, value) => {
+          obj[value] = value
+          return obj
+        }, {})
+
+      return this.value?.values || {}
     }
   },
 
