@@ -3,9 +3,9 @@ import re
 import threading
 
 from queue import Queue
-from typing import Optional, List, Any, Dict, Union, Tuple
+from typing import Optional, List, Any, Dict, Type, Union, Tuple
 
-from platypush.entities import manages
+from platypush.entities import Entity, manages
 from platypush.entities.batteries import Battery
 from platypush.entities.devices import Device
 from platypush.entities.dimmers import Dimmer
@@ -180,6 +180,27 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             'devices_by_addr': {},
         }
 
+    @staticmethod
+    def _get_properties(device: dict) -> dict:
+        exposes = (device.get('definition') or {}).get('exposes', []).copy()
+        properties = {}
+
+        while exposes:
+            exposed = exposes.pop(0)
+            exposes += exposed.get('features', [])
+            if exposed.get('property'):
+                properties[exposed['property']] = exposed
+
+        return properties
+
+    @staticmethod
+    def _get_options(device: dict) -> dict:
+        return {
+            option['property']: option
+            for option in (device.get('definition') or {}).get('options', [])
+            if option.get('property')
+        }
+
     def transform_entities(self, devices):
         compatible_entities = []
         for dev in devices:
@@ -203,13 +224,16 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 )
             }
 
+            exposed = self._get_properties(dev)
+            options = self._get_options(dev)
             reachable = dev.get('supported', False)
+
             light_info = self._get_light_meta(dev)
-            switch_info = self._get_switch_meta(dev)
             dev_entities = [
-                *self._get_sensors(dev),
-                *self._get_dimmers(dev),
-                *self._get_enum_switches(dev),
+                *self._get_sensors(dev, exposed, options),
+                *self._get_dimmers(dev, exposed, options),
+                *self._get_switches(dev, exposed, options),
+                *self._get_enum_switches(dev, exposed, options),
             ]
 
             if light_info:
@@ -218,7 +242,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                         id=f'{dev["ieee_address"]}:light',
                         name='Light',
                         on=dev.get('state', {}).get('state')
-                        == switch_info.get('value_on'),
+                        == light_info.get('value_on'),
                         brightness_min=light_info.get('brightness_min'),
                         brightness_max=light_info.get('brightness_max'),
                         temperature_min=light_info.get('temperature_min'),
@@ -259,20 +283,6 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                         ),
                         description=dev_def.get('description'),
                         data=dev_info,
-                    )
-                )
-            elif switch_info and dev.get('state', {}).get('state') is not None:
-                dev_entities.append(
-                    Switch(
-                        id=f'{dev["ieee_address"]}:switch',
-                        name='Switch',
-                        state=dev.get('state', {}).get('state')
-                        == switch_info['value_on'],
-                        description=dev_def.get("description"),
-                        data=dev_info,
-                        is_read_only=switch_info['is_read_only'],
-                        is_write_only=switch_info['is_write_only'],
-                        is_query_disabled=switch_info['is_query_disabled'],
                     )
                 )
 
@@ -792,7 +802,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         kwargs = self._mqtt_args(**kwargs)
         device_info = self._get_device_info(device)
         if device_info:
-            device = device_info.get('friendly_name') or self._ieee_address(device_info)
+            device = device_info.get('friendly_name') or self._ieee_address(device_info)  # type: ignore
 
         if property:
             properties = self.publish(
@@ -935,20 +945,34 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         reply_topic = self._topic(device)
 
         if property:
-            msg[property] = value
+            dev_def = (
+                self._info.get('devices_by_addr', {}).get(device, {}).get('definition')
+                or {}
+            )
+
             stored_property = next(
                 iter(
                     exposed
-                    for exposed in (
-                        self._info.get('devices_by_addr', {})
-                        .get(device, {})
-                        .get('definition', {})
-                        .get('exposes', {})
-                    )
+                    for exposed in dev_def.get('exposes', {})
                     if exposed.get('property') == property
                 ),
                 None,
             )
+
+            if stored_property:
+                msg[property] = value
+            else:
+                stored_property = next(
+                    iter(
+                        option
+                        for option in dev_def.get('options', {})
+                        if option.get('property') == property
+                    ),
+                    None,
+                )
+
+                if stored_property:
+                    return self.device_set_option(device, property, value, **kwargs)
 
             if stored_property and self._is_write_only(stored_property):
                 # Don't wait for an update from a value that is not readable
@@ -1420,73 +1444,66 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         )
 
     @action
-    def on(self, device, *_, **__) -> dict:
+    def on(self, device, *_, **__):
         """
-        Implements :meth:`platypush.plugins.switch.plugin.SwitchPlugin.on` and turns on a Zigbee device with a writable
-        binary property.
+        Turn on/set to true a switch, a binary property or an option.
         """
-        switch_info = self._get_switch_info(device)
-        assert switch_info, '{} is not a valid switch'.format(device)
-        device = switch_info.get('friendly_name') or self._ieee_address(switch_info)
-        props = self.device_set(
-            device, switch_info['property'], switch_info['value_on']
+        switch = self._get_switch(device)
+        address, prop = self._ieee_address(str(switch.id), with_property=True)
+        self.device_set(
+            address, prop, switch.data.get('value_on', 'ON')
         ).output  # type: ignore[reportGeneralTypeIssues]
-        return self._properties_to_switch(
-            device=device, props=props, switch_info=switch_info
-        )
 
     @action
-    def off(self, device, *_, **__) -> dict:
+    def off(self, device, *_, **__):
         """
-        Implements :meth:`platypush.plugins.switch.plugin.SwitchPlugin.off` and turns off a Zigbee device with a
-        writable binary property.
+        Turn off/set to false a switch, a binary property or an option.
         """
-        switch_info = self._get_switch_info(device)
-        assert switch_info, '{} is not a valid switch'.format(device)
-        device = switch_info.get('friendly_name') or self._ieee_address(switch_info)
-        props = self.device_set(
-            device, switch_info['property'], switch_info['value_off']
+        switch = self._get_switch(device)
+        address, prop = self._ieee_address(str(switch.id), with_property=True)
+        self.device_set(
+            address, prop, switch.data.get('value_on', 'OFF')
         ).output  # type: ignore[reportGeneralTypeIssues]
-        return self._properties_to_switch(
-            device=device, props=props, switch_info=switch_info
-        )
 
     @action
-    def toggle(self, device, *_, **__) -> dict:
+    def toggle(self, device, *_, **__):
         """
-        Implements :meth:`platypush.plugins.switch.plugin.SwitchPlugin.toggle`
-        and toggles a Zigbee device with a writable binary property.
+        Toggles the state of a switch, a binary property or an option.
         """
-        switch_info = self._get_switch_info(device)
-        assert switch_info, '{} is not a valid switch'.format(device)
-        device = switch_info.get('friendly_name') or self._ieee_address(switch_info)
-        props = self.device_set(
-            device, switch_info['property'], switch_info['value_toggle']
+        switch = self._get_switch(device)
+        address, prop = self._ieee_address(str(switch.id), with_property=True)
+        self.device_set(
+            address,
+            prop,
+            switch.data.get(
+                'value_toggle',
+                'OFF' if switch.state == switch.data.get('value_on', 'ON') else 'ON',
+            ),
         ).output  # type: ignore[reportGeneralTypeIssues]
-        return self._properties_to_switch(
-            device=device, props=props, switch_info=switch_info
-        )
 
-    def _get_switch_info(self, device: str):
-        device = self._ieee_address(device)
-        switches_info = self._get_switches_info()
-        info = switches_info.get(device)
-        if info:
-            return info
+    def _get_switch(self, name: str) -> Switch:
+        address, prop = self._ieee_address(name, with_property=True)
+        all_switches = self._get_all_switches()
+        entity_id = f'{address}:state'
+        if prop:
+            entity_id = f'{address}:{prop}'
 
-        device_info = self._get_device_info(device)
-        if device_info:
-            device = device_info.get('friendly_name') or device_info['ieee_address']
-            return switches_info.get(device)
+        switch = all_switches.get(entity_id)
+        assert switch, f'No such entity ID: {entity_id}'
+        return switch
 
-    @staticmethod
-    def _properties_to_switch(device: str, props: dict, switch_info: dict) -> dict:
-        return {
-            'on': props[switch_info['property']] == switch_info['value_on'],
-            'friendly_name': device,
-            'name': device,
-            **props,
-        }
+    def _get_all_switches(self) -> Dict[str, Switch]:
+        devices = self.devices().output  # type: ignore[reportGeneralTypeIssues]
+        all_switches = {}
+
+        for device in devices:
+            exposed = self._get_properties(device)
+            options = self._get_options(device)
+            switches = self._get_switches(device, exposed, options)
+            for switch in switches:
+                all_switches[switch.id] = switch
+
+        return all_switches
 
     @staticmethod
     def _is_read_only(feature: dict) -> bool:
@@ -1530,142 +1547,158 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         return (dev, None) if with_property else dev
 
     @classmethod
-    def _get_switch_meta(cls, device_info: dict) -> dict:
-        exposes = (device_info.get('definition', {}) or {}).get('exposes', [])
-        for exposed in exposes:
-            for feature in exposed.get('features', []):
-                if (
-                    feature.get('property') == 'state'
-                    and feature.get('type') == 'binary'
-                    and 'value_on' in feature
-                    and 'value_off' in feature
-                ):
-                    return {
-                        'friendly_name': device_info.get('friendly_name'),
-                        'ieee_address': device_info.get('friendly_name'),
-                        'property': feature['property'],
-                        'value_on': feature['value_on'],
-                        'value_off': feature['value_off'],
-                        'value_toggle': feature.get('value_toggle', None),
-                        'is_read_only': cls._is_read_only(feature),
-                        'is_write_only': cls._is_write_only(feature),
-                        'is_query_disabled': cls._is_query_disabled(feature),
-                    }
-
-        return {}
-
-    @classmethod
-    def _get_sensors(cls, device_info: dict) -> List[Sensor]:
-        sensors = []
-        exposes = [
-            exposed
-            for exposed in (device_info.get('definition', {}) or {}).get('exposes', [])
-            if (exposed.get('property') and cls._is_read_only(exposed))
+    def _get_switches(
+        cls, device_info: dict, props: dict, options: dict
+    ) -> List[Switch]:
+        return [
+            cls._to_entity(
+                Switch,
+                device_info,
+                prop,
+                options=options,
+                state=device_info.get('state', {}).get(prop['property'])
+                == prop['value_on'],
+                data={
+                    'value_on': prop['value_on'],
+                    'value_off': prop['value_off'],
+                    'value_toggle': prop.get('value_toggle'),
+                },
+            )
+            for prop in [*props.values(), *options.values()]
+            if (
+                prop.get('type') == 'binary'
+                and 'value_on' in prop
+                and 'value_off' in prop
+                and not cls._is_read_only(prop)
+            )
         ]
 
-        for exposed in exposes:
+    @classmethod
+    def _get_sensors(
+        cls, device_info: dict, props: dict, options: dict
+    ) -> List[Sensor]:
+        sensors = []
+        properties = [
+            prop
+            for prop in [*props.values(), *options.values()]
+            if cls._is_read_only(prop)
+        ]
+
+        for prop in properties:
             entity_type = None
             sensor_args = {
-                'id': f'{device_info["ieee_address"]}:{exposed["property"]}',
-                'name': exposed.get('description', ''),
-                'value': device_info.get('state', {}).get(exposed['property']),
-                'description': exposed.get('description'),
-                'is_read_only': cls._is_read_only(exposed),
-                'is_write_only': cls._is_write_only(exposed),
-                'is_query_disabled': cls._is_query_disabled(exposed),
-                'data': device_info,
+                'value': device_info.get('state', {}).get(prop['property']),
             }
 
-            if exposed.get('type') == 'numeric':
+            if prop.get('type') == 'numeric':
                 sensor_args.update(
                     {
-                        'min': exposed.get('value_min'),
-                        'max': exposed.get('value_max'),
-                        'unit': exposed.get('unit'),
+                        'min': prop.get('value_min'),
+                        'max': prop.get('value_max'),
+                        'unit': prop.get('unit'),
                     }
                 )
 
-            if exposed.get('property') == 'battery':
+            if prop.get('property') == 'battery':
                 entity_type = Battery
-            elif exposed.get('property') == 'linkquality':
+            elif prop.get('property') == 'linkquality':
                 entity_type = LinkQuality
-            elif exposed.get('property') == 'current':
+            elif prop.get('property') == 'current':
                 entity_type = CurrentSensor
-            elif exposed.get('property') == 'energy':
+            elif prop.get('property') == 'energy':
                 entity_type = EnergySensor
-            elif exposed.get('property') == 'power':
+            elif prop.get('property') == 'power':
                 entity_type = PowerSensor
-            elif exposed.get('property') == 'voltage':
+            elif prop.get('property') == 'voltage':
                 entity_type = VoltageSensor
-            elif exposed.get('property', '').endswith('temperature'):
+            elif prop.get('property', '').endswith('temperature'):
                 entity_type = TemperatureSensor
-            elif re.search(r'(humidity|moisture)$', exposed.get('property' '')):
+            elif re.search(r'(humidity|moisture)$', prop.get('property' '')):
                 entity_type = HumiditySensor
-            elif re.search(r'(illuminance|luminosity)$', exposed.get('property' '')):
+            elif re.search(r'(illuminance|luminosity)$', prop.get('property' '')):
                 entity_type = IlluminanceSensor
-            elif exposed.get('type') == 'binary':
+            elif prop.get('type') == 'binary':
                 entity_type = BinarySensor
-                sensor_args['value'] = sensor_args['value'] == exposed.get(
+                sensor_args['value'] = sensor_args['value'] == prop.get(
                     'value_on', True
                 )
-            elif exposed.get('type') == 'enum':
+            elif prop.get('type') == 'enum':
                 entity_type = EnumSensor
-                sensor_args['values'] = exposed.get('values', [])
-            elif exposed.get('type') == 'numeric':
+                sensor_args['values'] = prop.get('values', [])
+            elif prop.get('type') == 'numeric':
                 entity_type = NumericSensor
 
             if entity_type:
-                sensors.append(entity_type(**sensor_args))
+                sensors.append(
+                    cls._to_entity(
+                        entity_type, device_info, prop, options=options, **sensor_args
+                    )
+                )
 
         return sensors
 
     @classmethod
-    def _get_dimmers(cls, device_info: dict) -> List[Dimmer]:
+    def _get_dimmers(
+        cls, device_info: dict, props: dict, options: dict
+    ) -> List[Dimmer]:
         return [
-            Dimmer(
-                id=f'{device_info["ieee_address"]}:{exposed["property"]}',
-                name=exposed.get('description', ''),
-                value=device_info.get('state', {}).get(exposed['property']),
-                min=exposed.get('value_min'),
-                max=exposed.get('value_max'),
-                unit=exposed.get('unit'),
-                description=exposed.get('description'),
-                is_read_only=cls._is_read_only(exposed),
-                is_write_only=cls._is_write_only(exposed),
-                is_query_disabled=cls._is_query_disabled(exposed),
-                data=device_info,
+            cls._to_entity(
+                Dimmer,
+                device_info,
+                prop,
+                options=options,
+                value=device_info.get('state', {}).get(prop['property']),
+                min=prop.get('value_min'),
+                max=prop.get('value_max'),
+                unit=prop.get('unit'),
             )
-            for exposed in (device_info.get('definition', {}) or {}).get('exposes', [])
+            for prop in [*props.values(), *options.values()]
             if (
-                exposed.get('property')
-                and exposed.get('type') == 'numeric'
-                and not cls._is_read_only(exposed)
-                and not cls._is_write_only(exposed)
+                prop.get('property')
+                and prop.get('type') == 'numeric'
+                and not cls._is_read_only(prop)
             )
         ]
 
     @classmethod
-    def _get_enum_switches(cls, device_info: dict) -> List[EnumSwitch]:
+    def _get_enum_switches(
+        cls, device_info: dict, props: dict, options: dict
+    ) -> List[EnumSwitch]:
         return [
-            EnumSwitch(
-                id=f'{device_info["ieee_address"]}:{exposed["property"]}',
-                name=exposed.get('description', ''),
-                value=device_info.get(exposed['property']),
-                values=exposed.get('values', []),
-                description=exposed.get('description'),
-                is_read_only=cls._is_read_only(exposed),
-                is_write_only=cls._is_write_only(exposed),
-                is_query_disabled=cls._is_query_disabled(exposed),
-                data=device_info,
+            cls._to_entity(
+                EnumSwitch,
+                device_info,
+                prop,
+                options=options,
+                value=device_info.get('state', {}).get(prop['property']),
+                values=prop.get('values', []),
             )
-            for exposed in (device_info.get('definition', {}) or {}).get('exposes', [])
+            for prop in [*props.values(), *options.values()]
             if (
-                exposed.get('property')
-                and exposed.get('access', 0) & 2
-                and exposed.get('type') == 'enum'
-                and exposed.get('values')
+                prop.get('access', 0) & 2
+                and prop.get('type') == 'enum'
+                and prop.get('values')
             )
         ]
+
+    @classmethod
+    def _to_entity(
+        cls,
+        entity_type: Type[Entity],
+        device_info: dict,
+        property: dict,
+        options: dict,
+        **kwargs,
+    ) -> Entity:
+        return entity_type(
+            id=f'{device_info["ieee_address"]}:{property["property"]}',
+            name=property.get('description', ''),
+            is_read_only=cls._is_read_only(property),
+            is_write_only=cls._is_write_only(property),
+            is_query_disabled=cls._is_query_disabled(property),
+            is_configuration=property['property'] in options,
+            **kwargs,
+        )
 
     @classmethod
     def _get_light_meta(cls, device_info: dict) -> dict:
@@ -1781,38 +1814,6 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 }
 
         return {}
-
-    def _get_switches_info(self) -> dict:
-        devices = self.devices().output  # type: ignore[reportGeneralTypeIssues]
-        switches_info = {}
-
-        for device in devices:
-            info = self._get_switch_meta(device)
-            if not info:
-                continue
-
-            switches_info[
-                device.get('friendly_name', device['ieee_address'] + ':switch')
-            ] = info
-
-        return switches_info
-
-    @property
-    def switches(self) -> List[dict]:
-        """
-        Implements the :class:`platypush.plugins.switch.SwitchPlugin.switches` property and returns the state of any
-        device on the Zigbee network identified as a switch (a device is identified as a switch if it exposes a writable
-        ``state`` property that can be set to ``ON`` or ``OFF``).
-        """
-        switches_info = self._get_switches_info()
-        return [
-            self._properties_to_switch(
-                device=name, props=switch, switch_info=switches_info[name]
-            )
-            for name, switch in self.devices_get(
-                list(switches_info.keys())
-            ).output.items()  # type: ignore[reportGeneralTypeIssues]
-        ]
 
     @action
     def set_lights(self, lights, **kwargs):
