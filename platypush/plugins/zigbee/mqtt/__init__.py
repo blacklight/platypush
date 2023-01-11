@@ -904,7 +904,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                 workers[device].join(timeout=kwargs.get('timeout'))
             except Exception as e:
                 self.logger.warning(
-                    'An error while getting the status of the device {}: {}'.format(
+                    'An error occurred while getting the status of the device {}: {}'.format(
                         device, str(e)
                     )
                 )

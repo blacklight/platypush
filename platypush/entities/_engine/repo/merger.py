@@ -51,6 +51,19 @@ class EntitiesMerger:
         processed_entities = []
         existing_entities.update(self._repo.get(session, entities, use_cache=False))
 
+        # Make sure that we have no duplicate entity keys in the current batch
+        entities = list(
+            {
+                **({e.entity_key: e for e in entities}),
+                **(
+                    {
+                        e.entity_key: e
+                        for e in {str(ee.id): ee for ee in entities if ee.id}.values()
+                    }
+                ),
+            }.values()
+        )
+
         # Retrieve existing records and merge them
         for entity in entities:
             key = entity.entity_key
@@ -109,6 +122,7 @@ class EntitiesMerger:
             else:
                 temp_entity = new_entities.get(parent.entity_key)
                 if temp_entity:
+                    self._remove_duplicate_children(entity, temp_entity)
                     parent = entity.parent = temp_entity
                 else:
                     new_entities[parent.entity_key] = parent
@@ -124,6 +138,34 @@ class EntitiesMerger:
             entity.parent_id = parent_id  # type: ignore
 
         return parent_id, parent
+
+    @staticmethod
+    def _remove_duplicate_children(entity: Entity, parent: Optional[Entity] = None):
+        if not parent:
+            return
+
+        # Make sure that an entity has no duplicate entity IDs among its
+        # children
+        existing_child_index_by_id = None
+        if entity.id:
+            try:
+                existing_child_index_by_id = [e.id for e in parent.children].index(
+                    entity.id
+                )
+                parent.children.pop(existing_child_index_by_id)
+            except ValueError:
+                pass
+
+        # Make sure that an entity has no duplicate entity keys among its
+        # children
+        existing_child_index_by_key = None
+        try:
+            existing_child_index_by_key = [e.entity_key for e in parent.children].index(
+                entity.entity_key
+            )
+            parent.children.pop(existing_child_index_by_key)
+        except ValueError:
+            pass
 
     @classmethod
     def _merge_columns(cls, entity: Entity, existing_entity: Entity) -> Entity:

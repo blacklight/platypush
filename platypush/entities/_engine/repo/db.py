@@ -83,8 +83,8 @@ class EntitiesDb:
         already been flushed.
         """
         # Index childrens by parent_id and by parent_key
-        children_by_parent_id = defaultdict(list)
-        children_by_parent_key = defaultdict(list)
+        children_by_parent_id = defaultdict(lambda: defaultdict(Entity))
+        children_by_parent_key = defaultdict(lambda: defaultdict(Entity))
         for entity in entities:
             parent_key = None
             parent_id = entity.parent_id
@@ -93,9 +93,9 @@ class EntitiesDb:
                 parent_key = entity.parent.entity_key
 
             if parent_id:
-                children_by_parent_id[parent_id].append(entity)
+                children_by_parent_id[parent_id][entity.entity_key] = entity
             if parent_key:
-                children_by_parent_key[parent_key].append(entity)
+                children_by_parent_key[parent_key][entity.entity_key] = entity
 
         # Find the root entities in the hierarchy (i.e. those that have a null
         # parent)
@@ -131,14 +131,17 @@ class EntitiesDb:
             # Index the children nodes by key
             children_to_process = {
                 e.entity_key: e
-                for e in children_by_parent_key.get(entity.entity_key, [])
+                for e in children_by_parent_key.get(entity.entity_key, {}).values()
             }
 
             # If this entity has already been persisted, add back its children
             # that haven't been updated, so we won't lose those connections
             if entity.id:
                 children_to_process.update(
-                    {e.entity_key: e for e in children_by_parent_id.get(entity.id, [])}
+                    {
+                        e.entity_key: e
+                        for e in children_by_parent_id.get(entity.id, {}).values()
+                    }
                 )
 
             # Add all the updated+inserted+existing children to the next layer
