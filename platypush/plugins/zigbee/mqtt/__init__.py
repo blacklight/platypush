@@ -1814,6 +1814,7 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
         Set the state for one or more Zigbee lights.
         """
         lights = [lights] if isinstance(lights, str) else lights
+        lights = [str(self._ieee_address(light)) for light in lights]
         devices = [self._get_device_info(light) for light in lights]
 
         for i, dev in enumerate(devices):
