@@ -13,7 +13,7 @@ class EntitiesQueue(Queue):
     upstream caller.
     """
 
-    def __init__(self, stop_event: Optional[Event] = None, timeout: float = 2.0):
+    def __init__(self, stop_event: Optional[Event] = None, timeout: float = 1.0):
         super().__init__()
         self._timeout = timeout
         self._should_stop = stop_event
