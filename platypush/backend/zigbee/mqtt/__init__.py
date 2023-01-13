@@ -246,7 +246,7 @@ class ZigbeeMqttBackend(MqttBackend):
                 self.bus.post(ZigbeeMqttDeviceConnectedEvent(device=name, **event_args))
 
             exposes = (device.get('definition', {}) or {}).get('exposes', [])
-            payload = self._plugin.build_device_get_request(exposes)
+            payload = self._plugin._build_device_get_request(exposes)
             if payload:
                 client.publish(
                     self.base_topic + '/' + name + '/get',

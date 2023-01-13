@@ -1,6 +1,6 @@
 <template>
   <div class="entity-container-wrapper"
-      :class="{'with-children': hasChildren, collapsed: isCollapsed}">
+      :class="{'with-children': hasChildren, collapsed: isCollapsed, hidden: !value?.name?.length}">
     <div class="row item entity-container"
         :class="{blink: justUpdated, 'with-children': hasChildren, collapsed: isCollapsed}">
       <div class="adjuster" :class="{'col-12': !hasChildren, 'col-11': hasChildren}">
