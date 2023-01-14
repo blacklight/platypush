@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
+import { defineAsyncComponent, shallowRef } from 'vue'
 import Utils from '@/Utils'
 import Loading from "@/components/Loading";
 import Row from "@/components/widgets/Row";
@@ -67,8 +67,10 @@ export default {
           style: row.attributes.style?.nodeValue,
           class: row.attributes.class?.nodeValue,
           widgets: [...row.children].map((el) => {
-            const component = defineAsyncComponent(
+            const component = shallowRef(
+              defineAsyncComponent(
                 () => import(`@/components/widgets/${el.nodeName}/Index`)
+              )
             )
 
             const style = el.attributes.style?.nodeValue

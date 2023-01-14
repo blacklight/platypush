@@ -8,7 +8,7 @@
 <script>
 import Utils from "@/Utils";
 import Loading from "@/components/Loading";
-import {defineAsyncComponent} from "vue";
+import { defineAsyncComponent, shallowRef } from "vue";
 
 export default {
   name: "Plugin",
@@ -41,7 +41,7 @@ export default {
       this.loading = true
 
       try {
-        this.component = defineAsyncComponent(() => import(`@/components/panels/${this.componentName}/Index`))
+        this.component = shallowRef(defineAsyncComponent(() => import(`@/components/panels/${this.componentName}/Index`)))
         this.$options.components[this.componentName] = this.component
         this.config = (await this.request('config.get_plugins'))?.[this.pluginName] || {}
       } finally {

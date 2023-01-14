@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import {defineAsyncComponent} from "vue";
+import { defineAsyncComponent, shallowRef } from "vue";
 import Utils from '@/Utils'
 import Loading from "@/components/Loading";
 import Nav from "@/components/Nav";
@@ -56,8 +56,8 @@ export default {
         return
       }
 
-      this.component = defineAsyncComponent(async () => { return comp })
-      this.$options.components[name] = this.component
+      this.component = shallowRef(defineAsyncComponent(async () => { return comp }))
+      this.$options.components[componentName] = this.component
     },
 
     async initConfig() {

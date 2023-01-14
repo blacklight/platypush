@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import { defineAsyncComponent } from 'vue'
+import { defineAsyncComponent, shallowRef } from 'vue'
 import EntityMixin from "./EntityMixin"
 
 export default {
@@ -96,8 +96,10 @@ export default {
           }
       )
 
-      this.component = defineAsyncComponent(
-        () => import(`@/components/panels/Entities/${type}`)
+      this.component = shallowRef(
+        defineAsyncComponent(
+          () => import(`@/components/panels/Entities/${type}`)
+        )
       )
     }
   },
