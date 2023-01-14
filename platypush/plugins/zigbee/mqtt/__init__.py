@@ -225,7 +225,9 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
 
             exposed = self._get_properties(dev)
             options = self._get_options(dev)
-            reachable = dev.get('supported', False)
+            reachable = dev.get('supported', False) and not dev.get(
+                'interviewing', False
+            )
 
             light_info = self._get_light_meta(dev)
             dev_entities = [
