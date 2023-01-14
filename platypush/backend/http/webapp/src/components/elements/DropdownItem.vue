@@ -31,9 +31,7 @@ export default {
       default: false,
     },
 
-    itemClass: {
-      type: String,
-    }
+    itemClass: {}
   },
 
   methods: {
