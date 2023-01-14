@@ -106,7 +106,7 @@ export default {
       const template = (await this.request('config.get_dashboard', { name: name }))
 
       if (!template) {
-        this.error(`Dashboard ${name} not found`)
+        this.notifyError(`Dashboard ${name} not found`)
       }
 
       this.parseTemplate(name, template)

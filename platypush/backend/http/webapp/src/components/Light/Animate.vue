@@ -229,7 +229,7 @@ export default {
       const eventType = this.animationRunning ? 'stop' : 'start'
       const selectedLights = Object.entries(this.selectedLights).filter((light) => light[1]).map((light) => light[0])
       if (!selectedLights.length) {
-        this.warn('No lights have been selected')
+        this.notifyWarning('No lights have been selected')
         return
       }
 
