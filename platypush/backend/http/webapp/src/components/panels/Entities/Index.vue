@@ -177,6 +177,23 @@ export default {
         }, {})
     },
 
+    _shouldSkipLoading(entity) {
+      const children = Object.values(this.childrenByParentId(entity.id))
+      const hasReadableChildren = children.filter((child) => {
+        return (
+          !child.is_configuration &&
+          !child.is_write_only &&
+          !child.is_query_disabled
+        )
+      }).length > 0
+
+      return (
+        entity.is_query_disabled ||
+        entity.is_write_only ||
+        (children.length && !hasReadableChildren)
+      )
+    },
+
     async refresh(group) {
       const entities = (group ? group.entities : this.entities) || {}
       const args = {}
@@ -187,7 +204,7 @@ export default {
         }, {}))
 
       this.loadingEntities = Object.values(entities).reduce((obj, entity) => {
-          if (entity.is_query_disabled || entity.is_write_only)
+          if (this._shouldSkipLoading(entity))
             return obj
 
           const self = this
