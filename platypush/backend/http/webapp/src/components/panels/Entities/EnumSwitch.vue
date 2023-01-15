@@ -51,12 +51,6 @@ export default {
   components: {EntityIcon},
   mixins: [EntityMixin],
 
-  data() {
-    return {
-      collapsed: true,
-    }
-  },
-
   computed: {
     hasValues() {
       return !!Object.values(this?.value?.values || {}).length

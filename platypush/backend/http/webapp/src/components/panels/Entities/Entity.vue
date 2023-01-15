@@ -46,7 +46,6 @@ export default {
   data() {
     return {
       component: null,
-      collapsed: true,
       justUpdated: false,
     }
   },
@@ -94,7 +93,7 @@ export default {
     toggleCollapsed() {
       this.collapsed = !this.collapsed
       // Propagate the collapsed state to the wrapped component if applicable
-      if ('collapsed' in this.instance)
+      if (this.instance)
         this.instance.collapsed = !this.instance.collapsed
     }
   },

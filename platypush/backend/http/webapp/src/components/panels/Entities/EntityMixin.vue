@@ -35,6 +35,7 @@ export default {
   data() {
     return {
       modalVisible: false,
+      collapsed: true,
     }
   },
 

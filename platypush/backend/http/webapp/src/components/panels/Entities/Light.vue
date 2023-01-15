@@ -78,7 +78,6 @@ export default {
 
   data() {
     return {
-      collapsed: true,
       colorConverter: null,
     }
   },

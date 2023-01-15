@@ -54,12 +54,6 @@ export default {
   components: {Slider, EntityIcon},
   mixins: [EntityMixin],
 
-  data() {
-    return {
-      collapsed: true,
-    }
-  },
-
   computed: {
     parsedValue() {
       if (this.value?.is_write_only || this.value?.value == null)
