@@ -22,7 +22,7 @@
       </div>
     </div>
 
-    <div class="children" v-if="!isCollapsed">
+    <div class="children fade-in" v-if="!isCollapsed">
       <div class="child" v-for="entity in computedChildren" :key="entity.id">
         <Entity
          :value="entity"

@@ -65,7 +65,7 @@ $modal-body-bg: white !default;
 ///// General-purpose colors
 
 /// Selected
-$selected-bg: #c8ffd0 !default;
+$selected-bg: linear-gradient(90deg, rgba(200,255,208,1) 0%, rgba(216,239,232,1) 100%) !default;
 $selected-fg: #32b646;
 $selected-border: 1px solid #98cfa0 !default;
 
