@@ -1,6 +1,6 @@
 <template>
   <div class="entity switch-container">
-    <div class="head" :class="{expanded: expanded}">
+    <div class="head" :class="{collapsed: collapsed}">
       <div class="col-1 icon">
         <EntityIcon
           :icon="this.value.meta?.icon || {}"
@@ -13,9 +13,9 @@
       </div>
 
       <div class="col-s-3 col-m-2 buttons pull-right">
-        <button @click.stop="expanded = !expanded" v-if="hasValues">
+        <button @click.stop="collapsed = !collapsed" v-if="hasValues">
           <i class="fas"
-            :class="{'fa-angle-up': expanded, 'fa-angle-down': !expanded}" />
+            :class="{'fa-angle-up': !collapsed, 'fa-angle-down': collapsed}" />
         </button>
         <span class="value"
           v-text="value.values[value.value] || value.value"
@@ -23,7 +23,7 @@
       </div>
     </div>
 
-    <div class="body" v-if="expanded" @click.stop="prevent">
+    <div class="body" v-if="!collapsed" @click.stop="prevent">
       <div class="row">
         <div class="input">
           <select @input="setValue" ref="values" :disabled="loading">
@@ -53,7 +53,7 @@ export default {
 
   data() {
     return {
-      expanded: false,
+      collapsed: true,
     }
   },
 

@@ -1,6 +1,6 @@
 <template>
   <div class="entity light-container">
-    <div class="head" :class="{expanded: expanded}">
+    <div class="head" :class="{collapsed: collapsed}">
       <div class="col-1 icon">
         <EntityIcon :icon="icon" :hasColorFill="true"
           :loading="loading" :error="error" />
@@ -14,14 +14,14 @@
         <ToggleSwitch :value="value.on" @input="toggle"
           @click.stop :disabled="loading || value.is_read_only" />
 
-        <button @click.stop="expanded = !expanded">
+        <button @click.stop="collapsed = !collapsed">
           <i class="fas"
-            :class="{'fa-angle-up': expanded, 'fa-angle-down': !expanded}" />
+            :class="{'fa-angle-up': !collapsed, 'fa-angle-down': collapsed}" />
         </button>
       </div>
     </div>
 
-    <div class="body" v-if="expanded" @click.stop="prevent">
+    <div class="body" v-if="!collapsed" @click.stop="prevent">
       <div class="row" v-if="cssColor">
         <div class="icon">
           <i class="fas fa-palette" />
@@ -78,7 +78,7 @@ export default {
 
   data() {
     return {
-      expanded: false,
+      collapsed: true,
       colorConverter: null,
     }
   },
