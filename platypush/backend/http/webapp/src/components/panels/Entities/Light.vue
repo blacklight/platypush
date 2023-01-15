@@ -192,6 +192,11 @@ export default {
 
     this.colorConverter = new ColorConverter(ranges)
   },
+
+  unmounted() {
+    if (this.colorConverter)
+      delete this.colorConverter
+  },
 }
 </script>
 
