@@ -4,16 +4,19 @@
     <div class="row item entity-container"
         :class="{blink: justUpdated, 'with-children': hasChildren, collapsed: isCollapsed}">
       <div class="adjuster" :class="{'col-12': !hasChildren, 'col-11': hasChildren}">
-        <component :is="component"
+        <component
+          :is="component"
           :value="value"
           :loading="loading"
+          ref="instance"
           :error="error || value?.reachable == false"
+          @click="onClick"
           @input="$emit('input', $event)"
           @loading="$emit('loading', $event)"
         />
       </div>
 
-      <div class="col-1 collapse-toggler" @click.stop="collapsed = !collapsed" v-if="hasChildren">
+      <div class="col-1 collapse-toggler" @click.stop="toggleCollapsed" v-if="hasChildren">
         <i class="fas"
           :class="{'fa-chevron-down': isCollapsed, 'fa-chevron-up': !isCollapsed}" />
       </div>
@@ -63,6 +66,10 @@ export default {
 
       return this.collapsed
     },
+
+    instance() {
+      return this.$refs.instance
+    },
   },
 
   methods: {
@@ -76,6 +83,20 @@ export default {
 
       return this.objectsEqual(a, b)
     },
+
+    onClick(event) {
+      if (event.target.classList.contains('label')) {
+        event.stopPropagation()
+        this.toggleCollapsed()
+      }
+    },
+
+    toggleCollapsed() {
+      this.collapsed = !this.collapsed
+      // Propagate the collapsed state to the wrapped component if applicable
+      if ('collapsed' in this.instance)
+        this.instance.collapsed = !this.instance.collapsed
+    }
   },
 
   mounted() {
@@ -149,6 +170,22 @@ export default {
 
   .adjuster {
     cursor: pointer;
+  }
+}
+
+:deep(.entity-container) {
+  .head {
+    .name {
+      display: inline-flex;
+
+      &:hover {
+        color: $hover-fg;
+      }
+    }
+
+    .icon:hover {
+      color: $hover-fg;
+    }
   }
 }
 

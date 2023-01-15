@@ -79,6 +79,7 @@ $active-glow-bg-2: #9cdfb0 !default;
 /// Hover
 $default-hover-fg: #35b870 !default;
 $default-hover-fg-2: #38cf80 !default;
+$hover-fg: $default-hover-fg !default;
 $hover-bg: linear-gradient(90deg, rgba(190,246,218,1) 0%, rgba(229,251,240,1) 100%) !default;
 $active-bg: #8fefb7 !default;
 
