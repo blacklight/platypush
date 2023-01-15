@@ -2,8 +2,10 @@
   <div class="entity switch-container">
     <div class="head">
       <div class="col-1 icon">
-        <EntityIcon :icon="value.meta?.icon || {}"
-          :loading="loading" :error="error" />
+        <EntityIcon
+          :entity="value"
+          :loading="loading"
+          :error="error" />
       </div>
 
       <div class="col-9 label">

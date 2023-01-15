@@ -3,7 +3,7 @@
     <div class="head" :class="{collapsed: collapsed}">
       <div class="col-1 icon">
         <EntityIcon
-          :icon="this.value.meta?.icon || {}"
+          :entity="value"
           :loading="loading"
           :error="error" />
       </div>

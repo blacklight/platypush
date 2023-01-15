@@ -4,7 +4,7 @@
       :style="colorFillStyle">
     <img src="@/assets/img/spinner.gif" class="loading" v-if="loading">
     <i class="fas fa-circle-exclamation error" v-else-if="error" />
-    <Icon v-bind="computedIcon" v-else />
+    <Icon v-bind="computedIconNormalized" v-else />
   </div>
 </template>
 
@@ -25,9 +25,14 @@ export default {
       default: false,
     },
 
-    icon: {
+    entity: {
       type: Object,
       required: true,
+    },
+
+    icon: {
+      type: Object,
+      default: () => {},
     },
 
     hasColorFill: {
@@ -44,16 +49,23 @@ export default {
   },
 
   computed: {
+    computedIcon() {
+      let icon = {...(this.entity?.meta?.icon || {})}
+      if (Object.keys(this.icon || {}).length)
+        icon = this.icon
+      return {...icon}
+    },
+
     colorFill() {
-      return (this.hasColorFill && this.icon.color) ? this.icon.color : null
+      return this.hasColorFill && this.computedIcon.color
     },
 
     colorFillStyle() {
       return this.colorFill && !this.error ? {'background': this.colorFill} : {}
     },
 
-    computedIcon() {
-      const icon = {...this.icon}
+    computedIconNormalized() {
+      const icon = {...this.computedIcon}
       if (this.colorFill)
         delete icon.color
       return icon

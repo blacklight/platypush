@@ -2,8 +2,12 @@
   <div class="entity light-container">
     <div class="head" :class="{collapsed: collapsed}">
       <div class="col-1 icon">
-        <EntityIcon :icon="icon" :hasColorFill="true"
-          :loading="loading" :error="error" />
+        <EntityIcon
+          :entity="value"
+          :icon="icon"
+          :hasColorFill="true"
+          :loading="loading"
+          :error="error" />
       </div>
 
       <div class="col-s-8 col-m-9 label">
