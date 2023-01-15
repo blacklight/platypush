@@ -76,6 +76,20 @@
       <div class="value" v-text="entity.description" />
     </div>
 
+    <div class="table-row" v-if="entity.external_url">
+      <div class="title">External URL</div>
+      <div class="value url">
+        <a :href="entity.external_url" target="_blank" :text="entity.external_url" />
+      </div>
+    </div>
+
+    <div class="table-row" v-if="entity.image_url">
+      <div class="title">Image</div>
+      <div class="value">
+        <img class="entity-image" :src="entity.image_url">
+      </div>
+    </div>
+
     <div v-for="value, attr in entity.data || {}" :key="attr">
       <div class="table-row" v-if="value != null">
         <div class="title" v-text="prettify(attr)" />
@@ -312,6 +326,16 @@ export default {
       &:hover {
         background: $hover-bg;
       }
+    }
+  }
+
+  .value {
+    &.url {
+      text-align: right;
+    }
+
+    .entity-image {
+      max-height: 5em;
     }
   }
 }

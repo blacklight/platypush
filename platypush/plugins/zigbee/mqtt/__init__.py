@@ -292,6 +292,8 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                     id=dev['ieee_address'],
                     name=dev.get('friendly_name'),
                     description=dev_def.get('description'),
+                    external_url=self._get_device_url(dev),
+                    image_url=self._get_image_url(dev),
                     reachable=reachable,
                 )
 
@@ -302,6 +304,22 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
             compatible_entities += dev_entities
 
         return super().transform_entities(compatible_entities)  # type: ignore
+
+    @staticmethod
+    def _get_device_url(device_info: dict) -> Optional[str]:
+        model = device_info.get('definition', {}).get('model')
+        if not model:
+            return
+
+        return f'https://www.zigbee2mqtt.io/devices/{model}.html'
+
+    @staticmethod
+    def _get_image_url(device_info: dict) -> Optional[str]:
+        model = device_info.get('definition', {}).get('model')
+        if not model:
+            return
+
+        return f'https://www.zigbee2mqtt.io/images/devices/{model}.jpg'
 
     def _get_network_info(self, **kwargs) -> dict:
         self.logger.info('Fetching Zigbee network information')

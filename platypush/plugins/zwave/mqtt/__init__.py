@@ -767,6 +767,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
                 parent = parent_entities[node_id] = Device(
                     id=node['device_id'],
                     name=node.get('name'),
+                    external_url=self._build_external_url(node),
                     reachable=(
                         node.get('is_available', False) and node.get('is_ready', False)
                     ),
@@ -776,6 +777,20 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             parent = parent_entities[node_id]
             entity.parent = parent
             entity.reachable = parent.reachable
+
+    @staticmethod
+    def _build_external_url(node: dict) -> Optional[str]:
+        manufacturer_id = node.get('manufacturer_id')
+        product_id = node.get('product_id')
+        product_type = node.get('product_type')
+        firmware_version = node.get('firmware_version', '0.0')
+        if not (manufacturer_id and product_id and product_type):
+            return
+
+        return (
+            'https://devices.zwave-js.io/?jumpTo='
+            f'{manufacturer_id}:{product_type}:{product_id}:{firmware_version}'
+        )
 
     @classmethod
     def _merge_current_and_target_values(cls, values: Iterable[dict]) -> List[dict]:
