@@ -1,4 +1,3 @@
-import logging
 from typing import Union
 
 from platypush.entities import Entity
@@ -17,9 +16,6 @@ class EntityUpdateEvent(EntityEvent):
     This event is triggered whenever an entity of any type (a switch, a light,
     a sensor, a media player etc.) updates its state.
     """
-
-    def __init__(self, *args, logging_level=logging.DEBUG, **kwargs):
-        super().__init__(*args, logging_level=logging_level, **kwargs)
 
 
 class EntityDeleteEvent(EntityEvent):
