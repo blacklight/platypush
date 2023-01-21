@@ -102,7 +102,7 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
     def _expand_groups(self, groups: Iterable[str]) -> Set[str]:
         lights = set()
         light_id_to_name = {
-            light_id: light['name'] for light_id, light in self._get_lights().items()
+            light_id: light['name'] for light_id, light in (self._get_lights().items())
         }
 
         groups_ = [g for g in self._get_groups().values() if g.get('name') in groups]
@@ -245,7 +245,7 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
                 'id': id,
                 **light,
             }
-            for id, light in self._get_lights().items()
+            for id, light in self._get_lights(publish_entities=True).items()
         }
 
     @action
@@ -389,7 +389,7 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
             self.bridge = None
             raise e
 
-        return self._get_lights()
+        return self._get_lights(publish_entities=True)
 
     @action
     def set_lights(self, lights, **kwargs):
@@ -435,7 +435,7 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
             args += [arg, value]
 
         self.bridge.set_light(lights, *args)
-        return self._get_lights()
+        return self._get_lights(publish_entities=True)
 
     @action
     def set_group(self, group, **kwargs):
@@ -1151,12 +1151,13 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
 
         return super().transform_entities(new_entities)  # type: ignore
 
-    def _get_lights(self) -> dict:
+    def _get_lights(self, publish_entities=False) -> dict:
         assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
         lights = self.bridge.get_light()
         lights = {id: light for id, light in lights.items() if not light.get('recycle')}
         self._cached_lights = lights
-        self.publish_entities(lights)  # type: ignore
+        if publish_entities:
+            self.publish_entities(lights)  # type: ignore
         return lights
 
     def _get_groups(self) -> dict:
@@ -1171,7 +1172,7 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
 
     @action
     def status(self) -> Iterable[LightEntity]:
-        lights = self.transform_entities(self._get_lights())
+        lights = self.transform_entities(self._get_lights(publish_entities=True))
         for light in lights:
             light.id = light.external_id
             for attr, value in (light.data or {}).items():
@@ -1185,7 +1186,7 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
         return lights
 
     def main(self):
-        lights_prev = self._get_lights()  # Initialize the lights
+        lights_prev = self._get_lights(publish_entities=True)  # Initialize the lights
 
         while not self.should_stop():
             try:
