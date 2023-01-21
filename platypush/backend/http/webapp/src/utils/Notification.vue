@@ -5,7 +5,7 @@ export default {
   name: "Notification",
   methods: {
     notify(notification) {
-      bus.emit('notification-create', notification)
+      bus.publishNotification(notification)
     },
 
     notifyWarning(msg) {

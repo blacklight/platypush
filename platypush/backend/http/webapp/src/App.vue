@@ -69,7 +69,7 @@ export default {
   },
 
   mounted() {
-    bus.on('notification-create', this.onNotification)
+    bus.onNotification(this.onNotification)
   },
 }
 </script>
