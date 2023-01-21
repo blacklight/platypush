@@ -1,5 +1,21 @@
-import mitt from 'mitt';
+import mitt from 'mitt'
 
-const bus = mitt();
+const bus = mitt()
 
-export { bus };
+bus.publishEntity = (entity) => {
+  bus.emit('entity-update', entity)
+}
+
+bus.onEntity = (callback) => {
+  bus.on('entity-update', callback)
+}
+
+bus.publishNotification = (notification) => {
+  bus.emit('notification-create', notification)
+}
+
+bus.onNotification = (callback) => {
+  bus.on('notification-create', callback)
+}
+
+export { bus }

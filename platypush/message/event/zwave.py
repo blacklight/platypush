@@ -46,23 +46,17 @@ class ZwaveNetworkStoppedEvent(ZwaveEvent):
     Triggered when a Z-Wave network is stopped.
     """
 
-    pass
-
 
 class ZwaveNetworkErrorEvent(ZwaveEvent):
     """
     Triggered when an error occurs on the Z-Wave network.
     """
 
-    pass
-
 
 class ZwaveNetworkResetEvent(ZwaveEvent):
     """
     Triggered when a Z-Wave network is reset.
     """
-
-    pass
 
 
 class ZwaveNodeEvent(ZwaveEvent):
@@ -79,15 +73,11 @@ class ZwaveNodeAddedEvent(ZwaveNodeEvent):
     Triggered when a node is added to the network.
     """
 
-    pass
-
 
 class ZwaveNodeRemovedEvent(ZwaveNodeEvent):
     """
     Triggered when a node is removed from the network.
     """
-
-    pass
 
 
 class ZwaveNodeRenamedEvent(ZwaveNodeEvent):
@@ -95,15 +85,11 @@ class ZwaveNodeRenamedEvent(ZwaveNodeEvent):
     Triggered when a node is renamed.
     """
 
-    pass
-
 
 class ZwaveNodeReadyEvent(ZwaveNodeEvent):
     """
     Triggered when a node is ready.
     """
-
-    pass
 
 
 class ZwaveNodeAsleepEvent(ZwaveNodeEvent):
@@ -111,15 +97,11 @@ class ZwaveNodeAsleepEvent(ZwaveNodeEvent):
     Triggered when a node goes in sleep mode.
     """
 
-    pass
-
 
 class ZwaveNodeAwakeEvent(ZwaveNodeEvent):
     """
     Triggered when a node goes back into awake mode.
     """
-
-    pass
 
 
 class ZwaveNodeGroupEvent(ZwaveNodeEvent):
@@ -148,15 +130,11 @@ class ZwaveNodePollingEnabledEvent(ZwaveNodeEvent):
     Triggered when the polling of a node is successfully turned on.
     """
 
-    pass
-
 
 class ZwaveNodePollingDisabledEvent(ZwaveNodeEvent):
     """
     Triggered when the polling of a node is successfully turned off.
     """
-
-    pass
 
 
 class ZwaveButtonCreatedEvent(ZwaveNodeEvent):
@@ -164,15 +142,11 @@ class ZwaveButtonCreatedEvent(ZwaveNodeEvent):
     Triggered when a button is added to the network.
     """
 
-    pass
-
 
 class ZwaveButtonRemovedEvent(ZwaveNodeEvent):
     """
     Triggered when a button is removed from the network.
     """
-
-    pass
 
 
 class ZwaveButtonOnEvent(ZwaveNodeEvent):
@@ -180,15 +154,11 @@ class ZwaveButtonOnEvent(ZwaveNodeEvent):
     Triggered when a button is pressed.
     """
 
-    pass
-
 
 class ZwaveButtonOffEvent(ZwaveNodeEvent):
     """
     Triggered when a button is released.
     """
-
-    pass
 
 
 class ZwaveValueEvent(ZwaveEvent):
@@ -208,15 +178,11 @@ class ZwaveValueAddedEvent(ZwaveValueEvent):
     Triggered when a value is added to a node on the network.
     """
 
-    pass
-
 
 class ZwaveValueChangedEvent(ZwaveValueEvent):
     """
     Triggered when a value of a node on the network changes.
     """
-
-    pass
 
 
 class ZwaveValueRefreshedEvent(ZwaveValueEvent):
@@ -224,23 +190,17 @@ class ZwaveValueRefreshedEvent(ZwaveValueEvent):
     Triggered when a value of a node on the network is refreshed.
     """
 
-    pass
-
 
 class ZwaveValueRemovedEvent(ZwaveValueEvent):
     """
     Triggered when a value of a node on the network is removed.
     """
 
-    pass
-
 
 class ZwaveNodeQueryCompletedEvent(ZwaveEvent):
     """
     Triggered when all the nodes on the network have been queried.
     """
-
-    pass
 
 
 class ZwaveCommandEvent(ZwaveEvent):
@@ -273,8 +233,6 @@ class ZwaveCommandWaitingEvent(ZwaveCommandEvent):
     """
     Triggered when a command is waiting for a message to proceed.
     """
-
-    pass
 
 
 # vim:sw=4:ts=4:et:
