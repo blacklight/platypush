@@ -76,6 +76,7 @@ import NoItems from "@/components/elements/NoItems";
 import Entity from "./Entity.vue";
 import Selector from "./Selector.vue";
 import EntityModal from "./Modal"
+import { bus } from "@/bus";
 import icons from '@/assets/icons.json'
 import meta from './meta.json'
 
@@ -320,6 +321,7 @@ export default {
       }
 
       this.entities[entityId] = entity
+      bus.publishEntity(entity)
     },
 
     onEntityDelete(event) {
@@ -358,6 +360,10 @@ export default {
 
     await this.sync()
     await this.refresh()
+  },
+
+  unmounted() {
+    this.unsubscribe('on-entity-update')
   },
 }
 </script>

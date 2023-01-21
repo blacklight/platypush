@@ -28,7 +28,6 @@
          :value="entity"
          :loading="loading"
          :level="level + 1"
-         @update="setJustUpdated"
          @input="$emit('input', entity)" />
       </div>
     </div>
@@ -38,11 +37,12 @@
 <script>
 import { defineAsyncComponent, shallowRef } from 'vue'
 import EntityMixin from "./EntityMixin"
+import { bus } from "@/bus";
 
 export default {
   name: "Entity",
   mixins: [EntityMixin],
-  emits: ['input', 'loading'],
+  emits: ['input', 'loading', 'update'],
 
   data() {
     return {
@@ -91,6 +91,15 @@ export default {
       }
     },
 
+    onEntityUpdate(entity) {
+      // Check if any of the children have been updated
+      const entityId = entity?.id
+      if (entityId == null || !(entityId in this.children))
+        return
+
+      this.setJustUpdated()
+    },
+
     toggleCollapsed() {
       this.collapsed = !this.collapsed
       // Propagate the collapsed state to the wrapped component if applicable
@@ -128,6 +137,8 @@ export default {
         )
       )
     }
+
+    bus.onEntity(this.onEntityUpdate)
   },
 }
 </script>
