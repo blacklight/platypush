@@ -85,7 +85,10 @@ export default {
     },
 
     onClick(event) {
-      if (event.target.classList.contains('label')) {
+      if (
+        event.target.classList.contains('label') ||
+        event.target.classList.contains('head')
+      ) {
         event.stopPropagation()
         this.toggleCollapsed()
       }
@@ -94,7 +97,13 @@ export default {
     onEntityUpdate(entity) {
       // Check if any of the children have been updated
       const entityId = entity?.id
-      if (entityId == null || !(entityId in this.children))
+      const isChildUpdate = (
+        entityId != null &&
+        this.children &&
+        entityId in this.children
+      )
+
+      if (!isChildUpdate)
         return
 
       this.setJustUpdated()
