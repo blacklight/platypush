@@ -4,6 +4,8 @@ import aiohttp
 from threading import RLock
 from typing import Optional, Dict, List, Set, Tuple, Type, Union, Iterable
 
+import pysmartthings
+
 from platypush.entities import Entity, manages
 
 # TODO Check battery support
@@ -11,13 +13,15 @@ from platypush.entities import Entity, manages
 from platypush.entities.devices import Device
 from platypush.entities.dimmers import Dimmer
 from platypush.entities.lights import Light
-from platypush.entities.sensors import BinarySensor, Sensor
+from platypush.entities.motion import MotionSensor
+from platypush.entities.sensors import Sensor
 from platypush.entities.switches import Switch
-from platypush.plugins import Plugin, action
+from platypush.plugins import RunnablePlugin, action
+from platypush.utils import camel_case_to_snake_case
 
 
 @manages(Device, Dimmer, Sensor, Switch, Light)
-class SmartthingsPlugin(Plugin):
+class SmartthingsPlugin(RunnablePlugin):
     """
     Plugin to interact with devices and locations registered to a Samsung SmartThings account.
 
@@ -29,11 +33,14 @@ class SmartthingsPlugin(Plugin):
 
     _timeout = aiohttp.ClientTimeout(total=20.0)
 
-    def __init__(self, access_token: str, **kwargs):
+    def __init__(
+        self, access_token: str, poll_interval: Optional[float] = 20.0, **kwargs
+    ):
         """
         :param access_token: SmartThings API access token - you can get one at https://account.smartthings.com/tokens.
+        :param poll_interval: How often the plugin should poll for changes, in seconds (default: 20).
         """
-        super().__init__(**kwargs)
+        super().__init__(poll_interval=poll_interval, **kwargs)
         self._access_token = access_token
         self._refresh_lock = RLock()
         self._execute_lock = RLock()
@@ -76,7 +83,6 @@ class SmartthingsPlugin(Plugin):
         }
 
     async def _refresh_info(self):
-        import pysmartthings
 
         async with aiohttp.ClientSession(timeout=self._timeout) as session:
             api = pysmartthings.SmartThings(session, self._access_token)
@@ -369,8 +375,6 @@ class SmartthingsPlugin(Plugin):
         component_id: str,
         args: Optional[list],
     ):
-        import pysmartthings
-
         async with aiohttp.ClientSession(timeout=self._timeout) as session:
             api = pysmartthings.SmartThings(session, self._access_token)
             device = await api.device(device_id)
@@ -517,7 +521,7 @@ class SmartthingsPlugin(Plugin):
         if 'motionSensor' in cls._get_capabilities(device):
             sensors.append(
                 cls._to_entity(
-                    BinarySensor,
+                    MotionSensor,
                     device,
                     value=device.status.motion,
                 )
@@ -551,10 +555,21 @@ class SmartthingsPlugin(Plugin):
 
         return super().transform_entities(compatible_entities)  # type: ignore
 
-    async def _get_device_status(self, api, device_id: str) -> dict:
+    async def _get_device_status(
+        self, api, device_id: str, publish_entities: bool
+    ) -> dict:
         device = await api.device(device_id)
+        assert device, f'No such device: {device_id}'
         await device.status.refresh()
-        self.publish_entities([device])  # type: ignore
+        if publish_entities:
+            self.publish_entities([device])  # type: ignore
+
+        self._devices_by_id[device_id] = device
+        self._devices_by_name[device.label] = device
+        for i, dev in enumerate(self._devices):
+            if dev.device_id == device_id:
+                self._devices[i] = device
+                break
 
         return {
             'device_id': device_id,
@@ -567,9 +582,9 @@ class SmartthingsPlugin(Plugin):
             },
         }
 
-    async def _refresh_status(self, devices: List[str]) -> List[dict]:
-        import pysmartthings
-
+    async def _refresh_status(
+        self, devices: List[str], publish_entities: bool = True
+    ) -> List[dict]:
         device_ids = []
         missing_device_ids = set()
 
@@ -598,7 +613,11 @@ class SmartthingsPlugin(Plugin):
         async with aiohttp.ClientSession(timeout=self._timeout) as session:
             api = pysmartthings.SmartThings(session, self._access_token)
             status_tasks = [
-                asyncio.ensure_future(self._get_device_status(api, device_id))
+                asyncio.ensure_future(
+                    self._get_device_status(
+                        api, device_id, publish_entities=publish_entities
+                    )
+                )
                 for device_id in device_ids
             ]
 
@@ -606,7 +625,9 @@ class SmartthingsPlugin(Plugin):
             return await asyncio.gather(*status_tasks)
 
     @action
-    def status(self, device: Optional[Union[str, List[str]]] = None) -> List[dict]:
+    def status(
+        self, device: Optional[Union[str, List[str]]] = None, publish_entities=True
+    ) -> List[dict]:
         """
         Refresh and return the status of one or more devices.
 
@@ -643,7 +664,11 @@ class SmartthingsPlugin(Plugin):
             loop = asyncio.new_event_loop()
             try:
                 asyncio.set_event_loop(loop)
-                return loop.run_until_complete(self._refresh_status(list(devices)))
+                return loop.run_until_complete(
+                    self._refresh_status(
+                        list(devices), publish_entities=publish_entities
+                    )
+                )
             finally:
                 loop.stop()
 
@@ -677,8 +702,6 @@ class SmartthingsPlugin(Plugin):
         :param device: Device name or ID.
         :return: Device status
         """
-        import pysmartthings
-
         device = self._get_device(device)
         device_id = device.device_id
 
@@ -793,6 +816,52 @@ class SmartthingsPlugin(Plugin):
 
             if err:
                 raise err
+
+    @staticmethod
+    def _device_status_to_dict(status: pysmartthings.DeviceStatus) -> dict:
+        status_dict = {}
+        for attr in status.attributes.keys():
+            attr = camel_case_to_snake_case(attr)
+            if hasattr(status, attr):
+                status_dict[attr] = getattr(status, attr)
+
+        return status_dict
+
+    def _get_devices_status_dict(self) -> Dict[str, dict]:
+        return {
+            device_id: self._device_status_to_dict(device.status)
+            for device_id, device in self._devices_by_id.items()
+        }
+
+    @staticmethod
+    def _has_status_changed(status: dict, new_status: dict) -> bool:
+        if not status and new_status:
+            return True
+
+        for attr, value in status.items():
+            if attr in new_status:
+                new_value = new_status[attr]
+                if value != new_value:
+                    return True
+
+        return False
+
+    def main(self):
+        while not self.should_stop():
+            updated_devices = {}
+            devices = self._get_devices_status_dict()
+            self.status(publish_entities=False)
+            new_devices = self._get_devices_status_dict()
+
+            updated_devices = {
+                device_id: self._devices_by_id[device_id]
+                for device_id, new_status in new_devices.items()
+                if self._has_status_changed(devices.get(device_id, {}), new_status)
+            }
+
+            self.publish_entities(updated_devices.values())  # type: ignore
+            devices = new_devices
+            self.wait_stop(self.poll_interval)
 
 
 # vim:sw=4:ts=4:et:
