@@ -17,6 +17,7 @@ from platypush.message.event.zwave import (
     ZwaveNodeEvent,
     ZwaveNodeAsleepEvent,
     ZwaveNodeAwakeEvent,
+    ZwaveValueRemovedEvent,
 )
 
 
@@ -144,44 +145,29 @@ class ZwaveMqttBackend(MqttBackend):
 
             value = kwargs['value'] = node_values[value_id]
 
-        if event_type == ZwaveNodeEvent:
+        if issubclass(event_type, ZwaveNodeEvent):
+            # If the node has been removed, remove it from the cache
+            if event_type == ZwaveNodeRemovedEvent:
+                self._nodes.pop(node_id, None)
             # If this node_id wasn't cached before, then it's a new node
-            if node_id not in self._nodes:
+            elif node_id not in self._nodes:
                 event_type = ZwaveNodeAddedEvent
             # If the name has changed, we have a rename event
             elif node['name'] != self._nodes[node_id]['name']:
                 event_type = ZwaveNodeRenamedEvent
-
-            if event_type == ZwaveNodeRemovedEvent:
-                self._nodes.pop(node_id, None)
+            # If nothing relevant has changed, update the cached instance and return
             else:
                 self._nodes[node_id] = node
+                return
 
         evt = event_type(**kwargs)
         self._events_queue.put(evt)
 
-        if value and event_type == ZwaveValueChangedEvent:
-            value = value.copy()
-
-            # zwavejs2mqtt currently treats some values (e.g. binary switches) in an inconsistent way,
-            # using two values - a read-only value called currentValue that gets updated on the
-            # node_value_updated topic, and a writable value called targetValue that doesn't get updated
-            # (see https://github.com/zwave-js/zwavejs2mqtt/blob/4a6a5c5f1274763fd3aced4cae2c72ea060716b5 \
-            # /docs/guide/migrating.md).
-            # To properly manage updates on writable values, propagate an event for both.
-            if value.get('property_id') == 'currentValue':
-                target_value_id = (
-                    f'{node_id}-{value["command_class"]}-{value.get("endpoint", 0)}'
-                    f'-targetValue'
-                )
-                target_value = node_values.get(target_value_id)
-
-                if target_value:
-                    kwargs['value']['data'] = value['data']
-                    kwargs['node']['values'][target_value_id] = kwargs['value']
-                    evt = event_type(**kwargs)
-                    self._events_queue.put(evt)
-
+        if (
+            value
+            and issubclass(event_type, ZwaveValueChangedEvent)
+            and event_type != ZwaveValueRemovedEvent
+        ):
             self.plugin.publish_entities([kwargs['value']])  # type: ignore
 
     def on_mqtt_message(self):
