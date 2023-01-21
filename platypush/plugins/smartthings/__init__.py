@@ -2,16 +2,21 @@ import asyncio
 import aiohttp
 
 from threading import RLock
-from typing import Optional, Dict, List, Union, Iterable
+from typing import Optional, Dict, List, Set, Tuple, Type, Union, Iterable
 
-from platypush.entities import manages
+from platypush.entities import Entity, manages
+
+# TODO Check battery support
+# from platypush.entities.batteries import Battery
+from platypush.entities.devices import Device
+from platypush.entities.dimmers import Dimmer
 from platypush.entities.lights import Light
+from platypush.entities.sensors import BinarySensor, Sensor
 from platypush.entities.switches import Switch
-from platypush.plugins import action
-from platypush.plugins.switch import Plugin
+from platypush.plugins import Plugin, action
 
 
-@manages(Switch, Light)
+@manages(Device, Dimmer, Sensor, Switch, Light)
 class SmartthingsPlugin(Plugin):
     """
     Plugin to interact with devices and locations registered to a Samsung SmartThings account.
@@ -302,20 +307,28 @@ class SmartthingsPlugin(Plugin):
     def _get_device(self, device: str):
         return self._get_devices(device)[0]
 
-    def _get_devices(self, *devices: str):
-        def get_found_and_missing_devs():
-            found_devs = [
-                self._devices_by_id.get(d, self._devices_by_name.get(d))
-                for d in devices
-            ]
-            missing_devs = [d for i, d in enumerate(devices) if not found_devs[i]]
-            return found_devs, missing_devs
+    def _get_found_and_missing_devs(
+        self, *devices: str
+    ) -> Tuple[List[Device], List[str]]:
+        # Split the external_id:type indicators and always return the parent device
+        devices = tuple(dev.split(':')[0] for dev in devices)
 
-        devs, missing_devs = get_found_and_missing_devs()
+        found_devs = {
+            dev: self._devices_by_id.get(dev, self._devices_by_name.get(dev))
+            for dev in devices
+            if self._devices_by_id.get(dev, self._devices_by_name.get(dev))
+        }
+
+        missing_devs = {dev for dev in devices if dev not in found_devs}
+
+        return list(found_devs.values()), list(missing_devs)  # type: ignore
+
+    def _get_devices(self, *devices: str):
+        devs, missing_devs = self._get_found_and_missing_devs(*devices)
         if missing_devs:
             self.refresh_info()
 
-        devs, missing_devs = get_found_and_missing_devs()
+        devs, missing_devs = self._get_found_and_missing_devs(*devices)
         assert not missing_devs, f'Devices not found: {missing_devs}'
         return devs
 
@@ -426,69 +439,115 @@ class SmartthingsPlugin(Plugin):
                 loop.stop()
 
     @staticmethod
-    def _is_light(device):
+    def _get_capabilities(device) -> Set[str]:
         if isinstance(device, dict):
-            capabilities = device.get('capabilities', [])
-        else:
-            capabilities = device.capabilities
+            return set(device.get('capabilities', []))
+        return set(device.capabilities)
 
-        return 'colorControl' in capabilities or 'colorTemperature' in capabilities
+    @staticmethod
+    def _to_entity(entity_type: Type[Entity], device, **kwargs) -> Entity:
+        return entity_type(
+            id=device.device_id + ':' + entity_type.__name__.lower(),
+            name=entity_type.__name__,
+            **kwargs,
+        )
+
+    @classmethod
+    def _get_lights(cls, device) -> Iterable[Light]:
+        # TODO double-check conversion values here according to the docs
+        if not (
+            {'colorControl', 'colorTemperature'}.intersection(
+                cls._get_capabilities(device)
+            )
+        ):
+            return []
+
+        light_attrs = {}
+        if 'switch' in device.capabilities:
+            light_attrs['on'] = device.status.switch
+        if getattr(device.status, 'level', None) is not None:
+            light_attrs['brightness'] = device.status.level
+            light_attrs['brightness_min'] = 0
+            light_attrs['brightness_max'] = 100
+        if 'colorTemperature' in device.capabilities:
+            # Color temperature range on SmartThings is expressed in Kelvin
+            light_attrs['temperature_min'] = 2000
+            light_attrs['temperature_max'] = 6500
+            if device.status.color_temperature >= light_attrs['temperature_min']:
+                light_attrs['temperature'] = (
+                    light_attrs['temperature_max'] - light_attrs['temperature_min']
+                ) / 2
+        if getattr(device.status, 'hue', None) is not None:
+            light_attrs['hue'] = device.status.hue
+            light_attrs['hue_min'] = 0
+            light_attrs['hue_max'] = 100
+        if getattr(device.status, 'saturation', None) is not None:
+            light_attrs['saturation'] = device.status.saturation
+            light_attrs['saturation_min'] = 0
+            light_attrs['saturation_max'] = 80
+
+        return [cls._to_entity(Light, device, **light_attrs)]
+
+    @classmethod
+    def _get_switches(cls, device) -> Iterable[Switch]:
+        if 'switch' not in cls._get_capabilities(device):
+            return []
+
+        return [
+            cls._to_entity(
+                Switch,
+                device,
+                state=device.status.switch,
+            )
+        ]
+
+    @classmethod
+    def _get_dimmers(cls, device) -> Iterable[Dimmer]:
+        if 'switchLevel' not in cls._get_capabilities(device):
+            return []
+
+        return [
+            cls._to_entity(Dimmer, device, value=device.status.level, min=0, max=100)
+        ]
+
+    @classmethod
+    def _get_sensors(cls, device) -> Iterable[Sensor]:
+        sensors = []
+
+        if 'motionSensor' in cls._get_capabilities(device):
+            sensors.append(
+                cls._to_entity(
+                    BinarySensor,
+                    device,
+                    value=device.status.motion,
+                )
+            )
+
+        return sensors
 
     def transform_entities(self, entities):
-        from platypush.entities.switches import Switch
-
         compatible_entities = []
 
-        for device in entities:
-            data = {
-                'location_id': getattr(device, 'location_id', None),
-                'room_id': getattr(device, 'room_id', None),
-            }
+        for entity in entities:
+            device_entities = [
+                *self._get_lights(entity),
+                *self._get_switches(entity),
+                *self._get_dimmers(entity),
+                *self._get_sensors(entity),
+            ]
 
-            if self._is_light(device):
-                light_attrs = {
-                    'id': device.device_id,
-                    'name': device.label,
-                    'data': data,
-                }
-
-                if 'switch' in device.capabilities:
-                    light_attrs['on'] = device.status.switch
-                if getattr(device.status, 'level', None) is not None:
-                    light_attrs['brightness'] = device.status.level
-                    light_attrs['brightness_min'] = 0
-                    light_attrs['brightness_max'] = 100
-                if 'colorTemperature' in device.capabilities:
-                    # Color temperature range on SmartThings is expressed in Kelvin
-                    light_attrs['temperature_min'] = 2000
-                    light_attrs['temperature_max'] = 6500
-                    if (
-                        device.status.color_temperature
-                        >= light_attrs['temperature_min']
-                    ):
-                        light_attrs['temperature'] = (
-                            light_attrs['temperature_max']
-                            - light_attrs['temperature_min']
-                        ) / 2
-                if getattr(device.status, 'hue', None) is not None:
-                    light_attrs['hue'] = device.status.hue
-                    light_attrs['hue_min'] = 0
-                    light_attrs['hue_max'] = 100
-                if getattr(device.status, 'saturation', None) is not None:
-                    light_attrs['saturation'] = device.status.saturation
-                    light_attrs['saturation_min'] = 0
-                    light_attrs['saturation_max'] = 80
-
-                compatible_entities.append(Light(**light_attrs))
-            elif 'switch' in device.capabilities:
-                compatible_entities.append(
-                    Switch(
-                        id=device.device_id,
-                        name=device.label,
-                        state=device.status.switch,
-                        data=data,
-                    )
+            if device_entities:
+                parent = Device(
+                    id=entity.device_id,
+                    name=entity.label,
                 )
+
+                for child in device_entities:
+                    child.parent = parent
+
+                device_entities.insert(0, parent)
+
+            compatible_entities += device_entities
 
         return super().transform_entities(compatible_entities)  # type: ignore
 
@@ -584,7 +643,7 @@ class SmartthingsPlugin(Plugin):
             loop = asyncio.new_event_loop()
             try:
                 asyncio.set_event_loop(loop)
-                return loop.run_until_complete(self._refresh_status(devices))
+                return loop.run_until_complete(self._refresh_status(list(devices)))
             finally:
                 loop.stop()
 
@@ -623,7 +682,7 @@ class SmartthingsPlugin(Plugin):
         device = self._get_device(device)
         device_id = device.device_id
 
-        async def _toggle() -> bool:
+        async def _toggle():
             async with aiohttp.ClientSession(timeout=self._timeout) as session:
                 api = pysmartthings.SmartThings(session, self._access_token)
                 dev = await api.device(device_id)
@@ -644,45 +703,15 @@ class SmartthingsPlugin(Plugin):
         with self._refresh_lock:
             loop = asyncio.new_event_loop()
             loop.run_until_complete(_toggle())
-            device = loop.run_until_complete(self._refresh_status([device_id]))[0]  # type: ignore
-            return {
-                'id': device_id,
-                'name': device['name'],
-                'on': device['switch'],
-            }
-
-    @property
-    def switches(self) -> List[dict]:
-        """
-        :return: List of switch devices statuses in :class:`platypush.plugins.switch.SwitchPlugin` compatible format.
-            Example:
-
-          .. code-block:: json
-
-            [
-              {
-                "id": "switch-1",
-                "name": "Fan",
-                "on": false
-              },
-              {
-                "id": "tv-1",
-                "name": "Samsung Smart TV",
-                "on": true
-              }
+            updated_device = loop.run_until_complete(self._refresh_status([device_id]))[
+                0
             ]
 
-        """
-        devices = self.status().output  # type: ignore
-        return [
-            {
-                'name': device['name'],
-                'id': device['device_id'],
-                'on': device['switch'],
+            return {
+                'id': device_id,
+                'name': updated_device['name'],
+                'on': updated_device['switch'],
             }
-            for device in devices
-            if 'switch' in device and not self._is_light(device)
-        ]
 
     @action
     def set_level(self, device: str, level: int, **kwargs):
@@ -695,6 +724,30 @@ class SmartthingsPlugin(Plugin):
         :param kwarsg: Extra arguments that should be passed to :meth:`.execute`.
         """
         self.execute(device, 'switchLevel', 'setLevel', args=[int(level)], **kwargs)
+
+    @action
+    def set_value(
+        self, device: str, property: Optional[str] = None, data=None, **kwargs
+    ):
+        """
+        Set the value of a device. It is compatible with the generic
+        ``set_value`` method required by entities.
+
+        :param device: Device ID or device+property name string in the format ``device_id:property``.
+        :param property: Name of the property to be set. If not specified here
+            then it should be specified on the ``device`` level.
+        :param data: Value to be set.
+        """
+        device_tokens = device.split(':')
+        if len(device_tokens) > 1:
+            device, property = device_tokens[:2]
+        assert property, 'No property name specified'
+
+        if property.startswith('dimmer'):
+            assert data is not None, 'No value specified'
+            self.execute(device, 'switchLevel', 'setLevel', args=[int(data)], **kwargs)
+        elif property.startswith('switch'):
+            self.execute(device, 'switch', 'on' if data else 'off', **kwargs)
 
     @action
     def set_lights(
