@@ -2,7 +2,7 @@
   <div class="entity-container-wrapper"
       :class="{'with-children': hasChildren, collapsed: isCollapsed, hidden: !value?.name?.length}">
     <div class="row item entity-container"
-        :class="{blink: justUpdated, 'with-children': hasChildren, collapsed: isCollapsed}">
+        :class="{ 'with-children': hasChildren, collapsed: isCollapsed, blink: justUpdated }">
       <div class="adjuster" :class="{'col-12': !hasChildren, 'col-11': hasChildren}">
         <component
           :is="component"
@@ -28,6 +28,7 @@
          :value="entity"
          :loading="loading"
          :level="level + 1"
+         @update="setJustUpdated"
          @input="$emit('input', entity)" />
       </div>
     </div>
@@ -95,7 +96,13 @@ export default {
       // Propagate the collapsed state to the wrapped component if applicable
       if (this.instance)
         this.instance.collapsed = !this.instance.collapsed
-    }
+    },
+
+    setJustUpdated() {
+      this.justUpdated = true
+      const self = this;
+      setTimeout(() => self.justUpdated = false, 1000)
+    },
   },
 
   mounted() {
@@ -110,9 +117,8 @@ export default {
               if (this.valuesEqual(oldValue, newValue))
                 return false
 
-              this.justUpdated = true
-              const self = this;
-              setTimeout(() => self.justUpdated = false, 1000)
+              this.setJustUpdated()
+              this.$emit('update', {value: newValue})
           }
       )
 
