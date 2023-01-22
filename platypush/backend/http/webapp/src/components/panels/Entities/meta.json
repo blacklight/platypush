@@ -31,6 +31,14 @@
     }
   },
 
+  "volume": {
+    "name": "Dimmer",
+    "name_plural": "Dimmers",
+    "icon": {
+      "class": "fas fa-volume-high"
+    }
+  },
+
   "dimmer": {
     "name": "Dimmer",
     "name_plural": "Dimmers",
@@ -100,6 +108,14 @@
     "name_plural": "Sensors",
     "icon": {
       "class": "fas fa-temperature-half"
+    }
+  },
+
+  "muted": {
+    "name": "Switch",
+    "name_plural": "Switches",
+    "icon": {
+      "class": "fas fa-volume-xmark"
     }
   },
 
