@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 class Sensor(Device):
     __abstract__ = True
 
+    def __init__(self, *args, is_read_only=True, **kwargs):
+        super().__init__(*args, is_read_only=is_read_only, **kwargs)
+
 
 if 'raw_sensor' not in Base.metadata:
 
