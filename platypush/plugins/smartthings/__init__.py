@@ -8,8 +8,7 @@ import pysmartthings
 
 from platypush.entities import Entity, manages
 
-# TODO Check battery support
-# from platypush.entities.batteries import Battery
+from platypush.entities.batteries import Battery
 from platypush.entities.devices import Device
 from platypush.entities.dimmers import Dimmer
 from platypush.entities.lights import Light
@@ -488,7 +487,7 @@ class SmartthingsPlugin(RunnablePlugin):
         if getattr(device.status, 'saturation', None) is not None:
             light_attrs['saturation'] = device.status.saturation
             light_attrs['saturation_min'] = 0
-            light_attrs['saturation_max'] = 80
+            light_attrs['saturation_max'] = 100
 
         return [cls._to_entity(Light, device, **light_attrs)]
 
@@ -506,12 +505,15 @@ class SmartthingsPlugin(RunnablePlugin):
         ]
 
     @classmethod
-    def _get_dimmers(cls, device) -> Iterable[Dimmer]:
+    def _get_dimmers(cls, device: pysmartthings.Device) -> Iterable[Dimmer]:
         if 'switchLevel' not in cls._get_capabilities(device):
             return []
 
+        kwargs = cls._get_status_attr_info(device, 'level')
         return [
-            cls._to_entity(Dimmer, device, value=device.status.level, min=0, max=100)
+            cls._to_entity(
+                Dimmer, device, value=device.status.level, min=0, max=100, **kwargs
+            )
         ]
 
     @classmethod
@@ -519,15 +521,42 @@ class SmartthingsPlugin(RunnablePlugin):
         sensors = []
 
         if 'motionSensor' in cls._get_capabilities(device):
+            kwargs = cls._get_status_attr_info(device, 'motion')
             sensors.append(
                 cls._to_entity(
                     MotionSensor,
                     device,
                     value=device.status.motion,
+                    **kwargs,
+                )
+            )
+
+        if 'battery' in cls._get_capabilities(device):
+            kwargs = cls._get_status_attr_info(device, 'battery')
+            sensors.append(
+                cls._to_entity(
+                    Battery,
+                    device,
+                    value=device.status.attributes['battery'].value,
+                    **kwargs,
                 )
             )
 
         return sensors
+
+    @staticmethod
+    def _get_status_attr_info(device: pysmartthings.Device, attr: str) -> dict:
+        status = device.status.attributes.get(attr)
+        info = {}
+        if status:
+            if getattr(status, 'unit', None) is not None:
+                info['unit'] = status.unit
+            if getattr(status, 'min', None) is not None:
+                info['min'] = status.min
+            if getattr(status, 'max', None) is not None:
+                info['max'] = status.max
+
+        return info
 
     def transform_entities(self, entities):
         compatible_entities = []
