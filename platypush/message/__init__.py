@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import decimal
 import datetime
+import io
 import logging
 import inspect
 import json
@@ -65,6 +66,10 @@ class Message:
 
             if isinstance(obj, JSONAble):
                 return obj.to_json()
+
+            # Don't serialize I/O wrappers/objects
+            if isinstance(obj, io.IOBase):
+                return None
 
             try:
                 return super().default(obj)
