@@ -1,32 +1,30 @@
 import asyncio
-import aiohttp
-
 from threading import RLock
-from typing import Optional, Dict, List, Tuple, Type, Union, Iterable
+from typing import Dict, Iterable, List, Optional, Tuple, Type, Union
 
+import aiohttp
 from pysmartthings import (
     Attribute,
     Capability,
     Command,
-    Device,
+    DeviceEntity,
     DeviceStatus,
     SmartThings,
 )
 
 from platypush.entities import Entity, manages
-
-from platypush.entities.devices import Device as PDevice
+from platypush.entities.devices import Device
 from platypush.entities.dimmers import Dimmer
 from platypush.entities.lights import Light
 from platypush.entities.sensors import Sensor
-from platypush.entities.switches import Switch
+from platypush.entities.switches import EnumSwitch, Switch
 from platypush.plugins import RunnablePlugin, action
 from platypush.utils import camel_case_to_snake_case
 
-from ._mappers import device_mappers
+from ._mappers import DeviceMapper, device_mappers
 
 
-@manages(PDevice, Dimmer, Sensor, Switch, Light)
+@manages(Device, Dimmer, EnumSwitch, Light, Sensor, Switch)
 class SmartthingsPlugin(RunnablePlugin):
     """
     Plugin to interact with devices and locations registered to a Samsung SmartThings account.
@@ -316,7 +314,7 @@ class SmartthingsPlugin(RunnablePlugin):
         assert location, 'Location {} not found'.format(location_id or name)
         return self._location_to_dict(location)
 
-    def _get_device(self, device: str) -> Device:
+    def _get_device(self, device: str) -> DeviceEntity:
         return self._get_devices(device)[0]
 
     @staticmethod
@@ -328,7 +326,7 @@ class SmartthingsPlugin(RunnablePlugin):
 
     def _get_existing_and_missing_devices(
         self, *devices: str
-    ) -> Tuple[List[Device], List[str]]:
+    ) -> Tuple[List[DeviceEntity], List[str]]:
         # Split the external_id:type indicators and always return the parent device
         devices = tuple(self._to_device_and_property(dev)[0] for dev in devices)
 
@@ -341,7 +339,7 @@ class SmartthingsPlugin(RunnablePlugin):
         missing_devs = {dev for dev in devices if dev not in found_devs}
         return list(found_devs.values()), list(missing_devs)  # type: ignore
 
-    def _get_devices(self, *devices: str) -> List[Device]:
+    def _get_devices(self, *devices: str) -> List[DeviceEntity]:
         devs, missing_devs = self._get_existing_and_missing_devices(*devices)
         if missing_devs:
             self.refresh_info()
@@ -376,8 +374,8 @@ class SmartthingsPlugin(RunnablePlugin):
             }
 
         """
-        device = self._get_device(device)
-        return self._device_to_dict(device)
+        dev = self._get_device(device)
+        return self._device_to_dict(dev)
 
     async def _execute(
         self,
@@ -457,58 +455,92 @@ class SmartthingsPlugin(RunnablePlugin):
                 loop.stop()
 
     @staticmethod
+    def _property_to_entity_name(property: str) -> str:
+        return ' '.join(
+            [
+                t[:1].upper() + t[1:]
+                for t in camel_case_to_snake_case(property).split('_')
+            ]
+        )
+
+    @classmethod
     def _to_entity(
-        device: Device, property: str, entity_type: Type[Entity], **kwargs
+        cls, device: DeviceEntity, property: str, entity_type: Type[Entity], **kwargs
     ) -> Entity:
         return entity_type(
             id=f'{device.device_id}:{property}',
-            name=entity_type.__name__,
+            name=cls._property_to_entity_name(property),
             **kwargs,
         )
 
-    @staticmethod
-    def _get_status_attr_info(device: Device, attr: str) -> dict:
-        status = device.status.attributes.get(attr)
+    @classmethod
+    def _get_status_attr_info(cls, device: DeviceEntity, mapper: DeviceMapper) -> dict:
+        status = device.status.attributes.get(mapper.attribute)
         info = {}
         if status:
-            if getattr(status, 'unit', None) is not None:
-                info['unit'] = status.unit
-            if getattr(status, 'min', None) is not None:
-                info['min'] = status.min
-            if getattr(status, 'max', None) is not None:
-                info['max'] = status.max
+            info.update(
+                {
+                    attr: getattr(status, attr, None)
+                    for attr in ('unit', 'min', 'max')
+                    if getattr(status, attr, None) is not None
+                }
+            )
+
+            supported_values = mapper.values
+            if isinstance(mapper.value_type, str):
+                # The list of supported values is actually contained on a
+                # device attribute
+                try:
+                    supported_values = getattr(
+                        device.status, mapper.value_type, mapper.values
+                    )
+                except Exception:
+                    pass
+
+            if supported_values:
+                info['values'] = mapper.values
 
         return info
+
+    @staticmethod
+    def _merge_dicts(*dicts: dict) -> dict:
+        ret = {}
+        for d in dicts:
+            ret.update(d)
+        return ret
 
     @classmethod
     def _get_supported_entities(
         cls,
-        device: Device,
+        device: DeviceEntity,
         entity_type: Optional[Type[Entity]] = None,
         entity_value_attr: str = 'value',
         **default_entity_args,
     ) -> List[Entity]:
         mappers = [
-            m
-            for m in device_mappers
-            if (entity_type is None or issubclass(m.entity_type, entity_type))
-            and m.capability in device.capabilities
+            mapper
+            for mapper in device_mappers
+            if (entity_type is None or issubclass(mapper.entity_type, entity_type))
+            and mapper.capability in device.capabilities
         ]
 
         return [
             cls._to_entity(
                 device,
-                property=m.attribute,
-                entity_type=m.entity_type,
-                **{entity_value_attr: m.get_value(device)},
-                **default_entity_args,
-                **cls._get_status_attr_info(device, m.attribute),
+                property=mapper.attribute,
+                entity_type=mapper.entity_type,
+                **cls._merge_dicts(
+                    {entity_value_attr: mapper.get_value(device)},
+                    default_entity_args,
+                    mapper.entity_args,
+                    cls._get_status_attr_info(device, mapper),
+                ),
             )
-            for m in mappers
+            for mapper in mappers
         ]
 
     @classmethod
-    def _get_lights(cls, device: Device) -> Iterable[Light]:
+    def _get_lights(cls, device: DeviceEntity) -> Iterable[Light]:
         if not (
             {Capability.color_control, Capability.color_temperature}.intersection(
                 device.capabilities
@@ -517,33 +549,39 @@ class SmartthingsPlugin(RunnablePlugin):
             return []
 
         light_attrs = {}
+        status = device.status
+
         if Capability.switch in device.capabilities:
-            light_attrs['on'] = device.status.switch
+            light_attrs['on'] = status.switch
         if Capability.switch_level in device.capabilities:
-            light_attrs['brightness'] = device.status.level
+            light_attrs['brightness'] = status.level
             light_attrs['brightness_min'] = 0
             light_attrs['brightness_max'] = 100
         if Capability.color_temperature in device.capabilities:
-            light_attrs['temperature'] = device.status.color_temperature
+            light_attrs['temperature'] = status.color_temperature
             light_attrs['temperature_min'] = 1
             light_attrs['temperature_max'] = 30000
-        if getattr(device.status, 'hue', None) is not None:
-            light_attrs['hue'] = device.status.hue
+        if getattr(status, 'hue', None) is not None:
+            light_attrs['hue'] = status.hue
             light_attrs['hue_min'] = 0
             light_attrs['hue_max'] = 100
-        if getattr(device.status, 'saturation', None) is not None:
-            light_attrs['saturation'] = device.status.saturation
+        if getattr(status, 'saturation', None) is not None:
+            light_attrs['saturation'] = status.saturation
             light_attrs['saturation_min'] = 0
             light_attrs['saturation_max'] = 100
 
         return [cls._to_entity(device, 'light', Light, **light_attrs)]
 
     @classmethod
-    def _get_switches(cls, device: Device) -> Iterable[Switch]:
+    def _get_switches(cls, device: DeviceEntity) -> Iterable[Switch]:
         return cls._get_supported_entities(device, Switch, entity_value_attr='state')
 
     @classmethod
-    def _get_dimmers(cls, device: Device) -> Iterable[Dimmer]:
+    def _get_enum_switches(cls, device: DeviceEntity) -> Iterable[Switch]:
+        return cls._get_supported_entities(device, EnumSwitch)
+
+    @classmethod
+    def _get_dimmers(cls, device: DeviceEntity) -> Iterable[Dimmer]:
         return cls._get_supported_entities(device, Dimmer, min=0, max=100)
 
     @classmethod
@@ -703,12 +741,21 @@ class SmartthingsPlugin(RunnablePlugin):
         if value is None:
             # Toggle case
             dev = self._get_device(device)
-            assert hasattr(
-                dev.status, property
-            ), f'No such property on device "{dev.label}": "{property}"'
+            if property == 'light':
+                property = 'switch'
+            else:
+                assert hasattr(
+                    dev.status, property
+                ), f'No such property on device "{dev.label}": "{property}"'
 
+            value = getattr(dev.status, property, None)
+            assert value is not None, (
+                f'Could not get the current value of "{property}" for the '
+                f'device "{dev.device_id}"'
+            )
+
+            value = not value  # Toggle
             device = dev.device_id
-            value = getattr(dev.status, property) is not True
 
         return self.set_value(device, property, value)
 
@@ -769,10 +816,10 @@ class SmartthingsPlugin(RunnablePlugin):
         )
 
         assert mapper, f'No mappers found to set {property}={data} on device "{device}"'
-
         assert (
             mapper.set_command
         ), f'The property "{property}" on the device "{device}" cannot be set'
+
         command = (
             mapper.set_command(data)
             if callable(mapper.set_command)

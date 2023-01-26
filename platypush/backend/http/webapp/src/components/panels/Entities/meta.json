@@ -7,6 +7,14 @@
     }
   },
 
+  "button": {
+    "name": "Button",
+    "name_plural": "Buttons",
+    "icon": {
+      "class": "fas fa-circle-dot"
+    }
+  },
+
   "current_sensor": {
     "name": "Sensor",
     "name_plural": "Sensors",
@@ -140,6 +148,14 @@
     "name_plural": "Sensors",
     "icon": {
       "class": "fas fa-car-battery"
+    }
+  },
+
+  "multi_value_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-thermometer"
     }
   },
 

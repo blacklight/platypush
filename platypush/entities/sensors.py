@@ -66,9 +66,9 @@ if 'binary_sensor' not in Base.metadata:
             if isinstance(value, str):
                 value = value.lower()
 
-            if value in {True, 1, '1', 't', 'true', 'on'}:
+            if value in {True, 1, '1', 't', 'true', 'on', 'ON'}:
                 value = True
-            elif value in {False, 0, '0', 'f', 'false', 'off'}:
+            elif value in {False, 0, '0', 'f', 'false', 'off', 'OFF'}:
                 value = False
             elif value is not None:
                 logger.warning(f'Unsupported value for BinarySensor type: {value}')
@@ -96,6 +96,21 @@ if 'enum_sensor' not in Base.metadata:
         )
         value = Column(String)
         values = Column(JSON)
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }
+
+
+if 'multi_value_sensor' not in Base.metadata:
+
+    class MultiValueSensor(Sensor):
+        __tablename__ = 'multi_value_sensor'
+
+        id = Column(
+            Integer, ForeignKey(Device.id, ondelete='CASCADE'), primary_key=True
+        )
+        value = Column(JSON)
 
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,

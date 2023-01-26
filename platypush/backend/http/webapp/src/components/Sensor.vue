@@ -60,6 +60,8 @@ export default {
 
       if (this.isBoolean)
         return this.parseBoolean(this.value)
+      if (Array.isArray(this.value) || typeof(this.value) === 'object')
+        return JSON.stringify(this.value)
 
       let value = parseFloat(this.value)
       if (this.decimals != null)
