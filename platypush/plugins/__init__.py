@@ -110,7 +110,7 @@ class RunnablePlugin(Plugin):
             try:
                 if self._thread:
                     self._thread.join(timeout=self._stop_timeout)
-                    if self._thread.is_alive():
+                    if self._thread and self._thread.is_alive():
                         self.logger.warning(
                             f'Timeout (seconds={self._stop_timeout}) on '
                             'exit for the plugin '
