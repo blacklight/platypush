@@ -28,11 +28,12 @@ from platypush.entities.sensors import (
 from platypush.entities.switches import Switch, EnumSwitch
 from platypush.entities.temperature import TemperatureSensor
 from platypush.message.response import Response
+from platypush.plugins import RunnablePlugin
 from platypush.plugins.mqtt import MqttPlugin, action
 
 
 @manages(Battery, Device, Dimmer, Light, LinkQuality, Sensor, Switch)
-class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
+class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-init]
     """
     This plugin allows you to interact with Zigbee devices over MQTT through any Zigbee sniffer and
     `zigbee2mqtt <https://www.zigbee2mqtt.io/>`_.
@@ -125,6 +126,42 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
     Requires:
 
         * **paho-mqtt** (``pip install paho-mqtt``)
+
+    Triggers:
+
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttOnlineEvent` when the service comes online.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttOfflineEvent` when the service goes offline.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePropertySetEvent` when the properties of a
+          connected device change.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePairingEvent` when a device is pairing.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceConnectedEvent` when a device connects
+          to the network.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBannedEvent` when a device is banned
+          from the network.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedEvent` when a device is removed
+          from the network.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedFailedEvent` when a request to
+          remove a device from the network fails.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceWhitelistedEvent` when a device is
+          whitelisted on the network.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRenamedEvent` when a device is
+          renamed on the network.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBindEvent` when a device bind event
+          occurs.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceUnbindEvent` when a device unbind event
+          occurs.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedEvent` when a group is added.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedFailedEvent` when a request to
+          add a new group fails.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedEvent` when a group is removed.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedFailedEvent` when a request to
+          remove a group fails.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllEvent` when all the devices
+          are removed from a group.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllFailedEvent` when a request to
+          remove all the devices from a group fails.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttErrorEvent` when an internal error occurs
+          on the zigbee2mqtt service.
 
     """
 
@@ -1880,6 +1917,14 @@ class ZigbeeMqttPlugin(MqttPlugin):  # lgtm [py/missing-call-to-init]
                     data[attr] = value
 
             self.device_set(self._preferred_name(dev), values=data)
+
+    def main(self):
+        from ._listener import ZigbeeMqttListener
+
+        listener = ZigbeeMqttListener()
+        listener.start()
+        self.wait_stop()
+        listener.join()
 
 
 # vim:sw=4:ts=4:et:
