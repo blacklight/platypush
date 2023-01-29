@@ -1,4 +1,4 @@
-import warnings
+import logging
 from typing import Collection, Optional
 
 from ._base import Entity, get_entities_registry
@@ -6,6 +6,7 @@ from ._engine import EntitiesEngine
 from ._registry import manages, register_entity_plugin, get_plugin_entity_registry
 
 _engine: Optional[EntitiesEngine] = None
+logger = logging.getLogger(__name__)
 
 
 def init_entities_engine() -> EntitiesEngine:
@@ -20,7 +21,7 @@ def init_entities_engine() -> EntitiesEngine:
 
 def publish_entities(entities: Collection[Entity]):
     if not _engine:
-        warnings.warn('No entities engine registered')
+        logger.debug('No entities engine registered')
         return
 
     _engine.post(*entities)
