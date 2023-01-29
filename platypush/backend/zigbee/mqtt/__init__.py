@@ -21,9 +21,10 @@ class ZigbeeMqttBackend(Backend):
         super().run()
         warnings.warn(
             '''
-            The zigbee.mqtt has been merged into the zigbee.mqtt plugin. It is
-            now deprecated and it will be removed in a future version. Remove
-            any references to it from your configuration.
+            The zigbee.mqtt backend has been merged into the zigbee.mqtt
+            plugin. It is now deprecated and it will be removed in a future
+            version.
+            Please remove any references to it from your configuration.
             ''',
             DeprecationWarning,
         )

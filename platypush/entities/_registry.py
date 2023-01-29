@@ -106,8 +106,8 @@ class EntityManagerMixin:
         """
         from . import publish_entities
 
-        entities = self.transform_entities(entities)
-        publish_entities(entities)
+        transformed_entities = self.transform_entities(entities)
+        publish_entities(transformed_entities)
 
 
 def manages(*entities: Type[Entity]):
@@ -125,7 +125,7 @@ def manages(*entities: Type[Entity]):
 
             init(self, *args, **kwargs)
 
-        plugin.__init__ = __init__
+        plugin.__init__ = __init__  # type: ignore
         # Inject the EntityManagerMixin
         if EntityManagerMixin not in plugin.__bases__:
             plugin.__bases__ = (EntityManagerMixin,) + plugin.__bases__

@@ -36,8 +36,9 @@ from platypush.entities.switches import EnumSwitch, Switch
 from platypush.entities.temperature import TemperatureSensor
 from platypush.message.event.zwave import ZwaveNodeRenamedEvent, ZwaveNodeEvent
 
-from platypush.context import get_backend, get_bus
+from platypush.context import get_bus
 from platypush.message.response import Response
+from platypush.plugins import RunnablePlugin
 from platypush.plugins.mqtt import MqttPlugin, action
 from platypush.plugins.zwave._base import ZwaveBasePlugin
 from platypush.plugins.zwave._constants import command_class_by_name
@@ -45,7 +46,7 @@ from platypush.plugins.zwave._constants import command_class_by_name
 _NOT_IMPLEMENTED_ERR = NotImplementedError('Not implemented by zwave.mqtt')
 
 
-class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
+class ZwaveMqttPlugin(MqttPlugin, RunnablePlugin, ZwaveBasePlugin):
     """
     This plugin allows you to manage a Z-Wave network over MQTT through
     `zwave-js-ui <https://github.com/zwave-js/zwave-js-ui>`_.
@@ -75,6 +76,18 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     Requires:
 
         * **paho-mqtt** (``pip install paho-mqtt``)
+
+    Triggers:
+
+        * :class:`platypush.message.event.zwave.ZwaveNodeEvent` when a node attribute changes.
+        * :class:`platypush.message.event.zwave.ZwaveNodeAddedEvent` when a node is added to the network.
+        * :class:`platypush.message.event.zwave.ZwaveNodeRemovedEvent` when a node is removed from the network.
+        * :class:`platypush.message.event.zwave.ZwaveNodeRenamedEvent` when a node is renamed.
+        * :class:`platypush.message.event.zwave.ZwaveNodeReadyEvent` when a node is ready.
+        * :class:`platypush.message.event.zwave.ZwaveValueChangedEvent` when the value of a node on the network
+          changes.
+        * :class:`platypush.message.event.zwave.ZwaveNodeAsleepEvent` when a node goes into sleep mode.
+        * :class:`platypush.message.event.zwave.ZwaveNodeAwakeEvent` when a node goes back into awake mode.
 
     """
 
@@ -156,40 +169,30 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self.base_topic = topic_prefix + '/{}/ZWAVE_GATEWAY-' + name
         self.events_topic = self.base_topic.format('_EVENTS')
         self.timeout = timeout
-        self._info = {
+        self._info: Mapping[str, dict] = {
             'devices': {},
             'groups': {},
         }
 
-        self._nodes_cache = {
+        self._nodes_cache: Dict[str, dict] = {
             'by_id': {},
             'by_name': {},
         }
 
-        self._values_cache = {
+        self._values_cache: Dict[str, dict] = {
             'by_id': {},
             'by_label': {},
         }
 
-        self._scenes_cache = {
+        self._scenes_cache: Dict[str, dict] = {
             'by_id': {},
             'by_label': {},
         }
 
-        self._groups_cache = {}
-
-    @staticmethod
-    def _get_backend():
-        backend = get_backend('zwave.mqtt')
-        if not backend:
-            raise AssertionError('zwave.mqtt backend not configured')
-        return backend
+        self._groups_cache: Dict[str, dict] = {}
 
     def _api_topic(self, api: str) -> str:
-        return self.base_topic.format('_CLIENTS') + '/api/{}'.format(api)
-
-    def _topic(self, topic):
-        return self.base_topic + '/' + topic
+        return self.base_topic.format('_CLIENTS') + f'/api/{api}'
 
     @staticmethod
     def _parse_response(response: Union[dict, Response]) -> dict:
@@ -222,6 +225,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
     def _convert_timestamp(t: Optional[int]) -> Optional[datetime]:
         if t:
             return datetime.fromtimestamp(t / 1000)
+        return None
 
     def _get_scene(
         self,
@@ -375,7 +379,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             'device_id': device_id.replace('0x', ''),
             'name': node.get('name'),
             'capabilities': capabilities,
-            'manufacturer_id': '0x{:04x}'.format(node['manufacturerId'])
+            'manufacturer_id': f'0x{node["manufacturerId"]:04x}'
             if node.get('manufacturerId')
             else None,
             'manufacturer_name': node.get('manufacturer'),
@@ -395,7 +399,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             'is_security_device': node.get('supportsSecurity'),
             'is_sleeping': node.get('ready') and node.get('status') == 'Asleep',
             'last_update': cls._convert_timestamp(node.get('lastActive')),
-            'product_id': '0x{:04x}'.format(node['productId'])
+            'product_id': f'0x{node["productId"]:04x}'
             if node.get('productId')
             else None,
             'product_type': '0x{:04x}'.format(node['productType'])
@@ -785,7 +789,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         product_type = node.get('product_type')
         firmware_version = node.get('firmware_version', '0.0')
         if not (manufacturer_id and product_id and product_type):
-            return
+            return None
 
         return (
             'https://devices.zwave-js.io/?jumpTo='
@@ -848,9 +852,6 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             new_values[value_id] = value
 
         return list(new_values.values())
-
-    def _topic_by_value_id(self, value_id: str) -> str:
-        return self.topic_prefix + '/' + '/'.join(value_id.split('-'))
 
     def _filter_values(
         self,
@@ -1080,7 +1081,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         self._api_request('refreshInfo', node_id, **kwargs)
 
     @action
-    def request_node_neighbour_update(self, **kwargs):
+    def request_node_neighbour_update(self, *_, **kwargs):
         """
         Request a neighbours list update.
 
@@ -1271,7 +1272,7 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
         return nodes
 
     @action
-    def get_node_stats(self, **_):
+    def get_node_stats(self, *_, **__):
         """
         Get the statistics of a node on the network (not implemented by zwavejs2mqtt).
         """
@@ -2285,6 +2286,16 @@ class ZwaveMqttPlugin(MqttPlugin, ZwaveBasePlugin):
             }
             for dev in devices
         ]
+
+    def main(self):
+        from ._listener import ZwaveMqttListener
+
+        listener = ZwaveMqttListener()
+        listener.start()
+        self.wait_stop()
+
+        listener.stop()
+        listener.join()
 
 
 # vim:sw=4:ts=4:et:

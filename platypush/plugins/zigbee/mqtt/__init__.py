@@ -3,7 +3,15 @@ import re
 import threading
 
 from queue import Queue
-from typing import Optional, List, Any, Dict, Type, Union, Tuple
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 from platypush.entities import Entity, manages
 from platypush.entities.batteries import Battery
@@ -210,7 +218,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
 
         self.base_topic = base_topic
         self.timeout = timeout
-        self._info = {
+        self._info: Dict[str, dict] = {
             'devices_by_addr': {},
             'devices_by_name': {},
             'groups': {},
@@ -346,7 +354,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
     def _get_device_url(device_info: dict) -> Optional[str]:
         model = device_info.get('definition', {}).get('model')
         if not model:
-            return
+            return None
 
         return f'https://www.zigbee2mqtt.io/devices/{model}.html'
 
@@ -354,7 +362,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
     def _get_image_url(device_info: dict) -> Optional[str]:
         model = device_info.get('definition', {}).get('model')
         if not model:
-            return
+            return None
 
         return f'https://www.zigbee2mqtt.io/images/devices/{model}.jpg'
 
@@ -366,7 +374,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         if 'timeout' in mqtt_args:
             timeout = mqtt_args.pop('timeout')
 
-        info = {
+        info: Dict[str, Any] = {
             'state': None,
             'info': {},
             'config': {},
@@ -374,7 +382,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
             'groups': [],
         }
 
-        info_ready_events = {topic: threading.Event() for topic in info.keys()}
+        info_ready_events = {topic: threading.Event() for topic in info}
 
         def _on_message():
             def callback(_, __, msg):
@@ -426,9 +434,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
                     client.loop_stop()
                     client.disconnect()
             except Exception as e:
-                self.logger.warning(
-                    'Error on MQTT client disconnection: {}'.format(str(e))
-                )
+                self.logger.warning('Error on MQTT client disconnection: %s', e)
 
         return info
 
@@ -438,12 +444,12 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
     @staticmethod
     def _parse_response(response: Union[dict, Response]) -> dict:
         if isinstance(response, Response):
-            response = response.output  # type: ignore[reportGeneralTypeIssues]
+            response = dict(response.output)
 
-        assert response.get('status') != 'error', response.get(  # type: ignore[reportGeneralTypeIssues]
+        assert response.get('status') != 'error', response.get(
             'error', 'zigbee2mqtt error'
         )
-        return response  # type: ignore[reportGeneralTypeIssues]
+        return response
 
     @action
     def devices(self, **kwargs) -> List[Dict[str, Any]]:
@@ -784,10 +790,10 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         devices = self.devices().output  # type: ignore[reportGeneralTypeIssues]
         assert not [
             dev for dev in devices if dev.get('friendly_name') == name
-        ], 'A device named {} already exists on the network'.format(name)
+        ], f'A device named {name} already exists on the network'
 
         if device:
-            req = {
+            req: Dict[str, Any] = {
                 'from': device,
                 'to': name,
             }
@@ -807,7 +813,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         )
 
     @staticmethod
-    def _build_device_get_request(values: List[Dict[str, Any]]) -> dict:
+    def _build_device_get_request(values: List[Dict[str, Any]]) -> Dict[str, Any]:
         def extract_value(value: dict, root: dict, depth: int = 0):
             for feature in value.get('features', []):
                 new_root = root
@@ -829,7 +835,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
                 root[value['property']] = root.get(value['property'], {})
                 root = root[value['property']]
 
-        ret = {}
+        ret: Dict[str, Any] = {}
         for value in values:
             extract_value(value, root=ret)
 
@@ -954,7 +960,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         def worker(device: str, q: Queue):
             q.put(self.device_get(device, **kwargs).output)  # type: ignore[reportGeneralTypeIssues]
 
-        queues = {}
+        queues: Dict[str, Queue] = {}
         workers = {}
         response = {}
 
@@ -971,15 +977,15 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
                 workers[device].join(timeout=kwargs.get('timeout'))
             except Exception as e:
                 self.logger.warning(
-                    'An error occurred while getting the status of the device {}: {}'.format(
-                        device, str(e)
-                    )
+                    'An error occurred while getting the status of the device %s: %s',
+                    device,
+                    e,
                 )
 
         return response
 
     @action
-    def status(self, device: Optional[str] = None, *args, **kwargs):
+    def status(self, *args, device: Optional[str] = None, **kwargs):
         """
         Get the status of a device (by friendly name) or of all the connected devices (it wraps :meth:`.devices_get`).
 
@@ -1369,9 +1375,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
             for group in self.groups().output  # type: ignore[reportGeneralTypeIssues]
         }
 
-        assert (
-            name not in groups
-        ), 'A group named {} already exists on the network'.format(name)
+        assert name not in groups, f'A group named {name} already exists on the network'
 
         return self._parse_response(
             self.publish(  # type: ignore[reportGeneralTypeIssues]
@@ -1433,17 +1437,14 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
             (default: query the default configured device).
         """
+        remove_suffix = '_all' if device is None else ''
         return self._parse_response(
             self.publish(  # type: ignore[reportGeneralTypeIssues]
                 topic=self._topic(
-                    'bridge/request/group/members/remove{}'.format(
-                        '_all' if device is None else ''
-                    )
+                    f'bridge/request/group/members/remove{remove_suffix}'
                 ),
                 reply_topic=self._topic(
-                    'bridge/response/group/members/remove{}'.format(
-                        '_all' if device is None else ''
-                    )
+                    f'bridge/response/group/members/remove{remove_suffix}'
                 ),
                 msg={
                     'group': group,
@@ -1505,9 +1506,9 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         Turn on/set to true a switch, a binary property or an option.
         """
         device, prop_info = self._get_switch_info(device)
-        self.device_set(
+        return self.device_set(
             device, prop_info['property'], prop_info.get('value_on', 'ON')
-        ).output  # type: ignore[reportGeneralTypeIssues]
+        )
 
     @action
     def off(self, device, *_, **__):
@@ -1515,9 +1516,9 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         Turn off/set to false a switch, a binary property or an option.
         """
         device, prop_info = self._get_switch_info(device)
-        self.device_set(
+        return self.device_set(
             device, prop_info['property'], prop_info.get('value_off', 'OFF')
-        ).output  # type: ignore[reportGeneralTypeIssues]
+        )
 
     @action
     def toggle(self, device, *_, **__):
@@ -1527,7 +1528,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         device, prop_info = self._get_switch_info(device)
         prop = prop_info['property']
         device_state = self.device_get(device).output  # type: ignore
-        self.device_set(
+        return self.device_set(
             device,
             prop,
             prop_info.get(
@@ -1536,7 +1537,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
                 if device_state.get(prop) == prop_info.get('value_on', 'ON')
                 else 'ON',
             ),
-        ).output  # type: ignore[reportGeneralTypeIssues]
+        )
 
     def _get_switch_info(self, name: str) -> Tuple[str, dict]:
         name, prop = self._ieee_address(name, with_property=True)
@@ -1924,6 +1925,8 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         listener = ZigbeeMqttListener()
         listener.start()
         self.wait_stop()
+
+        listener.stop()
         listener.join()
 
 
