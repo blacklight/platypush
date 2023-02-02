@@ -1,18 +1,26 @@
 import logging
 from typing import Collection, Optional
 
-from ._base import Entity, get_entities_registry
+from ._base import Entity, get_entities_registry, init_entities_db
 from ._engine import EntitiesEngine
-from ._registry import manages, register_entity_plugin, get_plugin_entity_registry
+from ._managers import register_entity_manager, get_plugin_entity_registry
+from ._managers.lights import LightEntityManager
+from ._managers.sensors import SensorEntityManager
+from ._managers.switches import (
+    SwitchEntityManager,
+    DimmerEntityManager,
+    EnumSwitchEntityManager,
+)
 
 _engine: Optional[EntitiesEngine] = None
 logger = logging.getLogger(__name__)
 
 
 def init_entities_engine() -> EntitiesEngine:
-    from ._base import init_entities_db
-
-    global _engine
+    """
+    Initialize and start the entities engine.
+    """
+    global _engine  # pylint: disable=global-statement
     init_entities_db()
     _engine = EntitiesEngine()
     _engine.start()
@@ -20,6 +28,17 @@ def init_entities_engine() -> EntitiesEngine:
 
 
 def publish_entities(entities: Collection[Entity]):
+    """
+    Publish a collection of entities to be processed by the engine.
+
+    The engine will:
+
+        - Normalize and merge the provided entities.
+        - Trigger ``EntityUpdateEvent`` events.
+        - Persist the new state to the local database.
+
+    :param entities: Entities to be published.
+    """
     if not _engine:
         logger.debug('No entities engine registered')
         return
@@ -28,12 +47,16 @@ def publish_entities(entities: Collection[Entity]):
 
 
 __all__ = (
-    'Entity',
+    'DimmerEntityManager',
     'EntitiesEngine',
+    'Entity',
+    'EnumSwitchEntityManager',
+    'LightEntityManager',
+    'SensorEntityManager',
+    'SwitchEntityManager',
+    'get_entities_registry',
+    'get_plugin_entity_registry',
     'init_entities_engine',
     'publish_entities',
-    'register_entity_plugin',
-    'get_plugin_entity_registry',
-    'get_entities_registry',
-    'manages',
+    'register_entity_manager',
 )

@@ -1,6 +1,6 @@
 import asyncio
 from threading import RLock
-from typing import Dict, Iterable, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 import aiohttp
 from pysmartthings import (
@@ -9,10 +9,19 @@ from pysmartthings import (
     Command,
     DeviceEntity,
     DeviceStatus,
+    Location,
+    Room,
     SmartThings,
 )
 
-from platypush.entities import Entity, manages
+from platypush.entities import (
+    DimmerEntityManager,
+    Entity,
+    EnumSwitchEntityManager,
+    LightEntityManager,
+    SensorEntityManager,
+    SwitchEntityManager,
+)
 from platypush.entities.devices import Device
 from platypush.entities.dimmers import Dimmer
 from platypush.entities.lights import Light
@@ -24,8 +33,14 @@ from platypush.utils import camel_case_to_snake_case
 from ._mappers import DeviceMapper, device_mappers
 
 
-@manages(Device, Dimmer, EnumSwitch, Light, Sensor, Switch)
-class SmartthingsPlugin(RunnablePlugin):
+class SmartthingsPlugin(
+    RunnablePlugin,
+    DimmerEntityManager,
+    EnumSwitchEntityManager,
+    LightEntityManager,
+    SensorEntityManager,
+    SwitchEntityManager,
+):
     """
     Plugin to interact with devices and locations registered to a Samsung SmartThings account.
 
@@ -49,17 +64,17 @@ class SmartthingsPlugin(RunnablePlugin):
         self._refresh_lock = RLock()
         self._execute_lock = RLock()
 
-        self._locations = []
-        self._devices = []
-        self._rooms_by_location = {}
+        self._locations: List[Location] = []
+        self._devices: List[DeviceEntity] = []
+        self._rooms_by_location: Dict[str, Room] = {}
 
-        self._locations_by_id = {}
-        self._locations_by_name = {}
-        self._devices_by_id = {}
-        self._devices_by_name = {}
-        self._rooms_by_id = {}
-        self._rooms_by_location_and_id = {}
-        self._rooms_by_location_and_name = {}
+        self._locations_by_id: Dict[str, Location] = {}
+        self._locations_by_name: Dict[str, Location] = {}
+        self._devices_by_id: Dict[str, DeviceEntity] = {}
+        self._devices_by_name: Dict[str, DeviceEntity] = {}
+        self._rooms_by_id: Dict[str, Room] = {}
+        self._rooms_by_location_and_id: Dict[str, Dict[str, Room]] = {}
+        self._rooms_by_location_and_name: Dict[str, Dict[str, Room]] = {}
         self._entities_by_id: Dict[str, Entity] = {}
 
     async def _refresh_locations(self, api):
@@ -308,10 +323,13 @@ class SmartthingsPlugin(RunnablePlugin):
         ):
             self.refresh_info()
 
-        location = self._locations_by_id.get(
-            location_id, self._locations_by_name.get(name)
-        )
-        assert location, 'Location {} not found'.format(location_id or name)
+        location: Optional[Dict[str, Any]] = {}
+        if location_id:
+            location = self._locations_by_id.get(location_id)
+        elif name:
+            location = self._locations_by_name.get(name)
+
+        assert location, f'Location {location_id or name} not found'
         return self._location_to_dict(location)
 
     def _get_device(self, device: str) -> DeviceEntity:
@@ -321,7 +339,7 @@ class SmartthingsPlugin(RunnablePlugin):
     def _to_device_and_property(device: str) -> Tuple[str, Optional[str]]:
         tokens = device.split(':')
         if len(tokens) > 1:
-            return tuple(tokens[:2])
+            return (tokens[0], tokens[1])
         return tokens[0], None
 
     def _get_existing_and_missing_devices(
@@ -397,9 +415,7 @@ class SmartthingsPlugin(RunnablePlugin):
 
             assert (
                 ret
-            ), 'The command {capability}={command} failed on device {device}'.format(
-                capability=capability, command=command, device=device_id
-            )
+            ), f'The command {capability}={command} failed on device {device_id}'
 
             await self._get_device_status(api, device_id, publish_entities=True)
 
@@ -455,7 +471,9 @@ class SmartthingsPlugin(RunnablePlugin):
                 loop.stop()
 
     @staticmethod
-    def _property_to_entity_name(property: str) -> str:
+    def _property_to_entity_name(
+        property: str,
+    ) -> str:  # pylint: disable=redefined-builtin
         return ' '.join(
             [
                 t[:1].upper() + t[1:]
@@ -464,7 +482,7 @@ class SmartthingsPlugin(RunnablePlugin):
         )
 
     @classmethod
-    def _to_entity(
+    def _to_entity(  # pylint: disable=redefined-builtin
         cls, device: DeviceEntity, property: str, entity_type: Type[Entity], **kwargs
     ) -> Entity:
         return entity_type(
@@ -669,7 +687,7 @@ class SmartthingsPlugin(RunnablePlugin):
         # Fail if some devices haven't been found after refreshing
         assert (
             not missing_device_ids
-        ), 'Could not find the following devices: {}'.format(list(missing_device_ids))
+        ), f'Could not find the following devices: {list(missing_device_ids)}'
 
         async with aiohttp.ClientSession(timeout=self._timeout) as session:
             api = SmartThings(session, self._access_token)
@@ -682,12 +700,11 @@ class SmartthingsPlugin(RunnablePlugin):
                 for device_id in device_ids
             ]
 
-            # noinspection PyTypeChecker
             return await asyncio.gather(*status_tasks)
 
     @action
-    def status(
-        self, device: Optional[Union[str, List[str]]] = None, publish_entities=True
+    def status(  # pylint: disable=arguments-differ
+        self, device: Optional[Union[str, List[str]]] = None, publish_entities=True, **_
     ) -> List[dict]:
         """
         Refresh and return the status of one or more devices.
@@ -715,7 +732,7 @@ class SmartthingsPlugin(RunnablePlugin):
 
         if not device:
             self.refresh_info()
-            devices = self._devices_by_id.keys()
+            devices = list(self._devices_by_id.keys())
         elif isinstance(device, str):
             devices = [device]
         else:
@@ -734,7 +751,13 @@ class SmartthingsPlugin(RunnablePlugin):
                 loop.stop()
 
     def _set_switch(self, device: str, value: Optional[bool] = None):
-        device, property = self._to_device_and_property(device)
+        (
+            device,
+            property,
+        ) = self._to_device_and_property(  # pylint: disable=redefined-builtin
+            device
+        )
+
         if not property:
             property = Attribute.switch
 
@@ -744,6 +767,7 @@ class SmartthingsPlugin(RunnablePlugin):
             if property == 'light':
                 property = 'switch'
             else:
+                assert property, 'No property specified'
                 assert hasattr(
                     dev.status, property
                 ), f'No such property on device "{dev.label}": "{property}"'
@@ -760,7 +784,7 @@ class SmartthingsPlugin(RunnablePlugin):
         return self.set_value(device, property, value)
 
     @action
-    def on(self, device: str, *_, **__):
+    def on(self, device: str, *_, **__):  # pylint: disable=arguments-differ
         """
         Turn on a device with ``switch`` capability.
 
@@ -769,7 +793,7 @@ class SmartthingsPlugin(RunnablePlugin):
         return self._set_switch(device, True)
 
     @action
-    def off(self, device: str, *_, **__):
+    def off(self, device: str, *_, **__):  # pylint: disable=arguments-differ
         """
         Turn off a device with ``switch`` capability.
 
@@ -778,7 +802,7 @@ class SmartthingsPlugin(RunnablePlugin):
         return self._set_switch(device, False)
 
     @action
-    def toggle(self, device: str, *_, **__):
+    def toggle(self, device: str, *_, **__):  # pylint: disable=arguments-differ
         """
         Toggle a device with ``switch`` capability.
 
@@ -799,7 +823,7 @@ class SmartthingsPlugin(RunnablePlugin):
         """
         return self.set_value(device, Capability.switch_level, level, **kwargs)
 
-    def _set_value(
+    def _set_value(  # pylint: disable=redefined-builtin
         self, device: str, property: Optional[str] = None, data=None, **kwargs
     ):
         if not property:
@@ -830,14 +854,14 @@ class SmartthingsPlugin(RunnablePlugin):
             device,
             mapper.capability,
             command,
-            args=mapper.set_value_args(data),
+            args=mapper.set_value_args(data),  # type: ignore
             **kwargs,
         )
 
         return self.status(device)
 
     @action
-    def set_value(
+    def set_value(  # pylint: disable=arguments-differ,redefined-builtin
         self, device: str, property: Optional[str] = None, data=None, **kwargs
     ):
         """
@@ -854,10 +878,10 @@ class SmartthingsPlugin(RunnablePlugin):
             return self._set_value(device, property, data, **kwargs)
         except Exception as e:
             self.logger.exception(e)
-            raise AssertionError(e)
+            raise AssertionError(e) from e
 
     @action
-    def set_lights(
+    def set_lights(  # pylint: disable=arguments-differ,redefined-builtin
         self,
         lights: Iterable[str],
         on: Optional[bool] = None,
@@ -961,7 +985,7 @@ class SmartthingsPlugin(RunnablePlugin):
                 return self.status(publish_entities=False)
             except Exception as e:
                 self.logger.exception(e)
-                self.logger.error(f'Could not refresh the status: {e}')
+                self.logger.error('Could not refresh the status: %s', e)
                 self.wait_stop(3 * (self.poll_interval or 5))
 
         while not self.should_stop():

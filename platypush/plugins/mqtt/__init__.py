@@ -259,7 +259,7 @@ class MqttPlugin(Plugin):
                 try:
                     msg = Message.build(json.loads(msg))
                 except Exception as e:
-                    self.logger.debug(f'Not a valid JSON: {str(e)}')
+                    self.logger.debug('Not a valid JSON: %s', e)
 
             host = host or self.host
             port = port or self.port or 1883
@@ -303,7 +303,7 @@ class MqttPlugin(Plugin):
                 try:
                     client.loop_stop()
                 except Exception as e:
-                    self.logger.warning(f'Could not stop client loop: {e}')
+                    self.logger.warning('Could not stop client loop: %s', e)
 
                 client.disconnect()
 

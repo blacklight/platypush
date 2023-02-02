@@ -5,6 +5,7 @@ import threading
 from queue import Queue
 from typing import (
     Any,
+    Collection,
     Dict,
     List,
     Optional,
@@ -13,7 +14,14 @@ from typing import (
     Union,
 )
 
-from platypush.entities import Entity, manages
+from platypush.entities import (
+    DimmerEntityManager,
+    Entity,
+    EnumSwitchEntityManager,
+    LightEntityManager,
+    SensorEntityManager,
+    SwitchEntityManager,
+)
 from platypush.entities.batteries import Battery
 from platypush.entities.devices import Device
 from platypush.entities.dimmers import Dimmer
@@ -40,8 +48,15 @@ from platypush.plugins import RunnablePlugin
 from platypush.plugins.mqtt import MqttPlugin, action
 
 
-@manages(Battery, Device, Dimmer, Light, LinkQuality, Sensor, Switch)
-class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-init]
+class ZigbeeMqttPlugin(
+    RunnablePlugin,
+    MqttPlugin,
+    DimmerEntityManager,
+    EnumSwitchEntityManager,
+    LightEntityManager,
+    SensorEntityManager,
+    SwitchEntityManager,
+):  # lgtm [py/missing-call-to-init]
     """
     This plugin allows you to interact with Zigbee devices over MQTT through any Zigbee sniffer and
     `zigbee2mqtt <https://www.zigbee2mqtt.io/>`_.
@@ -245,9 +260,9 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
             if option.get('property')
         }
 
-    def transform_entities(self, devices):
+    def transform_entities(self, entities: Collection[dict]) -> List[Entity]:
         compatible_entities = []
-        for dev in devices:
+        for dev in entities:
             if not dev:
                 continue
 
@@ -275,7 +290,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
             )
 
             light_info = self._get_light_meta(dev)
-            dev_entities = [
+            dev_entities: List[Entity] = [
                 *self._get_sensors(dev, exposed, options),
                 *self._get_dimmers(dev, exposed, options),
                 *self._get_switches(dev, exposed, options),
@@ -348,7 +363,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
 
             compatible_entities += dev_entities
 
-        return super().transform_entities(compatible_entities)  # type: ignore
+        return compatible_entities
 
     @staticmethod
     def _get_device_url(device_info: dict) -> Optional[str]:
@@ -400,7 +415,9 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         try:
             host = mqtt_args.pop('host')
             port = mqtt_args.pop('port')
-            client = self._get_client(**mqtt_args)
+            client = self._get_client(  # pylint: disable=unexpected-keyword-arg
+                **mqtt_args
+            )
             client.on_message = _on_message()
             client.connect(host, port, keepalive=timeout)
             client.subscribe(self.base_topic + '/bridge/#')
@@ -444,7 +461,8 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
     @staticmethod
     def _parse_response(response: Union[dict, Response]) -> dict:
         if isinstance(response, Response):
-            response = dict(response.output)
+            rs: dict = response.output  # type: ignore
+            response = rs
 
         assert response.get('status') != 'error', response.get(
             'error', 'zigbee2mqtt error'
@@ -873,7 +891,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         return name == device.get('friendly_name') or name == device.get('ieee_address')
 
     @action
-    def device_get(
+    def device_get(  # pylint: disable=redefined-builtin
         self, device: str, property: Optional[str] = None, **kwargs
     ) -> Dict[str, Any]:
         """
@@ -994,7 +1012,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         return self.devices_get([device] if device else None, *args, **kwargs)
 
     @action
-    def device_set(
+    def device_set(  # pylint: disable=redefined-builtin
         self,
         device: str,
         property: Optional[str] = None,
@@ -1054,7 +1072,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         return properties
 
     @action
-    def set_value(
+    def set_value(  # pylint: disable=redefined-builtin,arguments-differ
         self, device: str, property: Optional[str] = None, data=None, **kwargs
     ):
         """
@@ -1069,7 +1087,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
             :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
             the default configured device).
         """
-        dev, prop = self._ieee_address(device, with_property=True)
+        dev, prop = self._ieee_address_and_property(device)
         if not property:
             property = prop
 
@@ -1273,7 +1291,9 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         }
 
     @action
-    def group_add(self, name: str, id: Optional[int] = None, **kwargs):
+    def group_add(  # pylint: disable=redefined-builtin
+        self, name: str, id: Optional[int] = None, **kwargs
+    ):
         """
         Add a new group.
 
@@ -1301,7 +1321,9 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         )
 
     @action
-    def group_get(self, group: str, property: Optional[str] = None, **kwargs) -> dict:
+    def group_get(  # pylint: disable=redefined-builtin
+        self, group: str, property: Optional[str] = None, **kwargs
+    ) -> dict:
         """
         Get one or more properties of a group. The compatible properties vary depending on the devices on the group.
         For example, a light bulb may have the "``state``" (with values ``"ON"`` and ``"OFF"``) and "``brightness``"
@@ -1329,9 +1351,10 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
 
         return properties
 
-    # noinspection PyShadowingBuiltins,DuplicatedCode
     @action
-    def group_set(self, group: str, property: str, value: Any, **kwargs):
+    def group_set(  # pylint: disable=redefined-builtin
+        self, group: str, property: str, value: Any, **kwargs
+    ):
         """
         Set a properties on a group. The compatible properties vary depending on the devices on the group.
         For example, a light bulb may have the "``state``" (with values ``"ON"`` and ``"OFF"``) and "``brightness``"
@@ -1501,7 +1524,9 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         )
 
     @action
-    def on(self, device, *_, **__):
+    def on(  # pylint: disable=redefined-builtin,arguments-differ
+        self, device, *_, **__
+    ):
         """
         Turn on/set to true a switch, a binary property or an option.
         """
@@ -1511,7 +1536,9 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         )
 
     @action
-    def off(self, device, *_, **__):
+    def off(  # pylint: disable=redefined-builtin,arguments-differ
+        self, device, *_, **__
+    ):
         """
         Turn off/set to false a switch, a binary property or an option.
         """
@@ -1521,7 +1548,9 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         )
 
     @action
-    def toggle(self, device, *_, **__):
+    def toggle(  # pylint: disable=redefined-builtin,arguments-differ
+        self, device, *_, **__
+    ):
         """
         Toggles the state of a switch, a binary property or an option.
         """
@@ -1540,7 +1569,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         )
 
     def _get_switch_info(self, name: str) -> Tuple[str, dict]:
-        name, prop = self._ieee_address(name, with_property=True)
+        name, prop = self._ieee_address_and_property(name)
         if not prop or prop == 'light':
             prop = 'state'
 
@@ -1548,13 +1577,13 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         assert device_info, f'No such device: {name}'
         name = self._preferred_name(device_info)
 
-        property = self._get_properties(device_info).get(prop)
+        prop = self._get_properties(device_info).get(prop)
         option = self._get_options(device_info).get(prop)
         if option:
             return name, option
 
-        assert property, f'No such property on device {name}: {prop}'
-        return name, property
+        assert prop, f'No such property on device {name}: {prop}'
+        return name, prop
 
     @staticmethod
     def _is_read_only(feature: dict) -> bool:
@@ -1575,9 +1604,9 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         return bool(feature.get('access', 0) & 4) == 0
 
     @staticmethod
-    def _ieee_address(
-        device: Union[dict, str], with_property=False
-    ) -> Union[str, Tuple[str, Optional[str]]]:
+    def _ieee_address_and_property(
+        device: Union[dict, str]
+    ) -> Tuple[str, Optional[str]]:
         # Entity value IDs are stored in the `<address>:<property>`
         # format. Therefore, we need to split by `:` if we want to
         # retrieve the original address.
@@ -1589,13 +1618,13 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         # IEEE address + property format
         if re.search(r'^0x[0-9a-fA-F]{16}:', dev):
             parts = dev.split(':')
-            return (
-                (parts[0], parts[1] if len(parts) > 1 else None)
-                if with_property
-                else parts[0]
-            )
+            return (parts[0], parts[1] if len(parts) > 1 else None)
 
-        return (dev, None) if with_property else dev
+        return (dev, None)
+
+    @classmethod
+    def _ieee_address(cls, device: Union[dict, str]) -> str:
+        return cls._ieee_address_and_property(device)[0]
 
     @classmethod
     def _get_switches(
@@ -1733,7 +1762,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         ]
 
     @classmethod
-    def _to_entity(
+    def _to_entity(  # pylint: disable=redefined-builtin
         cls,
         entity_type: Type[Entity],
         device_info: dict,
@@ -1867,7 +1896,7 @@ class ZigbeeMqttPlugin(RunnablePlugin, MqttPlugin):  # lgtm [py/missing-call-to-
         return {}
 
     @action
-    def set_lights(self, lights, **kwargs):
+    def set_lights(self, *_, lights, **kwargs):
         """
         Set the state for one or more Zigbee lights.
         """

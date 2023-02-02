@@ -4,22 +4,29 @@ import time
 
 from enum import Enum
 from threading import Thread, Event
-from typing import Iterable, Union, Mapping, Any, Set
+from typing import (
+    Any,
+    Collection,
+    Dict,
+    Iterable,
+    Mapping,
+    Set,
+    Union,
+)
 
 from platypush.context import get_bus
-from platypush.entities import Entity
+from platypush.entities import Entity, LightEntityManager
 from platypush.entities.lights import Light as LightEntity
 from platypush.message.event.light import (
     LightAnimationStartedEvent,
     LightAnimationStoppedEvent,
     LightStatusChangeEvent,
 )
-from platypush.plugins import action, RunnablePlugin
-from platypush.plugins.light import LightPlugin
+from platypush.plugins import RunnablePlugin, action
 from platypush.utils import set_thread_name
 
 
-class LightHuePlugin(RunnablePlugin, LightPlugin):
+class LightHuePlugin(RunnablePlugin, LightEntityManager):
     """
     Philips Hue lights plugin.
 
@@ -47,14 +54,22 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
     _UNINITIALIZED_BRIDGE_ERR = 'The Hue bridge is not initialized'
 
     class Animation(Enum):
+        """
+        Inner class to model light animations.
+        """
+
         COLOR_TRANSITION = 'color_transition'
         BLINK = 'blink'
 
         def __eq__(self, other):
+            """
+            Check if the configuration of two light animations matches.
+            """
             if isinstance(other, str):
                 return self.value == other
-            elif isinstance(other, self.__class__):
+            if isinstance(other, self.__class__):
                 return self == other
+            return False
 
     def __init__(self, bridge, lights=None, groups=None, poll_seconds: float = 20.0):
         """
@@ -76,14 +91,14 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
         self.bridge_address = bridge
         self.bridge = None
         self.logger.info(
-            'Initializing Hue lights plugin - bridge: "{}"'.format(self.bridge_address)
+            'Initializing Hue lights plugin - bridge: "%s"', self.bridge_address
         )
 
         self.connect()
         self.lights = set()
         self.groups = set()
         self.poll_seconds = poll_seconds
-        self._cached_lights = {}
+        self._cached_lights: Dict[str, dict] = {}
 
         if lights:
             self.lights = set(lights)
@@ -94,10 +109,10 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
             self.lights = {light['name'] for light in self._get_lights().values()}
 
         self.animation_thread = None
-        self.animations = {}
+        self.animations: Dict[str, dict] = {}
         self._animation_stop = Event()
         self._init_animations()
-        self.logger.info(f'Configured lights: {self.lights}')
+        self.logger.info('Configured lights: %s', self.lights)
 
     def _expand_groups(self, groups: Iterable[str]) -> Set[str]:
         lights = set()
@@ -147,7 +162,7 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
                     self.bridge = Bridge(self.bridge_address)
                     success = True
                 except PhueRegistrationException as e:
-                    self.logger.warning('Bridge registration error: {}'.format(str(e)))
+                    self.logger.warning('Bridge registration error: %s', e)
 
                     if n_tries >= self._MAX_RECONNECT_TRIES:
                         self.logger.error(
@@ -392,7 +407,7 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
         return self._get_lights(publish_entities=True)
 
     @action
-    def set_lights(self, lights, **kwargs):
+    def set_lights(self, lights, *_, **kwargs):  # pylint: disable=arguments-differ
         """
         Set a set of properties on a set of lights.
 
@@ -404,7 +419,7 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
 
             {
                 "type": "request",
-                "action": "light.hue.set_light",
+                "action": "light.hue.set_lights",
                 "args": {
                     "lights": ["Bulb 1", "Bulb 2"],
                     "sat": 255
@@ -434,7 +449,10 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
         for arg, value in kwargs.items():
             args += [arg, value]
 
-        self.bridge.set_light(lights, *args)
+        assert len(args) > 1, 'Not enough parameters passed to set_lights'
+        param = args.pop(0)
+        value = args.pop(0)
+        self.bridge.set_light(lights, param, value, *args)
         return self._get_lights(publish_entities=True)
 
     @action
@@ -442,8 +460,9 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
         """
         Set a group (or groups) property.
 
-        :param group: Group or groups to set. It can be a string representing the
-            group name, a group object, a list of strings, or a list of group objects.
+        :param group: Group or groups to set. Can be a string representing the
+            group name, a group object, a list of strings, or a list of group
+            objects.
         :param kwargs: key-value list of parameters to set.
 
         Example call::
@@ -464,7 +483,9 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
         self.bridge.set_group(group, **kwargs)
 
     @action
-    def on(self, lights=None, groups=None, **kwargs):
+    def on(  # pylint: disable=arguments-differ
+        self, lights=None, groups=None, **kwargs
+    ):
         """
         Turn lights/groups on.
 
@@ -479,7 +500,9 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
         return self._exec('on', True, lights=lights, groups=groups, **kwargs)
 
     @action
-    def off(self, lights=None, groups=None, **kwargs):
+    def off(  # pylint: disable=arguments-differ
+        self, lights=None, groups=None, **kwargs
+    ):
         """
         Turn lights/groups off.
 
@@ -494,7 +517,9 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
         return self._exec('on', False, lights=lights, groups=groups, **kwargs)
 
     @action
-    def toggle(self, lights=None, groups=None, **kwargs):
+    def toggle(  # pylint: disable=arguments-differ
+        self, lights=None, groups=None, **kwargs
+    ):
         """
         Toggle lights/groups on/off.
 
@@ -857,34 +882,42 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
         :type duration: float
 
         :param hue_range: If you selected a ``color_transition``, this will
-            specify the hue range of your color ``color_transition``. Default: [0, 65535]
+        specify the hue range of your color ``color_transition``.
+            Default: [0, 65535]
         :type hue_range: list[int]
 
         :param sat_range: If you selected a color ``color_transition``, this
-            will specify the saturation range of your color ``color_transition``.
-            Default: [0, 255]
+            will specify the saturation range of your color
+            ``color_transition``. Default: [0, 255]
         :type sat_range: list[int]
 
         :param bri_range: If you selected a color ``color_transition``, this
-            will specify the brightness range of your color ``color_transition``.
-            Default: [254, 255] :type bri_range: list[int]
+            will specify the brightness range of your color
+            ``color_transition``. Default: [254, 255]
+        :type bri_range: list[int]
 
-        :param lights: Lights to control (names, IDs or light objects). Default: plugin default lights
-        :param groups: Groups to control (names, IDs or group objects). Default: plugin default groups
+        :param lights: Lights to control (names, IDs or light objects).
+            Default: plugin default lights
+        :param groups: Groups to control (names, IDs or group objects).
+            Default: plugin default groups
 
         :param hue_step: If you selected a color ``color_transition``, this
-            will specify by how much the color hue will change between iterations.
-            Default: 1000 :type hue_step: int
+            will specify by how much the color hue will change between
+            iterations. Default: 1000
+        :type hue_step: int
 
         :param sat_step: If you selected a color ``color_transition``, this
-            will specify by how much the saturation will change between iterations.
-            Default: 2 :type sat_step: int
+            will specify by how much the saturation will change
+            between iterations. Default: 2
+        :type sat_step: int
 
         :param bri_step: If you selected a color ``color_transition``, this
             will specify by how much the brightness will change between iterations.
-            Default: 1 :type bri_step: int
+            Default: 1
+        :type bri_step: int
 
-        :param transition_seconds: Time between two transitions or blinks in seconds. Default: 1.0
+        :param transition_seconds: Time between two transitions or blinks in
+            seconds. Default: 1.0
         :type transition_seconds: float
         """
 
@@ -1028,11 +1061,11 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
                 try:
                     if animation == self.Animation.COLOR_TRANSITION:
                         for (light, attrs) in lights.items():
-                            self.logger.debug('Setting {} to {}'.format(light, attrs))
+                            self.logger.debug('Setting %s to %s', lights, attrs)
                             self.bridge.set_light(light, attrs)
                     elif animation == self.Animation.BLINK:
                         conf = lights[list(lights.keys())[0]]
-                        self.logger.debug('Setting lights to {}'.format(conf))
+                        self.logger.debug('Setting lights to %s', conf)
 
                         if groups:
                             self.bridge.set_group(
@@ -1074,7 +1107,7 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
 
     def transform_entities(
         self, entities: Union[Iterable[Union[dict, Entity]], Mapping[Any, dict]]
-    ) -> Iterable[Entity]:
+    ) -> Collection[Entity]:
         new_entities = []
         if isinstance(entities, dict):
             entities = [{'id': id, **e} for id, e in entities.items()]
@@ -1108,10 +1141,7 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
                                 'hue_max': self.MAX_HUE,
                             }
                             if entity.get('state', {}).get('hue') is not None
-                            else {
-                                'hue_min': None,
-                                'hue_max': None,
-                            }
+                            else {}
                         ),
                         **(
                             {
@@ -1119,10 +1149,7 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
                                 'saturation_max': self.MAX_SAT,
                             }
                             if entity.get('state', {}).get('sat') is not None
-                            else {
-                                'saturation_min': None,
-                                'saturation_max': None,
-                            }
+                            else {}
                         ),
                         **(
                             {
@@ -1130,10 +1157,7 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
                                 'brightness_max': self.MAX_BRI,
                             }
                             if entity.get('state', {}).get('bri') is not None
-                            else {
-                                'brightness_min': None,
-                                'brightness_max': None,
-                            }
+                            else {}
                         ),
                         **(
                             {
@@ -1141,15 +1165,12 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
                                 'temperature_max': self.MAX_CT,
                             }
                             if entity.get('state', {}).get('ct') is not None
-                            else {
-                                'temperature_min': None,
-                                'temperature_max': None,
-                            }
+                            else {}
                         ),
                     )
                 )
 
-        return super().transform_entities(new_entities)  # type: ignore
+        return new_entities
 
     def _get_lights(self, publish_entities=False) -> dict:
         assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
@@ -1171,7 +1192,7 @@ class LightHuePlugin(RunnablePlugin, LightPlugin):
         return {id: scene for id, scene in scenes.items() if not scene.get('recycle')}
 
     @action
-    def status(self) -> Iterable[LightEntity]:
+    def status(self, *_, **__) -> Iterable[LightEntity]:
         lights = self.transform_entities(self._get_lights(publish_entities=True))
         for light in lights:
             light.id = light.external_id

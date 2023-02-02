@@ -1,16 +1,25 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, List, Union
 
-from platypush.entities import manages
-from platypush.entities.batteries import Battery
-from platypush.entities.dimmers import Dimmer
-from platypush.entities.lights import Light
-from platypush.entities.switches import Switch
+from platypush.entities import (
+    DimmerEntityManager,
+    EnumSwitchEntityManager,
+    LightEntityManager,
+    SensorEntityManager,
+    SwitchEntityManager,
+)
 from platypush.plugins import Plugin, action
 
 
-@manages(Battery, Dimmer, Light, Switch)
-class ZwaveBasePlugin(Plugin, ABC):
+class ZwaveBasePlugin(
+    DimmerEntityManager,
+    EnumSwitchEntityManager,
+    LightEntityManager,
+    SensorEntityManager,
+    SwitchEntityManager,
+    Plugin,
+    ABC,
+):
     """
     Base class for Z-Wave plugins.
     """
@@ -27,7 +36,7 @@ class ZwaveBasePlugin(Plugin, ABC):
 
     @abstractmethod
     @action
-    def status(self) -> Dict[str, Any]:
+    def status(self) -> Dict[str, Any]:  # pylint: disable=arguments-differ
         """
         Get the status of the controller.
         """
@@ -316,7 +325,7 @@ class ZwaveBasePlugin(Plugin, ABC):
 
     @abstractmethod
     @action
-    def set_value(
+    def set_value(  # pylint: disable=arguments-differ
         self,
         data,
         value_id: Optional[int] = None,
@@ -864,7 +873,7 @@ class ZwaveBasePlugin(Plugin, ABC):
 
     @abstractmethod
     @action
-    def on(self, device: str, *args, **kwargs):
+    def on(self, device: str, *args, **kwargs):  # pylint: disable=arguments-differ
         """
         Turn on a switch on a device.
 
@@ -874,7 +883,7 @@ class ZwaveBasePlugin(Plugin, ABC):
 
     @abstractmethod
     @action
-    def off(self, device: str, *args, **kwargs):
+    def off(self, device: str, *args, **kwargs):  # pylint: disable=arguments-differ
         """
         Turn off a switch on a device.
 
@@ -884,7 +893,7 @@ class ZwaveBasePlugin(Plugin, ABC):
 
     @abstractmethod
     @action
-    def toggle(self, device: str, *args, **kwargs):
+    def toggle(self, device: str, *args, **kwargs):  # pylint: disable=arguments-differ
         """
         Toggle a switch on a device.
 
