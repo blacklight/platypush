@@ -344,31 +344,5 @@ class UtilsPlugin(Plugin):
 
         return plugins
 
-    @action
-    def get_sensor_plugins(self) -> dict:
-        """
-        :return: The list of enabled sensor plugins as a ``name -> configuration`` map.
-        """
-        from platypush.plugins.sensor import SensorPlugin
-
-        return {
-            name: Config.get(name)
-            for name, plugin in get_enabled_plugins().items()
-            if isinstance(plugin, SensorPlugin)
-        }
-
-    @action
-    def get_switch_plugins(self) -> dict:
-        """
-        :return: The list of enabled switch plugins as a ``name -> configuration`` map.
-        """
-        from platypush.plugins.switch import SwitchPlugin
-
-        return {
-            name: Config.get(name)
-            for name, plugin in get_enabled_plugins().items()
-            if isinstance(plugin, SwitchPlugin)
-        }
-
 
 # vim:sw=4:ts=4:et:
