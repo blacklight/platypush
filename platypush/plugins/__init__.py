@@ -5,7 +5,7 @@ import time
 
 from abc import ABC, abstractmethod
 from functools import wraps
-from typing import Optional
+from typing import Any, Callable, Optional
 
 from platypush.bus import Bus
 from platypush.common import ExtensionWithManifest
@@ -13,12 +13,20 @@ from platypush.event import EventGenerator
 from platypush.message.response import Response
 from platypush.utils import get_decorators, get_plugin_name_by_class, set_thread_name
 
-stop_timeout = 5  # Plugin stop timeout in seconds
+PLUGIN_STOP_TIMEOUT = 5  # Plugin stop timeout in seconds
 
 
-def action(f):
+def action(f: Callable[..., Any]) -> Callable[..., Response]:
+    """
+    Decorator used to wrap the methods in the plugin classes that should be
+    exposed as actions.
+
+    It wraps the method's response into a generic
+    :meth:`platypush.message.response.Response` object.
+    """
+
     @wraps(f)
-    def _execute_action(*args, **kwargs):
+    def _execute_action(*args, **kwargs) -> Response:
         response = Response()
         result = f(*args, **kwargs)
 
@@ -61,7 +69,7 @@ class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to
     def run(self, method, *args, **kwargs):
         assert (
             method in self.registered_actions
-        ), '{} is not a registered action on {}'.format(method, self.__class__.__name__)
+        ), f'{method} is not a registered action on {self.__class__.__name__}'
         return getattr(self, method)(*args, **kwargs)
 
 
@@ -73,7 +81,7 @@ class RunnablePlugin(Plugin):
     def __init__(
         self,
         poll_interval: Optional[float] = None,
-        stop_timeout: Optional[float] = stop_timeout,
+        stop_timeout: Optional[float] = PLUGIN_STOP_TIMEOUT,
         **kwargs,
     ):
         """
@@ -106,26 +114,26 @@ class RunnablePlugin(Plugin):
     def stop(self):
         self._should_stop.set()
         if self._thread and self._thread.is_alive():
-            self.logger.info(f'Waiting for {self.__class__.__name__} to stop')
+            self.logger.info('Waiting for %s to stop', self.__class__.__name__)
             try:
                 if self._thread:
                     self._thread.join(timeout=self._stop_timeout)
                     if self._thread and self._thread.is_alive():
                         self.logger.warning(
-                            f'Timeout (seconds={self._stop_timeout}) on '
-                            'exit for the plugin '
-                            + (
+                            'Timeout (seconds={%s}) on exit for the plugin %s',
+                            self._stop_timeout,
+                            (
                                 get_plugin_name_by_class(self.__class__)
                                 or self.__class__.__name__
-                            )
+                            ),
                         )
             except Exception as e:
-                self.logger.warning(f'Could not join thread on stop: {e}')
+                self.logger.warning('Could not join thread on stop: %s', e)
 
-        self.logger.info(f'{self.__class__.__name__} stopped')
+        self.logger.info('%s stopped', self.__class__.__name__)
 
     def _runner(self):
-        self.logger.info(f'Starting {self.__class__.__name__}')
+        self.logger.info('Starting %s', self.__class__.__name__)
 
         while not self.should_stop():
             try:
