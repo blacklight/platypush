@@ -22,3 +22,5 @@ platypush/requests
 .coverage
 coverage.xml
 Session.vim
+/jsconfig.json
+/package.json
