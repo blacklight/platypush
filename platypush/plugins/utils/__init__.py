@@ -1,6 +1,7 @@
 import json
 import threading
 import time
+from typing import Dict, Union
 
 from platypush.backend.http.utils import HttpUtils
 from platypush.config import Config
@@ -22,8 +23,8 @@ class UtilsPlugin(Plugin):
     _interval_hndl_idx = 0
     _interval_hndl_idx_lock = threading.RLock()
 
-    _pending_timeouts = {}
-    _pending_intervals = {}
+    _pending_timeouts: Dict[str, Union[Procedure, threading.Timer]] = {}
+    _pending_intervals: Dict[str, Union[Procedure, threading.Thread]] = {}
     _pending_timeouts_lock = threading.RLock()
     _pending_intervals_lock = threading.RLock()
 
@@ -67,8 +68,7 @@ class UtilsPlugin(Plugin):
             if not name:
                 name = self._DEFAULT_TIMEOUT_PREFIX + str(self._timeout_hndl_idx)
             if name in self._pending_timeouts:
-                return (None,
-                        "A timeout named '{}' is already awaiting".format(name))
+                return (None, f"A timeout named '{name}' is already awaiting")
 
         procedure = Procedure.build(name=name, requests=actions, _async=False)
         self._pending_timeouts[name] = procedure
@@ -82,10 +82,9 @@ class UtilsPlugin(Plugin):
                         del self._pending_timeouts[name]
 
         with self._pending_timeouts_lock:
-            self._pending_timeouts[name] = threading.Timer(seconds,
-                                                           _proc_wrapper,
-                                                           args=[procedure],
-                                                           kwargs=args)
+            self._pending_timeouts[name] = threading.Timer(
+                seconds, _proc_wrapper, args=[procedure], kwargs=args
+            )
         self._pending_timeouts[name].start()
 
     @action
@@ -98,7 +97,7 @@ class UtilsPlugin(Plugin):
         """
         with self._pending_timeouts_lock:
             if name not in self._pending_timeouts:
-                self.logger.debug('{} is not a pending timeout'.format(name))
+                self.logger.debug('%s is not a pending timeout', name)
                 return
             timer = self._pending_timeouts.pop(name)
 
@@ -131,7 +130,8 @@ class UtilsPlugin(Plugin):
 
         response = {}
 
-        for name in self._pending_timeouts.keys():
+        for name in self._pending_timeouts:
+            # pylint: disable=no-member
             response[name] = self.get_timeout(name).output.get(name)
         return response
 
@@ -175,9 +175,7 @@ class UtilsPlugin(Plugin):
             return {
                 name: {
                     'seconds': timer.interval,
-                    'actions': [
-                        json.loads(str(a)) for a in timer.args[0].requests
-                    ]
+                    'actions': [json.loads(str(a)) for a in timer.args[0].requests],
                 }
             }
 
@@ -204,12 +202,10 @@ class UtilsPlugin(Plugin):
         with self._interval_hndl_idx_lock:
             self._interval_hndl_idx += 1
             if not name:
-                name = self._DEFAULT_INTERVAL_PREFIX + \
-                       str(self._interval_hndl_idx)
+                name = self._DEFAULT_INTERVAL_PREFIX + str(self._interval_hndl_idx)
 
             if name in self._pending_intervals:
-                return (None,
-                        "An interval named '{}' is already running".format(name))
+                return (None, f"An interval named '{name}' is already running")
 
         procedure = Procedure.build(name=name, requests=actions, _async=False)
         self._pending_intervals[name] = procedure
@@ -225,7 +221,8 @@ class UtilsPlugin(Plugin):
 
         with self._pending_intervals_lock:
             self._pending_intervals[name] = threading.Thread(
-                target=_proc_wrapper, args=[procedure, seconds], kwargs=args)
+                target=_proc_wrapper, args=[procedure, seconds], kwargs=args
+            )
         self._pending_intervals[name].start()
 
     @action
@@ -238,7 +235,7 @@ class UtilsPlugin(Plugin):
         """
         with self._pending_intervals_lock:
             if name not in self._pending_intervals:
-                self.logger.debug('{} is not a running interval'.format(name))
+                self.logger.debug('%s is not a running interval', name)
                 return
             del self._pending_intervals[name]
 
@@ -269,7 +266,8 @@ class UtilsPlugin(Plugin):
 
         response = {}
 
-        for name in self._pending_intervals.keys():
+        for name in self._pending_intervals:
+            # pylint: disable=no-member
             response[name] = self.get_interval(name).output.get(name)
         return response
 
@@ -310,13 +308,16 @@ class UtilsPlugin(Plugin):
             if not timer:
                 return response
 
-            # noinspection PyProtectedMember
             return {
                 name: {
-                    'seconds': timer._args[1],
+                    'seconds': timer._args[1],  # pylint: disable=protected-access
                     'actions': [
-                        json.loads(str(a)) for a in timer._args[0].requests
-                    ]
+                        json.loads(str(a))
+                        for a in (
+                            # pylint: disable=protected-access
+                            timer._args[0].requests
+                        )
+                    ],
                 }
             }
 
@@ -338,7 +339,7 @@ class UtilsPlugin(Plugin):
 
         plugins = {}
         with self._plugins_lock:
-            for name in get_enabled_plugins().keys():
+            for name in get_enabled_plugins():
                 plugins[name] = Config.get(name)
 
         return plugins
@@ -349,6 +350,7 @@ class UtilsPlugin(Plugin):
         :return: The list of enabled sensor plugins as a ``name -> configuration`` map.
         """
         from platypush.plugins.sensor import SensorPlugin
+
         return {
             name: Config.get(name)
             for name, plugin in get_enabled_plugins().items()
@@ -361,6 +363,7 @@ class UtilsPlugin(Plugin):
         :return: The list of enabled switch plugins as a ``name -> configuration`` map.
         """
         from platypush.plugins.switch import SwitchPlugin
+
         return {
             name: Config.get(name)
             for name, plugin in get_enabled_plugins().items()
