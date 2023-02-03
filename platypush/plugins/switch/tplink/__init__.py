@@ -1,4 +1,11 @@
-from typing import Union, Mapping, List, Collection, Optional
+from typing import (
+    Collection,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Union,
+)
 
 from pyHS100 import (
     SmartDevice,
@@ -9,12 +16,11 @@ from pyHS100 import (
     SmartDeviceException,
 )
 
-from platypush.entities import Entity
-from platypush.plugins import action
-from platypush.plugins.switch import SwitchPlugin
+from platypush.entities import Entity, SwitchEntityManager
+from platypush.plugins import RunnablePlugin, action
 
 
-class SwitchTplinkPlugin(SwitchPlugin):
+class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
     """
     Plugin to interact with TP-Link smart switches/plugs like the HS100
     (https://www.tp-link.com/us/products/details/cat-5516_HS100.html).
@@ -25,15 +31,15 @@ class SwitchTplinkPlugin(SwitchPlugin):
 
     """
 
-    _ip_to_dev = {}
-    _alias_to_dev = {}
+    _ip_to_dev: Dict[str, SmartDevice] = {}
+    _alias_to_dev: Dict[str, SmartDevice] = {}
 
     def __init__(
         self,
         plugs: Optional[Union[Mapping[str, str], List[str]]] = None,
         bulbs: Optional[Union[Mapping[str, str], List[str]]] = None,
         strips: Optional[Union[Mapping[str, str], List[str]]] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param plugs: Optional list of IP addresses or name->address mapping if you have a static list of
@@ -75,28 +81,30 @@ class SwitchTplinkPlugin(SwitchPlugin):
 
         self._update_devices()
 
-    def _update_devices(self, devices: Optional[Mapping[str, SmartDevice]] = None):
+    def _update_devices(
+        self,
+        devices: Optional[Mapping[str, SmartDevice]] = None,
+        publish_entities: bool = True,
+    ):
         for (addr, info) in self._static_devices.items():
             try:
                 dev = info['type'](addr)
                 self._alias_to_dev[info.get('name', dev.alias)] = dev
                 self._ip_to_dev[addr] = dev
             except SmartDeviceException as e:
-                self.logger.warning(
-                    'Could not communicate with device {}: {}'.format(addr, str(e))
-                )
+                self.logger.warning('Could not communicate with device %s: %s', addr, e)
 
         for (ip, dev) in (devices or {}).items():
             self._ip_to_dev[ip] = dev
             self._alias_to_dev[dev.alias] = dev
 
-        if devices:
-            self.publish_entities(devices.values())  # type: ignore
+        if devices and publish_entities:
+            self.publish_entities(devices.values())
 
-    def transform_entities(self, devices: Collection[SmartDevice]):
+    def transform_entities(self, entities: Collection[SmartDevice]):
         from platypush.entities.switches import Switch
 
-        return super().transform_entities(  # type: ignore
+        return super().transform_entities(
             [
                 Switch(
                     id=dev.host,
@@ -109,13 +117,13 @@ class SwitchTplinkPlugin(SwitchPlugin):
                         'hw_info': dev.hw_info,
                     },
                 )
-                for dev in (devices or [])
+                for dev in (entities or [])
             ]
         )
 
-    def _scan(self):
+    def _scan(self, publish_entities: bool = True) -> Dict[str, SmartDevice]:
         devices = Discover.discover()
-        self._update_devices(devices)
+        self._update_devices(devices, publish_entities=publish_entities)
         return devices
 
     def _get_device(self, device, use_cache=True):
@@ -133,18 +141,21 @@ class SwitchTplinkPlugin(SwitchPlugin):
 
         if use_cache:
             return self._get_device(device, use_cache=False)
-        else:
-            raise RuntimeError('Device {} not found'.format(device))
+        raise RuntimeError(f'Device {device} not found')
 
     def _set(self, device: SmartDevice, state: bool):
         action_name = 'turn_on' if state else 'turn_off'
-        action = getattr(device, action_name)
-        action()
-        self.publish_entities([device])  # type: ignore
+        act = getattr(device, action_name, None)
+        assert act, (
+            f'No such action available on the device "{device.alias}": '
+            f'"{action_name}"'
+        )
+        act()
+        self.publish_entities([device])
         return self._serialize(device)
 
     @action
-    def on(self, device, **_):
+    def on(self, device, **_):  # pylint: disable=arguments-differ
         """
         Turn on a device
 
@@ -156,7 +167,7 @@ class SwitchTplinkPlugin(SwitchPlugin):
         return self._set(device, True)
 
     @action
-    def off(self, device, **_):
+    def off(self, device, **_):  # pylint: disable=arguments-differ
         """
         Turn off a device
 
@@ -168,7 +179,7 @@ class SwitchTplinkPlugin(SwitchPlugin):
         return self._set(device, False)
 
     @action
-    def toggle(self, device, **_):
+    def toggle(self, device, **_):  # pylint: disable=arguments-differ
         """
         Toggle the state of a device (on/off)
 
@@ -191,9 +202,48 @@ class SwitchTplinkPlugin(SwitchPlugin):
             'on': device.is_on,
         }
 
-    @property
-    def switches(self) -> List[dict]:
+    @action
+    def status(self, *_, **__) -> List[dict]:
+        """
+        Retrieve the current status of the devices. Return format:
+
+            .. code-block:: json
+
+                [
+                    {
+                        "current_consumption": 0.5,
+                        "id": "192.168.1.123",
+                        "ip": "192.168.1.123",
+                        "host": "192.168.1.123",
+                        "hw_info": "00:11:22:33:44:55",
+                        "name": "My Switch",
+                        "on": true,
+                    }
+                ]
+
+        """
         return [self._serialize(dev) for dev in self._scan().values()]
+
+    def main(self):
+        devices = {ip: self._serialize(dev) for ip, dev in self._ip_to_dev}
+
+        while not self.should_stop():
+            new_devices = self._scan(publish_entities=False)
+            new_serialized_devices = {
+                ip: self._serialize(dev) for ip, dev in new_devices.items()
+            }
+
+            updated_devices = {
+                ip: new_devices[ip]
+                for ip, dev in new_serialized_devices.items()
+                if any(v != devices.get(ip, {}).get(k) for k, v in dev.items())
+            }
+
+            if updated_devices:
+                self.publish_entities(updated_devices.values())
+
+            devices = new_serialized_devices
+            self.wait_stop(self.poll_interval)
 
 
 # vim:sw=4:ts=4:et:

@@ -471,9 +471,9 @@ class SmartthingsPlugin(
                 loop.stop()
 
     @staticmethod
-    def _property_to_entity_name(
+    def _property_to_entity_name(  # pylint: disable=redefined-builtin
         property: str,
-    ) -> str:  # pylint: disable=redefined-builtin
+    ) -> str:
         return ' '.join(
             [
                 t[:1].upper() + t[1:]
@@ -753,10 +753,8 @@ class SmartthingsPlugin(
     def _set_switch(self, device: str, value: Optional[bool] = None):
         (
             device,
-            property,
-        ) = self._to_device_and_property(  # pylint: disable=redefined-builtin
-            device
-        )
+            property,  # pylint: disable=redefined-builtin
+        ) = self._to_device_and_property(device)
 
         if not property:
             property = Attribute.switch
