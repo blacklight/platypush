@@ -11,7 +11,7 @@ import shutil
 import socket
 import sys
 from urllib.parse import quote
-from typing import Optional
+from typing import Optional, Set
 
 import yaml
 
@@ -21,9 +21,6 @@ from platypush.utils import (
     is_functional_hook,
     is_functional_cron,
 )
-
-""" Config singleton instance """
-_default_config_instance = None
 
 
 class Config:
@@ -38,15 +35,16 @@ class Config:
             Config.get('foo')
     """
 
-    """
-    Default config file locations:
-        - $HOME/.config/platypush/config.yaml
-        - /etc/platypush/config.yaml
-    """
+    # Default config file locations:
+    #   - $HOME/.config/platypush/config.yaml
+    #   - /etc/platypush/config.yaml
     _cfgfile_locations = [
         os.path.join(os.path.expanduser('~'), '.config', 'platypush', 'config.yaml'),
         os.path.join(os.sep, 'etc', 'platypush', 'config.yaml'),
     ]
+
+    # Config singleton instance
+    _instance = None
 
     _default_constants = {
         'today': datetime.date.today,
@@ -56,7 +54,7 @@ class Config:
     _workdir_location = os.path.join(
         os.path.expanduser('~'), '.local', 'share', 'platypush'
     )
-    _included_files = set()
+    _included_files: Set[str] = set()
 
     def __init__(self, cfgfile=None):
         """
@@ -118,9 +116,8 @@ class Config:
                 }
         else:
             db_engine = {
-                'engine': 'sqlite:///' + os.path.join(
-                    quote(self._config['workdir']), 'main.db'
-                )
+                'engine': 'sqlite:///'
+                + os.path.join(quote(self._config['workdir']), 'main.db')
             }
 
         self._config['db'] = db_engine
@@ -139,11 +136,7 @@ class Config:
                     try:
                         os.makedirs(logdir, exist_ok=True)
                     except Exception as e:
-                        print(
-                            'Unable to create logs directory {}: {}'.format(
-                                logdir, str(e)
-                            )
-                        )
+                        print(f'Unable to create logs directory {logdir}: {e}')
 
                     v = logfile
                     del logging_config['stream']
@@ -214,11 +207,9 @@ class Config:
                         continue
                     if not os.path.isabs(include_file):
                         include_file = os.path.join(cfgfile_dir, include_file)
-                    self._included_files.add(include_file)
 
-                    included_config = self._read_config_file(include_file)
-                    for incl_section in included_config.keys():
-                        config[incl_section] = included_config[incl_section]
+                    self._included_files.add(include_file)
+                    config.update(self._read_config_file(include_file))
             elif section == 'scripts_dir':
                 assert isinstance(file_config[section], str)
                 config['scripts_dir'] = os.path.abspath(
@@ -237,11 +228,7 @@ class Config:
         try:
             module = importlib.import_module(modname)
         except Exception as e:
-            print(
-                'Unhandled exception while importing module {}: {}'.format(
-                    modname, str(e)
-                )
-            )
+            print(f'Unhandled exception while importing module {modname}: {e}')
             return
 
         prefix = modname + '.' if prefix is None else prefix
@@ -284,19 +271,19 @@ class Config:
         sys.path = sys_path
 
     def _init_components(self):
-        for key in self._config.keys():
+        for key, component in self._config.items():
             if (
                 key.startswith('backend.')
                 and '.'.join(key.split('.')[1:]) in self._backend_manifests
             ):
                 backend_name = '.'.join(key.split('.')[1:])
-                self.backends[backend_name] = self._config[key]
+                self.backends[backend_name] = component
             elif key.startswith('event.hook.'):
                 hook_name = '.'.join(key.split('.')[2:])
-                self.event_hooks[hook_name] = self._config[key]
+                self.event_hooks[hook_name] = component
             elif key.startswith('cron.'):
                 cron_name = '.'.join(key.split('.')[1:])
-                self.cronjobs[cron_name] = self._config[key]
+                self.cronjobs[cron_name] = component
             elif key.startswith('procedure.'):
                 tokens = key.split('.')
                 _async = bool(len(tokens) > 2 and tokens[1] == 'async')
@@ -314,11 +301,11 @@ class Config:
 
                 self.procedures[procedure_name] = {
                     '_async': _async,
-                    'actions': self._config[key],
+                    'actions': component,
                     'args': args,
                 }
             elif key in self._plugin_manifests:
-                self.plugins[key] = self._config[key]
+                self.plugins[key] = component
 
     def _init_manifests(self, base_dir: Optional[str] = None):
         if not base_dir:
@@ -353,7 +340,7 @@ class Config:
         assert dashboards_dir
         abspath = os.path.join(dashboards_dir, name + '.xml')
         if not os.path.isfile(abspath):
-            return
+            return None
 
         with open(abspath, 'r') as fp:
             return fp.read()
@@ -373,111 +360,94 @@ class Config:
 
         return dashboards
 
-    @staticmethod
-    def get_dashboard(name: str, dashboards_dir: Optional[str] = None) -> Optional[str]:
-        global _default_config_instance
-        if _default_config_instance is None:
-            _default_config_instance = Config()
-        return _default_config_instance._get_dashboard(name, dashboards_dir)
+    @classmethod
+    def _get_instance(
+        cls, cfgfile: Optional[str] = None, force_reload: bool = False
+    ) -> "Config":
+        """
+        Lazy getter/setter for the default configuration instance.
+        """
+        if force_reload or cls._instance is None:
+            cfg_args = [cfgfile] if cfgfile else []
+            cls._instance = Config(*cfg_args)
+        return cls._instance
+
+    @classmethod
+    def get_dashboard(
+        cls, name: str, dashboards_dir: Optional[str] = None
+    ) -> Optional[str]:
+        # pylint: disable=protected-access
+        return cls._get_instance()._get_dashboard(name, dashboards_dir)
 
     @classmethod
     def get_dashboards(cls, dashboards_dir: Optional[str] = None) -> dict:
-        global _default_config_instance
-        if _default_config_instance is None:
-            _default_config_instance = Config()
-        return _default_config_instance._get_dashboards(dashboards_dir)
+        # pylint: disable=protected-access
+        return cls._get_instance()._get_dashboards(dashboards_dir)
 
     def _init_dashboards(self, dashboards_dir: str):
         self.dashboards = self._get_dashboards(dashboards_dir)
 
-    @staticmethod
-    def get_backends():
-        global _default_config_instance
-        if _default_config_instance is None:
-            _default_config_instance = Config()
-        return _default_config_instance.backends
-
-    @staticmethod
-    def get_plugins():
-        global _default_config_instance
-        if _default_config_instance is None:
-            _default_config_instance = Config()
-        return _default_config_instance.plugins
-
-    @staticmethod
-    def get_event_hooks():
-        global _default_config_instance
-        if _default_config_instance is None:
-            _default_config_instance = Config()
-        return _default_config_instance.event_hooks
-
-    @staticmethod
-    def get_procedures():
-        global _default_config_instance
-        if _default_config_instance is None:
-            _default_config_instance = Config()
-        return _default_config_instance.procedures
-
-    @staticmethod
-    def get_constants():
-        global _default_config_instance
-        if _default_config_instance is None:
-            _default_config_instance = Config()
-        constants = {}
-
-        for name in _default_config_instance.constants.keys():
-            constants[name] = Config.get_constant(name)
-        return constants
-
-    @staticmethod
-    def get_constant(name):
-        global _default_config_instance
-        if _default_config_instance is None:
-            _default_config_instance = Config()
-
-        if name not in _default_config_instance.constants:
-            return None
-        value = _default_config_instance.constants[name]
-        return value() if callable(value) else value
-
-    @staticmethod
-    def get_cronjobs():
-        global _default_config_instance
-        if _default_config_instance is None:
-            _default_config_instance = Config()
-        return _default_config_instance.cronjobs
+    @classmethod
+    def get_backends(cls):
+        return cls._get_instance().backends
 
     @classmethod
-    def _get_default_cfgfile(cls):
+    def get_plugins(cls):
+        return cls._get_instance().plugins
+
+    @classmethod
+    def get_event_hooks(cls):
+        return cls._get_instance().event_hooks
+
+    @classmethod
+    def get_procedures(cls):
+        return cls._get_instance().procedures
+
+    @classmethod
+    def get_constants(cls):
+        return {
+            name: Config.get_constant(name) for name in cls._get_instance().constants
+        }
+
+    @classmethod
+    def get_constant(cls, name):
+        value = cls._get_instance().constants.get(name)
+        if value is None:
+            return None
+        return value() if callable(value) else value
+
+    @classmethod
+    def get_cronjobs(cls):
+        return cls._get_instance().cronjobs
+
+    @classmethod
+    def _get_default_cfgfile(cls) -> Optional[str]:
         for location in cls._cfgfile_locations:
             if os.path.isfile(location):
                 return location
+        return None
 
-    @staticmethod
-    def init(cfgfile=None):
+    @classmethod
+    def init(cls, cfgfile: Optional[str] = None):
         """
         Initializes the config object singleton
         Params:
             cfgfile -- path to the config file - default: _cfgfile_locations
         """
-        global _default_config_instance
-        _default_config_instance = Config(cfgfile)
+        return cls._get_instance(cfgfile, force_reload=True)
 
-    @staticmethod
-    def get(key: Optional[str] = None):
+    @classmethod
+    def get(cls, key: Optional[str] = None):
         """
         Get a config value or the whole configuration object.
 
         :param key: Configuration entry to get (default: all entries).
         """
-        global _default_config_instance
-        if _default_config_instance is None:
-            _default_config_instance = Config()
-
+        # pylint: disable=protected-access
+        config = cls._get_instance()._config.copy()
         if key:
-            return _default_config_instance._config.get(key)
-
-        return _default_config_instance._config
+            return config.get(key)
+        return config
 
 
 # vim:sw=4:ts=4:et:
