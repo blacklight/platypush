@@ -8,11 +8,11 @@
           :error="error" />
       </div>
 
-      <div class="col-s-8 col-m-9 label">
+      <div class="col-s-7 col-m-8 label">
         <div class="name" v-text="value.name" />
       </div>
 
-      <div class="col-s-3 col-m-2 buttons pull-right">
+      <div class="col-s-4 col-m-3 buttons pull-right">
         <button @click.stop="collapsed = !collapsed">
           <i class="fas"
             :class="{'fa-angle-up': !collapsed, 'fa-angle-down': collapsed}" />
@@ -59,7 +59,10 @@ export default {
       if (this.value?.is_write_only || this.value?.value == null)
         return null
 
-      return this.value.value
+      let value = this.value.value
+      if (this.value.unit)
+        value = `${value} ${this.value.unit}`
+      return value
     }
   },
 
@@ -102,6 +105,7 @@ export default {
     .value-percent {
       font-size: 1.1em;
       font-weight: bold;
+      direction: ltr;
       opacity: 0.7;
     }
   }
