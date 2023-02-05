@@ -1,16 +1,16 @@
 import enum
 import time
-from typing import List, Optional
+from typing import Any, Collection, Dict, List, Optional
 
+from platypush.entities import EnumSwitchEntityManager
+from platypush.entities.switches import EnumSwitch
 from platypush.message.response.bluetooth import BluetoothScanResponse
 from platypush.plugins import action
 from platypush.plugins.bluetooth.ble import BluetoothBlePlugin
-from platypush.plugins.switch import SwitchPlugin
 
 
-class SwitchbotBluetoothPlugin(  # lgtm [py/missing-call-to-init]
-    SwitchPlugin, BluetoothBlePlugin
-):
+# pylint: disable=too-many-ancestors
+class SwitchbotBluetoothPlugin(BluetoothBlePlugin, EnumSwitchEntityManager):
     """
     Plugin to interact with a Switchbot (https://www.switch-bot.com/) device and
     programmatically control switches over a Bluetooth interface.
@@ -91,7 +91,7 @@ class SwitchbotBluetoothPlugin(  # lgtm [py/missing-call-to-init]
                 raise e
             time.sleep(5)
 
-        return self.status(device)  # type: ignore
+        return self.status(device)
 
     @action
     def press(self, device):
@@ -128,6 +128,30 @@ class SwitchbotBluetoothPlugin(  # lgtm [py/missing-call-to-init]
         return self._run(device, self.Command.OFF)
 
     @action
+    # pylint: disable=arguments-differ
+    def set_value(self, device: str, data: str, *_, **__):
+        """
+        Entity-compatible ``set_value`` method to send a command to a device.
+
+        :param device: Device name or address
+        :param data: Command to send. Possible values are:
+
+            - ``on``: Press the button and remain in the pressed state.
+            - ``off``: Release a previously pressed button.
+            - ``press``: Press and release the button.
+
+        """
+        if data == 'on':
+            return self.on(device)
+        if data == 'off':
+            return self.off(device)
+        if data == 'press':
+            return self.press(device)
+
+        self.logger.warning('Unknown command for SwitchBot "%s": "%s"', device, data)
+        return None
+
+    @action
     def scan(
         self, interface: Optional[str] = None, duration: int = 10
     ) -> BluetoothScanResponse:
@@ -138,14 +162,16 @@ class SwitchbotBluetoothPlugin(  # lgtm [py/missing-call-to-init]
         :param duration: Scan duration in seconds
         """
 
-        devices = super().scan(interface=interface, duration=duration).devices
-        compatible_devices = {}
+        compatible_devices: Dict[str, Any] = {}
+        devices = (
+            super().scan(interface=interface, duration=duration).devices  # type: ignore
+        )
 
         for dev in devices:
             try:
                 characteristics = [
                     chrc
-                    for chrc in self.discover_characteristics(
+                    for chrc in self.discover_characteristics(  # type: ignore
                         dev['addr'],
                         channel_type='random',
                         wait=False,
@@ -157,14 +183,14 @@ class SwitchbotBluetoothPlugin(  # lgtm [py/missing-call-to-init]
                 if characteristics:
                     compatible_devices[dev['addr']] = None
             except Exception as e:
-                self.logger.warning('Device scan error', e)
+                self.logger.warning('Device scan error: %s', e)
 
-        self.publish_entities(compatible_devices)  # type: ignore
+        self.publish_entities(compatible_devices)
         return BluetoothScanResponse(devices=compatible_devices)
 
-    @property
-    def switches(self) -> List[dict]:
-        self.publish_entities(self.configured_devices)  # type: ignore
+    @action
+    def status(self, *_, **__) -> List[dict]:
+        self.publish_entities(self.configured_devices)
         return [
             {
                 'address': addr,
@@ -175,20 +201,17 @@ class SwitchbotBluetoothPlugin(  # lgtm [py/missing-call-to-init]
             for addr, name in self.configured_devices.items()
         ]
 
-    def transform_entities(self, devices: dict):
-        from platypush.entities.switches import Switch
-
-        return super().transform_entities(  # type: ignore
-            [
-                Switch(
-                    id=addr,
-                    name=name,
-                    state=False,
-                    is_write_only=True,
-                )
-                for addr, name in devices.items()
-            ]
-        )
+    def transform_entities(self, entities: Collection[dict]) -> Collection[EnumSwitch]:
+        return [
+            EnumSwitch(
+                id=addr,
+                name=name,
+                value='on',
+                values=['on', 'off', 'press'],
+                is_write_only=True,
+            )
+            for addr, name in entities
+        ]
 
 
 # vim:sw=4:ts=4:et:
