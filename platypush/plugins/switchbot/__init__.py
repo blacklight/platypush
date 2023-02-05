@@ -1,6 +1,6 @@
 import queue
 import threading
-from typing import Any, Collection, Dict, List, Optional, Union
+from typing import Any, Collection, Dict, List, Optional, Tuple, Union
 
 import requests
 
@@ -8,24 +8,32 @@ from platypush.entities import (
     DimmerEntityManager,
     EnumSwitchEntityManager,
     Entity,
+    LightEntityManager,
     SwitchEntityManager,
 )
 from platypush.entities.devices import Device
 from platypush.entities.dimmers import Dimmer
+from platypush.entities.electricity import CurrentSensor, PowerSensor, VoltageSensor
+from platypush.entities.lights import Light
 from platypush.entities.humidity import HumiditySensor
 from platypush.entities.motion import MotionSensor
-from platypush.entities.sensors import BinarySensor, EnumSensor, Sensor
-from platypush.entities.switches import EnumSwitch
+from platypush.entities.sensors import BinarySensor, EnumSensor, NumericSensor
+from platypush.entities.switches import EnumSwitch, Switch
 from platypush.entities.temperature import TemperatureSensor
 from platypush.plugins import RunnablePlugin, action
 from platypush.schemas.switchbot import DeviceSchema, DeviceStatusSchema, SceneSchema
 
+from ._constants import DeviceType
+from ._setters import entity_setters
 
+
+# pylint: disable=too-many-ancestors
 class SwitchbotPlugin(
     RunnablePlugin,
-    SwitchEntityManager,
     DimmerEntityManager,
     EnumSwitchEntityManager,
+    LightEntityManager,
+    SwitchEntityManager,
 ):
     """
     Plugin to interact with the devices registered to a Switchbot
@@ -88,14 +96,21 @@ class SwitchbotPlugin(
 
         return response.get('body')
 
-    def _get_device(self, device: str, use_cache=True):
+    @staticmethod
+    def _split_device_id_and_property(device: str) -> Tuple[str, Optional[str]]:
+        tokens = device.split(':')[:2]
+        return tokens[0], (tokens[1] if len(tokens) == 2 else None)
+
+    def _get_device(self, device: str, use_cache=True) -> dict:
         if not use_cache:
             self.devices()
 
-        if device in self._devices_by_id:
-            return self._devices_by_id[device]
         if device in self._devices_by_name:
             return self._devices_by_name[device]
+
+        device, _ = self._split_device_id_and_property(device)
+        if device in self._devices_by_id:
+            return self._devices_by_id[device]
 
         assert use_cache, f'Device not found: {device}'
         return self._get_device(device, use_cache=False)
@@ -152,6 +167,12 @@ class SwitchbotPlugin(
             **args,
         )
 
+    @staticmethod
+    def _matches_device_types(device: dict, *device_types: DeviceType) -> bool:
+        return device.get('device_type') in {
+            device_type.value for device_type in device_types
+        }
+
     @classmethod
     def _get_bots(cls, *entities: dict) -> List[EnumSwitch]:
         return [
@@ -164,7 +185,29 @@ class SwitchbotPlugin(
                 data=cls._get_device_metadata(dev),
             )
             for dev in (entities or [])
-            if dev.get('device_type') == 'Bot'
+            if cls._matches_device_types(dev, DeviceType.BOT)
+        ]
+
+    @classmethod
+    def _get_lights(cls, *entities: dict) -> List[Light]:
+        return [
+            Light(
+                id=dev["id"],
+                name=dev["name"],
+                on="on" if dev.get("on") else "off",
+                brightness=dev.get("brightness"),
+                color_temperature=dev.get("color_temperature"),
+                color=dev.get("color"),
+                data=cls._get_device_metadata(dev),
+            )
+            for dev in (entities or [])
+            if cls._matches_device_types(
+                dev,
+                DeviceType.CEILING_LIGHT,
+                DeviceType.CEILING_LIGHT_PRO,
+                DeviceType.COLOR_BULB,
+                DeviceType.STRIP_LIGHT,
+            )
         ]
 
     @classmethod
@@ -180,7 +223,7 @@ class SwitchbotPlugin(
                 data=cls._get_device_metadata(dev),
             )
             for dev in (entities or [])
-            if dev.get('device_type') == 'Curtain'
+            if cls._matches_device_types(dev, DeviceType.CURTAIN)
         ]
 
     @classmethod
@@ -256,22 +299,207 @@ class SwitchbotPlugin(
         return devices
 
     @classmethod
-    def _get_sensors(cls, *entities: dict) -> List[Sensor]:
-        sensors: List[Sensor] = []
+    def _get_sensors(cls, *entities: dict) -> List[Device]:
+        sensors: List[Entity] = []
         for dev in entities:
-            if dev.get('device_type') in {'Meter', 'Meter Plus'}:
+            if cls._matches_device_types(dev, DeviceType.METER, DeviceType.METER_PLUS):
                 sensors.extend(cls._get_meters(dev))
-            elif dev.get('device_type') == 'Motion Sensor':
+            elif cls._matches_device_types(dev, DeviceType.MOTION_SENSOR):
                 sensors.extend(cls._get_motion_sensors(dev))
-            elif dev.get('device_type') == 'Contact Sensor':
+            elif cls._matches_device_types(dev, DeviceType.CONTACT_SENSOR):
                 sensors.extend(cls._get_contact_sensors(dev))
 
         return sensors
+
+    @classmethod
+    def _get_humidifiers(cls, *entities: dict) -> List[Device]:
+        humidifiers = [
+            dev
+            for dev in entities
+            if cls._matches_device_types(dev, DeviceType.HUMIDIFIER)
+        ]
+
+        devs = [Device(**cls._get_device_base(dev)) for dev in humidifiers]
+
+        for dev_dict, entity in zip(humidifiers, devs):
+            if dev_dict.get('power') is not None:
+                entity.children.append(
+                    Switch(
+                        id=f'{dev_dict["id"]}:state',
+                        name='State',
+                        state=cls._is_on(dev_dict['power']),
+                    )
+                )
+
+            if dev_dict.get('auto') is not None:
+                entity.children.append(
+                    Switch(
+                        id=f'{dev_dict["id"]}:auto',
+                        name='Automatic Mode',
+                        state=cls._is_on(dev_dict['auto']),
+                    )
+                )
+
+            if dev_dict.get('child_lock') is not None:
+                entity.children.append(
+                    Switch(
+                        id=f'{dev_dict["id"]}:child_lock',
+                        name='Child Lock',
+                        state=cls._is_on(dev_dict['child_lock']),
+                    )
+                )
+
+            if dev_dict.get('nebulization_efficiency') is not None:
+                entity.children.append(
+                    Dimmer(
+                        id=f'{dev_dict["id"]}:nebulization_efficiency',
+                        name='Nebulization Efficiency',
+                        value=cls._is_on(dev_dict['nebulization_efficiency']),
+                        min=0,
+                        max=100,
+                    )
+                )
+
+            if dev_dict.get('low_water') is not None:
+                entity.children.append(
+                    BinarySensor(
+                        id=f'{dev_dict["id"]}:low_water',
+                        name='Low Water',
+                        value=cls._is_on(dev_dict['low_water']),
+                    )
+                )
+
+            if dev_dict.get('temperature') is not None:
+                entity.children.append(
+                    TemperatureSensor(
+                        id=f'{dev_dict["id"]}:temperature',
+                        name='temperature',
+                        value=dev_dict['temperature'],
+                    )
+                )
+
+            if dev_dict.get('humidity') is not None:
+                entity.children.append(
+                    HumiditySensor(
+                        id=f'{dev_dict["id"]}:humidity',
+                        name='humidity',
+                        value=dev_dict['humidity'],
+                    )
+                )
+
+        return devs
+
+    @classmethod
+    def _get_locks(cls, *entities: dict) -> List[Device]:
+        locks = [
+            dev
+            for dev in (entities or [])
+            if cls._matches_device_types(dev, DeviceType.LOCK)
+        ]
+
+        devices = [Device(**cls._get_device_base(plug)) for plug in locks]
+
+        for plug, device in zip(locks, devices):
+            if plug.get('locked') is not None:
+                device.children.append(
+                    Switch(
+                        id=f'{plug["id"]}:locked',
+                        name='Locked',
+                        state=cls._is_on(plug['locked']),
+                    )
+                )
+
+            if plug.get('door_open') is not None:
+                device.children.append(
+                    BinarySensor(
+                        id=f'{plug["id"]}:door_open',
+                        name='Door Open',
+                        value=cls._is_on(plug['door_open']),
+                    )
+                )
+
+        return devices
+
+    @classmethod
+    def _get_plugs(cls, *entities: dict) -> List[Device]:
+        plugs = [
+            dev
+            for dev in (entities or [])
+            if cls._matches_device_types(
+                dev, DeviceType.PLUG, DeviceType.PLUG_MINI_JP, DeviceType.PLUG_MINI_US
+            )
+        ]
+
+        devices = [Device(**cls._get_device_base(plug)) for plug in plugs]
+
+        for plug, device in zip(plugs, devices):
+            if plug.get('on') is not None:
+                device.children.append(
+                    Switch(
+                        id=f'{plug["id"]}:state',
+                        name='State',
+                        state=cls._is_on(plug['on']),
+                    )
+                )
+
+            if plug.get('power') is not None:
+                device.children.append(
+                    PowerSensor(
+                        id=f'{plug["id"]}:power',
+                        name='Power',
+                        value=plug['power'],
+                        unit='W',
+                    )
+                )
+
+            if plug.get('voltage') is not None:
+                device.children.append(
+                    VoltageSensor(
+                        id=f'{plug["id"]}:voltage',
+                        name='Voltage',
+                        value=plug['voltage'],
+                        unit='V',
+                    )
+                )
+
+            if plug.get('current') is not None:
+                device.children.append(
+                    CurrentSensor(
+                        id=f'{plug["id"]}:current',
+                        name='Current',
+                        value=plug['current'],
+                        unit='A',
+                    )
+                )
+
+            if plug.get('active_time') is not None:
+                device.children.append(
+                    NumericSensor(
+                        id=f'{plug["id"]}:active_time',
+                        name='Active Time',
+                        value=plug['active_time'],
+                        unit='min',
+                    )
+                )
+
+        return devices
+
+    @staticmethod
+    def _is_on(state: Union[bool, str, int]) -> bool:
+        if isinstance(state, str):
+            state = state.lower()
+        else:
+            state = bool(state)
+        return state in {'on', 'true', '1', True}
 
     def transform_entities(self, entities: Collection[dict]) -> Collection[Entity]:
         return [
             *self._get_bots(*entities),
             *self._get_curtains(*entities),
+            *self._get_humidifiers(*entities),
+            *self._get_lights(*entities),
+            *self._get_locks(*entities),
+            *self._get_plugs(*entities),
             *self._get_sensors(*entities),
         ]
 
@@ -367,8 +595,8 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={'command': 'press'})
+        dev = self._get_device(device)
+        return self._run('post', 'commands', device=dev, json={'command': 'press'})
 
     @action
     def toggle(self, device: str, **_):  # pylint: disable=arguments-differ
@@ -386,8 +614,8 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={'command': 'turnOn'})
+        dev = self._get_device(device)
+        return self._run('post', 'commands', device=dev, json={'command': 'turnOn'})
 
     @action
     def off(self, device: str, **_):  # pylint: disable=arguments-differ
@@ -396,8 +624,28 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
-        return self._run('post', 'commands', device=device, json={'command': 'turnOff'})
+        dev = self._get_device(device)
+        return self._run('post', 'commands', device=dev, json={'command': 'turnOff'})
+
+    @action
+    def lock(self, device: str, **_):
+        """
+        Lock a compatible lock device.
+
+        :param device: Device name or ID.
+        """
+        dev = self._get_device(device)
+        return self._run('post', 'commands', device=dev, json={'command': 'lock'})
+
+    @action
+    def unlock(self, device: str, **_):
+        """
+        Unlock a compatible lock device.
+
+        :param device: Device name or ID.
+        """
+        dev = self._get_device(device)
+        return self._run('post', 'commands', device=dev, json={'command': 'unlock'})
 
     @action
     def set_curtain_position(self, device: str, position: int):
@@ -407,11 +655,11 @@ class SwitchbotPlugin(
         :param device: Device name or ID.
         :param position: An integer between 0 (open) and 100 (closed).
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'setPosition',
                 'commandType': 'command',
@@ -425,13 +673,17 @@ class SwitchbotPlugin(
         Set the nebulization efficiency of a humidifier device.
 
         :param device: Device name or ID.
-        :param efficiency: An integer between 0 and 100, or `auto`.
+        :param efficiency: Possible values:
+
+            - ``auto``: Automatic mode.
+            - A value between ``0`` and ``100``.
+
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'setMode',
                 'commandType': 'command',
@@ -598,11 +850,11 @@ class SwitchbotPlugin(
         :param device: Device name or ID.
         :param channel: Channel number.
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'SetChannel',
                 'commandType': 'command',
@@ -617,11 +869,11 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'volumeAdd',
                 'commandType': 'command',
@@ -635,11 +887,11 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'volumeSub',
                 'commandType': 'command',
@@ -653,11 +905,11 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'setMute',
                 'commandType': 'command',
@@ -671,11 +923,11 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'channelAdd',
                 'commandType': 'command',
@@ -689,11 +941,11 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'channelSub',
                 'commandType': 'command',
@@ -707,11 +959,11 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'Play',
                 'commandType': 'command',
@@ -725,11 +977,11 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'Pause',
                 'commandType': 'command',
@@ -743,11 +995,11 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'Stop',
                 'commandType': 'command',
@@ -761,11 +1013,11 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'FastForward',
                 'commandType': 'command',
@@ -779,11 +1031,11 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'Rewind',
                 'commandType': 'command',
@@ -797,11 +1049,11 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'Next',
                 'commandType': 'command',
@@ -815,11 +1067,11 @@ class SwitchbotPlugin(
 
         :param device: Device name or ID.
         """
-        device = self._get_device(device)
+        dev = self._get_device(device)
         return self._run(
             'post',
             'commands',
-            device=device,
+            device=dev,
             json={
                 'command': 'Previous',
                 'commandType': 'command',
@@ -854,37 +1106,105 @@ class SwitchbotPlugin(
     @action
     # pylint: disable=redefined-builtin,arguments-differ
     def set_value(self, device: str, property=None, data=None, **__):
+        entity = self._to_entity(device, property)
+        assert entity, f'No such entity: "{device}"'
+
+        dt = entity.data.get('device_type')
+        assert dt, f'Could not infer the device type for "{device}"'
+
+        device_type = DeviceType(dt)
+        setter_class = entity_setters.get(device_type)
+        assert setter_class, f'No setters found for device type "{device_type}"'
+
+        setter = setter_class(entity)
+        return setter(property=property, value=data)
+
+    def _to_entity(
+        self,
+        device: str,
+        property: Optional[str] = None,  # pylint: disable=redefined-builtin
+    ) -> Optional[Entity]:
         dev = self._get_device(device)
         entities = list(self.transform_entities([dev]))
-        assert entities, f'The device {device} is not mapped to a compatible entity'
+        if not entities:
+            return None
+        if len(entities) == 1:
+            return entities[0]
+        if not property:
+            device, property = self._split_device_id_and_property(device)
+        assert property, 'No property specified'
 
-        entity = entities[0]
+        entity_id = f'{device}:{property}'
+        return next(iter([e for e in entities if e.id == entity_id]), None)
 
-        # SwitchBot case
-        if isinstance(entity, EnumSwitch):
-            method = getattr(self, data, None)
-            assert method, f'No such action available for device "{device}": "{data}"'
+    @action
+    def set_lights(
+        self,
+        *_,
+        lights: Collection[str],
+        on: Optional[bool] = None,
+        brightness: Optional[int] = None,
+        hex: Optional[str] = None,  # pylint: disable=redefined-builtin
+        temperature: Optional[int] = None,
+        **__,
+    ):
+        """
+        Change the settings for compatible lights.
 
-            return method(entity.id)
+        :param lights: Light names or IDs.
+        :param on: Turn on the lights.
+        :param brightness: Set the brightness of the lights.
+        :param hex: Set the color of the lights.
+        :param temperature: Set the temperature of the lights.
+        """
+        devices = [self._get_device(light) for light in lights]
+        for dev in devices:
+            if on is not None:
+                method = self.on if on else self.off
+                method(dev['id'])
 
-        # Curtain case
-        if isinstance(entity, Dimmer):
-            return self.set_curtain_position(entity.id, data)
+            if brightness is not None:
+                self._run(
+                    'post',
+                    'commands',
+                    device=dev,
+                    json={
+                        'command': 'setBrightness',
+                        'commandType': 'command',
+                        'parameter': brightness,
+                    },
+                )
 
-        self.logger.warning(
-            'Could not find a suitable action for device "%s" of type "%s"',
-            device,
-            type(entity.__class__.__name__),
-        )
+            if hex is not None:
+                self._run(
+                    'post',
+                    'commands',
+                    device=dev,
+                    json={
+                        'command': 'setColor',
+                        'commandType': 'command',
+                        'parameter': hex,
+                    },
+                )
+
+            if temperature is not None:
+                self._run(
+                    'post',
+                    'commands',
+                    device=dev,
+                    json={
+                        'command': 'setColorTemperature',
+                        'commandType': 'command',
+                        'parameter': temperature,
+                    },
+                )
 
     def main(self):
         entities = {}
 
         while not self.should_stop():
-            new_entities = {
-                e['id']: e for e in self.status(publish_entities=False).output
-            }
-
+            status = self.status(publish_entities=False).output
+            new_entities = {e['id']: e for e in status}
             updated_entities = {
                 id: e
                 for id, e in new_entities.items()

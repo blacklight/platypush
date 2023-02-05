@@ -35,7 +35,7 @@ class MultiLevelSwitchEntityManager(EntityManager, ABC):
 
     @abstractmethod
     def set_value(  # pylint: disable=redefined-builtin
-        self, *entities, property=None, value=None, **__
+        self, *entities, property=None, data=None, **__
     ):
         """Set a value"""
         raise NotImplementedError()
