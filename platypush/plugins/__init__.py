@@ -80,13 +80,13 @@ class RunnablePlugin(Plugin):
 
     def __init__(
         self,
-        poll_interval: Optional[float] = None,
+        poll_interval: Optional[float] = 30,
         stop_timeout: Optional[float] = PLUGIN_STOP_TIMEOUT,
         **kwargs,
     ):
         """
         :param poll_interval: How often the :meth:`.loop` function should be
-            execute (default: None, no pause/interval).
+            execute (default: 30 seconds).
         :param stop_timeout: How long we should wait for any running
             threads/processes to stop before exiting (default: 5 seconds).
         """
