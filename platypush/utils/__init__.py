@@ -525,7 +525,7 @@ def get_enabled_plugins() -> dict:
     return plugins
 
 
-def get_redis() -> Redis:
+def get_redis(*args, **kwargs) -> Redis:
     """
     Get a Redis client on the basis of the Redis configuration.
 
@@ -537,13 +537,14 @@ def get_redis() -> Redis:
     """
     from platypush.config import Config
 
-    return Redis(
-        **(
+    if not (args or kwargs):
+        kwargs = (
             (Config.get('backend.redis') or {}).get('redis_args', {})
             or Config.get('redis')
             or {}
         )
-    )
+
+    return Redis(*args, **kwargs)
 
 
 def to_datetime(t: Union[str, int, float, datetime.datetime]) -> datetime.datetime:

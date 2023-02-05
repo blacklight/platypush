@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Optional, Union
 
 from redis import Redis
 
@@ -16,7 +16,7 @@ class RedisBackend(Backend):
     and can't post events or requests to the application bus.
     """
 
-    def __init__(self, queue='platypush_bus_mq', redis_args=None, *args, **kwargs):
+    def __init__(self, *args, queue='platypush_bus_mq', redis_args=None, **kwargs):
         """
         :param queue: Queue name to listen on (default: ``platypush_bus_mq``)
         :type queue: str
@@ -40,12 +40,21 @@ class RedisBackend(Backend):
         self.redis_args = redis_args
         self.redis: Optional[Redis] = None
 
-    def send_message(self, msg, queue_name=None, **kwargs):
-        msg = str(msg)
-        if queue_name:
-            self.redis.rpush(queue_name, msg)
-        else:
-            self.redis.rpush(self.queue, msg)
+    def send_message(
+        self, msg: Union[str, Message], queue_name: Optional[str] = None, **_
+    ):
+        """
+        Send a message to a Redis queue.
+
+        :param msg: Message to send, as a ``Message`` object or a string.
+        :param queue_name: Queue name to send the message to (default: ``platypush_bus_mq``).
+        """
+
+        if not self.redis:
+            self.logger.warning('The Redis backend is not yet running.')
+            return
+
+        self.redis.rpush(queue_name or self.queue, str(msg))
 
     def get_message(self, queue_name=None):
         queue = queue_name or self.queue
@@ -60,6 +69,7 @@ class RedisBackend(Backend):
             self.logger.debug(str(e))
             try:
                 import ast
+
                 msg = Message.build(ast.literal_eval(msg))
             except Exception as ee:
                 self.logger.debug(str(ee))
@@ -72,7 +82,11 @@ class RedisBackend(Backend):
 
     def run(self):
         super().run()
-        self.logger.info('Initialized Redis backend on queue {} with arguments {}'.format(self.queue, self.redis_args))
+        self.logger.info(
+            'Initialized Redis backend on queue %s with arguments %s',
+            self.queue,
+            self.redis_args,
+        )
 
         with Redis(**self.redis_args) as self.redis:
             while not self.should_stop():
@@ -81,7 +95,7 @@ class RedisBackend(Backend):
                     if not msg:
                         continue
 
-                    self.logger.info('Received message on the Redis backend: {}'.format(msg))
+                    self.logger.info('Received message on the Redis backend: %s', msg)
                     self.on_message(msg)
                 except Exception as e:
                     self.logger.exception(e)
