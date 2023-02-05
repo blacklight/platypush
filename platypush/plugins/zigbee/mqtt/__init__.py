@@ -1072,8 +1072,9 @@ class ZigbeeMqttPlugin(
         return properties
 
     @action
-    def set_value(  # pylint: disable=redefined-builtin,arguments-differ
-        self, device: str, property: Optional[str] = None, data=None, **kwargs
+    # pylint: disable=redefined-builtin,arguments-differ
+    def set_value(
+        self, device: str, *_, property: Optional[str] = None, data=None, **kwargs
     ):
         """
         Entity-compatible way of setting a value on a node.

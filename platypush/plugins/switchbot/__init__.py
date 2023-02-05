@@ -1105,7 +1105,7 @@ class SwitchbotPlugin(
 
     @action
     # pylint: disable=redefined-builtin,arguments-differ
-    def set_value(self, device: str, property=None, data=None, **__):
+    def set_value(self, device: str, *_, property=None, data=None, **__):
         entity = self._to_entity(device, property)
         assert entity, f'No such entity: "{device}"'
 

@@ -859,8 +859,9 @@ class SmartthingsPlugin(
         return self.status(device)
 
     @action
-    def set_value(  # pylint: disable=arguments-differ,redefined-builtin
-        self, device: str, property: Optional[str] = None, data=None, **kwargs
+    # pylint: disable=redefined-builtin,arguments-differ
+    def set_value(
+        self, device: str, *_, property: Optional[str] = None, data=None, **kwargs
     ):
         """
         Set the value of a device. It is compatible with the generic
