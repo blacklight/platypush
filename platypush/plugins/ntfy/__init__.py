@@ -1,7 +1,7 @@
 import asyncio
 import json
 import os
-from typing import Optional, Collection, Mapping
+from typing import Any, Callable, Dict, Optional, Collection, Mapping
 
 import requests
 import websockets
@@ -53,12 +53,12 @@ class NtfyPlugin(AsyncRunnablePlugin):
         reconnect_wait_secs_max = 60
 
         while not self.should_stop():
-            self.logger.debug(f'Connecting to {url}')
+            self.logger.debug('Connecting to %s', url)
 
             try:
-                async with websockets.connect(url) as ws:  # type: ignore
+                async with websockets.connect(url) as ws:  # pylint: disable=no-member
                     reconnect_wait_secs = 1
-                    self.logger.info(f'Connected to {url}')
+                    self.logger.info('Connected to %s', url)
                     async for msg in ws:
                         try:
                             msg = json.loads(msg)
@@ -122,7 +122,7 @@ class NtfyPlugin(AsyncRunnablePlugin):
         tags: Optional[Collection[str]] = None,
         schedule: Optional[str] = None,
     ):
-        """
+        r"""
         Send a message/notification to a topic.
 
         :param topic: Topic where the message will be delivered.
@@ -148,36 +148,36 @@ class NtfyPlugin(AsyncRunnablePlugin):
                 - ``broadcast``: Send an `Android broadcast <https://developer.android.com/guide/components/broadcasts>`
                       intent upon action selection (only available on Android).
 
-            Example:
+        Actions example:
 
-            .. code-block:: json
+        .. code-block:: json
 
-                [
-                    {
-                        "action": "view",
-                        "label": "Open portal",
-                        "url": "https://home.nest.com/",
-                        "clear": true
+            [
+                {
+                    "action": "view",
+                    "label": "Open portal",
+                    "url": "https://home.nest.com/",
+                    "clear": true
+                },
+                {
+                    "action": "http",
+                    "label": "Turn down",
+                    "url": "https://api.nest.com/",
+                    "method": "PUT",
+                    "headers": {
+                        "Authorization": "Bearer abcdef..."
                     },
-                    {
-                        "action": "http",
-                        "label": "Turn down",
-                        "url": "https://api.nest.com/",
-                        "method": "PUT",
-                        "headers": {
-                            "Authorization": "Bearer abcdef..."
-                        },
-                        "body": "{\\"temperature\\": 65}"
-                    },
-                    {
-                        "action": "broadcast",
-                        "label": "Take picture",
-                        "intent": "com.myapp.TAKE_PICTURE_INTENT",
-                        "extras": {
-                            "camera": "front"
-                        }
+                    "body": "{\\"temperature\\": 65}"
+                },
+                {
+                    "action": "broadcast",
+                    "label": "Take picture",
+                    "intent": "com.myapp.TAKE_PICTURE_INTENT",
+                    "extras": {
+                        "camera": "front"
                     }
-                ]
+                }
+            ]
 
         :param email: Forward the notification as an email to the specified
             address.
@@ -196,9 +196,9 @@ class NtfyPlugin(AsyncRunnablePlugin):
                   ``tomorrow, 3pm``)
 
         """
-        method = requests.post
+        method: Callable[..., requests.Response] = requests.post
         url = server_url or self._server_url
-        args = {}
+        args: Dict[str, Any] = {}
         if username and password:
             args['auth'] = (username, password)
 
@@ -247,8 +247,8 @@ class NtfyPlugin(AsyncRunnablePlugin):
             }
 
         rs = method(url, **args)
-        assert rs.ok, 'Could not send message to {}: {}'.format(
-            topic, rs.json().get('error', f'HTTP error: {rs.status_code}')
+        assert rs.ok, f'Could not send message to {topic}: ' + rs.json().get(
+            'error', f'HTTP error: {rs.status_code}'
         )
 
         return rs.json()

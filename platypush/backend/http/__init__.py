@@ -6,14 +6,14 @@ from multiprocessing import Process
 
 try:
     from websockets.exceptions import ConnectionClosed
-    from websockets import serve as websocket_serve
+    from websockets import serve as websocket_serve  # type: ignore
 except ImportError:
-    from websockets import ConnectionClosed, serve as websocket_serve
+    from websockets import ConnectionClosed, serve as websocket_serve  # type: ignore
 
 from platypush.backend import Backend
 from platypush.backend.http.app import application
 from platypush.context import get_or_create_event_loop
-from platypush.utils import get_ssl_server_context, set_thread_name
+from platypush.utils import get_ssl_server_context
 
 
 class HttpBackend(Backend):
@@ -186,7 +186,7 @@ class HttpBackend(Backend):
         maps=None,
         run_externally=False,
         uwsgi_args=None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param port: Listen port for the web server (default: 8008)
@@ -283,15 +283,13 @@ class HttpBackend(Backend):
                 '--enable-threads',
             ]
 
-        self.local_base_url = '{proto}://localhost:{port}'.format(
-            proto=('https' if ssl_cert else 'http'), port=self.port
-        )
-
+        protocol = 'https' if ssl_cert else 'http'
+        self.local_base_url = f'{protocol}://localhost:{self.port}'
         self._websocket_lock_timeout = 10
         self._websocket_lock = threading.RLock()
         self._websocket_locks = {}
 
-    def send_message(self, msg, **kwargs):
+    def send_message(self, msg, *_, **__):
         self.logger.warning('Use cURL or any HTTP client to query the HTTP backend')
 
     def on_stop(self):
@@ -351,9 +349,7 @@ class HttpBackend(Backend):
             timeout=self._websocket_lock_timeout
         )
         if not acquire_ok:
-            raise TimeoutError(
-                'Websocket on address {} not ready to receive data'.format(addr)
-            )
+            raise TimeoutError(f'Websocket on address {addr} not ready to receive data')
 
     def _release_websocket_lock(self, ws):
         try:
@@ -368,7 +364,7 @@ class HttpBackend(Backend):
                 self._websocket_locks[addr].release()
         except Exception as e:
             self.logger.warning(
-                'Unhandled exception while releasing websocket lock: {}'.format(str(e))
+                'Unhandled exception while releasing websocket lock: %s', e
             )
         finally:
             self._websocket_lock.release()
@@ -381,7 +377,7 @@ class HttpBackend(Backend):
                 self._acquire_websocket_lock(ws)
                 await ws.send(str(event))
             except Exception as e:
-                self.logger.warning('Error on websocket send_event: {}'.format(e))
+                self.logger.warning('Error on websocket send_event: %s', e)
             finally:
                 self._release_websocket_lock(ws)
 
@@ -393,7 +389,7 @@ class HttpBackend(Backend):
                 loop.run_until_complete(send_event(_ws))
             except ConnectionClosed:
                 self.logger.warning(
-                    'Websocket client {} connection lost'.format(_ws.remote_address)
+                    'Websocket client %s connection lost', _ws.remote_address
                 )
                 self.active_websockets.remove(_ws)
                 if _ws.remote_address in self._websocket_locks:
@@ -401,7 +397,6 @@ class HttpBackend(Backend):
 
     def websocket(self):
         """Websocket main server"""
-        set_thread_name('WebsocketServer')
 
         async def register_websocket(websocket, path):
             address = (
@@ -411,16 +406,14 @@ class HttpBackend(Backend):
             )
 
             self.logger.info(
-                'New websocket connection from {} on path {}'.format(address, path)
+                'New websocket connection from %s on path %s', address, path
             )
             self.active_websockets.add(websocket)
 
             try:
                 await websocket.recv()
             except ConnectionClosed:
-                self.logger.info(
-                    'Websocket client {} closed connection'.format(address)
-                )
+                self.logger.info('Websocket client %s closed connection', address)
                 self.active_websockets.remove(websocket)
                 if address in self._websocket_locks:
                     del self._websocket_locks[address]
@@ -435,14 +428,14 @@ class HttpBackend(Backend):
                 register_websocket,
                 self.bind_address,
                 self.websocket_port,
-                **websocket_args
+                **websocket_args,
             )
         )
         self._websocket_loop.run_forever()
 
     def _start_web_server(self):
         def proc():
-            self.logger.info('Starting local web server on port {}'.format(self.port))
+            self.logger.info('Starting local web server on port %s', self.port)
             kwargs = {
                 'host': self.bind_address,
                 'port': self.port,
@@ -470,7 +463,10 @@ class HttpBackend(Backend):
 
         if not self.disable_websocket:
             self.logger.info('Initializing websocket interface')
-            self.websocket_thread = threading.Thread(target=self.websocket)
+            self.websocket_thread = threading.Thread(
+                target=self.websocket,
+                name='WebsocketServer',
+            )
             self.websocket_thread.start()
 
         if not self.run_externally:
@@ -481,13 +477,13 @@ class HttpBackend(Backend):
             self.server_proc.join()
         elif self.uwsgi_args:
             uwsgi_cmd = ['uwsgi'] + self.uwsgi_args
-            self.logger.info('Starting uWSGI with arguments {}'.format(uwsgi_cmd))
+            self.logger.info('Starting uWSGI with arguments %s', uwsgi_cmd)
             self.server_proc = subprocess.Popen(uwsgi_cmd)
         else:
             self.logger.info(
                 'The web server is configured to be launched externally but '
-                + 'no uwsgi_args were provided. Make sure that you run another external service'
-                + 'for the webserver (e.g. nginx)'
+                'no uwsgi_args were provided. Make sure that you run another external service'
+                'for the web server (e.g. nginx)'
             )
 
         self._service_registry_thread = threading.Thread(target=self._register_service)

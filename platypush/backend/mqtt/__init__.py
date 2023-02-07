@@ -13,7 +13,6 @@ from platypush.message import Message
 from platypush.message.event.mqtt import MQTTMessageEvent
 from platypush.message.request import Request
 from platypush.plugins.mqtt import MqttPlugin as MQTTPlugin
-from platypush.utils import set_thread_name
 
 
 class MqttClient(mqtt.Client, threading.Thread):
@@ -39,6 +38,7 @@ class MqttClient(mqtt.Client, threading.Thread):
         mqtt.Client.__init__(self, *args, client_id=client_id, **kwargs)
         threading.Thread.__init__(self)
 
+        self.name = f'MQTTClient:{client_id}'
         self.host = host
         self.port = port
         self.topics = set(topics or [])
@@ -393,7 +393,6 @@ class MqttBackend(Backend):
         def handler(_, __, msg):
             # noinspection PyShadowingNames
             def response_thread(msg):
-                set_thread_name('MQTTProcessor')
                 response = self.get_message_response(msg)
                 if not response:
                     return
@@ -428,7 +427,9 @@ class MqttBackend(Backend):
 
             if isinstance(msg, Request):
                 threading.Thread(
-                    target=response_thread, name='MQTTProcessor', args=(msg,)
+                    target=response_thread,
+                    name='MQTTProcessorResponseThread',
+                    args=(msg,),
                 ).start()
 
         return handler

@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import threading
-import time
 
 from abc import ABC, abstractmethod
 from functools import wraps
@@ -11,7 +10,7 @@ from platypush.bus import Bus
 from platypush.common import ExtensionWithManifest
 from platypush.event import EventGenerator
 from platypush.message.response import Response
-from platypush.utils import get_decorators, get_plugin_name_by_class, set_thread_name
+from platypush.utils import get_decorators, get_plugin_name_by_class
 
 PLUGIN_STOP_TIMEOUT = 5  # Plugin stop timeout in seconds
 
@@ -107,25 +106,22 @@ class RunnablePlugin(Plugin):
         return self._should_stop.wait(timeout=timeout)
 
     def start(self):
-        set_thread_name(self.__class__.__name__)
-        self._thread = threading.Thread(target=self._runner)
+        self._thread = threading.Thread(
+            target=self._runner, name=self.__class__.__name__
+        )
         self._thread.start()
 
     def stop(self):
         self._should_stop.set()
         if self._thread and self._thread.is_alive():
-            self.logger.info('Waiting for %s to stop', self.__class__.__name__)
+            self.logger.info('Waiting for the plugin to stop')
             try:
                 if self._thread:
                     self._thread.join(timeout=self._stop_timeout)
                     if self._thread and self._thread.is_alive():
                         self.logger.warning(
-                            'Timeout (seconds={%s}) on exit for the plugin %s',
+                            'Timeout (seconds=%s) on exit for the plugin',
                             self._stop_timeout,
-                            (
-                                get_plugin_name_by_class(self.__class__)
-                                or self.__class__.__name__
-                            ),
                         )
             except Exception as e:
                 self.logger.warning('Could not join thread on stop: %s', e)
@@ -142,7 +138,7 @@ class RunnablePlugin(Plugin):
                 self.logger.exception(e)
 
             if self.poll_interval:
-                time.sleep(self.poll_interval)
+                self.wait_stop(self.poll_interval)
 
         self._thread = None
 
@@ -156,18 +152,27 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
         super().__init__(*args, **kwargs)
 
         self._loop: Optional[asyncio.AbstractEventLoop] = None
-        self._loop_runner: Optional[threading.Thread] = None
         self._task: Optional[asyncio.Task] = None
 
     @property
     def _should_start_runner(self):
+        """
+        This property is used to determine if the runner and the event loop
+        should be started for this plugin.
+        """
         return True
 
     @abstractmethod
     async def listen(self):
-        pass
+        """
+        Main body of the async plugin. When it's called, the event loop should
+        already be running and available over `self._loop`.
+        """
 
     async def _listen(self):
+        """
+        Wrapper for :meth:`.listen` that catches any exceptions and logs them.
+        """
         try:
             await self.listen()
         except KeyboardInterrupt:
@@ -179,40 +184,36 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
             ):
                 raise e
 
-    def _start_listener(self):
-        set_thread_name(self.__class__.__name__ + ':listener')
+    def _run_listener(self):
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
 
         self._task = self._loop.create_task(self._listen())
         if hasattr(self._task, 'set_name'):
             self._task.set_name(self.__class__.__name__ + '.listen')
-        self._loop.run_forever()
+        try:
+            self._loop.run_until_complete(self._task)
+        except Exception as e:
+            self.logger.info('The loop has terminated with an error: %s', e)
+
+        self._task.cancel()
 
     def main(self):
-        if self.should_stop() or (self._loop_runner and self._loop_runner.is_alive()):
-            self.logger.info('The main loop is already being run/stopped')
+        if self.should_stop():
+            self.logger.info('The plugin is already scheduled to stop')
             return
 
+        self._loop = asyncio.new_event_loop()
+
         if self._should_start_runner:
-            self._loop_runner = threading.Thread(target=self._start_listener)
-            self._loop_runner.start()
+            self._run_listener()
 
         self.wait_stop()
 
     def stop(self):
-        if self._task and self._loop and not self._task.done():
-            self._loop.call_soon_threadsafe(self._task.cancel)
-
         if self._loop and self._loop.is_running():
             self._loop.call_soon_threadsafe(self._loop.stop)
             self._loop = None
-
-        if self._loop_runner and self._loop_runner.is_alive():
-            try:
-                self._loop_runner.join(timeout=self._stop_timeout)
-            finally:
-                self._loop_runner = None
 
         super().stop()
 
