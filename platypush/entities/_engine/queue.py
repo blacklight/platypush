@@ -43,7 +43,7 @@ class EntitiesQueue(Queue):
 
     def put(self, *entities: Entity, block=True, timeout=None):
         """
-        This methood is called by an entity manager to update and persist the
+        This method is called by an entity manager to update and persist the
         state of some entities.
         """
         for entity in entities:
