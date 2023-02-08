@@ -78,7 +78,9 @@ class EntityManager(ABC):
 
         return entities
 
-    def publish_entities(self, entities: Optional[Collection[Any]]):
+    def publish_entities(
+        self, entities: Optional[Collection[Any]]
+    ) -> Collection[Entity]:
         """
         Publishes a list of entities. The downstream consumers include:
 
@@ -99,6 +101,7 @@ class EntityManager(ABC):
         )
 
         publish_entities(transformed_entities)
+        return transformed_entities
 
 
 def register_entity_manager(cls: Type[EntityManager]):
