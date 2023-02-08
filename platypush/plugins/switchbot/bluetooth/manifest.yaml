@@ -2,12 +2,6 @@ manifest:
   events: {}
   install:
     pip:
-      - pybluez
-      - gattlib
-    apt:
-      - libboost-python-dev
-      - libboost-thread-dev
-    pacman:
-      - boost-libs
+      - bleak
   package: platypush.plugins.switchbot.bluetooth
   type: plugin

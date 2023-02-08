@@ -175,8 +175,7 @@ setup(
         'alexa': ['avs @ https://github.com/BlackLight/avs/tarball/master'],
         # Support for bluetooth devices
         'bluetooth': [
-            'pybluez',
-            'gattlib',
+            'bleak',
             'pyobex @ https://github.com/BlackLight/PyOBEX/tarball/master',
         ],
         # Support for TP-Link devices

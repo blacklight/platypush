@@ -296,6 +296,7 @@ autodoc_mock_imports = [
     'aiofiles',
     'aiofiles.os',
     'async_lru',
+    'bleak',
 ]
 
 sys.path.insert(0, os.path.abspath('../..'))
