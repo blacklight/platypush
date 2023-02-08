@@ -53,11 +53,13 @@ class SwitchbotBluetoothPlugin(AsyncRunnablePlugin, EnumSwitchEntityManager):
 
     def __init__(
         self,
+        interface: Optional[str] = None,
         connect_timeout: Optional[float] = 5,
         device_names: Optional[Dict[str, str]] = None,
         **kwargs,
     ):
         """
+        :param interface: Name of the Bluetooth interface to use (default: first available).
         :param connect_timeout: Timeout in seconds for the connection to the
             Switchbot device. Default: 5 seconds
         :param device_names: Bluetooth address -> device name mapping. If not
@@ -75,6 +77,7 @@ class SwitchbotBluetoothPlugin(AsyncRunnablePlugin, EnumSwitchEntityManager):
         """
         super().__init__(**kwargs)
 
+        self._interface = interface
         self._connect_timeout = connect_timeout if connect_timeout else 5
         self._scan_lock = RLock()
         self._devices: Dict[str, BLEDevice] = {}
@@ -95,7 +98,9 @@ class SwitchbotBluetoothPlugin(AsyncRunnablePlugin, EnumSwitchEntityManager):
             Switchbot registered ``tx`` service.
         """
         dev = await self._get_device(device)
-        async with BleakClient(dev.address, timeout=self._connect_timeout) as client:
+        async with BleakClient(
+            dev.address, adapter=self._interface, timeout=self._connect_timeout
+        ) as client:
             await client.write_gatt_char(str(uuid), command.value)
 
     async def _get_device(self, device: str) -> BLEDevice:
@@ -196,7 +201,10 @@ class SwitchbotBluetoothPlugin(AsyncRunnablePlugin, EnumSwitchEntityManager):
     async def _scan(self, duration: Optional[float] = None) -> Collection[Entity]:
         with self._scan_lock:
             timeout = duration or self.poll_interval or 5
-            devices = await BleakScanner.discover(timeout=timeout)
+            devices = await BleakScanner.discover(
+                adapter=self._interface, timeout=timeout
+            )
+
             compatible_devices = [
                 d
                 for d in devices
