@@ -206,9 +206,13 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
         self._loop = asyncio.new_event_loop()
 
         if self._should_start_runner:
-            self._run_listener()
-
-        self.wait_stop()
+            while not self.should_stop():
+                try:
+                    self._run_listener()
+                finally:
+                    self.wait_stop(self.poll_interval)
+        else:
+            self.wait_stop()
 
     def stop(self):
         if self._loop and self._loop.is_running():

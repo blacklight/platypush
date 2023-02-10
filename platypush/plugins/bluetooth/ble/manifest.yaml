@@ -2,7 +2,6 @@ manifest:
   events: {}
   install:
     pip:
-    - pybluez
-    - gattlib
+    - bleak
   package: platypush.plugins.bluetooth.ble
   type: plugin

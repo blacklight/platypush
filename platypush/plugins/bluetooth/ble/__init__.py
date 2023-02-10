@@ -1,275 +1,352 @@
 import base64
-import os
-import subprocess
-import sys
-import time
-from typing import Optional, Dict
+from contextlib import asynccontextmanager
+from threading import RLock
+from typing import AsyncGenerator, Collection, List, Optional, Dict, Type, Union
+from uuid import UUID
 
-from platypush.plugins import action
-from platypush.plugins.sensor import SensorPlugin
-from platypush.message.response.bluetooth import BluetoothScanResponse, BluetoothDiscoverPrimaryResponse, \
-    BluetoothDiscoverCharacteristicsResponse
+from bleak import BleakClient, BleakScanner
+from bleak.backends.device import BLEDevice
+from typing_extensions import override
+
+from platypush.context import get_bus, get_or_create_event_loop
+from platypush.entities import Entity, EntityManager
+from platypush.entities.devices import Device
+from platypush.message.event.bluetooth.ble import (
+    BluetoothDeviceBlockedEvent,
+    BluetoothDeviceConnectedEvent,
+    BluetoothDeviceDisconnectedEvent,
+    BluetoothDeviceFoundEvent,
+    BluetoothDeviceLostEvent,
+    BluetoothDevicePairedEvent,
+    BluetoothDeviceTrustedEvent,
+    BluetoothDeviceUnblockedEvent,
+    BluetoothDeviceUnpairedEvent,
+    BluetoothDeviceUntrustedEvent,
+    BluetoothEvent,
+)
+from platypush.plugins import AsyncRunnablePlugin, action
+
+UUIDType = Union[str, UUID]
 
 
-class BluetoothBlePlugin(SensorPlugin):
+class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
     """
-    Bluetooth BLE (low-energy) plugin
+    Plugin to interact with BLE (Bluetooth Low-Energy) devices.
+
+    Note that the support for Bluetooth low-energy devices requires a Bluetooth
+    adapter compatible with the Bluetooth 5.0 specification or higher.
 
     Requires:
 
-        * **pybluez** (``pip install pybluez``)
-        * **gattlib** (``pip install gattlib``)
+        * **bleak** (``pip install bleak``)
 
-    Note that the support for bluetooth low-energy devices on Linux requires:
-
-        * A bluetooth adapter compatible with the bluetooth 5.0 specification or higher;
-        * To run platypush with root privileges (which is usually a very bad idea), or to set the raw net
-          capabilities on the Python executable (which is also a bad idea, because any Python script will
-          be able to access the kernel raw network API, but it's probably better than running a network
-          server that can execute system commands as root user). If you don't want to set special permissions
-          on the main Python executable and you want to run the bluetooth LTE plugin then the advised approach
-          is to install platypush in a virtual environment and set the capabilities on the venv python executable,
-          or run your platypush instance in Docker.
-
-          You can set the capabilities on the Python executable through the following shell command::
-
-            [sudo] setcap 'cap_net_raw,cap_net_admin+eip' /path/to/your/python
+    TODO: Write supported events.
 
     """
 
-    def __init__(self, interface: str = 'hci0', **kwargs):
+    # Default connection timeout (in seconds)
+    _default_connect_timeout = 5
+
+    def __init__(
+        self,
+        interface: Optional[str] = None,
+        connect_timeout: float = _default_connect_timeout,
+        device_names: Optional[Dict[str, str]] = None,
+        service_uuids: Optional[Collection[UUIDType]] = None,
+        **kwargs,
+    ):
         """
-        :param interface: Default adapter device to be used (default: 'hci0')
+        :param interface: Name of the Bluetooth interface to use (e.g. ``hci0``
+            on Linux). Default: first available interface.
+        :param connect_timeout: Timeout in seconds for the connection to a
+            Bluetooth device. Default: 5 seconds.
+        :param service_uuids: List of service UUIDs to discover. Default: all.
+        :param device_names: Bluetooth address -> device name mapping. If not
+            specified, the device's advertised name will be used, or its
+            Bluetooth address. Example:
+
+                .. code-block:: json
+
+                    {
+                        "00:11:22:33:44:55": "Switchbot",
+                        "00:11:22:33:44:56": "Headphones",
+                        "00:11:22:33:44:57": "Button"
+                    }
+
         """
         super().__init__(**kwargs)
-        self.interface = interface
-        self._req_by_addr = {}
 
-    @staticmethod
-    def _get_python_interpreter() -> str:
-        exe = sys.executable
+        self._interface = interface
+        self._connect_timeout = connect_timeout
+        self._service_uuids = service_uuids
+        self._scan_lock = RLock()
+        self._connections: Dict[str, BleakClient] = {}
+        self._devices: Dict[str, BLEDevice] = {}
+        self._device_name_by_addr = device_names or {}
+        self._device_addr_by_name = {
+            name: addr for addr, name in self._device_name_by_addr.items()
+        }
 
-        while os.path.islink(exe):
-            target = os.readlink(exe)
-            if not os.path.isabs(target):
-                target = os.path.abspath(os.path.join(os.path.dirname(exe), target))
-            exe = target
-
-        return exe
-
-    @staticmethod
-    def _python_has_ble_capabilities(exe: str) -> bool:
-        getcap = subprocess.Popen(['getcap', exe], stdout=subprocess.PIPE)
-        output = getcap.communicate()[0].decode().split('\n')
-        if not output:
-            return False
-
-        caps = output[0]
-        return ('cap_net_raw+eip' in caps or 'cap_net_raw=eip' in caps) and 'cap_net_admin' in caps
-
-    def _check_ble_support(self):
-        # Check if the script is running as root or if the Python executable
-        # has 'cap_net_admin,cap_net_raw+eip' capabilities
-        exe = self._get_python_interpreter()
-        assert os.getuid() == 0 or self._python_has_ble_capabilities(exe), '''
-            You are not running platypush as root and the Python interpreter has no
-            capabilities/permissions to access the BLE stack. Set the permissions on
-            your Python interpreter through:
-
-                [sudo] setcap "cap_net_raw,cap_net_admin+eip" {}'''.format(exe)
-
-    @action
-    def scan(self, interface: Optional[str] = None, duration: int = 10) -> BluetoothScanResponse:
+    async def _get_device(self, device: str) -> BLEDevice:
         """
-        Scan for nearby bluetooth low-energy devices
-
-        :param interface: Bluetooth adapter name to use (default configured if None)
-        :param duration: Scan duration in seconds
+        Utility method to get a device by name or address.
         """
-        from bluetooth.ble import DiscoveryService
+        addr = (
+            self._device_addr_by_name[device]
+            if device in self._device_addr_by_name
+            else device
+        )
 
-        if interface is None:
-            interface = self.interface
+        if addr not in self._devices:
+            self.logger.info('Scanning for unknown device "%s"', device)
+            await self._scan()
 
-        self._check_ble_support()
-        svc = DiscoveryService(interface)
-        devices = svc.discover(duration)
-        return BluetoothScanResponse(devices)
+        dev = self._devices.get(addr)
+        assert dev is not None, f'Unknown device: "{device}"'
+        return dev
 
-    @action
-    def get_measurement(self, interface: Optional[str] = None, duration: Optional[int] = 10, *args, **kwargs) \
-            -> Dict[str, dict]:
-        """
-        Wrapper for ``scan`` that returns bluetooth devices in a format usable by sensor backends.
+    def _get_device_name(self, device: BLEDevice) -> str:
+        return (
+            self._device_name_by_addr.get(device.address)
+            or device.name
+            or device.address
+        )
 
-        :param interface: Bluetooth adapter name to use (default configured if None)
-        :param duration: Scan duration in seconds
-        :return: Device address -> info map.
-        """
-        devices = self.scan(interface=interface, duration=duration).output
-        return {device['addr']: device for device in devices}
+    def _post_event(
+        self, event_type: Type[BluetoothEvent], device: BLEDevice, **kwargs
+    ):
+        props = device.details.get('props', {})
+        get_bus().post(
+            event_type(
+                address=device.address,
+                name=self._get_device_name(device),
+                connected=props.get('Connected', False),
+                paired=props.get('Paired', False),
+                blocked=props.get('Blocked', False),
+                trusted=props.get('Trusted', False),
+                service_uuids=device.metadata.get('uuids', []),
+                **kwargs,
+            )
+        )
 
-    # noinspection PyArgumentList
-    @action
-    def connect(self, device: str, interface: str = None, wait: bool = True, channel_type: str = 'public',
-                security_level: str = 'low', psm: int = 0, mtu: int = 0, timeout: float = 10.0):
-        """
-        Connect to a bluetooth LE device
+    def _on_device_event(self, device: BLEDevice, _):
+        event_types: List[Type[BluetoothEvent]] = []
+        existing_device = self._devices.get(device.address)
 
-        :param device: Device address to connect to
-        :param interface: Bluetooth adapter name to use (default configured if None)
-        :param wait: If True then wait for the connection to be established before returning (no timeout)
-        :param channel_type: Channel type, usually 'public' or 'random'
-        :param security_level: Security level - possible values: ['low', 'medium', 'high']
-        :param psm: PSM value (default: 0)
-        :param mtu: MTU value (default: 0)
-        :param timeout: Connection timeout if wait is not set (default: 10 seconds)
-        """
-        from gattlib import GATTRequester
+        if existing_device:
+            old_props = existing_device.details.get('props', {})
+            new_props = device.details.get('props', {})
 
-        req = self._req_by_addr.get(device)
-        if req:
-            if req.is_connected():
-                self.logger.info('Device {} is already connected'.format(device))
-                return
+            if old_props.get('Paired') != new_props.get('Paired'):
+                event_types.append(
+                    BluetoothDevicePairedEvent
+                    if new_props.get('Paired')
+                    else BluetoothDeviceUnpairedEvent
+                )
 
-            self._req_by_addr[device] = None
+            if old_props.get('Connected') != new_props.get('Connected'):
+                event_types.append(
+                    BluetoothDeviceConnectedEvent
+                    if new_props.get('Connected')
+                    else BluetoothDeviceDisconnectedEvent
+                )
 
-        if not interface:
-            interface = self.interface
-        if interface:
-            req = GATTRequester(device, False, interface)
+            if old_props.get('Blocked') != new_props.get('Blocked'):
+                event_types.append(
+                    BluetoothDeviceBlockedEvent
+                    if new_props.get('Blocked')
+                    else BluetoothDeviceUnblockedEvent
+                )
+
+            if old_props.get('Trusted') != new_props.get('Trusted'):
+                event_types.append(
+                    BluetoothDeviceTrustedEvent
+                    if new_props.get('Trusted')
+                    else BluetoothDeviceUntrustedEvent
+                )
         else:
-            req = GATTRequester(device, False)
+            event_types.append(BluetoothDeviceFoundEvent)
 
-        self.logger.info('Connecting to {}'.format(device))
-        connect_start_time = time.time()
-        req.connect(wait, channel_type, security_level, psm, mtu)
+        self._devices[device.address] = device
 
-        if not wait:
-            while not req.is_connected():
-                if time.time() - connect_start_time > timeout:
-                    raise TimeoutError('Connection to {} timed out'.format(device))
-                time.sleep(0.1)
+        if event_types:
+            for event_type in event_types:
+                self._post_event(event_type, device)
+            self.publish_entities([device])
 
-        self.logger.info('Connected to {}'.format(device))
-        self._req_by_addr[device] = req
+    @asynccontextmanager
+    async def _connect(
+        self,
+        device: str,
+        interface: Optional[str] = None,
+        timeout: Optional[float] = None,
+    ) -> AsyncGenerator[BleakClient, None]:
+        dev = await self._get_device(device)
+        async with BleakClient(
+            dev.address,
+            adapter=interface or self._interface,
+            timeout=timeout or self._connect_timeout,
+        ) as client:
+            self._connections[dev.address] = client
+            yield client
+            self._connections.pop(dev.address)
 
-    @action
-    def read(self, device: str, interface: str = None, uuid: str = None, handle: int = None,
-             binary: bool = False, disconnect_on_recv: bool = True, **kwargs) -> str:
-        """
-        Read a message from a device
-
-        :param device: Device address to connect to
-        :param interface: Bluetooth adapter name to use (default configured if None)
-        :param uuid: Service UUID. Either the UUID or the device handle must be specified
-        :param handle: Device handle. Either the UUID or the device handle must be specified
-        :param binary: Set to true to return data as a base64-encoded binary string
-        :param disconnect_on_recv: If True (default) disconnect when the response is received
-        :param kwargs: Extra arguments to be passed to :meth:`connect`
-        """
-        if interface is None:
-            interface = self.interface
-        if not (uuid or handle):
-            raise AttributeError('Specify either uuid or handle')
-
-        self.connect(device, interface=interface, **kwargs)
-        req = self._req_by_addr[device]
-
-        if uuid:
-            data = req.read_by_uuid(uuid)[0]
-        else:
-            data = req.read_by_handle(handle)[0]
-
-        if binary:
-            data = base64.encodebytes(data.encode() if isinstance(data, str) else data).decode().strip()
-        if disconnect_on_recv:
-            self.disconnect(device)
+    async def _read(
+        self,
+        device: str,
+        service_uuid: UUIDType,
+        interface: Optional[str] = None,
+        connect_timeout: Optional[float] = None,
+    ) -> bytearray:
+        async with self._connect(device, interface, connect_timeout) as client:
+            data = await client.read_gatt_char(service_uuid)
 
         return data
 
+    async def _write(
+        self,
+        device: str,
+        data: bytes,
+        service_uuid: UUIDType,
+        interface: Optional[str] = None,
+        connect_timeout: Optional[float] = None,
+    ):
+        async with self._connect(device, interface, connect_timeout) as client:
+            await client.write_gatt_char(service_uuid, data)
+
+    async def _scan(
+        self,
+        duration: Optional[float] = None,
+        service_uuids: Optional[Collection[UUIDType]] = None,
+        publish_entities: bool = False,
+    ) -> Collection[Entity]:
+        with self._scan_lock:
+            timeout = duration or self.poll_interval or 5
+            devices = await BleakScanner.discover(
+                adapter=self._interface,
+                timeout=timeout,
+                service_uuids=list(
+                    map(str, service_uuids or self._service_uuids or [])
+                ),
+                detection_callback=self._on_device_event,
+            )
+
+            # TODO Infer type from device.metadata['manufacturer_data']
+
+        self._devices.update({dev.address: dev for dev in devices})
+        if publish_entities:
+            entities = self.publish_entities(devices)
+        else:
+            entities = self.transform_entities(devices)
+
+        return entities
+
     @action
-    def write(self, device: str, data, handle: int = None, interface: str = None, binary: bool = False,
-              disconnect_on_recv: bool = True, **kwargs) -> str:
+    def scan(
+        self,
+        duration: Optional[float] = None,
+        service_uuids: Optional[Collection[UUIDType]] = None,
+    ):
+        """
+        Scan for Bluetooth devices nearby.
+
+        :param duration: Scan duration in seconds (default: same as the plugin's
+            `poll_interval` configuration parameter)
+        :param service_uuids: List of service UUIDs to discover. Default: all.
+        """
+        loop = get_or_create_event_loop()
+        loop.run_until_complete(
+            self._scan(duration, service_uuids, publish_entities=True)
+        )
+
+    @action
+    def read(
+        self,
+        device: str,
+        service_uuid: UUIDType,
+        interface: Optional[str] = None,
+        connect_timeout: Optional[float] = None,
+    ) -> str:
+        """
+        Read a message from a device.
+
+        :param device: Name or address of the device to read from.
+        :param service_uuid: Service UUID.
+        :param interface: Bluetooth adapter name to use (default configured if None).
+        :param connect_timeout: Connection timeout in seconds (default: same as the
+            configured `connect_timeout`).
+        :return: The base64-encoded response received from the device.
+        """
+        loop = get_or_create_event_loop()
+        data = loop.run_until_complete(
+            self._read(device, service_uuid, interface, connect_timeout)
+        )
+        return base64.b64encode(data).decode()
+
+    @action
+    def write(
+        self,
+        device: str,
+        data: Union[str, bytes],
+        service_uuid: UUIDType,
+        interface: Optional[str] = None,
+        connect_timeout: Optional[float] = None,
+    ):
         """
         Writes data to a device
 
-        :param device: Device address to connect to
-        :param data: Data to be written (str or bytes)
+        :param device: Name or address of the device to read from.
+        :param data: Data to be written, either as bytes or as a base64-encoded string.
+        :param service_uuid: Service UUID.
         :param interface: Bluetooth adapter name to use (default configured if None)
-        :param handle: Device handle. Either the UUID or the device handle must be specified
-        :param binary: Set to true if data is a base64-encoded binary string
-        :param disconnect_on_recv: If True (default) disconnect when the response is received
-        :param kwargs: Extra arguments to be passed to :meth:`connect`
+        :param connect_timeout: Connection timeout in seconds (default: same as the
+            configured `connect_timeout`).
         """
-        if interface is None:
-            interface = self.interface
-        if binary:
-            data = base64.decodebytes(data.encode() if isinstance(data, str) else data)
+        loop = get_or_create_event_loop()
+        if isinstance(data, str):
+            data = base64.b64decode(data.encode())
 
-        self.connect(device, interface=interface, **kwargs)
-        req = self._req_by_addr[device]
+        loop.run_until_complete(
+            self._write(device, data, service_uuid, interface, connect_timeout)
+        )
 
-        data = req.write_by_handle(handle, data)[0]
-
-        if binary:
-            data = base64.encodebytes(data.encode() if isinstance(data, str) else data).decode().strip()
-        if disconnect_on_recv:
-            self.disconnect(device)
-
-        return data
-
+    @override
     @action
-    def disconnect(self, device: str):
+    def status(self, *_, **__) -> Collection[Entity]:
         """
-        Disconnect from a connected device
-
-        :param device: Device address
+        Alias for :meth:`.scan`.
         """
-        req = self._req_by_addr.get(device)
-        if not req:
-            self.logger.info('Device {} not connected'.format(device))
+        return self.scan().output
 
-        req.disconnect()
-        self.logger.info('Device {} disconnected'.format(device))
+    @override
+    def transform_entities(self, entities: Collection[BLEDevice]) -> Collection[Device]:
+        return [
+            Device(
+                id=dev.address,
+                name=self._get_device_name(dev),
+            )
+            for dev in entities
+        ]
 
-    @action
-    def discover_primary(self, device: str, interface: str = None, **kwargs) -> BluetoothDiscoverPrimaryResponse:
-        """
-        Discover the primary services advertised by a LE bluetooth device
+    @override
+    async def listen(self):
+        device_addresses = set()
 
-        :param device: Device address to connect to
-        :param interface: Bluetooth adapter name to use (default configured if None)
-        :param kwargs: Extra arguments to be passed to :meth:`connect`
-        """
-        if interface is None:
-            interface = self.interface
+        while True:
+            entities = await self._scan()
+            new_device_addresses = {e.id for e in entities}
+            missing_device_addresses = device_addresses - new_device_addresses
+            missing_devices = [
+                dev
+                for addr, dev in self._devices.items()
+                if addr in missing_device_addresses
+            ]
 
-        self.connect(device, interface=interface, **kwargs)
-        req = self._req_by_addr[device]
-        services = req.discover_primary()
-        self.disconnect(device)
-        return BluetoothDiscoverPrimaryResponse(services=services)
+            for dev in missing_devices:
+                self._post_event(BluetoothDeviceLostEvent, dev)
+                self._devices.pop(dev.address, None)
 
-    @action
-    def discover_characteristics(self, device: str, interface: str = None, **kwargs) \
-            -> BluetoothDiscoverCharacteristicsResponse:
-        """
-        Discover the characteristics of a LE bluetooth device
-
-        :param device: Device address to connect to
-        :param interface: Bluetooth adapter name to use (default configured if None)
-        :param kwargs: Extra arguments to be passed to :meth:`connect`
-        """
-        if interface is None:
-            interface = self.interface
-
-        self.connect(device, interface=interface, **kwargs)
-        req = self._req_by_addr[device]
-        characteristics = req.discover_characteristics()
-        self.disconnect(device)
-        return BluetoothDiscoverCharacteristicsResponse(characteristics=characteristics)
+            device_addresses = new_device_addresses
 
 
 # vim:sw=4:ts=4:et:

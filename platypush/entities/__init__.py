@@ -3,7 +3,11 @@ from typing import Collection, Optional
 
 from ._base import Entity, get_entities_registry, init_entities_db
 from ._engine import EntitiesEngine
-from ._managers import register_entity_manager, get_plugin_entity_registry
+from ._managers import (
+    EntityManager,
+    get_plugin_entity_registry,
+    register_entity_manager,
+)
 from ._managers.lights import LightEntityManager
 from ._managers.sensors import SensorEntityManager
 from ._managers.switches import (
@@ -50,6 +54,7 @@ __all__ = (
     'DimmerEntityManager',
     'EntitiesEngine',
     'Entity',
+    'EntityManager',
     'EnumSwitchEntityManager',
     'LightEntityManager',
     'SensorEntityManager',

@@ -109,11 +109,7 @@ def register_entity_manager(cls: Type[EntityManager]):
     Associates a plugin as a manager for a certain entity type.
     You usually don't have to call this method directly.
     """
-    entity_managers = [
-        c
-        for c in inspect.getmro(cls)
-        if issubclass(c, EntityManager) and c not in {cls, EntityManager}
-    ]
+    entity_managers = [c for c in inspect.getmro(cls) if issubclass(c, EntityManager)]
 
     plugin_name = get_plugin_name_by_class(cls) or ''
     redis = get_redis()
