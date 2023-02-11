@@ -80,8 +80,8 @@ export default {
       try {
         await this.request('entities.execute', {
           id: this.value.id,
-          action: 'set_value',
-          data: +event.target.value,
+          action: 'set',
+          value: +event.target.value,
         })
       } finally {
         this.$emit('loading', false)
