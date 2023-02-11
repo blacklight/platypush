@@ -122,7 +122,7 @@ class SwitchbotBluetoothPlugin(BluetoothBlePlugin, EnumSwitchEntityManager):
         self.logger.warning('Unknown command for SwitchBot "%s": "%s"', device, value)
 
     @override
-    def set(self, entity: str, value: Any, attribute: Optional[str] = None, **kwargs):
+    def set(self, entity: str, value: Any, **kwargs):
         return self.set_value(entity, value, **kwargs)
 
     @override

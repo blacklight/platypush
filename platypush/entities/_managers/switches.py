@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 from typing_extensions import override
 
 from . import EntityManager
@@ -11,15 +11,13 @@ class WriteableEntityManager(EntityManager, ABC):
     """
 
     @abstractmethod
-    def set(self, entity: str, value: Any, attribute: Optional[str] = None, **kwargs):
+    def set(self, entity: str, value: Any, **kwargs):
         """
         Set the value of an entity.
 
         :param entity: The entity to set the value for. It's usually the ID of
             the entity provided by the plugin.
         :param value: The value to set the entity to.
-        :param attribute: The name of the attribute to set for the entity, if
-            required by the integration.
         """
         raise NotImplementedError()
 
@@ -45,7 +43,7 @@ class SwitchEntityManager(WriteableEntityManager, ABC):
         raise NotImplementedError()
 
     @override
-    def set(self, entity: str, value: Any, attribute: Optional[str] = None, **kwargs):
+    def set(self, entity: str, value: Any, **kwargs):
         method = self.on if value else self.off
         return method(entity, **kwargs)
 

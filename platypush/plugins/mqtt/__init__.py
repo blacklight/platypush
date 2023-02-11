@@ -126,7 +126,7 @@ class MqttPlugin(Plugin):
         if version == 'tlsv1.2':
             return ssl.PROTOCOL_TLSv1_2
 
-        assert 'Unrecognized TLS version: {}'.format(version)
+        assert f'Unrecognized TLS version: {version}'
 
     def _mqtt_args(self, **kwargs):
         return {

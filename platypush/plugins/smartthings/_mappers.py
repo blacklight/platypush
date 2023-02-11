@@ -34,7 +34,7 @@ class DeviceMapper:
         entity_type: Type[Entity],
         capability: str,
         attribute: str,
-        value_type: Union[Type, str],
+        value_type: Union[Type, Enum, str],
         set_command: Optional[Union[str, Callable[[Any], str]]] = None,
         get_value: Optional[Callable[[DeviceEntity], Any]] = None,
         set_value_args: Optional[Callable[..., Any]] = None,
@@ -46,7 +46,7 @@ class DeviceMapper:
         self.attribute = attribute
         self.value_type = value_type
         self.get_value = get_value if get_value else self._default_get_value
-        self.values = []
+        self.values: List[str] = []
         self.entity_args = kwargs
 
         if isinstance(value_type, Enum):

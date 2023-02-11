@@ -5,6 +5,7 @@ import threading
 from abc import ABC, abstractmethod
 from functools import wraps
 from typing import Any, Callable, Optional
+from typing_extensions import override
 
 from platypush.bus import Bus
 from platypush.common import ExtensionWithManifest
@@ -97,21 +98,33 @@ class RunnablePlugin(Plugin):
         self._thread: Optional[threading.Thread] = None
 
     def main(self):
+        """
+        Implementation of the main loop of the plugin.
+        """
         raise NotImplementedError()
 
-    def should_stop(self):
+    def should_stop(self) -> bool:
         return self._should_stop.is_set()
 
     def wait_stop(self, timeout=None):
+        """
+        Wait until a stop event is received.
+        """
         return self._should_stop.wait(timeout=timeout)
 
     def start(self):
+        """
+        Start the plugin.
+        """
         self._thread = threading.Thread(
             target=self._runner, name=self.__class__.__name__
         )
         self._thread.start()
 
     def stop(self):
+        """
+        Stop the plugin.
+        """
         self._should_stop.set()
         if self._thread and self._thread.is_alive():
             self.logger.info('Waiting for the plugin to stop')
@@ -129,6 +142,9 @@ class RunnablePlugin(Plugin):
         self.logger.info('%s stopped', self.__class__.__name__)
 
     def _runner(self):
+        """
+        Implementation of the runner thread.
+        """
         self.logger.info('Starting %s', self.__class__.__name__)
 
         while not self.should_stop():
@@ -185,6 +201,9 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
                 raise e
 
     def _run_listener(self):
+        """
+        Initialize an event loop and run the listener as a task.
+        """
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
 
@@ -198,6 +217,7 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
 
         self._task.cancel()
 
+    @override
     def main(self):
         if self.should_stop():
             self.logger.info('The plugin is already scheduled to stop')
@@ -214,6 +234,7 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
         else:
             self.wait_stop()
 
+    @override
     def stop(self):
         if self._loop and self._loop.is_running():
             self._loop.call_soon_threadsafe(self._loop.stop)

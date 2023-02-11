@@ -356,7 +356,7 @@ class SmartthingsPlugin(
         }
 
         missing_devs = {dev for dev in devices if dev not in found_devs}
-        return list(found_devs.values()), list(missing_devs)  # type: ignore
+        return list(found_devs.values()), list(missing_devs)
 
     def _get_devices(self, *devices: str) -> List[DeviceEntity]:
         devs, missing_devs = self._get_existing_and_missing_devices(*devices)
@@ -633,7 +633,7 @@ class SmartthingsPlugin(
 
         self._entities_by_id.update({e.id: e for e in compatible_entities})
 
-        return super().transform_entities(compatible_entities)  # type: ignore
+        return super().transform_entities(compatible_entities)
 
     async def _get_device_status(
         self, api, device_id: str, publish_entities: bool
@@ -642,7 +642,7 @@ class SmartthingsPlugin(
         assert device, f'No such device: {device_id}'
         await device.status.refresh()
         if publish_entities:
-            self.publish_entities([device])  # type: ignore
+            self.publish_entities([device])
 
         self._devices_by_id[device_id] = device
         self._devices_by_name[device.label] = device
@@ -863,7 +863,6 @@ class SmartthingsPlugin(
 
     @action
     def set(self, entity: str, value: Any, attribute: Optional[str] = None, **kwargs):
-        super().set(entity, value, attribute, **kwargs)
         return self.set_value(entity, property=attribute, value=value, **kwargs)
 
     @action
@@ -994,6 +993,7 @@ class SmartthingsPlugin(
                 self.logger.exception(e)
                 self.logger.error('Could not refresh the status: %s', e)
                 self.wait_stop(3 * (self.poll_interval or 5))
+                return None
 
         while not self.should_stop():
             updated_devices = {}
@@ -1010,7 +1010,7 @@ class SmartthingsPlugin(
                 if self._has_status_changed(devices.get(device_id, {}), new_status)
             }
 
-            self.publish_entities(updated_devices.values())  # type: ignore
+            self.publish_entities(updated_devices.values())
             devices.update(new_devices)
             self.wait_stop(self.poll_interval)
             refresh_status_safe()

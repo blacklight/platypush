@@ -348,7 +348,7 @@ class ZwaveBasePlugin(
         raise NotImplementedError
 
     @action
-    def set(self, entity: str, value: Any, attribute: Optional[str] = None, **kwargs):
+    def set(self, entity: str, value: Any, **kwargs):
         return self.set_value(
             value_id=entity, id_on_network=entity, data=value, **kwargs
         )
