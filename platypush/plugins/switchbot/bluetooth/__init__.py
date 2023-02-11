@@ -1,5 +1,5 @@
 import enum
-from typing import Collection
+from typing import Any, Collection, Optional
 from uuid import UUID
 
 from bleak.backends.device import BLEDevice
@@ -98,28 +98,32 @@ class SwitchbotBluetoothPlugin(BluetoothBlePlugin, EnumSwitchEntityManager):
         loop = get_or_create_event_loop()
         return loop.run_until_complete(self._run(device, Command.OFF))
 
-    @override
     @action
-    def set_value(self, device: str, *_, data: str, **__):
+    def set_value(self, device: Optional[str] = None, value: Optional[str] = None, **_):
         """
-        Entity-compatible ``set_value`` method to send a command to a device.
+        Send a command to a device as a value.
 
-        :param device: Device name or address
-        :param data: Command to send. Possible values are:
+        :param entity: Device name or address
+        :param value: Command to send. Possible values are:
 
             - ``on``: Press the button and remain in the pressed state.
             - ``off``: Release a previously pressed button.
             - ``press``: Press and release the button.
 
         """
-        if data == 'on':
+        assert device, 'No device specified'
+        if value == 'on':
             self.on(device)
-        if data == 'off':
+        if value == 'off':
             self.off(device)
-        if data == 'press':
+        if value == 'press':
             self.press(device)
 
-        self.logger.warning('Unknown command for SwitchBot "%s": "%s"', device, data)
+        self.logger.warning('Unknown command for SwitchBot "%s": "%s"', device, value)
+
+    @override
+    def set(self, entity: str, value: Any, attribute: Optional[str] = None, **kwargs):
+        return self.set_value(entity, value, **kwargs)
 
     @override
     def transform_entities(

@@ -33,6 +33,7 @@ from platypush.utils import camel_case_to_snake_case
 from ._mappers import DeviceMapper, device_mappers
 
 
+# pylint: disable=too-many-ancestors
 class SmartthingsPlugin(
     RunnablePlugin,
     DimmerEntityManager,
@@ -817,18 +818,18 @@ class SmartthingsPlugin(
 
         :param device: Device ID or name.
         :param level: Level, usually a percentage value between 0 and 1.
-        :param kwarsg: Extra arguments that should be passed to :meth:`.execute`.
+        :param kwargs: Extra arguments that should be passed to :meth:`.execute`.
         """
         return self.set_value(device, Capability.switch_level, level, **kwargs)
 
     def _set_value(  # pylint: disable=redefined-builtin
-        self, device: str, property: Optional[str] = None, data=None, **kwargs
+        self, device: str, property: Optional[str] = None, value: Any = None, **kwargs
     ):
         if not property:
             device, property = self._to_device_and_property(device)
 
         assert property, 'No property name specified'
-        assert data is not None, 'No value specified'
+        assert value is not None, 'No value specified'
         entity_id = f'{device}:{property}'
         entity = self._entities_by_id.get(entity_id)
         assert entity, f'No such entity ID: {entity_id}'
@@ -837,13 +838,15 @@ class SmartthingsPlugin(
             iter([m for m in device_mappers if m.attribute == property]), None
         )
 
-        assert mapper, f'No mappers found to set {property}={data} on device "{device}"'
+        assert (
+            mapper
+        ), f'No mappers found to set {property}={value} on device "{device}"'
         assert (
             mapper.set_command
         ), f'The property "{property}" on the device "{device}" cannot be set'
 
         command = (
-            mapper.set_command(data)
+            mapper.set_command(value)
             if callable(mapper.set_command)
             else mapper.set_command
         )
@@ -852,16 +855,20 @@ class SmartthingsPlugin(
             device,
             mapper.capability,
             command,
-            args=mapper.set_value_args(data),  # type: ignore
+            args=mapper.set_value_args(value),  # type: ignore
             **kwargs,
         )
 
         return self.status(device)
 
     @action
-    # pylint: disable=redefined-builtin,arguments-differ
-    def set_value(
-        self, device: str, *_, property: Optional[str] = None, data=None, **kwargs
+    def set(self, entity: str, value: Any, attribute: Optional[str] = None, **kwargs):
+        super().set(entity, value, attribute, **kwargs)
+        return self.set_value(entity, property=attribute, value=value, **kwargs)
+
+    @action
+    def set_value(  # pylint: disable=redefined-builtin
+        self, device: str, property: Optional[str] = None, value=None, **kwargs
     ):
         """
         Set the value of a device. It is compatible with the generic
@@ -871,10 +878,11 @@ class SmartthingsPlugin(
             ``device_id:property``.
         :param property: Name of the property to be set. If not specified here
             then it should be specified on the ``device`` level.
-        :param data: Value to be set.
+        :param value: Value to set.
         """
+        assert device, 'No device specified'
         try:
-            return self._set_value(device, property, data, **kwargs)
+            return self._set_value(device, property, value, **kwargs)
         except Exception as e:
             self.logger.exception(e)
             raise AssertionError(e) from e

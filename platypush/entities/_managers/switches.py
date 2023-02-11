@@ -1,9 +1,30 @@
 from abc import ABC, abstractmethod
+from typing import Any, Optional
+from typing_extensions import override
 
 from . import EntityManager
 
 
-class SwitchEntityManager(EntityManager, ABC):
+class WriteableEntityManager(EntityManager, ABC):
+    """
+    Base class for integrations that support entities whose values can be set.
+    """
+
+    @abstractmethod
+    def set(self, entity: str, value: Any, attribute: Optional[str] = None, **kwargs):
+        """
+        Set the value of an entity.
+
+        :param entity: The entity to set the value for. It's usually the ID of
+            the entity provided by the plugin.
+        :param value: The value to set the entity to.
+        :param attribute: The name of the attribute to set for the entity, if
+            required by the integration.
+        """
+        raise NotImplementedError()
+
+
+class SwitchEntityManager(WriteableEntityManager, ABC):
     """
     Base class for integrations that support binary switches.
     """
@@ -23,31 +44,19 @@ class SwitchEntityManager(EntityManager, ABC):
         """Toggle the state of a device (on->off or off->on)"""
         raise NotImplementedError()
 
-
-class MultiLevelSwitchEntityManager(EntityManager, ABC):
-    """
-    Base class for integrations that support dimmers/multi-level/enum switches.
-
-    Don't extend this class directly. Instead, use on of the available
-    intermediate abstract classes - like ``DimmerEntityManager`` or
-    ``EnumSwitchEntityManager``.
-    """
-
-    @abstractmethod
-    def set_value(  # pylint: disable=redefined-builtin
-        self, device=None, property=None, *, data=None, **__
-    ):
-        """Set a value"""
-        raise NotImplementedError()
+    @override
+    def set(self, entity: str, value: Any, attribute: Optional[str] = None, **kwargs):
+        method = self.on if value else self.off
+        return method(entity, **kwargs)
 
 
-class DimmerEntityManager(MultiLevelSwitchEntityManager, ABC):
+class DimmerEntityManager(WriteableEntityManager, ABC):
     """
     Base class for integrations that support dimmers/multi-level switches.
     """
 
 
-class EnumSwitchEntityManager(MultiLevelSwitchEntityManager, ABC):
+class EnumSwitchEntityManager(WriteableEntityManager, ABC):
     """
     Base class for integrations that support switches with a pre-defined,
     enum-like set of possible values.

@@ -1104,10 +1104,21 @@ class SwitchbotPlugin(
         return self._run('post', 'scenes', scenes[0]['id'], 'execute')
 
     @action
-    # pylint: disable=redefined-builtin,arguments-differ
-    def set_value(self, device: str, *_, property=None, data=None, **__):
+    # pylint: disable=redefined-builtin
+    def set_value(
+        self, device: str, property: Optional[str] = None, value: Any = None, **__
+    ):
+        """
+        Set the value of a property of a device.
+
+        :param device: Device name or ID, or entity (external) ID.
+        :param property: Property to set. It should be present if you are
+            passing a root device ID to ``device`` and not an atomic entity in
+            the format ``<device_id>:<property_name>``.
+        :param value: Value to set.
+        """
         entity = self._to_entity(device, property)
-        assert entity, f'No such entity: "{device}"'
+        assert entity, f'No such device: "{device}"'
 
         dt = entity.data.get('device_type')
         assert dt, f'Could not infer the device type for "{device}"'
@@ -1117,7 +1128,11 @@ class SwitchbotPlugin(
         assert setter_class, f'No setters found for device type "{device_type}"'
 
         setter = setter_class(entity)
-        return setter(property=property, value=data)
+        return setter(property=property, value=value)
+
+    @action
+    def set(self, entity: str, value: Any, attribute: Optional[str] = None, **kwargs):
+        return self.set_value(entity, property=attribute, value=value, **kwargs)
 
     def _to_entity(
         self,

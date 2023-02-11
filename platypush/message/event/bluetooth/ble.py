@@ -36,6 +36,7 @@ class BluetoothEvent(Event):
             connected=connected,
             paired=paired,
             blocked=blocked,
+            trusted=trusted,
             service_uuids=service_uuids or [],
             **kwargs
         )

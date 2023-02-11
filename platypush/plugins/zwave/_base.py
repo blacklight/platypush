@@ -325,7 +325,7 @@ class ZwaveBasePlugin(
 
     @abstractmethod
     @action
-    def set_value(  # pylint: disable=arguments-differ
+    def set_value(
         self,
         data,
         value_id: Optional[int] = None,
@@ -346,6 +346,12 @@ class ZwaveBasePlugin(
         :param node_name: Select value by [node_id/node_name, value_label]
         """
         raise NotImplementedError
+
+    @action
+    def set(self, entity: str, value: Any, attribute: Optional[str] = None, **kwargs):
+        return self.set_value(
+            value_id=entity, id_on_network=entity, data=value, **kwargs
+        )
 
     @abstractmethod
     @action

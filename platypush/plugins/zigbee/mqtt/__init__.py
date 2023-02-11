@@ -13,6 +13,7 @@ from typing import (
     Type,
     Union,
 )
+from typing_extensions import override
 
 from platypush.entities import (
     DimmerEntityManager,
@@ -48,6 +49,7 @@ from platypush.plugins import RunnablePlugin
 from platypush.plugins.mqtt import MqttPlugin, action
 
 
+# pylint: disable=too-many-ancestors
 class ZigbeeMqttPlugin(
     RunnablePlugin,
     MqttPlugin,
@@ -56,7 +58,7 @@ class ZigbeeMqttPlugin(
     LightEntityManager,
     SensorEntityManager,
     SwitchEntityManager,
-):  # lgtm [py/missing-call-to-init]
+):
     """
     This plugin allows you to interact with Zigbee devices over MQTT through any Zigbee sniffer and
     `zigbee2mqtt <https://www.zigbee2mqtt.io/>`_.
@@ -616,7 +618,6 @@ class ZigbeeMqttPlugin(
                                     "genLevelCtrl",
                                     "touchlink",
                                     "lightingColorCtrl",
-                                    "manuSpecificUbisysDimmerSetup"
                                 ],
                                 "output": [
                                     "genOta"
@@ -925,7 +926,7 @@ class ZigbeeMqttPlugin(
         if not exposes:
             return {}
 
-        # If the device has no queriable properties, don't specify a reply
+        # If the device has no queryable properties, don't specify a reply
         # topic to listen on
         req = self._build_device_get_request(exposes)
         reply_topic = self._topic(device)
@@ -1072,9 +1073,9 @@ class ZigbeeMqttPlugin(
         return properties
 
     @action
-    # pylint: disable=redefined-builtin,arguments-differ
+    # pylint: disable=redefined-builtin
     def set_value(
-        self, device: str, *_, property: Optional[str] = None, data=None, **kwargs
+        self, device: str, property: Optional[str] = None, data=None, **kwargs
     ):
         """
         Entity-compatible way of setting a value on a node.
@@ -1093,6 +1094,11 @@ class ZigbeeMqttPlugin(
             property = prop
 
         self.device_set(dev, property, data, **kwargs)
+
+    @override
+    @action
+    def set(self, entity: str, value: Any, attribute: Optional[str] = None, **kwargs):
+        return self.set_value(entity, data=value, property=attribute, **kwargs)
 
     @action
     def device_check_ota_updates(self, device: str, **kwargs) -> dict:
@@ -1578,13 +1584,13 @@ class ZigbeeMqttPlugin(
         assert device_info, f'No such device: {name}'
         name = self._preferred_name(device_info)
 
-        prop = self._get_properties(device_info).get(prop)
+        prop_info = self._get_properties(device_info).get(prop)
         option = self._get_options(device_info).get(prop)
         if option:
             return name, option
 
-        assert prop, f'No such property on device {name}: {prop}'
-        return name, prop
+        assert prop_info, f'No such property on device {name}: {prop}'
+        return name, prop_info
 
     @staticmethod
     def _is_read_only(feature: dict) -> bool:
