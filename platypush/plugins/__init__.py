@@ -167,7 +167,7 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._loop: Optional[asyncio.AbstractEventLoop] = asyncio.new_event_loop()
         self._task: Optional[asyncio.Task] = None
 
     @property
@@ -204,7 +204,6 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
         """
         Initialize an event loop and run the listener as a task.
         """
-        self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
 
         self._task = self._loop.create_task(self._listen())

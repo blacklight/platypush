@@ -31,6 +31,14 @@
     }
   },
 
+  "bluetooth_device": {
+    "name": "Device",
+    "name_plural": "Devices",
+    "icon": {
+      "class": "fab fa-bluetooth-b"
+    }
+  },
+
   "device": {
     "name": "Device",
     "name_plural": "Devices",

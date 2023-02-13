@@ -5,7 +5,31 @@ from platypush.message.event import Event
 
 class BluetoothEvent(Event):
     """
-    Base class for Bluetooth Low-Energy device events.
+    Base class for Bluetooth events.
+    """
+
+
+class BluetoothScanPausedEvent(BluetoothEvent):
+    """
+    Event triggered when the Bluetooth scan is paused.
+    """
+
+    def __init__(self, *args, duration: Optional[float] = None, **kwargs):
+        super().__init__(*args, duration=duration, **kwargs)
+
+
+class BluetoothScanResumedEvent(BluetoothEvent):
+    """
+    Event triggered when the Bluetooth scan is resumed.
+    """
+
+    def __init__(self, *args, duration: Optional[float] = None, **kwargs):
+        super().__init__(*args, duration=duration, **kwargs)
+
+
+class BluetoothDeviceEvent(BluetoothEvent):
+    """
+    Base class for Bluetooth device events.
     """
 
     def __init__(
@@ -17,7 +41,7 @@ class BluetoothEvent(Event):
         trusted: bool,
         blocked: bool,
         name: Optional[str] = None,
-        service_uuids: Optional[Collection[str]] = None,
+        characteristics: Optional[Collection[str]] = None,
         **kwargs
     ):
         """
@@ -27,7 +51,8 @@ class BluetoothEvent(Event):
         :param trusted: Whether the device is trusted.
         :param blocked: Whether the device is blocked.
         :param name: The name of the device.
-        :param service_uuids: The service UUIDs of the device.
+        :param characteristics: The UUIDs of the characteristics exposed by the
+            device.
         """
         super().__init__(
             *args,
@@ -37,66 +62,66 @@ class BluetoothEvent(Event):
             paired=paired,
             blocked=blocked,
             trusted=trusted,
-            service_uuids=service_uuids or [],
+            characteristics=characteristics or [],
             **kwargs
         )
 
 
-class BluetoothDeviceFoundEvent(BluetoothEvent):
+class BluetoothDeviceFoundEvent(BluetoothDeviceEvent):
     """
     Event triggered when a Bluetooth device is discovered during a scan.
     """
 
 
-class BluetoothDeviceLostEvent(BluetoothEvent):
+class BluetoothDeviceLostEvent(BluetoothDeviceEvent):
     """
     Event triggered when a previously discovered Bluetooth device is lost.
     """
 
 
-class BluetoothDeviceConnectedEvent(BluetoothEvent):
+class BluetoothDeviceConnectedEvent(BluetoothDeviceEvent):
     """
     Event triggered when a Bluetooth device is connected.
     """
 
 
-class BluetoothDeviceDisconnectedEvent(BluetoothEvent):
+class BluetoothDeviceDisconnectedEvent(BluetoothDeviceEvent):
     """
     Event triggered when a Bluetooth device is disconnected.
     """
 
 
-class BluetoothDevicePairedEvent(BluetoothEvent):
+class BluetoothDevicePairedEvent(BluetoothDeviceEvent):
     """
     Event triggered when a Bluetooth device is paired.
     """
 
 
-class BluetoothDeviceUnpairedEvent(BluetoothEvent):
+class BluetoothDeviceUnpairedEvent(BluetoothDeviceEvent):
     """
     Event triggered when a Bluetooth device is unpaired.
     """
 
 
-class BluetoothDeviceBlockedEvent(BluetoothEvent):
+class BluetoothDeviceBlockedEvent(BluetoothDeviceEvent):
     """
     Event triggered when a Bluetooth device is blocked.
     """
 
 
-class BluetoothDeviceUnblockedEvent(BluetoothEvent):
+class BluetoothDeviceUnblockedEvent(BluetoothDeviceEvent):
     """
     Event triggered when a Bluetooth device is unblocked.
     """
 
 
-class BluetoothDeviceTrustedEvent(BluetoothEvent):
+class BluetoothDeviceTrustedEvent(BluetoothDeviceEvent):
     """
     Event triggered when a Bluetooth device is trusted.
     """
 
 
-class BluetoothDeviceUntrustedEvent(BluetoothEvent):
+class BluetoothDeviceUntrustedEvent(BluetoothDeviceEvent):
     """
     Event triggered when a Bluetooth device is untrusted.
     """

@@ -54,7 +54,7 @@ class SwitchbotBluetoothPlugin(BluetoothBlePlugin, EnumSwitchEntityManager):
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, service_uuids=self._uuids.values(), **kwargs)
+        super().__init__(*args, characteristics=self._uuids.values(), **kwargs)
 
     async def _run(
         self,
