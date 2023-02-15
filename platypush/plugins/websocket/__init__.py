@@ -50,6 +50,7 @@ class WebsocketPlugin(AsyncRunnablePlugin):
         ssl_cafile=None,
         ssl_capath=None,
         wait_response=False,
+        timeout=None,
     ):
         """
         Sends a message to a websocket.
@@ -66,6 +67,9 @@ class WebsocketPlugin(AsyncRunnablePlugin):
             required by the SSL configuration (default: None)
         :param wait_response: Set to True if you expect a response to the
             delivered message.
+        :param timeout: If ``wait_response=True``, then ``timeout`` establishes
+            how long we should wait for a response before returning (default:
+            no timeout).
         :return: The received response if ``wait_response`` is set to True,
             otherwise nothing.
         """
@@ -87,10 +91,13 @@ class WebsocketPlugin(AsyncRunnablePlugin):
                 try:
                     await ws.send(str(msg))
                 except ConnectionClosed as err:
-                    self.logger.warning('Error on websocket %s: %s', url, err)
+                    self.logger.warning(
+                        'Connection error to websocket %s: %s', url, err
+                    )
 
                 if wait_response:
-                    messages = await self._recv(ws, num_messages=1)
+                    messages = await self._recv(ws, num_messages=1, timeout=timeout)
+
                     if messages:
                         return self._parse_msg(messages[0])
 
@@ -145,7 +152,7 @@ class WebsocketPlugin(AsyncRunnablePlugin):
 
         return self.loop.call_soon_threadsafe(recv)
 
-    async def _recv(self, ws, timeout=0, num_messages=0):
+    async def _recv(self, ws, timeout: Optional[float] = 0, num_messages=0):
         messages = []
         time_start = time.time()
         time_end = time_start + timeout if timeout else 0
