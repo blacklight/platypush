@@ -75,6 +75,7 @@ class EntityManager(ABC):
 
             entity.plugin = get_plugin_name_by_class(self.__class__)  # type: ignore
             entity.updated_at = datetime.utcnow()  # type: ignore
+            entity.children = self._normalize_entities(entity.children)
 
         return entities
 
