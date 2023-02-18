@@ -1,7 +1,20 @@
 manifest:
-  events: {}
+  events:
+    platypush.message.event.bluetooth.BluetoothDeviceBlockedEvent:
+    platypush.message.event.bluetooth.BluetoothDeviceConnectedEvent:
+    platypush.message.event.bluetooth.BluetoothDeviceDisconnectedEvent:
+    platypush.message.event.bluetooth.BluetoothDeviceFoundEvent:
+    platypush.message.event.bluetooth.BluetoothDeviceLostEvent:
+    platypush.message.event.bluetooth.BluetoothDevicePairedEvent:
+    platypush.message.event.bluetooth.BluetoothDeviceTrustedEvent:
+    platypush.message.event.bluetooth.BluetoothDeviceUnblockedEvent:
+    platypush.message.event.bluetooth.BluetoothDeviceUnpairedEvent:
+    platypush.message.event.bluetooth.BluetoothDeviceUntrustedEvent:
+    platypush.message.event.bluetooth.BluetoothScanPausedEvent:
+    platypush.message.event.bluetooth.BluetoothScanResumedEvent:
   install:
     pip:
     - bleak
+    - bluetooth-numbers
   package: platypush.plugins.bluetooth.ble
   type: plugin

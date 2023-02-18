@@ -173,9 +173,11 @@ setup(
         ],
         # Support for Alexa/Echo plugin
         'alexa': ['avs @ https://github.com/BlackLight/avs/tarball/master'],
-        # Support for bluetooth devices
+        # Support for Bluetooth devices
         'bluetooth': [
             'bleak',
+            'bluetooth-numbers',
+            'pybluez',
             'pyobex @ https://github.com/BlackLight/PyOBEX/tarball/master',
         ],
         # Support for TP-Link devices

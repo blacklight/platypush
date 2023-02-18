@@ -297,6 +297,7 @@ autodoc_mock_imports = [
     'aiofiles.os',
     'async_lru',
     'bleak',
+    'bluetooth_numbers',
 ]
 
 sys.path.insert(0, os.path.abspath('../..'))

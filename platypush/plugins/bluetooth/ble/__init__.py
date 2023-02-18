@@ -2,23 +2,38 @@ import base64
 from asyncio import Event, ensure_future
 from contextlib import asynccontextmanager
 from threading import RLock, Timer
-from typing import AsyncGenerator, Collection, List, Optional, Dict, Type, Union
+from time import time
+from typing import (
+    Any,
+    AsyncGenerator,
+    Collection,
+    Final,
+    List,
+    Optional,
+    Dict,
+    Type,
+    Union,
+)
 from uuid import UUID
 
 from bleak import BleakClient, BleakScanner
 from bleak.backends.device import BLEDevice
+from bleak.backends.scanner import AdvertisementData
+from bleak.uuids import uuidstr_to_str
+from bluetooth_numbers import company
 from typing_extensions import override
 
 from platypush.context import get_bus, get_or_create_event_loop
 from platypush.entities import Entity, EntityManager
 from platypush.entities.bluetooth import BluetoothDevice
-from platypush.message.event.bluetooth.ble import (
+from platypush.message.event.bluetooth import (
     BluetoothDeviceBlockedEvent,
     BluetoothDeviceConnectedEvent,
     BluetoothDeviceDisconnectedEvent,
     BluetoothDeviceFoundEvent,
     BluetoothDeviceLostEvent,
     BluetoothDevicePairedEvent,
+    BluetoothDeviceSignalUpdateEvent,
     BluetoothDeviceTrustedEvent,
     BluetoothDeviceUnblockedEvent,
     BluetoothDeviceUnpairedEvent,
@@ -42,20 +57,40 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
     Requires:
 
         * **bleak** (``pip install bleak``)
+        * **bluetooth-numbers** (``pip install bluetooth-numbers``)
 
-    TODO: Write supported events.
+    Triggers:
+
+        * :class:`platypush.message.event.bluetooth.BluetoothDeviceBlockedEvent`
+        * :class:`platypush.message.event.bluetooth.BluetoothDeviceConnectedEvent`
+        * :class:`platypush.message.event.bluetooth.BluetoothDeviceDisconnectedEvent`
+        * :class:`platypush.message.event.bluetooth.BluetoothDeviceFoundEvent`
+        * :class:`platypush.message.event.bluetooth.BluetoothDeviceLostEvent`
+        * :class:`platypush.message.event.bluetooth.BluetoothDevicePairedEvent`
+        * :class:`platypush.message.event.bluetooth.BluetoothDeviceTrustedEvent`
+        * :class:`platypush.message.event.bluetooth.BluetoothDeviceUnblockedEvent`
+        * :class:`platypush.message.event.bluetooth.BluetoothDeviceUnpairedEvent`
+        * :class:`platypush.message.event.bluetooth.BluetoothDeviceUntrustedEvent`
+        * :class:`platypush.message.event.bluetooth.BluetoothScanPausedEvent`
+        * :class:`platypush.message.event.bluetooth.BluetoothScanResumedEvent`
 
     """
 
-    # Default connection timeout (in seconds)
-    _default_connect_timeout = 5
+    _default_connect_timeout: Final[int] = 5
+    """ Default connection timeout (in seconds) """
+
+    _rssi_update_interval: Final[int] = 30
+    """
+    How long we should wait before triggering an update event upon a new
+    RSSI update, in seconds.
+    """
 
     def __init__(
         self,
         interface: Optional[str] = None,
         connect_timeout: float = _default_connect_timeout,
         device_names: Optional[Dict[str, str]] = None,
-        characteristics: Optional[Collection[UUIDType]] = None,
+        uuids: Optional[Collection[UUIDType]] = None,
         scan_paused_on_start: bool = False,
         **kwargs,
     ):
@@ -64,8 +99,8 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
             on Linux). Default: first available interface.
         :param connect_timeout: Timeout in seconds for the connection to a
             Bluetooth device. Default: 5 seconds.
-        :param characteristics: List of service/characteristic UUIDs to
-            discover. Default: all.
+        :param uuids: List of service/characteristic UUIDs to discover.
+            Default: all.
         :param device_names: Bluetooth address -> device name mapping. If not
             specified, the device's advertised name will be used, or its
             Bluetooth address. Example:
@@ -85,14 +120,15 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
         """
         super().__init__(**kwargs)
 
-        self._interface = interface
-        self._connect_timeout = connect_timeout
-        self._characteristics = characteristics
+        self._interface: Optional[str] = interface
+        self._connect_timeout: float = connect_timeout
+        self._uuids: Collection[Union[str, UUID]] = uuids or []
         self._scan_lock = RLock()
         self._scan_enabled = Event()
         self._scan_controller_timer: Optional[Timer] = None
         self._connections: Dict[str, BleakClient] = {}
         self._devices: Dict[str, BLEDevice] = {}
+        self._device_last_updated_at: Dict[str, float] = {}
         self._device_name_by_addr = device_names or {}
         self._device_addr_by_name = {
             name: addr for addr, name in self._device_name_by_addr.items()
@@ -129,21 +165,54 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
     def _post_event(
         self, event_type: Type[BluetoothDeviceEvent], device: BLEDevice, **kwargs
     ):
-        props = device.details.get('props', {})
         get_bus().post(
             event_type(
-                address=device.address,
-                name=self._get_device_name(device),
-                connected=props.get('Connected', False),
-                paired=props.get('Paired', False),
-                blocked=props.get('Blocked', False),
-                trusted=props.get('Trusted', False),
-                characteristics=device.metadata.get('uuids', []),
-                **kwargs,
+                address=device.address, **self._parse_device_args(device), **kwargs
             )
         )
 
-    def _on_device_event(self, device: BLEDevice, _):
+    def _parse_device_args(self, device: BLEDevice) -> Dict[str, Any]:
+        props = device.details.get('props', {})
+        return {
+            'name': self._get_device_name(device),
+            'connected': props.get('Connected', False),
+            'paired': props.get('Paired', False),
+            'blocked': props.get('Blocked', False),
+            'trusted': props.get('Trusted', False),
+            'rssi': device.rssi,
+            'tx_power': props.get('TxPower'),
+            'uuids': {
+                uuid: uuidstr_to_str(uuid) for uuid in device.metadata.get('uuids', [])
+            },
+            'manufacturers': {
+                manufacturer_id: company.get(manufacturer_id, 'Unknown')
+                for manufacturer_id in sorted(
+                    device.metadata.get('manufacturer_data', {}).keys()
+                )
+            },
+            'manufacturer_data': self._parse_manufacturer_data(device),
+            'service_data': self._parse_service_data(device),
+        }
+
+    @staticmethod
+    def _parse_manufacturer_data(device: BLEDevice) -> Dict[int, str]:
+        return {
+            manufacturer_id: ':'.join([f'{x:02x}' for x in value])
+            for manufacturer_id, value in device.metadata.get(
+                'manufacturer_data', {}
+            ).items()
+        }
+
+    @staticmethod
+    def _parse_service_data(device: BLEDevice) -> Dict[str, str]:
+        return {
+            service_uuid: ':'.join([f'{x:02x}' for x in value])
+            for service_uuid, value in device.details.get('props', {})
+            .get('ServiceData', {})
+            .items()
+        }
+
+    def _on_device_event(self, device: BLEDevice, _: AdvertisementData):
         event_types: List[Type[BluetoothDeviceEvent]] = []
         existing_device = self._devices.get(device.address)
 
@@ -178,6 +247,15 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
                     if new_props.get('Trusted')
                     else BluetoothDeviceUntrustedEvent
                 )
+
+            if (
+                time() - self._device_last_updated_at.get(device.address, 0)
+            ) >= self._rssi_update_interval and (
+                existing_device.rssi != device.rssi
+                or old_props.get('TxPower') != new_props.get('TxPower')
+            ):
+                event_types.append(BluetoothDeviceSignalUpdateEvent)
+
         else:
             event_types.append(BluetoothDeviceFoundEvent)
 
@@ -190,6 +268,7 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
             for event_type in event_types:
                 self._post_event(event_type, device)
             self.publish_entities([device])
+            self._device_last_updated_at[device.address] = time()
 
     @asynccontextmanager
     async def _connect(
@@ -234,7 +313,7 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
     async def _scan(
         self,
         duration: Optional[float] = None,
-        characteristics: Optional[Collection[UUIDType]] = None,
+        uuids: Optional[Collection[UUIDType]] = None,
         publish_entities: bool = False,
     ) -> Collection[Entity]:
         with self._scan_lock:
@@ -242,13 +321,9 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
             devices = await BleakScanner.discover(
                 adapter=self._interface,
                 timeout=timeout,
-                service_uuids=list(
-                    map(str, characteristics or self._characteristics or [])
-                ),
+                service_uuids=list(map(str, uuids or self._uuids or [])),
                 detection_callback=self._on_device_event,
             )
-
-            # TODO Infer type from device.metadata['manufacturer_data']
 
         self._devices.update({dev.address: dev for dev in devices})
         return (
@@ -307,7 +382,7 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
     def scan(
         self,
         duration: Optional[float] = None,
-        characteristics: Optional[Collection[UUIDType]] = None,
+        uuids: Optional[Collection[UUIDType]] = None,
     ):
         """
         Scan for Bluetooth devices nearby and return the results as a list of
@@ -315,11 +390,11 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
 
         :param duration: Scan duration in seconds (default: same as the plugin's
             `poll_interval` configuration parameter)
-        :param characteristics: List of characteristic UUIDs to discover. Default: all.
+        :param uuids: List of characteristic UUIDs to discover. Default: all.
         """
         loop = get_or_create_event_loop()
         return loop.run_until_complete(
-            self._scan(duration, characteristics, publish_entities=True)
+            self._scan(duration, uuids, publish_entities=True)
         )
 
     @action
@@ -388,7 +463,7 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
         return [
             BluetoothDevice(
                 id=dev.address,
-                name=self._get_device_name(dev),
+                **self._parse_device_args(dev),
             )
             for dev in entities
         ]
