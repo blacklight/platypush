@@ -4,6 +4,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     JSON,
+    String,
 )
 
 from platypush.common.db import Base
@@ -50,6 +51,15 @@ if 'bluetooth_device' not in Base.metadata:
         Service/characteristic UUIDs exposed by the device, as a
         UUID -> Name map.
         """
+
+        brand = Column(String)
+        """ Device brand, as a string. """
+
+        model = Column(String)
+        """ Device model, as a string. """
+
+        model_id = Column(String)
+        """ Device model ID. """
 
         manufacturer_data = Column(JSON)
         """
