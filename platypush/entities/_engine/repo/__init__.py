@@ -4,7 +4,11 @@ from typing import Dict, Iterable, Tuple
 from sqlalchemy.orm import Session, make_transient
 
 from platypush.entities import Entity
+
+# pylint: disable=no-name-in-module
 from platypush.entities._engine.repo.cache import EntitiesCache
+
+# pylint: disable=no-name-in-module
 from platypush.entities._engine.repo.db import EntitiesDb
 from platypush.entities._engine.repo.merger import EntitiesMerger
 

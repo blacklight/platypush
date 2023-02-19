@@ -12,9 +12,9 @@ class EntitiesMerger:
     """
 
     def __init__(self, repository):
-        from platypush.entities._engine.repo import EntitiesRepository
+        from . import EntitiesRepository
 
-        self._repo: EntitiesRepository = repository
+        self._repo: EntitiesRepository = repository  # type: ignore
 
     def merge(
         self,
@@ -26,8 +26,8 @@ class EntitiesMerger:
         the parent/child relationships and return a tuple with
         ``[new_entities, updated_entities]``.
         """
-        new_entities = {}
-        existing_entities = {}
+        new_entities: Dict[Tuple[str, str], Entity] = {}
+        existing_entities: Dict[Tuple[str, str], Entity] = {}
 
         self._merge(
             session,

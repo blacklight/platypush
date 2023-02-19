@@ -82,9 +82,15 @@ class EntitiesDb:
         rewired. Otherwise, we may end up with conflicts on entities that have
         already been flushed.
         """
-        # Index childrens by parent_id and by parent_key
-        children_by_parent_id = defaultdict(lambda: defaultdict(Entity))
-        children_by_parent_key = defaultdict(lambda: defaultdict(Entity))
+        # Index children by parent_id and by parent_key
+        children_by_parent_id: Dict[int, Dict[Tuple[str, str], Entity]] = defaultdict(
+            lambda: defaultdict(Entity)
+        )
+
+        children_by_parent_key: Dict[
+            Tuple[str, str], Dict[Tuple[str, str], Entity]
+        ] = defaultdict(lambda: defaultdict(Entity))
+
         for entity in entities:
             parent_key = None
             parent_id = entity.parent_id
@@ -113,8 +119,8 @@ class EntitiesDb:
             _TaxonomyAwareEntity(entity=e, level=0) for e in root_entities
         ]
 
-        batches = []
-        current_batch = []
+        batches: List[List[Entity]] = []
+        current_batch: List[_TaxonomyAwareEntity] = []
 
         while entities_to_process:
             # Pop the first element in the list (FIFO implementation)

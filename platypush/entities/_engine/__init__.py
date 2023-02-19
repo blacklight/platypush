@@ -4,7 +4,10 @@ from threading import Thread, Event
 from platypush.entities import Entity
 from platypush.utils import set_thread_name
 
+# pylint: disable=no-name-in-module
 from platypush.entities._engine.notifier import EntityNotifier
+
+# pylint: disable=no-name-in-module
 from platypush.entities._engine.queue import EntitiesQueue
 from platypush.entities._engine.repo import EntitiesRepository
 
@@ -18,7 +21,7 @@ class EntitiesEngine(Thread):
         1. Consume entities from a queue (synchronized with the upstream
            integrations that produce/handle them). The producer/consumer model
            ensure that only this thread writes to the database, packs events
-           together (preventing eccessive writes and throttling events), and
+           together (preventing excessive writes and throttling events), and
            prevents race conditions when SQLite is used.
         2. Merge any existing entities with their newer representations.
         3. Update the entities taxonomy.
@@ -66,7 +69,7 @@ class EntitiesEngine(Thread):
             try:
                 entities = self._repo.save(*entities)
             except Exception as e:
-                self.logger.error('Error while processing entity updates: ' + str(e))
+                self.logger.error('Error while processing entity updates: %s', e)
                 self.logger.exception(e)
                 continue
 

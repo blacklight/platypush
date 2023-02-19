@@ -30,6 +30,8 @@ class EntitiesCache:
             if e:
                 return e
 
+        return None
+
     def update(self, *entities: Entity, overwrite=False):
         """
         Update the cache with a list of new entities.

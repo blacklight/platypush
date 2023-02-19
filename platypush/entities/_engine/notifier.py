@@ -1,7 +1,9 @@
+from typing import Set, Tuple
 from platypush.context import get_bus
 from platypush.entities import Entity
 from platypush.message.event.entities import EntityUpdateEvent
 
+# pylint: disable=no-name-in-module
 from platypush.entities._engine.repo.cache import EntitiesCache
 
 
@@ -13,7 +15,7 @@ class EntityNotifier:
 
     def __init__(self, cache: EntitiesCache):
         self._cache = cache
-        self._entities_awaiting_flush = set()
+        self._entities_awaiting_flush: Set[Tuple[str, str]] = set()
 
     def _populate_entity_id_from_cache(self, new_entity: Entity):
         cached_entity = self._cache.get(new_entity)
