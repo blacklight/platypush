@@ -212,7 +212,9 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
         try:
             self._loop.run_until_complete(self._task)
         except Exception as e:
-            self.logger.info('The loop has terminated with an error: %s', e)
+            if not self.should_stop():
+                self.logger.warning('The loop has terminated with an error')
+                self.logger.exception(e)
 
         self._task.cancel()
 
