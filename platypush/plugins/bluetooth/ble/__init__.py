@@ -19,8 +19,6 @@ from uuid import UUID
 from bleak import BleakClient, BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
-from bleak.uuids import uuidstr_to_str
-from bluetooth_numbers import company
 from typing_extensions import override
 
 from platypush.context import get_bus, get_or_create_event_loop
@@ -44,6 +42,8 @@ from platypush.message.event.bluetooth import (
 )
 from platypush.plugins import AsyncRunnablePlugin, action
 
+from ._mappers import device_to_entity, parse_device_args
+
 UUIDType = Union[str, UUID]
 
 
@@ -58,6 +58,7 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
 
         * **bleak** (``pip install bleak``)
         * **bluetooth-numbers** (``pip install bluetooth-numbers``)
+        * **TheengsGateway** (``pip install git+https://github.com/BlackLight/TheengsGateway``)
 
     Triggers:
 
@@ -129,6 +130,7 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
         self._connections: Dict[str, BleakClient] = {}
         self._connection_locks: Dict[str, Lock] = {}
         self._devices: Dict[str, BLEDevice] = {}
+        self._entities: Dict[str, BluetoothDevice] = {}
         self._device_last_updated_at: Dict[str, float] = {}
         self._device_name_by_addr = device_names or {}
         self._device_addr_by_name = {
@@ -156,104 +158,68 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
         assert dev is not None, f'Unknown device: "{device}"'
         return dev
 
-    def _get_device_name(self, device: BLEDevice) -> str:
-        return (
-            self._device_name_by_addr.get(device.address)
-            or device.name
-            or device.address
-        )
-
     def _post_event(
         self, event_type: Type[BluetoothDeviceEvent], device: BLEDevice, **kwargs
     ):
         get_bus().post(
-            event_type(
-                address=device.address, **self._parse_device_args(device), **kwargs
-            )
+            event_type(address=device.address, **parse_device_args(device), **kwargs)
         )
 
-    def _parse_device_args(self, device: BLEDevice) -> Dict[str, Any]:
-        props = device.details.get('props', {})
-        return {
-            'name': self._get_device_name(device),
-            'connected': props.get('Connected', False),
-            'paired': props.get('Paired', False),
-            'blocked': props.get('Blocked', False),
-            'trusted': props.get('Trusted', False),
-            'rssi': device.rssi,
-            'tx_power': props.get('TxPower'),
-            'uuids': {
-                uuid: uuidstr_to_str(uuid) for uuid in device.metadata.get('uuids', [])
-            },
-            'manufacturers': {
-                manufacturer_id: company.get(manufacturer_id, 'Unknown')
-                for manufacturer_id in sorted(
-                    device.metadata.get('manufacturer_data', {}).keys()
-                )
-            },
-            'manufacturer_data': self._parse_manufacturer_data(device),
-            'service_data': self._parse_service_data(device),
-        }
+    def _on_device_event(self, device: BLEDevice, data: AdvertisementData):
+        """
+        Device advertisement packet callback handler.
 
-    @staticmethod
-    def _parse_manufacturer_data(device: BLEDevice) -> Dict[int, str]:
-        return {
-            manufacturer_id: ':'.join([f'{x:02x}' for x in value])
-            for manufacturer_id, value in device.metadata.get(
-                'manufacturer_data', {}
-            ).items()
-        }
+        1. It generates the relevant
+            :class:`platypush.message.event.bluetooth.BluetoothDeviceEvent` if the
+            state of the device has changed.
 
-    @staticmethod
-    def _parse_service_data(device: BLEDevice) -> Dict[str, str]:
-        return {
-            service_uuid: ':'.join([f'{x:02x}' for x in value])
-            for service_uuid, value in device.details.get('props', {})
-            .get('ServiceData', {})
-            .items()
-        }
+        2. It builds the relevant
+            :class:`platypush.entity.bluetooth.BluetoothDevice` entity object
+            populated with children entities that contain the supported
+            properties.
 
-    def _on_device_event(self, device: BLEDevice, _: AdvertisementData):
+        :param device: The Bluetooth device.
+        :param data: The advertisement data.
+        """
+
         event_types: List[Type[BluetoothDeviceEvent]] = []
-        existing_device = self._devices.get(device.address)
+        existing_entity = self._entities.get(device.address)
+        entity = device_to_entity(device, data)
 
-        if existing_device:
-            old_props = existing_device.details.get('props', {})
-            new_props = device.details.get('props', {})
-
-            if old_props.get('Paired') != new_props.get('Paired'):
+        if existing_entity:
+            if existing_entity.paired != entity.paired:
                 event_types.append(
                     BluetoothDevicePairedEvent
-                    if new_props.get('Paired')
+                    if entity.paired
                     else BluetoothDeviceUnpairedEvent
                 )
 
-            if old_props.get('Connected') != new_props.get('Connected'):
+            if existing_entity.connected != entity.connected:
                 event_types.append(
                     BluetoothDeviceConnectedEvent
-                    if new_props.get('Connected')
+                    if entity.connected
                     else BluetoothDeviceDisconnectedEvent
                 )
 
-            if old_props.get('Blocked') != new_props.get('Blocked'):
+            if existing_entity.blocked != entity.blocked:
                 event_types.append(
                     BluetoothDeviceBlockedEvent
-                    if new_props.get('Blocked')
+                    if entity.blocked
                     else BluetoothDeviceUnblockedEvent
                 )
 
-            if old_props.get('Trusted') != new_props.get('Trusted'):
+            if existing_entity.trusted != entity.trusted:
                 event_types.append(
                     BluetoothDeviceTrustedEvent
-                    if new_props.get('Trusted')
+                    if entity.trusted
                     else BluetoothDeviceUntrustedEvent
                 )
 
             if (
                 time() - self._device_last_updated_at.get(device.address, 0)
             ) >= self._rssi_update_interval and (
-                existing_device.rssi != device.rssi
-                or old_props.get('TxPower') != new_props.get('TxPower')
+                existing_entity.rssi != device.rssi
+                or existing_entity.tx_power != entity.tx_power
             ):
                 event_types.append(BluetoothDeviceSignalUpdateEvent)
         else:
@@ -267,8 +233,31 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
         if event_types:
             for event_type in event_types:
                 self._post_event(event_type, device)
-            self.publish_entities([device])
             self._device_last_updated_at[device.address] = time()
+
+        for child in entity.children:
+            child.parent = entity
+
+        self.publish_entities([entity])
+
+    def _has_changed(self, entity: BluetoothDevice) -> bool:
+        existing_entity = self._entities.get(entity.id or entity.external_id)
+
+        # If the entity didn't exist before, it's a new device.
+        if not existing_entity:
+            return True
+
+        entity_dict = entity.to_json()
+        existing_entity_dict = entity.to_json()
+
+        # Check if any of the root attributes changed, excluding those that are
+        # managed by the entities engine).
+        return any(
+            attr
+            for attr, value in entity_dict.items()
+            if value != existing_entity_dict.get(attr)
+            and attr not in {'id', 'external_id', 'plugin', 'updated_at'}
+        )
 
     @asynccontextmanager
     async def _connect(
@@ -318,7 +307,6 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
         self,
         duration: Optional[float] = None,
         uuids: Optional[Collection[UUIDType]] = None,
-        publish_entities: bool = False,
     ) -> Collection[Entity]:
         with self._scan_lock:
             timeout = duration or self.poll_interval or 5
@@ -330,11 +318,14 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
             )
 
         self._devices.update({dev.address: dev for dev in devices})
-        return (
-            self.publish_entities(devices)
-            if publish_entities
-            else self.transform_entities(devices)
-        )
+        addresses = {dev.address.lower() for dev in devices}
+        return [
+            dev
+            for addr, dev in self._entities.items()
+            if isinstance(dev, BluetoothDevice)
+            and addr.lower() in addresses
+            and dev.reachable
+        ]
 
     async def _scan_state_set(self, state: bool, duration: Optional[float] = None):
         def timer_callback():
@@ -397,9 +388,7 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
         :param uuids: List of characteristic UUIDs to discover. Default: all.
         """
         loop = get_or_create_event_loop()
-        return loop.run_until_complete(
-            self._scan(duration, uuids, publish_entities=True)
-        )
+        return loop.run_until_complete(self._scan(duration, uuids))
 
     @action
     def read(
@@ -461,14 +450,24 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
         return self.scan().output
 
     @override
+    def publish_entities(
+        self, entities: Optional[Collection[Any]]
+    ) -> Collection[Entity]:
+        self._entities.update({entity.id: entity for entity in (entities or [])})
+
+        return super().publish_entities(entities)
+
+    @override
     def transform_entities(
-        self, entities: Collection[BLEDevice]
+        self, entities: Collection[Union[BLEDevice, BluetoothDevice]]
     ) -> Collection[BluetoothDevice]:
         return [
             BluetoothDevice(
                 id=dev.address,
-                **self._parse_device_args(dev),
+                **parse_device_args(dev),
             )
+            if isinstance(dev, BLEDevice)
+            else dev
             for dev in entities
         ]
 
@@ -480,7 +479,7 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
             await self._scan_enabled.wait()
             entities = await self._scan()
 
-            new_device_addresses = {e.id for e in entities}
+            new_device_addresses = {e.external_id for e in entities}
             missing_device_addresses = device_addresses - new_device_addresses
             missing_devices = [
                 dev
@@ -491,6 +490,7 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
             for dev in missing_devices:
                 self._post_event(BluetoothDeviceLostEvent, dev)
                 self._devices.pop(dev.address, None)
+                self._entities.pop(dev.address, None)
 
             device_addresses = new_device_addresses
 

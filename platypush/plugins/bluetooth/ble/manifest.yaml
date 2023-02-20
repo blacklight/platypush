@@ -16,5 +16,6 @@ manifest:
     pip:
     - bleak
     - bluetooth-numbers
+    - git+https://github.com/BlackLight/TheengsGateway
   package: platypush.plugins.bluetooth.ble
   type: plugin
