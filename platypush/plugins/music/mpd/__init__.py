@@ -53,7 +53,7 @@ class MusicMpdPlugin(MusicPlugin):
             while n_tries > 0:
                 try:
                     n_tries -= 1
-                    self.client = mpd.MPDClient(use_unicode=True)
+                    self.client = mpd.MPDClient()
                     self.client.connect(self.host, self.port)
                     return self.client
                 except Exception as e:
