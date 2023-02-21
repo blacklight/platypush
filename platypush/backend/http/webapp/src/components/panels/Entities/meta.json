@@ -159,7 +159,7 @@
     }
   },
 
-  "multi_value_sensor": {
+  "composite_sensor": {
     "name": "Sensor",
     "name_plural": "Sensors",
     "icon": {
