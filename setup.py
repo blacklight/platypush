@@ -28,7 +28,7 @@ backend = pkg_files('platypush/backend')
 
 setup(
     name="platypush",
-    version="0.24.4",
+    version="0.24.5",
     author="Fabio Manganiello",
     author_email="info@fabiomanganiello.com",
     description="Platypush service",
@@ -57,7 +57,7 @@ setup(
         'redis',
         'requests',
         'croniter',
-        'sqlalchemy',
+        'sqlalchemy<2.0.0',
         'websockets',
         'websocket-client',
         'wheel',

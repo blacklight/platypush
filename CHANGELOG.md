@@ -4,18 +4,24 @@ All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being
 reported only starting from v0.20.2.
 
-## [Unreleased]
+## [0.24.5] - 2023-02-22
 
 ### Added
 
 - Added `hid` plugin to support discoverability and data interaction with
   generic HID devices - like Bluetooth/USB peripherals, joysticks, dongles and
   any other type of devices that supports the HID interface.
+  
+- Added `timeout` parameter to `websocket.send` to prevent messages sent on a
+  non-responsive websocket from getting the websocket loop stuck
 
 ### Fixed
 
 - Running the Zeroconf registration logic in another thread in `backend.http`,
   so failures in the Zeroconf logic don't affect the startup of the web server.
+  
+- (Temporarily) introduced `sqlalchemy < 2.0.0` as a requirement - a PR with a
+  migration to the new stable version of SQLAlchemy is in TODO.
 
 ## [0.24.4] - 2022-12-20
 

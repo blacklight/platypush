@@ -12,10 +12,10 @@ python-dateutil
 tz
 frozendict
 requests
-sqlalchemy
+sqlalchemy<2.0.0
 bcrypt
 rsa
-zeroconf
+zeroconf>=0.27.0
 paho-mqtt
 websocket-client
 croniter
