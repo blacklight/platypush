@@ -1,4 +1,6 @@
+import json
 import logging
+from typing import Optional, Union
 
 from sqlalchemy import (
     Boolean,
@@ -43,7 +45,7 @@ if 'raw_sensor' not in Base.metadata:
         id = Column(
             Integer, ForeignKey(Device.id, ondelete='CASCADE'), primary_key=True
         )
-        value = Column(String)
+        _value = Column(String)
         is_binary = Column(Boolean, default=False)
         """ If ``is_binary`` is ``True``, then ``value`` is a hex string. """
         is_json = Column(Boolean, default=False)
@@ -51,6 +53,32 @@ if 'raw_sensor' not in Base.metadata:
         If ``is_json`` is ``True``, then ``value`` is a JSON-encoded string
         object or array.
         """
+
+        @property
+        def value(self):
+            if self.is_binary:
+                return self._value.decode()
+            if self.is_json:
+                return json.loads(self._value)
+            return self._value
+
+        @value.setter
+        def value(
+            self, value: Optional[Union[str, bytearray, bytes, list, tuple, set, dict]]
+        ):
+            if isinstance(value, (bytearray, bytes)):
+                self._value = '0x' + ''.join([f'{x:02x}' for x in value])
+                self.is_binary = True
+            elif isinstance(value, (list, tuple, set)):
+                self._value = json.dumps(list(value))
+                self.is_json = True
+            elif isinstance(value, dict):
+                self._value = json.dumps(value)
+                self.is_json = True
+            else:
+                self._value = value
+                self.is_binary = False
+                self.is_json = False
 
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
