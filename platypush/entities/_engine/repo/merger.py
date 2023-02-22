@@ -14,7 +14,7 @@ class EntitiesMerger:
     def __init__(self, repository):
         from . import EntitiesRepository
 
-        self._repo: EntitiesRepository = repository  # type: ignore
+        self._repo: EntitiesRepository = repository
 
     def merge(
         self,
@@ -75,7 +75,7 @@ class EntitiesMerger:
                 if not parent_id and parent:
                     existing_entity.parent = parent
                 else:
-                    existing_entity.parent_id = parent_id  # type: ignore
+                    existing_entity.parent_id = parent_id
 
                 # Merge the other columns
                 self._merge_columns(entity, existing_entity)
@@ -99,7 +99,7 @@ class EntitiesMerger:
         Recursively update the hierarchy of an entity, moving upwards towards
         the parent.
         """
-        parent_id: Optional[int] = entity.parent_id  # type: ignore
+        parent_id: Optional[int] = entity.parent_id
         parent: Optional[Entity] = entity.parent
 
         # If the entity has a parent with an ID, use that
@@ -114,7 +114,7 @@ class EntitiesMerger:
             # If the parent is already stored, use its ID
             if batch:
                 parent = batch[0]
-                parent_id = parent.id  # type: ignore
+                parent_id = parent.id
 
             # Otherwise, check if its key is already among those awaiting flush
             # and reuse the same objects (prevents SQLAlchemy from generating
@@ -175,9 +175,9 @@ class EntitiesMerger:
         columns = [col.key for col in entity.columns]
         for col in columns:
             if col == 'meta':
-                existing_entity.meta = {  # type: ignore
-                    **(existing_entity.meta or {}),  # type: ignore
-                    **(entity.meta or {}),  # type: ignore
+                existing_entity.meta = {
+                    **(existing_entity.meta or {}),
+                    **(entity.meta or {}),
                 }
             elif col not in ('id', 'created_at'):
                 setattr(existing_entity, col, getattr(entity, col))
