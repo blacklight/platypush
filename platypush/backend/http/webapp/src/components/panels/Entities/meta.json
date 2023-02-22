@@ -127,6 +127,14 @@
     }
   },
 
+  "steps_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-shoe-prints"
+    }
+  },
+
   "muted": {
     "name": "Switch",
     "name_plural": "Switches",
