@@ -20,6 +20,7 @@ from platypush.entities.electricity import (
     PowerSensor,
     VoltageSensor,
 )
+from platypush.entities.heart import HeartRateSensor
 from platypush.entities.humidity import HumiditySensor
 from platypush.entities.illuminance import IlluminanceSensor
 from platypush.entities.motion import MotionSensor
@@ -68,6 +69,7 @@ _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
         value=value,
         unit=conf.get('unit', 'kWh'),
     ),
+    'activity heart rate': lambda value, _: HeartRateSensor(value=value),
     'humidity': lambda value, conf: HumiditySensor(
         value=value,
         unit=conf.get('unit', '%'),

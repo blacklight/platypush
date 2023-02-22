@@ -135,6 +135,14 @@
     }
   },
 
+  "heart_rate_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-heart-pulse"
+    }
+  },
+
   "muted": {
     "name": "Switch",
     "name_plural": "Switches",
