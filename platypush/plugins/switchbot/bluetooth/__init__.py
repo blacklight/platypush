@@ -48,19 +48,19 @@ class SwitchbotBluetoothPlugin(BluetoothBlePlugin, EnumSwitchEntityManager):
 
     # Static list of Bluetooth service UUIDs commonly exposed by SwitchBot
     # devices.
-    _uuids = {
+    _service_uuids = {
         service: UUID(f'cba20{prefix}-224d-11e6-9fb8-0002a5d5c51b')
         for service, prefix in _uuid_prefixes.items()
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, characteristics=self._uuids.values(), **kwargs)
+        super().__init__(*args, uuids=self._service_uuids.values(), **kwargs)
 
     async def _run(
         self,
         device: str,
         command: Command,
-        service_uuid: UUIDType = _uuids['tx'],
+        service_uuid: UUIDType = _service_uuids['tx'],
     ):
         await self._write(device, command.value, service_uuid)
 

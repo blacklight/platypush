@@ -496,7 +496,7 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
 
         while True:
             await self._scan_enabled.wait()
-            entities = await self._scan()
+            entities = await self._scan(uuids=self._uuids)
 
             new_device_addresses = {e.external_id for e in entities}
             missing_device_addresses = device_addresses - new_device_addresses
