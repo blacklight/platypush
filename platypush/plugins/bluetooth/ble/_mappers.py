@@ -24,6 +24,7 @@ from platypush.entities.humidity import HumiditySensor
 from platypush.entities.illuminance import IlluminanceSensor
 from platypush.entities.motion import MotionSensor
 from platypush.entities.sensors import BinarySensor, NumericSensor, RawSensor
+from platypush.entities.steps import StepsSensor
 from platypush.entities.temperature import TemperatureSensor
 
 
@@ -79,6 +80,7 @@ _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
         unit=conf.get('unit', 'W'),
     ),
     'motion': lambda value, _: MotionSensor(value=value),
+    'steps': lambda value, _: StepsSensor(value=value),
     'temperature': lambda value, conf: TemperatureSensor(
         value=value,
         unit=conf.get('unit', 'C'),
