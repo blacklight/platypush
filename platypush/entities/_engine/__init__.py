@@ -1,11 +1,10 @@
 from logging import getLogger
 from threading import Thread, Event
 
+from platypush.context import get_bus
 from platypush.entities import Entity
+from platypush.message.event.entities import EntityUpdateEvent
 from platypush.utils import set_thread_name
-
-# pylint: disable=no-name-in-module
-from platypush.entities._engine.notifier import EntityNotifier
 
 # pylint: disable=no-name-in-module
 from platypush.entities._engine.queue import EntitiesQueue
@@ -38,7 +37,6 @@ class EntitiesEngine(Thread):
         self._should_stop = Event()
         self._queue = EntitiesQueue(stop_event=self._should_stop)
         self._repo = EntitiesRepository()
-        self._notifier = EntityNotifier(self._repo._cache)
 
     def post(self, *entities: Entity):
         self._queue.put(*entities)
@@ -49,6 +47,15 @@ class EntitiesEngine(Thread):
 
     def stop(self):
         self._should_stop.set()
+
+    def notify(self, *entities: Entity):
+        """
+        Trigger an EntityUpdateEvent if the entity has been persisted, or queue
+        it to the list of entities whose notifications will be flushed when the
+        session is committed.
+        """
+        for entity in entities:
+            get_bus().post(EntityUpdateEvent(entity=entity))
 
     def run(self):
         super().run()
@@ -61,10 +68,6 @@ class EntitiesEngine(Thread):
             if not entities or self.should_stop:
                 continue
 
-            # Trigger/prepare EntityUpdateEvent objects
-            for entity in entities:
-                self._notifier.notify(entity)
-
             # Store the batch of entities
             try:
                 entities = self._repo.save(*entities)
@@ -73,7 +76,7 @@ class EntitiesEngine(Thread):
                 self.logger.exception(e)
                 continue
 
-            # Flush any pending notifications
-            self._notifier.flush(*entities)
+            # Trigger EntityUpdateEvent events
+            self.notify(*entities)
 
         self.logger.info('Stopped entities engine')

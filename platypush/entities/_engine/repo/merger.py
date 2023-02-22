@@ -49,7 +49,7 @@ class EntitiesMerger:
         (Recursive) inner implementation of the entity merge logic.
         """
         processed_entities = []
-        existing_entities.update(self._repo.get(session, entities, use_cache=False))
+        existing_entities.update(self._repo.get(session, entities))
 
         # Make sure that we have no duplicate entity keys in the current batch
         entities = list(
@@ -79,6 +79,9 @@ class EntitiesMerger:
 
                 # Merge the other columns
                 self._merge_columns(entity, existing_entity)
+                # Merge the children
+                self._merge(session, entity.children, new_entities, existing_entities)
+                # Use the updated version of the existing entity.
                 entity = existing_entity
             else:
                 # Add it to the map of new entities if the entity doesn't exist
@@ -109,7 +112,7 @@ class EntitiesMerger:
         # If there's no parent_id but there is a parent object, try to fetch
         # its stored version
         if not parent_id and parent:
-            batch = list(self._repo.get(session, [parent], use_cache=False).values())
+            batch = list(self._repo.get(session, [parent]).values())
 
             # If the parent is already stored, use its ID
             if batch:
@@ -135,7 +138,7 @@ class EntitiesMerger:
         # flushing)
         if parent_id:
             entity.parent = None
-            entity.parent_id = parent_id  # type: ignore
+            entity.parent_id = parent_id
 
         return parent_id, parent
 
