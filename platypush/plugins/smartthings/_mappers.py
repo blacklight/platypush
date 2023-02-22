@@ -16,7 +16,7 @@ from platypush.entities.motion import MotionSensor
 from platypush.entities.sensors import (
     BinarySensor,
     EnumSensor,
-    MultiValueSensor,
+    CompositeSensor,
     NumericSensor,
 )
 from platypush.entities.switches import EnumSwitch, Switch
@@ -492,7 +492,7 @@ device_mappers: List[DeviceMapper] = [
     ),
     # three_axis
     DeviceMapper(
-        entity_type=MultiValueSensor,
+        entity_type=CompositeSensor,
         capability=Capability.three_axis,
         attribute=Attribute.three_axis,
         value_type=list,
