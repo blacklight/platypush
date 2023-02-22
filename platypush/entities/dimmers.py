@@ -8,6 +8,11 @@ from .devices import Device
 if 'dimmer' not in Base.metadata:
 
     class Dimmer(Device):
+        """
+        This class models dimmer entities. A dimmer is any actionable entity
+        with numeric values and an optional min/max range.
+        """
+
         __tablename__ = 'dimmer'
 
         id = Column(

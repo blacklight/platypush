@@ -8,6 +8,10 @@ from ._base import Entity
 if 'device' not in Base.metadata:
 
     class Device(Entity):
+        """
+        Base class to model device entities.
+        """
+
         __tablename__ = 'device'
 
         id = Column(
