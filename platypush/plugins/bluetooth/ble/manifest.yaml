@@ -5,6 +5,7 @@ manifest:
     platypush.message.event.bluetooth.BluetoothDeviceDisconnectedEvent:
     platypush.message.event.bluetooth.BluetoothDeviceFoundEvent:
     platypush.message.event.bluetooth.BluetoothDeviceLostEvent:
+    platypush.message.event.bluetooth.BluetoothDeviceNewDataEvent:
     platypush.message.event.bluetooth.BluetoothDevicePairedEvent:
     platypush.message.event.bluetooth.BluetoothDeviceTrustedEvent:
     platypush.message.event.bluetooth.BluetoothDeviceUnblockedEvent:

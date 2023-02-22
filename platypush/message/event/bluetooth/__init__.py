@@ -97,6 +97,13 @@ class BluetoothDeviceEvent(BluetoothWithPortEvent):
         )
 
 
+class BluetoothDeviceNewDataEvent(BluetoothDeviceEvent):
+    """
+    Event triggered when a Bluetooth device publishes new manufacturer/service
+    data.
+    """
+
+
 class BluetoothDeviceFoundEvent(BluetoothDeviceEvent):
     """
     Event triggered when a Bluetooth device is discovered during a scan.

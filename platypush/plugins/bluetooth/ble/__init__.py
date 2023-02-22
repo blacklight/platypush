@@ -30,6 +30,7 @@ from platypush.message.event.bluetooth import (
     BluetoothDeviceDisconnectedEvent,
     BluetoothDeviceFoundEvent,
     BluetoothDeviceLostEvent,
+    BluetoothDeviceNewDataEvent,
     BluetoothDevicePairedEvent,
     BluetoothDeviceSignalUpdateEvent,
     BluetoothDeviceTrustedEvent,
@@ -51,6 +52,13 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
     """
     Plugin to interact with BLE (Bluetooth Low-Energy) devices.
 
+    This plugin uses `_Bleak_ <https://github.com/hbldh/bleak>`_ to interact
+    with the Bluetooth stack and `_Theengs_ <https://github.com/theengs/decoder>`_
+    to map the services exposed by the devices into native entities.
+
+    The full list of devices natively supported can be found
+    `here <https://decoder.theengs.io/devices/devices_by_brand.html>`_.
+
     Note that the support for Bluetooth low-energy devices requires a Bluetooth
     adapter compatible with the Bluetooth 5.0 specification or higher.
 
@@ -67,6 +75,7 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
         * :class:`platypush.message.event.bluetooth.BluetoothDeviceDisconnectedEvent`
         * :class:`platypush.message.event.bluetooth.BluetoothDeviceFoundEvent`
         * :class:`platypush.message.event.bluetooth.BluetoothDeviceLostEvent`
+        * :class:`platypush.message.event.bluetooth.BluetoothDeviceNewDataEvent`
         * :class:`platypush.message.event.bluetooth.BluetoothDevicePairedEvent`
         * :class:`platypush.message.event.bluetooth.BluetoothDeviceTrustedEvent`
         * :class:`platypush.message.event.bluetooth.BluetoothDeviceUnblockedEvent`
@@ -183,10 +192,11 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
         """
 
         event_types: List[Type[BluetoothDeviceEvent]] = []
-        existing_entity = self._entities.get(device.address)
         entity = device_to_entity(device, data)
+        existing_entity = self._entities.get(device.address)
+        existing_device = self._devices.get(device.address)
 
-        if existing_entity:
+        if existing_entity and existing_device:
             if existing_entity.paired != entity.paired:
                 event_types.append(
                     BluetoothDevicePairedEvent
@@ -222,6 +232,15 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
                 or existing_entity.tx_power != entity.tx_power
             ):
                 event_types.append(BluetoothDeviceSignalUpdateEvent)
+
+            if (
+                existing_device.metadata.get('manufacturer_data', {})
+                != device.metadata.get('manufacturer_data', {})
+            ) or (
+                existing_device.details.get('props', {}).get('ServiceData', {})
+                != device.details.get('props', {}).get('ServiceData', {})
+            ):
+                event_types.append(BluetoothDeviceNewDataEvent)
         else:
             event_types.append(BluetoothDeviceFoundEvent)
 
@@ -235,10 +254,10 @@ class BluetoothBlePlugin(AsyncRunnablePlugin, EntityManager):
                 self._post_event(event_type, device)
             self._device_last_updated_at[device.address] = time()
 
-        for child in entity.children:
-            child.parent = entity
+            for child in entity.children:
+                child.parent = entity
 
-        self.publish_entities([entity])
+            self.publish_entities([entity])
 
     def _has_changed(self, entity: BluetoothDevice) -> bool:
         existing_entity = self._entities.get(entity.id or entity.external_id)
