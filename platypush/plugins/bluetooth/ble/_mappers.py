@@ -40,6 +40,17 @@ class TheengsEntity:
     model_id: Optional[str] = None
 
 
+# pylint: disable=too-few-public-methods
+class NullSensor:
+    """
+    Dummy class to model sensors with null values (hence without sufficient
+    information for the application to infer the type).
+    """
+
+    def __init__(self, *_, **__):
+        pass
+
+
 # Maps property names to transformer methods (first mapper choice).
 _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
     'battery': lambda value, conf: Battery(
@@ -96,6 +107,9 @@ _value_type_to_entity: Dict[type, Callable[[Any, Dict[str, Any]], Entity]] = {
     bool: lambda value, _: BinarySensor(value=value),
     int: lambda value, _: NumericSensor(value=value),
     float: lambda value, _: NumericSensor(value=value),
+    str: lambda value, _: RawSensor(value=value),
+    bytes: lambda value, _: RawSensor(value=value),
+    bytearray: lambda value, _: RawSensor(value=value),
 }
 
 
@@ -126,8 +140,8 @@ def device_to_entity(device: BLEDevice, data: AdvertisementData) -> BluetoothDev
                 # If not, check if we can infer an entity mapper from the value type.
                 _value_type_to_entity.get(
                     type(theengs_entity.data.get(name)),
-                    # If not, default to a raw sensor.
-                    lambda value, _: RawSensor(value=value),
+                    # If not, default to a NullSensor.
+                    lambda *_: NullSensor(),
                 ),
             ),
         )(theengs_entity.data.get(name), conf)
@@ -135,6 +149,10 @@ def device_to_entity(device: BLEDevice, data: AdvertisementData) -> BluetoothDev
     }
 
     for prop, entity in parsed_entities.items():
+        if isinstance(entity, NullSensor):
+            # Skip entities that we couldn't parse.
+            continue
+
         entity.id = f'{parent_entity.id}:{prop}'
         entity.name = prop
         parent_entity.children.append(entity)
@@ -169,10 +187,7 @@ def _parse_advertisement_data(data: AdvertisementData) -> TheengsEntity:
         entity_args['name'] = data.local_name
 
     if entity_args:
-        # print('==== DECODING: ====')
-        # print(entity_args)
         encoded_ret = decodeBLE(json.dumps(entity_args))
-        # print('==== DECODED! ====')
 
         if encoded_ret:
             entity_args = json.loads(encoded_ret)
