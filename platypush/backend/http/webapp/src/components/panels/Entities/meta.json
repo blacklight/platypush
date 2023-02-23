@@ -111,6 +111,14 @@
     }
   },
 
+  "presence_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-person"
+    }
+  },
+
   "link_quality": {
     "name": "Link Quality",
     "name_plural": "Link Qualities",

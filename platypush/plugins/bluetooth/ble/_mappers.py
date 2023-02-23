@@ -24,6 +24,7 @@ from platypush.entities.heart import HeartRateSensor
 from platypush.entities.humidity import DewPointSensor, HumiditySensor
 from platypush.entities.illuminance import IlluminanceSensor
 from platypush.entities.motion import MotionSensor
+from platypush.entities.presence import PresenceSensor
 from platypush.entities.pressure import PressureSensor
 from platypush.entities.sensors import BinarySensor, NumericSensor, RawSensor
 from platypush.entities.steps import StepsSensor
@@ -84,6 +85,7 @@ _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
         value=value,
         unit=conf.get('unit', 'kWh'),
     ),
+    'heart rate': lambda value, _: HeartRateSensor(value=value),
     'humidity': lambda value, conf: HumiditySensor(
         value=value,
         unit=conf.get('unit', '%'),
@@ -103,6 +105,7 @@ _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
         value=value,
         unit=conf.get('unit', 'W'),
     ),
+    'presence': lambda value, _: PresenceSensor(value=value),
     'pressure': lambda value, conf: PressureSensor(
         value=value,
         unit=conf.get('unit'),
