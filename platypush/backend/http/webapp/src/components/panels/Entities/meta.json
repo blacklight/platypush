@@ -143,6 +143,14 @@
     }
   },
 
+  "time_duration_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-clock"
+    }
+  },
+
   "muted": {
     "name": "Switch",
     "name_plural": "Switches",

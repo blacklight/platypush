@@ -27,6 +27,7 @@ from platypush.entities.motion import MotionSensor
 from platypush.entities.sensors import BinarySensor, NumericSensor, RawSensor
 from platypush.entities.steps import StepsSensor
 from platypush.entities.temperature import TemperatureSensor
+from platypush.entities.time import TimeDurationSensor
 
 
 @dataclass
@@ -55,6 +56,7 @@ class NullSensor:
 
 # Maps property names to transformer methods (first mapper choice).
 _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
+    'activity heart rate': lambda value, _: HeartRateSensor(value=value),
     'battery': lambda value, conf: Battery(
         value=value,
         unit=conf.get('unit', '%'),
@@ -65,11 +67,14 @@ _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
         value=value,
         unit=conf.get('unit', 'A'),
     ),
+    'duration': lambda value, conf: TimeDurationSensor(
+        value=value,
+        unit=conf.get('unit'),
+    ),
     'energy': lambda value, conf: EnergySensor(
         value=value,
         unit=conf.get('unit', 'kWh'),
     ),
-    'activity heart rate': lambda value, _: HeartRateSensor(value=value),
     'humidity': lambda value, conf: HumiditySensor(
         value=value,
         unit=conf.get('unit', '%'),
