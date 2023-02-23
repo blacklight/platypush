@@ -21,7 +21,7 @@ from platypush.entities.electricity import (
     VoltageSensor,
 )
 from platypush.entities.heart import HeartRateSensor
-from platypush.entities.humidity import HumiditySensor
+from platypush.entities.humidity import DewPointSensor, HumiditySensor
 from platypush.entities.illuminance import IlluminanceSensor
 from platypush.entities.motion import MotionSensor
 from platypush.entities.pressure import PressureSensor
@@ -68,6 +68,10 @@ _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
         value=value,
         unit=conf.get('unit', 'A'),
     ),
+    'dew_point_sensor': lambda value, conf: DewPointSensor(
+        value=value,
+        unit=conf.get('unit'),
+    ),
     'duration': lambda value, conf: TimeDurationSensor(
         value=value,
         unit=conf.get('unit'),
@@ -95,7 +99,10 @@ _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
         value=value,
         unit=conf.get('unit', 'W'),
     ),
-    'pressure': lambda value, _: PressureSensor(value=value),
+    'pressure': lambda value, conf: PressureSensor(
+        value=value,
+        unit=conf.get('unit'),
+    ),
     'steps': lambda value, _: StepsSensor(value=value),
     'temperature': lambda value, conf: TemperatureSensor(
         value=value,
@@ -243,7 +250,7 @@ def parse_device_args(device: BLEDevice) -> Dict[str, Any]:
         object.
     """
 
-    props = device.details.get('props', {})
+    props = (device.details or {}).get('props', {})
     return {
         'name': device.name or device.address,
         'connected': props.get('Connected', False),
@@ -287,7 +294,8 @@ def _parse_service_data(device: BLEDevice) -> Dict[str, str]:
     """
     return {
         service_uuid: ''.join([f'{x:02x}' for x in value])
-        for service_uuid, value in device.details.get('props', {})
+        for service_uuid, value in (device.details or {})
+        .get('props', {})
         .get('ServiceData', {})
         .items()
     }

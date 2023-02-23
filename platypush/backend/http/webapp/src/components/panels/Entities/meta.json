@@ -87,6 +87,14 @@
     }
   },
 
+  "dew_point_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-hand-holding-droplet"
+    }
+  },
+
   "illuminance_sensor": {
     "name": "Sensor",
     "name_plural": "Sensors",
