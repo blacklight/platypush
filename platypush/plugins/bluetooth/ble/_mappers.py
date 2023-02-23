@@ -58,6 +58,10 @@ class NullSensor:
 # Maps property names to transformer methods (first mapper choice).
 _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
     'activity heart rate': lambda value, _: HeartRateSensor(value=value),
+    'atmospheric pressure': lambda value, conf: PressureSensor(
+        value=value,
+        unit=conf.get('unit'),
+    ),
     'battery': lambda value, conf: Battery(
         value=value,
         unit=conf.get('unit', '%'),
@@ -105,6 +109,34 @@ _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
     ),
     'steps': lambda value, _: StepsSensor(value=value),
     'temperature': lambda value, conf: TemperatureSensor(
+        value=value,
+        unit=conf.get('unit', 'C'),
+    ),
+    'temperature2': lambda value, conf: TemperatureSensor(
+        value=value,
+        unit=conf.get('unit', 'C'),
+    ),
+    'temperature3': lambda value, conf: TemperatureSensor(
+        value=value,
+        unit=conf.get('unit', 'C'),
+    ),
+    'temperature4': lambda value, conf: TemperatureSensor(
+        value=value,
+        unit=conf.get('unit', 'C'),
+    ),
+    'temperature5': lambda value, conf: TemperatureSensor(
+        value=value,
+        unit=conf.get('unit', 'C'),
+    ),
+    'temperature6': lambda value, conf: TemperatureSensor(
+        value=value,
+        unit=conf.get('unit', 'C'),
+    ),
+    'temperature7': lambda value, conf: TemperatureSensor(
+        value=value,
+        unit=conf.get('unit', 'C'),
+    ),
+    'temperature8': lambda value, conf: TemperatureSensor(
         value=value,
         unit=conf.get('unit', 'C'),
     ),
