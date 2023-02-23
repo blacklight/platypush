@@ -111,11 +111,27 @@
     }
   },
 
+  "contact_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "far fa-hand"
+    }
+  },
+
   "presence_sensor": {
     "name": "Sensor",
     "name_plural": "Sensors",
     "icon": {
       "class": "fas fa-person"
+    }
+  },
+
+  "weight_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-weight-scale"
     }
   },
 

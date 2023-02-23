@@ -14,6 +14,7 @@ from TheengsGateway._decoder import decodeBLE, getAttribute, getProperties
 from platypush.entities import Entity
 from platypush.entities.batteries import Battery
 from platypush.entities.bluetooth import BluetoothDevice
+from platypush.entities.contact import ContactSensor
 from platypush.entities.electricity import (
     CurrentSensor,
     EnergySensor,
@@ -30,6 +31,7 @@ from platypush.entities.sensors import BinarySensor, NumericSensor, RawSensor
 from platypush.entities.steps import StepsSensor
 from platypush.entities.temperature import TemperatureSensor
 from platypush.entities.time import TimeDurationSensor
+from platypush.entities.weight import WeightSensor
 
 
 @dataclass
@@ -69,6 +71,7 @@ _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
         min=conf.get('min', 0),
         max=conf.get('min', 100),
     ),
+    'contact': lambda value, _: ContactSensor(value=value),
     'current': lambda value, conf: CurrentSensor(
         value=value,
         unit=conf.get('unit', 'A'),
@@ -100,7 +103,12 @@ _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
         value=value,
         unit=conf.get('unit'),
     ),
+    'moisture': lambda value, conf: HumiditySensor(
+        value=value,
+        unit=conf.get('unit'),
+    ),
     'motion': lambda value, _: MotionSensor(value=value),
+    'open': lambda value, _: BinarySensor(value=value),
     'power': lambda value, conf: PowerSensor(
         value=value,
         unit=conf.get('unit', 'W'),
@@ -143,9 +151,17 @@ _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
         value=value,
         unit=conf.get('unit', 'C'),
     ),
+    'volt': lambda value, conf: VoltageSensor(
+        value=value,
+        unit=conf.get('unit', 'V'),
+    ),
     'voltage': lambda value, conf: VoltageSensor(
         value=value,
         unit=conf.get('unit', 'V'),
+    ),
+    'weight': lambda value, conf: WeightSensor(
+        value=value,
+        unit=conf.get('unit', 'kg'),
     ),
 }
 

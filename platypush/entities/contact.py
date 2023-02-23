@@ -5,14 +5,14 @@ from platypush.common.db import Base
 from .sensors import BinarySensor
 
 
-if 'presence_sensor' not in Base.metadata:
+if 'contact_sensor' not in Base.metadata:
 
-    class PresenceSensor(BinarySensor):
+    class ContactSensor(BinarySensor):
         """
-        A binary sensor that detects presence.
+        A binary sensor that detects contact.
         """
 
-        __tablename__ = 'presence_sensor'
+        __tablename__ = 'contact_sensor'
 
         id = Column(
             Integer, ForeignKey(BinarySensor.id, ondelete='CASCADE'), primary_key=True
