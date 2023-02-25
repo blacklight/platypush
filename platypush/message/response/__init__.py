@@ -78,7 +78,7 @@ class Response(Message):
         the message into a UTF-8 JSON string
         """
         output = (
-            self.output if self.output is not None else {'success': bool(self.errors)}
+            self.output if self.output is not None else {'success': not self.errors}
         )
 
         response_dict = {
