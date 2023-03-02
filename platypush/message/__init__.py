@@ -7,6 +7,7 @@ import inspect
 import json
 import time
 from typing import Union
+from uuid import UUID
 
 logger = logging.getLogger('platypush')
 
@@ -59,6 +60,9 @@ class Message:
 
             if isinstance(obj, set):
                 return list(obj)
+
+            if isinstance(obj, UUID):
+                return str(obj)
 
             value = self.parse_numpy(obj)
             if value is not None:
