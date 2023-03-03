@@ -53,6 +53,7 @@ if 'raw_sensor' not in Base.metadata:
         If ``is_json`` is ``True``, then ``value`` is a JSON-encoded string
         object or array.
         """
+        unit = Column(String)
 
         @property
         def value(self):
