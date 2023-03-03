@@ -249,6 +249,7 @@ autodoc_mock_imports = [
     'pyaudio',
     'avs',
     'PyOBEX',
+    'PyOBEX.client',
     'todoist',
     'trello',
     'telegram',
