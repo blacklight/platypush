@@ -105,7 +105,9 @@ if 'entity' not in Base.metadata:
             """
             This method returns the "external" key of an entity.
             """
+            return (str(self.external_id or self.id), str(self.plugin))
             return (str(self.external_id), str(self.plugin))
+            return (str(self.external_id or self.id), str(self.plugin))
 
         def _serialize_value(self, col: ColumnProperty) -> Any:
             val = getattr(self, col.key)
