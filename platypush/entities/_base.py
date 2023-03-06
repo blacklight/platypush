@@ -94,7 +94,7 @@ if 'entity' not in Base.metadata:
             'polymorphic_on': type,
         }
 
-        @classmethod
+        @classmethod  # type: ignore
         @property
         def columns(cls) -> Tuple[ColumnProperty]:
             inspector = schema_inspect(cls)
@@ -106,8 +106,6 @@ if 'entity' not in Base.metadata:
             This method returns the "external" key of an entity.
             """
             return (str(self.external_id or self.id), str(self.plugin))
-            return (str(self.external_id), str(self.plugin))
-            return (str(self.external_id or self.id), str(self.plugin))
 
         def _serialize_value(self, col: ColumnProperty) -> Any:
             val = getattr(self, col.key)
@@ -117,14 +115,14 @@ if 'entity' not in Base.metadata:
 
             return val
 
-        def to_json(self) -> dict:
+        def to_dict(self) -> dict:
             return {col.key: self._serialize_value(col) for col in self.columns}
 
         def __repr__(self):
             return str(self)
 
         def __str__(self):
-            return json.dumps(self.to_json())
+            return json.dumps(self.to_dict())
 
         def __setattr__(self, key, value):
             matching_columns = [c for c in self.columns if c.expression.name == key]

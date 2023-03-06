@@ -7,7 +7,7 @@ from platypush.message.event import Event
 class EntityEvent(Event):
     def __init__(self, entity: Union[Entity, dict], *args, **kwargs):
         if isinstance(entity, Entity):
-            entity = entity.to_json()
+            entity = entity.to_dict()
         super().__init__(entity=entity, *args, **kwargs)
 
 
