@@ -38,7 +38,10 @@ class EntitiesRepository:
         """
 
         with self._db.get_session(
-            locked=True, autoflush=False, expire_on_commit=False
+            locked=True,
+            autoflush=False,
+            autocommit=False,
+            expire_on_commit=False,
         ) as session:
             merged_entities = self._merger.merge(session, entities)
             merged_entities = self._db.upsert(session, merged_entities)
