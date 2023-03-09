@@ -1,12 +1,13 @@
 from logging import getLogger
 from threading import Thread, Event
+from typing import Dict, Optional, Tuple
 
 from platypush.context import get_bus
 from platypush.entities import Entity
 from platypush.message.event.entities import EntityUpdateEvent
 from platypush.utils import set_thread_name
 
-# pylint: disable=no-name-in-module
+from platypush.entities._base import EntitySavedCallback
 from platypush.entities._engine.queue import EntitiesQueue
 from platypush.entities._engine.repo import EntitiesRepository
 
@@ -29,16 +30,25 @@ class EntitiesEngine(Thread):
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         obj_name = self.__class__.__name__
         super().__init__(name=obj_name)
 
         self.logger = getLogger(name=obj_name)
         self._should_stop = Event()
+        """ Event used to synchronize stop events downstream."""
         self._queue = EntitiesQueue(stop_event=self._should_stop)
+        """ Queue where all entity upsert requests are received."""
         self._repo = EntitiesRepository()
+        """ The repository of the processed entities. """
+        self._callbacks: Dict[Tuple[str, str], EntitySavedCallback] = {}
+        """ (external_id, plugin) -> callback mapping"""
 
-    def post(self, *entities: Entity):
+    def post(self, *entities: Entity, callback: Optional[EntitySavedCallback] = None):
+        if callback:
+            for entity in entities:
+                self._callbacks[entity.entity_key] = callback
+
         self._queue.put(*entities)
 
     @property
@@ -52,10 +62,13 @@ class EntitiesEngine(Thread):
         """
         Trigger an EntityUpdateEvent if the entity has been persisted, or queue
         it to the list of entities whose notifications will be flushed when the
-        session is committed.
+        session is committed. It will also invoke any registered callbacks.
         """
         for entity in entities:
             get_bus().post(EntityUpdateEvent(entity=entity))
+            callback = self._callbacks.pop(entity.entity_key, None)
+            if callback:
+                callback(entity)
 
     def run(self):
         super().run()

@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any, Optional, Dict, Collection, Type
 
 from platypush.config import Config
-from platypush.entities import Entity
+from platypush.entities._base import Entity, EntitySavedCallback
 from platypush.utils import get_plugin_name_by_class, get_redis
 
 _entity_registry_varname = '_platypush/plugin_entity_registry'
@@ -68,7 +68,7 @@ class EntityManager(ABC):
 
     def _normalize_entities(self, entities: Collection[Entity]) -> Collection[Entity]:
         for entity in entities:
-            if entity.id:
+            if entity.id and not entity.external_id:
                 # Entity IDs can only refer to the internal primary key
                 entity.external_id = entity.id
                 entity.id = None  # type: ignore
@@ -80,7 +80,9 @@ class EntityManager(ABC):
         return entities
 
     def publish_entities(
-        self, entities: Optional[Collection[Any]]
+        self,
+        entities: Optional[Collection[Any]],
+        callback: Optional[EntitySavedCallback] = None,
     ) -> Collection[Entity]:
         """
         Publishes a list of entities. The downstream consumers include:
@@ -90,6 +92,9 @@ class EntityManager(ABC):
             - Any consumer subscribed to
                 :class:`platypush.message.event.entities.EntityUpdateEvent`
                 events (e.g. web clients)
+
+        It also accepts an optional callback that will be called when each of
+        the entities in the set is flushed to the database.
 
         You usually don't need to override this class (but you may want to
         extend :meth:`.transform_entities` instead if your extension doesn't
@@ -101,7 +106,7 @@ class EntityManager(ABC):
             self.transform_entities(entities or [])
         )
 
-        publish_entities(transformed_entities)
+        publish_entities(transformed_entities, callback=callback)
         return transformed_entities
 
 

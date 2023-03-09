@@ -4,7 +4,7 @@ import pathlib
 import types
 from datetime import datetime
 from dateutil.tz import tzutc
-from typing import Mapping, Type, Tuple, Any
+from typing import Callable, Mapping, Type, Tuple, Any
 
 import pkgutil
 from sqlalchemy import (
@@ -70,7 +70,7 @@ if 'entity' not in Base.metadata:
             'Entity',
             remote_side=[id],
             uselist=False,
-            lazy=True,
+            lazy='selectin',
             post_update=True,
             backref=backref(
                 'children',
@@ -105,7 +105,7 @@ if 'entity' not in Base.metadata:
             """
             This method returns the "external" key of an entity.
             """
-            return (str(self.external_id or self.id), str(self.plugin))
+            return str(self.external_id), str(self.plugin)
 
         def _serialize_value(self, col: ColumnProperty) -> Any:
             val = getattr(self, col.key)
@@ -152,6 +152,12 @@ if 'entity' not in Base.metadata:
     # Inject the JSONAble mixin (Python goes nuts if done through
     # standard multiple inheritance with an SQLAlchemy ORM class)
     Entity.__bases__ = Entity.__bases__ + (JSONAble,)
+
+    EntitySavedCallback = Callable[[Entity], None]
+    """
+    Type for the callback functions that should be called when an entity is saved
+    on the database.
+    """
 
 
 def _discover_entity_types():

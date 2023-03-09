@@ -1,7 +1,12 @@
 import logging
 from typing import Collection, Optional
 
-from ._base import Entity, get_entities_registry, init_entities_db
+from ._base import (
+    Entity,
+    EntitySavedCallback,
+    get_entities_registry,
+    init_entities_db,
+)
 from ._engine import EntitiesEngine
 from ._managers import (
     EntityManager,
@@ -31,7 +36,9 @@ def init_entities_engine() -> EntitiesEngine:
     return _engine
 
 
-def publish_entities(entities: Collection[Entity]):
+def publish_entities(
+    entities: Collection[Entity], callback: Optional[EntitySavedCallback] = None
+) -> None:
     """
     Publish a collection of entities to be processed by the engine.
 
@@ -47,7 +54,7 @@ def publish_entities(entities: Collection[Entity]):
         logger.debug('No entities engine registered')
         return
 
-    _engine.post(*entities)
+    _engine.post(*entities, callback=callback)
 
 
 __all__ = (
@@ -55,6 +62,7 @@ __all__ = (
     'EntitiesEngine',
     'Entity',
     'EntityManager',
+    'EntitySavedCallback',
     'EnumSwitchEntityManager',
     'LightEntityManager',
     'SensorEntityManager',
