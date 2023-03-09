@@ -115,6 +115,17 @@ if 'entity' not in Base.metadata:
             """
             return str(self.external_id), str(self.plugin)
 
+        def copy(self) -> 'Entity':
+            """
+            This method returns a copy of the entity. It's useful when you want
+            to reuse entity objects in other threads or outside of their
+            associated SQLAlchemy session context.
+            """
+            return self.__class__(
+                **{col.key: getattr(self, col.key, None) for col in self.columns},
+                children=[child.copy() for child in self.children],
+            )
+
         def _serialize_value(self, col: ColumnProperty) -> Any:
             val = getattr(self, col.key)
             if isinstance(val, datetime):
