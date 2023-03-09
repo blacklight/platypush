@@ -4,7 +4,7 @@ import pathlib
 import types
 from datetime import datetime
 from dateutil.tz import tzutc
-from typing import Callable, Mapping, Type, Tuple, Any
+from typing import Callable, Final, Mapping, Set, Type, Tuple, Any
 
 import pkgutil
 from sqlalchemy import (
@@ -25,6 +25,14 @@ from platypush.common.db import Base
 from platypush.message import JSONAble
 
 entities_registry: Mapping[Type['Entity'], Mapping] = {}
+
+_import_error_ignored_modules: Final[Set[str]] = {'bluetooth'}
+"""
+ImportError exceptions will be ignored for these entity submodules when
+imported dynamically. An ImportError for these modules means that some optional
+requirements are missing, and if those plugins aren't enabled then we shouldn't
+fail.
+"""
 
 
 if 'entity' not in Base.metadata:
@@ -177,8 +185,15 @@ def _discover_entity_types():
             module = types.ModuleType(mod_loader.name)
             mod_loader.loader.exec_module(module)
         except Exception as e:
-            logger.warning(f'Could not import module {modname}')
-            logger.exception(e)
+            if (
+                isinstance(e, (ImportError, ModuleNotFoundError))
+                and modname[len(__package__) + 1 :] in _import_error_ignored_modules
+            ):
+                logger.debug(f'Could not import module {modname}')
+            else:
+                logger.warning(f'Could not import module {modname}')
+                logger.exception(e)
+
             continue
 
         for _, obj in inspect.getmembers(module):
