@@ -1,4 +1,6 @@
+from datetime import datetime, timedelta
 import logging
+from threading import Event
 from typing import Collection, Optional
 
 from ._base import (
@@ -33,6 +35,23 @@ def init_entities_engine() -> EntitiesEngine:
     init_entities_db()
     _engine = EntitiesEngine()
     _engine.start()
+    return _engine
+
+
+def get_entities_engine(timeout: Optional[float] = None) -> EntitiesEngine:
+    """
+    Return the running entities engine.
+
+    :param timeout: Timeout in seconds (default: None).
+    """
+    time_start = datetime.utcnow()
+    while not timeout or (datetime.utcnow() - time_start < timedelta(seconds=timeout)):
+        if _engine:
+            break
+
+        Event().wait(1)
+
+    assert _engine, 'The entities engine has not been initialized'
     return _engine
 
 
