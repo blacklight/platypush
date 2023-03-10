@@ -1,10 +1,11 @@
 from typing import Dict, Iterable, List, Optional, Tuple
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, exc
 
 from platypush.entities import Entity
 
 
+# pylint: disable=too-few-public-methods
 class EntitiesMerger:
     """
     This object is in charge of detecting and merging entities that already
@@ -103,7 +104,12 @@ class EntitiesMerger:
         the parent.
         """
         parent_id: Optional[int] = entity.parent_id
-        parent: Optional[Entity] = entity.parent
+        try:
+            parent: Optional[Entity] = entity.parent
+        except exc.DetachedInstanceError:
+            # Dirty fix for `Parent instance <...> is not bound to a Session;
+            # lazy load operation of attribute 'parent' cannot proceed
+            parent = session.query(Entity).get(parent_id) if parent_id else None
 
         # If the entity has a parent with an ID, use that
         if parent and parent.id:
