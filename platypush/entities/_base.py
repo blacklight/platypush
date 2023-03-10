@@ -3,10 +3,10 @@ import json
 import pathlib
 import types
 from datetime import datetime
-from dateutil.tz import tzutc
-from typing import Callable, Final, Mapping, Set, Type, Tuple, Any
-
 import pkgutil
+from typing import Callable, Dict, Final, Set, Type, Tuple, Any
+
+from dateutil.tz import tzutc
 from sqlalchemy import (
     Boolean,
     Column,
@@ -24,7 +24,8 @@ from sqlalchemy.orm import ColumnProperty, Mapped, backref, relationship
 from platypush.common.db import Base
 from platypush.message import JSONAble
 
-entities_registry: Mapping[Type['Entity'], Mapping] = {}
+EntityRegistryType = Dict[str, Type['Entity']]
+entities_registry: EntityRegistryType = {}
 
 _import_error_ignored_modules: Final[Set[str]] = {'bluetooth'}
 """
@@ -78,7 +79,7 @@ if 'entity' not in Base.metadata:
             'Entity',
             remote_side=[id],
             uselist=False,
-            lazy='selectin',
+            lazy='joined',
             post_update=True,
             backref=backref(
                 'children',
@@ -104,7 +105,7 @@ if 'entity' not in Base.metadata:
 
         @classmethod  # type: ignore
         @property
-        def columns(cls) -> Tuple[ColumnProperty]:
+        def columns(cls) -> Tuple[ColumnProperty, ...]:
             inspector = schema_inspect(cls)
             return tuple(inspector.mapper.column_attrs)
 
@@ -138,12 +139,21 @@ if 'entity' not in Base.metadata:
             return {col.key: self._serialize_value(col) for col in self.columns}
 
         def __repr__(self):
+            """
+            Same as :meth:`.__str__`.
+            """
             return str(self)
 
         def __str__(self):
+            """
+            :return: A JSON-encoded representation of the entity.
+            """
             return json.dumps(self.to_dict())
 
         def __setattr__(self, key, value):
+            """
+            Serializes the new value before assigning it to an attribute.
+            """
             matching_columns = [c for c in self.columns if c.expression.name == key]
 
             if (
@@ -212,11 +222,17 @@ def _discover_entity_types():
                 entities_registry[obj] = {}
 
 
-def get_entities_registry():
+def get_entities_registry() -> EntityRegistryType:
+    """
+    :returns: A copy of the entities registry.
+    """
     return entities_registry.copy()
 
 
 def init_entities_db():
+    """
+    Initializes the entities database.
+    """
     from platypush.context import get_plugin
 
     _discover_entity_types()
