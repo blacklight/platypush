@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Dict, Iterable, List, Tuple
 
 from sqlalchemy import and_, or_
-from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.orm import Session
 
 from platypush.context import get_plugin
@@ -179,18 +178,12 @@ class EntitiesDb:
 
         session.commit()
 
-        all_entities = list(
+        # Make a copy of the entities in the batch, so they can be used outside
+        # of this session/thread without the DetachedInstanceError pain
+        return list(
             {
-                entity.entity_key: entity for batch in batches for entity in batch
+                entity.entity_key: entity.copy()
+                for batch in batches
+                for entity in batch
             }.values()
         )
-
-        # Remove all the entities from the existing session, so they can be
-        # accessed outside of this context
-        for e in all_entities:
-            try:
-                session.expunge(e)
-            except InvalidRequestError:
-                pass
-
-        return all_entities
