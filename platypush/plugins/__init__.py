@@ -126,7 +126,11 @@ class RunnablePlugin(Plugin):
         Stop the plugin.
         """
         self._should_stop.set()
-        if self._thread and self._thread.is_alive():
+        if (
+            self._thread
+            and self._thread != threading.current_thread()
+            and self._thread.is_alive()
+        ):
             self.logger.info('Waiting for the plugin to stop')
             try:
                 if self._thread:
