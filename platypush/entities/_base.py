@@ -138,6 +138,12 @@ if 'entity' not in Base.metadata:
         def to_dict(self) -> dict:
             return {col.key: self._serialize_value(col) for col in self.columns}
 
+        def to_json(self) -> dict:
+            """
+            Alias for :meth:`.to_dict`.
+            """
+            return self.to_dict()
+
         def __repr__(self):
             """
             Same as :meth:`.__str__`.
