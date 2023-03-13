@@ -2,7 +2,7 @@
 
 from enum import Enum
 
-from ._types import RawServiceClass
+from platypush.plugins.bluetooth._types import RawServiceClass
 
 class ServiceClass(Enum):
     """
@@ -14,6 +14,8 @@ class ServiceClass(Enum):
 
     UNKNOWN = ...
     """ A class for unknown services. """
+    OBEX_OBJECT_PUSH = ...
+    """ Class for the OBEX Object Push service. """
 
     @classmethod
     def get(cls, value: RawServiceClass) -> "ServiceClass":

@@ -1,10 +1,12 @@
 import re
 from enum import Enum
 from typing import Dict
+from uuid import UUID
 
 import bluetooth_numbers
+from bleak.uuids import uuid16_dict, uuid128_dict
 
-from ._types import RawServiceClass
+from platypush.plugins.bluetooth._types import RawServiceClass
 
 
 def _service_name_to_enum_name(service_name: str) -> str:
@@ -111,6 +113,10 @@ Section 3.3.
 # Section 3.4
 _service_classes.update(bluetooth_numbers.service)
 
+# Extend the service classes with the GATT service UUIDs defined in Bleak
+_service_classes.update(uuid16_dict)  # type: ignore
+_service_classes.update({UUID(uuid): name for uuid, name in uuid128_dict.items()})
+
 _service_classes_by_name: Dict[str, RawServiceClass] = {
     name: cls for cls, name in _service_classes.items()
 }
@@ -134,6 +140,12 @@ class _ServiceClassMeta:
         try:
             return ServiceClass(value)
         except ValueError:
+            try:
+                if isinstance(value, UUID):
+                    return ServiceClass(int(str(value).upper()[4:8], 16))
+            except ValueError:
+                pass
+
             return ServiceClass.UNKNOWN  # type: ignore
 
     @classmethod
@@ -149,7 +161,9 @@ class _ServiceClassMeta:
         )
 
     def __str__(self) -> str:
-        return _service_classes.get(self.value, ServiceClass(0).value)
+        return _service_classes.get(
+            self.value, ServiceClass.UNKNOWN.value  # type: ignore
+        )
 
     def __repr__(self) -> str:
         return f"<{self.value}: {str(self)}>"

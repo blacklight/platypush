@@ -1,8 +1,8 @@
-from ._device import BluetoothDevice
-from ._service import BluetoothService
+from ._device import BluetoothDeviceBuilder
+from ._services import BluetoothServicesBuilder
 
 
 __all__ = [
-    "BluetoothDevice",
-    "BluetoothService",
+    "BluetoothDeviceBuilder",
+    "BluetoothServicesBuilder",
 ]

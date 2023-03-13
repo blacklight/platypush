@@ -1,11 +1,10 @@
 import json
 import struct
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
-from bleak.uuids import uuidstr_to_str
 from bluetooth_numbers import company
 
 # pylint: disable=no-name-in-module
@@ -13,7 +12,7 @@ from TheengsGateway._decoder import decodeBLE, getAttribute, getProperties
 
 from platypush.entities import Entity
 from platypush.entities.batteries import Battery
-from platypush.entities.bluetooth import BluetoothDevice
+from platypush.entities.bluetooth import BluetoothDevice, BluetoothService
 from platypush.entities.contact import ContactSensor
 from platypush.entities.electricity import (
     CurrentSensor,
@@ -33,6 +32,8 @@ from platypush.entities.temperature import TemperatureSensor
 from platypush.entities.time import TimeDurationSensor
 from platypush.entities.weight import WeightSensor
 
+from .._model import Protocol, ServiceClass
+
 
 @dataclass
 class TheengsEntity:
@@ -42,7 +43,7 @@ class TheengsEntity:
 
     data: dict = field(default_factory=dict)
     properties: dict = field(default_factory=dict)
-    brand: Optional[str] = None
+    manufacturer: Optional[str] = None
     model: Optional[str] = None
     model_id: Optional[str] = None
 
@@ -196,6 +197,34 @@ _value_type_to_entity: Dict[type, Callable[[Any, Dict[str, Any]], Entity]] = {
 }
 
 
+def _parse_services(device: BLEDevice) -> List[BluetoothService]:
+    """
+    :param device: The target device.
+    :return: The parsed BLE services as a list of
+        :class:`platypush.entities.bluetooth.BluetoothService`.
+    """
+    services: List[BluetoothService] = []
+    for srv in device.metadata.get('uuids', []):
+        try:
+            uuid = BluetoothService.to_uuid(srv)
+        except (TypeError, ValueError):
+            # Not a valid UUID.
+            continue
+
+        srv_cls = ServiceClass.get(uuid)
+        services.append(
+            BluetoothService(
+                id=f'{device.address}:{uuid}',
+                uuid=uuid,
+                name=str(srv_cls),
+                protocol=Protocol.L2CAP,
+                is_ble=True,
+            )
+        )
+
+    return services
+
+
 def device_to_entity(device: BLEDevice, data: AdvertisementData) -> BluetoothDevice:
     """
     Convert the data received from a Bluetooth advertisement packet into a
@@ -205,12 +234,26 @@ def device_to_entity(device: BLEDevice, data: AdvertisementData) -> BluetoothDev
     """
 
     theengs_entity = _parse_advertisement_data(data)
+    props = (device.details or {}).get('props', {})
+    manufacturer = theengs_entity.manufacturer or company.get(
+        list(device.metadata['manufacturer_data'].keys())[0]
+        if device.metadata.get('manufacturer_data', {})
+        else None
+    )
+
     parent_entity = BluetoothDevice(
         id=device.address,
         model=theengs_entity.model,
-        brand=theengs_entity.brand,
         reachable=True,
-        **parse_device_args(device),
+        supports_ble=True,
+        supports_legacy=False,
+        address=device.address,
+        name=device.name or device.address,
+        connected=props.get('Connected', False),
+        rssi=device.rssi,
+        tx_power=props.get('TxPower'),
+        manufacturer=manufacturer,
+        children=_parse_services(device),
     )
 
     parsed_entities = {
@@ -239,6 +282,7 @@ def device_to_entity(device: BLEDevice, data: AdvertisementData) -> BluetoothDev
         entity.id = f'{parent_entity.id}:{prop}'
         entity.name = prop
         parent_entity.children.append(entity)
+        entity.parent = parent_entity
 
     return parent_entity
 
@@ -250,7 +294,7 @@ def _parse_advertisement_data(data: AdvertisementData) -> TheengsEntity:
         maps the parsed attributes.
     """
 
-    entity_args, properties, brand, model, model_id = ({}, {}, None, None, None)
+    entity_args, properties, manufacturer, model, model_id = ({}, {}, None, None, None)
 
     if data.service_data:
         parsed_data = list(data.service_data.keys())[0]
@@ -286,67 +330,7 @@ def _parse_advertisement_data(data: AdvertisementData) -> TheengsEntity:
     return TheengsEntity(
         data=entity_args,
         properties=properties,
-        brand=brand,
+        manufacturer=manufacturer,
         model=model,
         model_id=model_id,
     )
-
-
-def parse_device_args(device: BLEDevice) -> Dict[str, Any]:
-    """
-    :param device: The device to parse.
-    :return: The mapped device arguments required to initialize a
-        :class:`platypush.entity.bluetooth.BluetoothDevice` or
-        :class:`platypush.message.event.bluetooth.BluetoothDeviceEvent`
-        object.
-    """
-
-    props = (device.details or {}).get('props', {})
-    return {
-        'name': device.name or device.address,
-        'connected': props.get('Connected', False),
-        'paired': props.get('Paired', False),
-        'blocked': props.get('Blocked', False),
-        'trusted': props.get('Trusted', False),
-        'rssi': device.rssi,
-        'tx_power': props.get('TxPower'),
-        'uuids': {
-            uuid: uuidstr_to_str(uuid) for uuid in device.metadata.get('uuids', [])
-        },
-        'manufacturers': {
-            manufacturer_id: company.get(manufacturer_id, 'Unknown')
-            for manufacturer_id in sorted(
-                device.metadata.get('manufacturer_data', {}).keys()
-            )
-        },
-        'manufacturer_data': _parse_manufacturer_data(device),
-        'service_data': _parse_service_data(device),
-    }
-
-
-def _parse_manufacturer_data(device: BLEDevice) -> Dict[int, str]:
-    """
-    :param device: The device to parse.
-    :return: The manufacturer data as a ``manufacturer_id -> hex_string``
-        mapping.
-    """
-    return {
-        manufacturer_id: ''.join([f'{x:02x}' for x in value])
-        for manufacturer_id, value in device.metadata.get(
-            'manufacturer_data', {}
-        ).items()
-    }
-
-
-def _parse_service_data(device: BLEDevice) -> Dict[str, str]:
-    """
-    :param device: The device to parse.
-    :return: The service data as a ``service_uuid -> hex_string`` mapping.
-    """
-    return {
-        service_uuid: ''.join([f'{x:02x}' for x in value])
-        for service_uuid, value in (device.details or {})
-        .get('props', {})
-        .get('ServiceData', {})
-        .items()
-    }

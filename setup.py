@@ -177,8 +177,9 @@ setup(
         'bluetooth': [
             'bleak',
             'bluetooth-numbers',
-            'pybluez',
-            'pyobex @ https://github.com/BlackLight/PyOBEX/tarball/master',
+            'pybluez @ https://github.com/pybluez/pybluez/tarball/master',
+            'PyOBEX @ https://github.com/BlackLight/PyOBEX/tarball/master',
+            'TheengsGateway @ https://github.com/theengs/gateway/tarball/development',
         ],
         # Support for TP-Link devices
         'tplink': ['pyHS100'],

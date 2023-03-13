@@ -1,11 +1,3 @@
-from ._model import BluetoothDevice
-from ._scanner import DeviceScanner
+from ._manager import LegacyManager
 
-
-__all__ = [
-    "BluetoothDevice",
-    "DeviceScanner",
-]
-
-
-# vim:sw=4:ts=4:et:
+__all__ = ["LegacyManager"]

@@ -6,6 +6,7 @@ class Protocol(Enum):
     Models a Bluetooth protocol.
     """
 
+    UNKNOWN = 'UNKNOWN'
     RFCOMM = 'RFCOMM'
     L2CAP = 'L2CAP'
     TCP = 'TCP'

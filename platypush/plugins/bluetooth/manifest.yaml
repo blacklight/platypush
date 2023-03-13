@@ -1,8 +1,23 @@
 manifest:
-  events: {}
+  events:
+    platypush.message.event.bluetooth.BluetoothConnectionFailedEvent:
+    platypush.message.event.bluetooth.BluetoothDeviceConnectedEvent:
+    platypush.message.event.bluetooth.BluetoothDeviceDisconnectedEvent:
+    platypush.message.event.bluetooth.BluetoothDeviceFoundEvent:
+    platypush.message.event.bluetooth.BluetoothDeviceLostEvent:
+    platypush.message.event.bluetooth.BluetoothFileReceivedEvent:
+    platypush.message.event.bluetooth.BluetoothFileSentEvent:
+    platypush.message.event.bluetooth.BluetoothFileTransferCancelledEvent:
+    platypush.message.event.bluetooth.BluetoothFileTransferStartedEvent:
+    platypush.message.event.bluetooth.BluetoothScanPausedEvent:
+    platypush.message.event.bluetooth.BluetoothScanResumedEvent:
+    platypush.message.event.entities.EntityUpdateEvent:
   install:
     pip:
-    - pybluez
-    - pyobex
+    - bleak
+    - bluetooth-numbers
+    - git+https://github.com/pybluez/pybluez
+    - git+https://github.com/theengs/gateway
+    - git+https://github.com/BlackLight/PyOBEX
   package: platypush.plugins.bluetooth
   type: plugin
