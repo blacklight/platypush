@@ -48,6 +48,9 @@ if 'bluetooth_service' not in Base.metadata:
         is_ble = Column(Boolean, default=False)
         """ Whether the service is a BLE service. """
 
+        connected = Column(Boolean, default=False)
+        """ Whether an active connection exists to this service. """
+
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
