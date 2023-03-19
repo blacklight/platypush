@@ -86,7 +86,7 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
         devices: Optional[Mapping[str, SmartDevice]] = None,
         publish_entities: bool = True,
     ):
-        for (addr, info) in self._static_devices.items():
+        for addr, info in self._static_devices.items():
             try:
                 dev = info['type'](addr)
                 self._alias_to_dev[info.get('name', dev.alias)] = dev
@@ -94,7 +94,7 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
             except SmartDeviceException as e:
                 self.logger.warning('Could not communicate with device %s: %s', addr, e)
 
-        for (ip, dev) in (devices or {}).items():
+        for ip, dev in (devices or {}).items():
             self._ip_to_dev[ip] = dev
             self._alias_to_dev[dev.alias] = dev
 
@@ -225,7 +225,7 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
         return [self._serialize(dev) for dev in self._scan().values()]
 
     def main(self):
-        devices = {ip: self._serialize(dev) for ip, dev in self._ip_to_dev}
+        devices = {ip: self._serialize(dev) for ip, dev in self._ip_to_dev.items()}
 
         while not self.should_stop():
             new_devices = self._scan(publish_entities=False)
