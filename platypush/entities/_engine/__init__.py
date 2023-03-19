@@ -1,13 +1,13 @@
 from logging import getLogger
 from threading import Thread, Event
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 
 from platypush.context import get_bus
 from platypush.entities import Entity
 from platypush.message.event.entities import EntityUpdateEvent
 from platypush.utils import set_thread_name
 
-from platypush.entities._base import EntitySavedCallback
+from platypush.entities._base import EntityKey, EntitySavedCallback
 from platypush.entities._engine.queue import EntitiesQueue
 from platypush.entities._engine.repo import EntitiesRepository
 
@@ -46,7 +46,7 @@ class EntitiesEngine(Thread):
         """ Queue where all entity upsert requests are received."""
         self._repo = EntitiesRepository()
         """ The repository of the processed entities. """
-        self._callbacks: Dict[Tuple[str, str], EntitySavedCallback] = {}
+        self._callbacks: Dict[EntityKey, EntitySavedCallback] = {}
         """ (external_id, plugin) -> callback mapping"""
 
     def post(self, *entities: Entity, callback: Optional[EntitySavedCallback] = None):

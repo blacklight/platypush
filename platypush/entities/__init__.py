@@ -5,6 +5,7 @@ from typing import Collection, Optional
 
 from ._base import (
     Entity,
+    EntityKey,
     EntitySavedCallback,
     get_entities_registry,
     init_entities_db,
@@ -80,6 +81,7 @@ __all__ = (
     'DimmerEntityManager',
     'EntitiesEngine',
     'Entity',
+    'EntityKey',
     'EntityManager',
     'EntitySavedCallback',
     'EnumSwitchEntityManager',

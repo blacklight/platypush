@@ -27,6 +27,11 @@ from platypush.message import JSONAble
 EntityRegistryType = Dict[str, Type['Entity']]
 entities_registry: EntityRegistryType = {}
 
+EntityKey = Tuple[str, str]
+""" The entity's logical key, as an ``<external_id, plugin>`` tuple. """
+EntityMapping = Dict[EntityKey, 'Entity']
+""" Internal mapping for entities used for deduplication/merge/upsert. """
+
 _import_error_ignored_modules: Final[Set[str]] = {'bluetooth'}
 """
 ImportError exceptions will be ignored for these entity submodules when
@@ -110,7 +115,7 @@ if 'entity' not in Base.metadata:
             return tuple(inspector.mapper.column_attrs)
 
         @property
-        def entity_key(self) -> Tuple[str, str]:
+        def entity_key(self) -> EntityKey:
             """
             This method returns the "external" key of an entity.
             """

@@ -6,7 +6,7 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from platypush.context import get_plugin
-from platypush.entities import Entity
+from platypush.entities._base import Entity
 
 
 @dataclass
