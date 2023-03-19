@@ -277,8 +277,8 @@ def device_to_entity(device: BLEDevice, data: AdvertisementData) -> BluetoothDev
             # Skip entities that we couldn't parse.
             continue
 
-        entity.id = f'{parent_entity.id}:{prop}'
-        entity.name = prop
+        entity.id = f'{parent_entity.address}::{prop}'
+        entity.name = prop.title()
         parent_entity.children.append(entity)
         entity.parent = parent_entity
 
