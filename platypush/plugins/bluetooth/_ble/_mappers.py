@@ -216,7 +216,7 @@ def _parse_services(device: BLEDevice) -> List[BluetoothService]:
             BluetoothService(
                 id=f'{device.address}:{uuid}',
                 uuid=uuid,
-                name=str(srv_cls),
+                name=f'[{uuid}]' if srv_cls == ServiceClass.UNKNOWN else str(srv_cls),
                 protocol=Protocol.L2CAP,
                 is_ble=True,
             )
