@@ -180,7 +180,13 @@ class LegacyManager(BaseBluetoothManager):
 
         # Close the connection once the context is over
         with self._connection_locks[conn.key]:
-            conn.close()
+            try:
+                conn.close()
+            except Exception as e:
+                self.logger.warning(
+                    'Error while closing the connection to %s: %s', device, e
+                )
+
             self._connections.pop(conn.key, None)
 
         dev.connected = False
