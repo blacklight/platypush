@@ -236,9 +236,7 @@ def device_to_entity(device: BLEDevice, data: AdvertisementData) -> BluetoothDev
     theengs_entity = _parse_advertisement_data(data)
     props = (device.details or {}).get('props', {})
     manufacturer = theengs_entity.manufacturer or company.get(
-        list(device.metadata['manufacturer_data'].keys())[0]
-        if device.metadata.get('manufacturer_data', {})
-        else None
+        next(iter(key for key in device.metadata['manufacturer_data']), 0xFFFF)
     )
 
     parent_entity = BluetoothDevice(
