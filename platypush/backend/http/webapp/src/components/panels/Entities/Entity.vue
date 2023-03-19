@@ -7,6 +7,7 @@
         <component
           :is="component"
           :value="value"
+          :parent="parent"
           :loading="loading"
           ref="instance"
           :error="error || value?.reachable == false"
@@ -26,6 +27,7 @@
       <div class="child" v-for="entity in computedChildren" :key="entity.id">
         <Entity
          :value="entity"
+         :parent="value"
          :loading="loading"
          :level="level + 1"
          @input="$emit('input', entity)" />

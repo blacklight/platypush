@@ -21,6 +21,11 @@ export default {
       required: true,
     },
 
+    parent: {
+      type: Object,
+      default: () => {},
+    },
+
     children: {
       type: Object,
       default: () => {},
