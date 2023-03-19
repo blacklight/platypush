@@ -42,6 +42,10 @@ export default {
       if (typeof(a) !== 'object' || typeof(b) !== 'object')
         return false
 
+      if (a == null || b == null) {
+        return a == null && b == null
+      }
+
       for (const p of Object.keys(a || {})) {
         switch(typeof(a[p])) {
           case 'object':
