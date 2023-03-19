@@ -1,4 +1,7 @@
 {
+  "bluetooth": {
+    "class": "fab fa-bluetooth"
+  },
   "camera.android.ipcam": {
     "class": "fab fa-android"
   },

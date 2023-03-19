@@ -39,6 +39,14 @@
     }
   },
 
+  "bluetooth_service": {
+    "name": "Service",
+    "name_plural": "Services",
+    "icon": {
+      "class": "fas fa-satellite-dish"
+    }
+  },
+
   "device": {
     "name": "Device",
     "name_plural": "Devices",
