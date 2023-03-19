@@ -107,7 +107,7 @@ export default {
 <style lang="scss" scoped>
 $toggler-height: 2em;
 $footer-collapsed-height: 4em;
-$footer-expanded-height: 7.5em;
+$footer-expanded-height: 7.1em;
 
 nav {
   @media screen and (max-width: #{$tablet - 1px}) {
@@ -148,10 +148,9 @@ nav {
   }
 
   li {
-    border: $nav-entry-border;
+    border-bottom: $nav-entry-border;
     cursor: pointer;
     list-style: none;
-    letter-spacing: 0.04em;
 
     a {
       display: block;
@@ -162,13 +161,14 @@ nav {
       }
     }
 
-    &:hover {
-      background: $nav-entry-hover-bg;
-    }
-
     &.selected {
       background: $nav-entry-selected-bg;
-      border: $nav-entry-selected-border;
+      border: 1px solid rgba(0, 0, 0, 0);
+    }
+
+    &:hover {
+      background: $nav-entry-hover-bg;
+      border: 1px solid rgba(0, 0, 0, 0);
     }
 
     .name {
@@ -183,8 +183,8 @@ nav {
   .toggler {
     width: 100%;
     height: $toggler-height;
-    display: flex;
     background: $nav-toggler-bg;
+    display: flex;
     font-size: 1.5em;
     cursor: pointer;
     padding: 0.4em;
@@ -208,15 +208,20 @@ nav {
   }
 
   .plugins {
-    height: calc(100% - #{$toggler-height} - #{$footer-expanded-height} - 1.4em);
+    height: calc(100% - #{$toggler-height} - #{$footer-expanded-height} - 1em);
     overflow: auto;
   }
 
   .footer {
     height: $footer-expanded-height;
     background: $nav-footer-bg;
+    box-shadow: $nav-footer-shadow;
     padding: 0;
     margin: 0;
+
+    li:last-child {
+      border: 0;
+    }
   }
 
   ul {
@@ -278,6 +283,7 @@ nav {
       background: none;
       padding: 0;
       margin-bottom: .5em;
+      box-shadow: none;
     }
 
     @media screen and (max-width: #{$tablet - 1px}) {

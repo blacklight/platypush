@@ -87,23 +87,24 @@ $active-bg: #8fefb7 !default;
 $disabled-fg: rgb(155, 155, 155);
 
 /// Navigator
-$nav-bg: white !default;
-$nav-fg: #5a5e5b !default;
-$nav-toggler-bg: linear-gradient(0deg, #c0e8e4, #e4f8f4) !default;
-$nav-toggler-collapsed-bg: $nav-bg !default;
+$nav-bg: #4c4c4c !default;
+$nav-fg: white !default;
+$nav-toggler-bg: rgba(0, 0, 0, 0.25) !default;
+$nav-toggler-collapsed-bg: none !default;
 $nav-toggler-collapsed-mobile-bg: #3c3c3c !default;
 $nav-toggler-collapsed-mobile-fg: white !default;
-$nav-toggler-shadow: 0 0 1px 2px #c9cdca !default;
-$nav-footer-bg: rgb(240, 240, 240) !default;
-$nav-entry-selected-bg: $selected-bg !default;
+$nav-toggler-shadow: 1px 1px 1.5px 1px rgba(0,0,0,0.5) !default;
+$nav-footer-shadow: 1px -1px 1.5px 1px rgba(0,0,0,0.5) !default;
+$nav-footer-bg: rgba(0, 0, 0, 0.25) !default;
+$nav-entry-selected-bg: rgba(80,120,110,0.8) !default;
 $nav-entry-selected-border: 1px solid #b1ebba !default;
-$nav-entry-hover-bg: $hover-bg !default;
+$nav-entry-hover-bg: #5a8c78 !default;
 $nav-entry-collapsed-selected-bg: rgba(160, 245, 178, 0.95) !default;
 $nav-entry-collapsed-hover-bg: rgba(160, 245, 178, 0.60) !default;
-$nav-box-shadow-main: 1px 0 2px #aaa;
+$nav-box-shadow-main: 1px 1px 1.5px 1px rgba(0,0,0,0.5) !default;
 $nav-box-shadow-entry: 0 0 1px 1px #c9cdca !default;
 $nav-box-shadow-collapsed: 1px 0 2px 1px #bbb !default;
-$nav-entry-border: 1px solid $border-color-3 !default;
+$nav-entry-border: 1px solid rgba(255,255,255,0.15) !default;
 $nav-collapsed-bg: white;
 $nav-collapsed-fg: #5e5e5e;
 
