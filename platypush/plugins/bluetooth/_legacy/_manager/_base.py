@@ -174,6 +174,7 @@ class LegacyManager(BaseBluetoothManager):
             raise AssertionError(f'Connection to {device} timed out') from e
 
         dev.connected = True
+        conn.service.connected = True
         self.notify(BluetoothDeviceConnectedEvent, dev)
         yield conn
 
@@ -183,6 +184,7 @@ class LegacyManager(BaseBluetoothManager):
             self._connections.pop(conn.key, None)
 
         dev.connected = False
+        conn.service.connected = False
         self.notify(BluetoothDeviceDisconnectedEvent, dev)
 
     @override
