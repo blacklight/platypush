@@ -158,10 +158,6 @@ if 'bluetooth_device' not in Base.metadata:
         def to_dict(self):
             """
             Overwrites ``to_dict`` to transform private column names into their
-            public representation, and also include the exposed services and
-            child entities.
+            public representation.
             """
-            return {
-                **{k.lstrip('_'): v for k, v in super().to_dict().items()},
-                'children': [child.to_dict() for child in self.children],
-            }
+            return {k.lstrip('_'): v for k, v in super().to_dict().items()}
