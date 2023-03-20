@@ -14,7 +14,7 @@
 
       <div class="col-2 connector pull-right">
         <ToggleSwitch
-          :value="parent.connected"
+          :value="value.connected"
           :disabled="loading" 
           @input="connect"
           @click.stop />
@@ -37,9 +37,13 @@ export default {
     async connect(event) {
       event.stopPropagation()
       this.$emit('loading', true)
+      const method = (
+        'bluetooth.' +
+        (this.value.connected ? 'disconnect' : 'connect')
+      )
 
       try {
-        await this.request('bluetooth.connect', {
+        await this.request(method, {
           device: this.parent.address,
           service_uuid: this.uuid,
         })
