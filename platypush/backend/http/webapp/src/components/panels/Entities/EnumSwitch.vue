@@ -13,13 +13,13 @@
       </div>
 
       <div class="col-s-3 col-m-2 buttons pull-right">
+        <span class="value"
+          v-text="value.values[value.value] || value.value"
+          v-if="value?.value != null" />
         <button @click.stop="collapsed = !collapsed" v-if="hasValues">
           <i class="fas"
             :class="{'fa-angle-up': !collapsed, 'fa-angle-down': collapsed}" />
         </button>
-        <span class="value"
-          v-text="value.values[value.value] || value.value"
-          v-if="value?.value != null" />
       </div>
     </div>
 
