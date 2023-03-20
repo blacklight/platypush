@@ -50,7 +50,7 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
 
         * **bleak** (``pip install bleak``)
         * **bluetooth-numbers** (``pip install bluetooth-numbers``)
-        * **TheengsGateway** (``pip install git+https://github.com/theengs/gateway``)
+        * **TheengsDecoder** (``pip install TheengsDecoder``)
         * **pybluez** (``pip install git+https://github.com/pybluez/pybluez``)
         * **pyobex** (``pip install git+https://github.com/BlackLight/PyOBEX``)
 

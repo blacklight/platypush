@@ -299,7 +299,7 @@ autodoc_mock_imports = [
     'async_lru',
     'bleak',
     'bluetooth_numbers',
-    'TheengsGateway',
+    'TheengsDecoder',
 ]
 
 sys.path.insert(0, os.path.abspath('../..'))

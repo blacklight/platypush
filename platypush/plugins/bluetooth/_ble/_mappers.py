@@ -7,8 +7,7 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 from bluetooth_numbers import company
 
-# pylint: disable=no-name-in-module
-from TheengsGateway._decoder import decodeBLE, getAttribute, getProperties
+from TheengsDecoder import decodeBLE, getAttribute, getProperties
 
 from platypush.entities import Entity
 from platypush.entities.batteries import Battery

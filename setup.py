@@ -17,7 +17,7 @@ def readfile(fname):
 def pkg_files(dir):
     paths = []
     # noinspection PyShadowingNames
-    for (path, _, files) in os.walk(dir):
+    for path, _, files in os.walk(dir):
         for file in files:
             paths.append(os.path.join('..', path, file))
     return paths
@@ -177,9 +177,9 @@ setup(
         'bluetooth': [
             'bleak',
             'bluetooth-numbers',
+            'TheengsDecoder',
             'pybluez @ https://github.com/pybluez/pybluez/tarball/master',
             'PyOBEX @ https://github.com/BlackLight/PyOBEX/tarball/master',
-            'TheengsGateway @ https://github.com/theengs/gateway/tarball/development',
         ],
         # Support for TP-Link devices
         'tplink': ['pyHS100'],
