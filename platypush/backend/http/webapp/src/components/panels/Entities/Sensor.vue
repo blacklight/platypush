@@ -14,9 +14,9 @@
 
       <div class="col-s-3 col-m-2 pull-right"
           v-if="value.value != null">
+        <span class="value" v-text="value.value" />
         <span class="unit" v-text="value.unit"
           v-if="value.unit != null" />
-        <span class="value" v-text="value.value" />
       </div>
     </div>
   </div>

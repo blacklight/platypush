@@ -13,13 +13,13 @@
       </div>
 
       <div class="col-s-4 col-m-3 buttons pull-right">
+        <span class="value-percent"
+          v-text="parsedValue"
+          v-if="parsedValue != null" />
         <button @click.stop="collapsed = !collapsed">
           <i class="fas"
             :class="{'fa-angle-up': !collapsed, 'fa-angle-down': collapsed}" />
         </button>
-        <span class="value-percent"
-          v-text="parsedValue"
-          v-if="parsedValue != null" />
       </div>
     </div>
 

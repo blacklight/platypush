@@ -121,13 +121,19 @@ $label-width: 3em;
 
   .range-labels {
     width: 100%;
+    display: flex;
 
     &.with-label {
       width: calc(100% - $label-width);
     }
 
+    .left {
+      text-align: left;
+    }
+
     .right {
       @extend .pull-right;
+      flex-grow: 1;
     }
   }
 

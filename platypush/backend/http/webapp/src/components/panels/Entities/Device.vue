@@ -8,7 +8,7 @@
           :error="error" />
       </div>
 
-      <div class="col-12 label">
+      <div class="col-11 label">
         <div class="name" v-text="value.name" />
       </div>
     </div>

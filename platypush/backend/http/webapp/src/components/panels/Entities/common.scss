@@ -21,12 +21,10 @@
     }
 
     .pull-right {
-      display: inline-flex;
-      align-items: center;
-      direction: rtl;
       padding-right: 0.5em;
 
       :deep(.power-switch) {
+        @include pull-right;
         margin-top: 0.25em;
       }
     }

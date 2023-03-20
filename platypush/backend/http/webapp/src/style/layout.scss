@@ -150,21 +150,26 @@ $widths: (
 }
 
 .vertical-center {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 .horizontal-center {
-    display: flex;
-    justify-content: center;
-    margin-left: auto;
-    margin-right: auto;
+  display: flex;
+  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@mixin pull-right {
+  display: inline-flex;
+  text-align: right;
+  justify-content: right;
+  flex-grow: 1;
 }
 
 .pull-right {
-  text-align: right;
-  float: right;
-  justify-content: right;
+  @include pull-right;
 }
 
 .hidden {
