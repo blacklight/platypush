@@ -8,6 +8,7 @@
           :is="component"
           :value="value"
           :parent="parent"
+          :children="computedChildren"
           :loading="loading"
           ref="instance"
           :error="error || value?.reachable == false"
@@ -208,6 +209,10 @@ export default {
       &:hover {
         color: $hover-fg;
       }
+    }
+
+    .label {
+      margin-left: 0.5em;
     }
 
     .icon:hover {
