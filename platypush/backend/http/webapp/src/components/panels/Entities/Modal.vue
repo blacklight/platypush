@@ -90,13 +90,6 @@
       </div>
     </div>
 
-    <div v-for="value, attr in entity.data || {}" :key="attr">
-      <div class="table-row" v-if="value != null">
-        <div class="title" v-text="prettify(attr)" />
-        <div class="value" v-text="'' + value" />
-      </div>
-    </div>
-
     <div class="table-row" v-if="entity.created_at">
       <div class="title">Created at</div>
       <div class="value" v-text="formatDateTime(entity.created_at)" />
@@ -105,6 +98,20 @@
     <div class="table-row" v-if="entity.updated_at">
       <div class="title">Updated at</div>
       <div class="value" v-text="formatDateTime(entity.updated_at)" />
+    </div>
+
+    <div v-for="value, attr in entity" :key="attr">
+      <div class="table-row" v-if="value != null && specialFields.indexOf(attr) < 0">
+        <div class="title" v-text="prettify(attr)" />
+        <div class="value" v-text="'' + value" />
+      </div>
+    </div>
+
+    <div v-for="value, attr in (entity.data || {})" :key="attr">
+      <div class="table-row" v-if="value != null">
+        <div class="title" v-text="prettify(attr)" />
+        <div class="value" v-text="'' + value" />
+      </div>
     </div>
 
     <div class="table-row delete-entity-container">
@@ -152,6 +159,21 @@ import Utils from "@/Utils";
 import Entity from "./Entity";
 import meta from './meta.json';
 
+// These fields have a different rendering logic than the general-purpose one
+const specialFields = [
+  'created_at',
+  'data',
+  'description',
+  'external_id',
+  'external_url',
+  'id',
+  'image_url',
+  'meta',
+  'name',
+  'plugin',
+  'updated_at',
+]
+
 export default {
   name: "EntityModal",
   components: {Entity, Modal, EditButton, NameEditor, Icon, ConfirmDialog},
@@ -188,6 +210,7 @@ export default {
       editName: false,
       editIcon: false,
       configCollapsed: true,
+      specialFields: specialFields,
     }
   },
 
