@@ -31,6 +31,7 @@
          :parent="value"
          :loading="loading"
          :level="level + 1"
+         @show-modal="$emit('show-modal', $event)"
          @input="$emit('input', entity)" />
       </div>
     </div>
@@ -45,7 +46,7 @@ import { bus } from "@/bus";
 export default {
   name: "Entity",
   mixins: [EntityMixin],
-  emits: ['input', 'loading', 'update'],
+  emits: ['input', 'loading', 'update', 'show-modal'],
 
   data() {
     return {
@@ -88,12 +89,19 @@ export default {
     },
 
     onClick(event) {
+      event.stopPropagation()
+
       if (
         event.target.classList.contains('label') ||
         event.target.classList.contains('head')
       ) {
-        event.stopPropagation()
+        // When clicking on the name or icon of the entity, stop the event
+        // propagation and toggle the collapsed state instead.
         this.toggleCollapsed()
+      } else {
+        // Otherwise, propagate the event upwards as a request to show the
+        // entity details modal.
+        this.$emit('show-modal', this.value.id)
       }
     },
 

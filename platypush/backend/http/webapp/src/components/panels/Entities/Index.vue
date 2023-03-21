@@ -20,6 +20,7 @@
         :visible="modalVisible"
         :config-values="configValuesByParentId(modalEntityId)"
         @close="onEntityModal"
+        @entity-update="modalEntityId = $event"
         v-if="modalEntityId && entities[modalEntityId]"
       />
 
@@ -48,11 +49,13 @@
             </div>
 
             <div class="body">
-              <div class="entity-frame" @click="onEntityModal(entity.id)"
-                  v-for="entity in group.entities" :key="entity.id">
+              <div class="entity-frame"
+                  v-for="entity in group.entities"
+                  :key="entity.id">
                 <Entity
                   :value="entity"
                   :children="childrenByParentId(entity.id)"
+                  @show-modal="onEntityModal($event)"
                   @input="onEntityInput(entity)"
                   :error="!!errorEntities[entity.id]"
                   :loading="!!loadingEntities[entity.id]"

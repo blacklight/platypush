@@ -90,6 +90,16 @@
       </div>
     </div>
 
+    <div class="table-row" v-if="entity.parent_id">
+      <div class="title">Parent</div>
+      <div class="value">
+        <a href="#"
+          @click="$emit('entity-update', entity.parent_id)"
+          v-text="entity.parent_id"
+        />
+      </div>
+    </div>
+
     <div class="table-row" v-if="entity.created_at">
       <div class="title">Created at</div>
       <div class="value" v-text="formatDateTime(entity.created_at)" />
@@ -100,32 +110,49 @@
       <div class="value" v-text="formatDateTime(entity.updated_at)" />
     </div>
 
-    <div v-for="value, attr in entity" :key="attr">
-      <div class="table-row" v-if="value != null && specialFields.indexOf(attr) < 0">
-        <div class="title" v-text="prettify(attr)" />
-        <div class="value" v-text="'' + value" />
-      </div>
-    </div>
-
-    <div v-for="value, attr in (entity.data || {})" :key="attr">
-      <div class="table-row" v-if="value != null">
-        <div class="title" v-text="prettify(attr)" />
-        <div class="value" v-text="'' + value" />
-      </div>
-    </div>
-
-    <div class="table-row delete-entity-container">
+    <div class="table-row delete-entity-container"
+      @click="$refs.deleteConfirmDiag.show()">
       <div class="title">Delete Entity</div>
       <div class="value">
-        <button @click="$refs.deleteConfirmDiag.show()">
+        <button @click.stop="$refs.deleteConfirmDiag.show()">
           <i class="fas fa-trash" />
         </button>
       </div>
     </div>
 
+    <div class="extra-info-container">
+      <div class="title section-title" @click="extraInfoCollapsed = !extraInfoCollapsed">
+       <div class="col-11">
+         <i class="fas fa-circle-info" /> &nbsp;
+         Extra Info
+       </div>
+
+       <div class="col-1 pull-right">
+         <i class="fas"
+           :class="{'fa-chevron-down': extraInfoCollapsed, 'fa-chevron-up': !extraInfoCollapsed}" />
+       </div>
+      </div>
+
+      <div class="extra-info" v-if="!extraInfoCollapsed">
+        <div v-for="value, attr in entity" :key="attr">
+          <div class="table-row" v-if="value != null && specialFields.indexOf(attr) < 0">
+            <div class="title" v-text="prettify(attr)" />
+            <div class="value" v-text="stringify(value)" />
+          </div>
+        </div>
+
+        <div v-for="value, attr in (entity.data || {})" :key="attr">
+          <div class="table-row" v-if="value != null">
+            <div class="title" v-text="prettify(attr)" />
+            <div class="value" v-text="stringify(value)" />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="config-container"
       v-if="computedConfig.length">
-      <div class="title"
+      <div class="title section-title"
         @click="configCollapsed = !configCollapsed">
        <div class="col-11">
          <i class="fas fa-screwdriver-wrench" /> &nbsp;
@@ -172,13 +199,14 @@ const specialFields = [
   'name',
   'plugin',
   'updated_at',
+  'parent_id',
 ]
 
 export default {
   name: "EntityModal",
   components: {Entity, Modal, EditButton, NameEditor, Icon, ConfirmDialog},
   mixins: [Utils],
-  emits: ['input', 'loading'],
+  emits: ['input', 'loading', 'entity-update'],
   props: {
     entity: {
       type: Object,
@@ -210,6 +238,7 @@ export default {
       editName: false,
       editIcon: false,
       configCollapsed: true,
+      extraInfoCollapsed: true,
       specialFields: specialFields,
     }
   },
@@ -280,6 +309,14 @@ export default {
         this.editIcon = false
       }
     },
+
+    stringify(value) {
+      if (value == null)
+        return ''
+      if (Array.isArray(value) || typeof value === 'object')
+        return JSON.stringify(value)
+      return '' + value
+    },
   },
 }
 </script>
@@ -329,26 +366,39 @@ export default {
 
   .delete-entity-container {
     color: $error-fg;
+    cursor: pointer;
     button {
       color: $error-fg;
     }
   }
 
-  .config-container {
+  @mixin section-title {
+    display: flex;
+    cursor: pointer;
+    padding: 1em;
+    text-transform: uppercase;
+    letter-spacing: 0.033em;
+    border-top: $default-border;
+    box-shadow: $border-shadow-bottom;
+
+    &:hover {
+      background: $hover-bg;
+    }
+  }
+
+  .config-container,
+  .extra-info-container
+  {
     margin: 0;
 
-    .title {
-      display: flex;
-      padding: 1em;
-      text-transform: uppercase;
-      letter-spacing: 0.033em;
-      border-top: $default-border;
-      box-shadow: $border-shadow-bottom;
-      cursor: pointer;
+    .section-title {
+      @include section-title;
+    }
+  }
 
-      &:hover {
-        background: $hover-bg;
-      }
+  .config-container {
+    .title {
+      @include section-title;
     }
   }
 
