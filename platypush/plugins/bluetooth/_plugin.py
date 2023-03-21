@@ -77,11 +77,11 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
     _default_scan_duration: Final[float] = 10.0
     """ Default duration of a discovery session (in seconds) """
 
-    _default_excluded_manufacturers = {
+    _default_excluded_manufacturers = (
         'Apple, Inc.',
         'Google',
         'Microsoft',
-    }
+    )
     """
     Exclude beacons from these device manufacturers by default (main offenders
     when it comes to Bluetooth device space pollution).
@@ -94,7 +94,9 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
         service_uuids: Optional[Collection[RawServiceClass]] = None,
         scan_paused_on_start: bool = False,
         poll_interval: float = _default_scan_duration,
-        excluded_manufacturers: Optional[Collection[str]] = None,
+        excluded_manufacturers: Optional[
+            Collection[str]
+        ] = _default_excluded_manufacturers,
         **kwargs,
     ):
         """
