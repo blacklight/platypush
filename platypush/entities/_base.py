@@ -193,7 +193,7 @@ if 'entity' not in Base.metadata:
     # standard multiple inheritance with an SQLAlchemy ORM class)
     Entity.__bases__ = Entity.__bases__ + (JSONAble,)
 
-    EntitySavedCallback = Callable[[Entity], None]
+    EntitySavedCallback = Callable[[Entity], Any]
     """
     Type for the callback functions that should be called when an entity is saved
     on the database.

@@ -9,6 +9,7 @@ from typing import (
     Final,
     List,
     Optional,
+    Set,
     Union,
     Type,
 )
@@ -76,6 +77,16 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
     _default_scan_duration: Final[float] = 10.0
     """ Default duration of a discovery session (in seconds) """
 
+    _default_excluded_manufacturers = {
+        'Apple, Inc.',
+        'Google',
+        'Microsoft',
+    }
+    """
+    Exclude beacons from these device manufacturers by default (main offenders
+    when it comes to Bluetooth device space pollution).
+    """
+
     def __init__(
         self,
         interface: Optional[str] = None,
@@ -83,6 +94,7 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
         service_uuids: Optional[Collection[RawServiceClass]] = None,
         scan_paused_on_start: bool = False,
         poll_interval: float = _default_scan_duration,
+        excluded_manufacturers: Optional[Collection[str]] = None,
         **kwargs,
     ):
         """
@@ -95,7 +107,14 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
         :param scan_paused_on_start: If ``True``, the plugin will not the
             scanning thread until :meth:`.scan_resume` is called (default:
             ``False``).
-
+        :param excluded_manufacturers: Exclude beacons from these device
+            manufacturers. The default list includes Apple, Google and
+            Microsoft, who are among the main offenders when it comes to
+            Bluetooth device address space pollution. Set this value to an
+            empty list if you want to get all beacons (e.g. because you need to
+            communicate with Apple AirTags or Google devices over Bluetooth),
+            but be warned that the list of discovered Bluetooth devices may
+            dramatically increase over time.
         """
         kwargs['poll_interval'] = poll_interval
         super().__init__(**kwargs)
@@ -118,6 +137,10 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
         self._device_cache = EntityCache()
         """
         Cache of the devices discovered by the plugin.
+        """
+        self._excluded_manufacturers: Set[str] = set(excluded_manufacturers or [])
+        """
+        Set of manufacturer strings whose associated devices should be ignored.
         """
 
         self._managers: Dict[Type[BaseBluetoothManager], BaseBluetoothManager] = {}
@@ -553,7 +576,8 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
                     continue
 
                 device = self._device_cache.add(device)
-                self.publish_entities([device], callback=self._device_cache.add)
+                if device.manufacturer not in self._excluded_manufacturers:
+                    self.publish_entities([device], callback=self._device_cache.add)
         finally:
             self.stop()
 
