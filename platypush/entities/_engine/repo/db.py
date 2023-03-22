@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from platypush.context import get_plugin
 from platypush.entities._base import Entity
+from .helpers import get_parent
 
 
 @dataclass
@@ -69,7 +70,7 @@ class EntitiesDb:
             batch.clear()
 
     def _split_entity_batches_for_flush(
-        self, entities: Iterable[Entity]
+        self, session: Session, entities: Iterable[Entity]
     ) -> List[List[Entity]]:
         """
         This method retrieves the root entities given a list of entities and
@@ -93,9 +94,10 @@ class EntitiesDb:
         for entity in entities:
             parent_key = None
             parent_id = entity.parent_id
-            if entity.parent:
-                parent_id = parent_id or entity.parent.id
-                parent_key = entity.parent.entity_key
+            parent = get_parent(session, entity)
+            if parent:
+                parent_id = parent_id or parent.id
+                parent_key = parent.entity_key
 
             if parent_id:
                 children_by_parent_id[parent_id][entity.entity_key] = entity
@@ -169,7 +171,7 @@ class EntitiesDb:
         Persist a set of entities.
         """
         # Get the "unwrapped" batches
-        batches = self._split_entity_batches_for_flush(entities)
+        batches = self._split_entity_batches_for_flush(session, entities)
 
         # Flush each batch as we process it
         for batch in batches:

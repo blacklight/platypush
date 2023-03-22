@@ -4,9 +4,8 @@ from typing import Dict, Iterable, Optional, Tuple
 from sqlalchemy.orm import Session
 
 from platypush.entities._base import Entity, EntityMapping
-
-# pylint: disable=no-name-in-module
 from platypush.entities._engine.repo.db import EntitiesDb
+from platypush.entities._engine.repo.helpers import get_parent
 from platypush.entities._engine.repo.merger import EntitiesMerger
 
 logger = logging.getLogger('entities')
@@ -98,7 +97,7 @@ class EntitiesRepository:
         """
         parent = entity
         while parent:
-            parent = self._merge.get_parent(session, entity)
+            parent = get_parent(session, entity)
             if parent:
                 entity = parent
 
