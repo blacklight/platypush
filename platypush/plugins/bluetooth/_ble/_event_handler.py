@@ -26,6 +26,7 @@ _rssi_update_interval: Final[float] = 30.0
 """ How often to trigger RSSI update events for a device. """
 
 _excluded_manufacturers: Final[Collection[str]] = {
+    'Apple Continuity',
     'Apple, Inc.',
     'GAEN',
     'Google',
