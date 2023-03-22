@@ -190,14 +190,17 @@ _value_type_to_entity: Dict[type, Callable[[Any, Dict[str, Any]], Entity]] = {
 }
 
 
-def _parse_services(device: BLEDevice) -> List[BluetoothService]:
+def _parse_services(
+    device: BLEDevice, data: AdvertisementData
+) -> List[BluetoothService]:
     """
     :param device: The target device.
+    :param data: Published beacon data.
     :return: The parsed BLE services as a list of
         :class:`platypush.entities.bluetooth.BluetoothService`.
     """
     services: List[BluetoothService] = []
-    for srv in device.metadata.get('uuids', []):
+    for srv in data.service_uuids or []:
         try:
             uuid = BluetoothService.to_uuid(srv)
         except (TypeError, ValueError):
@@ -228,7 +231,7 @@ def device_to_entity(device: BLEDevice, data: AdvertisementData) -> BluetoothDev
 
     theengs_entity = _parse_advertisement_data(data)
     props = (device.details or {}).get('props', {})
-    manufacturer = _parse_manufacturer(device, theengs_entity)
+    manufacturer = _parse_manufacturer(device, theengs_entity, data)
     parent_entity = BluetoothDevice(
         id=device.address,
         model=theengs_entity.model,
@@ -238,10 +241,10 @@ def device_to_entity(device: BLEDevice, data: AdvertisementData) -> BluetoothDev
         address=device.address,
         name=device.name or device.address,
         connected=props.get('Connected', False),
-        rssi=device.rssi,
+        rssi=data.rssi,
         tx_power=props.get('TxPower'),
         manufacturer=manufacturer,
-        children=_parse_services(device),
+        children=_parse_services(device, data),
     )
 
     parsed_entities = {
@@ -275,10 +278,13 @@ def device_to_entity(device: BLEDevice, data: AdvertisementData) -> BluetoothDev
     return parent_entity
 
 
-def _parse_manufacturer(device: BLEDevice, entity: TheengsEntity) -> Optional[str]:
+def _parse_manufacturer(
+    device: BLEDevice, entity: TheengsEntity, data: AdvertisementData
+) -> Optional[str]:
     """
     :param device: The target device.
     :param entity: The entity that maps the received beacon data.
+    :param data:
     :return: The parsed manufacturer name.
     """
 
@@ -292,7 +298,7 @@ def _parse_manufacturer(device: BLEDevice, entity: TheengsEntity) -> Optional[st
         return manufacturer
 
     # Otherwise, infer it from the reported manufacturer_data.
-    for key in device.metadata.get('manufacturer_data', {}):
+    for key in data.manufacturer_data:
         manufacturer = company.get(key)
         if manufacturer:
             return manufacturer
