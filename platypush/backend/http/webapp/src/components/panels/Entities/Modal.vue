@@ -314,7 +314,7 @@ export default {
       if (value == null)
         return ''
       if (Array.isArray(value) || typeof value === 'object')
-        return JSON.stringify(value)
+        return JSON.stringify(value, null, 2)
       return '' + value
     },
   },
@@ -399,6 +399,13 @@ export default {
   .config-container {
     .title {
       @include section-title;
+    }
+  }
+
+  .extra-info-container {
+    .value {
+      white-space: pre-wrap;
+      opacity: 0.8;
     }
   }
 
