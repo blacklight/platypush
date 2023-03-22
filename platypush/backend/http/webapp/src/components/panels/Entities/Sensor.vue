@@ -13,8 +13,8 @@
       </div>
 
       <div class="col-s-3 col-m-2 pull-right"
-          v-if="value.value != null">
-        <span class="value" v-text="value.value" />
+          v-if="computedValue != null">
+        <span class="value" v-text="computedValue" />
         <span class="unit" v-text="value.unit"
           v-if="value.unit != null" />
       </div>
@@ -30,6 +30,14 @@ export default {
   name: 'Sensor',
   components: {EntityIcon},
   mixins: [EntityMixin],
+
+  computed: {
+    computedValue() {
+      if (this.value.value != null)
+        return this.value.value
+      return this.value._value
+    },
+  },
 }
 </script>
 
