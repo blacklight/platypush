@@ -168,17 +168,11 @@ _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
 # Maps reported units to transformer methods (second mapper choice).
 _unit_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
     'status': lambda value, _: BinarySensor(value=value),
-    'int': lambda value, conf: NumericSensor(
-        value=value,
-        unit=conf.get('unit'),
-    ),
-    'float': lambda value, conf: NumericSensor(
-        value=value,
-        unit=conf.get('unit'),
-    ),
+    'int': lambda value, _: NumericSensor(value=value),
+    'float': lambda value, _: NumericSensor(value=value),
     '%': lambda value, conf: NumericSensor(
         value=value,
-        unit='%',
+        unit=conf.get('unit', '%'),
         min=conf.get('min', 0),
         max=conf.get('min', 100),
     ),
@@ -188,9 +182,9 @@ _unit_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
 # Maps value types to transformer methods (third mapper choice).
 _value_type_to_entity: Dict[type, Callable[[Any, Dict[str, Any]], Entity]] = {
     bool: lambda value, _: BinarySensor(value=value),
-    int: lambda value, conf: NumericSensor(value=value, unit=conf.get('unit')),
-    float: lambda value, conf: NumericSensor(value=value, unit=conf.get('unit')),
-    str: lambda value, conf: RawSensor(value=value, unit=conf.get('unit')),
+    int: lambda value, _: NumericSensor(value=value),
+    float: lambda value, _: NumericSensor(value=value),
+    str: lambda value, _: RawSensor(value=value),
     bytes: lambda value, _: RawSensor(value=value),
     bytearray: lambda value, _: RawSensor(value=value),
 }
