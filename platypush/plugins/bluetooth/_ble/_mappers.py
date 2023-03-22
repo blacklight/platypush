@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
-from bluetooth_numbers import company
+from bluetooth_numbers import company, oui
 
 from TheengsDecoder import decodeBLE, getAttribute, getProperties
 
@@ -228,10 +228,7 @@ def device_to_entity(device: BLEDevice, data: AdvertisementData) -> BluetoothDev
 
     theengs_entity = _parse_advertisement_data(data)
     props = (device.details or {}).get('props', {})
-    manufacturer = theengs_entity.manufacturer or company.get(
-        next(iter(key for key in device.metadata['manufacturer_data']), 0xFFFF)
-    )
-
+    manufacturer = _parse_manufacturer(device, theengs_entity)
     parent_entity = BluetoothDevice(
         id=device.address,
         model=theengs_entity.model,
@@ -276,6 +273,32 @@ def device_to_entity(device: BLEDevice, data: AdvertisementData) -> BluetoothDev
         entity.parent = parent_entity
 
     return parent_entity
+
+
+def _parse_manufacturer(device: BLEDevice, entity: TheengsEntity) -> Optional[str]:
+    """
+    :param device: The target device.
+    :param entity: The entity that maps the received beacon data.
+    :return: The parsed manufacturer name.
+    """
+
+    # If the manufacturer has already been parsed, return it.
+    if entity.manufacturer:
+        return entity.manufacturer
+
+    # Otherwise, infer it from the first three bytes of the MAC address.
+    manufacturer = oui.get(':'.join(device.address.split(':')[:3]).upper())
+    if manufacturer:
+        return manufacturer
+
+    # Otherwise, infer it from the reported manufacturer_data.
+    for key in device.metadata.get('manufacturer_data', {}):
+        manufacturer = company.get(key)
+        if manufacturer:
+            return manufacturer
+
+    # Otherwise, we couldn't parse the manufacturer.
+    return None
 
 
 def _parse_advertisement_data(data: AdvertisementData) -> TheengsEntity:
