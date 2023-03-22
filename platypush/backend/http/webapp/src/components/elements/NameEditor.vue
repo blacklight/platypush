@@ -1,6 +1,6 @@
 <template>
   <form @submit.prevent="submit" class="name-editor">
-    <input type="text" v-model="text" :disabled="disabled">
+    <input type="text" v-model="text" :disabled="disabled" ref="input">
     <button type="submit">
       <i class="fas fa-circle-check" />
     </button>
@@ -21,7 +21,7 @@ export default {
 
     disabled: {
       type: Boolean,
-      deafult: false,
+      default: false,
     },
   },
 
@@ -44,6 +44,7 @@ export default {
 
   mounted() {
     this.text = this.value
+    this.$refs.input.focus()
   },
 }
 </script>
