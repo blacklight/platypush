@@ -17,6 +17,8 @@
     <div class="groups-canvas">
       <EntityModal
         :entity="entities[modalEntityId]"
+        :parent="entities[entities[modalEntityId].parent_id]"
+        :children="childrenByParentId(modalEntityId)"
         :visible="modalVisible"
         :config-values="configValuesByParentId(modalEntityId)"
         @close="onEntityModal"

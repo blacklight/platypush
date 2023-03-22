@@ -90,12 +90,11 @@
       </div>
     </div>
 
-    <div class="table-row" v-if="entity.parent_id">
+    <div class="table-row" v-if="parent">
       <div class="title">Parent</div>
       <div class="value">
-        <a href="#"
-          @click="$emit('entity-update', entity.parent_id)"
-          v-text="entity.parent_id"
+        <a class="url" @click="$emit('entity-update', parent.id)"
+          v-text="parent.name"
         />
       </div>
     </div>
@@ -120,7 +119,31 @@
       </div>
     </div>
 
-    <div class="extra-info-container">
+    <div class="section children-container" v-if="Object.keys(children || {}).length">
+      <div class="title section-title" @click="childrenCollapsed = !childrenCollapsed">
+       <div class="col-11">
+         <i class="fas fa-sitemap" /> &nbsp;
+         Children
+       </div>
+
+       <div class="col-1 pull-right">
+         <i class="fas"
+           :class="{'fa-chevron-down': childrenCollapsed, 'fa-chevron-up': !childrenCollapsed}" />
+       </div>
+      </div>
+
+      <div class="children-container-info" v-if="!childrenCollapsed">
+        <div class="table-row" v-for="child in children" :key="child.id">
+          <div class="value">
+            <a class="url" @click="$emit('entity-update', child.id)"
+              v-text="child.name"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section extra-info-container">
       <div class="title section-title" @click="extraInfoCollapsed = !extraInfoCollapsed">
        <div class="col-11">
          <i class="fas fa-circle-info" /> &nbsp;
@@ -150,7 +173,7 @@
       </div>
     </div>
 
-    <div class="config-container"
+    <div class="section config-container"
       v-if="computedConfig.length">
       <div class="title section-title"
         @click="configCollapsed = !configCollapsed">
@@ -195,6 +218,7 @@ const specialFields = [
   'external_url',
   'id',
   'image_url',
+  'is_configuration',
   'meta',
   'name',
   'plugin',
@@ -211,6 +235,14 @@ export default {
     entity: {
       type: Object,
       required: true,
+    },
+
+    parent: {
+      type: Object,
+    },
+
+    children: {
+      type: Object,
     },
 
     visible: {
@@ -238,6 +270,7 @@ export default {
       editName: false,
       editIcon: false,
       configCollapsed: true,
+      childrenCollapsed: true,
       extraInfoCollapsed: true,
       specialFields: specialFields,
     }
@@ -326,6 +359,10 @@ export default {
   .body {
     padding: 0;
 
+    @include from($desktop) {
+      min-width: 45em;
+    }
+
     .table-row {
       box-shadow: none;
       padding: 0.5em;
@@ -386,9 +423,7 @@ export default {
     }
   }
 
-  .config-container,
-  .extra-info-container
-  {
+  .section {
     margin: 0;
 
     .section-title {
@@ -410,8 +445,14 @@ export default {
   }
 
   .value {
-    &.url {
+    &.url, a {
       text-align: right;
+      text-decoration: underline;
+      opacity: 0.8;
+
+      &:hover {
+        opacity: 0.6;
+      }
     }
 
     .entity-image {
