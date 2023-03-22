@@ -28,6 +28,7 @@ class BaseBluetoothManager(ABC, threading.Thread):
         device_queue: Queue[BluetoothDevice],
         service_uuids: Optional[Collection[RawServiceClass]] = None,
         device_cache: Optional[EntityCache] = None,
+        exclude_known_noisy_beacons: bool = True,
         **kwargs,
     ):
         """
@@ -40,6 +41,7 @@ class BaseBluetoothManager(ABC, threading.Thread):
         :param device_queue: Queue used by the ``EventHandler`` to publish
             updates with the new parsed device entities.
         :param device_cache: Cache used to keep track of discovered devices.
+        :param exclude_known_noisy_beacons: Exclude known noisy beacons.
         """
         kwargs['name'] = f'Bluetooth:{self.__class__.__name__}'
         super().__init__(**kwargs)
@@ -53,6 +55,7 @@ class BaseBluetoothManager(ABC, threading.Thread):
         self._scan_lock = scan_lock
         self._scan_enabled = scan_enabled
         self._device_queue = device_queue
+        self._exclude_known_noisy_beacons = exclude_known_noisy_beacons
 
         self._cache = device_cache or EntityCache()
         """ Cache of discovered devices. """

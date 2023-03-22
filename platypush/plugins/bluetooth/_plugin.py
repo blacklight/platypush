@@ -9,7 +9,6 @@ from typing import (
     Final,
     List,
     Optional,
-    Set,
     Union,
     Type,
 )
@@ -77,16 +76,6 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
     _default_scan_duration: Final[float] = 10.0
     """ Default duration of a discovery session (in seconds) """
 
-    _default_excluded_manufacturers = (
-        'Apple, Inc.',
-        'Google',
-        'Microsoft',
-    )
-    """
-    Exclude beacons from these device manufacturers by default (main offenders
-    when it comes to Bluetooth device space pollution).
-    """
-
     def __init__(
         self,
         interface: Optional[str] = None,
@@ -94,9 +83,7 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
         service_uuids: Optional[Collection[RawServiceClass]] = None,
         scan_paused_on_start: bool = False,
         poll_interval: float = _default_scan_duration,
-        excluded_manufacturers: Optional[
-            Collection[str]
-        ] = _default_excluded_manufacturers,
+        exclude_known_noisy_beacons: bool = True,
         **kwargs,
     ):
         """
@@ -109,14 +96,14 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
         :param scan_paused_on_start: If ``True``, the plugin will not the
             scanning thread until :meth:`.scan_resume` is called (default:
             ``False``).
-        :param excluded_manufacturers: Exclude beacons from these device
-            manufacturers. The default list includes Apple, Google and
-            Microsoft, who are among the main offenders when it comes to
-            Bluetooth device address space pollution. Set this value to an
-            empty list if you want to get all beacons (e.g. because you need to
-            communicate with Apple AirTags or Google devices over Bluetooth),
-            but be warned that the list of discovered Bluetooth devices may
-            dramatically increase over time.
+        :param exclude_known_noisy_beacons: Exclude BLE beacons from devices
+            known for being very noisy. It mainly includes tracking services on
+            Google, Apple, Microsoft and Samsung devices. These devices are
+            also known for refreshing their MAC address very frequently, which
+            may result in a large (and constantly increasing) list of devices.
+            Disable this flag if you need to track BLE beacons from these
+            devices, but beware that you may need periodically clean up your
+            list of scanned devices.
         """
         kwargs['poll_interval'] = poll_interval
         super().__init__(**kwargs)
@@ -140,10 +127,8 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
         """
         Cache of the devices discovered by the plugin.
         """
-        self._excluded_manufacturers: Set[str] = set(excluded_manufacturers or [])
-        """
-        Set of manufacturer strings whose associated devices should be ignored.
-        """
+        self._excluded_known_noisy_beacons = exclude_known_noisy_beacons
+        """ Exclude known noisy BLE beacons. """
 
         self._managers: Dict[Type[BaseBluetoothManager], BaseBluetoothManager] = {}
         """
@@ -183,6 +168,7 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
             'device_queue': self._device_queue,
             'service_uuids': list(map(BluetoothService.to_uuid, self._service_uuids)),
             'device_cache': self._device_cache,
+            'exclude_known_noisy_beacons': self._excluded_known_noisy_beacons,
         }
 
         self._managers = {
@@ -488,11 +474,14 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
             file = os.path.abspath(os.path.expanduser(file))
             with open(file, 'rb') as f:
                 binary_data = f.read()
+        elif binary:
+            binary_data = base64.b64decode(
+                data.encode() if isinstance(data, str) else data
+            )
+        elif isinstance(data, str):
+            binary_data = data.encode()
         else:
-            if binary:
-                binary_data = base64.b64decode(
-                    data.encode() if isinstance(data, str) else data
-                )
+            binary_data = data
 
         sender = FileSender(self._managers[LegacyManager])  # type: ignore
         sender.send_file(file, device, binary_data)
@@ -578,8 +567,7 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
                     continue
 
                 device = self._device_cache.add(device)
-                if device.manufacturer not in self._excluded_manufacturers:
-                    self.publish_entities([device], callback=self._device_cache.add)
+                self.publish_entities([device], callback=self._device_cache.add)
         finally:
             self.stop()
 
