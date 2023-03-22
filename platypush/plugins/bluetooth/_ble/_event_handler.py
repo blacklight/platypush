@@ -183,7 +183,10 @@ class EventHandler:
             return False
 
         # If the manufacturer is in the excluded list, we should skip it
-        if device.manufacturer in _excluded_manufacturers:
+        if (
+            device.manufacturer in _excluded_manufacturers
+            or device.model in _excluded_manufacturers
+        ):
             return True
 
         # If the device has any children other than services, don't skip it
