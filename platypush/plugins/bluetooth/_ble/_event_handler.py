@@ -148,7 +148,7 @@ class EventHandler:
 
         new_entity = device_to_entity(device, data)
         if self._exclude_known_noisy_beacons and self._is_noisy_beacon(new_entity):
-            logger.info(
+            logger.debug(
                 'exclude_known_noisy_beacons is set to True: skipping beacon from device %s',
                 device.address,
             )
