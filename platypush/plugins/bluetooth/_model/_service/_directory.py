@@ -1,6 +1,8 @@
-import re
+from collections import defaultdict
 from enum import Enum
-from typing import Dict
+from functools import wraps
+import re
+from typing import Callable, Dict
 from uuid import UUID
 
 import bluetooth_numbers
@@ -9,6 +11,27 @@ from bleak.uuids import uuid16_dict, uuid128_dict
 from platypush.plugins.bluetooth._types import RawServiceClass
 
 
+def memoized_names(f: Callable[[str], str]):
+    """
+    Decorator that keeps track of the assigned names to make sure that we don't
+    end up with conflicts when assigning service class enum names.
+    """
+    assigned_names: Dict[str, int] = defaultdict(lambda: 0)
+
+    @wraps(f)
+    def wrapper(name: str) -> str:
+        name = f(name)
+        assigned_names[name] += 1
+        transformed_name = (
+            f'{name}_{assigned_names[name]}' if assigned_names[name] > 1 else name
+        )
+
+        return transformed_name
+
+    return wrapper
+
+
+@memoized_names
 def _service_name_to_enum_name(service_name: str) -> str:
     """
     Convert a service name to an enum-key compatible string.
