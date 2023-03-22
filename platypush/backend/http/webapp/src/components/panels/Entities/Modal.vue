@@ -135,6 +135,10 @@
       <div class="children-container-info" v-if="!childrenCollapsed">
         <div class="table-row" :class="{hidden: !child.name?.length || child.is_configuration}"
           v-for="child in children" :key="child.id">
+          <div class="title">
+            <EntityIcon :entity="entity" :icon="entity.meta?.icon" /> &nbsp;
+            {{ prettify(child.type) }}
+          </div>
           <div class="value">
             <a class="url" @click="$emit('entity-update', child.id)"
               v-text="child.name"
@@ -205,6 +209,7 @@ import Modal from "@/components/Modal";
 import Icon from "@/components/elements/Icon";
 import ConfirmDialog from "@/components/elements/ConfirmDialog";
 import EditButton from "@/components/elements/EditButton";
+import EntityIcon from "./EntityIcon"
 import NameEditor from "@/components/elements/NameEditor";
 import Utils from "@/Utils";
 import Entity from "./Entity";
@@ -229,7 +234,9 @@ const specialFields = [
 
 export default {
   name: "EntityModal",
-  components: {Entity, Modal, EditButton, NameEditor, Icon, ConfirmDialog},
+  components: {
+    Entity, EntityIcon, Modal, EditButton, NameEditor, Icon, ConfirmDialog
+  },
   mixins: [Utils],
   emits: ['input', 'loading', 'entity-update'],
   props: {
