@@ -133,7 +133,8 @@
       </div>
 
       <div class="children-container-info" v-if="!childrenCollapsed">
-        <div class="table-row" v-for="child in children" :key="child.id">
+        <div class="table-row" :class="{hidden: !child.name?.length || child.is_configuration}"
+          v-for="child in children" :key="child.id">
           <div class="value">
             <a class="url" @click="$emit('entity-update', child.id)"
               v-text="child.name"
