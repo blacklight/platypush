@@ -42,6 +42,12 @@ class BLEManager(BaseBluetoothManager):
     RSSI update, in seconds.
     """
 
+    _min_get_device_scan_duration: Final[int] = 10
+    """
+    Wait at least this many seconds for a device to be discovered when calling
+    get_device().
+    """
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -74,7 +80,10 @@ class BLEManager(BaseBluetoothManager):
         dev = self._device_cache.get(device)
         if not dev:
             self.logger.info('Scanning for unknown device "%s"', device)
-            await self._scan()
+            await self._scan(
+                duration=max(self._min_get_device_scan_duration, self.poll_interval)
+            )
+
             dev = self._device_cache.get(device)
 
         assert dev, f'Unknown device: "{device}"'
