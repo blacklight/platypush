@@ -67,6 +67,7 @@ class BLEManager(BaseBluetoothManager):
             device_queue=self._device_queue,
             device_cache=self._device_cache,
             entity_cache=self._cache,
+            plugins=self._plugins,
             exclude_known_noisy_beacons=self._exclude_known_noisy_beacons,
         )
         """ Bluetooth device event handler """
