@@ -238,10 +238,9 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
             else [srv for srv in device.services if srv.uuid == uuid]
         )
 
-        assert matching_services, (
-            f'No service found on the device {device} for port={port}, '
-            f'service_uuid={service_uuid}'
-        )
+        if not matching_services:
+            # It could be a GATT characteristic, so try BLE
+            return self._managers[BLEManager]
 
         srv = matching_services[0]
         return (
