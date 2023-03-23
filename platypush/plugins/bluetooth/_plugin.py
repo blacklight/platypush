@@ -1,9 +1,11 @@
 import base64
 import os
+import re
 from queue import Empty, Queue
 import threading
 import time
 from typing import (
+    Any,
     Collection,
     Dict,
     Final,
@@ -16,7 +18,10 @@ from typing import (
 from typing_extensions import override
 
 from platypush.context import get_bus, get_plugin
-from platypush.entities import EntityManager, get_entities_engine
+from platypush.entities import (
+    EnumSwitchEntityManager,
+    get_entities_engine,
+)
 from platypush.entities.bluetooth import BluetoothDevice, BluetoothService
 from platypush.message.event.bluetooth import (
     BluetoothScanPausedEvent,
@@ -32,7 +37,8 @@ from ._types import RawServiceClass
 from ._manager import BaseBluetoothManager
 
 
-class BluetoothPlugin(RunnablePlugin, EntityManager):
+# pylint: disable=too-many-ancestors
+class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
     """
     Plugin to interact with Bluetooth devices.
 
@@ -252,6 +258,12 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
         Get a device by its address or name, and scan for it if it's not
         cached.
         """
+        # If device is a compound entity ID in the format
+        # ``<mac_address>:<service>``, then split the MAC address part
+        m = re.match(r'^(([0-9a-f]{2}:){6}):.*', device, re.IGNORECASE)
+        if m:
+            device = m.group(1).rstrip(':')
+
         dev = self._device_cache.get(device)
         if dev:
             return dev
@@ -447,6 +459,39 @@ class BluetoothPlugin(RunnablePlugin, EntityManager):
             interface=interface,
             connect_timeout=connect_timeout,
         )
+
+    @override
+    @action
+    def set(self, entity: str, value: Any, **_):
+        """
+        Set the value of an entity.
+
+        This is currently only supported for Switchbot devices, where the value
+        can be one among ``on``, ``off`` and ``press``.
+
+        :param entity: The entity to set the value for. It can be the full
+            entity ID in the format ``<mac-address>::<service>``, or just
+            the MAC address if the plugin supports it.
+        :param value: The value to set the entity to.
+        """
+        device = self._get_device(entity)
+        matching_plugin = next(
+            iter(
+                plugin
+                for manager in self._managers.values()
+                for plugin in manager.plugins
+                if plugin.supports_device(device)
+            ),
+            None,
+        )
+
+        assert (
+            matching_plugin is not None
+        ), f'Action `set` not supported on device {entity}'
+
+        method = getattr(matching_plugin, 'set', None)
+        assert method, f'The plugin {matching_plugin} does not support `set`'
+        return method(device, value)
 
     @action
     def send_file(
