@@ -131,14 +131,19 @@ https://btprodspecificationrefs.blob.core.windows.net/assigned-numbers/Assigned%
 Section 3.3.
 """
 
+_custom_service_classes: Dict[RawServiceClass, str] = {
+    UUID("cba20d00-224d-11e6-9fb8-0002a5d5c51b"): "Switchbot",
+}
+
 # Update the base services with the GATT service UUIDs defined in ``bluetooth_numbers``. See
 # https://btprodspecificationrefs.blob.core.windows.net/assigned-numbers/Assigned%20Number%20Types/Assigned%20Numbers.pdf,
 # Section 3.4
 _service_classes.update(bluetooth_numbers.service)
 
 # Extend the service classes with the GATT service UUIDs defined in Bleak
-_service_classes.update(uuid16_dict)  # type: ignore
+_service_classes.update(_custom_service_classes)
 _service_classes.update({UUID(uuid): name for uuid, name in uuid128_dict.items()})
+_service_classes.update(uuid16_dict)  # type: ignore
 
 _service_classes_by_name: Dict[str, RawServiceClass] = {
     name: cls for cls, name in _service_classes.items()

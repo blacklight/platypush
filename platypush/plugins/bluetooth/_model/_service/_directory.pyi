@@ -16,6 +16,8 @@ class ServiceClass(Enum):
     """ A class for unknown services. """
     OBEX_OBJECT_PUSH = ...
     """ Class for the OBEX Object Push service. """
+    SWITCHBOT = ...
+    """ Class for Switchbot devices services. """
 
     @classmethod
     def get(cls, value: RawServiceClass) -> "ServiceClass":

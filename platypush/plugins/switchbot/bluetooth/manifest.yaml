@@ -1,7 +1,0 @@
-manifest:
-  events: {}
-  install:
-    pip:
-      - bleak
-  package: platypush.plugins.switchbot.bluetooth
-  type: plugin
