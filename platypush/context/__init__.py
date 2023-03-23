@@ -71,7 +71,7 @@ def register_backends(bus=None, global_scope=False, **kwargs):
     else:
         backends = {}
 
-    for (name, cfg) in Config.get_backends().items():
+    for name, cfg in Config.get_backends().items():
         module = importlib.import_module('platypush.backend.' + name)
 
         # e.g. backend.pushbullet main class: PushbulletBackend
@@ -119,7 +119,7 @@ def get_plugin(plugin, plugin_name=None, reload=False):
     :param reload: If ``True``, the plugin will be reloaded if it's already
         been registered.
     """
-    from ..plugins import Plugin
+    from ..plugins import Plugin, RunnablePlugin
 
     if isinstance(plugin, str):
         name = plugin
@@ -170,8 +170,13 @@ def get_plugin(plugin, plugin_name=None, reload=False):
         raise RuntimeError(e) from e
 
     with plugins_init_locks[name]:
-        if _ctx.plugins.get(name) and not reload:
-            return _ctx.plugins[name]
+        plugin = _ctx.plugins.get(name)
+        if plugin:
+            if not reload:
+                return _ctx.plugins[name]
+            if isinstance(plugin, RunnablePlugin):
+                plugin.stop()
+
         _ctx.plugins[name] = plugin_class(**plugin_conf)
 
     return _ctx.plugins[name]
