@@ -19,6 +19,7 @@ from platypush.message.event.bluetooth import (
 
 from .._cache import EntityCache
 from .._model import ServiceClass
+from .._plugins import BaseBluetoothPlugin
 from ._cache import DeviceCache
 from ._mappers import device_to_entity
 
@@ -89,7 +90,7 @@ event_matchers: Dict[
     or (old.reachable is False and new.reachable is True),
     BluetoothDeviceSignalUpdateEvent: lambda old, new: (
         (new.rssi is not None or new.tx_power is not None)
-        and (old and old.rssi)
+        and bool(old and old.rssi)
         and (
             _has_changed(old, new, 'rssi', tolerance=5)
             or _has_changed(old, new, 'tx_power', tolerance=5)
@@ -115,6 +116,7 @@ class EventHandler:
         device_queue: Queue,
         device_cache: DeviceCache,
         entity_cache: EntityCache,
+        plugins: Collection[BaseBluetoothPlugin],
         exclude_known_noisy_beacons: bool,
     ):
         """
@@ -126,6 +128,7 @@ class EventHandler:
         self._device_queue = device_queue
         self._device_cache = device_cache
         self._entity_cache = entity_cache
+        self._plugins = plugins
         self._exclude_known_noisy_beacons = exclude_known_noisy_beacons
 
     def __call__(self, device: BLEDevice, data: AdvertisementData):
@@ -154,6 +157,10 @@ class EventHandler:
                 device.address,
             )
             return
+
+        # Extend the new entity with children entities added by the plugins
+        for plugin in self._plugins:
+            plugin.extend_device(new_entity)
 
         events: List[BluetoothDeviceEvent] = []
         existing_entity = self._entity_cache.get(device.address)
@@ -195,7 +202,7 @@ class EventHandler:
             return False
 
         mapped_uuids = [
-            int(str(srv.uuid).split('-')[0], 16) & 0xFFFF
+            int(str(srv.uuid).split('-', maxsplit=1)[0], 16) & 0xFFFF
             if isinstance(srv.uuid, UUID)
             else srv.uuid
             for srv in device.services

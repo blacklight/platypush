@@ -210,7 +210,7 @@ def _parse_services(
         srv_cls = ServiceClass.get(uuid)
         services.append(
             BluetoothService(
-                id=f'{device.address}:{uuid}',
+                id=f'{device.address}::{uuid}',
                 uuid=uuid,
                 name=f'[{uuid}]' if srv_cls == ServiceClass.UNKNOWN else str(srv_cls),
                 protocol=Protocol.L2CAP,

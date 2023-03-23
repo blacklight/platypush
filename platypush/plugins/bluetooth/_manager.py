@@ -43,6 +43,8 @@ class BaseBluetoothManager(ABC, threading.Thread):
         :param device_cache: Cache used to keep track of discovered devices.
         :param exclude_known_noisy_beacons: Exclude known noisy beacons.
         """
+        from ._plugins import scan_plugins
+
         kwargs['name'] = f'Bluetooth:{self.__class__.__name__}'
         super().__init__(**kwargs)
 
@@ -59,6 +61,8 @@ class BaseBluetoothManager(ABC, threading.Thread):
 
         self._cache = device_cache or EntityCache()
         """ Cache of discovered devices. """
+        self._plugins = scan_plugins(self)
+        """ Plugins compatible with this manager. """
 
     def notify(
         self, event_type: Type[BluetoothDeviceEvent], device: BluetoothDevice, **kwargs
@@ -70,6 +74,10 @@ class BaseBluetoothManager(ABC, threading.Thread):
         """
         get_bus().post(event_type.from_device(device=device, **kwargs))
         self._device_queue.put_nowait(device)
+
+    @property
+    def plugins(self):
+        return self._plugins
 
     def should_stop(self) -> bool:
         return self._stop_event.is_set()
