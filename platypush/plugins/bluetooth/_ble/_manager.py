@@ -13,6 +13,7 @@ from typing import (
 
 from bleak import BleakClient, BleakScanner
 from bleak.backends.device import BLEDevice
+from bleak.exc import BleakError
 from typing_extensions import override
 
 from platypush.context import get_or_create_event_loop
@@ -23,11 +24,11 @@ from platypush.message.event.bluetooth import (
     BluetoothDeviceLostEvent,
 )
 
+from .._manager import BaseBluetoothManager
+from .._types import RawServiceClass
 from ._cache import DeviceCache
 from ._connection import BluetoothConnection
 from ._event_handler import EventHandler
-from .._manager import BaseBluetoothManager
-from .._types import RawServiceClass
 
 
 class BLEManager(BaseBluetoothManager):
@@ -104,29 +105,34 @@ class BLEManager(BaseBluetoothManager):
         async with self._connection_locks.get(dev.address, asyncio.Lock()) as lock:
             self._connection_locks[dev.address] = lock or asyncio.Lock()
 
-            async with BleakClient(
-                dev.address,
-                adapter=interface or self._interface,
-                timeout=timeout or self._connect_timeout,
-                disconnected_callback=self._disconnected_callback,
-            ) as client:
-                entity = self._cache.get(client.address)
-                if not client:
-                    if entity:
-                        entity.connected = False
-                        self.notify(BluetoothConnectionFailedEvent, entity)
+            try:
+                async with BleakClient(
+                    dev.address,
+                    adapter=interface or self._interface,
+                    timeout=timeout or self._connect_timeout,
+                    disconnected_callback=self._disconnected_callback,
+                ) as client:
+                    entity = self._cache.get(client.address)
+                    if not client:
+                        if entity:
+                            entity.connected = False
+                            self.notify(BluetoothConnectionFailedEvent, entity)
 
-                    raise AssertionError(f'Could not connect to the device {device}')
+                        raise AssertionError(
+                            f'Could not connect to the device {device}'
+                        )
 
-                # Yield the BluetoothConnection object
-                self._connections[dev.address] = BluetoothConnection(
-                    client=client,
-                    device=dev,
-                    loop=asyncio.get_event_loop(),
-                    thread=threading.current_thread(),
-                    close_event=close_event,
-                )
-                yield self._connections[dev.address]
+                    # Yield the BluetoothConnection object
+                    self._connections[dev.address] = BluetoothConnection(
+                        client=client,
+                        device=dev,
+                        loop=asyncio.get_event_loop(),
+                        thread=threading.current_thread(),
+                        close_event=close_event,
+                    )
+                    yield self._connections[dev.address]
+            except BleakError as e:
+                raise AssertionError(f'Could not connect to the device {device}') from e
 
     async def _read(
         self,
@@ -140,7 +146,12 @@ class BLEManager(BaseBluetoothManager):
         a service UUID.
         """
         async with self._connect(device, interface, connect_timeout) as conn:
-            data = await conn.client.read_gatt_char(service_uuid)
+            try:
+                data = await conn.client.read_gatt_char(service_uuid)
+            except BleakError as e:
+                raise AssertionError(
+                    f'Could not read from the device {device}: {e}'
+                ) from e
 
         return data
 
@@ -157,7 +168,12 @@ class BLEManager(BaseBluetoothManager):
         service UUID.
         """
         async with self._connect(device, interface, connect_timeout) as conn:
-            await conn.client.write_gatt_char(service_uuid, data)
+            try:
+                await conn.client.write_gatt_char(service_uuid, data)
+            except BleakError as e:
+                raise AssertionError(
+                    f'Could not write to the device {device}: {e}'
+                ) from e
 
     async def _scan(
         self,
