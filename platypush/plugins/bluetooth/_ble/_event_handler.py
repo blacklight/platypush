@@ -183,6 +183,7 @@ class EventHandler:
             get_bus().post(event)
 
         if events:
+            new_entity.reachable = True
             self._device_queue.put_nowait(new_entity)
 
     @staticmethod

@@ -176,6 +176,10 @@ class EntityCache(BaseCache):
             if getattr(existing_device, attr, None) is None:
                 setattr(existing_device, attr, getattr(device, attr, None))
 
+        # Coalesce the reachable flag
+        if device.reachable is not None:
+            existing_device.reachable = device.reachable
+
         # Merge the data and meta dictionaries
         for attr in ('data', 'meta'):
             setattr(
