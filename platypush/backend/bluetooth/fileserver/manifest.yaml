@@ -1,8 +1,0 @@
-manifest:
-  events: {}
-  install:
-    pip:
-    - pybluez
-    - pyobex
-  package: platypush.backend.bluetooth.fileserver
-  type: backend
