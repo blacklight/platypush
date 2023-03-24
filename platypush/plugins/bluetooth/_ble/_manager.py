@@ -426,6 +426,7 @@ class BLEManager(BaseBluetoothManager):
         Upon stop request, it stops any pending scans and closes all active
         connections.
         """
+        super().stop()
         self._close_active_connections()
         if self._main_loop and self._main_loop.is_running():
             self._main_loop.stop()

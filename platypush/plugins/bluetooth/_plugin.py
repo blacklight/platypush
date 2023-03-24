@@ -17,6 +17,7 @@ from typing import (
 
 from typing_extensions import override
 
+from platypush.common import StoppableThread
 from platypush.context import get_bus, get_plugin
 from platypush.entities import (
     EnumSwitchEntityManager,
@@ -49,6 +50,9 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
     The full list of devices natively supported can be found
     `here <https://decoder.theengs.io/devices/devices_by_brand.html>`_.
 
+    It also supports legacy Bluetooth services, as well as the transfer of
+    files.
+
     Note that the support for Bluetooth low-energy devices requires a Bluetooth
     adapter compatible with the Bluetooth 5.0 specification or higher.
 
@@ -59,7 +63,6 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
         * **TheengsDecoder** (``pip install TheengsDecoder``)
         * **pydbus** (``pip install pydbus``)
         * **pybluez** (``pip install git+https://github.com/pybluez/pybluez``)
-        * **PyOBEX** (``pip install git+https://github.com/BlackLight/PyOBEX``)
 
     Triggers:
 
@@ -639,35 +642,36 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
         """
         super().stop()
 
-        # Stop any pending scan controller timers
         self._cancel_scan_controller_timer()
+        self._stop_threads(self._managers.values())
 
-        # Set the stop events on the manager threads
-        for manager in self._managers.values():
-            if manager and manager.is_alive():
-                self.logger.info('Waiting for %s to stop', manager.name)
+    def _stop_threads(self, threads: Collection[StoppableThread], timeout: float = 5):
+        """
+        Set the stop events on active threads and wait for them to stop.
+        """
+        # Set the stop events and call `.stop`
+        for thread in threads:
+            if thread and thread.is_alive():
+                self.logger.info('Waiting for %s to stop', thread.name)
                 try:
-                    manager.stop()
+                    thread.stop()
                 except Exception as e:
-                    self.logger.exception(
-                        'Error while stopping %s: %s', manager.name, e
-                    )
+                    self.logger.exception('Error while stopping %s: %s', thread.name, e)
 
         # Wait for the manager threads to stop
-        stop_timeout = 5
         wait_start = time.time()
 
-        for manager in self._managers.values():
+        for thread in threads:
             if (
-                manager
-                and manager.ident != threading.current_thread().ident
-                and manager.is_alive()
+                thread
+                and thread.ident != threading.current_thread().ident
+                and thread.is_alive()
             ):
-                manager.join(timeout=max(0, stop_timeout - (time.time() - wait_start)))
+                thread.join(timeout=max(0, timeout - (time.time() - wait_start)))
 
-                if manager and manager.is_alive():
+                if thread and thread.is_alive():
                     self.logger.warning(
-                        'Timeout while waiting for %s to stop', manager.name
+                        'Timeout while waiting for %s to stop', thread.name
                     )
 
 

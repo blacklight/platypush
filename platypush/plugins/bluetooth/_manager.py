@@ -3,8 +3,9 @@ import logging
 from queue import Queue
 import threading
 from typing import Collection, Optional, Type, Union
-from platypush.context import get_bus
 
+from platypush.common import StoppableThread
+from platypush.context import get_bus
 from platypush.entities.bluetooth import BluetoothDevice
 from platypush.message.event.bluetooth import BluetoothDeviceEvent
 
@@ -12,7 +13,7 @@ from ._cache import EntityCache
 from ._types import DevicesBlacklist, RawServiceClass
 
 
-class BaseBluetoothManager(ABC, threading.Thread):
+class BaseBluetoothManager(StoppableThread, ABC):
     """
     Abstract interface for Bluetooth managers.
     """
@@ -22,7 +23,6 @@ class BaseBluetoothManager(ABC, threading.Thread):
         interface: str,
         poll_interval: float,
         connect_timeout: float,
-        stop_event: threading.Event,
         scan_lock: threading.RLock,
         scan_enabled: threading.Event,
         device_queue: Queue[BluetoothDevice],
@@ -36,7 +36,6 @@ class BaseBluetoothManager(ABC, threading.Thread):
         :param interface: The Bluetooth interface to use.
         :param poll_interval: Scan interval in seconds.
         :param connect_timeout: Connection timeout in seconds.
-        :param stop_event: Event used to synchronize on whether we should stop the plugin.
         :param scan_lock: Lock to synchronize scanning access to the Bluetooth device.
         :param scan_enabled: Event used to enable/disable scanning.
         :param device_queue: Queue used by the ``EventHandler`` to publish
@@ -55,7 +54,6 @@ class BaseBluetoothManager(ABC, threading.Thread):
         self._interface: Optional[str] = interface
         self._connect_timeout: float = connect_timeout
         self._service_uuids: Collection[RawServiceClass] = service_uuids or []
-        self._stop_event = stop_event
         self._scan_lock = scan_lock
         self._scan_enabled = scan_enabled
         self._device_queue = device_queue
@@ -81,9 +79,6 @@ class BaseBluetoothManager(ABC, threading.Thread):
     @property
     def plugins(self):
         return self._plugins
-
-    def should_stop(self) -> bool:
-        return self._stop_event.is_set()
 
     @abstractmethod
     def connect(
@@ -165,12 +160,6 @@ class BaseBluetoothManager(ABC, threading.Thread):
         :param interface: Bluetooth adapter name to use (default configured if None)
         :param connect_timeout: Connection timeout in seconds (default: same as the
             configured `connect_timeout`).
-        """
-
-    @abstractmethod
-    def stop(self):
-        """
-        Stop any pending tasks and terminate the thread.
         """
 
 

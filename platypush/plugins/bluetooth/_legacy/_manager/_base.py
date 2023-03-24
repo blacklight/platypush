@@ -256,7 +256,7 @@ class LegacyManager(BaseBluetoothManager):
             except IOError as e:
                 self.logger.warning('Could not discover devices: %s', e)
                 # Wait a bit before a potential retry
-                self._stop_event.wait(timeout=1)
+                self.wait_stop(timeout=1)
                 return []
 
         # Pre-fill the services for the devices that have already been scanned.
@@ -350,6 +350,8 @@ class LegacyManager(BaseBluetoothManager):
 
     @override
     def stop(self):
+        super().stop()
+
         # Close any active connections
         for conn in list(self._connections.values()):
             conn.close(timeout=5)
