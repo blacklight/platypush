@@ -294,7 +294,10 @@ class LegacyManager(BaseBluetoothManager):
 
         for dev in devices.values():
             self._service_scanned_devices[dev.address] = True
-            self._device_queue.put_nowait(dev)
+            if self._blacklist.matches(dev):
+                self.logger.debug('Ignoring blacklisted device: %s', dev.address)
+            else:
+                self._device_queue.put_nowait(dev)
 
         return list(devices.values())
 

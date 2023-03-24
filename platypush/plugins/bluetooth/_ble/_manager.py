@@ -68,6 +68,7 @@ class BLEManager(BaseBluetoothManager):
             device_cache=self._device_cache,
             entity_cache=self._cache,
             plugins=self._plugins,
+            blacklist=self._blacklist,
             exclude_known_noisy_beacons=self._exclude_known_noisy_beacons,
         )
         """ Bluetooth device event handler """
@@ -206,7 +207,7 @@ class BLEManager(BaseBluetoothManager):
                 detection_callback=self._event_handler,
             )
 
-        addresses = {dev.address for dev in devices}
+        addresses = {dev.address.lower() for dev in devices}
         return [
             dev
             for addr, dev in self._cache.items()

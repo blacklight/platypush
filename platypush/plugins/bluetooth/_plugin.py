@@ -33,7 +33,7 @@ from platypush.plugins.db import DbPlugin
 from ._ble import BLEManager
 from ._cache import EntityCache
 from ._legacy import LegacyManager
-from ._types import RawServiceClass
+from ._types import DevicesBlacklist, RawServiceClass
 from ._manager import BaseBluetoothManager
 
 
@@ -58,7 +58,7 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
         * **bluetooth-numbers** (``pip install bluetooth-numbers``)
         * **TheengsDecoder** (``pip install TheengsDecoder``)
         * **pybluez** (``pip install git+https://github.com/pybluez/pybluez``)
-        * **pyobex** (``pip install git+https://github.com/BlackLight/PyOBEX``)
+        * **PyOBEX** (``pip install git+https://github.com/BlackLight/PyOBEX``)
 
     Triggers:
 
@@ -90,6 +90,9 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
         scan_paused_on_start: bool = False,
         poll_interval: float = _default_scan_duration,
         exclude_known_noisy_beacons: bool = True,
+        ignored_device_addresses: Optional[Collection[str]] = None,
+        ignored_device_names: Optional[Collection[str]] = None,
+        ignored_device_manufacturers: Optional[Collection[str]] = None,
         **kwargs,
     ):
         """
@@ -110,6 +113,10 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
             Disable this flag if you need to track BLE beacons from these
             devices, but beware that you may need periodically clean up your
             list of scanned devices.
+        :param ignored_device_addresses: List of device addresses to ignore.
+        :param ignored_device_names: List of device names to ignore.
+        :param ignored_device_manufacturers: List of device manufacturers to
+            ignore.
         """
         kwargs['poll_interval'] = poll_interval
         super().__init__(**kwargs)
@@ -135,6 +142,13 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
         """
         self._excluded_known_noisy_beacons = exclude_known_noisy_beacons
         """ Exclude known noisy BLE beacons. """
+
+        self._blacklist = DevicesBlacklist(
+            addresses=set(ignored_device_addresses or []),
+            names=set(ignored_device_names or []),
+            manufacturers=set(ignored_device_manufacturers or []),
+        )
+        """ Blacklist rules for the devices to ignore. """
 
         self._managers: Dict[Type[BaseBluetoothManager], BaseBluetoothManager] = {}
         """
@@ -175,6 +189,7 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
             'service_uuids': list(map(BluetoothService.to_uuid, self._service_uuids)),
             'device_cache': self._device_cache,
             'exclude_known_noisy_beacons': self._excluded_known_noisy_beacons,
+            'blacklist': self._blacklist,
         }
 
         self._managers = {

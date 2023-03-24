@@ -9,7 +9,7 @@ from platypush.entities.bluetooth import BluetoothDevice
 from platypush.message.event.bluetooth import BluetoothDeviceEvent
 
 from ._cache import EntityCache
-from ._types import RawServiceClass
+from ._types import DevicesBlacklist, RawServiceClass
 
 
 class BaseBluetoothManager(ABC, threading.Thread):
@@ -29,6 +29,7 @@ class BaseBluetoothManager(ABC, threading.Thread):
         service_uuids: Optional[Collection[RawServiceClass]] = None,
         device_cache: Optional[EntityCache] = None,
         exclude_known_noisy_beacons: bool = True,
+        blacklist: Optional[DevicesBlacklist] = None,
         **kwargs,
     ):
         """
@@ -42,6 +43,7 @@ class BaseBluetoothManager(ABC, threading.Thread):
             updates with the new parsed device entities.
         :param device_cache: Cache used to keep track of discovered devices.
         :param exclude_known_noisy_beacons: Exclude known noisy beacons.
+        :param blacklist: Blacklist of devices to exclude from discovery.
         """
         from ._plugins import scan_plugins
 
@@ -58,6 +60,7 @@ class BaseBluetoothManager(ABC, threading.Thread):
         self._scan_enabled = scan_enabled
         self._device_queue = device_queue
         self._exclude_known_noisy_beacons = exclude_known_noisy_beacons
+        self._blacklist = blacklist or DevicesBlacklist()
 
         self._cache = device_cache or EntityCache()
         """ Cache of discovered devices. """

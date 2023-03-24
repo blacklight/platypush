@@ -20,6 +20,7 @@ from platypush.message.event.bluetooth import (
 from .._cache import EntityCache
 from .._model import ServiceClass
 from .._plugins import BaseBluetoothPlugin
+from .._types import DevicesBlacklist
 from ._cache import DeviceCache
 from ._mappers import device_to_entity
 
@@ -118,18 +119,21 @@ class EventHandler:
         entity_cache: EntityCache,
         plugins: Collection[BaseBluetoothPlugin],
         exclude_known_noisy_beacons: bool,
+        blacklist: DevicesBlacklist,
     ):
         """
         :param device_queue: Queue used to publish updated devices upstream.
         :param device_cache: Device cache.
         :param entity_cache: Entity cache.
         :param exclude_known_noisy_beacons: Exclude known noisy beacons.
+        :param blacklist: Blacklist rules.
         """
         self._device_queue = device_queue
         self._device_cache = device_cache
         self._entity_cache = entity_cache
         self._plugins = plugins
         self._exclude_known_noisy_beacons = exclude_known_noisy_beacons
+        self._blacklist = blacklist
 
     def __call__(self, device: BLEDevice, data: AdvertisementData):
         """
@@ -156,6 +160,10 @@ class EventHandler:
                 'exclude_known_noisy_beacons is set to True: skipping beacon from device %s',
                 device.address,
             )
+            return
+
+        if self._blacklist.matches(new_entity):
+            logger.debug('Ignoring blacklisted device: %s', device.address)
             return
 
         # Extend the new entity with children entities added by the plugins
