@@ -227,6 +227,35 @@ class BLEManager(BaseBluetoothManager):
                     'Error while disconnecting from %s: %s', conn.device.address, e
                 )
 
+    def _dbus_disconnect(self, device: BLEDevice):
+        """
+        Disconnect from a device using the DBus API (only available on Linux).
+        This may be required if there is an active connection to the device that is not owned by the
+        """
+        entity = self._cache.get(device.address)
+        assert entity, f'Unknown device: "{device.address}"'
+        path = device.details.get('path')
+        assert path, f'The device "{device.address}" has no reported system path'
+        assert path.startswith('/org/bluez/'), (
+            f'The device "{device.address}" is not a BlueZ device. Programmatic '
+            'system disconnection is only supported on Linux'
+        )
+
+        try:
+            import pydbus
+
+            bus = pydbus.SystemBus()
+            dbus_device = bus.get('org.bluez', path)
+            dbus_device.Disconnect()
+        except Exception as e:
+            raise AssertionError(
+                f'Could not disconnect from {device.address}: {e}'
+            ) from e
+
+        if entity.connected:
+            entity.connected = False
+            self.notify(BluetoothDeviceDisconnectedEvent, entity)
+
     @override
     def connect(
         self,
@@ -279,7 +308,11 @@ class BLEManager(BaseBluetoothManager):
 
         # Check if there are any active connections
         connection = self._connections.get(dev.address, None)
-        assert connection, f'No active connections to the device {device} were found'
+        if not connection:
+            # If there are no active connections in this process, try to
+            # disconnect through the DBus API
+            self._dbus_disconnect(dev)
+            return
 
         # Set the close event and wait for any connection thread to terminate
         if connection.close_event:

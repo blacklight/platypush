@@ -57,6 +57,7 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
         * **bleak** (``pip install bleak``)
         * **bluetooth-numbers** (``pip install bluetooth-numbers``)
         * **TheengsDecoder** (``pip install TheengsDecoder``)
+        * **pydbus** (``pip install pydbus``)
         * **pybluez** (``pip install git+https://github.com/pybluez/pybluez``)
         * **PyOBEX** (``pip install git+https://github.com/BlackLight/PyOBEX``)
 

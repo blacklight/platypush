@@ -178,6 +178,7 @@ setup(
             'bleak',
             'bluetooth-numbers',
             'TheengsDecoder',
+            'pydbus',
             'pybluez @ https://github.com/pybluez/pybluez/tarball/master',
             'PyOBEX @ https://github.com/BlackLight/PyOBEX/tarball/master',
         ],

@@ -17,6 +17,7 @@ manifest:
     - bleak
     - bluetooth-numbers
     - TheengsDecoder
+    - pydbus
     - git+https://github.com/pybluez/pybluez
     - git+https://github.com/BlackLight/PyOBEX
   package: platypush.plugins.bluetooth
