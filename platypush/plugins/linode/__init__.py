@@ -118,7 +118,7 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
                     get_bus().post(
                         LinodeInstanceStatusChanged(
                             instance_id=instance.id,
-                            instance=instance.name,
+                            instance_name=instance.name,
                             status=instance.status,
                             old_status=(
                                 status[instance.id].status

@@ -18,7 +18,7 @@ class LinodeInstanceStatusChanged(LinodeEvent):
         self,
         *args,
         instance_id: int,
-        instance: str,
+        instance_name: str,
         status: str,
         old_status: Optional[str] = None,
         **kwargs
@@ -32,7 +32,7 @@ class LinodeInstanceStatusChanged(LinodeEvent):
         super().__init__(
             *args,
             instance_id=instance_id,
-            instance=instance,
+            instance_name=instance_name,
             status=status,
             old_status=old_status,
             **kwargs
