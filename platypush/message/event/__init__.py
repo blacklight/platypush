@@ -34,13 +34,19 @@ class Event(Message):
         **kwargs
     ):
         """
-        Params:
-            target  -- Target node [String]
-            origin  -- Origin node (default: current node) [String]
-            id      -- Event ID (default: auto-generated)
-            kwargs  -- Additional arguments for the event [kwDict]
-            logging_level -- Logging level that should be applied to these
-                events (default: INFO).
+        :param target: Target node
+        :type target: str
+        :param origin: Origin node (default: current node)
+        :type origin: str
+        :param id: Event ID (default: auto-generated)
+        :type id: str
+        :param timestamp: Event timestamp (default: current time)
+        :type timestamp: float
+        :param logging_level: Logging level for this event (default:
+            ``logging.INFO``)
+        :param disable_web_clients_notification: Don't send a notification of
+            this event to the websocket clients
+        :param kwargs: Additional arguments for the event
         """
 
         super().__init__(timestamp=timestamp, logging_level=logging_level)
@@ -96,7 +102,7 @@ class Event(Message):
         if not isinstance(self, condition.type):
             return result
 
-        for (attr, value) in condition.args.items():
+        for attr, value in condition.args.items():
             if attr not in self.args:
                 return result
 
@@ -105,7 +111,7 @@ class Event(Message):
 
                 if arg_result.is_match:
                     match_scores.append(arg_result.score)
-                    for (parsed_arg, parsed_value) in arg_result.parsed_args.items():
+                    for parsed_arg, parsed_value in arg_result.parsed_args.items():
                         result.parsed_args[parsed_arg] = parsed_value
                 else:
                     return result
@@ -226,7 +232,7 @@ class EventMatchResult:
 
 def flatten(args):
     if isinstance(args, dict):
-        for (key, value) in args.items():
+        for key, value in args.items():
             if isinstance(value, date):
                 args[key] = value.isoformat()
             elif isinstance(value, (dict, list)):
