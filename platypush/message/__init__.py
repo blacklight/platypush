@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import decimal
 import datetime
+from enum import Enum
 import io
 import logging
 import inspect
@@ -70,6 +71,9 @@ class Message:
 
             if isinstance(obj, JSONAble):
                 return obj.to_json()
+
+            if isinstance(obj, Enum):
+                return obj.value
 
             # Don't serialize I/O wrappers/objects
             if isinstance(obj, io.IOBase):
