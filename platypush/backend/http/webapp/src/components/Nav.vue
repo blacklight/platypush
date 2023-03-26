@@ -143,8 +143,8 @@ nav {
   }
 
   @media screen and (min-width: $desktop) {
-    width: 16em;
-    min-width: 16em;
+    width: 20em;
+    min-width: 20em;
   }
 
   li {
