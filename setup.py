@@ -242,7 +242,7 @@ setup(
         # Support for SSH integration
         'ssh': ['paramiko'],
         # Support for clipboard integration
-        'clipboard': ['pyperclip'],
+        'clipboard': ['pyclip'],
         # Support for luma.oled display drivers
         'luma-oled': ['luma.oled @ git+https://github.com/rm-hull/luma.oled'],
         # Support for DBus integration

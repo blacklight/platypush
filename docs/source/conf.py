@@ -216,7 +216,7 @@ autodoc_mock_imports = [
     'bluetooth',
     'gevent.wsgi',
     'Adafruit_IO',
-    'pyperclip',
+    'pyclip',
     'pydbus',
     'inputs',
     'inotify',
