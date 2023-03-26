@@ -14,7 +14,6 @@ Plugins
     platypush/plugins/assistant.google.pushtotalk.rst
     platypush/plugins/autoremote.rst
     platypush/plugins/bluetooth.rst
-    platypush/plugins/bluetooth.ble.rst
     platypush/plugins/calendar.rst
     platypush/plugins/calendar.ical.rst
     platypush/plugins/camera.android.ipcam.rst
@@ -124,7 +123,6 @@ Plugins
     platypush/plugins/switch.tplink.rst
     platypush/plugins/switch.wemo.rst
     platypush/plugins/switchbot.rst
-    platypush/plugins/switchbot.bluetooth.rst
     platypush/plugins/system.rst
     platypush/plugins/tcp.rst
     platypush/plugins/tensorflow.rst

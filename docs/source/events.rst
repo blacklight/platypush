@@ -11,7 +11,6 @@ Events
     platypush/events/application.rst
     platypush/events/assistant.rst
     platypush/events/bluetooth.rst
-    platypush/events/bluetooth.ble.rst
     platypush/events/button.flic.rst
     platypush/events/camera.rst
     platypush/events/chat.slack.rst

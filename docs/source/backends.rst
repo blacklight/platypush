@@ -10,9 +10,6 @@ Backends
     platypush/backend/alarm.rst
     platypush/backend/assistant.google.rst
     platypush/backend/assistant.snowboy.rst
-    platypush/backend/bluetooth.fileserver.rst
-    platypush/backend/bluetooth.pushserver.rst
-    platypush/backend/bluetooth.scanner.rst
     platypush/backend/button.flic.rst
     platypush/backend/camera.pi.rst
     platypush/backend/chat.telegram.rst
@@ -31,7 +28,6 @@ Backends
     platypush/backend/joystick.linux.rst
     platypush/backend/kafka.rst
     platypush/backend/light.hue.rst
-    platypush/backend/linode.rst
     platypush/backend/log.http.rst
     platypush/backend/mail.rst
     platypush/backend/midi.rst
