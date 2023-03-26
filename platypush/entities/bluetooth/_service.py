@@ -1,6 +1,6 @@
-from typing import Union
-from typing_extensions import override
 from uuid import UUID
+
+from typing_extensions import override
 
 from sqlalchemy import (
     Boolean,
@@ -12,11 +12,6 @@ from sqlalchemy import (
 
 from platypush.common.db import Base
 from platypush.entities import Entity
-from platypush.plugins.bluetooth.model import (
-    Protocol,
-    RawServiceClass,
-    ServiceClass,
-)
 
 if 'bluetooth_service' not in Base.metadata:
 
@@ -56,7 +51,7 @@ if 'bluetooth_service' not in Base.metadata:
         }
 
         @staticmethod
-        def to_uuid(value: Union[str, RawServiceClass]) -> RawServiceClass:
+        def to_uuid(value):
             """
             Convert a raw UUID string to a service class UUID.
             """
@@ -72,18 +67,18 @@ if 'bluetooth_service' not in Base.metadata:
                 return int(value, 16)
 
         @property
-        def uuid(self) -> RawServiceClass:
+        def uuid(self):
             """
             Getter for the service class UUID.
             """
             return self.to_uuid(self._uuid)
 
         @uuid.setter
-        def uuid(self, value: Union[RawServiceClass, str]):
+        def uuid(self, value):
             """
             Setter for the service class UUID.
             """
-            uuid: Union[RawServiceClass, str] = self.to_uuid(value)
+            uuid = self.to_uuid(value)
             if isinstance(uuid, int):
                 # Hex-encoded 16-bit UUID case
                 uuid = f'{uuid:04X}'
@@ -91,20 +86,24 @@ if 'bluetooth_service' not in Base.metadata:
             self._uuid = str(uuid)
 
         @property
-        def protocol(self) -> Protocol:
+        def protocol(self):
             """
             Getter for the protocol used by the service.
             """
+            from platypush.plugins.bluetooth.model import Protocol
+
             try:
                 return Protocol(self._protocol)
             except ValueError:
                 return Protocol.UNKNOWN
 
         @protocol.setter
-        def protocol(self, value: Union[str, Protocol]):
+        def protocol(self, value):
             """
             Setter for the protocol used by the service.
             """
+            from platypush.plugins.bluetooth.model import Protocol
+
             protocol = Protocol.UNKNOWN
             if isinstance(value, Protocol):
                 protocol = value
@@ -117,11 +116,13 @@ if 'bluetooth_service' not in Base.metadata:
             self._protocol = protocol.value
 
         @property
-        def service_class(self) -> ServiceClass:
+        def service_class(self):
             """
             The :class:`platypush.plugins.bluetooth.model.ServiceClass` enum
             value.
             """
+            from platypush.plugins.bluetooth.model import ServiceClass
+
             try:
                 return ServiceClass.get(self.uuid)
             except (TypeError, ValueError):

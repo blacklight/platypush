@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, List
+from typing import Iterable, List
 from typing_extensions import override
 
 from sqlalchemy import (
@@ -11,12 +11,6 @@ from sqlalchemy import (
 )
 
 from platypush.common.db import Base
-from platypush.plugins.bluetooth.model import (
-    MajorDeviceClass,
-    MajorServiceClass,
-    MinorDeviceClass,
-    ServiceClass,
-)
 
 from ..devices import Device
 from ._service import BluetoothService
@@ -80,7 +74,9 @@ if 'bluetooth_device' not in Base.metadata:
         }
 
         @property
-        def major_device_class(self) -> MajorDeviceClass:
+        def major_device_class(self):
+            from platypush.plugins.bluetooth.model import MajorDeviceClass
+
             ret = MajorDeviceClass.UNKNOWN
             if self._major_device_class:
                 matches = [
@@ -95,11 +91,13 @@ if 'bluetooth_device' not in Base.metadata:
             return ret
 
         @major_device_class.setter
-        def major_device_class(self, value: MajorDeviceClass):
+        def major_device_class(self, value):
             self._major_device_class = value.value.name
 
         @property
-        def minor_device_classes(self) -> List[MinorDeviceClass]:
+        def minor_device_classes(self) -> list:
+            from platypush.plugins.bluetooth.model import MinorDeviceClass
+
             ret = []
             for dev_cls in self._minor_device_classes or []:
                 matches = [cls for cls in MinorDeviceClass if cls.value.name == dev_cls]
@@ -110,11 +108,13 @@ if 'bluetooth_device' not in Base.metadata:
             return ret
 
         @minor_device_classes.setter
-        def minor_device_classes(self, value: Iterable[MinorDeviceClass]):
+        def minor_device_classes(self, value: Iterable):
             self._minor_device_classes = [cls.value.name for cls in (value or [])]
 
         @property
-        def major_service_classes(self) -> List[MajorServiceClass]:
+        def major_service_classes(self) -> list:
+            from platypush.plugins.bluetooth.model import MajorServiceClass
+
             ret = []
             for dev_cls in self._major_service_classes or []:
                 matches = [
@@ -127,7 +127,7 @@ if 'bluetooth_device' not in Base.metadata:
             return ret
 
         @major_service_classes.setter
-        def major_service_classes(self, value: Iterable[MajorServiceClass]):
+        def major_service_classes(self, value: Iterable):
             self._major_service_classes = [cls.value.name for cls in (value or [])]
 
         @property
@@ -142,11 +142,13 @@ if 'bluetooth_device' not in Base.metadata:
             ]
 
         @property
-        def known_services(self) -> Dict[ServiceClass, "BluetoothService"]:
+        def known_services(self) -> dict:
             """
             Known services exposed by the device, indexed by
             :class:`platypush.plugins.bluetooth.model.ServiceClass` enum value.
             """
+            from platypush.plugins.bluetooth.model import ServiceClass
+
             return {
                 child.service_class: child
                 for child in self.children
