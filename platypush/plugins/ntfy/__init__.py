@@ -167,7 +167,7 @@ class NtfyPlugin(AsyncRunnablePlugin):
                     "headers": {
                         "Authorization": "Bearer abcdef..."
                     },
-                    "body": "{\\"temperature\\": 65}"
+                    "body": "{\"temperature\": 65}"
                 },
                 {
                     "action": "broadcast",
