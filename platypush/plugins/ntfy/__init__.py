@@ -93,8 +93,8 @@ class NtfyPlugin(AsyncRunnablePlugin):
                 )
 
     async def listen(self):
-        return await asyncio.wait(
-            [
+        return await asyncio.gather(
+            *[
                 self._get_ws_handler(f'{self._ws_url}/{sub}/ws')
                 for sub in set(self._subscriptions)
             ]
