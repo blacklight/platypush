@@ -12,7 +12,8 @@ class ClipboardPlugin(RunnablePlugin):
     monitor and get the current clipboard content.
 
     Requires:
-        - **pyperclip** (``pip install pyperclip``)
+
+        - **pyclip** (``pip install pyclip``)
 
     Triggers:
 
@@ -32,27 +33,27 @@ class ClipboardPlugin(RunnablePlugin):
         :param text: Text to copy
         :type text: str
         """
-        import pyperclip
+        import pyclip
 
-        pyperclip.copy(text)
+        pyclip.copy(text)
 
     @action
     def paste(self):
         """
         Get the current content of the clipboard
         """
-        import pyperclip
+        import pyclip
 
-        return pyperclip.paste()
+        return pyclip.paste(text=True)
 
     def main(self):
-        import pyperclip
+        import pyclip
 
         last_error_time = 0
 
         while not self.should_stop():
             try:
-                text = pyperclip.paste()
+                text = pyclip.paste(text=True)
                 if text and text != self._last_text:
                     get_bus().post(ClipboardEvent(text=text))
                     self._last_text = text
