@@ -1,5 +1,6 @@
 from datetime import datetime, date
-from typing import Optional, Union
+from enum import Enum
+from typing import Any, Optional, Type, Union
 
 from dateutil.parser import isoparse
 from dateutil.tz import tzutc
@@ -64,6 +65,23 @@ class Date(Function):  # lgtm [py/missing-call-to-init]
     def _deserialize(self, value, attr, data, **kwargs) -> Optional[date]:
         dt = normalize_datetime(value)
         return date.fromtimestamp(dt.timestamp())
+
+
+class EnumField(Function):
+    """
+    Field that maps enum values.
+    """
+
+    # pylint: disable=redefined-builtin
+    def __init__(self, *args, type: Type[Enum], **kwargs):
+        super().__init__(*args, **kwargs)
+        self.type = type
+
+    def _serialize(self, value: Optional[Enum], *_, **__) -> Optional[Any]:
+        return value.value if value is not None else None
+
+    def _deserialize(self, value: Optional[Any], *_, **__) -> Optional[Any]:
+        return self.type(value) if value is not None else None
 
 
 def normalize_datetime(
