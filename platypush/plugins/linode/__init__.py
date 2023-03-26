@@ -1,4 +1,4 @@
-from typing import Collection, Dict, List, Optional
+from typing import Collection, List, Optional
 
 from typing_extensions import override
 
@@ -6,17 +6,19 @@ from linode_api4 import LinodeClient, Instance, objects
 
 from platypush.context import get_bus
 from platypush.entities.cloud import CloudInstance
+from platypush.entities.managers.cloud import CloudInstanceEntityManager, InstanceId
+from platypush.entities.managers.switches import EnumSwitchEntityManager
+from platypush.entities.switches import EnumSwitch
 from platypush.message.event.linode import LinodeInstanceStatusChanged
 from platypush.schemas.linode import (
     LinodeInstance,
     LinodeInstanceSchema,
     LinodeInstanceStatus,
 )
-from platypush.entities.managers.cloud import CloudInstanceEntityManager, InstanceId
 from platypush.plugins import RunnablePlugin, action
 
 
-class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager):
+class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityManager):
     """
     This plugin can interact with a Linode account and manage node and volumes.
 
@@ -36,7 +38,7 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager):
 
     """
 
-    def __init__(self, token: str, poll_interval: float = 10.0, **kwargs):
+    def __init__(self, token: str, poll_interval: float = 60.0, **kwargs):
         """
         :param token: Linode API token.
         :param poll_interval: How often to poll the Linode API
@@ -44,8 +46,6 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager):
         """
         super().__init__(poll_interval=poll_interval, **kwargs)
         self._token = token
-        self._instances: Dict[int, CloudInstance] = {}
-        """ ``{instance_id: CloudInstance}`` mapping. """
 
     def _get_client(self, token: Optional[str] = None) -> LinodeClient:
         """
@@ -66,9 +66,9 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager):
         """
         client = self._get_client(token)
         if isinstance(instance, str):
-            filters = Instance.label == instance
+            filters = [Instance.label == instance]
         elif isinstance(instance, int):
-            filters = Instance.id == instance
+            filters = [Instance.id == instance]
         else:
             raise AssertionError(f'Invalid instance type: {type(instance)}')
 
@@ -90,13 +90,20 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager):
 
     @override
     def main(self):
+        instances = []
+
         while not self.should_stop():
-            status = self._instances.copy()
-            new_status = self.status(publish_entities=False).output
+            status = {instance.id: instance for instance in instances}
+
+            new_status = {
+                instance.id: instance
+                for instance in self.status(publish_entities=False).output
+            }
+
             changed_instances = (
                 [
                     instance
-                    for instance in new_status
+                    for instance in new_status.values()
                     if not (
                         status.get(instance.id)
                         and status[instance.id].status == instance.status
@@ -123,7 +130,7 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager):
 
                 self.publish_entities(changed_instances)
 
-            self._instances = new_status
+            instances = new_status.values()
             self.wait_stop(self.poll_interval)
 
     @override
@@ -135,6 +142,14 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager):
             [
                 CloudInstance(
                     reachable=instance.status == LinodeInstanceStatus.RUNNING,
+                    children=[
+                        EnumSwitch(
+                            id=f'{instance.id}:__action__',
+                            name='Actions',
+                            values=['boot', 'reboot', 'shutdown'],
+                            is_write_only=True,
+                        )
+                    ],
                     **schema.dump(instance),
                 )
                 for instance in entities
@@ -216,6 +231,27 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager):
         """
         node = self._get_instance(instance=instance, token=token)
         assert node.shutdown(), 'Shutdown failed'
+
+    @override
+    @action
+    def set(self, entity: str, value: str, **kwargs):
+        """
+        Entity framework compatible method to run an action on the instance
+        through an ``EnumSwitch``.
+
+        :param entity: Entity ID, as ``<instance_id>`` or
+            ``<instance_id>:__action__``.
+        :param value: Action to run, one among ``boot``, ``reboot`` and
+            ``shutdown``.
+        """
+        try:
+            instance_id = int(entity.removesuffix(':__action__'))
+        except (TypeError, ValueError) as e:
+            raise AssertionError(f'Invalid entity: {entity}') from e
+
+        assert value in {'boot', 'reboot', 'shutdown'}, f'Invalid action: {value}'
+        method = getattr(self, value)
+        return method(instance_id, **kwargs)
 
 
 # vim:sw=4:ts=4:et:

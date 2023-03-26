@@ -29,6 +29,9 @@
   "light.hue": {
     "class": "fas fa-lightbulb"
   },
+  "linode": {
+    "class": "fas fa-cloud"
+  },
   "media.jellyfin": {
     "imgUrl": "/icons/jellyfin.svg"
   },

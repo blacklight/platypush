@@ -39,6 +39,14 @@
     }
   },
 
+  "cloud_instance": {
+    "name": "Cloud Entity",
+    "name_plural": "Cloud Entities",
+    "icon": {
+      "class": "fas fa-cloud"
+    }
+  },
+
   "bluetooth_service": {
     "name": "Service",
     "name_plural": "Services",
