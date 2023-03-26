@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being
 reported only starting from v0.20.2.
 
+## [Unreleased]
+
+### Fixed
+
+- Migrated the `clipboard` integration from `pyperclip` to `pyclip` (see
+  [#240](https://git.platypush.tech/platypush/platypush/issues/240)).
+  `pyperclip` is unmaintained and largely broken, and `pyclip` seems to be a
+  viable drop-in alternative.
+
 ## [0.24.5] - 2023-02-22
 
 ### Added

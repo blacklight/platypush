@@ -17,7 +17,7 @@ def readfile(fname):
 def pkg_files(dir):
     paths = []
     # noinspection PyShadowingNames
-    for (path, _, files) in os.walk(dir):
+    for path, _, files in os.walk(dir):
         for file in files:
             paths.append(os.path.join('..', path, file))
     return paths
@@ -238,7 +238,7 @@ setup(
         # Support for SSH integration
         'ssh': ['paramiko'],
         # Support for clipboard integration
-        'clipboard': ['pyperclip'],
+        'clipboard': ['pyclip'],
         # Support for luma.oled display drivers
         'luma-oled': ['luma.oled @ git+https://github.com/rm-hull/luma.oled'],
         # Support for DBus integration
