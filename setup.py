@@ -66,6 +66,7 @@ setup(
         'python-dateutil',
         'rsa',
         'marshmallow',
+        'marshmallow_dataclass',
         'frozendict',
         'flask',
         'bcrypt',

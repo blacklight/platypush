@@ -4,6 +4,7 @@
 
 pyyaml
 marshmallow
+marshmallow_dataclass
 python-prctl
 flask
 websockets
