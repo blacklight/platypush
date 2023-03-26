@@ -11,17 +11,17 @@ from ._base import (
     init_entities_db,
 )
 from ._engine import EntitiesEngine
-from ._managers import (
+from .managers import (
     EntityManager,
     get_plugin_entity_registry,
     register_entity_manager,
 )
-from ._managers.lights import LightEntityManager
-from ._managers.sensors import SensorEntityManager
-from ._managers.switches import (
-    SwitchEntityManager,
+from .managers.lights import LightEntityManager
+from .managers.sensors import SensorEntityManager
+from .managers.switches import (
     DimmerEntityManager,
     EnumSwitchEntityManager,
+    SwitchEntityManager,
 )
 
 _engine: Optional[EntitiesEngine] = None
