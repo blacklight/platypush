@@ -1,5 +1,6 @@
 manifest:
-  events: {}
+  events:
+    platypush.message.event.linode.LinodeInstanceStatusChanged:
   install:
     pip:
     - linode_api4
