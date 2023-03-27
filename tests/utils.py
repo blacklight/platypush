@@ -1,6 +1,7 @@
 import os
-import requests
 from typing import Optional
+
+import requests
 
 from platypush.message import Message
 from platypush.message.response import Response
@@ -36,12 +37,19 @@ class TimeoutException(RuntimeError):
     """
     Exception raised in case of timeout.
     """
+
     def __init__(self, msg: str = 'Timeout'):
         self.msg = msg
 
 
-def send_request(action: str, timeout: Optional[float] = None, args: Optional[dict] = None,
-                 parse_json: bool = True, authenticate: bool = True, **kwargs):
+def send_request(
+    action: str,
+    timeout: Optional[float] = None,
+    args: Optional[dict] = None,
+    parse_json: bool = True,
+    authenticate: bool = True,
+    **kwargs
+):
     if not timeout:
         timeout = request_timeout
     if not args:
@@ -56,7 +64,8 @@ def send_request(action: str, timeout: Optional[float] = None, args: Optional[di
             'type': 'request',
             'action': action,
             'args': args,
-        }, **kwargs
+        },
+        **kwargs
     )
 
     clear_timeout()
@@ -71,23 +80,33 @@ def register_user(username: Optional[str] = None, password: Optional[str] = None
         username = test_user
         password = test_pass
 
-    set_timeout(seconds=request_timeout, on_timeout=on_timeout('User registration response timed out'))
-    response = requests.post('{base_url}/register?redirect={base_url}/'.format(base_url=base_url), data={
-        'username': username,
-        'password': password,
-        'confirm_password': password,
-    })
+    set_timeout(
+        seconds=request_timeout,
+        on_timeout=on_timeout('User registration response timed out'),
+    )
+    response = requests.post(
+        '{base_url}/register?redirect={base_url}/'.format(base_url=base_url),
+        data={
+            'username': username,
+            'password': password,
+            'confirm_password': password,
+        },
+    )
 
     clear_timeout()
     return response
 
 
 def on_timeout(msg):
-    def _f(): raise TimeoutException(msg)
+    def _f():
+        raise TimeoutException(msg)
+
     return _f
 
 
 def parse_response(response):
     response = Message.build(response.json())
-    assert isinstance(response, Response), 'Expected Response type, got {}'.format(response.__class__.__name__)
+    assert isinstance(response, Response), 'Expected Response type, got {}'.format(
+        response.__class__.__name__
+    )
     return response
