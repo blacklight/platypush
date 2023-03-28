@@ -8,8 +8,6 @@ Platypush
 [![Last Commit](https://img.shields.io/github/last-commit/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/-/commits/master/)
 [![Join chat on Matrix](https://img.shields.io/matrix/:platypush?server_fqdn=matrix.platypush.tech)](https://matrix.to/#/#platypush:matrix.platypush.tech)
 [![Contributions](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://git.platypush.tech/platypush/platypush/-/blob/master/CONTRIBUTING.md)
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/BlackLight/platypush.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/BlackLight/platypush/context:python)
-[![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/BlackLight/platypush.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/BlackLight/platypush/context:javascript)
 
 <!-- toc -->
 
