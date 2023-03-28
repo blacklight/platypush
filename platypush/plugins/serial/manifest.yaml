@@ -1,6 +1,8 @@
 manifest:
-  events: {}
+  events:
+    - platypush.message.event.sensor.SensorDataChangeEvent:
   install:
-    pip: []
+    pip:
+      - pyserial
   package: platypush.plugins.serial
   type: plugin

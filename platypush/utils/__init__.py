@@ -5,6 +5,7 @@ import hashlib
 import importlib
 import inspect
 import logging
+from multiprocessing import Lock as PLock
 import os
 import pathlib
 import re
@@ -12,13 +13,15 @@ import signal
 import socket
 import ssl
 import urllib.request
-from typing import Optional, Tuple, Union
+from threading import Lock as TLock
+from typing import Generator, Optional, Tuple, Union
 
 from dateutil import parser, tz
 from redis import Redis
 from rsa.key import PublicKey, PrivateKey, newkeys
 
 logger = logging.getLogger('utils')
+Lock = Union[PLock, TLock]  # type: ignore
 
 
 def get_module_and_method_from_action(action):
@@ -363,7 +366,7 @@ def get_mime_type(resource: str) -> Optional[str]:
             return response.info().get_content_type()
     else:
         if hasattr(magic, 'detect_from_filename'):
-            mime = magic.detect_from_filename(resource)
+            mime = magic.detect_from_filename(resource)  # type: ignore
         elif hasattr(magic, 'from_file'):
             mime = magic.from_file(resource, mime=True)
         else:
@@ -372,7 +375,7 @@ def get_mime_type(resource: str) -> Optional[str]:
             )
 
         if mime:
-            return mime.mime_type if hasattr(mime, 'mime_type') else mime
+            return mime.mime_type if hasattr(mime, 'mime_type') else mime  # type: ignore
 
     return None
 
@@ -557,6 +560,29 @@ def to_datetime(t: Union[str, int, float, datetime.datetime]) -> datetime.dateti
     if isinstance(t, str):
         return parser.parse(t)
     return t
+
+
+@contextlib.contextmanager
+def get_lock(
+    lock: Lock, timeout: Optional[float] = None
+) -> Generator[bool, None, None]:
+    """
+    Get a lock with an optional timeout through a context manager construct:
+
+        >>> from threading import Lock
+        >>> lock = Lock()
+        >>> with get_lock(lock, timeout=2):
+        >>>     ...
+
+    """
+    kwargs = {'timeout': timeout} if timeout else {}
+    result = lock.acquire(**kwargs)
+
+    try:
+        yield result
+    finally:
+        if result:
+            lock.release()
 
 
 # vim:sw=4:ts=4:et:
