@@ -313,6 +313,7 @@ class SerialPlugin(RunnablePlugin, SensorEntityManager):
         baud_rate: Optional[int] = None,
         size: Optional[int] = None,
         end: Optional[Union[int, str]] = None,
+        binary: bool = False,
     ) -> str:
         """
         Reads raw data from the serial device
@@ -321,7 +322,11 @@ class SerialPlugin(RunnablePlugin, SensorEntityManager):
         :param baud_rate: Baud rate (default: default configured baud_rate)
         :param size: Number of bytes to read
         :param end: End of message, as a character or bytecode
-        :return: The read message as a string if it's a valid UTF-8 string,
+        :param binary: If set to ``True``, then the serial output will be
+            interpreted as binary data and a base64-encoded representation will
+            be returned. Otherwise, the output will be interpreted as a UTF-8
+            encoded string.
+        :return: The read message as a UTF-8 string if ``binary=False``,
             otherwise as a base64-encoded string.
         """
 
@@ -352,12 +357,7 @@ class SerialPlugin(RunnablePlugin, SensorEntityManager):
                     if ch != end:
                         data += ch
 
-        try:
-            data = data.decode('utf-8')
-        except (ValueError, TypeError):
-            data = base64.b64encode(data).decode()
-
-        return data
+        return base64.b64encode(data).decode() if binary else data.decode('utf-8')
 
     @action
     def write(
