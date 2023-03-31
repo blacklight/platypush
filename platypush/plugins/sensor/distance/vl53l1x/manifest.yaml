@@ -1,8 +1,10 @@
 manifest:
-  events: []
+  events:
+    platypush.message.event.sensor import SensorDataChangeEvent:
+
   install:
     pip:
     - smbus2
     - vl53l1x
-  package: platypush.plugins.gpio.sensor.distance.vl53l1x
+  package: platypush.plugins.sensor.distance.vl53l1x
   type: plugin
