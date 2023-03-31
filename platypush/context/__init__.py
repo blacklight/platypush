@@ -148,7 +148,8 @@ def get_plugin(plugin, plugin_name=None, reload=False):
     # e.g. plugins.music.mpd main class: MusicMpdPlugin
     cls_name = ''
     for token in name.split('.'):
-        cls_name += token.title()
+        if token:
+            cls_name += token[0].upper() + token[1:]
     cls_name += 'Plugin'
 
     plugin_conf = Config.get_plugins()[name] if name in Config.get_plugins() else {}
