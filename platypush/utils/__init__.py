@@ -579,6 +579,8 @@ def get_lock(
     result = lock.acquire(**kwargs)
 
     try:
+        if not result:
+            raise TimeoutError()
         yield result
     finally:
         if result:
