@@ -31,6 +31,14 @@
     }
   },
 
+  "distance_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-ruler-horizontal"
+    }
+  },
+
   "bluetooth_device": {
     "name": "Device",
     "name_plural": "Devices",
