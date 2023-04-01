@@ -335,6 +335,14 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
     def publish_entities(
         self, entities: SensorDataType, *args, **kwargs
     ) -> Collection[Entity]:
+        # Skip empty data
+        if (
+            entities is None
+            or (isinstance(entities, dict) and not entities)
+            or (isinstance(entities, (list, tuple)) and not entities)
+        ):
+            return []
+
         return super().publish_entities(entities, *args, **kwargs)  # type: ignore
 
     @abstractmethod
