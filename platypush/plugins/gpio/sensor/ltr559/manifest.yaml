@@ -1,7 +1,0 @@
-manifest:
-  events: {}
-  install:
-    pip:
-    - ltr559
-  package: platypush.plugins.gpio.sensor.ltr559
-  type: plugin
