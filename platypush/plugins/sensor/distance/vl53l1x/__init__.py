@@ -3,16 +3,13 @@ from threading import RLock
 from typing import List, Mapping
 from typing_extensions import override
 
-from platypush.context import get_bus
-from platypush.entities.managers.sensors import SensorEntityManager
 from platypush.entities.devices import Device
 from platypush.entities.distance import DistanceSensor
-from platypush.message.event.sensor import SensorDataChangeEvent
-from platypush.plugins import RunnablePlugin, action
-from platypush.utils import get_plugin_name_by_class
+from platypush.plugins.sensor import SensorPlugin
 
 
-class SensorDistanceVl53l1xPlugin(RunnablePlugin, SensorEntityManager):
+# pylint: disable=too-many-ancestors
+class SensorDistanceVl53l1xPlugin(SensorPlugin):
     """
     Plugin to interact with an `VL53L1x
     <https://www.st.com/en/imaging-and-photonics-solutions/vl53l1x.html>`_
@@ -68,13 +65,8 @@ class SensorDistanceVl53l1xPlugin(RunnablePlugin, SensorEntityManager):
                 self._device.close()
                 self._device = None
 
-    @action
     @override
-    def status(self, *_, **__):
-        self.publish_entities(self._last_data)
-        return self._last_data
-
-    def _status(self, *_, short=True, medium=True, long=True, **__):
+    def get_measurement(self, *_, short=True, medium=True, long=True, **__):
         """
         :param short: Enable short range measurement (default: True)
         :param medium: Enable medium range measurement (default: True)
@@ -117,20 +109,6 @@ class SensorDistanceVl53l1xPlugin(RunnablePlugin, SensorEntityManager):
 
         return ret
 
-    @action
-    def get_data(self, *args, **kwargs):
-        """
-        (Deprecated) alias for :meth:`.status`.
-        """
-        return self.status(*args, **kwargs)
-
-    @action
-    def get_measurement(self, *args, **kwargs):
-        """
-        (Deprecated) alias for :meth:`.status`.
-        """
-        return self.status(*args, **kwargs)
-
     @override
     def transform_entities(self, entities: Mapping[str, int]) -> List[Device]:
         return super().transform_entities(  # type: ignore
@@ -150,26 +128,6 @@ class SensorDistanceVl53l1xPlugin(RunnablePlugin, SensorEntityManager):
                 )
             ]
         )
-
-    @override
-    def publish_entities(self, entities: Mapping[str, int], *_, **__) -> List[Device]:
-        get_bus().post(
-            SensorDataChangeEvent(
-                data=entities,
-                source=get_plugin_name_by_class(self.__class__),
-            )
-        )
-        return super().publish_entities(entities)  # type: ignore
-
-    @override
-    def main(self):
-        while not self.should_stop():
-            status = self._status()
-            if status != self._last_data:
-                self.publish_entities(status)
-
-            self._last_data = status
-            self.wait_stop(self.poll_interval)
 
 
 # vim:sw=4:ts=4:et:
