@@ -246,7 +246,7 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
             return events
 
         # Scalar case
-        if isinstance(old_data, (Numeric, NoneType)) and isinstance(
+        if isinstance(old_data, (int, float, NoneType)) and isinstance(
             new_data, (int, float)
         ):
             return self._process_scalar_threshold_events(
