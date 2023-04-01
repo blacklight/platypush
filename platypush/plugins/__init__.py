@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import threading
+import warnings
 
 from abc import ABC, abstractmethod
 from functools import wraps
@@ -86,7 +87,9 @@ class RunnablePlugin(Plugin):
     ):
         """
         :param poll_interval: How often the :meth:`.loop` function should be
-            execute (default: 15 seconds).
+            execute (default: 15 seconds). *NOTE*: For back-compatibility
+            reasons, the `poll_seconds` argument is also supported, but it's
+            deprecated.
         :param stop_timeout: How long we should wait for any running
             threads/processes to stop before exiting (default: 5 seconds).
         """
@@ -96,6 +99,16 @@ class RunnablePlugin(Plugin):
         self._should_stop = threading.Event()
         self._stop_timeout = stop_timeout
         self._thread: Optional[threading.Thread] = None
+
+        if kwargs.get('poll_seconds') is not None:
+            warnings.warn(
+                'poll_seconds is deprecated, use poll_interval instead',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+            if self.poll_interval is None:
+                self.poll_interval = kwargs['poll_seconds']
 
     def main(self):
         """
