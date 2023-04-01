@@ -211,8 +211,8 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
         if low_t is None or high_t is None:
             return []
 
-        assert isinstance(low_t, Numeric) and isinstance(
-            high_t, Numeric
+        assert isinstance(low_t, (int, float)) and isinstance(
+            high_t, (int, float)
         ), f'Non-numeric thresholds detected: "{low_t}" and "{high_t}"'
 
         # Above threshold case
@@ -246,7 +246,9 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
             return events
 
         # Scalar case
-        if isinstance(old_data, (Numeric, NoneType)) and isinstance(new_data, Numeric):
+        if isinstance(old_data, (Numeric, NoneType)) and isinstance(
+            new_data, (int, float)
+        ):
             return self._process_scalar_threshold_events(
                 old_data, new_data, attr  # type: ignore
             )
