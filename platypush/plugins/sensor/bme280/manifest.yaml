@@ -1,0 +1,10 @@
+manifest:
+  events:
+    platypush.message.event.sensor.SensorDataAboveThresholdEvent:
+    platypush.message.event.sensor.SensorDataBelowThresholdEvent:
+    platypush.message.event.sensor.SensorDataChangeEvent:
+  install:
+    pip:
+    - pimoroni-bme280
+  package: platypush.plugins.sensor.bme280
+  type: plugin
