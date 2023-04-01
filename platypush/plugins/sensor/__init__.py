@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from types import NoneType
 from typing import Collection, Iterable, List, Mapping, Optional, Tuple, Type, Union
 from typing_extensions import override
 
@@ -16,6 +15,7 @@ from platypush.message.event.sensor import (
 from platypush.plugins import RunnablePlugin, action
 from platypush.utils import get_plugin_name_by_class
 
+NoneType = type(None)
 ThresholdType = Union[Numeric, Tuple[Numeric, Numeric]]
 ThresholdConfiguration = Union[ThresholdType, Mapping[str, ThresholdType]]
 
