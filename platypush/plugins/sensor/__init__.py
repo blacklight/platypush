@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from types import NoneType
-from typing import Collection, List, Mapping, Optional, Tuple, Type, Union
+from typing import Collection, Iterable, List, Mapping, Optional, Tuple, Type, Union
 from typing_extensions import override
 
 from platypush.common.sensors import Numeric, SensorDataType
@@ -43,6 +43,7 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
         self,
         thresholds: Optional[ThresholdConfiguration] = None,
         tolerance: SensorDataType = 0,
+        enabled_sensors: Optional[Iterable[str]] = None,
         **kwargs,
     ):
         """
@@ -103,10 +104,14 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
                     0.1     # Tolerance on the 1st decimal digit for the second value
                 ]
 
+        :param enabled_sensors: If :meth:`.get_measurement` returns a key-value
+            mapping, and ``enabled_sensors`` is set, then only the reported
+            sensor keys will be returned.
         """
         super().__init__(**kwargs)
         self._tolerance = tolerance
         self._thresholds = thresholds
+        self._enabled_sensors = set(enabled_sensors or [])
         self._last_measurement: Optional[SensorDataType] = None
         """ Latest measurement from the sensor. """
 
@@ -309,6 +314,16 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
         # Otherwise, merge the old data with the new
         self._last_measurement.update(new_data)  # type: ignore
 
+    def _filter_enabled_sensors(self, data: SensorDataType) -> SensorDataType:
+        """
+        If ``data`` is a sensor mapping, and ``enabled_sensors`` is set, filter
+        out only the requested keys.
+        """
+        if not (isinstance(data, dict) and self._enabled_sensors):
+            return data
+
+        return {k: v for k, v in data.items() if k in self._enabled_sensors}
+
     @override
     @abstractmethod
     def transform_entities(self, entities: SensorDataType) -> Collection[Entity]:
@@ -390,6 +405,7 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
                 )
                 continue
 
+            new_data = self._filter_enabled_sensors(new_data)
             self._process_sensor_events(self._last_measurement, new_data)
             self._update_last_measurement(new_data)
             self.wait_stop(self.poll_interval)
