@@ -5,14 +5,14 @@ from platypush.common.db import Base
 from .sensors import NumericSensor
 
 
-if 'time_duration_sensor' not in Base.metadata:
+if 'time_duration' not in Base.metadata:
 
-    class TimeDurationSensor(NumericSensor):
+    class TimeDuration(NumericSensor):
         """
-        A sensor that measures a time duration.
+        An entity that measures a time duration.
         """
 
-        __tablename__ = 'time_duration_sensor'
+        __tablename__ = 'time_duration'
 
         id = Column(
             Integer, ForeignKey(NumericSensor.id, ondelete='CASCADE'), primary_key=True

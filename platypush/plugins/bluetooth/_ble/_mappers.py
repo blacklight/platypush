@@ -28,7 +28,7 @@ from platypush.entities.pressure import PressureSensor
 from platypush.entities.sensors import BinarySensor, NumericSensor, RawSensor
 from platypush.entities.steps import StepsSensor
 from platypush.entities.temperature import TemperatureSensor
-from platypush.entities.time import TimeDurationSensor
+from platypush.entities.time import TimeDuration
 from platypush.entities.weight import WeightSensor
 
 from .._model import Protocol, ServiceClass
@@ -80,7 +80,7 @@ _property_to_entity: Dict[str, Callable[[Any, Dict[str, Any]], Entity]] = {
         value=value,
         unit=conf.get('unit'),
     ),
-    'duration': lambda value, conf: TimeDurationSensor(
+    'duration': lambda value, conf: TimeDuration(
         value=value,
         unit=conf.get('unit'),
     ),
