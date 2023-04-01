@@ -333,7 +333,7 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
     def publish_entities(
         self, entities: SensorDataType, *args, **kwargs
     ) -> Collection[Entity]:
-        entities_args = [entities] if isinstance(entities, Numeric) else entities
+        entities_args = [entities] if isinstance(entities, (int, float)) else entities
         return super().publish_entities(entities_args, *args, **kwargs)  # type: ignore
 
     @abstractmethod
