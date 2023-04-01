@@ -68,6 +68,21 @@
   "rtorrent": {
     "class": "fa fa-magnet"
   },
+  "sensor.bme280": {
+    "class": "fas fa-microchip"
+  },
+  "sensor.envirophat": {
+    "class": "fas fa-microchip"
+  },
+  "sensor.ltr559": {
+    "class": "fas fa-microchip"
+  },
+  "sensor.vl53l1x": {
+    "class": "fas fa-microchip"
+  },
+  "serial": {
+    "class": "fab fa-usb"
+  },
   "smartthings": {
     "imgUrl": "/icons/smartthings.png"
   },
