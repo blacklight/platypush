@@ -111,23 +111,21 @@ class SensorDistanceVl53l1xPlugin(SensorPlugin):
 
     @override
     def transform_entities(self, entities: Mapping[str, int]) -> List[Device]:
-        return super().transform_entities(  # type: ignore
-            [
-                Device(
-                    id='vl53l1x',
-                    name='VL53L1X Distance Sensor',
-                    children=[
-                        DistanceSensor(
-                            id=f'vl53l1x:{key}',
-                            name=f'{key} distance',
-                            value=value,
-                            unit='mm',
-                        )
-                        for key, value in entities.items()
-                    ],
-                )
-            ]
-        )
+        return [
+            Device(
+                id='vl53l1x',
+                name='VL53L1X Distance Sensor',
+                children=[
+                    DistanceSensor(
+                        id=f'vl53l1x:{key}',
+                        name=f'{key} distance',
+                        value=value,
+                        unit='mm',
+                    )
+                    for key, value in entities.items()
+                ],
+            )
+        ]
 
 
 # vim:sw=4:ts=4:et:
