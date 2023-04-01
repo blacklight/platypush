@@ -63,6 +63,22 @@
     }
   },
 
+  "accelerometer": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-up-down-left-right"
+    }
+  },
+
+  "magnetometer": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-magnet"
+    }
+  },
+
   "device": {
     "name": "Device",
     "name_plural": "Devices",
