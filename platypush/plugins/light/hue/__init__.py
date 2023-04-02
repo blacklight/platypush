@@ -13,6 +13,7 @@ from typing import (
     Set,
     Union,
 )
+import warnings
 
 from platypush.context import get_bus
 from platypush.entities import Entity, LightEntityManager
@@ -71,7 +72,9 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
                 return self == other
             return False
 
-    def __init__(self, bridge, lights=None, groups=None, poll_seconds: float = 20.0):
+    def __init__(
+        self, bridge, lights=None, groups=None, poll_interval: float = 20.0, **kwargs
+    ):
         """
         :param bridge: Bridge address or hostname
         :type bridge: str
@@ -82,11 +85,22 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         :param groups Default groups to be controlled (default: all)
         :type groups: list[str]
 
-        :param poll_seconds: How often the plugin should check the bridge for light
+        :param poll_interval: How often the plugin should check the bridge for light
             updates (default: 20 seconds).
         """
 
-        super().__init__()
+        poll_seconds = kwargs.pop('poll_seconds', None)
+        if poll_seconds is not None:
+            warnings.warn(
+                'poll_seconds is deprecated, use poll_interval instead',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+            if poll_interval is None:
+                poll_interval = poll_seconds
+
+        super().__init__(**kwargs)
 
         self.bridge_address = bridge
         self.bridge = None
@@ -97,7 +111,7 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         self.connect()
         self.lights = set()
         self.groups = set()
-        self.poll_seconds = poll_seconds
+        self.poll_interval = poll_interval
         self._cached_lights: Dict[str, dict] = {}
 
         if lights:
@@ -1006,8 +1020,8 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
 
         def _next_light_attrs(lights):
             if animation == self.Animation.COLOR_TRANSITION:
-                for (light, attrs) in lights.items():
-                    for (attr, value) in attrs.items():
+                for light, attrs in lights.items():
+                    for attr, value in attrs.items():
                         if attr == 'hue':
                             attr_range = hue_range
                             attr_step = hue_step
@@ -1060,7 +1074,7 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
 
                 try:
                     if animation == self.Animation.COLOR_TRANSITION:
-                        for (light, attrs) in lights.items():
+                        for light, attrs in lights.items():
                             self.logger.debug('Setting %s to %s', lights, attrs)
                             self.bridge.set_light(light, attrs)
                     elif animation == self.Animation.BLINK:
@@ -1232,7 +1246,7 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
 
                 lights_prev = lights_new
             finally:
-                self.wait_stop(self.poll_seconds)
+                self.wait_stop(self.poll_interval)
 
 
 # vim:sw=4:ts=4:et:
