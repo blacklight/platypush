@@ -1,7 +1,8 @@
+from typing import Iterable, Mapping, Optional, Union
 from sqlalchemy import Column, Integer, ForeignKey
-from sqlalchemy.orm import reconstructor, validates
 
 from platypush.common.db import Base
+from platypush.common.sensors import Numeric
 
 from .sensors import RawSensor
 
@@ -23,16 +24,30 @@ if 'three_axis_sensor' not in Base.metadata:
             'polymorphic_identity': __tablename__,
         }
 
-        @validates('_value')
-        def check_value(self, _, value):
+        @RawSensor.value.setter
+        def value(
+            self, value: Optional[Union[Iterable[Numeric], Mapping[str, Numeric]]]
+        ):
+            """
+            Validates and normalizes the given value to a list of 3 numeric
+            values.
+            """
+            if value is None:
+                return
+
+            if isinstance(value, dict):
+                assert set(value.keys()) == {
+                    'x',
+                    'y',
+                    'z',
+                }, f'Invalid keys for entity of type {self.__class__}: "{value}"'
+
+                value = [value[k] for k in ['x', 'y', 'z']]  # type: ignore
+
             assert (
-                isinstance('_value', (list, tuple))
-                and len(value) == 3
+                isinstance(value, (list, tuple))
+                and len(value) == 3  # type: ignore
                 and all(isinstance(v, (int, float)) for v in value)
             ), f'Invalid 3-axis value: {value}'
 
-            return list(value)
-
-        @reconstructor
-        def post_init(self):
-            self.is_json = True
+            super(ThreeAxisSensor, type(self)).value.fset(self, value)  # type: ignore
