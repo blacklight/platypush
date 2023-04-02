@@ -18,6 +18,12 @@ class SensorDhtPlugin(SensorPlugin):
 
         * ``Adafruit_Python_DHT`` (``pip install git+https://github.com/adafruit/Adafruit_Python_DHT.git``)
 
+    Triggers:
+
+        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
+        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
+        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
+
     """
 
     def __init__(
