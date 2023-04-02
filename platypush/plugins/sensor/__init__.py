@@ -276,17 +276,20 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
 
     def _process_sensor_events(
         self, old_data: Optional[SensorDataType], new_data: Optional[SensorDataType]
-    ):
+    ) -> bool:
         """
         Given the previous and new measurement, it runs the comparison logic
         against the configured tolerance values and thresholds, and it
         processes the required sensor data change and above/below threshold
         events.
+
+        :return: ``True`` if some events were processed for the new data,
+            ``False`` otherwise.
         """
         # If the new data is missing or there are no changes, there are no
         # events to process
         if new_data is None or not self._has_changes(old_data, new_data):
-            return
+            return False
 
         events = [
             SensorDataChangeEvent(
@@ -300,6 +303,7 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
             get_bus().post(event)
 
         self.publish_entities(new_data)
+        return True
 
     def _update_last_measurement(self, new_data: SensorDataType):
         """
@@ -415,8 +419,11 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
                 continue
 
             new_data = self._filter_enabled_sensors(new_data)
-            self._process_sensor_events(self._last_measurement, new_data)
-            self._update_last_measurement(new_data)
+            is_event_processed = self._process_sensor_events(
+                self._last_measurement, new_data
+            )
+            if is_event_processed:
+                self._update_last_measurement(new_data)
             self.wait_stop(self.poll_interval)
 
 
