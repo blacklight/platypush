@@ -44,6 +44,8 @@ class Message:
                 return obj.tolist()
             if isinstance(obj, decimal.Decimal):
                 return float(obj)
+            if isinstance(obj, (bytes, bytearray)):
+                return '0x' + ''.join([f'{x:02x}' for x in obj])
             if callable(obj):
                 return '<function at {}.{}>'.format(obj.__module__, obj.__name__)
 

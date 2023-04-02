@@ -57,9 +57,14 @@ if 'raw_sensor' not in Base.metadata:
 
         @property
         def value(self):
-            if self.is_binary:
-                return self._value.decode()
-            if self.is_json:
+            if self._value is None:
+                return None
+            if self.is_binary and isinstance(self._value, str):
+                value = self._value[2:]
+                return bytes(
+                    [int(value[i : i + 2], 16) for i in range(0, len(value), 2)]
+                )
+            if self.is_json and isinstance(self._value, (str, bytes)):
                 return json.loads(self._value)
             return self._value
 
