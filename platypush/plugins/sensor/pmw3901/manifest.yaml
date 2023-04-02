@@ -1,0 +1,10 @@
+manifest:
+  events:
+    platypush.message.event.sensor.SensorDataAboveThresholdEvent:
+    platypush.message.event.sensor.SensorDataBelowThresholdEvent:
+    platypush.message.event.sensor.SensorDataChangeEvent:
+  install:
+    pip:
+    - pmw3901
+  package: platypush.plugins.sensor.pmw3901
+  type: plugin
