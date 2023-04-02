@@ -1,5 +1,8 @@
 manifest:
-  events: {}
+  events:
+    platypush.message.event.sensor.SensorDataAboveThresholdEvent:
+    platypush.message.event.sensor.SensorDataBelowThresholdEvent:
+    platypush.message.event.sensor.SensorDataChangeEvent:
   install:
     pip:
     - pyfirmata2

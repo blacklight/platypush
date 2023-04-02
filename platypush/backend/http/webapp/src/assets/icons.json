@@ -1,4 +1,7 @@
 {
+  "arduino": {
+    "class": "fas fa-microchip"
+  },
   "bluetooth": {
     "class": "fab fa-bluetooth"
   },
