@@ -1,0 +1,10 @@
+manifest:
+  events:
+    platypush.message.event.sensor.SensorDataAboveThresholdEvent:
+    platypush.message.event.sensor.SensorDataBelowThresholdEvent:
+    platypush.message.event.sensor.SensorDataChangeEvent:
+  install:
+    pip:
+    - adafruit-mcp3008
+  package: platypush.plugins.sensor.mcp3008
+  type: plugin
