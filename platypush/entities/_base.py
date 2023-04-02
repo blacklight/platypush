@@ -22,7 +22,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import ColumnProperty, Mapped, backref, relationship
 
 from platypush.common.db import Base
-from platypush.message import JSONAble
+from platypush.message import JSONAble, Message
 
 EntityRegistryType = Dict[str, Type['Entity']]
 entities_registry: EntityRegistryType = {}
@@ -183,7 +183,7 @@ if 'entity' not in Base.metadata:
             """
             :return: A JSON-encoded representation of the entity.
             """
-            return json.dumps(self.to_dict())
+            return json.dumps(self.to_dict(), cls=Message.Encoder)
 
         def __setattr__(self, key, value):
             """
