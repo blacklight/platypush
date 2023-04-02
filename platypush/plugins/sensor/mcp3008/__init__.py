@@ -19,7 +19,7 @@ class MCP3008Mode(enum.Enum):
 
 
 # pylint: disable=too-many-ancestors
-class GpioSensorMcp3008Plugin(SensorPlugin):
+class SensorMcp3008Plugin(SensorPlugin):
     """
     Plugin to read analog sensor values from an MCP3008 chipset.  The MCP3008
     chipset is a circuit that allows you to read measurements from multiple
