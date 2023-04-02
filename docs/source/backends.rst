@@ -43,20 +43,9 @@ Backends
     platypush/backend/pushbullet.rst
     platypush/backend/redis.rst
     platypush/backend/scard.rst
-    platypush/backend/sensor.accelerometer.rst
-    platypush/backend/sensor.arduino.rst
     platypush/backend/sensor.battery.rst
-    platypush/backend/sensor.bme280.rst
-    platypush/backend/sensor.dht.rst
-    platypush/backend/sensor.distance.rst
-    platypush/backend/sensor.distance.vl53l1x.rst
-    platypush/backend/sensor.envirophat.rst
     platypush/backend/sensor.ir.zeroborg.rst
     platypush/backend/sensor.leap.rst
-    platypush/backend/sensor.ltr559.rst
-    platypush/backend/sensor.mcp3008.rst
-    platypush/backend/sensor.motion.pmw3901.rst
-    platypush/backend/sensor.serial.rst
     platypush/backend/stt.deepspeech.rst
     platypush/backend/stt.picovoice.hotword.rst
     platypush/backend/stt.picovoice.speech.rst

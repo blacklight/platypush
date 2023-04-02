@@ -46,15 +46,6 @@ Plugins
     platypush/plugins/google.youtube.rst
     platypush/plugins/gotify.rst
     platypush/plugins/gpio.rst
-    platypush/plugins/gpio.sensor.accelerometer.rst
-    platypush/plugins/gpio.sensor.bme280.rst
-    platypush/plugins/gpio.sensor.dht.rst
-    platypush/plugins/gpio.sensor.distance.rst
-    platypush/plugins/gpio.sensor.distance.vl53l1x.rst
-    platypush/plugins/gpio.sensor.envirophat.rst
-    platypush/plugins/gpio.sensor.ltr559.rst
-    platypush/plugins/gpio.sensor.mcp3008.rst
-    platypush/plugins/gpio.sensor.motion.pmw3901.rst
     platypush/plugins/gpio.zeroborg.rst
     platypush/plugins/graphite.rst
     platypush/plugins/hid.rst
@@ -110,6 +101,15 @@ Plugins
     platypush/plugins/redis.rst
     platypush/plugins/rss.rst
     platypush/plugins/rtorrent.rst
+    platypush/plugins/sensor.bme280.rst
+    platypush/plugins/sensor.dht.rst
+    platypush/plugins/sensor.distance.vl53l1x.rst
+    platypush/plugins/sensor.envirophat.rst
+    platypush/plugins/sensor.hcsr04.rst
+    platypush/plugins/sensor.lis3dh.rst
+    platypush/plugins/sensor.ltr559.rst
+    platypush/plugins/sensor.mcp3008.rst
+    platypush/plugins/sensor.pmw3901.rst
     platypush/plugins/serial.rst
     platypush/plugins/shell.rst
     platypush/plugins/slack.rst
