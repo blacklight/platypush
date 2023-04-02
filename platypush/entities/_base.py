@@ -132,16 +132,40 @@ if 'entity' not in Base.metadata:
                 children=[child.copy() for child in self.children],
             )
 
-        def _serialize_value(self, col: ColumnProperty) -> Any:
-            val = getattr(self, col.key)
+        def _serialize_value(self, column_name: str) -> Any:
+            val = getattr(self, column_name)
             if isinstance(val, datetime):
                 # All entity timestamps are in UTC
                 val = val.replace(tzinfo=tzutc()).isoformat()
 
             return val
 
+        def _column_name(self, col: ColumnProperty) -> str:
+            """
+            Normalizes the column name, taking into account native columns and
+            columns mapped to properties.
+            """
+            normalized_name = col.key.lstrip('_')
+            if len(col.key.lstrip('_')) == col.key or not hasattr(
+                self, normalized_name
+            ):
+                return col.key  # It's not a hidden column with a mapped property
+
+            return normalized_name
+
+        def _column_to_pair(self, col: ColumnProperty) -> Tuple[str, Any]:
+            """
+            Utility method that, given a column, returns a pair containing its
+            normalized name and its serialized value.
+            """
+            col_name = self._column_name(col)
+            return col_name, self._serialize_value(col_name)
+
         def to_dict(self) -> dict:
-            return {col.key: self._serialize_value(col) for col in self.columns}
+            """
+            Returns the current entity as a flatten dictionary.
+            """
+            return dict(self._column_to_pair(col) for col in self.columns)
 
         def to_json(self) -> dict:
             """
