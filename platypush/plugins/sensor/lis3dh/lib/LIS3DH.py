@@ -25,7 +25,6 @@ import RPi.GPIO as GPIO  # needed for Hardware interrupt
 
 
 class LIS3DH:
-
     # I2C
     i2c = None
     I2C_ADDRESS_1 = 0x18
@@ -37,69 +36,75 @@ class LIS3DH:
     BUS_NUMBER = 1  # -1
 
     # Ranges
-    RANGE_2G  = 0b00  # default
-    RANGE_4G  = 0b01
-    RANGE_8G  = 0b10
+    RANGE_2G = 0b00  # default
+    RANGE_4G = 0b01
+    RANGE_8G = 0b10
     RANGE_16G = 0b11
     # default
     RANGE_DEFAULT = RANGE_2G
 
     # Refresh rates
-    DATARATE_400HZ          = 0b0111  # 400Hz  # default
-    DATARATE_200HZ          = 0b0110  # 200Hz
-    DATARATE_100HZ          = 0b0101  # 100Hz
-    DATARATE_50HZ           = 0b0100  # 50Hz
-    DATARATE_25HZ           = 0b0011  # 25Hz
-    DATARATE_10HZ           = 0b0010  # 10Hz
-    DATARATE_1HZ            = 0b0001  # 1Hz
-    DATARATE_POWERDOWN      = 0       # Power down
+    DATARATE_400HZ = 0b0111  # 400Hz  # default
+    DATARATE_200HZ = 0b0110  # 200Hz
+    DATARATE_100HZ = 0b0101  # 100Hz
+    DATARATE_50HZ = 0b0100  # 50Hz
+    DATARATE_25HZ = 0b0011  # 25Hz
+    DATARATE_10HZ = 0b0010  # 10Hz
+    DATARATE_1HZ = 0b0001  # 1Hz
+    DATARATE_POWERDOWN = 0  # Power down
     DATARATE_LOWPOWER_1K6HZ = 0b1000  # Low power mode (1.6KHz)
-    DATARATE_LOWPOWER_5KHZ  = 0b1001  # Low power mode (5KHz) / Normal power mode (1.25KHz)
+    DATARATE_LOWPOWER_5KHZ = (
+        0b1001  # Low power mode (5KHz) / Normal power mode (1.25KHz)
+    )
     # default
     DATARATE_DEFAULT = DATARATE_400HZ
 
     # Registers
-    REG_STATUS1       = 0x07
-    REG_OUTADC1_L     = 0x08
-    REG_OUTADC1_H     = 0x09
-    REG_OUTADC2_L     = 0x0A
-    REG_OUTADC2_H     = 0x0B
-    REG_OUTADC3_L     = 0x0C
-    REG_OUTADC3_H     = 0x0D
-    REG_INTCOUNT      = 0x0E
-    REG_WHOAMI        = 0x0F  # Device identification register
-    REG_TEMPCFG       = 0x1F
-    REG_CTRL1         = 0x20  # Used for data rate selection, and enabling/disabling individual axis
-    REG_CTRL2         = 0x21
-    REG_CTRL3         = 0x22
-    REG_CTRL4         = 0x23  # Used for BDU, scale selection, resolution selection and self-testing
-    REG_CTRL5         = 0x24
-    REG_CTRL6         = 0x25
-    REG_REFERENCE     = 0x26
-    REG_STATUS2       = 0x27
-    REG_OUT_X_L       = 0x28
-    REG_OUT_X_H       = 0x29
-    REG_OUT_Y_L       = 0x2A
-    REG_OUT_Y_H       = 0x2B
-    REG_OUT_Z_L       = 0x2C
-    REG_OUT_Z_H       = 0x2D
-    REG_FIFOCTRL      = 0x2E
-    REG_FIFOSRC       = 0x2F
-    REG_INT1CFG       = 0x30
-    REG_INT1SRC       = 0x31
-    REG_INT1THS       = 0x32
-    REG_INT1DUR       = 0x33
-    REG_CLICKCFG      = 0x38
-    REG_CLICKSRC      = 0x39
-    REG_CLICKTHS      = 0x3A
-    REG_TIMELIMIT     = 0x3B
-    REG_TIMELATENCY   = 0x3C
-    REG_TIMEWINDOW    = 0x3D
+    REG_STATUS1 = 0x07
+    REG_OUTADC1_L = 0x08
+    REG_OUTADC1_H = 0x09
+    REG_OUTADC2_L = 0x0A
+    REG_OUTADC2_H = 0x0B
+    REG_OUTADC3_L = 0x0C
+    REG_OUTADC3_H = 0x0D
+    REG_INTCOUNT = 0x0E
+    REG_WHOAMI = 0x0F  # Device identification register
+    REG_TEMPCFG = 0x1F
+    REG_CTRL1 = (
+        0x20  # Used for data rate selection, and enabling/disabling individual axis
+    )
+    REG_CTRL2 = 0x21
+    REG_CTRL3 = 0x22
+    REG_CTRL4 = (
+        0x23  # Used for BDU, scale selection, resolution selection and self-testing
+    )
+    REG_CTRL5 = 0x24
+    REG_CTRL6 = 0x25
+    REG_REFERENCE = 0x26
+    REG_STATUS2 = 0x27
+    REG_OUT_X_L = 0x28
+    REG_OUT_X_H = 0x29
+    REG_OUT_Y_L = 0x2A
+    REG_OUT_Y_H = 0x2B
+    REG_OUT_Z_L = 0x2C
+    REG_OUT_Z_H = 0x2D
+    REG_FIFOCTRL = 0x2E
+    REG_FIFOSRC = 0x2F
+    REG_INT1CFG = 0x30
+    REG_INT1SRC = 0x31
+    REG_INT1THS = 0x32
+    REG_INT1DUR = 0x33
+    REG_CLICKCFG = 0x38
+    REG_CLICKSRC = 0x39
+    REG_CLICKTHS = 0x3A
+    REG_TIMELIMIT = 0x3B
+    REG_TIMELATENCY = 0x3C
+    REG_TIMEWINDOW = 0x3D
 
     # Values
-    DEVICE_ID  = 0x33
-    INT_IO     = 0x04  # GPIO pin for interrupt
-    CLK_NONE   = 0x00
+    DEVICE_ID = 0x33
+    INT_IO = 0x04  # GPIO pin for interrupt
+    CLK_NONE = 0x00
     CLK_SINGLE = 0x01
     CLK_DOUBLE = 0x02
 
@@ -109,9 +114,14 @@ class LIS3DH:
 
     # changed busnumber to 1 (from -1)
     # alternative i2c address=0x19
-    def __init__(self, address=I2C_DEFAULT, bus=BUS_NUMBER,
-                 g_range=RANGE_DEFAULT, datarate=DATARATE_DEFAULT,
-                 debug=False):
+    def __init__(
+        self,
+        address=I2C_DEFAULT,
+        bus=BUS_NUMBER,
+        g_range=RANGE_DEFAULT,
+        datarate=DATARATE_DEFAULT,
+        debug=False,
+    ):
         self.isDebug = debug
         self.debug("Initialising LIS3DH")
 
@@ -125,12 +135,18 @@ class LIS3DH:
                 # raise Exception(("Device ID incorrect - expected 0x%X, " +
                 #                  "got 0x%X at address 0x%X") % (
                 #                          self.DEVICE_ID, val, self.address))
-                raise Exception(("Device ID incorrect - expected 0x{:x}, " +
-                                 "got 0x{:x} at address 0x{:x}").format(
-                                     self.DEVICE_ID, val, self.address))
+                raise Exception(
+                    (
+                        "Device ID incorrect - expected 0x{:x}, "
+                        + "got 0x{:x} at address 0x{:x}"
+                    ).format(self.DEVICE_ID, val, self.address)
+                )
 
-            self.debug(("Successfully connected to LIS3DH " +
-                        "at address 0x{:x}").format(self.address))
+            self.debug(
+                ("Successfully connected to LIS3DH " + "at address 0x{:x}").format(
+                    self.address
+                )
+            )
         except Exception as e:
             print("Error establishing connection with LIS3DH")
             print(e)
@@ -178,23 +194,31 @@ class LIS3DH:
         # accurately calculate the result
         g_range = self.getRange()
         divisor = 1
-        if g_range == self.RANGE_2G:    divisor = 16380
-        elif g_range == self.RANGE_4G:  divisor = 8190
-        elif g_range == self.RANGE_8G:  divisor = 4096
-        elif g_range == self.RANGE_16G: divisor = 1365.33
+        if g_range == self.RANGE_2G:
+            divisor = 16380
+        elif g_range == self.RANGE_4G:
+            divisor = 8190
+        elif g_range == self.RANGE_8G:
+            divisor = 4096
+        elif g_range == self.RANGE_16G:
+            divisor = 1365.33
 
         return float(res) / divisor
 
     # Get the range that the sensor is currently set to
     def getRange(self):
         val = self.i2c.readU8(self.REG_CTRL4)  # Get value from register
-        val = (val >> 4)  # Remove lowest 4 bits
+        val = val >> 4  # Remove lowest 4 bits
         val &= 0b0011  # Mask off two highest bits
 
-        if val == self.RANGE_2G:   return self.RANGE_2G
-        elif val == self.RANGE_4G: return self.RANGE_4G
-        elif val == self.RANGE_8G: return self.RANGE_8G
-        else:                      return self.RANGE_16G
+        if val == self.RANGE_2G:
+            return self.RANGE_2G
+        elif val == self.RANGE_4G:
+            return self.RANGE_4G
+        elif val == self.RANGE_8G:
+            return self.RANGE_8G
+        else:
+            return self.RANGE_16G
 
     # Set the range of the sensor (2G, 4G, 8G, 16G)
     def setRange(self, g_range):
@@ -203,7 +227,7 @@ class LIS3DH:
 
         val = self.i2c.readU8(self.REG_CTRL4)  # Get value from register
         val &= ~(0b110000)  # Mask off lowest 4 bits
-        val |= (g_range << 4)  # Write in our new range
+        val |= g_range << 4  # Write in our new range
         self.writeRegister(self.REG_CTRL4, val)  # Write back to register
 
     # Enable or disable an individual axis
@@ -223,10 +247,16 @@ class LIS3DH:
         GPIO.setup(self.INT_IO, GPIO.IN)
         GPIO.add_event_detect(self.INT_IO, GPIO.RISING, callback=mycallback)
 
-    def setClick(self, clickmode, clickthresh=80,
-                 timelimit=10, timelatency=20, timewindow=100,
-                 mycallback=None):
-        if (clickmode == self.CLK_NONE):
+    def setClick(
+        self,
+        clickmode,
+        clickthresh=80,
+        timelimit=10,
+        timelatency=20,
+        timewindow=100,
+        mycallback=None,
+    ):
+        if clickmode == self.CLK_NONE:
             val = self.i2c.readU8(self.REG_CTRL3)  # Get value from register
             val &= ~(0x80)  # unset bit 8 to disable interrupt
             self.writeRegister(self.REG_CTRL3, val)  # Write back to register
@@ -235,10 +265,10 @@ class LIS3DH:
         self.writeRegister(self.REG_CTRL3, 0x80)  # turn on int1 click
         self.writeRegister(self.REG_CTRL5, 0x08)  # latch interrupt on int1
 
-        if (clickmode == self.CLK_SINGLE):
+        if clickmode == self.CLK_SINGLE:
             # turn on all axes & singletap
             self.writeRegister(self.REG_CLICKCFG, 0x15)
-        if (clickmode == self.CLK_DOUBLE):
+        if clickmode == self.CLK_DOUBLE:
             # turn on all axes & doubletap
             self.writeRegister(self.REG_CLICKCFG, 0x2A)
 
@@ -253,14 +283,14 @@ class LIS3DH:
 
     def getClick(self):
         reg = self.i2c.readU8(self.REG_CLICKSRC)  # read click register
-        self.i2c.readU8(self.REG_INT1SRC)         # reset interrupt flag
+        self.i2c.readU8(self.REG_INT1SRC)  # reset interrupt flag
         return reg
 
     # Set the rate (cycles per second) at which data is gathered
     def setDataRate(self, dataRate):
         val = self.i2c.readU8(self.REG_CTRL1)  # Get current value
         val &= 0b1111  # Mask off lowest 4 bits
-        val |= (dataRate << 4)  # Write in our new data rate to highest 4 bits
+        val |= dataRate << 4  # Write in our new data rate to highest 4 bits
         self.writeRegister(self.REG_CTRL1, val)  # Write back to register
 
     # Set whether we want to use high resolution or not
@@ -284,8 +314,7 @@ class LIS3DH:
 
     # Write the given value to the given register
     def writeRegister(self, register, value):
-        self.debug("WRT {} to register 0x{:x}".format(
-            bin(value), register))
+        self.debug("WRT {} to register 0x{:x}".format(bin(value), register))
         self.i2c.write8(register, value)
 
     # Set the bit at index 'bit' to 'value' on 'input' and return
@@ -300,8 +329,8 @@ class LIS3DH:
     # Thanks to http://stackoverflow.com/questions/16124059/trying-to-
     #   read-a-twos-complement-16bit-into-a-signed-decimal
     def twosComp(self, x):
-        if (0x8000 & x):
-            x = - (0x010000 - x)
+        if 0x8000 & x:
+            x = -(0x010000 - x)
         return x
 
     # Print an output of all registers

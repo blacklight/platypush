@@ -1,0 +1,10 @@
+manifest:
+  events:
+    platypush.message.event.sensor.SensorDataAboveThresholdEvent:
+    platypush.message.event.sensor.SensorDataBelowThresholdEvent:
+    platypush.message.event.sensor.SensorDataChangeEvent:
+  install:
+    pip:
+    - Adafruit-GPIO
+  package: platypush.plugins.sensor.lis3dh
+  type: plugin
