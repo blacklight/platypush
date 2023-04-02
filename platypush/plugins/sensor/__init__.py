@@ -174,10 +174,7 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
                 for i, value in enumerate(new_data)
             )
 
-        raise AssertionError(
-            f'Mismatching types for old_data and new_data: "{type(old_data)}" '
-            f'and "{type(new_data)}"'
-        )
+        return old_data != new_data
 
     def _process_scalar_threshold_events(
         self,
