@@ -71,10 +71,19 @@
   "sensor.bme280": {
     "class": "fas fa-microchip"
   },
+  "sensor.dht": {
+    "class": "fas fa-microchip"
+  },
   "sensor.envirophat": {
     "class": "fas fa-microchip"
   },
   "sensor.ltr559": {
+    "class": "fas fa-microchip"
+  },
+  "sensor.mcp3008": {
+    "class": "fas fa-microchip"
+  },
+  "sensor.pmw3901": {
     "class": "fas fa-microchip"
   },
   "sensor.vl53l1x": {
