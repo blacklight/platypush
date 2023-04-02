@@ -1,7 +1,3 @@
-"""
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-"""
-
 import threading
 from typing import Any, Optional, Dict, Union, Collection
 
@@ -216,7 +212,7 @@ class GpioPlugin(RunnablePlugin):
             raise RuntimeError("No PIN mappings were provided/configured")
 
         values = []
-        for (pin, name) in self.pins_by_number.items():
+        for pin, name in self.pins_by_number.items():
             # noinspection PyUnresolvedReferences
             values.append(self.read(pin=pin, name=name).output)
 

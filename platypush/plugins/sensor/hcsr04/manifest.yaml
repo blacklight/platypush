@@ -1,0 +1,11 @@
+manifest:
+  events:
+    platypush.message.event.sensor.SensorDataAboveThresholdEvent:
+    platypush.message.event.sensor.SensorDataBelowThresholdEvent:
+    platypush.message.event.sensor.SensorDataChangeEvent:
+    platypush.message.event.distance.DistanceSensorEvent:
+  install:
+    pip:
+    - RPi.GPIO
+  package: platypush.plugins.sensor.hcsr04
+  type: plugin
