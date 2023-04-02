@@ -36,31 +36,23 @@ class SwitchbotPlugin(
     SwitchEntityManager,
 ):
     """
-    Plugin to interact with the devices registered to a Switchbot
-    (https://www.switch-bot.com/) account/hub.
-
-    The difference between this plugin and
-    :class:`platypush.plugins.switchbot.bluetooth.SwitchbotBluetoothPlugin` is
-    that the latter acts like a Bluetooth hub/bridge that interacts directly
-    with your Switchbot devices, while this plugin requires the devices to be
-    connected to a Switchbot Hub and it controls them through your cloud
-    account.
+    Plugin to interact with the devices registered to a `Switchbot`_
+    account/hub.
 
     In order to use this plugin:
 
         - Set up a Switchbot Hub and configure your devices through the
           Switchbot app.
-        - Follow the steps on the `Switchbot API repo
-          <https://github.com/OpenWonderLabs/SwitchBotAPI#getting-started>`_ to
-          get an API token from the app.
+        - Follow the steps on `get started page`_ to get an API token from the app.
+
+    .. _get started page: https://github.com/OpenWonderLabs/SwitchBotAPI#getting-started
+    .. _Switchbot: https://www.switch-bot.com/
 
     """
 
     def __init__(self, api_token: str, **kwargs):
         """
-        :param api_token: API token (see
-            `Getting started with the Switchbot API
-             <https://github.com/OpenWonderLabs/SwitchBotAPI#getting-started>`_).
+        :param api_token: API token (see `get started page`_).
         """
         super().__init__(**kwargs)
         self._api_token = api_token
