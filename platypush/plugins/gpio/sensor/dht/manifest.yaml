@@ -1,7 +1,0 @@
-manifest:
-  events: {}
-  install:
-    pip:
-    - Adafruit_Python_DHT
-  package: platypush.plugins.gpio.sensor.dht
-  type: plugin
