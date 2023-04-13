@@ -1,10 +1,11 @@
+import logging
 import inspect
 import json
 import pathlib
 import types
 from datetime import datetime
 import pkgutil
-from typing import Callable, Dict, Final, Set, Type, Tuple, Any
+from typing import Callable, Dict, Final, Optional, Set, Type, Tuple, Any
 
 from dateutil.tz import tzutc
 from sqlalchemy import (
@@ -20,6 +21,7 @@ from sqlalchemy import (
     inspect as schema_inspect,
 )
 from sqlalchemy.orm import ColumnProperty, Mapped, backref, relationship
+from sqlalchemy.orm.exc import ObjectDeletedError
 
 from platypush.common.db import Base
 from platypush.message import JSONAble, Message
@@ -39,6 +41,8 @@ imported dynamically. An ImportError for these modules means that some optional
 requirements are missing, and if those plugins aren't enabled then we shouldn't
 fail.
 """
+
+logger = logging.getLogger(__name__)
 
 
 if 'entity' not in Base.metadata:
@@ -127,8 +131,18 @@ if 'entity' not in Base.metadata:
             to reuse entity objects in other threads or outside of their
             associated SQLAlchemy session context.
             """
+            def key_value_pair(col: ColumnProperty):
+                try:
+                    return (col.key, getattr(self, col.key, None))
+                except ObjectDeletedError as e:
+                    return None
+
             return self.__class__(
-                **{col.key: getattr(self, col.key, None) for col in self.columns},
+                **dict(
+                    key_value_pair(col)
+                    for col in self.columns
+                    if key_value_pair(col) is not None
+                ),
                 children=[child.copy() for child in self.children],
             )
 
@@ -140,32 +154,44 @@ if 'entity' not in Base.metadata:
 
             return val
 
-        def _column_name(self, col: ColumnProperty) -> str:
+        def _column_name(self, col: ColumnProperty) -> Optional[str]:
             """
             Normalizes the column name, taking into account native columns and
             columns mapped to properties.
             """
-            normalized_name = col.key.lstrip('_')
-            if len(col.key.lstrip('_')) == col.key or not hasattr(
-                self, normalized_name
-            ):
-                return col.key  # It's not a hidden column with a mapped property
+            try:
+                normalized_name = col.key.lstrip('_')
+                if len(col.key.lstrip('_')) == col.key or not hasattr(
+                    self, normalized_name
+                ):
+                    return col.key  # It's not a hidden column with a mapped property
 
-            return normalized_name
+                return normalized_name
+            except ObjectDeletedError as e:
+                logger.warning(
+                    f'Could not access column "{col.key}" for entity ID "{self.id}": {e}'
+                )
+                return None
 
-        def _column_to_pair(self, col: ColumnProperty) -> Tuple[str, Any]:
+        def _column_to_pair(self, col: ColumnProperty) -> tuple:
             """
             Utility method that, given a column, returns a pair containing its
             normalized name and its serialized value.
             """
             col_name = self._column_name(col)
+            if col_name is None:
+                return tuple()
             return col_name, self._serialize_value(col_name)
 
         def to_dict(self) -> dict:
             """
             Returns the current entity as a flatten dictionary.
             """
-            return dict(self._column_to_pair(col) for col in self.columns)
+            return dict(
+                self._column_to_pair(col)
+                for col in self.columns
+                if self._column_to_pair(col)
+            )
 
         def to_json(self) -> dict:
             """
@@ -225,11 +251,6 @@ if 'entity' not in Base.metadata:
 
 
 def _discover_entity_types():
-    from platypush.context import get_plugin
-
-    logger = get_plugin('logger')
-    assert logger
-
     for loader, modname, _ in pkgutil.walk_packages(
         path=[str(pathlib.Path(__file__).parent.absolute())],
         prefix=__package__ + '.',
