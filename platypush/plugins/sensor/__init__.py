@@ -135,7 +135,7 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
         else:
             tolerance = 0
 
-        return abs(old_data - new_data) >= tolerance
+        return abs(old_data - new_data) > tolerance
 
     def _has_changes(
         self,
