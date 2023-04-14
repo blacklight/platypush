@@ -15,6 +15,14 @@
     }
   },
 
+  "cpu_info": {
+    "name": "System",
+    "name_plural": "System",
+    "icon": {
+      "class": "fas fa-microchip"
+    }
+  },
+
   "current_sensor": {
     "name": "Sensor",
     "name_plural": "Sensors",

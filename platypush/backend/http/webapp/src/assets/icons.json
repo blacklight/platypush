@@ -113,6 +113,9 @@
   "sound": {
     "class": "fa fa-microphone"
   },
+  "system": {
+    "class": "fas fa-microchip"
+  },
   "tts": {
     "class": "far fa-comment"
   },
