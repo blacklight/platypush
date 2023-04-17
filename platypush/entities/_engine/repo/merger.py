@@ -131,7 +131,7 @@ class EntitiesMerger:
         else:
             # Otherwise, merge the columns of the existing entity with those of
             # the new entity and use the existing entity
-            entity = cls._merge_columns(entity, existing_entity)
+            entity = cls._merge_columns(entity, existing_entity, include_children=True)
 
         # Refresh the existing collection of children with the new/updated
         # entity
@@ -165,8 +165,10 @@ class EntitiesMerger:
             if entity.id:
                 child.parent_id = entity.id
 
-    @staticmethod
-    def _merge_columns(entity: Entity, existing_entity: Entity) -> Entity:
+    @classmethod
+    def _merge_columns(
+        cls, entity: Entity, existing_entity: Entity, include_children: bool = False
+    ) -> Entity:
         """
         Merge two versions of an entity column by column.
         """
@@ -179,5 +181,21 @@ class EntitiesMerger:
                 }
             elif col not in ('id', 'created_at'):
                 setattr(existing_entity, col, getattr(entity, col))
+
+        # Recursive call to merge the columns of the children too
+        if include_children:
+            existing_children = {e.entity_key: e for e in existing_entity.children}
+            new_children = {e.entity_key: e for e in entity.children}
+            updated_children = {}
+
+            for key, child in new_children.items():
+                existing_child = existing_children.get(key)
+                updated_children[key] = (
+                    cls._merge_columns(child, existing_child, include_children=True)
+                    if existing_child
+                    else child
+                )
+
+            cls._append_children(existing_entity, *updated_children.values())
 
         return existing_entity
