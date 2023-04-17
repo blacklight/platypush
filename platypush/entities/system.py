@@ -5,6 +5,24 @@ from platypush.common.db import Base
 from . import Entity
 
 
+if 'cpu' not in Base.metadata:
+
+    class Cpu(Entity):
+        """
+        ``CPU`` ORM (container) model.
+        """
+
+        __tablename__ = 'cpu'
+
+        id = Column(
+            Integer, ForeignKey(Entity.id, ondelete='CASCADE'), primary_key=True
+        )
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }
+
+
 if 'cpu_info' not in Base.metadata:
 
     class CpuInfo(Entity):
@@ -30,6 +48,24 @@ if 'cpu_info' not in Base.metadata:
         l1_data_cache_size = Column(Integer)
         l2_cache_size = Column(Integer)
         l3_cache_size = Column(Integer)
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }
+
+
+if 'cpu_times' not in Base.metadata:
+
+    class CpuTimes(Entity):
+        """
+        ``CpuTimes`` ORM (container) model.
+        """
+
+        __tablename__ = 'cpu_times'
+
+        id = Column(
+            Integer, ForeignKey(Entity.id, ondelete='CASCADE'), primary_key=True
+        )
 
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,

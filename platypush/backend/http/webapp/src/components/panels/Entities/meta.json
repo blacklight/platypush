@@ -19,6 +19,22 @@
     "name": "System",
     "name_plural": "System",
     "icon": {
+      "class": "fas fa-circle-info"
+    }
+  },
+
+  "cpu_times": {
+    "name": "System",
+    "name_plural": "System",
+    "icon": {
+      "class": "fas fa-clock"
+    }
+  },
+
+  "cpu": {
+    "name": "System",
+    "name_plural": "System",
+    "icon": {
       "class": "fas fa-microchip"
     }
   },

@@ -9,7 +9,7 @@
       </div>
 
       <div class="col-10 label">
-        <div class="name">CPU Info</div>
+        <div class="name" v-text="value.name" />
       </div>
 
       <div class="col-1 collapse-toggler" @click.stop="isCollapsed = !isCollapsed">
@@ -18,7 +18,7 @@
       </div>
     </div>
 
-    <div class="body children fade-in" v-if="!isCollapsed">
+    <div class="body children attributes fade-in" v-if="!isCollapsed">
       <div class="child" v-if="value.architecture">
         <div class="col-s-12 col-m-6 label">
           <div class="name">Architecture</div>
@@ -170,16 +170,18 @@ export default {
 .entity {
   .head {
     padding: 0.25em;
+
+    .icon {
+      margin-right: 1em;
+    }
   }
 }
 
 .collapse-toggler {
   display: flex;
-  justify-content: center;
   align-items: center;
   flex: 1;
   min-height: 3em;
-  margin-left: 0;
   cursor: pointer;
 
   &:hover {
@@ -187,7 +189,7 @@ export default {
   }
 }
 
-.child {
+.attributes .child {
   margin: 0 -0.5em;
   padding: 0.5em 1em;
 
