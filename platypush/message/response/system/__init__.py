@@ -28,28 +28,6 @@ class SensorResponse(SystemResponse):
     pass
 
 
-class CpuStatsResponse(CpuResponse):
-    def __init__(
-        self,
-        ctx_switches: int,
-        interrupts: int,
-        soft_interrupts: int,
-        syscalls: int,
-        *args,
-        **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'ctx_switches': ctx_switches,
-                'interrupts': interrupts,
-                'soft_interrupts': soft_interrupts,
-                'syscalls': syscalls,
-            },
-            **kwargs
-        )
-
-
 class CpuFrequencyResponse(CpuResponse):
     # noinspection PyShadowingBuiltins
     def __init__(self, min: int, max: int, current: int, *args, **kwargs):

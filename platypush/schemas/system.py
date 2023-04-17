@@ -190,6 +190,18 @@ class CpuTimes:
 
 
 @dataclass
+class CpuStats:
+    """
+    CPU stats data class.
+    """
+
+    ctx_switches: int
+    interrupts: int
+    soft_interrupts: int
+    syscalls: int
+
+
+@dataclass
 class CpuData:
     """
     CPU data aggregate dataclass.
@@ -197,6 +209,7 @@ class CpuData:
 
     info: CpuInfo
     times: CpuTimes
+    stats: CpuStats
     percent: float = percent_field()
 
 
@@ -211,5 +224,5 @@ class SystemInfo:
 
 CpuInfoSchema = class_schema(CpuInfo, base_schema=CpuInfoBaseSchema)
 CpuTimesSchema = class_schema(CpuTimes, base_schema=CpuTimesBaseSchema)
-CpuDataSchema = class_schema(CpuTimes, base_schema=DataClassSchema)
+CpuStatsSchema = class_schema(CpuStats, base_schema=DataClassSchema)
 SystemInfoSchema = class_schema(SystemInfo, base_schema=DataClassSchema)

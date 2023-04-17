@@ -6,15 +6,15 @@ from typing_extensions import override
 
 from platypush.entities import Entity
 from platypush.entities.managers import EntityManager
-from platypush.entities.sensors import PercentSensor
+from platypush.entities.sensors import NumericSensor, PercentSensor
 from platypush.entities.system import (
     Cpu,
     CpuInfo as CpuInfoModel,
+    CpuStats as CpuStatsModel,
     CpuTimes as CpuTimesModel,
 )
 from platypush.message.response.system import (
     CpuResponseList,
-    CpuStatsResponse,
     CpuFrequencyResponse,
     VirtualMemoryUsageResponse,
     SwapMemoryUsageResponse,
@@ -41,6 +41,8 @@ from platypush.plugins.sensor import SensorPlugin
 from platypush.schemas.system import (
     CpuInfo,
     CpuInfoSchema,
+    CpuStats,
+    CpuStatsSchema,
     CpuTimes,
     CpuTimesSchema,
     SystemInfoSchema,
@@ -144,22 +146,20 @@ class SystemPlugin(SensorPlugin, EntityManager):
             return list(percent)  # type: ignore
         return percent
 
-    @action
-    def cpu_stats(self) -> CpuStatsResponse:
-        """
-        Get CPU stats.
-        :return: :class:`platypush.message.response.system.CpuStatsResponse`
-        """
+    def _cpu_stats(self) -> CpuStats:
         import psutil
 
         stats = psutil.cpu_stats()
+        return CpuStatsSchema().load(stats._asdict())  # type: ignore
 
-        return CpuStatsResponse(
-            ctx_switches=stats.ctx_switches,
-            interrupts=stats.interrupts,
-            soft_interrupts=stats.soft_interrupts,
-            syscalls=stats.syscalls,
-        )
+    @action
+    def cpu_stats(self) -> CpuStats:
+        """
+        Get CPU stats.
+
+        :return: .. schema:: system.CpuStatsSchema
+        """
+        return CpuStatsSchema().dump(self._cpu_stats())  # type: ignore
 
     @action
     def cpu_frequency(
@@ -791,6 +791,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
             {
                 'cpu': {
                     'info': self._cpu_info,
+                    'stats': self._cpu_stats(),
                     'times': self._cpu_times_avg(),
                     'percent': self.cpu_percent().output / 100.0,  # type: ignore
                 },
@@ -812,6 +813,18 @@ class SystemPlugin(SensorPlugin, EntityManager):
                         id='system:cpu:info',
                         name='Info',
                         **cpu['info'],
+                    ),
+                    CpuStatsModel(
+                        id='system:cpu:stats',
+                        name='Statistics',
+                        children=[
+                            NumericSensor(
+                                id=f'system:cpu:stats:{key}',
+                                name=key,
+                                value=value,
+                            )
+                            for key, value in cpu['stats'].items()
+                        ],
                     ),
                     CpuTimesModel(
                         id='system:cpu:times',

@@ -23,6 +23,14 @@
     }
   },
 
+  "cpu_stats": {
+    "name": "System",
+    "name_plural": "System",
+    "icon": {
+      "class": "fas fa-gauge"
+    }
+  },
+
   "cpu_times": {
     "name": "System",
     "name_plural": "System",

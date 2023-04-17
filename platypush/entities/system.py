@@ -70,3 +70,21 @@ if 'cpu_times' not in Base.metadata:
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
+
+
+if 'cpu_stats' not in Base.metadata:
+
+    class CpuStats(Entity):
+        """
+        ``CpuStats`` ORM (container) model.
+        """
+
+        __tablename__ = 'cpu_stats'
+
+        id = Column(
+            Integer, ForeignKey(Entity.id, ondelete='CASCADE'), primary_key=True
+        )
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }
