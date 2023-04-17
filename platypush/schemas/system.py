@@ -197,6 +197,7 @@ class CpuData:
 
     info: CpuInfo
     times: CpuTimes
+    percent: float = percent_field()
 
 
 @dataclass

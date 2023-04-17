@@ -792,6 +792,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
                 'cpu': {
                     'info': self._cpu_info,
                     'times': self._cpu_times_avg(),
+                    'percent': self.cpu_percent().output / 100.0,  # type: ignore
                 },
             }
         )
@@ -823,6 +824,11 @@ class SystemPlugin(SensorPlugin, EntityManager):
                             )
                             for key, time_percent in cpu['times'].items()
                         ],
+                    ),
+                    PercentSensor(
+                        id='system:cpu:percent',
+                        name='Percent',
+                        value=cpu['percent'],
                     ),
                 ],
             )
