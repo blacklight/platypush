@@ -24,11 +24,12 @@
       </div>
     </div>
 
-    <div class="children fade-in" v-if="!isCollapsed">
+    <div class="children fade-in" v-if="hasChildren && !isCollapsed">
       <div class="child" v-for="entity in computedChildren" :key="entity.id">
         <Entity
          :value="entity"
          :parent="value"
+         :children="childrenByParentId(entity.id)"
          :loading="loading"
          :level="level + 1"
          @show-modal="$emit('show-modal', $event)"
@@ -86,6 +87,19 @@ export default {
       }
 
       return this.objectsEqual(a, b)
+    },
+
+    childrenByParentId(parentId) {
+      return Object.values(this.allEntities || {}).
+        filter(
+          (entity) => entity
+            && entity.parent_id === parentId
+            && !entity.is_configuration
+        ).
+        reduce((obj, entity) => {
+          obj[entity.id] = entity
+          return obj
+        }, {})
     },
 
     onClick(event) {

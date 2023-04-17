@@ -57,6 +57,7 @@
                 <Entity
                   :value="entity"
                   :children="childrenByParentId(entity.id)"
+                  :all-entities="entities"
                   @show-modal="onEntityModal($event)"
                   @input="onEntityInput(entity)"
                   :error="!!errorEntities[entity.id]"

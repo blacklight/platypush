@@ -31,6 +31,11 @@ export default {
       default: () => {},
     },
 
+    allEntities: {
+      type: Object,
+      default: () => {},
+    },
+
     level: {
       type: Number,
       default: 0,
