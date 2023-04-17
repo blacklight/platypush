@@ -2,9 +2,20 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from marshmallow import pre_load
+from marshmallow.validate import Range
 from marshmallow_dataclass import class_schema
 
 from platypush.schemas.dataclasses import DataClassSchema
+
+
+def percent_field(**kwargs):
+    return field(
+        default_factory=float,
+        metadata={
+            'validate': Range(min=0, max=1),
+            **kwargs,
+        },
+    )
 
 
 class CpuInfoBaseSchema(DataClassSchema):
@@ -20,6 +31,25 @@ class CpuInfoBaseSchema(DataClassSchema):
             data['frequency_actual'] = data.pop('hz_actual')[0]
 
         return data
+
+
+class CpuTimesBaseSchema(DataClassSchema):
+    """
+    Base schema for CPU times.
+    """
+
+    @pre_load
+    def pre_load(self, data, **_) -> dict:
+        """
+        Convert the underlying object to dict and normalize all the percentage
+        values from [0, 100] to [0, 1].
+        """
+        return {
+            key: value / 100.0
+            for key, value in (
+                data if isinstance(data, dict) else data._asdict()
+            ).items()
+        }
 
 
 @dataclass
@@ -142,13 +172,43 @@ class CpuInfo:
 
 
 @dataclass
+class CpuTimes:
+    """
+    CPU times data class.
+    """
+
+    user: Optional[float] = percent_field()
+    nice: Optional[float] = percent_field()
+    system: Optional[float] = percent_field()
+    idle: Optional[float] = percent_field()
+    iowait: Optional[float] = percent_field()
+    irq: Optional[float] = percent_field()
+    softirq: Optional[float] = percent_field()
+    steal: Optional[float] = percent_field()
+    guest: Optional[float] = percent_field()
+    guest_nice: Optional[float] = percent_field()
+
+
+@dataclass
+class CpuData:
+    """
+    CPU data aggregate dataclass.
+    """
+
+    info: CpuInfo
+    times: CpuTimes
+
+
+@dataclass
 class SystemInfo:
     """
     Aggregate system info dataclass.
     """
 
-    cpu_info: CpuInfo
+    cpu: CpuData
 
 
 CpuInfoSchema = class_schema(CpuInfo, base_schema=CpuInfoBaseSchema)
+CpuTimesSchema = class_schema(CpuTimes, base_schema=CpuTimesBaseSchema)
+CpuDataSchema = class_schema(CpuTimes, base_schema=DataClassSchema)
 SystemInfoSchema = class_schema(SystemInfo, base_schema=DataClassSchema)
