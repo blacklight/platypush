@@ -202,6 +202,17 @@ class CpuStats:
 
 
 @dataclass
+class CpuFrequency:
+    """
+    CPU frequency data class.
+    """
+
+    current: float
+    min: float
+    max: float
+
+
+@dataclass
 class CpuData:
     """
     CPU data aggregate dataclass.
@@ -209,6 +220,7 @@ class CpuData:
 
     info: CpuInfo
     times: CpuTimes
+    frequency: CpuFrequency
     stats: CpuStats
     percent: float = percent_field()
 
@@ -222,6 +234,7 @@ class SystemInfo:
     cpu: CpuData
 
 
+CpuFrequencySchema = class_schema(CpuFrequency, base_schema=DataClassSchema)
 CpuInfoSchema = class_schema(CpuInfo, base_schema=CpuInfoBaseSchema)
 CpuTimesSchema = class_schema(CpuTimes, base_schema=CpuTimesBaseSchema)
 CpuStatsSchema = class_schema(CpuStats, base_schema=DataClassSchema)

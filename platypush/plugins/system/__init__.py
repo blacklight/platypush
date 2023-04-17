@@ -14,8 +14,6 @@ from platypush.entities.system import (
     CpuTimes as CpuTimesModel,
 )
 from platypush.message.response.system import (
-    CpuResponseList,
-    CpuFrequencyResponse,
     VirtualMemoryUsageResponse,
     SwapMemoryUsageResponse,
     DiskResponseList,
@@ -39,6 +37,8 @@ from platypush.message.response.system import (
 from platypush.plugins import action
 from platypush.plugins.sensor import SensorPlugin
 from platypush.schemas.system import (
+    CpuFrequency,
+    CpuFrequencySchema,
     CpuInfo,
     CpuInfoSchema,
     CpuStats,
@@ -107,7 +107,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
     @action
     def cpu_times(self, per_cpu=False, percent=True) -> Union[list, dict]:
         """
-        Get the CPU times stats.
+        Get the CPU times per status, either as absolute time or a percentage.
 
         :param per_cpu: Get per-CPU stats (default: False).
         :param percent: Get the stats in percentage (default: True).
@@ -161,37 +161,37 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return CpuStatsSchema().dump(self._cpu_stats())  # type: ignore
 
+    def _cpu_frequency_avg(self) -> CpuFrequency:
+        import psutil
+
+        freq = psutil.cpu_freq(percpu=False)
+        return CpuFrequencySchema().load(freq._asdict())  # type: ignore
+
+    def _cpu_frequency_per_cpu(self) -> List[CpuFrequency]:
+        import psutil
+
+        freq = psutil.cpu_freq(percpu=True)
+        return CpuFrequencySchema().load(freq._asdict(), many=True)  # type: ignore
+
     @action
     def cpu_frequency(
         self, per_cpu: bool = False
-    ) -> Union[CpuFrequencyResponse, CpuResponseList]:
+    ) -> Union[CpuFrequency, List[CpuFrequency]]:
         """
-        Get CPU stats.
+        Get the CPU frequency, in MHz.
 
         :param per_cpu: Get per-CPU stats (default: False).
-        :return: :class:`platypush.message.response.system.CpuFrequencyResponse`
+        :return: If ``per_cpu=False``:
+
+            .. schema:: system.CpuFrequencySchema
+
+        If ``per_cpu=True`` then a list will be returned, where each item
+        identifies the CPU times of a core:
+
+           .. schema:: system.CpuFrequencySchema(many=True)
+
         """
-        import psutil
-
-        freq = psutil.cpu_freq(percpu=per_cpu)
-
-        if per_cpu:
-            return CpuResponseList(
-                [
-                    CpuFrequencyResponse(
-                        min=f.min,
-                        max=f.max,
-                        current=f.current,
-                    )
-                    for f in freq
-                ]
-            )
-
-        return CpuFrequencyResponse(
-            min=freq.min,
-            max=freq.max,
-            current=freq.current,
-        )
+        return self._cpu_frequency_per_cpu() if per_cpu else self._cpu_frequency_avg()
 
     @action
     def load_avg(self) -> List[float]:
@@ -790,6 +790,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
         ret = SystemInfoSchema().dump(
             {
                 'cpu': {
+                    'frequency': self._cpu_frequency_avg(),
                     'info': self._cpu_info,
                     'stats': self._cpu_stats(),
                     'times': self._cpu_times_avg(),
@@ -837,6 +838,14 @@ class SystemPlugin(SensorPlugin, EntityManager):
                             )
                             for key, time_percent in cpu['times'].items()
                         ],
+                    ),
+                    NumericSensor(
+                        id='system:cpu:frequency',
+                        name='Frequency',
+                        value=round(cpu['frequency']['current'], 2),
+                        min=cpu['frequency']['min'],
+                        max=cpu['frequency']['max'],
+                        unit='MHz',
                     ),
                     PercentSensor(
                         id='system:cpu:percent',

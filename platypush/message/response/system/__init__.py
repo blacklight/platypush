@@ -28,20 +28,6 @@ class SensorResponse(SystemResponse):
     pass
 
 
-class CpuFrequencyResponse(CpuResponse):
-    # noinspection PyShadowingBuiltins
-    def __init__(self, min: int, max: int, current: int, *args, **kwargs):
-        super().__init__(
-            *args,
-            output={
-                'min': min,
-                'max': max,
-                'current': current,
-            },
-            **kwargs
-        )
-
-
 class VirtualMemoryUsageResponse(MemoryResponse):
     def __init__(
         self,
@@ -435,11 +421,6 @@ class ProcessResponse(SystemResponse):
 class SystemResponseList(SystemResponse):
     def __init__(self, responses: List[SystemResponse], *args, **kwargs):
         super().__init__(output=[r.output for r in responses], *args, **kwargs)
-
-
-class CpuResponseList(CpuResponse, SystemResponseList):
-    def __init__(self, responses: List[CpuResponse], *args, **kwargs):
-        super().__init__(responses=responses, *args, **kwargs)
 
 
 class DiskResponseList(DiskResponse, SystemResponseList):

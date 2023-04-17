@@ -44,6 +44,12 @@ export default {
 <style lang="scss" scoped>
 @import "common";
 
+.entity {
+  .icon {
+    margin-right: 1em;
+  }
+}
+
 .sensor-container {
   .head {
     .value {
