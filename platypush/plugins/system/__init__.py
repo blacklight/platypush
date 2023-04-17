@@ -6,9 +6,13 @@ from typing_extensions import override
 
 from platypush.entities import Entity
 from platypush.entities.managers import EntityManager
-from platypush.entities.system import CpuInfo as CpuInfoModel
+from platypush.entities.sensors import PercentSensor
+from platypush.entities.system import (
+    Cpu,
+    CpuInfo as CpuInfoModel,
+    CpuTimes as CpuTimesModel,
+)
 from platypush.message.response.system import (
-    CpuTimesResponse,
     CpuResponseList,
     CpuStatsResponse,
     CpuFrequencyResponse,
@@ -37,6 +41,8 @@ from platypush.plugins.sensor import SensorPlugin
 from platypush.schemas.system import (
     CpuInfo,
     CpuInfoSchema,
+    CpuTimes,
+    CpuTimesSchema,
     SystemInfoSchema,
 )
 
@@ -57,13 +63,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         super().__init__(*args, **kwargs)
         self.__cpu_info: Optional[CpuInfo] = None
 
-    @staticmethod
-    def _entity_args(name: str) -> Dict[str, str]:
-        return {
-            'id': f'system:{name}',
-            'name': name,
-        }
-
     @property
     def _cpu_info(self) -> CpuInfo:
         from cpuinfo import get_cpu_info
@@ -83,56 +82,45 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return CpuInfoSchema().dump(self._cpu_info)
 
+    @staticmethod
+    def _load_cpu_times(times, many: bool) -> Union[CpuTimes, List[CpuTimes]]:
+        return CpuTimesSchema().load(times, many=many)  # type: ignore
+
+    @classmethod
+    def _cpu_times_avg(cls, percent=True) -> CpuTimes:
+        import psutil
+
+        method = psutil.cpu_times_percent if percent else psutil.cpu_times
+        times = method(percpu=False)
+        return cls._load_cpu_times(times, many=False)  # type: ignore
+
+    @classmethod
+    def _cpu_times_per_cpu(cls, percent=True) -> List[CpuTimes]:
+        import psutil
+
+        method = psutil.cpu_times_percent if percent else psutil.cpu_times
+        times = method(percpu=True)
+        return cls._load_cpu_times(times, many=True)  # type: ignore
+
     @action
-    def cpu_times(
-        self, per_cpu=False, percent=False
-    ) -> Union[CpuTimesResponse, CpuResponseList]:
+    def cpu_times(self, per_cpu=False, percent=True) -> Union[list, dict]:
         """
         Get the CPU times stats.
 
         :param per_cpu: Get per-CPU stats (default: False).
-        :param percent: Get the stats in percentage (default: False).
-        :return: :class:`platypush.message.response.system.CpuTimesResponse`
+        :param percent: Get the stats in percentage (default: True).
+        :return: If ``per_cpu=False``:
+
+            .. schema:: system.CpuTimesSchema
+
+        If ``per_cpu=True`` then a list will be returned, where each item
+        identifies the CPU times of a core:
+
+           .. schema:: system.CpuTimesSchema(many=True)
+
         """
-        import psutil
-
-        times = (
-            psutil.cpu_times_percent(percpu=per_cpu)
-            if percent
-            else psutil.cpu_times(percpu=per_cpu)
-        )
-
-        if per_cpu:
-            return CpuResponseList(
-                [
-                    CpuTimesResponse(
-                        user=t.user,
-                        nice=t.nice,
-                        system=t.system,
-                        idle=t.idle,
-                        iowait=t.iowait,
-                        irq=t.irq,
-                        softirq=t.softirq,
-                        steal=t.steal,
-                        guest=t.guest,
-                        guest_nice=t.guest_nice,
-                    )
-                    for t in times
-                ]
-            )
-
-        return CpuTimesResponse(
-            user=times.user,
-            nice=times.nice,
-            system=times.system,
-            idle=times.idle,
-            iowait=times.iowait,
-            irq=times.irq,
-            softirq=times.softirq,
-            steal=times.steal,
-            guest=times.guest,
-            guest_nice=times.guest_nice,
-        )
+        method = self._cpu_times_per_cpu if per_cpu else self._cpu_times_avg
+        return CpuTimesSchema().dump(method(percent=percent), many=per_cpu)
 
     @action
     def cpu_percent(
@@ -801,7 +789,10 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         ret = SystemInfoSchema().dump(
             {
-                'cpu_info': self._cpu_info,
+                'cpu': {
+                    'info': self._cpu_info,
+                    'times': self._cpu_times_avg(),
+                },
             }
         )
 
@@ -809,11 +800,32 @@ class SystemPlugin(SensorPlugin, EntityManager):
 
     @override
     def transform_entities(self, entities: dict) -> List[Entity]:
+        cpu = entities['cpu'].copy()
+
         return [
-            CpuInfoModel(
-                **self._entity_args('cpu_info'),
-                **entities['cpu_info'],
-            ),
+            Cpu(
+                id='system:cpu',
+                name='CPU',
+                children=[
+                    CpuInfoModel(
+                        id='system:cpu:info',
+                        name='Info',
+                        **cpu['info'],
+                    ),
+                    CpuTimesModel(
+                        id='system:cpu:times',
+                        name='Times',
+                        children=[
+                            PercentSensor(
+                                id=f'system:cpu:times:{key}',
+                                name=key,
+                                value=time_percent,
+                            )
+                            for key, time_percent in cpu['times'].items()
+                        ],
+                    ),
+                ],
+            )
         ]
 
 
