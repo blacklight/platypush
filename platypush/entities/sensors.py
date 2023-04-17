@@ -91,7 +91,7 @@ if 'raw_sensor' not in Base.metadata:
         }
 
 
-if 'numeric_sensor' not in Base.metadata:
+if 'numeric_sensor' not in Base.metadata and 'percent_sensor' not in Base.metadata:
 
     class NumericSensor(Sensor):
         """
@@ -112,6 +112,27 @@ if 'numeric_sensor' not in Base.metadata:
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
+
+    class PercentSensor(NumericSensor):
+        """
+        A subclass of ``NumericSensor`` that represents a percentage value.
+        """
+
+        __tablename__ = 'percent_sensor'
+
+        id = Column(
+            Integer, ForeignKey(NumericSensor.id, ondelete='CASCADE'), primary_key=True
+        )
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }
+
+        def __init__(self, *args, **kwargs):
+            self.min = 0.0
+            self.max = 1.0
+            self.unit = '%'
+            super().__init__(*args, **kwargs)
 
 
 if 'binary_sensor' not in Base.metadata:

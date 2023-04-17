@@ -295,6 +295,14 @@
     }
   },
 
+  "percent_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-thermometer"
+    }
+  },
+
   "enum_sensor": {
     "name": "Sensor",
     "name_plural": "Sensors",
