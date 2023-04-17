@@ -28,40 +28,6 @@ class SensorResponse(SystemResponse):
     pass
 
 
-class CpuTimesResponse(CpuResponse):
-    def __init__(
-        self,
-        user: float,
-        nice: float,
-        system: float,
-        idle: float,
-        iowait: float,
-        irq: float,
-        softirq: float,
-        steal: float,
-        guest: float,
-        guest_nice: float,
-        *args,
-        **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'user': user,
-                'nice': nice,
-                'system': system,
-                'idle': idle,
-                'iowait': iowait,
-                'irq': irq,
-                'softirq': softirq,
-                'steal': steal,
-                'guest': guest,
-                'guest_nice': guest_nice,
-            },
-            **kwargs
-        )
-
-
 class CpuStatsResponse(CpuResponse):
     def __init__(
         self,
