@@ -1,10 +1,11 @@
 import socket
 
 from datetime import datetime
-from typing import Union, List, Optional, Dict
+from typing import Tuple, Union, List, Optional, Dict
 from typing_extensions import override
 
 from platypush.entities import Entity
+from platypush.entities.devices import Device
 from platypush.entities.managers import EntityManager
 from platypush.entities.sensors import NumericSensor, PercentSensor
 from platypush.entities.system import (
@@ -194,7 +195,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
         return self._cpu_frequency_per_cpu() if per_cpu else self._cpu_frequency_avg()
 
     @action
-    def load_avg(self) -> List[float]:
+    def load_avg(self) -> Tuple[float, float, float]:
         """
         Get the average load as a vector that represents the load within the last 1, 5 and 15 minutes.
         """
@@ -792,6 +793,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
                 'cpu': {
                     'frequency': self._cpu_frequency_avg(),
                     'info': self._cpu_info,
+                    'load_avg': self.load_avg().output,
                     'stats': self._cpu_stats(),
                     'times': self._cpu_times_avg(),
                     'percent': self.cpu_percent().output / 100.0,  # type: ignore
@@ -837,6 +839,18 @@ class SystemPlugin(SensorPlugin, EntityManager):
                                 value=time_percent,
                             )
                             for key, time_percent in cpu['times'].items()
+                        ],
+                    ),
+                    Device(
+                        id='system:cpu:load_avg',
+                        name='Load Average',
+                        children=[
+                            NumericSensor(
+                                id=f'system:cpu:load_avg:{mins}',
+                                name=f'Last {mins} minute(s)',
+                                value=round(val, 2),
+                            )
+                            for val, mins in zip(cpu['load_avg'], [1, 5, 15])
                         ],
                     ),
                     NumericSensor(

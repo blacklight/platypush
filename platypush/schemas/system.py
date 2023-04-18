@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from marshmallow import pre_load
 from marshmallow.validate import Range
@@ -222,6 +222,7 @@ class CpuData:
     times: CpuTimes
     frequency: CpuFrequency
     stats: CpuStats
+    load_avg: Tuple[float, float, float]
     percent: float = percent_field()
 
 
