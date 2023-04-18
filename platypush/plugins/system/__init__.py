@@ -807,6 +807,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
             Cpu(
                 id='system:cpu',
                 name='CPU',
+                percent=cpu['percent'],
                 children=[
                     CpuInfoModel(
                         id='system:cpu:info',
@@ -856,11 +857,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
                         min=cpu['frequency']['min'],
                         max=cpu['frequency']['max'],
                         unit='MHz',
-                    ),
-                    PercentSensor(
-                        id='system:cpu:percent',
-                        name='Percent',
-                        value=cpu['percent'],
                     ),
                 ],
             ),

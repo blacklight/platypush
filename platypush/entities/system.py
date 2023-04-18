@@ -18,6 +18,8 @@ if 'cpu' not in Base.metadata:
             Integer, ForeignKey(Entity.id, ondelete='CASCADE'), primary_key=True
         )
 
+        percent = Column(Float)
+
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }

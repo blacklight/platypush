@@ -135,6 +135,7 @@ export default {
 
     .value {
       text-align: right;
+      font-weight: bold;
     }
   }
 }
