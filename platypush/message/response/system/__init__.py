@@ -28,66 +28,6 @@ class SensorResponse(SystemResponse):
     pass
 
 
-class VirtualMemoryUsageResponse(MemoryResponse):
-    def __init__(
-        self,
-        total: int,
-        available: int,
-        percent: float,
-        used: int,
-        free: int,
-        active: int,
-        inactive: int,
-        buffers: int,
-        cached: int,
-        shared: int,
-        *args,
-        **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'total': total,
-                'available': available,
-                'percent': percent,
-                'used': used,
-                'free': free,
-                'active': active,
-                'inactive': inactive,
-                'buffers': buffers,
-                'cached': cached,
-                'shared': shared,
-            },
-            **kwargs
-        )
-
-
-class SwapMemoryUsageResponse(MemoryResponse):
-    def __init__(
-        self,
-        total: int,
-        percent: float,
-        used: int,
-        free: int,
-        sin: int,
-        sout: int,
-        *args,
-        **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'total': total,
-                'percent': percent,
-                'used': used,
-                'free': free,
-                'sin': sin,
-                'sout': sout,
-            },
-            **kwargs
-        )
-
-
 class DiskPartitionResponse(DiskResponse):
     def __init__(
         self,

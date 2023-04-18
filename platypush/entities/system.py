@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, JSON, String
+from sqlalchemy import Column, Float, ForeignKey, Integer, JSON, String
 
 from platypush.common.db import Base
 
@@ -84,6 +84,58 @@ if 'cpu_stats' not in Base.metadata:
         id = Column(
             Integer, ForeignKey(Entity.id, ondelete='CASCADE'), primary_key=True
         )
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }
+
+
+if 'memory_stats' not in Base.metadata:
+
+    class MemoryStats(Entity):
+        """
+        ``MemoryStats`` ORM model.
+        """
+
+        __tablename__ = 'memory_stats'
+
+        id = Column(
+            Integer, ForeignKey(Entity.id, ondelete='CASCADE'), primary_key=True
+        )
+
+        total = Column(Integer)
+        available = Column(Integer)
+        used = Column(Integer)
+        free = Column(Integer)
+        active = Column(Integer)
+        inactive = Column(Integer)
+        buffers = Column(Integer)
+        cached = Column(Integer)
+        shared = Column(Integer)
+        percent = Column(Float)
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }
+
+
+if 'swap_stats' not in Base.metadata:
+
+    class SwapStats(Entity):
+        """
+        ``SwapStats`` ORM model.
+        """
+
+        __tablename__ = 'swap_stats'
+
+        id = Column(
+            Integer, ForeignKey(Entity.id, ondelete='CASCADE'), primary_key=True
+        )
+
+        total = Column(Integer)
+        used = Column(Integer)
+        free = Column(Integer)
+        percent = Column(Float)
 
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,

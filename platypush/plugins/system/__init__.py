@@ -13,10 +13,10 @@ from platypush.entities.system import (
     CpuInfo as CpuInfoModel,
     CpuStats as CpuStatsModel,
     CpuTimes as CpuTimesModel,
+    MemoryStats as MemoryStatsModel,
+    SwapStats as SwapStatsModel,
 )
 from platypush.message.response.system import (
-    VirtualMemoryUsageResponse,
-    SwapMemoryUsageResponse,
     DiskResponseList,
     DiskPartitionResponse,
     DiskUsageResponse,
@@ -46,6 +46,10 @@ from platypush.schemas.system import (
     CpuStatsSchema,
     CpuTimes,
     CpuTimesSchema,
+    MemoryStats,
+    MemoryStatsSchema,
+    SwapStats,
+    SwapStatsSchema,
     SystemInfoSchema,
 )
 
@@ -203,45 +207,35 @@ class SystemPlugin(SensorPlugin, EntityManager):
 
         return psutil.getloadavg()
 
-    @action
-    def mem_virtual(self) -> VirtualMemoryUsageResponse:
-        """
-        Get the current virtual memory usage stats.
-        :return: list of :class:`platypush.message.response.system.VirtualMemoryUsageResponse`
-        """
+    def _mem_virtual(self) -> MemoryStats:
         import psutil
 
-        mem = psutil.virtual_memory()
-        return VirtualMemoryUsageResponse(
-            total=mem.total,
-            available=mem.available,
-            percent=mem.percent,
-            used=mem.used,
-            free=mem.free,
-            active=mem.active,
-            inactive=mem.inactive,
-            buffers=mem.buffers,
-            cached=mem.cached,
-            shared=mem.shared,
-        )
+        return MemoryStatsSchema().load(
+            psutil.virtual_memory()._asdict()
+        )  # type: ignore
 
     @action
-    def mem_swap(self) -> SwapMemoryUsageResponse:
+    def mem_virtual(self) -> dict:
         """
         Get the current virtual memory usage stats.
-        :return: list of :class:`platypush.message.response.system.SwapMemoryUsageResponse`
+
+        :return: .. schema:: system.MemoryStatsSchema
         """
+        return MemoryStatsSchema().dump(self._mem_virtual())  # type: ignore
+
+    def _mem_swap(self) -> SwapStats:
         import psutil
 
-        mem = psutil.swap_memory()
-        return SwapMemoryUsageResponse(
-            total=mem.total,
-            percent=mem.percent,
-            used=mem.used,
-            free=mem.free,
-            sin=mem.sin,
-            sout=mem.sout,
-        )
+        return SwapStatsSchema().load(psutil.swap_memory()._asdict())  # type: ignore
+
+    @action
+    def mem_swap(self) -> dict:
+        """
+        Get the current swap memory usage stats.
+
+        :return: .. schema:: system.SwapStatsSchema
+        """
+        return SwapStatsSchema().dump(self._mem_swap())  # type: ignore
 
     @action
     def disk_partitions(self) -> DiskResponseList:
@@ -793,11 +787,13 @@ class SystemPlugin(SensorPlugin, EntityManager):
                 'cpu': {
                     'frequency': self._cpu_frequency_avg(),
                     'info': self._cpu_info,
-                    'load_avg': self.load_avg().output,
+                    'load_avg': self.load_avg().output,  # type: ignore
                     'stats': self._cpu_stats(),
                     'times': self._cpu_times_avg(),
                     'percent': self.cpu_percent().output / 100.0,  # type: ignore
                 },
+                'memory': self._mem_virtual(),
+                'swap': self._mem_swap(),
             }
         )
 
@@ -867,7 +863,17 @@ class SystemPlugin(SensorPlugin, EntityManager):
                         value=cpu['percent'],
                     ),
                 ],
-            )
+            ),
+            MemoryStatsModel(
+                id='system:memory',
+                name='Memory',
+                **entities['memory'],
+            ),
+            SwapStatsModel(
+                id='system:swap',
+                name='Swap',
+                **entities['swap'],
+            ),
         ]
 
 

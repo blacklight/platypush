@@ -9,6 +9,9 @@ from platypush.schemas.dataclasses import DataClassSchema
 
 
 def percent_field(**kwargs):
+    """
+    Field used to model percentage float fields between 0 and 1.
+    """
     return field(
         default_factory=float,
         metadata={
@@ -30,6 +33,19 @@ class CpuInfoBaseSchema(DataClassSchema):
         if data.get('hz_actual'):
             data['frequency_actual'] = data.pop('hz_actual')[0]
 
+        return data
+
+
+class MemoryStatsBaseSchema(DataClassSchema):
+    """
+    Base schema for memory stats.
+    """
+
+    @pre_load
+    def pre_load(self, data: dict, **_) -> dict:
+        # Normalize the percentage between 0 and 1
+        if data.get('percent') is not None:
+            data['percent'] /= 100
         return data
 
 
@@ -227,16 +243,134 @@ class CpuData:
 
 
 @dataclass
+class MemoryStats:
+    """
+    Memory stats data class.
+    """
+
+    total: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Total available memory, in bytes',
+            }
+        }
+    )
+
+    available: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Available memory, in bytes',
+            }
+        }
+    )
+
+    used: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Used memory, in bytes',
+            }
+        }
+    )
+
+    free: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Free memory, in bytes',
+            }
+        }
+    )
+
+    active: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Size of the active memory, in bytes',
+            }
+        }
+    )
+
+    inactive: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Size of the inactive memory, in bytes',
+            }
+        }
+    )
+
+    buffers: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Size of the buffered memory, in bytes',
+            }
+        }
+    )
+
+    cached: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Size of the cached memory, in bytes',
+            }
+        }
+    )
+
+    shared: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Size of the shared memory, in bytes',
+            }
+        }
+    )
+
+    percent: float = percent_field()
+
+
+@dataclass
+class SwapStats:
+    """
+    Swap memory stats data class.
+    """
+
+    total: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Total available memory, in bytes',
+            }
+        }
+    )
+
+    used: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Used memory, in bytes',
+            }
+        }
+    )
+
+    free: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Free memory, in bytes',
+            }
+        }
+    )
+
+    percent: float = percent_field()
+
+
+@dataclass
 class SystemInfo:
     """
     Aggregate system info dataclass.
     """
 
     cpu: CpuData
+    memory: MemoryStats
+    swap: SwapStats
 
 
 CpuFrequencySchema = class_schema(CpuFrequency, base_schema=DataClassSchema)
 CpuInfoSchema = class_schema(CpuInfo, base_schema=CpuInfoBaseSchema)
 CpuTimesSchema = class_schema(CpuTimes, base_schema=CpuTimesBaseSchema)
 CpuStatsSchema = class_schema(CpuStats, base_schema=DataClassSchema)
+MemoryStatsSchema = class_schema(MemoryStats, base_schema=MemoryStatsBaseSchema)
+SwapStatsSchema = class_schema(SwapStats, base_schema=MemoryStatsBaseSchema)
 SystemInfoSchema = class_schema(SystemInfo, base_schema=DataClassSchema)

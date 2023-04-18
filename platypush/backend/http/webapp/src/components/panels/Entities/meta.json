@@ -47,6 +47,22 @@
     }
   },
 
+  "memory_stats": {
+    "name": "System",
+    "name_plural": "System",
+    "icon": {
+      "class": "fas fa-memory"
+    }
+  },
+
+  "swap_stats": {
+    "name": "System",
+    "name_plural": "System",
+    "icon": {
+      "class": "fas fa-memory"
+    }
+  },
+
   "current_sensor": {
     "name": "Sensor",
     "name_plural": "Sensors",
