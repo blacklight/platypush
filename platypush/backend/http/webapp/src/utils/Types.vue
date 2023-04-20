@@ -38,6 +38,49 @@ export default {
       return `${value.toFixed(2)} ${unit}`
     },
 
+    convertTime(time) {
+      const t = {}
+      const ret = []
+
+      time = parseFloat(time);   // Normalize strings
+      t.d = parseInt(time/86400)
+      t.h = parseInt(time/3600 - t.d*24)
+      t.m = parseInt(time/60 - (t.d*24 + t.h*60))
+      t.s = Math.round(time - (t.d*24 + t.h*3600 + t.m*60), 1)
+
+      if (parseInt(t.d)) {
+        let d = t.d + ' day'
+        if (t.d > 1) {
+          d += 's'
+        }
+        ret.push(d)
+      }
+
+      if (parseInt(t.h)) {
+        let h = t.h + ' hour'
+        if (t.h > 1) {
+          h += 's'
+        }
+        ret.push(h)
+      }
+
+      if (parseInt(t.m)) {
+        let m = t.m + ' minute'
+        if (t.m > 1) {
+          m += 's'
+        }
+        ret.push(m)
+      }
+
+      let s = t.s + ' second'
+      if (t.s > 1) {
+        s += 's'
+      }
+      ret.push(s)
+
+      return ret.join(' ')
+    },
+
     objectsEqual(a, b) {
       if (typeof(a) !== 'object' || typeof(b) !== 'object')
         return false
