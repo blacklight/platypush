@@ -147,6 +147,12 @@ export default {
   min-height: 3em;
   cursor: pointer;
 
+  @include from($tablet) {
+    @include until($desktop) {
+      margin-left: 3.25em;
+    }
+  }
+
   &:hover {
     color: $default-hover-fg;
   }
