@@ -1,8 +1,11 @@
+import os
 import socket
 
 from datetime import datetime
 from typing import Tuple, Union, List, Optional, Dict
 from typing_extensions import override
+
+import psutil
 
 from platypush.entities import Entity
 from platypush.entities.devices import Device
@@ -13,14 +16,11 @@ from platypush.entities.system import (
     CpuInfo as CpuInfoModel,
     CpuStats as CpuStatsModel,
     CpuTimes as CpuTimesModel,
+    Disk as DiskModel,
     MemoryStats as MemoryStatsModel,
     SwapStats as SwapStatsModel,
 )
 from platypush.message.response.system import (
-    DiskResponseList,
-    DiskPartitionResponse,
-    DiskUsageResponse,
-    DiskIoCountersResponse,
     NetworkIoCountersResponse,
     NetworkResponseList,
     NetworkConnectionResponse,
@@ -46,6 +46,8 @@ from platypush.schemas.system import (
     CpuStatsSchema,
     CpuTimes,
     CpuTimesSchema,
+    Disk,
+    DiskSchema,
     MemoryStats,
     MemoryStatsSchema,
     SwapStats,
@@ -95,16 +97,12 @@ class SystemPlugin(SensorPlugin, EntityManager):
 
     @classmethod
     def _cpu_times_avg(cls, percent=True) -> CpuTimes:
-        import psutil
-
         method = psutil.cpu_times_percent if percent else psutil.cpu_times
         times = method(percpu=False)
         return cls._load_cpu_times(times, many=False)  # type: ignore
 
     @classmethod
     def _cpu_times_per_cpu(cls, percent=True) -> List[CpuTimes]:
-        import psutil
-
         method = psutil.cpu_times_percent if percent else psutil.cpu_times
         times = method(percpu=True)
         return cls._load_cpu_times(times, many=True)  # type: ignore
@@ -143,8 +141,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
             function be called with at least 0.1 seconds between calls.
         :return: float if ``per_cpu=False``, ``list[float]`` otherwise.
         """
-        import psutil
-
         percent = psutil.cpu_percent(percpu=per_cpu, interval=interval)
 
         if per_cpu:
@@ -152,8 +148,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         return percent
 
     def _cpu_stats(self) -> CpuStats:
-        import psutil
-
         stats = psutil.cpu_stats()
         return CpuStatsSchema().load(stats._asdict())  # type: ignore
 
@@ -167,14 +161,10 @@ class SystemPlugin(SensorPlugin, EntityManager):
         return CpuStatsSchema().dump(self._cpu_stats())  # type: ignore
 
     def _cpu_frequency_avg(self) -> CpuFrequency:
-        import psutil
-
         freq = psutil.cpu_freq(percpu=False)
         return CpuFrequencySchema().load(freq._asdict())  # type: ignore
 
     def _cpu_frequency_per_cpu(self) -> List[CpuFrequency]:
-        import psutil
-
         freq = psutil.cpu_freq(percpu=True)
         return CpuFrequencySchema().load(freq._asdict(), many=True)  # type: ignore
 
@@ -203,13 +193,9 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         Get the average load as a vector that represents the load within the last 1, 5 and 15 minutes.
         """
-        import psutil
-
         return psutil.getloadavg()
 
     def _mem_virtual(self) -> MemoryStats:
-        import psutil
-
         return MemoryStatsSchema().load(
             psutil.virtual_memory()._asdict()
         )  # type: ignore
@@ -224,8 +210,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         return MemoryStatsSchema().dump(self._mem_virtual())  # type: ignore
 
     def _mem_swap(self) -> SwapStats:
-        import psutil
-
         return SwapStatsSchema().load(psutil.swap_memory()._asdict())  # type: ignore
 
     @action
@@ -237,111 +221,41 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return SwapStatsSchema().dump(self._mem_swap())  # type: ignore
 
-    @action
-    def disk_partitions(self) -> DiskResponseList:
-        """
-        Get the list of partitions mounted on the system.
-        :return: list of :class:`platypush.message.response.system.DiskPartitionResponse`
-        """
-        import psutil
+    def _disk_info(self) -> List[Disk]:
+        parts = {part.device: part._asdict() for part in psutil.disk_partitions()}
+        basename_parts = {os.path.basename(part): part for part in parts}
 
-        parts = psutil.disk_partitions()
-        return DiskResponseList(
+        io_stats = {
+            basename_parts[disk]: stats._asdict()
+            for disk, stats in psutil.disk_io_counters(perdisk=True).items()
+            if disk in basename_parts
+        }
+
+        usage = {
+            disk: psutil.disk_usage(info['mountpoint'])._asdict()
+            for disk, info in parts.items()
+        }
+
+        return DiskSchema().load(  # type: ignore
             [
-                DiskPartitionResponse(
-                    device=p.device,
-                    mount_point=p.mountpoint,
-                    fstype=p.fstype,
-                    opts=p.opts,
-                )
-                for p in parts
-            ]
+                {
+                    **info,
+                    **io_stats[part],
+                    **usage[part],
+                }
+                for part, info in parts.items()
+            ],
+            many=True,
         )
 
     @action
-    def disk_usage(
-        self, path: Optional[str] = None
-    ) -> Union[DiskUsageResponse, DiskResponseList]:
+    def disk_info(self):
         """
-        Get the usage of a mounted disk.
+        Get information about the detected disks and partitions.
 
-        :param path: Path where the device is mounted (default: get stats for all mounted devices).
-        :return: :class:`platypush.message.response.system.DiskUsageResponse` or list of
-            :class:`platypush.message.response.system.DiskUsageResponse`.
+        :return: .. schema:: system.DiskSchema(many=True)
         """
-        import psutil
-
-        if path:
-            usage = psutil.disk_usage(path)
-            return DiskUsageResponse(
-                path=path,
-                total=usage.total,
-                used=usage.used,
-                free=usage.free,
-                percent=usage.percent,
-            )
-        else:
-            disks = {
-                p.mountpoint: psutil.disk_usage(p.mountpoint)
-                for p in psutil.disk_partitions()
-            }
-
-            return DiskResponseList(
-                [
-                    DiskUsageResponse(
-                        path=path,
-                        total=disk.total,
-                        used=disk.used,
-                        free=disk.free,
-                        percent=disk.percent,
-                    )
-                    for path, disk in disks.items()
-                ]
-            )
-
-    @action
-    def disk_io_counters(
-        self, disk: Optional[str] = None, per_disk: bool = False
-    ) -> Union[DiskIoCountersResponse, DiskResponseList]:
-        """
-        Get the I/O counter stats for the mounted disks.
-
-        :param disk: Select the stats for a specific disk (e.g. 'sda1'). Default: get stats for all mounted disks.
-        :param per_disk: Return the stats per disk (default: False).
-        :return: :class:`platypush.message.response.system.DiskIoCountersResponse` or list of
-            :class:`platypush.message.response.system.DiskIoCountersResponse`.
-        """
-        import psutil
-
-        def _expand_response(_disk, _stats):
-            return DiskIoCountersResponse(
-                read_count=_stats.read_count,
-                write_count=_stats.write_count,
-                read_bytes=_stats.read_bytes,
-                write_bytes=_stats.write_bytes,
-                read_time=_stats.read_time,
-                write_time=_stats.write_time,
-                read_merged_count=_stats.read_merged_count,
-                write_merged_count=_stats.write_merged_count,
-                busy_time=_stats.busy_time,
-                disk=_disk,
-            )
-
-        if disk:
-            per_disk = True
-
-        io = psutil.disk_io_counters(perdisk=per_disk)
-        if disk:
-            stats = [d for name, d in io.items() if name == disk]
-            assert stats, 'No such disk: {}'.format(disk)
-            return _expand_response(disk, stats[0])
-
-        if not per_disk:
-            return _expand_response(None, io)
-
-        return DiskResponseList(
-            [_expand_response(disk, stats) for disk, stats in io.items()]
-        )
+        return DiskSchema().dump(self._disk_info(), many=True)
 
     @action
     def net_io_counters(
@@ -355,7 +269,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         :return: :class:`platypush.message.response.system.NetIoCountersResponse` or list of
             :class:`platypush.message.response.system.NetIoCountersResponse`.
         """
-        import psutil
 
         def _expand_response(_nic, _stats):
             return NetworkIoCountersResponse(
@@ -414,8 +327,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
 
         :return: List of :class:`platypush.message.response.system.NetworkConnectionResponse`.
         """
-        import psutil
-
         conns = psutil.net_connections(kind=type)
 
         return NetworkResponseList(
@@ -446,8 +357,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         :return: :class:`platypush.message.response.system.NetworkAddressResponse` or list of
             :class:`platypush.message.response.system.NetworkAddressResponse`.
         """
-        import psutil
-
         addrs = psutil.net_if_addrs()
 
         def _expand_addresses(_nic, _addrs):
@@ -504,8 +413,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         :return: :class:`platypush.message.response.system.NetworkInterfaceStatsResponse` or list of
             :class:`platypush.message.response.system.NetworkInterfaceStatsResponse`.
         """
-        import psutil
-
         stats = psutil.net_if_stats()
 
         def _expand_stats(_nic, _stats):
@@ -540,8 +447,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         :param sensor: Select the sensor name.
         :param fahrenheit: Return the temperature in Fahrenheit (default: Celsius).
         """
-        import psutil
-
         stats = psutil.sensors_temperatures(fahrenheit=fahrenheit)
 
         if sensor:
@@ -596,8 +501,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         :param sensor: Select the sensor name.
         :return: List of :class:`platypush.message.response.system.SensorFanResponse`.
         """
-        import psutil
-
         stats = psutil.sensors_fans()
 
         def _expand_stats(name, _stats):
@@ -627,8 +530,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         Get stats from the battery sensor.
         :return: List of :class:`platypush.message.response.system.SensorFanResponse`.
         """
-        import psutil
-
         stats = psutil.sensors_battery()
 
         return SensorBatteryResponse(
@@ -643,8 +544,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         Get the list of connected users.
         :return: List of :class:`platypush.message.response.system.ConnectUserResponse`.
         """
-        import psutil
-
         users = psutil.users()
 
         return ConnectedUserResponseList(
@@ -668,8 +567,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         :param filter: Filter the list by name.
         :return: List of :class:`platypush.message.response.system.ProcessResponse`.
         """
-        import psutil
-
         processes = [psutil.Process(pid) for pid in psutil.pids()]
         p_list = []
 
@@ -720,8 +617,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
 
     @staticmethod
     def _get_process(pid: int):
-        import psutil
-
         return psutil.Process(pid)
 
     @action
@@ -730,8 +625,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         :param pid: Process PID.
         :return: ``True`` if the process exists, ``False`` otherwise.
         """
-        import psutil
-
         return psutil.pid_exists(pid)
 
     @action
@@ -794,6 +687,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
                 },
                 'memory': self._mem_virtual(),
                 'swap': self._mem_swap(),
+                'disks': self._disk_info(),
             }
         )
 
@@ -870,6 +764,14 @@ class SystemPlugin(SensorPlugin, EntityManager):
                 name='Swap',
                 **entities['swap'],
             ),
+            *[
+                DiskModel(
+                    id=f'system:disk:{disk["device"]}',
+                    name=disk.pop('device'),
+                    **disk,
+                )
+                for disk in entities['disks']
+            ],
         ]
 
 

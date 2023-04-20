@@ -68,6 +68,25 @@ class CpuTimesBaseSchema(DataClassSchema):
         }
 
 
+class DiskBaseSchema(DataClassSchema):
+    """
+    Base schema for disk stats.
+    """
+
+    @pre_load
+    def pre_load(self, data: dict, **_) -> dict:
+        # Convert read/write/busy times from milliseconds to seconds
+        for attr in ['read_time', 'write_time', 'busy_time']:
+            if data.get(attr) is not None:
+                data[attr] /= 1000
+
+        # Normalize the percentage between 0 and 1
+        if data.get('percent') is not None:
+            data['percent'] /= 100
+
+        return data
+
+
 @dataclass
 class CpuInfo:
     """
@@ -357,6 +376,131 @@ class SwapStats:
 
 
 @dataclass
+class Disk:
+    """
+    Disk data class.
+    """
+
+    device: str = field(
+        metadata={
+            'metadata': {
+                'description': 'Path/identifier of the disk/partition',
+                'example': '/dev/sda1',
+            }
+        }
+    )
+
+    mountpoint: Optional[str] = field(
+        metadata={
+            'metadata': {
+                'description': 'Where the disk is mounted',
+                'example': '/home',
+            }
+        }
+    )
+
+    fstype: Optional[str] = field(
+        metadata={
+            'metadata': {
+                'description': 'Filesystem type',
+                'example': 'ext4',
+            }
+        }
+    )
+
+    opts: Optional[str] = field(
+        metadata={
+            'metadata': {
+                'description': 'Extra mount options passed to the partition',
+                'example': 'rw,relatime,fmask=0022,dmask=0022,utf8',
+            }
+        }
+    )
+
+    total: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Total available space, in bytes',
+            }
+        }
+    )
+
+    used: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Used disk space, in bytes',
+            }
+        }
+    )
+
+    free: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Free disk space, in bytes',
+            }
+        }
+    )
+
+    read_count: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Number of recorded read operations',
+            }
+        }
+    )
+
+    write_count: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Number of recorded write operations',
+            }
+        }
+    )
+
+    read_bytes: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Number of read bytes',
+            }
+        }
+    )
+
+    write_bytes: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Number of written bytes',
+            }
+        }
+    )
+
+    read_time: float = field(
+        metadata={
+            'metadata': {
+                'description': 'Time spent reading, in seconds',
+            }
+        }
+    )
+
+    write_time: float = field(
+        metadata={
+            'metadata': {
+                'description': 'Time spent writing, in seconds',
+            }
+        }
+    )
+
+    busy_time: float = field(
+        metadata={
+            'metadata': {
+                'description': 'Total disk busy time, in seconds',
+            }
+        }
+    )
+
+    percent: float = percent_field()
+
+
+@dataclass
 class SystemInfo:
     """
     Aggregate system info dataclass.
@@ -365,12 +509,14 @@ class SystemInfo:
     cpu: CpuData
     memory: MemoryStats
     swap: SwapStats
+    disks: List[Disk]
 
 
 CpuFrequencySchema = class_schema(CpuFrequency, base_schema=DataClassSchema)
 CpuInfoSchema = class_schema(CpuInfo, base_schema=CpuInfoBaseSchema)
 CpuTimesSchema = class_schema(CpuTimes, base_schema=CpuTimesBaseSchema)
 CpuStatsSchema = class_schema(CpuStats, base_schema=DataClassSchema)
+DiskSchema = class_schema(Disk, base_schema=DiskBaseSchema)
 MemoryStatsSchema = class_schema(MemoryStats, base_schema=MemoryStatsBaseSchema)
 SwapStatsSchema = class_schema(SwapStats, base_schema=MemoryStatsBaseSchema)
 SystemInfoSchema = class_schema(SystemInfo, base_schema=DataClassSchema)

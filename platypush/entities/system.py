@@ -142,3 +142,36 @@ if 'swap_stats' not in Base.metadata:
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
+
+
+if 'disk' not in Base.metadata:
+
+    class Disk(Entity):
+        """
+        ``Disk`` ORM model.
+        """
+
+        __tablename__ = 'disk'
+
+        id = Column(
+            Integer, ForeignKey(Entity.id, ondelete='CASCADE'), primary_key=True
+        )
+
+        mountpoint = Column(String)
+        fstype = Column(String)
+        opts = Column(String)
+        total = Column(Integer)
+        used = Column(Integer)
+        free = Column(Integer)
+        percent = Column(Float)
+        read_count = Column(Integer)
+        write_count = Column(Integer)
+        read_bytes = Column(Integer)
+        write_bytes = Column(Integer)
+        read_time = Column(Float)
+        write_time = Column(Float)
+        busy_time = Column(Float)
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }

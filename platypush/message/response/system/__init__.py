@@ -28,86 +28,6 @@ class SensorResponse(SystemResponse):
     pass
 
 
-class DiskPartitionResponse(DiskResponse):
-    def __init__(
-        self,
-        device: str,
-        mount_point: str,
-        fstype: Optional[str] = None,
-        opts: Optional[str] = None,
-        *args,
-        **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'device': device,
-                'mount_point': mount_point,
-                'fstype': fstype,
-                'opts': opts,
-            },
-            **kwargs
-        )
-
-
-class DiskUsageResponse(DiskResponse):
-    def __init__(
-        self,
-        path: str,
-        total: int,
-        used: int,
-        free: int,
-        percent: float,
-        *args,
-        **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'path': path,
-                'total': total,
-                'used': used,
-                'free': free,
-                'percent': percent,
-            },
-            **kwargs
-        )
-
-
-class DiskIoCountersResponse(DiskResponse):
-    def __init__(
-        self,
-        read_count: int,
-        write_count: int,
-        read_bytes: int,
-        write_bytes: int,
-        read_time: int,
-        write_time: int,
-        read_merged_count: int,
-        write_merged_count: int,
-        busy_time: int,
-        disk: Optional[str] = None,
-        *args,
-        **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'read_count': read_count,
-                'write_count': write_count,
-                'read_bytes': read_bytes,
-                'write_bytes': write_bytes,
-                'read_time': read_time,
-                'write_time': write_time,
-                'read_merged_count': read_merged_count,
-                'write_merged_count': write_merged_count,
-                'busy_time': busy_time,
-                'disk': disk,
-            },
-            **kwargs
-        )
-
-
 class NetworkIoCountersResponse(NetworkResponse):
     def __init__(
         self,
@@ -361,11 +281,6 @@ class ProcessResponse(SystemResponse):
 class SystemResponseList(SystemResponse):
     def __init__(self, responses: List[SystemResponse], *args, **kwargs):
         super().__init__(output=[r.output for r in responses], *args, **kwargs)
-
-
-class DiskResponseList(DiskResponse, SystemResponseList):
-    def __init__(self, responses: List[DiskResponse], *args, **kwargs):
-        super().__init__(responses=responses, *args, **kwargs)
 
 
 class NetworkResponseList(NetworkResponse, SystemResponseList):
