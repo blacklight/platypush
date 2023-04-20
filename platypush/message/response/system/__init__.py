@@ -28,38 +28,6 @@ class SensorResponse(SystemResponse):
     pass
 
 
-class NetworkIoCountersResponse(NetworkResponse):
-    def __init__(
-        self,
-        bytes_sent: int,
-        bytes_recv: int,
-        packets_sent: int,
-        packets_recv: int,
-        errin: int,
-        errout: int,
-        dropin: int,
-        dropout: int,
-        nic: Optional[str] = None,
-        *args,
-        **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'bytes_sent': bytes_sent,
-                'bytes_recv': bytes_recv,
-                'packets_sent': packets_sent,
-                'packets_recv': packets_recv,
-                'errin': errin,
-                'errout': errout,
-                'dropin': dropin,
-                'dropout': dropout,
-                'nic': nic,
-            },
-            **kwargs
-        )
-
-
 class NetworkConnectionResponse(NetworkResponse):
     # noinspection PyShadowingBuiltins
     def __init__(

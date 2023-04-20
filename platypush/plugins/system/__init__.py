@@ -18,10 +18,10 @@ from platypush.entities.system import (
     CpuTimes as CpuTimesModel,
     Disk as DiskModel,
     MemoryStats as MemoryStatsModel,
+    NetworkInterface as NetworkInterfaceModel,
     SwapStats as SwapStatsModel,
 )
 from platypush.message.response.system import (
-    NetworkIoCountersResponse,
     NetworkResponseList,
     NetworkConnectionResponse,
     NetworkAddressResponse,
@@ -50,6 +50,8 @@ from platypush.schemas.system import (
     DiskSchema,
     MemoryStats,
     MemoryStatsSchema,
+    NetworkInterface,
+    NetworkInterfaceSchema,
     SwapStats,
     SwapStatsSchema,
     SystemInfoSchema,
@@ -257,47 +259,44 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return DiskSchema().dump(self._disk_info(), many=True)
 
-    @action
-    def net_io_counters(
-        self, nic: Optional[str] = None, per_nic: bool = False
-    ) -> Union[NetworkIoCountersResponse, NetworkResponseList]:
-        """
-        Get the I/O counters stats for the network interfaces.
-
-        :param nic: Select the stats for a specific network device (e.g. 'eth0'). Default: get stats for all NICs.
-        :param per_nic: Return the stats broken down per interface (default: False).
-        :return: :class:`platypush.message.response.system.NetIoCountersResponse` or list of
-            :class:`platypush.message.response.system.NetIoCountersResponse`.
-        """
-
-        def _expand_response(_nic, _stats):
-            return NetworkIoCountersResponse(
-                bytes_sent=_stats.bytes_sent,
-                bytes_recv=_stats.bytes_recv,
-                packets_sent=_stats.packets_sent,
-                packets_recv=_stats.packets_recv,
-                errin=_stats.errin,
-                errout=_stats.errout,
-                dropin=_stats.dropin,
-                dropout=_stats.dropout,
-                nic=_nic,
-            )
-
-        if nic:
-            per_nic = True
-
-        io = psutil.net_io_counters(pernic=per_nic)
-        if nic:
-            stats = [d for name, d in io.items() if name == nic]
-            assert stats, 'No such network interface: {}'.format(nic)
-            return _expand_response(nic, stats[0])
-
-        if not per_nic:
-            return _expand_response(nic, io)
-
-        return NetworkResponseList(
-            [_expand_response(nic, stats) for nic, stats in io.items()]
+    def _net_io_counters(self) -> List[NetworkInterface]:
+        return NetworkInterfaceSchema().load(  # type: ignore
+            [
+                {'interface': interface, **stats._asdict()}
+                for interface, stats in psutil.net_io_counters(pernic=True).items()
+                if any(bool(val) for val in stats._asdict().values())
+            ],
+            many=True,
         )
+
+    def _net_io_counters_avg(self) -> NetworkInterface:
+        stats = psutil.net_io_counters(pernic=False)
+        return NetworkInterfaceSchema().load(  # type: ignore
+            {
+                'interface': None,
+                **stats._asdict(),
+            }
+        )
+
+    @action
+    def net_io_counters(self, per_nic: bool = False):
+        """
+        Get the information and statistics for the network interfaces.
+
+        :param per_nic: Return the stats grouped by interface (default: False).
+        :return: If ``per_nic=False``:
+
+            .. schema:: system.NetworkInterfaceSchema
+
+        If ``per_nic=True`` then a list will be returned, where each item
+        identifies the statistics per network interface:
+
+           .. schema:: system.NetworkInterfaceSchema(many=True)
+        """
+
+        if per_nic:
+            return NetworkInterfaceSchema().dump(self._net_io_counters(), many=True)
+        return NetworkInterfaceSchema().dump(self._net_io_counters_avg())
 
     @action
     def net_connections(
@@ -688,6 +687,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
                 'memory': self._mem_virtual(),
                 'swap': self._mem_swap(),
                 'disks': self._disk_info(),
+                'network': self._net_io_counters(),
             }
         )
 
@@ -771,6 +771,14 @@ class SystemPlugin(SensorPlugin, EntityManager):
                     **disk,
                 )
                 for disk in entities['disks']
+            ],
+            *[
+                NetworkInterfaceModel(
+                    id=f'system:network_interface:{nic["interface"]}',
+                    name=nic.pop('interface'),
+                    **nic,
+                )
+                for nic in entities['network']
             ],
         ]
 

@@ -175,3 +175,30 @@ if 'disk' not in Base.metadata:
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
+
+
+if 'network_interface' not in Base.metadata:
+
+    class NetworkInterface(Entity):
+        """
+        ``NetworkInterface`` ORM model.
+        """
+
+        __tablename__ = 'network_interface'
+
+        id = Column(
+            Integer, ForeignKey(Entity.id, ondelete='CASCADE'), primary_key=True
+        )
+
+        bytes_sent = Column(Integer)
+        bytes_recv = Column(Integer)
+        packets_sent = Column(Integer)
+        packets_recv = Column(Integer)
+        errors_in = Column(Integer)
+        errors_out = Column(Integer)
+        drop_in = Column(Integer)
+        drop_out = Column(Integer)
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }

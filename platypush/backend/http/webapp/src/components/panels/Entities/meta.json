@@ -71,6 +71,14 @@
     }
   },
 
+  "network_interface": {
+    "name": "System",
+    "name_plural": "System",
+    "icon": {
+      "class": "fas fa-ethernet"
+    }
+  },
+
   "current_sensor": {
     "name": "Sensor",
     "name_plural": "Sensors",
