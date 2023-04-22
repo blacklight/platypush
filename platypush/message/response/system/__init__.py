@@ -28,23 +28,6 @@ class SensorResponse(SystemResponse):
     pass
 
 
-class NetworkInterfaceStatsResponse(NetworkResponse):
-    def __init__(
-        self, nic: str, is_up: bool, duplex: str, speed: int, mtu: int, *args, **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'nic': nic,
-                'is_up': is_up,
-                'duplex': duplex,
-                'speed': speed,
-                'mtu': mtu,
-            },
-            **kwargs
-        )
-
-
 class SensorTemperatureResponse(SensorResponse):
     def __init__(
         self,
@@ -182,11 +165,6 @@ class ProcessResponse(SystemResponse):
 class SystemResponseList(SystemResponse):
     def __init__(self, responses: List[SystemResponse], *args, **kwargs):
         super().__init__(output=[r.output for r in responses], *args, **kwargs)
-
-
-class NetworkResponseList(NetworkResponse, SystemResponseList):
-    def __init__(self, responses: List[NetworkResponse], *args, **kwargs):
-        super().__init__(responses=responses, *args, **kwargs)
 
 
 class SensorResponseList(SensorResponse, SystemResponseList):

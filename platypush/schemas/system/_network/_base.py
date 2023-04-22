@@ -1,3 +1,4 @@
+from enum import Enum
 from socket import AddressFamily
 
 from marshmallow import pre_load
@@ -20,6 +21,7 @@ class NetworkInterfaceBaseSchema(SystemBaseSchema):
             'errout': 'errors_out',
             'dropin': 'drop_in',
             'dropout': 'drop_out',
+            'isup': 'is_up',
         }.items():
             if in_attr in data:
                 data[out_attr] = data.pop(in_attr)
@@ -31,5 +33,11 @@ class NetworkInterfaceBaseSchema(SystemBaseSchema):
             if isinstance(addr.get('family'), AddressFamily):
                 addr['family'] = addr['family'].name
             data['addresses'][i] = addr
+
+        if isinstance(data.get('duplex'), Enum):
+            data['duplex'] = data['duplex'].name.split('_')[-1]
+
+        # Split the flags string
+        data['flags'] = data.get('flags', '').split(',')
 
         return data

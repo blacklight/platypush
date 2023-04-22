@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from socket import AddressFamily
 from typing import List, Optional
 
+from marshmallow.validate import OneOf
+
 
 @dataclass
 class NetworkInterface:
@@ -80,6 +82,55 @@ class NetworkInterface:
                 'description': 'Number of packets dropped on outgoing traffic',
             },
         }
+    )
+
+    is_up: bool = field(
+        metadata={
+            'metadata': {
+                'description': 'Whether the interface is active',
+                'example': True,
+            },
+        }
+    )
+
+    speed: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Interface reported speed in Mbps',
+                'example': 10000,
+            },
+        }
+    )
+
+    mtu: int = field(
+        metadata={
+            'metadata': {
+                'description': 'Interface maximum transmission unit expressed '
+                'in bytes',
+                'example': 65535,
+            },
+        }
+    )
+
+    duplex: str = field(
+        metadata={
+            'validate': OneOf(['FULL', 'HALF', 'UNKNOWN']),
+            'metadata': {
+                'description': 'Interface duplex configuration. Can be FULL, '
+                'HALF or UNKNOWN',
+                'example': 'FULL',
+            },
+        }
+    )
+
+    flags: List[str] = field(
+        default_factory=list,
+        metadata={
+            'metadata': {
+                'description': 'List of flags associated to the interface',
+                'example': ['up', 'broadcast', 'running'],
+            }
+        },
     )
 
     addresses: List['NetworkInterfaceAddress'] = field(

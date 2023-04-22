@@ -3,6 +3,7 @@ from sqlalchemy import Column, Float, ForeignKey, Integer, JSON, String
 from platypush.common.db import Base
 
 from . import Entity
+from .devices import Device
 
 
 if 'cpu' not in Base.metadata:
@@ -179,7 +180,7 @@ if 'disk' not in Base.metadata:
 
 if 'network_interface' not in Base.metadata:
 
-    class NetworkInterface(Entity):
+    class NetworkInterface(Device):
         """
         ``NetworkInterface`` ORM model.
         """
@@ -187,7 +188,7 @@ if 'network_interface' not in Base.metadata:
         __tablename__ = 'network_interface'
 
         id = Column(
-            Integer, ForeignKey(Entity.id, ondelete='CASCADE'), primary_key=True
+            Integer, ForeignKey(Device.id, ondelete='CASCADE'), primary_key=True
         )
 
         bytes_sent = Column(Integer)
@@ -199,6 +200,10 @@ if 'network_interface' not in Base.metadata:
         drop_in = Column(Integer)
         drop_out = Column(Integer)
         addresses = Column(JSON)
+        speed = Column(Integer)
+        mtu = Column(Integer)
+        duplex = Column(String)
+        flags = Column(JSON)
 
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,

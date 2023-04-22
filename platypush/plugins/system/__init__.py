@@ -21,8 +21,6 @@ from platypush.entities.system import (
     SwapStats as SwapStatsModel,
 )
 from platypush.message.response.system import (
-    NetworkResponseList,
-    NetworkInterfaceStatsResponse,
     SensorTemperatureResponse,
     SensorResponseList,
     SensorFanResponse,
@@ -256,15 +254,18 @@ class SystemPlugin(SensorPlugin, EntityManager):
 
     def _network_info(self) -> List[NetworkInterface]:
         addrs = psutil.net_if_addrs()
+        stats = psutil.net_if_stats()
+
         return NetworkInterfaceSchema().load(  # type: ignore
             [
                 {
                     'interface': interface,
                     'addresses': addrs.get(interface, []),
-                    **stats._asdict(),
+                    **(stats[interface]._asdict() if stats.get(interface) else {}),
+                    **info._asdict(),
                 }
-                for interface, stats in psutil.net_io_counters(pernic=True).items()
-                if any(bool(val) for val in stats._asdict().values())
+                for interface, info in psutil.net_io_counters(pernic=True).items()
+                if any(bool(val) for val in info._asdict().values())
             ],
             many=True,
         )
@@ -329,37 +330,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         return schema.dump(
             schema.load(psutil.net_connections(kind=type), many=True),  # type: ignore
             many=True,
-        )
-
-    @action
-    def net_stats(
-        self, nic: Optional[str] = None
-    ) -> Union[NetworkInterfaceStatsResponse, NetworkResponseList]:
-        """
-        Get stats about the network interfaces.
-
-        :param nic: Select the stats for a specific network device (e.g. 'eth0'). Default: get stats for all NICs.
-        :return: :class:`platypush.message.response.system.NetworkInterfaceStatsResponse` or list of
-            :class:`platypush.message.response.system.NetworkInterfaceStatsResponse`.
-        """
-        stats = psutil.net_if_stats()
-
-        def _expand_stats(_nic, _stats):
-            return NetworkInterfaceStatsResponse(
-                nic=_nic,
-                is_up=_stats.isup,
-                duplex=_stats.duplex.name,
-                speed=_stats.speed,
-                mtu=_stats.mtu,
-            )
-
-        if nic:
-            stats = [addr for name, addr in stats.items() if name == nic]
-            assert stats, 'No such network interface: {}'.format(nic)
-            return _expand_stats(nic, stats[0])
-
-        return NetworkResponseList(
-            [_expand_stats(nic, addr) for nic, addr in stats.items()]
         )
 
     @action
@@ -706,6 +676,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
                 NetworkInterfaceModel(
                     id=f'system:network_interface:{nic["interface"]}',
                     name=nic.pop('interface'),
+                    reachable=nic.pop('is_up'),
                     **nic,
                 )
                 for nic in entities['network']

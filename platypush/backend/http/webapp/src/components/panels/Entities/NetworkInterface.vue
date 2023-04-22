@@ -91,12 +91,39 @@
         </div>
       </div>
 
-    <div class="child head" :class="{expanded: !areAddressesCollapsed}"
-      @click.stop="areAddressesCollapsed = !areAddressesCollapsed">
-      <div class="col-11 label">Addresses</div>
-      <div class="col-1 collapse-toggler pull-right">
-        <i class="fas"
-          :class="{'fa-chevron-down': areAddressesCollapsed, 'fa-chevron-up': !areAddressesCollapsed}" />
+      <div class="child" v-if="value.speed">
+        <div class="col-s-12 col-m-6 label">
+          <div class="name">Speed</div>
+        </div>
+        <div class="value">
+          <div class="name" v-text="value.speed + ' Mbps'" />
+        </div>
+      </div>
+
+      <div class="child" v-if="value.mtu">
+        <div class="col-s-12 col-m-6 label">
+          <div class="name">MTU</div>
+        </div>
+        <div class="value">
+          <div class="name" v-text="value.mtu" />
+        </div>
+      </div>
+
+      <div class="child" v-if="value.flags?.length">
+        <div class="col-s-12 col-m-6 label">
+          <div class="name">Flags</div>
+        </div>
+        <div class="value">
+          <div class="name" v-text="value.flags.join(', ')" />
+        </div>
+      </div>
+
+      <div class="child head" :class="{expanded: !areAddressesCollapsed}"
+        @click.stop="areAddressesCollapsed = !areAddressesCollapsed">
+        <div class="col-11 label">Addresses</div>
+        <div class="col-1 collapse-toggler pull-right">
+          <i class="fas"
+            :class="{'fa-chevron-down': areAddressesCollapsed, 'fa-chevron-up': !areAddressesCollapsed}" />
         </div>
       </div>
 
