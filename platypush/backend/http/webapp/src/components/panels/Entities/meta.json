@@ -39,14 +39,6 @@
     }
   },
 
-  "cpu": {
-    "name": "System",
-    "name_plural": "System",
-    "icon": {
-      "class": "fas fa-microchip"
-    }
-  },
-
   "memory_stats": {
     "name": "System",
     "name_plural": "System",
@@ -79,11 +71,27 @@
     }
   },
 
+  "system_temperature": {
+    "name": "System",
+    "name_plural": "System",
+    "icon": {
+      "class": "fas fa-temperature-half"
+    }
+  },
+
   "current_sensor": {
     "name": "Sensor",
     "name_plural": "Sensors",
     "icon": {
       "class": "fas fa-bolt"
+    }
+  },
+
+  "cpu": {
+    "name": "System",
+    "name_plural": "System",
+    "icon": {
+      "class": "fas fa-microchip"
     }
   },
 

@@ -4,6 +4,7 @@ from platypush.common.db import Base
 
 from . import Entity
 from .devices import Device
+from .temperature import TemperatureSensor
 
 
 if 'cpu' not in Base.metadata:
@@ -204,6 +205,29 @@ if 'network_interface' not in Base.metadata:
         mtu = Column(Integer)
         duplex = Column(String)
         flags = Column(JSON)
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }
+
+
+if 'system_temperature' not in Base.metadata:
+
+    class SystemTemperature(TemperatureSensor):
+        """
+        Extends the ``TemperatureSensor``.
+        """
+
+        __tablename__ = 'system_temperature'
+
+        id = Column(
+            Integer,
+            ForeignKey(TemperatureSensor.id, ondelete='CASCADE'),
+            primary_key=True,
+        )
+
+        high = Column(Float)
+        critical = Column(Float)
 
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,

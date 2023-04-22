@@ -5,6 +5,7 @@ from ._cpu import Cpu
 from ._disk import Disk
 from ._memory import MemoryStats, SwapStats
 from ._network import NetworkInterface
+from ._temperature import Temperature
 
 
 @dataclass
@@ -18,3 +19,4 @@ class SystemInfo:
     swap: SwapStats
     disks: List[Disk]
     network: List[NetworkInterface]
+    temperature: List[Temperature]

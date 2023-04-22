@@ -15,6 +15,7 @@ from ._memory import MemoryStats, MemoryStatsSchema, SwapStats, SwapStatsSchema
 from ._model import SystemInfo
 from ._network import NetworkInterface, NetworkInterfaceSchema
 from ._schemas import SystemInfoSchema
+from ._temperature import Temperature, TemperatureSchema
 
 
 __all__ = [
@@ -39,4 +40,6 @@ __all__ = [
     "NetworkInterfaceSchema",
     "SystemInfo",
     "SystemInfoSchema",
+    "Temperature",
+    "TemperatureSchema",
 ]

@@ -1,7 +1,7 @@
 import os
 
 from datetime import datetime
-from typing import Tuple, Union, List, Optional, Dict
+from typing import Tuple, Union, List, Optional
 from typing_extensions import override
 
 import psutil
@@ -19,9 +19,9 @@ from platypush.entities.system import (
     MemoryStats as MemoryStatsModel,
     NetworkInterface as NetworkInterfaceModel,
     SwapStats as SwapStatsModel,
+    SystemTemperature,
 )
 from platypush.message.response.system import (
-    SensorTemperatureResponse,
     SensorResponseList,
     SensorFanResponse,
     SensorBatteryResponse,
@@ -51,6 +51,8 @@ from platypush.schemas.system import (
     SwapStats,
     SwapStatsSchema,
     SystemInfoSchema,
+    Temperature,
+    TemperatureSchema,
 )
 
 
@@ -145,9 +147,9 @@ class SystemPlugin(SensorPlugin, EntityManager):
             return list(percent)  # type: ignore
         return percent
 
-    def _cpu_stats(self) -> CpuStats:
-        stats = psutil.cpu_stats()
-        return CpuStatsSchema().load(stats)  # type: ignore
+    @staticmethod
+    def _cpu_stats() -> CpuStats:
+        return CpuStatsSchema().load(psutil.cpu_stats())  # type: ignore
 
     @action
     def cpu_stats(self) -> CpuStats:
@@ -158,13 +160,13 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return CpuStatsSchema().dump(self._cpu_stats())  # type: ignore
 
-    def _cpu_frequency_avg(self) -> CpuFrequency:
-        freq = psutil.cpu_freq(percpu=False)
-        return CpuFrequencySchema().load(freq)  # type: ignore
+    @staticmethod
+    def _cpu_frequency_avg() -> CpuFrequency:
+        return CpuFrequencySchema().load(psutil.cpu_freq(percpu=False))  # type: ignore
 
-    def _cpu_frequency_per_cpu(self) -> List[CpuFrequency]:
-        freq = psutil.cpu_freq(percpu=True)
-        return CpuFrequencySchema().load(freq, many=True)  # type: ignore
+    @staticmethod
+    def _cpu_frequency_per_cpu() -> List[CpuFrequency]:
+        return CpuFrequencySchema().load(psutil.cpu_freq(percpu=True), many=True)  # type: ignore
 
     @action
     def cpu_frequency(
@@ -193,7 +195,8 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return psutil.getloadavg()
 
-    def _mem_virtual(self) -> MemoryStats:
+    @staticmethod
+    def _mem_virtual() -> MemoryStats:
         return MemoryStatsSchema().load(psutil.virtual_memory())  # type: ignore
 
     @action
@@ -205,7 +208,8 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return MemoryStatsSchema().dump(self._mem_virtual())  # type: ignore
 
-    def _mem_swap(self) -> SwapStats:
+    @staticmethod
+    def _mem_swap() -> SwapStats:
         return SwapStatsSchema().load(psutil.swap_memory())  # type: ignore
 
     @action
@@ -217,7 +221,8 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return SwapStatsSchema().dump(self._mem_swap())  # type: ignore
 
-    def _disk_info(self) -> List[Disk]:
+    @staticmethod
+    def _disk_info() -> List[Disk]:
         parts = {part.device: part._asdict() for part in psutil.disk_partitions()}
         basename_parts = {os.path.basename(part): part for part in parts}
         io_stats = {
@@ -252,7 +257,8 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return DiskSchema().dump(self._disk_info(), many=True)
 
-    def _network_info(self) -> List[NetworkInterface]:
+    @staticmethod
+    def _network_info() -> List[NetworkInterface]:
         addrs = psutil.net_if_addrs()
         stats = psutil.net_if_stats()
 
@@ -270,7 +276,8 @@ class SystemPlugin(SensorPlugin, EntityManager):
             many=True,
         )
 
-    def _network_info_avg(self) -> NetworkInterface:
+    @staticmethod
+    def _network_info_avg() -> NetworkInterface:
         stats = psutil.net_io_counters(pernic=False)
         return NetworkInterfaceSchema().load(  # type: ignore
             {
@@ -332,65 +339,29 @@ class SystemPlugin(SensorPlugin, EntityManager):
             many=True,
         )
 
+    @staticmethod
+    def _sensors_temperature() -> List[Temperature]:
+        return TemperatureSchema().load(  # type: ignore
+            [
+                {
+                    **sensor._asdict(),
+                    'id': f'{kind}_{i + 1}',
+                    'label': (f'{kind} #{i + 1}' if not sensor.label else sensor.label),
+                }
+                for kind, sensors in psutil.sensors_temperatures().items()
+                for i, sensor in enumerate(sensors)
+            ],
+            many=True,
+        )
+
     @action
-    def sensors_temperature(
-        self, sensor: Optional[str] = None, fahrenheit: bool = False
-    ) -> Union[
-        SensorTemperatureResponse,
-        List[SensorTemperatureResponse],
-        Dict[str, Union[SensorTemperatureResponse, List[SensorTemperatureResponse]]],
-    ]:
+    def sensors_temperature(self) -> List[dict]:
         """
         Get stats from the temperature sensors.
 
-        :param sensor: Select the sensor name.
-        :param fahrenheit: Return the temperature in Fahrenheit (default: Celsius).
+        :return: .. schema:: system.TemperatureSchema(many=True)
         """
-        stats = psutil.sensors_temperatures(fahrenheit=fahrenheit)
-
-        if sensor:
-            stats = [addr for name, addr in stats.items() if name == sensor]
-            assert stats, 'No such sensor name: {}'.format(sensor)
-            if len(stats) == 1:
-                return SensorTemperatureResponse(
-                    name=sensor,
-                    current=stats[0].current,
-                    high=stats[0].high,
-                    critical=stats[0].critical,
-                    label=stats[0].label,
-                )
-
-            return [
-                SensorTemperatureResponse(
-                    name=sensor,
-                    current=s.current,
-                    high=s.high,
-                    critical=s.critical,
-                    label=s.label,
-                )
-                for s in stats
-            ]
-
-        ret = {}
-        for name, data in stats.items():
-            for stat in data:
-                resp = SensorTemperatureResponse(
-                    name=sensor,
-                    current=stat.current,
-                    high=stat.high,
-                    critical=stat.critical,
-                    label=stat.label,
-                ).output
-
-                if name not in ret:
-                    ret[name] = resp
-                else:
-                    if isinstance(ret[name], list):
-                        ret[name].append(resp)
-                    else:
-                        ret[name] = [ret[name], resp]
-
-        return ret
+        return TemperatureSchema().dump(self._sensors_temperature(), many=True)
 
     @action
     def sensors_fan(self, sensor: Optional[str] = None) -> SensorResponseList:
@@ -588,6 +559,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
                 'swap': self._mem_swap(),
                 'disks': self._disk_info(),
                 'network': self._network_info(),
+                'temperature': self._sensors_temperature(),
             }
         )
 
@@ -679,7 +651,16 @@ class SystemPlugin(SensorPlugin, EntityManager):
                     reachable=nic.pop('is_up'),
                     **nic,
                 )
-                for nic in entities['network']
+                for nic in entities.get('network', [])
+            ],
+            *[
+                SystemTemperature(
+                    id=f'system:temperature:{temp.pop("id")}',
+                    name=temp.pop('label'),
+                    unit='°C',
+                    **temp,
+                )
+                for temp in entities.get('temperature', [])
             ],
         ]
 

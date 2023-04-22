@@ -8,48 +8,8 @@ class SystemResponse(Response):
     pass
 
 
-class CpuResponse(SystemResponse):
-    pass
-
-
-class MemoryResponse(SystemResponse):
-    pass
-
-
-class DiskResponse(SystemResponse):
-    pass
-
-
-class NetworkResponse(SystemResponse):
-    pass
-
-
 class SensorResponse(SystemResponse):
     pass
-
-
-class SensorTemperatureResponse(SensorResponse):
-    def __init__(
-        self,
-        name: str,
-        current: float,
-        high: Optional[float] = None,
-        critical: Optional[float] = None,
-        label: Optional[str] = None,
-        *args,
-        **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'name': name,
-                'current': current,
-                'high': high,
-                'critical': critical,
-                'label': label,
-            },
-            **kwargs
-        )
 
 
 class SensorFanResponse(SensorResponse):
