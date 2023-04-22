@@ -8,30 +8,6 @@ class SystemResponse(Response):
     pass
 
 
-class ConnectUserResponse(SystemResponse):
-    def __init__(
-        self,
-        name: str,
-        terminal: str,
-        host: str,
-        started: datetime,
-        pid: Optional[int] = None,
-        *args,
-        **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'name': name,
-                'terminal': terminal,
-                'host': host,
-                'started': started,
-                'pid': pid,
-            },
-            **kwargs
-        )
-
-
 class ProcessResponse(SystemResponse):
     def __init__(
         self,
@@ -91,11 +67,6 @@ class ProcessResponse(SystemResponse):
 class SystemResponseList(SystemResponse):
     def __init__(self, responses: List[SystemResponse], *args, **kwargs):
         super().__init__(output=[r.output for r in responses], *args, **kwargs)
-
-
-class ConnectedUserResponseList(SystemResponseList):
-    def __init__(self, responses: List[ConnectUserResponse], *args, **kwargs):
-        super().__init__(responses=responses, *args, **kwargs)
 
 
 class ProcessResponseList(SystemResponseList):

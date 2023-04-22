@@ -18,6 +18,7 @@ from ._model import SystemInfo
 from ._network import NetworkInterface, NetworkInterfaceSchema
 from ._schemas import SystemInfoSchema
 from ._temperature import Temperature, TemperatureSchema
+from ._user import User, UserSchema
 
 
 __all__ = [
@@ -48,4 +49,6 @@ __all__ = [
     "SystemInfoSchema",
     "Temperature",
     "TemperatureSchema",
+    "User",
+    "UserSchema",
 ]

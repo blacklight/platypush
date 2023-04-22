@@ -24,8 +24,6 @@ from platypush.entities.system import (
     SystemTemperature,
 )
 from platypush.message.response.system import (
-    ConnectedUserResponseList,
-    ConnectUserResponse,
     ProcessResponseList,
     ProcessResponse,
 )
@@ -56,6 +54,8 @@ from platypush.schemas.system import (
     SystemInfoSchema,
     Temperature,
     TemperatureSchema,
+    User,
+    UserSchema,
 )
 
 
@@ -403,26 +403,17 @@ class SystemPlugin(SensorPlugin, EntityManager):
         battery = self._sensors_battery()
         return BatterySchema().dump(battery) if battery else None  # type: ignore
 
+    def _connected_users(self) -> List[User]:
+        return UserSchema().load(psutil.users(), many=True)  # type: ignore
+
     @action
-    def connected_users(self) -> ConnectedUserResponseList:
+    def connected_users(self) -> List[dict]:
         """
         Get the list of connected users.
-        :return: List of :class:`platypush.message.response.system.ConnectUserResponse`.
-        """
-        users = psutil.users()
 
-        return ConnectedUserResponseList(
-            [
-                ConnectUserResponse(
-                    name=u.name,
-                    terminal=u.terminal,
-                    host=u.host,
-                    started=datetime.fromtimestamp(u.started),
-                    pid=u.pid,
-                )
-                for u in users
-            ]
-        )
+        :return: .. schema:: system.UserSchema
+        """
+        return UserSchema().dump(self._connected_users(), many=True)
 
     @action
     def processes(self, filter: Optional[str] = '') -> ProcessResponseList:
