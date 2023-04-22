@@ -300,7 +300,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
         return NetworkInterfaceSchema().dump(self._network_info_avg())
 
     @action
-    def net_connections(self, type: str = 'inet') -> List[dict]:
+    def network_connections(self, type: str = 'inet') -> List[dict]:
         """
         Get the list of active network connections.
         On MacOS this function requires root privileges.
