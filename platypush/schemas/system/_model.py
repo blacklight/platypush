@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
+from ._battery import Battery
 from ._cpu import Cpu
 from ._disk import Disk
 from ._fan import Fan
@@ -22,3 +23,4 @@ class SystemInfo:
     network: List[NetworkInterface]
     temperature: List[Temperature]
     fans: List[Fan]
+    battery: Optional[Battery]

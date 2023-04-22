@@ -1,10 +1,10 @@
-from sqlalchemy import Column, Float, ForeignKey, Integer, JSON, String
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, JSON, String
 
 from platypush.common.db import Base
 
 from . import Entity
 from .devices import Device
-from .sensors import NumericSensor
+from .sensors import NumericSensor, PercentSensor
 from .temperature import TemperatureSensor
 
 
@@ -249,6 +249,29 @@ if 'system_fan' not in Base.metadata:
             ForeignKey(NumericSensor.id, ondelete='CASCADE'),
             primary_key=True,
         )
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }
+
+
+if 'system_battery' not in Base.metadata:
+
+    class SystemBattery(PercentSensor):
+        """
+        ``SystemBattery`` ORM model.
+        """
+
+        __tablename__ = 'system_battery'
+
+        id = Column(
+            Integer,
+            ForeignKey(PercentSensor.id, ondelete='CASCADE'),
+            primary_key=True,
+        )
+
+        seconds_left = Column(Float)
+        power_plugged = Column(Boolean)
 
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,

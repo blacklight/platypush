@@ -19,11 +19,11 @@ from platypush.entities.system import (
     MemoryStats as MemoryStatsModel,
     NetworkInterface as NetworkInterfaceModel,
     SwapStats as SwapStatsModel,
+    SystemBattery,
     SystemFan,
     SystemTemperature,
 )
 from platypush.message.response.system import (
-    SensorBatteryResponse,
     ConnectedUserResponseList,
     ConnectUserResponse,
     ProcessResponseList,
@@ -32,6 +32,8 @@ from platypush.message.response.system import (
 from platypush.plugins import action
 from platypush.plugins.sensor import SensorPlugin
 from platypush.schemas.system import (
+    Battery,
+    BatterySchema,
     ConnectionSchema,
     CpuFrequency,
     CpuFrequencySchema,
@@ -387,19 +389,19 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return FanSchema().dump(self._sensors_fan(), many=True)
 
+    def _sensors_battery(self) -> Optional[Battery]:
+        battery = psutil.sensors_battery()
+        return BatterySchema().load(battery) if battery else None  # type: ignore
+
     @action
-    def sensors_battery(self) -> SensorBatteryResponse:
+    def sensors_battery(self) -> Optional[dict]:
         """
         Get stats from the battery sensor.
-        :return: List of :class:`platypush.message.response.system.SensorFanResponse`.
-        """
-        stats = psutil.sensors_battery()
 
-        return SensorBatteryResponse(
-            percent=stats.percent,
-            secs_left=stats.secsleft,
-            power_plugged=stats.power_plugged,
-        )
+        :return: .. schema:: system.BatterySchema
+        """
+        battery = self._sensors_battery()
+        return BatterySchema().dump(battery) if battery else None  # type: ignore
 
     @action
     def connected_users(self) -> ConnectedUserResponseList:
@@ -554,12 +556,14 @@ class SystemPlugin(SensorPlugin, EntityManager):
                 'network': self._network_info(),
                 'temperature': self._sensors_temperature(),
                 'fans': self._sensors_fan(),
+                'battery': self._sensors_battery(),
             }
         )
 
     @override
     def transform_entities(self, entities: dict) -> List[Entity]:
         cpu = entities['cpu'].copy()
+        battery = entities['battery']
 
         return [
             Cpu(
@@ -662,6 +666,15 @@ class SystemPlugin(SensorPlugin, EntityManager):
                     **fan,
                 )
                 for fan in entities.get('fans', [])
+            ],
+            *[
+                SystemBattery(
+                    id='system:battery',
+                    name='Battery',
+                    **battery,
+                )
+                if battery
+                else ()
             ],
         ]
 

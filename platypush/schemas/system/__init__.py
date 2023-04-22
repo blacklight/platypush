@@ -1,3 +1,4 @@
+from ._battery import Battery, BatterySchema
 from ._connection import Connection, ConnectionSchema
 from ._cpu import (
     Cpu,
@@ -20,6 +21,8 @@ from ._temperature import Temperature, TemperatureSchema
 
 
 __all__ = [
+    "Battery",
+    "BatterySchema",
     "Connection",
     "ConnectionSchema",
     "Cpu",

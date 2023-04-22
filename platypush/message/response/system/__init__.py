@@ -8,25 +8,6 @@ class SystemResponse(Response):
     pass
 
 
-class SensorResponse(SystemResponse):
-    pass
-
-
-class SensorBatteryResponse(SensorResponse):
-    def __init__(
-        self, percent: float, secs_left: int, power_plugged: bool, *args, **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'percent': percent,
-                'secs_left': secs_left,
-                'power_plugged': power_plugged,
-            },
-            **kwargs
-        )
-
-
 class ConnectUserResponse(SystemResponse):
     def __init__(
         self,

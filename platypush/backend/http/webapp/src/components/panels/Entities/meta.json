@@ -79,19 +79,27 @@
     }
   },
 
-  "current_sensor": {
-    "name": "Sensor",
-    "name_plural": "Sensors",
-    "icon": {
-      "class": "fas fa-bolt"
-    }
-  },
-
   "system_fan": {
     "name": "System",
     "name_plural": "System",
     "icon": {
       "class": "fas fa-fan"
+    }
+  },
+
+  "system_battery": {
+    "name": "System",
+    "name_plural": "System",
+    "icon": {
+      "class": "fas fa-battery-full"
+    }
+  },
+
+  "current_sensor": {
+    "name": "Sensor",
+    "name_plural": "Sensors",
+    "icon": {
+      "class": "fas fa-bolt"
     }
   },
 
