@@ -38,9 +38,5 @@ export default {
       font-weight: bold;
     }
   }
-
-  .icon {
-    margin-right: 1em;
-  }
 }
 </style>

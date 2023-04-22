@@ -186,6 +186,12 @@ export default {
   }
 }
 
+@mixin expanded-entity {
+  background: $selected-bg;
+  font-weight: bold;
+  box-shadow: 0 0 3px 2px $default-shadow-color;
+}
+
 .entity-container {
   width: 100%;
   display: flex;
@@ -195,27 +201,11 @@ export default {
   border-bottom: $default-border-3;
 
   &.with-children:not(.collapsed) {
-    background: $selected-bg;
-    font-weight: bold;
-    box-shadow: 0 0 3px 2px $default-shadow-color;
+    @include expanded-entity();
   }
 
   &:hover {
     background: $hover-bg;
-  }
-
-  .collapse-toggler {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex: 1;
-    min-height: 3em;
-    margin-left: 0;
-    cursor: pointer;
-
-    &:hover {
-      color: $default-hover-fg;
-    }
   }
 
   .adjuster {
@@ -224,6 +214,10 @@ export default {
 }
 
 :deep(.entity-container) {
+  .entity.expanded {
+    @include expanded-entity();
+  }
+
   .head {
     .name {
       display: inline-flex;

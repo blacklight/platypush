@@ -1,5 +1,5 @@
 <template>
-  <div class="entity disk-container">
+  <div class="entity disk-container" :class="{expanded: !isCollapsed}">
     <div class="head" @click.stop="isCollapsed = !isCollapsed">
       <div class="col-1 icon">
         <EntityIcon
@@ -168,57 +168,6 @@ export default {
     .value {
       text-align: right;
       font-weight: bold;
-    }
-
-    .icon {
-      margin-right: 1em;
-    }
-  }
-}
-
-.collapse-toggler {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  min-height: 3em;
-  cursor: pointer;
-
-  @include from($tablet) {
-    @include until($desktop) {
-      margin-left: 3.25em;
-    }
-  }
-
-  &:hover {
-    color: $default-hover-fg;
-  }
-}
-
-.attributes .child {
-  margin: 0 -0.5em;
-  padding: 0.5em 1em;
-
-  &:not(:last-child) {
-    border-bottom: 1px solid $border-color-1;
-  }
-
-  &:hover {
-    cursor: initial;
-  }
-
-  .label {
-    font-weight: bold;
-    @include from($tablet) {
-      @extend .col-m-6;
-    }
-  }
-
-  .value {
-    font-size: 0.95em;
-    text-align: right;
-
-    @include from($tablet) {
-      @extend .col-m-6;
     }
   }
 }

@@ -10,6 +10,12 @@
     display: flex;
     align-items: center;
     padding: 0.75em 0.25em;
+    min-height: 3.5em;
+    position: relative;
+
+    .icon {
+      margin-right: 1em;
+    }
 
     .label {
       margin-top: 0.25em;
@@ -38,6 +44,7 @@
     background: linear-gradient(0deg, $default-bg-5, $default-bg-2);
     border-top: 1px solid $border-color-1;
     box-shadow: $border-shadow-bottom;
+    font-weight: normal;
   }
 
   button {
@@ -48,6 +55,57 @@
 
     &:hover {
       color: $default-hover-fg;
+    }
+  }
+}
+
+.collapse-toggler {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+  min-height: 2em;
+  margin-right: 1.25em;
+  cursor: pointer;
+
+  &:hover {
+    color: $default-hover-fg;
+  }
+}
+
+.attributes .child {
+  padding: 0.5em 1em;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid $border-color-1;
+  }
+
+  &:hover {
+    cursor: initial;
+  }
+
+  &.head {
+    cursor: pointer;
+    &:hover {
+      background: $hover-bg;
+    }
+  }
+
+  .label {
+    font-weight: bold;
+    @include from($tablet) {
+      @extend .col-m-6;
+    }
+  }
+
+  .value {
+    font-size: 0.95em;
+    text-align: right;
+
+    @include from($tablet) {
+      @extend .col-m-6;
     }
   }
 }

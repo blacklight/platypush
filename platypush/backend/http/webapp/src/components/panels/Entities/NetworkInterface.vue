@@ -1,5 +1,5 @@
 <template>
-  <div class="entity network-interface-container">
+  <div class="entity network-interface-container" :class="{expanded: !isCollapsed}">
     <div class="head" @click.stop="isCollapsed = !isCollapsed">
       <div class="col-1 icon">
         <EntityIcon
@@ -12,7 +12,7 @@
         <div class="name" v-text="value.name" />
       </div>
 
-      <div class="col-1 collapse-toggler" @click.stop="isCollapsed = !isCollapsed">
+      <div class="col-1 collapse-toggler">
         <i class="fas"
           :class="{'fa-chevron-down': isCollapsed, 'fa-chevron-up': !isCollapsed}" />
       </div>
@@ -91,7 +91,8 @@
         </div>
       </div>
 
-    <div class="child head" @click.stop="areAddressesCollapsed = !areAddressesCollapsed">
+    <div class="child head" :class="{expanded: !areAddressesCollapsed}"
+      @click.stop="areAddressesCollapsed = !areAddressesCollapsed">
       <div class="col-11 label">Addresses</div>
       <div class="col-1 collapse-toggler pull-right">
         <i class="fas"
@@ -105,7 +106,7 @@
           v-for="address in (value.addresses || [])"
           :key="address.address"
         >
-          <div class="child head"
+          <div class="child head" :class="{expanded: displayedAddresses[address.address]}"
             @click.stop="displayedAddresses[address.address] = !displayedAddresses[address.address]"
           >
             <div class="col-11 label" v-text="address.address" />
@@ -160,61 +161,4 @@ export default {
 
 <style lang="scss" scoped>
 @import "common";
-
-.entity {
-  .head {
-    padding: 0.25em;
-
-    .icon {
-      margin-right: 1em;
-    }
-  }
-}
-
-.collapse-toggler {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  min-height: 3em;
-  cursor: pointer;
-
-  @include from($tablet) {
-    @include until($desktop) {
-      margin-left: 3.25em;
-    }
-  }
-
-  &:hover {
-    color: $default-hover-fg;
-  }
-}
-
-.attributes .child {
-  margin: 0 -0.5em;
-  padding: 0.5em 1em;
-
-  &:not(:last-child) {
-    border-bottom: 1px solid $border-color-1;
-  }
-
-  &:hover {
-    cursor: initial;
-  }
-
-  .label {
-    font-weight: bold;
-    @include from($tablet) {
-      @extend .col-m-6;
-    }
-  }
-
-  .value {
-    font-size: 0.95em;
-    text-align: right;
-
-    @include from($tablet) {
-      @extend .col-m-6;
-    }
-  }
-}
 </style>

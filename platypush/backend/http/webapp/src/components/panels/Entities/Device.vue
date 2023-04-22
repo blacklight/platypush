@@ -28,10 +28,4 @@ export default {
 
 <style lang="scss" scoped>
 @import "common";
-
-.device-container {
-  .icon {
-    margin-right: 1em;
-  }
-}
 </style>
