@@ -408,6 +408,7 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
                     e,
                     sleep_retry_secs,
                 )
+                self.logger.exception(e)
                 self.wait_stop(sleep_retry_secs)
                 sleep_retry_secs = min(
                     sleep_retry_secs * 2,
