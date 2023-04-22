@@ -90,6 +90,51 @@
           <div class="name" v-text="value.drop_out" />
         </div>
       </div>
+
+    <div class="child head" @click.stop="areAddressesCollapsed = !areAddressesCollapsed">
+      <div class="col-11 label">Addresses</div>
+      <div class="col-1 collapse-toggler pull-right">
+        <i class="fas"
+          :class="{'fa-chevron-down': areAddressesCollapsed, 'fa-chevron-up': !areAddressesCollapsed}" />
+        </div>
+      </div>
+
+      <div class="body children attributes fade-in addresses"
+          v-if="value.addresses?.length && !areAddressesCollapsed">
+        <div class="address-container"
+          v-for="address in (value.addresses || [])"
+          :key="address.address"
+        >
+          <div class="child head"
+            @click.stop="displayedAddresses[address.address] = !displayedAddresses[address.address]"
+          >
+            <div class="col-11 label" v-text="address.address" />
+            <div class="col-1 collapse-toggler pull-right">
+              <i class="fas"
+                :class="{
+                  'fa-chevron-down': !displayedAddresses[address.address],
+                  'fa-chevron-up': displayedAddresses[address.address]
+                }"
+              />
+            </div>
+          </div>
+          <div class="body children attributes fade-in address-details"
+              v-if="displayedAddresses[address.address]">
+            <div class="child" v-if="address.family">
+              <div class="label">Family</div>
+              <div class="value" v-text="address.family" />
+            </div>
+            <div class="child" v-if="address.netmask">
+              <div class="label">Netmask</div>
+              <div class="value" v-text="address.netmask" />
+            </div>
+            <div class="child" v-if="address.broadcast">
+              <div class="label">Broadcast</div>
+              <div class="value" v-text="address.broadcast" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -106,6 +151,8 @@ export default {
   data() {
     return {
       isCollapsed: true,
+      areAddressesCollapsed: true,
+      displayedAddresses: {},
     }
   },
 }
@@ -130,6 +177,12 @@ export default {
   flex: 1;
   min-height: 3em;
   cursor: pointer;
+
+  @include from($tablet) {
+    @include until($desktop) {
+      margin-left: 3.25em;
+    }
+  }
 
   &:hover {
     color: $default-hover-fg;

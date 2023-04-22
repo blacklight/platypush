@@ -198,6 +198,7 @@ if 'network_interface' not in Base.metadata:
         errors_out = Column(Integer)
         drop_in = Column(Integer)
         drop_out = Column(Integer)
+        addresses = Column(JSON)
 
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,

@@ -1,5 +1,4 @@
 import os
-import socket
 
 from datetime import datetime
 from typing import Tuple, Union, List, Optional, Dict
@@ -23,7 +22,6 @@ from platypush.entities.system import (
 )
 from platypush.message.response.system import (
     NetworkResponseList,
-    NetworkAddressResponse,
     NetworkInterfaceStatsResponse,
     SensorTemperatureResponse,
     SensorResponseList,
@@ -257,9 +255,14 @@ class SystemPlugin(SensorPlugin, EntityManager):
         return DiskSchema().dump(self._disk_info(), many=True)
 
     def _net_io_counters(self) -> List[NetworkInterface]:
+        addrs = psutil.net_if_addrs()
         return NetworkInterfaceSchema().load(  # type: ignore
             [
-                {'interface': interface, **stats._asdict()}
+                {
+                    'interface': interface,
+                    'addresses': addrs.get(interface, []),
+                    **stats._asdict(),
+                }
                 for interface, stats in psutil.net_io_counters(pernic=True).items()
                 if any(bool(val) for val in stats._asdict().values())
             ],
@@ -326,62 +329,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         return schema.dump(
             schema.load(psutil.net_connections(kind=type), many=True),  # type: ignore
             many=True,
-        )
-
-    @action
-    def net_addresses(
-        self, nic: Optional[str] = None
-    ) -> Union[NetworkAddressResponse, NetworkResponseList]:
-        """
-        Get address info associated to the network interfaces.
-
-        :param nic: Select the stats for a specific network device (e.g. 'eth0'). Default: get stats for all NICs.
-        :return: :class:`platypush.message.response.system.NetworkAddressResponse` or list of
-            :class:`platypush.message.response.system.NetworkAddressResponse`.
-        """
-        addrs = psutil.net_if_addrs()
-
-        def _expand_addresses(_nic, _addrs):
-            args = {'nic': _nic}
-
-            for addr in _addrs:
-                if addr.family == socket.AddressFamily.AF_INET:
-                    args.update(
-                        {
-                            'ipv4_address': addr.address,
-                            'ipv4_netmask': addr.netmask,
-                            'ipv4_broadcast': addr.broadcast,
-                        }
-                    )
-                elif addr.family == socket.AddressFamily.AF_INET6:
-                    args.update(
-                        {
-                            'ipv6_address': addr.address,
-                            'ipv6_netmask': addr.netmask,
-                            'ipv6_broadcast': addr.broadcast,
-                        }
-                    )
-                elif addr.family == socket.AddressFamily.AF_PACKET:
-                    args.update(
-                        {
-                            'mac_address': addr.address,
-                            'mac_broadcast': addr.broadcast,
-                        }
-                    )
-
-                if addr.ptp and not args.get('ptp'):
-                    args['ptp'] = addr.ptp
-
-            return NetworkAddressResponse(**args)
-
-        if nic:
-            addrs = [addr for name, addr in addrs.items() if name == nic]
-            assert addrs, 'No such network interface: {}'.format(nic)
-            addr = addrs[0]
-            return _expand_addresses(nic, addr)
-
-        return NetworkResponseList(
-            [_expand_addresses(nic, addr) for nic, addr in addrs.items()]
         )
 
     @action

@@ -28,40 +28,6 @@ class SensorResponse(SystemResponse):
     pass
 
 
-class NetworkAddressResponse(NetworkResponse):
-    def __init__(
-        self,
-        nic: str,
-        ipv4_address: Optional[str] = None,
-        ipv4_netmask: Optional[str] = None,
-        ipv4_broadcast: Optional[str] = None,
-        ipv6_address: Optional[str] = None,
-        ipv6_netmask: Optional[str] = None,
-        ipv6_broadcast: Optional[str] = None,
-        mac_address: Optional[str] = None,
-        mac_broadcast: Optional[str] = None,
-        ptp: Optional[str] = None,
-        *args,
-        **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'nic': nic,
-                'ipv4_address': ipv4_address,
-                'ipv4_netmask': ipv4_netmask,
-                'ipv4_broadcast': ipv4_broadcast,
-                'ipv6_address': ipv6_address,
-                'ipv6_netmask': ipv6_netmask,
-                'ipv6_broadcast': ipv6_broadcast,
-                'mac_address': mac_address,
-                'mac_broadcast': mac_broadcast,
-                'ptp': ptp,
-            },
-            **kwargs
-        )
-
-
 class NetworkInterfaceStatsResponse(NetworkResponse):
     def __init__(
         self, nic: str, is_up: bool, duplex: str, speed: int, mtu: int, *args, **kwargs
