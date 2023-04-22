@@ -1,10 +1,14 @@
+import logging
 from typing import Iterable, List, Optional
 
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.exc import ObjectDeletedError
 
 from platypush.entities._base import Entity, EntityMapping
 
 from .helpers import get_parent
+
+logger = logging.getLogger(__name__)
 
 
 # pylint: disable=too-few-public-methods
@@ -180,7 +184,13 @@ class EntitiesMerger:
                     **(entity.meta or {}),  # type: ignore
                 }
             elif col not in ('id', 'created_at'):
-                setattr(existing_entity, col, getattr(entity, col))
+                try:
+                    setattr(existing_entity, col, getattr(entity, col))
+                except ObjectDeletedError as e:
+                    logger.warning(
+                        'Could not set %s on entity <%s>: %s',
+                        col, existing_entity.entity_key, e
+                    )
 
         # Recursive call to merge the columns of the children too
         if include_children:
