@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from .._base import percent_field
+from platypush.schemas.dataclasses import percent_field
 
 
 @dataclass

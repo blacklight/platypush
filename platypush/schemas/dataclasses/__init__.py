@@ -1,3 +1,4 @@
+from dataclasses import field
 from datetime import date, datetime
 from uuid import UUID
 
@@ -6,9 +7,24 @@ from marshmallow import (
     Schema,
     fields,
     post_dump,
+    pre_load,
 )
+from marshmallow.validate import Range
 
 from .. import Date, DateTime
+
+
+def percent_field(**kwargs):
+    """
+    Field used to model percentage float fields between 0 and 1.
+    """
+    return field(
+        default_factory=float,
+        metadata={
+            'validate': Range(min=0, max=1),
+            **kwargs,
+        },
+    )
 
 
 class DataClassSchema(Schema):
@@ -44,6 +60,10 @@ class DataClassSchema(Schema):
         ), f'Could not find field {key} in {self.__class__.__name__}'
 
         return matching_fields[0]
+
+    @pre_load
+    def pre_load(self, data, **__) -> dict:
+        return data
 
     @post_dump
     def post_dump(self, data: dict, **__) -> dict:

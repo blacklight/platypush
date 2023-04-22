@@ -1,16 +1,15 @@
-from dataclasses import field
+from marshmallow import pre_load
 
-from marshmallow.validate import Range
+from platypush.schemas.dataclasses import DataClassSchema
 
 
-def percent_field(**kwargs):
+class SystemBaseSchema(DataClassSchema):
     """
-    Field used to model percentage float fields between 0 and 1.
+    Base schema for system info.
     """
-    return field(
-        default_factory=float,
-        metadata={
-            'validate': Range(min=0, max=1),
-            **kwargs,
-        },
-    )
+
+    @pre_load
+    def pre_load(self, data, **_) -> dict:
+        if hasattr(data, '_asdict'):
+            data = data._asdict()
+        return data

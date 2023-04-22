@@ -151,7 +151,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
 
     def _cpu_stats(self) -> CpuStats:
         stats = psutil.cpu_stats()
-        return CpuStatsSchema().load(stats._asdict())  # type: ignore
+        return CpuStatsSchema().load(stats)  # type: ignore
 
     @action
     def cpu_stats(self) -> CpuStats:
@@ -164,11 +164,11 @@ class SystemPlugin(SensorPlugin, EntityManager):
 
     def _cpu_frequency_avg(self) -> CpuFrequency:
         freq = psutil.cpu_freq(percpu=False)
-        return CpuFrequencySchema().load(freq._asdict())  # type: ignore
+        return CpuFrequencySchema().load(freq)  # type: ignore
 
     def _cpu_frequency_per_cpu(self) -> List[CpuFrequency]:
         freq = psutil.cpu_freq(percpu=True)
-        return CpuFrequencySchema().load(freq._asdict(), many=True)  # type: ignore
+        return CpuFrequencySchema().load(freq, many=True)  # type: ignore
 
     @action
     def cpu_frequency(
@@ -198,9 +198,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
         return psutil.getloadavg()
 
     def _mem_virtual(self) -> MemoryStats:
-        return MemoryStatsSchema().load(
-            psutil.virtual_memory()._asdict()
-        )  # type: ignore
+        return MemoryStatsSchema().load(psutil.virtual_memory())  # type: ignore
 
     @action
     def mem_virtual(self) -> dict:
@@ -212,7 +210,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
         return MemoryStatsSchema().dump(self._mem_virtual())  # type: ignore
 
     def _mem_swap(self) -> SwapStats:
-        return SwapStatsSchema().load(psutil.swap_memory()._asdict())  # type: ignore
+        return SwapStatsSchema().load(psutil.swap_memory())  # type: ignore
 
     @action
     def mem_swap(self) -> dict:
@@ -226,7 +224,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
     def _disk_info(self) -> List[Disk]:
         parts = {part.device: part._asdict() for part in psutil.disk_partitions()}
         basename_parts = {os.path.basename(part): part for part in parts}
-
         io_stats = {
             basename_parts[disk]: stats._asdict()
             for disk, stats in psutil.disk_io_counters(perdisk=True).items()
@@ -234,7 +231,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
         }
 
         usage = {
-            disk: psutil.disk_usage(info['mountpoint'])._asdict()
+            disk: psutil.disk_usage(info['mountpoint'])._asdict()  # type: ignore
             for disk, info in parts.items()
         }
 

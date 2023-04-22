@@ -1,18 +1,16 @@
 from marshmallow import pre_load
 
-from platypush.schemas.dataclasses import DataClassSchema
+from .._base import SystemBaseSchema
 
 
-class ConnectionBaseSchema(DataClassSchema):
+class ConnectionBaseSchema(SystemBaseSchema):
     """
     Base schema for connections.
     """
 
     @pre_load
     def pre_load(self, data, **_) -> dict:
-        if hasattr(data, '_asdict'):
-            data = data._asdict()
-
+        data = super().pre_load(data)
         addr_mapping = {
             'laddr': ('local_address', 'local_port'),
             'raddr': ('remote_address', 'remote_port'),

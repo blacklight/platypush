@@ -1,15 +1,16 @@
 from marshmallow import pre_load
 
-from platypush.schemas.dataclasses import DataClassSchema
+from .._base import SystemBaseSchema
 
 
-class CpuInfoBaseSchema(DataClassSchema):
+class CpuInfoBaseSchema(SystemBaseSchema):
     """
     Base schema for CPU info.
     """
 
     @pre_load
     def pre_load(self, data: dict, **_) -> dict:
+        data = super().pre_load(data)
         if data.get('hz_advertised'):
             data['frequency_advertised'] = data.pop('hz_advertised')[0]
         if data.get('hz_actual'):
@@ -18,7 +19,7 @@ class CpuInfoBaseSchema(DataClassSchema):
         return data
 
 
-class CpuTimesBaseSchema(DataClassSchema):
+class CpuTimesBaseSchema(SystemBaseSchema):
     """
     Base schema for CPU times.
     """
@@ -29,6 +30,7 @@ class CpuTimesBaseSchema(DataClassSchema):
         Convert the underlying object to dict and normalize all the percentage
         values from [0, 100] to [0, 1].
         """
+        data = super().pre_load(data)
         return {
             key: value / 100.0
             for key, value in (

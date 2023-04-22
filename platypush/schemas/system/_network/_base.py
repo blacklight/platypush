@@ -1,15 +1,16 @@
 from marshmallow import pre_load
 
-from platypush.schemas.dataclasses import DataClassSchema
+from .._base import SystemBaseSchema
 
 
-class NetworkInterfaceBaseSchema(DataClassSchema):
+class NetworkInterfaceBaseSchema(SystemBaseSchema):
     """
     Base schema for network interface stats.
     """
 
     @pre_load
     def pre_load(self, data: dict, **_) -> dict:
+        data = super().pre_load(data)
         for in_attr, out_attr in {
             'errin': 'errors_in',
             'errout': 'errors_out',
