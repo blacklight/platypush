@@ -71,8 +71,8 @@ class SystemPlugin(SensorPlugin, EntityManager):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, poll_interval: Optional[float] = 60, **kwargs):
+        super().__init__(*args, poll_interval=poll_interval, **kwargs)
         self.__cpu_info: Optional[CpuInfo] = None
 
     @property
