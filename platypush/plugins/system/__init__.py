@@ -254,7 +254,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return DiskSchema().dump(self._disk_info(), many=True)
 
-    def _net_io_counters(self) -> List[NetworkInterface]:
+    def _network_info(self) -> List[NetworkInterface]:
         addrs = psutil.net_if_addrs()
         return NetworkInterfaceSchema().load(  # type: ignore
             [
@@ -269,7 +269,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
             many=True,
         )
 
-    def _net_io_counters_avg(self) -> NetworkInterface:
+    def _network_info_avg(self) -> NetworkInterface:
         stats = psutil.net_io_counters(pernic=False)
         return NetworkInterfaceSchema().load(  # type: ignore
             {
@@ -279,7 +279,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
         )
 
     @action
-    def net_io_counters(self, per_nic: bool = False):
+    def network_info(self, per_nic: bool = False):
         """
         Get the information and statistics for the network interfaces.
 
@@ -295,8 +295,8 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
 
         if per_nic:
-            return NetworkInterfaceSchema().dump(self._net_io_counters(), many=True)
-        return NetworkInterfaceSchema().dump(self._net_io_counters_avg())
+            return NetworkInterfaceSchema().dump(self._network_info(), many=True)
+        return NetworkInterfaceSchema().dump(self._network_info_avg())
 
     @action
     def net_connections(self, type: str = 'inet') -> List[dict]:
@@ -617,7 +617,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
                 'memory': self._mem_virtual(),
                 'swap': self._mem_swap(),
                 'disks': self._disk_info(),
-                'network': self._net_io_counters(),
+                'network': self._network_info(),
             }
         )
 
