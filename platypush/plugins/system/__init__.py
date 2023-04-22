@@ -19,11 +19,10 @@ from platypush.entities.system import (
     MemoryStats as MemoryStatsModel,
     NetworkInterface as NetworkInterfaceModel,
     SwapStats as SwapStatsModel,
+    SystemFan,
     SystemTemperature,
 )
 from platypush.message.response.system import (
-    SensorResponseList,
-    SensorFanResponse,
     SensorBatteryResponse,
     ConnectedUserResponseList,
     ConnectUserResponse,
@@ -44,6 +43,8 @@ from platypush.schemas.system import (
     CpuTimesSchema,
     Disk,
     DiskSchema,
+    Fan,
+    FanSchema,
     MemoryStats,
     MemoryStatsSchema,
     NetworkInterface,
@@ -363,36 +364,28 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return TemperatureSchema().dump(self._sensors_temperature(), many=True)
 
+    def _sensors_fan(self) -> List[Fan]:
+        return FanSchema().load(  # type: ignore
+            [
+                {
+                    **sensor._asdict(),
+                    'id': f'{kind}_{i + 1}',
+                    'label': (f'{kind} #{i + 1}' if not sensor.label else sensor.label),
+                }
+                for kind, sensors in psutil.sensors_fans().items()
+                for i, sensor in enumerate(sensors)
+            ],
+            many=True,
+        )
+
     @action
-    def sensors_fan(self, sensor: Optional[str] = None) -> SensorResponseList:
+    def sensors_fan(self) -> List[dict]:
         """
         Get stats from the fan sensors.
 
-        :param sensor: Select the sensor name.
-        :return: List of :class:`platypush.message.response.system.SensorFanResponse`.
+        :return: .. schema:: system.FanSchema(many=True)
         """
-        stats = psutil.sensors_fans()
-
-        def _expand_stats(name, _stats):
-            return SensorResponseList(
-                [
-                    SensorFanResponse(
-                        name=name,
-                        current=s.current,
-                        label=s.label,
-                    )
-                    for s in _stats
-                ]
-            )
-
-        if sensor:
-            stats = [addr for name, addr in stats.items() if name == sensor]
-            assert stats, 'No such sensor name: {}'.format(sensor)
-            return _expand_stats(sensor, stats[0])
-
-        return SensorResponseList(
-            [_expand_stats(name, stat) for name, stat in stats.items()]
-        )
+        return FanSchema().dump(self._sensors_fan(), many=True)
 
     @action
     def sensors_battery(self) -> SensorBatteryResponse:
@@ -545,7 +538,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         :return: .. schema:: system.SystemInfoSchema
         """
-        ret = SystemInfoSchema().dump(
+        return SystemInfoSchema().dump(
             {
                 'cpu': {
                     'frequency': self._cpu_frequency_avg(),
@@ -560,10 +553,9 @@ class SystemPlugin(SensorPlugin, EntityManager):
                 'disks': self._disk_info(),
                 'network': self._network_info(),
                 'temperature': self._sensors_temperature(),
+                'fans': self._sensors_fan(),
             }
         )
-
-        return ret
 
     @override
     def transform_entities(self, entities: dict) -> List[Entity]:
@@ -661,6 +653,15 @@ class SystemPlugin(SensorPlugin, EntityManager):
                     **temp,
                 )
                 for temp in entities.get('temperature', [])
+            ],
+            *[
+                SystemFan(
+                    id=f'system:fan:{fan.pop("id")}',
+                    name=fan.pop('label'),
+                    unit='rpm',
+                    **fan,
+                )
+                for fan in entities.get('fans', [])
             ],
         ]
 

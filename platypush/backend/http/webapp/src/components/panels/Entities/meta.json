@@ -87,6 +87,14 @@
     }
   },
 
+  "system_fan": {
+    "name": "System",
+    "name_plural": "System",
+    "icon": {
+      "class": "fas fa-fan"
+    }
+  },
+
   "cpu": {
     "name": "System",
     "name_plural": "System",

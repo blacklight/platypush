@@ -1,0 +1,1 @@
+NumericSensor.vue

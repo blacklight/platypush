@@ -12,21 +12,6 @@ class SensorResponse(SystemResponse):
     pass
 
 
-class SensorFanResponse(SensorResponse):
-    def __init__(
-        self, name: str, current: int, label: Optional[str] = None, *args, **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'name': name,
-                'current': current,
-                'label': label,
-            },
-            **kwargs
-        )
-
-
 class SensorBatteryResponse(SensorResponse):
     def __init__(
         self, percent: float, secs_left: int, power_plugged: bool, *args, **kwargs
@@ -125,11 +110,6 @@ class ProcessResponse(SystemResponse):
 class SystemResponseList(SystemResponse):
     def __init__(self, responses: List[SystemResponse], *args, **kwargs):
         super().__init__(output=[r.output for r in responses], *args, **kwargs)
-
-
-class SensorResponseList(SensorResponse, SystemResponseList):
-    def __init__(self, responses: List[SensorResponse], *args, **kwargs):
-        super().__init__(responses=responses, *args, **kwargs)
 
 
 class ConnectedUserResponseList(SystemResponseList):

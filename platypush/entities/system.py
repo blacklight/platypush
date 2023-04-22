@@ -4,6 +4,7 @@ from platypush.common.db import Base
 
 from . import Entity
 from .devices import Device
+from .sensors import NumericSensor
 from .temperature import TemperatureSensor
 
 
@@ -228,6 +229,26 @@ if 'system_temperature' not in Base.metadata:
 
         high = Column(Float)
         critical = Column(Float)
+
+        __mapper_args__ = {
+            'polymorphic_identity': __tablename__,
+        }
+
+
+if 'system_fan' not in Base.metadata:
+
+    class SystemFan(NumericSensor):
+        """
+        ``SystemFan`` ORM model.
+        """
+
+        __tablename__ = 'system_fan'
+
+        id = Column(
+            Integer,
+            ForeignKey(NumericSensor.id, ondelete='CASCADE'),
+            primary_key=True,
+        )
 
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,

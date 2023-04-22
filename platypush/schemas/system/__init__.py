@@ -11,6 +11,7 @@ from ._cpu import (
     CpuTimesSchema,
 )
 from ._disk import Disk, DiskSchema
+from ._fan import Fan, FanSchema
 from ._memory import MemoryStats, MemoryStatsSchema, SwapStats, SwapStatsSchema
 from ._model import SystemInfo
 from ._network import NetworkInterface, NetworkInterfaceSchema
@@ -32,6 +33,8 @@ __all__ = [
     "CpuTimesSchema",
     "Disk",
     "DiskSchema",
+    "Fan",
+    "FanSchema",
     "MemoryStats",
     "MemoryStatsSchema",
     "SwapStats",
