@@ -28,39 +28,6 @@ class SensorResponse(SystemResponse):
     pass
 
 
-class NetworkConnectionResponse(NetworkResponse):
-    # noinspection PyShadowingBuiltins
-    def __init__(
-        self,
-        fd: int,
-        family: str,
-        type: str,
-        local_address: str,
-        local_port: int,
-        remote_address: str,
-        remote_port: int,
-        status: str,
-        pid: int,
-        *args,
-        **kwargs
-    ):
-        super().__init__(
-            *args,
-            output={
-                'fd': fd,
-                'family': family,
-                'type': type,
-                'local_address': local_address,
-                'local_port': local_port,
-                'remote_address': remote_address,
-                'remote_port': remote_port,
-                'status': status,
-                'pid': pid,
-            },
-            **kwargs
-        )
-
-
 class NetworkAddressResponse(NetworkResponse):
     def __init__(
         self,

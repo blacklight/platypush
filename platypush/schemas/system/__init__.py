@@ -1,3 +1,4 @@
+from ._connection import Connection, ConnectionSchema
 from ._cpu import (
     Cpu,
     CpuFrequency,
@@ -17,6 +18,8 @@ from ._schemas import SystemInfoSchema
 
 
 __all__ = [
+    "Connection",
+    "ConnectionSchema",
     "Cpu",
     "CpuFrequency",
     "CpuFrequencySchema",

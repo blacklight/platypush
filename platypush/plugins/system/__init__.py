@@ -23,7 +23,6 @@ from platypush.entities.system import (
 )
 from platypush.message.response.system import (
     NetworkResponseList,
-    NetworkConnectionResponse,
     NetworkAddressResponse,
     NetworkInterfaceStatsResponse,
     SensorTemperatureResponse,
@@ -38,6 +37,7 @@ from platypush.message.response.system import (
 from platypush.plugins import action
 from platypush.plugins.sensor import SensorPlugin
 from platypush.schemas.system import (
+    ConnectionSchema,
     CpuFrequency,
     CpuFrequencySchema,
     CpuInfo,
@@ -299,50 +299,36 @@ class SystemPlugin(SensorPlugin, EntityManager):
         return NetworkInterfaceSchema().dump(self._net_io_counters_avg())
 
     @action
-    def net_connections(
-        self, type: Optional[str] = None
-    ) -> Union[NetworkConnectionResponse, NetworkResponseList]:
+    def net_connections(self, type: str = 'inet') -> List[dict]:
         """
         Get the list of active network connections.
-        On macOS this function requires root privileges.
+        On MacOS this function requires root privileges.
 
-        :param type: Connection type to filter. Supported types:
+        :param type: Connection type to filter (default: ``inet``). Supported
+            types:
 
             +------------+----------------------------------------------------+
-            | Kind Value | Connections using                                  |
+            | ``type``   | Description                                        |
             +------------+----------------------------------------------------+
-            | inet       | IPv4 and IPv6                                      |
-            | inet4      | IPv4                                               |
-            | inet6      | IPv6                                               |
-            | tcp        | TCP                                                |
-            | tcp4       | TCP over IPv4                                      |
-            | tcp6       | TCP over IPv6                                      |
-            | udp        | UDP                                                |
-            | udp4       | UDP over IPv4                                      |
-            | udp6       | UDP over IPv6                                      |
-            | unix       | UNIX socket (both UDP and TCP protocols)           |
-            | all        | the sum of all the possible families and protocols |
+            | ``inet``   | IPv4 and IPv6                                      |
+            | ``inet4``  | IPv4                                               |
+            | ``inet6``  | IPv6                                               |
+            | ``tcp``    | TCP                                                |
+            | ``tcp4``   | TCP over IPv4                                      |
+            | ``tcp6``   | TCP over IPv6                                      |
+            | ``udp``    | UDP                                                |
+            | ``udp4``   | UDP over IPv4                                      |
+            | ``udp6``   | UDP over IPv6                                      |
+            | ``unix``   | UNIX socket (both UDP and TCP protocols)           |
+            | ``all``    | Any families and protocols                         |
             +------------+----------------------------------------------------+
 
-        :return: List of :class:`platypush.message.response.system.NetworkConnectionResponse`.
+        :return: .. schema:: system.ConnectionSchema(many=True)
         """
-        conns = psutil.net_connections(kind=type)
-
-        return NetworkResponseList(
-            [
-                NetworkConnectionResponse(
-                    fd=conn.fd,
-                    family=conn.family.name,
-                    type=conn.type.name,
-                    local_address=conn.laddr[0] if conn.laddr else None,
-                    local_port=conn.laddr[1] if len(conn.laddr) > 1 else None,
-                    remote_address=conn.raddr[0] if conn.raddr else None,
-                    remote_port=conn.raddr[1] if len(conn.raddr) > 1 else None,
-                    status=conn.status,
-                    pid=conn.pid,
-                )
-                for conn in conns
-            ]
+        schema = ConnectionSchema()
+        return schema.dump(
+            schema.load(psutil.net_connections(kind=type), many=True),  # type: ignore
+            many=True,
         )
 
     @action
