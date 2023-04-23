@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from dataclasses import asdict, is_dataclass
 import decimal
 import datetime
 from enum import Enum
@@ -77,6 +78,9 @@ class Message:
             if isinstance(obj, Enum):
                 return obj.value
 
+            if is_dataclass(obj):
+                obj = asdict(obj)
+
             # Don't serialize I/O wrappers/objects
             if isinstance(obj, io.IOBase):
                 return None
@@ -85,9 +89,7 @@ class Message:
                 return super().default(obj)
             except Exception as e:
                 logger.warning(
-                    'Could not serialize object type {}: {}: {}'.format(
-                        type(obj), str(e), obj
-                    )
+                    'Could not serialize object type %s: %s: %s', type(obj), e, obj
                 )
 
     def __init__(self, *_, timestamp=None, logging_level=logging.INFO, **__):
@@ -152,7 +154,7 @@ class Message:
             try:
                 msg = json.loads(msg.strip())
             except (ValueError, TypeError):
-                logger.warning('Invalid JSON message: {}'.format(msg))
+                logger.warning('Invalid JSON message: %s', msg)
 
         assert isinstance(msg, dict)
 
