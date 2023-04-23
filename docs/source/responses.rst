@@ -16,7 +16,6 @@ Responses
     platypush/responses/qrcode.rst
     platypush/responses/ssh.rst
     platypush/responses/stt.rst
-    platypush/responses/system.rst
     platypush/responses/tensorflow.rst
     platypush/responses/todoist.rst
     platypush/responses/translate.rst
