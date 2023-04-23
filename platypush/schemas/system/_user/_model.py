@@ -31,7 +31,6 @@ class User:
         metadata={
             'metadata': {
                 'description': 'When the user session started',
-                'example': 'pts/1',
             }
         }
     )

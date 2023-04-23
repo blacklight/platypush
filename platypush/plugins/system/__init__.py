@@ -1,6 +1,5 @@
 import os
 
-from datetime import datetime
 from typing import Tuple, Union, List, Optional
 from typing_extensions import override
 
@@ -22,10 +21,6 @@ from platypush.entities.system import (
     SystemBattery,
     SystemFan,
     SystemTemperature,
-)
-from platypush.message.response.system import (
-    ProcessResponseList,
-    ProcessResponse,
 )
 from platypush.plugins import action
 from platypush.plugins.sensor import SensorPlugin
@@ -49,6 +44,8 @@ from platypush.schemas.system import (
     MemoryStatsSchema,
     NetworkInterface,
     NetworkInterfaceSchema,
+    Process,
+    ProcessSchema,
     SwapStats,
     SwapStatsSchema,
     SystemInfoSchema,
@@ -366,7 +363,8 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return TemperatureSchema().dump(self._sensors_temperature(), many=True)
 
-    def _sensors_fan(self) -> List[Fan]:
+    @staticmethod
+    def _sensors_fan() -> List[Fan]:
         return FanSchema().load(  # type: ignore
             [
                 {
@@ -389,7 +387,8 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return FanSchema().dump(self._sensors_fan(), many=True)
 
-    def _sensors_battery(self) -> Optional[Battery]:
+    @staticmethod
+    def _sensors_battery() -> Optional[Battery]:
         battery = psutil.sensors_battery()
         return BatterySchema().load(battery) if battery else None  # type: ignore
 
@@ -403,7 +402,8 @@ class SystemPlugin(SensorPlugin, EntityManager):
         battery = self._sensors_battery()
         return BatterySchema().dump(battery) if battery else None  # type: ignore
 
-    def _connected_users(self) -> List[User]:
+    @staticmethod
+    def _connected_users() -> List[User]:
         return UserSchema().load(psutil.users(), many=True)  # type: ignore
 
     @action
@@ -415,64 +415,40 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         return UserSchema().dump(self._connected_users(), many=True)
 
-    @action
-    def processes(self, filter: Optional[str] = '') -> ProcessResponseList:
+    @classmethod
+    def _processes(cls) -> List[Process]:
         """
         Get the list of running processes.
 
         :param filter: Filter the list by name.
         :return: List of :class:`platypush.message.response.system.ProcessResponse`.
         """
-        processes = [psutil.Process(pid) for pid in psutil.pids()]
-        p_list = []
+        return ProcessSchema().load(  # type: ignore
+            filter(  # type: ignore
+                lambda proc: proc is not None,
+                [cls._get_process_if_exists(pid) for pid in psutil.pids()],
+            ),
+            many=True,
+        )
 
-        for p in processes:
-            if filter and filter not in p.name():
-                continue
+    @action
+    def processes(self) -> List[dict]:
+        """
+        Get the list of running processes.
 
-            args = {}
+        :return: .. schema:: system.ProcessSchema
+        """
+        return ProcessSchema().dump(self._processes(), many=True)
 
-            try:
-                mem = p.memory_info()
-                times = p.cpu_times()
-                args.update(
-                    pid=p.pid,
-                    name=p.name(),
-                    started=datetime.fromtimestamp(p.create_time()),
-                    ppid=p.ppid(),
-                    children=[pp.pid for pp in p.children()],
-                    status=p.status(),
-                    username=p.username(),
-                    terminal=p.terminal(),
-                    cpu_user_time=times.user,
-                    cpu_system_time=times.system,
-                    cpu_children_user_time=times.children_user,
-                    cpu_children_system_time=times.children_system,
-                    mem_rss=mem.rss,
-                    mem_vms=mem.vms,
-                    mem_shared=mem.shared,
-                    mem_text=mem.text,
-                    mem_data=mem.data,
-                    mem_lib=mem.lib,
-                    mem_dirty=mem.dirty,
-                    mem_percent=p.memory_percent(),
-                )
-            except psutil.Error:
-                continue
-
-            try:
-                args.update(
-                    exe=p.exe(),
-                )
-            except psutil.Error:
-                pass
-
-            p_list.append(ProcessResponse(**args))
-
-        return ProcessResponseList(p_list)
+    @classmethod
+    def _get_process_if_exists(cls, pid: int) -> Optional[psutil.Process]:
+        try:
+            return cls._get_process(pid)
+        except psutil.NoSuchProcess:
+            return None
 
     @staticmethod
-    def _get_process(pid: int):
+    def _get_process(pid: int) -> psutil.Process:
         return psutil.Process(pid)
 
     @action
