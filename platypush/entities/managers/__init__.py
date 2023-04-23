@@ -68,6 +68,9 @@ class EntityManager(ABC):
 
     def _normalize_entities(self, entities: Collection[Entity]) -> Collection[Entity]:
         for entity in entities:
+            if not entity:
+                continue
+
             if entity.id and not entity.external_id:
                 # Entity IDs can only refer to the internal primary key
                 entity.external_id = entity.id
