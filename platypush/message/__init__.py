@@ -79,7 +79,7 @@ class Message:
                 return obj.value
 
             if is_dataclass(obj):
-                obj = asdict(obj)
+                return asdict(obj)
 
             # Don't serialize I/O wrappers/objects
             if isinstance(obj, io.IOBase):
