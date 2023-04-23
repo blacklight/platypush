@@ -6,6 +6,14 @@ reported only starting from v0.20.2.
 
 ## [Unreleased]
 
+### Added
+
+- Migrated many integrations to the new [entities
+  framework](https://git.platypush.tech/platypush/platypush/pulls/230).
+  This is a very large change to the foundations of the platform, and there's
+  still a lot of work in progress. A detailed description of all the changes
+  will follow shortly.
+
 ### Fixed
 
 - Migrated the `clipboard` integration from `pyperclip` to `pyclip` (see
