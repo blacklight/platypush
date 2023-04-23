@@ -84,10 +84,10 @@ class ZigbeeMqttPlugin(
 
           .. code-block:: shell
 
-              wget https://github.com/Koenkk/Z-Stack-firmware/raw/master\
-                      /coordinator/Z-Stack_Home_1.2/bin/default/CC2531_DEFAULT_20201127.zip
-              unzip CC2531_DEFAULT_20201127.zip
-              [sudo] cc-tool -e -w CC2531ZNP-Prod.hex
+             wget https://github.com/Koenkk/Z-Stack-firmware/raw/master\
+                     /coordinator/Z-Stack_Home_1.2/bin/default/CC2531_DEFAULT_20201127.zip
+             unzip CC2531_DEFAULT_20201127.zip
+             [sudo] cc-tool -e -w CC2531ZNP-Prod.hex
 
         - You can disconnect your debugger and downloader cable once the firmware is flashed.
 
@@ -98,13 +98,13 @@ class ZigbeeMqttPlugin(
 
           .. code-block:: shell
 
-              # Clone zigbee2mqtt repository
-              [sudo] git clone https://github.com/Koenkk/zigbee2mqtt.git /opt/zigbee2mqtt
-              [sudo] chown -R pi:pi /opt/zigbee2mqtt  # Or whichever is your user
+             # Clone zigbee2mqtt repository
+             [sudo] git clone https://github.com/Koenkk/zigbee2mqtt.git /opt/zigbee2mqtt
+             [sudo] chown -R pi:pi /opt/zigbee2mqtt  # Or whichever is your user
 
-              # Install dependencies (as user "pi")
-              cd /opt/zigbee2mqtt
-              npm install
+             # Install dependencies (as user "pi")
+             cd /opt/zigbee2mqtt
+             npm install
 
         - You need to have an MQTT broker running somewhere. If not, you can install
             `Mosquitto <https://mosquitto.org/>`_ through your package manager on any device in your network.
@@ -113,23 +113,22 @@ class ZigbeeMqttPlugin(
 
           .. code-block:: yaml
 
-              # MQTT settings
-              mqtt:
-                  # MQTT base topic for zigbee2mqtt MQTT messages
-                  base_topic: zigbee2mqtt
-                  # MQTT server URL
-                  server: 'mqtt://localhost'
-                  # MQTT server authentication, uncomment if required:
-                  # user: my_user
-                  # password: my_password
+             # MQTT settings
+             mqtt:
+                 # MQTT base topic for zigbee2mqtt MQTT messages
+                 base_topic: zigbee2mqtt
+                 # MQTT server URL
+                 server: 'mqtt://localhost'
+                 # MQTT server authentication, uncomment if required:
+                 # user: my_user
+                 # password: my_password
 
         - Also make sure that ``permit_join`` is set to ``True``, in order to allow Zigbee devices to join the network
           while you're configuring it. It's equally important to set ``permit_join`` to ``False`` once you have
           configured your network, to prevent accidental/malignant joins from outer Zigbee devices.
 
         - Start the ``zigbee2mqtt`` daemon on your device (the
-          `official documentation <https://www.zigbee2mqtt.io/getting_started
-           /running_zigbee2mqtt.html#5-optional-running-as-a-daemon-with-systemctl>`_
+          `official documentation <https://www.zigbee2mqtt.io/getting_started/running_zigbee2mqtt.html#5-optional-running-as-a-daemon-with-systemctl>`_
           also contains instructions on how to configure it as a ``systemd`` service:
 
           .. code-block:: shell
@@ -188,7 +187,7 @@ class ZigbeeMqttPlugin(
         * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttErrorEvent` when an internal error occurs
           on the zigbee2mqtt service.
 
-    """
+    """  # noqa: E501
 
     def __init__(
         self,
