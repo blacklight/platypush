@@ -70,7 +70,7 @@ class Disk:
         }
     )
 
-    read_count: int = field(
+    read_count: Optional[int] = field(
         metadata={
             'metadata': {
                 'description': 'Number of recorded read operations',
@@ -78,7 +78,7 @@ class Disk:
         }
     )
 
-    write_count: int = field(
+    write_count: Optional[int] = field(
         metadata={
             'metadata': {
                 'description': 'Number of recorded write operations',
@@ -86,7 +86,7 @@ class Disk:
         }
     )
 
-    read_bytes: int = field(
+    read_bytes: Optional[int] = field(
         metadata={
             'metadata': {
                 'description': 'Number of read bytes',
@@ -94,7 +94,7 @@ class Disk:
         }
     )
 
-    write_bytes: int = field(
+    write_bytes: Optional[int] = field(
         metadata={
             'metadata': {
                 'description': 'Number of written bytes',
@@ -102,7 +102,7 @@ class Disk:
         }
     )
 
-    read_time: float = field(
+    read_time: Optional[float] = field(
         metadata={
             'metadata': {
                 'description': 'Time spent reading, in seconds',
@@ -110,7 +110,7 @@ class Disk:
         }
     )
 
-    write_time: float = field(
+    write_time: Optional[float] = field(
         metadata={
             'metadata': {
                 'description': 'Time spent writing, in seconds',
@@ -118,7 +118,7 @@ class Disk:
         }
     )
 
-    busy_time: float = field(
+    busy_time: Optional[float] = field(
         metadata={
             'metadata': {
                 'description': 'Total disk busy time, in seconds',

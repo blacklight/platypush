@@ -240,7 +240,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
             [
                 {
                     **info,
-                    **io_stats[part],
+                    **io_stats.get(part, {}),
                     **usage[part],
                 }
                 for part, info in parts.items()
