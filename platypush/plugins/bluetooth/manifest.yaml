@@ -20,5 +20,7 @@ manifest:
     - pydbus
     - git+https://github.com/pybluez/pybluez
     - git+https://github.com/BlackLight/PyOBEX
+    apt:
+    - libbluetooth-dev
   package: platypush.plugins.bluetooth
   type: plugin
