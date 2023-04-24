@@ -9,9 +9,10 @@ from threading import Thread, RLock
 from typing import List, Dict, Any, Optional, Tuple
 
 from sqlalchemy import engine, create_engine, Column, Integer, String, DateTime
-from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 from platypush.backend import Backend
+from platypush.common.db import declarative_base
 from platypush.config import Config
 from platypush.context import get_plugin
 from platypush.message.event.mail import (
@@ -39,6 +40,7 @@ class MailboxStatus(Base):
 
 
 # </editor-fold>
+
 
 # <editor-fold desc="Mailbox model">
 @dataclass
