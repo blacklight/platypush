@@ -14,14 +14,14 @@
       <div class="row" v-if="_showSensors && Object.keys(sensors).length">
         <div class="col-3">
           <Sensor icon-class="fas fa-thermometer-half" :value="sensors.temperature" unit="°"
-                  v-if="sensors.temperature != null" />
+                  v-if="typeof sensors.temperature === 'number'" />
         </div>
 
         <div class="col-6">&nbsp;</div>
 
         <div class="col-3">
           <Sensor icon-class="fas fa-tint" :value="sensors.humidity" unit="%"
-                  v-if="sensors.humidity != null" />
+                  v-if="typeof sensors.humidity === 'number'" />
         </div>
       </div>
     </div>
