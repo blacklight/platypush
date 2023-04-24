@@ -139,7 +139,7 @@ class DbPlugin(Plugin):
         engine=None,
         data: Optional[dict] = None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         """
         Returns rows (as a list of hashes) given a query.
@@ -219,7 +219,7 @@ class DbPlugin(Plugin):
             query = table.select()
 
             if filter:
-                for (k, v) in filter.items():
+                for k, v in filter.items():
                     query = query.where(self._build_condition(table, k, v))
 
         if query is None:
@@ -246,7 +246,7 @@ class DbPlugin(Plugin):
         key_columns=None,
         on_duplicate_update=False,
         *args,
-        **kwargs
+        **kwargs,
     ):
         """
         Inserts records (as a list of hashes) into a table.
@@ -394,7 +394,7 @@ class DbPlugin(Plugin):
             values = {k: v for (k, v) in record.items() if k not in key_columns}
             update = table.update()
 
-            for (k, v) in key.items():
+            for k, v in key.items():
                 update = update.where(self._build_condition(table, k, v))
 
             update = update.values(**values)
@@ -503,13 +503,13 @@ class DbPlugin(Plugin):
                 table, engine = self._get_table(table, engine=engine, *args, **kwargs)
                 delete = table.delete()
 
-                for (k, v) in record.items():
+                for k, v in record.items():
                     delete = delete.where(self._build_condition(table, k, v))
 
                 connection.execute(delete)
 
     def create_all(self, engine, base):
-        with (self.get_session(engine, locked=True) as session, session.begin()):
+        with self.get_session(engine, locked=True) as session:
             base.metadata.create_all(session.connection())
 
     @contextmanager
@@ -523,7 +523,7 @@ class DbPlugin(Plugin):
             # Mock lock
             lock = RLock()
 
-        with (lock, engine.connect() as conn, conn.begin()):
+        with lock, engine.connect() as conn, conn.begin():
             session = scoped_session(
                 sessionmaker(
                     expire_on_commit=False,
