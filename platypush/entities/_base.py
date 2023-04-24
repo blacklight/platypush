@@ -20,7 +20,7 @@ from sqlalchemy import (
     UniqueConstraint,
     inspect as schema_inspect,
 )
-from sqlalchemy.orm import ColumnProperty, Mapped, backref, relationship
+from sqlalchemy.orm import ColumnProperty, backref, relationship
 from sqlalchemy.orm.exc import ObjectDeletedError
 
 from platypush.common.db import Base
@@ -84,7 +84,7 @@ if 'entity' not in Base.metadata:
             onupdate=datetime.utcnow(),
         )
 
-        parent: Mapped['Entity'] = relationship(
+        parent = relationship(
             'Entity',
             remote_side=[id],
             uselist=False,
@@ -131,15 +131,16 @@ if 'entity' not in Base.metadata:
             to reuse entity objects in other threads or outside of their
             associated SQLAlchemy session context.
             """
+
             def key_value_pair(col: ColumnProperty):
                 try:
                     return (col.key, getattr(self, col.key, None))
-                except ObjectDeletedError as e:
+                except ObjectDeletedError:
                     return None
 
             return self.__class__(
                 **dict(
-                    key_value_pair(col)
+                    key_value_pair(col)  # type: ignore
                     for col in self.columns
                     if key_value_pair(col) is not None
                 ),
@@ -180,7 +181,7 @@ if 'entity' not in Base.metadata:
             """
             col_name = self._column_name(col)
             if col_name is None:
-                return tuple()
+                return ()
             return col_name, self._serialize_value(col_name)
 
         def to_dict(self) -> dict:
@@ -215,7 +216,7 @@ if 'entity' not in Base.metadata:
             """
             Serializes the new value before assigning it to an attribute.
             """
-            matching_columns = [c for c in self.columns if c.expression.name == key]
+            matching_columns = [c for c in self.columns if c.expression.name == key]  # type: ignore
 
             if (
                 matching_columns
@@ -275,7 +276,7 @@ def _discover_entity_types():
 
         for _, obj in inspect.getmembers(module):
             if inspect.isclass(obj) and issubclass(obj, Entity):
-                entities_registry[obj] = {}
+                entities_registry[obj] = {}  # type: ignore
 
 
 def get_entities_registry() -> EntityRegistryType:
