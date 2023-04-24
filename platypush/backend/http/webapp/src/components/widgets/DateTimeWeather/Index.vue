@@ -13,15 +13,15 @@
     <div class="row sensors-container">
       <div class="row" v-if="_showSensors && Object.keys(sensors).length">
         <div class="col-3">
-          <Sensor icon-class="fas fa-thermometer-half" :value="sensors.temperature" unit="°"
-                  v-if="typeof sensors.temperature === 'number'" />
+          <Sensor icon-class="fas fa-thermometer-half" :value="sensors[sensorTemperatureAttr]" unit="°"
+                  v-if="sensors[sensorTemperatureAttr] != null" />
         </div>
 
         <div class="col-6">&nbsp;</div>
 
         <div class="col-3">
-          <Sensor icon-class="fas fa-tint" :value="sensors.humidity" unit="%"
-                  v-if="typeof sensors.humidity === 'number'" />
+          <Sensor icon-class="fas fa-tint" :value="sensors[sensorHumidityAttr]" unit="%"
+                  v-if="sensors[sensorHumidityAttr] != null" />
         </div>
       </div>
     </div>
@@ -152,11 +152,17 @@ export default {
 
   methods: {
     onSensorData(event) {
-      if (this.sensorTemperatureAttr in event.data)
-        this.sensors.temperature = event.data.temperature
+      if (
+        this.sensorTemperatureAttr in event.data &&
+        typeof event.data[this.sensorTemperatureAttr] === 'number'
+      )
+        this.sensors.temperature = event.data[this.sensorTemperatureAttr]
 
-      if (this.sensorHumidityAttr in event.data)
-        this.sensors.humidity = event.data.humidity
+      if (
+        this.sensorHumidityAttr in event.data &&
+        typeof event.data[this.sensorHumidityAttr] === 'number'
+      )
+        this.sensors.humidity = event.data[this.sensorHumidityAttr]
     },
   },
 
