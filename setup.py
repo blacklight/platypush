@@ -57,7 +57,7 @@ setup(
         'redis',
         'requests',
         'croniter',
-        'sqlalchemy<2.0.0',
+        'sqlalchemy',
         'websockets',
         'websocket-client',
         'wheel',
