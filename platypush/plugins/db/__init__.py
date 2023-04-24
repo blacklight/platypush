@@ -530,7 +530,7 @@ class DbPlugin(Plugin):
                 connection.execute(delete)
 
     def create_all(self, engine, base):
-        with self.get_session(engine, locked=True) as session, session.begin():
+        with self.get_session(engine, locked=True) as session:
             base.metadata.create_all(session.connection())
 
     @contextmanager
