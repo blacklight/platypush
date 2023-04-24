@@ -12,10 +12,11 @@ from sqlalchemy import (
     ForeignKey,
 )
 
-from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
+from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.sql.expression import func
 
 from platypush.backend.http.request import HttpRequest
+from platypush.common.db import declarative_base
 from platypush.config import Config
 from platypush.context import get_plugin
 from platypush.message.event.http.rss import NewFeedEvent

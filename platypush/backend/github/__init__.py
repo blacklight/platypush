@@ -6,9 +6,10 @@ from typing import Optional, List
 
 import requests
 from sqlalchemy import create_engine, Column, String, DateTime
-from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 from platypush.backend import Backend
+from platypush.common.db import declarative_base
 from platypush.config import Config
 from platypush.message.event.github import (
     GithubPushEvent,

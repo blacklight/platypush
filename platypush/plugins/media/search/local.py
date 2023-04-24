@@ -12,9 +12,10 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     ForeignKey,
 )
-from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
+from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.sql.expression import func
 
+from platypush.common.db import declarative_base
 from platypush.config import Config
 from platypush.plugins.media import MediaPlugin
 from platypush.plugins.media.search import MediaSearcher
