@@ -2,7 +2,7 @@
   <div class="entity-icon-container"
       :class="{'with-color-fill': !!colorFill}"
       :style="colorFillStyle">
-    <img src="@/assets/img/spinner.gif" class="loading" v-if="loading">
+    <i class="fas fa-spinner fa-spin-pulse loading" v-if="loading" />
     <i class="fas fa-circle-exclamation error" v-else-if="error" />
     <Icon v-bind="computedIconNormalized" v-else />
   </div>
@@ -103,6 +103,7 @@ export default {
     transform: translate(0%, -50%);
     width: 1em;
     height: 1em;
+    opacity: 0.6;
   }
 
   .error {
