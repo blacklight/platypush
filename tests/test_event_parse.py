@@ -1,28 +1,88 @@
 import pytest
 
 from platypush.event.hook import EventCondition
+from platypush.message.event.assistant import SpeechRecognizedEvent
 from platypush.message.event.ping import PingEvent
-
-
-condition = EventCondition.build({
-    'type': 'platypush.message.event.ping.PingEvent',
-    'message': 'This is (the)? answer: ${answer}'
-})
 
 
 def test_event_parse():
     """
     Test for the events/conditions matching logic.
     """
-    message = "GARBAGE GARBAGE this is the answer: 42"
-    event = PingEvent(message=message)
+    condition = EventCondition.build(
+        {
+            'type': 'platypush.message.event.ping.PingEvent',
+            'message': 'This is a test message',
+        }
+    )
+
+    event = PingEvent(message=condition.args['message'])
+    result = event.matches_condition(condition)
+    assert result.is_match
+
+    event = PingEvent(message="This is not a test message")
+    result = event.matches_condition(condition)
+    assert not result.is_match
+
+
+def test_nested_event_condition():
+    """
+    Verify that nested event conditions work as expected.
+    """
+    condition = EventCondition.build(
+        {
+            'type': 'platypush.message.event.ping.PingEvent',
+            'message': {
+                'foo': 'bar',
+            },
+        }
+    )
+
+    event = PingEvent(
+        message={
+            'foo': 'bar',
+            'baz': 'clang',
+        }
+    )
+
+    assert event.matches_condition(condition).is_match
+
+    event = PingEvent(
+        message={
+            'something': 'else',
+        }
+    )
+
+    assert not event.matches_condition(condition).is_match
+
+    event = PingEvent(
+        message={
+            'foo': 'baz',
+        }
+    )
+
+    assert not event.matches_condition(condition).is_match
+
+
+def test_speech_recognized_event_parse():
+    """
+    Test the event parsing and text extraction logic for the
+    SpeechRecognizedEvent.
+    """
+    condition = EventCondition.build(
+        {
+            'type': 'platypush.message.event.assistant.SpeechRecognizedEvent',
+            'phrase': 'This is (the)? answer: ${answer}',
+        }
+    )
+
+    event = SpeechRecognizedEvent(phrase="GARBAGE GARBAGE this is the answer: 42")
     result = event.matches_condition(condition)
     assert result.is_match
     assert 'answer' in result.parsed_args
     assert result.parsed_args['answer'] == '42'
 
-    message = "what is not the answer? 43"
-    event = PingEvent(message=message)
+    event = PingEvent(phrase="what is not the answer? 43")
     result = event.matches_condition(condition)
     assert not result.is_match
 
