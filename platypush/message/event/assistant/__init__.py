@@ -1,13 +1,16 @@
 import logging
+import re
+import sys
+from typing_extensions import override
 
 from platypush.context import get_backend, get_plugin
 from platypush.message.event import Event
 
 
 class AssistantEvent(Event):
-    """ Base class for assistant events """
+    """Base class for assistant events"""
 
-    def __init__(self, assistant=None, *args, **kwargs):
+    def __init__(self, *args, assistant=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.logger = logging.getLogger('platypush:assistant')
 
@@ -20,7 +23,9 @@ class AssistantEvent(Event):
                 self._assistant = get_plugin('assistant.google.pushtotalk')
 
             if not self._assistant:
-                self.logger.warning('Assistant plugin/backend not configured/initialized')
+                self.logger.warning(
+                    'Assistant plugin/backend not configured/initialized'
+                )
                 self._assistant = None
 
 
@@ -38,7 +43,7 @@ class ConversationEndEvent(AssistantEvent):
     Event triggered when a conversation ends
     """
 
-    def __init__(self, with_follow_on_turn=False, *args, **kwargs):
+    def __init__(self, *args, with_follow_on_turn=False, **kwargs):
         """
         :param with_follow_on_turn: Set to true if the conversation expects a user follow-up, false otherwise
         :type with_follow_on_turn: str
@@ -75,9 +80,6 @@ class NoResponseEvent(ConversationEndEvent):
     Event triggered when a conversation ends with no response
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
 
 class SpeechRecognizedEvent(AssistantEvent):
     """
@@ -105,18 +107,89 @@ class SpeechRecognizedEvent(AssistantEvent):
 
         return result
 
+    @override
+    def _matches_argument(self, argname, condition_value, args, result):
+        """
+        Overrides the default `_matches_argument` method to allow partial
+        phrase matches and text extraction.
+
+        Example::
+
+            args = {
+                'phrase': 'Hey dude turn on the living room lights'
+            }
+
+        - `self._matches_argument(argname='phrase', condition_value='Turn on the ${lights} lights')`
+          will return `EventMatchResult(is_match=True, parsed_args={ 'lights': 'living room' })`
+
+        - `self._matches_argument(argname='phrase', condition_value='Turn off the ${lights} lights')`
+          will return `EventMatchResult(is_match=False, parsed_args={})`
+
+        """
+
+        if args.get(argname) == condition_value:
+            # In case of an exact match, return immediately
+            result.is_match = True
+            result.score = sys.maxsize
+            return result
+
+        event_tokens = re.split(r'\s+', args.get(argname, '').strip().lower())
+        condition_tokens = re.split(r'\s+', condition_value.strip().lower())
+
+        while event_tokens and condition_tokens:
+            event_token = event_tokens[0]
+            condition_token = condition_tokens[0]
+
+            if event_token == condition_token:
+                event_tokens.pop(0)
+                condition_tokens.pop(0)
+                result.score += 1.5
+            elif re.search(condition_token, event_token):
+                m = re.search(f'({condition_token})', event_token)
+                if m and m.group(1):
+                    event_tokens.pop(0)
+                    result.score += 1.25
+
+                condition_tokens.pop(0)
+            else:
+                m = re.match(r'[^\\]*\${(.+?)}', condition_token)
+                if m:
+                    argname = m.group(1)
+                    if argname not in result.parsed_args:
+                        result.parsed_args[argname] = event_token
+                        result.score += 1.0
+                    else:
+                        result.parsed_args[argname] += ' ' + event_token
+
+                    if (len(condition_tokens) == 1 and len(event_tokens) == 1) or (
+                        len(event_tokens) > 1
+                        and len(condition_tokens) > 1
+                        and event_tokens[1] == condition_tokens[1]
+                    ):
+                        # Stop appending tokens to this argument, as the next
+                        # condition will be satisfied as well
+                        condition_tokens.pop(0)
+
+                    event_tokens.pop(0)
+                else:
+                    result.score -= 1.0
+                    event_tokens.pop(0)
+
+        # It's a match if all the tokens in the condition string have been satisfied
+        result.is_match = len(condition_tokens) == 0
+        return result
+
 
 class HotwordDetectedEvent(AssistantEvent):
     """
     Event triggered when a custom hotword is detected
     """
 
-    def __init__(self, hotword=None, *args, **kwargs):
+    def __init__(self, *args, hotword=None, **kwargs):
         """
         :param hotword: The detected user hotword
         :type hotword: str
         """
-
         super().__init__(*args, hotword=hotword, **kwargs)
 
 
@@ -134,17 +207,11 @@ class AlertStartedEvent(AssistantEvent):
     Event triggered when an alert starts on the assistant
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
 
 class AlertEndEvent(AssistantEvent):
     """
     Event triggered when an alert ends on the assistant
     """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
 
 class AlarmStartedEvent(AlertStartedEvent):
@@ -152,17 +219,11 @@ class AlarmStartedEvent(AlertStartedEvent):
     Event triggered when an alarm starts on the assistant
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
 
 class AlarmEndEvent(AlertEndEvent):
     """
     Event triggered when an alarm ends on the assistant
     """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
 
 class TimerStartedEvent(AlertStartedEvent):
@@ -170,31 +231,23 @@ class TimerStartedEvent(AlertStartedEvent):
     Event triggered when a timer starts on the assistant
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
 
 class TimerEndEvent(AlertEndEvent):
     """
     Event triggered when a timer ends on the assistant
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
 
 class MicMutedEvent(AssistantEvent):
     """
     Event triggered when the microphone is muted.
     """
-    pass
 
 
 class MicUnmutedEvent(AssistantEvent):
     """
     Event triggered when the microphone is muted.
     """
-    pass
 
 
 # vim:sw=4:ts=4:et:

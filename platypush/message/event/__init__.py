@@ -2,8 +2,6 @@ import copy
 import json
 import logging
 import random
-import re
-import sys
 import time
 
 from datetime import date
@@ -31,7 +29,7 @@ class Event(Message):
         timestamp=None,
         logging_level=logging.INFO,
         disable_web_clients_notification=False,
-        **kwargs
+        **kwargs,
     ):
         """
         :param target: Target node
@@ -53,7 +51,7 @@ class Event(Message):
         self.id = id if id else self._generate_id()
         self.target = target if target else Config.get('device_id')
         self.origin = origin if origin else Config.get('device_id')
-        self.type = '{}.{}'.format(self.__class__.__module__, self.__class__.__name__)
+        self.type = f'{self.__class__.__module__}.{self.__class__.__name__}'
         self.args = kwargs
         self.disable_web_clients_notification = disable_web_clients_notification
 
@@ -71,8 +69,10 @@ class Event(Message):
 
     @classmethod
     def build(cls, msg):
-        """Builds an event message from a JSON UTF-8 string/bytearray, a
-        dictionary, or another Event"""
+        """
+        Builds an event message from a JSON UTF-8 string/bytearray, a
+        dictionary, or another Event
+        """
 
         msg = super().parse(msg)
         event_type = msg['args'].pop('type')
@@ -88,7 +88,42 @@ class Event(Message):
     @staticmethod
     def _generate_id():
         """Generate a unique event ID"""
-        return ''.join(['{:02x}'.format(random.randint(0, 255)) for _ in range(16)])
+        return ''.join([f'{random.randint(0, 255):02x}' for _ in range(16)])
+
+    def _matches_condition(
+        self,
+        condition: dict,
+        args: dict,
+        result: "EventMatchResult",
+        match_scores: list,
+    ) -> bool:
+        for attr, value in condition.items():
+            if attr not in args:
+                return False
+
+            if isinstance(args[attr], str):
+                self._matches_argument(
+                    argname=attr, condition_value=value, args=args, result=result
+                )
+
+                if result.is_match:
+                    match_scores.append(result.score)
+                else:
+                    return False
+            elif isinstance(value, dict):
+                if not isinstance(args[attr], dict):
+                    return False
+
+                return self._matches_condition(
+                    condition=value,
+                    args=args[attr],
+                    result=result,
+                    match_scores=match_scores,
+                )
+            elif args[attr] != value:
+                return False
+
+        return True
 
     def matches_condition(self, condition):
         """
@@ -102,22 +137,13 @@ class Event(Message):
         if not isinstance(self, condition.type):
             return result
 
-        for attr, value in condition.args.items():
-            if attr not in self.args:
-                return result
-
-            if isinstance(self.args[attr], str):
-                arg_result = self._matches_argument(argname=attr, condition_value=value)
-
-                if arg_result.is_match:
-                    match_scores.append(arg_result.score)
-                    for parsed_arg, parsed_value in arg_result.parsed_args.items():
-                        result.parsed_args[parsed_arg] = parsed_value
-                else:
-                    return result
-            elif self.args[attr] != value:
-                # TODO proper support for list and dictionary matches
-                return result
+        if not self._matches_condition(
+            condition=condition.args,
+            args=self.args,
+            result=result,
+            match_scores=match_scores,
+        ):
+            return result
 
         result.is_match = True
         if match_scores:
@@ -125,75 +151,20 @@ class Event(Message):
 
         return result
 
-    def _matches_argument(self, argname, condition_value):
+    def _matches_argument(
+        self, argname, condition_value, args, result: "EventMatchResult"
+    ):
         """
         Returns an EventMatchResult if the event argument [argname] matches
         [condition_value].
-
-        - Example:
-            - self.args = {
-                'phrase': 'Hey dude turn on the living room lights'
-            }
-
-            - self._matches_argument(argname='phrase', condition_value='Turn on the ${lights} lights')
-              will return EventMatchResult(is_match=True, parsed_args={ 'lights': 'living room' })
-
-            - self._matches_argument(argname='phrase', condition_value='Turn off the ${lights} lights')
-              will return EventMatchResult(is_match=False, parsed_args={})
         """
 
-        result = EventMatchResult(is_match=False)
-        if self.args.get(argname) == condition_value:
-            # In case of an exact match, return immediately
-            result.is_match = True
-            result.score = sys.maxsize
-            return result
-
-        event_tokens = re.split(r'\s+', self.args.get(argname, '').strip().lower())
-        condition_tokens = re.split(r'\s+', condition_value.strip().lower())
-
-        while event_tokens and condition_tokens:
-            event_token = event_tokens[0]
-            condition_token = condition_tokens[0]
-
-            if event_token == condition_token:
-                event_tokens.pop(0)
-                condition_tokens.pop(0)
-                result.score += 1.5
-            elif re.search(condition_token, event_token):
-                m = re.search('({})'.format(condition_token), event_token)
-                if m and m.group(1):
-                    event_tokens.pop(0)
-                    result.score += 1.25
-
-                condition_tokens.pop(0)
-            else:
-                m = re.match(r'[^\\]*\${(.+?)}', condition_token)
-                if m:
-                    argname = m.group(1)
-                    if argname not in result.parsed_args:
-                        result.parsed_args[argname] = event_token
-                        result.score += 1.0
-                    else:
-                        result.parsed_args[argname] += ' ' + event_token
-
-                    if (len(condition_tokens) == 1 and len(event_tokens) == 1) or (
-                        len(event_tokens) > 1
-                        and len(condition_tokens) > 1
-                        and event_tokens[1] == condition_tokens[1]
-                    ):
-                        # Stop appending tokens to this argument, as the next
-                        # condition will be satisfied as well
-                        condition_tokens.pop(0)
-
-                    event_tokens.pop(0)
-                else:
-                    result.score -= 1.0
-                    event_tokens.pop(0)
-
-        # It's a match if all the tokens in the condition string have been satisfied
-        result.is_match = len(condition_tokens) == 0
-        return result
+        # Simple equality match by default. It can be overridden by the derived classes.
+        result.is_match = args.get(argname) == condition_value
+        if result.is_match:
+            result.score += 2
+        else:
+            result.score = 0
 
     def __str__(self):
         """
@@ -218,11 +189,13 @@ class Event(Message):
 
 
 class EventMatchResult:
-    """When comparing an event against an event condition, you want to
+    """
+    When comparing an event against an event condition, you want to
     return this object. It contains the match status (True or False),
     any parsed arguments, and a match_score that identifies how "strong"
     the match is - in case of multiple event matches, the ones with the
-    highest score will win"""
+    highest score will win.
+    """
 
     def __init__(self, is_match, score=0.0, parsed_args=None):
         self.is_match = is_match
@@ -231,6 +204,9 @@ class EventMatchResult:
 
 
 def flatten(args):
+    """
+    Flatten a nested dictionary for string serialization.
+    """
     if isinstance(args, dict):
         for key, value in args.items():
             if isinstance(value, date):
