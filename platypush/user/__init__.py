@@ -3,11 +3,11 @@ import datetime
 import hashlib
 import json
 import random
-import rsa
 import time
 from typing import Optional, Dict
 
 import bcrypt
+import rsa
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import make_transient
@@ -73,7 +73,7 @@ class UserManager:
                 username=username,
                 password=self._encrypt_password(password),
                 created_at=datetime.datetime.utcnow(),
-                **kwargs
+                **kwargs,
             )
 
             session.add(record)
@@ -238,9 +238,7 @@ class UserManager:
             indent=None,
         )
 
-        return base64.b64encode(
-            rsa.encrypt(payload.encode('ascii'), pub_key)
-        ).decode()
+        return base64.b64encode(rsa.encrypt(payload.encode('ascii'), pub_key)).decode()
 
     def validate_jwt_token(self, token: str) -> Dict[str, str]:
         """
@@ -263,21 +261,19 @@ class UserManager:
 
         try:
             payload = json.loads(
-                rsa.decrypt(
-                    base64.b64decode(token.encode('ascii')),
-                    priv_key
-                ).decode('ascii')
+                rsa.decrypt(base64.b64decode(token.encode('ascii')), priv_key).decode(
+                    'ascii'
+                )
             )
         except (TypeError, ValueError) as e:
-            raise InvalidJWTTokenException(f'Could not decode JWT token: {e}')
+            raise InvalidJWTTokenException(f'Could not decode JWT token: {e}') from e
 
         expires_at = payload.get('expires_at')
         if expires_at and time.time() > expires_at:
             raise InvalidJWTTokenException('Expired JWT token')
 
         user = self.authenticate_user(
-            payload.get('username', ''),
-            payload.get('password', '')
+            payload.get('username', ''), payload.get('password', '')
         )
 
         if not user:
