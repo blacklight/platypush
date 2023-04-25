@@ -25,7 +25,7 @@ class DbPlugin(Plugin):
     _db_error_wait_interval = 5.0
     _db_error_retries = 3
 
-    def __init__(self, engine=None, *args, **kwargs):
+    def __init__(self, engine=None, **kwargs):
         """
         :param engine: Default SQLAlchemy connection engine string (e.g.
             ``sqlite:///:memory:`` or ``mysql://user:pass@localhost/test``)
@@ -42,7 +42,7 @@ class DbPlugin(Plugin):
 
         super().__init__()
         self.engine_url = engine
-        self.engine = self.get_engine(engine, *args, **kwargs)
+        self.engine = self.get_engine(engine, **kwargs)
 
     def get_engine(
         self, engine: Optional[Union[str, Engine]] = None, *args, **kwargs
@@ -66,16 +66,14 @@ class DbPlugin(Plugin):
         return self.engine
 
     @staticmethod
-    def _build_condition(table, column, value):  # type: ignore
-        if isinstance(value, str):
-            value = "'{}'".format(value)
-        elif not isinstance(value, int) and not isinstance(value, float):
-            value = "'{}'".format(str(value))
+    def _build_condition(table, column, value):  # pylint: disable=unused-argument
+        if isinstance(value, str) or not isinstance(value, (int, float)):
+            value = f"'{value}'"
 
-        return eval('table.c.{}=={}'.format(column, value))
+        return eval(f'table.c.{column}=={value}')  # pylint: disable=eval-used
 
     @action
-    def execute(self, statement, engine=None, *args, **kwargs):
+    def execute(self, statement, *args, engine=None, **kwargs):
         """
         Executes a raw SQL statement.
 
@@ -98,37 +96,37 @@ class DbPlugin(Plugin):
             (see https:///docs.sqlalchemy.org/en/latest/core/engines.html)
         """
 
-        engine = self.get_engine(engine, *args, **kwargs)
+        with self.get_engine(engine, *args, **kwargs).connect() as connection:
+            connection.execute(text(statement))
 
-        with engine.connect() as connection:
-            connection.execute(statement)
-
-    def _get_table(self, table, engine=None, *args, **kwargs):
+    def _get_table(self, table: str, *args, engine=None, **kwargs):
         if not engine:
             engine = self.get_engine(engine, *args, **kwargs)
 
         db_ok = False
         n_tries = 0
         last_error = None
+        table_ = None
 
         while not db_ok and n_tries < self._db_error_retries:
             try:
                 n_tries += 1
                 metadata = MetaData()
-                table = Table(table, metadata, autoload=True, autoload_with=engine)
+                table_ = Table(table, metadata, autoload_with=engine)
                 db_ok = True
             except Exception as e:
                 last_error = e
                 wait_time = self._db_error_wait_interval * n_tries
                 self.logger.exception(e)
-                self.logger.info('Waiting {} seconds before retrying'.format(wait_time))
+                self.logger.info('Waiting %s seconds before retrying', wait_time)
                 time.sleep(wait_time)
                 engine = self.get_engine(engine, *args, **kwargs)
 
         if not db_ok and last_error:
             raise last_error
 
-        return table, engine
+        assert table_, f'No such table: {table}'
+        return table_, engine
 
     @action
     def select(
@@ -324,17 +322,16 @@ class DbPlugin(Plugin):
                     connection, table, records, key_columns
                 )
 
-            with connection.begin():
-                if insert_records:
-                    insert = table.insert().values(insert_records)
-                    ret = self._execute_try_returning(connection, insert)
-                    if ret:
-                        returned_records += ret
+            if insert_records:
+                insert = table.insert().values(insert_records)
+                ret = self._execute_try_returning(connection, insert)
+                if ret:
+                    returned_records += ret
 
-                if update_records and on_duplicate_update:
-                    ret = self._update(connection, table, update_records, key_columns)
-                    if ret:
-                        returned_records = ret + returned_records
+            if update_records and on_duplicate_update:
+                ret = self._update(connection, table, update_records, key_columns)
+                if ret:
+                    returned_records = ret + returned_records
 
         if returned_records:
             return returned_records
@@ -365,8 +362,9 @@ class DbPlugin(Plugin):
 
         query = table.select().where(
             or_(
-                and_(
-                    self._build_condition(table, k, record.get(k)) for k in key_columns
+                and_(  # type: ignore
+                    self._build_condition(table, k, record.get(k))
+                    for k in key_columns  # type: ignore
                 )
                 for record in records
             )
@@ -498,13 +496,13 @@ class DbPlugin(Plugin):
 
         engine = self.get_engine(engine, *args, **kwargs)
 
-        with engine.connect() as connection, connection.begin():
+        with engine.connect() as connection:
             for record in records:
-                table, engine = self._get_table(table, engine=engine, *args, **kwargs)
-                delete = table.delete()
+                table_, engine = self._get_table(table, engine=engine, *args, **kwargs)
+                delete = table_.delete()
 
                 for k, v in record.items():
-                    delete = delete.where(self._build_condition(table, k, v))
+                    delete = delete.where(self._build_condition(table_, k, v))
 
                 connection.execute(delete)
 
@@ -514,7 +512,7 @@ class DbPlugin(Plugin):
 
     @contextmanager
     def get_session(
-        self, engine=None, locked=False, autoflush=True, *args, **kwargs
+        self, *args, engine=None, locked=False, autoflush=True, **kwargs
     ) -> Generator[Session, None, None]:
         engine = self.get_engine(engine, *args, **kwargs)
         if locked:
@@ -523,16 +521,20 @@ class DbPlugin(Plugin):
             # Mock lock
             lock = RLock()
 
-        with lock, engine.connect() as conn, conn.begin():
-            session = scoped_session(
+        with lock, engine.connect() as conn:
+            session_maker = scoped_session(
                 sessionmaker(
                     expire_on_commit=False,
                     autoflush=autoflush,
                 )
             )
 
-            session.configure(bind=conn)
-            yield session()
+            session_maker.configure(bind=conn)
+            session = session_maker()
+            yield session
+
+            session.flush()
+            session.commit()
 
 
 # vim:sw=4:ts=4:et:
