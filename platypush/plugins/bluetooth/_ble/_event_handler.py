@@ -191,6 +191,10 @@ class EventHandler:
         """
         Check if the beacon received from the given device should be skipped.
         """
+        # Exclude Apple iBeacons
+        if device.manufacturer == 'Apple, Inc.' and device.model == 'iBeacon':
+            return True
+
         # "Noisy" beacon devices usually have no associated friendly name. If a
         # device has a valid name, we should probably include it.
         if (
@@ -204,6 +208,10 @@ class EventHandler:
             device.manufacturer in _excluded_manufacturers
             or device.model in _excluded_manufacturers
         ):
+            return True
+
+        # If the device has no children and no manufacturer, skip it
+        if not (device.children and device.manufacturer):
             return True
 
         # If the device has any children other than services, don't skip it
