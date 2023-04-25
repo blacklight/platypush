@@ -1,6 +1,21 @@
-from platypush.config import Config
+from sqlalchemy import Column, String
+
+from platypush.common.db import declarative_base
 from platypush.context import get_plugin
 from platypush.plugins import Plugin, action
+from platypush.plugins.db import DbPlugin
+
+Base = declarative_base()
+
+
+# pylint: disable=too-few-public-methods
+class Variable(Base):
+    """Models the variable table"""
+
+    __tablename__ = 'variable'
+
+    name = Column(String, primary_key=True, nullable=False)
+    value = Column(String)
 
 
 class VariablePlugin(Plugin):
@@ -11,8 +26,6 @@ class VariablePlugin(Plugin):
     will be stored either persisted on a local database or on the local Redis instance.
     """
 
-    _variable_table_name = 'variable'
-
     def __init__(self, **kwargs):
         """
         The plugin will create a table named ``variable`` on the database
@@ -21,24 +34,14 @@ class VariablePlugin(Plugin):
         """
 
         super().__init__(**kwargs)
-        self.db_plugin = get_plugin('db')
-        self.redis_plugin = get_plugin('redis')
+        db_plugin = get_plugin('db')
+        redis_plugin = get_plugin('redis')
+        assert db_plugin, 'Database plugin not configured'
+        assert redis_plugin, 'Redis plugin not configured'
 
-        db = Config.get('db')
-        self.db_config = {
-            'engine': db.get('engine'),
-            'args': db.get('args', []),
-            'kwargs': db.get('kwargs', {})
-        }
-
-        self._create_tables()
-        # self._variables = {}
-
-    def _create_tables(self):
-        self.db_plugin.execute("""CREATE TABLE IF NOT EXISTS {}(
-            name varchar(255) not null primary key,
-            value text
-        )""".format(self._variable_table_name))
+        self.redis_plugin = redis_plugin
+        self.db_plugin: DbPlugin = db_plugin
+        self.db_plugin.create_all(self.db_plugin.get_engine(), Base)
 
     @action
     def get(self, name, default_value=None):
@@ -53,13 +56,10 @@ class VariablePlugin(Plugin):
         :returns: A map in the format ``{"<name>":"<value>"}``
         """
 
-        rows = self.db_plugin.select(table=self._variable_table_name,
-                                     filter={'name': name},
-                                     engine=self.db_config['engine'],
-                                     *self.db_config['args'],
-                                     **self.db_config['kwargs']).output
+        with self.db_plugin.get_session() as session:
+            var = session.query(Variable).filter_by(name=name).first()
 
-        return {name: rows[0]['value'] if rows else default_value}
+        return {name: (var.value if var is not None else default_value)}
 
     @action
     def set(self, **kwargs):
@@ -69,15 +69,24 @@ class VariablePlugin(Plugin):
         :param kwargs: Key-value list of variables to set (e.g. ``foo='bar', answer=42``)
         """
 
-        records = [{'name': k, 'value': v}
-                   for (k, v) in kwargs.items()]
+        with self.db_plugin.get_session() as session:
+            existing_vars = {
+                var.name: var
+                for var in session.query(Variable)
+                .filter(Variable.name.in_(kwargs.keys()))
+                .all()
+            }
 
-        self.db_plugin.insert(table=self._variable_table_name,
-                              records=records, key_columns=['name'],
-                              engine=self.db_config['engine'],
-                              on_duplicate_update=True,
-                              *self.db_config['args'],
-                              **self.db_config['kwargs'])
+            new_vars = {
+                name: Variable(name=name, value=value)
+                for name, value in kwargs.items()
+                if name not in existing_vars
+            }
+
+            for name, var in existing_vars.items():
+                var.value = kwargs[name]  # type: ignore
+
+            session.add_all([*existing_vars.values(), *new_vars.values()])
 
         return kwargs
 
@@ -90,12 +99,8 @@ class VariablePlugin(Plugin):
         :type name: str
         """
 
-        records = [{'name': name}]
-
-        self.db_plugin.delete(table=self._variable_table_name,
-                              records=records, engine=self.db_config['engine'],
-                              *self.db_config['args'],
-                              **self.db_config['kwargs'])
+        with self.db_plugin.get_session() as session:
+            session.query(Variable).filter_by(name=name).delete()
 
         return True
 
@@ -149,5 +154,6 @@ class VariablePlugin(Plugin):
         """
 
         return self.redis_plugin.expire(name, expire)
+
 
 # vim:sw=4:ts=4:et:
