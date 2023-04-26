@@ -258,29 +258,23 @@ class MqttBackend(Backend):
     def add_listeners(self, *listeners):
         for i, listener in enumerate(listeners):
             host = listener.get('host', self.host)
-            if host:
-                port = listener.get('port', self._default_mqtt_port)
-                username = listener.get('username')
-                password = listener.get('password')
-                tls_cafile = self._expandpath(listener.get('tls_cafile'))
-                tls_certfile = self._expandpath(listener.get('tls_certfile'))
-                tls_keyfile = self._expandpath(listener.get('tls_keyfile'))
-                tls_version = MQTTPlugin.get_tls_version(listener.get('tls_version'))
-                tls_ciphers = listener.get('tls_ciphers')
-                tls_insecure = listener.get('tls_insecure')
-            else:
-                host = self.host
-                port = self.port
-                username = self.username
-                password = self.password
-                tls_cafile = self.tls_cafile
-                tls_certfile = self.tls_certfile
-                tls_keyfile = self.tls_keyfile
-                tls_version = self.tls_version
-                tls_ciphers = self.tls_ciphers
-                tls_insecure = self.tls_insecure
-
+            port = listener.get('port', self.port)
+            username = listener.get('username', self.username)
+            password = listener.get('password', self.password)
+            tls_cafile = self._expandpath(listener.get('tls_cafile', self.tls_cafile))
+            tls_certfile = self._expandpath(
+                listener.get('tls_certfile', self.tls_certfile)
+            )
+            tls_keyfile = self._expandpath(
+                listener.get('tls_keyfile', self.tls_keyfile)
+            )
+            tls_version = MQTTPlugin.get_tls_version(
+                listener.get('tls_version', self.tls_version)
+            )
+            tls_ciphers = listener.get('tls_ciphers', self.tls_ciphers)
+            tls_insecure = listener.get('tls_insecure', self.tls_insecure)
             topics = listener.get('topics')
+
             if not topics:
                 self.logger.warning(
                     'No list of topics specified for listener n.%d', i + 1
