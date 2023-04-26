@@ -125,7 +125,7 @@ class DbPlugin(Plugin):
         if not db_ok and last_error:
             raise last_error
 
-        assert table_, f'No such table: {table}'
+        assert table_ is not None, f'No such table: {table}'
         return table_, engine
 
     @action
