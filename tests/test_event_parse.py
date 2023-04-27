@@ -87,6 +87,56 @@ def test_speech_recognized_event_parse():
     assert not result.is_match
 
 
+def test_condition_with_relational_operators():
+    """
+    Test relational operators used in event conditions.
+    """
+    # Given: A condition with a relational operator.
+    condition = EventCondition.build(
+        {
+            'type': 'platypush.message.event.ping.PingEvent',
+            'message': {'foo': {'$gt': 25}},
+        }
+    )
+
+    # When: An event with a value greater than 25 is received.
+    event = PingEvent(message={'foo': 26})
+
+    # Then: The condition is matched.
+    assert event.matches_condition(condition).is_match
+
+    # When: An event with a value lower than 25 is received.
+    event = PingEvent(message={'foo': 24})
+
+    # Then: The condition is not matched.
+    assert not event.matches_condition(condition).is_match
+
+
+def test_filter_with_regex_condition():
+    """
+    Test an event matcher with a regex filter on an attribute.
+    """
+    # Given: A condition with a regex filter.
+    condition = EventCondition.build(
+        {
+            'type': 'platypush.message.event.ping.PingEvent',
+            'message': {'foo': {'$regex': '^ba[rz]'}},
+        }
+    )
+
+    # When: An event with a matching string is received.
+    event = PingEvent(message={'foo': 'bart'})
+
+    # Then: The condition is matched.
+    assert event.matches_condition(condition).is_match
+
+    # When: An event with a non-matching string is received.
+    event = PingEvent(message={'foo': 'back'})
+
+    # Then: The condition is not matched.
+    assert not event.matches_condition(condition).is_match
+
+
 if __name__ == '__main__':
     pytest.main()
 
