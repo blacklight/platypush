@@ -157,47 +157,59 @@ class Event(Message):
 
         return True
 
+    # pylint: disable=too-many-branches,too-many-return-statements
     def _matches_condition(
         self,
         condition: dict,
-        args: dict,
+        event_args: dict,
         result: "EventMatchResult",
         match_scores: list,
     ) -> bool:
-        for attr, value in condition.items():
-            if attr not in args:
+        for attr, condition_value in condition.items():
+            if attr not in event_args:
                 return False
 
-            if isinstance(args[attr], str):
-                if self._is_relational_filter(value):
-                    if not self._relational_filter_matches(value, args[attr]):
+            event_value = event_args[attr]
+            if isinstance(event_value, str):
+                if self._is_relational_filter(condition_value):
+                    if not self._relational_filter_matches(
+                        condition_value, event_value
+                    ):
                         return False
                 else:
                     self._matches_argument(
-                        argname=attr, condition_value=value, args=args, result=result
+                        argname=attr,
+                        condition_value=condition_value,
+                        event_args=event_args,
+                        result=result,
                     )
 
                     if result.is_match:
                         match_scores.append(result.score)
                     else:
                         return False
-            elif isinstance(value, dict):
-                if self._is_relational_filter(value):
-                    if not self._relational_filter_matches(value, args[attr]):
+            elif isinstance(condition_value, dict):
+                if self._is_relational_filter(condition_value):
+                    if not self._relational_filter_matches(
+                        condition_value, event_value
+                    ):
                         return False
                 else:
-                    if not isinstance(args[attr], dict):
+                    if not isinstance(event_value, dict):
                         return False
 
                     if not self._matches_condition(
-                        condition=value,
-                        args=args[attr],
+                        condition=condition_value,
+                        event_args=event_value,
                         result=result,
                         match_scores=match_scores,
                     ):
                         return False
-            elif args[attr] != value:
-                return False
+            else:
+                if event_value != condition_value:
+                    return False
+
+                match_scores.append(2.0)
 
         return True
 
@@ -215,7 +227,7 @@ class Event(Message):
 
         if not self._matches_condition(
             condition=condition.args,
-            args=self.args,
+            event_args=self.args,
             result=result,
             match_scores=match_scores,
         ):
@@ -228,7 +240,7 @@ class Event(Message):
         return result
 
     def _matches_argument(
-        self, argname, condition_value, args, result: "EventMatchResult"
+        self, argname, condition_value, event_args, result: "EventMatchResult"
     ):
         """
         Returns an EventMatchResult if the event argument [argname] matches
@@ -236,7 +248,7 @@ class Event(Message):
         """
 
         # Simple equality match by default. It can be overridden by the derived classes.
-        result.is_match = args.get(argname) == condition_value
+        result.is_match = event_args.get(argname) == condition_value
         if result.is_match:
             result.score += 2
         else:

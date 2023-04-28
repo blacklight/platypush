@@ -108,14 +108,14 @@ class SpeechRecognizedEvent(AssistantEvent):
         return result
 
     @override
-    def _matches_argument(self, argname, condition_value, args, result):
+    def _matches_argument(self, argname, condition_value, event_args, result):
         """
         Overrides the default `_matches_argument` method to allow partial
         phrase matches and text extraction.
 
         Example::
 
-            args = {
+            event_args = {
                 'phrase': 'Hey dude turn on the living room lights'
             }
 
@@ -127,13 +127,13 @@ class SpeechRecognizedEvent(AssistantEvent):
 
         """
 
-        if args.get(argname) == condition_value:
+        if event_args.get(argname) == condition_value:
             # In case of an exact match, return immediately
             result.is_match = True
             result.score = sys.maxsize
             return result
 
-        event_tokens = re.split(r'\s+', args.get(argname, '').strip().lower())
+        event_tokens = re.split(r'\s+', event_args.get(argname, '').strip().lower())
         condition_tokens = re.split(r'\s+', condition_value.strip().lower())
 
         while event_tokens and condition_tokens:
