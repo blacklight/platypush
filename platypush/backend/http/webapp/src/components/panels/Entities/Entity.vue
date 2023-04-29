@@ -221,6 +221,7 @@ export default {
   .head {
     .name {
       display: inline-flex;
+      word-break: break-all;
 
       &:hover {
         color: $hover-fg;
@@ -229,6 +230,10 @@ export default {
 
     .label {
       margin-left: 0.5em;
+    }
+
+    .value {
+      word-break: break-all;
     }
 
     .icon:hover {
