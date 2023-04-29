@@ -39,7 +39,11 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={
-        'platypush': ['alembic.ini', 'alembic/*', 'alembic/**/*'],
+        'platypush': [
+            'migrations/alembic.ini',
+            'migrations/alembic/*',
+            'migrations/alembic/**/*',
+        ],
     },
     entry_points={
         'console_scripts': [
