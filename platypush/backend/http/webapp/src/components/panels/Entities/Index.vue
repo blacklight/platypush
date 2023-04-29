@@ -3,11 +3,11 @@
     <Loading v-if="loading" />
 
     <header>
-      <div class="col-11 left">
+      <div class="col-s-10 col-m-11 left">
         <Selector :entity-groups="entityGroups" :value="selector" @input="selector = $event" />
       </div>
 
-      <div class="col-1 actions-container right">
+      <div class="col-s-2 col-m-1 actions-container right">
         <Dropdown title="Actions" icon-class="fas fa-ellipsis">
           <DropdownItem  icon-class="fa fa-sync-alt" text="Refresh" @click="refresh" />
           <DropdownItem  icon-class="fa fa-square-root-variable"

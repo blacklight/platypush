@@ -1,5 +1,6 @@
 <template>
-  <Modal :visible="visible" title="Set Variable" ref="modal" @open="onOpen">
+  <Modal :visible="visible" title="Set Variable" ref="modal"
+      @open="onOpen" @close="$emit('close', $event)">
     <div class="variable-modal-container">
       <form @submit.prevent="setValue">
         <div class="row">
@@ -114,6 +115,14 @@ export default {
       padding: 0.25em 1em;
       display: flex;
       align-items: center;
+
+      @include until($tablet) {
+        flex-direction: column;
+      }
+
+      input[type=text] {
+        width: 100%;
+      }
     }
 
     .button-container {
