@@ -153,7 +153,14 @@ class EntitiesPlugin(Plugin):
                     self.logger.warning(
                         'Could not load results from plugin %s: %s', plugin_name, result
                     )
-                    self.logger.warning(''.join(format_exception(result)))
+
+                    self.logger.warning(
+                        ''.join(
+                            format_exception(
+                                type(result), value=result, tb=result.__traceback__
+                            )
+                        )
+                    )
                 else:
                     results.append(result)
             except Empty:
