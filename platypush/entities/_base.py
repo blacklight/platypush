@@ -1,11 +1,15 @@
 import logging
 import inspect
 import json
+import os
 import pathlib
+import subprocess
+import sys
 import types
 from datetime import datetime
-import pkgutil
 from typing import Callable, Dict, Final, Optional, Set, Type, Tuple, Any
+
+import pkgutil
 
 from dateutil.tz import tzutc
 from sqlalchemy import (
@@ -23,6 +27,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import ColumnProperty, backref, relationship
 from sqlalchemy.orm.exc import ObjectDeletedError
 
+import platypush
 from platypush.common.db import Base
 from platypush.message import JSONAble, Message
 
@@ -170,7 +175,10 @@ if 'entity' not in Base.metadata:
                 return normalized_name
             except ObjectDeletedError as e:
                 logger.warning(
-                    f'Could not access column "{col.key}" for entity ID "{self.id}": {e}'
+                    'Could not access column "%s" for entity ID "{%s}": {%s}',
+                    col.key,
+                    self.id,
+                    e,
                 )
                 return None
 
@@ -267,9 +275,9 @@ def _discover_entity_types():
                 isinstance(e, (ImportError, ModuleNotFoundError))
                 and modname[len(__package__) + 1 :] in _import_error_ignored_modules
             ):
-                logger.debug(f'Could not import module {modname}')
+                logger.debug('Could not import module %s', modname)
             else:
-                logger.warning(f'Could not import module {modname}')
+                logger.warning('Could not import module %s', modname)
                 logger.exception(e)
 
             continue
@@ -292,7 +300,31 @@ def init_entities_db():
     """
     from platypush.context import get_plugin
 
+    run_db_migrations()
     _discover_entity_types()
     db = get_plugin('db')
     assert db
     db.create_all(db.get_engine(), Base)
+
+
+def run_db_migrations():
+    """
+    Run the database migrations upon engine initialization.
+    """
+    logger.info('Running database migrations')
+    alembic_ini = os.path.join(
+        os.path.dirname(inspect.getabsfile(platypush)), 'migrations', 'alembic.ini'
+    )
+
+    subprocess.run(
+        [
+            sys.executable,
+            '-m',
+            'alembic',
+            '-c',
+            alembic_ini,
+            'upgrade',
+            'head',
+        ],
+        check=True,
+    )

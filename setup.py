@@ -38,6 +38,9 @@ setup(
     url="https://platypush.tech",
     packages=find_packages(),
     include_package_data=True,
+    package_data={
+        'platypush': ['alembic.ini', 'alembic/*', 'alembic/**/*'],
+    },
     entry_points={
         'console_scripts': [
             'platypush=platypush:main',
@@ -58,6 +61,7 @@ setup(
         'requests',
         'croniter',
         'sqlalchemy',
+        'alembic',
         'websockets',
         'websocket-client',
         'wheel',
