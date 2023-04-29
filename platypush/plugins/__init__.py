@@ -91,6 +91,18 @@ class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to
         assert redis, 'db plugin not initialized'
         return redis
 
+    @property
+    def _entities(self):
+        """
+        :return: The reference to the :class:`platypush.plugins.entities.EntitiesPlugin`.
+        """
+        from platypush.context import get_plugin
+        from platypush.plugins.entities import EntitiesPlugin
+
+        entities: EntitiesPlugin = get_plugin(EntitiesPlugin)  # type: ignore
+        assert entities, 'entities plugin not initialized'
+        return entities
+
     def run(self, method, *args, **kwargs):
         assert (
             method in self.registered_actions
