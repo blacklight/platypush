@@ -7,10 +7,12 @@
         <Selector :entity-groups="entityGroups" :value="selector" @input="selector = $event" />
       </div>
 
-      <div class="col-1 right">
-        <button title="Refresh" @click="refresh">
-          <i class="fa fa-sync-alt" />
-        </button>
+      <div class="col-1 actions-container right">
+        <Dropdown title="Actions" icon-class="fas fa-ellipsis">
+          <DropdownItem  icon-class="fa fa-sync-alt" text="Refresh" @click="refresh" />
+          <DropdownItem  icon-class="fa fa-square-root-variable"
+            text="Set Variable" @click="variableModalVisible = true" />
+        </Dropdown>
       </div>
     </header>
 
@@ -26,6 +28,7 @@
         v-if="modalEntityId && entities[modalEntityId]"
       />
 
+      <VariableModal :visible="variableModalVisible" @close="variableModalVisible = false" />
       <NoItems v-if="!Object.keys(displayGroups || {})?.length">No entities found</NoItems>
 
       <div class="groups-container" v-else>
@@ -75,6 +78,8 @@
 </template>
 
 <script>
+import Dropdown from "@/components/elements/Dropdown";
+import DropdownItem from "@/components/elements/DropdownItem";
 import Utils from "@/Utils"
 import Loading from "@/components/Loading";
 import Icon from "@/components/elements/Icon";
@@ -82,14 +87,25 @@ import NoItems from "@/components/elements/NoItems";
 import Entity from "./Entity.vue";
 import Selector from "./Selector.vue";
 import EntityModal from "./Modal"
+import VariableModal from "./VariableModal"
 import { bus } from "@/bus";
 import icons from '@/assets/icons.json'
 import meta from './meta.json'
 
 export default {
   name: "Entities",
-  components: {Loading, Icon, Entity, Selector, NoItems, EntityModal},
   mixins: [Utils],
+  components: {
+    Dropdown,
+    DropdownItem,
+    Entity,
+    EntityModal,
+    Icon,
+    Loading,
+    NoItems,
+    Selector,
+    VariableModal,
+  },
 
   props: {
     // Entity scan timeout in seconds
@@ -108,6 +124,7 @@ export default {
       entities: {},
       modalEntityId: null,
       modalVisible: false,
+      variableModalVisible: false,
       selector: {
         grouping: 'category',
         selectedEntities: {},
@@ -205,10 +222,10 @@ export default {
       const entities = (group ? group.entities : this.entities) || {}
       const args = {}
       if (group)
-        args.plugins = Object.keys(entities.reduce((obj, entity) => {
+        args.plugins = Object.values(entities).reduce((obj, entity) => {
           obj[entity.plugin] = true
           return obj
-        }, {}))
+        }, {})
 
       this.loadingEntities = Object.values(entities).reduce((obj, entity) => {
           if (this._shouldSkipLoading(entity))
@@ -419,10 +436,42 @@ export default {
       right: 0;
       text-align: right;
       margin-right: 0.5em;
-      padding-right: 0.5em;
+      padding-right: 0;
 
       button {
         padding: 0.5em 0;
+      }
+    }
+
+    :deep(.right) {
+      .dropdown-container {
+        .dropdown {
+          min-width: 10em;
+
+          .item {
+            box-shadow: none;
+
+            .text {
+              text-align: left;
+              margin-left: 0.75em;
+            }
+          }
+        }
+
+        button {
+          margin-right: 0;
+          text-align: center;
+          background: transparent;
+          border: 0;
+
+          &:hover {
+            color: $default-hover-fg;
+          }
+
+          i {
+            margin-left: 0.5em;
+          }
+        }
       }
     }
   }
