@@ -156,14 +156,14 @@ class EventHandler:
 
         new_entity = device_to_entity(device, data)
         if self._exclude_known_noisy_beacons and self._is_noisy_beacon(new_entity):
-            logger.debug(
+            logger.info(
                 'exclude_known_noisy_beacons is set to True: skipping beacon from device %s',
                 device.address,
             )
             return
 
         if self._blacklist.matches(new_entity):
-            logger.debug('Ignoring blacklisted device: %s', device.address)
+            logger.info('Ignoring blacklisted device: %s', device.address)
             return
 
         # Extend the new entity with children entities added by the plugins
