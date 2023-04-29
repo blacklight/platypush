@@ -89,7 +89,7 @@ event_matchers: Dict[
     and _has_been_set(old, new, 'connected', False),
     BluetoothDeviceFoundEvent: lambda old, new: old is None
     or (old.reachable is False and new.reachable is True),
-    BluetoothDeviceSignalUpdateEvent: lambda old, new: (
+    BluetoothDeviceSignalUpdateEvent: lambda old, new: (  # type: ignore
         (new.rssi is not None or new.tx_power is not None)
         and bool(old and old.rssi)
         and (
@@ -183,7 +183,7 @@ class EventHandler:
             get_bus().post(event)
 
         if events:
-            new_entity.reachable = True
+            new_entity.reachable = True  # type: ignore
             self._device_queue.put_nowait(new_entity)
 
     @staticmethod
@@ -217,6 +217,14 @@ class EventHandler:
         # If the device has any children other than services, don't skip it
         if any(not isinstance(child, BluetoothService) for child in device.children):
             return False
+
+        # If the device's only children are unknown services, skip it
+        if not any(
+            isinstance(child, BluetoothService)
+            and child.service_class != ServiceClass.UNKNOWN
+            for child in device.children
+        ):
+            return True
 
         mapped_uuids = [
             int(str(srv.uuid).split('-', maxsplit=1)[0], 16) & 0xFFFF
