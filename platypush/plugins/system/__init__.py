@@ -606,6 +606,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
                     **disk,
                 )
                 for disk in entities['disks']
+                if disk.get('device')
             ],
             *[
                 NetworkInterfaceModel(
