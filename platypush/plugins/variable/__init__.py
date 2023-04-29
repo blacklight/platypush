@@ -1,7 +1,6 @@
 from typing import Collection, Dict, Iterable, Optional, Union
 from typing_extensions import override
 
-# from platypush.common.db import Base
 from platypush.entities import EntityManager
 from platypush.entities.variables import Variable
 from platypush.plugins import Plugin, action
@@ -22,7 +21,6 @@ class VariablePlugin(Plugin, EntityManager):
         self._db_vars: Dict[str, Optional[str]] = {}
         """ Local cache for db variables. """
 
-        # db.create_all(db.get_engine(), Base)
         with db.get_session() as session:
             self._db_vars.update(
                 {  # type: ignore
