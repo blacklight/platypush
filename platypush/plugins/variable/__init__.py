@@ -64,7 +64,11 @@ class VariablePlugin(Plugin, EntityManager):
         :param name: Name of the variable to remove.
         """
 
-        self.publish_entities({name: None})
+        with self._db.get_session() as session:
+            entity = session.query(Variable).filter(Variable.name == name).first()
+            if entity is not None:
+                self._entities.delete(entity.id)
+
         self._db_vars.pop(name, None)
         return True
 
