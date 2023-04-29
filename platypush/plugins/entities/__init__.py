@@ -1,6 +1,7 @@
 from queue import Queue, Empty
 from threading import Thread
 from time import time
+from traceback import format_exception
 from typing import Optional, Any, Collection, Mapping
 
 from sqlalchemy import or_, text
@@ -49,7 +50,9 @@ class EntitiesPlugin(Plugin):
         """
         entity_registry = get_entities_registry()
         selected_types = []
-        all_types = {e.__tablename__.lower(): e for e in entity_registry}
+        all_types = {
+            e.__tablename__.lower(): e for e in entity_registry  # type: ignore
+        }
 
         if types:
             selected_types = {t.lower() for t in types}
@@ -148,8 +151,9 @@ class EntitiesPlugin(Plugin):
                 plugin_name, result = q.get(block=True, timeout=0.5)
                 if isinstance(result, Exception):
                     self.logger.warning(
-                        f'Could not load results from plugin {plugin_name}: {result}'
+                        'Could not load results from plugin %s: %s', plugin_name, result
                     )
+                    self.logger.warning(''.join(format_exception(result)))
                 else:
                     results.append(result)
             except Empty:
@@ -243,7 +247,10 @@ class EntitiesPlugin(Plugin):
         with self._get_session(locked=True) as session:
             objs = session.query(Entity).filter(Entity.id.in_(entities.keys())).all()
             for obj in objs:
-                obj.meta = {**(obj.meta or {}), **(entities.get(str(obj.id), {}))}
+                obj.meta = {  # type: ignore
+                    **dict(obj.meta or {}),  # type: ignore
+                    **(entities.get(str(obj.id), {})),
+                }
                 session.add(obj)
 
             session.commit()

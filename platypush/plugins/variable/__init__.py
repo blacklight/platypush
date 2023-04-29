@@ -1,24 +1,12 @@
-from sqlalchemy import Column, String
+from typing import Collection, Dict, Iterable, Optional, Union
+from typing_extensions import override
 
-from platypush.common.db import declarative_base
-from platypush.context import get_plugin
+from platypush.entities import EntityManager
+from platypush.entities.variables import Variable
 from platypush.plugins import Plugin, action
-from platypush.plugins.db import DbPlugin
-
-Base = declarative_base()
 
 
-# pylint: disable=too-few-public-methods
-class Variable(Base):
-    """Models the variable table"""
-
-    __tablename__ = 'variable'
-
-    name = Column(String, primary_key=True, nullable=False)
-    value = Column(String)
-
-
-class VariablePlugin(Plugin):
+class VariablePlugin(Plugin, EntityManager):
     """
     This plugin allows you to manipulate context variables that can be
     accessed across your tasks. It requires the :mod:`platypush.plugins.db`
@@ -27,39 +15,34 @@ class VariablePlugin(Plugin):
     """
 
     def __init__(self, **kwargs):
-        """
-        The plugin will create a table named ``variable`` on the database
-        configured in the :mod:`platypush.plugins.db` plugin. You'll have
-        to specify a default ``engine`` in your ``db`` plugin configuration.
-        """
-
         super().__init__(**kwargs)
-        db_plugin = get_plugin('db')
-        redis_plugin = get_plugin('redis')
-        assert db_plugin, 'Database plugin not configured'
-        assert redis_plugin, 'Redis plugin not configured'
 
-        self.redis_plugin = redis_plugin
-        self.db_plugin: DbPlugin = db_plugin
-        self.db_plugin.create_all(self.db_plugin.get_engine(), Base)
+        db = self._db
+        self._db_vars: Dict[str, Optional[str]] = {}
+        """ Local cache for db variables. """
+
+        with db.get_session() as session:
+            self._db_vars.update(
+                {  # type: ignore
+                    str(var.name): var.value for var in session.query(Variable).all()
+                }
+            )
 
     @action
-    def get(self, name, default_value=None):
+    def get(self, name: Optional[str] = None, default_value=None):
         """
         Get the value of a variable by name from the local db.
 
-        :param name: Variable name
-        :type name: str
-
+        :param name: Variable name. If not specified, all the stored variables will be returned.
         :param default_value: What will be returned if the variable is not defined (default: None)
-
         :returns: A map in the format ``{"<name>":"<value>"}``
         """
 
-        with self.db_plugin.get_session() as session:
-            var = session.query(Variable).filter_by(name=name).first()
-
-        return {name: (var.value if var is not None else default_value)}
+        return (
+            {name: self._db_vars.get(name, default_value)}
+            if name is not None
+            else self.status().output
+        )
 
     @action
     def set(self, **kwargs):
@@ -69,53 +52,36 @@ class VariablePlugin(Plugin):
         :param kwargs: Key-value list of variables to set (e.g. ``foo='bar', answer=42``)
         """
 
-        with self.db_plugin.get_session() as session:
-            existing_vars = {
-                var.name: var
-                for var in session.query(Variable)
-                .filter(Variable.name.in_(kwargs.keys()))
-                .all()
-            }
-
-            new_vars = {
-                name: Variable(name=name, value=value)
-                for name, value in kwargs.items()
-                if name not in existing_vars
-            }
-
-            for name, var in existing_vars.items():
-                var.value = kwargs[name]  # type: ignore
-
-            session.add_all([*existing_vars.values(), *new_vars.values()])
-
+        self.publish_entities(kwargs)
+        self._db_vars.update(kwargs)
         return kwargs
 
     @action
-    def unset(self, name):
+    def unset(self, name: str):
         """
         Unset a variable by name if it's set on the local db.
 
-        :param name: Name of the variable to remove
-        :type name: str
+        :param name: Name of the variable to remove.
         """
 
-        with self.db_plugin.get_session() as session:
-            session.query(Variable).filter_by(name=name).delete()
+        with self._db.get_session() as session:
+            entity = session.query(Variable).filter(Variable.name == name).first()
+            if entity is not None:
+                self._entities.delete(entity.id)
 
+        self._db_vars.pop(name, None)
         return True
 
     @action
-    def mget(self, name):
+    def mget(self, name: str):
         """
         Get the value of a variable by name from Redis.
 
         :param name: Variable name
-        :type name: str
-
         :returns: A map in the format ``{"<name>":"<value>"}``
         """
 
-        return self.redis_plugin.mget([name])
+        return self._redis.mget([name])
 
     @action
     def mset(self, **kwargs):
@@ -123,37 +89,65 @@ class VariablePlugin(Plugin):
         Set a variable or a set of variables on Redis.
 
         :param kwargs: Key-value list of variables to set (e.g. ``foo='bar', answer=42``)
-
         :returns: A map with the set variables
         """
 
-        self.redis_plugin.mset(**kwargs)
+        self._redis.mset(**kwargs)
         return kwargs
 
     @action
-    def munset(self, name):
+    def munset(self, name: str):
         """
         Unset a Redis variable by name if it's set
 
         :param name: Name of the variable to remove
-        :type name: str
         """
 
-        return self.redis_plugin.delete(name)
+        return self._redis.delete(name)
 
     @action
-    def expire(self, name, expire):
+    def expire(self, name: str, expire: int):
         """
         Set a variable expiration on Redis
 
         :param name: Variable name
-        :type name: str
-
         :param expire: Expiration time in seconds
-        :type expire: int
         """
 
-        return self.redis_plugin.expire(name, expire)
+        return self._redis.expire(name, expire)
+
+    @override
+    def transform_entities(
+        self, entities: Union[dict, Iterable]
+    ) -> Collection[Variable]:
+        variables = (
+            [
+                {
+                    'name': name,
+                    'value': value,
+                }
+                for name, value in entities.items()
+            ]
+            if isinstance(entities, dict)
+            else entities
+        )
+
+        return super().transform_entities(
+            [
+                Variable(id=var['name'], name=var['name'], value=var['value'])
+                for var in variables
+            ]
+        )
+
+    @override
+    @action
+    def status(self, *_, **__):
+        variables = {
+            name: value for name, value in self._db_vars.items() if value is not None
+        }
+
+        self.publish_entities(variables)
+        return variables
 
 
 # vim:sw=4:ts=4:et:

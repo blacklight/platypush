@@ -125,6 +125,9 @@
   "tv.samsung.ws": {
     "class": "fas fa-tv"
   },
+  "variable": {
+    "class": "fas fa-square-root-variable"
+  },
   "zigbee.mqtt": {
     "imgUrl": "/icons/zigbee.svg"
   },

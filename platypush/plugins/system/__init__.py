@@ -606,6 +606,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
                     **disk,
                 )
                 for disk in entities['disks']
+                if disk.get('device')
             ],
             *[
                 NetworkInterfaceModel(
@@ -615,6 +616,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
                     **nic,
                 )
                 for nic in entities.get('network', [])
+                if nic.get('interface')
             ],
             *[
                 SystemTemperature(
@@ -624,6 +626,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
                     **temp,
                 )
                 for temp in entities.get('temperature', [])
+                if temp.get('id') and temp.get('label')
             ],
             *[
                 SystemFan(
@@ -633,6 +636,7 @@ class SystemPlugin(SensorPlugin, EntityManager):
                     **fan,
                 )
                 for fan in entities.get('fans', [])
+                if fan.get('id') and fan.get('label')
             ],
             *[
                 SystemBattery(

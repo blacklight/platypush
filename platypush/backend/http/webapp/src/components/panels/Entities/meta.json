@@ -343,6 +343,14 @@
     }
   },
 
+  "variable": {
+    "name": "Variable",
+    "name_plural": "Variables",
+    "icon": {
+      "class": "fas fa-square-root-variable"
+    }
+  },
+
   "voltage_sensor": {
     "name": "Sensor",
     "name_plural": "Sensors",
