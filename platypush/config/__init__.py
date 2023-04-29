@@ -11,7 +11,7 @@ import shutil
 import socket
 import sys
 from urllib.parse import quote
-from typing import Optional, Set
+from typing import Dict, Optional, Set
 
 import yaml
 
@@ -129,7 +129,7 @@ class Config:
         }
 
         if 'logging' in self._config:
-            for (k, v) in self._config['logging'].items():
+            for k, v in self._config['logging'].items():
                 if k == 'filename':
                     logfile = os.path.expanduser(v)
                     logdir = os.path.dirname(logfile)
@@ -158,7 +158,7 @@ class Config:
                 os.environ[k] = str(v)
 
         self.backends = {}
-        self.plugins = {}
+        self.plugins = self._core_plugins
         self.event_hooks = {}
         self.procedures = {}
         self.constants = {}
@@ -172,6 +172,12 @@ class Config:
         self._load_scripts()
         self._init_components()
         self._init_dashboards(self._config['dashboards_dir'])
+
+    @property
+    def _core_plugins(self) -> Dict[str, dict]:
+        return {
+            'variable': {},
+        }
 
     def _create_default_config(self):
         cfg_mod_dir = os.path.dirname(os.path.abspath(__file__))
@@ -330,7 +336,7 @@ class Config:
         if 'constants' in self._config:
             self.constants = self._config['constants']
 
-        for (key, value) in self._default_constants.items():
+        for key, value in self._default_constants.items():
             self.constants[key] = value
 
     def _get_dashboard(
