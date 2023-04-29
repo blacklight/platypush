@@ -1,4 +1,4 @@
-from typing import Collection, Dict, Optional
+from typing import Collection, Dict, Iterable, Optional, Union
 from typing_extensions import override
 
 # from platypush.common.db import Base
@@ -115,22 +115,36 @@ class VariablePlugin(Plugin, EntityManager):
         return self._redis.expire(name, expire)
 
     @override
-    def transform_entities(self, entities: dict) -> Collection[Variable]:
+    def transform_entities(
+        self, entities: Union[dict, Iterable]
+    ) -> Collection[Variable]:
+        variables = (
+            [
+                {
+                    'name': name,
+                    'value': value,
+                }
+                for name, value in entities.items()
+            ]
+            if isinstance(entities, dict)
+            else entities
+        )
+
         return super().transform_entities(
             [
-                Variable(id=name, name=name, value=value)
-                for name, value in entities.items()
+                Variable(id=var['name'], name=var['name'], value=var['value'])
+                for var in variables
             ]
         )
 
     @override
     @action
-    def status(self):
+    def status(self, *_, **__):
         variables = {
             name: value for name, value in self._db_vars.items() if value is not None
         }
 
-        super().publish_entities(variables)
+        self.publish_entities(variables)
         return variables
 
 
