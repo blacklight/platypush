@@ -67,6 +67,30 @@ class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to
             get_decorators(self.__class__, climb_class_hierarchy=True).get('action', [])
         )
 
+    @property
+    def _db(self):
+        """
+        :return: The reference to the :class:`platypush.plugins.db.DbPlugin`.
+        """
+        from platypush.context import get_plugin
+        from platypush.plugins.db import DbPlugin
+
+        db: DbPlugin = get_plugin(DbPlugin)  # type: ignore
+        assert db, 'db plugin not initialized'
+        return db
+
+    @property
+    def _redis(self):
+        """
+        :return: The reference to the :class:`platypush.plugins.redis.RedisPlugin`.
+        """
+        from platypush.context import get_plugin
+        from platypush.plugins.redis import RedisPlugin
+
+        redis: RedisPlugin = get_plugin(RedisPlugin)  # type: ignore
+        assert redis, 'db plugin not initialized'
+        return redis
+
     def run(self, method, *args, **kwargs):
         assert (
             method in self.registered_actions
