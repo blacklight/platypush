@@ -464,6 +464,10 @@ export default {
           background: transparent;
           border: 0;
 
+          @include until($tablet) {
+            padding-right: 0;
+          }
+
           &:hover {
             color: $default-hover-fg;
           }
@@ -480,13 +484,15 @@ export default {
     width: 100%;
     height: calc(100% - #{$selector-height});
     overflow: auto;
-
-    @include until($tablet) {
-      padding: 0.5em;
-    }
   }
 
   .groups-container {
+    @include until(#{$desktop - 1}) {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
     @include from($desktop) {
       column-count: var(--groups-per-row);
     }
@@ -494,13 +500,14 @@ export default {
 
   .group {
     width: 100%;
+    max-width: 600px;
     max-height: 100%;
     position: relative;
     padding: $main-margin 0;
     display: flex;
     break-inside: avoid;
 
-    @include from ($tablet) {
+    @include from($tablet) {
       padding: $main-margin;
     }
 
