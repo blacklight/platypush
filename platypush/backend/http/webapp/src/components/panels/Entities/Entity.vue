@@ -186,12 +186,6 @@ export default {
   }
 }
 
-@mixin expanded-entity {
-  background: $selected-bg;
-  font-weight: bold;
-  box-shadow: 0 0 3px 2px $default-shadow-color;
-}
-
 .entity-container {
   width: 100%;
   display: flex;
@@ -214,35 +208,6 @@ export default {
 
     &.with-children {
       width: calc(100% - $collapse-toggler-width - 0.5em);
-    }
-  }
-}
-
-:deep(.entity-container) {
-  .entity.expanded {
-    @include expanded-entity();
-  }
-
-  .head {
-    .name {
-      display: inline-flex;
-      word-break: break-all;
-
-      &:hover {
-        color: $hover-fg;
-      }
-    }
-
-    .label {
-      margin-left: 0.5em;
-    }
-
-    .value {
-      word-break: break-all;
-    }
-
-    .icon:hover {
-      color: $hover-fg;
     }
   }
 }

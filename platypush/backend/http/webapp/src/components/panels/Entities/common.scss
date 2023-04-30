@@ -2,10 +2,20 @@
 
 $collapse-toggler-width: 2em;
 
+@mixin expanded-entity {
+  background: $selected-bg;
+  font-weight: bold;
+  box-shadow: 0 0 3px 2px $default-shadow-color;
+}
+
 .entity {
   width: 100%;
   display: flex;
   flex-direction: column;
+
+  &.expanded {
+    @include expanded-entity();
+  }
 
   .head {
     height: 100%;
@@ -15,20 +25,41 @@ $collapse-toggler-width: 2em;
     min-height: 3.5em;
     position: relative;
 
+    &.expanded {
+      background: $selected-bg;
+      font-weight: bold;
+    }
+
     .icon {
       @extend .col-1;
-      margin-right: 1em;
+      margin-right: 0.5em;
+
+      &:hover {
+        color: $hover-fg;
+      }
     }
 
     .label {
       @extend .col-s-8;
       @extend .col-m-9;
       margin-top: 0.25em;
+      margin-left: 0.5em;
     }
 
-    &.expanded {
-      background: $selected-bg;
+    .name {
+      display: inline-flex;
+      word-break: break-all;
+
+      &:hover {
+        color: $hover-fg;
+      }
+    }
+
+    .value {
+      font-size: 1.1em;
       font-weight: bold;
+      word-break: break-all;
+      opacity: 0.8;
     }
 
     .value-and-toggler {
@@ -48,12 +79,6 @@ $collapse-toggler-width: 2em;
       @extend .col-m-2;
       @extend .pull-right;
       min-width: 7em;
-    }
-
-    .value {
-      font-size: 1.1em;
-      font-weight: bold;
-      opacity: 0.8;
     }
 
     .unit {
