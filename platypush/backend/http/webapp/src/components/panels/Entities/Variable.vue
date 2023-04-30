@@ -9,12 +9,11 @@
         <div class="name" v-text="value.name" />
       </div>
 
-      <div class="value-container" @click.stop="collapsed = !collapsed">
-        <span class="value" v-text="value.value" v-if="value?.value != null" />
-      </div>
-
-      <div class="collapse-toggler" @click.stop="collapsed = !collapsed">
-        <i class="fas" :class="{'fa-chevron-down': collapsed, 'fa-chevron-up': !collapsed}" />
+      <div class="value-and-toggler" @click.stop="collapsed = !collapsed">
+        <div class="value" v-text="value.value" v-if="value?.value != null" />
+        <div class="collapse-toggler" @click.stop="collapsed = !collapsed">
+          <i class="fas" :class="{'fa-chevron-down': collapsed, 'fa-chevron-up': !collapsed}" />
+        </div>
       </div>
     </div>
 
@@ -23,7 +22,7 @@
         <form @submit.prevent="setValue">
           <div class="row">
             <div class="col-9">
-              <input type="text" :value="value.value" placeholder="Variable value" :disabled="loading" ref="text" />
+              <input type="text" v-model="value_" placeholder="Variable value" :disabled="loading" ref="text" />
             </div>
             <div class="col-3 pull-right">
               <button type="button" title="Clear" @click.stop="clearValue" :disabled="loading">
@@ -51,6 +50,7 @@ export default {
   data: function() {
     return {
       collapsed: true,
+      value_: null,
     }
   },
 
@@ -71,7 +71,7 @@ export default {
     },
 
     async setValue() {
-      const value = this.$refs.text.value
+      const value = this.value_
       if (!value?.length)
         return await this.clearValue()
 
@@ -85,6 +85,13 @@ export default {
       }
     },
   },
+
+  mounted() {
+    this.value_ = this.value.value
+    this.$watch(() => this.value.value, (newValue) => {
+      this.value_ = newValue
+    })
+  },
 }
 </script>
 
@@ -97,20 +104,19 @@ $icon-width: 2em;
   .head {
     .icon, .collapse-toggler {
       width: $icon-width;
-      margin-right: 0;
     }
 
-    .label, .value-container {
-      max-width: calc(((100% - (2 * $icon-width)) / 2) - 0.75em);
+    .label, .value-and-toggler {
+      min-width: calc(((100% - (2 * $icon-width)) / 2) - 1em);
+      max-width: calc(((100% - (2 * $icon-width)) / 2) - 1em);
     }
 
-    .value-container {
-      margin-left: 0.5em;
+    .label {
+      margin-left: 1em;
+    }
+
+    .value-and-toggler {
       text-align: right;
-    }
-
-    .collapse-toggler {
-      margin-right: 1em;
     }
   }
 
