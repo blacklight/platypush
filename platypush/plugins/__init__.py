@@ -99,7 +99,7 @@ class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to
         from platypush.context import get_plugin
         from platypush.plugins.entities import EntitiesPlugin
 
-        entities: EntitiesPlugin = get_plugin(EntitiesPlugin)  # type: ignore
+        entities: EntitiesPlugin = get_plugin('entities')  # type: ignore
         assert entities, 'entities plugin not initialized'
         return entities
 
