@@ -1,6 +1,7 @@
 <template>
   <div class="entity-icon-container"
       :class="{'with-color-fill': !!colorFill}"
+      :title="prettify(entity.type || '')"
       :style="colorFillStyle">
     <i class="fas fa-spinner fa-spin-pulse loading" v-if="loading" />
     <i class="fas fa-circle-exclamation error" v-else-if="error" />
@@ -10,10 +11,12 @@
 
 <script>
 import Icon from "@/components/elements/Icon";
+import Utils from "@/Utils"
 
 export default {
   name: "EntityIcon",
   components: {Icon},
+  mixins: [Utils],
   props: {
     loading: {
       type: Boolean,
