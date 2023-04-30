@@ -43,9 +43,9 @@ export default {
       const ret = []
 
       time = parseFloat(time);   // Normalize strings
-      t.d = parseInt(time/86400)
-      t.h = parseInt(time/3600 - t.d*24)
-      t.m = parseInt(time/60 - (t.d*24 + t.h*60))
+      t.d = Math.round(time/86400)
+      t.h = Math.round(time/3600 - t.d*24)
+      t.m = Math.round(time/60 - (t.d*24 + t.h*60))
       t.s = Math.round(time - (t.d*24 + t.h*3600 + t.m*60), 1)
 
       if (parseInt(t.d)) {
