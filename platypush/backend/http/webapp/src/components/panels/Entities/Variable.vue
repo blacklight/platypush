@@ -1,19 +1,19 @@
 <template>
   <div class="entity variable-container" v-if="value.value != null">
     <div class="head" :class="{collapsed: collapsed}">
-      <div class="col-1 icon">
+      <div class="icon">
         <EntityIcon :entity="value" :loading="loading" :error="error" />
       </div>
 
-      <div class="col-s-6 col-m-7 label">
+      <div class="label">
         <div class="name" v-text="value.name" />
       </div>
 
-      <div class="col-s-4 col-m-3 value-container" @click.stop="collapsed = !collapsed">
+      <div class="value-container" @click.stop="collapsed = !collapsed">
         <span class="value" v-text="value.value" v-if="value?.value != null" />
       </div>
 
-      <div class="col-1 collapse-toggler" @click.stop="collapsed = !collapsed">
+      <div class="collapse-toggler" @click.stop="collapsed = !collapsed">
         <i class="fas" :class="{'fa-chevron-down': collapsed, 'fa-chevron-up': !collapsed}" />
       </div>
     </div>
@@ -91,17 +91,37 @@ export default {
 <style lang="scss" scoped>
 @import "common";
 
-.head .value-container {
-  text-align: right;
-}
+$icon-width: 2em;
 
-form {
-  width: 100%;
+.variable-container {
+  .head {
+    .icon, .collapse-toggler {
+      width: $icon-width;
+      margin-right: 0;
+    }
 
-  .row {
+    .label, .value-container {
+      max-width: calc(((100% - (2 * $icon-width)) / 2) - 0.75em);
+    }
+
+    .value-container {
+      margin-left: 0.5em;
+      text-align: right;
+    }
+
+    .collapse-toggler {
+      margin-right: 1em;
+    }
+  }
+
+  form {
     width: 100%;
-    input[type=text] {
+
+    .row {
       width: 100%;
+      input[type=text] {
+        width: 100%;
+      }
     }
   }
 }

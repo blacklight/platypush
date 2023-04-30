@@ -2,17 +2,16 @@
   <div class="entity cpu-container">
     <div class="head">
       <div class="col-1 icon">
-        <EntityIcon
-          :entity="value"
-          :loading="loading"
-          :error="error" />
+        <EntityIcon :entity="value" :loading="loading" :error="error" />
       </div>
 
-      <div class="col-9 label">
+      <div class="label">
         <div class="name" v-text="value.name" />
       </div>
 
-      <div class="col-2 value" v-text="Math.round(value.percent * 100, 1) + '%'" />
+      <div class="value-container">
+        <div class="value" v-text="Math.round(value.percent * 100, 1) + '%'" />
+      </div>
     </div>
   </div>
 </template>
@@ -30,13 +29,4 @@ export default {
 
 <style lang="scss" scoped>
 @import "common";
-
-.cpu-container {
-  .head {
-    .value {
-      text-align: right;
-      font-weight: bold;
-    }
-  }
-}
 </style>

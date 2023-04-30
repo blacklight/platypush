@@ -3,7 +3,7 @@
       :class="{'with-children': hasChildren, collapsed: isCollapsed, hidden: !value?.name?.length}">
     <div class="row item entity-container"
         :class="{ 'with-children': hasChildren, collapsed: isCollapsed, blink: justUpdated }">
-      <div class="adjuster" :class="{'col-12': !hasChildren, 'col-11': hasChildren}">
+      <div class="adjuster" :class="{'with-children': hasChildren}">
         <component
           :is="component"
           :value="value"
@@ -210,6 +210,11 @@ export default {
 
   .adjuster {
     cursor: pointer;
+    width: 100%;
+
+    &.with-children {
+      width: calc(100% - $collapse-toggler-width - 0.5em);
+    }
   }
 }
 

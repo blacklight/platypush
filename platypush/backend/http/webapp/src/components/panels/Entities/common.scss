@@ -1,5 +1,7 @@
 @import "vars";
 
+$collapse-toggler-width: 2em;
+
 .entity {
   width: 100%;
   display: flex;
@@ -14,16 +16,48 @@
     position: relative;
 
     .icon {
+      @extend .col-1;
       margin-right: 1em;
     }
 
     .label {
+      @extend .col-s-8;
+      @extend .col-m-9;
       margin-top: 0.25em;
     }
 
     &.expanded {
       background: $selected-bg;
       font-weight: bold;
+    }
+
+    .value-and-toggler {
+      @extend .col-3;
+      display: flex;
+      align-items: center;
+      justify-content: right;
+      min-width: 7em;
+
+      .value {
+        margin-right: 2.5em;
+      }
+    }
+
+    .value-container {
+      @extend .col-s-3;
+      @extend .col-m-2;
+      @extend .pull-right;
+      min-width: 7em;
+    }
+
+    .value {
+      font-size: 1.1em;
+      font-weight: bold;
+      opacity: 0.8;
+    }
+
+    .unit {
+      margin-left: 0.2em;
     }
 
     .pull-right {
@@ -66,7 +100,7 @@
   align-items: center;
   justify-content: flex-end;
   flex: 1;
-  min-height: 2em;
+  min-height: $collapse-toggler-width;
   margin-right: 1.25em;
   cursor: pointer;
 
@@ -76,7 +110,13 @@
 }
 
 .attributes .child {
+  display: flex;
+  align-items: center;
   padding: 0.5em 1em;
+
+  @include until($tablet - 1) {
+    flex-direction: column;
+  }
 
   &:not(:last-child) {
     border-bottom: 1px solid $border-color-1;
@@ -95,17 +135,18 @@
 
   .label {
     font-weight: bold;
-    @include from($tablet) {
-      @extend .col-m-6;
-    }
+    @extend .col-s-12;
+    @extend .col-m-6;
   }
 
   .value {
     font-size: 0.95em;
-    text-align: right;
+    word-break: break-all;
+    @extend .col-s-12;
+    @extend .col-m-6;
 
     @include from($tablet) {
-      @extend .col-m-6;
+      text-align: right;
     }
   }
 }

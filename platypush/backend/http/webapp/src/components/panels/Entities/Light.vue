@@ -1,7 +1,7 @@
 <template>
   <div class="entity light-container">
     <div class="head" :class="{collapsed: collapsed}">
-      <div class="col-1 icon">
+      <div class="icon">
         <EntityIcon
           :entity="value"
           :icon="icon"
@@ -10,11 +10,11 @@
           :error="error" />
       </div>
 
-      <div class="col-s-8 col-m-9 label">
+      <div class="label">
         <div class="name" v-text="value.name" />
       </div>
 
-      <div class="col-s-3 col-m-2 buttons pull-right">
+      <div class="value-container">
         <ToggleSwitch :value="value.on" @input="toggle"
           @click.stop :disabled="loading || value.is_read_only" />
 
@@ -208,7 +208,7 @@ export default {
 
 .light-container {
   .head {
-    .buttons {
+    .value-container {
       button {
         margin-right: 0.5em;
       }

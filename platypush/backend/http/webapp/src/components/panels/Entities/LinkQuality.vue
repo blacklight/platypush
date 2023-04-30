@@ -1,19 +1,16 @@
 <template>
   <div class="entity link-quality-container">
     <div class="head">
-      <div class="col-1 icon">
-        <EntityIcon
-          :entity="value"
-          :loading="loading"
-          :error="error" />
+      <div class="icon">
+        <EntityIcon :entity="value" :loading="loading" :error="error" />
       </div>
 
-      <div class="col-s-8 col-m-9 label">
+      <div class="label">
         <div class="name" v-text="value.name" />
       </div>
 
-      <div class="col-s-3 col-m-2 buttons pull-right">
-        <span class="value-percent"
+      <div class="value-container">
+        <span class="value"
           v-text="valuePercent + '%'"
           v-if="valuePercent != null" />
       </div>
@@ -45,14 +42,4 @@ export default {
 
 <style lang="scss" scoped>
 @import "common";
-
-.link-quality-container {
-  .head {
-    .value-percent {
-      font-size: 1.1em;
-      font-weight: bold;
-      opacity: 0.7;
-    }
-  }
-}
 </style>

@@ -1,19 +1,16 @@
 <template>
   <div class="entity dimmer-container">
     <div class="head" :class="{collapsed: collapsed}">
-      <div class="col-1 icon">
-        <EntityIcon
-          :entity="value"
-          :loading="loading"
-          :error="error" />
+      <div class="icon">
+        <EntityIcon :entity="value" :loading="loading" :error="error" />
       </div>
 
-      <div class="col-s-7 col-m-8 label">
+      <div class="label">
         <div class="name" v-text="value.name" />
       </div>
 
-      <div class="col-s-4 col-m-3 buttons pull-right">
-        <span class="value-percent"
+      <div class="value-container pull-right">
+        <span class="value"
           v-text="parsedValue"
           v-if="parsedValue != null" />
         <button @click.stop="collapsed = !collapsed">
@@ -96,17 +93,10 @@ export default {
 
 .dimmer-container {
   .head {
-    .buttons {
+    .value-container {
       button {
         margin-right: 0.5em;
       }
-    }
-
-    .value-percent {
-      font-size: 1.1em;
-      font-weight: bold;
-      direction: ltr;
-      opacity: 0.7;
     }
   }
 
