@@ -163,7 +163,7 @@ class EventHandler:
             return
 
         if self._blacklist.matches(new_entity):
-            logger.info('Ignoring blacklisted device: %s', device.address)
+            logger.debug('Ignoring blacklisted device: %s', device.address)
             return
 
         # Extend the new entity with children entities added by the plugins
