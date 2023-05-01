@@ -196,11 +196,14 @@ if 'entity' not in Base.metadata:
             """
             Returns the current entity as a flatten dictionary.
             """
-            return dict(
-                self._column_to_pair(col)
-                for col in self.columns
-                if self._column_to_pair(col)
-            )
+            return {
+                **dict(
+                    self._column_to_pair(col)
+                    for col in self.columns
+                    if self._column_to_pair(col)
+                ),
+                'children_ids': [c.id for c in self.children],
+            }
 
         def to_json(self) -> dict:
             """
