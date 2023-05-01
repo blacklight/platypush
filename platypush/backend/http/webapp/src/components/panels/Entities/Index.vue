@@ -126,7 +126,7 @@ export default {
       modalVisible: false,
       variableModalVisible: false,
       selector: {
-        grouping: 'category',
+        grouping: 'plugin',
         selectedEntities: {},
       },
     }
