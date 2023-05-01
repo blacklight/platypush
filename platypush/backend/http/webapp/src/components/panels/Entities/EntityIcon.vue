@@ -3,7 +3,7 @@
       :class="{'with-color-fill': !!colorFill}"
       :title="prettify(entity.type || '')"
       :style="colorFillStyle">
-    <i class="fas fa-spinner fa-spin-pulse loading" v-if="loading" />
+    <i class="fas fa-spinner loading" v-if="loading" />
     <i class="fas fa-circle-exclamation error" v-else-if="error" />
     <Icon v-bind="computedIconNormalized" v-else />
   </div>
