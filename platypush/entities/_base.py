@@ -7,7 +7,7 @@ import subprocess
 import sys
 import types
 from datetime import datetime
-from typing import Callable, Dict, Final, Optional, Set, Type, Tuple, Any
+from typing import Callable, Dict, Final, List, Optional, Set, Type, Tuple, Any
 
 import pkgutil
 
@@ -192,6 +192,20 @@ if 'entity' not in Base.metadata:
                 return ()
             return col_name, self._serialize_value(col_name)
 
+        @property
+        def children_ids(self) -> List[int]:
+            """
+            Returns the children IDs of the entity.
+            """
+            children_ids = []
+            for child in self.children:
+                try:
+                    children_ids.append(child.id)
+                except ObjectDeletedError:
+                    pass
+
+            return children_ids
+
         def to_dict(self) -> dict:
             """
             Returns the current entity as a flatten dictionary.
@@ -202,7 +216,7 @@ if 'entity' not in Base.metadata:
                     for col in self.columns
                     if self._column_to_pair(col)
                 ),
-                'children_ids': [c.id for c in self.children],
+                'children_ids': self.children_ids,
             }
 
         def to_json(self) -> dict:
