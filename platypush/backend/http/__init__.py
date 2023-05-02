@@ -12,6 +12,7 @@ except ImportError:
 
 from platypush.backend import Backend
 from platypush.backend.http.app import application
+from platypush.bus.redis import RedisBus
 from platypush.context import get_or_create_event_loop
 from platypush.utils import get_ssl_server_context
 
@@ -289,7 +290,7 @@ class HttpBackend(Backend):
         self._websocket_lock = threading.RLock()
         self._websocket_locks = {}
 
-    def send_message(self, msg, *_, **__):
+    def send_message(self, *_, **__):
         self.logger.warning('Use cURL or any HTTP client to query the HTTP backend')
 
     def on_stop(self):
@@ -433,7 +434,7 @@ class HttpBackend(Backend):
         )
         self._websocket_loop.run_forever()
 
-    def _start_web_server(self):
+    def _web_server_proc(self):
         def proc():
             self.logger.info('Starting local web server on port %s', self.port)
             kwargs = {
@@ -442,6 +443,10 @@ class HttpBackend(Backend):
                 'use_reloader': False,
                 'debug': False,
             }
+
+            assert isinstance(
+                self.bus, RedisBus
+            ), 'The HTTP backend only works if backed by a Redis bus'
 
             application.config['redis_queue'] = self.bus.redis_queue
             if self.ssl_context:
@@ -458,9 +463,7 @@ class HttpBackend(Backend):
             self.logger.warning('Could not register the Zeroconf service')
             self.logger.exception(e)
 
-    def run(self):
-        super().run()
-
+    def _start_websocket_server(self):
         if not self.disable_websocket:
             self.logger.info('Initializing websocket interface')
             self.websocket_thread = threading.Thread(
@@ -469,10 +472,16 @@ class HttpBackend(Backend):
             )
             self.websocket_thread.start()
 
+    def _start_zeroconf_service(self):
+        self._service_registry_thread = threading.Thread(
+            target=self._register_service,
+            name='ZeroconfService',
+        )
+        self._service_registry_thread.start()
+
+    def _run_web_server(self):
         if not self.run_externally:
-            self.server_proc = Process(
-                target=self._start_web_server(), name='WebServer'
-            )
+            self.server_proc = Process(target=self._web_server_proc(), name='WebServer')
             self.server_proc.start()
             self.server_proc.join()
         elif self.uwsgi_args:
@@ -480,14 +489,18 @@ class HttpBackend(Backend):
             self.logger.info('Starting uWSGI with arguments %s', uwsgi_cmd)
             self.server_proc = subprocess.Popen(uwsgi_cmd)
         else:
-            self.logger.info(
+            raise RuntimeError(
                 'The web server is configured to be launched externally but '
                 'no uwsgi_args were provided. Make sure that you run another external service'
                 'for the web server (e.g. nginx)'
             )
 
-        self._service_registry_thread = threading.Thread(target=self._register_service)
-        self._service_registry_thread.start()
+    def run(self):
+        super().run()
+
+        self._start_websocket_server()
+        self._start_zeroconf_service()
+        self._run_web_server()
 
 
 # vim:sw=4:ts=4:et:
