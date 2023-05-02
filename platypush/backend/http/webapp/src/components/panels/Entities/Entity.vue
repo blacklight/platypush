@@ -8,7 +8,7 @@
           :is="component"
           :value="value"
           :parent="parent"
-          :children="computedChildren"
+          :children="children"
           :loading="loading"
           ref="instance"
           :error="error || value?.reachable == false"
@@ -25,7 +25,7 @@
     </div>
 
     <div class="children fade-in" v-if="hasChildren && !isCollapsed">
-      <div class="child" v-for="entity in computedChildren" :key="entity.id">
+      <div class="child" v-for="entity in children" :key="entity.id">
         <Entity
          :value="entity"
          :parent="value"
@@ -57,19 +57,12 @@ export default {
   },
 
   computed: {
-    computedChildren() {
-      return Object.values(this.children || {}).filter((child) => child)
-    },
-
     hasChildren() {
-      return !!this.computedChildren.length
+      return !!Object.keys(this.children).length
     },
 
     isCollapsed() {
-      if (!this.hasChildren)
-        return true
-
-      return this.collapsed
+      return !this.hasChildren ? true : this.collapsed
     },
 
     instance() {
@@ -90,16 +83,16 @@ export default {
     },
 
     childrenByParentId(parentId) {
-      return Object.values(this.allEntities || {}).
-        filter(
-          (entity) => entity
-            && entity.parent_id === parentId
-            && !entity.is_configuration
-        ).
-        reduce((obj, entity) => {
+      const parentEntity = this.allEntities?.[parentId]
+      if (!parentEntity)
+        return {}
+
+      return (parentEntity.children_ids || []).reduce((obj, entityId) => {
+        const entity = this.allEntities[entityId]
+        if (entity && !entity.is_configuration)
           obj[entity.id] = entity
-          return obj
-        }, {})
+        return obj
+      }, {})
     },
 
     onClick(event) {
@@ -131,7 +124,7 @@ export default {
       if (!isChildUpdate)
         return
 
-      this.setJustUpdated()
+      this.notifyUpdate()
     },
 
     toggleCollapsed() {
@@ -141,7 +134,7 @@ export default {
         this.instance.collapsed = !this.instance.collapsed
     },
 
-    setJustUpdated() {
+    notifyUpdate() {
       this.justUpdated = true
       const self = this;
       setTimeout(() => self.justUpdated = false, 1000)
@@ -160,7 +153,7 @@ export default {
               if (this.valuesEqual(oldValue, newValue))
                 return false
 
-              this.setJustUpdated()
+              this.notifyUpdate()
               this.$emit('update', {value: newValue})
           }
       )

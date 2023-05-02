@@ -55,8 +55,8 @@
 
             <div class="body">
               <div class="entity-frame"
-                  v-for="entity in group.entities"
-                  :key="entity.id">
+                 v-for="entity in Object.values(group.entities).sort((a, b) => a.name.localeCompare(b.name))"
+                 :key="entity.id">
                 <Entity
                   :value="entity"
                   :children="childrenByParentId(entity.id)"
@@ -64,6 +64,7 @@
                   @show-modal="onEntityModal($event)"
                   @input="onEntityInput(entity)"
                   :error="!!errorEntities[entity.id]"
+                  :key="entity.id"
                   :loading="!!loadingEntities[entity.id]"
                   @loading="loadingEntities[entity.id] = $event"
                   v-if="!entity.parent_id"
@@ -122,6 +123,12 @@ export default {
       errorEntities: {},
       entityTimeouts: {},
       entities: {},
+      entityGroups: {
+        id: {},
+        category: {},
+        plugin: {},
+        type: {},
+      },
       modalEntityId: null,
       modalVisible: false,
       variableModalVisible: false,
@@ -141,10 +148,6 @@ export default {
       return icons
     },
 
-    entityTypes() {
-      return this.groupEntities('type')
-    },
-
     typesByCategory() {
       return Object.entries(meta).reduce((obj, [type, meta]) => {
           obj[meta.name_plural] = type
@@ -152,21 +155,10 @@ export default {
       }, {})
     },
 
-    entityGroups() {
-      return {
-        'id': Object.entries(this.groupEntities('id')).reduce((obj, [id, entities]) => {
-          obj[id] = entities[0]
-          return obj
-        }, {}),
-        'category': this.groupEntities('category'),
-        'plugin': this.groupEntities('plugin'),
-      }
-    },
-
     displayGroups() {
       return Object.entries(this.entityGroups[this.selector.grouping]).
         filter(
-          (entry) => entry[1].filter(
+          (entry) => Object.values(entry[1]).filter(
             (e) =>
               !!this.selector.selectedEntities[e.id] && e.parent_id == null
           ).length > 0
@@ -175,7 +167,7 @@ export default {
           ([grouping, entities]) => {
             return {
               name: grouping,
-              entities: entities.filter(
+              entities: Object.values(entities).filter(
                 (e) => e.id in this.selector.selectedEntities
               ),
             }
@@ -186,19 +178,32 @@ export default {
   },
 
   methods: {
-    groupEntities(attr) {
-      return Object.values(this.entities).
-        filter((entity) => entity.parent_id == null).
-        reduce((obj, entity) => {
-          const entities = obj[entity[attr]] || {}
-          entities[entity.id] = entity
+    addEntity(entity) {
+      if (entity.parent_id != null)
+        return  // Only group entities that have no parent
 
-          obj[entity[attr]] = Object.values(entities).sort((a, b) => {
-              return a.name.localeCompare(b.name)
-            })
+      this.entities[entity.id] = entity;
+      ['id', 'type', 'category', 'plugin'].forEach((attr) => {
+        if (entity[attr] == null)
+          return
 
-          return obj
-        }, {})
+        if (!this.entityGroups[attr][entity[attr]])
+          this.entityGroups[attr][entity[attr]] = {}
+        this.entityGroups[attr][entity[attr]][entity.id] = entity
+      })
+    },
+
+    removeEntity(entity) {
+      if (entity.parent_id != null)
+        return  // Only group entities that have no parent
+
+      ['id', 'type', 'category', 'plugin'].forEach((attr) => {
+        if (this.entityGroups[attr][entity[attr]][entity.id])
+          delete this.entityGroups[attr][entity[attr]][entity.id]
+      })
+
+      if (this.entities[entity.id])
+        delete this.entities[entity.id]
     },
 
     _shouldSkipLoading(entity) {
@@ -236,6 +241,7 @@ export default {
           if (this.entityTimeouts[id])
             clearTimeout(this.entityTimeouts[id])
 
+          this.addEntity(entity)
           this.entityTimeouts[id] = setTimeout(() => {
               if (self.loadingEntities[id])
                 delete self.loadingEntities[id]
@@ -266,6 +272,7 @@ export default {
           }
 
           obj[entity.id] = entity
+          this.addEntity(entity)
           return obj
         }, {})
 
@@ -275,30 +282,26 @@ export default {
       }
     },
 
-    childrenByParentId(parentId) {
-      return Object.values(this.entities).
-        filter(
-          (entity) => entity
-            && entity.parent_id === parentId
-            && !entity.is_configuration
-        ).
-        reduce((obj, entity) => {
-          obj[entity.id] = entity
-          return obj
-        }, {})
+    childrenByParentId(parentId, selectConfig) {
+      const entity = this.entities?.[parentId]
+      if (!entity?.children_ids?.length)
+        return {}
+
+      return entity.children_ids.reduce((obj, id) => {
+        const child = this.entities[id]
+        if (
+          child && (
+            (!selectConfig && !child.is_configuration) ||
+            (selectConfig && child.is_configuration)
+          )
+        )
+          obj[id] = this.entities[id]
+        return obj
+      }, {})
     },
 
     configValuesByParentId(parentId) {
-      return Object.values(this.entities).
-        filter(
-            (entity) => entity
-              && entity.parent_id === parentId
-              && entity.is_configuration
-        ).
-        reduce((obj, entity) => {
-          obj[entity.id] = entity
-          return obj
-        }, {})
+      return this.childrenByParentId(parentId, true)
     },
 
     clearEntityTimeouts(entityId) {
@@ -343,7 +346,7 @@ export default {
         ...(event.entity?.meta || {}),
       }
 
-      this.entities[entityId] = entity
+      this.addEntity(entity)
       bus.publishEntity(entity)
     },
 
@@ -354,7 +357,7 @@ export default {
       if (entityId === this.modalEntityId)
         this.modalEntityId = null
       if (this.entities[entityId])
-        delete this.entities[entityId]
+        this.removeEntity(this.entities[entityId])
     },
 
     onEntityModal(entityId) {
