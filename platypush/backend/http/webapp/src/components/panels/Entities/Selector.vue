@@ -29,6 +29,7 @@ import Dropdown from "@/components/elements/Dropdown";
 import DropdownItem from "@/components/elements/DropdownItem";
 import meta from './meta.json'
 import pluginIcons from '@/assets/icons.json'
+import { bus } from "@/bus";
 
 export default {
   name: "Selector",
@@ -74,12 +75,12 @@ export default {
     },
 
     selectedEntities() {
+      const searchTerm = this.searchTerm?.toLowerCase()
       return Object.values(this.entityGroups.id).filter((entity) => {
         if (!this.selectedGroups[entity[this.value?.grouping]])
          return false
 
-        if (this.searchTerm?.length) {
-          const searchTerm = this.searchTerm.toLowerCase()
+        if (searchTerm?.length) {
           return (
             ((entity.name || '').toLowerCase()).indexOf(searchTerm) >= 0 ||
             ((entity.plugin || '').toLowerCase()).indexOf(searchTerm) >= 0 ||
@@ -135,21 +136,15 @@ export default {
       this.$emit('input', value)
     },
 
-    refreshGroupFilter(reset) {
-      if (reset)
-        this.selectedGroups = Object.keys(
-          this.entityGroups[this.value?.grouping] || {}
-        ).reduce(
-          (obj, group) => {
-            obj[group] = true
-            return obj
-          }, {}
-        )
-      else {
-        for (const group of Object.keys(this.entityGroups[this.value?.grouping]))
-          if (this.selectedGroups[group] == null)
-            this.selectedGroups[group] = true
-      }
+    refreshGroupFilter() {
+      this.selectedGroups = Object.keys(
+        this.entityGroups[this.value?.grouping] || {}
+      ).reduce(
+        (obj, group) => {
+          obj[group] = true
+          return obj
+        }, {}
+      )
 
       this.synchronizeSelectedEntities()
     },
@@ -157,6 +152,13 @@ export default {
     toggleGroup(group) {
       this.selectedGroups[group] = !this.selectedGroups[group]
       this.synchronizeSelectedEntities()
+    },
+
+    processEntityUpdate(entity) {
+      const group = entity[this.value?.grouping]
+      if (group && this.selectedGroups[entity[group]] == null) {
+        this.selectedGroups[group] = true
+      }
     },
 
     onGroupingChanged(grouping) {
@@ -170,10 +172,10 @@ export default {
   },
 
   mounted() {
-    this.refreshGroupFilter(true)
-    this.$watch(() => this.value?.grouping, () => { this.refreshGroupFilter(true) })
+    this.refreshGroupFilter()
+    this.$watch(() => this.value?.grouping, () => { this.refreshGroupFilter() })
     this.$watch(() => this.searchTerm, this.updateSearchTerm)
-    this.$watch(() => this.entityGroups, () => { this.refreshGroupFilter(false) })
+    bus.onEntity(this.processEntityUpdate)
   },
 }
 </script>
