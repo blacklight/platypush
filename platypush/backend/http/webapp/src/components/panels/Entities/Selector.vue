@@ -89,7 +89,7 @@ export default {
     },
 
     selectedEntities() {
-      const searchTerm = this.searchTerm?.toLowerCase()
+      const searchTerm = (this.searchTerm || '').toLowerCase()
       return Object.values(this.entityGroups.id).filter((entity) => {
         if (!this.selectedGroups[entity[this.value?.grouping]])
          return false
