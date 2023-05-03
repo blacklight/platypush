@@ -1,24 +1,34 @@
 <template>
   <div class="entities-selectors-container">
-    <div class="selector">
-      <Dropdown title="Group by" icon-class="fas fa-object-ungroup" ref="groupingSelector">
-        <DropdownItem v-for="g in visibleGroupings" :key="g" :text="prettifyGroupingName(g)"
-          :item-class="{selected: value?.grouping === g}"
-          @click="onGroupingChanged(g)" />
-      </Dropdown>
+    <div class="selector search-container col-11"
+      v-if="Object.keys(entityGroups.id || {}).length">
+      <input ref="search" type="text" class="search-bar"
+        title="Filter by name, plugin or ID" placeholder="🔎"
+        v-model="searchTerm">
     </div>
 
-    <div class="selector" :class="{active: isGroupFilterActive}" v-if="value?.grouping">
-      <Dropdown title="Filter by" icon-class="fas fa-filter" ref="groupSelector"
-          keep-open-on-item-click>
-        <DropdownItem v-for="g in sortedGroups" :key="g" :text="g"
-          v-bind="iconForGroup(g)" :item-class="{selected: !!selectedGroups[g]}"
-          @click.stop="toggleGroup(g)" />
-      </Dropdown>
-    </div>
+    <div class="selector actions-container col-1 pull-right">
+      <Dropdown title="Actions" icon-class="fas fa-ellipsis">
+        <DropdownItem  icon-class="fas fa-sync-alt" text="Refresh"
+          @click="$emit('refresh')" />
+        <DropdownItem  icon-class="fas fa-square-root-variable"
+          text="Set Variable" @click="$emit('show-variable-modal')" />
 
-    <div class="selector" v-if="Object.keys(entityGroups.id || {}).length">
-      <input ref="search" type="text" class="search-bar" placeholder="🔎" v-model="searchTerm">
+        <Dropdown title="Group by" text="Group by"
+          icon-class="fas fa-object-ungroup" ref="groupingSelector">
+          <DropdownItem v-for="g in visibleGroupings" :key="g" :text="prettifyGroupingName(g)"
+            :item-class="{selected: value?.grouping === g}"
+            @click="onGroupingChanged(g)" />
+        </Dropdown>
+
+        <Dropdown title="Filter groups" text="Filter groups"
+            :icon-class="{fas: true, 'fa-filter': true, active: hasActiveFilter}"
+            ref="groupSelector" keep-open-on-item-click>
+          <DropdownItem v-for="g in sortedGroups" :key="g" :text="g"
+            v-bind="iconForGroup(g)" :item-class="{selected: !!selectedGroups[g]}"
+            @click.stop="toggleGroup(g)" />
+        </Dropdown>
+      </Dropdown>
     </div>
   </div>
 </template>
@@ -33,7 +43,7 @@ import { bus } from "@/bus";
 
 export default {
   name: "Selector",
-  emits: ['input'],
+  emits: ['input', 'refresh', 'show-variable-modal'],
   mixins: [Utils],
   components: {Dropdown, DropdownItem},
   props: {
@@ -60,6 +70,10 @@ export default {
       return Object.keys(this.entityGroups).filter(
         (grouping) => grouping !== 'id'
       )
+    },
+
+    hasActiveFilter() {
+      return Object.values(this.selectedGroups).filter((val) => val === false).length > 0
     },
 
     sortedGroups() {
@@ -189,14 +203,6 @@ export default {
   .selector {
     height: 100%;
     display: inline-flex;
-
-    &.active {
-      :deep(.dropdown-container) {
-        button {
-          color: $default-hover-fg;
-        }
-      }
-    }
   }
 
   @media (max-width: 330px) {
@@ -205,9 +211,52 @@ export default {
     }
   }
 
+  .search-bar {
+    margin: 0.25em 0;
+  }
+
+  @include until(#{$tablet - 1 }) {
+    .search-bar {
+      width: 100%;
+      margin-right: 2em;
+    }
+  }
+
+  @include from($tablet) {
+    .search-bar {
+      min-width: 400px;
+    }
+  }
+
   :deep(.dropdown-container) {
     height: 100%;
     display: flex;
+
+    .dropdown {
+      min-width: 10em;
+
+      .text {
+        text-align: left;
+        padding-left: 0.5em;
+      }
+    }
+
+    .dropdown-container {
+      button {
+        width: 100%;
+        background: none;
+        text-align: left;
+        letter-spacing: 0.01em;
+
+        .text {
+          padding-left: 0.25em;
+        }
+
+        .icon.active {
+          color: $selected-fg;
+        }
+      }
+    }
 
     button {
       height: 100%;
@@ -221,7 +270,7 @@ export default {
     }
 
     .item {
-      padding: 0.5em 4em 0.5em 0.5em;
+      padding: 0.75em 0.5em;
       border: 0;
       box-shadow: none;
 

@@ -3,17 +3,13 @@
     <Loading v-if="loading" />
 
     <header>
-      <div class="col-s-10 col-m-11 left">
-        <Selector :entity-groups="entityGroups" :value="selector" @input="selector = $event" />
-      </div>
-
-      <div class="col-s-2 col-m-1 actions-container right">
-        <Dropdown title="Actions" icon-class="fas fa-ellipsis">
-          <DropdownItem  icon-class="fa fa-sync-alt" text="Refresh" @click="refresh" />
-          <DropdownItem  icon-class="fa fa-square-root-variable"
-            text="Set Variable" @click="variableModalVisible = true" />
-        </Dropdown>
-      </div>
+      <Selector
+        :entity-groups="entityGroups"
+        :value="selector"
+        @input="selector = $event"
+        @refresh="refresh"
+        @show-variable-modal="variableModalVisible = true"
+      />
     </header>
 
     <div class="groups-canvas">
@@ -79,8 +75,6 @@
 </template>
 
 <script>
-import Dropdown from "@/components/elements/Dropdown";
-import DropdownItem from "@/components/elements/DropdownItem";
 import Utils from "@/Utils"
 import Loading from "@/components/Loading";
 import Icon from "@/components/elements/Icon";
@@ -97,8 +91,6 @@ export default {
   name: "Entities",
   mixins: [Utils],
   components: {
-    Dropdown,
-    DropdownItem,
     Entity,
     EntityModal,
     Icon,
@@ -447,42 +439,6 @@ export default {
 
       button {
         padding: 0.5em 0;
-      }
-    }
-
-    :deep(.right) {
-      .dropdown-container {
-        .dropdown {
-          min-width: 10em;
-
-          .item {
-            box-shadow: none;
-
-            .text {
-              text-align: left;
-              margin-left: 0.75em;
-            }
-          }
-        }
-
-        button {
-          margin-right: 0;
-          text-align: center;
-          background: transparent;
-          border: 0;
-
-          @include until($tablet) {
-            padding-right: 0;
-          }
-
-          &:hover {
-            color: $default-hover-fg;
-          }
-
-          i {
-            margin-left: 0.5em;
-          }
-        }
       }
     }
   }
