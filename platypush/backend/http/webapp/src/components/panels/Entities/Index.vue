@@ -187,9 +187,13 @@ export default {
         if (entity[attr] == null)
           return
 
-        if (!this.entityGroups[attr][entity[attr]])
-          this.entityGroups[attr][entity[attr]] = {}
-        this.entityGroups[attr][entity[attr]][entity.id] = entity
+        if (attr == 'id')
+          this.entityGroups[attr][entity[attr]] = entity
+        else {
+          if (!this.entityGroups[attr][entity[attr]])
+            this.entityGroups[attr][entity[attr]] = {}
+          this.entityGroups[attr][entity[attr]][entity.id] = entity
+        }
       })
     },
 
