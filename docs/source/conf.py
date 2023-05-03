@@ -103,6 +103,7 @@ html_domain_indices = True
 html_theme_options = {
     'toc_title': 'Platypush documentation',
     'repository_url': 'https://git.platypush.tech/platypush/platypush',
+    'repository_provider': 'github',
     'use_repository_button': True,
     'use_issues_button': True,
     'use_fullscreen_button': True,
@@ -187,7 +188,7 @@ texinfo_documents = [
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 # -- Options for todo extension ----------------------------------------------
 
