@@ -17,15 +17,12 @@ class AssistantEvent(Event):
         if assistant:
             self._assistant = assistant
         else:
-            self._assistant = get_backend('assistant.google')
-
-            if not self._assistant:
-                self._assistant = get_plugin('assistant.google.pushtotalk')
-
-            if not self._assistant:
-                self.logger.warning(
-                    'Assistant plugin/backend not configured/initialized'
-                )
+            try:
+                self._assistant = get_backend('assistant.google')
+                if not self._assistant:
+                    self._assistant = get_plugin('assistant.google.pushtotalk')
+            except Exception as e:
+                self.logger.debug('Could not initialize the assistant component: %s', e)
                 self._assistant = None
 
 

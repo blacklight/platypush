@@ -82,7 +82,7 @@ def test_speech_recognized_event_parse():
     assert 'answer' in result.parsed_args
     assert result.parsed_args['answer'] == '42'
 
-    event = PingEvent(phrase="what is not the answer? 43")
+    event = SpeechRecognizedEvent(phrase="what is not the answer? 43")
     result = event.matches_condition(condition)
     assert not result.is_match
 
