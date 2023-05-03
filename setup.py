@@ -36,7 +36,7 @@ setup(
     python_requires='>= 3.6',
     keywords="home-automation automation iot mqtt websockets redis dashboard notifications",
     url="https://platypush.tech",
-    packages=find_packages(),
+    packages=find_packages(exclude=['tests']),
     include_package_data=True,
     package_data={
         'platypush': [
