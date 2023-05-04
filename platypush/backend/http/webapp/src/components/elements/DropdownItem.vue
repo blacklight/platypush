@@ -50,9 +50,12 @@ export default {
 <style lang="scss" scoped>
 .item {
   display: flex;
-  padding: .5em .25em;
+  padding: 0.75em 0.5em;
   cursor: pointer;
   align-items: center;
+  color: $default-fg-2;
+  border: 0;
+  box-shadow: none;
 
   &:hover {
     background: $hover-bg;
@@ -67,10 +70,15 @@ export default {
     cursor: initial;
   }
 
+  .text {
+    text-align: left;
+    margin-left: 0.5em;
+  }
+
   .icon {
+    width: 1.5em;
     display: inline-flex;
     align-items: center;
-    max-width: 2em;
   }
 
   ::v-deep(.icon-container) {

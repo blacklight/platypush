@@ -26,7 +26,6 @@ export default {
     },
 
     iconClass: {
-      type: String,
       default: 'fa fa-ellipsis-h',
     },
 
@@ -105,6 +104,16 @@ export default {
   display: inline-flex;
   flex-direction: column;
 
+  button {
+    background: $default-bg-2;
+    border: 0;
+    padding: 0.5em;
+
+    &:hover {
+      color: $default-hover-fg;
+    }
+  }
+
   .dropdown {
     position: absolute;
     width: max-content;
@@ -117,4 +126,27 @@ export default {
     z-index: 1;
   }
 }
+
+:deep(.dropdown-container) {
+  button {
+    width: 100%;
+    height: 100%;
+    color: $default-fg-2;
+    background: $dropdown-bg;
+    border: 0;
+    padding: 0.75em 0.5em;
+    text-align: left;
+    letter-spacing: 0.01em;
+
+    &:hover {
+      background: $hover-bg;
+      color: $default-fg-2;
+    }
+
+    .text {
+      padding-left: 0.25em;
+    }
+  }
+}
+
 </style>
