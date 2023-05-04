@@ -231,6 +231,7 @@ export default {
   @include from($tablet) {
     .search-bar {
       min-width: 400px;
+      margin-left: 0.5em;
     }
   }
 
@@ -239,59 +240,15 @@ export default {
     display: flex;
 
     .dropdown {
-      min-width: 10em;
-
-      .text {
-        text-align: left;
-        padding-left: 0.5em;
-      }
+      min-width: 11em;
     }
 
-    .dropdown-container {
-      button {
-        width: 100%;
-        background: none;
-        text-align: left;
-        letter-spacing: 0.01em;
-
-        .text {
-          padding-left: 0.25em;
-        }
-
-        .icon.active {
-          color: $selected-fg;
-        }
-      }
+    .icon.active {
+      color: $selected-fg;
     }
 
     button {
       height: 100%;
-      background: $default-bg-2;
-      border: 0;
-      padding: 0.5em;
-
-      &:hover {
-        color: $default-hover-fg;
-      }
-    }
-
-    .item {
-      padding: 0.75em 0.5em;
-      border: 0;
-      box-shadow: none;
-
-      .col-1.icon {
-        width: 1.5em;
-      }
-
-      &.selected {
-        font-weight: bold;
-        background: #ffffff00;
-      }
-
-      &:hover {
-        background: $hover-bg;
-      }
     }
   }
 }

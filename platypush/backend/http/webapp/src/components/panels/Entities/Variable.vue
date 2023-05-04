@@ -47,6 +47,7 @@ export default {
   name: 'Variable',
   components: {EntityIcon},
   mixins: [EntityMixin],
+  emits: ['loading'],
   data: function() {
     return {
       collapsed: true,
