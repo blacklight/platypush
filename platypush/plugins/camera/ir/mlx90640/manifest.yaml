@@ -1,6 +1,9 @@
 manifest:
   events: {}
   install:
+    pip:
+      - numpy
+      - Pillow
     apt:
       - libi2c-dev
     pacman:

@@ -2,6 +2,7 @@ manifest:
   events: {}
   install:
     pip:
+    - numpy
     - opencv-python
     - Pillow
   package: platypush.plugins.camera.cv
