@@ -12,6 +12,7 @@ $collapse-toggler-width: 2em;
   width: 100%;
   display: flex;
   flex-direction: column;
+  justify-content: center;
 
   &.expanded {
     @include expanded-entity();

@@ -1,23 +1,23 @@
 <template>
   <div class="entity device-container">
     <div class="head">
-      <div class="col-1 icon">
+      <div class="icon">
         <EntityIcon
           :entity="value"
           :loading="loading"
           :error="error" />
       </div>
 
-      <div class="col-2 connector">
+      <div class="label">
+        <div class="name" v-text="value.name" />
+      </div>
+
+      <div class="value-container" :class="{'with-children': value?.children_ids?.length}">
         <ToggleSwitch
           :value="value.connected"
           :disabled="loading" 
           @input="connect"
           @click.stop />
-      </div>
-
-      <div class="col-9 label">
-        <div class="name" v-text="value.name" />
       </div>
     </div>
   </div>
@@ -61,13 +61,10 @@ export default {
   display: flex;
   justify-content: center;
 
-  .icon {
-    margin-right: 1em;
-  }
-
-  .connector {
-    width: 4em;
-    margin: 0.25em 0 -0.25em 0.5em;
+  .value-container {
+    &:not(.with-children) {
+      margin-right: 2.5em;
+    }
   }
 }
 </style>
