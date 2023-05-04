@@ -89,21 +89,27 @@ export default {
     },
 
     selectedEntities() {
-      const searchTerm = (this.searchTerm || '').toLowerCase()
+      if (!this.searchTerm?.length)
+        return this.entityGroups.id
+
+      const searchTerm = this.searchTerm.toLowerCase().trim()
       return Object.values(this.entityGroups.id).filter((entity) => {
         if (!this.selectedGroups[entity[this.value?.grouping]])
-         return false
+          return false
 
-        if (searchTerm?.length) {
-          return (
-            ((entity.name || '').toLowerCase()).indexOf(searchTerm) >= 0 ||
-            ((entity.plugin || '').toLowerCase()).indexOf(searchTerm) >= 0 ||
-            ((entity.external_id || '').toLowerCase()).indexOf(searchTerm) >= 0 ||
-            (entity.id || 0).toString() == searchTerm
-          )
+        if (!searchTerm?.length)
+          return true
+
+        for (const attr of ['id', 'external_id', 'name', 'plugin']) {
+          if (!entity[attr])
+            continue
+
+          const entityValue = entity[attr].toString().toLowerCase()
+          if (entityValue.indexOf(searchTerm) >= 0)
+            return true
         }
 
-        return true
+        return false
       }).reduce((obj,  entity) => {
         obj[entity.id] = entity
         return obj
