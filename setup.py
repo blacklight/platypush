@@ -60,25 +60,26 @@ setup(
         "Development Status :: 4 - Beta",
     ],
     install_requires=[
+        'alembic',
+        'bcrypt',
+        'croniter',
+        'flask',
+        'frozendict',
+        'marshmallow',
+        'marshmallow_dataclass',
+        'python-dateutil',
+        'python-magic',
         'pyyaml',
         'redis',
         'requests',
-        'croniter',
+        'rsa',
         'sqlalchemy',
-        'alembic',
-        'websockets',
+        'tz',
+        'waitress',
         'websocket-client',
+        'websockets',
         'wheel',
         'zeroconf>=0.27.0',
-        'tz',
-        'python-dateutil',
-        'rsa',
-        'marshmallow',
-        'marshmallow_dataclass',
-        'frozendict',
-        'flask',
-        'bcrypt',
-        'python-magic',
     ],
     extras_require={
         # Support for thread custom name
@@ -89,8 +90,9 @@ setup(
         'pushbullet': [
             'pushbullet.py @ https://github.com/rbrcsk/pushbullet.py/tarball/master'
         ],
-        # Support for HTTP backend over uWSGI
-        'http': ['gunicorn'],
+        # This is only kept for back-compatibility purposes, as all the
+        # dependencies of the HTTP webserver are now core dependencies.
+        'http': [],
         # Support for MQTT backends
         'mqtt': ['paho-mqtt'],
         # Support for RSS feeds parser
@@ -230,7 +232,7 @@ setup(
         # Support for zigbee2mqtt
         'zigbee': ['paho-mqtt'],
         # Support for Z-Wave
-        'zwave': ['python-openzwave'],
+        'zwave': ['paho-mqtt'],
         # Support for Mozilla DeepSpeech speech-to-text engine
         'deepspeech': ['deepspeech', 'numpy', 'sounddevice'],
         # Support for PicoVoice hotword detection engine

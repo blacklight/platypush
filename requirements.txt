@@ -22,3 +22,4 @@ paho-mqtt
 websocket-client
 croniter
 python-magic
+waitress

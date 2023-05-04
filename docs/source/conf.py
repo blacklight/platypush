@@ -301,6 +301,7 @@ autodoc_mock_imports = [
     'bleak',
     'bluetooth_numbers',
     'TheengsDecoder',
+    'waitress',
 ]
 
 sys.path.insert(0, os.path.abspath('../..'))

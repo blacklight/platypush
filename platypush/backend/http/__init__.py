@@ -1,14 +1,15 @@
 import os
-import subprocess
 import threading
 
 from multiprocessing import Process
 
 try:
-    from websockets.exceptions import ConnectionClosed
+    from websockets.exceptions import ConnectionClosed  # type: ignore
     from websockets import serve as websocket_serve  # type: ignore
 except ImportError:
     from websockets import ConnectionClosed, serve as websocket_serve  # type: ignore
+
+import waitress
 
 from platypush.backend import Backend
 from platypush.backend.http.app import application
@@ -152,22 +153,6 @@ class HttpBackend(Backend):
         * **Session token**, generated upon login, it can be used to authenticate requests through the ``Cookie`` header
           (cookie name: ``session_token``).
 
-    Requires:
-
-        * **gunicorn** (``pip install gunicorn``) - optional, to run the Platypush webapp over uWSGI.
-
-    By default the Platypush web server will run in a
-    process spawned on the fly by the HTTP backend. However, being a
-    Flask app, it will serve clients in a single thread and it won't
-    support many features of a full-blown web server. gunicorn allows
-    you to easily spawn the web server in a uWSGI wrapper, separate
-    from the main Platypush daemon, and the uWSGI layer can be easily
-    exposed over an nginx/lighttpd web server.
-
-    Command to run the web server over a gunicorn uWSGI wrapper::
-
-        gunicorn -w <n_workers> -b <bind_address>:8008 platypush.backend.http.uwsgi
-
     """
 
     _DEFAULT_HTTP_PORT = 8008
@@ -185,8 +170,7 @@ class HttpBackend(Backend):
         ssl_cafile=None,
         ssl_capath=None,
         maps=None,
-        run_externally=False,
-        uwsgi_args=None,
+        flask_args=None,
         **kwargs,
     ):
         """
@@ -222,25 +206,8 @@ class HttpBackend(Backend):
             the value is the absolute path to expose.
         :type resource_dirs: dict[str, str]
 
-        :param run_externally: If set, then the HTTP backend will not directly
-            spawn the web server. Set this option if you plan to run the webapp
-            in a separate web server (recommended), like uwsgi or uwsgi+nginx.
-        :type run_externally: bool
-
-        :param uwsgi_args: If ``run_externally`` is set and you would like the
-            HTTP backend to directly spawn and control the uWSGI application
-            server instance, then pass the list of uWSGI arguments through
-            this parameter. Some examples include::
-
-                # Start uWSGI instance listening on HTTP port 8008 with 4
-                # processes
-                ['--plugin', 'python', '--http-socket', ':8008', '--master', '--processes', '4']
-
-                # Start uWSGI instance listening on uWSGI socket on port 3031.
-                # You can then use another full-blown web server, like nginx
-                # or Apache, to communicate with the uWSGI instance
-                ['--plugin', 'python', '--socket', '127.0.0.1:3031', '--master', '--processes', '4']
-        :type uwsgi_args: list[str]
+        :param flask_args: Extra key-value arguments that should be passed to the Flask service.
+        :type flask_args: dict[str, str]
         """
 
         super().__init__(**kwargs)
@@ -264,8 +231,7 @@ class HttpBackend(Backend):
             self.resource_dirs = {}
 
         self.active_websockets = set()
-        self.run_externally = run_externally
-        self.uwsgi_args = uwsgi_args or []
+        self.flask_args = flask_args or {}
         self.ssl_context = (
             get_ssl_server_context(
                 ssl_cert=ssl_cert,
@@ -276,13 +242,6 @@ class HttpBackend(Backend):
             if ssl_cert
             else None
         )
-
-        if self.uwsgi_args:
-            self.uwsgi_args = [str(_) for _ in self.uwsgi_args] + [
-                '--module',
-                'platypush.backend.http.uwsgi',
-                '--enable-threads',
-            ]
 
         protocol = 'https' if ssl_cert else 'http'
         self.local_base_url = f'{protocol}://localhost:{self.port}'
@@ -299,26 +258,16 @@ class HttpBackend(Backend):
         self.logger.info('Received STOP event on HttpBackend')
 
         if self.server_proc:
-            if isinstance(self.server_proc, subprocess.Popen):
+            self.server_proc.terminate()
+            self.server_proc.join(timeout=10)
+            if self.server_proc.is_alive():
                 self.server_proc.kill()
-                self.server_proc.wait(timeout=10)
-                if self.server_proc.poll() is not None:
-                    self.logger.info(
-                        'HTTP server process may be still alive at termination'
-                    )
-                else:
-                    self.logger.info('HTTP server process terminated')
+            if self.server_proc.is_alive():
+                self.logger.info(
+                    'HTTP server process may be still alive at termination'
+                )
             else:
-                self.server_proc.terminate()
-                self.server_proc.join(timeout=10)
-                if self.server_proc.is_alive():
-                    self.server_proc.kill()
-                if self.server_proc.is_alive():
-                    self.logger.info(
-                        'HTTP server process may be still alive at termination'
-                    )
-                else:
-                    self.logger.info('HTTP server process terminated')
+                self.logger.info('HTTP server process terminated')
 
         if (
             self.websocket_thread
@@ -440,8 +389,6 @@ class HttpBackend(Backend):
             kwargs = {
                 'host': self.bind_address,
                 'port': self.port,
-                'use_reloader': False,
-                'debug': False,
             }
 
             assert isinstance(
@@ -451,8 +398,10 @@ class HttpBackend(Backend):
             application.config['redis_queue'] = self.bus.redis_queue
             if self.ssl_context:
                 kwargs['ssl_context'] = self.ssl_context
+            if self.flask_args:
+                kwargs.update(self.flask_args)
 
-            application.run(**kwargs)
+            waitress.serve(application, **kwargs)
 
         return proc
 
@@ -480,20 +429,9 @@ class HttpBackend(Backend):
         self._service_registry_thread.start()
 
     def _run_web_server(self):
-        if not self.run_externally:
-            self.server_proc = Process(target=self._web_server_proc(), name='WebServer')
-            self.server_proc.start()
-            self.server_proc.join()
-        elif self.uwsgi_args:
-            uwsgi_cmd = ['uwsgi'] + self.uwsgi_args
-            self.logger.info('Starting uWSGI with arguments %s', uwsgi_cmd)
-            self.server_proc = subprocess.Popen(uwsgi_cmd)
-        else:
-            raise RuntimeError(
-                'The web server is configured to be launched externally but '
-                'no uwsgi_args were provided. Make sure that you run another external service'
-                'for the web server (e.g. nginx)'
-            )
+        self.server_proc = Process(target=self._web_server_proc(), name='WebServer')
+        self.server_proc.start()
+        self.server_proc.join()
 
     def run(self):
         super().run()
