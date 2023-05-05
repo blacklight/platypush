@@ -127,6 +127,7 @@ export default {
       selector: {
         grouping: 'plugin',
         selectedEntities: {},
+        selectedGroups: {},
       },
     }
   },
@@ -148,14 +149,9 @@ export default {
     },
 
     displayGroups() {
-      return Object.entries(this.entityGroups[this.selector.grouping]).
-        filter(
-          (entry) => Object.values(entry[1]).filter(
-            (e) =>
-              !!this.selector.selectedEntities[e.id] && e.parent_id == null
-          ).length > 0
-        ).
-        map(
+      return Object.entries(this.entityGroups[this.selector.grouping])
+        .filter((entry) => this.selector.selectedGroups[entry[0]])
+        .map(
           ([grouping, entities]) => {
             return {
               name: grouping,
@@ -164,8 +160,9 @@ export default {
               ),
             }
           }
-        ).
-        sort((a, b) => a.name.localeCompare(b.name))
+        )
+        .filter((group) => group.entities?.length > 0)
+        .sort((a, b) => a.name.localeCompare(b.name))
     },
   },
 

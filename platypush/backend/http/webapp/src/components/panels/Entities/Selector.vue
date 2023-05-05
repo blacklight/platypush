@@ -143,16 +143,11 @@ export default {
       return {}
     },
 
-    synchronizeSelectedEntities() {
-      const value = {...this.value}
-      value.selectedEntities = this.selectedEntities
-      this.$emit('input', value)
-    },
-
-    updateSearchTerm() {
+    sync() {
       const value = {...this.value}
       value.searchTerm = this.searchTerm
       value.selectedEntities = this.selectedEntities
+      value.selectedGroups = this.selectedGroups
       this.$emit('input', value)
     },
 
@@ -166,17 +161,17 @@ export default {
         }, {}
       )
 
-      this.synchronizeSelectedEntities()
+      this.sync()
     },
 
     toggleGroup(group) {
       this.selectedGroups[group] = !this.selectedGroups[group]
-      this.synchronizeSelectedEntities()
+      this.sync()
     },
 
     processEntityUpdate(entity) {
       const group = entity[this.value?.grouping]
-      if (group && this.selectedGroups[entity[group]] == null) {
+      if (group && this.selectedGroups[group] == null) {
         this.selectedGroups[group] = true
       }
     },
@@ -194,7 +189,7 @@ export default {
   mounted() {
     this.refreshGroupFilter()
     this.$watch(() => this.value?.grouping, () => { this.refreshGroupFilter() })
-    this.$watch(() => this.searchTerm, this.updateSearchTerm)
+    this.$watch(() => this.searchTerm, this.sync)
     bus.onEntity(this.processEntityUpdate)
   },
 }
