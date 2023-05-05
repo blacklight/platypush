@@ -2,7 +2,12 @@
   <div class="modal-container fade-in" :id="id" :class="{hidden: !isVisible}" :style="{'--z-index': zIndex}" @click="close">
     <div class="modal" :class="$attrs.class">
       <div class="content" :style="{'--width': width, '--height': height}" @click="$event.stopPropagation()">
-        <div class="header" v-text="title" v-if="title"></div>
+        <div class="header" v-if="title">
+          <div class="title" v-text="title" v-if="title" />
+          <button title="Close" alt="Close" @click="close">
+            <i class="fas fa-xmark" />
+          </button>
+        </div>
         <div class="body">
           <slot @modal-close="close" />
         </div>
@@ -145,6 +150,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+$icon-size: 1.5em;
+$icon-margin: 0.5em;
+
 .modal-container {
   position: fixed;
   display: flex;
@@ -171,6 +179,7 @@ export default {
 
     .header {
       display: flex;
+      position: relative;
       border-bottom: $modal-header-border;
       border-radius: 0.5em 0.5em 0 0;
       padding: 0.5em;
@@ -179,6 +188,21 @@ export default {
       align-items: center;
       background: $modal-header-bg;
       text-transform: uppercase;
+
+      button {
+        width: $icon-size;
+        height: $icon-size;
+        position: absolute;
+        right: 0;
+        margin: auto $icon-margin;
+        padding: 0;
+        border: 0;
+        background: transparent;
+
+        &:hover {
+          color: $default-hover-fg;
+        }
+      }
     }
 
     .body {
