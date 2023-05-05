@@ -57,9 +57,12 @@ class VariablePlugin(Plugin, EntityManager):
         return kwargs
 
     @action
-    def unset(self, name: str):
+    def delete(self, name: str):
         """
-        Unset a variable by name if it's set on the local db.
+        Delete a variable from the database.
+
+        Unlike :meth:`.unset`, this method actually deletes the record from the
+        database instead of setting it to null.
 
         :param name: Name of the variable to remove.
         """
@@ -71,6 +74,19 @@ class VariablePlugin(Plugin, EntityManager):
 
         self._db_vars.pop(name, None)
         return True
+
+    @action
+    def unset(self, name: str):
+        """
+        Unset a variable by name if it's set on the local db.
+
+        Unlike :meth:`.delete`, this method only sets the record to null
+        instead of removing it from the database.
+
+        :param name: Name of the variable to remove.
+        """
+
+        return self.set(**{name: None})
 
     @action
     def mget(self, name: str):
