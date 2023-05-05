@@ -1,5 +1,6 @@
 <template>
-  <div class="modal-container fade-in" :id="id" :class="{hidden: !isVisible}" :style="{'--z-index': zIndex}" @click="close">
+  <div class="modal-container fade-in" :id="id" :class="{hidden: !isVisible}"
+    :style="{'--z-index': zIndex}" @click="close">
     <div class="modal" :class="$attrs.class">
       <div class="content" :style="{'--width': width, '--height': height}" @click="$event.stopPropagation()">
         <div class="header" v-if="title">
@@ -94,6 +95,13 @@ export default {
       else
         this.show()
     },
+
+    onKeyUp(event) {
+      event.stopPropagation()
+      if (event.key === 'Escape') {
+        this.close()
+      }
+    },
   },
 
   mounted() {
@@ -107,8 +115,13 @@ export default {
       self.isVisible = visible
     }
 
+    document.body.addEventListener('keyup', this.onKeyUp)
     this.$watch(() => this.visible, visibleHndl)
     this.$watch(() => this.isVisible, visibleHndl)
+  },
+
+  unmounted() {
+    document.body.removeEventListener('keyup', this.onKeyUp)
   },
 
   updated() {

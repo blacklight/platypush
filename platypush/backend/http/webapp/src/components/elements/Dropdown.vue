@@ -94,6 +94,21 @@ export default {
       this.$emit('click')
       this.visible ? this.close() : this.open()
     },
+
+    onKeyUp(event) {
+      event.stopPropagation()
+      if (event.key === 'Escape') {
+        this.close()
+      }
+    },
+  },
+
+  mounted() {
+    document.body.addEventListener('keyup', this.onKeyUp)
+  },
+
+  unmounted() {
+    document.body.removeEventListener('keyup', this.onKeyUp)
   },
 }
 </script>
