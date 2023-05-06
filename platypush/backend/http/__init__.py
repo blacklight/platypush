@@ -3,7 +3,7 @@ import pathlib
 import secrets
 import threading
 
-from multiprocessing import Process
+from multiprocessing import Process, cpu_count
 
 try:
     from websockets.exceptions import ConnectionClosed  # type: ignore
@@ -11,10 +11,9 @@ try:
 except ImportError:
     from websockets import ConnectionClosed, serve as websocket_serve  # type: ignore
 
-import waitress
-
 from platypush.backend import Backend
 from platypush.backend.http.app import application
+from platypush.backend.http.wsgi import WSGIApplicationWrapper
 from platypush.bus.redis import RedisBus
 from platypush.config import Config
 from platypush.context import get_or_create_event_loop
@@ -174,7 +173,6 @@ class HttpBackend(Backend):
         ssl_capath=None,
         maps=None,
         secret_key_file=None,
-        flask_args=None,
         **kwargs,
     ):
         """
@@ -213,9 +211,6 @@ class HttpBackend(Backend):
         :param secret_key_file: Path to the file containing the secret key that will be used by Flask
             (default: ``~/.local/share/platypush/flask.secret.key``).
         :type secret_key_file: str
-
-        :param flask_args: Extra key-value arguments that should be passed to the Flask service.
-        :type flask_args: dict[str, str]
         """
 
         super().__init__(**kwargs)
@@ -239,7 +234,6 @@ class HttpBackend(Backend):
             self.resource_dirs = {}
 
         self.active_websockets = set()
-        self.flask_args = flask_args or {}
         self.ssl_context = (
             get_ssl_server_context(
                 ssl_cert=ssl_cert,
@@ -420,24 +414,18 @@ class HttpBackend(Backend):
     def _web_server_proc(self):
         def proc():
             self.logger.info('Starting local web server on port %s', self.port)
-            kwargs = {
-                'host': self.bind_address,
-                'port': self.port,
-            }
-
             assert isinstance(
                 self.bus, RedisBus
             ), 'The HTTP backend only works if backed by a Redis bus'
 
             application.config['redis_queue'] = self.bus.redis_queue
             application.secret_key = self._get_secret_key()
+            kwargs = {
+                'bind': f'{self.bind_address}:{self.port}',
+                'workers': (cpu_count() * 2) + 1,
+            }
 
-            if self.ssl_context:
-                kwargs['ssl_context'] = self.ssl_context
-            if self.flask_args:
-                kwargs.update(self.flask_args)
-
-            waitress.serve(application, **kwargs)
+            WSGIApplicationWrapper(f'{__package__}.app:application', kwargs).run()
 
         return proc
 

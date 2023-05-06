@@ -201,6 +201,7 @@ autodoc_default_options = {
 }
 
 autodoc_mock_imports = [
+    'gunicorn',
     'googlesamples.assistant.grpc.audio_helpers',
     'google.assistant.embedded',
     'google.assistant.library',
