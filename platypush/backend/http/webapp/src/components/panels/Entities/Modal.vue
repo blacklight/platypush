@@ -363,6 +363,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "common";
+
 :deep(.modal) {
   .body {
     padding: 0;
@@ -467,5 +469,16 @@ export default {
       max-height: 5em;
     }
   }
+
+  @include until(#{$tablet - 1}) {
+    .entity-container-wrapper {
+      &.collapsed {
+        border-radius: 0;
+        box-shadow: none;
+        border-bottom: $default-border;
+      }
+    }
+  }
+
 }
 </style>

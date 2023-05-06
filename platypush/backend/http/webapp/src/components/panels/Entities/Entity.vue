@@ -58,7 +58,7 @@ export default {
 
   computed: {
     hasChildren() {
-      return !!Object.keys(this.children).length
+      return !!Object.keys(this.children || {}).length
     },
 
     isCollapsed() {
@@ -172,54 +172,4 @@ export default {
 
 <style lang="scss" scoped>
 @import "common";
-
-.entity-container-wrapper {
-  &.with-children:not(.collapsed) {
-    box-shadow: 0 3px 4px 0 $default-shadow-color;
-  }
-}
-
-.entity-container {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  position: relative;
-  padding: 0 !important;
-  border-bottom: $default-border-3;
-
-  &.with-children:not(.collapsed) {
-    @include expanded-entity();
-  }
-
-  &:hover {
-    background: $hover-bg;
-  }
-
-  .adjuster {
-    cursor: pointer;
-    width: 100%;
-
-    &.with-children {
-      width: calc(100% - $collapse-toggler-width - 0.5em);
-    }
-  }
-}
-
-.blink {
-  animation: blink-animation 1s steps(20, start);
-}
-
-@keyframes blink-animation {
-  0% {
-    background: initial
-  }
-
-  50% {
-    background: $active-bg;
-  }
-
-  100% {
-    background: initial
-  }
-}
 </style>

@@ -409,7 +409,7 @@ export default {
   font-weight: 400;
 
   button {
-    background: #ffffff00;
+    background: transparent;
     border: 0;
 
     &:hover {
@@ -447,6 +447,10 @@ export default {
   }
 
   .groups-container {
+    @include until(#{$tablet - 1}) {
+      background: $default-bg-2;
+    }
+
     @include until(#{$desktop - 1}) {
       display: flex;
       flex-direction: column;
@@ -463,9 +467,12 @@ export default {
     max-width: 600px;
     max-height: 100%;
     position: relative;
-    padding: $main-margin 0;
     display: flex;
     break-inside: avoid;
+
+    @include until(#{$tablet - 1}) {
+      padding: 0;
+    }
 
     @include from($tablet) {
       padding: $main-margin;
@@ -480,8 +487,11 @@ export default {
       flex-direction: column;
       flex-grow: 1;
       position: relative;
-      box-shadow: $group-shadow;
-      border-radius: 1em;
+
+      @include from($tablet) {
+        border-radius: 1em;
+        box-shadow: $group-shadow;
+      }
     }
 
     .header {
@@ -490,7 +500,14 @@ export default {
       display: table;
       background: $header-bg;
       box-shadow: $header-shadow;
-      border-radius: 1em 1em 0 0;
+
+      @include until(#{$tablet - 1}) {
+        border-bottom: 1px solid $border-color-2;
+      }
+
+      @include from($tablet) {
+        border-radius: 1em 1em 0 0;
+      }
 
       .section {
         height: 100%;
@@ -510,23 +527,60 @@ export default {
           text-align: center;
         }
       }
+
+      .title {
+        text-transform: capitalize;
+
+        @include until(#{$tablet - 1}) {
+          font-weight: bold;
+        }
+      }
     }
 
     .body {
-      background: $default-bg-2;
       max-height: calc(100% - #{$header-height});
       overflow: auto;
       flex-grow: 1;
 
-      .entity-frame:last-child {
-        border-radius: 0 0 1em 1em;
+      @include until(#{$tablet - 1}) {
+        background: $default-bg-4;
+      }
+
+      @include from($tablet) {
+        background: $default-bg-2;
+      }
+
+      .entity-frame {
+        background: $background-color;
+
+        @include until(#{$tablet - 1}) {
+          margin: 0.75em 0.25em;
+          border: $default-border-2;
+          border-radius: 1em;
+        }
+
+        @include from($tablet) {
+          &:last-child {
+            border-radius: 0 0 1em 1em;
+          }
+        }
       }
     }
   }
 
   :deep(.modal) {
-    @include until($tablet) {
-      width: 95%;
+    @include until(#{$tablet - 1}) {
+      width: calc(100% - 1em);
+
+      .table-row {
+        border-bottom: 1px solid $border-color-2;
+      }
+    }
+
+    .table-row {
+      .value {
+        overflow: auto;
+      }
     }
 
     .content {
