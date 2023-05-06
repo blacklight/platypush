@@ -177,7 +177,7 @@ texinfo_documents = [
         'platypush Documentation',
         author,
         'platypush',
-        'One line description of project.',
+        'A general-purpose platform for automation.',
         'Miscellaneous',
     ),
 ]
