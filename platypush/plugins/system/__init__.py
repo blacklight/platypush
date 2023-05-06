@@ -223,7 +223,12 @@ class SystemPlugin(SensorPlugin, EntityManager):
 
     @staticmethod
     def _disk_info() -> List[Disk]:
-        parts = {part.device: part._asdict() for part in psutil.disk_partitions()}
+        parts = {
+            part.device: part._asdict()
+            for part in psutil.disk_partitions()
+            if part.fstype != 'squashfs'  # Exclude loopback mounts
+        }
+
         basename_parts = {os.path.basename(part): part for part in parts}
         io_stats = {
             basename_parts[disk]: stats._asdict()
