@@ -1,4 +1,6 @@
 import os
+import pathlib
+import secrets
 import threading
 
 from multiprocessing import Process
@@ -14,6 +16,7 @@ import waitress
 from platypush.backend import Backend
 from platypush.backend.http.app import application
 from platypush.bus.redis import RedisBus
+from platypush.config import Config
 from platypush.context import get_or_create_event_loop
 from platypush.utils import get_ssl_server_context
 
@@ -170,6 +173,7 @@ class HttpBackend(Backend):
         ssl_cafile=None,
         ssl_capath=None,
         maps=None,
+        secret_key_file=None,
         flask_args=None,
         **kwargs,
     ):
@@ -205,6 +209,10 @@ class HttpBackend(Backend):
             where the key is the relative path under ``/resources`` to expose and
             the value is the absolute path to expose.
         :type resource_dirs: dict[str, str]
+
+        :param secret_key_file: Path to the file containing the secret key that will be used by Flask
+            (default: ``~/.local/share/platypush/flask.secret.key``).
+        :type secret_key_file: str
 
         :param flask_args: Extra key-value arguments that should be passed to the Flask service.
         :type flask_args: dict[str, str]
@@ -243,6 +251,13 @@ class HttpBackend(Backend):
             else None
         )
 
+        self._workdir: str = Config.get('workdir')  # type: ignore
+        assert self._workdir, 'The workdir is not set'
+
+        self.secret_key_file = os.path.expanduser(
+            secret_key_file
+            or os.path.join(self._workdir, 'flask.secret.key')  # type: ignore
+        )
         protocol = 'https' if ssl_cert else 'http'
         self.local_base_url = f'{protocol}://localhost:{self.port}'
         self._websocket_lock_timeout = 10
@@ -383,6 +398,25 @@ class HttpBackend(Backend):
         )
         self._websocket_loop.run_forever()
 
+    def _get_secret_key(self, _create=False):
+        if _create:
+            self.logger.info('Creating web server secret key')
+            pathlib.Path(self.secret_key_file).parent.mkdir(parents=True, exist_ok=True)
+            with open(self.secret_key_file, 'w') as f:
+                f.write(secrets.token_urlsafe(32))
+
+            os.chmod(self.secret_key_file, 0o600)
+            return secrets.token_urlsafe(32)
+
+        try:
+            with open(self.secret_key_file, 'r') as f:
+                return f.read()
+        except IOError as e:
+            if not _create:
+                return self._get_secret_key(_create=True)
+
+            raise e
+
     def _web_server_proc(self):
         def proc():
             self.logger.info('Starting local web server on port %s', self.port)
@@ -396,6 +430,8 @@ class HttpBackend(Backend):
             ), 'The HTTP backend only works if backed by a Redis bus'
 
             application.config['redis_queue'] = self.bus.redis_queue
+            application.secret_key = self._get_secret_key()
+
             if self.ssl_context:
                 kwargs['ssl_context'] = self.ssl_context
             if self.flask_args:
