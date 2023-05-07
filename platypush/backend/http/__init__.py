@@ -247,7 +247,6 @@ class HttpBackend(Backend):
             ), 'The HTTP backend only works if backed by a Redis bus'
 
             application.config['redis_queue'] = self.bus.redis_queue
-            application.config['lifespan'] = 'on'
             application.secret_key = self._get_secret_key()
             kwargs = {
                 'bind': f'{self.bind_address}:{self.port}',
