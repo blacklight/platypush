@@ -1,5 +1,5 @@
 <template>
-  <Events ref="events" :ws-port="config['backend.http'].websocket_port" v-if="hasWebsocket" />
+  <Events ref="events" v-if="hasWebsocket" />
   <Notifications ref="notifications" />
   <VoiceAssistant ref="voice-assistant" v-if="hasAssistant" />
   <Pushbullet ref="pushbullet" v-if="hasPushbullet" />

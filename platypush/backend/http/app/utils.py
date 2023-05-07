@@ -78,14 +78,6 @@ def get_http_port():
     return http_conf.get('port', HttpBackend._DEFAULT_HTTP_PORT)
 
 
-# noinspection PyProtectedMember
-def get_websocket_port():
-    from platypush.backend.http import HttpBackend
-
-    http_conf = Config.get('backend.http') or {}
-    return http_conf.get('websocket_port', HttpBackend._DEFAULT_WEBSOCKET_PORT)
-
-
 def send_message(msg, wait_for_response=True):
     msg = Message.build(msg)
     if msg is None:
