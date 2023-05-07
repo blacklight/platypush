@@ -109,8 +109,6 @@ calendar:
 backend.http:
     # Listening port
     port: 8008
-    # Websocket port
-    websocket_port: 8009
 
     # Through resource_dirs you can specify external folders whose content can be accessed on
     # the web server through a custom URL. In the case below we have a Dropbox folder containing
@@ -164,10 +162,6 @@ backend.mqtt:
 # Raw TCP socket backend. It can run commands sent as JSON over telnet or netcat
 #backend.tcp:
 #    port: 3333
-
-# Websocket backend. Install required dependencies through 'pip install "platypush[http]"'
-#backend.websocket:
-#    port: 8765
 
 ## --
 ## Assistant configuration examples

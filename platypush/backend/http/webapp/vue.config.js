@@ -18,6 +18,11 @@ module.exports = {
         target: 'http://localhost:8008',
         changeOrigin: true
       },
+      '/ws/*': {
+        target: 'http://localhost:8008',
+        ws: true,
+        changeOrigin: true
+      },
       '/auth': {
         target: 'http://localhost:8008',
         changeOrigin: true

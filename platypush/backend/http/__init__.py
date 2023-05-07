@@ -4,20 +4,15 @@ import secrets
 import threading
 
 from multiprocessing import Process, cpu_count
-
-try:
-    from websockets.exceptions import ConnectionClosed  # type: ignore
-    from websockets import serve as websocket_serve  # type: ignore
-except ImportError:
-    from websockets import ConnectionClosed, serve as websocket_serve  # type: ignore
+from typing import Mapping, Optional
 
 from platypush.backend import Backend
 from platypush.backend.http.app import application
+from platypush.backend.http.ws import events_redis_topic
 from platypush.backend.http.wsgi import WSGIApplicationWrapper
 from platypush.bus.redis import RedisBus
 from platypush.config import Config
-from platypush.context import get_or_create_event_loop
-from platypush.utils import get_ssl_server_context
+from platypush.utils import get_redis
 
 
 class HttpBackend(Backend):
@@ -31,8 +26,6 @@ class HttpBackend(Backend):
         backend.http:
             # Default HTTP listen port
             port: 8008
-            # Default websocket port
-            websocket_port: 8009
             # External folders that will be exposed over `/resources/<name>`
             resource_dirs:
                 photos: /mnt/hd/photos
@@ -158,70 +151,30 @@ class HttpBackend(Backend):
     """
 
     _DEFAULT_HTTP_PORT = 8008
-    _DEFAULT_WEBSOCKET_PORT = 8009
 
     def __init__(
         self,
-        port=_DEFAULT_HTTP_PORT,
-        websocket_port=_DEFAULT_WEBSOCKET_PORT,
-        bind_address='0.0.0.0',
-        disable_websocket=False,
-        resource_dirs=None,
-        ssl_cert=None,
-        ssl_key=None,
-        ssl_cafile=None,
-        ssl_capath=None,
-        maps=None,
-        secret_key_file=None,
+        port: int = _DEFAULT_HTTP_PORT,
+        bind_address: str = '0.0.0.0',
+        resource_dirs: Optional[Mapping[str, str]] = None,
+        secret_key_file: Optional[str] = None,
         **kwargs,
     ):
         """
         :param port: Listen port for the web server (default: 8008)
-        :type port: int
-
-        :param websocket_port: Listen port for the websocket server (default: 8009)
-        :type websocket_port: int
-
         :param bind_address: Address/interface to bind to (default: 0.0.0.0, accept connection from any IP)
-        :type bind_address: str
-
-        :param disable_websocket: Disable the websocket interface (default: False)
-        :type disable_websocket: bool
-
-        :param ssl_cert: Set it to the path of your certificate file if you want to enable HTTPS (default: None)
-        :type ssl_cert: str
-
-        :param ssl_key: Set it to the path of your key file if you want to enable HTTPS (default: None)
-        :type ssl_key: str
-
-        :param ssl_cafile: Set it to the path of your certificate authority file if you want to enable HTTPS
-            (default: None)
-        :type ssl_cafile: str
-
-        :param ssl_capath: Set it to the path of your certificate authority directory if you want to enable HTTPS
-            (default: None)
-        :type ssl_capath: str
-
         :param resource_dirs: Static resources directories that will be
             accessible through ``/resources/<path>``. It is expressed as a map
             where the key is the relative path under ``/resources`` to expose and
             the value is the absolute path to expose.
-        :type resource_dirs: dict[str, str]
-
         :param secret_key_file: Path to the file containing the secret key that will be used by Flask
             (default: ``~/.local/share/platypush/flask.secret.key``).
-        :type secret_key_file: str
         """
 
         super().__init__(**kwargs)
 
         self.port = port
-        self.websocket_port = websocket_port
-        self.maps = maps or {}
         self.server_proc = None
-        self.disable_websocket = disable_websocket
-        self.websocket_thread = None
-        self._websocket_loop = None
         self._service_registry_thread = None
         self.bind_address = bind_address
 
@@ -233,30 +186,11 @@ class HttpBackend(Backend):
         else:
             self.resource_dirs = {}
 
-        self.active_websockets = set()
-        self.ssl_context = (
-            get_ssl_server_context(
-                ssl_cert=ssl_cert,
-                ssl_key=ssl_key,
-                ssl_cafile=ssl_cafile,
-                ssl_capath=ssl_capath,
-            )
-            if ssl_cert
-            else None
-        )
-
-        self._workdir: str = Config.get('workdir')  # type: ignore
-        assert self._workdir, 'The workdir is not set'
-
         self.secret_key_file = os.path.expanduser(
             secret_key_file
-            or os.path.join(self._workdir, 'flask.secret.key')  # type: ignore
+            or os.path.join(Config.get('workdir'), 'flask.secret.key')  # type: ignore
         )
-        protocol = 'https' if ssl_cert else 'http'
-        self.local_base_url = f'{protocol}://localhost:{self.port}'
-        self._websocket_lock_timeout = 10
-        self._websocket_lock = threading.RLock()
-        self._websocket_locks = {}
+        self.local_base_url = f'http://localhost:{self.port}'
 
     def send_message(self, *_, **__):
         self.logger.warning('Use cURL or any HTTP client to query the HTTP backend')
@@ -278,119 +212,13 @@ class HttpBackend(Backend):
             else:
                 self.logger.info('HTTP server process terminated')
 
-        if (
-            self.websocket_thread
-            and self.websocket_thread.is_alive()
-            and self._websocket_loop
-        ):
-            self._websocket_loop.stop()
-            self.logger.info('HTTP websocket service terminated')
-
         if self._service_registry_thread and self._service_registry_thread.is_alive():
             self._service_registry_thread.join(timeout=5)
             self._service_registry_thread = None
 
-    def _acquire_websocket_lock(self, ws):
-        try:
-            acquire_ok = self._websocket_lock.acquire(
-                timeout=self._websocket_lock_timeout
-            )
-            if not acquire_ok:
-                raise TimeoutError('Websocket lock acquire timeout')
-
-            addr = ws.remote_address
-            if addr not in self._websocket_locks:
-                self._websocket_locks[addr] = threading.RLock()
-        finally:
-            self._websocket_lock.release()
-
-        acquire_ok = self._websocket_locks[addr].acquire(
-            timeout=self._websocket_lock_timeout
-        )
-        if not acquire_ok:
-            raise TimeoutError(f'Websocket on address {addr} not ready to receive data')
-
-    def _release_websocket_lock(self, ws):
-        try:
-            acquire_ok = self._websocket_lock.acquire(
-                timeout=self._websocket_lock_timeout
-            )
-            if not acquire_ok:
-                raise TimeoutError('Websocket lock acquire timeout')
-
-            addr = ws.remote_address
-            if addr in self._websocket_locks:
-                self._websocket_locks[addr].release()
-        except Exception as e:
-            self.logger.warning(
-                'Unhandled exception while releasing websocket lock: %s', e
-            )
-        finally:
-            self._websocket_lock.release()
-
     def notify_web_clients(self, event):
         """Notify all the connected web clients (over websocket) of a new event"""
-
-        async def send_event(ws):
-            try:
-                self._acquire_websocket_lock(ws)
-                await ws.send(str(event))
-            except Exception as e:
-                self.logger.warning('Error on websocket send_event: %s', e)
-            finally:
-                self._release_websocket_lock(ws)
-
-        loop = get_or_create_event_loop()
-        wss = self.active_websockets.copy()
-
-        for _ws in wss:
-            try:
-                loop.run_until_complete(send_event(_ws))
-            except ConnectionClosed:
-                self.logger.warning(
-                    'Websocket client %s connection lost', _ws.remote_address
-                )
-                self.active_websockets.remove(_ws)
-                if _ws.remote_address in self._websocket_locks:
-                    del self._websocket_locks[_ws.remote_address]
-
-    def websocket(self):
-        """Websocket main server"""
-
-        async def register_websocket(websocket, path):
-            address = (
-                websocket.remote_address
-                if websocket.remote_address
-                else '<unknown client>'
-            )
-
-            self.logger.info(
-                'New websocket connection from %s on path %s', address, path
-            )
-            self.active_websockets.add(websocket)
-
-            try:
-                await websocket.recv()
-            except ConnectionClosed:
-                self.logger.info('Websocket client %s closed connection', address)
-                self.active_websockets.remove(websocket)
-                if address in self._websocket_locks:
-                    del self._websocket_locks[address]
-
-        websocket_args = {}
-        if self.ssl_context:
-            websocket_args['ssl'] = self.ssl_context
-
-        self._websocket_loop = get_or_create_event_loop()
-        self._websocket_loop.run_until_complete(
-            websocket_serve(
-                register_websocket,
-                self.bind_address,
-                self.websocket_port,
-                **websocket_args,
-            )
-        )
-        self._websocket_loop.run_forever()
+        get_redis().publish(events_redis_topic, str(event))
 
     def _get_secret_key(self, _create=False):
         if _create:
@@ -419,10 +247,13 @@ class HttpBackend(Backend):
             ), 'The HTTP backend only works if backed by a Redis bus'
 
             application.config['redis_queue'] = self.bus.redis_queue
+            application.config['lifespan'] = 'on'
             application.secret_key = self._get_secret_key()
             kwargs = {
                 'bind': f'{self.bind_address}:{self.port}',
                 'workers': (cpu_count() * 2) + 1,
+                'worker_class': 'eventlet',
+                'timeout': 60,
             }
 
             WSGIApplicationWrapper(f'{__package__}.app:application', kwargs).run()
@@ -435,15 +266,6 @@ class HttpBackend(Backend):
         except Exception as e:
             self.logger.warning('Could not register the Zeroconf service')
             self.logger.exception(e)
-
-    def _start_websocket_server(self):
-        if not self.disable_websocket:
-            self.logger.info('Initializing websocket interface')
-            self.websocket_thread = threading.Thread(
-                target=self.websocket,
-                name='WebsocketServer',
-            )
-            self.websocket_thread.start()
 
     def _start_zeroconf_service(self):
         self._service_registry_thread = threading.Thread(
@@ -460,7 +282,6 @@ class HttpBackend(Backend):
     def run(self):
         super().run()
 
-        self._start_websocket_server()
         self._start_zeroconf_service()
         self._run_web_server()
 

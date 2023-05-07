@@ -23,8 +23,9 @@ import yaml
 from platypush.config import Config
 from platypush.utils import manifest
 
-workdir = os.path.join(os.path.expanduser('~'), '.local', 'share',
-                       'platypush', 'platydock')
+workdir = os.path.join(
+    os.path.expanduser('~'), '.local', 'share', 'platypush', 'platydock'
+)
 
 
 class Action(enum.Enum):
@@ -52,8 +53,12 @@ def _parse_deps(cls):
 def generate_dockerfile(deps, ports, cfgfile, device_dir, python_version):
     device_id = Config.get('device_id')
     if not device_id:
-        raise RuntimeError(('You need to specify a device_id in {} - Docker ' +
-                            'containers cannot rely on hostname').format(cfgfile))
+        raise RuntimeError(
+            (
+                'You need to specify a device_id in {} - Docker '
+                + 'containers cannot rely on hostname'
+            ).format(cfgfile)
+        )
 
     os.makedirs(device_dir, exist_ok=True)
     content = textwrap.dedent(
@@ -63,7 +68,10 @@ def generate_dockerfile(deps, ports, cfgfile, device_dir, python_version):
         RUN mkdir -p /app
         RUN mkdir -p /etc/platypush
         RUN mkdir -p /usr/local/share/platypush\n
-        '''.format(python_version=python_version)).lstrip()
+        '''.format(
+            python_version=python_version
+        )
+    ).lstrip()
 
     srcdir = os.path.dirname(cfgfile)
     cfgfile_copy = os.path.join(device_dir, 'config.yaml')
@@ -81,9 +89,15 @@ def generate_dockerfile(deps, ports, cfgfile, device_dir, python_version):
         }
 
         with open(cfgfile_copy, 'a') as f:
-            f.write('\n# Automatically added by platydock, do not remove\n' + yaml.dump({
-                'backend.redis': backend_config['redis'],
-            }) + '\n')
+            f.write(
+                '\n# Automatically added by platydock, do not remove\n'
+                + yaml.dump(
+                    {
+                        'backend.redis': backend_config['redis'],
+                    }
+                )
+                + '\n'
+            )
 
     # Main database configuration
     has_main_db = False
@@ -95,11 +109,17 @@ def generate_dockerfile(deps, ports, cfgfile, device_dir, python_version):
 
     if not has_main_db:
         with open(cfgfile_copy, 'a') as f:
-            f.write('\n# Automatically added by platydock, do not remove\n' + yaml.dump({
-                'main.db': {
-                    'engine': 'sqlite:////platypush.db',
-                }
-            }) + '\n')
+            f.write(
+                '\n# Automatically added by platydock, do not remove\n'
+                + yaml.dump(
+                    {
+                        'main.db': {
+                            'engine': 'sqlite:////platypush.db',
+                        }
+                    }
+                )
+                + '\n'
+            )
 
     # Copy included files
     # noinspection PyProtectedMember
@@ -109,22 +129,33 @@ def generate_dockerfile(deps, ports, cfgfile, device_dir, python_version):
         pathlib.Path(destdir).mkdir(parents=True, exist_ok=True)
         shutil.copy(include, destdir, follow_symlinks=True)
         content += 'RUN mkdir -p /etc/platypush/' + incdir + '\n'
-        content += 'COPY ' + os.path.relpath(include, srcdir) + \
-                   ' /etc/platypush/' + incdir + '\n'
+        content += (
+            'COPY '
+            + os.path.relpath(include, srcdir)
+            + ' /etc/platypush/'
+            + incdir
+            + '\n'
+        )
 
     # Copy script files
     scripts_dir = os.path.join(os.path.dirname(cfgfile), 'scripts')
     if os.path.isdir(scripts_dir):
         local_scripts_dir = os.path.join(device_dir, 'scripts')
         remote_scripts_dir = '/etc/platypush/scripts'
-        shutil.copytree(scripts_dir, local_scripts_dir, symlinks=True, dirs_exist_ok=True)
+        shutil.copytree(
+            scripts_dir, local_scripts_dir, symlinks=True, dirs_exist_ok=True
+        )
         content += f'RUN mkdir -p {remote_scripts_dir}\n'
         content += f'COPY scripts/ {remote_scripts_dir}\n'
 
     packages = deps.pop('packages', None)
     pip = deps.pop('pip', None)
     exec_cmds = deps.pop('exec', None)
-    pkg_cmd = f'\n\t&& apt-get install --no-install-recommends -y {" ".join(packages)} \\' if packages else ''
+    pkg_cmd = (
+        f'\n\t&& apt-get install --no-install-recommends -y {" ".join(packages)} \\'
+        if packages
+        else ''
+    )
     pip_cmd = f'\n\t&& pip install {" ".join(pip)} \\' if pip else ''
     content += f'''
 RUN dpkg --configure -a \\
@@ -171,7 +202,8 @@ RUN apt-get remove -y git \\
 
         ENV PYTHONPATH /app:$PYTHONPATH
         CMD ["python", "-m", "platypush"]
-        ''')
+        '''
+    )
 
     dockerfile = os.path.join(device_dir, 'Dockerfile')
     print('Generating Dockerfile {}'.format(dockerfile))
@@ -185,19 +217,30 @@ def build(args):
 
     ports = set()
     parser = argparse.ArgumentParser(
-        prog='platydock build',
-        description='Build a Platypush image from a config.yaml'
+        prog='platydock build', description='Build a Platypush image from a config.yaml'
     )
 
-    parser.add_argument('-c', '--config', type=str, required=True,
-                        help='Path to the platypush configuration file')
-    parser.add_argument('-p', '--python-version', type=str, default='3.9',
-                        help='Python version to be used')
+    parser.add_argument(
+        '-c',
+        '--config',
+        type=str,
+        required=True,
+        help='Path to the platypush configuration file',
+    )
+    parser.add_argument(
+        '-p',
+        '--python-version',
+        type=str,
+        default='3.9',
+        help='Python version to be used',
+    )
 
     opts, args = parser.parse_known_args(args)
 
     cfgfile = os.path.abspath(os.path.expanduser(opts.config))
-    manifest._available_package_manager = 'apt'  # Force apt for Debian-based Docker images
+    manifest._available_package_manager = (
+        'apt'  # Force apt for Debian-based Docker images
+    )
     install_cmds = manifest.get_dependencies_from_conf(cfgfile)
     python_version = opts.python_version
     backend_config = Config.get_backends()
@@ -205,45 +248,75 @@ def build(args):
     # Container exposed ports
     if backend_config.get('http'):
         from platypush.backend.http import HttpBackend
+
         # noinspection PyProtectedMember
         ports.add(backend_config['http'].get('port', HttpBackend._DEFAULT_HTTP_PORT))
         # noinspection PyProtectedMember
-        ports.add(backend_config['http'].get('websocket_port', HttpBackend._DEFAULT_WEBSOCKET_PORT))
+        ports.add(
+            backend_config['http'].get(
+                'websocket_port', HttpBackend._DEFAULT_WEBSOCKET_PORT
+            )
+        )
 
     if backend_config.get('tcp'):
         ports.add(backend_config['tcp']['port'])
 
     if backend_config.get('websocket'):
         from platypush.backend.websocket import WebsocketBackend
+
         # noinspection PyProtectedMember
-        ports.add(backend_config['websocket'].get('port', WebsocketBackend._default_websocket_port))
+        ports.add(
+            backend_config['websocket'].get(
+                'port', WebsocketBackend._default_websocket_port
+            )
+        )
 
     dev_dir = os.path.join(workdir, Config.get('device_id'))
     generate_dockerfile(
-        deps=dict(install_cmds), ports=ports, cfgfile=cfgfile, device_dir=dev_dir, python_version=python_version
+        deps=dict(install_cmds),
+        ports=ports,
+        cfgfile=cfgfile,
+        device_dir=dev_dir,
+        python_version=python_version,
     )
 
     subprocess.call(
-        ['docker', 'build', '-t', 'platypush-{}'.format(Config.get('device_id')), dev_dir]
+        [
+            'docker',
+            'build',
+            '-t',
+            'platypush-{}'.format(Config.get('device_id')),
+            dev_dir,
+        ]
     )
 
 
 def start(args):
     global workdir
 
-    parser = argparse.ArgumentParser(prog='platydock start',
-                                     description='Start a Platypush container',
-                                     epilog=textwrap.dedent('''
+    parser = argparse.ArgumentParser(
+        prog='platydock start',
+        description='Start a Platypush container',
+        epilog=textwrap.dedent(
+            '''
                                        You can append additional options that
                                        will be passed to the docker container.
                                        Example:
 
                                             --add-host='myhost:192.168.1.1'
-                                       '''))
+                                       '''
+        ),
+    )
 
     parser.add_argument('image', type=str, help='Platypush image to start')
-    parser.add_argument('-p', '--publish', action='append', nargs='*', default=[],
-                        help=textwrap.dedent('''
+    parser.add_argument(
+        '-p',
+        '--publish',
+        action='append',
+        nargs='*',
+        default=[],
+        help=textwrap.dedent(
+            '''
                                              Container's ports to expose to the host.
                                              Note that the default exposed ports from
                                              the container service will be exposed unless
@@ -253,13 +326,22 @@ def start(args):
 
                                              Example:
 
-                                             -p 18008:8008 -p 18009:8009
-                                             '''))
+                                             -p 18008:8008
+                                             '''
+        ),
+    )
 
-    parser.add_argument('-a', '--attach', action='store_true', default=False,
-                        help=textwrap.dedent('''
+    parser.add_argument(
+        '-a',
+        '--attach',
+        action='store_true',
+        default=False,
+        help=textwrap.dedent(
+            '''
                                              If set, then attach to the container after starting it up (default: false).
-                                             '''))
+                                             '''
+        ),
+    )
 
     opts, args = parser.parse_known_args(args)
     ports = {}
@@ -277,11 +359,20 @@ def start(args):
 
     print('Preparing Redis support container')
     subprocess.call(['docker', 'pull', 'redis'])
-    subprocess.call(['docker', 'run', '--rm', '--name', 'redis-' + opts.image,
-                     '-d', 'redis'])
+    subprocess.call(
+        ['docker', 'run', '--rm', '--name', 'redis-' + opts.image, '-d', 'redis']
+    )
 
-    docker_cmd = ['docker', 'run', '--rm', '--name', opts.image, '-it',
-                  '--link', 'redis-' + opts.image + ':redis']
+    docker_cmd = [
+        'docker',
+        'run',
+        '--rm',
+        '--name',
+        opts.image,
+        '-it',
+        '--link',
+        'redis-' + opts.image + ':redis',
+    ]
 
     for container_port, host_port in ports.items():
         docker_cmd += ['-p', host_port + ':' + container_port]
@@ -297,8 +388,9 @@ def start(args):
 
 
 def stop(args):
-    parser = argparse.ArgumentParser(prog='platydock stop',
-                                     description='Stop a Platypush container')
+    parser = argparse.ArgumentParser(
+        prog='platydock stop', description='Stop a Platypush container'
+    )
 
     parser.add_argument('container', type=str, help='Platypush container to stop')
     opts, args = parser.parse_known_args(args)
@@ -313,11 +405,13 @@ def stop(args):
 def rm(args):
     global workdir
 
-    parser = argparse.ArgumentParser(prog='platydock rm',
-                                     description='Remove a Platypush image. ' +
-                                                 'NOTE: make sure that no container is ' +
-                                                 'running nor linked to the image before ' +
-                                                 'removing it')
+    parser = argparse.ArgumentParser(
+        prog='platydock rm',
+        description='Remove a Platypush image. '
+        + 'NOTE: make sure that no container is '
+        + 'running nor linked to the image before '
+        + 'removing it',
+    )
 
     parser.add_argument('image', type=str, help='Platypush image to remove')
     opts, args = parser.parse_known_args(args)
@@ -327,10 +421,10 @@ def rm(args):
 
 
 def ls(args):
-    parser = argparse.ArgumentParser(prog='platydock ls',
-                                     description='List available Platypush containers')
-    parser.add_argument('filter', type=str, nargs='?',
-                        help='Image name filter')
+    parser = argparse.ArgumentParser(
+        prog='platydock ls', description='List available Platypush containers'
+    )
+    parser.add_argument('filter', type=str, nargs='?', help='Image name filter')
 
     opts, args = parser.parse_known_args(args)
 
@@ -340,9 +434,10 @@ def ls(args):
     images = []
 
     for line in output:
-        if re.match(r'^platypush-(.+?)\s.*', line):
-            if not opts.filter or (opts.filter and opts.filter in line):
-                images.append(line)
+        if re.match(r'^platypush-(.+?)\s.*', line) and (
+            not opts.filter or (opts.filter and opts.filter in line)
+        ):
+            images.append(line)
 
     if images:
         print(header)
@@ -352,14 +447,17 @@ def ls(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(prog='platydock', add_help=False,
-                                     description='Manage Platypush docker containers',
-                                     epilog='Use platydock <action> --help to ' +
-                                            'get additional help')
+    parser = argparse.ArgumentParser(
+        prog='platydock',
+        add_help=False,
+        description='Manage Platypush docker containers',
+        epilog='Use platydock <action> --help to ' + 'get additional help',
+    )
 
     # noinspection PyTypeChecker
-    parser.add_argument('action', nargs='?', type=Action, choices=list(Action),
-                        help='Action to execute')
+    parser.add_argument(
+        'action', nargs='?', type=Action, choices=list(Action), help='Action to execute'
+    )
     parser.add_argument('-h', '--help', action='store_true', help='Show usage')
     opts, args = parser.parse_known_args(sys.argv[1:])
 

@@ -7,12 +7,6 @@ import { bus } from "@/bus";
 
 export default {
   name: "Events",
-  props: {
-    wsPort: {
-      type: Number,
-      default: 8009,
-    }
-  },
 
   data() {
     return {
@@ -21,7 +15,9 @@ export default {
       pending: false,
       opened: false,
       timeout: null,
-      reconnectMsecs: 30000,
+      reconnectMsecs: 1000,
+      minReconnectMsecs: 1000,
+      maxReconnectMsecs: 30000,
       handlers: {},
       handlerNameToEventTypes: {},
     }
@@ -30,6 +26,7 @@ export default {
   methods: {
     onWebsocketTimeout() {
       console.log('Websocket reconnection timed out, retrying')
+      this.reconnectMsecs = Math.min(this.reconnectMsecs * 2, this.maxReconnectMsecs)
       this.pending = false
       if (this.ws)
         this.ws.close()
@@ -88,6 +85,7 @@ export default {
 
       console.log('Websocket connection successful')
       this.opened = true
+      this.reconnectMsecs = this.minReconnectMsecs
 
       if (this.pending) {
         this.pending = false
@@ -106,7 +104,10 @@ export default {
 
     onClose(event) {
       if (event) {
-        console.log('Websocket closed - code: ' + event.code + ' - reason: ' + event.reason)
+        console.log(
+          `Websocket closed - code: ${event.code} - reason: ${event.reason}. ` +
+          `Retrying in ${this.reconnectMsecs / 1000}s`
+        )
       }
 
       this.opened = false
@@ -120,7 +121,7 @@ export default {
     init() {
       try {
         const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
-        const url = `${protocol}://${location.hostname}:${this.wsPort}`
+        const url = `${protocol}://${location.host}/ws/events`
         this.ws = new WebSocket(url)
       } catch (err) {
         console.error('Websocket initialization error')

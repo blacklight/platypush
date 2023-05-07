@@ -7,21 +7,21 @@ from platypush.context import get_backend
 from platypush.message.event import Event
 
 
-class EventProcessor(object):
-    """ Event processor class. Checks an event against the configured
-        rules and executes any matching event hooks """
+class EventProcessor:
+    """Event processor class. Checks an event against the configured
+    rules and executes any matching event hooks"""
 
     def __init__(self, hooks=None):
         """
         Params:
             hooks -- List of event hooks (default: any entry in the config
-            named as event.hook.<hook_name> """
+            named as event.hook.<hook_name>"""
 
         if hooks is None:
             hooks = Config.get_event_hooks()
 
         self.hooks = []
-        for (name, hook) in hooks.items():
+        for name, hook in hooks.items():
             h = EventHook.build(name=name, hook=hook)
             self.hooks.append(h)
 
@@ -35,12 +35,8 @@ class EventProcessor(object):
         if backend:
             backend.notify_web_clients(event)
 
-        backend = get_backend('websocket')
-        if backend:
-            backend.notify_web_clients(event)
-
     def process_event(self, event: Event):
-        """ Processes an event and runs the matched hooks with the highest score """
+        """Processes an event and runs the matched hooks with the highest score"""
 
         if not event.disable_web_clients_notification:
             self.notify_web_clients(event)

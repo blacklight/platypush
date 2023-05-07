@@ -5,6 +5,7 @@
 alembic
 bcrypt
 croniter
+eventlet
 flask
 frozendict
 gunicorn
