@@ -1,4 +1,11 @@
+from typing import Any, Dict
+
 from gunicorn.app.wsgiapp import WSGIApplication
+from uvicorn.workers import UvicornWorker as BaseUvicornWorker
+
+
+class UvicornWorker(BaseUvicornWorker):
+    CONFIG_KWARGS: Dict[str, Any] = {"loop": "auto", "http": "auto", "lifespan": "on"}
 
 
 class WSGIApplicationWrapper(WSGIApplication):

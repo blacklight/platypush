@@ -252,8 +252,8 @@ class HttpBackend(Backend):
             kwargs = {
                 'bind': f'{self.bind_address}:{self.port}',
                 'workers': (cpu_count() * 2) + 1,
-                'worker_class': 'eventlet',
-                'timeout': 60,
+                'worker_class_str': f'{__package__}.app.UvicornWorker',
+                'timeout': 30,
             }
 
             WSGIApplicationWrapper(f'{__package__}.app:application', kwargs).run()

@@ -303,6 +303,7 @@ autodoc_mock_imports = [
     'bluetooth_numbers',
     'TheengsDecoder',
     'simple_websocket',
+    'uvicorn',
 ]
 
 sys.path.insert(0, os.path.abspath('../..'))
