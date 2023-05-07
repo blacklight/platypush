@@ -3,5 +3,7 @@ manifest:
   install:
     pip:
     - pycups
+    apt:
+    - libcups2-dev
   package: platypush.plugins.printer.cups
   type: plugin

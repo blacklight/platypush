@@ -8,11 +8,22 @@ import os
 import time
 
 from platypush.backend.assistant import AssistantBackend
-from platypush.message.event.assistant import \
-    ConversationStartEvent, ConversationEndEvent, ConversationTimeoutEvent, \
-    ResponseEvent, NoResponseEvent, SpeechRecognizedEvent, AlarmStartedEvent, \
-    AlarmEndEvent, TimerStartedEvent, TimerEndEvent, AlertStartedEvent, \
-    AlertEndEvent, MicMutedEvent, MicUnmutedEvent
+from platypush.message.event.assistant import (
+    ConversationStartEvent,
+    ConversationEndEvent,
+    ConversationTimeoutEvent,
+    ResponseEvent,
+    NoResponseEvent,
+    SpeechRecognizedEvent,
+    AlarmStartedEvent,
+    AlarmEndEvent,
+    TimerStartedEvent,
+    TimerEndEvent,
+    AlertStartedEvent,
+    AlertEndEvent,
+    MicMutedEvent,
+    MicUnmutedEvent,
+)
 
 
 class AssistantGoogleBackend(AssistantBackend):
@@ -57,22 +68,30 @@ class AssistantGoogleBackend(AssistantBackend):
 
         * **google-assistant-library** (``pip install google-assistant-library``)
         * **google-assistant-sdk[samples]** (``pip install google-assistant-sdk[samples]``)
+        * **google-auth** (``pip install google-auth``)
+
     """
 
-    def __init__(self,
-                 credentials_file=os.path.join(
-                     os.path.expanduser('~/.config'),
-                     'google-oauthlib-tool', 'credentials.json'),
-                 device_model_id='Platypush', **kwargs):
+    _default_credentials_file = os.path.join(
+        os.path.expanduser('~/.config'), 'google-oauthlib-tool', 'credentials.json'
+    )
+
+    def __init__(
+        self,
+        credentials_file=_default_credentials_file,
+        device_model_id='Platypush',
+        **kwargs
+    ):
         """
-        :param credentials_file: Path to the Google OAuth credentials file \
-            (default: ~/.config/google-oauthlib-tool/credentials.json). \
-            See https://developers.google.com/assistant/sdk/guides/library/python/embed/install-sample#generate_credentials \
+        :param credentials_file: Path to the Google OAuth credentials file
+            (default: ~/.config/google-oauthlib-tool/credentials.json).
+            See
+            https://developers.google.com/assistant/sdk/guides/library/python/embed/install-sample#generate_credentials
             for instructions to get your own credentials file.
 
         :type credentials_file: str
 
-        :param device_model_id: Device model ID to use for the assistant \
+        :param device_model_id: Device model ID to use for the assistant
             (default: Platypush)
         :type device_model_id: str
         """
@@ -102,17 +121,23 @@ class AssistantGoogleBackend(AssistantBackend):
             self.bus.post(ConversationTimeoutEvent(assistant=self))
         elif event.type == EventType.ON_NO_RESPONSE:
             self.bus.post(NoResponseEvent(assistant=self))
-        elif hasattr(EventType, 'ON_RENDER_RESPONSE') and \
-                event.type == EventType.ON_RENDER_RESPONSE:
-            self.bus.post(ResponseEvent(assistant=self, response_text=event.args.get('text')))
+        elif (
+            hasattr(EventType, 'ON_RENDER_RESPONSE')
+            and event.type == EventType.ON_RENDER_RESPONSE
+        ):
+            self.bus.post(
+                ResponseEvent(assistant=self, response_text=event.args.get('text'))
+            )
             tts, args = self._get_tts_plugin()
 
             if tts and 'text' in event.args:
                 self.stop_conversation()
                 tts.say(text=event.args['text'], **args)
-        elif hasattr(EventType, 'ON_RESPONDING_STARTED') and \
-                event.type == EventType.ON_RESPONDING_STARTED and \
-                event.args.get('is_error_response', False) is True:
+        elif (
+            hasattr(EventType, 'ON_RESPONDING_STARTED')
+            and event.type == EventType.ON_RESPONDING_STARTED
+            and event.args.get('is_error_response', False) is True
+        ):
             self.logger.warning('Assistant response error')
         elif event.type == EventType.ON_RECOGNIZING_SPEECH_FINISHED:
             phrase = event.args['text'].lower().strip()
@@ -144,12 +169,12 @@ class AssistantGoogleBackend(AssistantBackend):
             self.bus.post(event)
 
     def start_conversation(self):
-        """ Starts an assistant conversation """
+        """Starts an assistant conversation"""
         if self.assistant:
             self.assistant.start_conversation()
 
     def stop_conversation(self):
-        """ Stops an assistant conversation """
+        """Stops an assistant conversation"""
         if self.assistant:
             self.assistant.stop_conversation()
 
@@ -177,7 +202,9 @@ class AssistantGoogleBackend(AssistantBackend):
         super().run()
 
         with open(self.credentials_file, 'r') as f:
-            self.credentials = google.oauth2.credentials.Credentials(token=None, **json.load(f))
+            self.credentials = google.oauth2.credentials.Credentials(
+                token=None, **json.load(f)
+            )
 
         while not self.should_stop():
             self._has_error = False
@@ -186,12 +213,16 @@ class AssistantGoogleBackend(AssistantBackend):
                 self.assistant = assistant
                 for event in assistant.start():
                     if not self.is_detecting():
-                        self.logger.info('Assistant event received but detection is currently paused')
+                        self.logger.info(
+                            'Assistant event received but detection is currently paused'
+                        )
                         continue
 
                     self._process_event(event)
                     if self._has_error:
-                        self.logger.info('Restarting the assistant after an unrecoverable error')
+                        self.logger.info(
+                            'Restarting the assistant after an unrecoverable error'
+                        )
                         time.sleep(5)
                         break
 

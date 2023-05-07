@@ -3,5 +3,7 @@ manifest:
   install:
     pip:
     - picamera
+    - numpy
+    - Pillow
   package: platypush.backend.camera.pi
   type: backend

@@ -9,10 +9,17 @@ import time
 
 from platypush.context import get_bus
 from platypush.plugins import Plugin, action
-from platypush.message.event.torrent import \
-    TorrentDownloadStartEvent, TorrentDownloadedMetadataEvent, TorrentStateChangeEvent, \
-    TorrentDownloadProgressEvent, TorrentDownloadCompletedEvent, TorrentDownloadStopEvent, \
-    TorrentPausedEvent, TorrentResumedEvent, TorrentQueuedEvent
+from platypush.message.event.torrent import (
+    TorrentDownloadStartEvent,
+    TorrentDownloadedMetadataEvent,
+    TorrentStateChangeEvent,
+    TorrentDownloadProgressEvent,
+    TorrentDownloadCompletedEvent,
+    TorrentDownloadStopEvent,
+    TorrentPausedEvent,
+    TorrentResumedEvent,
+    TorrentQueuedEvent,
+)
 
 
 class TorrentPlugin(Plugin):
@@ -21,7 +28,7 @@ class TorrentPlugin(Plugin):
 
     Requires:
 
-        * **python-libtorrent-bin** (``pip install python-libtorrent-bin``)
+        * **python-libtorrent** (``pip install python-libtorrent``)
 
     """
 
@@ -39,8 +46,14 @@ class TorrentPlugin(Plugin):
     # noinspection HttpUrlsUsage
     default_popcorn_base_url = 'http://popcorn-time.ga'
 
-    def __init__(self, download_dir=None, torrent_ports=None, imdb_key=None, popcorn_base_url=default_popcorn_base_url,
-                 **kwargs):
+    def __init__(
+        self,
+        download_dir=None,
+        torrent_ports=None,
+        imdb_key=None,
+        popcorn_base_url=default_popcorn_base_url,
+        **kwargs,
+    ):
         """
         :param download_dir: Directory where the videos/torrents will be downloaded (default: none)
         :type download_dir: str
@@ -66,7 +79,9 @@ class TorrentPlugin(Plugin):
 
         self.imdb_key = imdb_key
         self.imdb_urls = {}
-        self.torrent_ports = torrent_ports if torrent_ports else self.default_torrent_ports
+        self.torrent_ports = (
+            torrent_ports if torrent_ports else self.default_torrent_ports
+        )
         self.download_dir = None
         self._sessions = {}
         self._lt_session = None
@@ -109,11 +124,16 @@ class TorrentPlugin(Plugin):
         # noinspection PyCallingNonCallable
         def worker(cat):
             if cat not in self.categories:
-                raise RuntimeError('Unsupported category {}. Supported category: {}'.
-                                   format(cat, self.categories.keys()))
+                raise RuntimeError(
+                    'Unsupported category {}. Supported category: {}'.format(
+                        cat, self.categories.keys()
+                    )
+                )
 
             self.logger.info('Searching {} torrents for "{}"'.format(cat, query))
-            results.extend(self.categories[cat](query, language=language, *args, **kwargs))
+            results.extend(
+                self.categories[cat](query, *args, language=language, **kwargs)
+            )
 
         workers = [
             threading.Thread(target=worker, kwargs={'cat': category})
@@ -151,11 +171,14 @@ class TorrentPlugin(Plugin):
         imdb_results = self._imdb_query(query, category)
         result_queues = [queue.Queue()] * len(imdb_results)
         workers = [
-            threading.Thread(target=self._torrent_search_worker, kwargs={
-                'imdb_id': imdb_results[i]['id'],
-                'category': category,
-                'q': result_queues[i],
-            })
+            threading.Thread(
+                target=self._torrent_search_worker,
+                kwargs={
+                    'imdb_id': imdb_results[i]['id'],
+                    'category': category,
+                    'q': result_queues[i],
+                },
+            )
             for i in range(len(imdb_results))
         ]
 
@@ -179,85 +202,99 @@ class TorrentPlugin(Plugin):
         return results
 
     @staticmethod
-    def _results_to_movies_response(results: List[dict], language: Optional[str] = None):
-        return sorted([
-            {
-                'imdb_id': result.get('imdb_id'),
-                'type': 'movies',
-                'file': item.get('file'),
-                'title': '{title} [movies][{language}][{quality}]'.format(
-                    title=result.get('title'), language=lang, quality=quality),
-                'duration': int(result.get('runtime'), 0),
-                'year': int(result.get('year'), 0),
-                'synopsis': result.get('synopsis'),
-                'trailer': result.get('trailer'),
-                'genres': result.get('genres', []),
-                'images': result.get('images', []),
-                'rating': result.get('rating', {}),
-                'language': lang,
-                'quality': quality,
-                'size': item.get('size'),
-                'provider': item.get('provider'),
-                'seeds': item.get('seed'),
-                'peers': item.get('peer'),
-                'url': item.get('url'),
-            }
-            for result in results
-            for (lang, items) in (result.get('torrents', {}) or {}).items()
-            if not language or language == lang
-            for (quality, item) in items.items()
-            if quality != '0'
-        ], key=lambda item: item.get('seeds', 0), reverse=True)
+    def _results_to_movies_response(
+        results: List[dict], language: Optional[str] = None
+    ):
+        return sorted(
+            [
+                {
+                    'imdb_id': result.get('imdb_id'),
+                    'type': 'movies',
+                    'file': item.get('file'),
+                    'title': '{title} [movies][{language}][{quality}]'.format(
+                        title=result.get('title'), language=lang, quality=quality
+                    ),
+                    'duration': int(result.get('runtime') or 0),
+                    'year': int(result.get('year') or 0),
+                    'synopsis': result.get('synopsis'),
+                    'trailer': result.get('trailer'),
+                    'genres': result.get('genres', []),
+                    'images': result.get('images', []),
+                    'rating': result.get('rating', {}),
+                    'language': lang,
+                    'quality': quality,
+                    'size': item.get('size'),
+                    'provider': item.get('provider'),
+                    'seeds': item.get('seed'),
+                    'peers': item.get('peer'),
+                    'url': item.get('url'),
+                }
+                for result in results
+                for (lang, items) in (result.get('torrents', {}) or {}).items()
+                if not language or language == lang
+                for (quality, item) in items.items()
+                if quality != '0'
+            ],
+            key=lambda item: item.get('seeds', 0),
+            reverse=True,
+        )
 
     @staticmethod
     def _results_to_tv_response(results: List[dict]):
-        return sorted([
-            {
-                'imdb_id': result.get('imdb_id'),
-                'tvdb_id': result.get('tvdb_id'),
-                'type': 'tv',
-                'file': item.get('file'),
-                'series': result.get('title'),
-                'title': '{series} [S{season:02d}E{episode:02d}] {title} [tv][{quality}]'.format(
-                    series=result.get('title'),
-                    season=episode.get('season'),
-                    episode=episode.get('episode'),
-                    title=episode.get('title'),
-                    quality=quality),
-                'duration': int(result.get('runtime'), 0),
-                'year': int(result.get('year'), 0),
-                'synopsis': result.get('synopsis'),
-                'overview': episode.get('overview'),
-                'season': episode.get('season'),
-                'episode': episode.get('episode'),
-                'num_seasons': result.get('num_seasons'),
-                'country': result.get('country'),
-                'network': result.get('network'),
-                'status': result.get('status'),
-                'genres': result.get('genres', []),
-                'images': result.get('images', []),
-                'rating': result.get('rating', {}),
-                'quality': quality,
-                'provider': item.get('provider'),
-                'seeds': item.get('seeds'),
-                'peers': item.get('peers'),
-                'url': item.get('url'),
-            }
-            for result in results
-            for episode in result.get('episodes', [])
-            for quality, item in (episode.get('torrents', {}) or {}).items()
-            if quality != '0'
-        ], key=lambda item: '{series}.{quality}.{season:02d}.{episode:02d}'.format(
-            series=item.get('series'), quality=item.get('quality'),
-            season=item.get('season'), episode=item.get('episode')))
+        return sorted(
+            [
+                {
+                    'imdb_id': result.get('imdb_id'),
+                    'tvdb_id': result.get('tvdb_id'),
+                    'type': 'tv',
+                    'file': item.get('file'),
+                    'series': result.get('title'),
+                    'title': '{series} [S{season:02d}E{episode:02d}] {title} [tv][{quality}]'.format(
+                        series=result.get('title'),
+                        season=episode.get('season'),
+                        episode=episode.get('episode'),
+                        title=episode.get('title'),
+                        quality=quality,
+                    ),
+                    'duration': int(result.get('runtime') or 0),
+                    'year': int(result.get('year') or 0),
+                    'synopsis': result.get('synopsis'),
+                    'overview': episode.get('overview'),
+                    'season': episode.get('season'),
+                    'episode': episode.get('episode'),
+                    'num_seasons': result.get('num_seasons'),
+                    'country': result.get('country'),
+                    'network': result.get('network'),
+                    'status': result.get('status'),
+                    'genres': result.get('genres', []),
+                    'images': result.get('images', []),
+                    'rating': result.get('rating', {}),
+                    'quality': quality,
+                    'provider': item.get('provider'),
+                    'seeds': item.get('seeds'),
+                    'peers': item.get('peers'),
+                    'url': item.get('url'),
+                }
+                for result in results
+                for episode in result.get('episodes', [])
+                for quality, item in (episode.get('torrents', {}) or {}).items()
+                if quality != '0'
+            ],
+            key=lambda item: '{series}.{quality}.{season:02d}.{episode:02d}'.format(
+                series=item.get('series'),
+                quality=item.get('quality'),
+                season=item.get('season'),
+                episode=item.get('episode'),
+            ),
+        )
 
     def search_movies(self, query, language=None):
         return self._results_to_movies_response(
-            self._search_torrents(query, 'movies'), language=language)
+            self._search_torrents(query, 'movies'), language=language
+        )
 
     def search_tv(self, query, **_):
-        return self._results_to_tv_response(
-            self._search_torrents(query, 'tv'))
+        return self._results_to_tv_response(self._search_torrents(query, 'tv'))
 
     def _get_torrent_info(self, torrent, download_dir):
         import libtorrent as lt
@@ -296,7 +333,9 @@ class TorrentPlugin(Plugin):
         else:
             torrent_file = os.path.abspath(os.path.expanduser(torrent))
             if not os.path.isfile(torrent_file):
-                raise RuntimeError('{} is not a valid torrent file'.format(torrent_file))
+                raise RuntimeError(
+                    '{} is not a valid torrent file'.format(torrent_file)
+                )
 
         if torrent_file:
             file_info = lt.torrent_info(torrent_file)
@@ -330,7 +369,9 @@ class TorrentPlugin(Plugin):
 
             while not transfer.is_finished():
                 if torrent not in self.transfers:
-                    self.logger.info('Torrent {} has been stopped and removed'.format(torrent))
+                    self.logger.info(
+                        'Torrent {} has been stopped and removed'.format(torrent)
+                    )
                     self._fire_event(TorrentDownloadStopEvent(url=torrent), event_hndl)
                     break
 
@@ -339,14 +380,14 @@ class TorrentPlugin(Plugin):
 
                 if torrent_file:
                     self.torrent_state[torrent]['size'] = torrent_file.total_size()
-                    files = [os.path.join(
-                        download_dir,
-                        torrent_file.files().file_path(i))
+                    files = [
+                        os.path.join(download_dir, torrent_file.files().file_path(i))
                         for i in range(0, torrent_file.files().num_files())
                     ]
 
                     if is_media:
                         from platypush.plugins.media import MediaPlugin
+
                         # noinspection PyProtectedMember
                         files = [f for f in files if MediaPlugin.is_video_file(f)]
 
@@ -354,7 +395,9 @@ class TorrentPlugin(Plugin):
                 self.torrent_state[torrent]['name'] = status.name
                 self.torrent_state[torrent]['num_peers'] = status.num_peers
                 self.torrent_state[torrent]['paused'] = status.paused
-                self.torrent_state[torrent]['progress'] = round(100 * status.progress, 2)
+                self.torrent_state[torrent]['progress'] = round(
+                    100 * status.progress, 2
+                )
                 self.torrent_state[torrent]['state'] = status.state.name
                 self.torrent_state[torrent]['title'] = status.name
                 self.torrent_state[torrent]['torrent'] = torrent
@@ -363,30 +406,51 @@ class TorrentPlugin(Plugin):
                 self.torrent_state[torrent]['files'] = files
 
                 if transfer.has_metadata() and not metadata_downloaded:
-                    self._fire_event(TorrentDownloadedMetadataEvent(**self.torrent_state[torrent]), event_hndl)
+                    self._fire_event(
+                        TorrentDownloadedMetadataEvent(**self.torrent_state[torrent]),
+                        event_hndl,
+                    )
                     metadata_downloaded = True
 
                 if status.state == status.downloading and not download_started:
-                    self._fire_event(TorrentDownloadStartEvent(**self.torrent_state[torrent]), event_hndl)
+                    self._fire_event(
+                        TorrentDownloadStartEvent(**self.torrent_state[torrent]),
+                        event_hndl,
+                    )
                     download_started = True
 
                 if last_status and status.progress != last_status.progress:
-                    self._fire_event(TorrentDownloadProgressEvent(**self.torrent_state[torrent]), event_hndl)
+                    self._fire_event(
+                        TorrentDownloadProgressEvent(**self.torrent_state[torrent]),
+                        event_hndl,
+                    )
 
                 if not last_status or status.state != last_status.state:
-                    self._fire_event(TorrentStateChangeEvent(**self.torrent_state[torrent]), event_hndl)
+                    self._fire_event(
+                        TorrentStateChangeEvent(**self.torrent_state[torrent]),
+                        event_hndl,
+                    )
 
                 if last_status and status.paused != last_status.paused:
                     if status.paused:
-                        self._fire_event(TorrentPausedEvent(**self.torrent_state[torrent]), event_hndl)
+                        self._fire_event(
+                            TorrentPausedEvent(**self.torrent_state[torrent]),
+                            event_hndl,
+                        )
                     else:
-                        self._fire_event(TorrentResumedEvent(**self.torrent_state[torrent]), event_hndl)
+                        self._fire_event(
+                            TorrentResumedEvent(**self.torrent_state[torrent]),
+                            event_hndl,
+                        )
 
                 last_status = status
                 time.sleep(self._MONITOR_CHECK_INTERVAL)
 
             if transfer and transfer.is_finished():
-                self._fire_event(TorrentDownloadCompletedEvent(**self.torrent_state[torrent]), event_hndl)
+                self._fire_event(
+                    TorrentDownloadCompletedEvent(**self.torrent_state[torrent]),
+                    event_hndl,
+                )
 
             self.remove(torrent)
             return files
@@ -398,12 +462,15 @@ class TorrentPlugin(Plugin):
             return self._lt_session
 
         import libtorrent as lt
+
         # noinspection PyArgumentList
         self._lt_session = lt.session()
         return self._lt_session
 
     @action
-    def download(self, torrent, download_dir=None, _async=False, event_hndl=None, is_media=False):
+    def download(
+        self, torrent, download_dir=None, _async=False, event_hndl=None, is_media=False
+    ):
         """
         Download a torrent.
 
@@ -445,10 +512,14 @@ class TorrentPlugin(Plugin):
 
         download_dir = os.path.abspath(os.path.expanduser(download_dir))
         os.makedirs(download_dir, exist_ok=True)
-        info, file_info, torrent_file, magnet = self._get_torrent_info(torrent, download_dir)
+        info, file_info, torrent_file, magnet = self._get_torrent_info(
+            torrent, download_dir
+        )
 
         if torrent in self._sessions:
-            self.logger.info('A torrent session is already running for {}'.format(torrent))
+            self.logger.info(
+                'A torrent session is already running for {}'.format(torrent)
+            )
             return self.torrent_state.get(torrent, {})
 
         session = self._get_session()
@@ -472,12 +543,22 @@ class TorrentPlugin(Plugin):
             'title': transfer.status().name,
             'trackers': info['trackers'],
             'save_path': download_dir,
+            'torrent_file': torrent_file,
         }
 
         self._fire_event(TorrentQueuedEvent(url=torrent), event_hndl)
-        self.logger.info('Downloading "{}" to "{}" from [{}]'.format(info['name'], download_dir, torrent))
-        monitor_thread = self._torrent_monitor(torrent=torrent, transfer=transfer, download_dir=download_dir,
-                                               event_hndl=event_hndl, is_media=is_media)
+        self.logger.info(
+            'Downloading "{}" to "{}" from [{}]'.format(
+                info['name'], download_dir, torrent
+            )
+        )
+        monitor_thread = self._torrent_monitor(
+            torrent=torrent,
+            transfer=transfer,
+            download_dir=download_dir,
+            event_hndl=event_hndl,
+            is_media=is_media,
+        )
 
         if not _async:
             return monitor_thread()
@@ -565,7 +646,7 @@ class TorrentPlugin(Plugin):
     @staticmethod
     def _generate_rand_filename(length=16):
         name = ''
-        for i in range(0, length):
+        for _ in range(0, length):
             name += hex(random.randint(0, 15))[2:].upper()
         return name + '.torrent'
 

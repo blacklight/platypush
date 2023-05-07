@@ -10,5 +10,6 @@ manifest:
     pip:
     - tenacity
     - google-assistant-sdk
+    - google-auth
   package: platypush.plugins.assistant.google.pushtotalk
   type: plugin

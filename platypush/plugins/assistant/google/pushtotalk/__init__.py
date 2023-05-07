@@ -7,9 +7,13 @@ import os
 from typing import Optional, Dict, Any
 
 from platypush.context import get_bus, get_plugin
-from platypush.message.event.assistant import ConversationStartEvent, \
-    ConversationEndEvent, SpeechRecognizedEvent, VolumeChangedEvent, \
-    ResponseEvent
+from platypush.message.event.assistant import (
+    ConversationStartEvent,
+    ConversationEndEvent,
+    SpeechRecognizedEvent,
+    VolumeChangedEvent,
+    ResponseEvent,
+)
 
 from platypush.message.event.google import GoogleDeviceOnOffEvent
 
@@ -34,29 +38,42 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
         * **tenacity** (``pip install tenacity``)
         * **google-assistant-sdk** (``pip install google-assistant-sdk[samples]``)
+        * **google-auth** (``pip install google-auth``)
 
     """
 
     api_endpoint = 'embeddedassistant.googleapis.com'
     grpc_deadline = 60 * 3 + 5
     device_handler = None
+    _default_credentials_file = os.path.join(
+        os.path.expanduser('~'),
+        '.config',
+        'google-oauthlib-tool',
+        'credentials.json',
+    )
 
-    def __init__(self,
-                 credentials_file=os.path.join(
-                     os.path.expanduser('~'), '.config',
-                     'google-oauthlib-tool', 'credentials.json'),
-                 device_config=os.path.join(
-                     os.path.expanduser('~'), '.config', 'googlesamples-assistant',
-                     'device_config.json'),
-                 language='en-US',
-                 play_response=True,
-                 tts_plugin=None,
-                 tts_args=None,
-                 **kwargs):
+    _default_device_config = os.path.join(
+        os.path.expanduser('~'),
+        '.config',
+        'googlesamples-assistant',
+        'device_config.json',
+    )
+
+    def __init__(
+        self,
+        credentials_file=_default_credentials_file,
+        device_config=_default_device_config,
+        language='en-US',
+        play_response=True,
+        tts_plugin=None,
+        tts_args=None,
+        **kwargs
+    ):
         """
         :param credentials_file: Path to the Google OAuth credentials file
             (default: ~/.config/google-oauthlib-tool/credentials.json).
-            See https://developers.google.com/assistant/sdk/guides/library/python/embed/install-sample#generate_credentials
+            See
+            https://developers.google.com/assistant/sdk/guides/library/python/embed/install-sample#generate_credentials
             for instructions to get your own credentials file.
         :type credentials_file: str
 
@@ -81,6 +98,7 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         """
 
         import googlesamples.assistant.grpc.audio_helpers as audio_helpers
+
         super().__init__(**kwargs)
 
         self.audio_sample_rate = audio_helpers.DEFAULT_AUDIO_SAMPLE_RATE
@@ -114,8 +132,9 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
                 self.credentials.refresh(self.http_request)
         except Exception as ex:
             self.logger.error('Error loading credentials: %s', str(ex))
-            self.logger.error('Run google-oauthlib-tool to initialize '
-                              'new OAuth 2.0 credentials.')
+            self.logger.error(
+                'Run google-oauthlib-tool to initialize ' 'new OAuth 2.0 credentials.'
+            )
             raise
 
         self.grpc_channel = None
@@ -128,27 +147,25 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         self.interactions = []
 
         # Create an authorized gRPC channel.
-        self.grpc_channel = secure_authorized_channel(self.credentials, self.http_request, self.api_endpoint)
+        self.grpc_channel = secure_authorized_channel(
+            self.credentials, self.http_request, self.api_endpoint
+        )
         self.logger.info('Connecting to {}'.format(self.api_endpoint))
 
         # Configure audio source and sink.
         audio_device = None
-        audio_source = audio_device = (
-            audio_device or audio_helpers.SoundDeviceStream(
-                sample_rate=self.audio_sample_rate,
-                sample_width=self.audio_sample_width,
-                block_size=self.audio_block_size,
-                flush_size=self.audio_flush_size
-            )
+        audio_source = audio_device = audio_device or audio_helpers.SoundDeviceStream(
+            sample_rate=self.audio_sample_rate,
+            sample_width=self.audio_sample_width,
+            block_size=self.audio_block_size,
+            flush_size=self.audio_flush_size,
         )
 
-        audio_sink = (
-            audio_device or audio_helpers.SoundDeviceStream(
-                sample_rate=self.audio_sample_rate,
-                sample_width=self.audio_sample_width,
-                block_size=self.audio_block_size,
-                flush_size=self.audio_flush_size
-            )
+        audio_sink = audio_device or audio_helpers.SoundDeviceStream(
+            sample_rate=self.audio_sample_rate,
+            sample_width=self.audio_sample_width,
+            block_size=self.audio_block_size,
+            flush_size=self.audio_flush_size,
         )
 
         # Create conversation stream with the given audio source and sink.
@@ -162,21 +179,28 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         self._install_device_handlers()
 
     def on_conversation_start(self):
-        """ Conversation start handler """
+        """Conversation start handler"""
+
         def handler():
             get_bus().post(ConversationStartEvent(assistant=self))
 
         return handler
 
     def on_conversation_end(self):
-        """ Conversation end handler """
+        """Conversation end handler"""
+
         def handler(with_follow_on_turn):
-            get_bus().post(ConversationEndEvent(assistant=self, with_follow_on_turn=with_follow_on_turn))
+            get_bus().post(
+                ConversationEndEvent(
+                    assistant=self, with_follow_on_turn=with_follow_on_turn
+                )
+            )
 
         return handler
 
     def on_speech_recognized(self):
-        """ Speech recognized handler """
+        """Speech recognized handler"""
+
         def handler(phrase):
             get_bus().post(SpeechRecognizedEvent(assistant=self, phrase=phrase))
             self.interactions.append({'request': phrase})
@@ -184,14 +208,16 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         return handler
 
     def on_volume_changed(self):
-        """ Volume changed event """
+        """Volume changed event"""
+
         def handler(volume):
             get_bus().post(VolumeChangedEvent(assistant=self, volume=volume))
 
         return handler
 
     def on_response(self):
-        """ Response handler """
+        """Response handler"""
+
         def handler(response):
             get_bus().post(ResponseEvent(assistant=self, response_text=response))
 
@@ -207,8 +233,14 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         return handler
 
     @action
-    def start_conversation(self, *args, language: Optional[str] = None, tts_plugin: Optional[str] = None,
-                           tts_args: Optional[Dict[str, Any]] = None, **kwargs):
+    def start_conversation(
+        self,
+        *_,
+        language: Optional[str] = None,
+        tts_plugin: Optional[str] = None,
+        tts_args: Optional[Dict[str, Any]] = None,
+        **__
+    ):
         """
         Start a conversation
 
@@ -242,27 +274,31 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
         self._init_assistant()
         self.on_conversation_start()
 
-        with SampleAssistant(language_code=language,
-                             device_model_id=self.device_model_id,
-                             device_id=self.device_id,
-                             conversation_stream=self.conversation_stream,
-                             display=None,
-                             channel=self.grpc_channel,
-                             deadline_sec=self.grpc_deadline,
-                             play_response=play_response,
-                             device_handler=self.device_handler,
-                             on_conversation_start=self.on_conversation_start(),
-                             on_conversation_end=self.on_conversation_end(),
-                             on_volume_changed=self.on_volume_changed(),
-                             on_response=self.on_response(),
-                             on_speech_recognized=self.on_speech_recognized()) as self.assistant:
+        with SampleAssistant(
+            language_code=language,
+            device_model_id=self.device_model_id,
+            device_id=self.device_id,
+            conversation_stream=self.conversation_stream,
+            display=None,
+            channel=self.grpc_channel,
+            deadline_sec=self.grpc_deadline,
+            play_response=play_response,
+            device_handler=self.device_handler,
+            on_conversation_start=self.on_conversation_start(),
+            on_conversation_end=self.on_conversation_end(),
+            on_volume_changed=self.on_volume_changed(),
+            on_response=self.on_response(),
+            on_speech_recognized=self.on_speech_recognized(),
+        ) as self.assistant:
             continue_conversation = True
 
             while continue_conversation:
                 try:
                     continue_conversation = self.assistant.assist()
                 except Exception as e:
-                    self.logger.warning('Unhandled assistant exception: {}'.format(str(e)))
+                    self.logger.warning(
+                        'Unhandled assistant exception: {}'.format(str(e))
+                    )
                     self.logger.exception(e)
                     self._init_assistant()
 
@@ -297,14 +333,18 @@ class AssistantGooglePushtotalkPlugin(AssistantPlugin):
 
     def _install_device_handlers(self):
         import googlesamples.assistant.grpc.device_helpers as device_helpers
+
         self.device_handler = device_helpers.DeviceRequestHandler(self.device_id)
 
         @self.device_handler.command('action.devices.commands.OnOff')
-        def handler(on):
-            get_bus().post(GoogleDeviceOnOffEvent(
-                device_id=self.device_id,
-                device_model_id=self.device_model_id,
-                on=on))
+        def handler(on):  # type: ignore
+            get_bus().post(
+                GoogleDeviceOnOffEvent(
+                    device_id=self.device_id,
+                    device_model_id=self.device_model_id,
+                    on=on,
+                )
+            )
 
 
 # vim:sw=4:ts=4:et:

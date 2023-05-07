@@ -7,7 +7,6 @@ bcrypt
 croniter
 flask
 frozendict
-gunicorn
 marshmallow
 marshmallow_dataclass
 paho-mqtt
@@ -18,10 +17,9 @@ pyyaml
 redis
 requests
 rsa
-simple_websocket
 sqlalchemy
+tornado
 tz
-uvicorn
 websocket-client
-wsproto
+websockets
 zeroconf>=0.27.0

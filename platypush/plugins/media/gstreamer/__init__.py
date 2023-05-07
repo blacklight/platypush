@@ -15,6 +15,7 @@ class MediaGstreamerPlugin(MediaPlugin):
     Requires:
 
         * **gst-python**
+        * **pygobject**
 
     On Debian and derived systems:
 
@@ -46,7 +47,7 @@ class MediaGstreamerPlugin(MediaPlugin):
         return pipeline
 
     @action
-    def play(self, resource: Optional[str] = None, **args):
+    def play(self, resource: Optional[str] = None, **_):
         """
         Play a resource.
 
@@ -67,20 +68,20 @@ class MediaGstreamerPlugin(MediaPlugin):
         pipeline = self._allocate_pipeline(resource)
         pipeline.play()
         if self.volume:
-            pipeline.set_volume(self.volume / 100.)
+            pipeline.set_volume(self.volume / 100.0)
 
         return self.status()
 
     @action
     def pause(self):
-        """ Toggle the paused state """
+        """Toggle the paused state"""
         assert self._player, 'No instance is running'
         self._player.pause()
         return self.status()
 
     @action
     def quit(self):
-        """ Stop and quit the player (alias for :meth:`.stop`) """
+        """Stop and quit the player (alias for :meth:`.stop`)"""
         self._stop_torrent()
         assert self._player, 'No instance is running'
 
@@ -90,18 +91,18 @@ class MediaGstreamerPlugin(MediaPlugin):
 
     @action
     def stop(self):
-        """ Stop and quit the player (alias for :meth:`.quit`) """
+        """Stop and quit the player (alias for :meth:`.quit`)"""
         return self.quit()
 
     @action
     def voldown(self, step=10.0):
-        """ Volume down by (default: 10)% """
+        """Volume down by (default: 10)%"""
         # noinspection PyUnresolvedReferences
         return self.set_volume(self.get_volume().output - step)
 
     @action
     def volup(self, step=10.0):
-        """ Volume up by (default: 10)% """
+        """Volume up by (default: 10)%"""
         # noinspection PyUnresolvedReferences
         return self.set_volume(self.get_volume().output + step)
 
@@ -113,7 +114,7 @@ class MediaGstreamerPlugin(MediaPlugin):
         :return: Volume value between 0 and 100.
         """
         assert self._player, 'No instance is running'
-        return self._player.get_volume() * 100.
+        return self._player.get_volume() * 100.0
 
     @action
     def set_volume(self, volume):
@@ -124,7 +125,7 @@ class MediaGstreamerPlugin(MediaPlugin):
         """
         assert self._player, 'Player not running'
         # noinspection PyTypeChecker
-        volume = max(0, min(1, volume / 100.))
+        volume = max(0, min(1, volume / 100.0))
         self._player.set_volume(volume)
         MediaPipeline.post_event(MediaVolumeChangedEvent, volume=volume * 100)
         return self.status()
@@ -142,12 +143,12 @@ class MediaGstreamerPlugin(MediaPlugin):
 
     @action
     def back(self, offset=60.0):
-        """ Back by (default: 60) seconds """
+        """Back by (default: 60) seconds"""
         return self.seek(-offset)
 
     @action
     def forward(self, offset=60.0):
-        """ Forward by (default: 60) seconds """
+        """Forward by (default: 60) seconds"""
         return self.seek(offset)
 
     @action
@@ -158,7 +159,7 @@ class MediaGstreamerPlugin(MediaPlugin):
         return self._player and self._player.is_playing()
 
     @action
-    def load(self, resource, **args):
+    def load(self, resource, **_):
         """
         Load/queue a resource/video to the player (alias for :meth:`.play`).
         """
@@ -166,7 +167,7 @@ class MediaGstreamerPlugin(MediaPlugin):
 
     @action
     def mute(self):
-        """ Toggle mute state """
+        """Toggle mute state"""
         assert self._player, 'No instance is running'
         muted = self._player.is_muted()
         if muted:
@@ -201,11 +202,15 @@ class MediaGstreamerPlugin(MediaPlugin):
 
         return {
             'duration': length,
-            'filename': self._resource[7:] if self._resource.startswith('file://') else self._resource,
+            'filename': self._resource[7:]
+            if self._resource.startswith('file://')
+            else self._resource,
             'mute': self._player.is_muted(),
             'name': self._resource,
             'pause': self._player.is_paused(),
-            'percent_pos':  pos / length if pos is not None and length is not None and pos >= 0 and length > 0 else 0,
+            'percent_pos': pos / length
+            if pos is not None and length is not None and pos >= 0 and length > 0
+            else 0,
             'position': pos,
             'seekable': length is not None and length > 0,
             'state': self._gst_to_player_state(self._player.get_state()).value,
@@ -217,6 +222,7 @@ class MediaGstreamerPlugin(MediaPlugin):
     def _gst_to_player_state(state) -> PlayerState:
         # noinspection PyUnresolvedReferences,PyPackageRequirements
         from gi.repository import Gst
+
         if state == Gst.State.READY:
             return PlayerState.STOP
         if state == Gst.State.PAUSED:
@@ -225,13 +231,13 @@ class MediaGstreamerPlugin(MediaPlugin):
             return PlayerState.PLAY
         return PlayerState.IDLE
 
-    def toggle_subtitles(self, *args, **kwargs):
+    def toggle_subtitles(self, *_, **__):
         raise NotImplementedError
 
-    def set_subtitles(self, filename, *args, **kwargs):
+    def set_subtitles(self, *_, **__):
         raise NotImplementedError
 
-    def remove_subtitles(self, *args, **kwargs):
+    def remove_subtitles(self, *_, **__):
         raise NotImplementedError
 
 

@@ -19,6 +19,7 @@ class SensorLtr559Plugin(SensorPlugin):
     Requires:
 
         * ``ltr559`` (``pip install ltr559``)
+        * ``smbus`` (``pip install smbus``)
 
     Triggers:
 

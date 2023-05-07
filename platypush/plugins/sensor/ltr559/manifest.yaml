@@ -6,5 +6,6 @@ manifest:
   install:
     pip:
     - ltr559
+    - smbus
   package: platypush.plugins.sensor.ltr559
   type: plugin

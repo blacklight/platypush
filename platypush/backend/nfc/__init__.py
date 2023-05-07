@@ -2,8 +2,12 @@ import base64
 import json
 
 from platypush.backend import Backend
-from platypush.message.event.nfc import NFCTagDetectedEvent, NFCTagRemovedEvent, NFCDeviceConnectedEvent, \
-    NFCDeviceDisconnectedEvent
+from platypush.message.event.nfc import (
+    NFCTagDetectedEvent,
+    NFCTagRemovedEvent,
+    NFCDeviceConnectedEvent,
+    NFCDeviceDisconnectedEvent,
+)
 
 
 class NfcBackend(Backend):
@@ -20,7 +24,7 @@ class NfcBackend(Backend):
     Requires:
 
         * **nfcpy** >= 1.0 (``pip install 'nfcpy>=1.0'``)
-        * **ndef** (``pip install ndef``)
+        * **ndef** (``pip install ndeflib``)
 
     Run the following to check if your device is compatible with nfcpy and the right permissions are set::
 
@@ -49,7 +53,11 @@ class NfcBackend(Backend):
             self._clf = nfc.ContactlessFrontend()
             self._clf.open(self.device_id)
             self.bus.post(NFCDeviceConnectedEvent(reader=self._get_device_str()))
-            self.logger.info('Initialized NFC reader backend on device {}'.format(self._get_device_str()))
+            self.logger.info(
+                'Initialized NFC reader backend on device {}'.format(
+                    self._get_device_str()
+                )
+            )
 
         return self._clf
 
@@ -107,51 +115,92 @@ class NfcBackend(Backend):
                 r = {
                     **r,
                     'type': 'smartposter',
-                    **{attr: getattr(record, attr) for attr in ['resource', 'titles', 'title', 'action', 'icon',
-                                                                'icons', 'resource_size', 'resource_type']},
+                    **{
+                        attr: getattr(record, attr)
+                        for attr in [
+                            'resource',
+                            'titles',
+                            'title',
+                            'action',
+                            'icon',
+                            'icons',
+                            'resource_size',
+                            'resource_type',
+                        ]
+                    },
                 }
             elif isinstance(record, DeviceInformationRecord):
                 r = {
                     **r,
                     'type': 'device_info',
-                    **{attr: getattr(record, attr) for attr in ['vendor_name', 'model_name', 'unique_name',
-                                                                'uuid_string', 'version_string']},
+                    **{
+                        attr: getattr(record, attr)
+                        for attr in [
+                            'vendor_name',
+                            'model_name',
+                            'unique_name',
+                            'uuid_string',
+                            'version_string',
+                        ]
+                    },
                 }
             elif isinstance(record, WifiSimpleConfigRecord):
                 r = {
                     **r,
                     'type': 'wifi_simple_config',
-                    **{attr: record[attr] for attr in record.attribute_names()}
+                    **{attr: record[attr] for attr in record.attribute_names()},
                 }
             elif isinstance(record, WifiPeerToPeerRecord):
                 r = {
                     **r,
                     'type': 'wifi_peer_to_peer',
-                    **{attr: record[attr] for attr in record.attribute_names()}
+                    **{attr: record[attr] for attr in record.attribute_names()},
                 }
             elif isinstance(record, BluetoothEasyPairingRecord):
                 r = {
                     **r,
                     'type': 'bluetooth_easy_pairing',
-                    **{attr: getattr(record, attr) for attr in ['device_address', 'device_name', 'device_class']},
+                    **{
+                        attr: getattr(record, attr)
+                        for attr in ['device_address', 'device_name', 'device_class']
+                    },
                 }
             elif isinstance(record, BluetoothLowEnergyRecord):
                 r = {
                     **r,
                     'type': 'bluetooth_low_energy',
-                    **{attr: getattr(record, attr) for attr in ['device_address', 'device_name', 'role_capabilities',
-                                                                'appearance', 'flags', 'security_manager_tk_value',
-                                                                'secure_connections_confirmation_value',
-                                                                'secure_connections_random_value']},
+                    **{
+                        attr: getattr(record, attr)
+                        for attr in [
+                            'device_address',
+                            'device_name',
+                            'role_capabilities',
+                            'appearance',
+                            'flags',
+                            'security_manager_tk_value',
+                            'secure_connections_confirmation_value',
+                            'secure_connections_random_value',
+                        ]
+                    },
                 }
             elif isinstance(record, SignatureRecord):
                 r = {
                     **r,
                     'type': 'signature',
-                    **{attr: getattr(record, attr) for attr in ['version', 'signature_type', 'hash_type', 'signature',
-                                                                'signature_uri', 'certificate_format',
-                                                                'certificate_store', 'certificate_uri',
-                                                                'secure_connections_random_value']},
+                    **{
+                        attr: getattr(record, attr)
+                        for attr in [
+                            'version',
+                            'signature_type',
+                            'hash_type',
+                            'signature',
+                            'signature_uri',
+                            'certificate_format',
+                            'certificate_store',
+                            'certificate_uri',
+                            'secure_connections_random_value',
+                        ]
+                    },
                 }
             else:
                 r = {
@@ -175,7 +224,11 @@ class NfcBackend(Backend):
 
             tag_id = self._parse_id(tag)
             records = self._parse_records(tag)
-            self.bus.post(NFCTagDetectedEvent(reader=self._get_device_str(), tag_id=tag_id, records=records))
+            self.bus.post(
+                NFCTagDetectedEvent(
+                    reader=self._get_device_str(), tag_id=tag_id, records=records
+                )
+            )
             return True
 
         return callback
@@ -183,7 +236,9 @@ class NfcBackend(Backend):
     def _on_release(self):
         def callback(tag):
             tag_id = self._parse_id(tag)
-            self.bus.post(NFCTagRemovedEvent(reader=self._get_device_str(), tag_id=tag_id))
+            self.bus.post(
+                NFCTagRemovedEvent(reader=self._get_device_str(), tag_id=tag_id)
+            )
 
         return callback
 
@@ -193,10 +248,12 @@ class NfcBackend(Backend):
         while not self.should_stop():
             try:
                 clf = self._get_clf()
-                clf.connect(rdwr={
-                    'on-connect': self._on_connect(),
-                    'on-release': self._on_release(),
-                })
+                clf.connect(
+                    rdwr={
+                        'on-connect': self._on_connect(),
+                        'on-release': self._on_release(),
+                    }
+                )
             finally:
                 self.close()
 

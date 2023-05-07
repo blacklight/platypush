@@ -3,13 +3,17 @@ import pathlib
 import secrets
 import threading
 
-from multiprocessing import Process, cpu_count
+from multiprocessing import Process
 from typing import Mapping, Optional
+
+from tornado.wsgi import WSGIContainer
+from tornado.web import Application, FallbackHandler
+from tornado.ioloop import IOLoop
 
 from platypush.backend import Backend
 from platypush.backend.http.app import application
-from platypush.backend.http.ws import events_redis_topic
-from platypush.backend.http.wsgi import WSGIApplicationWrapper
+from platypush.backend.http.ws import WSEventProxy, events_redis_topic
+
 from platypush.bus.redis import RedisBus
 from platypush.config import Config
 from platypush.utils import get_redis
@@ -177,6 +181,7 @@ class HttpBackend(Backend):
         self.server_proc = None
         self._service_registry_thread = None
         self.bind_address = bind_address
+        self._io_loop: Optional[IOLoop] = None
 
         if resource_dirs:
             self.resource_dirs = {
@@ -200,6 +205,10 @@ class HttpBackend(Backend):
         super().on_stop()
         self.logger.info('Received STOP event on HttpBackend')
 
+        if self._io_loop:
+            self._io_loop.stop()
+            self._io_loop.close()
+
         if self.server_proc:
             self.server_proc.terminate()
             self.server_proc.join(timeout=10)
@@ -215,6 +224,8 @@ class HttpBackend(Backend):
         if self._service_registry_thread and self._service_registry_thread.is_alive():
             self._service_registry_thread.join(timeout=5)
             self._service_registry_thread = None
+
+        self._io_loop = None
 
     def notify_web_clients(self, event):
         """Notify all the connected web clients (over websocket) of a new event"""
@@ -248,14 +259,23 @@ class HttpBackend(Backend):
 
             application.config['redis_queue'] = self.bus.redis_queue
             application.secret_key = self._get_secret_key()
-            kwargs = {
-                'bind': f'{self.bind_address}:{self.port}',
-                'workers': (cpu_count() * 2) + 1,
-                'worker_class_str': f'{__package__}.app.UvicornWorker',
-                'timeout': 30,
-            }
 
-            WSGIApplicationWrapper(f'{__package__}.app:application', kwargs).run()
+            container = WSGIContainer(application)
+            server = Application(
+                [
+                    (r'/ws/events', WSEventProxy),
+                    (r'.*', FallbackHandler, {'fallback': container}),
+                ]
+            )
+
+            server.listen(address=self.bind_address, port=self.port)
+            self._io_loop = IOLoop.instance()
+
+            try:
+                self._io_loop.start()
+            except Exception as e:
+                if not self.should_stop():
+                    raise e
 
         return proc
 

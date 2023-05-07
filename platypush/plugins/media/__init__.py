@@ -30,7 +30,7 @@ class MediaPlugin(Plugin, ABC):
     Requires:
 
         * A media player installed (supported so far: mplayer, vlc, mpv, omxplayer, chromecast)
-        * **python-libtorrent-bin** (``pip install python-libtorrent-bin``), optional, for torrent support over native
+        * **python-libtorrent** (``pip install python-libtorrent``), optional, for torrent support over native
             library
         * *rtorrent* installed - optional, for torrent support over rtorrent
         * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
@@ -43,41 +43,123 @@ class MediaPlugin(Plugin, ABC):
     # A media plugin can either be local or remote (e.g. control media on
     # another device)
     _is_local = True
-    _NOT_IMPLEMENTED_ERR = NotImplementedError('This method must be implemented in a derived class')
+    _NOT_IMPLEMENTED_ERR = NotImplementedError(
+        'This method must be implemented in a derived class'
+    )
 
     # Supported audio extensions
     audio_extensions = {
-        '3gp', 'aa', 'aac', 'aax', 'act', 'aiff', 'amr', 'ape', 'au',
-        'awb', 'dct', 'dss', 'dvf', 'flac', 'gsm', 'iklax', 'ivs',
-        'm4a', 'm4b', 'm4p', 'mmf', 'mp3', 'mpc', 'msv', 'nmf', 'nsf',
-        'ogg,', 'opus', 'ra,', 'raw', 'sln', 'tta', 'vox', 'wav',
-        'wma', 'wv', 'webm', '8svx',
+        '3gp',
+        'aa',
+        'aac',
+        'aax',
+        'act',
+        'aiff',
+        'amr',
+        'ape',
+        'au',
+        'awb',
+        'dct',
+        'dss',
+        'dvf',
+        'flac',
+        'gsm',
+        'iklax',
+        'ivs',
+        'm4a',
+        'm4b',
+        'm4p',
+        'mmf',
+        'mp3',
+        'mpc',
+        'msv',
+        'nmf',
+        'nsf',
+        'ogg,',
+        'opus',
+        'ra,',
+        'raw',
+        'sln',
+        'tta',
+        'vox',
+        'wav',
+        'wma',
+        'wv',
+        'webm',
+        '8svx',
     }
 
     # Supported video extensions
     video_extensions = {
-        'webm', 'mkv', 'flv', 'flv', 'vob', 'ogv', 'ogg', 'drc', 'gif',
-        'gifv', 'mng', 'avi', 'mts', 'm2ts', 'mov', 'qt', 'wmv', 'yuv',
-        'rm', 'rmvb', 'asf', 'amv', 'mp4', 'm4p', 'm4v', 'mpg', 'mp2',
-        'mpeg', 'mpe', 'mpv', 'mpg', 'mpeg', 'm2v', 'm4v', 'svi',
-        '3gp', '3g2', 'mxf', 'roq', 'nsv', 'flv', 'f4v', 'f4p', 'f4a',
+        'webm',
+        'mkv',
+        'flv',
+        'flv',
+        'vob',
+        'ogv',
+        'ogg',
+        'drc',
+        'gif',
+        'gifv',
+        'mng',
+        'avi',
+        'mts',
+        'm2ts',
+        'mov',
+        'qt',
+        'wmv',
+        'yuv',
+        'rm',
+        'rmvb',
+        'asf',
+        'amv',
+        'mp4',
+        'm4p',
+        'm4v',
+        'mpg',
+        'mp2',
+        'mpeg',
+        'mpe',
+        'mpv',
+        'mpg',
+        'mpeg',
+        'm2v',
+        'm4v',
+        'svi',
+        '3gp',
+        '3g2',
+        'mxf',
+        'roq',
+        'nsv',
+        'flv',
+        'f4v',
+        'f4p',
+        'f4a',
         'f4b',
     }
 
-    _supported_media_plugins = {'media.mplayer', 'media.omxplayer', 'media.mpv',
-                                'media.vlc', 'media.chromecast', 'media.gstreamer'}
+    _supported_media_plugins = {
+        'media.mplayer',
+        'media.omxplayer',
+        'media.mpv',
+        'media.vlc',
+        'media.chromecast',
+        'media.gstreamer',
+    }
 
     _supported_media_types = ['file', 'jellyfin', 'plex', 'torrent', 'youtube']
     _default_search_timeout = 60  # 60 seconds
 
-    def __init__(self,
-                 media_dirs: Optional[List[str]] = None,
-                 download_dir: Optional[str] = None,
-                 env: Optional[Dict[str, str]] = None,
-                 volume: Optional[Union[float, int]] = None,
-                 torrent_plugin: str = 'torrent',
-                 youtube_format: str = 'best',
-                 *args, **kwargs):
+    def __init__(
+        self,
+        media_dirs: Optional[List[str]] = None,
+        download_dir: Optional[str] = None,
+        env: Optional[Dict[str, str]] = None,
+        volume: Optional[Union[float, int]] = None,
+        torrent_plugin: str = 'torrent',
+        youtube_format: str = 'best',
+        **kwargs,
+    ):
         """
         :param media_dirs: Directories that will be scanned for media files when
             a search is performed (default: none)
@@ -134,17 +216,21 @@ class MediaPlugin(Plugin, ABC):
         self._env = env or {}
         self.media_dirs = set(
             filter(
-                lambda _: os.path.isdir(_),
-                map(
-                    lambda _: os.path.abspath(os.path.expanduser(_)),
-                    media_dirs
-                )
+                os.path.isdir,
+                [os.path.abspath(os.path.expanduser(d)) for d in media_dirs],
             )
         )
 
-        self.download_dir = os.path.abspath(os.path.expanduser(
-            download_dir or player_config.get('download_dir') or
-            os.path.join((os.path.expanduser('~') or self._env.get('HOME') or '/'), 'Downloads')))
+        self.download_dir = os.path.abspath(
+            os.path.expanduser(
+                download_dir
+                or player_config.get('download_dir')
+                or os.path.join(
+                    (os.path.expanduser('~') or self._env.get('HOME') or '/'),
+                    'Downloads',
+                )
+            )
+        )
 
         if not os.path.isdir(self.download_dir):
             os.makedirs(self.download_dir, exist_ok=True)
@@ -162,14 +248,17 @@ class MediaPlugin(Plugin, ABC):
             # More than 5% of the torrent has been downloaded
             if event.args.get('progress', 0) > 5 and event.args.get('files'):
                 evt_queue.put(event.args['files'])
+
         return handler
 
     @staticmethod
     def _is_youtube_resource(resource):
-        return resource.startswith('youtube:') \
-               or resource.startswith('https://youtu.be/') \
-               or resource.startswith('https://www.youtube.com/watch?v=') \
-               or resource.startswith('https://youtube.com/watch?v=')
+        return (
+            resource.startswith('youtube:')
+            or resource.startswith('https://youtu.be/')
+            or resource.startswith('https://www.youtube.com/watch?v=')
+            or resource.startswith('https://youtube.com/watch?v=')
+        )
 
     def _get_resource(self, resource):
         """
@@ -194,15 +283,21 @@ class MediaPlugin(Plugin, ABC):
 
             resource = self.get_youtube_video_url(resource)
         elif resource.startswith('magnet:?'):
-            self.logger.info('Downloading torrent {} to {}'.format(
-                resource, self.download_dir))
+            self.logger.info(
+                'Downloading torrent {} to {}'.format(resource, self.download_dir)
+            )
             torrents = get_plugin(self.torrent_plugin)
 
             evt_queue = queue.Queue()
-            torrents.download(resource, download_dir=self.download_dir, _async=True, is_media=True,
-                              event_hndl=self._torrent_event_handler(evt_queue))
+            torrents.download(
+                resource,
+                download_dir=self.download_dir,
+                _async=True,
+                is_media=True,
+                event_hndl=self._torrent_event_handler(evt_queue),
+            )
 
-            resources = [f for f in evt_queue.get()]
+            resources = [f for f in evt_queue.get()]  # noqa: C416
 
             if resources:
                 self._videos_queue = sorted(resources)
@@ -265,7 +360,7 @@ class MediaPlugin(Plugin, ABC):
 
     @action
     def next(self):
-        """ Play the next item in the queue """
+        """Play the next item in the queue"""
         self.stop()
 
         if self._videos_queue:
@@ -323,8 +418,14 @@ class MediaPlugin(Plugin, ABC):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
-    def search(self, query, types=None, queue_results=False, autoplay=False,
-               search_timeout=_default_search_timeout):
+    def search(
+        self,
+        query,
+        types=None,
+        queue_results=False,
+        autoplay=False,
+        search_timeout=_default_search_timeout,
+    ):
         """
         Perform a video search.
 
@@ -356,8 +457,12 @@ class MediaPlugin(Plugin, ABC):
             results_queues[media_type] = queue.Queue()
             search_hndl = self._get_search_handler_by_type(media_type)
             worker_threads[media_type] = threading.Thread(
-                target=self._search_worker(query=query, search_hndl=search_hndl,
-                                           results_queue=results_queues[media_type]))
+                target=self._search_worker(
+                    query=query,
+                    search_hndl=search_hndl,
+                    results_queue=results_queues[media_type],
+                )
+            )
             worker_threads[media_type].start()
 
         for media_type in types:
@@ -368,11 +473,15 @@ class MediaPlugin(Plugin, ABC):
 
                 results[media_type].extend(items)
             except queue.Empty:
-                self.logger.warning('Search for "{}" media type {} timed out'.
-                                    format(query, media_type))
+                self.logger.warning(
+                    'Search for "{}" media type {} timed out'.format(query, media_type)
+                )
             except Exception as e:
-                self.logger.warning('Error while searching for "{}", media type {}'.
-                                    format(query, media_type))
+                self.logger.warning(
+                    'Error while searching for "{}", media type {}'.format(
+                        query, media_type
+                    )
+                )
                 self.logger.exception(e)
 
         flattened_results = []
@@ -402,23 +511,29 @@ class MediaPlugin(Plugin, ABC):
                 results_queue.put(search_hndl.search(query))
             except Exception as e:
                 results_queue.put(e)
+
         return thread
 
     def _get_search_handler_by_type(self, search_type):
         if search_type == 'file':
             from .search import LocalMediaSearcher
+
             return LocalMediaSearcher(self.media_dirs, media_plugin=self)
         if search_type == 'torrent':
             from .search import TorrentMediaSearcher
+
             return TorrentMediaSearcher(media_plugin=self)
         if search_type == 'youtube':
             from .search import YoutubeMediaSearcher
+
             return YoutubeMediaSearcher(media_plugin=self)
         if search_type == 'plex':
             from .search import PlexMediaSearcher
+
             return PlexMediaSearcher(media_plugin=self)
         if search_type == 'jellyfin':
             from .search import JellyfinMediaSearcher
+
             return JellyfinMediaSearcher(media_plugin=self)
 
         self.logger.warning('Unsupported search type: {}'.format(search_type))
@@ -463,18 +578,23 @@ class MediaPlugin(Plugin, ABC):
 
         http = get_backend('http')
         if not http:
-            self.logger.warning('Unable to stream {}: HTTP backend unavailable'.
-                                format(media))
+            self.logger.warning(
+                'Unable to stream {}: HTTP backend unavailable'.format(media)
+            )
             return
 
         self.logger.info('Starting streaming {}'.format(media))
-        response = requests.put('{url}/media{download}'.format(
-            url=http.local_base_url, download='?download' if download else ''),
-            json={'source': media, 'subtitles': subtitles})
+        response = requests.put(
+            '{url}/media{download}'.format(
+                url=http.local_base_url, download='?download' if download else ''
+            ),
+            json={'source': media, 'subtitles': subtitles},
+        )
 
         if not response.ok:
-            self.logger.warning('Unable to start streaming: {}'.
-                                format(response.text or response.reason))
+            self.logger.warning(
+                'Unable to start streaming: {}'.format(response.text or response.reason)
+            )
             return None, (response.text or response.reason)
 
         return response.json()
@@ -483,16 +603,19 @@ class MediaPlugin(Plugin, ABC):
     def stop_streaming(self, media_id):
         http = get_backend('http')
         if not http:
-            self.logger.warning('Cannot unregister {}: HTTP backend unavailable'.
-                                format(media_id))
+            self.logger.warning(
+                'Cannot unregister {}: HTTP backend unavailable'.format(media_id)
+            )
             return
 
-        response = requests.delete('{url}/media/{id}'.
-                                   format(url=http.local_base_url, id=media_id))
+        response = requests.delete(
+            '{url}/media/{id}'.format(url=http.local_base_url, id=media_id)
+        )
 
         if not response.ok:
-            self.logger.warning('Unable to unregister media_id {}: {}'.format(
-                media_id, response.reason))
+            self.logger.warning(
+                'Unable to unregister media_id {}: {}'.format(media_id, response.reason)
+            )
             return
 
         return response.json()
@@ -511,11 +634,18 @@ class MediaPlugin(Plugin, ABC):
     @staticmethod
     def _youtube_search_html_parse(query):
         from .search import YoutubeMediaSearcher
+
         # noinspection PyProtectedMember
         return YoutubeMediaSearcher()._youtube_search_html_parse(query)
 
     def get_youtube_video_url(self, url, youtube_format: Optional[str] = None):
-        ytdl_cmd = ['youtube-dl', '-f', youtube_format or self.youtube_format, '-g', url]
+        ytdl_cmd = [
+            'youtube-dl',
+            '-f',
+            youtube_format or self.youtube_format,
+            '-g',
+            url,
+        ]
         self.logger.info(f'Executing command {" ".join(ytdl_cmd)}')
         youtube_dl = subprocess.Popen(ytdl_cmd, stdout=subprocess.PIPE)
         url = youtube_dl.communicate()[0].decode().strip()
@@ -564,15 +694,29 @@ class MediaPlugin(Plugin, ABC):
         if filename.startswith('file://'):
             filename = filename[7:]
 
-        result = subprocess.Popen(["ffprobe", filename], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        result = subprocess.Popen(
+            ["ffprobe", filename], stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        )
 
         return functools.reduce(
             lambda t, t_i: t + t_i,
-            [float(t) * pow(60, i) for (i, t) in enumerate(re.search(
-                r'^Duration:\s*([^,]+)', [x.decode()
-                                          for x in result.stdout.readlines()
-                                          if "Duration" in x.decode()].pop().strip()
-            ).group(1).split(':')[::-1])]
+            [
+                float(t) * pow(60, i)
+                for (i, t) in enumerate(
+                    re.search(
+                        r'^Duration:\s*([^,]+)',
+                        [
+                            x.decode()
+                            for x in result.stdout.readlines()
+                            if "Duration" in x.decode()
+                        ]
+                        .pop()
+                        .strip(),
+                    )
+                    .group(1)
+                    .split(':')[::-1]
+                )
+            ],
         )
 
     @action
@@ -608,13 +752,14 @@ class MediaPlugin(Plugin, ABC):
             return
 
         if subtitles.startswith('file://'):
-            subtitles = subtitles[len('file://'):]
+            subtitles = subtitles[len('file://') :]
         if os.path.isfile(subtitles):
             return os.path.abspath(subtitles)
         else:
             content = requests.get(subtitles).content
-            f = tempfile.NamedTemporaryFile(prefix='media_subs_',
-                                            suffix='.srt', delete=False)
+            f = tempfile.NamedTemporaryFile(
+                prefix='media_subs_', suffix='.srt', delete=False
+            )
 
             with f:
                 f.write(content)

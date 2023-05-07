@@ -4,6 +4,7 @@ manifest:
     pip:
       - numpy
       - Pillow
+      - pygobject
     apt:
       - python3-gi
       - python3-gst-1.0

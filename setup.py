@@ -65,7 +65,6 @@ setup(
         'croniter',
         'flask',
         'frozendict',
-        'gunicorn',
         'marshmallow',
         'marshmallow_dataclass',
         'python-dateutil',
@@ -74,13 +73,12 @@ setup(
         'redis',
         'requests',
         'rsa',
-        'simple_websocket',
         'sqlalchemy',
+        'tornado',
         'tz',
-        'uvicorn',
         'websocket-client',
+        'websockets',
         'wheel',
-        'wsproto',
         'zeroconf>=0.27.0',
     ],
     extras_require={
@@ -109,6 +107,7 @@ setup(
         'google-tts': [
             'oauth2client',
             'google-api-python-client',
+            'google-auth',
             'google-cloud-texttospeech',
         ],
         # Support for OMXPlayer plugin
@@ -116,7 +115,7 @@ setup(
         # Support for YouTube
         'youtube': ['youtube-dl'],
         # Support for torrents download
-        'torrent': ['python-libtorrent-bin'],
+        'torrent': ['python-libtorrent'],
         # Generic support for cameras
         'camera': ['numpy', 'Pillow'],
         # Support for RaspberryPi camera
@@ -124,10 +123,10 @@ setup(
         # Support for inotify file monitors
         'inotify': ['inotify'],
         # Support for Google Assistant
-        'google-assistant-legacy': ['google-assistant-library'],
-        'google-assistant': ['google-assistant-sdk[samples]'],
+        'google-assistant-legacy': ['google-assistant-library', 'google-auth'],
+        'google-assistant': ['google-assistant-sdk[samples]', 'google-auth'],
         # Support for the Google APIs
-        'google': ['oauth2client', 'google-api-python-client'],
+        'google': ['oauth2client', 'google-auth', 'google-api-python-client'],
         # Support for Last.FM scrobbler plugin
         'lastfm': ['pylast'],
         # Support for custom hotword detection
@@ -171,7 +170,7 @@ setup(
         # Support for BME280 environment sensor
         'bme280': ['pimoroni-bme280'],
         # Support for LTR559 light/proximity sensor
-        'ltr559': ['ltr559'],
+        'ltr559': ['ltr559', 'smbus'],
         # Support for VL53L1X laser ranger/distance sensor
         'vl53l1x': ['smbus2', 'vl53l1x'],
         # Support for Dropbox integration
@@ -212,9 +211,9 @@ setup(
         # Support for Trello integration
         'trello': ['py-trello'],
         # Support for Google Pub/Sub
-        'google-pubsub': ['google-cloud-pubsub'],
+        'google-pubsub': ['google-cloud-pubsub', 'google-auth'],
         # Support for Google Translate
-        'google-translate': ['google-cloud-translate'],
+        'google-translate': ['google-cloud-translate', 'google-auth'],
         # Support for keyboard/mouse plugin
         'inputs': ['pyuserinput'],
         # Support for Buienradar weather forecast
