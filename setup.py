@@ -66,7 +66,7 @@ setup(
         'eventlet',
         'flask',
         'frozendict',
-        'gunicorn',
+        'gunicorn @ https://github.com/benoitc/gunicorn/tarball/master',
         'marshmallow',
         'marshmallow_dataclass',
         'python-dateutil',
