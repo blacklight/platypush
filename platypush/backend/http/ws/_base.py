@@ -32,7 +32,7 @@ class WSRoute(WebSocketHandler, Thread, ABC):
 
     @override
     def open(self, *_, **__):
-        logger.info('Started websocket connection with %s', self.request.remote_ip)
+        logger.info('Client %s connected to %s', self.request.remote_ip, self.path())
         self.name = f'ws:{self.app_name()}@{self.request.remote_ip}'
         self.start()
 
@@ -97,8 +97,9 @@ class WSRoute(WebSocketHandler, Thread, ABC):
 
         self._sub.close()
         logger.info(
-            'Websocket connection to %s closed, reason=%s, message=%s',
+            'Client %s disconnected from %s, reason=%s, message=%s',
             self.request.remote_ip,
+            self.path(),
             self.close_code,
             self.close_reason,
         )
