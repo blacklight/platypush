@@ -251,25 +251,9 @@ def build(args):
 
         # noinspection PyProtectedMember
         ports.add(backend_config['http'].get('port', HttpBackend._DEFAULT_HTTP_PORT))
-        # noinspection PyProtectedMember
-        ports.add(
-            backend_config['http'].get(
-                'websocket_port', HttpBackend._DEFAULT_WEBSOCKET_PORT
-            )
-        )
 
     if backend_config.get('tcp'):
         ports.add(backend_config['tcp']['port'])
-
-    if backend_config.get('websocket'):
-        from platypush.backend.websocket import WebsocketBackend
-
-        # noinspection PyProtectedMember
-        ports.add(
-            backend_config['websocket'].get(
-                'port', WebsocketBackend._default_websocket_port
-            )
-        )
 
     dev_dir = os.path.join(workdir, Config.get('device_id'))
     generate_dockerfile(
