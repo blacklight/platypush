@@ -12,8 +12,8 @@ from tornado.ioloop import IOLoop
 
 from platypush.backend import Backend
 from platypush.backend.http.app import application
-from platypush.backend.http.ws import scan_routes
-from platypush.backend.http.ws.events import events_redis_topic
+from platypush.backend.http.app.utils import get_ws_routes
+from platypush.backend.http.app.ws.events import events_redis_topic
 
 from platypush.bus.redis import RedisBus
 from platypush.config import Config
@@ -264,7 +264,7 @@ class HttpBackend(Backend):
             container = WSGIContainer(application)
             server = Application(
                 [
-                    *[(route.path(), route) for route in scan_routes()],
+                    *[(route.path(), route) for route in get_ws_routes()],
                     (r'.*', FallbackHandler, {'fallback': container}),
                 ]
             )

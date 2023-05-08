@@ -1,4 +1,5 @@
 from abc import ABC, abstractclassmethod
+import json
 from logging import getLogger
 from threading import RLock, Thread
 from typing import Any, Generator, Iterable, Optional, Union
@@ -8,7 +9,9 @@ from redis import ConnectionError as RedisConnectionError
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 
+from platypush.backend.http.app.utils.auth import AuthStatus, get_auth_status
 from platypush.config import Config
+from platypush.message import Message
 from platypush.utils import get_redis
 
 logger = getLogger(__name__)
@@ -32,7 +35,14 @@ class WSRoute(WebSocketHandler, Thread, ABC):
 
     @override
     def open(self, *_, **__):
-        logger.info('Client %s connected to %s', self.request.remote_ip, self.path())
+        auth_status = get_auth_status(self.request)
+        if auth_status != AuthStatus.OK:
+            self.close(code=1008, reason=auth_status.value.message)  # Policy Violation
+            return
+
+        logger.info(
+            'Client %s connected to %s', self.request.remote_ip, self.request.path
+        )
         self.name = f'ws:{self.app_name()}@{self.request.remote_ip}'
         self.start()
 
@@ -51,6 +61,10 @@ class WSRoute(WebSocketHandler, Thread, ABC):
     @classmethod
     def path(cls) -> str:
         return f'/ws/{cls.app_name()}'
+
+    @property
+    def auth_required(self):
+        return True
 
     def subscribe(self, *topics: str) -> None:
         with self._sub_lock:
@@ -78,7 +92,12 @@ class WSRoute(WebSocketHandler, Thread, ABC):
         except RedisConnectionError:
             return
 
-    def send(self, msg: Union[str, bytes]) -> None:
+    def send(self, msg: Union[str, bytes, dict, list, tuple, set]) -> None:
+        if isinstance(msg, (list, tuple, set)):
+            msg = list(msg)
+        if isinstance(msg, (list, dict)):
+            msg = json.dumps(msg, cls=Message.Encoder)
+
         self._io_loop.asyncio_loop.call_soon_threadsafe(  # type: ignore
             self.write_message, msg
         )
@@ -99,7 +118,7 @@ class WSRoute(WebSocketHandler, Thread, ABC):
         logger.info(
             'Client %s disconnected from %s, reason=%s, message=%s',
             self.request.remote_ip,
-            self.path(),
+            self.request.path,
             self.close_code,
             self.close_reason,
         )

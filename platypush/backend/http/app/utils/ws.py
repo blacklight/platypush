@@ -5,18 +5,20 @@ from typing import List, Type
 
 import pkgutil
 
-from ._base import WSRoute, logger
+from ..ws import WSRoute, logger
 
 
-def scan_routes() -> List[Type[WSRoute]]:
+def get_ws_routes() -> List[Type[WSRoute]]:
     """
     Scans for websocket route objects.
     """
+    from platypush.backend.http import HttpBackend
 
-    base_dir = os.path.dirname(__file__)
+    base_pkg = '.'.join([HttpBackend.__module__, 'app', 'ws'])
+    base_dir = os.path.join(os.path.dirname(inspect.getfile(HttpBackend)), 'app', 'ws')
     routes = []
 
-    for _, mod_name, _ in pkgutil.walk_packages([base_dir], prefix=__package__ + '.'):
+    for _, mod_name, _ in pkgutil.walk_packages([base_dir], prefix=base_pkg + '.'):
         try:
             module = importlib.import_module(mod_name)
         except Exception as e:
