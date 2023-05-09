@@ -5,6 +5,7 @@
 alembic
 bcrypt
 croniter
+docutils
 flask
 frozendict
 marshmallow

@@ -305,6 +305,7 @@ autodoc_mock_imports = [
     'simple_websocket',
     'uvicorn',
     'websockets',
+    'docutils',
 ]
 
 sys.path.insert(0, os.path.abspath('../..'))

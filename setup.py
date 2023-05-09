@@ -63,6 +63,7 @@ setup(
         'alembic',
         'bcrypt',
         'croniter',
+        'docutils',
         'flask',
         'frozendict',
         'marshmallow',
@@ -202,8 +203,6 @@ setup(
         'mlx90640': ['Pillow'],
         # Support for machine learning models and cameras over OpenCV
         'cv': ['opencv-python', 'numpy', 'Pillow'],
-        # Support for the generation of HTML documentation from docstring
-        'htmldoc': ['docutils'],
         # Support for Node-RED integration
         'nodered': ['pynodered'],
         # Support for Todoist integration
