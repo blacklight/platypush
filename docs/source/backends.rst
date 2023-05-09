@@ -55,7 +55,6 @@ Backends
     platypush/backend/weather.buienradar.rst
     platypush/backend/weather.darksky.rst
     platypush/backend/weather.openweathermap.rst
-    platypush/backend/websocket.rst
     platypush/backend/wiimote.rst
     platypush/backend/zwave.rst
     platypush/backend/zwave.mqtt.rst

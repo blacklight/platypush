@@ -188,8 +188,6 @@ backend](https://docs.platypush.tech/en/latest/platypush/backend/http.html), an
 instance](https://docs.platypush.tech/en/latest/platypush/backend/mqtt.html), a
 [Kafka
 instance](https://docs.platypush.tech/en/latest/platypush/backend/kafka.html),
-a [Websocket
-service](https://docs.platypush.tech/en/latest/platypush/backend/websocket.html),
 [Pushbullet](https://docs.platypush.tech/en/latest/platypush/backend/pushbullet.html)
 etc.) or monitor a device or a service for events (like a
 [sensor](https://docs.platypush.tech/en/latest/platypush/backend/sensor.html),
