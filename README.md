@@ -11,7 +11,7 @@ Platypush
 
 <!-- toc -->
 
-    + [Useful links](#useful-links)
+- [Useful links](#useful-links)
 - [Introduction](#introduction)
     + [What it can do](#what-it-can-do)
 - [Installation](#installation)
@@ -41,7 +41,7 @@ Platypush
 
 <!-- tocstop -->
 
-#### Useful links
+## Useful links
 - Recommended read: [**Getting started with Platypush**](https://blog.platypush.tech/article/Ultimate-self-hosted-automation-with-Platypush).
 
 - The [blog](https://blog.platypush.tech) is a good place to get more insights
