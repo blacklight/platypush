@@ -51,7 +51,7 @@ class WSRoute(WebSocketHandler, Thread, ABC):
         pass
 
     @override
-    def on_message(self, *_, **__):
+    def on_message(self, message):  # type: ignore
         pass
 
     @abstractclassmethod

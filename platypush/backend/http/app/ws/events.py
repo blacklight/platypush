@@ -3,6 +3,7 @@ from typing_extensions import override
 from platypush.message.event import Event
 
 from . import WSRoute, logger, pubsub_redis_topic
+from ..utils import send_message
 
 events_redis_topic = pubsub_redis_topic('events')
 
@@ -22,10 +23,22 @@ class WSEventProxy(WSRoute):
         return 'events'
 
     @override
+    def on_message(self, message):
+        try:
+            event = Event.build(message)
+            assert isinstance(event, Event), f'Expected {Event}, got {type(event)}'
+        except Exception as e:
+            logger.info('Could not build event from %s: %s', message, e)
+            logger.exception(e)
+            return
+
+        send_message(event, wait_for_response=False)
+
+    @override
     def run(self) -> None:
         for msg in self.listen():
             try:
-                evt = Event.build(msg.decode())
+                evt = Event.build(msg)
             except Exception as e:
                 logger.warning('Error parsing event: %s: %s', msg, e)
                 continue

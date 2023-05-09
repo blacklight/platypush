@@ -1,8 +1,8 @@
-from flask import current_app
 from redis import Redis
 
 from platypush.bus.redis import RedisBus
 from platypush.config import Config
+from platypush.context import get_backend
 from platypush.message import Message
 from platypush.message.request import Request
 from platypush.utils import get_redis_queue_name_by_message
@@ -15,7 +15,8 @@ _bus = None
 def bus():
     global _bus
     if _bus is None:
-        _bus = RedisBus(redis_queue=current_app.config.get('redis_queue'))
+        redis_queue = get_backend('http').bus.redis_queue  # type: ignore
+        _bus = RedisBus(redis_queue=redis_queue)
     return _bus
 
 
