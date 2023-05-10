@@ -252,8 +252,9 @@ export default {
       await this.request('entities.scan', args)
     },
 
-    async sync() {
-      this.loading = true
+    async sync(setLoading=true) {
+      if (setLoading)
+        this.loading = true
 
       try {
         this.entities = (await this.request('entities.get')).reduce((obj, entity) => {
@@ -270,8 +271,10 @@ export default {
         }, {})
 
         this.selector.selectedEntities = this.entityGroups.id
+        this.refreshEntitiesCache()
       } finally {
-        this.loading = false
+        if (setLoading)
+          this.loading = false
       }
     },
 
@@ -362,6 +365,23 @@ export default {
         this.modalVisible = false
       }
     },
+
+    loadCachedEntities() {
+      const cachedEntities = localStorage.getItem('entities')
+      if (cachedEntities) {
+        this.entities = JSON.parse(cachedEntities)
+        return true
+      }
+
+      return false
+    },
+
+    refreshEntitiesCache() {
+      if (this.loading)
+        return
+
+      window.localStorage.setItem('entities', JSON.stringify(this.entities))
+    },
   },
 
   async mounted() {
@@ -377,8 +397,16 @@ export default {
       'platypush.message.event.entities.EntityDeleteEvent'
     )
 
-    await this.sync()
-    await this.refresh()
+    if (!this.loadCachedEntities()) {
+      await this.sync()
+      await this.refresh()
+    } else {
+      this.refresh()
+      this.sync(false).then(() => this.refresh())
+    }
+
+    // Refresh the entities cache every 10 seconds
+    setInterval(() => this.refreshEntitiesCache(), 10000)
   },
 
   unmounted() {
