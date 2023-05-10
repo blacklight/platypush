@@ -1,4 +1,21 @@
+const httpProxy = {
+  target: 'http://localhost:8008',
+  changeOrigin: true
+}
+
+const wsProxy = {
+  target: 'http://localhost:8008',
+  changeOrigin: false,
+  ws: true,
+  onProxyReq: function(request) {
+    console.log('===== HERE');
+    console.log(request);
+    request.setHeader('Origin', 'http://localhost:8008');
+  },
+}
+
 module.exports = {
+  lintOnSave: true,
   outputDir: "dist",
   assetsDir: "static",
   css: {
@@ -14,31 +31,16 @@ module.exports = {
 
   devServer: {
     proxy: {
-      '/execute': {
-        target: 'http://localhost:8008',
-        changeOrigin: true
-      },
-      '/ws/events': {
-        target: 'http://localhost:8008',
-        ws: true,
-        changeOrigin: true
-      },
-      '/auth': {
-        target: 'http://localhost:8008',
-        changeOrigin: true
-      },
-      '/logout': {
-        target: 'http://localhost:8008',
-        changeOrigin: true
-      },
-      '/camera/*': {
-        target: 'http://localhost:8008',
-        changeOrigin: true
-      },
-      '/sound/*': {
-        target: 'http://localhost:8008',
-        changeOrigin: true
-      }
+      '/execute': httpProxy,
+      '/ws/events': wsProxy,
+      '/ws/requests': wsProxy,
+      '/static/*': httpProxy,
+      '/auth': httpProxy,
+      '/login': httpProxy,
+      '/logout': httpProxy,
+      '/register': httpProxy,
+      '/camera/*': httpProxy,
+      '/sound/*': httpProxy,
     }
   }
 };
