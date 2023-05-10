@@ -36,6 +36,25 @@ export default {
               }
             })
             .catch((error) => {
+              // No users present -> redirect to the registration page
+              if (
+                error?.response?.data?.code === 412 &&
+                window.location.href.indexOf('/register') < 0
+              ) {
+                window.location.href = '/register?redirect=' + window.location.href
+                return
+              }
+
+              // Unauthorized -> redirect to the login page
+              if (
+                error?.response?.data?.code === 401 &&
+                window.location.href.indexOf('/login') < 0
+              ) {
+                window.location.href = '/login?redirect=' + window.location.href
+                return
+              }
+
+              console.log(error)
               if (showError)
                 this.notify({
                   text: error,
