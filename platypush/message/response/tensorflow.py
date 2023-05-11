@@ -1,7 +1,6 @@
 from typing import Dict, List, Union, Optional
 
 import numpy as np
-from tensorflow.keras.models import Model
 
 from platypush.message.response import Response
 
@@ -10,13 +9,18 @@ class TensorflowResponse(Response):
     """
     Generic Tensorflow response.
     """
-    def __init__(self, *args, model: Model, model_name: Optional[str] = None, **kwargs):
+
+    def __init__(self, *args, model, model_name: Optional[str] = None, **kwargs):
         """
         :param model: Name of the model.
         """
-        super().__init__(*args, output={
-            'model': model_name or model.name,
-        }, **kwargs)
+        super().__init__(
+            *args,
+            output={
+                'model': model_name or model.name,
+            },
+            **kwargs
+        )
 
         self.model = model
 
@@ -25,7 +29,14 @@ class TensorflowTrainResponse(TensorflowResponse):
     """
     Tensorflow model fit/train response.
     """
-    def __init__(self, *args, epochs: List[int], history: Dict[str, List[Union[int, float]]], **kwargs):
+
+    def __init__(
+        self,
+        *args,
+        epochs: List[int],
+        history: Dict[str, List[Union[int, float]]],
+        **kwargs
+    ):
         """
         :param epochs: List of epoch indexes the model has been trained on.
         :param history: Train history, as a ``metric -> [values]`` dictionary where each value in ``values`` is
@@ -40,7 +51,14 @@ class TensorflowPredictResponse(TensorflowResponse):
     """
     Tensorflow model prediction response.
     """
-    def __init__(self, *args, prediction: np.ndarray, output_labels: Optional[List[str]] = None, **kwargs):
+
+    def __init__(
+        self,
+        *args,
+        prediction: np.ndarray,
+        output_labels: Optional[List[str]] = None,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
 
         if output_labels and len(output_labels) == self.model.outputs[-1].shape[-1]:
