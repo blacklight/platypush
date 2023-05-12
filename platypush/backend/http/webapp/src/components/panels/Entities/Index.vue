@@ -252,9 +252,8 @@ export default {
       await this.request('entities.scan', args)
     },
 
-    async sync(setLoading=true) {
-      if (setLoading)
-        this.loading = true
+    async sync() {
+      this.loading = true
 
       try {
         this.entities = (await this.request('entities.get')).reduce((obj, entity) => {
@@ -273,8 +272,7 @@ export default {
         this.selector.selectedEntities = this.entityGroups.id
         this.refreshEntitiesCache()
       } finally {
-        if (setLoading)
-          this.loading = false
+        this.loading = false
       }
     },
 
@@ -367,10 +365,14 @@ export default {
     },
 
     loadCachedEntities() {
-      const cachedEntities = localStorage.getItem('entities')
+      const cachedEntities = window.localStorage.getItem('entities')
       if (cachedEntities) {
         this.entities = JSON.parse(cachedEntities)
-        return true
+        if (this.entities) {
+          Object.values(this.entities).forEach((entity) => this.onEntityUpdate({entity: entity}))
+          this.selector.selectedEntities = this.entityGroups.id
+          return true
+        }
       }
 
       return false
@@ -401,11 +403,9 @@ export default {
       await this.sync()
       await this.refresh()
     } else {
-      this.refresh()
-      this.sync(false).then(() => this.refresh())
+      await this.request('entities.scan')
     }
 
-    // Refresh the entities cache every 10 seconds
     setInterval(() => this.refreshEntitiesCache(), 10000)
   },
 
