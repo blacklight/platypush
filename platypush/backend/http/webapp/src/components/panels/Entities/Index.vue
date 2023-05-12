@@ -249,11 +249,12 @@ export default {
           return obj
       }, {})
 
-      await this.request('entities.scan', args)
+      this.request('entities.scan', args)
     },
 
-    async sync() {
-      this.loading = true
+    async sync(setLoading=true) {
+      if (setLoading)
+        this.loading = true
 
       try {
         this.entities = (await this.request('entities.get')).reduce((obj, entity) => {
@@ -272,7 +273,8 @@ export default {
         this.selector.selectedEntities = this.entityGroups.id
         this.refreshEntitiesCache()
       } finally {
-        this.loading = false
+        if (setLoading)
+          this.loading = false
       }
     },
 
@@ -367,12 +369,18 @@ export default {
     loadCachedEntities() {
       const cachedEntities = window.localStorage.getItem('entities')
       if (cachedEntities) {
-        this.entities = JSON.parse(cachedEntities)
-        if (this.entities) {
-          Object.values(this.entities).forEach((entity) => this.onEntityUpdate({entity: entity}))
-          this.selector.selectedEntities = this.entityGroups.id
-          return true
+        try {
+          this.entities = JSON.parse(cachedEntities)
+          if (!this.entities)
+            throw Error('The list of cached entities is null')
+        } catch (e) {
+          console.warning('Could not parse cached entities', e)
+          return false
         }
+
+        Object.values(this.entities).forEach((entity) => this.onEntityUpdate({entity: entity}))
+        this.selector.selectedEntities = this.entityGroups.id
+        return true
       }
 
       return false
@@ -401,9 +409,10 @@ export default {
 
     if (!this.loadCachedEntities()) {
       await this.sync()
-      await this.refresh()
+      this.refresh()
     } else {
       await this.request('entities.scan')
+      this.sync()
     }
 
     setInterval(() => this.refreshEntitiesCache(), 10000)
