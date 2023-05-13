@@ -1,20 +1,16 @@
 import importlib
 import inspect
 import json
-import pkgutil
 import threading
 from typing import Optional
-
-import platypush.backend  # lgtm [py/import-and-import-from]
-import platypush.plugins  # lgtm [py/import-and-import-from]
-import platypush.message.event  # lgtm [py/import-and-import-from]
-import platypush.message.response  # lgtm [py/import-and-import-from]
 
 from platypush.backend import Backend
 from platypush.config import Config
 from platypush.plugins import Plugin, action
 from platypush.message.event import Event
 from platypush.message.response import Response
+from platypush.utils import get_plugin_class_by_name
+from platypush.utils.manifest import Manifest, scan_manifests
 
 from ._model import (
     BackendModel,
@@ -42,40 +38,36 @@ class InspectPlugin(Plugin):
         self._responses_lock = threading.RLock()
         self._html_doc = False
 
-    def _init_plugins(self):
-        package = platypush.plugins
-        prefix = package.__name__ + '.'
-
-        for _, modname, _ in pkgutil.walk_packages(
-            path=package.__path__, prefix=prefix, onerror=lambda _: None
-        ):
+    def _get_modules(self, parent_class: type):
+        for mf_file in scan_manifests(parent_class):
+            manifest = Manifest.from_file(mf_file)
             try:
-                module = importlib.import_module(modname)
+                yield importlib.import_module(manifest.package)
             except Exception as e:
-                self.logger.warning('Could not import module %s: %s', modname, e)
+                self.logger.debug(
+                    'Could not import module %s: %s',
+                    manifest.package,
+                    e,
+                )
                 continue
 
-            for _, obj in inspect.getmembers(module):
-                if inspect.isclass(obj) and issubclass(obj, Plugin):
-                    model = PluginModel(
-                        plugin=obj, prefix=prefix, html_doc=self._html_doc
-                    )
-                    if model.name:
-                        self._plugins[model.name] = model
+    def _init_plugins(self):
+        prefix = Plugin.__module__ + '.'
+
+        for module in self._get_modules(Plugin):
+            plugin_name = '.'.join(module.__name__.split('.')[2:])
+            plugin_class = get_plugin_class_by_name(plugin_name)
+            model = PluginModel(
+                plugin=plugin_class, prefix=prefix, html_doc=self._html_doc
+            )
+
+            if model.name:
+                self._plugins[model.name] = model
 
     def _init_backends(self):
-        package = platypush.backend
-        prefix = package.__name__ + '.'
+        prefix = Backend.__module__ + '.'
 
-        for _, modname, _ in pkgutil.walk_packages(
-            path=package.__path__, prefix=prefix, onerror=lambda _: None
-        ):
-            try:
-                module = importlib.import_module(modname)
-            except Exception as e:
-                self.logger.debug('Could not import module %s: %s', modname, e)
-                continue
-
+        for module in self._get_modules(Backend):
             for _, obj in inspect.getmembers(module):
                 if inspect.isclass(obj) and issubclass(obj, Backend):
                     model = BackendModel(
@@ -85,18 +77,9 @@ class InspectPlugin(Plugin):
                         self._backends[model.name] = model
 
     def _init_events(self):
-        package = platypush.message.event
-        prefix = package.__name__ + '.'
+        prefix = Event.__module__ + '.'
 
-        for _, modname, _ in pkgutil.walk_packages(
-            path=package.__path__, prefix=prefix, onerror=lambda _: None
-        ):
-            try:
-                module = importlib.import_module(modname)
-            except Exception as e:
-                self.logger.debug('Could not import module %s: %s', modname, e)
-                continue
-
+        for module in self._get_modules(Event):
             for _, obj in inspect.getmembers(module):
                 if type(obj) == Event:  # pylint: disable=unidiomatic-typecheck
                     continue
@@ -111,18 +94,9 @@ class InspectPlugin(Plugin):
                         self._events[event.package][event.name] = event
 
     def _init_responses(self):
-        package = platypush.message.response
-        prefix = package.__name__ + '.'
+        prefix = Response.__module__ + '.'
 
-        for _, modname, _ in pkgutil.walk_packages(
-            path=package.__path__, prefix=prefix, onerror=lambda _: None
-        ):
-            try:
-                module = importlib.import_module(modname)
-            except Exception as e:
-                self.logger.debug('Could not import module %s: %s', modname, e)
-                continue
-
+        for module in self._get_modules(Response):
             for _, obj in inspect.getmembers(module):
                 if type(obj) == Response:  # pylint: disable=unidiomatic-typecheck
                     continue
