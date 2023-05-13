@@ -89,7 +89,7 @@ class WSRoute(WebSocketHandler, Thread, ABC):
                     continue
 
                 yield msg.get('data')
-        except RedisConnectionError:
+        except (AttributeError, RedisConnectionError):
             return
 
     def send(self, msg: Union[str, bytes, dict, list, tuple, set]) -> None:
