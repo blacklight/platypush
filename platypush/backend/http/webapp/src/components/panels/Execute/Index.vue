@@ -30,8 +30,10 @@
               Action documentation
             </div>
 
-            <div class="doc html" v-html="selectedDoc" v-if="htmlDoc" />
-            <div class="doc raw" v-text="selectedDoc" v-else />
+            <div class="doc html">
+              <Loading v-if="docLoading" />
+              <span v-html="selectedDoc" v-else />
+            </div>
           </div>
 
           <div class="options" v-if="action.name in actions && (Object.keys(action.args).length ||
@@ -51,8 +53,10 @@
                     Attribute: <div class="attr-name" v-text="selectedAttr" />
                   </div>
 
-                  <div class="doc html" v-html="selectedAttrDoc" v-if="htmlDoc" />
-                  <div class="doc raw" v-text="selectedAttrDoc" v-else />
+                  <div class="doc html">
+                    <Loading v-if="docLoading" />
+                    <span v-html="selectedAttrDoc" v-else />
+                  </div>
                 </div>
               </div>
 
@@ -87,15 +91,17 @@
                 Attribute: <div class="attr-name" v-text="selectedAttr" />
               </div>
 
-              <div class="doc html" v-html="selectedAttrDoc" v-if="htmlDoc" />
-              <div class="doc raw" v-text="selectedAttrDoc" v-else />
+              <div class="doc html">
+                <Loading v-if="docLoading" />
+                <span v-html="selectedAttrDoc" v-else />
+              </div>
             </div>
+          </div>
 
-            <div class="output-container">
-              <div class="title" v-text="error != null ? 'Error' : 'Output'" v-if="error != null || response != null" />
-              <div class="response" v-html="response" v-if="response != null" />
-              <div class="error" v-html="error" v-else-if="error != null" />
-            </div>
+          <div class="output-container">
+            <div class="title" v-text="error != null ? 'Error' : 'Output'" v-if="error != null || response != null" />
+            <div class="response" v-html="response" v-if="response != null" />
+            <div class="error" v-html="error" v-else-if="error != null" />
           </div>
         </div>
 
@@ -163,6 +169,7 @@ export default {
     return {
       loading: false,
       running: false,
+      docLoading: false,
       structuredInput: true,
       actionChanged: false,
       selectedDoc: undefined,
@@ -175,11 +182,11 @@ export default {
 
       response: undefined,
       error: undefined,
-      htmlDoc: false,
       rawRequest: undefined,
       actions: {},
       plugins: {},
       procedures: {},
+      actionDocsCache: {},
       action: {
         name: undefined,
         args: {},
@@ -195,15 +202,12 @@ export default {
 
       try {
         this.procedures = await this.request('inspect.get_procedures')
-        this.plugins = await this.request('inspect.get_all_plugins', {html_doc: false})
+        this.plugins = await this.request('inspect.get_all_plugins')
       } finally {
         this.loading = false
       }
 
       for (const plugin of Object.values(this.plugins)) {
-        if (plugin.html_doc)
-          this.htmlDoc = true
-
         for (const action of Object.values(plugin.actions)) {
           action.name = plugin.name + '.' + action.name
           action.supportsExtraArgs = !!action.has_kwargs
@@ -213,20 +217,20 @@ export default {
       }
 
       const self = this
-      autocomplete(this.$refs.actionName, Object.keys(this.actions).sort(), (evt, value) => {
+      autocomplete(this.$refs.actionName, Object.keys(this.actions).sort(), (_, value) => {
         this.action.name = value
         self.updateAction()
       })
     },
 
-    updateAction() {
+    async updateAction() {
       if (!(this.action.name in this.actions))
         this.selectedDoc = undefined
 
       if (!this.actionChanged || !(this.action.name in this.actions))
         return
 
-      this.loading = true
+      this.docLoading = true
       try {
         this.action = {
           ...this.actions[this.action.name],
@@ -241,32 +245,27 @@ export default {
           extraArgs: [],
         }
       } finally {
-        this.loading = false
+        this.docLoading = false
       }
 
-      this.selectedDoc = this.parseDoc(this.action.doc)
+      this.selectedDoc =
+        this.actionDocsCache[this.action.name]?.html ||
+        await this.parseDoc(this.action.doc)
+
+      if (!this.actionDocsCache[this.action.name])
+        this.actionDocsCache[this.action.name] = {}
+      this.actionDocsCache[this.action.name].html = this.selectedDoc
+
       this.actionChanged = false
       this.response = undefined
       this.error = undefined
     },
 
-    parseDoc(docString) {
-      if (!docString?.length || this.htmlDoc)
+    async parseDoc(docString) {
+      if (!docString?.length)
         return docString
 
-      let lineNo = 0
-      let trailingSpaces = 0
-
-      return docString.split('\n').reduce((doc, line) => {
-        if (++lineNo === 2)
-          trailingSpaces = line.match(/^(\s*)/)[1].length
-
-        if (line.trim().startsWith('.. code-block'))
-          return doc
-
-        doc += line.slice(trailingSpaces).replaceAll('``', '') + '\n'
-        return doc
-      }, '')
+      return await this.request('utils.rst_to_html', {text: docString})
     },
 
     updateProcedure(name, event) {
@@ -308,11 +307,16 @@ export default {
       this.action.extraArgs.pop(i)
     },
 
-    selectAttrDoc(name) {
-      this.response = undefined
-      this.error = undefined
+    async selectAttrDoc(name) {
       this.selectedAttr = name
-      this.selectedAttrDoc = this.parseDoc(this.action.args[name].doc)
+      this.selectedAttrDoc =
+        this.actionDocsCache[this.action.name]?.[name]?.html ||
+        await this.parseDoc(this.action.args[name].doc)
+
+      if (!this.actionDocsCache[this.action.name])
+        this.actionDocsCache[this.action.name] = {}
+
+      this.actionDocsCache[this.action.name][name] = {html: this.selectedAttrDoc}
     },
 
     resetAttrDoc() {
@@ -450,6 +454,7 @@ $params-tablet-width: 20em;
   }
 
   .action-form {
+    background: $default-bg-2;
     padding: 1em .5em;
   }
 
@@ -544,10 +549,24 @@ $params-tablet-width: 20em;
       display: flex;
       margin-bottom: .5em;
 
+      label {
+        margin-left: 0.25em;
+      }
+
+      .buttons {
+        display: flex;
+        flex-grow: 1;
+        justify-content: right;
+      }
+
       .action-extra-param-del {
         border: 0;
         text-align: right;
         padding: 0 .5em;
+      }
+
+      input[type=text] {
+        width: 100%;
       }
 
       .buttons {
@@ -569,11 +588,6 @@ $params-tablet-width: 20em;
     .doc-container,
     .output-container {
       margin-top: .5em;
-      .doc {
-        &.raw {
-          white-space: pre;
-        }
-      }
     }
 
     .output-container {
@@ -590,7 +604,6 @@ $params-tablet-width: 20em;
       }
 
       .doc {
-        white-space: pre-line;
         width: 100%;
         overflow: auto;
       }
@@ -613,11 +626,6 @@ $params-tablet-width: 20em;
     .attr-doc-container {
       .doc {
         padding: 1em !important;
-
-        &.raw {
-          font-family: monospace;
-          font-size: .8em;
-        }
       }
     }
 
@@ -747,11 +755,14 @@ $params-tablet-width: 20em;
   }
 
   .run-btn {
-    border-radius: 2em;
-    padding: .5em .75em;
+    background: none;
+    border-radius: .25em;
+    padding: .5em 1.5em;
+    box-shadow: $primary-btn-shadow;
 
     &:hover {
-      opacity: .8;
+      background: $hover-bg;
+      box-shadow: none;
     }
   }
 }

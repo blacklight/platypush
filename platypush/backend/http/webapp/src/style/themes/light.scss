@@ -56,6 +56,7 @@ $border-shadow-right: 2.5px 0 4px 0 $default-shadow-color;
 $border-shadow-bottom-right: 2.5px 2.5px 3px 0 $default-shadow-color;
 $header-shadow: 0px 1px 3px 1px #bbb !default;
 $group-shadow: 3px -2px 6px 1px #98b0a0;
+$primary-btn-shadow: 1px 1px 0.5px 0.75px #32b64640 !default;
 
 //// Modals
 $modal-header-bg: #e0e0e0 !default;
@@ -81,6 +82,7 @@ $default-hover-fg: #35b870 !default;
 $default-hover-fg-2: #38cf80 !default;
 $hover-fg: $default-hover-fg !default;
 $hover-bg: linear-gradient(90deg, rgba(190,246,218,1) 0%, rgba(229,251,240,1) 100%) !default;
+$hover-bg-2: rgb(190,246,218) !default;
 $active-bg: #8fefb7 !default;
 
 /// Disabled

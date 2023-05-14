@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 import inspect
 import json
 import re
-from typing import Optional
 
 from platypush.utils import get_decorators
 
@@ -13,16 +12,6 @@ class Model(ABC):
 
     def __repr__(self):
         return json.dumps(dict(self))
-
-    @staticmethod
-    def to_html(doc):
-        try:
-            import docutils.core  # type: ignore
-        except ImportError:
-            # docutils not found
-            return doc
-
-        return docutils.core.publish_parts(doc, writer_name='html')['html_body']
 
     @abstractmethod
     def __iter__(self):
@@ -40,42 +29,29 @@ class ProcedureEncoder(json.JSONEncoder):
 
 
 class BackendModel(Model):
-    def __init__(self, backend, prefix='', html_doc: Optional[bool] = False):
+    def __init__(self, backend, prefix=''):
         self.name = backend.__module__[len(prefix) :]
-        self.html_doc = html_doc
-        self.doc = (
-            self.to_html(backend.__doc__)
-            if html_doc and backend.__doc__
-            else backend.__doc__
-        )
+        self.doc = backend.__doc__
 
     def __iter__(self):
-        for attr in ['name', 'doc', 'html_doc']:
+        for attr in ['name', 'doc']:
             yield attr, getattr(self, attr)
 
 
 class PluginModel(Model):
-    def __init__(self, plugin, prefix='', html_doc: Optional[bool] = False):
-        self.name = plugin.__module__[len(prefix) :]
-        self.html_doc = html_doc
-        self.doc = (
-            self.to_html(plugin.__doc__)
-            if html_doc and plugin.__doc__
-            else plugin.__doc__
-        )
+    def __init__(self, plugin, prefix=''):
+        self.name = re.sub(r'\._plugin$', '', plugin.__module__[len(prefix) :])
+        self.doc = plugin.__doc__
         self.actions = {
-            action_name: ActionModel(
-                getattr(plugin, action_name), html_doc=html_doc or False
-            )
+            action_name: ActionModel(getattr(plugin, action_name))
             for action_name in get_decorators(plugin, climb_class_hierarchy=True).get(
                 'action', []
             )
         }
 
     def __iter__(self):
-        for attr in ['name', 'actions', 'doc', 'html_doc']:
+        for attr in ['name', 'actions', 'doc']:
             if attr == 'actions':
-                # noinspection PyShadowingNames
                 yield attr, {
                     name: dict(action) for name, action in self.actions.items()
                 },
@@ -84,40 +60,31 @@ class PluginModel(Model):
 
 
 class EventModel(Model):
-    def __init__(self, event, prefix='', html_doc: Optional[bool] = False):
+    def __init__(self, event, prefix=''):
         self.package = event.__module__[len(prefix) :]
         self.name = event.__name__
-        self.html_doc = html_doc
-        self.doc = (
-            self.to_html(event.__doc__) if html_doc and event.__doc__ else event.__doc__
-        )
+        self.doc = event.__doc__
 
     def __iter__(self):
-        for attr in ['name', 'doc', 'html_doc']:
+        for attr in ['name', 'doc']:
             yield attr, getattr(self, attr)
 
 
 class ResponseModel(Model):
-    def __init__(self, response, prefix='', html_doc: Optional[bool] = False):
+    def __init__(self, response, prefix=''):
         self.package = response.__module__[len(prefix) :]
         self.name = response.__name__
-        self.html_doc = html_doc
-        self.doc = (
-            self.to_html(response.__doc__)
-            if html_doc and response.__doc__
-            else response.__doc__
-        )
+        self.doc = response.__doc__
 
     def __iter__(self):
-        for attr in ['name', 'doc', 'html_doc']:
+        for attr in ['name', 'doc']:
             yield attr, getattr(self, attr)
 
 
 class ActionModel(Model):
-    # noinspection PyShadowingNames
-    def __init__(self, action, html_doc: bool = False):
+    def __init__(self, action):
         self.name = action.__name__
-        self.doc, argsdoc = self._parse_docstring(action.__doc__, html_doc=html_doc)
+        self.doc, argsdoc = self._parse_docstring(action.__doc__)
         self.args = {}
         self.has_kwargs = False
 
@@ -134,7 +101,7 @@ class ActionModel(Model):
             }
 
     @classmethod
-    def _parse_docstring(cls, docstring: str, html_doc: bool = False):
+    def _parse_docstring(cls, docstring: str):
         new_docstring = ''
         params = {}
         cur_param = None
@@ -147,11 +114,7 @@ class ActionModel(Model):
             m = re.match(r'^\s*:param ([^:]+):\s*(.*)', line)
             if m:
                 if cur_param:
-                    params[cur_param] = (
-                        cls.to_html(cur_param_docstring)
-                        if html_doc
-                        else cur_param_docstring
-                    )
+                    params[cur_param] = cur_param_docstring
 
                 cur_param = m.group(1)
                 cur_param_docstring = m.group(2)
@@ -160,11 +123,7 @@ class ActionModel(Model):
             else:
                 if cur_param:
                     if not line.strip():
-                        params[cur_param] = (
-                            cls.to_html(cur_param_docstring)
-                            if html_doc
-                            else cur_param_docstring
-                        )
+                        params[cur_param] = cur_param_docstring
                         cur_param = None
                         cur_param_docstring = ''
                     else:
@@ -173,14 +132,9 @@ class ActionModel(Model):
                     new_docstring += line.rstrip() + '\n'
 
         if cur_param:
-            params[cur_param] = (
-                cls.to_html(cur_param_docstring) if html_doc else cur_param_docstring
-            )
+            params[cur_param] = cur_param_docstring
 
-        return (
-            new_docstring.strip() if not html_doc else cls.to_html(new_docstring),
-            params,
-        )
+        return new_docstring.strip(), params
 
     def __iter__(self):
         for attr in ['name', 'args', 'doc', 'has_kwargs']:

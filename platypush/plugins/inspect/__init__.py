@@ -36,7 +36,6 @@ class InspectPlugin(Plugin):
         self._backends_lock = threading.RLock()
         self._events_lock = threading.RLock()
         self._responses_lock = threading.RLock()
-        self._html_doc = False
 
     def _get_modules(self, parent_class: type):
         for mf_file in scan_manifests(parent_class):
@@ -57,9 +56,7 @@ class InspectPlugin(Plugin):
         for module in self._get_modules(Plugin):
             plugin_name = '.'.join(module.__name__.split('.')[2:])
             plugin_class = get_plugin_class_by_name(plugin_name)
-            model = PluginModel(
-                plugin=plugin_class, prefix=prefix, html_doc=self._html_doc
-            )
+            model = PluginModel(plugin=plugin_class, prefix=prefix)
 
             if model.name:
                 self._plugins[model.name] = model
@@ -70,9 +67,7 @@ class InspectPlugin(Plugin):
         for module in self._get_modules(Backend):
             for _, obj in inspect.getmembers(module):
                 if inspect.isclass(obj) and issubclass(obj, Backend):
-                    model = BackendModel(
-                        backend=obj, prefix=prefix, html_doc=self._html_doc
-                    )
+                    model = BackendModel(backend=obj, prefix=prefix)
                     if model.name:
                         self._backends[model.name] = model
 
@@ -85,9 +80,7 @@ class InspectPlugin(Plugin):
                     continue
 
                 if inspect.isclass(obj) and issubclass(obj, Event) and obj != Event:
-                    event = EventModel(
-                        event=obj, html_doc=self._html_doc, prefix=prefix
-                    )
+                    event = EventModel(event=obj, prefix=prefix)
                     if event.package not in self._events:
                         self._events[event.package] = {event.name: event}
                     else:
@@ -106,24 +99,19 @@ class InspectPlugin(Plugin):
                     and issubclass(obj, Response)
                     and obj != Response
                 ):
-                    response = ResponseModel(
-                        response=obj, html_doc=self._html_doc, prefix=prefix
-                    )
+                    response = ResponseModel(response=obj, prefix=prefix)
                     if response.package not in self._responses:
                         self._responses[response.package] = {response.name: response}
                     else:
                         self._responses[response.package][response.name] = response
 
     @action
-    def get_all_plugins(self, html_doc: Optional[bool] = None):
+    def get_all_plugins(self):
         """
-        :param html_doc: If True then the docstring will be parsed into HTML (default: False)
+        Get information about all the available plugins.
         """
         with self._plugins_lock:
-            if not self._plugins or (
-                html_doc is not None and html_doc != self._html_doc
-            ):
-                self._html_doc = html_doc
+            if not self._plugins:
                 self._init_plugins()
 
             return json.dumps(
@@ -131,15 +119,12 @@ class InspectPlugin(Plugin):
             )
 
     @action
-    def get_all_backends(self, html_doc: Optional[bool] = None):
+    def get_all_backends(self):
         """
-        :param html_doc: If True then the docstring will be parsed into HTML (default: False)
+        Get information about all the available backends.
         """
         with self._backends_lock:
-            if not self._backends or (
-                html_doc is not None and html_doc != self._html_doc
-            ):
-                self._html_doc = html_doc
+            if not self._backends:
                 self._init_backends()
 
             return json.dumps(
@@ -147,15 +132,12 @@ class InspectPlugin(Plugin):
             )
 
     @action
-    def get_all_events(self, html_doc: Optional[bool] = None):
+    def get_all_events(self):
         """
-        :param html_doc: If True then the docstring will be parsed into HTML (default: False)
+        Get information about all the available events.
         """
         with self._events_lock:
-            if not self._events or (
-                html_doc is not None and html_doc != self._html_doc
-            ):
-                self._html_doc = html_doc
+            if not self._events:
                 self._init_events()
 
             return json.dumps(
@@ -166,15 +148,12 @@ class InspectPlugin(Plugin):
             )
 
     @action
-    def get_all_responses(self, html_doc: Optional[bool] = None):
+    def get_all_responses(self):
         """
-        :param html_doc: If True then the docstring will be parsed into HTML (default: False)
+        Get information about all the available responses.
         """
         with self._responses_lock:
-            if not self._responses or (
-                html_doc is not None and html_doc != self._html_doc
-            ):
-                self._html_doc = html_doc
+            if not self._responses:
                 self._init_responses()
 
             return json.dumps(
