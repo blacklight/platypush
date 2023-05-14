@@ -344,5 +344,24 @@ class UtilsPlugin(Plugin):
 
         return plugins
 
+    @action
+    def rst_to_html(self, text: str):
+        """
+        Utility action to convert RST to HTML.
+
+        It is mostly used by the frontend to render the docstring of the
+        available plugins and actions.
+        """
+        try:
+            import docutils.core  # type: ignore
+        except ImportError:
+            self.logger.warning(
+                "docutils is not installed. "
+                "Please install docutils to convert RST to HTML."
+            )
+            return text
+
+        return docutils.core.publish_parts(text, writer_name='html')['html_body']
+
 
 # vim:sw=4:ts=4:et:
