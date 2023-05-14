@@ -22,11 +22,11 @@
     background-color: $background-color;
 
     &:hover {
-      background-color: $hover-bg;
+      background-color: $hover-bg-2;
     }
   }
 }
 
 .autocomplete-active {
-  background-color: $selected-bg !important;
+  background-color: $hover-bg-2 !important;
 }
