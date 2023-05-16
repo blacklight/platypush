@@ -73,6 +73,17 @@ def get_plugin_module_by_name(plugin_name):
         return None
 
 
+def get_backend_module_by_name(backend_name):
+    """Gets the module of a backend by name (e.g. "backend.http" or "backend.mqtt")"""
+
+    module_name = 'platypush.backend.' + backend_name
+    try:
+        return importlib.import_module('platypush.backend.' + backend_name)
+    except ImportError as e:
+        logger.error('Cannot import %s: %s', module_name, e)
+        return None
+
+
 def get_plugin_class_by_name(plugin_name):
     """Gets the class of a plugin by name (e.g. "music.mpd" or "media.vlc")"""
 
@@ -108,6 +119,34 @@ def get_plugin_name_by_class(plugin) -> Optional[str]:
     ]
 
     return '.'.join(class_tokens)
+
+
+def get_backend_class_by_name(backend_name: str):
+    """Gets the class of a backend by name (e.g. "backend.http" or "backend.mqtt")"""
+
+    module = get_backend_module_by_name(backend_name)
+    if not module:
+        return
+
+    class_name = getattr(
+        module,
+        ''.join(
+            [
+                token.capitalize()
+                for i, token in enumerate(backend_name.split('.'))
+                if not (i == 0 and token == 'backend')
+            ]
+        )
+        + 'Backend',
+    )
+    try:
+        return getattr(
+            module,
+            ''.join([_.capitalize() for _ in backend_name.split('.')]) + 'Backend',
+        )
+    except Exception as e:
+        logger.error('Cannot import class %s: %s', class_name, e)
+        return None
 
 
 def get_backend_name_by_class(backend) -> Optional[str]:
