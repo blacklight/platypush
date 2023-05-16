@@ -509,6 +509,7 @@ export default {
 
     @include until(#{$tablet - 1}) {
       padding: 0;
+      margin-bottom: $main-margin;
     }
 
     @include from($tablet) {
@@ -524,11 +525,8 @@ export default {
       flex-direction: column;
       flex-grow: 1;
       position: relative;
-
-      @include from($tablet) {
-        border-radius: 1em;
-        box-shadow: $group-shadow;
-      }
+      border-radius: 1em;
+      box-shadow: $group-shadow;
     }
 
     .header {
@@ -579,10 +577,6 @@ export default {
       overflow: auto;
       flex-grow: 1;
 
-      @include until(#{$tablet - 1}) {
-        background: $default-bg-4;
-      }
-
       @include from($tablet) {
         background: $default-bg-2;
       }
@@ -590,16 +584,8 @@ export default {
       .entity-frame {
         background: $background-color;
 
-        @include until(#{$tablet - 1}) {
-          margin: 0.75em 0.25em;
-          border: $default-border-2;
-          border-radius: 1em;
-        }
-
-        @include from($tablet) {
-          &:last-child {
-            border-radius: 0 0 1em 1em;
-          }
+        &:last-child {
+          border-radius: 0 0 1em 1em;
         }
       }
     }

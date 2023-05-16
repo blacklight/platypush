@@ -6,10 +6,6 @@ $collapse-toggler-width: 2em;
   background: $selected-bg;
   font-weight: bold;
   box-shadow: 0 0 3px 2px $default-shadow-color;
-
-  @include until(#{$tablet - 1}) {
-    border-radius: 1em;
-  }
 }
 
 .entity-container {
@@ -18,18 +14,7 @@ $collapse-toggler-width: 2em;
   align-items: center;
   position: relative;
   padding: 0 !important;
-
-  @include until(#{$tablet - 1}) {
-    border-radius: 1em;
-
-    &:not(:last-child) {
-      border-bottom: $default-border-3;
-    }
-  }
-
-  @include from($tablet) {
-    border-bottom: $default-border-3;
-  }
+  border-bottom: $default-border-3;
 
   &.with-children:not(.collapsed) {
     @include expanded-entity();
@@ -50,12 +35,6 @@ $collapse-toggler-width: 2em;
 }
 
 @include until(#{$tablet - 1}) {
-  .entity-container {
-    .children {
-      border-radius: 0 0 1em 1em;
-    }
-  }
-
   .child {
     &:not(:last-child) {
       .entity-container {
@@ -239,38 +218,8 @@ $collapse-toggler-width: 2em;
   &.with-children:not(.collapsed) {
     box-shadow: 0 3px 4px 0 $default-shadow-color;
 
-    @include until(#{$tablet - 1}) {
-      border-radius: 1em;
-    }
-
-    @include from($tablet) {
-      .children .child:last-child {
-        box-shadow: 0 3px 4px 0 $default-shadow-color;
-      }
-    }
-  }
-
-  @include until(#{$tablet - 1}) {
-    box-shadow: 0 3px 4px 0 $default-shadow-color;
-
-    &.collapsed {
-      border-radius: 1em;
-    }
-
-    .children {
-      .entity-container-wrapper {
-        border-radius: 0;
-        box-shadow: none;
-
-        &.with-children:not(.collapsed) {
-          border-radius: 1em;
-          box-shadow: 0 3px 4px 0 $default-shadow-color;
-        }
-
-        &:last-child {
-          border-radius: 0 0 1em 1em;
-        }
-      }
+    .children .child:last-child {
+      box-shadow: 0 3px 4px 0 $default-shadow-color;
     }
   }
 }
