@@ -1,3 +1,4 @@
+import inspect
 import json
 
 
@@ -10,7 +11,13 @@ class ProcedureEncoder(json.JSONEncoder):
         if callable(o):
             return {
                 'type': 'native_function',
-                'source': f'{o.__module__}.{o.__name__}',
+                'module': o.__module__,
+                'source': inspect.getsourcefile(o),
+                'args': [
+                    name
+                    for name, arg in inspect.signature(o).parameters.items()
+                    if arg.kind != arg.VAR_KEYWORD
+                ],
             }
 
         return super().default(o)
