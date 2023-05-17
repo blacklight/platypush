@@ -21,7 +21,8 @@
                      @change="actionChanged=true" @blur="updateAction">
             </label>
           </div>
-          <button type="submit" class="run-btn btn-primary" :disabled="running" title="Run">
+          <button type="submit" class="run-btn btn-primary"
+            :disabled="running || !action?.name?.length" title="Run">
             <i class="fas fa-play" />
           </button>
 
@@ -66,11 +67,11 @@
                     <input type="text" class="action-extra-param-name" :disabled="running"
                            placeholder="Name" v-model="action.extraArgs[i].name">
                   </label>
-                  <label class="col-5">
+                  <label class="col-6">
                     <input type="text" class="action-extra-param-value" :disabled="running"
                            placeholder="Value" v-model="action.extraArgs[i].value">
                   </label>
-                  <label class="col-2 buttons">
+                  <label class="col-1 buttons">
                     <button type="button" class="action-extra-param-del" title="Remove parameter"
                             @click="removeParameter(i)">
                       <i class="fas fa-trash" />
@@ -108,7 +109,7 @@
         <div class="request raw-request" :class="structuredInput ? 'hidden' : ''">
           <div class="first-row">
             <label>
-              <textarea v-model="rawRequest" placeholder="Raw JSON request" />
+              <textarea v-model="rawRequest" ref="rawAction" :placeholder="rawRequestPlaceholder" />
             </label>
             <button type="submit" :disabled="running" class="run-btn btn-primary" title="Run">
               <i class="fas fa-play" />
@@ -183,6 +184,8 @@ export default {
       response: undefined,
       error: undefined,
       rawRequest: undefined,
+      rawRequestPlaceholder: 'Raw JSON request. Example:\n\n' +
+        '{"type": "request", "action": "file.list", "args": {"path": "/"}}',
       actions: {},
       plugins: {},
       procedures: {},
@@ -330,6 +333,13 @@ export default {
       this.structuredInput = structuredInput
       this.response = undefined
       this.error = undefined
+      this.$nextTick(() => {
+        if (structuredInput) {
+          this.$refs.actionName.focus()
+        } else {
+          this.$refs.rawAction.focus()
+        }
+      })
     },
 
     onResponse(response) {
@@ -426,6 +436,10 @@ export default {
   },
 
   mounted() {
+    this.$nextTick(() => {
+      this.$refs.actionName.focus()
+    })
+
     this.refresh()
   },
 }
@@ -459,7 +473,7 @@ $params-tablet-width: 20em;
   }
 
   .title {
-    background: $title-bg;
+    background: $header-bg;
     padding: .5em;
     border: $title-border;
     box-shadow: $title-shadow;
@@ -755,14 +769,30 @@ $params-tablet-width: 20em;
   }
 
   .run-btn {
-    background: none;
+    background: $background-color;
     border-radius: .25em;
     padding: .5em 1.5em;
     box-shadow: $primary-btn-shadow;
+    cursor: pointer;
 
     &:hover {
       background: $hover-bg;
       box-shadow: none;
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      color: $default-fg-2; 
+      cursor: initial;
+      box-shadow: none;
+
+      &:hover {
+        background: $background-color;
+        box-shadow: none;
+      }
+    }
+
+    &:not(disabled) {
     }
   }
 }
