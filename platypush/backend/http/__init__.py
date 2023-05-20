@@ -199,6 +199,7 @@ class HttpBackend(Backend):
         resource_dirs: Optional[Mapping[str, str]] = None,
         secret_key_file: Optional[str] = None,
         num_workers: Optional[int] = None,
+        use_werkzeug_server: bool = False,
         **kwargs,
     ):
         """
@@ -211,6 +212,16 @@ class HttpBackend(Backend):
         :param secret_key_file: Path to the file containing the secret key that will be used by Flask
             (default: ``~/.local/share/platypush/flask.secret.key``).
         :param num_workers: Number of worker processes to use (default: ``(cpu_count * 2) + 1``).
+        :param use_werkzeug_server: Whether the backend should be served by a
+            Werkzeug server (default: ``False``). Note that using the built-in
+            Werkzeug server instead of Tornado is very inefficient, and it
+            doesn't support websocket-based features either so the UI will
+            probably be severely limited. You should only use this option if:
+
+                - You are running tests.
+                - You have issues with running a full Tornado server - for
+                  example, you are running the application on a small embedded
+                  device that doesn't support Tornado.
         """
 
         super().__init__(**kwargs)
@@ -235,6 +246,7 @@ class HttpBackend(Backend):
         )
         self.local_base_url = f'http://localhost:{self.port}'
         self.num_workers = num_workers or (cpu_count() * 2) + 1
+        self.use_werkzeug_server = use_werkzeug_server
 
     def send_message(self, *_, **__):
         self.logger.warning('Use cURL or any HTTP client to query the HTTP backend')
@@ -339,14 +351,25 @@ class HttpBackend(Backend):
             self.num_workers,
         )
 
-        sockets = bind_sockets(self.port, address=self.bind_address, reuse_port=True)
+        if self.use_werkzeug_server:
+            application.config['redis_queue'] = self.bus.redis_queue
+            application.run(
+                host=self.bind_address,
+                port=self.port,
+                use_reloader=False,
+                debug=True,
+            )
+        else:
+            sockets = bind_sockets(
+                self.port, address=self.bind_address, reuse_port=True
+            )
 
-        try:
-            fork_processes(self.num_workers)
-            future = self._post_fork_main(sockets)
-            asyncio.run(future)
-        except (asyncio.CancelledError, KeyboardInterrupt):
-            return
+            try:
+                fork_processes(self.num_workers)
+                future = self._post_fork_main(sockets)
+                asyncio.run(future)
+            except (asyncio.CancelledError, KeyboardInterrupt):
+                return
 
     def _start_web_server(self):
         self._server_proc = Process(target=self._web_server_proc)

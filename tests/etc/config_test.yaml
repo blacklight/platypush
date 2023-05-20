@@ -6,7 +6,8 @@ main.db:
 
 backend.http:
     port: 8123
-    disable_websocket: True
+    num_workers: 1
+    use_werkzeug_server: True
 
 backend.redis:
     disabled: False
