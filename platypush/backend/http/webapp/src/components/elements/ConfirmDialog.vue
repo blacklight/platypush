@@ -64,10 +64,8 @@ export default {
     display: flex;
     flex-direction: row;
     justify-content: right;
-    padding: 1em 0 1em 1em;
     border: 0;
     border-radius: 0;
-    box-shadow: 0 -1px 2px 0 $default-shadow-color;
 
     button {
       margin-right: 1em;

@@ -4,11 +4,15 @@
   <VoiceAssistant ref="voice-assistant" v-if="hasAssistant" />
   <Pushbullet ref="pushbullet" v-if="hasPushbullet" />
   <Ntfy ref="ntfy" v-if="hasNtfy" />
+  <ConfirmDialog ref="pwaDialog" @input="installPWA">
+    Would you like to install this application locally?
+  </ConfirmDialog>
 
   <router-view />
 </template>
 
 <script>
+import ConfirmDialog from "@/components/elements/ConfirmDialog";
 import Notifications from "@/components/Notifications";
 import Utils from "@/Utils";
 import Events from "@/Events";
@@ -21,13 +25,14 @@ export default {
   name: 'App',
   mixins: [Utils],
   components: {
-    Pushbullet, Ntfy, Notifications, Events, VoiceAssistant
+    ConfirmDialog, Pushbullet, Ntfy, Notifications, Events, VoiceAssistant
   },
 
   data() {
     return {
       config: {},
       userAuthenticated: false,
+      pwaInstallEvent: null,
     }
   },
 
@@ -62,6 +67,13 @@ export default {
       this.config = await this.request('config.get', {}, 60000, false)
       this.userAuthenticated = true
     },
+
+    installPWA() {
+      if (this.pwaInstallEvent)
+        this.pwaInstallEvent.prompt()
+
+      this.$refs.pwaDialog.close()
+    }
   },
 
   created() {
@@ -71,8 +83,8 @@ export default {
   beforeMount() {
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault()
-      if (confirm('Would you like to install the application for more features?'))
-        e.prompt()
+      this.pwaInstallEvent = e
+      this.$refs.pwaDialog.show()
     })
   },
 
