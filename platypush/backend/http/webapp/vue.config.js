@@ -27,6 +27,11 @@ module.exports = {
     }
   },
 
+  pwa: {
+    name: 'Platypush',
+    themeColor: '#ffffff',
+  },
+
   devServer: {
     proxy: {
       '^/ws/events': wsProxy,
@@ -35,6 +40,7 @@ module.exports = {
       '^/auth': httpProxy,
       '^/camera/': httpProxy,
       '^/sound/': httpProxy,
+      '^/logo.svg': httpProxy,
     }
   }
 };
