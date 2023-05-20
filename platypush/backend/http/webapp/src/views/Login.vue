@@ -2,7 +2,9 @@
   <div class="login-container">
     <form class="login" method="POST">
       <div class="header">
-        <span class="logo" />
+        <span class="logo">
+          <img src="/logo.svg" alt="logo" />
+        </span>
         <span class="text">Platypush</span>
       </div>
 
@@ -87,7 +89,6 @@ body {
     width: 3em;
     height: 3em;
     display: inline-flex;
-    background-image: url('@/assets/img/logo.png');
     background-size: cover;
   }
 
