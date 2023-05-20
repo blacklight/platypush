@@ -68,6 +68,14 @@ export default {
     this.initConfig()
   },
 
+  beforeMount() {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault()
+      if (confirm('Would you like to install the application for more features?'))
+        e.prompt()
+    })
+  },
+
   mounted() {
     bus.onNotification(this.onNotification)
   },
