@@ -13,6 +13,7 @@
     "core-js": "^3.23.4",
     "lato-font": "^3.0.0",
     "mitt": "^2.1.0",
+    "register-service-worker": "^1.7.2",
     "sass": "^1.53.0",
     "sass-loader": "^10.3.1",
     "vue": "^3.2.13",
@@ -25,6 +26,7 @@
     "@babel/eslint-parser": "^7.12.16",
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
+    "@vue/cli-plugin-pwa": "~5.0.0",
     "@vue/cli-service": "~5.0.0",
     "eslint": "^7.32.0",
     "eslint-plugin-vue": "^8.0.3"
