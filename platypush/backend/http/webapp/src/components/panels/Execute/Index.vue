@@ -1,8 +1,8 @@
 <template>
   <div class="row plugin execute-container">
     <Loading v-if="loading" />
-    <div class="command-container">
-      <div class="title">Execute Action</div>
+    <div class="section command-container">
+      <div class="section-title">Execute Action</div>
       <form class="action-form" ref="actionForm" autocomplete="off" @submit.prevent="executeAction">
         <div class="request-type-container">
           <input type="radio" id="action-structured-input"
@@ -14,17 +14,21 @@
         </div>
 
         <div class="request structured-request" :class="structuredInput ? '' : 'hidden'">
-          <div class="autocomplete">
-            <label>
-              <input ref="actionName" type="text" class="action-name"
-                     placeholder="Action Name" :disabled="running" v-model="action.name"
-                     @change="actionChanged=true" @blur="updateAction">
-            </label>
+          <div class="request-header">
+            <div class="autocomplete">
+              <label>
+                <input ref="actionName" type="text" class="action-name"
+                       placeholder="Action Name" :disabled="running" v-model="action.name"
+                       @change="actionChanged=true" @blur="updateAction">
+              </label>
+            </div>
+            <div class="buttons">
+              <button type="submit" class="run-btn btn-primary"
+                :disabled="running || !action?.name?.length" title="Run">
+                <i class="fas fa-play" />
+              </button>
+            </div>
           </div>
-          <button type="submit" class="run-btn btn-primary"
-            :disabled="running || !action?.name?.length" title="Run">
-            <i class="fas fa-play" />
-          </button>
 
           <div class="doc-container" v-if="selectedDoc">
             <div class="title">
@@ -100,7 +104,14 @@
           </div>
 
           <div class="output-container">
-            <div class="title" v-text="error != null ? 'Error' : 'Output'" v-if="error != null || response != null" />
+            <div class="header" v-if="error != null || response != null">
+              <div class="title" v-text="error != null ? 'Error' : 'Output'" />
+              <div class="buttons">
+                <button type="button" title="Copy to clipboard" @click="copyToClipboard">
+                  <i class="fas fa-clipboard" />
+                </button>
+              </div>
+            </div>
             <div class="response" v-html="response" v-if="response != null" />
             <div class="error" v-html="error" v-else-if="error != null" />
           </div>
@@ -117,7 +128,14 @@
           </div>
 
           <div class="output-container" v-if="response != null || error != null">
-            <div class="title" v-text="error != null ? 'Error' : 'Output'" />
+            <div class="header" v-if="error != null || response != null">
+              <div class="title" v-text="error != null ? 'Error' : 'Output'" />
+              <div class="buttons">
+                <button type="button" title="Copy to clipboard" @click="copyToClipboard">
+                  <i class="fas fa-clipboard" />
+                </button>
+              </div>
+            </div>
             <div class="error" v-html="error" v-if="error != null" />
             <div class="response" v-html="response" v-else-if="response != null" />
           </div>
@@ -125,8 +143,8 @@
       </form>
     </div>
 
-    <div class="procedures-container">
-      <div class="title">Execute Procedure</div>
+    <div class="section procedures-container">
+      <div class="section-title">Execute Procedure</div>
       <div class="procedure" :class="selectedProcedure.name === name ? 'selected' : ''"
            v-for="name in Object.keys(procedures).sort()" :key="name" @click="updateProcedure(name, $event)">
         <form ref="procedureForm" autocomplete="off" @submit.prevent="executeProcedure">
@@ -323,8 +341,6 @@ export default {
     },
 
     resetAttrDoc() {
-      this.response = undefined
-      this.error = undefined
       this.selectedAttr = undefined
       this.selectedAttrDoc = undefined
     },
@@ -354,6 +370,14 @@ export default {
 
     onDone() {
       this.running = false
+    },
+
+    async copyToClipboard() {
+      const output = (
+        this.error != null ? this.error : this.response
+      ).replace(/^\s*<pre>/g, '').replace(/<\/pre>\s*/g, '')
+
+      await navigator.clipboard.writeText(output)
     },
 
     executeAction() {
@@ -451,6 +475,19 @@ export default {
 
 $params-desktop-width: 30em;
 $params-tablet-width: 20em;
+$request-headers-btn-width: 7.5em;
+
+@mixin header {
+  background: $default-bg-5;
+  display: flex;
+  align-items: center;
+  padding: 0.5em;
+  border: $title-border;
+  border-radius: 1em;
+  box-shadow: $title-shadow;
+  font-weight: normal;
+  font-size: 1em;
+}
 
 .execute-container {
   width: 100%;
@@ -459,6 +496,22 @@ $params-tablet-width: 20em;
   font-weight: 400;
   border-bottom: $default-border-2;
   border-radius: 0 0 1em 1em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .section {
+    width: 100%;
+    max-width: 1000px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: $section-shadow;
+
+    @include from($desktop) {
+      margin: 1em;
+      border-radius: 1em 1em 0 0;
+    }
+  }
 
   form {
     padding: 0;
@@ -472,13 +525,34 @@ $params-tablet-width: 20em;
     padding: 1em .5em;
   }
 
-  .title {
+  .request-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+
+    .autocomplete {
+      width: calc(100% - $request-headers-btn-width);
+      flex-grow: 1;
+    }
+
+    .buttons {
+      width: $request-headers-btn-width;
+      display: inline-flex;
+      justify-content: flex-end;
+      margin-right: 0.5em;
+    }
+  }
+
+  .section-title {
     background: $header-bg;
-    padding: .5em;
-    border: $title-border;
+    padding: .75em .5em;
     box-shadow: $title-shadow;
     font-size: 1.1em;
     margin-bottom: 0 !important;
+
+    @include from($desktop) {
+      border-radius: 0.5em 0.5em 0 0;
+    }
   }
 
   .request-type-container {
@@ -492,24 +566,17 @@ $params-tablet-width: 20em;
   }
 
   .request {
+    display: flex;
+    flex-direction: column;
     margin: 0 .5em;
 
     form {
       margin-bottom: 0 !important;
     }
 
-    .autocomplete {
-      width: 80%;
-      max-width: 60em;
-    }
-
     .action-name {
       box-shadow: $action-name-shadow;
       width: 100%;
-    }
-
-    [type=submit] {
-      margin-left: 2em;
     }
 
     .options {
@@ -604,6 +671,22 @@ $params-tablet-width: 20em;
       margin-top: .5em;
     }
 
+    .doc-container,
+    .attr-doc-container {
+      .title {
+        @include header;
+      }
+    }
+
+    .attr-doc-container {
+      .title {
+        .attr-name {
+          font-weight: bold;
+          margin-left: 0.25em;
+        }
+      }
+    }
+
     .output-container {
       flex-grow: 1;
     }
@@ -648,12 +731,22 @@ $params-tablet-width: 20em;
       display: flex;
       flex-direction: column;
 
-      .title {
-        font-weight: normal;
-        font-size: 1em;
-        padding: .5em;
-        background: $section-title-bg;
-        border-radius: .5em;
+      .header {
+        @include header;
+
+        .title {
+          flex-grow: 1;
+        }
+
+        button {
+          background: none;
+          border: none;
+          box-shadow: none;
+
+          &:hover {
+            color: $default-hover-fg;
+          }
+        }
 
         .attr-name {
           display: inline-block;
@@ -666,23 +759,25 @@ $params-tablet-width: 20em;
       .doc {
         height: 100%;
         padding: .5em .5em 0 .5em;
-        border-radius: 0 0 1em 1em;
+        border-radius: 1em;
         overflow: auto;
+        margin-top: 0.1em;
       }
 
       .response {
         background: $response-bg;
-        border: $response-border;
+        box-shadow: $response-shadow;
       }
 
       .error {
         background: $error-bg;
-        border: $error-border;
+        padding: 1em;
+        box-shadow: $error-shadow;
       }
 
       .doc {
         background: $doc-bg;
-        border: $doc-border;
+        box-shadow: $doc-shadow;
       }
     }
 
@@ -790,9 +885,6 @@ $params-tablet-width: 20em;
         background: $background-color;
         box-shadow: none;
       }
-    }
-
-    &:not(disabled) {
     }
   }
 }
