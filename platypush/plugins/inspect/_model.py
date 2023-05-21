@@ -152,13 +152,18 @@ class ActionModel(Model):
             return None, {}
 
         for line in docstring.split('\n'):
-            m = re.match(r'^\s*:param ([^:]+):\s*(.*)', line)
-            if m:
+            if m := re.match(r'^\s*:param ([^:]+):\s*(.*)', line):
                 if cur_param:
                     params[cur_param] = cur_param_docstring
 
                 cur_param = m.group(1)
                 cur_param_docstring = m.group(2)
+            elif m := re.match(r'^\s*:return:\s+(.*)', line):
+                if cur_param:
+                    params[cur_param] = cur_param_docstring
+
+                new_docstring += '\n\n**Returns:**\n\n' + m.group(1).strip() + ' '
+                cur_param = None
             elif re.match(r'^\s*:[^:]+:\s*.*', line):
                 continue
             else:
@@ -168,9 +173,9 @@ class ActionModel(Model):
                         cur_param = None
                         cur_param_docstring = ''
                     else:
-                        cur_param_docstring += '\n' + line.strip()
+                        cur_param_docstring += '\n' + line.strip() + ' '
                 else:
-                    new_docstring += line.rstrip() + '\n'
+                    new_docstring += line.strip() + ' '
 
         if cur_param:
             params[cur_param] = cur_param_docstring
