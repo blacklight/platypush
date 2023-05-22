@@ -16,7 +16,7 @@ class ResponseParser(Parser):
 
     @override
     @classmethod
-    def parse(cls, docstring: str) -> str:
+    def parse(cls, docstring: str, *_, **__) -> str:
         while True:
             m = cls._response_regex.search(docstring)
             if not m:

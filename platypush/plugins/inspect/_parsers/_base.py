@@ -8,5 +8,5 @@ class Parser(ABC):
 
     @classmethod
     @abstractmethod
-    def parse(cls, docstring: str) -> str:
+    def parse(cls, docstring: str, obj_type: type) -> str:
         raise NotImplementedError()

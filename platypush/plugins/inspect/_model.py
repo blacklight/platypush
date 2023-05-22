@@ -1,7 +1,7 @@
 import inspect
 import json
 import re
-from typing import Callable, Optional, Type
+from typing import Callable, List, Optional, Type
 
 from platypush.backend import Backend
 from platypush.message.event import Event
@@ -13,6 +13,7 @@ from ._parsers import (
     BackendParser,
     EventParser,
     MethodParser,
+    Parser,
     PluginParser,
     ResponseParser,
     SchemaParser,
@@ -24,7 +25,7 @@ class Model:
     Base class for component models.
     """
 
-    _parsers = [
+    _parsers: List[Type[Parser]] = [
         BackendParser,
         EventParser,
         MethodParser,
@@ -51,7 +52,9 @@ class Model:
         self.package = obj_type.__module__[len(prefix) :]
         self.name = name or self.package
         self.last_modified = last_modified
-        self.doc, argsdoc = self._parse_docstring(doc or obj_type.__doc__ or '')
+        self.doc, argsdoc = self._parse_docstring(
+            doc or obj_type.__doc__ or '', obj_type=obj_type
+        )
         self.args = {}
         self.has_kwargs = False
 
@@ -87,7 +90,7 @@ class Model:
             yield attr, getattr(self, attr)
 
     @classmethod
-    def _parse_docstring(cls, docstring: str):
+    def _parse_docstring(cls, docstring: str, obj_type: type):
         new_docstring = ''
         params = {}
         cur_param = None
@@ -129,14 +132,14 @@ class Model:
             params[cur_param] = cur_param_docstring
 
         for param, doc in params.items():
-            params[param] = cls._post_process_docstring(doc)
+            params[param] = cls._post_process_docstring(doc, obj_type=obj_type)
 
-        return cls._post_process_docstring(new_docstring), params
+        return cls._post_process_docstring(new_docstring, obj_type=obj_type), params
 
     @classmethod
-    def _post_process_docstring(cls, docstring: str) -> str:
+    def _post_process_docstring(cls, docstring: str, obj_type: type) -> str:
         for parsers in cls._parsers:
-            docstring = parsers.parse(docstring)
+            docstring = parsers.parse(docstring, obj_type=obj_type)
         return docstring.strip()
 
 

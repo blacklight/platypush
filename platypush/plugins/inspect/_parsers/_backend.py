@@ -16,7 +16,7 @@ class BackendParser(Parser):
 
     @override
     @classmethod
-    def parse(cls, docstring: str) -> str:
+    def parse(cls, docstring: str, *_, **__) -> str:
         while True:
             m = cls._backend_regex.search(docstring)
             if not m:

@@ -1,4 +1,5 @@
 from ._backend import BackendParser
+from ._base import Parser
 from ._event import EventParser
 from ._method import MethodParser
 from ._plugin import PluginParser
@@ -10,6 +11,7 @@ __all__ = [
     'BackendParser',
     'EventParser',
     'MethodParser',
+    'Parser',
     'PluginParser',
     'ResponseParser',
     'SchemaParser',

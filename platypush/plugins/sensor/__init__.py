@@ -378,7 +378,7 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
     @action
     def get_data(self, *args, **kwargs):
         """
-        (Deprecated) alias for :meth:`.get_measurement``
+        (Deprecated) alias for :meth:`.get_measurement`
         """
         return self.get_measurement(*args, **kwargs)
 
