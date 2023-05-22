@@ -64,6 +64,7 @@ export default {
     display: flex;
     flex-direction: row;
     justify-content: right;
+    margin-bottom: 1em;
     border: 0;
     border-radius: 0;
 
