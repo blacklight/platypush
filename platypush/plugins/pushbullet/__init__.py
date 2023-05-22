@@ -16,7 +16,8 @@ class PushbulletPlugin(Plugin):
 
     Requires:
 
-        * The :class:`platypush.backend.pushbullet.Pushbullet` backend enabled
+        * The :class:`platypush.backend.pushbullet.PushbulletBackend` backend enabled
+
     """
 
     def __init__(self, token: Optional[str] = None, **kwargs):
@@ -44,23 +45,23 @@ class PushbulletPlugin(Plugin):
         """
         Get the list of available devices
         """
-        resp = requests.get('https://api.pushbullet.com/v2/devices',
-                            headers={'Authorization': 'Bearer ' + self.token,
-                                     'Content-Type': 'application/json'})
+        resp = requests.get(
+            'https://api.pushbullet.com/v2/devices',
+            headers={
+                'Authorization': 'Bearer ' + self.token,
+                'Content-Type': 'application/json',
+            },
+        )
 
         self._devices = resp.json().get('devices', [])
-        self._devices_by_id = {
-            dev['iden']: dev
-            for dev in self._devices
-        }
+        self._devices_by_id = {dev['iden']: dev for dev in self._devices}
 
         self._devices_by_name = {
-            dev['nickname']: dev
-            for dev in self._devices if 'nickname' in dev
+            dev['nickname']: dev for dev in self._devices if 'nickname' in dev
         }
 
     @action
-    def get_device(self, device):
+    def get_device(self, device) -> Optional[dict]:
         """
         :param device: Device ID or name
         """
@@ -79,7 +80,14 @@ class PushbulletPlugin(Plugin):
             refreshed = True
 
     @action
-    def send_note(self, device: str = None, body: str = None, title: str = None, url: str = None, **kwargs):
+    def send_note(
+        self,
+        device: Optional[str] = None,
+        body: Optional[str] = None,
+        title: Optional[str] = None,
+        url: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Send a note push.
 
@@ -90,10 +98,11 @@ class PushbulletPlugin(Plugin):
         :param kwargs: Push arguments, see https://docs.pushbullet.com/#create-push
         """
 
+        dev = None
         if device:
-            device = self.get_device(device).output
-            if not device:
-                raise RuntimeError('No such device')
+            dev = self.get_device(device).output
+            if not dev:
+                raise RuntimeError(f'No such device: {device}')
 
         kwargs['body'] = body
         kwargs['title'] = title
@@ -102,21 +111,25 @@ class PushbulletPlugin(Plugin):
             kwargs['type'] = 'link'
             kwargs['url'] = url
 
-        if device:
-            # noinspection PyTypeChecker
-            kwargs['device_iden'] = device['iden']
+        if dev:
+            kwargs['device_iden'] = dev['iden']
 
-        resp = requests.post('https://api.pushbullet.com/v2/pushes',
-                             data=json.dumps(kwargs),
-                             headers={'Authorization': 'Bearer ' + self.token,
-                                      'Content-Type': 'application/json'})
+        resp = requests.post(
+            'https://api.pushbullet.com/v2/pushes',
+            data=json.dumps(kwargs),
+            headers={
+                'Authorization': 'Bearer ' + self.token,
+                'Content-Type': 'application/json',
+            },
+        )
 
         if resp.status_code >= 400:
-            raise Exception('Pushbullet push failed with status {}: {}'.
-                            format(resp.status_code, resp.json()))
+            raise Exception(
+                f'Pushbullet push failed with status {resp.status_code}: {resp.json()}'
+            )
 
     @action
-    def send_file(self, filename: str, device: str = None):
+    def send_file(self, filename: str, device: Optional[str] = None):
         """
         Send a file.
 
@@ -124,48 +137,61 @@ class PushbulletPlugin(Plugin):
         :param filename: Path to the local file
         """
 
+        dev = None
         if device:
-            device = self.get_device(device).output
-            if not device:
-                raise RuntimeError('No such device')
+            dev = self.get_device(device).output
+            if not dev:
+                raise RuntimeError(f'No such device: {device}')
 
-        resp = requests.post('https://api.pushbullet.com/v2/upload-request',
-                             data=json.dumps({'file_name': os.path.basename(filename)}),
-                             headers={'Authorization': 'Bearer ' + self.token,
-                                      'Content-Type': 'application/json'})
+        resp = requests.post(
+            'https://api.pushbullet.com/v2/upload-request',
+            data=json.dumps({'file_name': os.path.basename(filename)}),
+            headers={
+                'Authorization': 'Bearer ' + self.token,
+                'Content-Type': 'application/json',
+            },
+        )
 
         if resp.status_code != 200:
-            raise Exception('Pushbullet file upload request failed with status {}'.
-                            format(resp.status_code))
+            raise Exception(
+                f'Pushbullet file upload request failed with status {resp.status_code}'
+            )
 
         r = resp.json()
-        resp = requests.post(r['upload_url'], data=r['data'],
-                             files={'file': open(filename, 'rb')})
+        with open(filename, 'rb') as f:
+            resp = requests.post(r['upload_url'], data=r['data'], files={'file': f})
 
         if resp.status_code != 204:
-            raise Exception('Pushbullet file upload failed with status {}'.
-                            format(resp.status_code))
+            raise Exception(
+                f'Pushbullet file upload failed with status {resp.status_code}'
+            )
 
-        # noinspection PyTypeChecker
-        resp = requests.post('https://api.pushbullet.com/v2/pushes',
-                             headers={'Authorization': 'Bearer ' + self.token,
-                                      'Content-Type': 'application/json'},
-
-                             data=json.dumps({
-                                 'type': 'file',
-                                 'device_iden': device['iden'] if device else None,
-                                 'file_name': r['file_name'],
-                                 'file_type': r['file_type'],
-                                 'file_url': r['file_url']}))
+        resp = requests.post(
+            'https://api.pushbullet.com/v2/pushes',
+            headers={
+                'Authorization': 'Bearer ' + self.token,
+                'Content-Type': 'application/json',
+            },
+            data=json.dumps(
+                {
+                    'type': 'file',
+                    'device_iden': dev['iden'] if dev else None,
+                    'file_name': r['file_name'],
+                    'file_type': r['file_type'],
+                    'file_url': r['file_url'],
+                }
+            ),
+        )
 
         if resp.status_code >= 400:
-            raise Exception('Pushbullet file push failed with status {}'.
-                            format(resp.status_code))
+            raise Exception(
+                f'Pushbullet file push failed with status {resp.status_code}'
+            )
 
         return {
             'filename': r['file_name'],
             'type': r['file_type'],
-            'url': r['file_url']
+            'url': r['file_url'],
         }
 
     @action
@@ -178,17 +204,23 @@ class PushbulletPlugin(Plugin):
         backend = get_backend('pushbullet')
         device_id = backend.get_device_id() if backend else None
 
-        resp = requests.post('https://api.pushbullet.com/v2/ephemerals',
-                             data=json.dumps({
-                                 'type': 'push',
-                                 'push': {
-                                     'body': text,
-                                     'type': 'clip',
-                                     'source_device_iden': device_id,
-                                 },
-                             }),
-                             headers={'Authorization': 'Bearer ' + self.token,
-                                      'Content-Type': 'application/json'})
+        resp = requests.post(
+            'https://api.pushbullet.com/v2/ephemerals',
+            data=json.dumps(
+                {
+                    'type': 'push',
+                    'push': {
+                        'body': text,
+                        'type': 'clip',
+                        'source_device_iden': device_id,
+                    },
+                }
+            ),
+            headers={
+                'Authorization': 'Bearer ' + self.token,
+                'Content-Type': 'application/json',
+            },
+        )
 
         resp.raise_for_status()
 
