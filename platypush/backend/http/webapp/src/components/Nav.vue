@@ -156,6 +156,8 @@ nav {
       display: block;
       color: $nav-fg;
       padding: 1em 0.5em;
+      text-decoration: none;
+
       &:hover {
         color: $nav-fg;
       }

@@ -42,8 +42,13 @@ ul {
 }
 
 a {
+  color: $default-link-fg;
+  text-decoration: underline dotted;
   cursor: pointer;
-  text-decoration: none;
+
+  &:hover {
+    color: $default-hover-fg;
+  }
 }
 
 ::-webkit-scrollbar {

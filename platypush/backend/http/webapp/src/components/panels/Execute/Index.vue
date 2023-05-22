@@ -1,5 +1,5 @@
 <template>
-  <div class="row plugin execute-container">
+  <div class="row plugin execute-container" @click="onClick">
     <Loading v-if="loading" />
     <div class="section command-container">
       <div class="section-title">Execute Action</div>
@@ -32,7 +32,7 @@
 
           <div class="doc-container" v-if="selectedDoc">
             <div class="title">
-              Action documentation
+              <a :href="currentActionDocURL">Action documentation</a>
             </div>
 
             <div class="doc html">
@@ -215,6 +215,24 @@ export default {
         supportsExtraArgs: false,
       },
     }
+  },
+
+  computed: {
+    currentActionDocURL() {
+      if (!this.action?.name?.length)
+        return undefined
+
+      const plugin = this.action.name.split('.').slice(0, -1).join('.')
+      const actionName = this.action.name.split('.').slice(-1)
+      const actionClass = this.action.name
+        .split('.')
+        .slice(0, -1)
+        .map((token) => token.slice(0, 1).toUpperCase() + token.slice(1))
+        .join('') + 'Plugin'
+
+      return 'https://docs.platypush.tech/platypush/plugins/' +
+        `${plugin}.html#platypush.plugins.${plugin}.${actionClass}.${actionName}`
+    },
   },
 
   methods: {
@@ -456,6 +474,15 @@ export default {
 
       this.request('procedure.' + this.selectedProcedure.name, args)
           .then(this.onResponse).catch(this.onError).finally(this.onDone)
+    },
+
+    onClick(event) {
+      // Intercept any clicks from RST rendered links and open them in a new tab
+      if (event.target.tagName.toLowerCase() === 'a') {
+        event.stopPropagation()
+        event.preventDefault()
+        window.open(event.target.getAttribute('href', '_blank'))
+      }
     },
   },
 
@@ -856,6 +883,10 @@ $request-headers-btn-width: 7.5em;
       button {
         background: $procedure-submit-btn-bg;
       }
+    }
+
+    .action-param-value {
+      margin: 0.25em 0;
     }
   }
 

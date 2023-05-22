@@ -1,7 +1,7 @@
 import inspect
 import json
 import re
-from typing import Optional, Type
+from typing import Callable, Optional, Type
 
 from platypush.backend import Backend
 from platypush.message.event import Event
@@ -9,11 +9,29 @@ from platypush.message.response import Response
 from platypush.plugins import Plugin
 from platypush.utils import get_decorators
 
+from ._parsers import (
+    BackendParser,
+    EventParser,
+    MethodParser,
+    PluginParser,
+    ResponseParser,
+    SchemaParser,
+)
+
 
 class Model:
     """
     Base class for component models.
     """
+
+    _parsers = [
+        BackendParser,
+        EventParser,
+        MethodParser,
+        PluginParser,
+        ResponseParser,
+        SchemaParser,
+    ]
 
     def __init__(
         self,
@@ -32,8 +50,22 @@ class Model:
         self._obj_type = obj_type
         self.package = obj_type.__module__[len(prefix) :]
         self.name = name or self.package
-        self.doc = doc or obj_type.__doc__
         self.last_modified = last_modified
+        self.doc, argsdoc = self._parse_docstring(doc or obj_type.__doc__ or '')
+        self.args = {}
+        self.has_kwargs = False
+
+        for arg in list(inspect.signature(obj_type).parameters.values())[1:]:
+            if arg.kind == arg.VAR_KEYWORD:
+                self.has_kwargs = True
+                continue
+
+            self.args[arg.name] = {
+                'default': arg.default
+                if not issubclass(arg.default.__class__, type)
+                else None,
+                'doc': argsdoc.get(arg.name),
+            }
 
     def __str__(self):
         """
@@ -51,8 +83,61 @@ class Model:
         """
         Iterator for the model public attributes/values pairs.
         """
-        for attr in ['name', 'doc']:
+        for attr in ['name', 'args', 'doc', 'has_kwargs']:
             yield attr, getattr(self, attr)
+
+    @classmethod
+    def _parse_docstring(cls, docstring: str):
+        new_docstring = ''
+        params = {}
+        cur_param = None
+        cur_param_docstring = ''
+
+        if not docstring:
+            return None, {}
+
+        for line in docstring.split('\n'):
+            m = re.match(r'^\s*:param ([^:]+):\s*(.*)', line)
+            if m:
+                if cur_param:
+                    params[cur_param] = cur_param_docstring
+
+                cur_param = m.group(1)
+                cur_param_docstring = m.group(2)
+                continue
+
+            m = re.match(r'^\s*:return:\s+(.*)', line)
+            if m:
+                if cur_param:
+                    params[cur_param] = cur_param_docstring
+
+                new_docstring += '\n\n**Returns:**\n\n' + m.group(1).strip() + ' '
+                cur_param = None
+                continue
+
+            if cur_param:
+                if not line.strip():
+                    params[cur_param] = cur_param_docstring
+                    cur_param = None
+                    cur_param_docstring = ''
+                else:
+                    cur_param_docstring += '\n' + line.strip() + ' '
+            else:
+                new_docstring += line + '\n'
+
+        if cur_param:
+            params[cur_param] = cur_param_docstring
+
+        for param, doc in params.items():
+            params[param] = cls._post_process_docstring(doc)
+
+        return cls._post_process_docstring(new_docstring), params
+
+    @classmethod
+    def _post_process_docstring(cls, docstring: str) -> str:
+        for parsers in cls._parsers:
+            docstring = parsers.parse(docstring)
+        return docstring.strip()
 
 
 # pylint: disable=too-few-public-methods
@@ -90,7 +175,7 @@ class PluginModel(Model):
         Overrides the default implementation of ``__iter__`` to also include
         plugin actions.
         """
-        for attr in ['name', 'actions', 'doc']:
+        for attr in ['name', 'args', 'actions', 'doc', 'has_kwargs']:
             if attr == 'actions':
                 yield attr, {
                     name: dict(action) for name, action in self.actions.items()
@@ -122,66 +207,5 @@ class ActionModel(Model):
     Model for plugin action components.
     """
 
-    def __init__(self, action, **kwargs):
-        doc, argsdoc = self._parse_docstring(action.__doc__)
-        super().__init__(action, name=action.__name__, doc=doc, **kwargs)
-
-        self.args = {}
-        self.has_kwargs = False
-
-        for arg in list(inspect.signature(action).parameters.values())[1:]:
-            if arg.kind == arg.VAR_KEYWORD:
-                self.has_kwargs = True
-                continue
-
-            self.args[arg.name] = {
-                'default': arg.default
-                if not issubclass(arg.default.__class__, type)
-                else None,
-                'doc': argsdoc.get(arg.name),
-            }
-
-    @classmethod
-    def _parse_docstring(cls, docstring: str):
-        new_docstring = ''
-        params = {}
-        cur_param = None
-        cur_param_docstring = ''
-
-        if not docstring:
-            return None, {}
-
-        for line in docstring.split('\n'):
-            if m := re.match(r'^\s*:param ([^:]+):\s*(.*)', line):
-                if cur_param:
-                    params[cur_param] = cur_param_docstring
-
-                cur_param = m.group(1)
-                cur_param_docstring = m.group(2)
-            elif m := re.match(r'^\s*:return:\s+(.*)', line):
-                if cur_param:
-                    params[cur_param] = cur_param_docstring
-
-                new_docstring += '\n\n**Returns:**\n\n' + m.group(1).strip() + ' '
-                cur_param = None
-            elif re.match(r'^\s*:[^:]+:\s*.*', line):
-                continue
-            else:
-                if cur_param:
-                    if not line.strip():
-                        params[cur_param] = cur_param_docstring
-                        cur_param = None
-                        cur_param_docstring = ''
-                    else:
-                        cur_param_docstring += '\n' + line.strip() + ' '
-                else:
-                    new_docstring += line.strip() + ' '
-
-        if cur_param:
-            params[cur_param] = cur_param_docstring
-
-        return new_docstring.strip(), params
-
-    def __iter__(self):
-        for attr in ['name', 'args', 'doc', 'has_kwargs']:
-            yield attr, getattr(self, attr)
+    def __init__(self, obj_type: Type[Callable], *args, **kwargs):
+        super().__init__(obj_type, name=obj_type.__name__, *args, **kwargs)
