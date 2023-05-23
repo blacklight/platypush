@@ -8,7 +8,11 @@ from typing import Optional, Tuple
 from PIL.Image import Image
 
 from platypush.plugins.camera.model.camera import Camera
-from platypush.plugins.camera.model.writer import VideoWriter, FileVideoWriter, StreamWriter
+from platypush.plugins.camera.model.writer import (
+    VideoWriter,
+    FileVideoWriter,
+    StreamWriter,
+)
 
 
 class FFmpegWriter(VideoWriter, ABC):
@@ -16,9 +20,17 @@ class FFmpegWriter(VideoWriter, ABC):
     Generic FFmpeg encoder for camera frames.
     """
 
-    def __init__(self, *args, input_file: str = '-', input_format: str = 'rawvideo', output_file: str = '-',
-                 output_format: Optional[str] = None, pix_fmt: Optional[str] = None,
-                 output_opts: Optional[Tuple] = None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        input_file: str = '-',
+        input_format: str = 'rawvideo',
+        output_file: str = '-',
+        output_format: Optional[str] = None,
+        pix_fmt: Optional[str] = None,
+        output_opts: Optional[Tuple] = None,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
 
         self.input_file = input_file
@@ -29,21 +41,34 @@ class FFmpegWriter(VideoWriter, ABC):
         self.pix_fmt = pix_fmt
         self.output_opts = output_opts or ()
 
-        self.logger.info('Starting FFmpeg. Command: {}'.format(' '.join(self.ffmpeg_args)))
-        self.ffmpeg = subprocess.Popen(self.ffmpeg_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.logger.info('Starting FFmpeg. Command: ' + ' '.join(self.ffmpeg_args))
+        self.ffmpeg = subprocess.Popen(
+            self.ffmpeg_args, stdin=subprocess.PIPE, stdout=subprocess.PIPE
+        )
 
     @property
     def ffmpeg_args(self):
-        return [self.camera.info.ffmpeg_bin, '-y',
-                '-f', self.input_format,
-                *(('-pix_fmt', self.pix_fmt) if self.pix_fmt else ()),
-                '-s', '{}x{}'.format(self.width, self.height),
-                '-r', str(self.camera.info.fps),
-                '-i', self.input_file,
-                *(('-f', self.output_format) if self.output_format else ()),
-                *self.output_opts,
-                *(('-vcodec', self.camera.info.output_codec) if self.camera.info.output_codec else ()),
-                self.output_file]
+        return [
+            self.camera.info.ffmpeg_bin,
+            '-y',
+            '-f',
+            self.input_format,
+            *(('-pix_fmt', self.pix_fmt) if self.pix_fmt else ()),
+            '-s',
+            f'{self.width}x{self.height}',
+            '-r',
+            str(self.camera.info.fps),
+            '-i',
+            self.input_file,
+            *(('-f', self.output_format) if self.output_format else ()),
+            *self.output_opts,
+            *(
+                ('-vcodec', self.camera.info.output_codec)
+                if self.camera.info.output_codec
+                else ()
+            ),
+            self.output_file,
+        ]
 
     def is_closed(self):
         return self.closed or not self.ffmpeg or self.ffmpeg.poll() is not None
@@ -55,7 +80,7 @@ class FFmpegWriter(VideoWriter, ABC):
         try:
             self.ffmpeg.stdin.write(image.convert('RGB').tobytes())
         except Exception as e:
-            self.logger.warning('FFmpeg send error: {}'.format(str(e)))
+            self.logger.warning('FFmpeg send error: %s', e)
             self.close()
 
     def close(self):
@@ -63,7 +88,7 @@ class FFmpegWriter(VideoWriter, ABC):
             if self.ffmpeg and self.ffmpeg.stdin:
                 try:
                     self.ffmpeg.stdin.close()
-                except (IOError, OSError):
+                except OSError:
                     pass
 
             if self.ffmpeg:
@@ -77,7 +102,7 @@ class FFmpegWriter(VideoWriter, ABC):
             if self.ffmpeg and self.ffmpeg.stdout:
                 try:
                     self.ffmpeg.stdout.close()
-                except (IOError, OSError):
+                except OSError:
                     pass
 
         self.ffmpeg = None
@@ -98,10 +123,26 @@ class FFmpegStreamWriter(StreamWriter, FFmpegWriter, ABC):
     Stream camera frames using FFmpeg.
     """
 
-    def __init__(self, *args, output_format: str, output_opts: Optional[Tuple] = None, **kwargs):
-        super().__init__(*args, pix_fmt='rgb24', output_format=output_format, output_opts=output_opts or (
-            '-tune', 'zerolatency', '-preset', 'superfast', '-trellis', '0',
-            '-fflags', 'nobuffer'), **kwargs)
+    def __init__(
+        self, *args, output_format: str, output_opts: Optional[Tuple] = None, **kwargs
+    ):
+        super().__init__(
+            *args,
+            pix_fmt='rgb24',
+            output_format=output_format,
+            output_opts=output_opts
+            or (
+                '-tune',
+                'zerolatency',
+                '-preset',
+                'superfast',
+                '-trellis',
+                '0',
+                '-fflags',
+                'nobuffer',
+            ),
+            **kwargs,
+        )
         self._reader = threading.Thread(target=self._reader_thread)
         self._reader.start()
 
@@ -115,7 +156,7 @@ class FFmpegStreamWriter(StreamWriter, FFmpegWriter, ABC):
             try:
                 data = self.ffmpeg.stdout.read(1 << 15)
             except Exception as e:
-                self.logger.warning('FFmpeg reader error: {}'.format(str(e)))
+                self.logger.warning('FFmpeg reader error: %s', e)
                 break
 
             if not data:
@@ -123,7 +164,7 @@ class FFmpegStreamWriter(StreamWriter, FFmpegWriter, ABC):
 
             if self.frame is None:
                 latency = time.time() - start_time
-                self.logger.info('FFmpeg stream latency: {} secs'.format(latency))
+                self.logger.info('FFmpeg stream latency: %d secs', latency)
 
             with self.ready:
                 self.frame = data
@@ -140,12 +181,16 @@ class FFmpegStreamWriter(StreamWriter, FFmpegWriter, ABC):
         try:
             self.ffmpeg.stdin.write(data)
         except Exception as e:
-            self.logger.warning('FFmpeg send error: {}'.format(str(e)))
+            self.logger.warning('FFmpeg send error: %s', e)
             self.close()
 
     def close(self):
         super().close()
-        if self._reader and self._reader.is_alive() and threading.get_ident() != self._reader.ident:
+        if (
+            self._reader
+            and self._reader.is_alive()
+            and threading.get_ident() != self._reader.ident
+        ):
             self._reader.join(timeout=5.0)
             self._reader = None
 
