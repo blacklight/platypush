@@ -834,7 +834,7 @@ class CameraPlugin(Plugin, ABC):
         if device:
             return self._status(device)
 
-        return {id: self._status(device) for id, camera in self._devices.items()}
+        return {id: self._status(id) for id in self._devices}
 
     @staticmethod
     def transform_frame(frame, color_transform):

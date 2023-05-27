@@ -16,7 +16,7 @@ from tornado.web import Application, FallbackHandler
 
 from platypush.backend import Backend
 from platypush.backend.http.app import application
-from platypush.backend.http.app.utils import get_ws_routes
+from platypush.backend.http.app.utils import get_streaming_routes, get_ws_routes
 from platypush.backend.http.app.ws.events import events_redis_topic
 
 from platypush.bus.redis import RedisBus
@@ -331,7 +331,10 @@ class HttpBackend(Backend):
         container = WSGIContainer(application)
         tornado_app = Application(
             [
-                *[(route.path(), route) for route in get_ws_routes()],
+                *[
+                    (route.path(), route)
+                    for route in [*get_ws_routes(), *get_streaming_routes()]
+                ],
                 (r'.*', FallbackHandler, {'fallback': container}),
             ]
         )
@@ -352,7 +355,7 @@ class HttpBackend(Backend):
         )
 
         if self.use_werkzeug_server:
-            application.config['redis_queue'] = self.bus.redis_queue
+            application.config['redis_queue'] = self.bus.redis_queue  # type: ignore
             application.run(
                 host=self.bind_address,
                 port=self.port,
