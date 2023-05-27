@@ -19,7 +19,6 @@ Plugins
     platypush/plugins/camera.android.ipcam.rst
     platypush/plugins/camera.cv.rst
     platypush/plugins/camera.ffmpeg.rst
-    platypush/plugins/camera.gstreamer.rst
     platypush/plugins/camera.ir.mlx90640.rst
     platypush/plugins/camera.pi.rst
     platypush/plugins/chat.irc.rst
