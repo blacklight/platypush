@@ -1,0 +1,16 @@
+manifest:
+  events: {}
+  install:
+    pip:
+      - numpy
+      - Pillow
+      - pygobject
+    apt:
+      - python3-gi
+      - python3-gst-1.0
+    pacman:
+      - gst-python
+      - python-gobject
+
+  package: platypush.plugins.camera.gstreamer
+  type: plugin
