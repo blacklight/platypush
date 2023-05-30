@@ -1,7 +1,7 @@
 import io
 import logging
+import multiprocessing
 import os
-import threading
 import time
 
 from abc import ABC, abstractmethod
@@ -26,11 +26,11 @@ class VideoWriter(ABC):
         self.closed = False
 
     @abstractmethod
-    def write(self, img: Image):
+    def write(self, image: Image):
         """
         Write an image to the channel.
 
-        :param img: PIL Image instance.
+        :param image: PIL Image instance.
         """
         raise NotImplementedError()
 
@@ -76,7 +76,7 @@ class StreamWriter(VideoWriter, ABC):
         self.frame: Optional[bytes] = None
         self.frame_time: Optional[float] = None
         self.buffer = io.BytesIO()
-        self.ready = threading.Condition()
+        self.ready = multiprocessing.Condition()
         self.sock = sock
 
     def write(self, image: Image):
