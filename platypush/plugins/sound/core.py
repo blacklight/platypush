@@ -1,7 +1,3 @@
-"""
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-"""
-
 import enum
 import logging
 import json
@@ -15,7 +11,7 @@ class WaveShape(enum.Enum):
     TRIANG = 'triang'
 
 
-class Sound(object):
+class Sound:
     """
     Models a basic synthetic sound that can be played through an audio device
     """
@@ -34,9 +30,16 @@ class Sound(object):
     duration = None
     shape = None
 
-    def __init__(self, midi_note=midi_note, frequency=None, phase=phase,
-                 gain=gain, duration=duration, shape=WaveShape.SIN,
-                 A_frequency=STANDARD_A_FREQUENCY):
+    def __init__(
+        self,
+        midi_note=midi_note,
+        frequency=None,
+        phase=phase,
+        gain=gain,
+        duration=duration,
+        shape=WaveShape.SIN,
+        A_frequency=STANDARD_A_FREQUENCY,
+    ):
         """
         You can construct a sound either from a MIDI note or a base frequency
 
@@ -67,20 +70,24 @@ class Sound(object):
         """
 
         if midi_note and frequency:
-            raise RuntimeError('Please specify either a MIDI note or a base ' +
-                               'frequency')
+            raise RuntimeError(
+                'Please specify either a MIDI note or a base ' + 'frequency'
+            )
 
         if midi_note:
             self.midi_note = midi_note
-            self.frequency = self.note_to_freq(midi_note=midi_note,
-                                               A_frequency=A_frequency)
+            self.frequency = self.note_to_freq(
+                midi_note=midi_note, A_frequency=A_frequency
+            )
         elif frequency:
             self.frequency = frequency
-            self.midi_note = self.freq_to_note(frequency=frequency,
-                                               A_frequency=A_frequency)
+            self.midi_note = self.freq_to_note(
+                frequency=frequency, A_frequency=A_frequency
+            )
         else:
-            raise RuntimeError('Please specify either a MIDI note or a base ' +
-                               'frequency')
+            raise RuntimeError(
+                'Please specify either a MIDI note or a base ' + 'frequency'
+            )
 
         self.phase = phase
         self.gain = gain
@@ -99,8 +106,7 @@ class Sound(object):
         :type A_frequency: float
         """
 
-        return (2.0 ** ((midi_note - cls.STANDARD_A_MIDI_NOTE) / 12.0)) \
-               * A_frequency
+        return (2.0 ** ((midi_note - cls.STANDARD_A_MIDI_NOTE) / 12.0)) * A_frequency
 
     @classmethod
     def freq_to_note(cls, frequency, A_frequency=STANDARD_A_FREQUENCY):
@@ -116,10 +122,11 @@ class Sound(object):
 
         # TODO return also the offset in % between the provided frequency
         # and the standard MIDI note frequency
-        return int(12.0 * math.log(frequency / A_frequency, 2)
-                   + cls.STANDARD_A_MIDI_NOTE)
+        return int(
+            12.0 * math.log(frequency / A_frequency, 2) + cls.STANDARD_A_MIDI_NOTE
+        )
 
-    def get_wave(self, t_start=0., t_end=0., samplerate=_DEFAULT_SAMPLERATE):
+    def get_wave(self, t_start=0.0, t_end=0.0, samplerate=_DEFAULT_SAMPLERATE):
         """
         Get the wave binary data associated to this sound
 
@@ -137,6 +144,7 @@ class Sound(object):
         """
 
         import numpy as np
+
         x = np.linspace(t_start, t_end, int((t_end - t_start) * samplerate))
 
         x = x.reshape(len(x), 1)
@@ -148,8 +156,7 @@ class Sound(object):
                 wave[wave < 0] = -1
                 wave[wave >= 0] = 1
         elif self.shape == WaveShape.SAWTOOTH or self.shape == WaveShape.TRIANG:
-            wave = 2 * (self.frequency * x -
-                        np.floor(0.5 + self.frequency * x))
+            wave = 2 * (self.frequency * x - np.floor(0.5 + self.frequency * x))
             if self.shape == WaveShape.TRIANG:
                 wave = 2 * np.abs(wave) - 1
         else:
@@ -157,8 +164,14 @@ class Sound(object):
 
         return self.gain * wave
 
-    def fft(self, t_start=0., t_end=0., samplerate=_DEFAULT_SAMPLERATE,
-            freq_range=None, freq_buckets=None):
+    def fft(
+        self,
+        t_start=0.0,
+        t_end=0.0,
+        samplerate=_DEFAULT_SAMPLERATE,
+        freq_range=None,
+        freq_buckets=None,
+    ):
         """
         Get the real part of the Fourier transform associated to a time-bounded
             sample of this sound
@@ -173,7 +186,8 @@ class Sound(object):
         :type samplerate: int
 
         :param freq_range: FFT frequency range. Default: ``(0, samplerate/2)``
-            (see `Nyquist-Shannon sampling theorem <https://en.wikipedia.org/wiki/Nyquist%E2%80%93Shannon_sampling_theorem>`_)
+            (see`Nyquist-Shannon sampling theorem
+            <https://en.wikipedia.org/wiki/Nyquist%E2%80%93Shannon_sampling_theorem>`_)
         :type freq_range: list or tuple with 2 int elements (range)
 
         :param freq_buckets: Number of buckets to subdivide the frequency range.
@@ -190,7 +204,7 @@ class Sound(object):
 
         wave = self.get_wave(t_start=t_start, t_end=t_end, samplerate=samplerate)
         fft = np.fft.fft(wave.reshape(len(wave)))
-        fft = fft.real[freq_range[0]:freq_range[1]]
+        fft = fft.real[freq_range[0] : freq_range[1]]
 
         if freq_buckets is not None:
             fft = np.histogram(fft, bins=freq_buckets)
@@ -224,7 +238,7 @@ class Sound(object):
         raise RuntimeError('Usage: {}'.format(__doc__))
 
 
-class Mix(object):
+class Mix:
     """
     This class models a set of mixed :class:`Sound` instances that can be played
     through an audio stream to an audio device
@@ -251,15 +265,22 @@ class Mix(object):
 
     def remove(self, sound_index):
         if sound_index >= len(self._sounds):
-            self.logger.error('No such sound index: {} in mix {}'.format(
-                sound_index, list(self)))
+            self.logger.error(
+                'No such sound index: {} in mix {}'.format(sound_index, list(self))
+            )
             return
 
         self._sounds.pop(sound_index)
 
     # noinspection PyProtectedMember
-    def get_wave(self, t_start=0., t_end=0., normalize_range=(-1.0, 1.0),
-                 on_clip='scale', samplerate=Sound._DEFAULT_SAMPLERATE):
+    def get_wave(
+        self,
+        t_start=0.0,
+        t_end=0.0,
+        normalize_range=(-1.0, 1.0),
+        on_clip='scale',
+        samplerate=Sound._DEFAULT_SAMPLERATE,
+    ):
         """
         Get the wave binary data associated to this mix
 
@@ -289,8 +310,9 @@ class Mix(object):
         wave = None
 
         for sound in self._sounds:
-            sound_wave = sound.get_wave(t_start=t_start, t_end=t_end,
-                                        samplerate=samplerate)
+            sound_wave = sound.get_wave(
+                t_start=t_start, t_end=t_end, samplerate=samplerate
+            )
 
             if wave is None:
                 wave = sound_wave
@@ -298,8 +320,9 @@ class Mix(object):
                 wave += sound_wave
 
         if normalize_range and len(wave):
-            scale_factor = (normalize_range[1] - normalize_range[0]) / \
-                           (wave.max() - wave.min())
+            scale_factor = (normalize_range[1] - normalize_range[0]) / (
+                wave.max() - wave.min()
+            )
 
             if scale_factor < 1.0:  # Wave clipping
                 if on_clip == 'scale':
@@ -308,14 +331,21 @@ class Mix(object):
                     wave[wave < normalize_range[0]] = normalize_range[0]
                     wave[wave > normalize_range[1]] = normalize_range[1]
                 else:
-                    raise RuntimeError('Supported values for "on_clip": ' +
-                                       '"scale" or "clip"')
+                    raise RuntimeError(
+                        'Supported values for "on_clip": ' + '"scale" or "clip"'
+                    )
 
         return wave
 
     # noinspection PyProtectedMember
-    def fft(self, t_start=0., t_end=0., samplerate=Sound._DEFAULT_SAMPLERATE,
-            freq_range=None, freq_buckets=None):
+    def fft(
+        self,
+        t_start=0.0,
+        t_end=0.0,
+        samplerate=Sound._DEFAULT_SAMPLERATE,
+        freq_range=None,
+        freq_buckets=None,
+    ):
         """
         Get the real part of the Fourier transform associated to a time-bounded
             sample of this mix
@@ -330,7 +360,8 @@ class Mix(object):
         :type samplerate: int
 
         :param freq_range: FFT frequency range. Default: ``(0, samplerate/2)``
-            (see `Nyquist-Shannon sampling theorem <https://en.wikipedia.org/wiki/Nyquist%E2%80%93Shannon_sampling_theorem>`_)
+            (see `Nyquist-Shannon sampling theorem
+            <https://en.wikipedia.org/wiki/Nyquist%E2%80%93Shannon_sampling_theorem>`_)
         :type freq_range: list or tuple with 2 int elements (range)
 
         :param freq_buckets: Number of buckets to subdivide the frequency range.
@@ -347,7 +378,7 @@ class Mix(object):
 
         wave = self.get_wave(t_start=t_start, t_end=t_end, samplerate=samplerate)
         fft = np.fft.fft(wave.reshape(len(wave)))
-        fft = fft.real[freq_range[0]:freq_range[1]]
+        fft = fft.real[freq_range[0] : freq_range[1]]
 
         if freq_buckets is not None:
             fft = np.histogram(fft, bins=freq_buckets)
@@ -369,5 +400,6 @@ class Mix(object):
             duration = max(duration, sound.duration)
 
         return duration
+
 
 # vim:sw=4:ts=4:et:

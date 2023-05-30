@@ -5,7 +5,11 @@ from typing import Optional, Union, Tuple, Set
 
 import numpy as np
 
-from platypush.plugins.camera.model.writer import StreamWriter, VideoWriter, FileVideoWriter
+from platypush.plugins.camera.model.writer import (
+    StreamWriter,
+    VideoWriter,
+    FileVideoWriter,
+)
 from platypush.plugins.camera.model.writer.preview import PreviewWriter
 
 
@@ -32,7 +36,7 @@ class CameraInfo:
     stream_format: Optional[str] = None
     vertical_flip: bool = False
     warmup_frames: int = 0
-    warmup_seconds: float = 0.
+    warmup_seconds: float = 0.0
 
     def set(self, **kwargs):
         for k, v in kwargs.items():
@@ -97,10 +101,15 @@ class Camera:
         return writers
 
     def effective_resolution(self) -> Tuple[int, int]:
+        """
+        Calculates the effective resolution of the camera in pixels, taking
+        into account the base resolution, the scale and the rotation.
+        """
+        assert self.info.resolution, 'No base resolution specified'
         rot = (self.info.rotate or 0) * math.pi / 180
         sin = math.sin(rot)
         cos = math.cos(rot)
-        scale = np.array([[self.info.scale_x or 1., self.info.scale_y or 1.]])
+        scale = np.array([[self.info.scale_x or 1.0, self.info.scale_y or 1.0]])
         resolution = np.array([[self.info.resolution[0], self.info.resolution[1]]])
         rot_matrix = np.array([[sin, cos], [cos, sin]])
         resolution = (scale * abs(np.cross(rot_matrix, resolution)))[0]

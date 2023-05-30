@@ -56,6 +56,8 @@ class CameraRoute(StreamingRoute):
                 camera.stream.ready.wait(timeout=timeout)
                 return camera.stream.frame
 
+        return None
+
     def _should_stop(self):
         if self._finished:
             return True
