@@ -8,6 +8,7 @@ from tornado.web import stream_request_body
 from platypush.context import get_plugin
 
 from platypush.plugins.camera import Camera, CameraPlugin, StreamWriter
+from platypush.utils import get_plugin_name_by_class
 
 from .. import StreamingRoute
 
@@ -29,6 +30,8 @@ class CameraRoute(StreamingRoute):
     """
     Route for camera streams.
     """
+
+    _redis_queue_prefix = '_platypush/camera'
 
     def __init__(self, *args, **kwargs):
         # TODO Support multiple concurrent requests
@@ -67,9 +70,16 @@ class CameraRoute(StreamingRoute):
 
         return True
 
-    def send_feed(self, camera: Camera):
-        while not self._should_stop():
-            frame = self._get_frame(camera, timeout=5.0)
+    def send_feed(self, camera: CameraPlugin):
+        redis_queue = self._get_redis_queue_by_camera(camera)
+        for msg in self.listen():
+            if self._should_stop():
+                break
+
+            if msg.channel != redis_queue:
+                continue
+
+            frame = msg.data
             if frame:
                 self.write(frame)
                 self.flush()
@@ -111,6 +121,21 @@ class CameraRoute(StreamingRoute):
 
         return kwargs
 
+    @classmethod
+    def _get_redis_queue_by_camera(cls, camera: CameraPlugin) -> str:
+        plugin_name = get_plugin_name_by_class(camera.__class__)
+        assert plugin_name, f'No such plugin: {plugin_name}'
+        return '/'.join(
+            [
+                cls._redis_queue_prefix,
+                plugin_name,
+                *map(
+                    str,
+                    [camera.camera_info.device] if camera.camera_info.device else [],
+                ),
+            ]
+        )
+
     def get(self, plugin: str, route: str, extension: str = '') -> None:
         self._set_request_type_and_extension(route, extension)
         if not (self._request_type and self._extension):
@@ -119,18 +144,21 @@ class CameraRoute(StreamingRoute):
 
         stream_class = StreamWriter.get_class_by_name(self._extension)
         camera = self._get_camera(plugin)
+        redis_queue = self._get_redis_queue_by_camera(camera)
         self.set_header('Content-Type', stream_class.mimetype)
+        self.subscribe(redis_queue)
 
         with camera.open(
             stream=True,
             stream_format=self._extension,
             frames_dir=None,
+            redis_queue=redis_queue,
             **self._get_args(self.request.arguments),
         ) as session:
             camera.start_camera(session)
             if self._request_type == RequestType.PHOTO:
                 self.send_frame(session)
             elif self._request_type == RequestType.VIDEO:
-                self.send_feed(session)
+                self.send_feed(camera)
 
         self.finish()

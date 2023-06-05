@@ -194,7 +194,11 @@ class CameraPlugin(Plugin, ABC):
         return merged_info
 
     def open_device(
-        self, device: Optional[Union[int, str]] = None, stream: bool = False, **params
+        self,
+        device: Optional[Union[int, str]],
+        stream: bool = False,
+        redis_queue: Optional[str] = None,
+        **params,
     ) -> Camera:
         """
         Initialize and open a device.
@@ -231,7 +235,9 @@ class CameraPlugin(Plugin, ABC):
 
         if stream:
             writer_class = StreamWriter.get_class_by_name(camera.info.stream_format)
-            camera.stream = writer_class(camera=camera, plugin=self)
+            camera.stream = writer_class(
+                camera=camera, plugin=self, redis_queue=redis_queue
+            )
 
         if camera.info.frames_dir:
             pathlib.Path(
@@ -275,19 +281,27 @@ class CameraPlugin(Plugin, ABC):
 
     @contextmanager
     def open(
-        self, device: Optional[Union[int, str]] = None, stream: bool = None, **info
+        self,
+        device: Optional[Union[int, str]] = None,
+        stream: bool = None,
+        redis_queue: Optional[str] = None,
+        **info,
     ) -> Generator[Camera, None, None]:
         """
         Initialize and open a device using a context manager pattern.
 
         :param device: Capture device by name, path or ID.
         :param stream: If set, the frames will be streamed to ``camera.stream``.
+        :param redis_queue: If set, the frames will be streamed to
+            ``redis_queue``.
         :param info: Camera parameters override - see constructors parameters.
         :return: The initialized :class:`platypush.plugins.camera.Camera` object.
         """
         camera = None
         try:
-            camera = self.open_device(device, stream=stream, **info)
+            camera = self.open_device(
+                device, stream=stream, redis_queue=redis_queue, **info
+            )
             yield camera
         finally:
             self.close_device(camera)

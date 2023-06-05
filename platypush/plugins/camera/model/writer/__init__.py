@@ -9,6 +9,8 @@ from typing import Optional, IO
 
 from PIL.Image import Image
 
+from platypush.utils import get_redis
+
 
 class VideoWriter(ABC):
     """
@@ -71,12 +73,19 @@ class StreamWriter(VideoWriter, ABC):
     Abstract class for camera streaming operations.
     """
 
-    def __init__(self, *args, sock: Optional[IO] = None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        sock: Optional[IO] = None,
+        redis_queue: Optional[str] = None,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.frame: Optional[bytes] = None
         self.frame_time: Optional[float] = None
         self.buffer = io.BytesIO()
         self.ready = multiprocessing.Condition()
+        self.redis_queue = redis_queue
         self.sock = sock
 
     def write(self, image: Image):
@@ -102,6 +111,9 @@ class StreamWriter(VideoWriter, ABC):
             except ConnectionError:
                 self.logger.info('Client connection closed')
                 self.close()
+
+        if self.redis_queue:
+            get_redis().publish(self.redis_queue, data)
 
     @abstractmethod
     def encode(self, image: Image) -> bytes:
