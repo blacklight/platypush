@@ -1,3 +1,3 @@
-from ._base import StreamingRoute, logger
+from ._base import StreamingRoute
 
-__all__ = ['StreamingRoute', 'logger']
+__all__ = ['StreamingRoute']

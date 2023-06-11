@@ -1,3 +1,4 @@
+import logging
 import os
 import importlib
 import inspect
@@ -5,7 +6,9 @@ from typing import List, Type
 
 import pkgutil
 
-from ..streaming import StreamingRoute, logger
+from ..streaming import StreamingRoute
+
+logger = logging.getLogger(__name__)
 
 
 def get_streaming_routes() -> List[Type[StreamingRoute]]:

@@ -1,18 +1,16 @@
 from enum import Enum
 import json
-from logging import getLogger
 from typing import Optional
 from typing_extensions import override
 
 from tornado.web import stream_request_body
 from platypush.context import get_plugin
 
+from platypush.config import Config
 from platypush.plugins.camera import Camera, CameraPlugin, StreamWriter
 from platypush.utils import get_plugin_name_by_class
 
 from .. import StreamingRoute
-
-logger = getLogger(__name__)
 
 
 class RequestType(Enum):
@@ -31,10 +29,9 @@ class CameraRoute(StreamingRoute):
     Route for camera streams.
     """
 
-    _redis_queue_prefix = '_platypush/camera'
+    _redis_queue_prefix = f'_platypush/{Config.get("device_id") or ""}/camera'
 
     def __init__(self, *args, **kwargs):
-        # TODO Support multiple concurrent requests
         super().__init__(*args, **kwargs)
         self._camera: Optional[Camera] = None
         self._request_type = RequestType.UNKNOWN
@@ -60,29 +57,6 @@ class CameraRoute(StreamingRoute):
                 return camera.stream.frame
 
         return None
-
-    def _should_stop(self):
-        if self._finished:
-            return True
-
-        if self.request.connection and getattr(self.request.connection, 'stream', None):
-            return self.request.connection.stream.closed()  # type: ignore
-
-        return True
-
-    def send_feed(self, camera: CameraPlugin):
-        redis_queue = self._get_redis_queue_by_camera(camera)
-        for msg in self.listen():
-            if self._should_stop():
-                break
-
-            if msg.channel != redis_queue:
-                continue
-
-            frame = msg.data
-            if frame:
-                self.write(frame)
-                self.flush()
 
     def send_frame(self, camera: Camera):
         frame = None
@@ -121,8 +95,9 @@ class CameraRoute(StreamingRoute):
 
         return kwargs
 
+    @override
     @classmethod
-    def _get_redis_queue_by_camera(cls, camera: CameraPlugin) -> str:
+    def _get_redis_queue(cls, camera: CameraPlugin, *_, **__) -> str:
         plugin_name = get_plugin_name_by_class(camera.__class__)
         assert plugin_name, f'No such plugin: {plugin_name}'
         return '/'.join(
@@ -144,9 +119,8 @@ class CameraRoute(StreamingRoute):
 
         stream_class = StreamWriter.get_class_by_name(self._extension)
         camera = self._get_camera(plugin)
-        redis_queue = self._get_redis_queue_by_camera(camera)
+        redis_queue = self._get_redis_queue(camera)
         self.set_header('Content-Type', stream_class.mimetype)
-        self.subscribe(redis_queue)
 
         with camera.open(
             stream=True,
@@ -159,6 +133,6 @@ class CameraRoute(StreamingRoute):
             if self._request_type == RequestType.PHOTO:
                 self.send_frame(session)
             elif self._request_type == RequestType.VIDEO:
-                self.send_feed(camera)
+                self.forward_stream(camera)
 
         self.finish()

@@ -11,5 +11,9 @@ manifest:
     - sounddevice
     - soundfile
     - numpy
+    apt:
+    - ffmpeg
+    pacman:
+    - ffmpeg
   package: platypush.plugins.sound
   type: plugin
