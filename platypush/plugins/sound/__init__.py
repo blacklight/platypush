@@ -442,6 +442,7 @@ class SoundPlugin(Plugin):
         self,
         device: Optional[str] = None,
         fifo: Optional[str] = None,
+        outfile: Optional[str] = None,
         duration: Optional[float] = None,
         sample_rate: Optional[int] = None,
         dtype: str = 'float32',
@@ -456,8 +457,10 @@ class SoundPlugin(Plugin):
 
         :param device: Input device (default: default configured device or
             system default audio input if not configured)
-        :param fifo: Path of the FIFO that will be used to exchange audio
-            samples (default: /tmp/inputstream)
+        :param fifo: Path of a FIFO that will be used to exchange audio frames
+            with other consumers.
+        :param outfile: If specified, the audio data will be persisted on the
+            specified audio file too.
         :param duration: Recording duration in seconds (default: record until
             stop event)
         :param sample_rate: Recording sample rate (default: device default rate)
@@ -487,8 +490,18 @@ class SoundPlugin(Plugin):
         if blocksize is None:
             blocksize = self.input_blocksize
 
-        if not fifo:
-            fifo = os.devnull
+        if fifo:
+            fifo = os.path.expanduser(fifo)
+            if os.path.exists(fifo) and stat.S_ISFIFO(os.stat(fifo).st_mode):
+                self.logger.info('Removing previous input stream FIFO %s', fifo)
+                os.unlink(fifo)
+
+            os.mkfifo(fifo, 0o644)
+            outfile = fifo
+        elif outfile:
+            outfile = os.path.expanduser(outfile)
+
+        outfile = outfile or fifo or os.devnull
 
         def audio_callback(audio_converter: ConverterProcess):
             # _ = frames
@@ -522,8 +535,8 @@ class SoundPlugin(Plugin):
                     latency=latency,
                     blocksize=blocksize,
                 ), open(
-                    fifo, 'wb'
-                ) as audio_queue:
+                    outfile, 'wb'
+                ) as f:
                     self.start_recording()
                     get_bus().post(SoundRecordingStartedEvent())
                     self.logger.info('Started recording from device [%s]', device)
@@ -549,7 +562,7 @@ class SoundPlugin(Plugin):
                         if not data:
                             continue
 
-                        audio_queue.write(data)
+                        f.write(data)
                         if redis_queue:
                             get_redis().publish(redis_queue, data)
 
@@ -558,13 +571,6 @@ class SoundPlugin(Plugin):
             finally:
                 self.stop_recording()
                 get_bus().post(SoundRecordingStoppedEvent())
-
-        if os.path.exists(fifo):
-            if stat.S_ISFIFO(os.stat(fifo).st_mode):
-                self.logger.info('Removing previous input stream FIFO %s', fifo)
-                os.unlink(fifo)
-        else:
-            os.mkfifo(fifo, 0o644)
 
         Thread(target=streaming_thread).start()
 
