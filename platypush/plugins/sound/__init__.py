@@ -122,7 +122,7 @@ class SoundPlugin(Plugin):
         :param category: Device category to query. Can be either input or output
         :type category: str
         """
-        return sd.query_hostapis()[0].get('default_' + category.lower() + '_device')
+        return sd.query_hostapis()[0].get('default_' + category.lower() + '_device')  # type: ignore
 
     @action
     def query_devices(self, category=None):
@@ -165,9 +165,9 @@ class SoundPlugin(Plugin):
 
         devs = sd.query_devices()
         if category == 'input':
-            devs = [d for d in devs if d.get('max_input_channels') > 0]
+            devs = [d for d in devs if d.get('max_input_channels') > 0]  # type: ignore
         elif category == 'output':
-            devs = [d for d in devs if d.get('max_output_channels') > 0]
+            devs = [d for d in devs if d.get('max_output_channels') > 0]  # type: ignore
 
         return devs
 
@@ -454,6 +454,7 @@ class SoundPlugin(Plugin):
     def record(
         self,
         device: Optional[str] = None,
+        output_device: Optional[str] = None,
         fifo: Optional[str] = None,
         outfile: Optional[str] = None,
         duration: Optional[float] = None,
@@ -465,12 +466,16 @@ class SoundPlugin(Plugin):
         redis_queue: Optional[str] = None,
         format: str = 'wav',
         stream: bool = True,
+        play_audio: bool = False,
     ):
         """
         Return audio data from an audio source
 
         :param device: Input device (default: default configured device or
             system default audio input if not configured)
+        :param output_device: Audio output device if ``play_audio=True`` (audio
+            pass-through) (default: default configured device or system default
+            audio output if not configured)
         :param fifo: Path of a FIFO that will be used to exchange audio frames
             with other consumers.
         :param outfile: If specified, the audio data will be persisted on the
@@ -483,6 +488,8 @@ class SoundPlugin(Plugin):
             float32
         :param blocksize: Audio block size (default: configured
             `input_blocksize` or 2048)
+        :param play_audio: If True, then the recorded audio will be played in
+            real-time on the selected ``output_device`` (default: False).
         :param latency: Device latency in seconds (default: the device's default high latency)
         :param channels: Number of channels (default: 1)
         :param redis_queue: If set, the audio chunks will also be published to
@@ -499,9 +506,18 @@ class SoundPlugin(Plugin):
         if device is None:
             device = self._get_default_device('input')
 
+        if play_audio:
+            output_device = (
+                output_device
+                or self.output_device
+                or self._get_default_device('output')
+            )
+
+            device = (device, output_device)  # type: ignore
+
         if sample_rate is None:
             dev_info = sd.query_devices(device, 'input')
-            sample_rate = int(dev_info['default_samplerate'])
+            sample_rate = int(dev_info['default_samplerate'])  # type: ignore
 
         if blocksize is None:
             blocksize = self.input_blocksize
@@ -522,7 +538,7 @@ class SoundPlugin(Plugin):
         def audio_callback(audio_converter: ConverterProcess):
             # _ = frames
             # __ = time
-            def callback(indata, _, __, status):
+            def callback(indata, outdata, _, __, status):
                 while self._get_recording_state() == RecordingState.PAUSED:
                     self.recording_paused_changed.wait()
 
@@ -530,11 +546,15 @@ class SoundPlugin(Plugin):
                     self.logger.warning('Recording callback status: %s', status)
 
                 audio_converter.write(indata.tobytes())
+                if play_audio:
+                    outdata[:] = indata
 
             return callback
 
         def streaming_thread():
             try:
+                stream_index = self._allocate_stream_index() if play_audio else None
+
                 with ConverterProcess(
                     ffmpeg_bin=self.ffmpeg_bin,
                     sample_rate=sample_rate,
@@ -542,7 +562,7 @@ class SoundPlugin(Plugin):
                     dtype=dtype,
                     chunk_size=self.input_blocksize,
                     output_format=format,
-                ) as converter, sd.InputStream(
+                ) as converter, sd.Stream(
                     samplerate=sample_rate,
                     device=device,
                     channels=channels,
@@ -550,10 +570,15 @@ class SoundPlugin(Plugin):
                     dtype=dtype,
                     latency=latency,
                     blocksize=blocksize,
-                ), open(
+                ) as audio_stream, open(
                     outfile, 'wb'
                 ) as f:
                     self.start_recording()
+                    if stream_index:
+                        self._start_playback(
+                            stream_index=stream_index, stream=audio_stream
+                        )
+
                     get_bus().post(SoundRecordingStartedEvent())
                     self.logger.info('Started recording from device [%s]', device)
                     recording_started_time = time.time()
@@ -591,117 +616,17 @@ class SoundPlugin(Plugin):
         Thread(target=streaming_thread).start()
 
     @action
-    def recordplay(
-        self,
-        duration=None,
-        input_device=None,
-        output_device=None,
-        sample_rate=None,
-        blocksize=None,
-        latency=0,
-        channels=1,
-        dtype=None,
-    ):
+    def recordplay(self, *args, **kwargs):
         """
-        Records audio and plays it on an output sound device (audio pass-through)
-
-        :param duration: Recording duration in seconds (default: record until stop event)
-        :type duration: float
-
-        :param input_device: Input device (default: default configured device
-            or system default audio input if not configured)
-        :type input_device: int or str
-
-        :param output_device: Output device (default: default configured device
-            or system default audio output if not configured)
-        :type output_device: int or str
-
-        :param sample_rate: Recording sample rate (default: device default rate)
-        :type sample_rate: int
-
-        :param blocksize: Audio block size (default: configured `output_blocksize` or 2048)
-        :type blocksize: int
-
-        :param latency: Device latency in seconds (default: 0)
-        :type latency: float
-
-        :param channels: Number of channels (default: 1)
-        :type channels: int
-
-        :param dtype: Data type for the recording - see `Soundfile docs -
-            Recording
-            <https://python-sounddevice.readthedocs.io/en/0.3.12/_modules/sounddevice.html#rec>`_
-            for available types (default: input device default)
-        :type dtype: str
+        Deprecated alias for :meth:`.record`.
         """
+        warnings.warn(
+            'sound.recordplay is deprecated, use sound.record with `play_audio=True` instead',
+            DeprecationWarning,
+            stacklevel=1,
+        )
 
-        self.recording_paused_changed.clear()
-
-        if input_device is None:
-            input_device = self.input_device
-        if input_device is None:
-            input_device = self._get_default_device('input')
-
-        if output_device is None:
-            output_device = self.output_device
-        if output_device is None:
-            output_device = self._get_default_device('output')
-
-        if sample_rate is None:
-            dev_info = sd.query_devices(input_device, 'input')
-            sample_rate = int(dev_info['default_samplerate'])
-
-        if blocksize is None:
-            blocksize = self.output_blocksize
-
-        # _ = frames
-        # __ = time
-        def audio_callback(indata, outdata, _, __, status):
-            while self._get_recording_state() == RecordingState.PAUSED:
-                self.recording_paused_changed.wait()
-
-            if status:
-                self.logger.warning('Recording callback status: %s', status)
-
-            outdata[:] = indata
-
-        stream_index = None
-
-        try:
-            stream_index = self._allocate_stream_index()
-            stream = sd.Stream(
-                samplerate=sample_rate,
-                channels=channels,
-                blocksize=blocksize,
-                latency=latency,
-                device=(input_device, output_device),
-                dtype=dtype,
-                callback=audio_callback,
-            )
-            self.start_recording()
-            self._start_playback(stream_index=stream_index, stream=stream)
-
-            self.logger.info(
-                'Started recording pass-through from device [%s] to sound device [%s]',
-                input_device,
-                output_device,
-            )
-
-            recording_started_time = time.time()
-
-            while self._get_recording_state() != RecordingState.STOPPED and (
-                duration is None or time.time() - recording_started_time < duration
-            ):
-                while self._get_recording_state() == RecordingState.PAUSED:
-                    self.recording_paused_changed.wait()
-
-                time.sleep(0.1)
-
-        except queue.Empty:
-            self.logger.warning('Recording timeout: audio callback failed?')
-        finally:
-            self.stop_playback([stream_index])
-            self.stop_recording()
+        return self.record(*args, **kwargs)
 
     @action
     def query_streams(self):
