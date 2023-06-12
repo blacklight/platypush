@@ -32,7 +32,7 @@ class SoundRoute(StreamingRoute):
     @contextmanager
     def _audio_stream(self, **kwargs) -> Generator[None, None, None]:
         response = send_request(
-            'sound.stream_recording',
+            'sound.record',
             dtype='int16',
             **kwargs,
         )
