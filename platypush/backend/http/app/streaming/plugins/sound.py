@@ -46,7 +46,7 @@ class SoundRoute(StreamingRoute):
 
     @override
     @classmethod
-    def _get_redis_queue(cls, device: Optional[str] = None, *_, **__) -> str:
+    def _get_redis_queue(cls, *_, device: Optional[str] = None, **__) -> str:
         return '/'.join([cls._redis_queue_prefix, *([device] if device else [])])
 
     def _get_args(self, **kwargs):

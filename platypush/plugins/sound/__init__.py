@@ -451,7 +451,7 @@ class SoundPlugin(Plugin):
         return self.record(*args, **kwargs)
 
     @action
-    def record(
+    def record(  # pylint: disable=too-many-statements
         self,
         device: Optional[str] = None,
         output_device: Optional[str] = None,
@@ -459,12 +459,12 @@ class SoundPlugin(Plugin):
         outfile: Optional[str] = None,
         duration: Optional[float] = None,
         sample_rate: Optional[int] = None,
-        dtype: str = 'float32',
+        dtype: str = 'int16',
         blocksize: Optional[int] = None,
         latency: Union[float, str] = 'high',
         channels: int = 1,
         redis_queue: Optional[str] = None,
-        format: str = 'wav',
+        format: str = 'wav',  # pylint: disable=redefined-builtin
         stream: bool = True,
         play_audio: bool = False,
     ):
