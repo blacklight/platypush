@@ -3,7 +3,7 @@ from asyncio.subprocess import PIPE
 from queue import Empty
 
 from queue import Queue
-from threading import Thread
+from threading import Event, RLock, Thread
 from typing import Optional, Self
 
 from platypush.context import get_or_create_event_loop
@@ -75,19 +75,15 @@ class ConverterProcess(Thread):
         self._out_queue = Queue()
         self.ffmpeg = None
         self._loop = None
+        self._should_stop = Event()
+        self._stop_lock = RLock()
 
     def __enter__(self) -> Self:
         self.start()
         return self
 
     def __exit__(self, *_, **__):
-        if self.ffmpeg and self._loop:
-            self._loop.call_soon_threadsafe(self.ffmpeg.kill)
-
-        self.ffmpeg = None
-
-        if self._loop:
-            self._loop = None
+        self.stop()
 
     def _check_ffmpeg(self):
         assert (
@@ -125,7 +121,12 @@ class ConverterProcess(Thread):
         except asyncio.TimeoutError:
             pass
 
-        while self._loop and self.ffmpeg and self.ffmpeg.returncode is None:
+        while (
+            self._loop
+            and self.ffmpeg
+            and self.ffmpeg.returncode is None
+            and not self.should_stop
+        ):
             self._check_ffmpeg()
             assert (
                 self.ffmpeg and self.ffmpeg.stdout
@@ -157,6 +158,24 @@ class ConverterProcess(Thread):
         super().run()
         self._loop = get_or_create_event_loop()
         self._loop.run_until_complete(self._audio_proxy(timeout=1))
+
+    def stop(self):
+        with self._stop_lock:
+            self._should_stop.set()
+            if self.ffmpeg:
+                try:
+                    self.ffmpeg.kill()
+                except ProcessLookupError:
+                    pass
+
+            self.ffmpeg = None
+
+            if self._loop:
+                self._loop = None
+
+    @property
+    def should_stop(self) -> bool:
+        return self._should_stop.is_set()
 
 
 # vim:sw=4:ts=4:et:
