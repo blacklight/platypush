@@ -7,6 +7,7 @@ import time
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from dataclasses import asdict
 from datetime import datetime
 from multiprocessing import Process
 from queue import Queue
@@ -152,21 +153,21 @@ class CameraPlugin(Plugin, ABC):
         """
         super().__init__(**kwargs)
 
-        self.workdir = os.path.join(
-            Config.get('workdir'), get_plugin_name_by_class(self)
-        )
+        workdir = Config.get('workdir')
+        plugin_name = get_plugin_name_by_class(self)
+        assert isinstance(workdir, str) and plugin_name
+        self.workdir = os.path.join(workdir, plugin_name)
         pathlib.Path(self.workdir).mkdir(mode=0o755, exist_ok=True, parents=True)
 
-        # noinspection PyArgumentList
         self.camera_info = self._camera_info_class(
             device,
             color_transform=color_transform,
             warmup_frames=warmup_frames,
-            warmup_seconds=warmup_seconds,
+            warmup_seconds=warmup_seconds or 0,
             rotate=rotate,
             scale_x=scale_x,
             scale_y=scale_y,
-            capture_timeout=capture_timeout,
+            capture_timeout=capture_timeout or 20,
             fps=fps,
             input_format=input_format,
             output_format=output_format,
@@ -227,13 +228,12 @@ class CameraPlugin(Plugin, ABC):
             camera.start_event.clear()
             camera.capture_thread = None
         else:
-            # noinspection PyArgumentList
             camera = self._camera_class(info=info)
 
         camera.info.set(**params)
         camera.object = self.prepare_device(camera)
 
-        if stream:
+        if stream and camera.info.stream_format:
             writer_class = StreamWriter.get_class_by_name(camera.info.stream_format)
             camera.stream = writer_class(
                 camera=camera, plugin=self, redis_queue=redis_queue
@@ -283,7 +283,7 @@ class CameraPlugin(Plugin, ABC):
     def open(
         self,
         device: Optional[Union[int, str]] = None,
-        stream: bool = None,
+        stream: bool = False,
         redis_queue: Optional[str] = None,
         **info,
     ) -> Generator[Camera, None, None]:
@@ -304,7 +304,8 @@ class CameraPlugin(Plugin, ABC):
             )
             yield camera
         finally:
-            self.close_device(camera)
+            if camera:
+                self.close_device(camera)
 
     @abstractmethod
     def prepare_device(self, device: Camera):
@@ -333,7 +334,6 @@ class CameraPlugin(Plugin, ABC):
         """
         raise NotImplementedError()
 
-    # noinspection PyShadowingBuiltins
     @staticmethod
     def store_frame(frame, filepath: str, format: Optional[str] = None):
         """
@@ -347,7 +347,7 @@ class CameraPlugin(Plugin, ABC):
 
         if isinstance(frame, bytes):
             frame = list(frame)
-        elif not isinstance(frame, Image.Image):
+        if not isinstance(frame, Image.Image):
             frame = Image.fromarray(frame)
 
         save_args = {}
@@ -571,7 +571,7 @@ class CameraPlugin(Plugin, ABC):
         video_file: Optional[str] = None,
         preview: bool = False,
         **camera,
-    ) -> Union[str, dict]:
+    ) -> Optional[Union[str, dict]]:
         """
         Capture a video.
 
@@ -596,7 +596,7 @@ class CameraPlugin(Plugin, ABC):
             self.wait_capture(camera)
             return video_file
 
-        return self.status(camera.info.device)
+        return self.status(camera.info.device).output
 
     @action
     def stop_capture(self, device: Optional[Union[int, str]] = None):
@@ -606,12 +606,12 @@ class CameraPlugin(Plugin, ABC):
         :param device: Name/path/ID of the device to stop (default: all the active devices).
         """
         devices = self._devices.copy()
-        stop_devices = list(devices.values())[:]
+        stop_devices = list(devices.values())
         if device:
             stop_devices = [self._devices[device]] if device in self._devices else []
 
-        for device in stop_devices:
-            self.close_device(device)
+        for dev in stop_devices:
+            self.close_device(dev)
 
     @action
     def capture_image(self, image_file: str, preview: bool = False, **camera) -> str:
@@ -635,9 +635,8 @@ class CameraPlugin(Plugin, ABC):
 
         return image_file
 
-    # noinspection PyUnusedLocal
     @action
-    def take_picture(self, image_file: str, preview: bool = False, **camera) -> str:
+    def take_picture(self, image_file: str, **camera) -> str:
         """
         Alias for :meth:`.capture_image`.
 
@@ -646,7 +645,7 @@ class CameraPlugin(Plugin, ABC):
         :param preview: Show a preview of the camera frames.
         :return: The local path to the saved image.
         """
-        return self.capture_image(image_file, **camera)
+        return str(self.capture_image(image_file, **camera).output)
 
     @action
     def capture_sequence(
@@ -655,7 +654,7 @@ class CameraPlugin(Plugin, ABC):
         n_frames: Optional[int] = None,
         preview: bool = False,
         **camera,
-    ) -> str:
+    ) -> Optional[str]:
         """
         Capture a sequence of frames from a camera and store them to a directory.
 
@@ -687,7 +686,7 @@ class CameraPlugin(Plugin, ABC):
         """
         camera = self.open_device(frames_dir=None, **camera)
         self.start_camera(camera, duration=duration, n_frames=n_frames, preview=True)
-        return self.status(camera.info.device)
+        return self.status(camera.info.device)  # type: ignore
 
     @staticmethod
     def _prepare_server_socket(camera: Camera) -> socket.socket:
@@ -729,10 +728,11 @@ class CameraPlugin(Plugin, ABC):
                     continue
 
                 if camera.info.device not in self._devices:
-                    info = camera.info.to_dict()
+                    info = asdict(camera.info)
                     info['stream_format'] = stream_format
                     camera = self.open_device(stream=True, **info)
 
+                assert camera.stream, 'No camera stream available'
                 camera.stream.sock = sock
                 self.start_camera(
                     camera, duration=duration, frames_dir=None, image_file=None
@@ -741,7 +741,9 @@ class CameraPlugin(Plugin, ABC):
             self._cleanup_stream(camera, server_socket, sock)
             self.logger.info('Stopped camera stream')
 
-    def _cleanup_stream(self, camera: Camera, server_socket: socket.socket, client: IO):
+    def _cleanup_stream(
+        self, camera: Camera, server_socket: socket.socket, client: Optional[IO]
+    ):
         if client:
             try:
                 client.close()
@@ -772,7 +774,7 @@ class CameraPlugin(Plugin, ABC):
         :return: The status of the device.
         """
         camera = self.open_device(stream=True, stream_format=stream_format, **camera)
-        return self._start_streaming(camera, duration, stream_format)
+        return self._start_streaming(camera, duration, stream_format)  # type: ignore
 
     def _start_streaming(
         self, camera: Camera, duration: Optional[float], stream_format: str
@@ -781,6 +783,7 @@ class CameraPlugin(Plugin, ABC):
         assert (
             not camera.stream_event.is_set() and camera.info.device not in self._streams
         ), f'A streaming session is already running for device {camera.info.device}'
+        assert camera.info.device, 'No device name available'
 
         self._streams[camera.info.device] = camera
         camera.stream_event.set()
@@ -804,12 +807,12 @@ class CameraPlugin(Plugin, ABC):
         :param device: Name/path/ID of the device to stop (default: all the active devices).
         """
         streams = self._streams.copy()
-        stop_devices = list(streams.values())[:]
+        stop_devices = list(streams.values())
         if device:
             stop_devices = [self._streams[device]] if device in self._streams else []
 
-        for device in stop_devices:
-            self._stop_streaming(device)
+        for dev in stop_devices:
+            self._stop_streaming(dev)
 
     def _stop_streaming(self, camera: Camera):
         camera.stream_event.clear()
@@ -825,7 +828,7 @@ class CameraPlugin(Plugin, ABC):
             return {}
 
         return {
-            **camera.info.to_dict(),
+            **asdict(camera.info),
             'active': bool(camera.capture_thread and camera.capture_thread.is_alive()),
             'capturing': bool(
                 camera.capture_thread

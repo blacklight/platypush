@@ -1,6 +1,6 @@
 import math
 import threading
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Optional, Union, Tuple, Set
 
 import numpy as np
@@ -17,8 +17,8 @@ from platypush.plugins.camera.model.writer.preview import PreviewWriter
 class CameraInfo:
     device: Optional[Union[int, str]]
     bind_address: Optional[str] = None
-    capture_timeout: float = 20.0
-    color_transform: Optional[str] = None
+    capture_timeout: float = 0
+    color_transform: Optional[Union[int, str]] = None
     ffmpeg_bin: Optional[str] = None
     fps: Optional[float] = None
     frames_dir: Optional[str] = None
@@ -36,42 +36,15 @@ class CameraInfo:
     stream_format: Optional[str] = None
     vertical_flip: bool = False
     warmup_frames: int = 0
-    warmup_seconds: float = 0.0
+    warmup_seconds: float = 0
 
     def set(self, **kwargs):
         for k, v in kwargs.items():
             if hasattr(self, k):
                 setattr(self, k, v)
 
-    def to_dict(self) -> dict:
-        return {
-            'bind_address': self.bind_address,
-            'capture_timeout': self.capture_timeout,
-            'color_transform': self.color_transform,
-            'device': self.device,
-            'ffmpeg_bin': self.ffmpeg_bin,
-            'fps': self.fps,
-            'frames_dir': self.frames_dir,
-            'grayscale': self.grayscale,
-            'horizontal_flip': self.horizontal_flip,
-            'input_codec': self.input_codec,
-            'input_format': self.input_format,
-            'listen_port': self.listen_port,
-            'output_codec': self.output_codec,
-            'output_format': self.output_format,
-            'resolution': list(self.resolution or ()),
-            'rotate': self.rotate,
-            'scale_x': self.scale_x,
-            'scale_y': self.scale_y,
-            'stream_format': self.stream_format,
-            'vertical_flip': self.vertical_flip,
-            'warmup_frames': self.warmup_frames,
-            'warmup_seconds': self.warmup_seconds,
-        }
-
     def clone(self):
-        # noinspection PyArgumentList
-        return self.__class__(**self.to_dict())
+        return self.__class__(**asdict(self))
 
 
 @dataclass
