@@ -1,5 +1,6 @@
 import asyncio
 from asyncio.subprocess import PIPE
+from logging import getLogger
 from queue import Empty
 
 from queue import Queue
@@ -74,6 +75,7 @@ class ConverterProcess(Thread):
         self._closed = False
         self._out_queue = Queue()
         self.ffmpeg = None
+        self.logger = getLogger(__name__)
         self._loop = None
         self._should_stop = Event()
         self._stop_lock = RLock()
@@ -157,21 +159,21 @@ class ConverterProcess(Thread):
     def run(self):
         super().run()
         self._loop = get_or_create_event_loop()
-        self._loop.run_until_complete(self._audio_proxy(timeout=1))
+        try:
+            self._loop.run_until_complete(self._audio_proxy(timeout=1))
+        except RuntimeError as e:
+            self.logger.warning(e)
+        finally:
+            self.stop()
 
     def stop(self):
         with self._stop_lock:
             self._should_stop.set()
             if self.ffmpeg:
-                try:
-                    self.ffmpeg.kill()
-                except ProcessLookupError:
-                    pass
+                self.ffmpeg.kill()
 
             self.ffmpeg = None
-
-            if self._loop:
-                self._loop = None
+            self._loop = None
 
     @property
     def should_stop(self) -> bool:

@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 from typing import IO
 from typing_extensions import override
 
@@ -16,7 +14,6 @@ from .._model import AudioState
 from ._base import AudioThread
 
 
-@dataclass
 class AudioRecorder(AudioThread):
     """
     The ``AudioRecorder`` thread is responsible for recording audio from the
@@ -32,7 +29,7 @@ class AudioRecorder(AudioThread):
         # _ = frames
         # __ = time
         def callback(indata, outdata, _, __, status):
-            if self.state == AudioState.PAUSED:
+            if self.state != AudioState.RUNNING:
                 return
 
             if status:
@@ -41,7 +38,7 @@ class AudioRecorder(AudioThread):
             try:
                 audio_converter.write(indata.tobytes())
             except AssertionError as e:
-                self.logger.warning('Audio recorder callback error: %s', e)
+                self.logger.warning('Audio converter callback error: %s', e)
                 self.state = AudioState.STOPPED
                 return
 
@@ -63,8 +60,10 @@ class AudioRecorder(AudioThread):
 
     @override
     def notify_stop(self):
+        prev_state = self.state
         super().notify_stop()
-        get_bus().post(SoundRecordingStoppedEvent())
+        if prev_state != AudioState.STOPPED:
+            get_bus().post(SoundRecordingStoppedEvent())
 
 
 # vim:sw=4:ts=4:et:
