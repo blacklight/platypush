@@ -14,7 +14,9 @@ manifest:
     - numpy
     apt:
     - ffmpeg
+    - portaudio19-dev
     pacman:
     - ffmpeg
+    - portaudio
   package: platypush.plugins.sound
   type: plugin

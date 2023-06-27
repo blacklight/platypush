@@ -13,6 +13,18 @@ class SoundPlugin(RunnablePlugin):
     """
     Plugin to interact with a sound device.
 
+    Among the other features, enabling this plugin allows you to stream audio
+    over HTTP from the device where the application is running, if
+    :class:`platypush.backend.http.HttpBackend` is enabled.
+
+    Simply open
+    ``http://<host>:<backend-port>/sound/stream.[mp3|wav|acc|ogg]?token=<your-token>``
+    to access live recording from the audio device.
+
+    It can also be used as a general-purpose audio player and synthesizer,
+    supporting both local and remote audio resources, as well as a MIDI-like
+    interface through the :meth:`.play` command.
+
     Triggers:
 
         * :class:`platypush.message.event.sound.SoundPlaybackStartedEvent` on playback start
@@ -29,6 +41,8 @@ class SoundPlugin(RunnablePlugin):
         * **sounddevice** (``pip install sounddevice``)
         * **numpy** (``pip install numpy``)
         * **ffmpeg** package installed on the system
+        * **portaudio** package installed on the system - either
+          ``portaudio19-dev`` on Debian-like systems, or ``portaudio`` on Arch.
 
     """
 
