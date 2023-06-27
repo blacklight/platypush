@@ -57,8 +57,12 @@ class InspectPlugin(Plugin):
         try:
             with open(self._components_cache_file, 'rb') as f:
                 self._components_cache = pickle.load(f)
-        except OSError:
-            return
+        except Exception as e:
+            self.logger.warning('Could not initialize the components cache: %s', e)
+            self.logger.info(
+                'The plugin will initialize the cache by scanning '
+                'the integrations at the next run. This may take a while'
+            )
 
     def _flush_components_cache(self):
         """
