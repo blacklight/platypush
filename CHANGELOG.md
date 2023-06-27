@@ -6,20 +6,232 @@ reported only starting from v0.20.2.
 
 ## [Unreleased]
 
+This should actually be a new big major release, but I'm holding on implementing
+more features before a 1.0 tag.
+
 ### Added
 
 - Migrated many integrations to the new [entities
   framework](https://git.platypush.tech/platypush/platypush/pulls/230).
-  This is a very large change to the foundations of the platform, and there's
-  still a lot of work in progress. A detailed description of all the changes
-  will follow shortly.
+  This is a very large change to the foundations of the platform. Many plugins
+  (and many others will follow) now publish and store their *entities* in a
+  standard format, so e.g. all the lights, switches, Bluetooth devices, cameras,
+  audio devices, media players and sensors are now supposed to expose the same
+  attributes and API regardless of the type of integration. This refactor also
+  includes a new default home panel, which includes all the entities detected by
+  the registered integrations. Many integrations have already been migrated to
+  the new framework. Among them (and many others are on their way):
+
+  - `arduino`
+  - `bluetooth`
+  - `light.hue`
+  - `linode`
+  - All the `sensor.*` plugins
+  - `serial`
+  - `smartthings`
+  - `switchbot`
+  - `system`
+  - `variable`
+  - `zigbee.mqtt`
+  - `zwave.mqtt`
+
+- Added support for more complex filters on event hooks. Earlier filters could
+  only model key-value pair matches. The interface now supports more
+  sophisticated filters - among these, structured filters with partial matches
+  and relational filters. For example:
+
+```python
+from platypush.event.hook import hook
+from platypush.message.event.sensor import SensorDataChangeEvent
+
+@hook(SensorDataChangeEvent, data=1):
+def hook_1(event):
+    """
+    Triggered when event.data == 1
+    """
+
+@hook(SensorDataChangeEvent, data={'state': 1}):
+def hook_2(event):
+    """
+    Triggered when event.data['state'] == 1
+    """
+
+@hook(SensorDataChangeEvent, data={
+  'temperature': {'$gt': 25},
+  'humidity': {'$le': 15}
+}):
+def hook_3(event):
+    """
+    Triggered when event.data['temperature'] > 25 and
+    event.data['humidity'] <= 15.
+    """
+```
+
+The supported relational fields are the same supported by ElasticSearch - `$gt`
+for greater than, `$lt` for lesser than, `$ge` for greater or equal, `$ne` for
+not equal, etc.
+
+This also means that the previous `SensorDataAboveThresholdEvent` and
+`SensorDataBelowThresholdEvent` events are now deprecated, as the new hook API
+makes it much easier and flexible to define custom threshold logic on any events
+without having to pre-define thresholds in each backend's configuration.
+
+- Added a Progressive WebApp (PWA) framework to the Vue webapp. It is now
+  possible to install Platypush as a stand-alone webapp directly from the web
+  panel if the panel is served over HTTPS. For now this only improves the user
+  experience, performance and it provides a more native-like experience on
+  mobile, but in the future the PWA background worker could be used to e.g.
+  deliver asynchronous events and notifications to the clients without keeping
+  the browser open.
+
+- Added support for application database automatic migrations after an update by
+  using Alembic.
+
+### Changed
+
+- Tornado is now used as an HTTP engine by `backend.http`, instead of using
+  bare bone Flask with its inefficient Werkzeug server and an optional uwsgi
+  that required extra configuration (and an extra external service).
+
+- All the streaming endpoints have been rewritten and adapted to work with
+  Tornado. This greatly improves performance, stability and ease of
+  configuration, while remaining back-compatible with the previous URL formats.
+  As a side note, all the streaming endpoints are now using Redis to stream
+  information across multiple worker processes, so make sure that you have a
+  version of Redis that supports pub/sub (most of the recent ones should do).
+
+- The `bluetooth` plugin has been completely rewritten, merged with the (now
+  deprecated) `backend.bluetooth`. The previously separated low-energy/legacy
+  integrations have now been merged too. It now supports much more than passive
+  scanning, as it can recognize the information published by most of the device,
+  supports both legacy and low-energy connection/disconnection actions, and it
+  can detect most of the device classes, services and manufacturers. It also
+  supports parsing some standard features (like battery level, temperature,
+  state etc.) if they are published according to some convention supported by
+  *TheengsGateway*. The `switchbot.bluetooth` integration has now also been
+  merged into `bluetooth`.
+
+- The `sound` plugin has been completely rewritten. While it should still be
+  largely back-compatible with the previous implementation, you should probably
+  go and take a look at the new documentation to get a grasp of the new
+  features.
+
+- The `camera.ffmpeg` plugin has received a big rewrite that has improved its
+  stability and robustness against several types of cameras. It is now the
+  recommended way of interfacing with general-purpose cameras, even for
+  PiCameras - the `camera.pi` integration is now largely deprecated, as the old
+  PiCamera API is deprecated as well, and `camera.ffmpeg` should now work out of
+  the box with a PiCamera if a reasonably recent version of ffmpeg is installed.
+
+- `backend.websocket` has been **removed** and replaced by Tornado asynchronous
+   websocket URLs registered on the HTTP backend. The two new routes that
+   replace the websocket backend are:
+
+  - `/ws/events`: subscribe to this websocket to receive any asynchronous
+    events forwarded by the application.
+  - `/ws/requests`: you can send request messages to this endpoints, and the
+    responses will be received asynchronously on the same channel.
+
+- The `inspect` plugin has been largely improved.
+
+  - Its performance is now much snappier, as it scans for all the available
+    integrations by searching for manifest files instead of scanning each
+    single source file. Documentation about specific plugins and actions is
+    fetched lazily when requested by the user.
+  - It now also caches results by looking at the last modified date of the
+    source file, so it won't have to re-scan source files that haven't been
+    modified.
+  - Its detection of RST constructs has also been improved, so most of the code
+    blocks, schemas, return types and references to other objects are now
+    rendered in the plugin UI.
+
+- Added `variable.delete` action. The existing `variable.unset` action will now
+  only set a variable to null if it exists, while `variable.delete` will
+  actually remove it from the database.
+
+- `backend.sensor.distance` and `gpio.sensor.distance` have been removed and
+  migrated instead to a new `sensor.hcsr04` plugin, since the existing logic
+  actually only applies to HC-SR04-like distance sensors.
+
+- `backend.sensor.dht` and `gpio.sensor.dht` have been removed and
+  migrated to a new `sensor.dht` plugin.
+
+- `backend.sensor.accelerometer` and `gpio.sensor.accelerometer` have been
+  removed and migrated to a new `sensor.lis3dh` plugin, since the existing
+  accelerometer logic only works with these sensors.
+
+- `backend.sensor.motion.pwm3901` and `gpio.sensor.motion.pwm3901` have been
+  removed and migrated to a new `sensor.pwm3901` plugin.
+  accelerometer logic only works with these sensors.
+
+- `backend.sensor.envirophat` and `gpio.sensor.envirophat` have been removed and
+  migrated to a new `sensor.envirophat` plugin.
+
+- `backend.sensor.ltr559` and `gpio.sensor.ltr559` have been removed and
+  migrated to a new `sensor.ltr559` plugin.
+
+- `backend.sensor.bme280` and `gpio.sensor.bme280` have been removed and
+  migrated to a new `sensor.bme280` plugin.
+
+- `backend.sensor.distance.vl53l1x` and `gpio.sensor.distance.vl53l1x` have been
+  removed and migrated to a new `sensor.vl53l1x` plugin.
+
+- `backend.serial` has been removed and merged into the `serial` plugin.
+
+- `backend.switch.wemo` has been removed and merged into the `switch.wemo`
+  plugin.
+
+- `backend.switch.tplink` has been removed and merged into the `switch.tplink`
+  plugin.
+
+- `backend.zigbee.mqtt` has been removed and merged into the `zigbee.mqtt`
+  plugin.
+
+- `backend.zwave.mqtt` has been removed and merged into the `zwave.mqtt` plugin.
 
 ### Fixed
+
+- Notable performance improvements for the UI (like -50% on the load time and
+  memory usage in some cases). Recursive/reflective Vue components now use
+  `shallowRef`, so complex UI models won't have to be fully loaded at page
+  start.
+
+- Fixed compatibility with SQLAlchemy 2.
 
 - Migrated the `clipboard` integration from `pyperclip` to `pyclip` (see
   [#240](https://git.platypush.tech/platypush/platypush/issues/240)).
   `pyperclip` is unmaintained and largely broken, and `pyclip` seems to be a
   viable drop-in alternative.
+
+- Better implementation of the UI modals - added close buttons and trigger
+  closure when Esc is pressed.
+
+### Removed
+
+- Removed SSL configuration from `backend.http`. Configuring SSL on
+  Flask+Tornado is messy, and it won't end up with a good user experience.
+  Instead, you should consider using a reverse proxy (e.g. nginx or Apache) if
+  you want to make the Platypush web interface available over HTTPS. A sample
+  nginx configuration has been added under `examples/nginx`. Note that running
+  the web panel over HTTPS is a requirement if you want to leverage the PWA
+  features, as a PWA can only be served over HTTPS.
+
+- Removed the Bluetooth file server integration. It is still possible to send
+  files over Bluetooth (the feature has now been merged into the `bluetooth`
+  plugin, under `bluetooth.send_file`), but all the server features rely on
+  features of PyOBEX that are now very broken on recent versions of Python (the
+  project itself hasn't been updated in years).
+
+- Removed or deprecated all the `backend.sensor.*` backends. Their logic has now
+  been merged into their associated plugins, and the plugins will have the
+  ability to run in the background too.
+
+- Removed `backend.sensor.battery`. It has now been merged into the `system`
+  plugin.
+
+- Removed `gpio.sensor` plugin. It was never really fully implemented, and it
+  was probably impossible to implement with an interface that could work with
+  any sensor-like device connected over GPIO.
 
 ## [0.24.5] - 2023-02-22
 
