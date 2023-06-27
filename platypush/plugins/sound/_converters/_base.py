@@ -4,7 +4,7 @@ from asyncio.subprocess import PIPE
 from logging import getLogger
 from queue import Empty, Queue
 from threading import Event, RLock, Thread
-from typing import Any, Callable, Coroutine, Iterable, Optional, Self
+from typing import Any, Callable, Coroutine, Iterable, Optional
 
 from platypush.context import get_or_create_event_loop
 
@@ -87,7 +87,7 @@ class AudioConverter(Thread, ABC):
         self._on_exit = on_exit
         self._ffmpeg_terminated = Event()
 
-    def __enter__(self) -> Self:
+    def __enter__(self) -> "AudioConverter":
         """
         Audio converter context manager.
 
