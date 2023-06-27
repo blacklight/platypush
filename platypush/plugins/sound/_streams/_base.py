@@ -324,7 +324,7 @@ class AudioThread(Thread, ABC):
         """
         self.logger.debug('Timeout on converter %s', converter.__class__.__name__)
         # Continue only if the converter hasn't terminated
-        return self._converter_terminated.is_set()
+        return not self._converter_terminated.is_set()
 
     @override
     def run(self):

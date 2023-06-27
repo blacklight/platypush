@@ -253,13 +253,18 @@ class AudioConverter(Thread, ABC):
             ), 'The stdout is closed for the ffmpeg process'
 
             self._ffmpeg_terminated.clear()
+
             try:
-                data = await asyncio.wait_for(
-                    self.ffmpeg.stdout.read(self._chunk_size), timeout
-                )
+                reader = asyncio.create_task(self.ffmpeg.stdout.read(self._chunk_size))
+                data = await asyncio.wait_for(reader, timeout)
                 self._out_queue.put(data)
             except asyncio.TimeoutError:
-                self._out_queue.put(b'')
+                pass
+            except Exception as e:
+                self.logger.warning('Audio proxy error: %s', e)
+                break
+
+        self._out_queue.put(b'')
 
     def write(self, data: bytes):
         """
