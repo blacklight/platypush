@@ -1,11 +1,10 @@
 from typing_extensions import override
 
+from platypush.backend.http.app.mixins import MessageType
 from platypush.message.event import Event
 
-from . import WSRoute, logger, pubsub_redis_topic
+from . import WSRoute, logger
 from ..utils import send_message
-
-events_redis_topic = pubsub_redis_topic('events')
 
 
 class WSEventProxy(WSRoute):
@@ -14,13 +13,22 @@ class WSEventProxy(WSRoute):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.subscribe(events_redis_topic)
+        super().__init__(*args, subscriptions=[self.events_channel], **kwargs)
 
     @classmethod
     @override
     def app_name(cls) -> str:
         return 'events'
+
+    @classmethod
+    @property
+    def events_channel(cls) -> str:
+        return cls.get_channel('events')
+
+    @override
+    @classmethod
+    def publish(cls, data: MessageType, *_) -> None:
+        super().publish(data, cls.events_channel)
 
     @override
     def on_message(self, message):
@@ -38,9 +46,9 @@ class WSEventProxy(WSRoute):
     def run(self) -> None:
         for msg in self.listen():
             try:
-                evt = Event.build(msg)
+                evt = Event.build(msg.data)
             except Exception as e:
                 logger.warning('Error parsing event: %s: %s', msg, e)
                 continue
 
-            self.send(str(evt))
+            self.send(evt)

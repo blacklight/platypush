@@ -1,13 +1,15 @@
 import io
 import logging
+import multiprocessing
 import os
-import threading
 import time
 
 from abc import ABC, abstractmethod
 from typing import Optional, IO
 
 from PIL.Image import Image
+
+from platypush.utils import get_redis
 
 
 class VideoWriter(ABC):
@@ -26,11 +28,11 @@ class VideoWriter(ABC):
         self.closed = False
 
     @abstractmethod
-    def write(self, img: Image):
+    def write(self, image: Image):
         """
         Write an image to the channel.
 
-        :param img: PIL Image instance.
+        :param image: PIL Image instance.
         """
         raise NotImplementedError()
 
@@ -49,7 +51,7 @@ class VideoWriter(ABC):
         """
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, *_, **__):
         """
         Context manager-based interface.
         """
@@ -60,8 +62,9 @@ class FileVideoWriter(VideoWriter, ABC):
     """
     Abstract class to handle frames-to-video file operations.
     """
+
     def __init__(self, *args, output_file: str, **kwargs):
-        VideoWriter.__init__(self, *args, **kwargs)
+        super().__init__(self, *args, **kwargs)
         self.output_file = os.path.abspath(os.path.expanduser(output_file))
 
 
@@ -69,12 +72,20 @@ class StreamWriter(VideoWriter, ABC):
     """
     Abstract class for camera streaming operations.
     """
-    def __init__(self, *args, sock: Optional[IO] = None, **kwargs):
-        VideoWriter.__init__(self, *args, **kwargs)
+
+    def __init__(
+        self,
+        *args,
+        sock: Optional[IO] = None,
+        redis_queue: Optional[str] = None,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
         self.frame: Optional[bytes] = None
         self.frame_time: Optional[float] = None
         self.buffer = io.BytesIO()
-        self.ready = threading.Condition()
+        self.ready = multiprocessing.Condition()
+        self.redis_queue = redis_queue
         self.sock = sock
 
     def write(self, image: Image):
@@ -101,6 +112,9 @@ class StreamWriter(VideoWriter, ABC):
                 self.logger.info('Client connection closed')
                 self.close()
 
+        if self.redis_queue:
+            get_redis().publish(self.redis_queue, data)
+
     @abstractmethod
     def encode(self, image: Image) -> bytes:
         """
@@ -117,16 +131,20 @@ class StreamWriter(VideoWriter, ABC):
             try:
                 self.sock.close()
             except Exception as e:
-                self.logger.warning('Could not close camera resource: {}'.format(str(e)))
+                self.logger.warning('Could not close camera resource: %s', e)
 
         super().close()
 
     @staticmethod
     def get_class_by_name(name: str):
         from platypush.plugins.camera.model.writer.index import StreamHandlers
+
         name = name.upper()
-        assert hasattr(StreamHandlers, name), 'No such stream handler: {}. Supported types: {}'.format(
-            name, [hndl.name for hndl in list(StreamHandlers)])
+        assert hasattr(
+            StreamHandlers, name
+        ), f'No such stream handler: {name}. Supported types: ' + (
+            ', '.join([hndl.name for hndl in list(StreamHandlers)])
+        )
 
         return getattr(StreamHandlers, name).value
 

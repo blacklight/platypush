@@ -16,12 +16,11 @@ from tornado.web import Application, FallbackHandler
 
 from platypush.backend import Backend
 from platypush.backend.http.app import application
-from platypush.backend.http.app.utils import get_ws_routes
-from platypush.backend.http.app.ws.events import events_redis_topic
+from platypush.backend.http.app.utils import get_streaming_routes, get_ws_routes
+from platypush.backend.http.app.ws.events import WSEventProxy
 
 from platypush.bus.redis import RedisBus
 from platypush.config import Config
-from platypush.utils import get_redis
 
 
 class HttpBackend(Backend):
@@ -286,7 +285,7 @@ class HttpBackend(Backend):
 
     def notify_web_clients(self, event):
         """Notify all the connected web clients (over websocket) of a new event"""
-        get_redis().publish(events_redis_topic, str(event))
+        WSEventProxy.publish(event)  # noqa: E1120
 
     def _get_secret_key(self, _create=False):
         if _create:
@@ -331,7 +330,10 @@ class HttpBackend(Backend):
         container = WSGIContainer(application)
         tornado_app = Application(
             [
-                *[(route.path(), route) for route in get_ws_routes()],
+                *[
+                    (route.path(), route)
+                    for route in [*get_ws_routes(), *get_streaming_routes()]
+                ],
                 (r'.*', FallbackHandler, {'fallback': container}),
             ]
         )
@@ -352,7 +354,7 @@ class HttpBackend(Backend):
         )
 
         if self.use_werkzeug_server:
-            application.config['redis_queue'] = self.bus.redis_queue
+            application.config['redis_queue'] = self.bus.redis_queue  # type: ignore
             application.run(
                 host=self.bind_address,
                 port=self.port,

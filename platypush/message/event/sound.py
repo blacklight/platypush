@@ -1,65 +1,70 @@
+from abc import ABC
+from typing import Optional, Tuple, Union
 from platypush.message.event import Event
 
 
-class SoundEvent(Event):
-    """ Base class for sound events """
+class SoundEvent(Event, ABC):
+    """Base class for sound events"""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self, *args, device: Optional[Union[str, Tuple[str, str]]] = None, **kwargs
+    ):
+        super().__init__(*args, device=device, **kwargs)
 
 
-class SoundPlaybackStartedEvent(SoundEvent):
+class SoundEventWithResource(SoundEvent, ABC):
+    """Base class for sound events with resource names attached"""
+
+    def __init__(self, *args, resource: Optional[str] = None, **kwargs):
+        super().__init__(*args, resource=resource, **kwargs)
+
+
+class SoundPlaybackStartedEvent(SoundEventWithResource):
     """
     Event triggered when a new sound playback starts
     """
 
-    def __init__(self, filename=None, *args, **kwargs):
-        super().__init__(*args, filename=filename, **kwargs)
 
-
-class SoundPlaybackStoppedEvent(SoundEvent):
+class SoundPlaybackStoppedEvent(SoundEventWithResource):
     """
     Event triggered when the sound playback stops
     """
 
-    def __init__(self, filename=None, *args, **kwargs):
-        super().__init__(*args, filename=filename, **kwargs)
 
-
-class SoundPlaybackPausedEvent(SoundEvent):
+class SoundPlaybackPausedEvent(SoundEventWithResource):
     """
     Event triggered when the sound playback pauses
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+
+class SoundPlaybackResumedEvent(SoundEventWithResource):
+    """
+    Event triggered when the sound playback resumsed from a paused state
+    """
 
 
-class SoundRecordingStartedEvent(SoundEvent):
+class SoundRecordingStartedEvent(SoundEventWithResource):
     """
     Event triggered when a new recording starts
     """
 
-    def __init__(self, filename=None, *args, **kwargs):
-        super().__init__(*args, filename=filename, **kwargs)
 
-
-class SoundRecordingStoppedEvent(SoundEvent):
+class SoundRecordingStoppedEvent(SoundEventWithResource):
     """
     Event triggered when a sound recording stops
     """
 
-    def __init__(self, filename=None, *args, **kwargs):
-        super().__init__(*args, filename=filename, **kwargs)
 
-
-class SoundRecordingPausedEvent(SoundEvent):
+class SoundRecordingPausedEvent(SoundEventWithResource):
     """
     Event triggered when a sound recording pauses
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+
+class SoundRecordingResumedEvent(SoundEvent):
+    """
+    Event triggered when a sound recording resumes from a paused state
+    """
 
 
 # vim:sw=4:ts=4:et:

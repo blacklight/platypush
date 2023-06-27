@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[8184],{8184:function(a,e,n){n.r(e),n.d(e,{default:function(){return f}});var r=n(6252);function u(a,e,n,u,t,c){var p=(0,r.up)("Camera");return(0,r.wg)(),(0,r.j4)(p,{"camera-plugin":"cv"})}var t=n(9021),c={name:"CameraCv",components:{Camera:t["default"]}},p=n(3744);const s=(0,p.Z)(c,[["render",u]]);var f=s}}]);
+//# sourceMappingURL=8184-legacy.73f24c6e.js.map

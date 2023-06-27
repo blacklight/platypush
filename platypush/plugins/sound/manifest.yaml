@@ -1,15 +1,20 @@
 manifest:
   events:
     platypush.message.event.sound.SoundPlaybackPausedEvent: on playback pause
+    platypush.message.event.sound.SoundPlaybackResumedEvent: on playback resume
     platypush.message.event.sound.SoundPlaybackStartedEvent: on playback start
     platypush.message.event.sound.SoundPlaybackStoppedEvent: on playback stop
     platypush.message.event.sound.SoundRecordingPausedEvent: on recording pause
+    platypush.message.event.sound.SoundRecordingResumedEvent: on recording resumed
     platypush.message.event.sound.SoundRecordingStartedEvent: on recording start
     platypush.message.event.sound.SoundRecordingStoppedEvent: on recording stop
   install:
     pip:
     - sounddevice
-    - soundfile
     - numpy
+    apt:
+    - ffmpeg
+    pacman:
+    - ffmpeg
   package: platypush.plugins.sound
   type: plugin

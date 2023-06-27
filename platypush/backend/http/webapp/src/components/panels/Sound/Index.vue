@@ -2,8 +2,7 @@
   <div class="sound">
     <div class="sound-container">
       <audio autoplay preload="none" ref="player" v-if="recording">
-        <!--suppress HtmlUnknownTarget -->
-        <source :src="`/sound/stream?t=${(new Date()).getTime()}`" type="audio/x-wav;codec=pcm">
+        <source :src="`/sound/stream.aac?t=${(new Date()).getTime()}`">
         Your browser does not support audio elements
       </audio>
     </div>

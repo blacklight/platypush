@@ -13,6 +13,7 @@ from .routes import (
     get_remote_base_url,
     get_routes,
 )
+from .streaming import get_streaming_routes
 from .ws import get_ws_routes
 
 __all__ = [
@@ -27,6 +28,7 @@ __all__ = [
     'get_message_response',
     'get_remote_base_url',
     'get_routes',
+    'get_streaming_routes',
     'get_ws_routes',
     'logger',
     'send_message',
