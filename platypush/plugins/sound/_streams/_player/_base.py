@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import IO, Iterable, List, Optional, Self, Type, Union
+from typing import IO, Iterable, List, Optional, Type, Union
 from typing_extensions import override
 
 import numpy as np
@@ -39,7 +39,7 @@ class AudioPlayer(AudioThread, ABC):
         infile: Optional[str] = None,
         sound: Optional[Union[dict, Iterable[dict]]] = None,
         **kwargs,
-    ) -> Self:
+    ) -> "AudioPlayer":
         from ._resource import AudioResourcePlayer
         from ._synth import AudioSynthPlayer, Sound
 
