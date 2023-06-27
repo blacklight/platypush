@@ -154,7 +154,7 @@ setup(
         # Support for Chromecast plugin
         'chromecast': ['pychromecast'],
         # Support for sound devices
-        'sound': ['sounddevice', 'soundfile', 'numpy'],
+        'sound': ['sounddevice', 'numpy'],
         # Support for web media subtitles
         'subtitles': [
             'webvtt-py',

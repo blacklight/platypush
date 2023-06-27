@@ -1,21 +1,12 @@
-from collections import defaultdict
-import os
-import queue
-import stat
-from typing_extensions import override
+from dataclasses import asdict
 import warnings
-
-from threading import Event, RLock
-from typing import Dict, Optional, Union
-
-import sounddevice as sd
-import soundfile as sf
+from typing import Iterable, List, Optional, Union
+from typing_extensions import override
 
 from platypush.plugins import RunnablePlugin, action
 
-from .core import Sound, Mix
-from ._controllers import AudioRecorder
-from ._model import AudioState
+from ._manager import AudioManager
+from ._model import DeviceType, StreamType
 
 
 class SoundPlugin(RunnablePlugin):
@@ -27,27 +18,30 @@ class SoundPlugin(RunnablePlugin):
         * :class:`platypush.message.event.sound.SoundPlaybackStartedEvent` on playback start
         * :class:`platypush.message.event.sound.SoundPlaybackStoppedEvent` on playback stop
         * :class:`platypush.message.event.sound.SoundPlaybackPausedEvent` on playback pause
+        * :class:`platypush.message.event.sound.SoundPlaybackResumedEvent` on playback resume
         * :class:`platypush.message.event.sound.SoundRecordingStartedEvent` on recording start
         * :class:`platypush.message.event.sound.SoundRecordingStoppedEvent` on recording stop
         * :class:`platypush.message.event.sound.SoundRecordingPausedEvent` on recording pause
+        * :class:`platypush.message.event.sound.SoundRecordingResumedEvent` on recording resume
 
     Requires:
 
         * **sounddevice** (``pip install sounddevice``)
-        * **soundfile** (``pip install soundfile``)
         * **numpy** (``pip install numpy``)
-        * **ffmpeg** package installed on the system (for streaming support)
+        * **ffmpeg** package installed on the system
 
     """
 
-    _STREAM_NAME_PREFIX = 'platypush-stream-'
+    _DEFAULT_BLOCKSIZE = 1024
+    _DEFAULT_QUEUE_SIZE = 10
 
     def __init__(
         self,
-        input_device=None,
-        output_device=None,
-        input_blocksize=Sound._DEFAULT_BLOCKSIZE,
-        output_blocksize=Sound._DEFAULT_BLOCKSIZE,
+        input_device: Optional[DeviceType] = None,
+        output_device: Optional[DeviceType] = None,
+        input_blocksize: int = _DEFAULT_BLOCKSIZE,
+        output_blocksize: int = _DEFAULT_BLOCKSIZE,
+        queue_size: Optional[int] = _DEFAULT_QUEUE_SIZE,
         ffmpeg_bin: str = 'ffmpeg',
         **kwargs,
     ):
@@ -55,23 +49,18 @@ class SoundPlugin(RunnablePlugin):
         :param input_device: Index or name of the default input device. Use
             :meth:`platypush.plugins.sound.query_devices` to get the
             available devices. Default: system default
-        :type input_device: int or str
-
         :param output_device: Index or name of the default output device.
             Use :meth:`platypush.plugins.sound.query_devices` to get the
             available devices. Default: system default
-        :type output_device: int or str
-
         :param input_blocksize: Blocksize to be applied to the input device.
             Try to increase this value if you get input overflow errors while
             recording. Default: 1024
-        :type input_blocksize: int
-
         :param output_blocksize: Blocksize to be applied to the output device.
             Try to increase this value if you get output underflow errors while
             playing. Default: 1024
-        :type output_blocksize: int
-
+        :param queue_size: When running in synth mode, this is the maximum
+            number of generated audio frames that will be queued before the
+            audio device processes them (default: 100).
         :param ffmpeg_bin: Path of the ``ffmpeg`` binary (default: search for
             the ``ffmpeg`` in the ``PATH``).
         """
@@ -82,349 +71,147 @@ class SoundPlugin(RunnablePlugin):
         self.output_device = output_device
         self.input_blocksize = input_blocksize
         self.output_blocksize = output_blocksize
-
-        self.playback_state = {}
-        self.playback_state_lock = RLock()
-        self.playback_paused_changed = {}
-        self.stream_mixes = {}
-        self.active_streams = {}
-        self.stream_name_to_index = {}
-        self.stream_index_to_name = {}
-        self.completed_callback_events = {}
         self.ffmpeg_bin = ffmpeg_bin
-
-        self._recorders: Dict[str, AudioRecorder] = {}
-        self._recorder_locks: Dict[str, RLock] = defaultdict(RLock)
-
-    @staticmethod
-    def _get_default_device(category: str) -> str:
-        """
-        Query the default audio devices.
-
-        :param category: Device category to query. Can be either input or output
-        """
-        host_apis = sd.query_hostapis()
-        assert host_apis, 'No sound devices found'
-        available_devices = list(
-            filter(
-                lambda x: x is not None,
-                (
-                    host_api.get('default_' + category.lower() + '_device')  # type: ignore
-                    for host_api in host_apis
-                ),
-            ),
+        self._manager = AudioManager(
+            input_blocksize=self.input_blocksize,
+            output_blocksize=self.output_blocksize,
+            should_stop=self._should_stop,
+            input_device=input_device,
+            output_device=output_device,
+            queue_size=queue_size,
         )
-
-        assert available_devices, f'No default "{category}" device found'
-        return available_devices[0]
-
-    @action
-    def query_devices(self, category=None):
-        """
-        Query the available devices
-
-        :param category: Device category to query. Can be either input or output. Default: None (query all devices)
-        :type category: str
-
-        :returns: A dictionary representing the available devices.
-
-        Example::
-
-            [
-                {
-                    "name": "pulse",
-                    "hostapi": 0,
-                    "max_input_channels": 32,
-                    "max_output_channels": 32,
-                    "default_low_input_latency": 0.008684807256235827,
-                    "default_low_output_latency": 0.008684807256235827,
-                    "default_high_input_latency": 0.034807256235827665,
-                    "default_high_output_latency": 0.034807256235827665,
-                    "default_samplerate": 44100
-                },
-                {
-                    "name": "default",
-                    "hostapi": 0,
-                    "max_input_channels": 32,
-                    "max_output_channels": 32,
-                    "default_low_input_latency": 0.008684807256235827,
-                    "default_low_output_latency": 0.008684807256235827,
-                    "default_high_input_latency": 0.034807256235827665,
-                    "default_high_output_latency": 0.034807256235827665,
-                    "default_samplerate": 44100
-                }
-            ]
-
-        """
-
-        devs = sd.query_devices()
-        if category == 'input':
-            devs = [d for d in devs if d.get('max_input_channels') > 0]  # type: ignore
-        elif category == 'output':
-            devs = [d for d in devs if d.get('max_output_channels') > 0]  # type: ignore
-
-        return devs
-
-    def _play_audio_callback(self, q, blocksize, streamtype, stream_index):
-        is_raw_stream = streamtype == sd.RawOutputStream
-
-        def audio_callback(outdata, frames, *, status):
-            if self._get_playback_state(stream_index) == AudioState.STOPPED:
-                raise sd.CallbackStop
-
-            while self._get_playback_state(stream_index) == AudioState.PAUSED:
-                self.playback_paused_changed[stream_index].wait()
-
-            if frames != blocksize:
-                self.logger.warning(
-                    'Received %d frames, expected blocksize is %d', frames, blocksize
-                )
-                return
-
-            if status.output_underflow:
-                self.logger.warning('Output underflow: increase blocksize?')
-                outdata[:] = (b'\x00' if is_raw_stream else 0.0) * len(outdata)
-                return
-
-            if status:
-                self.logger.warning('Audio callback failed: %s', status)
-
-            try:
-                data = q.get_nowait()
-            except queue.Empty:
-                self.logger.warning('Buffer is empty: increase buffersize?')
-                raise sd.CallbackStop
-
-            if len(data) < len(outdata):
-                outdata[: len(data)] = data
-                outdata[len(data) :] = (b'\x00' if is_raw_stream else 0.0) * (
-                    len(outdata) - len(data)
-                )
-            else:
-                outdata[:] = data
-
-        return audio_callback
 
     @action
     def play(
         self,
-        file=None,
-        sound=None,
-        device=None,
-        blocksize=None,
-        bufsize=None,
-        samplerate=None,
-        channels=None,
-        stream_name=None,
-        stream_index=None,
+        resource: Optional[str] = None,
+        file: Optional[str] = None,
+        sound: Optional[Union[dict, Iterable[dict]]] = None,
+        device: Optional[DeviceType] = None,
+        duration: Optional[float] = None,
+        blocksize: Optional[int] = None,
+        sample_rate: Optional[int] = None,
+        channels: int = 2,
+        volume: float = 100,
+        stream_name: Optional[str] = None,
+        stream_index: Optional[int] = None,
     ):
         """
-        Plays a sound file (support formats: wav, raw) or a synthetic sound.
+        Plays an audio file/URL (any audio format supported by ffmpeg works) or
+        a synthetic sound.
 
-        :param file: Sound file path. Specify this if you want to play a file
-        :type file: str
-
+        :param resource: Audio resource to be played. It can be a local file or
+            a URL.
+        :param file: **Deprecated**. Use ``resource`` instead.
         :param sound: Sound to play. Specify this if you want to play
             synthetic sounds. You can also create polyphonic sounds by just
-            calling play multiple times.
-        :type sound: Sound. You can initialize it either from a list
-            of `Sound` objects or from its JSON representation, e.g.::
+            calling play multiple times. Frequencies can be specified either by
+            ``midi_note`` - either as strings (e.g. ``A4``) or integers (e.g.
+            ``69``) - or by ``frequency`` (e.g. ``440`` for 440 Hz). You can
+            also specify a list of sounds here if you want to apply multiple
+            harmonics on a base sound.
+            Some examples:
 
-                {
-                    "midi_note": 69,  # 440 Hz A
-                    "gain":      1.0, # Maximum volume
-                    "duration":  1.0  # 1 second or until release/pause/stop
-                }
+                .. code-block:: python
+
+                    {
+                        "frequency": 440,  # 440 Hz
+                        "volume":    100,  # Maximum volume
+                        "duration":  1.0   # 1 second or until stop_playback
+                    }
+
+                .. code-block:: python
+
+                    [
+                        {
+                            "midi_note": "A4", # A @ 440 Hz
+                            "volume":    100,  # Maximum volume
+                            "duration":  1.0   # 1 second or until stop_playback
+                        },
+                        {
+                            "midi_note": "E5", # Play the harmonic one fifth up
+                            "volume":    25,   # 1/4 of the volume
+                            "duration":  1.0   # 1 second or until stop_playback
+                            "phase":     3.14  # ~180 degrees phase
+                            # Make it a triangular wave (default: sin).
+                            # Supported types: "sin", "triang", "square",
+                            # "sawtooth"
+                            "shape:      "triang"
+                        }
+                    ]
+
+                .. code-block:: python
+
+                    [
+                        {
+                            "midi_note": "C4", # C4 MIDI note
+                            "duration":  0.5   # 0.5 seconds or until stop_playback
+                        },
+                        {
+                            "midi_note": "G5", # G5 MIDI note
+                            "duration":  0.5,  # 0.5 seconds or until stop_playback
+                            "delay":     0.5   # Start this note 0.5 seconds
+                                               # after playback has started
+                        }
+                    ]
 
         :param device: Output device (default: default configured device or
             system default audio output if not configured)
-        :type device: int or str
-
+        :param duration: Playback duration, in seconds. Default: None - play
+            until the end of the audio source or until :meth:`.stop_playback`.
         :param blocksize: Audio block size (default: configured
             `output_blocksize` or 2048)
-        :type blocksize: int
-
-        :param bufsize: Size of the audio buffer (default: 20 frames for audio
-            files, 2 frames for synth sounds)
-        :type bufsize: int
-
-        :param samplerate: Audio samplerate. Default: audio file samplerate if
-            in file mode, 44100 Hz if in synth mode
-        :type samplerate: int
-
+        :param sample_rate: Audio sample rate. Default: audio file sample rate
+            if in file mode, 44100 Hz if in synth mode
         :param channels: Number of audio channels. Default: number of channels
             in the audio file in file mode, 1 if in synth mode
-        :type channels: int
-
+        :param volume: Playback volume, between 0 and 100. Default: 100.
         :param stream_index: If specified, play to an already active stream
             index (you can get them through
             :meth:`platypush.plugins.sound.query_streams`). Default:
             creates a new audio stream through PortAudio.
-        :type stream_index: int
-
         :param stream_name: Name of the stream to play to. If set, the sound
             will be played to the specified stream name, or a stream with that
             name will be created. If not set, and ``stream_index`` is not set
             either, then a new stream will be created on the next available
             index and named ``platypush-stream-<index>``.
-        :type stream_name: str
         """
 
-        if not file and not sound:
+        dev = self._manager.get_device(device=device, type=StreamType.OUTPUT)
+        blocksize = blocksize or self.output_blocksize
+
+        if file:
+            warnings.warn(
+                'file is deprecated, use resource instead',
+                DeprecationWarning,
+                stacklevel=1,
+            )
+            if not resource:
+                resource = file
+
+        if not (resource or sound):
             raise RuntimeError(
-                'Please specify either a file to play or a ' + 'list of sound objects'
+                'Please specify either a file to play or a list of sound objects'
             )
-
-        if blocksize is None:
-            blocksize = self.output_blocksize
-
-        if bufsize is None:
-            if file:
-                bufsize = Sound._DEFAULT_FILE_BUFSIZE
-            else:
-                bufsize = Sound._DEFAULT_SYNTH_BUFSIZE
-
-        q = queue.Queue(maxsize=bufsize)
-        f = None
-        t = 0.0
-
-        if file:
-            file = os.path.abspath(os.path.expanduser(file))
-
-        if device is None:
-            device = self.output_device
-        if device is None:
-            device = self._get_default_device('output')
-
-        if file:
-            f = sf.SoundFile(file)
-        if not samplerate:
-            samplerate = f.samplerate if f else Sound._DEFAULT_SAMPLERATE
-        if not channels:
-            channels = f.channels if f else 1
-
-        mix = None
-        with self.playback_state_lock:
-            stream_index, is_new_stream = self._get_or_allocate_stream_index(
-                stream_index=stream_index, stream_name=stream_name
-            )
-
-            if sound and stream_index in self.stream_mixes:
-                mix = self.stream_mixes[stream_index]
-                mix.add(sound)
-
-        if not mix:
-            return None, "Unable to allocate the stream"
 
         self.logger.info(
             'Starting playback of %s to sound device [%s] on stream [%s]',
-            file or sound,
-            device,
+            resource or sound,
+            dev.index,
             stream_index,
         )
 
-        if not is_new_stream:
-            return  # Let the existing callback handle the new mix
-            # TODO Potential support also for mixed streams with
-            # multiple sound files and synth sounds?
-
-        try:
-            # Audio queue pre-fill loop
-            for _ in range(bufsize):
-                if f:
-                    data = f.buffer_read(blocksize, dtype='float32')
-                    if not data:
-                        break
-                else:
-                    duration = mix.duration()
-                    blocktime = float(blocksize / samplerate)
-                    next_t = (
-                        min(t + blocktime, duration)
-                        if duration is not None
-                        else t + blocktime
-                    )
-
-                    data = mix.get_wave(t_start=t, t_end=next_t, samplerate=samplerate)
-                    t = next_t
-
-                    if duration is not None and t >= duration:
-                        break
-
-                q.put_nowait(data)  # Pre-fill the audio queue
-
-            stream = self.active_streams[stream_index]
-            completed_callback_event = self.completed_callback_events[stream_index]
-
-            if stream is None:
-                streamtype = sd.RawOutputStream if file else sd.OutputStream
-                stream = streamtype(
-                    samplerate=samplerate,
-                    blocksize=blocksize,
-                    device=device,
-                    channels=channels,
-                    dtype='float32',
-                    callback=self._play_audio_callback(
-                        q=q,
-                        blocksize=blocksize,
-                        streamtype=streamtype,
-                        stream_index=stream_index,
-                    ),
-                    finished_callback=completed_callback_event.set,
-                )
-
-                self.start_playback(stream_index=stream_index, stream=stream)
-
-            with stream:
-                # Timeout set until we expect all the buffered blocks to
-                # be consumed
-                timeout = blocksize * bufsize / samplerate
-
-                while True:
-                    while self._get_playback_state(stream_index) == AudioState.PAUSED:
-                        self.playback_paused_changed[stream_index].wait()
-
-                    if f:
-                        data = f.buffer_read(blocksize, dtype='float32')
-                        if not data:
-                            break
-                    else:
-                        duration = mix.duration()
-                        blocktime = float(blocksize / samplerate)
-                        next_t = (
-                            min(t + blocktime, duration)
-                            if duration is not None
-                            else t + blocktime
-                        )
-
-                        data = mix.get_wave(
-                            t_start=t, t_end=next_t, samplerate=samplerate
-                        )
-                        t = next_t
-
-                        if duration is not None and t >= duration:
-                            break
-
-                    if self._get_playback_state(stream_index) == AudioState.STOPPED:
-                        break
-
-                    try:
-                        q.put(data, timeout=timeout)
-                    except queue.Full as e:
-                        if self._get_playback_state(stream_index) != AudioState.PAUSED:
-                            raise e
-
-                completed_callback_event.wait()
-        except queue.Full:
-            if (
-                stream_index is None
-                or self._get_playback_state(stream_index) != AudioState.STOPPED
-            ):
-                self.logger.warning('Playback timeout: audio callback failed?')
-        finally:
-            if f and not f.closed:
-                f.close()
-
-            self.stop_playback([stream_index])
+        self._manager.create_player(
+            device=dev.index,
+            infile=resource,
+            sound=sound,
+            duration=duration,
+            blocksize=blocksize,
+            sample_rate=sample_rate,
+            channels=channels,
+            volume=volume,
+            stream_name=stream_name,
+        ).start()
 
     @action
     def stream_recording(self, *args, **kwargs):
@@ -439,86 +226,11 @@ class SoundPlugin(RunnablePlugin):
 
         return self.record(*args, **kwargs)
 
-    def create_recorder(
-        self,
-        device: str,
-        output_device: Optional[str] = None,
-        fifo: Optional[str] = None,
-        outfile: Optional[str] = None,
-        duration: Optional[float] = None,
-        sample_rate: Optional[int] = None,
-        dtype: str = 'int16',
-        blocksize: Optional[int] = None,
-        latency: Union[float, str] = 'high',
-        channels: int = 1,
-        redis_queue: Optional[str] = None,
-        format: str = 'wav',  # pylint: disable=redefined-builtin
-        stream: bool = True,
-        play_audio: bool = False,
-    ) -> AudioRecorder:
-        with self._recorder_locks[device]:
-            assert self._recorders.get(device) is None, (
-                f'Recording already in progress for device {device}',
-            )
-
-            if play_audio:
-                output_device = (
-                    output_device
-                    or self.output_device
-                    or self._get_default_device('output')
-                )
-
-                device = (device, output_device)  # type: ignore
-                input_device = device[0]
-            else:
-                input_device = device
-
-            if sample_rate is None:
-                dev_info = sd.query_devices(device, 'input')
-                sample_rate = int(dev_info['default_samplerate'])  # type: ignore
-
-            if blocksize is None:
-                blocksize = self.input_blocksize
-
-            if fifo:
-                fifo = os.path.expanduser(fifo)
-                if os.path.exists(fifo) and stat.S_ISFIFO(os.stat(fifo).st_mode):
-                    self.logger.info('Removing previous input stream FIFO %s', fifo)
-                    os.unlink(fifo)
-
-                os.mkfifo(fifo, 0o644)
-                outfile = fifo
-            elif outfile:
-                outfile = os.path.expanduser(outfile)
-
-            outfile = outfile or fifo or os.devnull
-            self._recorders[input_device] = AudioRecorder(
-                plugin=self,
-                device=device,
-                outfile=outfile,
-                duration=duration,
-                sample_rate=sample_rate,
-                dtype=dtype,
-                blocksize=blocksize,
-                latency=latency,
-                output_format=format,
-                channels=channels,
-                redis_queue=redis_queue,
-                stream=stream,
-                audio_pass_through=play_audio,
-                should_stop=self._should_stop,
-            )
-
-        return self._recorders[input_device]
-
-    def _get_input_device(self, device: Optional[str] = None) -> str:
-        return device or self.input_device or self._get_default_device('input')
-
     @action
-    def record(  # pylint: disable=too-many-statements
+    def record(
         self,
-        device: Optional[str] = None,
-        output_device: Optional[str] = None,
+        device: Optional[DeviceType] = None,
+        output_device: Optional[DeviceType] = None,
         fifo: Optional[str] = None,
         outfile: Optional[str] = None,
         duration: Optional[float] = None,
@@ -527,9 +239,11 @@ class SoundPlugin(RunnablePlugin):
         blocksize: Optional[int] = None,
         latency: Union[float, str] = 'high',
         channels: int = 1,
+        volume: float = 100,
         redis_queue: Optional[str] = None,
         format: str = 'wav',  # pylint: disable=redefined-builtin
         stream: bool = True,
+        stream_name: Optional[str] = None,
         play_audio: bool = False,
     ):
         """
@@ -556,16 +270,19 @@ class SoundPlugin(RunnablePlugin):
             real-time on the selected ``output_device`` (default: False).
         :param latency: Device latency in seconds (default: the device's default high latency)
         :param channels: Number of channels (default: 1)
+        :param volume: Recording volume, between 0 and 100. Default: 100.
         :param redis_queue: If set, the audio chunks will also be published to
             this Redis channel, so other consumers can process them downstream.
-        :param format: Audio format. Supported: wav, mp3, ogg, aac. Default: wav.
+        :param format: Audio format. Supported: wav, mp3, ogg, aac, flac.
+            Default: wav.
         :param stream: If True (default), then the audio will be streamed to an
             HTTP endpoint too (default: ``/sound/stream<.format>``).
+        :param stream_name: Custom name for the output stream.
         """
 
-        device = self._get_input_device(device)
-        self.create_recorder(
-            device,
+        dev = self._manager.get_device(device=device, type=StreamType.INPUT)
+        self._manager.create_recorder(
+            dev.index,
             output_device=output_device,
             fifo=fifo,
             outfile=outfile,
@@ -575,9 +292,11 @@ class SoundPlugin(RunnablePlugin):
             blocksize=blocksize,
             latency=latency,
             channels=channels,
+            volume=volume,
             redis_queue=redis_queue,
             format=format,
             stream=stream,
+            stream_name=stream_name,
             play_audio=play_audio,
         ).start()
 
@@ -596,211 +315,121 @@ class SoundPlugin(RunnablePlugin):
         return self.record(*args, **kwargs)
 
     @action
-    def query_streams(self):
+    def status(self) -> List[dict]:
         """
-        :returns: A list of active audio streams
-        """
+        :return: The current status of the audio devices and streams.
 
-        streams = {
-            i: {
-                attr: getattr(stream, attr)
-                for attr in [
-                    'active',
-                    'closed',
-                    'stopped',
-                    'blocksize',
-                    'channels',
-                    'cpu_load',
-                    'device',
-                    'dtype',
-                    'latency',
-                    'samplerate',
-                    'samplesize',
+        Example:
+
+            .. code-block:: json
+
+                [
+                  {
+                    "streams": [
+                      {
+                        "device": 3,
+                        "direction": "output",
+                        "outfile": "/dev/null",
+                        "infile": "/mnt/hd/media/music/audio.mp3",
+                        "ffmpeg_bin": "ffmpeg",
+                        "channels": 2,
+                        "sample_rate": 44100,
+                        "dtype": "int16",
+                        "streaming": false,
+                        "duration": null,
+                        "blocksize": 1024,
+                        "latency": "high",
+                        "redis_queue": "platypush-stream-AudioResourcePlayer-3",
+                        "audio_pass_through": false,
+                        "state": "PAUSED",
+                        "started_time": "2023-06-19T11:57:05.882329",
+                        "stream_index": 1,
+                        "stream_name": "platypush:audio:output:1"
+                      }
+                    ],
+                    "index": 3,
+                    "name": "default",
+                    "hostapi": 0,
+                    "max_input_channels": 32,
+                    "max_output_channels": 32,
+                    "default_samplerate": 44100,
+                    "default_low_input_latency": 0.008707482993197279,
+                    "default_low_output_latency": 0.008707482993197279,
+                    "default_high_input_latency": 0.034829931972789115,
+                    "default_high_output_latency": 0.034829931972789115
+                  }
                 ]
-                if hasattr(stream, attr)
-            }
-            for i, stream in self.active_streams.items()
-        }
 
-        for i, stream in streams.items():
-            stream['playback_state'] = self.playback_state[i].name
-            stream['name'] = self.stream_index_to_name.get(i)
-            if i in self.stream_mixes:
-                stream['mix'] = dict(enumerate(list(self.stream_mixes[i])))
+        """
+        devices = self._manager.get_devices()
+        streams = self._manager.get_streams()
+        ret = {dev.index: {'streams': [], **asdict(dev)} for dev in devices}
+        for stream in streams:
+            if stream.device is None:
+                continue
 
-        return streams
-
-    def _get_or_allocate_stream_index(
-        self, stream_index=None, stream_name=None, completed_callback_event=None
-    ):
-        stream = None
-
-        with self.playback_state_lock:
-            if stream_index is None:
-                if stream_name is not None:
-                    stream_index = self.stream_name_to_index.get(stream_name)
-            else:
-                if stream_name is not None:
-                    raise RuntimeError(
-                        'Redundant specification of both '
-                        + 'stream_name and stream_index'
-                    )
-
-            if stream_index is not None:
-                stream = self.active_streams.get(stream_index)
-
-            if not stream:
-                return (
-                    self._allocate_stream_index(
-                        stream_name=stream_name,
-                        completed_callback_event=completed_callback_event,
-                    ),
-                    True,
-                )
-
-            return stream_index, False
-
-    def _allocate_stream_index(self, stream_name=None, completed_callback_event=None):
-        stream_index = None
-
-        with self.playback_state_lock:
-            for i in range(len(self.active_streams) + 1):
-                if i not in self.active_streams:
-                    stream_index = i
-                    break
-
-            if stream_index is None:
-                raise RuntimeError('No stream index available')
-
-            if stream_name is None:
-                stream_name = self._STREAM_NAME_PREFIX + str(stream_index)
-
-            self.active_streams[stream_index] = None
-            self.stream_mixes[stream_index] = Mix()
-            self.stream_index_to_name[stream_index] = stream_name
-            self.stream_name_to_index[stream_name] = stream_index
-            self.completed_callback_events[stream_index] = (
-                completed_callback_event if completed_callback_event else Event()
+            dev_index = int(
+                stream.device
+                if isinstance(stream.device, (int, str))
+                else stream.device[0]
             )
 
-        return stream_index
+            ret[dev_index]['streams'].append(stream.asdict())
 
-    def start_playback(self, stream_index, stream):
-        with self.playback_state_lock:
-            self.playback_state[stream_index] = AudioState.RUNNING
-            self.active_streams[stream_index] = stream
-
-            if isinstance(self.playback_paused_changed.get(stream_index), Event):
-                self.playback_paused_changed[stream_index].clear()
-            else:
-                self.playback_paused_changed[stream_index] = Event()
-
-        self.logger.info('Playback started on stream index %d', stream_index)
-
-        return stream_index
+        return list(ret.values())
 
     @action
-    def stop_playback(self, streams=None):
+    def query_streams(self):
         """
-        :param streams: Streams to stop by index or name (default: all)
-        :type streams: list[int] or list[str]
+        Deprecated alias for :meth:`.status`.
         """
 
-        with self.playback_state_lock:
-            streams = streams or self.active_streams.keys()
-            if not streams:
-                return
-            completed_callback_events = {}
-
-            for i in streams:
-                stream = self.active_streams.get(i)
-                if not stream:
-                    i = self.stream_name_to_index.get(i)
-                    stream = self.active_streams.get(i)
-                if not stream:
-                    self.logger.info('No such stream index or name: %d', i)
-                    continue
-
-                if self.completed_callback_events[i]:
-                    completed_callback_events[i] = self.completed_callback_events[i]
-                self.playback_state[i] = AudioState.STOPPED
-
-        for i, event in completed_callback_events.items():
-            event.wait()
-
-            if i in self.completed_callback_events:
-                del self.completed_callback_events[i]
-            if i in self.active_streams:
-                del self.active_streams[i]
-            if i in self.stream_mixes:
-                del self.stream_mixes[i]
-
-            if i in self.stream_index_to_name:
-                name = self.stream_index_to_name[i]
-                del self.stream_index_to_name[i]
-                if name in self.stream_name_to_index:
-                    del self.stream_name_to_index[name]
-
-        self.logger.info(
-            'Playback stopped on streams [%s]',
-            ', '.join([str(stream) for stream in completed_callback_events]),
+        warnings.warn(
+            'sound.query_streams is deprecated, use sound.status instead',
+            DeprecationWarning,
+            stacklevel=1,
         )
 
+        return self.status()
+
     @action
-    def pause_playback(self, streams=None):
+    def stop_playback(
+        self,
+        device: Optional[DeviceType] = None,
+        streams: Optional[Iterable[Union[int, str]]] = None,
+    ):
         """
-        :param streams: Streams to pause by index (default: all)
-        :type streams: list[int]
+        :param device: Only stop the streams on the specified device, by name or index (default: all).
+        :param streams: Streams to stop by index or name (default: all).
         """
+        self._manager.stop_audio(device=device, streams=streams, type=StreamType.OUTPUT)
 
-        with self.playback_state_lock:
-            streams = streams or self.active_streams.keys()
-            if not streams:
-                return
-
-            for i in streams:
-                stream = self.active_streams.get(i)
-                if not stream:
-                    i = self.stream_name_to_index.get(i)
-                    stream = self.active_streams.get(i)
-                if not stream:
-                    self.logger.info('No such stream index or name: %d', i)
-                    continue
-
-                if self.playback_state[i] == AudioState.PAUSED:
-                    self.playback_state[i] = AudioState.RUNNING
-                elif self.playback_state[i] == AudioState.RUNNING:
-                    self.playback_state[i] = AudioState.PAUSED
-                else:
-                    continue
-
-                self.playback_paused_changed[i].set()
-
-        self.logger.info(
-            'Playback pause toggled on streams [%s]',
-            ', '.join([str(stream) for stream in streams]),
+    @action
+    def pause_playback(
+        self,
+        device: Optional[DeviceType] = None,
+        streams: Optional[Iterable[Union[int, str]]] = None,
+    ):
+        """
+        :param device: Only stop the streams on the specified device, by name or index (default: all).
+        :param streams: Streams to stop by index or name (default: all).
+        """
+        self._manager.pause_audio(
+            device=device, streams=streams, type=StreamType.OUTPUT
         )
 
     @action
     def stop_recording(
-        self, device: Optional[str] = None, timeout: Optional[float] = 2
+        self, device: Optional[DeviceType] = None, timeout: Optional[float] = 2
     ):
         """
         Stop the current recording process on the selected device (default:
         default input device), if it is running.
         """
-        device = self._get_input_device(device)
-        with self._recorder_locks[device]:
-            recorder = self._recorders.pop(device, None)
-            if not recorder:
-                self.logger.warning('No active recording session for device %s', device)
-                return
-
-            recorder.notify_stop()
-            recorder.join(timeout=timeout)
+        self._manager.stop_audio(device, StreamType.INPUT, timeout=timeout)
 
     @action
-    def pause_recording(self, device: Optional[str] = None):
+    def pause_recording(self, device: Optional[DeviceType] = None):
         """
         Toggle the recording pause state on the selected device (default:
         default input device), if it is running.
@@ -808,94 +437,32 @@ class SoundPlugin(RunnablePlugin):
         If paused, the recording will be resumed. If running, it will be
         paused. Otherwise, no action will be taken.
         """
-        device = self._get_input_device(device)
-        with self._recorder_locks[device]:
-            recorder = self._recorders.get(device)
-            if not recorder:
-                self.logger.warning('No active recording session for device %s', device)
-                return
-
-            recorder.notify_pause()
+        self._manager.pause_audio(device, StreamType.INPUT)
 
     @action
-    def release(
+    def set_volume(
         self,
-        stream_index=None,
-        stream_name=None,
-        sound_index=None,
-        midi_note=None,
-        frequency=None,
+        volume: float,
+        device: Optional[DeviceType] = None,
+        streams: Optional[Iterable[Union[int, str]]] = None,
     ):
         """
-        Remove a sound from an active stream, either by sound index (use
-            :meth:`platypush.sound.plugin.SoundPlugin.query_streams` to get
-            the sounds playing on the active streams), midi_note, frequency
-            or absolute file path.
+        Set the audio input/output volume.
 
-        :param stream_index: Stream index (default: sound removed from all the
-            active streams)
-        :type stream_index: int
-
-        :param stream_name: Stream name (default: sound removed from all the
-            active streams)
-        :type stream_index: str
-
-        :param sound_index: Sound index
-        :type sound_index: int
-
-        :param midi_note: MIDI note
-        :type midi_note: int
-
-        :param frequency: Sound frequency
-        :type frequency: float
+        :param volume: New volume, between 0 and 100.
+        :param device: Set the volume only on the specified device (default:
+            all).
+        :param streams: Set the volume only on the specified list of stream
+            indices/names (default: all).
         """
-
-        if stream_name:
-            if stream_index:
-                raise RuntimeError(
-                    'stream_index and stream name are ' + 'mutually exclusive'
-                )
-            stream_index = self.stream_name_to_index.get(stream_name)
-
-        mixes = (
-            self.stream_mixes.copy()
-            if stream_index is None
-            else {stream_index: self.stream_mixes[stream_index]}
-        )
-
-        streams_to_stop = []
-
-        for i, mix in mixes.items():
-            for j, sound in enumerate(mix):
-                if (
-                    (sound_index is not None and j == sound_index)
-                    or (midi_note is not None and sound.get('midi_note') == midi_note)
-                    or (frequency is not None and sound.get('frequency') == frequency)
-                ):
-                    if len(list(mix)) == 1:
-                        # Last sound in the mix
-                        streams_to_stop.append(i)
-                    else:
-                        mix.remove(j)
-
-        if streams_to_stop:
-            self.stop_playback(streams_to_stop)
-
-    def _get_playback_state(self, stream_index):
-        with self.playback_state_lock:
-            return self.playback_state[stream_index]
+        self._manager.set_volume(volume=volume, device=device, streams=streams)
 
     @override
     def main(self):
-        self.wait_stop()
-
-    @override
-    def stop(self):
-        super().stop()
-        devices = list(self._recorders.keys())
-
-        for device in devices:
-            self.stop_recording(device, timeout=0)
+        try:
+            self.wait_stop()
+        finally:
+            self._manager.stop_audio()
 
 
 # vim:sw=4:ts=4:et:
