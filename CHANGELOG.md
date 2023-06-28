@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being
 reported only starting from v0.20.2.
 
-## [Unreleased]
+## [0.50.0] - 2023-06-28
 
 This should actually be a new big major release, but I'm holding on implementing
 more features before a 1.0 tag.
