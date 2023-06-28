@@ -31,10 +31,17 @@ Platypush
   * [Backends](#backends)
   * [Events](#events)
   * [Hooks](#hooks)
+    + [More complex filters](#more-complex-filters)
   * [Procedures](#procedures)
   * [Cronjobs](#cronjobs)
   * [Entities](#entities)
   * [The web interface](#the-web-interface)
+    + [The main web panel](#the-main-web-panel)
+    + [The execution panel](#the-execution-panel)
+    + [Other web panels](#other-web-panels)
+    + [Dashboards](#dashboards)
+  * [Running in production mode](#running-in-production-mode)
+    + [PWA support](#pwa-support)
 - [Mobile app](#mobile-app)
 - [Tests](#tests)
 - [Funding](#funding)
@@ -243,7 +250,7 @@ by the configured integrations.
 2. Start the service from the virtual environment:
 
     ```shell
-        # device_id matches either the hostname or the device_id in config.yaml
+    # device_id matches either the hostname or the device_id in config.yaml
     platyvenv start device_id
     ```
 
@@ -276,7 +283,7 @@ script named `platydock` that automatically creates a container instance from a
 2. Start the container:
 
     ```shell
-        # device_id matches either the hostname or the device_id in config.yaml
+    # device_id matches either the hostname or the device_id in config.yaml
     platydock start device_id
     ```
 
@@ -478,6 +485,43 @@ def on_music_play_command(event, title=None, artist=None, **context):
     run('music.mpd.play', results[0]['file'])
 ```
 
+#### More complex filters
+
+Your event hooks can include more complex filters too. Structured filters
+against partial event arguments are also possible, and relational operators are
+supported as well. For example:
+
+```python
+from platypush.event.hook import hook
+from platypush.message.event.sensor import SensorDataChangeEvent
+
+@hook(SensorDataChangeEvent, data=1):
+def hook_1(event):
+    """
+    Triggered when event.data == 1
+    """
+
+@hook(SensorDataChangeEvent, data={'state': 1}):
+def hook_2(event):
+    """
+    Triggered when event.data['state'] == 1
+    """
+
+@hook(SensorDataChangeEvent, data={
+  'temperature': {'$gt': 25},
+  'humidity': {'$le': 15}
+}):
+def hook_3(event):
+    """
+    Triggered when event.data['temperature'] > 25 and
+    event.data['humidity'] <= 15.
+    """
+```
+
+The supported relational fields are the same supported by ElasticSearch - `$gt`
+for greater than, `$lt` for lesser than, `$ge` for greater or equal, `$ne` for
+not equal, etc.
+
 ### Procedures
 
 Procedures are pieces of custom logic that can be executed as atomic actions
@@ -626,9 +670,73 @@ groups together the controls for most of the plugins - e.g. sensors, switches,
 music controls and search, media library and torrent management, lights,
 Zigbee/Z-Wave devices and so on. The UI is responsive and mobile-friendly.
 
+Some screenshots:
+
+#### The main web panel
+
+This is the default panel available at `http://<host>:<port>` after
+registration/login. It provides all the entities published by the integrations
+under one view, with custom grouping and filtering options.
+
+![Screenshot of the application main
+panel, showing the Bluetooth, Serial, SmartThings and System integrations](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/main-panel-screenshot-1.png)
+
+![Screenshot of the application main
+panel, showing the Philips Hue, Zigbee, SmartThings and some sensors integrations](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/main-panel-screenshot-2.png)
+
+#### The execution panel
+
+The web interface provides an `execute` panel as well. You can use this panel to
+interactively inspect the available integrations and their actions, together
+with their documentation and parameters, run requests directly from the web
+interface, and inspect the JSON responses.
+
+![Screenshot of the execution panel, showing the actions autocomplete
+form](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/execute-panel-screenshot-1.png)
+
+![Screenshot of the execution panel, showing an action's automatically generated
+documentation and its parsed attributes](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/execute-panel-screenshot-2.png)
+
+#### Other web panels
+
+Several integrations add their own feature-rich panels to the web view, turning
+Platypush into a gateway to all of your services - from Zigbee sensors, to media
+players and services, to your music cloud, and more.
+
+![Screenshot of the media panel, showing search results from multiple sources
+and several supported types of streaming services](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/media-panel-screenshot-1.png)
+
+![Screenshot of one of the music
+panels](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/music-panel-screenshot-1.png)
+
+![Screenshot of the Snapcast panel, which can be used to synchronize your music
+streams across multiple
+devices](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/snapcast-panel-screenshot-1.png)
+
+#### Dashboards
+
 The web service also provides means for the user to create [custom
 dashboards](https://git.platypush.tech/platypush/platypush/src/branch/master/examples/conf/dashboard.xml)
 that can be used to show information from multiple sources on a large screen.
+
+![Screenshot of a Platypush dashboard, showing a calendar widget, the current
+music state, weather, news from the RSS integration, and a carousel of custom
+pictures.](https://blog.platypush.tech/img/dashboard-1.png)
+
+### Running in production mode
+
+If you want to access your Platypush web panel outside your home network, it may
+be a good idea to use an nginx/Apache reverse proxy with a valid SSL certificate
+(e.g. managed by certbot). A [sample an nginx
+configuration](https://git.platypush.tech/platypush/platypush/src/branch/master/examples/nginx/nginx.sample.conf)
+is provided in the repository.
+
+#### PWA support
+
+Note that having the web application served over SSL is a requirement for the
+PWA (progressive web app) to work. The Platypush PWA allows you to install a
+Platypush native-like client on your mobile devices if you don't want to use the
+full Android app.
 
 ## Mobile app
 
