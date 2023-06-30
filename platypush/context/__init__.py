@@ -130,20 +130,26 @@ def get_plugin(plugin, plugin_name=None, reload=False):
     else:
         raise TypeError(f'Invalid plugin type/name: {plugin}')
 
+    assert name, 'No plugin name provided'
     if name not in plugins_init_locks:
         plugins_init_locks[name] = RLock()
 
     if name in _ctx.plugins and not reload:
         return _ctx.plugins[name]
 
+    module_name = None
     if isinstance(plugin, str):
-        try:
-            plugin = importlib.import_module(
-                'platypush.plugins.' + name
-            )  # type: ignore
-        except ImportError as e:
-            logger.warning('No such plugin: %s', name)
-            raise RuntimeError(e) from e
+        module_name = 'platypush.plugins.{name}'
+    elif issubclass(plugin, Plugin):
+        module_name = plugin.__module__
+    else:
+        raise RuntimeError(f'Invalid plugin type/name: {plugin}')
+
+    try:
+        plugin = importlib.import_module(module_name)
+    except ImportError as e:
+        logger.warning('No such plugin: %s', name)
+        raise RuntimeError(e) from e
 
     # e.g. plugins.music.mpd main class: MusicMpdPlugin
     cls_name = ''
