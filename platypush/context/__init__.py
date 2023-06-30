@@ -139,7 +139,7 @@ def get_plugin(plugin, plugin_name=None, reload=False):
 
     module_name = None
     if isinstance(plugin, str):
-        module_name = 'platypush.plugins.{name}'
+        module_name = f'platypush.plugins.{name}'
     elif issubclass(plugin, Plugin):
         module_name = plugin.__module__
     else:
