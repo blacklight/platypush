@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being
 reported only starting from v0.20.2.
 
+## [0.50.2] - 2023-06-30
+
+### Fixed
+
+- A fix for the new `get_plugin` supported syntax. `get_plugin` now also
+  accepts a plugin class/type as an argument rather than a string, but the
+  previous logic didn't properly inspect the parent module.
+
 ## [0.50.0] - 2023-06-28
 
 This should actually be a new big major release, but I'm holding on implementing
