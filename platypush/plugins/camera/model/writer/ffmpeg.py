@@ -5,8 +5,6 @@ import time
 from abc import ABC
 from typing import Optional, Tuple
 
-from PIL.Image import Image
-
 from platypush.plugins.camera.model.camera import Camera
 from platypush.plugins.camera.model.writer import (
     VideoWriter,
@@ -73,7 +71,7 @@ class FFmpegWriter(VideoWriter, ABC):
     def is_closed(self):
         return self.closed or not self.ffmpeg or self.ffmpeg.poll() is not None
 
-    def write(self, image: Image):
+    def write(self, image):
         if self.is_closed():
             return
 
@@ -146,7 +144,7 @@ class FFmpegStreamWriter(StreamWriter, FFmpegWriter, ABC):
         self._reader = threading.Thread(target=self._reader_thread)
         self._reader.start()
 
-    def encode(self, image: Image) -> bytes:
+    def encode(self, image) -> bytes:
         return image.convert('RGB').tobytes()
 
     def _reader_thread(self):
@@ -173,7 +171,7 @@ class FFmpegStreamWriter(StreamWriter, FFmpegWriter, ABC):
 
             self._sock_send(self.frame)
 
-    def write(self, image: Image):
+    def write(self, image):
         if self.is_closed():
             return
 

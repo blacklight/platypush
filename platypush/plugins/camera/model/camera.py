@@ -3,8 +3,6 @@ import threading
 from dataclasses import asdict, dataclass
 from typing import Optional, Union, Tuple, Set
 
-import numpy as np
-
 from platypush.plugins.camera.model.writer import (
     StreamWriter,
     VideoWriter,
@@ -78,6 +76,8 @@ class Camera:
         Calculates the effective resolution of the camera in pixels, taking
         into account the base resolution, the scale and the rotation.
         """
+        import numpy as np
+
         assert self.info.resolution, 'No base resolution specified'
         rot = (self.info.rotate or 0) * math.pi / 180
         sin = math.sin(rot)

@@ -7,8 +7,6 @@ import time
 from abc import ABC, abstractmethod
 from typing import Optional, IO
 
-from PIL.Image import Image
-
 from platypush.utils import get_redis
 
 
@@ -28,11 +26,12 @@ class VideoWriter(ABC):
         self.closed = False
 
     @abstractmethod
-    def write(self, image: Image):
+    def write(self, image):
         """
         Write an image to the channel.
 
         :param image: PIL Image instance.
+        :type image: PIL.Image.Image
         """
         raise NotImplementedError()
 
@@ -88,7 +87,7 @@ class StreamWriter(VideoWriter, ABC):
         self.redis_queue = redis_queue
         self.sock = sock
 
-    def write(self, image: Image):
+    def write(self, image):
         data = self.encode(image)
         with self.ready:
             if self.buffer.closed:
@@ -116,7 +115,7 @@ class StreamWriter(VideoWriter, ABC):
             get_redis().publish(self.redis_queue, data)
 
     @abstractmethod
-    def encode(self, image: Image) -> bytes:
+    def encode(self, image) -> bytes:
         """
         Encode an image before sending it to the channel.
 

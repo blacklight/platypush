@@ -30,8 +30,7 @@ def get_routes():
             if hasattr(module, '__routes__'):
                 routes.extend(module.__routes__)
         except Exception as e:
-            logger.warning('Could not import module %s', mod_name)
-            logger.exception(e)
+            logger().warning('Could not import module %s: %s', mod_name, str(e))
             continue
 
     return routes
