@@ -57,6 +57,7 @@ class Request(Message):
         self.args = args if args else {}
         self.backend = backend
         self.token = token
+        self._logger = logging.getLogger('platypush:requests')
 
     @classmethod
     def build(cls, msg):
@@ -77,16 +78,11 @@ class Request(Message):
 
     @staticmethod
     def _generate_id():
-        _id = ''
-        for _ in range(0, 16):
-            _id += '%.2x' % random.randint(0, 255)
-        return _id
+        return ''.join(f'{random.randint(0, 255):02x}' for _ in range(0, 16))
 
     def _execute_procedure(self, *args, **kwargs):
-        from platypush.config import Config
         from platypush.procedure import Procedure
 
-        logger.info('Executing procedure request: {}'.format(self.action))
         procedures = Config.get_procedures()
         proc_name = '.'.join(self.action.split('.')[1:])
         if proc_name not in procedures:
@@ -120,7 +116,7 @@ class Request(Message):
 
         constants = Config.get_constants()
         context['constants'] = {}
-        for (name, value) in constants.items():
+        for name, value in constants.items():
             context['constants'][name] = value
 
         keys = []
@@ -143,23 +139,20 @@ class Request(Message):
 
     @classmethod
     def expand_value_from_context(cls, _value, **context):
-        for (k, v) in context.items():
+        for k, v in context.items():
             if isinstance(v, Message):
                 v = json.loads(str(v))
             try:
                 exec('{}={}'.format(k, v))
-            except Exception as e:
-                logger.debug(str(e))
+            except Exception:
                 if isinstance(v, str):
                     try:
                         exec('{}="{}"'.format(k, re.sub(r'(^|[^\\])"', '\1\\"', v)))
-                    except Exception as e:
+                    except Exception as e2:
                         logger.debug(
-                            'Could not set context variable {}={}: {}'.format(
-                                k, v, str(e)
-                            )
+                            'Could not set context variable %s=%s: %s', k, v, e2
                         )
-                        logger.debug('Context: {}'.format(context))
+                        logger.debug('Context: %s', context)
 
         parsed_value = ''
         if not isinstance(_value, str):
@@ -205,6 +198,7 @@ class Request(Message):
         response.id = self.id
         response.target = self.origin
         response.origin = Config.get('device_id')
+        response.log()
 
         if self.backend and self.origin:
             self.backend.send_response(response=response, request=self)
@@ -235,6 +229,7 @@ class Request(Message):
             from platypush.plugins import RunnablePlugin
 
             response = None
+            self.log()
 
             try:
                 if self.action.startswith('procedure.'):
@@ -243,25 +238,20 @@ class Request(Message):
                     if response is not None:
                         self._send_response(response)
                     return response
+
                 # utils.get_context is a special action that simply returns the current context
-                elif self.action == 'utils.get_context':
+                if self.action == 'utils.get_context':
                     response = Response(output=context)
                     self._send_response(response)
                     return response
-                else:
-                    action = self.expand_value_from_context(self.action, **context)
-                    (module_name, method_name) = get_module_and_method_from_action(
-                        action
-                    )
-                    plugin = get_plugin(module_name)
-                    assert plugin, f'No such plugin: {module_name}'
+
+                action = self.expand_value_from_context(self.action, **context)
+                (module_name, method_name) = get_module_and_method_from_action(action)
+                plugin = get_plugin(module_name)
+                assert plugin, f'No such plugin: {module_name}'
             except Exception as e:
                 logger.exception(e)
-                msg = 'Uncaught pre-processing exception from action [{}]: {}'.format(
-                    self.action, str(e)
-                )
-                logger.warning(msg)
-                response = Response(output=None, errors=[msg])
+                response = Response(output=None, errors=[str(e)])
                 self._send_response(response)
                 return response
 
@@ -276,41 +266,23 @@ class Request(Message):
                 else:
                     response = plugin.run(method_name, args)
 
-                if not response:
-                    logger.warning(
-                        'Received null response from action {}'.format(action)
-                    )
-                else:
-                    if response.is_error():
-                        logger.warning(
-                            (
-                                'Response processed with errors from ' + 'action {}: {}'
-                            ).format(action, str(response))
-                        )
-                    else:
-                        response.log(action)
+                if response is None:
+                    response = Response()
             except (AssertionError, TimeoutError) as e:
                 logger.warning(
-                    '%s from action [%s]: %s', e.__class__.__name__, action, str(e)
+                    '%s from action [%s]: %s', e.__class__.__name__, action, e
                 )
                 response = Response(output=None, errors=[str(e)])
             except Exception as e:
                 # Retry mechanism
                 plugin.logger.exception(e)
-                logger.warning(
-                    (
-                        'Uncaught exception while processing response '
-                        + 'from action [{}]: {}'
-                    ).format(action, str(e))
-                )
-
                 errors = errors or []
                 if str(e) not in errors:
                     errors.append(str(e))
 
                 response = Response(output=None, errors=errors)
                 if _n_tries - 1 > 0:
-                    logger.info('Reloading plugin {} and retrying'.format(module_name))
+                    logger.info('Reloading plugin %s and retrying', module_name)
                     plugin = get_plugin(module_name, reload=True)
                     if isinstance(plugin, RunnablePlugin):
                         plugin.bus = get_bus()

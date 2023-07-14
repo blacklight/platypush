@@ -21,20 +21,18 @@ def execute_route():
     try:
         msg = json.loads(request.data.decode('utf-8'))
     except Exception as e:
-        logger().error(
-            'Unable to parse JSON from request {}: {}'.format(request.data, str(e))
-        )
+        logger().error('Unable to parse JSON from request %s: %s', request.data, e)
         abort(400, str(e))
 
-    logger().info('Received message on the HTTP backend: {}'.format(msg))
+    logger().debug(
+        'Received message on the HTTP backend from %s: %s', request.remote_addr, msg
+    )
 
     try:
         response = send_message(msg)
         return Response(str(response or {}), mimetype='application/json')
     except Exception as e:
-        logger().error(
-            'Error while running HTTP action: {}. Request: {}'.format(str(e), msg)
-        )
+        logger().error('Error while running HTTP action: %s. Request: %s', e, msg)
         abort(500, str(e))
 
 

@@ -57,6 +57,7 @@ class Event(Message):
         self.type = f'{self.__class__.__module__}.{self.__class__.__name__}'
         self.args = kwargs
         self.disable_web_clients_notification = disable_web_clients_notification
+        self._logger = logging.getLogger('platypush:events')
 
         for arg, value in self.args.items():
             if arg not in [
