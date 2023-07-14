@@ -58,72 +58,51 @@ class Config:
     )
     _included_files: Set[str] = set()
 
-    def __init__(self, cfgfile=None):
+    def __init__(self, cfgfile: Optional[str] = None):
         """
         Constructor. Always use the class as a singleton (i.e. through
         Config.init), you won't probably need to call the constructor directly
-        Params:
-            cfgfile -- Config file path (default: retrieve the first
-                       available location in _cfgfile_locations)
+
+        :param cfgfile: Config file path (default: retrieve the first available
+            location in _cfgfile_locations).
         """
 
+        self.backends = {}
+        self.plugins = self._core_plugins
+        self.event_hooks = {}
+        self.procedures = {}
+        self.constants = {}
+        self.cronjobs = {}
+        self.dashboards = {}
+        self._plugin_manifests = {}
+        self._backend_manifests = {}
+        self._cfgfile = ''
+
+        self._init_cfgfile(cfgfile)
+        self._config = self._read_config_file(self._cfgfile)
+
+        self._init_secrets()
+        self._init_dirs()
+        self._init_db()
+        self._init_logging()
+        self._init_device_id()
+        self._init_environment()
+        self._init_manifests()
+        self._init_constants()
+        self._load_scripts()
+        self._init_components()
+        self._init_dashboards(self._config['dashboards_dir'])
+
+    def _init_cfgfile(self, cfgfile: Optional[str] = None):
         if cfgfile is None:
             cfgfile = self._get_default_cfgfile()
 
         if cfgfile is None:
             cfgfile = self._create_default_config()
 
-        cfgfile = self._cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
-        self._config = self._read_config_file(self._cfgfile)
+        self._cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
 
-        if 'token' in self._config:
-            self._config['token_hash'] = get_hash(self._config['token'])
-
-        if 'workdir' not in self._config:
-            self._config['workdir'] = self._workdir_location
-        self._config['workdir'] = os.path.expanduser(self._config['workdir'])
-        os.makedirs(self._config['workdir'], exist_ok=True)
-
-        if 'scripts_dir' not in self._config:
-            self._config['scripts_dir'] = os.path.join(
-                os.path.dirname(cfgfile), 'scripts'
-            )
-        os.makedirs(self._config['scripts_dir'], mode=0o755, exist_ok=True)
-
-        if 'dashboards_dir' not in self._config:
-            self._config['dashboards_dir'] = os.path.join(
-                os.path.dirname(cfgfile), 'dashboards'
-            )
-        os.makedirs(self._config['dashboards_dir'], mode=0o755, exist_ok=True)
-
-        # Create a default (empty) __init__.py in the scripts folder
-        init_py = os.path.join(self._config['scripts_dir'], '__init__.py')
-        if not os.path.isfile(init_py):
-            with open(init_py, 'w') as f:
-                f.write('# Auto-generated __init__.py - do not remove\n')
-
-        # Include scripts_dir parent in sys.path so members can be imported in scripts
-        # through the `scripts` package
-        scripts_parent_dir = str(
-            pathlib.Path(self._config['scripts_dir']).absolute().parent
-        )
-        sys.path = [scripts_parent_dir] + sys.path
-
-        # Initialize the default db connection string
-        db_engine = self._config.get('main.db', '')
-        if db_engine:
-            if isinstance(db_engine, str):
-                db_engine = {
-                    'engine': db_engine,
-                }
-        else:
-            db_engine = {
-                'engine': 'sqlite:///'
-                + os.path.join(quote(self._config['workdir']), 'main.db')
-            }
-
-        self._config['db'] = db_engine
-
+    def _init_logging(self):
         logging_config = {
             'level': logging.INFO,
             'stream': sys.stdout,
@@ -152,28 +131,65 @@ class Config:
 
         self._config['logging'] = logging_config
 
+    def _init_db(self):
+        # Initialize the default db connection string
+        db_engine = self._config.get('main.db', '')
+        if db_engine:
+            if isinstance(db_engine, str):
+                db_engine = {
+                    'engine': db_engine,
+                }
+        else:
+            db_engine = {
+                'engine': 'sqlite:///'
+                + os.path.join(quote(self._config['workdir']), 'main.db')
+            }
+
+        self._config['db'] = db_engine
+
+    def _init_device_id(self):
         if 'device_id' not in self._config:
             self._config['device_id'] = socket.gethostname()
 
+    def _init_environment(self):
         if 'environment' in self._config:
             for k, v in self._config['environment'].items():
                 os.environ[k] = str(v)
 
-        self.backends = {}
-        self.plugins = self._core_plugins
-        self.event_hooks = {}
-        self.procedures = {}
-        self.constants = {}
-        self.cronjobs = {}
-        self.dashboards = {}
-        self._plugin_manifests = {}
-        self._backend_manifests = {}
+    def _init_dirs(self):
+        if 'workdir' not in self._config:
+            self._config['workdir'] = self._workdir_location
+        self._config['workdir'] = os.path.expanduser(self._config['workdir'])
+        os.makedirs(self._config['workdir'], exist_ok=True)
 
-        self._init_manifests()
-        self._init_constants()
-        self._load_scripts()
-        self._init_components()
-        self._init_dashboards(self._config['dashboards_dir'])
+        if 'scripts_dir' not in self._config:
+            self._config['scripts_dir'] = os.path.join(
+                os.path.dirname(self._cfgfile), 'scripts'
+            )
+        os.makedirs(self._config['scripts_dir'], mode=0o755, exist_ok=True)
+
+        if 'dashboards_dir' not in self._config:
+            self._config['dashboards_dir'] = os.path.join(
+                os.path.dirname(self._cfgfile), 'dashboards'
+            )
+        os.makedirs(self._config['dashboards_dir'], mode=0o755, exist_ok=True)
+
+        # Create a default (empty) __init__.py in the scripts folder
+        init_py = os.path.join(self._config['scripts_dir'], '__init__.py')
+        if not os.path.isfile(init_py):
+            with open(init_py, 'w') as f:
+                f.write('# Auto-generated __init__.py - do not remove\n')
+
+        # Include scripts_dir parent in sys.path so members can be imported in scripts
+        # through the `scripts` package
+        scripts_parent_dir = str(
+            pathlib.Path(self._config['scripts_dir']).absolute().parent
+        )
+        sys.path = [scripts_parent_dir] + sys.path
+
+    def _init_secrets(self):
+        if 'token' in self._config:
+            self._config['token_hash'] = get_hash(self._config['token'])
 
     @property
     def _core_plugins(self) -> Dict[str, dict]:

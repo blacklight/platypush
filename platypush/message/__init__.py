@@ -11,7 +11,7 @@ import time
 from typing import Union
 from uuid import UUID
 
-logger = logging.getLogger('platypush')
+_logger = logging.getLogger('platypush')
 
 
 class JSONAble(ABC):
@@ -88,31 +88,33 @@ class Message:
             try:
                 return super().default(obj)
             except Exception as e:
-                logger.warning(
+                _logger.warning(
                     'Could not serialize object type %s: %s: %s', type(obj), e, obj
                 )
 
     def __init__(self, *_, timestamp=None, logging_level=logging.INFO, **__):
         self.timestamp = timestamp or time.time()
         self.logging_level = logging_level
+        self._logger = _logger
+        self._default_log_prefix = ''
 
     def log(self, prefix=''):
         if self.logging_level is None:
             return  # Skip logging
 
-        log_func = logger.info
+        log_func = self._logger.info
         if self.logging_level == logging.DEBUG:
-            log_func = logger.debug
+            log_func = self._logger.debug
         elif self.logging_level == logging.WARNING:
-            log_func = logger.warning
+            log_func = self._logger.warning
         elif self.logging_level == logging.ERROR:
-            log_func = logger.error
+            log_func = self._logger.error
         elif self.logging_level == logging.FATAL:
-            log_func = logger.fatal
+            log_func = self._logger.fatal
 
         if not prefix:
-            prefix = f'Received {self.__class__.__name__}: '
-        log_func(f'{prefix}{self}')
+            prefix = self._default_log_prefix
+        log_func('%s%s', prefix, self)
 
     def __str__(self):
         """
@@ -154,7 +156,7 @@ class Message:
             try:
                 msg = json.loads(msg.strip())
             except (ValueError, TypeError):
-                logger.warning('Invalid JSON message: %s', msg)
+                _logger.warning('Invalid JSON message: %s', msg)
 
         assert isinstance(msg, dict)
 

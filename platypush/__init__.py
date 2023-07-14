@@ -1,7 +1,7 @@
 """
 Platypush
 
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
+.. moduleauthor:: Fabio Manganiello <fabio@manganiello.tech>
 .. license: MIT
 """
 
@@ -11,6 +11,7 @@ import os
 import sys
 from typing import Optional
 
+from .bus import Bus
 from .bus.redis import RedisBus
 from .config import Config
 from .context import register_backends, register_plugins
@@ -33,19 +34,8 @@ log = logging.getLogger('platypush')
 class Daemon:
     """Main class for the Platypush daemon"""
 
-    # Configuration file (default: either ~/.config/platypush/config.yaml or
-    # /etc/platypush/config.yaml
-    config_file = None
-
-    # Application bus. It's an internal queue where:
-    # - backends will post the messages they receive
-    # - plugins will post the responses they process
-    bus = None
-
     # Default bus queue name
     _default_redis_queue = 'platypush/bus'
-
-    pidfile = None
 
     # backend_name => backend_obj map
     backends = None
@@ -80,25 +70,16 @@ class Daemon:
             verbose -- Enable debug/verbose logging, overriding the stored configuration (default: False).
         """
 
+        self.pidfile = pidfile
         if pidfile:
-            self.pidfile = pidfile
-            with open(self.pidfile, 'w') as f:
+            with open(pidfile, 'w') as f:
                 f.write(str(os.getpid()))
 
+        self.bus: Optional[Bus] = None
         self.redis_queue = redis_queue or self._default_redis_queue
         self.config_file = config_file
+        self._verbose = verbose
         Config.init(self.config_file)
-        logging_conf = Config.get('logging') or {}
-        if verbose:
-            logging_conf['level'] = logging.DEBUG
-        logging.basicConfig(**logging_conf)
-
-        redis_conf = Config.get('backend.redis') or {}
-        self.bus = RedisBus(
-            redis_queue=self.redis_queue,
-            on_message=self.on_message(),
-            **redis_conf.get('redis_args', {})
-        )
 
         self.no_capture_stdout = no_capture_stdout
         self.no_capture_stderr = no_capture_stderr
@@ -107,6 +88,23 @@ class Daemon:
         self.requests_to_process = requests_to_process
         self.processed_requests = 0
         self.cron_scheduler = None
+
+        self._init_bus()
+        self._init_logging()
+
+    def _init_bus(self):
+        redis_conf = Config.get('backend.redis') or {}
+        self.bus = RedisBus(
+            redis_queue=self.redis_queue,
+            on_message=self.on_message(),
+            **redis_conf.get('redis_args', {})
+        )
+
+    def _init_logging(self):
+        logging_conf = Config.get('logging') or {}
+        if self._verbose:
+            logging_conf['level'] = logging.DEBUG
+        logging.basicConfig(**logging_conf)
 
     @classmethod
     def build_from_cmdline(cls, args):
@@ -122,7 +120,7 @@ class Daemon:
             dest='config',
             required=False,
             default=None,
-            help=cls.config_file.__doc__,
+            help='Custom location for the configuration file',
         )
         parser.add_argument(
             '--version',
@@ -207,7 +205,7 @@ class Daemon:
                 try:
                     msg.execute(n_tries=self.n_tries)
                 except PermissionError:
-                    log.info('Dropped unauthorized request: {}'.format(msg))
+                    log.info('Dropped unauthorized request: %s', msg)
 
                 self.processed_requests += 1
                 if (
@@ -255,7 +253,7 @@ class Daemon:
             sys.stderr = Logger(log.warning)
 
         set_thread_name('platypush')
-        log.info('---- Starting platypush v.{}'.format(__version__))
+        log.info('---- Starting platypush v.%s', __version__)
 
         # Initialize the backends and link them to the bus
         self.backends = register_backends(bus=self.bus, global_scope=True)
