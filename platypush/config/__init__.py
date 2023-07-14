@@ -36,9 +36,11 @@ class Config:
     """
 
     # Default config file locations:
+    #   - current directory
     #   - $HOME/.config/platypush/config.yaml
     #   - /etc/platypush/config.yaml
     _cfgfile_locations = [
+        os.path.join(os.path.abspath('.'), 'config.yaml'),
         os.path.join(os.path.expanduser('~'), '.config', 'platypush', 'config.yaml'),
         os.path.join(os.sep, 'etc', 'platypush', 'config.yaml'),
     ]
