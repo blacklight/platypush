@@ -15,6 +15,7 @@ from platypush.message.response import Response
 from platypush.utils import get_decorators, get_plugin_name_by_class
 
 PLUGIN_STOP_TIMEOUT = 5  # Plugin stop timeout in seconds
+logger = logging.getLogger(__name__)
 
 
 def action(f: Callable[..., Any]) -> Callable[..., Response]:
@@ -29,7 +30,11 @@ def action(f: Callable[..., Any]) -> Callable[..., Response]:
     @wraps(f)
     def _execute_action(*args, **kwargs) -> Response:
         response = Response()
-        result = f(*args, **kwargs)
+        try:
+            result = f(*args, **kwargs)
+        except TypeError as e:
+            logger.exception(e)
+            result = Response(errors=[str(e)])
 
         if result and isinstance(result, Response):
             result.errors = (
