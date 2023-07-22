@@ -28,7 +28,7 @@ backend = pkg_files('platypush/backend')
 
 setup(
     name="platypush",
-    version="0.50.2",
+    version="0.50.3",
     author="Fabio Manganiello",
     author_email="fabio@manganiello.tech",
     description="Platypush service",
