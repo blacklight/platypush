@@ -78,6 +78,7 @@ Events
     platypush/events/web.widget.rst
     platypush/events/websocket.rst
     platypush/events/wiimote.rst
+    platypush/events/xmpp.rst
     platypush/events/zeroborg.rst
     platypush/events/zeroconf.rst
     platypush/events/zigbee.mqtt.rst

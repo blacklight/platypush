@@ -145,6 +145,7 @@ Plugins
     platypush/plugins/weather.openweathermap.rst
     platypush/plugins/websocket.rst
     platypush/plugins/wiimote.rst
+    platypush/plugins/xmpp.rst
     platypush/plugins/zeroconf.rst
     platypush/plugins/zigbee.mqtt.rst
     platypush/plugins/zwave.rst

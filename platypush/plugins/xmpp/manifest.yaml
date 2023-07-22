@@ -1,0 +1,36 @@
+manifest:
+  events:
+    platypush.message.event.xmpp.XmppConnectedEvent:
+    platypush.message.event.xmpp.XmppContactAddRequestAcceptedEvent:
+    platypush.message.event.xmpp.XmppContactAddRequestEvent:
+    platypush.message.event.xmpp.XmppContactAddRequestRejectedEvent:
+    platypush.message.event.xmpp.XmppConversationAddedEvent:
+    platypush.message.event.xmpp.XmppConversationEnterEvent:
+    platypush.message.event.xmpp.XmppConversationExitEvent:
+    platypush.message.event.xmpp.XmppConversationJoinEvent:
+    platypush.message.event.xmpp.XmppConversationLeaveEvent:
+    platypush.message.event.xmpp.XmppConversationNickChangedEvent:
+    platypush.message.event.xmpp.XmppDisconnectedEvent:
+    platypush.message.event.xmpp.XmppMessageReceivedEvent:
+    platypush.message.event.xmpp.XmppPresenceChangedEvent:
+    platypush.message.event.xmpp.XmppRoomAffiliationChangedEvent:
+    platypush.message.event.xmpp.XmppRoomEnterEvent:
+    platypush.message.event.xmpp.XmppRoomExitEvent:
+    platypush.message.event.xmpp.XmppRoomInviteAcceptedEvent:
+    platypush.message.event.xmpp.XmppRoomInviteEvent:
+    platypush.message.event.xmpp.XmppRoomInviteRejectedEvent:
+    platypush.message.event.xmpp.XmppRoomJoinEvent:
+    platypush.message.event.xmpp.XmppRoomLeaveEvent:
+    platypush.message.event.xmpp.XmppRoomMessageReceivedEvent:
+    platypush.message.event.xmpp.XmppRoomNickChangedEvent:
+    platypush.message.event.xmpp.XmppRoomPresenceChangedEvent:
+    platypush.message.event.xmpp.XmppRoomRoleChangedEvent:
+    platypush.message.event.xmpp.XmppRoomTopicChangedEvent:
+    platypush.message.event.xmpp.XmppRoomUserUnavailableEvent:
+    platypush.message.event.xmpp.XmppUserAvailableEvent:
+    platypush.message.event.xmpp.XmppUserUnavailableEvent:
+  pip:
+    - aioxmpp
+    - pytz
+  package: platypush.plugins.xmpp
+  type: plugin
