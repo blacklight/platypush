@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 Given the high speed of development in the first phase, changes are being
 reported only starting from v0.20.2.
 
+## [0.50.3] - 2023-07-22
+
+### Added
+
+- Added [XMPP plugin](https://git.platypush.tech/platypush/platypush/pulls/269).
+
 ## [0.50.2] - 2023-06-30
 
 ### Fixed
