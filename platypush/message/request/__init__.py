@@ -269,10 +269,14 @@ class Request(Message):
                 if response is None:
                     response = Response()
             except (AssertionError, TimeoutError) as e:
+                error = e if str(e) else e.__class__.__name__
                 logger.warning(
-                    '%s from action [%s]: %s', e.__class__.__name__, action, e
+                    '%s from action [%s]: %s',
+                    e.__class__.__name__,
+                    action,
+                    error,
                 )
-                response = Response(output=None, errors=[str(e)])
+                response = Response(output=None, errors=[error])
             except Exception as e:
                 # Retry mechanism
                 plugin.logger.exception(e)
