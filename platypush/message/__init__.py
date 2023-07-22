@@ -78,6 +78,9 @@ class Message:
             if isinstance(obj, Enum):
                 return obj.value
 
+            if isinstance(obj, Exception):
+                return f'<{obj.__class__.__name__}>' + (f' {obj}' if obj else '')
+
             if is_dataclass(obj):
                 return asdict(obj)
 
