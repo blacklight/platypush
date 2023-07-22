@@ -1,15 +1,16 @@
-"""
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-"""
-
 import os
+from typing import Optional
 
 from platypush.context import get_bus
 from platypush.plugins import action
 from platypush.plugins.assistant import AssistantPlugin
 
-from platypush.message.event.assistant import ConversationStartEvent, \
-    ConversationEndEvent, SpeechRecognizedEvent, ResponseEvent
+from platypush.message.event.assistant import (
+    ConversationStartEvent,
+    ConversationEndEvent,
+    SpeechRecognizedEvent,
+    ResponseEvent,
+)
 
 
 class AssistantEchoPlugin(AssistantPlugin):
@@ -38,8 +39,13 @@ class AssistantEchoPlugin(AssistantPlugin):
         * **avs** (``pip install avs``)
     """
 
-    def __init__(self, avs_config_file: str = None, audio_device: str = 'default',
-                 audio_player: str = 'default', **kwargs):
+    def __init__(
+        self,
+        avs_config_file: Optional[str] = None,
+        audio_device: str = 'default',
+        audio_player: str = 'default',
+        **kwargs
+    ):
         """
         :param avs_config_file: AVS credentials file - default: ~/.avs.json. If the file doesn't exist then
             an instance of the AVS authentication service will be spawned. You can login through an Amazon
@@ -61,9 +67,12 @@ class AssistantEchoPlugin(AssistantPlugin):
 
         if not avs_config_file or not os.path.isfile(avs_config_file):
             from avs.auth import auth
+
             auth(None, avs_config_file)
-            self.logger.warning('Amazon Echo assistant credentials not configured. Open http://localhost:3000 ' +
-                                'to authenticate this client')
+            self.logger.warning(
+                'Amazon Echo assistant credentials not configured. Open http://localhost:3000 '
+                + 'to authenticate this client'
+            )
 
         self.audio_device = audio_device
         self.audio_player = audio_player
@@ -84,37 +93,43 @@ class AssistantEchoPlugin(AssistantPlugin):
     def _on_ready(self):
         def _callback():
             self._ready = True
+
         return _callback
 
     def _on_listening(self):
         def _callback():
             get_bus().post(ConversationStartEvent(assistant=self))
+
         return _callback
 
     def _on_speaking(self):
         def _callback():
             # AVS doesn't provide a way to access the response text
             get_bus().post(ResponseEvent(assistant=self, response_text=''))
+
         return _callback
 
     def _on_finished(self):
         def _callback():
             get_bus().post(ConversationEndEvent(assistant=self))
+
         return _callback
 
     def _on_disconnected(self):
         def _callback():
             self._ready = False
+
         return _callback
 
     def _on_thinking(self):
         def _callback():
             # AVS doesn't provide a way to access the detected text
             get_bus().post(SpeechRecognizedEvent(assistant=self, phrase=''))
+
         return _callback
 
     @action
-    def start_conversation(self, **kwargs):
+    def start_conversation(self, **_):
         if not self._ready:
             raise RuntimeError('Echo assistant not ready')
 

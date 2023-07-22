@@ -1,7 +1,3 @@
-"""
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-"""
-
 from datetime import datetime
 from typing import List, Union, Optional
 
@@ -50,23 +46,29 @@ class GoogleMapsPlugin(GooglePlugin):
         :type longitude: float
         """
 
-        response = requests.get('https://maps.googleapis.com/maps/api/geocode/json',
-                                params={
-                                    'latlng': '{},{}'.format(latitude, longitude),
-                                    'key': self.api_key,
-                                }).json()
+        response = requests.get(
+            'https://maps.googleapis.com/maps/api/geocode/json',
+            params={
+                'latlng': '{},{}'.format(latitude, longitude),
+                'key': self.api_key,
+            },
+        ).json()
 
-        address = dict(
-            (t, None) for t in ['street_number', 'street', 'locality', 'country', 'postal_code']
-        )
+        address = {
+            t: None
+            for t in ['street_number', 'street', 'locality', 'country', 'postal_code']
+        }
 
         address['latitude'] = latitude
         address['longitude'] = longitude
 
         if 'results' in response and response['results']:
             result = response['results'][0]
-            self.logger.info('Google Maps geocode response for latlng ({},{}): {}'.
-                             format(latitude, longitude, result))
+            self.logger.info(
+                'Google Maps geocode response for latlng ({},{}): {}'.format(
+                    latitude, longitude, result
+                )
+            )
 
             address['address'] = result['formatted_address'].split(',')[0]
             for addr_component in result['address_components']:
@@ -92,11 +94,13 @@ class GoogleMapsPlugin(GooglePlugin):
         :type longitude: float
         """
 
-        response = requests.get('https://maps.googleapis.com/maps/api/elevation/json',
-                                params={
-                                    'locations': '{},{}'.format(latitude, longitude),
-                                    'key': self.api_key,
-                                }).json()
+        response = requests.get(
+            'https://maps.googleapis.com/maps/api/elevation/json',
+            params={
+                'locations': '{},{}'.format(latitude, longitude),
+                'key': self.api_key,
+            },
+        ).json()
 
         elevation = None
 
@@ -106,16 +110,20 @@ class GoogleMapsPlugin(GooglePlugin):
         return {'elevation': elevation}
 
     @action
-    def get_travel_time(self, origins: List[str], destinations: List[str],
-                        departure_time: Optional[datetime_types] = None,
-                        arrival_time: Optional[datetime_types] = None,
-                        units: str = 'metric',
-                        avoid: Optional[List[str]] = None,
-                        language: Optional[str] = None,
-                        mode: Optional[str] = None,
-                        traffic_model: Optional[str] = None,
-                        transit_mode: Optional[List[str]] = None,
-                        transit_route_preference: Optional[str] = None):
+    def get_travel_time(
+        self,
+        origins: List[str],
+        destinations: List[str],
+        departure_time: Optional[datetime_types] = None,
+        arrival_time: Optional[datetime_types] = None,
+        units: str = 'metric',
+        avoid: Optional[List[str]] = None,
+        language: Optional[str] = None,
+        mode: Optional[str] = None,
+        traffic_model: Optional[str] = None,
+        transit_mode: Optional[List[str]] = None,
+        transit_route_preference: Optional[str] = None,
+    ):
         """
         Get the estimated travel time between a set of departure points and a set of destinations.
 
@@ -194,17 +202,25 @@ class GoogleMapsPlugin(GooglePlugin):
                 'origins': '|'.join(origins),
                 'destinations': '|'.join(destinations),
                 'units': units,
-                **({'departure_time': to_datetime(departure_time)} if departure_time else {}),
+                **(
+                    {'departure_time': to_datetime(departure_time)}
+                    if departure_time
+                    else {}
+                ),
                 **({'arrival_time': to_datetime(arrival_time)} if arrival_time else {}),
                 **({'avoid': '|'.join(avoid)} if avoid else {}),
                 **({'language': language} if language else {}),
                 **({'mode': mode} if mode else {}),
                 **({'traffic_model': traffic_model} if traffic_model else {}),
                 **({'transit_mode': transit_mode} if transit_mode else {}),
-                **({'transit_route_preference': transit_route_preference}
-                   if transit_route_preference else {}),
+                **(
+                    {'transit_route_preference': transit_route_preference}
+                    if transit_route_preference
+                    else {}
+                ),
                 'key': self.api_key,
-            }).json()
+            },
+        ).json()
 
         assert not rs.get('error_message'), f'{rs["status"]}: {rs["error_message"]}'
         rows = rs.get('rows', [])

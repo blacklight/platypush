@@ -1,8 +1,3 @@
-"""
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-.. license: MIT
-"""
-
 import logging
 import re
 import socket
@@ -15,9 +10,17 @@ from platypush.bus import Bus
 from platypush.common import ExtensionWithManifest
 from platypush.config import Config
 from platypush.context import get_backend
-from platypush.message.event.zeroconf import ZeroconfServiceAddedEvent, ZeroconfServiceRemovedEvent
-from platypush.utils import set_timeout, clear_timeout, \
-    get_redis_queue_name_by_message, set_thread_name, get_backend_name_by_class
+from platypush.message.event.zeroconf import (
+    ZeroconfServiceAddedEvent,
+    ZeroconfServiceRemovedEvent,
+)
+from platypush.utils import (
+    set_timeout,
+    clear_timeout,
+    get_redis_queue_name_by_message,
+    set_thread_name,
+    get_backend_name_by_class,
+)
 
 from platypush import __version__
 from platypush.event import EventGenerator
@@ -44,7 +47,9 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
     # Loop function, can be implemented by derived classes
     loop = None
 
-    def __init__(self, bus: Optional[Bus] = None, poll_seconds: Optional[float] = None, **kwargs):
+    def __init__(
+        self, bus: Optional[Bus] = None, poll_seconds: Optional[float] = None, **kwargs
+    ):
         """
         :param bus: Reference to the bus object to be used in the backend
         :param poll_seconds: If the backend implements a ``loop`` method, this parameter expresses how often the
@@ -65,14 +70,15 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         self.thread_id = None
         self._stop_event = ThreadEvent()
         self._kwargs = kwargs
-        self.logger = logging.getLogger('platypush:backend:' + get_backend_name_by_class(self.__class__))
+        self.logger = logging.getLogger(
+            'platypush:backend:' + get_backend_name_by_class(self.__class__)
+        )
         self.zeroconf = None
         self.zeroconf_info = None
 
         # Internal-only, we set the request context on a backend if that
         # backend is intended to react for a response to a specific request
-        self._request_context = kwargs['_req_ctx'] if '_req_ctx' in kwargs \
-            else None
+        self._request_context = kwargs['_req_ctx'] if '_req_ctx' in kwargs else None
 
         if 'logging' in kwargs:
             self.logger.setLevel(getattr(logging, kwargs.get('logging').upper()))
@@ -90,11 +96,14 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
 
         msg = Message.build(msg)
 
-        if not getattr(msg, 'target') or msg.target != self.device_id:
+        if not getattr(msg, 'target', None) or msg.target != self.device_id:
             return  # Not for me
 
-        self.logger.debug('Message received on the {} backend: {}'.format(
-            self.__class__.__name__, msg))
+        self.logger.debug(
+            'Message received on the {} backend: {}'.format(
+                self.__class__.__name__, msg
+            )
+        )
 
         if self._is_expected_response(msg):
             # Expected response, trigger the response handler
@@ -104,26 +113,31 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
             self.stop()
             return
 
-        msg.backend = self   # Augment message to be able to process responses
+        msg.backend = self  # Augment message to be able to process responses
         self.bus.post(msg)
 
     def _is_expected_response(self, msg):
-        """ Internal only - returns true if we are expecting for a response
-            and msg is that response """
+        """Internal only - returns true if we are expecting for a response
+        and msg is that response"""
 
         # pylint: disable=unsubscriptable-object
-        return self._request_context \
-            and isinstance(msg, Response) \
+        return (
+            self._request_context
+            and isinstance(msg, Response)
             and msg.id == self._request_context['request'].id
+        )
 
     def _get_backend_config(self):
-        config_name = 'backend.' + self.__class__.__name__.split('Backend', maxsplit=1)[0].lower()
+        config_name = (
+            'backend.' + self.__class__.__name__.split('Backend', maxsplit=1)[0].lower()
+        )
         return Config.get(config_name)
 
     def _setup_response_handler(self, request, on_response, response_timeout):
         def _timeout_hndl():
-            raise RuntimeError('Timed out while waiting for a response from {}'.
-                               format(request.target))
+            raise RuntimeError(
+                'Timed out while waiting for a response from {}'.format(request.target)
+            )
 
         req_ctx = {
             'request': request,
@@ -131,8 +145,9 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
             'response_timeout': response_timeout,
         }
 
-        resp_backend = self.__class__(bus=self.bus, _req_ctx=req_ctx,
-                                      **self._get_backend_config(), **self._kwargs)
+        resp_backend = self.__class__(
+            bus=self.bus, _req_ctx=req_ctx, **self._get_backend_config(), **self._kwargs
+        )
 
         # Set the response timeout
         if response_timeout:
@@ -157,8 +172,13 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
 
         self.send_message(event, **kwargs)
 
-    def send_request(self, request, on_response=None,
-                     response_timeout=_default_response_timeout, **kwargs):
+    def send_request(
+        self,
+        request,
+        on_response=None,
+        response_timeout=_default_response_timeout,
+        **kwargs
+    ):
         """
         Send a request message on the backend.
 
@@ -215,16 +235,18 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
             if not redis:
                 raise KeyError()
         except KeyError:
-            self.logger.warning((
-                "Backend {} does not implement send_message "
-                "and the fallback Redis backend isn't configured"
-            ).format(self.__class__.__name__))
+            self.logger.warning(
+                (
+                    "Backend {} does not implement send_message "
+                    "and the fallback Redis backend isn't configured"
+                ).format(self.__class__.__name__)
+            )
             return
 
         redis.send_message(msg, queue_name=queue_name)
 
     def run(self):
-        """ Starts the backend thread. To be implemented in the derived classes if the loop method isn't defined. """
+        """Starts the backend thread. To be implemented in the derived classes if the loop method isn't defined."""
         self.thread_id = get_ident()
         set_thread_name(self._thread_name)
         if not callable(self.loop):
@@ -249,24 +271,29 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
                             elif has_error:
                                 time.sleep(5)
             except Exception as e:
-                self.logger.error('{} initialization error: {}'.format(self.__class__.__name__, str(e)))
+                self.logger.error(
+                    '{} initialization error: {}'.format(
+                        self.__class__.__name__, str(e)
+                    )
+                )
                 self.logger.exception(e)
                 time.sleep(self.poll_seconds or 5)
 
     def __enter__(self):
-        """ Invoked when the backend is initialized, if the main logic is within a ``loop()`` function """
+        """Invoked when the backend is initialized, if the main logic is within a ``loop()`` function"""
         self.logger.info('Initialized backend {}'.format(self.__class__.__name__))
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """ Invoked when the backend is terminated, if the main logic is within a ``loop()`` function """
+        """Invoked when the backend is terminated, if the main logic is within a ``loop()`` function"""
         self.on_stop()
         self.logger.info('Terminated backend {}'.format(self.__class__.__name__))
 
     def on_stop(self):
-        """ Callback invoked when the process stops """
+        """Callback invoked when the process stops"""
 
     def stop(self):
-        """ Stops the backend thread by sending a STOP event on its bus """
+        """Stops the backend thread by sending a STOP event on its bus"""
+
         def _async_stop():
             self._stop_event.set()
             self.unregister_service()
@@ -285,8 +312,10 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
 
         redis_backend = get_backend('redis')
         if not redis_backend:
-            self.logger.warning('Redis backend not configured - some '
-                                'web server features may not be working properly')
+            self.logger.warning(
+                'Redis backend not configured - some '
+                'web server features may not be working properly'
+            )
             redis_args = {}
         else:
             redis_args = redis_backend.redis_args
@@ -305,7 +334,9 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
 
             return response
         except Exception as e:
-            self.logger.error('Error while processing response to {}: {}'.format(msg, str(e)))
+            self.logger.error(
+                'Error while processing response to {}: {}'.format(msg, str(e))
+            )
 
     @staticmethod
     def _get_ip() -> str:
@@ -318,13 +349,15 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         s.close()
         return addr
 
-    def register_service(self,
-                         port: Optional[int] = None,
-                         name: Optional[str] = None,
-                         srv_type: Optional[str] = None,
-                         srv_name: Optional[str] = None,
-                         udp: bool = False,
-                         properties: Optional[Dict] = None):
+    def register_service(
+        self,
+        port: Optional[int] = None,
+        name: Optional[str] = None,
+        srv_type: Optional[str] = None,
+        srv_name: Optional[str] = None,
+        udp: bool = False,
+        properties: Optional[Dict] = None,
+    ):
         """
         Initialize the Zeroconf service configuration for this backend.
 
@@ -348,7 +381,9 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
             from zeroconf import ServiceInfo, Zeroconf
             from platypush.plugins.zeroconf import ZeroconfListener
         except ImportError:
-            self.logger.warning('zeroconf package not available, service discovery will be disabled.')
+            self.logger.warning(
+                'zeroconf package not available, service discovery will be disabled.'
+            )
             return
 
         self.zeroconf = Zeroconf()
@@ -360,28 +395,40 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         }
 
         name = name or re.sub(r'Backend$', '', self.__class__.__name__).lower()
-        srv_type = srv_type or '_platypush-{name}._{proto}.local.'.format(name=name, proto='udp' if udp else 'tcp')
-        srv_name = srv_name or '{host}.{type}'.format(host=self.device_id, type=srv_type)
+        srv_type = srv_type or '_platypush-{name}._{proto}.local.'.format(
+            name=name, proto='udp' if udp else 'tcp'
+        )
+        srv_name = srv_name or '{host}.{type}'.format(
+            host=self.device_id, type=srv_type
+        )
 
         if port:
             srv_port = port
         else:
             srv_port = self.port if hasattr(self, 'port') else None
 
-        self.zeroconf_info = ServiceInfo(srv_type, srv_name,
-                                         addresses=[socket.inet_aton(self._get_ip())],
-                                         port=srv_port,
-                                         weight=0,
-                                         priority=0,
-                                         properties=srv_desc)
+        self.zeroconf_info = ServiceInfo(
+            srv_type,
+            srv_name,
+            addresses=[socket.inet_aton(self._get_ip())],
+            port=srv_port,
+            weight=0,
+            priority=0,
+            properties=srv_desc,
+        )
 
         if not self.zeroconf_info:
             self.logger.warning('Could not register Zeroconf service')
             return
 
         self.zeroconf.register_service(self.zeroconf_info)
-        self.bus.post(ZeroconfServiceAddedEvent(service_type=srv_type, service_name=srv_name,
-                                                service_info=ZeroconfListener.parse_service_info(self.zeroconf_info)))
+        self.bus.post(
+            ZeroconfServiceAddedEvent(
+                service_type=srv_type,
+                service_name=srv_name,
+                service_info=ZeroconfListener.parse_service_info(self.zeroconf_info),
+            )
+        )
 
     def unregister_service(self):
         """
@@ -391,17 +438,26 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
             try:
                 self.zeroconf.unregister_service(self.zeroconf_info)
             except Exception as e:
-                self.logger.warning('Could not register Zeroconf service {}: {}: {}'.format(
-                    self.zeroconf_info.name, type(e).__name__, str(e)))
+                self.logger.warning(
+                    'Could not register Zeroconf service {}: {}: {}'.format(
+                        self.zeroconf_info.name, type(e).__name__, str(e)
+                    )
+                )
 
             if self.zeroconf:
                 self.zeroconf.close()
 
             if self.zeroconf_info:
-                self.bus.post(ZeroconfServiceRemovedEvent(service_type=self.zeroconf_info.type,
-                                                          service_name=self.zeroconf_info.name))
+                self.bus.post(
+                    ZeroconfServiceRemovedEvent(
+                        service_type=self.zeroconf_info.type,
+                        service_name=self.zeroconf_info.name,
+                    )
+                )
             else:
-                self.bus.post(ZeroconfServiceRemovedEvent(service_type=None, service_name=None))
+                self.bus.post(
+                    ZeroconfServiceRemovedEvent(service_type=None, service_name=None)
+                )
 
             self.zeroconf_info = None
             self.zeroconf = None

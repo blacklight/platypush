@@ -1,7 +1,3 @@
-"""
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-"""
-
 import json
 import os
 from typing import Optional, Dict, Any

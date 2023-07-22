@@ -1,7 +1,3 @@
-"""
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-"""
-
 from platypush.plugins import action
 from platypush.plugins.google import GooglePlugin
 
@@ -48,10 +44,12 @@ class GoogleYoutubePlugin(GooglePlugin):
         :type max_results: int
 
         :param kwargs: Any extra arguments that will be transparently passed to the YouTube API.
-            See the `Getting started - parameters <https://developers.google.com/youtube/v3/docs/search/list#parameters>`_.
+            See the `Getting started - parameters
+            <https://developers.google.com/youtube/v3/docs/search/list#parameters>`_.
 
         :return: A list of YouTube resources.
-            See the `Getting started - Resource <https://developers.google.com/youtube/v3/docs/search#resource>`_.
+            See the `Getting started - Resource
+            <https://developers.google.com/youtube/v3/docs/search#resource>`_.
         """
 
         parts = parts or self._default_parts[:]
@@ -63,9 +61,11 @@ class GoogleYoutubePlugin(GooglePlugin):
             types = ','.join(types)
 
         service = self.get_service('youtube', 'v3')
-        result = service.search().list(part=parts, q=query, type=types,
-                                       maxResults=max_results,
-                                       **kwargs).execute()
+        result = (
+            service.search()
+            .list(part=parts, q=query, type=types, maxResults=max_results, **kwargs)
+            .execute()
+        )
 
         events = result.get('items', [])
         return events

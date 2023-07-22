@@ -30,7 +30,7 @@ setup(
     name="platypush",
     version="0.50.2",
     author="Fabio Manganiello",
-    author_email="info@fabiomanganiello.com",
+    author_email="fabio@manganiello.tech",
     description="Platypush service",
     license="MIT",
     python_requires='>= 3.6',

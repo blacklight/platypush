@@ -1,7 +1,3 @@
-"""
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-"""
-
 from platypush.backend.assistant.google import AssistantGoogleBackend
 from platypush.context import get_backend
 from platypush.plugins import action
@@ -19,10 +15,12 @@ class AssistantGooglePlugin(AssistantPlugin):
         super().__init__(**kwargs)
 
     def _get_assistant(self) -> AssistantGoogleBackend:
-        return get_backend('assistant.google')
+        backend = get_backend('assistant.google')
+        assert backend, 'The assistant.google backend is not configured.'
+        return backend
 
     @action
-    def start_conversation(self, **kwargs):
+    def start_conversation(self):
         """
         Programmatically start a conversation with the assistant
         """

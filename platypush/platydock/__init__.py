@@ -3,9 +3,6 @@ Platydock
 
 Platydock is a helper that allows you to easily manage (create, destroy, start,
 stop and list) Platypush instances as Docker images.
-
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-.. license: MIT
 """
 
 import argparse

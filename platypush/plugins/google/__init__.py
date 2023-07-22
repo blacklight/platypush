@@ -1,7 +1,3 @@
-"""
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-"""
-
 from platypush.plugins import Plugin
 
 
@@ -23,7 +19,8 @@ class GooglePlugin(Plugin):
 
         5. Generate a credentials file for the needed scope::
 
-            python -m platypush.plugins.google.credentials 'https://www.googleapis.com/auth/gmail.compose' ~/client_secret.json
+            python -m platypush.plugins.google.credentials \
+                'https://www.googleapis.com/auth/gmail.compose' ~/client_secret.json
 
     Requires:
 
@@ -32,7 +29,7 @@ class GooglePlugin(Plugin):
 
     """
 
-    def __init__(self, scopes=None, *args, **kwargs):
+    def __init__(self, scopes=None, **kwargs):
         """
         Initialized the Google plugin with the required scopes.
 
@@ -41,14 +38,13 @@ class GooglePlugin(Plugin):
         """
 
         from platypush.plugins.google.credentials import get_credentials
+
         super().__init__(**kwargs)
         self._scopes = scopes or []
 
         if self._scopes:
             scopes = ' '.join(sorted(self._scopes))
-            self.credentials = {
-                scopes: get_credentials(scopes)
-            }
+            self.credentials = {scopes: get_credentials(scopes)}
         else:
             self.credentials = {}
 
@@ -57,7 +53,7 @@ class GooglePlugin(Plugin):
         from apiclient import discovery
 
         if scopes is None:
-            scopes = getattr(self, 'scopes') if hasattr(self, 'scopes') else []
+            scopes = getattr(self, 'scopes', [])
 
         scopes = ' '.join(sorted(scopes))
         credentials = self.credentials[scopes]

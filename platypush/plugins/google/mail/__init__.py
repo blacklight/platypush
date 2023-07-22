@@ -1,7 +1,3 @@
-"""
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-"""
-
 import base64
 import mimetypes
 import os
@@ -81,8 +77,9 @@ class GoogleMailPlugin(GooglePlugin):
                 elif main_type == 'audio':
                     msg = MIMEAudio(content, _subtype=sub_type)
                 elif main_type == 'application':
-                    msg = MIMEApplication(content, _subtype=sub_type,
-                                          _encoder=encode_base64)
+                    msg = MIMEApplication(
+                        content, _subtype=sub_type, _encoder=encode_base64
+                    )
                 else:
                     msg = MIMEBase(main_type, sub_type)
                     msg.set_payload(content)
@@ -93,8 +90,7 @@ class GoogleMailPlugin(GooglePlugin):
 
         service = self.get_service('gmail', 'v1')
         body = {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}
-        message = (service.users().messages().send(
-            userId='me', body=body).execute())
+        message = service.users().messages().send(userId='me', body=body).execute()
 
         return message
 
@@ -107,5 +103,6 @@ class GoogleMailPlugin(GooglePlugin):
         results = service.users().labels().list(userId='me').execute()
         labels = results.get('labels', [])
         return labels
+
 
 # vim:sw=4:ts=4:et:

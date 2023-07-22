@@ -1,7 +1,3 @@
-"""
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-"""
-
 import dateutil.parser
 import importlib
 
@@ -53,7 +49,9 @@ class CalendarPlugin(Plugin, CalendarInterface):
 
         for calendar in calendars:
             if 'type' not in calendar:
-                self.logger.warning("Invalid calendar with no type specified: {}".format(calendar))
+                self.logger.warning(
+                    "Invalid calendar with no type specified: {}".format(calendar)
+                )
                 continue
 
             cal_type = calendar.pop('type')
@@ -61,7 +59,6 @@ class CalendarPlugin(Plugin, CalendarInterface):
             class_name = cal_type.split('.')[-1]
             module = importlib.import_module(module_name)
             self.calendars.append(getattr(module, class_name)(**calendar))
-
 
     @action
     def get_upcoming_events(self, max_results=10):
@@ -71,7 +68,8 @@ class CalendarPlugin(Plugin, CalendarInterface):
         :param max_results: Maximum number of results to be returned (default: 10)
         :type max_results: int
 
-        :returns: platypush.message.Response -- Response object with the list of events in the Google calendar API format.
+        :returns: platypush.message.Response -- Response object with the list of
+            events in the Google calendar API format.
 
         Example::
 
@@ -113,15 +111,16 @@ class CalendarPlugin(Plugin, CalendarInterface):
             except Exception as e:
                 self.logger.warning('Could not retrieve events: {}'.format(str(e)))
 
-        events = sorted(events, key=lambda event:
-                        dateutil.parser.parse(
-                            event['start']['dateTime']
-                            if 'dateTime' in event['start']
-                            else event['start']['date'] + 'T00:00:00+00:00'
-                        ))[:max_results]
+        events = sorted(
+            events,
+            key=lambda event: dateutil.parser.parse(
+                event['start']['dateTime']
+                if 'dateTime' in event['start']
+                else event['start']['date'] + 'T00:00:00+00:00'
+            ),
+        )[:max_results]
 
         return events
 
 
 # vim:sw=4:ts=4:et:
-

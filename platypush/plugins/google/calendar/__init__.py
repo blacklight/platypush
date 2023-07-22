@@ -1,7 +1,3 @@
-"""
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-"""
-
 import datetime
 
 from platypush.plugins import action
@@ -34,9 +30,17 @@ class GoogleCalendarPlugin(GooglePlugin, CalendarInterface):
 
         now = datetime.datetime.utcnow().isoformat() + 'Z'
         service = self.get_service('calendar', 'v3')
-        result = service.events().list(calendarId='primary', timeMin=now,
-                                       maxResults=max_results, singleEvents=True,
-                                       orderBy='startTime').execute()
+        result = (
+            service.events()
+            .list(
+                calendarId='primary',
+                timeMin=now,
+                maxResults=max_results,
+                singleEvents=True,
+                orderBy='startTime',
+            )
+            .execute()
+        )
 
         events = result.get('items', [])
         return events

@@ -1,8 +1,3 @@
-"""
-.. moduleauthor:: Fabio Manganiello <blacklight86@gmail.com>
-.. license: MIT
-"""
-
 import os
 import threading
 
@@ -89,10 +84,14 @@ class AssistantSnowboyBackend(AssistantBackend):
         self.detector = snowboydecoder.HotwordDetector(
             [model['voice_model_file'] for model in self.models.values()],
             sensitivity=[model['sensitivity'] for model in self.models.values()],
-            audio_gain=self.audio_gain)
+            audio_gain=self.audio_gain,
+        )
 
-        self.logger.info('Initialized Snowboy hotword detection with {} voice model configurations'.
-                         format(len(self.models)))
+        self.logger.info(
+            'Initialized Snowboy hotword detection with {} voice model configurations'.format(
+                len(self.models)
+            )
+        )
 
     def _init_models(self, models):
         if not models:
@@ -107,7 +106,9 @@ class AssistantSnowboyBackend(AssistantBackend):
             detect_sound = conf.get('detect_sound')
 
             if not model_file:
-                raise AttributeError('No voice_model_file specified for model {}'.format(name))
+                raise AttributeError(
+                    'No voice_model_file specified for model {}'.format(name)
+                )
 
             model_file = os.path.abspath(os.path.expanduser(model_file))
             assistant_plugin_name = conf.get('assistant_plugin')
@@ -116,14 +117,19 @@ class AssistantSnowboyBackend(AssistantBackend):
                 detect_sound = os.path.abspath(os.path.expanduser(detect_sound))
 
             if not os.path.isfile(model_file):
-                raise FileNotFoundError('Voice model file {} does not exist or it not a regular file'.
-                                        format(model_file))
+                raise FileNotFoundError(
+                    'Voice model file {} does not exist or it not a regular file'.format(
+                        model_file
+                    )
+                )
 
             self.models[name] = {
                 'voice_model_file': model_file,
                 'sensitivity': conf.get('sensitivity', 0.5),
                 'detect_sound': detect_sound,
-                'assistant_plugin': get_plugin(assistant_plugin_name) if assistant_plugin_name else None,
+                'assistant_plugin': get_plugin(assistant_plugin_name)
+                if assistant_plugin_name
+                else None,
                 'assistant_language': conf.get('assistant_language'),
                 'tts_plugin': conf.get('tts_plugin'),
                 'tts_args': conf.get('tts_args', {}),
@@ -143,7 +149,9 @@ class AssistantSnowboyBackend(AssistantBackend):
 
         def callback():
             if not self.is_detecting():
-                self.logger.info('Hotword detected but assistant response currently paused')
+                self.logger.info(
+                    'Hotword detected but assistant response currently paused'
+                )
                 return
 
             self.bus.post(HotwordDetectedEvent(hotword=hotword))
@@ -159,8 +167,11 @@ class AssistantSnowboyBackend(AssistantBackend):
                 threading.Thread(target=sound_thread, args=(detect_sound,)).start()
 
             if assistant_plugin:
-                assistant_plugin.start_conversation(language=assistant_language, tts_plugin=tts_plugin,
-                                                    tts_args=tts_args)
+                assistant_plugin.start_conversation(
+                    language=assistant_language,
+                    tts_plugin=tts_plugin,
+                    tts_args=tts_args,
+                )
 
         return callback
 
@@ -172,10 +183,11 @@ class AssistantSnowboyBackend(AssistantBackend):
 
     def run(self):
         super().run()
-        self.detector.start(detected_callback=[
-            self.hotword_detected(hotword)
-            for hotword in self.models.keys()
-        ])
+        self.detector.start(
+            detected_callback=[
+                self.hotword_detected(hotword) for hotword in self.models.keys()
+            ]
+        )
 
 
 # vim:sw=4:ts=4:et:
