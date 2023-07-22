@@ -283,5 +283,7 @@ setup(
         'irc': ['irc'],
         # Support for the Matrix integration
         'matrix': ['matrix-nio'],
+        # Support for the XMPP integration
+        'xmpp': ['aioxmpp', 'pytz'],
     },
 )

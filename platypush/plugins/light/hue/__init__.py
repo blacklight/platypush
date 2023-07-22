@@ -896,7 +896,7 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         :type duration: float
 
         :param hue_range: If you selected a ``color_transition``, this will
-        specify the hue range of your color ``color_transition``.
+            specify the hue range of your color ``color_transition``.
             Default: [0, 65535]
         :type hue_range: list[int]
 
