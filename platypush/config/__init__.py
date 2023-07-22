@@ -461,6 +461,16 @@ class Config:
         return cls._get_instance(cfgfile, force_reload=True)
 
     @classmethod
+    @property
+    def workdir(cls) -> str:
+        """
+        :return: The path of the configured working directory.
+        """
+        workdir = cls._get_instance().get('workdir')
+        assert workdir
+        return workdir  # type: ignore
+
+    @classmethod
     def get(cls, key: Optional[str] = None):
         """
         Get a config value or the whole configuration object.
