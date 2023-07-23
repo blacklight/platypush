@@ -81,10 +81,17 @@ export default {
   },
 
   beforeMount() {
+    if (this.getCookie('pwa-dialog-shown')?.length)
+      return
+
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault()
       this.pwaInstallEvent = e
       this.$refs.pwaDialog.show()
+
+      this.setCookie('pwa-dialog-shown', '1', {
+        expires: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000)
+      })
     })
   },
 
