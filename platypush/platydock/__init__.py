@@ -60,7 +60,7 @@ def generate_dockerfile(deps, ports, cfgfile, device_dir, python_version):
     os.makedirs(device_dir, exist_ok=True)
     content = textwrap.dedent(
         '''
-        FROM python:{python_version}-slim-bullseye
+        FROM python:{python_version}-slim-bookworm
 
         RUN mkdir -p /app
         RUN mkdir -p /etc/platypush
