@@ -29,7 +29,6 @@ class RedisBus(Bus):
         """
         Reads one message from the Redis queue
         """
-
         try:
             if self.should_stop():
                 return None
@@ -49,8 +48,17 @@ class RedisBus(Bus):
         """
         Sends a message to the Redis queue
         """
+        from redis import exceptions
 
-        return self.redis.rpush(self.redis_queue, str(msg))
+        try:
+            return self.redis.rpush(self.redis_queue, str(msg))
+        except exceptions.ConnectionError as e:
+            if not self.should_stop():
+                # Raise the exception only if the bus it not supposed to be
+                # stopped
+                raise e
+
+            return None
 
     def stop(self):
         super().stop()

@@ -559,24 +559,31 @@ def get_enabled_plugins() -> dict:
     return plugins
 
 
+def get_redis_conf() -> dict:
+    """
+    Get the Redis connection arguments from the configuration.
+    """
+    from platypush.config import Config
+
+    return (
+        Config.get('redis')
+        or (Config.get('backend.redis') or {}).get('redis_args', {})
+        or {}
+    )
+
+
 def get_redis(*args, **kwargs) -> Redis:
     """
     Get a Redis client on the basis of the Redis configuration.
 
     The Redis configuration can be loaded from:
 
-        1. The ``backend.redis`` configuration (``redis_args`` attribute)
-        2. The ``redis`` plugin.
+        1. The ``redis`` plugin.
+        2. The ``backend.redis`` configuration (``redis_args`` attribute)
 
     """
-    from platypush.config import Config
-
     if not (args or kwargs):
-        kwargs = (
-            Config.get('redis')
-            or (Config.get('backend.redis') or {}).get('redis_args', {})
-            or {}
-        )
+        kwargs = get_redis_conf()
 
     return Redis(*args, **kwargs)
 

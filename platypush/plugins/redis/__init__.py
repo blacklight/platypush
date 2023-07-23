@@ -1,7 +1,7 @@
 from redis import Redis
 
-from platypush.context import get_backend
 from platypush.plugins import Plugin, action
+from platypush.utils import get_redis_conf
 
 
 class RedisPlugin(Plugin):
@@ -12,15 +12,7 @@ class RedisPlugin(Plugin):
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.args = args
-        self.kwargs = kwargs
-
-        if not kwargs:
-            try:
-                redis_backend = get_backend('redis')
-                if redis_backend and redis_backend.redis_args:
-                    self.kwargs = redis_backend.redis_args
-            except Exception as e:
-                self.logger.debug(e)
+        self.kwargs = kwargs or get_redis_conf()
 
     def _get_redis(self):
         return Redis(*self.args, **self.kwargs)
@@ -58,7 +50,7 @@ class RedisPlugin(Plugin):
         """
 
         return {
-            keys[i]: value.decode() if value else value
+            keys[i]: value.decode() if isinstance(value, bytes) else value
             for (i, value) in enumerate(self._get_redis().mget(keys, *args))
         }
 
@@ -75,7 +67,7 @@ class RedisPlugin(Plugin):
             # broke back-compatibility with the previous way of passing
             # key-value pairs to mset directly on kwargs. This try-catch block
             # is to support things on all the redis-py versions
-            return self._get_redis().mset(mapping=kwargs)
+            return self._get_redis().mset(mapping=kwargs)  # type: ignore
 
     @action
     def expire(self, key, expiration):

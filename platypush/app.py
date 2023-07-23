@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import subprocess
 import sys
 from typing import Optional
 
@@ -16,7 +17,7 @@ from .message.event import Event
 from .message.event.application import ApplicationStartedEvent
 from .message.request import Request
 from .message.response import Response
-from .utils import get_enabled_plugins
+from .utils import get_enabled_plugins, get_redis_conf
 
 log = logging.getLogger('platypush')
 
@@ -26,6 +27,9 @@ class Application:
 
     # Default bus queue name
     _default_redis_queue = 'platypush/bus'
+
+    # Default Redis port
+    _default_redis_port = 6379
 
     # backend_name => backend_obj map
     backends = None
@@ -42,6 +46,9 @@ class Application:
         no_capture_stderr: bool = False,
         redis_queue: Optional[str] = None,
         verbose: bool = False,
+        start_redis: bool = False,
+        redis_host: Optional[str] = None,
+        redis_port: Optional[int] = None,
     ):
         """
         :param config_file: Configuration file override (default: None).
@@ -58,6 +65,15 @@ class Application:
             messages (default: platypush/bus).
         :param verbose: Enable debug/verbose logging, overriding the stored
             configuration (default: False).
+        :param start_redis: If set, it starts a managed Redis instance upon
+            boot (it requires the ``redis-server`` executable installed on the
+            server). This is particularly useful when running the application
+            inside of Docker containers, without relying on ``docker-compose``
+            to start multiple containers, and in tests (default: False).
+        :param redis_host: Host of the Redis server to be used. It overrides
+            the settings in the ``redis`` section of the configuration file.
+        :param redis_port: Port of the local Redis server. It overrides the
+            settings in the ``redis`` section of the configuration file.
         """
 
         self.pidfile = pidfile
@@ -78,16 +94,29 @@ class Application:
         self.requests_to_process = requests_to_process
         self.processed_requests = 0
         self.cron_scheduler = None
+        self.start_redis = start_redis
+        self.redis_host = redis_host
+        self.redis_port = redis_port
+        self.redis_conf = {}
+        self._redis_proc: Optional[subprocess.Popen] = None
 
         self._init_bus()
         self._init_logging()
 
     def _init_bus(self):
-        redis_conf = Config.get('backend.redis') or {}
+        self._redis_conf = get_redis_conf()
+        self._redis_conf['port'] = self.redis_port or self._redis_conf.get(
+            'port', self._default_redis_port
+        )
+
+        if self.redis_host:
+            self._redis_conf['host'] = self.redis_host
+
+        Config.set('redis', self._redis_conf)
         self.bus = RedisBus(
             redis_queue=self.redis_queue,
             on_message=self.on_message(),
-            **redis_conf.get('redis_args', {})
+            **self._redis_conf,
         )
 
     def _init_logging(self):
@@ -95,6 +124,37 @@ class Application:
         if self._verbose:
             logging_conf['level'] = logging.DEBUG
         logging.basicConfig(**logging_conf)
+
+    def _start_redis(self):
+        if self._redis_proc and self._redis_proc.poll() is None:
+            log.warning(
+                'A local Redis instance is already running, refusing to start it again'
+            )
+            return
+
+        port = self._redis_conf['port']
+        log.info('Starting local Redis instance on %s', port)
+        self._redis_proc = subprocess.Popen(
+            [
+                'redis-server',
+                '--bind',
+                'localhost',
+                '--port',
+                str(port),
+            ],
+            stdout=subprocess.PIPE,
+        )
+
+        log.info('Waiting for Redis to start')
+        for line in self._redis_proc.stdout:  # type: ignore
+            if b'Ready to accept connections' in line:
+                break
+
+    def _stop_redis(self):
+        if self._redis_proc and self._redis_proc.poll() is None:
+            log.info('Stopping local Redis instance')
+            self._redis_proc.kill()
+            self._redis_proc = None
 
     @classmethod
     def build(cls, *args: str):
@@ -104,6 +164,7 @@ class Application:
         from . import __version__
 
         parser = argparse.ArgumentParser()
+
         parser.add_argument(
             '--config',
             '-c',
@@ -112,6 +173,7 @@ class Application:
             default=None,
             help='Custom location for the configuration file',
         )
+
         parser.add_argument(
             '--version',
             dest='version',
@@ -119,6 +181,7 @@ class Application:
             action='store_true',
             help="Print the current version and exit",
         )
+
         parser.add_argument(
             '--verbose',
             '-v',
@@ -127,6 +190,7 @@ class Application:
             action='store_true',
             help="Enable verbose/debug logging",
         )
+
         parser.add_argument(
             '--pidfile',
             '-P',
@@ -137,6 +201,7 @@ class Application:
             + "store its PID, useful if you're planning to "
             + "integrate it in a service",
         )
+
         parser.add_argument(
             '--no-capture-stdout',
             dest='no_capture_stdout',
@@ -146,6 +211,7 @@ class Application:
             + "exceeded errors so stdout won't be captured by "
             + "the logging system",
         )
+
         parser.add_argument(
             '--no-capture-stderr',
             dest='no_capture_stderr',
@@ -155,6 +221,7 @@ class Application:
             + "exceeded errors so stderr won't be captured by "
             + "the logging system",
         )
+
         parser.add_argument(
             '--redis-queue',
             dest='redis_queue',
@@ -162,6 +229,34 @@ class Application:
             default=cls._default_redis_queue,
             help="Name of the Redis queue to be used to internally deliver messages "
             "(default: platypush/bus)",
+        )
+
+        parser.add_argument(
+            '--start-redis',
+            dest='start_redis',
+            required=False,
+            action='store_true',
+            help="Set this flag if you want to run and manage Redis internally "
+            "from the app rather than using an external server. It requires the "
+            "redis-server executable to be present in the path",
+        )
+
+        parser.add_argument(
+            '--redis-host',
+            dest='redis_host',
+            required=False,
+            default=None,
+            help="Overrides the host specified in the redis section of the "
+            "configuration file",
+        )
+
+        parser.add_argument(
+            '--redis-port',
+            dest='redis_port',
+            required=False,
+            default=None,
+            help="Overrides the port specified in the redis section of the "
+            "configuration file",
         )
 
         opts, _ = parser.parse_known_args(args)
@@ -176,6 +271,9 @@ class Application:
             no_capture_stderr=opts.no_capture_stderr,
             redis_queue=opts.redis_queue,
             verbose=opts.verbose,
+            start_redis=opts.start_redis,
+            redis_host=opts.redis_host,
+            redis_port=opts.redis_port,
         )
 
     def on_message(self):
@@ -234,6 +332,9 @@ class Application:
             self.entities_engine.stop()
             self.entities_engine = None
 
+        if self.start_redis:
+            self._stop_redis()
+
     def run(self):
         """Start the daemon."""
         from . import __version__
@@ -244,6 +345,10 @@ class Application:
             sys.stderr = Logger(log.warning)
 
         log.info('---- Starting platypush v.%s', __version__)
+
+        # Start the local Redis service if required
+        if self.start_redis:
+            self._start_redis()
 
         # Initialize the backends and link them to the bus
         self.backends = register_backends(bus=self.bus, global_scope=True)
