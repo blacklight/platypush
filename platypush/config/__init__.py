@@ -11,7 +11,7 @@ import shutil
 import socket
 import sys
 from urllib.parse import quote
-from typing import Dict, Optional, Set
+from typing import Any, Dict, Optional, Set
 
 import yaml
 
@@ -471,7 +471,7 @@ class Config:
         return workdir  # type: ignore
 
     @classmethod
-    def get(cls, key: Optional[str] = None):
+    def get(cls, key: Optional[str] = None, default: Optional[Any] = None):
         """
         Get a config value or the whole configuration object.
 
@@ -480,7 +480,7 @@ class Config:
         # pylint: disable=protected-access
         config = cls._get_instance()._config.copy()
         if key:
-            return config.get(key)
+            return config.get(key, default)
         return config
 
 
