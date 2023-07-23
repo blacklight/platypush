@@ -483,5 +483,16 @@ class Config:
             return config.get(key, default)
         return config
 
+    @classmethod
+    def set(cls, key: str, value: Any):
+        """
+        Set a config value.
+
+        :param key: Configuration entry to set.
+        :param value: New value to set.
+        """
+        # pylint: disable=protected-access
+        cls._get_instance()._config[key] = value
+
 
 # vim:sw=4:ts=4:et:
