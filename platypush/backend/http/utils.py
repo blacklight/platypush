@@ -1,3 +1,5 @@
+import collections.abc
+import datetime
 import json
 import logging
 import os
@@ -7,7 +9,11 @@ from platypush.config import Config
 from platypush.backend.http.app import template_folder
 
 
-class HttpUtils(object):
+class HttpUtils:
+    """
+    Common utilities used by the HTTP backend and jinja templates.
+    """
+
     log = logging.getLogger('platypush:web')
 
     @staticmethod
@@ -15,23 +21,30 @@ class HttpUtils(object):
         if not isinstance(columns, int):
             try:
                 columns = int(columns)
-            except ValueError:
-                raise RuntimeError('columns should be a number, got {} ({})'.format(type(columns), columns))
+            except ValueError as e:
+                raise RuntimeError(
+                    f'columns should be a number, got {type(columns)} ({columns})'
+                ) from e
 
         if 1 <= columns <= 12:
-            return 'col-{}'.format(columns)
+            return f'col-{columns}'
 
-        raise RuntimeError('Constraint violation: should be 1 <= columns <= 12, ' +
-                           'got columns={}'.format(columns))
+        raise RuntimeError(
+            'Constraint violation: should be 1 <= columns <= 12, '
+            f'got columns={columns}'
+        )
 
     @staticmethod
     def search_directory(directory, *extensions, recursive=False):
         files = []
 
         if recursive:
-            for root, subdirs, files in os.walk(directory):
+            for root, _, files in os.walk(directory):
                 for file in files:
-                    if not extensions or os.path.splitext(file)[1].lower() in extensions:
+                    if (
+                        not extensions
+                        or os.path.splitext(file)[1].lower() in extensions
+                    ):
                         files.append(os.path.join(root, file))
         else:
             for file in os.listdir(directory):
@@ -54,12 +67,15 @@ class HttpUtils(object):
                 break
 
         if not uri:
-            raise RuntimeError(('Directory {} not found among the available ' +
-                                'static resources on the webserver').format(
-                directory))
+            raise RuntimeError(
+                (
+                    'Directory {} not found among the available '
+                    + 'static resources on the webserver'
+                ).format(directory)
+            )
 
         results = [
-            re.sub('^{}(.*)$'.format(resource_path), uri + '\\1', path)
+            re.sub(fr'^{resource_path}(.*)$', uri + '\\1', path)
             for path in cls.search_directory(directory, *extensions)
         ]
 
@@ -68,14 +84,14 @@ class HttpUtils(object):
     @classmethod
     def to_json(cls, data):
         def json_parse(x):
-            if type(x) == __import__('datetime').timedelta:
+            if isinstance(x, datetime.timedelta):
                 return x.days * 24 * 60 * 60 + x.seconds + x.microseconds / 1e6
 
             # Ignore non-serializable attributes
-            cls.log.warning('Non-serializable attribute type "{}": {}'.format(type(x), x))
+            cls.log.warning('Non-serializable attribute type "%s": %s', type(x), x)
             return None
 
-        if isinstance(data, type({}.keys())):
+        if isinstance(data, collections.abc.KeysView):
             # Convert dict_keys to list before serializing
             data = list(data)
         return json.dumps(data, default=json_parse)
@@ -97,7 +113,9 @@ class HttpUtils(object):
         # noinspection PyTypeChecker
         return [
             os.path.join(directory, file)
-            for root, path, files in os.walk(os.path.abspath(os.path.join(template_folder, directory)))
+            for _, __, files in os.walk(
+                os.path.abspath(os.path.join(template_folder, directory))
+            )
             for file in files
             if file.endswith('.html') or file.endswith('.htm')
         ]
@@ -111,5 +129,6 @@ class HttpUtils(object):
     def isfile(cls, *path):
         path = path[0] if len(path) == 1 else os.path.join(*path)
         return os.path.isfile(path)
+
 
 # vim:sw=4:ts=4:et:
