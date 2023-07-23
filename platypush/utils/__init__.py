@@ -573,8 +573,8 @@ def get_redis(*args, **kwargs) -> Redis:
 
     if not (args or kwargs):
         kwargs = (
-            (Config.get('backend.redis') or {}).get('redis_args', {})
-            or Config.get('redis')
+            Config.get('redis')
+            or (Config.get('backend.redis') or {}).get('redis_args', {})
             or {}
         )
 
