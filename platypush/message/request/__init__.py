@@ -30,7 +30,7 @@ class Request(Message):
         target,
         action,
         origin=None,
-        id=None,
+        id=None,  # pylint: disable=redefined-builtin
         backend=None,
         args=None,
         token=None,
@@ -109,8 +109,6 @@ class Request(Message):
         return proc.execute(*args, **kwargs)
 
     def _expand_context(self, event_args=None, **context):
-        from platypush.config import Config
-
         if event_args is None:
             event_args = copy.deepcopy(self.args)
 
@@ -138,16 +136,19 @@ class Request(Message):
         return event_args
 
     @classmethod
+    # pylint: disable=too-many-branches
     def expand_value_from_context(cls, _value, **context):
         for k, v in context.items():
             if isinstance(v, Message):
                 v = json.loads(str(v))
             try:
-                exec('{}={}'.format(k, v))
+                exec('{}={}'.format(k, v))  # pylint: disable=exec-used
             except Exception:
                 if isinstance(v, str):
                     try:
-                        exec('{}="{}"'.format(k, re.sub(r'(^|[^\\])"', '\1\\"', v)))
+                        exec(  # pylint: disable=exec-used
+                            '{}="{}"'.format(k, re.sub(r'(^|[^\\])"', '\1\\"', v))
+                        )
                     except Exception as e2:
                         logger.debug(
                             'Could not set context variable %s=%s: %s', k, v, e2
@@ -167,7 +168,7 @@ class Request(Message):
                 _value = m.group(4)
 
                 try:
-                    context_value = eval(inner_expr)
+                    context_value = eval(inner_expr)  # pylint: disable=eval-used
 
                     if callable(context_value):
                         context_value = context_value()
@@ -209,6 +210,7 @@ class Request(Message):
                 redis.send_message(queue_name, response)
                 redis.expire(queue_name, 60)
 
+    # pylint: disable=too-many-statements
     def execute(self, n_tries=1, _async=True, **context):
         """
         Execute this request and returns a Response object
@@ -224,6 +226,7 @@ class Request(Message):
                     - group: ${group_name}  # will be expanded as "Kitchen lights")
         """
 
+        # pylint: disable=too-many-branches
         def _thread_func(_n_tries, errors=None):
             from platypush.context import get_bus
             from platypush.plugins import RunnablePlugin

@@ -5,7 +5,6 @@ from typing import Dict, Optional
 from platypush.context import get_bus
 from platypush.entities import Entity
 from platypush.message.event.entities import EntityUpdateEvent
-from platypush.utils import set_thread_name
 
 from platypush.entities._base import EntityKey, EntitySavedCallback
 from platypush.entities._engine.queue import EntitiesQueue
@@ -99,7 +98,6 @@ class EntitiesEngine(Thread):
 
     def run(self):
         super().run()
-        set_thread_name('entities')
         self.logger.info('Started entities engine')
         self._running.set()
 

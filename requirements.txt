@@ -13,7 +13,6 @@ marshmallow_dataclass
 paho-mqtt
 python-dateutil
 python-magic
-python-prctl
 pyyaml
 redis
 requests

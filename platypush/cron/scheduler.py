@@ -8,7 +8,7 @@ import croniter
 from dateutil.tz import gettz
 
 from platypush.procedure import Procedure
-from platypush.utils import is_functional_cron, set_thread_name
+from platypush.utils import is_functional_cron
 
 logger = logging.getLogger('platypush:cron')
 
@@ -52,7 +52,7 @@ class Cronjob(threading.Thread):
     """
 
     def __init__(self, name, cron_expression, actions):
-        super().__init__()
+        super().__init__(name=f'cron:{name}')
         self.cron_expression = cron_expression
         self.name = name
         self.state = CronjobState.IDLE
@@ -79,7 +79,6 @@ class Cronjob(threading.Thread):
         """
         Inner logic of the cronjob thread.
         """
-        set_thread_name(f'cron:{self.name}')
 
         # Wait until an event is received or the next execution slot is reached
         self.wait()
@@ -203,7 +202,7 @@ class CronScheduler(threading.Thread):
         logger.info('Running cron scheduler')
 
         while not self.should_stop():
-            for (job_name, job_config) in self.jobs_config.items():
+            for job_name, job_config in self.jobs_config.items():
                 job = self._get_job(name=job_name, config=job_config)
                 if job.state == CronjobState.IDLE:
                     try:

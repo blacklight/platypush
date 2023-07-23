@@ -89,7 +89,7 @@ def get_plugin_class_by_name(plugin_name):
 
     module = get_plugin_module_by_name(plugin_name)
     if not module:
-        return
+        return None
 
     class_name = getattr(
         module, ''.join([_.capitalize() for _ in plugin_name.split('.')]) + 'Plugin'
@@ -126,7 +126,7 @@ def get_backend_class_by_name(backend_name: str):
 
     module = get_backend_module_by_name(backend_name)
     if not module:
-        return
+        return None
 
     class_name = getattr(
         module,
@@ -149,7 +149,7 @@ def get_backend_class_by_name(backend_name: str):
         return None
 
 
-def get_backend_name_by_class(backend) -> Optional[str]:
+def get_backend_name_by_class(backend) -> str:
     """Gets the common name of a backend (e.g. "http" or "mqtt") given its class."""
 
     from platypush.backend import Backend
@@ -206,12 +206,14 @@ def get_decorators(cls, climb_class_hierarchy=False):
 
     decorators = {}
 
-    # noinspection PyPep8Naming
     def visit_FunctionDef(node):
         for n in node.decorator_list:
             if isinstance(n, ast.Call):
-                # noinspection PyUnresolvedReferences
-                name = n.func.attr if isinstance(n.func, ast.Attribute) else n.func.id
+                name = (
+                    n.func.attr
+                    if isinstance(n.func, ast.Attribute)
+                    else n.func.id  # type: ignore
+                )
             else:
                 name = n.attr if isinstance(n, ast.Attribute) else n.id
 
@@ -257,6 +259,7 @@ def _get_ssl_context(
     else:
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 
+    assert ssl_cert, 'No certificate specified'
     if ssl_cafile or ssl_capath:
         ssl_context.load_verify_locations(cafile=ssl_cafile, capath=ssl_capath)
 
@@ -309,18 +312,6 @@ def get_ssl_client_context(
         ssl_cafile=ssl_cafile,
         ssl_capath=ssl_capath,
     )
-
-
-def set_thread_name(name: str):
-    """
-    Set the name of the current thread.
-    """
-    try:
-        import prctl
-
-        prctl.set_name(name)  # pylint: disable=no-member
-    except ImportError:
-        logger.debug('Unable to set thread name: prctl module is missing')
 
 
 def find_bins_in_path(bin_name):
@@ -399,7 +390,6 @@ def get_mime_type(resource: str) -> Optional[str]:
         offset = len('file://')
         resource = resource[offset:]
 
-    # noinspection HttpUrlsUsage
     if resource.startswith('http://') or resource.startswith('https://'):
         with urllib.request.urlopen(resource) as response:
             return response.info().get_content_type()
@@ -441,6 +431,8 @@ def grouper(n, iterable, fillvalue=None):
 
     for chunk in zip_longest(*args):
         yield filter(None, chunk)
+
+    return
 
 
 def is_functional_procedure(obj) -> bool:
@@ -529,7 +521,7 @@ def get_or_generate_jwt_rsa_key_pair():
     """
     from platypush.config import Config
 
-    key_dir = os.path.join(Config.get('workdir'), 'jwt')
+    key_dir = os.path.join(Config.workdir, 'jwt')
     priv_key_file = os.path.join(key_dir, 'id_rsa')
     pub_key_file = priv_key_file + '.pub'
 

@@ -18,7 +18,6 @@ from platypush.utils import (
     set_timeout,
     clear_timeout,
     get_redis_queue_name_by_message,
-    set_thread_name,
     get_backend_name_by_class,
 )
 
@@ -81,7 +80,7 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         self._request_context = kwargs['_req_ctx'] if '_req_ctx' in kwargs else None
 
         if 'logging' in kwargs:
-            self.logger.setLevel(getattr(logging, kwargs.get('logging').upper()))
+            self.logger.setLevel(getattr(logging, kwargs['logging'].upper()))
 
     def on_message(self, msg):
         """
@@ -95,21 +94,23 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         """
 
         msg = Message.build(msg)
+        if msg is None:
+            return
 
         if not getattr(msg, 'target', None) or msg.target != self.device_id:
             return  # Not for me
 
         self.logger.debug(
-            'Message received on the {} backend: {}'.format(
-                self.__class__.__name__, msg
-            )
+            'Message received on the %s backend: %s', self.__class__.__name__, msg
         )
 
         if self._is_expected_response(msg):
             # Expected response, trigger the response handler
             clear_timeout()
-            # pylint: disable=unsubscriptable-object
-            self._request_context['on_response'](msg)
+            if self._request_context:
+                # pylint: disable=unsubscriptable-object
+                self._request_context['on_response'](msg)
+
             self.stop()
             return
 
@@ -117,8 +118,10 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         self.bus.post(msg)
 
     def _is_expected_response(self, msg):
-        """Internal only - returns true if we are expecting for a response
-        and msg is that response"""
+        """
+        Internal only - returns true if we are expecting for a response and msg
+        is that response.
+        """
 
         # pylint: disable=unsubscriptable-object
         return (
@@ -131,12 +134,12 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         config_name = (
             'backend.' + self.__class__.__name__.split('Backend', maxsplit=1)[0].lower()
         )
-        return Config.get(config_name)
+        return Config.get(config_name) or {}
 
     def _setup_response_handler(self, request, on_response, response_timeout):
         def _timeout_hndl():
             raise RuntimeError(
-                'Timed out while waiting for a response from {}'.format(request.target)
+                f'Timed out while waiting for a response from {request.target}'
             )
 
         req_ctx = {
@@ -177,7 +180,7 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         request,
         on_response=None,
         response_timeout=_default_response_timeout,
-        **kwargs
+        **kwargs,
     ):
         """
         Send a request message on the backend.
@@ -237,9 +240,10 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         except KeyError:
             self.logger.warning(
                 (
-                    "Backend {} does not implement send_message "
+                    "Backend %s does not implement send_message "
                     "and the fallback Redis backend isn't configured"
-                ).format(self.__class__.__name__)
+                ),
+                self.__class__.__name__,
             )
             return
 
@@ -248,7 +252,6 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
     def run(self):
         """Starts the backend thread. To be implemented in the derived classes if the loop method isn't defined."""
         self.thread_id = get_ident()
-        set_thread_name(self._thread_name)
         if not callable(self.loop):
             return
 
@@ -272,21 +275,19 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
                                 time.sleep(5)
             except Exception as e:
                 self.logger.error(
-                    '{} initialization error: {}'.format(
-                        self.__class__.__name__, str(e)
-                    )
+                    '%s initialization error: %s', self.__class__.__name__, e
                 )
                 self.logger.exception(e)
                 time.sleep(self.poll_seconds or 5)
 
     def __enter__(self):
         """Invoked when the backend is initialized, if the main logic is within a ``loop()`` function"""
-        self.logger.info('Initialized backend {}'.format(self.__class__.__name__))
+        self.logger.info('Initialized backend %s', self.__class__.__name__)
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, *_, **__):
         """Invoked when the backend is terminated, if the main logic is within a ``loop()`` function"""
         self.on_stop()
-        self.logger.info('Terminated backend {}'.format(self.__class__.__name__))
+        self.logger.info('Terminated backend %s', self.__class__.__name__)
 
     def on_stop(self):
         """Callback invoked when the process stops"""
@@ -324,9 +325,14 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         return redis
 
     def get_message_response(self, msg):
+        queue = get_redis_queue_name_by_message(msg)
+        if not queue:
+            self.logger.warning('No response queue configured for the message')
+            return None
+
         try:
             redis = self._get_redis()
-            response = redis.blpop(get_redis_queue_name_by_message(msg), timeout=60)
+            response = redis.blpop(queue, timeout=60)
             if response and len(response) > 1:
                 response = Message.build(response[1])
             else:
@@ -334,9 +340,9 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
 
             return response
         except Exception as e:
-            self.logger.error(
-                'Error while processing response to {}: {}'.format(msg, str(e))
-            )
+            self.logger.error('Error while processing response to %s: %s', msg, e)
+
+        return None
 
     @staticmethod
     def _get_ip() -> str:
@@ -395,18 +401,9 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         }
 
         name = name or re.sub(r'Backend$', '', self.__class__.__name__).lower()
-        srv_type = srv_type or '_platypush-{name}._{proto}.local.'.format(
-            name=name, proto='udp' if udp else 'tcp'
-        )
-        srv_name = srv_name or '{host}.{type}'.format(
-            host=self.device_id, type=srv_type
-        )
-
-        if port:
-            srv_port = port
-        else:
-            srv_port = self.port if hasattr(self, 'port') else None
-
+        srv_type = srv_type or f'_platypush-{name}._{"udp" if udp else "tcp"}.local.'
+        srv_name = srv_name or f'{self.device_id}.{srv_type}'
+        srv_port = port if port else getattr(self, 'port', None)
         self.zeroconf_info = ServiceInfo(
             srv_type,
             srv_name,
@@ -439,9 +436,10 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
                 self.zeroconf.unregister_service(self.zeroconf_info)
             except Exception as e:
                 self.logger.warning(
-                    'Could not register Zeroconf service {}: {}: {}'.format(
-                        self.zeroconf_info.name, type(e).__name__, str(e)
-                    )
+                    'Could not register Zeroconf service %s: %s: %s',
+                    self.zeroconf_info.name,
+                    type(e).__name__,
+                    e,
                 )
 
             if self.zeroconf:

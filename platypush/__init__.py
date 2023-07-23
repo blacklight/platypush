@@ -23,7 +23,7 @@ from .message.event import Event
 from .message.event.application import ApplicationStartedEvent
 from .message.request import Request
 from .message.response import Response
-from .utils import set_thread_name, get_enabled_plugins
+from .utils import get_enabled_plugins
 
 __author__ = 'Fabio Manganiello <fabio@manganiello.tech>'
 __version__ = '0.50.3'
@@ -252,7 +252,6 @@ class Daemon:
         if not self.no_capture_stderr:
             sys.stderr = Logger(log.warning)
 
-        set_thread_name('platypush')
         log.info('---- Starting platypush v.%s', __version__)
 
         # Initialize the backends and link them to the bus

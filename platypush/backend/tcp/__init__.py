@@ -6,7 +6,6 @@ from typing import Optional
 
 from platypush.backend import Backend
 from platypush.message import Message
-from platypush.utils import set_thread_name
 
 
 class TcpBackend(Backend):
@@ -17,19 +16,20 @@ class TcpBackend(Backend):
     # Maximum length of a request to be processed
     _MAX_REQ_SIZE = 2048
 
-    def __init__(self, port, bind_address=None, listen_queue=5, *args, **kwargs):
+    def __init__(self, port, bind_address=None, listen_queue=5, **kwargs):
         """
         :param port: TCP port number
         :type port: int
 
-        :param bind_address: Specify a bind address if you want to hook the service to a specific interface (default: listen for any connections)
+        :param bind_address: Specify a bind address if you want to hook the
+            service to a specific interface (default: listen for any connections).
         :type bind_address: str
 
         :param listen_queue: Maximum number of queued connections (default: 5)
         :type listen_queue: int
         """
 
-        super().__init__(*args, **kwargs)
+        super().__init__(name=self.__class__.__name__, **kwargs)
 
         self.port = port
         self.bind_address = bind_address or '0.0.0.0'
@@ -46,8 +46,11 @@ class TcpBackend(Backend):
 
             while not self.should_stop():
                 if processed_bytes > self._MAX_REQ_SIZE:
-                    self.logger.warning('Ignoring message longer than {} bytes from {}'
-                                        .format(self._MAX_REQ_SIZE, address[0]))
+                    self.logger.warning(
+                        'Ignoring message longer than {} bytes from {}'.format(
+                            self._MAX_REQ_SIZE, address[0]
+                        )
+                    )
                     return
 
                 ch = sock.recv(1)
@@ -76,17 +79,16 @@ class TcpBackend(Backend):
                 return
 
             msg = Message.build(msg)
-            self.logger.info('Received request from {}: {}'.format(msg, address[0]))
+            self.logger.info('Received request from %s: %s', msg, address[0])
             self.on_message(msg)
 
             response = self.get_message_response(msg)
-            self.logger.info('Processing response on the TCP backend: {}'.format(response))
+            self.logger.info('Processing response on the TCP backend: %s', response)
 
             if response:
                 sock.send(str(response).encode())
 
         def _f_wrapper():
-            set_thread_name('TCPListener')
             try:
                 _f()
             finally:
@@ -111,11 +113,16 @@ class TcpBackend(Backend):
         serv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         serv_sock.settimeout(0.5)
 
-        self.logger.info('Initialized TCP backend on port {} with bind address {}'.
-                         format(self.port, self.bind_address))
+        self.logger.info(
+            'Initialized TCP backend on port %s with bind address %s',
+            self.port,
+            self.bind_address,
+        )
 
         serv_sock.listen(self.listen_queue)
-        self._srv = multiprocessing.Process(target=self._accept_process, args=(serv_sock,))
+        self._srv = multiprocessing.Process(
+            target=self._accept_process, args=(serv_sock,)
+        )
         self._srv.start()
 
         while not self.should_stop():
@@ -124,7 +131,7 @@ class TcpBackend(Backend):
             except (socket.timeout, queue.Empty):
                 continue
 
-            self.logger.info('Accepted connection from client {}'.format(address[0]))
+            self.logger.info('Accepted connection from client %s', address[0])
             self._process_client(sock, address)
 
         if self._srv:

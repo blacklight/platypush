@@ -5,11 +5,17 @@ import threading
 import time
 
 from platypush.backend import Backend
-from platypush.utils import set_thread_name
-from platypush.message.event.music.snapcast import ClientVolumeChangeEvent, \
-    GroupMuteChangeEvent, ClientConnectedEvent, ClientDisconnectedEvent, \
-    ClientLatencyChangeEvent, ClientNameChangeEvent, GroupStreamChangeEvent, \
-    StreamUpdateEvent, ServerUpdateEvent
+from platypush.message.event.music.snapcast import (
+    ClientVolumeChangeEvent,
+    GroupMuteChangeEvent,
+    ClientConnectedEvent,
+    ClientDisconnectedEvent,
+    ClientLatencyChangeEvent,
+    ClientNameChangeEvent,
+    GroupStreamChangeEvent,
+    StreamUpdateEvent,
+    ServerUpdateEvent,
+)
 
 
 class MusicSnapcastBackend(Backend):
@@ -31,11 +37,17 @@ class MusicSnapcastBackend(Backend):
     """
 
     _DEFAULT_SNAPCAST_PORT = 1705
-    _DEFAULT_POLL_SECONDS = 10   # Poll servers each 10 seconds
+    _DEFAULT_POLL_SECONDS = 10  # Poll servers each 10 seconds
     _SOCKET_EOL = '\r\n'.encode()
 
-    def __init__(self, hosts=None, ports=None,
-                 poll_seconds=_DEFAULT_POLL_SECONDS, *args, **kwargs):
+    def __init__(
+        self,
+        hosts=None,
+        ports=None,
+        poll_seconds=_DEFAULT_POLL_SECONDS,
+        *args,
+        **kwargs,
+    ):
         """
         :param hosts: List of Snapcast server names or IPs to monitor (default:
             `['localhost']`
@@ -72,24 +84,25 @@ class MusicSnapcastBackend(Backend):
         if self._socks.get(host):
             return self._socks[host]
 
-        self.logger.debug('Connecting to {host}:{port}'.format(host=host, port=port))
+        self.logger.debug('Connecting to %s:%d', host, port)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((host, port))
         self._socks[host] = sock
-        self.logger.info('Connected to {host}:{port}'.format(host=host, port=port))
+        self.logger.info('Connected to %s:%d', host, port)
         return sock
 
     def _disconnect(self, host, port):
         sock = self._socks.get(host)
         if not sock:
-            self.logger.debug('Not connected to {}:{}'.format(host, port))
+            self.logger.debug('Not connected to %s:%d', host, port)
             return
 
         try:
             sock.close()
         except Exception as e:
-            self.logger.warning(('Exception while disconnecting from {host}:{port}: {error}'.
-                                 format(host=host, port=port, error=str(e))))
+            self.logger.warning(
+                'Exception while disconnecting from %s:%d: %s', host, port, e
+            )
         finally:
             self._socks[host] = None
 
@@ -103,7 +116,7 @@ class MusicSnapcastBackend(Backend):
             if ready[0]:
                 buf += sock.recv(1)
             else:
-                return
+                return None
 
         return json.loads(buf.decode().strip())
 
@@ -115,8 +128,9 @@ class MusicSnapcastBackend(Backend):
             client_id = msg.get('params', {}).get('id')
             volume = msg.get('params', {}).get('volume', {}).get('percent')
             muted = msg.get('params', {}).get('volume', {}).get('muted')
-            evt = ClientVolumeChangeEvent(host=host, client=client_id,
-                                          volume=volume, muted=muted)
+            evt = ClientVolumeChangeEvent(
+                host=host, client=client_id, volume=volume, muted=muted
+            )
         elif msg.get('method') == 'Group.OnMute':
             group_id = msg.get('params', {}).get('id')
             muted = msg.get('params', {}).get('mute')
@@ -149,10 +163,8 @@ class MusicSnapcastBackend(Backend):
 
         return evt
 
-    def _client(self, host, port, thread_name):
+    def _client(self, host, port):
         def _thread():
-            set_thread_name(thread_name)
-
             while not self.should_stop():
                 try:
                     sock = self._connect(host, port)
@@ -164,16 +176,20 @@ class MusicSnapcastBackend(Backend):
                         msgs = [msgs]
 
                     for msg in msgs:
-                        self.logger.debug('Received message on {host}:{port}: {msg}'.
-                                          format(host=host, port=port, msg=msg))
+                        self.logger.debug(
+                            'Received message on {host}:{port}: {msg}'.format(
+                                host=host, port=port, msg=msg
+                            )
+                        )
 
-                        # noinspection PyTypeChecker
                         evt = self._parse_msg(host=host, msg=msg)
                         if evt:
                             self.bus.post(evt)
                 except Exception as e:
-                    self.logger.warning('Exception while getting the status ' + 'of the Snapcast server {}:{}: {}'.
-                                        format(host, port, str(e)))
+                    self.logger.warning(
+                        'Exception while getting the status '
+                        + 'of the Snapcast server {}:{}: {}'.format(host, port, str(e))
+                    )
 
                     self._disconnect(host, port)
                 finally:
@@ -184,17 +200,19 @@ class MusicSnapcastBackend(Backend):
     def run(self):
         super().run()
 
-        self.logger.info('Initialized Snapcast backend - hosts: {} ports: {}'.
-                         format(self.hosts, self.ports))
+        self.logger.info(
+            'Initialized Snapcast backend - hosts: {} ports: {}'.format(
+                self.hosts, self.ports
+            )
+        )
 
         while not self.should_stop():
             for i, host in enumerate(self.hosts):
                 port = self.ports[i]
-                thread_name = 'Snapcast-{host}-{port}'.format(host=host, port=port)
+                thread_name = f'Snapcast-{host}-{port}'
 
                 self._threads[host] = threading.Thread(
-                    target=self._client(host, port, thread_name),
-                    name=thread_name
+                    target=self._client(host, port), name=thread_name
                 )
 
                 self._threads[host].start()
@@ -211,8 +229,11 @@ class MusicSnapcastBackend(Backend):
                 try:
                     sock.close()
                 except Exception as e:
-                    self.logger.warning('Could not close Snapcast connection to {}: {}: {}'.format(
-                        host, type(e), str(e)))
+                    self.logger.warning(
+                        'Could not close Snapcast connection to {}: {}: {}'.format(
+                            host, type(e), str(e)
+                        )
+                    )
 
 
 # vim:sw=4:ts=4:et:

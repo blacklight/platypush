@@ -83,8 +83,6 @@ setup(
         'zeroconf>=0.27.0',
     ],
     extras_require={
-        # Support for thread custom name
-        'threadname': ['python-prctl'],
         # Support for Kafka backend and plugin
         'kafka': ['kafka-python'],
         # Support for Pushbullet backend and plugin

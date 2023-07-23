@@ -24,7 +24,6 @@ from platypush.message.event.light import (
     LightStatusChangeEvent,
 )
 from platypush.plugins import RunnablePlugin, action
-from platypush.utils import set_thread_name
 
 
 class LightHuePlugin(RunnablePlugin, LightEntityManager):
@@ -1054,7 +1053,6 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
             return self._animation_stop.is_set()
 
         def _animate_thread(lights):
-            set_thread_name('HueAnimate')
             get_bus().post(
                 LightAnimationStartedEvent(
                     lights=lights,
@@ -1209,7 +1207,7 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
     def status(self, *_, **__) -> Iterable[LightEntity]:
         lights = self.transform_entities(self._get_lights(publish_entities=True))
         for light in lights:
-            light.id = light.external_id
+            light.id = light.external_id  # type: ignore
             for attr, value in (light.data or {}).items():
                 setattr(light, attr, value)
 
