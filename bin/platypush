@@ -1,9 +1,13 @@
 #!python3
 
-from platypush import main
+import sys
+
+from platypush.app import Application
+
 
 if __name__ == '__main__':
-    main()
+    app = Application.build(*sys.argv[1:])
+    app.run()
 
 
 # vim:sw=4:ts=4:et:

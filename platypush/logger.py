@@ -21,7 +21,6 @@ class Logger:
         This function only serves to prevent PyCharm unit tests from failing when the stdout is redirected to the
         Logger.
         """
-        pass
 
 
 # vim:sw=4:ts=4:et:

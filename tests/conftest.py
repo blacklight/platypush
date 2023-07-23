@@ -5,7 +5,7 @@ from threading import Thread
 
 import pytest
 
-from platypush import Daemon, Config
+from platypush import Application, Config
 
 from .utils import config_file, set_base_url
 
@@ -30,7 +30,7 @@ def app():
     logging.info('Starting Platypush test service')
 
     Config.init(config_file)
-    _app = Daemon(config_file=config_file, redis_queue='platypush-tests/bus')
+    _app = Application(config_file=config_file, redis_queue='platypush-tests/bus')
     Thread(target=_app.run).start()
     logging.info(
         'Sleeping %d seconds while waiting for the daemon to start up',
