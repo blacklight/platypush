@@ -1,8 +1,8 @@
-# Sample Dockerfile. Use platydock -c /path/to/custom/config.yamlr
+# Sample Dockerfile. Use platydock -c /path/to/custom/config.yaml
 # to generate your custom Dockerfile.
 
 
-FROM python:alpine3.7
+FROM python:alpine3.11
 
 RUN mkdir /app
 COPY . /app
