@@ -1,6 +1,7 @@
 import json
 
-from flask import abort, request, Response, Blueprint, escape
+from flask import abort, request, Response, Blueprint
+from markupsafe import escape
 
 from platypush.backend.http.app import template_folder
 from platypush.common.spotify import SpotifyMixin
