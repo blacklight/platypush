@@ -25,9 +25,10 @@ steps:
       EOF
     - chmod 0600 ~/.ssh/id_rsa
     - ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+    - git config --global --add safe.directory $PWD
     - git remote add github git@github.com:/BlackLight/platypush.git
     - git pull github master
-    - git push --mirror -v github
+    - git push --all -v github
 
 - name: run-tests
   image: python:3.11-alpine
