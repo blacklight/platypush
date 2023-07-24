@@ -2,21 +2,20 @@
 # to generate your custom Dockerfile.
 
 
-FROM python:alpine3.11
+FROM python3.11:alpine
 
-RUN mkdir /app
-COPY . /app
-WORKDIR /app
-RUN apk add --update --no-cache --virtual build-base \
-        && apk add --update --no-cache libffi-dev \
-        && apk add --update --no-cache zlib-dev \
-        && apk add --update --no-cache libjpeg-turbo-dev \
-        && pip install -r requirements.txt \
-        && apk del build-base \
-        && apk del libffi-dev \
-        && apk del libjpeg-turbo-dev \
-        && apk del zlib-dev
-
+RUN mkdir -p /install /app
+COPY . /install
+RUN cd /install
+RUN apk add --update --no-cache redis
+RUN apk add --update --no-cache --virtual build-base g++ rust
+RUN pip install -U pip
+RUN pip install .
+RUN apk del build-base g++ rust
 RUN cd /app && python setup.py build install
-CMD python -m platypush
 
+EXPOSE 8008
+VOLUME /app/config
+VOLUME /app/workdir
+
+CMD python -m platypush --start-redis --config-file /app/config/config.yaml --workdir /app/workdir
