@@ -134,7 +134,7 @@ class Application:
 
         port = self._redis_conf['port']
         log.info('Starting local Redis instance on %s', port)
-        self._redis_proc = subprocess.Popen(
+        self._redis_proc = subprocess.Popen(  # pylint: disable=consider-using-with
             [
                 'redis-server',
                 '--bind',
@@ -163,7 +163,9 @@ class Application:
         """
         from . import __version__
 
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(
+            description='A general-purpose platform for automation'
+        )
 
         parser.add_argument(
             '--config',
@@ -172,6 +174,15 @@ class Application:
             required=False,
             default=None,
             help='Custom location for the configuration file',
+        )
+
+        parser.add_argument(
+            '--help',
+            '-h',
+            dest='help',
+            required=False,
+            action='store_true',
+            help="Print this help and exit",
         )
 
         parser.add_argument(
@@ -260,8 +271,13 @@ class Application:
         )
 
         opts, _ = parser.parse_known_args(args)
+
         if opts.version:
             print(__version__)
+            sys.exit(0)
+
+        if opts.help:
+            parser.print_help()
             sys.exit(0)
 
         return cls(
