@@ -66,6 +66,9 @@ Platypush
 - A [Matrix instance](https://matrix.to/#/#platypush:matrix.platypush.tech) is
   available if you are looking for interactive support.
 
+- An IRC channel is also available at `#platypush@irc.platypush.tech:6697` (SSL
+  only).
+
 - A [Lemmy instance](https://lemmy.platypush.tech/c/platypush) is available for
   general questions.
 
