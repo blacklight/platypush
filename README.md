@@ -66,7 +66,7 @@ Platypush
 - A [Matrix instance](https://matrix.to/#/#platypush:matrix.platypush.tech) is
   available if you are looking for interactive support.
 
-- A [Reddit channel](https://www.reddit.com/r/platypush) is available for
+- A [Lemmy instance](https://lemmy.platypush.tech/c/platypush) is available for
   general questions.
 
 ## Introduction
