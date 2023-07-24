@@ -219,8 +219,12 @@ class Config:
 
         config = {}
 
-        with open(cfgfile, 'r') as fp:
-            file_config = yaml.safe_load(fp)
+        try:
+            with open(cfgfile, 'r') as fp:
+                file_config = yaml.safe_load(fp)
+        except FileNotFoundError:
+            print(f'Unable to open config file {cfgfile}')
+            return config
 
         if not file_config:
             return config

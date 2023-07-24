@@ -30,7 +30,12 @@ def app():
     logging.info('Starting Platypush test service')
 
     Config.init(config_file)
-    _app = Application(config_file=config_file, redis_queue='platypush-tests/bus')
+    _app = Application(
+        config_file=config_file,
+        redis_queue='platypush-tests/bus',
+        start_redis=True,
+        redis_port=16379,
+    )
     Thread(target=_app.run).start()
     logging.info(
         'Sleeping %d seconds while waiting for the daemon to start up',

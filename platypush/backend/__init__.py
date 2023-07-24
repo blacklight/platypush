@@ -443,7 +443,10 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
                 )
 
             if self.zeroconf:
-                self.zeroconf.close()
+                try:
+                    self.zeroconf.close()
+                except TimeoutError:
+                    pass
 
             if self.zeroconf_info:
                 self.bus.post(
