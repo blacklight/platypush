@@ -37,10 +37,12 @@ class Config:
 
     # Default config file locations:
     #   - current directory
+    #   - $XDG_CONFIG_HOME/platypush/config.yaml
     #   - $HOME/.config/platypush/config.yaml
     #   - /etc/platypush/config.yaml
     _cfgfile_locations = [
         os.path.join(os.path.abspath('.'), 'config.yaml'),
+        os.path.join(os.environ.get('XDG_CONFIG_HOME', ''), 'config.yaml'),
         os.path.join(os.path.expanduser('~'), '.config', 'platypush', 'config.yaml'),
         os.path.join(os.sep, 'etc', 'platypush', 'config.yaml'),
     ]
@@ -54,8 +56,13 @@ class Config:
     }
 
     _workdir_location = os.path.join(
-        os.path.expanduser('~'), '.local', 'share', 'platypush'
+        *(
+            (os.environ['XDG_DATA_HOME'], 'platypush')
+            if os.environ.get('XDG_DATA_HOME')
+            else (os.path.expanduser('~'), '.local', 'share', 'platypush')
+        )
     )
+
     _included_files: Set[str] = set()
 
     def __init__(self, cfgfile: Optional[str] = None):
