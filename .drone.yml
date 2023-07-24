@@ -1,0 +1,15 @@
+kind: pipeline
+type: docker
+name: default
+
+steps:
+- name: run-tests
+  image: python:3.11-alpine
+  commands:
+    - apk add --update --no-cache redis
+    - apk add --update --no-cache --virtual build-base g++ rust
+    - pip install -U pip
+    - pip install .
+    - pip install -r requirements-tests.txt
+    - apk del build-base g++ rust
+    - pytest tests
