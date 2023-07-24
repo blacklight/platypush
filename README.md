@@ -1,7 +1,7 @@
 Platypush
 =========
 
-[![Build Status](https://ci.platypush.tech/status.svg)](https://ci.platypush.tech/latest.log)
+[![Build Status](https://ci-cd.platypush.tech/api/badges/platypush/platypush/status.svg)](https://ci-cd.platypush.tech/platypush/platypush)
 [![Documentation Status](https://ci.platypush.tech/docs/status.svg)](https://ci.platypush.tech/docs/latest.log)
 [![pip version](https://img.shields.io/pypi/v/platypush.svg?style=flat)](https://pypi.python.org/pypi/platypush/)
 [![License](https://img.shields.io/github/license/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/src/branch/master/LICENSE.txt)
