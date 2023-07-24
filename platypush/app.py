@@ -40,6 +40,8 @@ class Application:
     def __init__(
         self,
         config_file: Optional[str] = None,
+        workdir: Optional[str] = None,
+        logsdir: Optional[str] = None,
         pidfile: Optional[str] = None,
         requests_to_process: Optional[int] = None,
         no_capture_stdout: bool = False,
@@ -52,6 +54,12 @@ class Application:
     ):
         """
         :param config_file: Configuration file override (default: None).
+        :param workdir: Overrides the ``workdir`` setting in the configuration
+            file (default: None).
+        :param logsdir: Set logging directory. If not specified, the
+            ``filename`` setting under the ``logging`` section of the
+            configuration file is used. If not set, logging will be sent to
+            stdout and stderr.
         :param pidfile: File where platypush will store its PID upon launch,
            useful if you're planning to integrate the application within a
            service or a launcher script (default: None).
@@ -85,7 +93,13 @@ class Application:
         self.redis_queue = redis_queue or self._default_redis_queue
         self.config_file = config_file
         self._verbose = verbose
+        self._logsdir = (
+            os.path.abspath(os.path.expanduser(logsdir)) if logsdir else None
+        )
         Config.init(self.config_file)
+
+        if workdir:
+            Config.set('workdir', os.path.abspath(os.path.expanduser(workdir)))
 
         self.no_capture_stdout = no_capture_stdout
         self.no_capture_stderr = no_capture_stderr
@@ -123,6 +137,11 @@ class Application:
         logging_conf = Config.get('logging') or {}
         if self._verbose:
             logging_conf['level'] = logging.DEBUG
+        if self._logsdir:
+            logging_conf['filename'] = os.path.join(self._logsdir, 'platypush.log')
+            logging_conf.pop('stream', None)
+
+        Config.set('logging', logging_conf)
         logging.basicConfig(**logging_conf)
 
     def _start_redis(self):
@@ -172,6 +191,26 @@ class Application:
             required=False,
             default=None,
             help='Custom location for the configuration file',
+        )
+
+        parser.add_argument(
+            '--workdir',
+            '-w',
+            dest='workdir',
+            required=False,
+            default=None,
+            help='Custom working directory to be used for the application',
+        )
+
+        parser.add_argument(
+            '--logsdir',
+            '-l',
+            dest='logsdir',
+            required=False,
+            default=None,
+            help='Store logs in the specified directory. By default, the '
+            '`[logging.]filename` configuration option will be used. If not '
+            'set, logging will be sent to stdout and stderr.',
         )
 
         parser.add_argument(
@@ -266,6 +305,8 @@ class Application:
 
         return cls(
             config_file=opts.config,
+            workdir=opts.workdir,
+            logsdir=opts.logsdir,
             pidfile=opts.pidfile,
             no_capture_stdout=opts.no_capture_stdout,
             no_capture_stderr=opts.no_capture_stderr,
