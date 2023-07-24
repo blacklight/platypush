@@ -4,6 +4,31 @@ type: docker
 name: default
 
 steps:
+- name: github-mirror
+  image: alpine
+  environment:
+    SSH_PUBKEY:
+      from_secret: ssh_pubkey
+    SSH_PRIVKEY:
+      from_secret: ssh_privkey
+
+  commands:
+    - apk add --update --no-cache git openssh
+    - mkdir -p ~/.ssh
+    - |
+      cat <<EOF > ~/.ssh/id_rsa.pub
+      $SSH_PUBKEY
+      EOF
+    - |
+      cat <<EOF > ~/.ssh/id_rsa
+      $SSH_PRIVKEY
+      EOF
+    - chmod 0600 ~/.ssh/id_rsa
+    - ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+    - git remote add github git@github.com:/BlackLight/platypush.git
+    - git pull github master
+    - git push --mirror -v github
+
 - name: run-tests
   image: python:3.11-alpine
   commands:
