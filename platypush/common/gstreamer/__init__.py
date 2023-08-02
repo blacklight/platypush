@@ -3,18 +3,22 @@ import threading
 
 from typing import Optional
 
-# noinspection PyPackageRequirements
 import gi
+
 gi.require_version('Gst', '1.0')
 gi.require_version('GstApp', '1.0')
 
-# noinspection PyPackageRequirements,PyUnresolvedReferences
+# flake8: noqa
 from gi.repository import GLib, Gst, GstApp
 
 Gst.init(None)
 
 
 class Pipeline:
+    """
+    A GStreamer pipeline.
+    """
+
     def __init__(self):
         self.logger = logging.getLogger('gst-pipeline')
         self.pipeline = Gst.Pipeline()
@@ -57,15 +61,16 @@ class Pipeline:
     @staticmethod
     def link(*elements):
         for i, el in enumerate(elements):
-            if i == len(elements)-1:
+            if i == len(elements) - 1:
                 break
-            el.link(elements[i+1])
+            el.link(elements[i + 1])
 
     def emit(self, signal, *args, **kwargs):
         return self.pipeline.emit(signal, *args, **kwargs)
 
     def play(self):
         self.pipeline.set_state(Gst.State.PLAYING)
+        assert self.loop, 'No GLib loop is running'
         self.loop.start()
 
     def pause(self):
@@ -92,7 +97,7 @@ class Pipeline:
     def on_buffer(self, sink):
         sample = GstApp.AppSink.pull_sample(sink)
         buffer = sample.get_buffer()
-        size, offset, maxsize = buffer.get_sizes()
+        size, offset, _ = buffer.get_sizes()
         self.data = buffer.extract_dup(offset, size)
         self.data_ready.set()
         return False
@@ -101,9 +106,8 @@ class Pipeline:
         self.logger.info('End of stream event received')
         self.stop()
 
-    # noinspection PyUnusedLocal
-    def on_error(self, bus, msg):
-        self.logger.warning('GStreamer pipeline error: {}'.format(msg.parse_error()))
+    def on_error(self, _, msg):
+        self.logger.warning('GStreamer pipeline error: %s', msg.parse_error())
         self.stop()
 
     def get_source(self):
@@ -113,12 +117,11 @@ class Pipeline:
         return self.sink
 
     def get_state(self) -> Gst.State:
-        state = self.source.current_state
-        if not state:
+        if not (self.source and self.source.current_state):
             self.logger.warning('Unable to get pipeline state')
             return Gst.State.NULL
 
-        return state
+        return self.source.current_state
 
     def is_playing(self) -> bool:
         return self.get_state() == Gst.State.PLAYING
@@ -127,6 +130,10 @@ class Pipeline:
         return self.get_state() == Gst.State.PAUSED
 
     def get_position(self) -> Optional[float]:
+        if not self.source:
+            self.logger.warning('Unable to get pipeline state')
+            return Gst.State.NULL
+
         pos = self.source.query_position(Gst.Format(Gst.Format.TIME))
         if not pos[0]:
             return None
@@ -134,6 +141,7 @@ class Pipeline:
         return pos[1] / 1e9
 
     def get_duration(self) -> Optional[float]:
+        assert self.source, 'No active source found'
         pos = self.source.query_duration(Gst.Format(Gst.Format.TIME))
         if not pos[0]:
             return None
@@ -157,9 +165,7 @@ class Pipeline:
 
     def seek(self, position: float):
         assert self.source, 'No source specified'
-        if position < 0:
-            position = 0
-
+        position = max(0, position)
         duration = self.get_duration()
         if duration and position > duration:
             position = duration
@@ -169,11 +175,16 @@ class Pipeline:
 
 
 class Loop(threading.Thread):
+    """
+    Wraps the execution of a GLib main loop into its own thread.
+    """
+
     def __init__(self):
         super().__init__()
         self._loop = GLib.MainLoop()
 
     def run(self):
+        assert self._loop, 'No GLib loop is running'
         self._loop.run()
 
     def is_running(self) -> bool:

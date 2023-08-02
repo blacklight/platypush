@@ -15,16 +15,19 @@ Platypush
 - [Introduction](#introduction)
     + [What it can do](#what-it-can-do)
 - [Installation](#installation)
-  * [System installation](#system-installation)
-    + [Install through `pip`](#install-through-pip)
-    + [Install through a system package manager](#install-through-a-system-package-manager)
-    + [Install from sources](#install-from-sources)
+  * [Prerequisites](#prerequisites)
+    + [Docker installation](#docker-installation)
+    + [Use an external service](#use-an-external-service)
+    + [Manual installation](#manual-installation)
+  * [Install through `pip`](#install-through-pip)
+  * [Install through a system package manager](#install-through-a-system-package-manager)
+  * [Install from sources](#install-from-sources)
   * [Installing the dependencies for your extensions](#installing-the-dependencies-for-your-extensions)
     + [Install via `extras` name](#install-via-extras-name)
     + [Install via `manifest.yaml`](#install-via-manifestyaml)
     + [Check the instructions reported in the documentation](#check-the-instructions-reported-in-the-documentation)
   * [Virtual environment installation](#virtual-environment-installation)
-  * [Docker installation](#docker-installation)
+  * [Docker installation](#docker-installation-1)
 - [Architecture](#architecture)
   * [Plugins](#plugins)
   * [Actions](#actions)
@@ -127,26 +130,82 @@ You can use Platypush to do things like:
 
 ## Installation
 
-### System installation
+### Prerequisites
 
-Platypush uses Redis to deliver and store requests and temporary messages:
+Platypush uses [Redis](https://redis.io/) to dispatch requests, responses,
+events and custom messages across several processes and integrations.
+
+#### Docker installation
+
+You can run Redis on the fly on your local machine using a Docker image:
+
+```bash
+# Expose a Redis server on port 6379 (default)
+docker run --rm -p 6379:6379 --name redis redis
+```
+
+#### Use an external service
+
+You can let Platypush use an external Redis service, if you wish to avoid
+running one on the same machine.
+
+In such scenario, simply start the application by passing custom values for
+`--redis-host` and `--redis-port`, or configure these values in its
+configuration file:
 
 ```yaml
-# Example for Debian-based distributions
-[sudo] apt-get install redis-server
+redis:
+  host: some-ip
+  port: some-port
+```
 
+If you wish to run multiple instances that use the same Redis server, you may
+also want to customize the name of the default queue that they use
+(`--redis-queue` command-line option) in order to avoid conflicts.
+
+#### Manual installation
+
+Unless you are running Platypush in a Docker container, or you are running
+Redis in a Docker container, or you want to use a remote Redis service, the
+Redis server should be installed on the same machine where Platypush runs:
+
+```bash
+# On Debian-based distributions
+sudo apt install redis-server
+
+# On Arch-based distributions
+# The hiredis package is also advised
+sudo pacman -S redis
+
+# On MacOS
+brew install redis
+```
+
+Once Redis is installed, you have two options:
+
+1. Run it a separate service. This depends on your operating system and
+   supervisor/service controller. For example, on systemd:
+
+```bash
 # Enable and start the service
-[sudo] systemctl enable redis
-[sudo] systemctl start redis
+sudo systemctl enable redis
+sudo systemctl start redis
 ```
 
-#### Install through `pip`
+2. Let Platypush run and control the Redis service. This is a good option if
+   you want Platypush to run its own service, separate from any other one
+   running on the same machine, and terminate it as soon as the application
+   ends. In this case, simply launch the application with the `--start-redis`
+   option (and optionally `--redis-port <any-num>` to customize the listen
+   port).
 
-```shell
-[sudo] pip3 install platypush
+### Install through `pip`
+
+```bash
+[sudo] pip install platypush
 ```
 
-#### Install through a system package manager
+### Install through a system package manager
 
 Note: currently only Arch Linux and derived distributions are supported.
 
@@ -157,7 +216,7 @@ latest stable version) or the
 (for the latest git version) through your favourite AUR package manager. For
 example, using `yay`:
 
-```shell
+```bash
 yay platypush
 # Or
 yay platypush-git
@@ -166,14 +225,12 @@ yay platypush-git
 The Arch Linux packages on AUR are automatically updated upon new git commits
 or tags.
 
-#### Install from sources
+### Install from sources
 
 ```shell
 git clone https://git.platypush.tech/platypush/platypush.git
 cd platypush
 [sudo] pip install .
-# Or
-[sudo] python3 setup.py install
 ```
 
 ### Installing the dependencies for your extensions
@@ -226,6 +283,8 @@ You can then start the service by simply running:
 ```shell
 platypush
 ```
+
+See `platypush --help` for a full list of options.
 
 It's advised to run it as a systemd service though - simply copy the provided
 [`.service`

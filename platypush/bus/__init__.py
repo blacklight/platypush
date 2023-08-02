@@ -10,8 +10,10 @@ from platypush.message.event import Event
 logger = logging.getLogger('platypush:bus')
 
 
-class Bus(object):
-    """ Main local bus where the daemon will listen for new messages """
+class Bus:
+    """
+    Main local bus where the daemon will listen for new messages.
+    """
 
     _MSG_EXPIRY_TIMEOUT = 60.0  # Consider a message on the bus as expired after one minute without being picked up
 
@@ -23,39 +25,45 @@ class Bus(object):
         self._should_stop = threading.Event()
 
     def post(self, msg):
-        """ Sends a message to the bus """
+        """Sends a message to the bus"""
         self.bus.put(msg)
 
     def get(self):
-        """ Reads one message from the bus """
+        """Reads one message from the bus"""
         try:
             return self.bus.get(timeout=0.1)
         except Empty:
-            return
+            return None
 
     def stop(self):
         self._should_stop.set()
 
     def _msg_executor(self, msg):
         def event_handler(event: Event, handler: Callable[[Event], None]):
-            logger.info('Triggering event handler {}'.format(handler.__name__))
+            logger.info('Triggering event handler %s', handler.__name__)
             handler(event)
 
         def executor():
             if isinstance(msg, Event):
-                if type(msg) in self.event_handlers:
-                    handlers = self.event_handlers[type(msg)]
-                else:
-                    handlers = {*[hndl for event_type, hndl in self.event_handlers.items()
-                                  if isinstance(msg, event_type)]}
+                handlers = self.event_handlers.get(
+                    type(msg),
+                    {
+                        *[
+                            hndl
+                            for event_type, hndl in self.event_handlers.items()
+                            if isinstance(msg, event_type)
+                        ]
+                    },
+                )
 
                 for hndl in handlers:
                     threading.Thread(target=event_handler, args=(msg, hndl))
 
             try:
-                self.on_message(msg)
+                if self.on_message:
+                    self.on_message(msg)
             except Exception as e:
-                logger.error('Error on processing message {}'.format(msg))
+                logger.error('Error on processing message %s', msg)
                 logger.exception(e)
 
         return executor
@@ -76,17 +84,24 @@ class Bus(object):
             if msg is None:
                 continue
 
-            timestamp = msg.timestamp if hasattr(msg, 'timestamp') else msg.get('timestamp')
+            timestamp = (
+                msg.timestamp if hasattr(msg, 'timestamp') else msg.get('timestamp')
+            )
             if timestamp and time.time() - timestamp > self._MSG_EXPIRY_TIMEOUT:
-                logger.debug('{} seconds old message on the bus expired, ignoring it: {}'.
-                             format(int(time.time()-msg.timestamp), msg))
+                logger.debug(
+                    '%f seconds old message on the bus expired, ignoring it: %s',
+                    time.time() - msg.timestamp,
+                    msg,
+                )
                 continue
 
             threading.Thread(target=self._msg_executor(msg)).start()
 
         logger.info('Bus service stopped')
 
-    def register_handler(self, event_type: Type[Event], handler: Callable[[Event], None]) -> Callable[[], None]:
+    def register_handler(
+        self, event_type: Type[Event], handler: Callable[[Event], None]
+    ) -> Callable[[], None]:
         """
         Register an event handler to the bus.
 
@@ -104,7 +119,9 @@ class Bus(object):
 
         return unregister
 
-    def unregister_handler(self, event_type: Type[Event], handler: Callable[[Event], None]) -> None:
+    def unregister_handler(
+        self, event_type: Type[Event], handler: Callable[[Event], None]
+    ) -> None:
         """
         Remove an event handler.
 

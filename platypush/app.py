@@ -153,16 +153,27 @@ class Application:
 
         port = self._redis_conf['port']
         log.info('Starting local Redis instance on %s', port)
-        self._redis_proc = subprocess.Popen(  # pylint: disable=consider-using-with
-            [
-                'redis-server',
-                '--bind',
-                'localhost',
-                '--port',
-                str(port),
-            ],
-            stdout=subprocess.PIPE,
-        )
+        redis_cmd_args = [
+            'redis-server',
+            '--bind',
+            'localhost',
+            '--port',
+            str(port),
+        ]
+
+        try:
+            self._redis_proc = subprocess.Popen(  # pylint: disable=consider-using-with
+                redis_cmd_args,
+                stdout=subprocess.PIPE,
+            )
+        except Exception as e:
+            log.error(
+                'Failed to start local Redis instance: "%s": %s',
+                ' '.join(redis_cmd_args),
+                e,
+            )
+
+            sys.exit(1)
 
         log.info('Waiting for Redis to start')
         for line in self._redis_proc.stdout:  # type: ignore
