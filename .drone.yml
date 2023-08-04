@@ -30,6 +30,32 @@ steps:
     - git pull github master
     - git push --all -v github
 
+- name: rebuild-docs
+  image: alpine
+  volumes:
+    - name: docs
+      path: /docs
+
+  commands:
+    - echo "Installing required build dependencies"
+    - apk add --update --no-cache make py3-sphinx py3-pip py3-paho-mqtt
+    - pip install -U hid sphinx-rtd-theme sphinx-book-theme
+    - pip install .
+    - mkdir -p /docs/current
+    - export APPDIR=$PWD
+    - rm -rf "$APPDIR/docs/build"
+    - echo "Building the updated documentation"
+    - cd "$APPDIR/docs"
+    - make html
+    - rm -f config*.yaml
+    - cd "$APPDIR"
+    - echo "Copying the new documentation files to the target folder"
+    - mv -v "$APPDIR/docs/build" /docs/new
+    - cd /docs
+    - mv current old
+    - mv new current
+    - rm -rf old
+
 - name: run-tests
   image: python:3.11-alpine
   commands:
@@ -40,3 +66,8 @@ steps:
     - pip install -r requirements-tests.txt
     - apk del build-base g++ rust
     - pytest tests
+
+volumes:
+  - name: docs
+    host:
+      path: /opt/docs/platypush
