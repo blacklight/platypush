@@ -56,6 +56,10 @@ steps:
     - mv new current
     - rm -rf old
 
+  when:
+    event:
+      - tag
+
 - name: run-tests
   image: python:3.11-alpine
   commands:
