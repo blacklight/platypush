@@ -92,7 +92,7 @@ steps:
     - git config --global --add safe.directory $PWD
     - export VERSION=$(python setup.py --version)
     - export HEAD=$(git log | head -1 | awk '{printf "%.8s", $2}')
-    - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...$(git tag | tail -1) | wc -l).$HEAD"
+    - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).$HEAD"
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
     - export TAG_ARCHIVE="platypush-$VERSION.tar.gz"
     - export CHECKSUM=$(curl --silent https://git.platypush.tech/platypush/platypush/archive/master.tar.gz | sha512sum | awk '{print $1}')
