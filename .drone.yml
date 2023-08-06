@@ -135,6 +135,8 @@ steps:
     - chmod 0600 ~/.ssh/id_rsa
     - ssh-keyscan git.platypush.tech >> ~/.ssh/known_hosts 2>/dev/null
 
+    # Backup the original git configuration before changing name and email
+    - cp .git/config /tmp/git.config.orig
     - git config user.name "Platypush CI/CD Automation"
     - git config user.email "admin@platypush.tech"
     - git config commit.gpgsign true
@@ -144,6 +146,9 @@ steps:
     - git remote rm origin
     - git remote add origin git@git.platypush.tech:platypush/platypush.git
     - git push origin master
+
+    # Restore the original git configuration
+    - mv /tmp/git.config.orig .git/config
 
 - name: update-arch-packages
   image: python:3.11-alpine
