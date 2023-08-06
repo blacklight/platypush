@@ -151,7 +151,6 @@ steps:
       - push
 
   depends_on:
-    - tests
     - build-ui
 
   commands:
@@ -261,8 +260,6 @@ steps:
       - tag
 
   depends_on:
-    - tests
-    - docs
     - update-pip-package
     - update-arch-packages
 
@@ -286,8 +283,6 @@ steps:
       - push
 
   depends_on:
-    - tests
-    - build-ui
     - update-arch-packages
 
   commands:
