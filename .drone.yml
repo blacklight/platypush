@@ -105,6 +105,12 @@ steps:
         exit 0
       fi
 
+    - |
+      if [ "$(git log --pretty=format:%s HEAD...HEAD~1)" == "[Automatic] Updated UI files" ]; then
+        echo "UI changes have already been committed, skipping build"
+        exit 0
+      fi
+
     - rm -rf node_modules dist
     - npm install
     - npm run build
@@ -129,9 +135,9 @@ steps:
     - chmod 0600 ~/.ssh/id_rsa
     - ssh-keyscan git.platypush.tech >> ~/.ssh/known_hosts 2>/dev/null
 
-    - git config --global commit.gpgsign true
     - git config user.name "Platypush CI/CD Automation"
     - git config user.email "admin@platypush.tech"
+    - git config commit.gpgsign true
     - git config user.signingkey $PGP_KEY_ID
     - git add dist
     - git commit dist -S -m "[Automatic] Updated UI files" --no-verify
