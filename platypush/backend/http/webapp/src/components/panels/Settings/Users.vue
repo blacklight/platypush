@@ -47,17 +47,22 @@
             <DropdownItem text="Change Password" :disabled="commandRunning" icon-class="fa fa-key"
                           @click="showChangePasswordModal(user)" />
             <DropdownItem text="Delete User" :disabled="commandRunning" icon-class="fa fa-trash"
-                          @click="deleteUser(user)" />
+                          @click="$refs.deleteUserDialog.show()" />
           </Dropdown>
         </div>
       </li>
     </ul>
 
     <FloatingButton icon-class="fa fa-plus" text="Add User" @click="showAddUserModal" />
+
+    <ConfirmDialog ref="deleteUserDialog" @input="deleteUser(selectedUser)">
+      Are you sure that you want to remove the user {{ selectedUser }}?
+    </ConfirmDialog>
   </div>
 </template>
 
 <script>
+import ConfirmDialog from "@/components/elements/ConfirmDialog";
 import Dropdown from "@/components/elements/Dropdown";
 import Modal from "@/components/Modal";
 import Loading from "@/components/Loading";
@@ -67,7 +72,7 @@ import FloatingButton from "@/components/elements/FloatingButton";
 
 export default {
   name: "Users",
-  components: {Dropdown, DropdownItem, FloatingButton, Loading, Modal},
+  components: {ConfirmDialog, Dropdown, DropdownItem, FloatingButton, Loading, Modal},
   mixins: [Utils],
 
   props: {
@@ -199,13 +204,10 @@ export default {
     },
 
     async deleteUser(user) {
-      if (!confirm('Are you sure that you want to remove the user ' + user.username + '?'))
-        return
-
       this.commandRunning = true
       try {
         await this.request('user.delete_user', {
-          username: user.username,
+          username: user,
           session_token: this.sessionToken,
         })
       } finally {
@@ -213,12 +215,13 @@ export default {
       }
 
       this.notify({
-        text: 'User ' + user.username + ' removed',
+        text: `User ${user} removed`,
         image: {
           iconClass: 'fas fa-check',
         },
       })
 
+      this.selectedUser = null
       await this.refresh()
     },
 
@@ -245,7 +248,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .settings-container {
   .body {
     width: 100%;
@@ -276,7 +279,10 @@ export default {
       display: flex;
       align-items: center;
       padding: .75em;
-      box-shadow: $border-shadow-bottom;
+
+      &:not(:last-child) {
+        box-shadow: $border-shadow-bottom;
+      }
 
       &:hover {
         background: $hover-bg;
@@ -309,9 +315,27 @@ export default {
       box-shadow: $border-shadow-bottom;
 
       .user {
-        border-radius: 1em;
+        border-radius: 0;
+
+        &:first-child {
+          border-radius: 1em 1em 0 0;
+        }
+
+        &:last-child {
+          border-radius: 0 0 1em 1em;
+        }
       }
     }
+  }
+
+  :deep(.btn) {
+    border-radius: 1em;
+  }
+}
+
+:deep(.dropdown-container) {
+  button {
+    background: none !important;
   }
 }
 </style>
