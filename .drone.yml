@@ -184,3 +184,26 @@ steps:
     - apk add --update --no-cache py3-twine
     - python setup.py sdist bdist_wheel
     - twine upload dist/platypush-$(python setup.py --version).tar.gz
+
+- name: notify-release
+  image: python:3.11-alpine
+  environment:
+    WORKER_RPC_SECRET:
+      from_secret: worker_rpc_secret
+
+  when:
+    event:
+      - tag
+
+  depends_on:
+    - tests
+    - docs
+    - update-pip-package
+    - update-arch-packages
+
+  commands:
+    - apk add --update --no-cache curl
+    - |
+      curl --silent -XPOST \
+        -H "X-Token: $WORKER_RPC_SECRET" \
+        "https://worker.ci-cd.platypush.tech/hook/notify-platypush-release?version=$(python setup.py --version)"
