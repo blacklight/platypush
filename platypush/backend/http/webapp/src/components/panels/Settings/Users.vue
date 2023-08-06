@@ -318,24 +318,28 @@ export default {
         border-radius: 0;
 
         &:first-child {
-          border-radius: 1em 1em 0 0;
+          border-top-left-radius: 1em;
+          border-top-right-radius: 1em;
         }
 
         &:last-child {
-          border-radius: 0 0 1em 1em;
+          border-bottom-left-radius: 1em;
+          border-bottom-right-radius: 1em;
         }
       }
     }
-  }
-
-  :deep(.btn) {
-    border-radius: 1em;
   }
 }
 
 :deep(.dropdown-container) {
   button {
     background: none !important;
+  }
+}
+
+:deep(.modal) {
+  .btn {
+    border-radius: 1em;
   }
 }
 </style>
