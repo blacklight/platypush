@@ -269,6 +269,10 @@ export default {
       padding: 1em;
     }
   }
+
+  .btn {
+    border-radius: 1em;
+  }
 }
 
 @media screen and (max-width: calc(#{$desktop} - 1px)) {
