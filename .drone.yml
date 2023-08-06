@@ -207,3 +207,26 @@ steps:
       curl --silent -XPOST \
         -H "X-Token: $WORKER_RPC_SECRET" \
         "https://worker.ci-cd.platypush.tech/hook/notify-platypush-release?version=$(python setup.py --version)"
+
+- name: notify-build-status
+  image: alpine
+  environment:
+    WORKER_RPC_SECRET:
+      from_secret: worker_rpc_secret
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+
+  depends_on:
+    - tests
+    - update-arch-packages
+
+  commands:
+    - apk add --update --no-cache curl
+    - |
+      curl --silent -XPOST \
+        -H "X-Token: $WORKER_RPC_SECRET" \
+        "https://worker.ci-cd.platypush.tech/hook/notify-platypush-build?status=$DRONE_BUILD_STATUS"
