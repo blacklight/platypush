@@ -3,6 +3,11 @@ kind: pipeline
 type: docker
 name: default
 
+volumes:
+  - name: docs
+    host:
+      path: /opt/docs/platypush
+
 steps:
 - name: github-mirror
   image: alpine
@@ -27,7 +32,7 @@ steps:
     - git pull github master
     - git push --all -v github
 
-- name: rebuild-docs
+- name: docs
   image: alpine
   volumes:
     - name: docs
@@ -159,7 +164,23 @@ steps:
         git push origin master
       fi
 
-volumes:
-  - name: docs
-    host:
-      path: /opt/docs/platypush
+- name: update-pip-package
+  image: python:3.11-alpine
+  environment:
+    TWINE_USERNAME:
+      from_secret: pypi_user
+    TWINE_PASSWORD:
+      from_secret: pypi_pass
+
+  when:
+    event:
+      - tag
+
+  depends_on:
+    - tests
+    - docs
+
+  commands:
+    - apk add --update --no-cache py3-twine
+    - python setup.py sdist bdist_wheel
+    - twine upload dist/platypush-$(python setup.py --version).tar.gz
