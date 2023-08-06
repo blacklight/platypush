@@ -105,6 +105,7 @@ steps:
         exit 0
       fi
 
+    - rm -rf node_modules dist
     - npm install
     - npm run build
     - |
