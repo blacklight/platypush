@@ -73,6 +73,69 @@ steps:
     - apk del build-base g++ rust
     - pytest tests
 
+- name: build-ui
+  image: node:current-alpine3.18
+
+  environment:
+    SSH_PUBKEY:
+      from_secret: ssh_pubkey
+    SSH_PRIVKEY:
+      from_secret: ssh_privkey
+    PGP_KEY:
+      from_secret: pgp_key
+    PGP_KEY_ID:
+      from_secret: pgp_key_id
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+
+  depends_on:
+    - tests
+
+  commands:
+    - apk add --update --no-cache git
+    - git config --global --add safe.directory $PWD
+    - cd platypush/backend/http/webapp
+    - |
+      if [ $(git log --pretty=oneline $DRONE_COMMIT_AFTER...$DRONE_COMMIT_BEFORE . | wc -l) -eq 0 ]; then
+        echo "No UI changes detected, skipping build"
+        exit 0
+      fi
+
+    - npm install
+    - npm run build
+    - |
+      if [ $(git status --porcelain dist | wc -l) -eq 0 ]; then
+        echo "No build files have been changed"
+        exit 0
+      fi
+
+    - apk add --update --no-cache bash gnupg openssh
+    - mkdir -p ~/.ssh
+    - |
+      cat <<EOF | gpg --import --armor
+      $PGP_KEY
+      EOF
+
+    - echo $SSH_PUBKEY > ~/.ssh/id_rsa.pub
+    - |
+      cat <<EOF > ~/.ssh/id_rsa
+      $SSH_PRIVKEY
+      EOF
+    - chmod 0600 ~/.ssh/id_rsa
+    - ssh-keyscan git.platypush.tech >> ~/.ssh/known_hosts 2>/dev/null
+
+    - git config --global commit.gpgsign true
+    - git config user.name "Platypush CI/CD Automation"
+    - git config user.email "admin@platypush.tech"
+    - git config user.signingkey $PGP_KEY_ID
+    - git add dist
+    - git commit dist -S -m "[Automatic] Updated UI files" --no-verify
+    - git push origin master
+
 - name: update-arch-packages
   image: python:3.11-alpine
   environment:
@@ -85,9 +148,12 @@ steps:
   when:
     branch:
       - master
+    event:
+      - push
 
   depends_on:
     - tests
+    - build-ui
 
   commands:
     - echo "-- Installing dependencies"
@@ -222,6 +288,7 @@ steps:
 
   depends_on:
     - tests
+    - build-ui
     - update-arch-packages
 
   commands:
