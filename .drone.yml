@@ -134,7 +134,6 @@ steps:
     - git config user.signingkey $PGP_KEY_ID
     - git add dist
     - git commit dist -S -m "[Automatic] Updated UI files" --no-verify
-    - git push origin master
 
 - name: update-arch-packages
   image: python:3.11-alpine
