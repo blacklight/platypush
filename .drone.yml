@@ -97,6 +97,11 @@ steps:
 
   commands:
     - apk add --update --no-cache git
+
+    # Backup the original git configuration before changing attributes
+    - export GIT_CONF=$PWD/.git/config
+    - cp $GIT_CONF /tmp/git.config.orig
+
     - git config --global --add safe.directory $PWD
     - cd platypush/backend/http/webapp
     - |
@@ -135,8 +140,6 @@ steps:
     - chmod 0600 ~/.ssh/id_rsa
     - ssh-keyscan git.platypush.tech >> ~/.ssh/known_hosts 2>/dev/null
 
-    # Backup the original git configuration before changing name and email
-    - cp .git/config /tmp/git.config.orig
     - git config user.name "Platypush CI/CD Automation"
     - git config user.email "admin@platypush.tech"
     - git config commit.gpgsign true
@@ -148,7 +151,7 @@ steps:
     - git push origin master
 
     # Restore the original git configuration
-    - mv /tmp/git.config.orig .git/config
+    - mv /tmp/git.config.orig $GIT_CONF
 
 - name: update-arch-packages
   image: python:3.11-alpine
