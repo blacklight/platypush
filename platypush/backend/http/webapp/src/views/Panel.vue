@@ -1,12 +1,18 @@
 <template>
   <main>
     <Loading v-if="loading" />
-    <Nav :panels="components" :selected-panel="selectedPanel" :hostname="hostname"
-         @select="selectedPanel = $event" v-else />
+    <Nav :panels="components"
+         :selected-panel="selectedPanel"
+         :selected-config-panel="selectedConfigPanel"
+         :hostname="hostname"
+         @select="selectedPanel = $event"
+         @select-config="selectedConfigPanel = $event"
+         v-else
+    />
 
     <div class="canvas" v-if="selectedPanel === 'settings'">
       <div class="panel">
-        <Settings />
+        <Settings :selected-panel="selectedConfigPanel" />
       </div>
     </div>
 
@@ -39,6 +45,7 @@ export default {
       components: {},
       hostname: undefined,
       selectedPanel: undefined,
+      selectedConfigPanel: 'users',
     }
   },
 

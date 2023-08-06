@@ -5,7 +5,29 @@
       <span class="hostname" v-if="hostname" v-text="hostname" />
     </div>
 
-    <ul class="plugins">
+    <ul class="plugins" v-if="selectedPanel === 'settings'">
+      <li class="entry" title="Home" @click="onItemClick('entities')">
+        <a href="/#">
+          <i class="fas fa-home" />
+          <span class="name" v-if="!collapsed">Home</span>
+        </a>
+      </li>
+
+      <li v-for="config, name in configSections" :key="name" class="entry"
+          :class="{selected: name === selectedConfigPanel}"
+          :title="config.name" @click="$emit('select-config', name)">
+        <a href="/#settings">
+        <span class="icon">
+          <i :class="config.icon['class']" v-if="config.icon?.['class']" />
+          <img :src="config.icon?.imgUrl" v-else-if="config.icon?.imgUrl" alt="name"/>
+          <i class="fas fa-puzzle-piece" v-else />
+        </span>
+        <span class="name" v-if="!collapsed" v-text="config.name" />
+        </a>
+      </li>
+    </ul>
+
+    <ul class="plugins" v-else>
       <li v-for="name in panelNames" :key="name" class="entry" :class="{selected: name === selectedPanel}"
           :title="name" @click="onItemClick(name)">
         <a :href="`/#${name}`">
@@ -21,7 +43,6 @@
 
     <ul class="footer">
       <li :class="{selected: selectedPanel === 'settings'}" title="Settings" @click="onItemClick('settings')">
-        <!--suppress HtmlUnknownAnchorTarget -->
         <a href="/#settings">
           <span class="icon">
             <i class="fa fa-cog" />
@@ -31,7 +52,6 @@
       </li>
 
       <li title="Logout" @click="onItemClick('logout')">
-        <!--suppress HtmlUnknownTarget -->
         <a href="/logout">
           <span class="icon">
             <i class="fas fa-sign-out-alt" />
@@ -46,10 +66,11 @@
 <script>
 import icons from '@/assets/icons.json'
 import Utils from "@/Utils";
+import configSections from '@/components/panels/Settings/sections.json';
 
 export default {
   name: "Nav",
-  emits: ['select'],
+  emits: ['select', 'select-config'],
   mixins: [Utils],
   props: {
     panels: {
@@ -58,6 +79,10 @@ export default {
     },
 
     selectedPanel: {
+      type: String,
+    },
+
+    selectedConfigPanel: {
       type: String,
     },
 
@@ -94,6 +119,7 @@ export default {
       collapsed: true,
       icons: icons,
       host: null,
+      configSections: configSections,
     }
   },
 
@@ -217,7 +243,6 @@ nav {
   .footer {
     height: $footer-expanded-height;
     background: $nav-footer-bg;
-    box-shadow: $nav-footer-shadow;
     padding: 0;
     margin: 0;
 

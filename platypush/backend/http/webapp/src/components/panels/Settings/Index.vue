@@ -1,48 +1,32 @@
 <template>
   <div class="settings-container">
-    <header>
-      <div class="col-8">
-        <Dropdown title="Select a category" icon-class="fa fa-ellipsis-h">
-          <DropdownItem text="Users" icon-class="fa fa-user"
-            :item-class="{selected: selectedView === 'users'}"
-            @click="selectedView = 'users'" />
-          <DropdownItem text="Generate a token" icon-class="fa fa-key"
-            :item-class="{selected: selectedView === 'token'}"
-            @click="selectedView = 'token'" />
-        </Dropdown>
-      </div>
-
-      <div class="col-4 pull-right">
-        <button title="Add User" @click="$refs.usersView.$refs.addUserModal.show()" v-if="selectedView === 'users'">
-          <i class="fa fa-plus" />
-        </button>
-      </div>
-    </header>
-
     <main>
       <Users :session-token="sessionToken" :current-user="currentUser"
-             v-if="selectedView === 'users'" ref="usersView" />
+             v-if="selectedPanel === 'users' && currentUser" />
       <Token :session-token="sessionToken" :current-user="currentUser"
-             v-else-if="selectedView === 'token'" ref="tokenView" />
+             v-else-if="selectedPanel === 'tokens' && currentUser" />
     </main>
   </div>
 </template>
 
 <script>
-import Dropdown from "@/components/elements/Dropdown";
-import DropdownItem from "@/components/elements/DropdownItem";
 import Token from "@/components/panels/Settings/Token";
 import Users from "@/components/panels/Settings/Users";
 import Utils from "@/Utils";
 
 export default {
   name: "Settings",
-  components: {Dropdown, DropdownItem, Users, Token},
+  components: {Users, Token},
   mixins: [Utils],
+
+  props: {
+    selectedPanel: {
+      type: String,
+    },
+  },
 
   data() {
     return {
-      selectedView: 'users',
       currentUser: null,
       sessionToken: null,
     }

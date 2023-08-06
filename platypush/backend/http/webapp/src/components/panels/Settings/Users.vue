@@ -43,15 +43,17 @@
       <li v-for="user in users" :key="user.user_id" class="item user" @click="selectedUser = user.username">
         <div class="name col-8" v-text="user.username" />
         <div class="actions pull-right col-4">
-          <Dropdown title="User Actions" icon-class="fa fa-cog">
+          <Dropdown title="User Actions" icon-class="fa fa-ellipsis">
             <DropdownItem text="Change Password" :disabled="commandRunning" icon-class="fa fa-key"
-                          @click="selectedUser = user.username; $refs.changePasswordModal.show()" />
+                          @click="showChangePasswordModal(user)" />
             <DropdownItem text="Delete User" :disabled="commandRunning" icon-class="fa fa-trash"
                           @click="deleteUser(user)" />
           </Dropdown>
         </div>
       </li>
     </ul>
+
+    <FloatingButton icon-class="fa fa-plus" text="Add User" @click="showAddUserModal" />
   </div>
 </template>
 
@@ -61,10 +63,11 @@ import Modal from "@/components/Modal";
 import Loading from "@/components/Loading";
 import Utils from "@/Utils";
 import DropdownItem from "@/components/elements/DropdownItem";
+import FloatingButton from "@/components/elements/FloatingButton";
 
 export default {
   name: "Users",
-  components: {DropdownItem, Loading, Modal, Dropdown},
+  components: {Dropdown, DropdownItem, FloatingButton, Loading, Modal},
   mixins: [Utils],
 
   props: {
@@ -218,6 +221,22 @@ export default {
 
       await this.refresh()
     },
+
+    showAddUserModal() {
+      this.$refs.addUserModal.show()
+      this.$nextTick(() => {
+        this.$refs.addUserForm.reset()
+        this.$refs.addUserForm.username.focus()
+      })
+    },
+
+    showChangePasswordModal(user) {
+      this.$refs.changePasswordModal.show()
+      this.$nextTick(() => {
+        this.$refs.changePasswordForm.password.focus()
+        this.selectedUser = user.username
+      })
+    },
   },
 
   mounted() {
@@ -268,6 +287,7 @@ export default {
         justify-content: right;
 
         button {
+          background: none !important;
           width: min-content;
         }
       }

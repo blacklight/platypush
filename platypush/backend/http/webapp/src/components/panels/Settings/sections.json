@@ -1,0 +1,15 @@
+{
+  "users": {
+    "name": "Users",
+    "icon": {
+      "class": "fas fa-user"
+    }
+  },
+
+  "tokens": {
+    "name": "Tokens",
+    "icon": {
+      "class": "fas fa-key"
+    }
+  }
+}
