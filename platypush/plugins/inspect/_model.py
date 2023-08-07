@@ -34,6 +34,10 @@ class Model:
         SchemaParser,
     ]
 
+    _param_docstring_re = re.compile(r'^\s*:param ([^:]+):\s*(.*)')
+    _type_docstring_re = re.compile(r'^\s*:type ([^:]+):\s*(.*)')
+    _return_docstring_re = re.compile(r'^\s*:return:\s+(.*)')
+
     def __init__(
         self,
         obj_type: type,
@@ -106,7 +110,7 @@ class Model:
             return None, {}
 
         for line in docstring.split('\n'):
-            m = re.match(r'^\s*:param ([^:]+):\s*(.*)', line)
+            m = cls._param_docstring_re.match(line)
             if m:
                 if cur_param:
                     params[cur_param] = cur_param_docstring
@@ -115,7 +119,16 @@ class Model:
                 cur_param_docstring = m.group(2)
                 continue
 
-            m = re.match(r'^\s*:return:\s+(.*)', line)
+            m = cls._type_docstring_re.match(line)
+            if m:
+                if cur_param:
+                    cur_param_docstring += '\n**Type:** ' + m.group(2).strip()
+                    params[cur_param] = cur_param_docstring
+
+                cur_param = None
+                continue
+
+            m = cls._return_docstring_re.match(line)
             if m:
                 if cur_param:
                     params[cur_param] = cur_param_docstring
