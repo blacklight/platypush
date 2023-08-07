@@ -52,9 +52,15 @@ class Model:
         self.package = obj_type.__module__[len(prefix) :]
         self.name = name or self.package
         self.last_modified = last_modified
-        self.doc, argsdoc = self._parse_docstring(
-            doc or obj_type.__doc__ or '', obj_type=obj_type
-        )
+
+        docstring = doc or ''
+        if obj_type.__doc__:
+            docstring += '\n\n' + obj_type.__doc__
+
+        if hasattr(obj_type, '__init__'):
+            docstring += '\n\n' + (obj_type.__init__.__doc__ or '')
+
+        self.doc, argsdoc = self._parse_docstring(docstring, obj_type=obj_type)
         self.args = {}
         self.has_kwargs = False
 
