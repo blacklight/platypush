@@ -35,7 +35,7 @@ class Model:
     ]
 
     _param_docstring_re = re.compile(r'^\s*:param ([^:]+):\s*(.*)')
-    _type_docstring_re = re.compile(r'^\s*:type ([^:]+):\s*(.*)')
+    _type_docstring_re = re.compile(r'^\s*:type ([^:]+):\s*([^\s]+).*')
     _return_docstring_re = re.compile(r'^\s*:return:\s+(.*)')
 
     def __init__(
@@ -67,17 +67,39 @@ class Model:
         self.doc, argsdoc = self._parse_docstring(docstring, obj_type=obj_type)
         self.args = {}
         self.has_kwargs = False
+        self.has_varargs = False
 
         for arg in list(inspect.signature(obj_type).parameters.values())[1:]:
             if arg.kind == arg.VAR_KEYWORD:
                 self.has_kwargs = True
                 continue
 
+            if arg.kind == arg.VAR_POSITIONAL:
+                self.has_varargs = True
+                continue
+
             self.args[arg.name] = {
-                'default': arg.default
-                if not issubclass(arg.default.__class__, type)
-                else None,
-                'doc': argsdoc.get(arg.name),
+                'default': (
+                    arg.default if not issubclass(arg.default.__class__, type) else None
+                ),
+                'doc': argsdoc.get(arg.name, {}).get('name'),
+                'required': arg.default is inspect._empty,
+                'type': (
+                    argsdoc.get(arg.name, {}).get('type')
+                    or (
+                        (
+                            arg.annotation.__name__
+                            if arg.annotation.__module__ == 'builtins'
+                            else (
+                                None
+                                if arg.annotation is inspect._empty
+                                else str(arg.annotation).replace('typing.', '')
+                            )
+                        )
+                        if arg.annotation
+                        else None
+                    )
+                ),
             }
 
     def __str__(self):
@@ -96,7 +118,7 @@ class Model:
         """
         Iterator for the model public attributes/values pairs.
         """
-        for attr in ['name', 'args', 'doc', 'has_kwargs']:
+        for attr in ['name', 'args', 'doc', 'has_varargs', 'has_kwargs']:
             yield attr, getattr(self, attr)
 
     @classmethod
@@ -105,6 +127,7 @@ class Model:
         params = {}
         cur_param = None
         cur_param_docstring = ''
+        param_types = {}
 
         if not docstring:
             return None, {}
@@ -122,7 +145,7 @@ class Model:
             m = cls._type_docstring_re.match(line)
             if m:
                 if cur_param:
-                    cur_param_docstring += '\n**Type:** ' + m.group(2).strip()
+                    param_types[cur_param] = m.group(2).strip()
                     params[cur_param] = cur_param_docstring
 
                 cur_param = None
@@ -151,7 +174,13 @@ class Model:
             params[cur_param] = cur_param_docstring
 
         for param, doc in params.items():
-            params[param] = cls._post_process_docstring(doc, obj_type=obj_type)
+            params[param] = {
+                'name': cls._post_process_docstring(doc, obj_type=obj_type)
+            }
+
+            param_type = param_types.pop(param, None)
+            if param_type is not None:
+                params[param]['type'] = param_type
 
         return cls._post_process_docstring(new_docstring, obj_type=obj_type), params
 
@@ -197,7 +226,7 @@ class PluginModel(Model):
         Overrides the default implementation of ``__iter__`` to also include
         plugin actions.
         """
-        for attr in ['name', 'args', 'actions', 'doc', 'has_kwargs']:
+        for attr in ['name', 'args', 'actions', 'doc', 'has_varargs', 'has_kwargs']:
             if attr == 'actions':
                 yield attr, {
                     name: dict(action) for name, action in self.actions.items()
