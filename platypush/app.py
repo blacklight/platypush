@@ -321,7 +321,18 @@ def main(*args: str):
     Application entry point.
     """
     app = Application.from_cmdline(args)
-    app.run()
+
+    try:
+        app.run()
+    except KeyboardInterrupt:
+        pass
+
+    log.info('Application stopped')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main(*sys.argv[1:]))
 
 
 # vim:sw=4:ts=4:et:
