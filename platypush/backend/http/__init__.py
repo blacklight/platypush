@@ -269,8 +269,12 @@ class HttpBackend(Backend):
                 self._workers.pop(i)
 
         if self._server_proc:
-            self._server_proc.terminate()
-            self._server_proc.join(timeout=5)
+            try:
+                self._server_proc.terminate()
+                self._server_proc.join(timeout=5)
+            except AttributeError:
+                pass
+
             self._server_proc = None
 
         if self._server_proc and self._server_proc.is_alive():

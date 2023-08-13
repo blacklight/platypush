@@ -25,9 +25,6 @@ log = logging.getLogger('platypush')
 class Application:
     """Main class for the Platypush application."""
 
-    # Default bus queue name
-    _default_redis_queue = 'platypush/bus'
-
     # Default Redis port
     _default_redis_port = 6379
 
@@ -90,7 +87,7 @@ class Application:
                 f.write(str(os.getpid()))
 
         self.bus: Optional[Bus] = None
-        self.redis_queue = redis_queue or self._default_redis_queue
+        self.redis_queue = redis_queue or RedisBus.DEFAULT_REDIS_QUEUE
         self.config_file = config_file
         self._verbose = verbose
         self._logsdir = (
