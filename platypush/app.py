@@ -1,12 +1,12 @@
-import argparse
 import logging
 import os
 import subprocess
 import sys
-from typing import Optional
+from typing import Optional, Sequence
 
 from .bus import Bus
 from .bus.redis import RedisBus
+from .cli import parse_cmdline
 from .config import Config
 from .context import register_backends, register_plugins
 from .cron.scheduler import CronScheduler
@@ -184,133 +184,11 @@ class Application:
             self._redis_proc = None
 
     @classmethod
-    def build(cls, *args: str):
+    def from_cmdline(cls, args: Sequence[str]) -> "Application":
         """
         Build the app from command line arguments.
         """
-        from . import __version__
-
-        parser = argparse.ArgumentParser()
-
-        parser.add_argument(
-            '--config',
-            '-c',
-            dest='config',
-            required=False,
-            default=None,
-            help='Custom location for the configuration file',
-        )
-
-        parser.add_argument(
-            '--workdir',
-            '-w',
-            dest='workdir',
-            required=False,
-            default=None,
-            help='Custom working directory to be used for the application',
-        )
-
-        parser.add_argument(
-            '--logsdir',
-            '-l',
-            dest='logsdir',
-            required=False,
-            default=None,
-            help='Store logs in the specified directory. By default, the '
-            '`[logging.]filename` configuration option will be used. If not '
-            'set, logging will be sent to stdout and stderr.',
-        )
-
-        parser.add_argument(
-            '--version',
-            dest='version',
-            required=False,
-            action='store_true',
-            help="Print the current version and exit",
-        )
-
-        parser.add_argument(
-            '--verbose',
-            '-v',
-            dest='verbose',
-            required=False,
-            action='store_true',
-            help="Enable verbose/debug logging",
-        )
-
-        parser.add_argument(
-            '--pidfile',
-            '-P',
-            dest='pidfile',
-            required=False,
-            default=None,
-            help="File where platypush will "
-            + "store its PID, useful if you're planning to "
-            + "integrate it in a service",
-        )
-
-        parser.add_argument(
-            '--no-capture-stdout',
-            dest='no_capture_stdout',
-            required=False,
-            action='store_true',
-            help="Set this flag if you have max stack depth "
-            + "exceeded errors so stdout won't be captured by "
-            + "the logging system",
-        )
-
-        parser.add_argument(
-            '--no-capture-stderr',
-            dest='no_capture_stderr',
-            required=False,
-            action='store_true',
-            help="Set this flag if you have max stack depth "
-            + "exceeded errors so stderr won't be captured by "
-            + "the logging system",
-        )
-
-        parser.add_argument(
-            '--redis-queue',
-            dest='redis_queue',
-            required=False,
-            default=cls._default_redis_queue,
-            help="Name of the Redis queue to be used to internally deliver messages "
-            "(default: platypush/bus)",
-        )
-
-        parser.add_argument(
-            '--start-redis',
-            dest='start_redis',
-            required=False,
-            action='store_true',
-            help="Set this flag if you want to run and manage Redis internally "
-            "from the app rather than using an external server. It requires the "
-            "redis-server executable to be present in the path",
-        )
-
-        parser.add_argument(
-            '--redis-host',
-            dest='redis_host',
-            required=False,
-            default=None,
-            help="Overrides the host specified in the redis section of the "
-            "configuration file",
-        )
-
-        parser.add_argument(
-            '--redis-port',
-            dest='redis_port',
-            required=False,
-            default=None,
-            help="Overrides the port specified in the redis section of the "
-            "configuration file",
-        )
-
-        opts, _ = parser.parse_known_args(args)
-        if opts.version:
-            print(__version__)
-            sys.exit(0)
-
+        opts = parse_cmdline(args)
         return cls(
             config_file=opts.config,
             workdir=opts.workdir,
@@ -435,7 +313,7 @@ def main(*args: str):
     """
     Application entry point.
     """
-    app = Application.build(*args)
+    app = Application.from_cmdline(args)
     app.run()
 
 
