@@ -348,7 +348,7 @@ class Application:
                     self.requests_to_process
                     and self.processed_requests >= self.requests_to_process
                 ):
-                    self.stop_app()
+                    self.stop()
             elif isinstance(msg, Response):
                 msg.log()
             elif isinstance(msg, Event):
@@ -357,9 +357,11 @@ class Application:
 
         return _f
 
-    def stop_app(self):
+    def stop(self):
         """Stops the backends and the bus."""
         from .plugins import RunnablePlugin
+
+        log.info('Stopping the application')
 
         if self.backends:
             for backend in self.backends.values():
@@ -426,7 +428,7 @@ class Application:
         except KeyboardInterrupt:
             log.info('SIGINT received, terminating application')
         finally:
-            self.stop_app()
+            self.stop()
 
 
 def main(*args: str):

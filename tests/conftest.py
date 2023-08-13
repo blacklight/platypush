@@ -45,7 +45,7 @@ def app():
     yield _app
 
     logging.info('Stopping Platypush test service')
-    _app.stop_app()
+    _app.stop()
     clear_loggers()
     db = (Config.get('main.db') or {}).get('engine', '')[len('sqlite:///') :]
 
