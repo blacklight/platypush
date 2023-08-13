@@ -7,6 +7,7 @@ from typing import Optional, Sequence
 from .bus import Bus
 from .bus.redis import RedisBus
 from .cli import parse_cmdline
+from .commands import CommandStream
 from .config import Config
 from .context import register_backends, register_plugins
 from .cron.scheduler import CronScheduler
@@ -48,6 +49,7 @@ class Application:
         start_redis: bool = False,
         redis_host: Optional[str] = None,
         redis_port: Optional[int] = None,
+        ctrl_sock: Optional[str] = None,
     ):
         """
         :param config_file: Configuration file override (default: None).
@@ -79,6 +81,9 @@ class Application:
             the settings in the ``redis`` section of the configuration file.
         :param redis_port: Port of the local Redis server. It overrides the
             settings in the ``redis`` section of the configuration file.
+        :param ctrl_sock: If set, it identifies a path to a UNIX domain socket
+            that the application can use to send control messages (e.g. STOP
+            and RESTART) to its parent.
         """
 
         self.pidfile = pidfile
@@ -110,6 +115,7 @@ class Application:
         self.redis_port = redis_port
         self.redis_conf = {}
         self._redis_proc: Optional[subprocess.Popen] = None
+        self.cmd_stream = CommandStream(ctrl_sock)
 
         self._init_bus()
         self._init_logging()
@@ -201,6 +207,7 @@ class Application:
             start_redis=opts.start_redis,
             redis_host=opts.redis_host,
             redis_port=opts.redis_port,
+            ctrl_sock=opts.ctrl_sock,
         )
 
     def on_message(self):
