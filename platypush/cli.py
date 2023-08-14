@@ -2,6 +2,7 @@ import argparse
 from typing import Sequence
 
 from platypush.bus.redis import RedisBus
+from platypush.utils import get_default_pid_file
 
 
 def parse_cmdline(args: Sequence[str]) -> argparse.Namespace:
@@ -61,10 +62,10 @@ def parse_cmdline(args: Sequence[str]) -> argparse.Namespace:
         '-P',
         dest='pidfile',
         required=False,
-        default=None,
+        default=get_default_pid_file(),
         help="File where platypush will "
         + "store its PID, useful if you're planning to "
-        + "integrate it in a service",
+        + f"integrate it in a service (default: {get_default_pid_file()})",
     )
 
     parser.add_argument(

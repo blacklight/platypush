@@ -14,6 +14,7 @@ import socket
 import ssl
 import urllib.request
 from threading import Lock as TLock
+from tempfile import gettempdir
 from typing import Generator, Optional, Tuple, Union
 
 from dateutil import parser, tz
@@ -623,6 +624,13 @@ def get_lock(
     finally:
         if result:
             lock.release()
+
+
+def get_default_pid_file() -> str:
+    """
+    Get the default PID file path.
+    """
+    return os.path.join(gettempdir(), 'platypush.pid')
 
 
 # vim:sw=4:ts=4:et:
