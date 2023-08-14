@@ -2,13 +2,14 @@ import datetime
 import enum
 import logging
 import threading
-from typing import Dict
+import time
+from typing import Dict, Optional
 
 import croniter
 from dateutil.tz import gettz
 
 from platypush.procedure import Procedure
-from platypush.utils import is_functional_cron
+from platypush.utils import get_remaining_timeout, is_functional_cron
 
 logger = logging.getLogger('platypush:cron')
 
@@ -197,6 +198,20 @@ class CronScheduler(threading.Thread):
 
     def should_stop(self):
         return self._should_stop.is_set()
+
+    def wait_stop(self, timeout: Optional[float] = None):
+        start = time.time()
+        stopped = self._should_stop.wait(
+            timeout=get_remaining_timeout(timeout=timeout, start=start)
+        )
+
+        if not stopped:
+            raise TimeoutError(
+                f'Timeout waiting for {self.__class__.__name__} to stop.'
+            )
+
+        if threading.get_ident() != self.ident:
+            self.join(timeout=get_remaining_timeout(timeout=timeout, start=start))
 
     def run(self):
         logger.info('Running cron scheduler')
