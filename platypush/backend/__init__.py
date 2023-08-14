@@ -27,6 +27,7 @@ from platypush.message import Message
 from platypush.message.event import Event
 from platypush.message.request import Request
 from platypush.message.response import Response
+from platypush.utils import get_redis
 
 
 class Backend(Thread, EventGenerator, ExtensionWithManifest):
@@ -308,22 +309,6 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
     def wait_stop(self, timeout=None) -> bool:
         return self._stop_event.wait(timeout)
 
-    def _get_redis(self):
-        import redis
-
-        redis_backend = get_backend('redis')
-        if not redis_backend:
-            self.logger.warning(
-                'Redis backend not configured - some '
-                'web server features may not be working properly'
-            )
-            redis_args = {}
-        else:
-            redis_args = redis_backend.redis_args
-
-        redis = redis.Redis(**redis_args)
-        return redis
-
     def get_message_response(self, msg):
         queue = get_redis_queue_name_by_message(msg)
         if not queue:
@@ -331,7 +316,7 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
             return None
 
         try:
-            redis = self._get_redis()
+            redis = get_redis()
             response = redis.blpop(queue, timeout=60)
             if response and len(response) > 1:
                 response = Message.build(response[1])
