@@ -15,7 +15,8 @@ import ssl
 import urllib.request
 from threading import Lock as TLock
 from tempfile import gettempdir
-from typing import Generator, Optional, Tuple, Union
+import time
+from typing import Generator, Optional, Tuple, Type, Union
 
 from dateutil import parser, tz
 from redis import Redis
@@ -631,6 +632,18 @@ def get_default_pid_file() -> str:
     Get the default PID file path.
     """
     return os.path.join(gettempdir(), 'platypush.pid')
+
+
+def get_remaining_timeout(
+    timeout: Optional[float], start: float, cls: Union[Type[int], Type[float]] = float
+) -> Optional[Union[int, float]]:
+    """
+    Get the remaining timeout, given a start time.
+    """
+    if timeout is None:
+        return None
+
+    return cls(max(0, timeout - (time.time() - start)))
 
 
 # vim:sw=4:ts=4:et:
