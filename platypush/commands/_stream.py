@@ -31,7 +31,7 @@ class CommandStream(ControllableProcess):
     """Close the client socket after this amount of seconds."""
 
     def __init__(self, path: Optional[str] = None):
-        super().__init__(name='platypush-cmd-stream')
+        super().__init__(name='platypush:cmd:stream')
         self.path = os.path.abspath(os.path.expanduser(path or self._default_sock_path))
         self._sock: Optional[socket.socket] = None
         self._cmd_queue: Queue["Command"] = Queue()
@@ -64,6 +64,7 @@ class CommandStream(ControllableProcess):
         sock.bind(self.path)
         os.chmod(self.path, 0o600)
         sock.listen(1)
+        self.start()
         return self
 
     def __exit__(self, *_, **__):

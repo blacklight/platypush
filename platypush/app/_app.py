@@ -1,24 +1,26 @@
+from contextlib import contextmanager
 import logging
 import os
+import signal
 import subprocess
 import sys
 from typing import Optional, Sequence
 
-from .bus import Bus
-from .bus.redis import RedisBus
-from .cli import parse_cmdline
-from .commands import CommandStream
-from .config import Config
-from .context import register_backends, register_plugins
-from .cron.scheduler import CronScheduler
-from .entities import init_entities_engine, EntitiesEngine
-from .event.processor import EventProcessor
-from .logger import Logger
-from .message.event import Event
-from .message.event.application import ApplicationStartedEvent
-from .message.request import Request
-from .message.response import Response
-from .utils import get_enabled_plugins, get_redis_conf
+from platypush.bus import Bus
+from platypush.bus.redis import RedisBus
+from platypush.cli import parse_cmdline
+from platypush.commands import CommandStream
+from platypush.config import Config
+from platypush.context import register_backends, register_plugins
+from platypush.cron.scheduler import CronScheduler
+from platypush.entities import init_entities_engine, EntitiesEngine
+from platypush.event.processor import EventProcessor
+from platypush.logger import Logger
+from platypush.message.event import Event
+from platypush.message.event.application import ApplicationStartedEvent
+from platypush.message.request import Request
+from platypush.message.response import Response
+from platypush.utils import get_enabled_plugins, get_redis_conf
 
 log = logging.getLogger('platypush')
 
@@ -87,10 +89,6 @@ class Application:
         """
 
         self.pidfile = pidfile
-        if pidfile:
-            with open(pidfile, 'w') as f:
-                f.write(str(os.getpid()))
-
         self.bus: Optional[Bus] = None
         self.redis_queue = redis_queue or RedisBus.DEFAULT_REDIS_QUEUE
         self.config_file = config_file
@@ -98,7 +96,9 @@ class Application:
         self._logsdir = (
             os.path.abspath(os.path.expanduser(logsdir)) if logsdir else None
         )
+
         Config.init(self.config_file)
+        Config.set('ctrl_sock', ctrl_sock)
 
         if workdir:
             Config.set('workdir', os.path.abspath(os.path.expanduser(workdir)))
@@ -244,36 +244,66 @@ class Application:
 
     def stop(self):
         """Stops the backends and the bus."""
-        from .plugins import RunnablePlugin
+        from platypush.plugins import RunnablePlugin
 
         log.info('Stopping the application')
+        backends = (self.backends or {}).copy().values()
+        runnable_plugins = [
+            plugin
+            for plugin in get_enabled_plugins().values()
+            if isinstance(plugin, RunnablePlugin)
+        ]
 
-        if self.backends:
-            for backend in self.backends.values():
-                backend.stop()
+        for backend in backends:
+            backend.stop()
 
-        for plugin in get_enabled_plugins().values():
-            if isinstance(plugin, RunnablePlugin):
-                plugin.stop()
+        for plugin in runnable_plugins:
+            plugin.stop()
+
+        for backend in backends:
+            backend.wait_stop()
+
+        for plugin in runnable_plugins:
+            plugin.wait_stop()
+
+        if self.entities_engine:
+            self.entities_engine.stop()
+            self.entities_engine.wait_stop()
+            self.entities_engine = None
+
+        if self.cron_scheduler:
+            self.cron_scheduler.stop()
+            self.cron_scheduler.wait_stop()
+            self.cron_scheduler = None
 
         if self.bus:
             self.bus.stop()
             self.bus = None
 
-        if self.cron_scheduler:
-            self.cron_scheduler.stop()
-            self.cron_scheduler = None
-
-        if self.entities_engine:
-            self.entities_engine.stop()
-            self.entities_engine = None
-
         if self.start_redis:
             self._stop_redis()
 
-    def run(self):
-        """Start the daemon."""
-        from . import __version__
+        log.info('Exiting application')
+
+    @contextmanager
+    def _open_pidfile(self):
+        if self.pidfile:
+            try:
+                with open(self.pidfile, 'w') as f:
+                    f.write(str(os.getpid()))
+            except OSError as e:
+                log.warning('Failed to create PID file %s: %s', self.pidfile, e)
+
+        yield
+
+        if self.pidfile:
+            try:
+                os.remove(self.pidfile)
+            except OSError as e:
+                log.warning('Failed to remove PID file %s: %s', self.pidfile, e)
+
+    def _run(self):
+        from platypush import __version__
 
         if not self.no_capture_stdout:
             sys.stdout = Logger(log.info)
@@ -312,8 +342,16 @@ class Application:
             self.bus.poll()
         except KeyboardInterrupt:
             log.info('SIGINT received, terminating application')
+            # Ignore other SIGINT signals
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
         finally:
             self.stop()
+
+    def run(self):
+        """Run the application."""
+
+        with self._open_pidfile():
+            self._run()
 
 
 def main(*args: str):
@@ -327,12 +365,7 @@ def main(*args: str):
     except KeyboardInterrupt:
         pass
 
-    log.info('Application stopped')
     return 0
-
-
-if __name__ == '__main__':
-    sys.exit(main(*sys.argv[1:]))
 
 
 # vim:sw=4:ts=4:et:

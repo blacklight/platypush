@@ -11,6 +11,7 @@ frozendict
 marshmallow
 marshmallow_dataclass
 paho-mqtt
+psutil
 python-dateutil
 python-magic
 pyyaml

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from logging import getLogger
+import logging
 from multiprocessing import Event, Process, RLock
 from os import getpid
 from typing import Optional
@@ -17,8 +17,9 @@ class ControllableProcess(Process, ABC):
     def __init__(self, *args, timeout: Optional[float] = None, **kwargs):
         kwargs['name'] = kwargs.get('name', self.__class__.__name__)
         super().__init__(*args, **kwargs)
+
         self.timeout = timeout
-        self.logger = getLogger(self.name)
+        self.logger = logging.getLogger(self.name)
         self._should_stop = Event()
         self._stop_lock = RLock()
         self._should_restart = False
@@ -60,23 +61,22 @@ class ControllableProcess(Process, ABC):
 
         :param timeout: The maximum time to wait for the process to stop.
         """
-        timeout = timeout if timeout is not None else self.timeout
+        timeout = timeout if timeout is not None else self._kill_timeout
         with self._stop_lock:
             self._should_stop.set()
             self.on_stop()
 
-            if self.pid == getpid():
-                return  # Prevent termination deadlock
-
             try:
-                self.wait_stop(timeout=timeout)
+                if self.pid != getpid():
+                    self.wait_stop(timeout=timeout)
             except TimeoutError:
                 pass
             finally:
                 self.terminate()
 
             try:
-                self.wait_stop(timeout=self._kill_timeout)
+                if self.pid != getpid():
+                    self.wait_stop(timeout=self._kill_timeout)
             except TimeoutError:
                 self.logger.warning(
                     'The process %s is still alive after %f seconds, killing it',
