@@ -8,6 +8,7 @@ Plugins
 
     platypush/plugins/adafruit.io.rst
     platypush/plugins/alarm.rst
+    platypush/plugins/application.rst
     platypush/plugins/arduino.rst
     platypush/plugins/assistant.echo.rst
     platypush/plugins/assistant.google.rst
