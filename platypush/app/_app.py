@@ -1,32 +1,32 @@
-import argparse
+from contextlib import contextmanager
 import logging
 import os
+import signal
 import subprocess
 import sys
-from typing import Optional
+from typing import Optional, Sequence
 
-from .bus import Bus
-from .bus.redis import RedisBus
-from .config import Config
-from .context import register_backends, register_plugins
-from .cron.scheduler import CronScheduler
-from .entities import init_entities_engine, EntitiesEngine
-from .event.processor import EventProcessor
-from .logger import Logger
-from .message.event import Event
-from .message.event.application import ApplicationStartedEvent
-from .message.request import Request
-from .message.response import Response
-from .utils import get_enabled_plugins, get_redis_conf
+from platypush.bus import Bus
+from platypush.bus.redis import RedisBus
+from platypush.cli import parse_cmdline
+from platypush.commands import CommandStream
+from platypush.config import Config
+from platypush.context import register_backends, register_plugins
+from platypush.cron.scheduler import CronScheduler
+from platypush.entities import init_entities_engine, EntitiesEngine
+from platypush.event.processor import EventProcessor
+from platypush.logger import Logger
+from platypush.message.event import Event
+from platypush.message.event.application import ApplicationStartedEvent
+from platypush.message.request import Request
+from platypush.message.response import Response
+from platypush.utils import get_enabled_plugins, get_redis_conf
 
 log = logging.getLogger('platypush')
 
 
 class Application:
     """Main class for the Platypush application."""
-
-    # Default bus queue name
-    _default_redis_queue = 'platypush/bus'
 
     # Default Redis port
     _default_redis_port = 6379
@@ -51,6 +51,7 @@ class Application:
         start_redis: bool = False,
         redis_host: Optional[str] = None,
         redis_port: Optional[int] = None,
+        ctrl_sock: Optional[str] = None,
     ):
         """
         :param config_file: Configuration file override (default: None).
@@ -82,21 +83,22 @@ class Application:
             the settings in the ``redis`` section of the configuration file.
         :param redis_port: Port of the local Redis server. It overrides the
             settings in the ``redis`` section of the configuration file.
+        :param ctrl_sock: If set, it identifies a path to a UNIX domain socket
+            that the application can use to send control messages (e.g. STOP
+            and RESTART) to its parent.
         """
 
         self.pidfile = pidfile
-        if pidfile:
-            with open(pidfile, 'w') as f:
-                f.write(str(os.getpid()))
-
         self.bus: Optional[Bus] = None
-        self.redis_queue = redis_queue or self._default_redis_queue
+        self.redis_queue = redis_queue or RedisBus.DEFAULT_REDIS_QUEUE
         self.config_file = config_file
         self._verbose = verbose
         self._logsdir = (
             os.path.abspath(os.path.expanduser(logsdir)) if logsdir else None
         )
+
         Config.init(self.config_file)
+        Config.set('ctrl_sock', ctrl_sock)
 
         if workdir:
             Config.set('workdir', os.path.abspath(os.path.expanduser(workdir)))
@@ -113,6 +115,7 @@ class Application:
         self.redis_port = redis_port
         self.redis_conf = {}
         self._redis_proc: Optional[subprocess.Popen] = None
+        self.cmd_stream = CommandStream(ctrl_sock)
 
         self._init_bus()
         self._init_logging()
@@ -187,133 +190,11 @@ class Application:
             self._redis_proc = None
 
     @classmethod
-    def build(cls, *args: str):
+    def from_cmdline(cls, args: Sequence[str]) -> "Application":
         """
         Build the app from command line arguments.
         """
-        from . import __version__
-
-        parser = argparse.ArgumentParser()
-
-        parser.add_argument(
-            '--config',
-            '-c',
-            dest='config',
-            required=False,
-            default=None,
-            help='Custom location for the configuration file',
-        )
-
-        parser.add_argument(
-            '--workdir',
-            '-w',
-            dest='workdir',
-            required=False,
-            default=None,
-            help='Custom working directory to be used for the application',
-        )
-
-        parser.add_argument(
-            '--logsdir',
-            '-l',
-            dest='logsdir',
-            required=False,
-            default=None,
-            help='Store logs in the specified directory. By default, the '
-            '`[logging.]filename` configuration option will be used. If not '
-            'set, logging will be sent to stdout and stderr.',
-        )
-
-        parser.add_argument(
-            '--version',
-            dest='version',
-            required=False,
-            action='store_true',
-            help="Print the current version and exit",
-        )
-
-        parser.add_argument(
-            '--verbose',
-            '-v',
-            dest='verbose',
-            required=False,
-            action='store_true',
-            help="Enable verbose/debug logging",
-        )
-
-        parser.add_argument(
-            '--pidfile',
-            '-P',
-            dest='pidfile',
-            required=False,
-            default=None,
-            help="File where platypush will "
-            + "store its PID, useful if you're planning to "
-            + "integrate it in a service",
-        )
-
-        parser.add_argument(
-            '--no-capture-stdout',
-            dest='no_capture_stdout',
-            required=False,
-            action='store_true',
-            help="Set this flag if you have max stack depth "
-            + "exceeded errors so stdout won't be captured by "
-            + "the logging system",
-        )
-
-        parser.add_argument(
-            '--no-capture-stderr',
-            dest='no_capture_stderr',
-            required=False,
-            action='store_true',
-            help="Set this flag if you have max stack depth "
-            + "exceeded errors so stderr won't be captured by "
-            + "the logging system",
-        )
-
-        parser.add_argument(
-            '--redis-queue',
-            dest='redis_queue',
-            required=False,
-            default=cls._default_redis_queue,
-            help="Name of the Redis queue to be used to internally deliver messages "
-            "(default: platypush/bus)",
-        )
-
-        parser.add_argument(
-            '--start-redis',
-            dest='start_redis',
-            required=False,
-            action='store_true',
-            help="Set this flag if you want to run and manage Redis internally "
-            "from the app rather than using an external server. It requires the "
-            "redis-server executable to be present in the path",
-        )
-
-        parser.add_argument(
-            '--redis-host',
-            dest='redis_host',
-            required=False,
-            default=None,
-            help="Overrides the host specified in the redis section of the "
-            "configuration file",
-        )
-
-        parser.add_argument(
-            '--redis-port',
-            dest='redis_port',
-            required=False,
-            default=None,
-            help="Overrides the port specified in the redis section of the "
-            "configuration file",
-        )
-
-        opts, _ = parser.parse_known_args(args)
-        if opts.version:
-            print(__version__)
-            sys.exit(0)
-
+        opts = parse_cmdline(args)
         return cls(
             config_file=opts.config,
             workdir=opts.workdir,
@@ -326,6 +207,7 @@ class Application:
             start_redis=opts.start_redis,
             redis_host=opts.redis_host,
             redis_port=opts.redis_port,
+            ctrl_sock=opts.ctrl_sock,
         )
 
     def on_message(self):
@@ -351,7 +233,7 @@ class Application:
                     self.requests_to_process
                     and self.processed_requests >= self.requests_to_process
                 ):
-                    self.stop_app()
+                    self.stop()
             elif isinstance(msg, Response):
                 msg.log()
             elif isinstance(msg, Event):
@@ -360,36 +242,68 @@ class Application:
 
         return _f
 
-    def stop_app(self):
+    def stop(self):
         """Stops the backends and the bus."""
-        from .plugins import RunnablePlugin
+        from platypush.plugins import RunnablePlugin
 
-        if self.backends:
-            for backend in self.backends.values():
-                backend.stop()
+        log.info('Stopping the application')
+        backends = (self.backends or {}).copy().values()
+        runnable_plugins = [
+            plugin
+            for plugin in get_enabled_plugins().values()
+            if isinstance(plugin, RunnablePlugin)
+        ]
 
-        for plugin in get_enabled_plugins().values():
-            if isinstance(plugin, RunnablePlugin):
-                plugin.stop()
+        for backend in backends:
+            backend.stop()
+
+        for plugin in runnable_plugins:
+            plugin.stop()
+
+        for backend in backends:
+            backend.wait_stop()
+
+        for plugin in runnable_plugins:
+            plugin.wait_stop()
+
+        if self.entities_engine:
+            self.entities_engine.stop()
+            self.entities_engine.wait_stop()
+            self.entities_engine = None
+
+        if self.cron_scheduler:
+            self.cron_scheduler.stop()
+            self.cron_scheduler.wait_stop()
+            self.cron_scheduler = None
 
         if self.bus:
             self.bus.stop()
             self.bus = None
 
-        if self.cron_scheduler:
-            self.cron_scheduler.stop()
-            self.cron_scheduler = None
-
-        if self.entities_engine:
-            self.entities_engine.stop()
-            self.entities_engine = None
-
         if self.start_redis:
             self._stop_redis()
 
-    def run(self):
-        """Start the daemon."""
-        from . import __version__
+        log.info('Exiting application')
+
+    @contextmanager
+    def _open_pidfile(self):
+        if self.pidfile:
+            try:
+                with open(self.pidfile, 'w') as f:
+                    f.write(str(os.getpid()))
+            except OSError as e:
+                log.warning('Failed to create PID file %s: %s', self.pidfile, e)
+
+        yield
+
+        if self.pidfile:
+            try:
+                os.remove(self.pidfile)
+            except OSError as e:
+                log.warning('Failed to remove PID file %s: %s', self.pidfile, e)
+
+    def _run(self):
+        from platypush import __version__
 
         if not self.no_capture_stdout:
             sys.stdout = Logger(log.info)
@@ -428,16 +342,30 @@ class Application:
             self.bus.poll()
         except KeyboardInterrupt:
             log.info('SIGINT received, terminating application')
+            # Ignore other SIGINT signals
+            signal.signal(signal.SIGINT, signal.SIG_IGN)
         finally:
-            self.stop_app()
+            self.stop()
+
+    def run(self):
+        """Run the application."""
+
+        with self._open_pidfile():
+            self._run()
 
 
 def main(*args: str):
     """
     Application entry point.
     """
-    app = Application.build(*args)
-    app.run()
+    app = Application.from_cmdline(args)
+
+    try:
+        app.run()
+    except KeyboardInterrupt:
+        pass
+
+    return 0
 
 
 # vim:sw=4:ts=4:et:

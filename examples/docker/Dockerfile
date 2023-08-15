@@ -7,10 +7,10 @@ FROM python:3.11-alpine
 RUN mkdir -p /install /app
 COPY . /install
 RUN apk add --update --no-cache redis
-RUN apk add --update --no-cache --virtual build-base g++ rust
+RUN apk add --update --no-cache --virtual build-base g++ rust linux-headers
 RUN pip install -U pip
 RUN cd /install && pip install .
-RUN apk del build-base g++ rust
+RUN apk del build-base g++ rust linux-headers
 
 EXPOSE 8008
 VOLUME /app/config

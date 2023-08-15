@@ -1,6 +1,6 @@
 import logging
 import threading
-from typing import Optional
+from typing import Final, Optional
 
 from platypush.bus import Bus
 from platypush.message import Message
@@ -13,7 +13,7 @@ class RedisBus(Bus):
     Overrides the in-process in-memory local bus with a Redis bus
     """
 
-    _DEFAULT_REDIS_QUEUE = 'platypush/bus'
+    DEFAULT_REDIS_QUEUE: Final[str] = 'platypush/bus'
 
     def __init__(self, *args, on_message=None, redis_queue=None, **kwargs):
         from platypush.utils import get_redis
@@ -21,7 +21,7 @@ class RedisBus(Bus):
         super().__init__(on_message=on_message)
         self.redis = get_redis(*args, **kwargs)
         self.redis_args = kwargs
-        self.redis_queue = redis_queue or self._DEFAULT_REDIS_QUEUE
+        self.redis_queue = redis_queue or self.DEFAULT_REDIS_QUEUE
         self.on_message = on_message
         self.thread_id = threading.get_ident()
 

@@ -68,6 +68,7 @@ setup(
         'frozendict',
         'marshmallow',
         'marshmallow_dataclass',
+        'psutil',
         'python-dateutil',
         'python-magic',
         'pyyaml',
@@ -224,7 +225,7 @@ setup(
         # Support for Graphite integration
         'graphite': ['graphyte'],
         # Support for CPU and memory monitoring and info
-        'sys': ['py-cpuinfo', 'psutil'],
+        'sys': ['py-cpuinfo'],
         # Support for nmap integration
         'nmap': ['python-nmap'],
         # Support for zigbee2mqtt
