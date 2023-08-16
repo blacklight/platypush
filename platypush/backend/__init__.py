@@ -441,6 +441,8 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         """
         Unregister the Zeroconf service configuration if available.
         """
+        from redis import exceptions
+
         if self.zeroconf and self.zeroconf_info:
             try:
                 self.zeroconf.unregister_service(self.zeroconf_info)
@@ -458,17 +460,22 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
                 except TimeoutError:
                     pass
 
-            if self.zeroconf_info:
-                self.bus.post(
-                    ZeroconfServiceRemovedEvent(
-                        service_type=self.zeroconf_info.type,
-                        service_name=self.zeroconf_info.name,
+            try:
+                if self.zeroconf_info:
+                    self.bus.post(
+                        ZeroconfServiceRemovedEvent(
+                            service_type=self.zeroconf_info.type,
+                            service_name=self.zeroconf_info.name,
+                        )
                     )
-                )
-            else:
-                self.bus.post(
-                    ZeroconfServiceRemovedEvent(service_type=None, service_name=None)
-                )
+                else:
+                    self.bus.post(
+                        ZeroconfServiceRemovedEvent(
+                            service_type=None, service_name=None
+                        )
+                    )
+            except exceptions.ConnectionError:
+                pass
 
             self.zeroconf_info = None
             self.zeroconf = None
