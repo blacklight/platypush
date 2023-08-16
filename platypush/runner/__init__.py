@@ -1,7 +1,9 @@
+import sys
+
 from ._runner import ApplicationRunner
 
 
-def main(*args: str):
+def main():
     """
     Main application entry point.
 
@@ -11,7 +13,7 @@ def main(*args: str):
     """
 
     app_runner = ApplicationRunner()
-    app_runner.run(*args)
+    app_runner.run(*sys.argv[1:])
 
 
 __all__ = ["ApplicationRunner", "main"]
