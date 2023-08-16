@@ -20,7 +20,6 @@ requests
 rsa
 sqlalchemy
 tornado
-tz
 websocket-client
 websockets
 zeroconf>=0.27.0

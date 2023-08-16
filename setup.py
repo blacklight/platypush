@@ -77,7 +77,6 @@ setup(
         'rsa',
         'sqlalchemy',
         'tornado',
-        'tz',
         'websocket-client',
         'websockets',
         'wheel',
