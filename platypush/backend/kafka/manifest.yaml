@@ -1,7 +1,9 @@
 manifest:
   events: {}
   install:
+    apt:
+      - python3-kafka
     pip:
-    - kafka
+      - kafka
   package: platypush.backend.kafka
   type: backend

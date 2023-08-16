@@ -1,7 +1,13 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-otp
+    apt:
+      - python3-pyotp
+    pacman:
+      - python-pyotp
     pip:
-    - pyotp
+      - pyotp
   package: platypush.plugins.otp
   type: plugin

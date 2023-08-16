@@ -1,9 +1,18 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-numpy
+      - py3-pillow
+    pacman:
+      - python-numpy
+      - python-pillow
+    apt:
+      - python3-numpy
+      - python3-pillow
     pip:
-    - picamera
-    - numpy
-    - Pillow
+      - picamera
+      - numpy
+      - Pillow
   package: platypush.backend.camera.pi
   type: backend

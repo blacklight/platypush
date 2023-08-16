@@ -1,16 +1,25 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-numpy
+      - py3-pillow
+      - py3-gobject3
+      - py3-gst
+    pacman:
+      - python-numpy
+      - python-pillow
+      - gst-python
+      - python-gobject
+    apt:
+      - python3-numpy
+      - python3-pillow
+      - python3-gi
+      - python3-gst-1.0
     pip:
       - numpy
       - Pillow
       - pygobject
-    apt:
-      - python3-gi
-      - python3-gst-1.0
-    pacman:
-      - gst-python
-      - python-gobject
 
   package: platypush.plugins.camera.gstreamer
   type: plugin

@@ -17,7 +17,13 @@ manifest:
     platypush.message.event.zwave.ZwaveValueChangedEvent: >
       when the value of a node on the network changes.
   install:
+    apk:
+      - py3-paho-mqtt
+    pacman:
+      - python-paho-mqtt
+    apt:
+      - python3-paho-mqtt
     pip:
-    - paho-mqtt
+      - paho-mqtt
   package: platypush.plugins.zwave.mqtt
   type: plugin

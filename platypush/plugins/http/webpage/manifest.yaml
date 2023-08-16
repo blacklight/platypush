@@ -1,15 +1,20 @@
 manifest:
   events: {}
   install:
-    pip:
-    - weasyprint
+    apk:
+      - sudo
+      - nodejs
+      - npm
     apt:
       - sudo
       - nodejs
       - npm
     pacman:
       - sudo
+      - nodejs
       - npm
+    pip:
+      - weasyprint
     exec:
       - sudo npm install -g @postlight/mercury-parser
   package: platypush.plugins.http.webpage

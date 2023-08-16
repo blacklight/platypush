@@ -2,7 +2,9 @@ manifest:
   events:
     platypush.message.event.clipboard.ClipboardEvent: on clipboard update.
   install:
+    apk:
+      - py3-pyclip
     pip:
-    - pyclip
+      - pyclip
   package: platypush.plugins.clipboard
   type: plugin

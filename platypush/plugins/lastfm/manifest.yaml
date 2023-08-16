@@ -1,7 +1,13 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-pylast
+    apt:
+      - python3-pylast
+    pacman:
+      - python-pylast
     pip:
-    - pylast
+      - pylast
   package: platypush.plugins.lastfm
   type: plugin

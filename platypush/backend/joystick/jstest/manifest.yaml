@@ -13,9 +13,11 @@ manifest:
     platypush.message.event.joystick.JoystickStateEvent: when the state of the joystick
       (i.e. some of itsaxes or buttons values) changes.
   install:
+    apk:
+      - linuxconsoletools
     apt:
       - joystick
     pacman:
-      - jsutils
+      - joyutils
   package: platypush.backend.joystick.jstest
   type: backend

@@ -1,7 +1,11 @@
 manifest:
   events: {}
   install:
+    apt:
+      - python3-dropbox
+    pacman:
+      - python-dropbox
     pip:
-    - dropbox
+      - dropbox
   package: platypush.plugins.dropbox
   type: plugin

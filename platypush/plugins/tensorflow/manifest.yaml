@@ -13,10 +13,21 @@ manifest:
     platypush.message.event.tensorflow.TensorflowTrainStartedEvent: when a Tensorflow
       model starts being trained.
   install:
+    apk:
+      - py3-numpy
+      - py3-pandas
+    pacman:
+      - python-numpy
+      - python-pandas
+      - python-tensorflow
+      - python-keras
+    apt:
+      - python3-numpy
+      - python3-pandas
     pip:
-    - numpy
-    - pandas
-    - tensorflow
-    - keras
+      - numpy
+      - pandas
+      - tensorflow
+      - keras
   package: platypush.plugins.tensorflow
   type: plugin

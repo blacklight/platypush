@@ -1,7 +1,13 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-py-cpuinfo
+    apt:
+      - python3-cpuinfo
+    pacman:
+      - python-py-cpuinfo
     pip:
-    - py-cpuinfo
+      - py-cpuinfo
   package: platypush.plugins.system
   type: plugin

@@ -29,6 +29,13 @@ manifest:
     platypush.message.event.xmpp.XmppRoomUserUnavailableEvent:
     platypush.message.event.xmpp.XmppUserAvailableEvent:
     platypush.message.event.xmpp.XmppUserUnavailableEvent:
+  apk:
+    - py3-tz
+  apt:
+    - python3-aioxmpp
+    - python3-tz
+  pacman:
+    - python-pytz
   pip:
     - aioxmpp
     - pytz

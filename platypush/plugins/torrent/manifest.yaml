@@ -1,7 +1,13 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-libtorrent-rasterbar
+    apt:
+      - python3-libtorrent
+    pacman:
+      - libtorrent-rasterbar
     pip:
-    - python-libtorrent
+      - libtorrent
   package: platypush.plugins.torrent
   type: plugin

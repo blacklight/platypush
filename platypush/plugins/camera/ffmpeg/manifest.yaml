@@ -1,12 +1,20 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-numpy
+      - py3-pillow
+      - ffmpeg
+    pacman:
+      - python-numpy
+      - python-pillow
+      - ffmpeg
+    apt:
+      - python3-numpy
+      - python3-pillow
+      - ffmpeg
     pip:
       - numpy
       - Pillow
-    apt:
-      - ffmpeg
-    pacman:
-      - ffmpeg
   package: platypush.plugins.camera.ffmpeg
   type: plugin

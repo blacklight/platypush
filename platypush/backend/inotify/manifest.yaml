@@ -9,7 +9,11 @@ manifest:
     platypush.message.event.inotify.InotifyPermissionsChangeEvent: if the permissions
       of a resource are changed
   install:
+    apk:
+      - py3-inotify
+    apt:
+      - python3-inotify
     pip:
-    - inotify
+      - inotify
   package: platypush.backend.inotify
   type: backend

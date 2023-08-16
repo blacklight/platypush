@@ -19,9 +19,18 @@ manifest:
     platypush.message.event.assistant.TimerEndEvent: when a timer ends
     platypush.message.event.assistant.TimerStartedEvent: when a timer starts
   install:
+    apk:
+      - py3-grpcio
+      - py3-google-auth
+    apt:
+      - python3-grpcio
+      - python3-google-auth
+    pacman:
+      - python-grpcio
+      - python-google-auth
     pip:
-    - google-assistant-library
-    - google-assistant-sdk[samples]
-    - google-auth
+      - google-assistant-library
+      - google-assistant-sdk[samples]
+      - google-auth
   package: platypush.backend.assistant.google
   type: backend

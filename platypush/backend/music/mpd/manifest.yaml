@@ -10,7 +10,11 @@ manifest:
     platypush.message.event.music.PlaylistChangeEvent: if the main playlist has changed
     platypush.message.event.music.VolumeChangeEvent: if the main volume has changed
   install:
+    apt:
+      - python3-mpd2
+    pacman:
+      - python-mpd2
     pip:
-    - python-mpd2
+      - python-mpd2
   package: platypush.backend.music.mpd
   type: backend

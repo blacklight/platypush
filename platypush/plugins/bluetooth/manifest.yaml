@@ -13,14 +13,20 @@ manifest:
     platypush.message.event.bluetooth.BluetoothScanResumedEvent:
     platypush.message.event.entities.EntityUpdateEvent:
   install:
-    pip:
-    - bleak
-    - bluetooth-numbers
-    - TheengsDecoder
-    - pydbus
-    - git+https://github.com/pybluez/pybluez
-    - git+https://github.com/BlackLight/PyOBEX
+    apk:
+      - py3-pydbus
     apt:
-    - libbluetooth-dev
+      - libbluetooth-dev
+      - python3-pydbus
+    pacman:
+      - python-pydbus
+      - python-bleak
+    pip:
+      - bleak
+      - bluetooth-numbers
+      - TheengsDecoder
+      - pydbus
+      - git+https://github.com/pybluez/pybluez
+      - git+https://github.com/BlackLight/PyOBEX
   package: platypush.plugins.bluetooth
   type: plugin

@@ -7,7 +7,6 @@ manifest:
     platypush.message.event.zeroconf.ZeroconfServiceUpdatedEvent: when a service is
       updated.
   install:
-    pip:
-    - zeroconf
+    pip: []
   package: platypush.plugins.zeroconf
   type: plugin

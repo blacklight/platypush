@@ -3,7 +3,13 @@ manifest:
     platypush.message.event.scard.SmartCardDetectedEvent: when a smart card is detected
     platypush.message.event.scard.SmartCardRemovedEvent: when a smart card is removed
   install:
+    apk:
+      - py3-pyscard
+    pacman:
+      - python-pyscard
+    apt:
+      - python3-pyscard
     pip:
-    - pyscard
+      - pyscard
   package: platypush.backend.scard
   type: backend

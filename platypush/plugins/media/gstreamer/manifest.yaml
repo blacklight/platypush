@@ -1,14 +1,17 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-gobject3
+      - py3-gst
     apt:
       - python3-gi
       - python3-gst-1.0
-    pip:
-      - pygobject
     pacman:
       - gst-python
       - python-gobject
+    pip:
+      - pygobject
 
   package: platypush.plugins.media.gstreamer
   type: plugin

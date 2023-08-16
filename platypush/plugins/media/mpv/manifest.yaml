@@ -1,11 +1,16 @@
 manifest:
   events: {}
   install:
-    pip:
-      - python-mpv
+    apk:
+      - mpv
+      - py3-mpv
     apt:
       - mpv
+      - python3-mpv
     pacman:
       - mpv
+      - python-mpv
+    pip:
+      - python-mpv
   package: platypush.plugins.media.mpv
   type: plugin

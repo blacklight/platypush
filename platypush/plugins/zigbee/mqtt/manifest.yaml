@@ -39,7 +39,13 @@ manifest:
     platypush.message.event.zigbee.mqtt.ZigbeeMqttOnlineEvent: >
       when the service comes online.
   install:
+    apk:
+      - py3-paho-mqtt
+    pacman:
+      - python-paho-mqtt
+    apt:
+      - python3-paho-mqtt
     pip:
-    - paho-mqtt
+      - paho-mqtt
   package: platypush.plugins.zigbee.mqtt
   type: plugin

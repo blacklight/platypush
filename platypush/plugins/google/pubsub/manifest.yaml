@@ -1,10 +1,21 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-google-api-python-client
+      - py3-google-auth
+      - py3-oauth2client
+    apt:
+      - python3-google-auth
+      - python3-oauth2client
+    pacman:
+      - python-google-api-python-client
+      - python-google-auth
+      - python-oauth2client
     pip:
-    - google-api-python-client
-    - google-auth
-    - oauth2client
-    - google-cloud-pubsub
+      - google-api-python-client
+      - google-auth
+      - oauth2client
+      - google-cloud-pubsub
   package: platypush.plugins.google.pubsub
   type: plugin

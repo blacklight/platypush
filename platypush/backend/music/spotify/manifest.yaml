@@ -9,6 +9,9 @@ manifest:
     platypush.message.event.music.NewPlayingTrackEvent: if a new track is being played
     platypush.message.event.music.VolumeChangeEvent: if the volume changes
   install:
+    apk:
+      - sudo
+      - cargo
     apt:
       - sudo
       - cargo

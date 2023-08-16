@@ -1,7 +1,11 @@
 manifest:
   events: {}
   install:
+    apt:
+      - python3-rtmidi
+    pacman:
+      - python-rtmidi
     pip:
-    - python-rtmidi
+      - python-rtmidi
   package: platypush.plugins.midi
   type: plugin

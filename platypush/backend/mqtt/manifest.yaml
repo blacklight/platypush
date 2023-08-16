@@ -3,7 +3,13 @@ manifest:
     platypush.message.event.mqtt.MQTTMessageEvent: when a newmessage is received on
       one of the custom listeners
   install:
+    apk:
+      - py3-paho-mqtt
+    pacman:
+      - python-paho-mqtt
+    apt:
+      - python3-paho-mqtt
     pip:
-    - paho-mqtt
+      - paho-mqtt
   package: platypush.backend.mqtt
   type: backend

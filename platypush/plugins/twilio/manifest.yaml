@@ -1,7 +1,9 @@
 manifest:
   events: {}
   install:
+    apt:
+      - python3-twilio
     pip:
-    - twilio
+      - twilio
   package: platypush.plugins.twilio
   type: plugin

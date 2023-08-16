@@ -1,11 +1,14 @@
 manifest:
   events: {}
   install:
-    pip:
-      - ffmpeg-python
+    apk:
+      - ffmpeg
     apt:
       - ffmpeg
     pacman:
       - ffmpeg
+      - python-ffmpeg
+    pip:
+      - ffmpeg-python
   package: platypush.plugins.ffmpeg
   type: plugin

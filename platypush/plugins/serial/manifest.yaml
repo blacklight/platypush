@@ -2,6 +2,12 @@ manifest:
   events:
     - platypush.message.event.sensor.SensorDataChangeEvent:
   install:
+    apk:
+      - py3-pyserial
+    apt:
+      - python3-serial
+    pacman:
+      - python-pyserial
     pip:
       - pyserial
   package: platypush.plugins.serial

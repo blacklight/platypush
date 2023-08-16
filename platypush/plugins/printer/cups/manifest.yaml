@@ -1,9 +1,14 @@
 manifest:
   events: {}
   install:
-    pip:
-    - pycups
+    apk:
+      - py3-pycups
     apt:
-    - libcups2-dev
+      - libcups2-dev
+      - python3-cups
+    pacman:
+      - python-pycups
+    pip:
+      - pycups
   package: platypush.plugins.printer.cups
   type: plugin

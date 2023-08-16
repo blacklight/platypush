@@ -1,10 +1,25 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-numpy
+      - py3-pillow
+      - py3-qrcode
+      - py3-pyzbar
+    pacman:
+      - python-numpy
+      - python-pillow
+      - python-qrcode
+      - pyzbar
+    apt:
+      - python3-numpy
+      - python3-pillow
+      - python3-pyzbar
+      - python3-qrcode
     pip:
-    - numpy
-    - qrcode
-    - pyzbar
-    - Pillow
+      - numpy
+      - qrcode
+      - pyzbar
+      - Pillow
   package: platypush.plugins.qrcode
   type: plugin

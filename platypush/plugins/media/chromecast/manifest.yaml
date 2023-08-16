@@ -1,7 +1,11 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-pychromecast
+    apt:
+      - python3-pychromecast
     pip:
-    - pychromecast
+      - pychromecast
   package: platypush.plugins.media.chromecast
   type: plugin
