@@ -463,13 +463,31 @@ class Config:
         return None
 
     @classmethod
-    def init(cls, cfgfile: Optional[str] = None):
+    def init(
+        cls,
+        cfgfile: Optional[str] = None,
+        device_id: Optional[str] = None,
+        workdir: Optional[str] = None,
+        ctrl_sock: Optional[str] = None,
+        **_,
+    ):
         """
         Initializes the config object singleton
-        Params:
-            cfgfile -- path to the config file - default: _cfgfile_locations
+
+        :param cfgfile: Path to the config file (default: _cfgfile_locations)
+        :param device_id: Override the configured device_id.
+        :param workdir: Override the configured working directory.
+        :param ctrl_sock: Override the configured control socket.
         """
-        return cls._get_instance(cfgfile, force_reload=True)
+        cfg = cls._get_instance(cfgfile, force_reload=True)
+        if device_id:
+            cfg.set('device_id', device_id)
+        if workdir:
+            cfg.set('workdir', workdir)
+        if ctrl_sock:
+            cfg.set('ctrl_sock', ctrl_sock)
+
+        return cfg
 
     @classmethod
     @property
