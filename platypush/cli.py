@@ -30,6 +30,17 @@ def parse_cmdline(args: Sequence[str]) -> argparse.Namespace:
     )
 
     parser.add_argument(
+        '--device-id',
+        '-d',
+        dest='device_id',
+        required=False,
+        default=None,
+        help='Override the device ID used to identify this instance. If not '
+        'passed here, it is inferred from the configuration (device_id field).'
+        'If not present there either, it is inferred from the hostname.',
+    )
+
+    parser.add_argument(
         '--logsdir',
         '-l',
         dest='logsdir',
