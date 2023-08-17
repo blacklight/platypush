@@ -35,4 +35,4 @@ EXPOSE 8008
 VOLUME /app/config
 VOLUME /app/workdir
 
-CMD platypush --start-redis --config-file /app/config/config.yaml --workdir /app/workdir
+CMD platypush --start-redis --config /app/config/config.yaml --workdir /app/workdir
