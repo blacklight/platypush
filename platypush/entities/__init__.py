@@ -52,7 +52,8 @@ def get_entities_engine(timeout: Optional[float] = None) -> EntitiesEngine:
 
         Event().wait(1)
 
-    assert _engine, 'The entities engine has not been initialized'
+    if not _engine:
+        raise TimeoutError('The entities engine has not been initialized')
     return _engine
 
 
