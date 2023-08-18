@@ -4,18 +4,24 @@ import queue
 import re
 import threading
 import time
-
-from dateutil.tz import tzutc
 from typing import Iterable, Optional, Collection, Set
 from xml.etree import ElementTree
 
 import dateutil.parser
+from dateutil.tz import tzutc
 import requests
 
 from platypush.context import get_bus, get_plugin
 from platypush.message.event.rss import NewFeedEntryEvent
 from platypush.plugins import RunnablePlugin, action
+from platypush.plugins.variable import VariablePlugin
 from platypush.schemas.rss import RssFeedEntrySchema
+
+
+def _variable() -> VariablePlugin:
+    var = get_plugin(VariablePlugin)
+    assert var, 'Could not load the variable plugin'
+    return var
 
 
 class RssPlugin(RunnablePlugin):
@@ -37,6 +43,8 @@ class RssPlugin(RunnablePlugin):
         'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
         + 'Chrome/62.0.3202.94 Safari/537.36'
     )
+
+    timeout = 20
 
     def __init__(
         self,
@@ -61,8 +69,7 @@ class RssPlugin(RunnablePlugin):
         self._latest_entries = []
 
         self.subscriptions = list(self._parse_subscriptions(subscriptions or []))
-
-        self._latest_timestamps = self._get_latest_timestamps()
+        self._latest_timestamps = {}
 
     @staticmethod
     def _get_feed_latest_timestamp_varname(url: str) -> str:
@@ -70,21 +77,20 @@ class RssPlugin(RunnablePlugin):
 
     @classmethod
     def _get_feed_latest_timestamp(cls, url: str) -> Optional[datetime.datetime]:
-        t = (
-            get_plugin('variable')
-            .get(cls._get_feed_latest_timestamp_varname(url))
-            .output.get(cls._get_feed_latest_timestamp_varname(url))
-        )
+        varname = cls._get_feed_latest_timestamp_varname(url)
+        var: dict = _variable().get(varname).output or {}  # type: ignore
+        t = var.get(varname)
 
         if t:
             return dateutil.parser.isoparse(t)
+
+        return None
 
     def _get_latest_timestamps(self) -> dict:
         return {url: self._get_feed_latest_timestamp(url) for url in self.subscriptions}
 
     def _update_latest_timestamps(self) -> None:
-        variable = get_plugin('variable')
-        variable.set(
+        _variable().set(
             **{
                 self._get_feed_latest_timestamp_varname(url): latest_timestamp
                 for url, latest_timestamp in self._latest_timestamps.items()
@@ -95,7 +101,7 @@ class RssPlugin(RunnablePlugin):
     def _parse_content(entry) -> Optional[str]:
         content = getattr(entry, 'content', None)
         if not content:
-            return
+            return None
 
         if isinstance(content, list):
             return content[0]['value']
@@ -113,7 +119,9 @@ class RssPlugin(RunnablePlugin):
         import feedparser
 
         feed = feedparser.parse(
-            requests.get(url, headers={'User-Agent': self.user_agent}).text
+            requests.get(
+                url, headers={'User-Agent': self.user_agent}, timeout=self.timeout
+            ).text,
         )
         return RssFeedEntrySchema().dump(
             sorted(
@@ -139,7 +147,7 @@ class RssPlugin(RunnablePlugin):
                     for entry in feed.entries
                     if getattr(entry, 'published_parsed', None)
                 ],
-                key=lambda e: e['published'],
+                key=lambda e: e['published'],  # type: ignore
             ),
             many=True,
         )
@@ -196,6 +204,7 @@ class RssPlugin(RunnablePlugin):
                     headers={
                         'User-Agent': self.user_agent,
                     },
+                    timeout=self.timeout,
                 ).text
             except Exception as e:
                 self.logger.warning('Could not retrieve subscription %s: %s', url, e)
@@ -316,6 +325,7 @@ class RssPlugin(RunnablePlugin):
         return ElementTree.tostring(root, encoding='utf-8', method='xml').decode()
 
     def main(self):
+        self._latest_timestamps = self._get_latest_timestamps()
         self._feed_workers = [
             threading.Thread(target=self._feed_worker, args=(q,))
             for q in self._feed_worker_queues
@@ -325,7 +335,7 @@ class RssPlugin(RunnablePlugin):
             worker.start()
 
         self.logger.info(
-            f'Initialized RSS plugin with {len(self.subscriptions)} subscriptions'
+            'Initialized RSS plugin with %d subscriptions', len(self.subscriptions)
         )
 
         while not self.should_stop():
@@ -360,7 +370,7 @@ class RssPlugin(RunnablePlugin):
                 url = response['url']
                 error = response.get('error')
                 if error:
-                    self.logger.error(f'Could not parse feed {url}: {error}')
+                    self.logger.error('Could not parse feed %s: %s', url, error)
                     responses[url] = error
                 else:
                     responses[url] = response['content']

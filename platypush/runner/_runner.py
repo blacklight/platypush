@@ -49,12 +49,9 @@ class ApplicationRunner:
             self._print_version()
 
         while True:
-            with (
-                CommandStream(parsed_args.ctrl_sock) as stream,
-                ApplicationProcess(
-                    *args, pidfile=parsed_args.pidfile, timeout=self._default_timeout
-                ) as self._proc,
-            ):
+            with CommandStream(parsed_args.ctrl_sock) as stream, ApplicationProcess(
+                *args, pidfile=parsed_args.pidfile, timeout=self._default_timeout
+            ) as self._proc:
                 try:
                     self._listen(stream)
                 except KeyboardInterrupt:
