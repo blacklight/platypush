@@ -118,7 +118,7 @@ class RssPlugin(RunnablePlugin):
         import feedparser
 
         feed = feedparser.parse(
-            requests.get(url, headers={'User-Agent': self.user_agent}).text
+            requests.get(url, headers={'User-Agent': self.user_agent}, timeout=20).text,
         )
         return RssFeedEntrySchema().dump(
             sorted(
@@ -331,7 +331,7 @@ class RssPlugin(RunnablePlugin):
             worker.start()
 
         self.logger.info(
-            f'Initialized RSS plugin with {len(self.subscriptions)} subscriptions'
+            'Initialized RSS plugin with %d subscriptions', len(self.subscriptions)
         )
 
         while not self.should_stop():
