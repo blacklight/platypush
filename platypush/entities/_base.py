@@ -117,9 +117,8 @@ if 'entity' not in Base.metadata:
             'polymorphic_on': type,
         }
 
-        @classmethod  # type: ignore
-        @property
-        def columns(cls) -> Tuple[ColumnProperty, ...]:
+        @classmethod
+        def get_columns(cls) -> Tuple[ColumnProperty, ...]:
             inspector = schema_inspect(cls)
             return tuple(inspector.mapper.column_attrs)
 
@@ -146,7 +145,7 @@ if 'entity' not in Base.metadata:
             return self.__class__(
                 **dict(
                     key_value_pair(col)  # type: ignore
-                    for col in self.columns
+                    for col in self.get_columns()
                     if key_value_pair(col) is not None
                 ),
                 children=[child.copy() for child in self.children],
@@ -213,7 +212,7 @@ if 'entity' not in Base.metadata:
             return {
                 **dict(
                     self._column_to_pair(col)
-                    for col in self.columns
+                    for col in self.get_columns()
                     if self._column_to_pair(col)
                 ),
                 'children_ids': self.children_ids,
@@ -241,7 +240,7 @@ if 'entity' not in Base.metadata:
             """
             Serializes the new value before assigning it to an attribute.
             """
-            matching_columns = [c for c in self.columns if c.expression.name == key]  # type: ignore
+            matching_columns = [c for c in self.get_columns() if c.expression.name == key]  # type: ignore
 
             if (
                 matching_columns

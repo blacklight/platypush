@@ -44,6 +44,8 @@ class RssPlugin(RunnablePlugin):
         + 'Chrome/62.0.3202.94 Safari/537.36'
     )
 
+    timeout = 20
+
     def __init__(
         self,
         subscriptions: Optional[Collection[str]] = None,
@@ -117,7 +119,9 @@ class RssPlugin(RunnablePlugin):
         import feedparser
 
         feed = feedparser.parse(
-            requests.get(url, headers={'User-Agent': self.user_agent}, timeout=20).text,
+            requests.get(
+                url, headers={'User-Agent': self.user_agent}, timeout=self.timeout
+            ).text,
         )
         return RssFeedEntrySchema().dump(
             sorted(
@@ -200,6 +204,7 @@ class RssPlugin(RunnablePlugin):
                     headers={
                         'User-Agent': self.user_agent,
                     },
+                    timeout=self.timeout,
                 ).text
             except Exception as e:
                 self.logger.warning('Could not retrieve subscription %s: %s', url, e)
@@ -365,7 +370,7 @@ class RssPlugin(RunnablePlugin):
                 url = response['url']
                 error = response.get('error')
                 if error:
-                    self.logger.error(f'Could not parse feed {url}: {error}')
+                    self.logger.error('Could not parse feed %s: %s', url, error)
                     responses[url] = error
                 else:
                     responses[url] = response['content']
