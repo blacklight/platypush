@@ -18,6 +18,12 @@ from platypush.plugins.variable import VariablePlugin
 from platypush.schemas.rss import RssFeedEntrySchema
 
 
+def _variable() -> VariablePlugin:
+    var = get_plugin(VariablePlugin)
+    assert var, 'Could not load the variable plugin'
+    return var
+
+
 class RssPlugin(RunnablePlugin):
     """
     A plugin for parsing and subscribing to RSS feeds.
@@ -63,13 +69,6 @@ class RssPlugin(RunnablePlugin):
         self.subscriptions = list(self._parse_subscriptions(subscriptions or []))
         self._latest_timestamps = {}
 
-    @classmethod
-    @property
-    def _variable(cls) -> VariablePlugin:
-        var = get_plugin(VariablePlugin)
-        assert var, 'Could not load the variable plugin'
-        return var
-
     @staticmethod
     def _get_feed_latest_timestamp_varname(url: str) -> str:
         return f'LATEST_FEED_TIMESTAMP[{url}]'
@@ -77,7 +76,7 @@ class RssPlugin(RunnablePlugin):
     @classmethod
     def _get_feed_latest_timestamp(cls, url: str) -> Optional[datetime.datetime]:
         varname = cls._get_feed_latest_timestamp_varname(url)
-        var: dict = cls._variable.get(varname).output or {}  # type: ignore
+        var: dict = _variable().get(varname).output or {}  # type: ignore
         t = var.get(varname)
 
         if t:
@@ -89,7 +88,7 @@ class RssPlugin(RunnablePlugin):
         return {url: self._get_feed_latest_timestamp(url) for url in self.subscriptions}
 
     def _update_latest_timestamps(self) -> None:
-        self._variable.set(
+        _variable().set(
             **{
                 self._get_feed_latest_timestamp_varname(url): latest_timestamp
                 for url, latest_timestamp in self._latest_timestamps.items()
