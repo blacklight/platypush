@@ -176,7 +176,7 @@ class EntitiesMerger:
         """
         Merge two versions of an entity column by column.
         """
-        columns = [col.key for col in entity.columns]
+        columns = [col.key for col in entity.get_columns()]
         for col in columns:
             if col == 'meta':
                 existing_entity.meta = {  # type: ignore
@@ -189,7 +189,9 @@ class EntitiesMerger:
                 except ObjectDeletedError as e:
                     logger.warning(
                         'Could not set %s on entity <%s>: %s',
-                        col, existing_entity.entity_key, e
+                        col,
+                        existing_entity.entity_key,
+                        e,
                     )
 
         # Recursive call to merge the columns of the children too
