@@ -192,7 +192,7 @@ class HttpBackend(Backend):
 
     """
 
-    _DEFAULT_HTTP_PORT = 8008
+    DEFAULT_HTTP_PORT = 8008
     """The default listen port for the webserver."""
 
     _STOP_TIMEOUT = 5
@@ -200,7 +200,7 @@ class HttpBackend(Backend):
 
     def __init__(
         self,
-        port: int = _DEFAULT_HTTP_PORT,
+        port: int = DEFAULT_HTTP_PORT,
         bind_address: str = '0.0.0.0',
         resource_dirs: Optional[Mapping[str, str]] = None,
         secret_key_file: Optional[str] = None,
