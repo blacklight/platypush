@@ -21,6 +21,7 @@ class BaseImage(Enum):
     """
 
     ALPINE = 'alpine'
+    DEBIAN = 'debian'
     UBUNTU = 'ubuntu'
 
     def __str__(self) -> str:
@@ -30,6 +31,7 @@ class BaseImage(Enum):
         return self.value
 
 
+# pylint: disable=too-few-public-methods
 class DockerfileGenerator:
     """
     Generate a Dockerfile from on a configuration file.
@@ -40,6 +42,7 @@ class DockerfileGenerator:
 
     _pkg_manager_by_base_image = {
         BaseImage.ALPINE: PackageManagers.APK,
+        BaseImage.DEBIAN: PackageManagers.APT,
         BaseImage.UBUNTU: PackageManagers.APT,
     }
 
@@ -54,6 +57,8 @@ class DockerfileGenerator:
         :param cfgfile: Path to the configuration file.
         :return: The content of the generated Dockerfile.
         """
+        import platypush
+
         Config.init(self.cfgfile)
         new_file_lines = []
         ports = self._get_exposed_ports()
@@ -66,7 +71,8 @@ class DockerfileGenerator:
 
         is_after_expose_cmd = False
         base_file = os.path.join(
-            str(pathlib.Path(inspect.getfile(Config)).parent),
+            str(pathlib.Path(inspect.getfile(platypush)).parent),
+            'install',
             'docker',
             f'{self.image}.Dockerfile',
         )
