@@ -65,13 +65,14 @@ class Config:
 
     _included_files: Set[str] = set()
 
-    def __init__(self, cfgfile: Optional[str] = None):
+    def __init__(self, cfgfile: Optional[str] = None, workdir: Optional[str] = None):
         """
         Constructor. Always use the class as a singleton (i.e. through
         Config.init), you won't probably need to call the constructor directly
 
         :param cfgfile: Config file path (default: retrieve the first available
             location in _cfgfile_locations).
+        :param workdir: Overrides the default working directory.
         """
 
         self.backends = {}
@@ -89,7 +90,7 @@ class Config:
         self._config = self._read_config_file(self.config_file)
 
         self._init_secrets()
-        self._init_dirs()
+        self._init_dirs(workdir=workdir)
         self._init_db()
         self._init_logging()
         self._init_device_id()
@@ -163,11 +164,16 @@ class Config:
             for k, v in self._config['environment'].items():
                 os.environ[k] = str(v)
 
-    def _init_dirs(self):
-        if 'workdir' not in self._config:
+    def _init_dirs(self, workdir: Optional[str] = None):
+        if workdir:
+            self._config['workdir'] = workdir
+        if not self._config.get('workdir'):
             self._config['workdir'] = self._workdir_location
-        self._config['workdir'] = os.path.expanduser(self._config['workdir'])
-        os.makedirs(self._config['workdir'], exist_ok=True)
+
+        self._config['workdir'] = os.path.expanduser(
+            os.path.expanduser(self._config['workdir'])
+        )
+        pathlib.Path(self._config['workdir']).mkdir(parents=True, exist_ok=True)
 
         if 'scripts_dir' not in self._config:
             self._config['scripts_dir'] = os.path.join(
@@ -396,14 +402,17 @@ class Config:
 
     @classmethod
     def _get_instance(
-        cls, cfgfile: Optional[str] = None, force_reload: bool = False
+        cls,
+        cfgfile: Optional[str] = None,
+        workdir: Optional[str] = None,
+        force_reload: bool = False,
     ) -> "Config":
         """
         Lazy getter/setter for the default configuration instance.
         """
         if force_reload or cls._instance is None:
             cfg_args = [cfgfile] if cfgfile else []
-            cls._instance = Config(*cfg_args)
+            cls._instance = Config(*cfg_args, workdir=workdir)
         return cls._instance
 
     @classmethod
@@ -478,7 +487,7 @@ class Config:
         :param workdir: Override the configured working directory.
         :param ctrl_sock: Override the configured control socket.
         """
-        cfg = cls._get_instance(cfgfile, force_reload=True)
+        cfg = cls._get_instance(cfgfile, workdir=workdir, force_reload=True)
         if device_id:
             cfg.set('device_id', device_id)
         if workdir:
