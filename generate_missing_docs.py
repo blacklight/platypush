@@ -4,7 +4,7 @@ from typing import Iterable, Optional
 from platypush.backend import Backend
 from platypush.context import get_plugin
 from platypush.plugins import Plugin
-from platypush.utils.manifest import get_manifests
+from platypush.utils.manifest import Manifests
 
 
 def _get_inspect_plugin():
@@ -14,11 +14,11 @@ def _get_inspect_plugin():
 
 
 def get_all_plugins():
-    return sorted([mf.component_name for mf in get_manifests(Plugin)])
+    return sorted([mf.component_name for mf in Manifests.by_base_class(Plugin)])
 
 
 def get_all_backends():
-    return sorted([mf.component_name for mf in get_manifests(Backend)])
+    return sorted([mf.component_name for mf in Manifests.by_base_class(Backend)])
 
 
 def get_all_events():
