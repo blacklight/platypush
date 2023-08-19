@@ -83,10 +83,10 @@ class Config:
         self.dashboards = {}
         self._plugin_manifests = {}
         self._backend_manifests = {}
-        self._cfgfile = ''
+        self.config_file = ''
 
         self._init_cfgfile(cfgfile)
-        self._config = self._read_config_file(self._cfgfile)
+        self._config = self._read_config_file(self.config_file)
 
         self._init_secrets()
         self._init_dirs()
@@ -107,7 +107,7 @@ class Config:
         if cfgfile is None or not os.path.exists(cfgfile):
             cfgfile = self._create_default_config()
 
-        self._cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
+        self.config_file = os.path.abspath(os.path.expanduser(cfgfile))
 
     def _init_logging(self):
         logging_config = {
@@ -171,13 +171,13 @@ class Config:
 
         if 'scripts_dir' not in self._config:
             self._config['scripts_dir'] = os.path.join(
-                os.path.dirname(self._cfgfile), 'scripts'
+                os.path.dirname(self.config_file), 'scripts'
             )
         os.makedirs(self._config['scripts_dir'], mode=0o755, exist_ok=True)
 
         if 'dashboards_dir' not in self._config:
             self._config['dashboards_dir'] = os.path.join(
-                os.path.dirname(self._cfgfile), 'dashboards'
+                os.path.dirname(self.config_file), 'dashboards'
             )
         os.makedirs(self._config['dashboards_dir'], mode=0o755, exist_ok=True)
 
@@ -216,7 +216,6 @@ class Config:
 
     def _read_config_file(self, cfgfile):
         cfgfile_dir = os.path.dirname(os.path.abspath(os.path.expanduser(cfgfile)))
-
         config = {}
 
         try:
