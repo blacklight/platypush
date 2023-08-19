@@ -74,6 +74,10 @@ def run_migrations_online() -> None:
 
 
 def set_db_engine():
+    app_conf_file = context.get_x_argument(as_dictionary=True).get('CFGFILE')
+    if app_conf_file:
+        Config.init(app_conf_file)
+
     engine_url = context.get_x_argument(as_dictionary=True).get('DBNAME')
     if not engine_url:
         db_conf = Config.get('db')

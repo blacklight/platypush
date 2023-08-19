@@ -29,6 +29,7 @@ from sqlalchemy.orm import ColumnProperty, backref, relationship
 from sqlalchemy.orm.exc import ObjectDeletedError
 
 import platypush
+from platypush.config import Config
 from platypush.common.db import Base
 from platypush.message import JSONAble, Message
 
@@ -354,6 +355,8 @@ def run_db_migrations():
             'alembic',
             '-c',
             alembic_ini,
+            '-x',
+            f'CFGFILE={Config.get_file()}',
             '-x',
             f'DBNAME={_get_db_engine().url}',
             'upgrade',

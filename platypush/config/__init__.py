@@ -530,5 +530,12 @@ class Config:
         # pylint: disable=protected-access
         cls._get_instance()._config[key] = value
 
+    @classmethod
+    def get_file(cls) -> str:
+        """
+        :return: The main configuration file path.
+        """
+        return cls._get_instance().config_file
+
 
 # vim:sw=4:ts=4:et:
