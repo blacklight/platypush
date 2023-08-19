@@ -523,7 +523,7 @@ def get_or_generate_jwt_rsa_key_pair():
     """
     from platypush.config import Config
 
-    key_dir = os.path.join(Config.workdir, 'jwt')
+    key_dir = os.path.join(Config.get_workdir(), 'jwt')
     priv_key_file = os.path.join(key_dir, 'id_rsa')
     pub_key_file = priv_key_file + '.pub'
 

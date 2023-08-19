@@ -117,7 +117,7 @@ class XmppPlugin(AsyncRunnablePlugin, XmppBasePlugin):
             auto_accept_invites=auto_accept_invites,
             restore_state=restore_state,
             state_file=os.path.expanduser(
-                state_file or os.path.join(Config.workdir, 'xmpp', 'state.json')
+                state_file or os.path.join(Config.get_workdir(), 'xmpp', 'state.json')
             ),
         )
         self._loaded_state = SerializedState()

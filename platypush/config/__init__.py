@@ -498,8 +498,7 @@ class Config:
         return cfg
 
     @classmethod
-    @property
-    def workdir(cls) -> str:
+    def get_workdir(cls) -> str:
         """
         :return: The path of the configured working directory.
         """
