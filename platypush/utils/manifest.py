@@ -26,9 +26,9 @@ import yaml
 from platypush.message.event import Event
 
 supported_package_managers = {
-    'apk': ['apk', 'add', '--no-cache', '--no-progress'],
-    'apt': ['apt', 'install', '-y', '-q'],
-    'pacman': ['pacman', '-S', '--noconfirm', '--noprogressbar'],
+    'apk': ['apk', 'add', '--update', '--no-interactive', '--no-cache'],
+    'apt': ['apt', 'install', '-y'],
+    'pacman': ['pacman', '-S', '--noconfirm'],
 }
 
 _available_package_manager = None
