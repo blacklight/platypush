@@ -20,7 +20,7 @@ from platypush.utils import (
     get_plugin_class_by_name,
     get_plugin_name_by_class,
 )
-from platypush.utils.manifest import Manifest, scan_manifests
+from platypush.utils.manifest import Manifests
 
 from ._context import ComponentContext
 from ._model import (
@@ -116,8 +116,7 @@ class InspectPlugin(Plugin):
         A generator that scans the manifest files given a ``base_type``
         (``Plugin`` or ``Backend``) and yields the parsed submodules.
         """
-        for mf_file in scan_manifests(base_type):
-            manifest = Manifest.from_file(mf_file)
+        for manifest in Manifests.by_base_class(base_type):
             try:
                 yield importlib.import_module(manifest.package)
             except Exception as e:
