@@ -55,6 +55,11 @@ class PackageManager:
 
     executable: str
     """ The executable name. """
+    default_os: str
+    """
+    The default distro whose configuration we should use if this package
+    manager is detected.
+    """
     install: Iterable[str] = field(default_factory=tuple)
     """ The install command, as a sequence of strings. """
     uninstall: Iterable[str] = field(default_factory=tuple)
@@ -70,18 +75,21 @@ class PackageManagers(Enum):
         executable='apk',
         install=('apk', 'add', '--update', '--no-interactive', '--no-cache'),
         uninstall=('apk', 'del', '--no-interactive'),
+        default_os='alpine',
     )
 
     APT = PackageManager(
         executable='apt',
         install=('apt', 'install', '-y'),
         uninstall=('apt', 'remove', '-y'),
+        default_os='debian',
     )
 
     PACMAN = PackageManager(
         executable='pacman',
-        install=('pacman', '-S', '--noconfirm'),
+        install=('pacman', '-S', '--noconfirm', '--needed'),
         uninstall=('pacman', '-R', '--noconfirm'),
+        default_os='arch',
     )
 
     @classmethod
