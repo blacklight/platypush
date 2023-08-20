@@ -55,8 +55,10 @@ class PackageManager:
 
     executable: str
     """ The executable name. """
-    command: Iterable[str] = field(default_factory=tuple)
-    """ The command to execute, as a sequence of strings. """
+    install: Iterable[str] = field(default_factory=tuple)
+    """ The install command, as a sequence of strings. """
+    uninstall: Iterable[str] = field(default_factory=tuple)
+    """ The uninstall command, as a sequence of strings. """
 
 
 class PackageManagers(Enum):
@@ -66,17 +68,20 @@ class PackageManagers(Enum):
 
     APK = PackageManager(
         executable='apk',
-        command=('apk', 'add', '--update', '--no-interactive', '--no-cache'),
+        install=('apk', 'add', '--update', '--no-interactive', '--no-cache'),
+        uninstall=('apk', 'del', '--no-interactive'),
     )
 
     APT = PackageManager(
         executable='apt',
-        command=('apt', 'install', '-y'),
+        install=('apt', 'install', '-y'),
+        uninstall=('apt', 'remove', '-y'),
     )
 
     PACMAN = PackageManager(
         executable='pacman',
-        command=('pacman', '-S', '--noconfirm'),
+        install=('pacman', '-S', '--noconfirm'),
+        uninstall=('pacman', '-R', '--noconfirm'),
     )
 
     @classmethod
@@ -90,7 +95,7 @@ class PackageManagers(Enum):
         if not pkg_manager:
             raise ValueError(f'Unknown package manager: {name}')
 
-        return pkg_manager.value.command
+        return pkg_manager.value.install
 
     @classmethod
     def scan(cls) -> Optional["PackageManagers"]:
@@ -221,7 +226,7 @@ class Dependencies:
             yield ' '.join(
                 [
                     *(['sudo'] if wants_sudo else []),
-                    *pkg_manager.value.command,
+                    *pkg_manager.value.install,
                     *sorted(self.packages),  # type: ignore
                 ]
             )

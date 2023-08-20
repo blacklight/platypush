@@ -6,6 +6,7 @@ WORKDIR /var/lib/platypush
 ARG DOCKER_CTX=1
 ENV DOCKER_CTX=1
 
+RUN apk update
 RUN /install/platypush/install/scripts/alpine/install.sh
 RUN cd /install && pip install -U --no-input --no-cache-dir .
 RUN rm -rf /install
