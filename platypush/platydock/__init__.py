@@ -7,7 +7,9 @@ import argparse
 import inspect
 import os
 import pathlib
+import re
 import sys
+import textwrap
 from typing import Iterable
 
 from platypush.config import Config
@@ -34,9 +36,10 @@ class DockerfileGenerator:
         BaseImage.UBUNTU: PackageManagers.APT,
     }
 
-    def __init__(self, cfgfile: str, image: BaseImage) -> None:
+    def __init__(self, cfgfile: str, image: BaseImage, gitref: str) -> None:
         self.cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
         self.image = image
+        self.gitref = gitref
 
     def generate(self) -> str:
         """
@@ -70,7 +73,12 @@ class DockerfileGenerator:
             file_lines = [line.rstrip() for line in f.readlines()]
 
         for line in file_lines:
-            if line.startswith('RUN cd /install '):
+            if re.match(
+                r'RUN /install/platypush/install/scripts/[A-Za-z0-9_-]+/install.sh',
+                line.strip(),
+            ):
+                new_file_lines.append(self._generate_git_clone_command())
+            elif line.startswith('RUN cd /install '):
                 for new_line in deps.before:
                     new_file_lines.append('RUN ' + new_line)
 
@@ -92,6 +100,24 @@ class DockerfileGenerator:
             new_file_lines.append(line)
 
         return '\n'.join(new_file_lines)
+
+    def _generate_git_clone_command(self) -> str:
+        pkg_manager = self._pkg_manager_by_base_image[self.image]
+        install_cmd = ' '.join(pkg_manager.value.install)
+        uninstall_cmd = ' '.join(pkg_manager.value.uninstall)
+        return textwrap.dedent(
+            f"""
+            RUN if [ ! -f "/install/setup.py" ]; then \\
+              echo "Platypush source not found under the current directory, downloading it" && \\
+                  {install_cmd} git && \\
+                  rm -rf /install && \\
+                  git clone https://github.com/BlackLight/platypush.git /install && \\
+                  cd /install && \\
+                  git checkout {self.gitref} && \\
+                  {uninstall_cmd} git; \\
+            fi
+            """
+        )
 
     @staticmethod
     def _get_exposed_ports() -> Iterable[int]:
@@ -123,6 +149,7 @@ def main():
     parser.add_argument(
         '-h', '--help', dest='show_usage', action='store_true', help='Show usage'
     )
+
     parser.add_argument(
         'cfgfile',
         type=str,
@@ -130,6 +157,7 @@ def main():
         help='The path to the configuration file. If not specified a minimal '
         'Dockerfile with no extra dependencies will be generated.',
     )
+
     parser.add_argument(
         '--image',
         '-i',
@@ -139,6 +167,18 @@ def main():
         choices=list(BaseImage),
         default=BaseImage.ALPINE,
         help='Base image to use for the Dockerfile.',
+    )
+
+    parser.add_argument(
+        '--ref',
+        '-r',
+        dest='gitref',
+        required=False,
+        type=str,
+        default='master',
+        help='If platydock is not run from a Platypush installation directory, '
+        'it will clone the source via git. You can specify through this '
+        'option which branch, tag or commit hash to use. Defaults to master.',
     )
 
     opts, _ = parser.parse_known_args(sys.argv[1:])
@@ -157,7 +197,10 @@ def main():
             file=sys.stderr,
         )
 
-    dockerfile = DockerfileGenerator(opts.cfgfile, image=opts.image).generate()
+    dockerfile = DockerfileGenerator(
+        opts.cfgfile, image=opts.image, gitref=opts.gitref
+    ).generate()
+
     print(dockerfile)
     return 0
 
