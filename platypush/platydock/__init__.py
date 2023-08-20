@@ -4,7 +4,6 @@ Dockerfile for Platypush starting from a configuration file.
 """
 
 import argparse
-from enum import Enum
 import inspect
 import os
 import pathlib
@@ -12,23 +11,12 @@ import sys
 from typing import Iterable
 
 from platypush.config import Config
-from platypush.utils.manifest import Dependencies, InstallContext, PackageManagers
-
-
-class BaseImage(Enum):
-    """
-    Supported base images for Dockerfiles.
-    """
-
-    ALPINE = 'alpine'
-    DEBIAN = 'debian'
-    UBUNTU = 'ubuntu'
-
-    def __str__(self) -> str:
-        """
-        Explicit __str__ override for argparse purposes.
-        """
-        return self.value
+from platypush.utils.manifest import (
+    BaseImage,
+    Dependencies,
+    InstallContext,
+    PackageManagers,
+)
 
 
 # pylint: disable=too-few-public-methods
@@ -67,6 +55,7 @@ class DockerfileGenerator:
             self.cfgfile,
             pkg_manager=pkg_manager,
             install_context=InstallContext.DOCKER,
+            base_image=self.image,
         )
 
         is_after_expose_cmd = False
@@ -135,7 +124,11 @@ def main():
         '-h', '--help', dest='show_usage', action='store_true', help='Show usage'
     )
     parser.add_argument(
-        'cfgfile', type=str, nargs='?', help='The path to the configuration file.'
+        'cfgfile',
+        type=str,
+        nargs='?',
+        help='The path to the configuration file. If not specified a minimal '
+        'Dockerfile with no extra dependencies will be generated.',
     )
     parser.add_argument(
         '--image',
@@ -154,11 +147,15 @@ def main():
         return 0
 
     if not opts.cfgfile:
+        opts.cfgfile = os.path.join(
+            str(pathlib.Path(inspect.getfile(Config)).parent),
+            'config.auto.yaml',
+        )
+
         print(
-            f'Please specify a configuration file.\nRun {sys.argv[0]} --help to get the available options.',
+            f'No configuration file specified. Using {opts.cfgfile}.',
             file=sys.stderr,
         )
-        return 1
 
     dockerfile = DockerfileGenerator(opts.cfgfile, image=opts.image).generate()
     print(dockerfile)

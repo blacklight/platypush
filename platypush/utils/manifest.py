@@ -31,6 +31,22 @@ _available_package_manager = None
 logger = logging.getLogger(__name__)
 
 
+class BaseImage(Enum):
+    """
+    Supported base images for Dockerfiles.
+    """
+
+    ALPINE = 'alpine'
+    DEBIAN = 'debian'
+    UBUNTU = 'ubuntu'
+
+    def __str__(self) -> str:
+        """
+        Explicit __str__ override for argparse purposes.
+        """
+        return self.value
+
+
 @dataclass
 class PackageManager:
     """
@@ -55,7 +71,7 @@ class PackageManagers(Enum):
 
     APT = PackageManager(
         executable='apt',
-        command=('DEBIAN_FRONTEND=noninteractive', 'apt', 'install', '-y'),
+        command=('apt', 'install', '-y'),
     )
 
     PACMAN = PackageManager(
@@ -142,6 +158,9 @@ class Dependencies:
     pkg_manager: Optional[PackageManagers] = None
     """ Override the default package manager detected on the system. """
     install_context: InstallContext = InstallContext.NONE
+    """ The installation context - Docker, virtual environment or bare metal. """
+    base_image: Optional[BaseImage] = None
+    """ Base image used in case of Docker installations. """
 
     @property
     def _is_venv(self) -> bool:
@@ -154,17 +173,34 @@ class Dependencies:
             self.install_context == InstallContext.VENV or sys.prefix != sys.base_prefix
         )
 
+    @property
+    def _is_docker(self) -> bool:
+        """
+        :return: True if the dependencies scanning logic is running either in a
+            Docker environment.
+        """
+        return (
+            self.install_context == InstallContext.DOCKER
+            or 'DOCKER_CTX' in os.environ
+            or os.path.isfile('/.dockerenv')
+        )
+
     @classmethod
     def from_config(
         cls,
         conf_file: Optional[str] = None,
         pkg_manager: Optional[PackageManagers] = None,
         install_context: InstallContext = InstallContext.NONE,
+        base_image: Optional[BaseImage] = None,
     ) -> "Dependencies":
         """
         Parse the required dependencies from a configuration file.
         """
-        deps = cls(pkg_manager=pkg_manager, install_context=install_context)
+        deps = cls(
+            pkg_manager=pkg_manager,
+            install_context=install_context,
+            base_image=base_image,
+        )
 
         for manifest in Manifests.by_config(conf_file, pkg_manager=pkg_manager):
             deps.before += manifest.install.before
@@ -179,7 +215,7 @@ class Dependencies:
         Generates the package manager commands required to install the given
         dependencies on the system.
         """
-        wants_sudo = self.install_context != InstallContext.DOCKER and os.getuid() != 0
+        wants_sudo = not (self._is_docker or os.getuid() == 0)
         pkg_manager = self.pkg_manager or PackageManagers.scan()
         if self.packages and pkg_manager:
             yield ' '.join(
@@ -196,8 +232,9 @@ class Dependencies:
         the system.
         """
         wants_break_system_packages = not (
-            # Docker installations shouldn't require --break-system-packages in pip
-            self.install_context == InstallContext.DOCKER
+            # Docker installations shouldn't require --break-system-packages in
+            # pip, except for Debian
+            (self._is_docker and self.base_image != BaseImage.DEBIAN)
             # --break-system-packages has been introduced in Python 3.10
             or sys.version_info < (3, 11)
             # If we're in a virtual environment then we don't need

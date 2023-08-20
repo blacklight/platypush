@@ -1,8 +1,12 @@
 FROM alpine
+
 ADD . /install
 WORKDIR /var/lib/platypush
 
-RUN DOCKER_CTX=1 /install/platypush/install/scripts/alpine/install.sh
+ARG DOCKER_CTX=1
+ENV DOCKER_CTX=1
+
+RUN /install/platypush/install/scripts/alpine/install.sh
 RUN cd /install && pip install -U --no-input --no-cache-dir .
 RUN rm -rf /install
 
@@ -11,4 +15,7 @@ EXPOSE 8008
 VOLUME /etc/platypush
 VOLUME /var/lib/platypush
 
-CMD /run.sh
+CMD platypush \
+  --start-redis \
+  --config /etc/platypush/config.yaml \
+  --workdir /var/lib/platypush
