@@ -10,7 +10,7 @@ import pathlib
 import re
 import sys
 import textwrap
-from typing import Iterable
+from typing import Iterable, Sequence
 
 from platypush.config import Config
 from platypush.utils.manifest import (
@@ -70,7 +70,6 @@ class DockerfileGenerator:
         """
         Generate a Dockerfile based on a configuration file.
 
-        :param cfgfile: Path to the configuration file.
         :return: The content of the generated Dockerfile.
         """
         import platypush
@@ -131,6 +130,11 @@ class DockerfileGenerator:
         return '\n'.join(new_file_lines)
 
     def _generate_git_clone_command(self) -> str:
+        """
+        Generates a git clone command in Dockerfile that checks out the repo
+        and the right git reference, if the application sources aren't already
+        available under /install.
+        """
         pkg_manager = self._pkg_manager_by_base_image[self.image]
         install_cmd = ' '.join(pkg_manager.value.install)
         uninstall_cmd = ' '.join(pkg_manager.value.uninstall)
@@ -147,6 +151,73 @@ class DockerfileGenerator:
             fi
             """
         )
+
+    @classmethod
+    def from_cmdline(cls, args: Sequence[str]) -> 'DockerfileGenerator':
+        """
+        Create a DockerfileGenerator instance from command line arguments.
+
+        :param args: Command line arguments.
+        :return: A DockerfileGenerator instance.
+        """
+        parser = argparse.ArgumentParser(
+            prog='platydock',
+            add_help=False,
+            description='Create a Platypush Dockerfile from a config.yaml.',
+        )
+
+        parser.add_argument(
+            '-h', '--help', dest='show_usage', action='store_true', help='Show usage'
+        )
+
+        parser.add_argument(
+            'cfgfile',
+            type=str,
+            nargs='?',
+            help='The path to the configuration file. If not specified a minimal '
+            'Dockerfile with no extra dependencies will be generated.',
+        )
+
+        parser.add_argument(
+            '--image',
+            '-i',
+            dest='image',
+            required=False,
+            type=BaseImage,
+            choices=list(BaseImage),
+            default=BaseImage.ALPINE,
+            help='Base image to use for the Dockerfile.',
+        )
+
+        parser.add_argument(
+            '--ref',
+            '-r',
+            dest='gitref',
+            required=False,
+            type=str,
+            default='master',
+            help='If platydock is not run from a Platypush installation directory, '
+            'it will clone the source via git. You can specify through this '
+            'option which branch, tag or commit hash to use. Defaults to master.',
+        )
+
+        opts, _ = parser.parse_known_args(args)
+        if opts.show_usage:
+            parser.print_help()
+            sys.exit(0)
+
+        if not opts.cfgfile:
+            opts.cfgfile = os.path.join(
+                str(pathlib.Path(inspect.getfile(Config)).parent),
+                'config.auto.yaml',
+            )
+
+            print(
+                f'No configuration file specified. Using {opts.cfgfile}.',
+                file=sys.stderr,
+            )
+
+        return cls(opts.cfgfile, image=opts.image, gitref=opts.gitref)
 
     @staticmethod
     def _get_exposed_ports() -> Iterable[int]:
@@ -169,68 +240,7 @@ def main():
     """
     Generates a Dockerfile based on the configuration file.
     """
-    parser = argparse.ArgumentParser(
-        prog='platydock',
-        add_help=False,
-        description='Create a Platypush Dockerfile from a config.yaml.',
-    )
-
-    parser.add_argument(
-        '-h', '--help', dest='show_usage', action='store_true', help='Show usage'
-    )
-
-    parser.add_argument(
-        'cfgfile',
-        type=str,
-        nargs='?',
-        help='The path to the configuration file. If not specified a minimal '
-        'Dockerfile with no extra dependencies will be generated.',
-    )
-
-    parser.add_argument(
-        '--image',
-        '-i',
-        dest='image',
-        required=False,
-        type=BaseImage,
-        choices=list(BaseImage),
-        default=BaseImage.ALPINE,
-        help='Base image to use for the Dockerfile.',
-    )
-
-    parser.add_argument(
-        '--ref',
-        '-r',
-        dest='gitref',
-        required=False,
-        type=str,
-        default='master',
-        help='If platydock is not run from a Platypush installation directory, '
-        'it will clone the source via git. You can specify through this '
-        'option which branch, tag or commit hash to use. Defaults to master.',
-    )
-
-    opts, _ = parser.parse_known_args(sys.argv[1:])
-    if opts.show_usage:
-        parser.print_help()
-        return 0
-
-    if not opts.cfgfile:
-        opts.cfgfile = os.path.join(
-            str(pathlib.Path(inspect.getfile(Config)).parent),
-            'config.auto.yaml',
-        )
-
-        print(
-            f'No configuration file specified. Using {opts.cfgfile}.',
-            file=sys.stderr,
-        )
-
-    dockerfile = DockerfileGenerator(
-        opts.cfgfile, image=opts.image, gitref=opts.gitref
-    ).generate()
-
-    print(dockerfile)
+    print(DockerfileGenerator.from_cmdline(sys.argv[1:]).generate())
     return 0
 
 
