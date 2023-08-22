@@ -49,9 +49,9 @@ setup(
         'console_scripts': [
             'platypush=platypush:main',
             'platydock=platypush.platydock:main',
+            'platyvenv=platypush.platyvenv:main',
         ],
     },
-    scripts=['bin/platyvenv'],
     long_description=readfile('README.md'),
     long_description_content_type='text/markdown',
     classifiers=[
