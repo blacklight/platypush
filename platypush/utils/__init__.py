@@ -646,4 +646,13 @@ def get_remaining_timeout(
     return cls(max(0, timeout - (time.time() - start)))
 
 
+def get_src_root() -> str:
+    """
+    :return: The root source folder of the application.
+    """
+    import platypush
+
+    return os.path.dirname(inspect.getfile(platypush))
+
+
 # vim:sw=4:ts=4:et:
