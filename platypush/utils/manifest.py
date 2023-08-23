@@ -331,10 +331,14 @@ class Dependencies:
                 ]
             )
 
-    def to_pip_install_commands(self) -> Generator[str, None, None]:
+    def to_pip_install_commands(self, full_command=True) -> Generator[str, None, None]:
         """
         Generates the pip commands required to install the given dependencies on
         the system.
+
+        :param full_command: Whether to return the full pip command to execute
+            (as a single string) or the list of packages that will be installed
+            through another script.
         """
         wants_break_system_packages = not (
             # Docker installations shouldn't require --break-system-packages in
@@ -348,11 +352,20 @@ class Dependencies:
         )
 
         if self.pip:
-            yield (
-                'pip install -U --no-input --no-cache-dir '
-                + ('--break-system-packages ' if wants_break_system_packages else '')
-                + ' '.join(sorted(self.pip))
-            )
+            deps = sorted(self.pip)
+            if full_command:
+                yield (
+                    'pip install -U --no-input --no-cache-dir '
+                    + (
+                        '--break-system-packages '
+                        if wants_break_system_packages
+                        else ''
+                    )
+                    + ' '.join(deps)
+                )
+            else:
+                for dep in deps:
+                    yield dep
 
     def to_install_commands(self) -> Generator[str, None, None]:
         """
@@ -530,7 +543,6 @@ class Manifests:
         Get all the manifest objects associated to the extensions declared in a
         given configuration file.
         """
-        import platypush
         from platypush.config import Config
 
         conf_args = []
@@ -538,7 +550,7 @@ class Manifests:
             conf_args.append(conf_file)
 
         Config.init(*conf_args)
-        app_dir = os.path.dirname(inspect.getfile(platypush))
+        app_dir = get_src_root()
 
         for name in Config.get_backends().keys():
             yield Manifest.from_file(
