@@ -312,6 +312,7 @@ class Dependencies:
         Generates the package manager commands required to install the given
         dependencies on the system.
         """
+
         wants_sudo = not (self._is_docker or os.getuid() == 0)
         pkg_manager = self.pkg_manager or PackageManagers.scan()
         if self.packages and pkg_manager:
@@ -319,7 +320,14 @@ class Dependencies:
                 [
                     *(['sudo'] if wants_sudo else []),
                     *pkg_manager.value.install,
-                    *sorted(self.packages),  # type: ignore
+                    *sorted(
+                        pkg
+                        for pkg in self.packages  # type: ignore
+                        if not (
+                            self.install_context == InstallContext.VENV
+                            and self._is_python_pkg(pkg)
+                        )
+                    ),
                 ]
             )
 
