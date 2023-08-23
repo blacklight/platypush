@@ -26,6 +26,7 @@ from typing_extensions import override
 import yaml
 
 from platypush.message.event import Event
+from platypush.utils import get_src_root
 
 _available_package_manager = None
 logger = logging.getLogger(__name__)
@@ -197,6 +198,81 @@ class Dependencies:
             or 'DOCKER_CTX' in os.environ
             or os.path.isfile('/.dockerenv')
         )
+
+    @property
+    def _wants_sudo(self) -> bool:
+        """
+        :return: True if the system dependencies should be installed with sudo.
+        """
+        return not (self._is_docker or os.getuid() == 0)
+
+    @staticmethod
+    def _get_requirements_dir() -> str:
+        """
+        :return: The root folder for the base installation requirements.
+        """
+        return os.path.join(get_src_root(), 'install', 'requirements')
+
+    @classmethod
+    def _parse_requirements_file(
+        cls,
+        requirements_file: str,
+        install_context: InstallContext = InstallContext.NONE,
+    ) -> Iterable[str]:
+        """
+        :param requirements_file: The path to the requirements file.
+        :return: The list of requirements to install.
+        """
+        with open(requirements_file, 'r') as f:
+            return {
+                line.strip()
+                for line in f
+                if not (
+                    not line.strip()
+                    or line.strip().startswith('#')
+                    # Virtual environments will install all the Python
+                    # dependencies via pip, so we should skip them here
+                    or (
+                        install_context == InstallContext.VENV
+                        and cls._is_python_pkg(line.strip())
+                    )
+                )
+            }
+
+    @classmethod
+    def _get_base_system_dependencies(
+        cls,
+        pkg_manager: Optional[PackageManagers] = None,
+        install_context: InstallContext = InstallContext.NONE,
+    ) -> Iterable[str]:
+        """
+        :return: The base system dependencies that should be installed on the
+            system.
+        """
+
+        # Docker images will install the base packages through their own
+        # dedicated shell script, so don't report their base system
+        # requirements here.
+        if not (pkg_manager and install_context != InstallContext.DOCKER):
+            return set()
+
+        return cls._parse_requirements_file(
+            os.path.join(
+                cls._get_requirements_dir(), pkg_manager.value.default_os + '.txt'
+            ),
+            install_context,
+        )
+
+    @staticmethod
+    def _is_python_pkg(pkg: str) -> bool:
+        """
+        Utility function that returns True if a given package is a Python
+        system package. These should be skipped during a virtual
+        environment installation, as the virtual environment will be
+        installed via pip.
+        """
+        tokens = pkg.split('-')
+        return len(tokens) > 1 and tokens[0] in {'py3', 'python3', 'python'}
 
     @classmethod
     def from_config(
