@@ -4,17 +4,19 @@ virtual environment for Platypush starting from a configuration file.
 """
 
 import argparse
+from contextlib import contextmanager
 import inspect
 import os
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
-from typing import Sequence
+import tempfile
+from typing import Generator, Sequence
 import venv
 
 from platypush.config import Config
-from platypush.utils import get_src_root
 from platypush.utils.manifest import (
     Dependencies,
     InstallContext,
@@ -58,6 +60,43 @@ class VenvBuilder:
             print(f'Installing system packages: {cmd}')
             subprocess.call(re.split(r'\s+', cmd.strip()))
 
+    @contextmanager
+    def _prepare_src_dir(self) -> Generator[str, None, None]:
+        """
+        Prepare the source directory used to install the virtual enviornment.
+
+        If platyvenv is launched from a local checkout of the Platypush source
+        code, then that checkout will be used.
+
+        Otherwise, the source directory will be cloned from git into a
+        temporary folder.
+        """
+        setup_py_path = os.path.join(os.getcwd(), 'setup.py')
+        if os.path.isfile(setup_py_path):
+            print('Using local checkout of the Platypush source code')
+            yield os.getcwd()
+        else:
+            checkout_dir = tempfile.mkdtemp(prefix='platypush-', suffix='.git')
+            print(f'Cloning Platypush source code from git into {checkout_dir}')
+            subprocess.call(
+                [
+                    'git',
+                    'clone',
+                    '--recursive',
+                    'https://github.com/BlackLight/platypush.git',
+                    checkout_dir,
+                ]
+            )
+
+            pwd = os.getcwd()
+            os.chdir(checkout_dir)
+            subprocess.call(['git', 'checkout', self.gitref])
+            yield checkout_dir
+
+            os.chdir(pwd)
+            print(f'Cleaning up {checkout_dir}')
+            shutil.rmtree(checkout_dir, ignore_errors=True)
+
     def _prepare_venv(self) -> None:
         """
         Installs the virtual environment under the configured output_dir.
@@ -75,14 +114,7 @@ class VenvBuilder:
             f'Installing base Python dependencies under {self.output_dir}...',
         )
 
-        subprocess.call([*self._pip_cmd, 'pip'])
-        pwd = os.getcwd()
-
-        try:
-            os.chdir(os.path.dirname(get_src_root()))
-            subprocess.call([*self._pip_cmd, '.'])
-        finally:
-            os.chdir(pwd)
+        subprocess.call([*self._pip_cmd, 'pip', '.'])
 
     def _install_extra_pip_packages(self, deps: Dependencies):
         """
@@ -111,8 +143,15 @@ class VenvBuilder:
         )
 
         self._install_system_packages(deps)
-        self._prepare_venv()
+
+        with self._prepare_src_dir():
+            self._prepare_venv()
+
         self._install_extra_pip_packages(deps)
+        print(
+            f'\nVirtual environment created at {self.output_dir}.\n'
+            f'Run source {os.path.join(self.output_dir, "bin", "activate")} to activate it.'
+        )
 
     @classmethod
     def from_cmdline(cls, args: Sequence[str]) -> 'VenvBuilder':
