@@ -353,21 +353,27 @@ class Dependencies:
 
         wants_sudo = not (self._is_docker or os.getuid() == 0)
         pkg_manager = self.pkg_manager or PackageManagers.scan()
+
         if self.packages and pkg_manager:
-            yield ' '.join(
-                [
-                    *(['sudo'] if wants_sudo else []),
-                    *pkg_manager.value.install,
-                    *sorted(
-                        pkg
-                        for pkg in self.packages  # type: ignore
-                        if not (
-                            self.install_context == InstallContext.VENV
-                            and self._is_python_pkg(pkg)
-                        )
-                    ),
-                ]
+            installed_packages = pkg_manager.value.get_installed()
+            to_install = sorted(
+                pkg
+                for pkg in self.packages  # type: ignore
+                if pkg not in installed_packages
+                and not (
+                    self.install_context == InstallContext.VENV
+                    and self._is_python_pkg(pkg)
+                )
             )
+
+            if to_install:
+                yield ' '.join(
+                    [
+                        *(['sudo'] if wants_sudo else []),
+                        *pkg_manager.value.install,
+                        *to_install,
+                    ]
+                )
 
     def to_pip_install_commands(self, full_command=True) -> Generator[str, None, None]:
         """
