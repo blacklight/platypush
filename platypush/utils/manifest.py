@@ -285,7 +285,15 @@ class Dependencies:
         """
         Parse the required dependencies from a configuration file.
         """
+        if not pkg_manager:
+            pkg_manager = PackageManagers.scan()
+
+        base_system_deps = cls._get_base_system_dependencies(
+            pkg_manager=pkg_manager, install_context=install_context
+        )
+
         deps = cls(
+            packages=set(base_system_deps),
             pkg_manager=pkg_manager,
             install_context=install_context,
             base_image=base_image,
