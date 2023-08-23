@@ -7,10 +7,13 @@ import json
 import logging
 import os
 import pathlib
+import re
 import shutil
+import subprocess
 import sys
 
 from typing import (
+    Callable,
     Dict,
     Generator,
     List,
@@ -65,6 +68,8 @@ class PackageManager:
     """ The install command, as a sequence of strings. """
     uninstall: Iterable[str] = field(default_factory=tuple)
     """ The uninstall command, as a sequence of strings. """
+    get_installed: Callable[[], Iterable[str]] = lambda: []
+    """ A function that returns the list of installed packages. """
 
 
 class PackageManagers(Enum):
@@ -77,6 +82,19 @@ class PackageManagers(Enum):
         install=('apk', 'add', '--update', '--no-interactive', '--no-cache'),
         uninstall=('apk', 'del', '--no-interactive'),
         default_os='alpine',
+        get_installed=lambda: {
+            re.sub(r'.*\s*\{(.+?)\}\s*.*', r'\1', line)
+            for line in (
+                line.strip()
+                for line in subprocess.Popen(  # pylint: disable=consider-using-with
+                    ['apk', 'list', '--installed'], stdout=subprocess.PIPE
+                )
+                .communicate()[0]
+                .decode()
+                .split('\n')
+            )
+            if line.strip()
+        },
     )
 
     APT = PackageManager(
@@ -84,6 +102,16 @@ class PackageManagers(Enum):
         install=('apt', 'install', '-y'),
         uninstall=('apt', 'remove', '-y'),
         default_os='debian',
+        get_installed=lambda: {
+            line.strip().split('/')[0]
+            for line in subprocess.Popen(  # pylint: disable=consider-using-with
+                ['apt', 'list', '--installed'], stdout=subprocess.PIPE
+            )
+            .communicate()[0]
+            .decode()
+            .split('\n')
+            if line.strip()
+        },
     )
 
     PACMAN = PackageManager(
@@ -91,6 +119,16 @@ class PackageManagers(Enum):
         install=('pacman', '-S', '--noconfirm', '--needed'),
         uninstall=('pacman', '-R', '--noconfirm'),
         default_os='arch',
+        get_installed=lambda: {
+            line.strip().split(' ')[0]
+            for line in subprocess.Popen(  # pylint: disable=consider-using-with
+                ['pacman', '-Q'], stdout=subprocess.PIPE
+            )
+            .communicate()[0]
+            .decode()
+            .split('\n')
+            if line.strip()
+        },
     )
 
     @classmethod
