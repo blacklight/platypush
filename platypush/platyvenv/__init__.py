@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import textwrap
 from typing import Generator, Sequence
 import venv
 
@@ -131,6 +132,35 @@ class VenvBuilder:
 
         subprocess.call([*self._pip_cmd, *pip_deps])
 
+    def _generate_run_sh(self) -> str:
+        """
+        Generate a ``run.sh`` script to run the application from a newly built
+        virtual environment.
+
+        :return: The location of the generated ``run.sh`` script.
+        """
+        run_sh_path = os.path.join(self.output_dir, 'bin', 'run.sh')
+        with open(run_sh_path, 'w') as run_sh:
+            run_sh.write(
+                textwrap.dedent(
+                    f"""
+                    #!/bin/bash
+
+                    cd {self.output_dir}
+
+                    # Activate the virtual environment
+                    source bin/activate
+
+                    # Run the application with the configuration file passed
+                    # during build
+                    platypush -c {self.cfgfile} $*
+                    """
+                )
+            )
+
+        os.chmod(run_sh_path, 0o750)
+        return run_sh_path
+
     def build(self):
         """
         Build a Dockerfile based on a configuration file.
@@ -148,9 +178,10 @@ class VenvBuilder:
             self._prepare_venv()
 
         self._install_extra_pip_packages(deps)
+        run_sh_path = self._generate_run_sh()
         print(
-            f'\nVirtual environment created at {self.output_dir}.\n'
-            f'Run source {os.path.join(self.output_dir, "bin", "activate")} to activate it.'
+            f'\nVirtual environment created under {self.output_dir}.\n'
+            f'You can run the application through the {run_sh_path} script.\n'
         )
 
     @classmethod
