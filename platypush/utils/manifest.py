@@ -20,6 +20,7 @@ from typing import (
     Optional,
     Iterable,
     Mapping,
+    Sequence,
     Set,
     Type,
     Union,
@@ -64,12 +65,46 @@ class PackageManager:
     The default distro whose configuration we should use if this package
     manager is detected.
     """
-    install: Iterable[str] = field(default_factory=tuple)
+    install: Sequence[str] = field(default_factory=tuple)
     """ The install command, as a sequence of strings. """
-    uninstall: Iterable[str] = field(default_factory=tuple)
+    uninstall: Sequence[str] = field(default_factory=tuple)
     """ The uninstall command, as a sequence of strings. """
-    get_installed: Callable[[], Iterable[str]] = lambda: []
-    """ A function that returns the list of installed packages. """
+    list: Sequence[str] = field(default_factory=tuple)
+    """ The command to list the installed packages. """
+    parse_list_line: Callable[[str], str] = field(default_factory=lambda: lambda s: s)
+    """
+    Internal package-manager dependent function that parses the base package
+    name from a line returned by the list command.
+    """
+
+    def _get_installed(self) -> Sequence[str]:
+        """
+        :return: The install context-aware list of installed packages.
+            It should only used within the context of :meth:`.get_installed`.
+        """
+
+        if os.environ.get('DOCKER_CTX'):
+            # If we're running in a Docker build context, don't run the package
+            # manager to retrieve the list of installed packages, as the host
+            # and guest systems have different environments.
+            return ()
+
+        return tuple(
+            line.strip()
+            for line in subprocess.Popen(  # pylint: disable=consider-using-with
+                self.list, stdout=subprocess.PIPE
+            )
+            .communicate()[0]
+            .decode()
+            .split('\n')
+            if line.strip()
+        )
+
+    def get_installed(self) -> Sequence[str]:
+        """
+        :return: The list of installed packages.
+        """
+        return tuple(self.parse_list_line(line) for line in self._get_installed())
 
 
 class PackageManagers(Enum):
@@ -81,54 +116,27 @@ class PackageManagers(Enum):
         executable='apk',
         install=('apk', 'add', '--update', '--no-interactive', '--no-cache'),
         uninstall=('apk', 'del', '--no-interactive'),
+        list=('apk', 'list', '--installed'),
         default_os='alpine',
-        get_installed=lambda: {
-            re.sub(r'.*\s*\{(.+?)\}\s*.*', r'\1', line)
-            for line in (
-                line.strip()
-                for line in subprocess.Popen(  # pylint: disable=consider-using-with
-                    ['apk', 'list', '--installed'], stdout=subprocess.PIPE
-                )
-                .communicate()[0]
-                .decode()
-                .split('\n')
-            )
-            if line.strip()
-        },
+        parse_list_line=lambda line: re.sub(r'.*\s*\{(.+?)\}\s*.*', r'\1', line),
     )
 
     APT = PackageManager(
         executable='apt',
         install=('apt', 'install', '-y'),
         uninstall=('apt', 'remove', '-y'),
+        list=('apt', 'list', '--installed'),
         default_os='debian',
-        get_installed=lambda: {
-            line.strip().split('/')[0]
-            for line in subprocess.Popen(  # pylint: disable=consider-using-with
-                ['apt', 'list', '--installed'], stdout=subprocess.PIPE
-            )
-            .communicate()[0]
-            .decode()
-            .split('\n')
-            if line.strip()
-        },
+        parse_list_line=lambda line: line.split('/')[0],
     )
 
     PACMAN = PackageManager(
         executable='pacman',
         install=('pacman', '-S', '--noconfirm', '--needed'),
         uninstall=('pacman', '-R', '--noconfirm'),
+        list=('pacman', '-Q'),
         default_os='arch',
-        get_installed=lambda: {
-            line.strip().split(' ')[0]
-            for line in subprocess.Popen(  # pylint: disable=consider-using-with
-                ['pacman', '-Q'], stdout=subprocess.PIPE
-            )
-            .communicate()[0]
-            .decode()
-            .split('\n')
-            if line.strip()
-        },
+        parse_list_line=lambda line: line.split(' ')[0],
     )
 
     @classmethod
@@ -233,7 +241,7 @@ class Dependencies:
         """
         return (
             self.install_context == InstallContext.DOCKER
-            or 'DOCKER_CTX' in os.environ
+            or bool(os.environ.get('DOCKER_CTX'))
             or os.path.isfile('/.dockerenv')
         )
 
