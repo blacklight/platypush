@@ -183,7 +183,6 @@ steps:
     - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).$HEAD"
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
     - export TAG_ARCHIVE="platypush-$VERSION.tar.gz"
-    - export CHECKSUM=$(curl --silent https://git.platypush.tech/platypush/platypush/archive/master.tar.gz | sha512sum | awk '{print $1}')
 
     - echo "--- Preparing environment"
     - mkdir -p ~/.ssh
@@ -208,7 +207,6 @@ steps:
       sed -i 'PKGBUILD' -r \
         -e "s/^pkgver=.*/pkgver=$GIT_VERSION/" \
         -e "s/^pkgrel=.*/pkgrel=1/" \
-        -e "s/^sha512sums=.*/sha512sums=('$CHECKSUM')/"
     - sudo -u build makepkg --printsrcinfo > .SRCINFO
     - export FILES_CHANGED=$(git status --porcelain --untracked-files=no | wc -l)
     - |
