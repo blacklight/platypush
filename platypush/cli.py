@@ -9,7 +9,10 @@ def parse_cmdline(args: Sequence[str]) -> argparse.Namespace:
     """
     Parse command-line arguments from a list of strings.
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        'platypush',
+        description='A general-purpose platform for automation. See https://docs.platypush.tech for more info.',
+    )
 
     parser.add_argument(
         '--config',

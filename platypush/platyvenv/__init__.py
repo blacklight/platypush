@@ -3,11 +3,9 @@ Platyvenv is a helper script that allows you to automatically create a
 virtual environment for Platypush starting from a configuration file.
 """
 
-import argparse
 from contextlib import contextmanager
-import inspect
+import logging
 import os
-import pathlib
 import re
 import shutil
 import subprocess
@@ -17,26 +15,36 @@ import textwrap
 from typing import Generator, Sequence
 import venv
 
+from typing_extensions import override
+
+from platypush.builder import BaseBuilder
 from platypush.config import Config
 from platypush.utils.manifest import (
     Dependencies,
     InstallContext,
 )
 
+logger = logging.getLogger()
 
-# pylint: disable=too-few-public-methods
-class VenvBuilder:
+
+class VenvBuilder(BaseBuilder):
     """
     Build a virtual environment from on a configuration file.
-
-    :param cfgfile: Path to the configuration file.
-    :param image: The base image to use.
     """
 
-    def __init__(self, cfgfile: str, gitref: str, output_dir: str) -> None:
-        self.cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
-        self.output_dir = os.path.abspath(os.path.expanduser(output_dir))
-        self.gitref = gitref
+    def __init__(self, *args, **kwargs) -> None:
+        kwargs['install_context'] = InstallContext.DOCKER
+        super().__init__(*args, **kwargs)
+
+    @override
+    @classmethod
+    def get_name(cls):
+        return "platyvenv"
+
+    @override
+    @classmethod
+    def get_description(cls):
+        return "Build a Platypush virtual environment from a configuration file."
 
     @property
     def _pip_cmd(self) -> Sequence[str]:
@@ -44,7 +52,7 @@ class VenvBuilder:
         :return: The pip install command to use for the selected environment.
         """
         return (
-            os.path.join(self.output_dir, 'bin', 'python'),
+            os.path.join(self.output, 'bin', 'python'),
             '-m',
             'pip',
             'install',
@@ -58,7 +66,7 @@ class VenvBuilder:
         Install the required system packages.
         """
         for cmd in deps.to_pkg_install_commands():
-            print(f'Installing system packages: {cmd}')
+            logger.info('Installing system packages: %s', cmd)
             subprocess.call(re.split(r'\s+', cmd.strip()))
 
     @contextmanager
@@ -74,11 +82,11 @@ class VenvBuilder:
         """
         setup_py_path = os.path.join(os.getcwd(), 'setup.py')
         if os.path.isfile(setup_py_path):
-            print('Using local checkout of the Platypush source code')
+            logger.info('Using local checkout of the Platypush source code')
             yield os.getcwd()
         else:
             checkout_dir = tempfile.mkdtemp(prefix='platypush-', suffix='.git')
-            print(f'Cloning Platypush source code from git into {checkout_dir}')
+            logger.info('Cloning Platypush source code from git into %s', checkout_dir)
             subprocess.call(
                 [
                     'git',
@@ -95,71 +103,41 @@ class VenvBuilder:
             yield checkout_dir
 
             os.chdir(pwd)
-            print(f'Cleaning up {checkout_dir}')
+            logger.info('Cleaning up %s', checkout_dir)
             shutil.rmtree(checkout_dir, ignore_errors=True)
 
     def _prepare_venv(self) -> None:
         """
-        Installs the virtual environment under the configured output_dir.
+        Install the virtual environment under the configured output.
         """
-        print(f'Creating virtual environment under {self.output_dir}...')
+        logger.info('Creating virtual environment under %s...', self.output)
 
         venv.create(
-            self.output_dir,
+            self.output,
             symlinks=True,
             with_pip=True,
             upgrade_deps=True,
         )
 
-        print(
-            f'Installing base Python dependencies under {self.output_dir}...',
-        )
-
+        logger.info('Installing base Python dependencies under %s...', self.output)
         subprocess.call([*self._pip_cmd, 'pip', '.'])
 
     def _install_extra_pip_packages(self, deps: Dependencies):
         """
-        Install the extra pip dependencies parsed through the
+        Install the extra pip dependencies inferred from the configured
+        extensions.
         """
         pip_deps = list(deps.to_pip_install_commands(full_command=False))
         if not pip_deps:
             return
 
-        print(
-            f'Installing extra pip dependencies under {self.output_dir}: '
-            + ' '.join(pip_deps)
+        logger.info(
+            'Installing extra pip dependencies under %s: %s',
+            self.output,
+            ' '.join(pip_deps),
         )
 
         subprocess.call([*self._pip_cmd, *pip_deps])
-
-    def _generate_run_sh(self) -> str:
-        """
-        Generate a ``run.sh`` script to run the application from a newly built
-        virtual environment.
-
-        :return: The location of the generated ``run.sh`` script.
-        """
-        run_sh_path = os.path.join(self.output_dir, 'bin', 'run.sh')
-        with open(run_sh_path, 'w') as run_sh:
-            run_sh.write(
-                textwrap.dedent(
-                    f"""
-                    #!/bin/bash
-
-                    cd {self.output_dir}
-
-                    # Activate the virtual environment
-                    source bin/activate
-
-                    # Run the application with the configuration file passed
-                    # during build
-                    platypush -c {self.cfgfile} $*
-                    """
-                )
-            )
-
-        os.chmod(run_sh_path, 0o750)
-        return run_sh_path
 
     def build(self):
         """
@@ -178,78 +156,26 @@ class VenvBuilder:
             self._prepare_venv()
 
         self._install_extra_pip_packages(deps)
-        run_sh_path = self._generate_run_sh()
-        print(
-            f'\nVirtual environment created under {self.output_dir}.\n'
-            f'You can run the application through the {run_sh_path} script.\n'
-        )
+        self._print_instructions(
+            textwrap.dedent(
+                f"""
+                Virtual environment created under {self.output}.
+                To run the application:
 
-    @classmethod
-    def from_cmdline(cls, args: Sequence[str]) -> 'VenvBuilder':
-        """
-        Create a DockerfileGenerator instance from command line arguments.
+                    source {self.output}/bin/activate
+                    platypush -c {self.cfgfile} {
+                        "--device_id " + self.device_id if self.device_id else ""
+                    }
 
-        :param args: Command line arguments.
-        :return: A DockerfileGenerator instance.
-        """
-        parser = argparse.ArgumentParser(
-            prog='platyvenv',
-            add_help=False,
-            description='Create a Platypush virtual environment from a config.yaml.',
-        )
+                Platypush requires a Redis instance. If you don't want to use a
+                stand-alone server, you can pass the --start-redis option to
+                the executable (optionally with --redis-port).
 
-        parser.add_argument(
-            '-h', '--help', dest='show_usage', action='store_true', help='Show usage'
-        )
-
-        parser.add_argument(
-            'cfgfile',
-            type=str,
-            nargs='?',
-            help='The path to the configuration file. If not specified a minimal '
-            'virtual environment only with the base dependencies will be '
-            'generated.',
-        )
-
-        parser.add_argument(
-            '-o',
-            '--output',
-            dest='output_dir',
-            type=str,
-            required=False,
-            default='venv',
-            help='Target directory for the virtual environment (default: ./venv)',
-        )
-
-        parser.add_argument(
-            '--ref',
-            '-r',
-            dest='gitref',
-            required=False,
-            type=str,
-            default='master',
-            help='If platyvenv is not run from a Platypush installation directory, '
-            'it will clone the sources via git. You can specify through this '
-            'option which branch, tag or commit hash to use. Defaults to master.',
-        )
-
-        opts, _ = parser.parse_known_args(args)
-        if opts.show_usage:
-            parser.print_help()
-            sys.exit(0)
-
-        if not opts.cfgfile:
-            opts.cfgfile = os.path.join(
-                str(pathlib.Path(inspect.getfile(Config)).parent),
-                'config.auto.yaml',
+                Platypush will then start its own local instance and it will
+                terminate it once the application is stopped.
+                """
             )
-
-            print(
-                f'No configuration file specified. Using {opts.cfgfile}.',
-                file=sys.stderr,
-            )
-
-        return cls(opts.cfgfile, gitref=opts.gitref, output_dir=opts.output_dir)
+        )
 
 
 def main():
@@ -257,6 +183,7 @@ def main():
     Generates a virtual environment based on the configuration file.
     """
     VenvBuilder.from_cmdline(sys.argv[1:]).build()
+    return 0
 
 
 if __name__ == '__main__':
