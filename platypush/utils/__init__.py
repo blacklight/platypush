@@ -655,4 +655,11 @@ def get_src_root() -> str:
     return os.path.dirname(inspect.getfile(platypush))
 
 
+def is_root() -> bool:
+    """
+    :return: True if the current user is root/administrator.
+    """
+    return os.getuid() == 0
+
+
 # vim:sw=4:ts=4:et:
