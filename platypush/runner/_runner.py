@@ -1,4 +1,6 @@
 import logging
+import os
+import signal
 import sys
 from threading import Thread
 from typing import Optional
@@ -23,6 +25,7 @@ class ApplicationRunner:
         logging.basicConfig(level=logging.INFO, stream=sys.stdout)
         self.logger = logging.getLogger('platypush:runner')
         self._proc: Optional[ApplicationProcess] = None
+        self._stream: Optional[CommandStream] = None
 
     def _listen(self, stream: CommandStream):
         """
@@ -48,12 +51,16 @@ class ApplicationRunner:
         if parsed_args.version:
             self._print_version()
 
+        signal.signal(signal.SIGTERM, lambda *_: self.stop())
+
         while True:
-            with CommandStream(parsed_args.ctrl_sock) as stream, ApplicationProcess(
+            with CommandStream(
+                parsed_args.ctrl_sock
+            ) as self._stream, ApplicationProcess(
                 *args, pidfile=parsed_args.pidfile, timeout=self._default_timeout
             ) as self._proc:
                 try:
-                    self._listen(stream)
+                    self._listen(self._stream)
                 except KeyboardInterrupt:
                     pass
 
@@ -62,6 +69,8 @@ class ApplicationRunner:
                     continue
 
                 break
+
+        self._stream = None
 
     def run(self, *args: str) -> None:
         try:
@@ -72,6 +81,10 @@ class ApplicationRunner:
     def stop(self):
         if self._proc is not None:
             self._proc.stop()
+
+        if self._stream and self._stream.pid:
+            os.kill(self._stream.pid, signal.SIGKILL)
+            self._stream = None
 
     def restart(self):
         if self._proc is not None:
