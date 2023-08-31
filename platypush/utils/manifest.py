@@ -30,7 +30,7 @@ from typing_extensions import override
 import yaml
 
 from platypush.message.event import Event
-from platypush.utils import get_src_root
+from platypush.utils import get_src_root, is_root
 
 _available_package_manager = None
 logger = logging.getLogger(__name__)
@@ -250,7 +250,7 @@ class Dependencies:
         """
         :return: True if the system dependencies should be installed with sudo.
         """
-        return not (self._is_docker or os.getuid() == 0)
+        return not (self._is_docker or is_root())
 
     @staticmethod
     def _get_requirements_dir() -> str:
@@ -359,7 +359,7 @@ class Dependencies:
         dependencies on the system.
         """
 
-        wants_sudo = not (self._is_docker or os.getuid() == 0)
+        wants_sudo = not (self._is_docker or is_root())
         pkg_manager = self.pkg_manager or PackageManagers.scan()
 
         if self.packages and pkg_manager:
