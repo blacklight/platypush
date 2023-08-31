@@ -30,7 +30,7 @@ steps:
     - git config --global --add safe.directory $PWD
     - git remote add github git@github.com:/BlackLight/platypush.git
     - git pull --rebase github master
-    - git push --all -v github
+    - git push -f --all -v github
 
 - name: docs
   image: alpine
