@@ -34,7 +34,7 @@ class CommandStream(ControllableProcess):
         super().__init__(name='platypush:cmd:stream')
         self.path = os.path.abspath(os.path.expanduser(path or self._default_sock_path))
         self._sock: Optional[socket.socket] = None
-        self._cmd_queue: Queue["Command"] = Queue()
+        self._cmd_queue = Queue()
         self._close_lock = RLock()
 
     def reset(self):
@@ -71,16 +71,21 @@ class CommandStream(ControllableProcess):
     def __exit__(self, *_, **__):
         with self._close_lock:
             self.terminate()
+            self.join(1)
 
             try:
                 self.close()
             except Exception as e:
-                self.logger.warning(str(e))
+                self.logger.warning(
+                    '%s on command stream close: %s', type(e).__name__, str(e)
+                )
 
             try:
                 self.kill()
             except Exception as e:
-                self.logger.warning(str(e))
+                self.logger.debug(
+                    '%s on command stream kill: %s', type(e).__name__, str(e)
+                )
 
     def _serve(self, sock: socket.socket):
         """
