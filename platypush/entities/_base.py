@@ -24,10 +24,12 @@ from sqlalchemy import (
     UniqueConstraint,
     inspect as schema_inspect,
 )
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import ColumnProperty, backref, relationship
 from sqlalchemy.orm.exc import ObjectDeletedError
 
 import platypush
+from platypush.config import Config
 from platypush.common.db import Base
 from platypush.message import JSONAble, Message
 
@@ -303,6 +305,24 @@ def _discover_entity_types():
                 entities_registry[obj] = {}  # type: ignore
 
 
+def _get_db():
+    """
+    Utility method to get the db plugin.
+    """
+    from platypush.context import get_plugin
+
+    db = get_plugin('db')
+    assert db
+    return db
+
+
+def _get_db_engine() -> Engine:
+    """
+    Utility method to get the db engine.
+    """
+    return _get_db().get_engine()
+
+
 def get_entities_registry() -> EntityRegistryType:
     """
     :returns: A copy of the entities registry.
@@ -314,13 +334,9 @@ def init_entities_db():
     """
     Initializes the entities database.
     """
-    from platypush.context import get_plugin
-
     run_db_migrations()
     _discover_entity_types()
-    db = get_plugin('db')
-    assert db
-    db.create_all(db.get_engine(), Base)
+    _get_db().create_all(_get_db_engine(), Base)
 
 
 def run_db_migrations():
@@ -339,6 +355,10 @@ def run_db_migrations():
             'alembic',
             '-c',
             alembic_ini,
+            '-x',
+            f'CFGFILE={Config.get_file()}',
+            '-x',
+            f'DBNAME={_get_db_engine().url}',
             'upgrade',
             'head',
         ],

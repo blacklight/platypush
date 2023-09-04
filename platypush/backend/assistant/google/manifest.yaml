@@ -10,7 +10,7 @@ manifest:
       times out
     platypush.message.event.assistant.MicMutedEvent: when the microphone is muted.
     platypush.message.event.assistant.MicUnmutedEvent: when the microphone is un-muted.
-    platypush.message.event.assistant.NoResponse: when a conversation returned no
+    platypush.message.event.assistant.NoResponseEvent: when a conversation returned no
       response
     platypush.message.event.assistant.ResponseEvent: when the assistant is speaking
       a response

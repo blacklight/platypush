@@ -32,7 +32,7 @@ class ApplicationProcess(ControllableProcess):
         self.logger.info('Starting application...')
 
         with subprocess.Popen(
-            ['python', '-m', 'platypush.app', *self.args],
+            [sys.executable, '-m', 'platypush.app', *self.args],
             stdin=sys.stdin,
             stdout=sys.stdout,
             stderr=sys.stderr,

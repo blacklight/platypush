@@ -18,7 +18,7 @@ manifest:
     pacman:
       - sudo
       - cargo
-    exec:
+    after:
       - sudo cargo install librespot
   package: platypush.backend.music.spotify
   type: backend

@@ -1,6 +1,6 @@
 manifest:
   events:
-    platypush.message.event.sensor import SensorDataChangeEvent:
+    - platypush.message.event.sensor.SensorDataChangeEvent
 
   install:
     pip:

@@ -1,6 +1,6 @@
 manifest:
   events:
-    - platypush.message.event.sensor.SensorDataChangeEvent:
+    - platypush.message.event.sensor.SensorDataChangeEvent
   install:
     apk:
       - py3-pyserial

@@ -9,7 +9,10 @@ def parse_cmdline(args: Sequence[str]) -> argparse.Namespace:
     """
     Parse command-line arguments from a list of strings.
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        'platypush',
+        description='A general-purpose platform for automation. See https://docs.platypush.tech for more info.',
+    )
 
     parser.add_argument(
         '--config',
@@ -27,6 +30,17 @@ def parse_cmdline(args: Sequence[str]) -> argparse.Namespace:
         required=False,
         default=None,
         help='Custom working directory to be used for the application',
+    )
+
+    parser.add_argument(
+        '--device-id',
+        '-d',
+        dest='device_id',
+        required=False,
+        default=None,
+        help='Override the device ID used to identify this instance. If not '
+        'passed here, it is inferred from the configuration (device_id field).'
+        'If not present there either, it is inferred from the hostname.',
     )
 
     parser.add_argument(

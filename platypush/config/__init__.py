@@ -20,6 +20,7 @@ from platypush.utils import (
     is_functional_procedure,
     is_functional_hook,
     is_functional_cron,
+    is_root,
 )
 
 
@@ -65,13 +66,14 @@ class Config:
 
     _included_files: Set[str] = set()
 
-    def __init__(self, cfgfile: Optional[str] = None):
+    def __init__(self, cfgfile: Optional[str] = None, workdir: Optional[str] = None):
         """
         Constructor. Always use the class as a singleton (i.e. through
         Config.init), you won't probably need to call the constructor directly
 
         :param cfgfile: Config file path (default: retrieve the first available
             location in _cfgfile_locations).
+        :param workdir: Overrides the default working directory.
         """
 
         self.backends = {}
@@ -83,13 +85,13 @@ class Config:
         self.dashboards = {}
         self._plugin_manifests = {}
         self._backend_manifests = {}
-        self._cfgfile = ''
+        self.config_file = ''
 
         self._init_cfgfile(cfgfile)
-        self._config = self._read_config_file(self._cfgfile)
+        self._config = self._read_config_file(self.config_file)
 
         self._init_secrets()
-        self._init_dirs()
+        self._init_dirs(workdir=workdir)
         self._init_db()
         self._init_logging()
         self._init_device_id()
@@ -104,10 +106,10 @@ class Config:
         if cfgfile is None:
             cfgfile = self._get_default_cfgfile()
 
-        if cfgfile is None:
+        if cfgfile is None or not os.path.exists(cfgfile):
             cfgfile = self._create_default_config()
 
-        self._cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
+        self.config_file = os.path.abspath(os.path.expanduser(cfgfile))
 
     def _init_logging(self):
         logging_config = {
@@ -163,21 +165,26 @@ class Config:
             for k, v in self._config['environment'].items():
                 os.environ[k] = str(v)
 
-    def _init_dirs(self):
-        if 'workdir' not in self._config:
+    def _init_dirs(self, workdir: Optional[str] = None):
+        if workdir:
+            self._config['workdir'] = workdir
+        if not self._config.get('workdir'):
             self._config['workdir'] = self._workdir_location
-        self._config['workdir'] = os.path.expanduser(self._config['workdir'])
-        os.makedirs(self._config['workdir'], exist_ok=True)
+
+        self._config['workdir'] = os.path.expanduser(
+            os.path.expanduser(self._config['workdir'])
+        )
+        pathlib.Path(self._config['workdir']).mkdir(parents=True, exist_ok=True)
 
         if 'scripts_dir' not in self._config:
             self._config['scripts_dir'] = os.path.join(
-                os.path.dirname(self._cfgfile), 'scripts'
+                os.path.dirname(self.config_file), 'scripts'
             )
         os.makedirs(self._config['scripts_dir'], mode=0o755, exist_ok=True)
 
         if 'dashboards_dir' not in self._config:
             self._config['dashboards_dir'] = os.path.join(
-                os.path.dirname(self._cfgfile), 'dashboards'
+                os.path.dirname(self.config_file), 'dashboards'
             )
         os.makedirs(self._config['dashboards_dir'], mode=0o755, exist_ok=True)
 
@@ -206,17 +213,29 @@ class Config:
 
     def _create_default_config(self):
         cfg_mod_dir = os.path.dirname(os.path.abspath(__file__))
-        cfgfile = self._cfgfile_locations[0]
+        # Use /etc/platypush/config.yaml if the user is running as root,
+        # otherwise ~/.config/platypush/config.yaml
+        cfgfile = (
+            (
+                os.path.join(os.environ['XDG_CONFIG_HOME'], 'config.yaml')
+                if os.environ.get('XDG_CONFIG_HOME')
+                else os.path.join(
+                    os.path.expanduser('~'), '.config', 'platypush', 'config.yaml'
+                )
+            )
+            if not is_root()
+            else os.path.join(os.sep, 'etc', 'platypush', 'config.yaml')
+        )
+
         cfgdir = pathlib.Path(cfgfile).parent
         cfgdir.mkdir(parents=True, exist_ok=True)
-        for cfgfile in glob.glob(os.path.join(cfg_mod_dir, 'config*.yaml')):
-            shutil.copy(cfgfile, str(cfgdir))
+        for cf in glob.glob(os.path.join(cfg_mod_dir, 'config*.yaml')):
+            shutil.copy(cf, str(cfgdir))
 
         return cfgfile
 
     def _read_config_file(self, cfgfile):
         cfgfile_dir = os.path.dirname(os.path.abspath(os.path.expanduser(cfgfile)))
-
         config = {}
 
         try:
@@ -397,14 +416,17 @@ class Config:
 
     @classmethod
     def _get_instance(
-        cls, cfgfile: Optional[str] = None, force_reload: bool = False
+        cls,
+        cfgfile: Optional[str] = None,
+        workdir: Optional[str] = None,
+        force_reload: bool = False,
     ) -> "Config":
         """
         Lazy getter/setter for the default configuration instance.
         """
         if force_reload or cls._instance is None:
             cfg_args = [cfgfile] if cfgfile else []
-            cls._instance = Config(*cfg_args)
+            cls._instance = Config(*cfg_args, workdir=workdir)
         return cls._instance
 
     @classmethod
@@ -463,17 +485,34 @@ class Config:
         return None
 
     @classmethod
-    def init(cls, cfgfile: Optional[str] = None):
+    def init(
+        cls,
+        cfgfile: Optional[str] = None,
+        device_id: Optional[str] = None,
+        workdir: Optional[str] = None,
+        ctrl_sock: Optional[str] = None,
+        **_,
+    ):
         """
         Initializes the config object singleton
-        Params:
-            cfgfile -- path to the config file - default: _cfgfile_locations
+
+        :param cfgfile: Path to the config file (default: _cfgfile_locations)
+        :param device_id: Override the configured device_id.
+        :param workdir: Override the configured working directory.
+        :param ctrl_sock: Override the configured control socket.
         """
-        return cls._get_instance(cfgfile, force_reload=True)
+        cfg = cls._get_instance(cfgfile, workdir=workdir, force_reload=True)
+        if device_id:
+            cfg.set('device_id', device_id)
+        if workdir:
+            cfg.set('workdir', workdir)
+        if ctrl_sock:
+            cfg.set('ctrl_sock', ctrl_sock)
+
+        return cfg
 
     @classmethod
-    @property
-    def workdir(cls) -> str:
+    def get_workdir(cls) -> str:
         """
         :return: The path of the configured working directory.
         """
@@ -504,6 +543,13 @@ class Config:
         """
         # pylint: disable=protected-access
         cls._get_instance()._config[key] = value
+
+    @classmethod
+    def get_file(cls) -> str:
+        """
+        :return: The main configuration file path.
+        """
+        return cls._get_instance().config_file
 
 
 # vim:sw=4:ts=4:et:

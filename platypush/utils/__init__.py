@@ -523,7 +523,7 @@ def get_or_generate_jwt_rsa_key_pair():
     """
     from platypush.config import Config
 
-    key_dir = os.path.join(Config.workdir, 'jwt')
+    key_dir = os.path.join(Config.get_workdir(), 'jwt')
     priv_key_file = os.path.join(key_dir, 'id_rsa')
     pub_key_file = priv_key_file + '.pub'
 
@@ -644,6 +644,22 @@ def get_remaining_timeout(
         return None
 
     return cls(max(0, timeout - (time.time() - start)))
+
+
+def get_src_root() -> str:
+    """
+    :return: The root source folder of the application.
+    """
+    import platypush
+
+    return os.path.dirname(inspect.getfile(platypush))
+
+
+def is_root() -> bool:
+    """
+    :return: True if the current user is root/administrator.
+    """
+    return os.getuid() == 0
 
 
 # vim:sw=4:ts=4:et:

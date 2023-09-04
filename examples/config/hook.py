@@ -12,7 +12,10 @@ from platypush.utils import run
 from platypush.event.hook import hook
 
 # Event types that you want to react to
-from platypush.message.event.assistant import ConversationStartEvent, SpeechRecognizedEvent
+from platypush.message.event.assistant import (
+    ConversationStartEvent,
+    SpeechRecognizedEvent,
+)
 
 
 @hook(SpeechRecognizedEvent, phrase='play ${title} by ${artist}')
@@ -23,10 +26,13 @@ def on_music_play_command(event, title=None, artist=None, **context):
     Note that in this specific case we can leverage the token-extraction feature of SpeechRecognizedEvent through
     ${} that operates on regex-like principles to extract any text that matches the pattern into context variables.
     """
-    results = run('music.mpd.search', filter={
-        'artist': artist,
-        'title': title,
-    })
+    results = run(
+        'music.mpd.search',
+        filter={
+            'artist': artist,
+            'title': title,
+        },
+    )
 
     if results:
         run('music.mpd.play', results[0]['file'])

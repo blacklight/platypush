@@ -10,7 +10,7 @@ package.sh
 platypush/backend/http/static/resources/*
 docs/build
 .idea/
-config
+/config
 platypush/backend/http/static/css/*/.sass-cache/
 .vscode
 platypush/backend/http/static/js/lib/vue.js
@@ -24,3 +24,4 @@ coverage.xml
 Session.vim
 /jsconfig.json
 /package.json
+/Dockerfile

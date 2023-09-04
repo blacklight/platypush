@@ -29,7 +29,7 @@ steps:
     - ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
     - git config --global --add safe.directory $PWD
     - git remote add github git@github.com:/BlackLight/platypush.git
-    - git pull github master
+    - git pull --rebase github "$(git branch | head -1 | awk '{print $2}')" || echo "No such branch on Github"
     - git push --all -v github
 
 - name: docs

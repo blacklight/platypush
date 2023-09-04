@@ -1,8 +1,9 @@
-import requests
 from typing import Optional
 from urllib.parse import urljoin, urlencode
-from platypush.backend.http.app.utils import get_local_base_url
 
+import requests
+
+from platypush.backend.http.app.utils import get_local_base_url
 from platypush.context import get_backend
 from platypush.plugins import action
 from platypush.plugins.tts import TtsPlugin
@@ -10,7 +11,7 @@ from platypush.schemas.tts.mimic3 import Mimic3VoiceSchema
 
 
 class TtsMimic3Plugin(TtsPlugin):
-    """
+    r"""
     TTS plugin that uses the `Mimic3 webserver
     <https://github.com/MycroftAI/mimic3>`_ provided by `Mycroft
     <https://mycroft.ai/>`_ as a text-to-speech engine.
@@ -42,7 +43,7 @@ class TtsMimic3Plugin(TtsPlugin):
         voice: str = 'en_UK/apope_low',
         media_plugin: Optional[str] = None,
         player_args: Optional[dict] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param server_url: Base URL of the web server that runs the Mimic3 engine.
@@ -69,6 +70,7 @@ class TtsMimic3Plugin(TtsPlugin):
     def say(
         self,
         text: str,
+        *_,
         server_url: Optional[str] = None,
         voice: Optional[str] = None,
         player_args: Optional[dict] = None,

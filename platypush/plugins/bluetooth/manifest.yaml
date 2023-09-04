@@ -15,12 +15,15 @@ manifest:
   install:
     apk:
       - py3-pydbus
+      - git
     apt:
       - libbluetooth-dev
       - python3-pydbus
+      - git
     pacman:
       - python-pydbus
       - python-bleak
+      - git
     pip:
       - bleak
       - bluetooth-numbers
