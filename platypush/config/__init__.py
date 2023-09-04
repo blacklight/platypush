@@ -20,6 +20,7 @@ from platypush.utils import (
     is_functional_procedure,
     is_functional_hook,
     is_functional_cron,
+    is_root,
 )
 
 
@@ -212,11 +213,24 @@ class Config:
 
     def _create_default_config(self):
         cfg_mod_dir = os.path.dirname(os.path.abspath(__file__))
-        cfgfile = self._cfgfile_locations[0]
+        # Use /etc/platypush/config.yaml if the user is running as root,
+        # otherwise ~/.config/platypush/config.yaml
+        cfgfile = (
+            (
+                os.path.join(os.environ['XDG_CONFIG_HOME'], 'config.yaml')
+                if os.environ.get('XDG_CONFIG_HOME')
+                else os.path.join(
+                    os.path.expanduser('~'), '.config', 'platypush', 'config.yaml'
+                )
+            )
+            if not is_root()
+            else os.path.join(os.sep, 'etc', 'platypush', 'config.yaml')
+        )
+
         cfgdir = pathlib.Path(cfgfile).parent
         cfgdir.mkdir(parents=True, exist_ok=True)
-        for cfgfile in glob.glob(os.path.join(cfg_mod_dir, 'config*.yaml')):
-            shutil.copy(cfgfile, str(cfgdir))
+        for cf in glob.glob(os.path.join(cfg_mod_dir, 'config*.yaml')):
+            shutil.copy(cf, str(cfgdir))
 
         return cfgfile
 
