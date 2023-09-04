@@ -190,7 +190,7 @@ class BaseBuilder(ABC):
         if not opts.cfgfile:
             opts.cfgfile = os.path.join(
                 str(pathlib.Path(inspect.getfile(Config)).parent),
-                'config.auto.yaml',
+                'config.yaml',
             )
 
             logger.info('No configuration file specified. Using %s.', opts.cfgfile)
