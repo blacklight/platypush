@@ -1,4 +1,4 @@
-from multiprocessing import Queue
+from multiprocessing import RLock, Queue
 import os
 from queue import Empty
 import socket
@@ -35,6 +35,7 @@ class CommandStream(ControllableProcess):
         self.path = os.path.abspath(os.path.expanduser(path or self._default_sock_path))
         self._sock: Optional[socket.socket] = None
         self._cmd_queue: Queue["Command"] = Queue()
+        self._close_lock = RLock()
 
     def reset(self):
         if self._sock is not None:
@@ -68,9 +69,18 @@ class CommandStream(ControllableProcess):
         return self
 
     def __exit__(self, *_, **__):
-        self.terminate()
-        self.join()
-        self.close()
+        with self._close_lock:
+            self.terminate()
+
+            try:
+                self.close()
+            except Exception as e:
+                self.logger.warning(str(e))
+
+            try:
+                self.kill()
+            except Exception as e:
+                self.logger.warning(str(e))
 
     def _serve(self, sock: socket.socket):
         """
