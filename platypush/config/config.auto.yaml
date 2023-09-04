@@ -1,6 +1,0 @@
-# Auto-generated configuration file.
-# Do not edit manually - use the config.yaml file for manual modifications
-# instead
-
-backend.http:
-  enabled: True
