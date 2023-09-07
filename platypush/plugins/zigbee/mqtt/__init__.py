@@ -226,7 +226,7 @@ class ZigbeeMqttPlugin(
              # MQTT settings
              mqtt:
                  # MQTT base topic for zigbee2mqtt MQTT messages
-                 base_topic: zigbee2mqtt
+                 topic_prefix: zigbee2mqtt
                  # MQTT server URL
                  server: 'mqtt://localhost'
                  # MQTT server authentication, uncomment if required:
@@ -294,7 +294,8 @@ class ZigbeeMqttPlugin(
         self,
         host: str,
         port: int = 1883,
-        base_topic: str = 'zigbee2mqtt',
+        topic_prefix: str = 'zigbee2mqtt',
+        base_topic: Optional[str] = None,
         timeout: int = 10,
         tls_certfile: Optional[str] = None,
         tls_keyfile: Optional[str] = None,
@@ -307,8 +308,10 @@ class ZigbeeMqttPlugin(
         """
         :param host: Default MQTT broker where ``zigbee2mqtt`` publishes its messages.
         :param port: Broker listen port (default: 1883).
-        :param base_topic: Topic prefix, as specified in
+        :param topic_prefix: Prefix for the published topics, as specified in
             ``/opt/zigbee2mqtt/data/configuration.yaml`` (default: '``zigbee2mqtt``').
+        :param base_topic: Legacy alias for ``topic_prefix`` (default:
+            '``zigbee2mqtt``').
         :param timeout: If the command expects from a response, then this
             timeout value will be used (default: 60 seconds).
         :param tls_cafile: If the connection requires TLS/SSL, specify the
@@ -326,11 +329,17 @@ class ZigbeeMqttPlugin(
         :param password: If the connection requires user authentication, specify
             the password (default: None)
         """
+        if base_topic:
+            self.logger.warning(
+                'base_topic is deprprecated, please use topic_prefix instead'
+            )
+            topic_prefix = base_topic
+
         super().__init__(
             host=host,
             port=port,
             topics=[
-                f'{base_topic}/{topic}'
+                f'{topic_prefix}/{topic}'
                 for topic in [
                     'bridge/state',
                     'bridge/log',
@@ -351,7 +360,7 @@ class ZigbeeMqttPlugin(
         # Append a unique suffix to the client ID to avoid client name clashes
         # with other MQTT plugins.
         self.client_id += '-zigbee-mqtt'
-        self.base_topic = base_topic
+        self.topic_prefix = topic_prefix
         self.timeout = timeout
         self._info = ZigbeeInfo()
         self._devices_meta: Dict[str, dict] = {}
@@ -550,7 +559,7 @@ class ZigbeeMqttPlugin(
             )
             client.on_message = msg_callback
             client.connect()
-            client.subscribe(self.base_topic + '/bridge/#')
+            client.subscribe(self.topic_prefix + '/bridge/#')
             client.loop_start()
 
             for event in info_ready_events.values():
@@ -590,7 +599,7 @@ class ZigbeeMqttPlugin(
         Utility method that construct a topic prefixed by the configured base
         topic.
         """
-        return f'{self.base_topic}/{topic}'
+        return f'{self.topic_prefix}/{topic}'
 
     @staticmethod
     def _parse_response(response: Union[dict, Response]) -> dict:
@@ -2211,7 +2220,7 @@ class ZigbeeMqttPlugin(
         """
 
         def handler(client: MqttClient, _, msg: mqtt.MQTTMessage):
-            topic = msg.topic[len(self.base_topic) + 1 :]
+            topic = msg.topic[len(self.topic_prefix) + 1 :]
             data = msg.payload.decode()
             if not data:
                 return
@@ -2296,7 +2305,7 @@ class ZigbeeMqttPlugin(
             devices = {}
             for dev in text or []:
                 devices[dev['friendly_name']] = dev
-                client.subscribe(self.base_topic + '/' + dev['friendly_name'])
+                client.subscribe(self.topic_prefix + '/' + dev['friendly_name'])
         elif msg_type == 'pairing':
             self._bus.post(ZigbeeMqttDevicePairingEvent(device=text, **args))
         elif msg_type in ['device_ban', 'device_banned']:
@@ -2349,7 +2358,7 @@ class ZigbeeMqttPlugin(
         # Subscribe to updates from all the known devices
         event_args = {'host': client.host, 'port': client.port}
         client.subscribe(
-            *[self.base_topic + '/' + device for device in devices_info.keys()]
+            *[self.topic_prefix + '/' + device for device in devices_info.keys()]
         )
 
         for name, device in devices_info.items():
@@ -2365,7 +2374,7 @@ class ZigbeeMqttPlugin(
             payload = self._build_device_get_request(exposes)
             if payload:
                 client.publish(
-                    self.base_topic + '/' + name + '/get',
+                    self.topic_prefix + '/' + name + '/get',
                     json.dumps(payload),
                 )
 
