@@ -137,7 +137,7 @@ class MqttPlugin(RunnablePlugin):
         self.client_id = client_id or str(Config.get('device_id'))
         self.run_topic = (
             f'{run_topic_prefix}/{Config.get("device_id")}'
-            if run_topic_prefix
+            if type(self) == MqttPlugin and run_topic_prefix
             else None
         )
 
