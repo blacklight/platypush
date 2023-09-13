@@ -143,6 +143,7 @@ class MqttPlugin(RunnablePlugin):
 
         self._listeners_lock = defaultdict(threading.RLock)
         self.listeners: Dict[str, MqttClient] = {}  # client_id -> MqttClient map
+        self.timeout = timeout
         self.default_listener = (
             self._get_client(
                 host=host,
@@ -188,6 +189,7 @@ class MqttPlugin(RunnablePlugin):
         client_hash = hashlib.sha1(
             '|'.join(
                 [
+                    self.__class__.__name__,
                     host,
                     str(port),
                     json.dumps(sorted(topics)),
