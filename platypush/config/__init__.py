@@ -106,10 +106,11 @@ class Config:
         if cfgfile is None:
             cfgfile = self._get_default_cfgfile()
 
+        cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
         if cfgfile is None or not os.path.exists(cfgfile):
-            cfgfile = self._create_default_config()
+            cfgfile = self._create_default_config(cfgfile)
 
-        self.config_file = os.path.abspath(os.path.expanduser(cfgfile))
+        self.config_file = cfgfile
 
     def _init_logging(self):
         logging_config = {
@@ -211,21 +212,24 @@ class Config:
             'variable': {},
         }
 
-    def _create_default_config(self):
+    @staticmethod
+    def _create_default_config(cfgfile: Optional[str] = None):
         cfg_mod_dir = os.path.dirname(os.path.abspath(__file__))
-        # Use /etc/platypush/config.yaml if the user is running as root,
-        # otherwise ~/.config/platypush/config.yaml
-        cfgfile = (
-            (
-                os.path.join(os.environ['XDG_CONFIG_HOME'], 'config.yaml')
-                if os.environ.get('XDG_CONFIG_HOME')
-                else os.path.join(
-                    os.path.expanduser('~'), '.config', 'platypush', 'config.yaml'
+
+        if not cfgfile:
+            # Use /etc/platypush/config.yaml if the user is running as root,
+            # otherwise ~/.config/platypush/config.yaml
+            cfgfile = (
+                (
+                    os.path.join(os.environ['XDG_CONFIG_HOME'], 'config.yaml')
+                    if os.environ.get('XDG_CONFIG_HOME')
+                    else os.path.join(
+                        os.path.expanduser('~'), '.config', 'platypush', 'config.yaml'
+                    )
                 )
+                if not is_root()
+                else os.path.join(os.sep, 'etc', 'platypush', 'config.yaml')
             )
-            if not is_root()
-            else os.path.join(os.sep, 'etc', 'platypush', 'config.yaml')
-        )
 
         cfgdir = pathlib.Path(cfgfile).parent
         cfgdir.mkdir(parents=True, exist_ok=True)
@@ -526,6 +530,7 @@ class Config:
         Get a config value or the whole configuration object.
 
         :param key: Configuration entry to get (default: all entries).
+        :param default: Default value to return if the key is missing.
         """
         # pylint: disable=protected-access
         config = cls._get_instance()._config.copy()
