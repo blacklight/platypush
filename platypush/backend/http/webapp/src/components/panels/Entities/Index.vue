@@ -168,10 +168,11 @@ export default {
 
   methods: {
     addEntity(entity) {
+      this.entities[entity.id] = entity
+
       if (entity.parent_id != null)
         return  // Only group entities that have no parent
 
-      this.entities[entity.id] = entity;
       ['id', 'type', 'category', 'plugin'].forEach((attr) => {
         if (entity[attr] == null)
           return
