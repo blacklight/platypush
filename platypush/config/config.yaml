@@ -26,6 +26,7 @@
 ### Include directives
 ### ------------------
 
+###
 # # You can split your configuration over multiple files and use the include
 # # directive to import other files into your configuration.
 #
@@ -37,11 +38,13 @@
 #     - logging.yaml
 #     - media.yaml
 #     - sensors.yaml
+###
 
 ### -----------------
 ### Working directory
 ### -----------------
 
+###
 # # Working directory of the application. This is where the main database will be
 # # stored by default (if the default SQLite configuration is used), and it's
 # # where the integrations will store their state.
@@ -55,11 +58,13 @@
 # # - $HOME/.local/share/platypush otherwise.
 #
 # workdir: ~/.local/share/platypush
+###
 
 ### ----------------------
 ### Database configuration
 ### ----------------------
 
+###
 # # By default Platypush will use a SQLite database named `main.db` under the
 # # `workdir`. You can specify any other engine string here - the application has
 # # been tested against SQLite, Postgres and MariaDB/MySQL >= 8.
@@ -73,11 +78,13 @@
 #   engine: sqlite:///home/user/.local/share/platypush/main.db
 #   # OR, if you want to use e.g. Postgres with the pg8000 driver:
 #   engine: postgresql+pg8000://dbuser:dbpass@dbhost/dbname
+###
 
 ### ---------------------
 ### Logging configuration
 ### ---------------------
 
+###
 # # Platypush logs on stdout by default. You can use the logging section to
 # # specify an alternative file or change the logging level.
 #
@@ -87,11 +94,13 @@
 # logging:
 #     filename: ~/.local/log/platypush/platypush.log
 #     level: INFO
+###
 
 ### -----------------------
 ### device_id configuration
 ### -----------------------
 
+###
 # # The device_id is used by many components of Platypush and it should uniquely
 # # identify a device in your network. If nothing is specified then the hostname
 # # will be used.
@@ -100,11 +109,13 @@
 # # -d/--device-id option.
 #
 # device_id: my_device
+###
 
 ### -------------------
 ### Redis configuration
 ### -------------------
 
+###
 # # Platypush needs a Redis instance for inter-process communication.
 # #
 # # By default, the application will try and connect to a Redis server listening
@@ -123,11 +134,13 @@
 #   port: 6379
 #   username: user
 #   password: secret
+###
 
 ### ------------------------
 ### Web server configuration
 ### ------------------------
 
+###
 # Platypush comes with a versatile Web server that is used to:
 #
 # - Serve the main UI and the UIs for the plugins that provide one.
@@ -226,6 +239,30 @@ backend.http:
 ###
 
 ###
+# # Example configuration of the MQTT plugin.
+# # This plugin allows you to subscribe to MQTT topics and trigger `platypush.message.event.mqtt.MQTTMessageEvent`
+# # events that you can hook on when new messages are received.
+# # You can also publish messages to MQTT topics through the `mqtt.publish` action.
+#
+# mqtt:
+#   # Host and port of the MQTT broker
+#   host: my-mqtt-broker
+#   port: 1883
+#   # Topic to subscribe to. Messages received on these topics will trigger `MQTTMessageEvent` events.
+#   topics:
+#     - platypush/sensors
+#
+#   # Extra listeners. You can use them to subscribe to multiple brokers at the same time.
+#   listeners:
+#     - host: another-mqtt-broker
+#       port: 1883
+#       username: user
+#       password: secret
+#       topics:
+#         - platypush/tests
+###
+
+###
 # # Example configuration of music.mpd plugin, a plugin to interact with MPD and
 # # Mopidy music server instances. See
 # # https://docs.platypush.tech/en/latest/platypush/plugins/music.mpd.html
@@ -245,24 +282,13 @@ backend.http:
 ###
 
 ###
-# # Example configuration of the MQTT plugin. This specifies a server that the
-# # application will use by default (if not specified on the request body).
-#
-# mqtt:
-#     host: 192.168.1.2
-#     port: 1883
-#     username: user
-#     password: secret
-###
-
-###
 # # Enable the system plugin if you want your device to periodically report
 # # system statistics (CPU load, disk usage, memory usage etc.)
 # #
 # # When new data is gathered, an `EntityUpdateEvent` with `plugin='system'` will
 # # be triggered with the new data, and you can subscribe a hook to these events
 # # to run your custom logic.
-# 
+#
 # system:
 #     # How often we should poll for new data
 #     poll_interval: 60
@@ -311,7 +337,7 @@ backend.http:
 
 ###
 # # Example configuration of a weather plugin
-# 
+#
 # weather.openweathermap:
 #     token: secret
 #     lat: lat
@@ -328,7 +354,7 @@ backend.http:
 # # using Web hooks (i.e. event hooks that subscribe to
 # # `platypush.message.event.http.hook.WebhookEvent` events), provided that the
 # # Web server is listening on a publicly accessible address.
-# 
+#
 # ifttt:
 #     ifttt_key: SECRET
 ###
@@ -348,14 +374,14 @@ backend.http:
 # # build automation routines on. You can also use Platypush to control your
 # # Zigbee devices, either through the Web interface or programmatically through
 # # the available plugin actions.
-# 
+#
 # zigbee.mqtt:
 #     # Host of the MQTT broker
-#     host: riemann
+#     host: my-mqtt-broker
 #     # Listen port of the MQTT broker
 #     port: 1883
 #     # Base topic, as specified in `<zigbee2mqtt_dir>/data/configuration.yaml`
-#     base_topic: zigbee2mqtt
+#     topic_prefix: zigbee2mqtt
 ###
 
 ###
@@ -366,10 +392,10 @@ backend.http:
 # # automation routines on.
 # # You can also use Platypush to control your Z-Wave devices, either through the
 # # Web interface or programmatically through the available plugin actions.
-# 
+#
 # zwave.mqtt:
 #     # Host of the MQTT broker
-#     host: riemann
+#     host: my-mqtt-broker
 #     # Listen port of the MQTT broker
 #     port: 1883
 #     # Gateway name, usually configured in the ZWaveJS-UI through `Settings ->
@@ -402,7 +428,7 @@ backend.http:
 #
 # # You can also capture images by connecting to the
 # # `/camera/<plugin>/photo[.extension]`, for example `/camera/ffmpeg/photo.jpg`.
-# 
+#
 # camera.ffmpeg:
 #   # Default video device to use
 #   device: /dev/video0
@@ -543,7 +569,7 @@ backend.http:
 # # `platypush.message.event.sensor.SensorDataChangeEvent` events will be
 # # triggered when the data changes - you can subscribe to them in your custom
 # # hooks.
-# 
+#
 # serial:
 #     # The path to the USB interface with e.g. an Arduino or ESP microcontroller
 #     # connected.
@@ -579,7 +605,7 @@ backend.http:
 #         temperature: 0.5
 #         humidity: 0.75
 #         luminosity: 5
-# 
+#
 #     # If a threshold is defined for a sensor, and the value of that sensor goes
 #     # below/above that temperature between two reads, then a
 #     # `SensorDataBelowThresholdEvent` or a `SensorDataAboveThresholdEvent` will
@@ -599,7 +625,7 @@ backend.http:
 # # Note that the interface of this plugin is basically the same as the serial
 # # plugin, and any other plugin that extends `SensorPlugin` in general.
 # # Therefore, poll_interval, tolerance and thresholds are supported here too.
-#       
+#
 # arduino:
 #     board: /dev/ttyUSB0
 #     # name -> PIN number mapping (similar for digital_pins).
@@ -607,10 +633,10 @@ backend.http:
 #     # the forwarded events.
 #     analog_pins:
 #         temperature: 7
-# 
+#
 #     tolerance:
 #         temperature: 0.5
-# 
+#
 #     thresholds:
 #         temperature: 25.0
 ###
@@ -619,13 +645,13 @@ backend.http:
 # # Another example: the LTR559 is a common sensor for proximity and luminosity
 # # that can be wired to a Raspberry Pi or similar devices over SPI or I2C
 # # interface. It exposes the same base interface as all other sensor plugins.
-# 
+#
 # sensor.ltr559:
 #     poll_interval: 1.0
 #     tolerance:
 #         light: 7.0
 #         proximity: 5.0
-# 
+#
 #     thresholds:
 #         proximity: 10.0
 ###
@@ -637,7 +663,7 @@ backend.http:
 ###
 # # `tts` is the simplest TTS integration. It leverages the Google Translate open
 # # "say" endpoint to render text as audio speech.
-# 
+#
 # tts:
 #     # The media plugin that should be used to play the audio response
 #     media_plugin: media.vlc
@@ -655,7 +681,7 @@ backend.http:
 # # Google developers console, create an API key, and follow the instruction
 # # logged on the next restart to give your app the required permissions to your
 # # account.
-# 
+#
 # tts.google:
 #     # The media plugin that should be used to play the audio response
 #     media_plugin: media.vlc
@@ -674,7 +700,7 @@ backend.http:
 # # Follow the instructions at
 # # https://docs.platypush.tech/platypush/plugins/tts.mimic3.html to quickly
 # # bootstrap a mimic3 server.
-# 
+#
 # tts.mimic3:
 #     # The base URL of the mimic3 server
 #     server_url: http://riemann:59125
@@ -731,7 +757,7 @@ backend.http:
 # # A use-case can be the one where you have a Tasker automation running on your
 # # Android device that detects when your phone enters or exits a certain area,
 # # and sends the appropriate request to your Platypush server.
-# 
+#
 # procedure.at_home:
 #     # Set the db variable AT_HOME to 1.
 #     # Variables are flexible entities with a name and a value that will be
@@ -741,11 +767,11 @@ backend.http:
 #     - action: variable.set
 #       args:
 #           AT_HOME: 1
-# 
+#
 #     # Check the luminosity level from e.g. a connected LTR559 sensor.
 #     # It could also be a Bluetooth, Zigbee, Z-Wave, serial etc. sensor.
 #     - action: sensor.ltr559.get_measurement
-# 
+#
 #     # If it's below a certain threshold, turn on the lights.
 #     # In this case, `light` is a parameter returned by the previous response,
 #     # so we can directly access it here through the `${}` context operator.
@@ -753,12 +779,12 @@ backend.http:
 #     # ${output["light"]}.
 #     - if ${int(light or 0) < 110}:
 #         - action: light.hue.on
-# 
+#
 #     # Say a welcome home message
 #     - action: tts.mimic3.say
 #       args:
 #           text: Welcome home
-# 
+#
 #     # Start the music
 #     - action: music.mpd.play
 ###
@@ -771,10 +797,10 @@ backend.http:
 #     - action: variable.unset
 #       args:
 #           name: AT_HOME
-# 
+#
 #     # Stop the music
 #     - action: music.mpd.stop
-# 
+#
 #     # Turn off the lights
 #     - action: light.hue.off
 ###
@@ -789,12 +815,12 @@ backend.http:
 # #
 # # See the event hook section below for a sample hook that listens for messages
 # # sent by other clients using this procedure.
-# 
+#
 # procedure.send_sensor_data(name, value):
 #     - action: mqtt.send_message
 #       args:
 #           topic: platypush/sensors
-#           host: mqtt-server
+#           host: my-mqtt-broker
 #           port: 1883
 #           msg:
 #               name: ${name}
@@ -807,7 +833,7 @@ backend.http:
 ## -------------------
 
 # Event hooks are procedures that are run when a certain condition is met.
-# 
+#
 # Check the documentation of your configured backends and plugins to see which
 # events they can trigger, and check https://docs.platypush.tech/events.html
 # for the full list of available events with their schemas.
@@ -830,7 +856,7 @@ backend.http:
 # # Note that, for this event to be triggered, the application must first
 # # subscribe to the `platypush/sensor` topic - e.g. by adding `platypush/sensor`
 # # to the active subscriptions in the `mqtt` configurations.
-# 
+#
 # event.hook.OnSensorDataReceived:
 #     if:
 #         type: platypush.message.event.mqtt.MQTTMessageEvent
@@ -849,7 +875,7 @@ backend.http:
 ###
 # # The example below plays the music on mpd/mopidy when your voice assistant
 # # triggers a speech recognized event with "play the music" content.
-# 
+#
 # event.hook.PlayMusicAssistantCommand:
 #     if:
 #         type: platypush.message.event.assistant.SpeechRecognizedEvent
@@ -863,7 +889,7 @@ backend.http:
 
 ###
 # # This will turn on the lights when you say "turn on the lights"
-# 
+#
 # event.hook.TurnOnLightsCommand:
 #     if:
 #         type: platypush.message.event.assistant.SpeechRecognizedEvent
@@ -887,7 +913,7 @@ backend.http:
 # # By default they don't have an authentication layer at all. You are however
 # # advised to create your custom passphrase and checks the request's headers or
 # # query string for it - preferably one passphrase per endpoint.
-# 
+#
 # event.hook.WebhookExample:
 #     if:
 #         type: platypush.message.event.http.hook.WebhookEvent
@@ -910,7 +936,7 @@ backend.http:
 # # Standard UNIX cron syntax is supported, plus an optional 6th indicator
 # # at the end of the expression to run jobs with second granularity.
 # # The example below executes a script at intervals of 1 minute.
-# 
+#
 # cron.TestCron:
 #     cron_expression: '* * * * *'
 #     actions:
