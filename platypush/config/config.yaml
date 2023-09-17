@@ -360,10 +360,20 @@ backend.http:
 ###
 
 ###
-# # The `http.webpage` integration comes with the mercury-parser JavaScript library.
-# # It allows you to "distill" the content of a Web page and export it in readable format (in simplified HTML, Markdown or PDF) through the
+# # The `http.webpage` integration comes with the mercury-parser JavaScript
+# # library. It allows you to "distill" the content of a Web page and export it
+# # in readable format (in simplified HTML, Markdown or PDF).
 #
 # http.webpage:
+###
+
+###
+# # The Bluetooth integration allows you to scan Bluetooth devices, hook events
+# # when Bluetooth devices are detected/lost, and it natively supports several
+# # device types that can be controlled or monitored via API or UI.
+#
+# bluetooth:
+#   poll_interval: 30
 ###
 
 ###
