@@ -56,21 +56,27 @@ class MusicTidalPlugin(RunnablePlugin):
             parameters will be stored (default:
             ``<WORKDIR>/tidal/credentials.json``).
         """
-        from tidalapi import Quality
 
         super().__init__(**kwargs)
         self._credentials_file = os.path.expanduser(credentials_file)
         self._user_playlists = {}
+        self._quality = self._get_quality(quality)
+        self._session = None
+
+    @staticmethod
+    def _get_quality(quality: str):
+        from tidalapi import Quality
 
         try:
-            self._quality = getattr(Quality, quality.lower())
+            return getattr(Quality, quality.lower())
         except AttributeError:
-            raise AssertionError(
-                f'Invalid quality: {quality}. Supported values: '
-                f'{[q.name for q in Quality]}'
-            )
-
-        self._session = None
+            try:
+                return Quality(quality.upper())
+            except ValueError as e:
+                raise AssertionError(
+                    f'Invalid quality: {quality}. Supported values: '
+                    f'{[q.value for q in Quality]}'
+                ) from e
 
     def _oauth_open_saved_session(self):
         if not self._session:
@@ -104,6 +110,15 @@ class MusicTidalPlugin(RunnablePlugin):
 
             with open(self._credentials_file, 'w') as outfile:
                 json.dump(data, outfile)
+
+    @staticmethod
+    def _ensure_user_playlist(playlist):
+        from tidalapi import UserPlaylist
+
+        assert isinstance(
+            playlist, UserPlaylist
+        ), 'This operation is only possible on user playlists'
+        return playlist
 
     @property
     def session(self):
@@ -151,6 +166,7 @@ class MusicTidalPlugin(RunnablePlugin):
         :param playlist_id: ID of the playlist to delete.
         """
         pl = self.session.playlist(playlist_id)
+        pl = self._ensure_user_playlist(pl)
         pl.delete()
 
     @action
@@ -162,6 +178,7 @@ class MusicTidalPlugin(RunnablePlugin):
         :param description: New description.
         """
         pl = self.session.playlist(playlist_id)
+        pl = self._ensure_user_playlist(pl)
         pl.edit(title=title, description=description)
 
     @action
@@ -183,7 +200,7 @@ class MusicTidalPlugin(RunnablePlugin):
         :return: .. schema:: tidal.TidalPlaylistSchema
         """
         pl = self.session.playlist(playlist_id)
-        pl._tracks = get_items(pl.tracks)
+        pl._tracks = get_items(pl.tracks)  # type: ignore
         return TidalPlaylistSchema().dump(pl)
 
     @action
@@ -195,7 +212,7 @@ class MusicTidalPlugin(RunnablePlugin):
         :return: .. schema:: tidal.TidalArtistSchema
         """
         ret = self.session.artist(artist_id)
-        ret.albums = get_items(ret.get_albums)
+        ret.albums = get_items(ret.get_albums)  # type: ignore
         return TidalArtistSchema().dump(ret)
 
     @action
@@ -279,6 +296,7 @@ class MusicTidalPlugin(RunnablePlugin):
         :param track_ids: List of track IDs to append.
         """
         pl = self.session.playlist(playlist_id)
+        pl = self._ensure_user_playlist(pl)
         pl.add(track_ids)
 
     @action
@@ -302,6 +320,8 @@ class MusicTidalPlugin(RunnablePlugin):
         ), 'Please specify either track_id or index'
 
         pl = self.session.playlist(playlist_id)
+        pl = self._ensure_user_playlist(pl)
+
         if index:
             pl.remove_by_index(index)
         if track_id:
