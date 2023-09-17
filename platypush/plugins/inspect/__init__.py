@@ -12,6 +12,7 @@ from typing import Callable, Dict, Generator, Optional, Type, Union
 from platypush.backend import Backend
 from platypush.config import Config
 from platypush.plugins import Plugin, action
+from platypush.message import Message
 from platypush.message.event import Event
 from platypush.message.response import Response
 from platypush.utils import (
@@ -314,7 +315,8 @@ class InspectPlugin(Plugin):
             {
                 get_plugin_name_by_class(cls): dict(plugin)
                 for cls, plugin in self._components_cache.get(Plugin, {}).items()
-            }
+            },
+            cls=Message.Encoder,
         )
 
     @action
