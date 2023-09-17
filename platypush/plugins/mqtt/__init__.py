@@ -178,7 +178,6 @@ class MqttPlugin(RunnablePlugin):
         host: str,
         port: int,
         client_id: Optional[str] = None,
-        on_message: Optional[MqttCallback] = None,
         topics: Iterable[str] = (),
         **_,
     ) -> str:
@@ -193,7 +192,6 @@ class MqttPlugin(RunnablePlugin):
                     host,
                     str(port),
                     json.dumps(sorted(topics)),
-                    str(id(on_message)),
                 ]
             ).encode()
         ).hexdigest()
@@ -344,7 +342,6 @@ class MqttPlugin(RunnablePlugin):
             host=kwargs['host'],
             port=kwargs['port'],
             client_id=client_id,
-            on_message=on_message,
             topics=topics,
         )
 
@@ -435,14 +432,8 @@ class MqttPlugin(RunnablePlugin):
             response_buffer.close()
 
             if client:
-                try:
-                    client.loop_stop()
-                except Exception as e:
-                    self.logger.warning(
-                        'Could not stop client loop: %s: %s', type(e).__name__, e
-                    )
-
-                client.disconnect()
+                client.stop()
+                del client
 
     @action
     def subscribe(self, topic: str, **mqtt_kwargs):
@@ -473,7 +464,21 @@ class MqttPlugin(RunnablePlugin):
         :param mqtt_kwargs: MQTT broker configuration (host, port, username,
             password etc.). See :meth:`.__init__` parameters.
         """
-        self._get_client(**mqtt_kwargs).unsubscribe(topic)
+        client_id = self._get_client_id(
+            topics=(topic,),
+            **mqtt_kwargs,
+        )
+
+        with self._listeners_lock[client_id]:
+            client = self.listeners.get(client_id)
+
+        if not client:
+            self.logger.info('No subscriptions found for topic %s', topic)
+            return
+
+        client.unsubscribe(topic)
+        client.stop()
+        del client
 
     @staticmethod
     def _response_callback(reply_topic: str, event: threading.Event, buffer: IO[bytes]):
@@ -527,6 +532,7 @@ class MqttPlugin(RunnablePlugin):
         for listener in self.listeners.values():
             try:
                 listener.join(timeout=1)
+                del listener
             except Exception:
                 pass
 

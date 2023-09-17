@@ -236,6 +236,11 @@ class MqttClient(mqtt.Client, threading.Thread):
         if not self.is_alive():
             return
 
+        try:
+            self.loop_stop()
+        except Exception as e:
+            self.logger.debug('Could not stop client loop: %s: %s', type(e).__name__, e)
+
         self._stop_scheduled = True
         self.disconnect()
         self._running = False
