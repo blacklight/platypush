@@ -5,7 +5,7 @@ manifest:
     platypush.message.event.chat.telegram.ContactMessageEvent: when a contact is received.
     platypush.message.event.chat.telegram.DocumentMessageEvent: when a document is
       received.
-    platypush.message.event.chat.telegram.GroupCreatedEvent: when the bot is invited
+    platypush.message.event.chat.telegram.GroupChatCreatedEvent: when the bot is invited
       to a new group.
     platypush.message.event.chat.telegram.LocationMessageEvent: when a location is
       received.

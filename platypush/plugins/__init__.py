@@ -32,7 +32,10 @@ def action(f: Callable[..., Any]) -> Callable[..., Response]:
         response = Response()
         try:
             result = f(*args, **kwargs)
-        except TypeError as e:
+        except Exception as e:
+            if isinstance(e, KeyboardInterrupt):
+                return response
+
             _logger.exception(e)
             result = Response(errors=[str(e)])
 

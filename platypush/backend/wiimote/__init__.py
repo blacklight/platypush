@@ -15,7 +15,7 @@ class WiimoteBackend(Backend):
 
     Triggers:
 
-        * :class:`platypush.message.event.Wiimote.WiimoteEvent` \
+        * :class:`platypush.message.event.wiimote.WiimoteEvent` \
             when the state of the Wiimote (battery, buttons, acceleration etc.) changes
 
     Requires:

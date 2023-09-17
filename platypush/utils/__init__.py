@@ -662,4 +662,27 @@ def is_root() -> bool:
     return os.getuid() == 0
 
 
+def get_message_response(msg):
+    """
+    Get the response to the given message.
+
+    :param msg: The message to get the response for.
+    :return: The response to the given message.
+    """
+    from platypush.message import Message
+
+    redis = get_redis()
+    redis_queue = get_redis_queue_name_by_message(msg)
+    if not redis_queue:
+        return None
+
+    response = redis.blpop(redis_queue, timeout=60)
+    if response and len(response) > 1:
+        response = Message.build(response[1])
+    else:
+        response = None
+
+    return response
+
+
 # vim:sw=4:ts=4:et:

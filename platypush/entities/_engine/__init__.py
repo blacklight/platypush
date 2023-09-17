@@ -25,8 +25,8 @@ class EntitiesEngine(Thread):
            together (preventing excessive writes and throttling events), and
            prevents race conditions when SQLite is used.
         2. Merge any existing entities with their newer representations.
-        3. Update the entities taxonomy.
-        4. Persist the new state to the entities database.
+        3. Update the entities' taxonomy.
+        4. Persist the new state to the entities' database.
         5. Trigger events for the updated entities.
 
     """

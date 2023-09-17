@@ -1,13 +1,15 @@
+import contextlib
 import json
 import re
 import threading
 
-from queue import Queue
+from queue import Empty, Queue
 from typing import (
     Any,
     Collection,
     Dict,
     List,
+    Mapping,
     Optional,
     Tuple,
     Type,
@@ -15,6 +17,10 @@ from typing import (
 )
 from typing_extensions import override
 
+import paho.mqtt.client as mqtt
+
+from platypush.bus import Bus
+from platypush.context import get_bus
 from platypush.entities import (
     DimmerEntityManager,
     Entity,
@@ -44,14 +50,34 @@ from platypush.entities.sensors import (
 )
 from platypush.entities.switches import Switch, EnumSwitch
 from platypush.entities.temperature import TemperatureSensor
+from platypush.message.event.zigbee.mqtt import (
+    ZigbeeMqttOnlineEvent,
+    ZigbeeMqttOfflineEvent,
+    ZigbeeMqttDevicePairingEvent,
+    ZigbeeMqttDeviceConnectedEvent,
+    ZigbeeMqttDeviceBannedEvent,
+    ZigbeeMqttDeviceRemovedEvent,
+    ZigbeeMqttDeviceRemovedFailedEvent,
+    ZigbeeMqttDeviceWhitelistedEvent,
+    ZigbeeMqttDeviceRenamedEvent,
+    ZigbeeMqttDeviceBindEvent,
+    ZigbeeMqttDevicePropertySetEvent,
+    ZigbeeMqttDeviceUnbindEvent,
+    ZigbeeMqttGroupAddedEvent,
+    ZigbeeMqttGroupAddedFailedEvent,
+    ZigbeeMqttGroupRemovedEvent,
+    ZigbeeMqttGroupRemovedFailedEvent,
+    ZigbeeMqttGroupRemoveAllEvent,
+    ZigbeeMqttGroupRemoveAllFailedEvent,
+    ZigbeeMqttErrorEvent,
+)
 from platypush.message.response import Response
-from platypush.plugins import RunnablePlugin
-from platypush.plugins.mqtt import MqttPlugin, action
+from platypush.plugins.mqtt import DEFAULT_TIMEOUT, MqttClient, MqttPlugin, action
+from ._state import BridgeState, ZigbeeState
 
 
 # pylint: disable=too-many-ancestors
 class ZigbeeMqttPlugin(
-    RunnablePlugin,
     MqttPlugin,
     DimmerEntityManager,
     EnumSwitchEntityManager,
@@ -60,7 +86,7 @@ class ZigbeeMqttPlugin(
     SwitchEntityManager,
 ):
     """
-    This plugin allows you to interact with Zigbee devices over MQTT through any Zigbee sniffer and
+    Support for Zigbee devices using any Zigbee adapter compatible with
     `zigbee2mqtt <https://www.zigbee2mqtt.io/>`_.
 
     In order to get started you'll need:
@@ -71,15 +97,18 @@ class ZigbeeMqttPlugin(
 
     Instructions:
 
-        - Install `cc-tool <https://github.com/dashesy/cc-tool>`_ either from sources or from a package manager.
+        - Install `cc-tool <https://github.com/dashesy/cc-tool>`_ either from
+          sources or from a package manager.
         - Connect the Zigbee to your PC/RaspberryPi in this way: ::
 
             USB -> CC debugger -> downloader cable -> CC2531 -> USB
 
-        - The debugger and the adapter should be connected *at the same time*. If the later ``cc-tool`` command throws
-          up an error, put the device in sync while connected by pressing the _Reset_ button on the debugger.
+        - The debugger and the adapter should be connected *at the same time*.
+          If the later ``cc-tool`` command throws up an error, put the device in
+          sync while connected by pressing the _Reset_ button on the debugger.
         - Check where the device is mapped. On Linux it will usually be ``/dev/ttyACM0``.
-        - Download the latest `Z-Stack firmware <https://github.com/Koenkk/Z-Stack-firmware/tree/master/coordinator>`_
+        - Download the latest `Z-Stack firmware
+          <https://github.com/Koenkk/Z-Stack-firmware/tree/master/coordinator>`_
           to your device. Instructions for a CC2531 device:
 
           .. code-block:: shell
@@ -91,10 +120,12 @@ class ZigbeeMqttPlugin(
 
         - You can disconnect your debugger and downloader cable once the firmware is flashed.
 
-        - Install ``zigbee2mqtt``. First install a node/npm environment, then either install ``zigbee2mqtt`` manually or
-          through your package manager. **NOTE**: many API breaking changes have occurred on Zigbee2MQTT 1.17.0,
-          therefore this integration will only be compatible with the version 1.17.0 of the service or higher versions.
-          Manual instructions:
+        - Install ``zigbee2mqtt``. First install a node/npm environment, then
+          either install ``zigbee2mqtt`` manually or through your package
+          manager. **NOTE**: many API breaking changes have occurred on
+          Zigbee2MQTT 1.17.0, therefore this integration will only be compatible
+          with the version 1.17.0 of the service or higher versions. Manual
+          instructions:
 
           .. code-block:: shell
 
@@ -106,44 +137,51 @@ class ZigbeeMqttPlugin(
              cd /opt/zigbee2mqtt
              npm install
 
-        - You need to have an MQTT broker running somewhere. If not, you can install
-            `Mosquitto <https://mosquitto.org/>`_ through your package manager on any device in your network.
+        - You need to have an MQTT broker running somewhere. If not, you can
+          install `Mosquitto <https://mosquitto.org/>`_ through your package
+          manager on any device in your network.
 
-        - Edit the ``/opt/zigbee2mqtt/data/configuration.yaml`` file to match the configuration of your MQTT broker:
+        - Edit the ``/opt/zigbee2mqtt/data/configuration.yaml`` file to match
+          the configuration of your MQTT broker:
 
           .. code-block:: yaml
 
              # MQTT settings
              mqtt:
                  # MQTT base topic for zigbee2mqtt MQTT messages
-                 base_topic: zigbee2mqtt
+                 topic_prefix: zigbee2mqtt
                  # MQTT server URL
                  server: 'mqtt://localhost'
                  # MQTT server authentication, uncomment if required:
                  # user: my_user
                  # password: my_password
 
-        - Also make sure that ``permit_join`` is set to ``True``, in order to allow Zigbee devices to join the network
-          while you're configuring it. It's equally important to set ``permit_join`` to ``False`` once you have
-          configured your network, to prevent accidental/malignant joins from outer Zigbee devices.
+        - Also make sure that ``permit_join`` is set to ``True``, in order to
+          allow Zigbee devices to join the network while you're configuring it.
+          It's equally important to set ``permit_join`` to ``False`` once you
+          have configured your network, to prevent accidental/malignant joins
+          from outer Zigbee devices.
 
-        - Start the ``zigbee2mqtt`` daemon on your device (the
-          `official documentation <https://www.zigbee2mqtt.io/getting_started/running_zigbee2mqtt.html#5-optional-running-as-a-daemon-with-systemctl>`_
-          also contains instructions on how to configure it as a ``systemd`` service:
+        - Start the ``zigbee2mqtt`` daemon on your device (the `official
+          documentation
+          <https://www.zigbee2mqtt.io/getting_started/running_zigbee2mqtt.html#5-optional-running-as-a-daemon-with-systemctl>`_
+          also contains instructions on how to configure it as a ``systemd``
+          service:
 
           .. code-block:: shell
 
               cd /opt/zigbee2mqtt
               npm start
 
-        - If you have Zigbee devices that are paired to other bridges, unlink them or do a factory reset to pair them
-          to your new bridge.
+        - If you have Zigbee devices that are paired to other bridges, unlink
+          them or do a factory reset to pair them to your new bridge.
 
-        - If it all goes fine, once the daemon is running and a new device is found you should see traces like this in
-          the output of ``zigbee2mqtt``::
+        - If it all goes fine, once the daemon is running and a new device is
+          found you should see traces like this in the output of
+          ``zigbee2mqtt``::
 
-            zigbee2mqtt:info  2019-11-09T12:19:56: Successfully interviewed '0x00158d0001dc126a', device has
-            successfully been paired
+            zigbee2mqtt:info  2019-11-09T12:19:56: Successfully interviewed '0x00158d0001dc126a',
+            device has successfully been paired
 
         - You are now ready to use this integration.
 
@@ -153,47 +191,34 @@ class ZigbeeMqttPlugin(
 
     Triggers:
 
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttOnlineEvent` when the service comes online.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttOfflineEvent` when the service goes offline.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePropertySetEvent` when the properties of a
-          connected device change.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePairingEvent` when a device is pairing.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceConnectedEvent` when a device connects
-          to the network.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBannedEvent` when a device is banned
-          from the network.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedEvent` when a device is removed
-          from the network.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedFailedEvent` when a request to
-          remove a device from the network fails.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceWhitelistedEvent` when a device is
-          whitelisted on the network.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRenamedEvent` when a device is
-          renamed on the network.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBindEvent` when a device bind event
-          occurs.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceUnbindEvent` when a device unbind event
-          occurs.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedEvent` when a group is added.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedFailedEvent` when a request to
-          add a new group fails.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedEvent` when a group is removed.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedFailedEvent` when a request to
-          remove a group fails.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllEvent` when all the devices
-          are removed from a group.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllFailedEvent` when a request to
-          remove all the devices from a group fails.
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttErrorEvent` when an internal error occurs
-          on the zigbee2mqtt service.
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttOnlineEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttOfflineEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePropertySetEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePairingEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceConnectedEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBannedEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedFailedEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceWhitelistedEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRenamedEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBindEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceUnbindEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedFailedEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedFailedEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllFailedEvent`
+        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttErrorEvent`
 
     """  # noqa: E501
 
     def __init__(
         self,
-        host: str = 'localhost',
+        host: str,
         port: int = 1883,
-        base_topic: str = 'zigbee2mqtt',
+        topic_prefix: str = 'zigbee2mqtt',
+        base_topic: Optional[str] = None,
         timeout: int = 10,
         tls_certfile: Optional[str] = None,
         tls_keyfile: Optional[str] = None,
@@ -204,44 +229,67 @@ class ZigbeeMqttPlugin(
         **kwargs,
     ):
         """
-        :param host: Default MQTT broker where ``zigbee2mqtt`` publishes its messages (default: ``localhost``).
+        :param host: Default MQTT broker where ``zigbee2mqtt`` publishes its messages.
         :param port: Broker listen port (default: 1883).
-        :param base_topic: Topic prefix, as specified in ``/opt/zigbee2mqtt/data/configuration.yaml``
-            (default: '``base_topic``').
-        :param timeout: If the command expects from a response, then this timeout value will be used
-            (default: 60 seconds).
-        :param tls_cafile: If the connection requires TLS/SSL, specify the certificate authority file
-            (default: None)
-        :param tls_certfile: If the connection requires TLS/SSL, specify the certificate file (default: None)
-        :param tls_keyfile: If the connection requires TLS/SSL, specify the key file (default: None)
-        :param tls_version: If the connection requires TLS/SSL, specify the minimum TLS supported version
-            (default: None)
-        :param tls_ciphers: If the connection requires TLS/SSL, specify the supported ciphers (default: None)
-        :param username: If the connection requires user authentication, specify the username (default: None)
-        :param password: If the connection requires user authentication, specify the password (default: None)
+        :param topic_prefix: Prefix for the published topics, as specified in
+            ``/opt/zigbee2mqtt/data/configuration.yaml`` (default: '``zigbee2mqtt``').
+        :param base_topic: Legacy alias for ``topic_prefix`` (default:
+            '``zigbee2mqtt``').
+        :param timeout: If the command expects from a response, then this
+            timeout value will be used (default: 60 seconds).
+        :param tls_cafile: If the connection requires TLS/SSL, specify the
+            certificate authority file (default: None)
+        :param tls_certfile: If the connection requires TLS/SSL, specify the
+            certificate file (default: None)
+        :param tls_keyfile: If the connection requires TLS/SSL, specify the key
+            file (default: None)
+        :param tls_version: If the connection requires TLS/SSL, specify the
+            minimum TLS supported version (default: None)
+        :param tls_ciphers: If the connection requires TLS/SSL, specify the
+            supported ciphers (default: None)
+        :param username: If the connection requires user authentication, specify
+            the username (default: None)
+        :param password: If the connection requires user authentication, specify
+            the password (default: None)
         """
+        if base_topic:
+            self.logger.warning(
+                'base_topic is deprecated, please use topic_prefix instead'
+            )
+            topic_prefix = base_topic
+
         super().__init__(
             host=host,
             port=port,
+            topics=[
+                f'{topic_prefix}/{topic}'
+                for topic in [
+                    'bridge/state',
+                    'bridge/log',
+                    'bridge/logging',
+                    'bridge/devices',
+                    'bridge/groups',
+                ]
+            ],
             tls_certfile=tls_certfile,
             tls_keyfile=tls_keyfile,
             tls_version=tls_version,
             tls_ciphers=tls_ciphers,
             username=username,
             password=password,
+            timeout=timeout,
             **kwargs,
         )
 
-        self.base_topic = base_topic
-        self.timeout = timeout
-        self._info: Dict[str, dict] = {
-            'devices_by_addr': {},
-            'devices_by_name': {},
-            'groups': {},
-        }
+        self.topic_prefix = topic_prefix
+        self._info = ZigbeeState()
 
     @staticmethod
     def _get_properties(device: dict) -> dict:
+        """
+        Static method that parses the properties of a device from its received
+        definition.
+        """
         exposes = (device.get('definition') or {}).get('exposes', []).copy()
         properties = {}
 
@@ -255,12 +303,17 @@ class ZigbeeMqttPlugin(
 
     @staticmethod
     def _get_options(device: dict) -> dict:
+        """
+        Static method that parses the options of a device from its received
+        definition.
+        """
         return {
             option['property']: option
             for option in (device.get('definition') or {}).get('options', [])
             if option.get('property')
         }
 
+    @override
     def transform_entities(self, entities: Collection[dict]) -> List[Entity]:
         compatible_entities = []
         for dev in entities:
@@ -368,6 +421,10 @@ class ZigbeeMqttPlugin(
 
     @staticmethod
     def _get_device_url(device_info: dict) -> Optional[str]:
+        """
+        Static method that returns the zigbee2mqtt URL with the information
+        about a certain device, if the model is available in its definition.
+        """
         model = device_info.get('definition', {}).get('model')
         if not model:
             return None
@@ -376,6 +433,10 @@ class ZigbeeMqttPlugin(
 
     @staticmethod
     def _get_image_url(device_info: dict) -> Optional[str]:
+        """
+        Static method that returns the zigbee2mqtt URL of the image of a
+        certain device, if the model is available in its definition.
+        """
         model = device_info.get('definition', {}).get('model')
         if not model:
             return None
@@ -383,13 +444,13 @@ class ZigbeeMqttPlugin(
         return f'https://www.zigbee2mqtt.io/images/devices/{model}.jpg'
 
     def _get_network_info(self, **kwargs) -> dict:
+        """
+        Refreshes the network information.
+        """
         self.logger.info('Fetching Zigbee network information')
         client = None
         mqtt_args = self._mqtt_args(**kwargs)
-        timeout = 30
-        if 'timeout' in mqtt_args:
-            timeout = mqtt_args.pop('timeout')
-
+        timeout = mqtt_args.pop('timeout', DEFAULT_TIMEOUT)
         info: Dict[str, Any] = {
             'state': None,
             'info': {},
@@ -400,28 +461,23 @@ class ZigbeeMqttPlugin(
 
         info_ready_events = {topic: threading.Event() for topic in info}
 
-        def _on_message():
-            def callback(_, __, msg):
-                topic = msg.topic.split('/')[-1]
-                if topic in info:
-                    info[topic] = (
-                        msg.payload.decode()
-                        if topic == 'state'
-                        else json.loads(msg.payload.decode())
-                    )
-                    info_ready_events[topic].set()
-
-            return callback
+        def msg_callback(_, __, msg):
+            topic = msg.topic.split('/')[-1]
+            if topic in info:
+                info[topic] = (
+                    msg.payload.decode()
+                    if topic == 'state'
+                    else json.loads(msg.payload.decode())
+                )
+                info_ready_events[topic].set()
 
         try:
-            host = mqtt_args.pop('host')
-            port = mqtt_args.pop('port')
             client = self._get_client(  # pylint: disable=unexpected-keyword-arg
                 **mqtt_args
             )
-            client.on_message = _on_message()
-            client.connect(host, port, keepalive=timeout)
-            client.subscribe(self.base_topic + '/bridge/#')
+            client.on_message = msg_callback
+            client.connect()
+            client.subscribe(self.topic_prefix + '/bridge/#')
             client.loop_start()
 
             for event in info_ready_events.values():
@@ -432,16 +488,16 @@ class ZigbeeMqttPlugin(
                     )
 
             # Cache the new results
-            self._info['devices_by_name'] = {
+            self._info.devices.by_name = {
                 self._preferred_name(device): device
                 for device in info.get('devices', [])
             }
 
-            self._info['devices_by_addr'] = {
+            self._info.devices.by_address = {
                 device['ieee_address']: device for device in info.get('devices', [])
             }
 
-            self._info['groups'] = {
+            self._info.groups = {
                 group.get('name'): group for group in info.get('groups', [])
             }
 
@@ -456,27 +512,59 @@ class ZigbeeMqttPlugin(
 
         return info
 
-    def _topic(self, topic):
-        return self.base_topic + '/' + topic
+    def _topic(self, topic: str) -> str:
+        """
+        Utility method that construct a topic prefixed by the configured base
+        topic.
+        """
+        return f'{self.topic_prefix}/{topic}'
 
     @staticmethod
     def _parse_response(response: Union[dict, Response]) -> dict:
+        """
+        Utility method that flattens a response received on a zigbee2mqtt topic
+        into a dictionary.
+        """
         if isinstance(response, Response):
             rs: dict = response.output  # type: ignore
             response = rs
 
-        assert response.get('status') != 'error', response.get(
-            'error', 'zigbee2mqtt error'
+        if isinstance(response, dict):
+            assert response.get('status') != 'error', response.get(
+                'error', 'zigbee2mqtt error'
+            )
+
+        return response or {}
+
+    def _run_request(
+        self,
+        topic: str,
+        msg: Union[dict, str],
+        reply_topic: Optional[str] = None,
+        **kwargs,
+    ) -> dict:
+        """
+        Sends a request/message to the Zigbee2MQTT bridge and waits for a
+        response.
+        """
+        return self._parse_response(
+            self.publish(  # type: ignore
+                topic=topic,
+                msg=msg,
+                reply_topic=reply_topic,
+                **self._mqtt_args(**kwargs),
+            )
+            or {}
         )
-        return response
 
     @action
     def devices(self, **kwargs) -> List[Dict[str, Any]]:
         """
         Get the list of devices registered to the service.
 
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
 
         :return: List of paired devices. Example output:
 
@@ -507,7 +595,7 @@ class ZigbeeMqttPlugin(
 
                 {
                     "date_code": "20180906",
-                    "friendly_name": "My Lightbulb",
+                    "friendly_name": "My Light Bulb",
                     "ieee_address": "0x00123456789abcdf",
                     "network_address": 52715,
                     "power_source": "Mains (single phase)",
@@ -648,23 +736,22 @@ class ZigbeeMqttPlugin(
         self, permit: bool = True, timeout: Optional[float] = None, **kwargs
     ):
         """
-        Enable/disable devices from joining the network. This is not persistent (will not be saved to
-        ``configuration.yaml``).
+        Enable/disable devices from joining the network.
+
+        This is not persistent (it will not be saved to ``configuration.yaml``).
 
         :param permit: Set to True to allow joins, False otherwise.
         :param timeout: Allow/disallow joins only for this amount of time.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
         if timeout:
-            return self._parse_response(
-                self.publish(  # type: ignore[reportGeneralTypeIssues]
-                    topic=self._topic('bridge/request/permit_join'),
-                    msg={'value': permit, 'time': timeout},
-                    reply_topic=self._topic('bridge/response/permit_join'),
-                    **self._mqtt_args(**kwargs),
-                )
-                or {}
+            return self._run_request(
+                topic=self._topic('bridge/request/permit_join'),
+                msg={'value': permit, 'time': timeout},
+                reply_topic=self._topic('bridge/response/permit_join'),
+                **self._mqtt_args(**kwargs),
             )
 
         return self.publish(
@@ -676,12 +763,14 @@ class ZigbeeMqttPlugin(
     @action
     def factory_reset(self, **kwargs):
         """
-        Perform a factory reset of a device connected to the network, following the procedure required by the particular
-        device (for instance, Hue bulbs require the Zigbee adapter to be close to the device while a button on the back
-        of the bulb is pressed).
+        Perform a factory reset of a device connected to the network, following
+        the procedure required by the particular device (for instance, Hue bulbs
+        require the Zigbee adapter to be close to the device while a button on
+        the back of the bulb is pressed).
 
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
         self.publish(
             topic=self._topic('bridge/request/touchlink/factory_reset'),
@@ -692,44 +781,46 @@ class ZigbeeMqttPlugin(
     @action
     def log_level(self, level: str, **kwargs):
         """
-        Change the log level at runtime. This change will not be persistent.
+        Change the log level at runtime.
+
+        This change will not be persistent.
 
         :param level: Possible values: 'debug', 'info', 'warn', 'error'.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
-        return self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic('bridge/request/config/log_level'),
-                msg={'value': level},
-                reply_topic=self._topic('bridge/response/config/log_level'),
-                **self._mqtt_args(**kwargs),
-            )
+        return self._run_request(
+            topic=self._topic('bridge/request/config/log_level'),
+            msg={'value': level},
+            reply_topic=self._topic('bridge/response/config/log_level'),
+            **self._mqtt_args(**kwargs),
         )
 
     @action
     def device_set_option(self, device: str, option: str, value: Any, **kwargs):
         """
-        Change the options of a device. Options can only be changed, not added or deleted.
+        Change the options of a device.
+
+        Options can only be changed, not added or deleted.
 
         :param device: Display name or IEEE address of the device.
         :param option: Option name.
         :param value: New value.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
-        return self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic('bridge/request/device/options'),
-                reply_topic=self._topic('bridge/response/device/options'),
-                msg={
-                    'id': device,
-                    'options': {
-                        option: value,
-                    },
+        return self._run_request(
+            topic=self._topic('bridge/request/device/options'),
+            reply_topic=self._topic('bridge/response/device/options'),
+            msg={
+                'id': device,
+                'options': {
+                    option: value,
                 },
-                **self._mqtt_args(**kwargs),
-            )
+            },
+            **self._mqtt_args(**kwargs),
         )
 
     @action
@@ -738,19 +829,19 @@ class ZigbeeMqttPlugin(
         Remove a device from the network.
 
         :param device: Display name of the device.
-        :param force: Force the remove also if the removal wasn't acknowledged by the device. Note: a forced remove
-            only removes the entry from the internal database, but the device is likely to connect again when
+        :param force: Force the remove also if the removal wasn't acknowledged
+            by the device. Note: a forced remove only removes the entry from the
+            internal database, but the device is likely to connect again when
             restarted unless it's factory reset (default: False).
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
-        return self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic('bridge/request/device/remove'),
-                msg={'id': device, 'force': force},
-                reply_topic=self._topic('bridge/response/device/remove'),
-                **self._mqtt_args(**kwargs),
-            )
+        return self._run_request(
+            topic=self._topic('bridge/request/device/remove'),
+            msg={'id': device, 'force': force},
+            reply_topic=self._topic('bridge/response/device/remove'),
+            **self._mqtt_args(**kwargs),
         )
 
     @action
@@ -759,35 +850,35 @@ class ZigbeeMqttPlugin(
         Ban a device from the network.
 
         :param device: Display name of the device.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
-        return self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic('bridge/request/device/ban'),
-                reply_topic=self._topic('bridge/response/device/ban'),
-                msg={'id': device},
-                **self._mqtt_args(**kwargs),
-            )
+        return self._run_request(
+            topic=self._topic('bridge/request/device/ban'),
+            reply_topic=self._topic('bridge/response/device/ban'),
+            msg={'id': device},
+            **self._mqtt_args(**kwargs),
         )
 
     @action
     def device_whitelist(self, device: str, **kwargs):
         """
-        Whitelist a device on the network. Note: once at least a device is whitelisted, all the other non-whitelisted
-        devices will be removed from the network.
+        Whitelist a device on the network.
+
+        Note: once at least a device is whitelisted, all the other
+        non-whitelisted devices will be removed from the network.
 
         :param device: Display name of the device.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
-        return self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic('bridge/request/device/whitelist'),
-                reply_topic=self._topic('bridge/response/device/whitelist'),
-                msg={'id': device},
-                **self._mqtt_args(**kwargs),
-            )
+        return self._run_request(
+            topic=self._topic('bridge/request/device/whitelist'),
+            reply_topic=self._topic('bridge/response/device/whitelist'),
+            msg={'id': device},
+            **self._mqtt_args(**kwargs),
         )
 
     @action
@@ -796,16 +887,18 @@ class ZigbeeMqttPlugin(
         Rename a device on the network.
 
         :param name: New name.
-        :param device: Current name of the device to rename. If no name is specified then the rename will
-            affect the last device that joined the network.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param device: Current name of the device to rename. If no name is
+            specified then the rename will affect the last device that joined
+            the network.
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
         if name == device:
             self.logger.info('Old and new name are the same: nothing to do')
-            return
+            return None
 
-        devices = self.devices().output  # type: ignore[reportGeneralTypeIssues]
+        devices: dict = self.devices().output  # type: ignore
         assert not [
             dev for dev in devices if dev.get('friendly_name') == name
         ], f'A device named {name} already exists on the network'
@@ -821,37 +914,42 @@ class ZigbeeMqttPlugin(
                 'to': name,
             }
 
-        return self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic('bridge/request/device/rename'),
-                msg=req,
-                reply_topic=self._topic('bridge/response/device/rename'),
-                **self._mqtt_args(**kwargs),
-            )
+        return self._run_request(
+            topic=self._topic('bridge/request/device/rename'),
+            msg=req,
+            reply_topic=self._topic('bridge/response/device/rename'),
+            **self._mqtt_args(**kwargs),
         )
 
     @staticmethod
     def _build_device_get_request(values: List[Dict[str, Any]]) -> Dict[str, Any]:
-        def extract_value(value: dict, root: dict, depth: int = 0):
-            for feature in value.get('features', []):
+        """
+        Prepares a ``device_get`` request, as a dictionary to be sent down to
+        the bridge.
+
+        This makes sure that the properties and options are properly mapped and
+        converted.
+        """
+
+        def extract_value(val: dict, root: dict, depth: int = 0):
+            for feature in val.get('features', []):
                 new_root = root
                 if depth > 0:
-                    new_root = root[value['property']] = root.get(value['property'], {})
+                    new_root = root[val['property']] = root.get(val['property'], {})
 
                 extract_value(feature, new_root, depth=depth + 1)
 
-            if not value.get('access', 1) & 0x4:
+            if not val.get('access', 1) & 0x4:
                 # Property not readable/query-able
                 return
 
-            if 'features' not in value:
-                if 'property' in value:
-                    root[value['property']] = 0 if value['type'] == 'numeric' else ''
+            if 'features' not in val:
+                if 'property' in val:
+                    root[val['property']] = 0 if val['type'] == 'numeric' else ''
                 return
 
-            if 'property' in value:
-                root[value['property']] = root.get(value['property'], {})
-                root = root[value['property']]
+            if 'property' in val:
+                root[val['property']] = root.get(val['property'], {})
 
         ret: Dict[str, Any] = {}
         for value in values:
@@ -860,11 +958,14 @@ class ZigbeeMqttPlugin(
         return ret
 
     def _get_device_info(self, device: str, **kwargs) -> dict:
-        device_info = self._info['devices_by_name'].get(
+        """
+        Get or retrieve the information about a device.
+        """
+        device_info = self._info.devices.by_name.get(
             # First: check by friendly name
             device,
             # Second: check by address
-            self._info['devices_by_addr'].get(device, {}),
+            self._info.devices.by_address.get(device, {}),
         )
 
         if not device_info:
@@ -883,10 +984,18 @@ class ZigbeeMqttPlugin(
 
     @staticmethod
     def _preferred_name(device: dict) -> str:
+        """
+        Utility method that returns the preferred name of a device, on the basis
+        of which attributes are exposed (friendly name or IEEE address).
+        """
         return device.get('friendly_name') or device.get('ieee_address') or ''
 
     @classmethod
     def _device_name_matches(cls, name: str, device: dict) -> bool:
+        """
+        Utility method that checks if either the friendly name or IEEE address
+        of a device match a certain string.
+        """
         name = str(cls._ieee_address(name))
         return name == device.get('friendly_name') or name == device.get('ieee_address')
 
@@ -895,14 +1004,19 @@ class ZigbeeMqttPlugin(
         self, device: str, property: Optional[str] = None, **kwargs
     ) -> Dict[str, Any]:
         """
-        Get the properties of a device. The returned keys vary depending on the device. For example, a light bulb
-        may have the "``state``" and "``brightness``" properties, while an environment sensor may have the
-        "``temperature``" and "``humidity``" properties, and so on.
+        Get the properties of a device.
+
+        The returned keys vary depending on the device. For example, a light
+        bulb may have the "``state``" and "``brightness``" properties, while an
+        environment sensor may have the "``temperature``" and "``humidity``"
+        properties, and so on.
 
         :param device: Display name of the device.
-        :param property: Name of the property that should be retrieved (default: all).
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param property: Name of the property that should be retrieved (default:
+            all).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         :return: Key->value map of the device properties.
         """
         kwargs = self._mqtt_args(**kwargs)
@@ -911,12 +1025,12 @@ class ZigbeeMqttPlugin(
         device = self._preferred_name(device_info)
 
         if property:
-            properties = self.publish(
+            properties = self._run_request(
                 topic=self._topic(device) + f'/get/{property}',
                 reply_topic=self._topic(device),
                 msg={property: ''},
                 **kwargs,
-            ).output  # type: ignore[reportGeneralTypeIssues]
+            )
 
             assert property in properties, f'No such property: {property}'
             return {property: properties[property]}
@@ -928,16 +1042,13 @@ class ZigbeeMqttPlugin(
         # If the device has no queryable properties, don't specify a reply
         # topic to listen on
         req = self._build_device_get_request(exposes)
-        reply_topic = self._topic(device)
-        if not req:
-            reply_topic = None
-
-        return self.publish(
+        reply_topic = self._topic(device) if req else None
+        return self._run_request(
             topic=self._topic(device) + '/get',
             reply_topic=reply_topic,
             msg=req,
             **kwargs,
-        ).output  # type: ignore[reportGeneralTypeIssues]
+        )
 
     @action
     def devices_get(
@@ -946,10 +1057,11 @@ class ZigbeeMqttPlugin(
         """
         Get the properties of the devices connected to the network.
 
-        :param devices: If set, then only the status of these devices (by friendly name) will be retrieved (default:
-            retrieve all).
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param devices: If set, then only the status of these devices (by
+            friendly name) will be retrieved (default: retrieve all).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         :return: Key->value map of the device properties:
 
             .. code-block:: json
@@ -970,13 +1082,13 @@ class ZigbeeMqttPlugin(
             devices = list(
                 {
                     self._preferred_name(device)
-                    for device in self.devices(**kwargs).output  # type: ignore[reportGeneralTypeIssues]
+                    for device in list(self.devices(**kwargs).output)  # type: ignore
                     if self._preferred_name(device)
                 }
             )
 
         def worker(device: str, q: Queue):
-            q.put(self.device_get(device, **kwargs).output)  # type: ignore[reportGeneralTypeIssues]
+            q.put_nowait(self.device_get(device, **kwargs).output)  # type: ignore
 
         queues: Dict[str, Queue] = {}
         workers = {}
@@ -990,9 +1102,16 @@ class ZigbeeMqttPlugin(
             workers[device].start()
 
         for device in devices:
+            timeout = kwargs.get('timeout')
             try:
-                response[device] = queues[device].get(timeout=kwargs.get('timeout'))
-                workers[device].join(timeout=kwargs.get('timeout'))
+                response[device] = queues[device].get(timeout=timeout)
+                workers[device].join(timeout=timeout)
+            except Empty:
+                self.logger.warning(
+                    'Could not get the status of the device %s: timeout after %f seconds',
+                    device,
+                    timeout,
+                )
             except Exception as e:
                 self.logger.warning(
                     'An error occurred while getting the status of the device %s: %s',
@@ -1000,12 +1119,15 @@ class ZigbeeMqttPlugin(
                     e,
                 )
 
+                self.logger.exception(e)
+
         return response
 
     @action
     def status(self, *args, device: Optional[str] = None, **kwargs):
         """
-        Get the status of a device (by friendly name) or of all the connected devices (it wraps :meth:`.devices_get`).
+        Get the status of a device (by friendly name) or of all the connected
+        devices (it wraps :meth:`.devices_get`).
 
         :param device: Device friendly name (default: get all devices).
         """
@@ -1021,16 +1143,21 @@ class ZigbeeMqttPlugin(
         **kwargs,
     ):
         """
-        Set a properties on a device. The compatible properties vary depending on the device. For example, a light bulb
-        may have the "``state``" and "``brightness``" properties, while an environment sensor may have the
-        "``temperature``" and "``humidity``" properties, and so on.
+        Set a properties on a device.
+
+        The compatible properties vary depending on the device. For example, a
+        light bulb may have the "``state``" and "``brightness``" properties,
+        while an environment sensor may have the "``temperature``" and
+        "``humidity``" properties, and so on.
 
         :param device: Display name of the device.
         :param property: Name of the property that should be set.
         :param value: New value of the property.
-        :param values: If you want to set multiple values, then pass this mapping instead of ``property``+``value``.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param values: If you want to set multiple values, then pass this
+            mapping instead of ``property``+``value``.
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
         msg = (values or {}).copy()
         reply_topic = None
@@ -1056,12 +1183,12 @@ class ZigbeeMqttPlugin(
             if self._is_write_only(stored_property):
                 reply_topic = None
 
-        properties = self.publish(
+        properties = self._run_request(
             topic=self._topic(device + '/set'),
             reply_topic=reply_topic,
             msg=msg,
             **self._mqtt_args(**kwargs),
-        ).output  # type: ignore[reportGeneralTypeIssues]
+        )
 
         if property and reply_topic:
             assert (
@@ -1084,6 +1211,7 @@ class ZigbeeMqttPlugin(
         :param property: Name of the property to set. If not specified here, it
             should be specified on ``device`` in ``<address>:<property>``
             format.
+        :param data: Value to set for the property.
         :param kwargs: Extra arguments to be passed to
             :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
             the default configured device).
@@ -1105,8 +1233,9 @@ class ZigbeeMqttPlugin(
         Check if the specified device has any OTA updates available to install.
 
         :param device: Address or friendly name of the device.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
 
         :return:
 
@@ -1119,13 +1248,11 @@ class ZigbeeMqttPlugin(
                 }
 
         """
-        ret = self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic('bridge/request/device/ota_update/check'),
-                reply_topic=self._topic('bridge/response/device/ota_update/check'),
-                msg={'id': device},
-                **self._mqtt_args(**kwargs),
-            )
+        ret = self._run_request(
+            topic=self._topic('bridge/request/device/ota_update/check'),
+            reply_topic=self._topic('bridge/response/device/ota_update/check'),
+            msg={'id': device},
+            **self._mqtt_args(**kwargs),
         )
 
         return {
@@ -1140,16 +1267,15 @@ class ZigbeeMqttPlugin(
         Install OTA updates for a device if available.
 
         :param device: Address or friendly name of the device.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
-        return self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic('bridge/request/device/ota_update/update'),
-                reply_topic=self._topic('bridge/response/device/ota_update/update'),
-                msg={'id': device},
-                **self._mqtt_args(**kwargs),
-            )
+        return self._run_request(
+            topic=self._topic('bridge/request/device/ota_update/update'),
+            reply_topic=self._topic('bridge/response/device/ota_update/update'),
+            msg={'id': device},
+            **self._mqtt_args(**kwargs),
         )
 
     @action
@@ -1157,8 +1283,9 @@ class ZigbeeMqttPlugin(
         """
         Get the groups registered on the device.
 
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
         return self._get_network_info(**kwargs).get('groups', [])
 
@@ -1167,8 +1294,9 @@ class ZigbeeMqttPlugin(
         """
         Get the information, configuration and state of the network.
 
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
 
         :return: Example:
 
@@ -1225,7 +1353,7 @@ class ZigbeeMqttPlugin(
                         "device_options": {},
                         "devices": {
                             "0x00123456789abcdf": {
-                                "friendly_name": "My Lightbulb"
+                                "friendly_name": "My Light Bulb"
                             }
                         },
                         "experimental": {
@@ -1305,8 +1433,9 @@ class ZigbeeMqttPlugin(
 
         :param name: Display name of the group.
         :param id: Optional numeric ID (default: auto-generated).
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
         payload = (
             name
@@ -1317,13 +1446,11 @@ class ZigbeeMqttPlugin(
             }
         )
 
-        return self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic('bridge/request/group/add'),
-                reply_topic=self._topic('bridge/response/group/add'),
-                msg=payload,
-                **self._mqtt_args(**kwargs),
-            )
+        return self._run_request(
+            topic=self._topic('bridge/request/group/add'),
+            reply_topic=self._topic('bridge/response/group/add'),
+            msg=payload,
+            **self._mqtt_args(**kwargs),
         )
 
     @action
@@ -1331,28 +1458,34 @@ class ZigbeeMqttPlugin(
         self, group: str, property: Optional[str] = None, **kwargs
     ) -> dict:
         """
-        Get one or more properties of a group. The compatible properties vary depending on the devices on the group.
-        For example, a light bulb may have the "``state``" (with values ``"ON"`` and ``"OFF"``) and "``brightness``"
-        properties, while an environment sensor may have the "``temperature``" and "``humidity``" properties, and so on.
+        Get one or more properties of a group.
+
+        The compatible properties vary depending on the devices on the group.
+        For example, a light bulb may have the "``state``" (with values ``"ON"``
+        and ``"OFF"``) and "``brightness``" properties, while an environment
+        sensor may have the "``temperature``" and "``humidity``" properties, and
+        so on.
 
         :param group: Display name of the group.
-        :param property: Name of the property to retrieve (default: all available properties)
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param property: Name of the property to retrieve (default: all
+            available properties)
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
         msg = {}
         if property:
             msg = {property: ''}
 
-        properties = self.publish(
+        properties = self._run_request(
             topic=self._topic(group + '/get'),
             reply_topic=self._topic(group),
             msg=msg,
             **self._mqtt_args(**kwargs),
-        ).output  # type: ignore[reportGeneralTypeIssues]
+        )
 
         if property:
-            assert property in properties, 'No such property: ' + property
+            assert property in properties, f'No such property: {property}'
             return {property: properties[property]}
 
         return properties
@@ -1362,25 +1495,31 @@ class ZigbeeMqttPlugin(
         self, group: str, property: str, value: Any, **kwargs
     ):
         """
-        Set a properties on a group. The compatible properties vary depending on the devices on the group.
-        For example, a light bulb may have the "``state``" (with values ``"ON"`` and ``"OFF"``) and "``brightness``"
-        properties, while an environment sensor may have the "``temperature``" and "``humidity``" properties, and so on.
+        Set a properties on a group.
+
+        The compatible properties vary depending on the devices on the group.
+
+        For example, a light bulb may have the "``state``" (with values ``"ON"``
+        and ``"OFF"``) and "``brightness``" properties, while an environment
+        sensor may have the "``temperature``" and "``humidity``" properties, and
+        so on.
 
         :param group: Display name of the group.
         :param property: Name of the property that should be set.
         :param value: New value of the property.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
-        properties = self.publish(
+        properties = self._run_request(
             topic=self._topic(group + '/set'),
             reply_topic=self._topic(group),
             msg={property: value},
             **self._mqtt_args(**kwargs),
-        ).output  # type: ignore[reportGeneralTypeIssues]
+        )
 
         if property:
-            assert property in properties, 'No such property: ' + property
+            assert property in properties, f'No such property: {property}'
             return {property: properties[property]}
 
         return properties
@@ -1392,27 +1531,26 @@ class ZigbeeMqttPlugin(
 
         :param name: New name.
         :param group: Current name of the group to rename.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
         if name == group:
             self.logger.info('Old and new name are the same: nothing to do')
-            return
+            return None
 
         groups = {
-            group.get('friendly_name'): group
-            for group in self.groups().output  # type: ignore[reportGeneralTypeIssues]
+            g.get('friendly_name'): g
+            for g in dict(self.groups().output)  # type: ignore
         }
 
         assert name not in groups, f'A group named {name} already exists on the network'
 
-        return self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic('bridge/request/group/rename'),
-                reply_topic=self._topic('bridge/response/group/rename'),
-                msg={'from': group, 'to': name} if group else name,
-                **self._mqtt_args(**kwargs),
-            )
+        return self._run_request(
+            topic=self._topic('bridge/request/group/rename'),
+            reply_topic=self._topic('bridge/response/group/rename'),
+            msg={'from': group, 'to': name} if group else name,
+            **self._mqtt_args(**kwargs),
         )
 
     @action
@@ -1421,16 +1559,15 @@ class ZigbeeMqttPlugin(
         Remove a group.
 
         :param name: Display name of the group.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
-        return self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic('bridge/request/group/remove'),
-                reply_topic=self._topic('bridge/response/group/remove'),
-                msg=name,
-                **self._mqtt_args(**kwargs),
-            )
+        return self._run_request(
+            topic=self._topic('bridge/request/group/remove'),
+            reply_topic=self._topic('bridge/response/group/remove'),
+            msg=name,
+            **self._mqtt_args(**kwargs),
         )
 
     @action
@@ -1440,19 +1577,18 @@ class ZigbeeMqttPlugin(
 
         :param group: Display name of the group.
         :param device: Display name of the device to be added.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
-        return self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic('bridge/request/group/members/add'),
-                reply_topic=self._topic('bridge/response/group/members/add'),
-                msg={
-                    'group': group,
-                    'device': device,
-                },
-                **self._mqtt_args(**kwargs),
-            )
+        return self._run_request(
+            topic=self._topic('bridge/request/group/members/add'),
+            reply_topic=self._topic('bridge/response/group/members/add'),
+            msg={
+                'group': group,
+                'device': device,
+            },
+            **self._mqtt_args(**kwargs),
         )
 
     @action
@@ -1461,78 +1597,78 @@ class ZigbeeMqttPlugin(
         Remove a device from a group.
 
         :param group: Display name of the group.
-        :param device: Display name of the device to be removed. If none is specified then all the devices registered
-            to the specified group will be removed.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param device: Display name of the device to be removed. If none is
+            specified then all the devices registered to the specified group
+            will be removed.
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
         remove_suffix = '_all' if device is None else ''
-        return self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic(
-                    f'bridge/request/group/members/remove{remove_suffix}'
-                ),
-                reply_topic=self._topic(
-                    f'bridge/response/group/members/remove{remove_suffix}'
-                ),
-                msg={
-                    'group': group,
-                    'device': device,
-                },
-                **self._mqtt_args(**kwargs),
-            )
+        return self._run_request(
+            topic=self._topic(f'bridge/request/group/members/remove{remove_suffix}'),
+            reply_topic=self._topic(
+                f'bridge/response/group/members/remove{remove_suffix}'
+            ),
+            msg={
+                'group': group,
+                'device': device,
+            },
+            **self._mqtt_args(**kwargs),
         )
 
     @action
     def bind_devices(self, source: str, target: str, **kwargs):
         """
-        Bind two devices. Binding makes it possible that devices can directly control each other without the
-        intervention of zigbee2mqtt or any home automation software. You may want to use this feature to bind
-        for example an IKEA/Philips Hue dimmer switch to a light bulb, or a Zigbee remote to a thermostat.
-        Read more on the `zigbee2mqtt binding page <https://www.zigbee2mqtt.io/information/binding.html>`_.
+        Bind two devices.
 
-        :param source: Name of the source device. It can also be a group name, although the support is
-            `still experimental <https://www.zigbee2mqtt.io/information/binding.html#binding-a-group>`_.
-            You can also bind a specific device endpoint - for example ``MySensor/temperature``.
-        :param target: Name of the target device.
-            You can also bind a specific device endpoint - for example ``MyLight/state``.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        Binding makes it possible that devices can directly control each other
+        without the intervention of zigbee2mqtt or any home automation software.
+        You may want to use this feature to bind for example an IKEA/Philips Hue
+        dimmer switch to a light bulb, or a Zigbee remote to a thermostat. Read
+        more on the `zigbee2mqtt binding page
+        <https://www.zigbee2mqtt.io/information/binding.html>`_.
+
+        :param source: Name of the source device. It can also be a group name,
+            although the support is `still experimental
+            <https://www.zigbee2mqtt.io/information/binding.html#binding-a-group>`_.
+            You can also bind a specific device endpoint - for example
+            ``MySensor/temperature``.
+        :param target: Name of the target device. You can also bind a specific
+            device endpoint - for example ``MyLight/state``.
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
-        return self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic('bridge/request/device/bind'),
-                reply_topic=self._topic('bridge/response/device/bind'),
-                msg={'from': source, 'to': target},
-                **self._mqtt_args(**kwargs),
-            )
+        return self._run_request(
+            topic=self._topic('bridge/request/device/bind'),
+            reply_topic=self._topic('bridge/response/device/bind'),
+            msg={'from': source, 'to': target},
+            **self._mqtt_args(**kwargs),
         )
 
     @action
     def unbind_devices(self, source: str, target: str, **kwargs):
         """
-        Un-bind two devices.
+        Remove a binding between two devices.
 
-        :param source: Name of the source device.
-            You can also bind a specific device endpoint - for example ``MySensor/temperature``.
-        :param target: Name of the target device.
-            You can also bind a specific device endpoint - for example ``MyLight/state``.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
-            (default: query the default configured device).
+        :param source: Name of the source device. You can also bind a specific
+            device endpoint - for example ``MySensor/temperature``.
+        :param target: Name of the target device. You can also bind a specific
+            device endpoint - for example ``MyLight/state``.
+        :param kwargs: Extra arguments to be passed to
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            the default configured device).
         """
-        return self._parse_response(
-            self.publish(  # type: ignore[reportGeneralTypeIssues]
-                topic=self._topic('bridge/request/device/unbind'),
-                reply_topic=self._topic('bridge/response/device/unbind'),
-                msg={'from': source, 'to': target},
-                **self._mqtt_args(**kwargs),
-            )
+        return self._run_request(
+            topic=self._topic('bridge/request/device/unbind'),
+            reply_topic=self._topic('bridge/response/device/unbind'),
+            msg={'from': source, 'to': target},
+            **self._mqtt_args(**kwargs),
         )
 
     @action
-    def on(  # pylint: disable=redefined-builtin,arguments-differ
-        self, device, *_, **__
-    ):
+    def on(self, device, *_, **__):  # pylint: disable=arguments-differ
         """
         Turn on/set to true a switch, a binary property or an option.
         """
@@ -1542,9 +1678,7 @@ class ZigbeeMqttPlugin(
         )
 
     @action
-    def off(  # pylint: disable=redefined-builtin,arguments-differ
-        self, device, *_, **__
-    ):
+    def off(self, device, *_, **__):  # pylint: disable=arguments-differ
         """
         Turn off/set to false a switch, a binary property or an option.
         """
@@ -1554,15 +1688,13 @@ class ZigbeeMqttPlugin(
         )
 
     @action
-    def toggle(  # pylint: disable=redefined-builtin,arguments-differ
-        self, device, *_, **__
-    ):
+    def toggle(self, device, *_, **__):  # pylint: disable=arguments-differ
         """
         Toggles the state of a switch, a binary property or an option.
         """
         device, prop_info = self._get_switch_info(device)
         prop = prop_info['property']
-        device_state = self.device_get(device).output  # type: ignore
+        device_state: dict = self.device_get(device).output  # type: ignore
         return self.device_set(
             device,
             prop,
@@ -1575,6 +1707,10 @@ class ZigbeeMqttPlugin(
         )
 
     def _get_switch_info(self, name: str) -> Tuple[str, dict]:
+        """
+        Get the information about a switch or switch-like device by name or
+        address.
+        """
         name, prop = self._ieee_address_and_property(name)
         if not prop or prop == 'light':
             prop = 'state'
@@ -1593,6 +1729,10 @@ class ZigbeeMqttPlugin(
 
     @staticmethod
     def _is_read_only(feature: dict) -> bool:
+        """
+        Utility method that checks if a feature is read-only on the basis of its
+        access flags.
+        """
         return bool(feature.get('access', 0) & 2) == 0 and (
             bool(feature.get('access', 0) & 1) == 1
             or bool(feature.get('access', 0) & 4) == 1
@@ -1600,6 +1740,10 @@ class ZigbeeMqttPlugin(
 
     @staticmethod
     def _is_write_only(feature: dict) -> bool:
+        """
+        Utility method that checks if a feature is write-only on the basis of
+        its access flags.
+        """
         return bool(feature.get('access', 0) & 2) == 1 and (
             bool(feature.get('access', 0) & 1) == 0
             or bool(feature.get('access', 0) & 4) == 0
@@ -1607,12 +1751,22 @@ class ZigbeeMqttPlugin(
 
     @staticmethod
     def _is_query_disabled(feature: dict) -> bool:
+        """
+        Utility method that checks if a feature doesn't support programmatic
+        querying (i.e. it will only broadcast its state when available) on the
+        basis of its access flags.
+        """
         return bool(feature.get('access', 0) & 4) == 0
 
     @staticmethod
     def _ieee_address_and_property(
         device: Union[dict, str]
     ) -> Tuple[str, Optional[str]]:
+        """
+        Given a device property, as a dictionary containing the full device
+        definition or a string containing the device address and property,
+        return a tuple in the format ``(device_address, property_name)``.
+        """
         # Entity value IDs are stored in the `<address>:<property>`
         # format. Therefore, we need to split by `:` if we want to
         # retrieve the original address.
@@ -1624,18 +1778,26 @@ class ZigbeeMqttPlugin(
         # IEEE address + property format
         if re.search(r'^0x[0-9a-fA-F]{16}:', dev):
             parts = dev.split(':')
-            return (parts[0], parts[1] if len(parts) > 1 else None)
+            return parts[0], parts[1] if len(parts) > 1 else None
 
-        return (dev, None)
+        return dev, None
 
     @classmethod
     def _ieee_address(cls, device: Union[dict, str]) -> str:
+        """
+        :return: The IEEE address of a device, given its full definition or
+        common name.
+        """
         return cls._ieee_address_and_property(device)[0]
 
     @classmethod
     def _get_switches(
         cls, device_info: dict, props: dict, options: dict
     ) -> List[Switch]:
+        """
+        A utility method that parses the properties of a device that can be
+        mapped to switches (or switch-like entities).
+        """
         return [
             cls._to_entity(
                 Switch,
@@ -1660,9 +1822,13 @@ class ZigbeeMqttPlugin(
         ]
 
     @classmethod
-    def _get_sensors(
+    def _get_sensors(  # pylint: disable=too-many-branches
         cls, device_info: dict, props: dict, options: dict
     ) -> List[Sensor]:
+        """
+        A utility method that parses the properties of a device that can be
+        mapped to sensors (or sensor-like entities).
+        """
         sensors = []
         properties = [
             prop
@@ -1727,6 +1893,10 @@ class ZigbeeMqttPlugin(
     def _get_dimmers(
         cls, device_info: dict, props: dict, options: dict
     ) -> List[Dimmer]:
+        """
+        A utility method that parses the properties of a device that can be
+        mapped to dimmers (or dimmer-like entities).
+        """
         return [
             cls._to_entity(
                 Dimmer,
@@ -1750,6 +1920,10 @@ class ZigbeeMqttPlugin(
     def _get_enum_switches(
         cls, device_info: dict, props: dict, options: dict
     ) -> List[EnumSwitch]:
+        """
+        A utility method that parses the properties of a device that can be
+        mapped to switches with enum values.
+        """
         return [
             cls._to_entity(
                 EnumSwitch,
@@ -1776,6 +1950,10 @@ class ZigbeeMqttPlugin(
         options: dict,
         **kwargs,
     ) -> Entity:
+        """
+        Give the information about a device and its properties and options, it
+        builds an entity of the right type.
+        """
         return entity_type(
             id=f'{device_info["ieee_address"]}:{property["property"]}',
             name=property.get('description', ''),
@@ -1788,8 +1966,12 @@ class ZigbeeMqttPlugin(
 
     @classmethod
     def _get_light_meta(cls, device_info: dict) -> dict:
-        exposes = (device_info.get('definition', {}) or {}).get('exposes', [])
-        for exposed in exposes:
+        """
+        Parse the attributes of a device that can be mapped to lights (or
+        light-like entities).
+        """
+        # pylint: disable=too-many-nested-blocks
+        for exposed in (device_info.get('definition', {}) or {}).get('exposes', []):
             if exposed.get('type') == 'light':
                 features = exposed.get('features', [])
                 switch = {}
@@ -1814,7 +1996,7 @@ class ZigbeeMqttPlugin(
                             'value_on': feature['value_on'],
                             'value_off': feature['value_off'],
                             'state_name': feature['name'],
-                            'value_toggle': feature.get('value_toggle', None),
+                            'value_toggle': feature.get('value_toggle'),
                             **data,
                         }
                     elif (
@@ -1954,15 +2136,226 @@ class ZigbeeMqttPlugin(
 
             self.device_set(self._preferred_name(dev), values=data)
 
-    def main(self):
-        from ._listener import ZigbeeMqttListener
+    @override
+    def on_mqtt_message(self):
+        """
+        Overrides :meth:`platypush.plugins.mqtt.MqttPlugin.on_mqtt_message` to
+        handle messages from the zigbee2mqtt integration.
+        """
 
-        listener = ZigbeeMqttListener()
-        listener.start()
-        self.wait_stop()
+        def handler(client: MqttClient, _, msg: mqtt.MQTTMessage):
+            topic_idx = len(self.topic_prefix) + 1
+            topic = msg.topic[topic_idx:]
+            data = msg.payload.decode()
+            if not data:
+                return
 
-        listener.stop()
-        listener.join()
+            with contextlib.suppress(ValueError, TypeError):
+                data = json.loads(data)
+
+            if topic == 'bridge/state':
+                self._process_state_message(client, data)
+            elif topic in ['bridge/log', 'bridge/logging']:
+                self._process_log_message(client, data)
+            elif topic == 'bridge/devices':
+                self._process_devices(client, data)
+            elif topic == 'bridge/groups':
+                self._process_groups(client, data)
+            elif isinstance(data, dict):
+                name = topic.split('/')[-1]
+                if name not in self._info.devices:
+                    self.logger.debug('Skipping unknown topic: %s', topic)
+                    return
+
+                dev = self._info.devices.get(name)
+                assert dev is not None, f'No such device: {name}'
+                changed_props = {
+                    k: v for k, v in data.items() if v != dev.get('state', {}).get(k)
+                }
+
+                if changed_props:
+                    self._process_property_update(name, data)
+                    self._bus.post(
+                        ZigbeeMqttDevicePropertySetEvent(
+                            host=client.host,
+                            port=client.port,
+                            device=name,
+                            properties=changed_props,
+                        )
+                    )
+
+                dev = self._info.devices.get(name)
+                if dev:
+                    self._info.devices.set_state(
+                        dev.get('friendly_name') or dev.get('ieee_address'), data
+                    )
+
+        return handler
+
+    @property
+    def _bus(self) -> Bus:
+        """
+        Utility property for the bus.
+        """
+        return get_bus()
+
+    def _process_state_message(self, client: MqttClient, msg: str):
+        """
+        Process a state message.
+        """
+        if msg == self._info.bridge_state:
+            return
+
+        if msg == 'online':
+            evt = ZigbeeMqttOnlineEvent
+            self._info.bridge_state = BridgeState.ONLINE
+        elif msg == 'offline':
+            evt = ZigbeeMqttOfflineEvent
+            self._info.bridge_state = BridgeState.OFFLINE
+            self.logger.warning('The zigbee2mqtt service is offline')
+        else:
+            return
+
+        self._bus.post(evt(host=client.host, port=client.port))
+
+    # pylint: disable=too-many-branches
+    def _process_log_message(self, client, msg):
+        """
+        Process a log event.
+        """
+
+        msg_type = msg.get('type')
+        text = msg.get('message')
+        args = {'host': client._host, 'port': client._port}
+
+        if msg_type == 'devices':
+            devices = {}
+            for dev in text or []:
+                devices[dev['friendly_name']] = dev
+                client.subscribe(self.topic_prefix + '/' + dev['friendly_name'])
+        elif msg_type == 'pairing':
+            self._bus.post(ZigbeeMqttDevicePairingEvent(device=text, **args))
+        elif msg_type in ['device_ban', 'device_banned']:
+            self._bus.post(ZigbeeMqttDeviceBannedEvent(device=text, **args))
+        elif msg_type in ['device_removed_failed', 'device_force_removed_failed']:
+            force = msg_type == 'device_force_removed_failed'
+            self._bus.post(
+                ZigbeeMqttDeviceRemovedFailedEvent(device=text, force=force, **args)
+            )
+        elif msg_type == 'device_whitelisted':
+            self._bus.post(ZigbeeMqttDeviceWhitelistedEvent(device=text, **args))
+        elif msg_type == 'device_renamed':
+            self._bus.post(ZigbeeMqttDeviceRenamedEvent(device=text, **args))
+        elif msg_type == 'device_bind':
+            self._bus.post(ZigbeeMqttDeviceBindEvent(device=text, **args))
+        elif msg_type == 'device_unbind':
+            self._bus.post(ZigbeeMqttDeviceUnbindEvent(device=text, **args))
+        elif msg_type == 'device_group_add':
+            self._bus.post(ZigbeeMqttGroupAddedEvent(group=text, **args))
+        elif msg_type == 'device_group_add_failed':
+            self._bus.post(ZigbeeMqttGroupAddedFailedEvent(group=text, **args))
+        elif msg_type == 'device_group_remove':
+            self._bus.post(ZigbeeMqttGroupRemovedEvent(group=text, **args))
+        elif msg_type == 'device_group_remove_failed':
+            self._bus.post(ZigbeeMqttGroupRemovedFailedEvent(group=text, **args))
+        elif msg_type == 'device_group_remove_all':
+            self._bus.post(ZigbeeMqttGroupRemoveAllEvent(group=text, **args))
+        elif msg_type == 'device_group_remove_all_failed':
+            self._bus.post(ZigbeeMqttGroupRemoveAllFailedEvent(group=text, **args))
+        elif msg_type == 'zigbee_publish_error':
+            self.logger.error('zigbee2mqtt error: {}'.format(text))
+            self._bus.post(ZigbeeMqttErrorEvent(error=text, **args))
+        elif msg.get('level') in ['warning', 'error']:
+            log = getattr(self.logger, msg['level'])
+            log(
+                'zigbee2mqtt {}: {}'.format(
+                    msg['level'], text or msg.get('error', msg.get('warning'))
+                )
+            )
+
+    def _process_devices(self, client: MqttClient, msg):
+        """
+        Process a list of devices received on the zigbee2mqtt bridge.
+        """
+        devices_info = {
+            device.get('friendly_name', device.get('ieee_address')): device
+            for device in msg
+        }
+
+        # Subscribe to updates from all the known devices
+        event_args = {'host': client.host, 'port': client.port}
+        client.subscribe(
+            *[self.topic_prefix + '/' + device for device in devices_info.keys()]
+        )
+
+        for name, device in devices_info.items():
+            # If we haven't cached this device yet, then notify about the
+            # connection of a new device.
+            if not self._info.devices.get(name):
+                self._bus.post(
+                    ZigbeeMqttDeviceConnectedEvent(device=name, **event_args)
+                )
+
+            # Send a request to fetch all the known properties of this device
+            exposes = (device.get('definition', {}) or {}).get('exposes', [])
+            payload = self._build_device_get_request(exposes)
+            if payload:
+                client.publish(
+                    self.topic_prefix + '/' + name + '/get',
+                    json.dumps(payload),
+                )
+
+        # Send a request to fetch all the known properties of this device
+        for name in self._info.devices.by_name.copy():
+            if name not in devices_info:
+                self._bus.post(ZigbeeMqttDeviceRemovedEvent(device=name, **event_args))
+                self._info.devices.remove(name)
+
+        for dev in devices_info.values():
+            self._info.devices.add(dev)
+
+    def _process_groups(self, client: MqttClient, msg):
+        """
+        Process an MQTT message containing an updated list of groups.
+        """
+        event_args = {'host': client.host, 'port': client.port}
+        groups_info = {
+            group.get('friendly_name', group.get('id')): group for group in msg
+        }
+
+        # Trigger ZigbeeMqttGroupAddedEvent for each new group
+        for name in groups_info.keys():
+            if name not in self._info.groups:
+                self._bus.post(ZigbeeMqttGroupAddedEvent(group=name, **event_args))
+
+        # Trigger ZigbeeMqttGroupRemovedEvent for each removed group
+        for name in self._info.groups.copy():
+            if name not in groups_info:
+                self._bus.post(ZigbeeMqttGroupRemovedEvent(group=name, **event_args))
+                del self._info.groups[name]
+
+        # Reset the groups cache
+        self._info.groups = {group: {} for group in groups_info.keys()}
+
+    def _process_property_update(self, device_name: str, properties: Mapping):
+        """
+        Process an MQTT message containing a device property update.
+
+        It will appropriately forward an
+        :class:`platypush.message.event.entities.EntityUpdateEvent` to the bus.
+        """
+        device_info = self._info.devices.get(device_name)
+        if not (device_info and properties):
+            return
+
+        self.publish_entities(
+            [
+                {
+                    **device_info,
+                    'state': properties,
+                }
+            ]
+        )
 
 
 # vim:sw=4:ts=4:et:

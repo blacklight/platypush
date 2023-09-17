@@ -1,7 +1,0 @@
-manifest:
-  events: {}
-  install:
-    pip:
-    - python-openzwave
-  package: platypush.plugins.zwave
-  type: plugin
