@@ -149,5 +149,4 @@ Plugins
     platypush/plugins/xmpp.rst
     platypush/plugins/zeroconf.rst
     platypush/plugins/zigbee.mqtt.rst
-    platypush/plugins/zwave.rst
     platypush/plugins/zwave.mqtt.rst
