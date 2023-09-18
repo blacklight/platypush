@@ -274,11 +274,11 @@ steps:
     - git pull --rebase origin master --tags
     - export VERSION=$(python setup.py --version)
     - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1)
-    - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).$HEAD"
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
     - export TAG_ARCHIVE="platypush-$VERSION.tar.gz"
+    - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).$HEAD"
     - export GIT_BUILD_DIR="$WORKDIR/$${GIT_PKG_NAME}_$${GIT_VERSION}_all"
-    - export GIT_PKGNAME="$GIT_BUILD_DIR/$${GIT_PKG_NAME}_$${GIT_VERSION}.deb"
+    - export GIT_DEB="$WORKDIR/$${GIT_PKG_NAME}_$${GIT_VERSION}.deb"
 
     - echo "--- Building git package"
     - pip install --prefix="$GIT_BUILD_DIR" --no-cache --no-deps .
@@ -294,7 +294,7 @@ steps:
       Description: Universal command executor and automation hub.
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
-    - aws s3 cp "$GIT_PKGNAME" s3://platypush-static/deb/git/
+    - aws s3 cp "$GIT_DEB" s3://platypush-static/deb/git/
 
 - name: update-pip-package
   image: python:3.11-alpine
