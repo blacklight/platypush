@@ -269,10 +269,12 @@ steps:
   commands:
     - echo "-- Installing dependencies"
     - apt update
-    - apt install -y dpkg-dev gpg python3 python3-pip
+    - apt install -y dpkg-dev gpg git python3 python3-pip
     - pip install awscli --break-system-packages
 
     - echo "--- Parsing metadata"
+    - git config --global --add safe.directory $PWD
+    - git pull --rebase origin master --tags
     - export VERSION=$(python setup.py --version)
     - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1)
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
@@ -323,10 +325,12 @@ steps:
   commands:
     - echo "-- Installing dependencies"
     - apt update
-    - apt install -y dpkg-dev gpg python3 python3-pip
+    - apt install -y dpkg-dev gpg git python3 python3-pip
     - pip install awscli
 
     - echo "--- Parsing metadata"
+    - git config --global --add safe.directory $PWD
+    - git pull --rebase origin master --tags
     - export VERSION=$(python setup.py --version)
     - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1)
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
