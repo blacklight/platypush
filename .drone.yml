@@ -245,7 +245,7 @@ steps:
       fi
 
 - name: update-debian-stable-packages
-  image: python:3.11-bookworm
+  image: debian:bookworm
   environment:
     WORKDIR: /tmp/workdir
     STABLE_PKG_NAME: platypush
@@ -269,7 +269,7 @@ steps:
   commands:
     - echo "-- Installing dependencies"
     - apt update
-    - apt install -y dpkg-dev gpg
+    - apt install -y dpkg-dev gpg python3 python3-pip
     - pip install awscli
 
     - echo "--- Parsing metadata"
@@ -300,7 +300,7 @@ steps:
     - aws s3 cp "$GIT_DEB" s3://platypush-pkg/apt/bookworm/main/
 
 - name: update-debian-oldstable-packages
-  image: python:3.9-bullseye
+  image: debian:bullseye
   environment:
     WORKDIR: /tmp/workdir
     STABLE_PKG_NAME: platypush
@@ -325,7 +325,7 @@ steps:
   commands:
     - echo "-- Installing dependencies"
     - apt update
-    - apt install -y dpkg-dev gpg
+    - apt install -y dpkg-dev gpg python3 python3-pip
     - pip install awscli
 
     - echo "--- Parsing metadata"
