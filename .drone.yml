@@ -277,14 +277,14 @@ steps:
     - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).$HEAD"
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
     - export TAG_ARCHIVE="platypush-$VERSION.tar.gz"
-    - export GIT_BUILD_DIR="${WORKDIR}/${GIT_PKG_NAME}_${GIT_VERSION}_all"
-    - export PKGNAME="${PWD}/${GIT_PKG_NAME}_${GIT_VERSION}.deb"
+    - export GIT_BUILD_DIR="$WORKDIR/$GIT_PKG_NAME_$GIT_VERSION_all"
+    - export PKGNAME="$WORKDIR/$${GIT_PKG_NAME}_$${GIT_VERSION}.deb"
 
     - echo "--- Building git package"
     - pip install --prefix="$GIT_BUILD_DIR" --no-cache --no-deps .
-    - mkdir -p "${GIT_BUILD_DIR}/__all/DEBIAN"
+    - mkdir -p "$GIT_BUILD_DIR/__all/DEBIAN"
     - |
-      cat <<EOF > "${GIT_BUILD_DIR}/__all/DEBIAN/control"
+      cat <<EOF > "$GIT_BUILD_DIR/__all/DEBIAN/control"
       Package: $GIT_PKG_NAME
       Version: $GIT_VERSION
       Maintainer: Fabio Manganiello <fabio@platypush.tech>
