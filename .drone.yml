@@ -250,9 +250,12 @@ steps:
     WORKDIR: /tmp/workdir
     STABLE_PKG_NAME: platypush
     GIT_PKG_NAME: platypush-git
-    AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud
-    AWS_ACCESS_KEY_ID: aws_access_key_id
-    AWS_SECRET_ACCESS_KEY: aws_secret_access_key
+    AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
+    AWS_DEFAULT_REGION: nl-ams
+    AWS_ACCESS_KEY_ID:
+      from_secret: aws_access_key_id
+    AWS_SECRET_ACCESS_KEY:
+      from_secret: aws_secret_access_key
 
   when:
     branch:
@@ -294,7 +297,7 @@ steps:
       Description: Universal command executor and automation hub.
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
-    - aws s3 cp "$GIT_DEB" s3://platypush-static/deb/git/
+    - aws s3 cp "$GIT_DEB" s3://platypush-pkg/apt/git/
 
 - name: update-pip-package
   image: python:3.11-alpine
