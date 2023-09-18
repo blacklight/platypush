@@ -5,7 +5,6 @@ import os
 from random import randint
 import re
 import textwrap
-from typing_extensions import override
 
 from marshmallow import fields
 
@@ -59,7 +58,6 @@ class SchemaParser(Parser):
 
         return str(field.__class__.__name__).lower()
 
-    @override
     @classmethod
     def parse(cls, docstring: str, *_, **__) -> str:
         while True:

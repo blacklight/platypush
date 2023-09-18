@@ -14,7 +14,6 @@ from typing import (
 from bleak import BleakClient, BleakScanner
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
-from typing_extensions import override
 
 from platypush.context import get_or_create_event_loop
 from platypush.entities.bluetooth import BluetoothDevice
@@ -256,7 +255,6 @@ class BLEManager(BaseBluetoothManager):
             entity.connected = False
             self.notify(BluetoothDeviceDisconnectedEvent, entity)
 
-    @override
     def connect(
         self,
         device: str,
@@ -299,7 +297,6 @@ class BLEManager(BaseBluetoothManager):
         success = connected_event.wait(timeout=timeout)
         assert success, f'Connection to {device} timed out'
 
-    @override
     def disconnect(self, device: str, *_, **__):
         # Get the device
         loop = get_or_create_event_loop()
@@ -323,7 +320,6 @@ class BLEManager(BaseBluetoothManager):
             connection.thread and connection.thread.is_alive()
         ), f'Disconnection from {device} timed out'
 
-    @override
     def scan(
         self,
         duration: Optional[float] = None,
@@ -340,7 +336,6 @@ class BLEManager(BaseBluetoothManager):
         loop = get_or_create_event_loop()
         return loop.run_until_complete(self._scan(duration, service_uuids))
 
-    @override
     def read(
         self,
         device: str,
@@ -360,7 +355,6 @@ class BLEManager(BaseBluetoothManager):
             self._read(device, service_uuid, interface, connect_timeout)
         )
 
-    @override
     def write(
         self,
         device: str,
@@ -401,7 +395,6 @@ class BLEManager(BaseBluetoothManager):
 
             device_addresses = new_device_addresses
 
-    @override
     def run(self):
         super().run()
 
@@ -420,7 +413,6 @@ class BLEManager(BaseBluetoothManager):
             except Exception:
                 pass
 
-    @override
     def stop(self):
         """
         Upon stop request, it stops any pending scans and closes all active

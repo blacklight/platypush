@@ -3,7 +3,6 @@ from collections import namedtuple
 import json
 from typing import Dict, List, Optional, Union
 import threading
-from typing_extensions import override
 
 from serial import Serial
 
@@ -258,7 +257,6 @@ class SerialPlugin(SensorPlugin):
 
         return _DeviceAndRate(device, baud_rate)
 
-    @override
     @action
     def get_measurement(
         self,
@@ -386,7 +384,6 @@ class SerialPlugin(SensorPlugin):
             self.logger.info('Writing %d bytes to %s', len(data), device)
             ser.write(data)
 
-    @override
     def transform_entities(self, entities: Dict[str, Numeric]) -> List[Device]:
         transformed_entities = []
 
@@ -415,7 +412,6 @@ class SerialPlugin(SensorPlugin):
             )
         ]
 
-    @override
     def main(self):
         if not self._enable_polling:
             # If the polling is disabled, we don't need to do anything here
@@ -424,7 +420,6 @@ class SerialPlugin(SensorPlugin):
 
         super().main()
 
-    @override
     def stop(self):
         super().stop()
         self._close_serial()

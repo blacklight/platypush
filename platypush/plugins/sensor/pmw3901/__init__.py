@@ -2,7 +2,6 @@ import enum
 import math
 import time
 from typing import Dict, List
-from typing_extensions import override
 
 from platypush.common.sensors import Numeric
 from platypush.entities.devices import Device
@@ -114,7 +113,6 @@ class SensorPmw3901Plugin(SensorPlugin):
 
         return self._sensor
 
-    @override
     @action
     def get_measurement(self, *_, **__):
         """
@@ -156,7 +154,6 @@ class SensorPmw3901Plugin(SensorPlugin):
             'motion_events_per_sec': self._events_per_sec.get(secs, 0),
         }
 
-    @override
     def transform_entities(self, entities: Dict[str, Numeric]) -> List[Device]:
         return [
             Device(

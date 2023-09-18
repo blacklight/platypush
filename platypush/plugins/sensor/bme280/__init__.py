@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import Dict, List, Type
-from typing_extensions import override
 
 from platypush.common.sensors import Numeric
 from platypush.entities.devices import Device
@@ -98,7 +97,6 @@ class SensorBme280Plugin(SensorPlugin):
         self._device = BME280(i2c_dev=self._bus)
         return self._device
 
-    @override
     @action
     def get_measurement(self, *_, **__):
         """
@@ -123,7 +121,6 @@ class SensorBme280Plugin(SensorPlugin):
             'altitude': device.get_altitude(),
         }
 
-    @override
     def transform_entities(self, entities: Dict[str, Numeric]) -> List[Device]:
         sensors = []
         for sensor, value in entities.items():

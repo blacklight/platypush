@@ -10,8 +10,6 @@ from typing import (
     Optional,
     Union,
 )
-from typing_extensions import override
-
 import bluetooth
 
 from platypush.entities.bluetooth import BluetoothDevice, BluetoothService
@@ -193,7 +191,6 @@ class LegacyManager(BaseBluetoothManager):
         conn.service.connected = False
         self.notify(BluetoothDeviceDisconnectedEvent, dev)
 
-    @override
     def connect(
         self,
         device: str,
@@ -222,7 +219,6 @@ class LegacyManager(BaseBluetoothManager):
         conn_success = connected.wait(timeout=timeout)
         assert conn_success, f'Connection to {device} timed out'
 
-    @override
     def disconnect(
         self,
         device: str,
@@ -241,7 +237,6 @@ class LegacyManager(BaseBluetoothManager):
         for conn in matching_connections:
             conn.close()
 
-    @override
     def scan(self, duration: Optional[float] = None) -> List[BluetoothDevice]:
         duration = duration or self.poll_interval
         assert duration, 'Scan duration must be set'
@@ -301,7 +296,6 @@ class LegacyManager(BaseBluetoothManager):
 
         return list(devices.values())
 
-    @override
     def read(
         self,
         device: str,
@@ -321,7 +315,6 @@ class LegacyManager(BaseBluetoothManager):
             except bluetooth.BluetoothError as e:
                 raise AssertionError(f'Error reading from {device}: {e}') from e
 
-    @override
     def write(
         self,
         device: str,
@@ -338,7 +331,6 @@ class LegacyManager(BaseBluetoothManager):
             except bluetooth.BluetoothError as e:
                 raise AssertionError(f'Error reading from {device}: {e}') from e
 
-    @override
     def run(self):
         super().run()
         self.logger.info('Starting legacy Bluetooth scanner')
@@ -348,7 +340,6 @@ class LegacyManager(BaseBluetoothManager):
             if scan_enabled:
                 self.scan(duration=self.poll_interval)
 
-    @override
     def stop(self):
         super().stop()
 

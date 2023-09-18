@@ -4,7 +4,6 @@ from queue import Empty
 import socket
 import tempfile
 from typing import Optional
-from typing_extensions import override
 
 from platypush.process import ControllableProcess
 
@@ -54,7 +53,6 @@ class CommandStream(ControllableProcess):
         self._cmd_queue.close()
         self._cmd_queue = Queue()
 
-    @override
     def close(self) -> None:
         self.reset()
         return super().close()
@@ -134,7 +132,6 @@ class CommandStream(ControllableProcess):
         except OSError:
             pass
 
-    @override
     def main(self):
         while self._sock and not self.should_stop:
             sock = self._sock

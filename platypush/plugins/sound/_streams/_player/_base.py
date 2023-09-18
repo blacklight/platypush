@@ -1,6 +1,5 @@
 from abc import ABC
 from typing import IO, Iterable, List, Optional, Type, Union
-from typing_extensions import override
 
 import numpy as np
 import sounddevice as sd
@@ -55,25 +54,20 @@ class AudioPlayer(AudioThread, ABC):
         raise AssertionError('Either infile or url must be specified')
 
     @property
-    @override
     def direction(self) -> StreamType:
         return StreamType.OUTPUT
 
-    @override
     def _on_converter_timeout(self, *_, **__) -> bool:
         return False  # break
 
     @property
-    @override
     def _stream_type(self) -> Type[sd.RawOutputStream]:
         return sd.RawOutputStream
 
     @property
-    @override
     def _audio_converter_type(self) -> Type[RawOutputAudioConverter]:
         return RawOutputAudioConverter
 
-    @override
     def _on_audio_converted(self, data: bytes, out_f: Optional[IO] = None):
         if self.audio_stream:
             self.audio_stream.write(
@@ -87,22 +81,18 @@ class AudioPlayer(AudioThread, ABC):
         super()._on_audio_converted(data, out_f)
 
     @property
-    @override
     def _started_event_type(self) -> Type[SoundPlaybackStartedEvent]:
         return SoundPlaybackStartedEvent
 
     @property
-    @override
     def _stopped_event_type(self) -> Type[SoundPlaybackStoppedEvent]:
         return SoundPlaybackStoppedEvent
 
     @property
-    @override
     def _paused_event_type(self) -> Type[SoundPlaybackPausedEvent]:
         return SoundPlaybackPausedEvent
 
     @property
-    @override
     def _resumed_event_type(self) -> Type[SoundPlaybackResumedEvent]:
         return SoundPlaybackResumedEvent
 

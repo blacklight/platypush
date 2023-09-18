@@ -14,7 +14,6 @@ import subprocess
 import sys
 import textwrap
 from typing import IO, Generator, Iterable
-from typing_extensions import override
 
 from platypush.builder import BaseBuilder
 from platypush.config import Config
@@ -73,12 +72,10 @@ class DockerBuilder(BaseBuilder):
         self.tag = tag
         self.print_only = print_only  # TODO
 
-    @override
     @classmethod
     def get_name(cls):
         return "platydock"
 
-    @override
     @classmethod
     def get_description(cls):
         return "Build a Platypush Docker image from a configuration file."
@@ -133,7 +130,6 @@ class DockerBuilder(BaseBuilder):
                 yield line.rstrip()
 
     @property
-    @override
     def deps(self) -> Dependencies:
         return Dependencies.from_config(
             self.cfgfile,
@@ -187,7 +183,6 @@ class DockerBuilder(BaseBuilder):
 
         return parser
 
-    @override
     def build(self):
         """
         Build a Dockerfile based on a configuration file.
@@ -292,7 +287,6 @@ class DockerBuilder(BaseBuilder):
         )
 
     @classmethod
-    @override
     def _get_arg_parser(cls) -> argparse.ArgumentParser:
         parser = super()._get_arg_parser()
 

@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Type
-from typing_extensions import override
 
 from platypush.common.sensors import Numeric
 from platypush.entities.acceleration import Accelerometer
@@ -99,7 +98,6 @@ class SensorEnvirophatPlugin(SensorPlugin):
 
     """
 
-    @override
     @action
     def get_measurement(self, *_, qnh: float = 1020.0, **__):
         """
@@ -156,7 +154,6 @@ class SensorEnvirophatPlugin(SensorPlugin):
 
         return ret
 
-    @override
     def transform_entities(self, entities: Dict[str, Numeric]) -> List[Device]:
         return [
             Device(

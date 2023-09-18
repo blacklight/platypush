@@ -2,7 +2,6 @@ import enum
 import time
 
 from typing import List, Optional, Dict, Union, Callable, Tuple, Type
-from typing_extensions import override
 
 from pyfirmata2 import (
     Arduino,
@@ -485,7 +484,6 @@ class ArduinoPlugin(SensorPlugin):
 
         return ret
 
-    @override
     def transform_entities(self, entities: Dict[str, Numeric]) -> List[Device]:  # type: ignore
         dev_id = 'arduino'
         dev_name = 'Arduino'

@@ -1,5 +1,4 @@
 import re
-from typing_extensions import override
 
 from ._base import Parser
 
@@ -14,7 +13,6 @@ class PluginParser(Parser):
         r'(\s*):class:`(platypush\.plugins\.(.+?))`', re.MULTILINE
     )
 
-    @override
     @classmethod
     def parse(cls, docstring: str, *_, **__) -> str:
         while True:

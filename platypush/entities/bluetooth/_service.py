@@ -1,7 +1,5 @@
 from uuid import UUID
 
-from typing_extensions import override
-
 from sqlalchemy import (
     Boolean,
     Column,
@@ -128,7 +126,6 @@ if 'bluetooth_service' not in Base.metadata:
             except (TypeError, ValueError):
                 return ServiceClass.UNKNOWN
 
-        @override
         def to_dict(self) -> dict:
             return {
                 **{k.lstrip('_'): v for k, v in super().to_dict().items()},

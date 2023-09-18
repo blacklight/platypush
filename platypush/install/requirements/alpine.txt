@@ -15,7 +15,6 @@ py3-requests
 py3-rsa
 py3-sqlalchemy
 py3-tornado
-py3-typing-extensions
 py3-tz
 py3-websocket-client
 py3-websockets

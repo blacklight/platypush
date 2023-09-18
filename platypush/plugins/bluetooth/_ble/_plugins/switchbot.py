@@ -2,8 +2,6 @@ from enum import Enum
 from typing import Iterable
 from uuid import UUID
 
-from typing_extensions import override
-
 from platypush.entities import Entity
 from platypush.entities.bluetooth import BluetoothDevice
 from platypush.entities.switches import EnumSwitch
@@ -45,13 +43,11 @@ class SwitchbotPlugin(BaseBluetoothPlugin):
     Implements support for Switchbot devices.
     """
 
-    @override
     def supports_device(self, device: BluetoothDevice) -> bool:
         return any(
             srv.service_class == ServiceClass.SWITCHBOT for srv in device.services
         )
 
-    @override
     def _extract_entities(self, device: BluetoothDevice) -> Iterable[Entity]:
         return [
             EnumSwitch(

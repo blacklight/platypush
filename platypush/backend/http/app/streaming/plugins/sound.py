@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 import json
 from typing import Generator, Optional
-from typing_extensions import override
 
 from tornado.web import stream_request_body
 
@@ -24,7 +23,6 @@ class SoundRoute(StreamingRoute):
         self._audio_headers_written: bool = False
         """Send the audio file headers before we send the first audio frame."""
 
-    @override
     @classmethod
     def path(cls) -> str:
         return r"/sound/stream\.?([a-zA-Z0-9_]+)?"
@@ -44,7 +42,6 @@ class SoundRoute(StreamingRoute):
         yield
         send_request('sound.stop_recording')
 
-    @override
     @classmethod
     def _get_redis_queue(cls, *_, device: Optional[str] = None, **__) -> str:
         return '/'.join([cls._redis_queue_prefix, *([device] if device else [])])

@@ -1,7 +1,6 @@
 import logging
 import re
 import sys
-from typing_extensions import override
 
 from platypush.context import get_backend, get_plugin
 from platypush.message.event import Event
@@ -104,7 +103,6 @@ class SpeechRecognizedEvent(AssistantEvent):
 
         return result
 
-    @override
     def _matches_argument(self, argname, condition_value, event_args, result):
         """
         Overrides the default `_matches_argument` method to allow partial

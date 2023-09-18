@@ -1,5 +1,4 @@
 from typing import Iterable
-from typing_extensions import override
 
 from ._base import AudioConverter
 
@@ -10,12 +9,10 @@ class RawOutputAudioConverter(AudioConverter):
     """
 
     @property
-    @override
     def _input_format_args(self) -> Iterable[str]:
         return self._compressed_ffmpeg_args
 
     @property
-    @override
     def _output_format_args(self) -> Iterable[str]:
         return self._raw_ffmpeg_args
 
@@ -30,7 +27,6 @@ class RawOutputAudioFromFileConverter(RawOutputAudioConverter):
         self.infile = infile
 
     @property
-    @override
     def _input_source_args(self) -> Iterable[str]:
         return ('-i', self.infile)
 

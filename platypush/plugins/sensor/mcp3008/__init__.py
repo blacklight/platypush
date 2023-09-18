@@ -1,6 +1,5 @@
 import enum
 from typing import Dict, List
-from typing_extensions import override
 
 from platypush.common.sensors import Numeric
 from platypush.entities.devices import Device
@@ -154,7 +153,6 @@ class SensorMcp3008Plugin(SensorPlugin):
     def _convert_to_voltage(self, value):
         return (value * self.Vdd) / 1023.0 if value is not None else None
 
-    @override
     @action
     def get_measurement(self):
         """
@@ -197,7 +195,6 @@ class SensorMcp3008Plugin(SensorPlugin):
 
         return values
 
-    @override
     def transform_entities(self, entities: Dict[str, Numeric]) -> List[Device]:
         return [
             Device(

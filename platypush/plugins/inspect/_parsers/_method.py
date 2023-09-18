@@ -1,5 +1,4 @@
 import re
-from typing_extensions import override
 
 from ._base import Parser
 
@@ -16,7 +15,6 @@ class MethodParser(Parser):
 
     _rel_method_regex = re.compile(r'(\s*):meth:`\.(.+?)`', re.MULTILINE)
 
-    @override
     @classmethod
     def parse(cls, docstring: str, obj_type: type) -> str:
         while True:

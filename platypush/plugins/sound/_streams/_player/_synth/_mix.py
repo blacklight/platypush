@@ -1,7 +1,6 @@
 import json
 import logging
 from typing import List, Tuple, Union
-from typing_extensions import override
 
 import numpy as np
 from numpy.typing import DTypeLike, NDArray
@@ -57,7 +56,6 @@ class Mix(SoundBase):
         for sound_index in sound_indices[::-1]:
             self._sounds.pop(sound_index)
 
-    @override
     def get_wave(
         self,
         sample_rate: float,

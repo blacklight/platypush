@@ -15,8 +15,6 @@ from typing import (
     Type,
 )
 
-from typing_extensions import override
-
 from platypush.common import StoppableThread
 from platypush.context import get_bus, get_plugin
 from platypush.entities import (
@@ -479,7 +477,6 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
             connect_timeout=connect_timeout,
         )
 
-    @override
     @action
     def set(self, entity: str, value: Any, **_):
         """
@@ -549,7 +546,6 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
         sender = FileSender(self._managers[LegacyManager])  # type: ignore
         sender.send_file(file, device, binary_data)
 
-    @override
     @action
     def status(
         self,
@@ -608,13 +604,11 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
         get_entities_engine().notify(*known_devices)
         return known_devices
 
-    @override
     def transform_entities(
         self, entities: Collection[BluetoothDevice]
     ) -> Collection[BluetoothDevice]:
         return super().transform_entities(entities)
 
-    @override
     def main(self):
         self._refresh_cache()
         self._init_bluetooth_managers()
@@ -634,7 +628,6 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
         finally:
             self.stop()
 
-    @override
     def stop(self):
         """
         Upon stop request, it stops any pending scans and closes all active

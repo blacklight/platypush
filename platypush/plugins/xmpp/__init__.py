@@ -1,6 +1,5 @@
 import os
 from typing import Iterable, Optional, Type, Union
-from typing_extensions import override
 
 import aioxmpp
 import aioxmpp.im
@@ -177,11 +176,9 @@ class XmppPlugin(AsyncRunnablePlugin, XmppBasePlugin):
 
         return self._handlers[hndl_type]
 
-    @override
     def should_stop(self) -> bool:
         return super().should_stop() or self._state.should_stop.is_set()
 
-    @override
     def stop(self):
         self._state.should_stop.set()
         self._stop_state_serializer()
@@ -199,7 +196,6 @@ class XmppPlugin(AsyncRunnablePlugin, XmppBasePlugin):
             self._client.stop()
             self._client = None
 
-    @override
     async def listen(self):
         self._client = aioxmpp.PresenceManagedClient(self._jid, self._security)
 

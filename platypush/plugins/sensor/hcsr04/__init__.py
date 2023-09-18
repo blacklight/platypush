@@ -1,8 +1,6 @@
 from collections.abc import Collection
 import time
-
 from typing import List, Optional, Union
-from typing_extensions import override
 import warnings
 
 from platypush.context import get_bus
@@ -142,7 +140,6 @@ class SensorHcsr04Plugin(GpioPlugin, SensorPlugin):
         # s = vt where v = 1/2 * avg speed of sound in mm/s
         return round(pulse_duration * 171500.0, 2)
 
-    @override
     @action
     def get_measurement(self, *_, **__) -> Optional[float]:
         """
@@ -161,7 +158,6 @@ class SensorHcsr04Plugin(GpioPlugin, SensorPlugin):
             self.cleanup()
             raise e
 
-    @override
     def transform_entities(
         self, entities: Union[Optional[float], Collection[Optional[float]]]
     ) -> List[DistanceSensor]:

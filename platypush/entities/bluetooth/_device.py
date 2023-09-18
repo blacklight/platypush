@@ -1,5 +1,4 @@
 from typing import Iterable, List
-from typing_extensions import override
 
 from sqlalchemy import (
     Boolean,
@@ -156,7 +155,6 @@ if 'bluetooth_device' not in Base.metadata:
                 and child.service_class != ServiceClass.UNKNOWN
             }
 
-        @override
         def to_dict(self):
             """
             Overwrites ``to_dict`` to transform private column names into their

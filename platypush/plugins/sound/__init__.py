@@ -1,7 +1,6 @@
 from dataclasses import asdict
 import warnings
 from typing import Iterable, List, Optional, Union
-from typing_extensions import override
 
 from platypush.plugins import RunnablePlugin, action
 
@@ -471,7 +470,6 @@ class SoundPlugin(RunnablePlugin):
         """
         self._manager.set_volume(volume=volume, device=device, streams=streams)
 
-    @override
     def main(self):
         try:
             self.wait_stop()

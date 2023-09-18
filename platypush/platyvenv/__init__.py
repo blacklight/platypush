@@ -15,8 +15,6 @@ import textwrap
 from typing import Generator, Sequence
 import venv
 
-from typing_extensions import override
-
 from platypush.builder import BaseBuilder
 from platypush.config import Config
 from platypush.utils.manifest import (
@@ -36,12 +34,10 @@ class VenvBuilder(BaseBuilder):
         kwargs['install_context'] = InstallContext.DOCKER
         super().__init__(*args, **kwargs)
 
-    @override
     @classmethod
     def get_name(cls):
         return "platyvenv"
 
-    @override
     @classmethod
     def get_description(cls):
         return "Build a Platypush virtual environment from a configuration file."

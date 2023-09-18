@@ -2,7 +2,6 @@ from contextlib import contextmanager
 from queue import Queue
 from threading import Event
 from typing import Any, Generator, Iterable, Optional, Type
-from typing_extensions import override
 
 import numpy as np
 import sounddevice as sd
@@ -42,12 +41,10 @@ class AudioSynthPlayer(AudioPlayer):
         )
 
     @property
-    @override
     def _stream_type(self) -> Type[sd.OutputStream]:
         return sd.OutputStream
 
     @property
-    @override
     def _audio_converter_type(self) -> None:
         pass
 
@@ -61,7 +58,6 @@ class AudioSynthPlayer(AudioPlayer):
             self.mix.volume = __value
         return super().__setattr__(__name, __value)
 
-    @override
     def _on_converter_timeout(self, *_, **__) -> bool:
         """
         Don't break the audio stream if the output converter failed
@@ -69,7 +65,6 @@ class AudioSynthPlayer(AudioPlayer):
         return True
 
     @property
-    @override
     def _stream_args(self) -> dict:
         """
         Register an :class:`.AudioOutputCallback` to fill up the audio buffers.
@@ -95,7 +90,6 @@ class AudioSynthPlayer(AudioPlayer):
         """
         return self.blocksize * (self.queue_size or 5) / self.sample_rate
 
-    @override
     @contextmanager
     def _audio_generator(self) -> Generator[AudioGenerator, None, None]:
         stop_generator = Event()

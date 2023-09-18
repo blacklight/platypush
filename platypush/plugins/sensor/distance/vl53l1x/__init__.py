@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 from threading import RLock
 from typing import List, Mapping
-from typing_extensions import override
 
 from platypush.entities.devices import Device
 from platypush.entities.distance import DistanceSensor
@@ -65,7 +64,6 @@ class SensorDistanceVl53l1xPlugin(SensorPlugin):
                 self._device.close()
                 self._device = None
 
-    @override
     def get_measurement(self, *_, short=True, medium=True, long=True, **__):
         """
         :param short: Enable short range measurement (default: True)
@@ -109,7 +107,6 @@ class SensorDistanceVl53l1xPlugin(SensorPlugin):
 
         return ret
 
-    @override
     def transform_entities(self, entities: Mapping[str, int]) -> List[Device]:
         return [
             Device(

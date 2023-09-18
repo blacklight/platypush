@@ -1,7 +1,6 @@
 from functools import wraps
 from threading import Event, RLock
 from typing import Any, Callable, Collection, Dict, Iterable, Optional, Union
-from typing_extensions import override
 
 from platypush.entities import EntityManager, get_entities_engine
 from platypush.entities.variables import Variable
@@ -170,7 +169,6 @@ class VariablePlugin(Plugin, EntityManager):
 
         return self._redis.expire(name, expire)
 
-    @override
     def transform_entities(
         self, entities: Union[dict, Iterable]
     ) -> Collection[Variable]:
@@ -193,7 +191,6 @@ class VariablePlugin(Plugin, EntityManager):
             ]
         )
 
-    @override
     @action
     @ensure_initialized
     def status(self, *_, **__):

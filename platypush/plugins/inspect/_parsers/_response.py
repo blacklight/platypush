@@ -1,5 +1,4 @@
 import re
-from typing_extensions import override
 
 from ._base import Parser
 
@@ -14,7 +13,6 @@ class ResponseParser(Parser):
         r'(\s*):class:`(platypush\.message\.response\.(.+?))`', re.MULTILINE
     )
 
-    @override
     @classmethod
     def parse(cls, docstring: str, *_, **__) -> str:
         while True:

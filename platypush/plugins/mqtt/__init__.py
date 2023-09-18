@@ -4,7 +4,6 @@ import io
 import json
 import threading
 from typing import Any, Dict, Iterable, Optional, IO
-from typing_extensions import override
 
 import paho.mqtt.client as mqtt
 
@@ -504,7 +503,6 @@ class MqttPlugin(RunnablePlugin):
         """
         return self.publish(*args, **kwargs)
 
-    @override
     def main(self):
         if self.run_topic:
             self.logger.warning(
@@ -519,7 +517,6 @@ class MqttPlugin(RunnablePlugin):
 
         self.wait_stop()
 
-    @override
     def stop(self):
         """
         Disconnect all the clients upon plugin stop.

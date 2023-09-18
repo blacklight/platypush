@@ -7,7 +7,6 @@ import queue
 from threading import Event, RLock, Thread
 import time
 from typing import IO, Callable, Final, Generator, Optional, Tuple, Type, Union
-from typing_extensions import override
 
 import sounddevice as sd
 
@@ -326,7 +325,6 @@ class AudioThread(Thread, ABC):
         # Continue only if the converter hasn't terminated
         return not self._converter_terminated.is_set()
 
-    @override
     def run(self):
         """
         Wrapper for the main loop that initializes the converter and the stream.

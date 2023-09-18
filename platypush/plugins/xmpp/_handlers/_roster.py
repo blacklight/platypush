@@ -1,5 +1,5 @@
 from typing import Union
-from typing_extensions import override
+
 import aioxmpp
 import aioxmpp.roster.xso
 
@@ -28,7 +28,6 @@ class XmppRosterHandler(XmppBaseHandler):
         self.roster.on_entry_removed.connect(self._on_roster_entry_removed)  # type: ignore
         self.roster.on_subscribe.connect(self._on_roster_subscribe)  # type: ignore
 
-    @override
     def restore_state(self):
         if self._loaded_state.users:
             for user_id in self._loaded_state.users:

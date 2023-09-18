@@ -15,7 +15,6 @@ from typing import (
     Type,
     Union,
 )
-from typing_extensions import override
 
 import paho.mqtt.client as mqtt
 
@@ -313,7 +312,6 @@ class ZigbeeMqttPlugin(
             if option.get('property')
         }
 
-    @override
     def transform_entities(self, entities: Collection[dict]) -> List[Entity]:
         compatible_entities = []
         for dev in entities:
@@ -1222,7 +1220,6 @@ class ZigbeeMqttPlugin(
 
         self.device_set(dev, property, data, **kwargs)
 
-    @override
     @action
     def set(self, entity: str, value: Any, attribute: Optional[str] = None, **kwargs):
         return self.set_value(entity, data=value, property=attribute, **kwargs)
@@ -2136,7 +2133,6 @@ class ZigbeeMqttPlugin(
 
             self.device_set(self._preferred_name(dev), values=data)
 
-    @override
     def on_mqtt_message(self):
         """
         Overrides :meth:`platypush.plugins.mqtt.MqttPlugin.on_mqtt_message` to

@@ -21,8 +21,6 @@ from typing import (
 )
 from urllib.parse import parse_qs, urlparse
 
-from typing_extensions import override
-
 from platypush.entities import (
     DimmerEntityManager,
     EnumSwitchEntityManager,
@@ -958,7 +956,6 @@ class ZwaveMqttPlugin(
         assert group_id in groups, f'No such group_id: {group_id}'
         return groups[group_id]
 
-    @override
     def on_mqtt_message(self):
         def handler(_, __, msg):
             if not msg.topic.startswith(self.events_topic):
@@ -2189,7 +2186,6 @@ class ZwaveMqttPlugin(
             'id': value['value_id'],
         }
 
-    @override
     def main(self):
         self.get_nodes()
         super().main()

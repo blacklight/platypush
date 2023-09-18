@@ -3,7 +3,6 @@ import os
 import signal
 import subprocess
 import sys
-from typing_extensions import override
 
 from platypush.process import ControllableProcess
 
@@ -27,7 +26,6 @@ class ApplicationProcess(ControllableProcess):
     def __exit__(self, *_, **__):
         self.stop()
 
-    @override
     def main(self):
         self.logger.info('Starting application...')
 
@@ -42,7 +40,6 @@ class ApplicationProcess(ControllableProcess):
             except KeyboardInterrupt:
                 pass
 
-    @override
     def on_stop(self):
         try:
             with open(self.pidfile, 'r') as f:

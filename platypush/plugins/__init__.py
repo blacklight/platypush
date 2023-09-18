@@ -6,7 +6,6 @@ import warnings
 from abc import ABC, abstractmethod
 from functools import wraps
 from typing import Any, Callable, Optional
-from typing_extensions import override
 
 from platypush.bus import Bus
 from platypush.common import ExtensionWithManifest
@@ -279,7 +278,6 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
 
         self._task.cancel()
 
-    @override
     def main(self):
         if self.should_stop():
             self.logger.info('The plugin is already scheduled to stop')
@@ -296,7 +294,6 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
         else:
             self.wait_stop()
 
-    @override
     def stop(self):
         if self._loop and self._loop.is_running():
             self._loop.call_soon_threadsafe(self._loop.stop)

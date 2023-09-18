@@ -3,7 +3,6 @@ import logging
 from multiprocessing import Event, Process, RLock
 from os import getpid
 from typing import Optional
-from typing_extensions import override
 
 
 class ControllableProcess(Process, ABC):
@@ -121,7 +120,6 @@ class ControllableProcess(Process, ABC):
         self._should_restart = False
         return self.main()
 
-    @override
     def run(self) -> None:
         """
         Executes the process.

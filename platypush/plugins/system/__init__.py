@@ -1,7 +1,5 @@
 import os
-
 from typing import Tuple, Union, List, Optional
-from typing_extensions import override
 
 import psutil
 
@@ -506,7 +504,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         self._get_process(pid).wait(timeout)
 
-    @override
     @action
     def get_measurement(self, *_, **__):
         """
@@ -532,7 +529,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
             }
         )
 
-    @override
     def transform_entities(self, entities: dict) -> List[Entity]:
         cpu = entities['cpu'].copy()
         battery = entities['battery']

@@ -1,7 +1,5 @@
 from typing import Dict, List
 
-from typing_extensions import override
-
 from platypush.common.sensors import Numeric
 from platypush.entities.devices import Device
 from platypush.entities.distance import DistanceSensor
@@ -35,7 +33,6 @@ class SensorLtr559Plugin(SensorPlugin):
         super().__init__(**kwargs)
         self.ltr = ltr559.LTR559()
 
-    @override
     @action
     def get_measurement(self, *_, **__):
         """
@@ -55,7 +52,6 @@ class SensorLtr559Plugin(SensorPlugin):
             'proximity': self.ltr.get_proximity(),
         }
 
-    @override
     def transform_entities(self, entities: Dict[str, Numeric]) -> List[Device]:
         sensors = []
 

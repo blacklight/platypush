@@ -1,7 +1,6 @@
 from enum import Enum
 import json
 from typing import Final, Optional, Tuple, Union
-from typing_extensions import override
 
 import numpy as np
 from numpy.typing import NDArray
@@ -144,7 +143,6 @@ class Sound(SoundBase):
 
         return wave
 
-    @override
     def get_wave(
         self,
         sample_rate: float,

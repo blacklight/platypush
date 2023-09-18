@@ -25,7 +25,6 @@ from typing import (
     Type,
     Union,
 )
-from typing_extensions import override
 
 import yaml
 
@@ -551,7 +550,6 @@ class PluginManifest(Manifest):
     """
 
     @property
-    @override
     def manifest_type(self) -> ManifestType:
         return ManifestType.PLUGIN
 
@@ -563,7 +561,6 @@ class BackendManifest(Manifest):
     """
 
     @property
-    @override
     def manifest_type(self) -> ManifestType:
         return ManifestType.BACKEND
 

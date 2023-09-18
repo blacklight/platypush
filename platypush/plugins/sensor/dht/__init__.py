@@ -1,8 +1,7 @@
 from typing import List, Optional, Dict
-from typing_extensions import override
+
 from platypush.common.sensors import Numeric
 from platypush.entities.devices import Device
-
 from platypush.entities.humidity import HumiditySensor
 from platypush.entities.temperature import TemperatureSensor
 from platypush.plugins import action
@@ -101,7 +100,6 @@ class SensorDhtPlugin(SensorPlugin):
             'temperature': temperature,
         }
 
-    @override
     @action
     def get_measurement(self, *_, **__) -> Dict[str, float]:
         """
@@ -119,7 +117,6 @@ class SensorDhtPlugin(SensorPlugin):
         """
         return self.read()  # type: ignore
 
-    @override
     def transform_entities(self, entities: Dict[str, Numeric]) -> List[Device]:
         return [
             Device(
