@@ -9,6 +9,11 @@ volumes:
       path: /opt/docs/platypush
 
 steps:
+
+###
+### Mirror the current repository state to Github
+###
+
 - name: github-mirror
   image: alpine
   environment:
@@ -31,6 +36,10 @@ steps:
     - git remote add github git@github.com:/BlackLight/platypush.git
     - git pull --rebase github "$(git branch | head -1 | awk '{print $2}')" || echo "No such branch on Github"
     - git push --all -v github
+
+###
+### Rebuild the docs
+###
 
 - name: docs
   image: alpine
@@ -62,6 +71,10 @@ steps:
     event:
       - tag
 
+###
+### Run the tests
+###
+
 - name: tests
   image: python:3.11-alpine
   commands:
@@ -72,6 +85,10 @@ steps:
     - pip install -r requirements-tests.txt
     - apk del build-base g++ rust linux-headers
     - pytest tests
+
+###
+### Rebuild the UI files
+###
 
 - name: build-ui
   image: node:current-alpine3.18
@@ -152,6 +169,10 @@ steps:
 
     # Restore the original git configuration
     - mv /tmp/git.config.orig $GIT_CONF
+
+###
+### Update the Arch packages
+###
 
 - name: update-arch-packages
   image: python:3.11-alpine
@@ -244,16 +265,19 @@ steps:
         git push origin master
       fi
 
+###
+### Update the Debian (stable) packages
+###
+
 - name: update-debian-stable-packages
   image: debian:stable
   environment:
     DEB_VERSION: stable
     WORKDIR: /tmp/workdir
     STABLE_PKG_NAME: platypush
-    GIT_PKG_NAME: platypush-git
+    PKG_NAME: platypush
     S3_URL: s3://platypush-pkg/apt/dists
     AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
-    AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
       from_secret: aws_access_key_id
     AWS_SECRET_ACCESS_KEY:
@@ -288,8 +312,8 @@ steps:
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
     - export TAG_ARCHIVE="platypush-$VERSION.tar.gz"
     - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).$HEAD"
-    - export GIT_BUILD_DIR="$WORKDIR/$${GIT_PKG_NAME}_$${GIT_VERSION}_all"
-    - export GIT_DEB="$WORKDIR/$${GIT_PKG_NAME}_$${GIT_VERSION}_all.deb"
+    - export GIT_BUILD_DIR="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all"
+    - export GIT_DEB="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all.deb"
 
     - echo "--- Building git package"
     - pip install --prefix="$GIT_BUILD_DIR/usr" --no-cache --no-deps .
@@ -302,7 +326,7 @@ steps:
     - mkdir -p "$GIT_BUILD_DIR/DEBIAN"
     - |
       cat <<EOF > "$GIT_BUILD_DIR/DEBIAN/control"
-      Package: $GIT_PKG_NAME
+      Package: $PKG_NAME
       Version: $GIT_VERSION
       Maintainer: Fabio Manganiello <fabio@platypush.tech>
       Depends: $(cat platypush/install/requirements/debian.txt | tr '\n' ',' | sed -re 's/,$//' -e 's/,/, /g')
@@ -311,7 +335,13 @@ steps:
       Description: Universal command executor and automation hub.
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
-    - aws s3 cp "$GIT_DEB" "$S3_URL/$DEB_VERSION/main/all/"
+
+    - echo "--- Pushing package to the S3 bucket"
+    - aws s3 cp "$GIT_DEB" "$S3_URL/$DEB_VERSION/dev/all/"
+
+###
+### Update the Debian (oldstable) packages
+###
 
 - name: update-debian-oldstable-packages
   image: debian:oldstable
@@ -319,10 +349,9 @@ steps:
     DEB_VERSION: oldstable
     WORKDIR: /tmp/workdir
     STABLE_PKG_NAME: platypush
-    GIT_PKG_NAME: platypush-git
+    PKG_NAME: platypush
     S3_URL: s3://platypush-pkg/apt/dists
     AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
-    AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
       from_secret: aws_access_key_id
     AWS_SECRET_ACCESS_KEY:
@@ -357,8 +386,8 @@ steps:
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
     - export TAG_ARCHIVE="platypush-$VERSION.tar.gz"
     - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).$HEAD"
-    - export GIT_BUILD_DIR="$WORKDIR/$${GIT_PKG_NAME}_$${GIT_VERSION}_all"
-    - export GIT_DEB="$WORKDIR/$${GIT_PKG_NAME}_$${GIT_VERSION}_all.deb"
+    - export GIT_BUILD_DIR="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all"
+    - export GIT_DEB="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all.deb"
 
     - echo "--- Building git package"
     - pip install --prefix="$GIT_BUILD_DIR/usr" --no-cache --no-deps .
@@ -371,7 +400,7 @@ steps:
     - mkdir -p "$GIT_BUILD_DIR/DEBIAN"
     - |
       cat <<EOF > "$GIT_BUILD_DIR/DEBIAN/control"
-      Package: $GIT_PKG_NAME
+      Package: $PKG_NAME
       Version: $GIT_VERSION
       Maintainer: Fabio Manganiello <fabio@platypush.tech>
       Depends: $(cat platypush/install/requirements/debian.txt | tr '\n' ',' | sed -re 's/,$//' -e 's/,/, /g')
@@ -380,7 +409,56 @@ steps:
       Description: Universal command executor and automation hub.
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
-    - aws s3 cp "$GIT_DEB" "$S3_URL/$DEB_VERSION/main/all/"
+
+    - echo "--- Pushing package to the S3 bucket"
+    - aws s3 cp "$GIT_DEB" "$S3_URL/$DEB_VERSION/dev/all/"
+
+###
+### Updates the APT repository after new packages have been pushed
+###
+
+- name: update-apt-repo
+  image: debian:stable
+  privileged: true  # Required to use the FUSE module for s3fs
+  environment:
+    S3_BUCKET: platypush-pkg
+    BUCKET_MNT: /mnt/s3
+    MAX_PKG_PER_BRANCH: 10
+    AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
+    AWS_ACCESS_KEY_ID:
+      from_secret: aws_access_key_id
+    AWS_SECRET_ACCESS_KEY:
+      from_secret: aws_secret_access_key
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+
+  depends_on:
+    - update-debian-stable-packages
+    - update-debian-oldstable-packages
+
+  commands:
+    - echo "-- Installing dependencies"
+    - apt install -y s3fs
+
+    - echo "-- Mounting the S3 bucket"
+    - mkdir -p "$BUCKET_MNT"
+    - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL"
+
+    - echo "-- Cleaning up older apt releases"
+    - |
+      find "$BUCKET_MNT/apt/dists" -mindepth 3 -maxdepth 3 -type d | tail -n+2 | while read reldir; do
+        let pkg_to_remove=($(ls "$reldir" | wc -l) - $MAX_PKG_PER_BRANCH)
+        [ $pkg_to_remove -le 0 ] && break
+        ls -rt "$reldir" | head -n$pkg_to_remove | xargs printf -- "$reldir/%s\n" | xargs rm -f
+      done
+
+###
+### Updates the pip package upon new releases
+###
 
 - name: update-pip-package
   image: python:3.11-alpine
@@ -403,6 +481,11 @@ steps:
     - python setup.py sdist bdist_wheel
     - twine upload dist/platypush-$(python setup.py --version).tar.gz
 
+###
+### Checkpoint step that waits for all the package update
+### steps to complete before proceeding to the next steps.
+###
+
 - name: wait-pkg-update
   image: alpine
 
@@ -415,11 +498,14 @@ steps:
 
   depends_on:
     - update-arch-packages
-    - update-debian-stable-packages
-    - update-debian-oldstable-packages
+    - update-apt-repo
 
   commands:
     - echo "All packages have been successfully updated"
+
+###
+### Notifies about a new release
+###
 
 - name: notify-release
   image: python:3.11-alpine
@@ -441,6 +527,10 @@ steps:
       curl --silent -XPOST \
         -H "X-Token: $WORKER_RPC_SECRET" \
         "https://worker.ci-cd.platypush.tech/hook/notify-platypush-release?version=$(python setup.py --version)"
+
+###
+### Notifies about a change in the CI/CD build status
+###
 
 - name: notify-build-status
   image: alpine
