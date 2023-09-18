@@ -283,7 +283,7 @@ steps:
     - pip install --prefix="$GIT_BUILD_DIR" --no-cache --no-deps .
     - mkdir "${GIT_BUILD_DIR}/DEBIAN"
     - |
-      cat <<EOF > "${GIT_BUILD_DIR}/DEBIAN/control"
+      cat <<EOF > "${GIT_BUILD_DIR}/__all/DEBIAN/control"
       Package: $GIT_PKG_NAME
       Version: $GIT_VERSION
       Maintainer: Fabio Manganiello <fabio@platypush.tech>
