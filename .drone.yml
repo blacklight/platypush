@@ -320,6 +320,7 @@ steps:
 
   depends_on:
     - build-ui
+    - update-debian-stable-packages
 
   commands:
     - echo "-- Installing dependencies"
@@ -375,6 +376,24 @@ steps:
     - python setup.py sdist bdist_wheel
     - twine upload dist/platypush-$(python setup.py --version).tar.gz
 
+- name: wait-pkg-update
+  image: alpine
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+      - tag
+
+  depends_on:
+    - update-arch-packages
+    - update-debian-stable-packages
+    - update-debian-oldstable-packages
+
+  commands:
+    - echo "All packages have been successfully updated"
+
 - name: notify-release
   image: python:3.11-alpine
   environment:
@@ -387,9 +406,7 @@ steps:
 
   depends_on:
     - update-pip-package
-    - update-arch-packages
-    - update-debian-stable-packages
-    - update-debian-oldstable-packages
+    - wait-pkg-update
 
   commands:
     - apk add --update --no-cache curl
@@ -414,9 +431,7 @@ steps:
       - failure
 
   depends_on:
-    - update-arch-packages
-    - update-debian-stable-packages
-    - update-debian-oldstable-packages
+    - wait-pkg-update
 
   commands:
     - apk add --update --no-cache curl
