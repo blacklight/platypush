@@ -280,7 +280,7 @@ steps:
     - export PKGNAME="${PWD}/${GIT_PKG_NAME}_${GIT_VERSION}.deb"
 
     - echo "--- Building git package"
-    - pip install --prefix="$GIT_BUILD_DIR" --no-cache --no-deps
+    - pip install --prefix="$GIT_BUILD_DIR" --no-cache --no-deps .
     - mkdir "${GIT_BUILD_DIR}/DEBIAN"
     - |
       cat <<EOF > "${GIT_BUILD_DIR}/DEBIAN/control"
