@@ -287,7 +287,7 @@ steps:
       Package: $GIT_PKG_NAME
       Version: $GIT_VERSION
       Maintainer: Fabio Manganiello <fabio@platypush.tech>
-      Depends: $(cat platypush/install/requirements/debian.txt | tr '\n' ' ')
+      Depends: $(cat platypush/install/requirements/debian.txt | tr '\n' ',' | sed -re 's/,$//' -e 's/,/, /g')
       Architecture: all
       Homepage: https://platypush.tech
       Description: Universal command executor and automation hub.
