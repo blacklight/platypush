@@ -278,6 +278,7 @@ steps:
     PKG_NAME: platypush
     S3_URL: s3://platypush-pkg/apt/dists
     AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
+    AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
       from_secret: aws_access_key_id
     AWS_SECRET_ACCESS_KEY:
@@ -352,6 +353,7 @@ steps:
     PKG_NAME: platypush
     S3_URL: s3://platypush-pkg/apt/dists
     AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
+    AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
       from_secret: aws_access_key_id
     AWS_SECRET_ACCESS_KEY:
@@ -425,6 +427,7 @@ steps:
     BUCKET_MNT: /mnt/s3
     MAX_PKG_PER_BRANCH: 10
     AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
+    AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
       from_secret: aws_access_key_id
     AWS_SECRET_ACCESS_KEY:
