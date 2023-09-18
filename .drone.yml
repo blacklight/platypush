@@ -281,7 +281,7 @@ steps:
 
     - echo "--- Building git package"
     - pip install --prefix="$GIT_BUILD_DIR" --no-cache --no-deps .
-    - mkdir "${GIT_BUILD_DIR}/DEBIAN"
+    - mkdir -p "${GIT_BUILD_DIR}/__all/DEBIAN"
     - |
       cat <<EOF > "${GIT_BUILD_DIR}/__all/DEBIAN/control"
       Package: $GIT_PKG_NAME
