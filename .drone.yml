@@ -245,11 +245,13 @@ steps:
       fi
 
 - name: update-debian-stable-packages
-  image: debian:bookworm
+  image: debian:stable
   environment:
+    DEB_VERSION: stable
     WORKDIR: /tmp/workdir
     STABLE_PKG_NAME: platypush
     GIT_PKG_NAME: platypush-git
+    S3_URL: s3://platypush-pkg/apt/dists
     AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
     AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
@@ -309,14 +311,16 @@ steps:
       Description: Universal command executor and automation hub.
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
-    - aws s3 cp "$GIT_DEB" s3://platypush-pkg/apt/dists/bookworm/main/all/
+    - aws s3 cp "$GIT_DEB" "$S3_URL/$DEB_VERSION/main/all/"
 
 - name: update-debian-oldstable-packages
-  image: debian:bullseye
+  image: debian:oldstable
   environment:
+    DEB_VERSION: oldstable
     WORKDIR: /tmp/workdir
     STABLE_PKG_NAME: platypush
     GIT_PKG_NAME: platypush-git
+    S3_URL: s3://platypush-pkg/apt/dists
     AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
     AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
@@ -364,7 +368,6 @@ steps:
         mv "$dir" "$base/dist-packages"
       done
 
-
     - mkdir -p "$GIT_BUILD_DIR/DEBIAN"
     - |
       cat <<EOF > "$GIT_BUILD_DIR/DEBIAN/control"
@@ -377,7 +380,7 @@ steps:
       Description: Universal command executor and automation hub.
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
-    - aws s3 cp "$GIT_DEB" s3://platypush-pkg/apt/dists/bookworm/main/all/
+    - aws s3 cp "$GIT_DEB" "$S3_URL/$DEB_VERSION/main/all/"
 
 - name: update-pip-package
   image: python:3.11-alpine
