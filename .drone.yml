@@ -244,7 +244,7 @@ steps:
         git push origin master
       fi
 
-- name: update-debian-packages
+- name: update-debian-stable-packages
   image: python:3.11-bookworm
   environment:
     WORKDIR: /tmp/workdir
@@ -297,7 +297,62 @@ steps:
       Description: Universal command executor and automation hub.
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
-    - aws s3 cp "$GIT_DEB" s3://platypush-pkg/apt/git/
+    - aws s3 cp "$GIT_DEB" s3://platypush-pkg/apt/bookworm/main
+
+- name: update-debian-oldstable-packages
+  image: python:3.9-bullseye
+  environment:
+    WORKDIR: /tmp/workdir
+    STABLE_PKG_NAME: platypush
+    GIT_PKG_NAME: platypush-git
+    AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
+    AWS_DEFAULT_REGION: nl-ams
+    AWS_ACCESS_KEY_ID:
+      from_secret: aws_access_key_id
+    AWS_SECRET_ACCESS_KEY:
+      from_secret: aws_secret_access_key
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+
+  depends_on:
+    - build-ui
+
+  commands:
+    - echo "-- Installing dependencies"
+    - apt update
+    - apt install -y dpkg-dev gpg
+    - pip install awscli
+
+    - echo "--- Parsing metadata"
+    - git config --global --add safe.directory $PWD
+    - git pull --rebase origin master --tags
+    - export VERSION=$(python setup.py --version)
+    - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1)
+    - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
+    - export TAG_ARCHIVE="platypush-$VERSION.tar.gz"
+    - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).$HEAD"
+    - export GIT_BUILD_DIR="$WORKDIR/$${GIT_PKG_NAME}_$${GIT_VERSION}_all"
+    - export GIT_DEB="$WORKDIR/$${GIT_PKG_NAME}_$${GIT_VERSION}_all.deb"
+
+    - echo "--- Building git package"
+    - pip install --prefix="$GIT_BUILD_DIR" --no-cache --no-deps .
+    - mkdir -p "$GIT_BUILD_DIR/DEBIAN"
+    - |
+      cat <<EOF > "$GIT_BUILD_DIR/DEBIAN/control"
+      Package: $GIT_PKG_NAME
+      Version: $GIT_VERSION
+      Maintainer: Fabio Manganiello <fabio@platypush.tech>
+      Depends: $(cat platypush/install/requirements/debian.txt | tr '\n' ',' | sed -re 's/,$//' -e 's/,/, /g')
+      Architecture: all
+      Homepage: https://platypush.tech
+      Description: Universal command executor and automation hub.
+      EOF
+    - dpkg --build "$GIT_BUILD_DIR"
+    - aws s3 cp "$GIT_DEB" s3://platypush-pkg/apt/bullseye/main
 
 - name: update-pip-package
   image: python:3.11-alpine
@@ -333,7 +388,8 @@ steps:
   depends_on:
     - update-pip-package
     - update-arch-packages
-    - update-debian-packages
+    - update-debian-stable-packages
+    - update-debian-oldstable-packages
 
   commands:
     - apk add --update --no-cache curl
@@ -359,7 +415,8 @@ steps:
 
   depends_on:
     - update-arch-packages
-    - update-debian-packages
+    - update-debian-stable-packages
+    - update-debian-oldstable-packages
 
   commands:
     - apk add --update --no-cache curl
