@@ -445,6 +445,7 @@ steps:
 
   commands:
     - echo "-- Installing dependencies"
+    - apt update
     - apt install -y s3fs
 
     - echo "-- Mounting the S3 bucket"
