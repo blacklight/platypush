@@ -455,7 +455,7 @@ steps:
     - echo "-- Cleaning up older apt releases"
     - |
       find "$BUCKET_MNT/apt/dists" -mindepth 3 -maxdepth 3 -type d | tail -n+2 | while read reldir; do
-        let pkg_to_remove=$(ls "$reldir" | wc -l)-$MAX_PKG_PER_BRANCH
+        pkg_to_remove=$(( $(ls "$reldir" | wc -l) - $MAX_PKG_PER_BRANCH ))
         [ $pkg_to_remove -le 0 ] && break
         ls -rt "$reldir" | head -n$pkg_to_remove | xargs printf -- "$reldir/%s\n" | xargs rm -f
       done
