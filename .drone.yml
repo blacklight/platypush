@@ -275,6 +275,7 @@ steps:
     - echo "--- Parsing metadata"
     - git config --global --add safe.directory $PWD
     - git pull --rebase origin master --tags
+    - export PY_VERSION=$(python3 --version | awk '{print $2}' | sed -re 's/^([0-9]+\.[0-9]+).*/\1/')
     - export VERSION=$(python3 setup.py --version)
     - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1)
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
@@ -285,6 +286,12 @@ steps:
 
     - echo "--- Building git package"
     - pip install --prefix="$GIT_BUILD_DIR" --no-cache --no-deps .
+
+    - mkdir -p "$GIT_BUILD_DIR/usr/local"
+    - mv "$GIT_BUILD_DIR/usr/bin" "$GIT_BUILD_DIR/usr/local"
+    - mv "$GIT_BUILD_DIR/usr/lib" "$GIT_BUILD_DIR/usr/local"
+    - mv "$GIT_BUILD_DIR/usr/local/lib/python$${PY_VERSION}/site-packages" "$GIT_BUILD_DIR/usr/local/lib/python$${PY_VERSION}/dist-packages"
+
     - mkdir -p "$GIT_BUILD_DIR/DEBIAN"
     - |
       cat <<EOF > "$GIT_BUILD_DIR/DEBIAN/control"
@@ -331,6 +338,7 @@ steps:
     - echo "--- Parsing metadata"
     - git config --global --add safe.directory $PWD
     - git pull --rebase origin master --tags
+    - export PY_VERSION=$(python3 --version | awk '{print $2}' | sed -re 's/^([0-9]+\.[0-9]+).*/\1/')
     - export VERSION=$(python3 setup.py --version)
     - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1)
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
@@ -341,6 +349,12 @@ steps:
 
     - echo "--- Building git package"
     - pip install --prefix="$GIT_BUILD_DIR" --no-cache --no-deps .
+
+    - mkdir -p "$GIT_BUILD_DIR/usr/local"
+    - mv "$GIT_BUILD_DIR/usr/bin" "$GIT_BUILD_DIR/usr/local"
+    - mv "$GIT_BUILD_DIR/usr/lib" "$GIT_BUILD_DIR/usr/local"
+    - mv "$GIT_BUILD_DIR/usr/local/lib/python$${PY_VERSION}/site-packages" "$GIT_BUILD_DIR/usr/local/lib/python$${PY_VERSION}/dist-packages"
+
     - mkdir -p "$GIT_BUILD_DIR/DEBIAN"
     - |
       cat <<EOF > "$GIT_BUILD_DIR/DEBIAN/control"
