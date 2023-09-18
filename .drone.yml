@@ -275,7 +275,7 @@ steps:
     - echo "--- Parsing metadata"
     - git config --global --add safe.directory $PWD
     - git pull --rebase origin master --tags
-    - export PY_VERSION=$(python3 --version | awk '{print $2}' | sed -re 's/^([0-9]+\.[0-9]+).*/\1/')
+    - export PY_VERSION="$(python3 --version | awk '{print $2}' | sed -r -e 's/^([0-9]+\.[0-9]+).*/\1/')"
     - export VERSION=$(python3 setup.py --version)
     - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1)
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
@@ -334,7 +334,7 @@ steps:
     - echo "--- Parsing metadata"
     - git config --global --add safe.directory $PWD
     - git pull --rebase origin master --tags
-    - export PY_VERSION=$(python3 --version | awk '{print $2}' | sed -re 's/^([0-9]+\.[0-9]+).*/\1/')
+    - export PY_VERSION="$(python3 --version | awk '{print $2}' | sed -r -e 's/^([0-9]+\.[0-9]+).*/\1/')"
     - export VERSION=$(python3 setup.py --version)
     - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1)
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
