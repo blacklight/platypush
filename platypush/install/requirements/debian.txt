@@ -16,7 +16,6 @@ python3-requests
 python3-rsa
 python3-sqlalchemy
 python3-tornado
-python3-typing-inspect
 python3-tz
 python3-websocket
 python3-websockets
