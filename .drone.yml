@@ -291,6 +291,7 @@ steps:
       Architecture: all
       Homepage: https://platypush.tech
       Description: Universal command executor and automation hub.
+      EOF
     - dpkg --build "$GIT_BUILD_DIR"
     - aws s3 cp "$PKGNAME" s3://platypush-static/deb/git/
 
