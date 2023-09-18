@@ -272,6 +272,12 @@ steps:
     - apt install -y dpkg-dev gpg git python3 python3-pip
     - pip install awscli --break-system-packages
 
+    - echo "-- Copying source directory"
+    - mkdir -p "$WORKDIR"
+    - export SRCDIR="$WORKDIR/src"
+    - cp -r "$PWD" "$SRCDIR"
+    - cd "$SRCDIR"
+
     - echo "--- Parsing metadata"
     - git config --global --add safe.directory $PWD
     - git pull --rebase origin master --tags
@@ -326,9 +332,14 @@ steps:
 
   depends_on:
     - build-ui
-    - update-debian-stable-packages
 
   commands:
+    - echo "-- Copying source directory"
+    - mkdir -p "$WORKDIR"
+    - export SRCDIR="$WORKDIR/src"
+    - cp -r "$PWD" "$SRCDIR"
+    - cd "$SRCDIR"
+
     - echo "-- Installing dependencies"
     - apt update
     - apt install -y dpkg-dev gpg git python3 python3-pip
@@ -401,6 +412,7 @@ steps:
 
   depends_on:
     - update-arch-packages
+    - update-debian-stable-packages
     - update-debian-oldstable-packages
 
   commands:
