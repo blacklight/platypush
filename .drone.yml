@@ -297,7 +297,7 @@ steps:
       Description: Universal command executor and automation hub.
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
-    - aws s3 cp "$GIT_DEB" s3://platypush-pkg/apt/bookworm/main
+    - aws s3 cp "$GIT_DEB" s3://platypush-pkg/apt/bookworm/main/
 
 - name: update-debian-oldstable-packages
   image: python:3.9-bullseye
@@ -352,7 +352,7 @@ steps:
       Description: Universal command executor and automation hub.
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
-    - aws s3 cp "$GIT_DEB" s3://platypush-pkg/apt/bullseye/main
+    - aws s3 cp "$GIT_DEB" s3://platypush-pkg/apt/bullseye/main/
 
 - name: update-pip-package
   image: python:3.11-alpine
