@@ -500,7 +500,7 @@ steps:
       Suite: $distro
       Codename: $distro
       Version: 1.0
-      Architectures: all
+      Architectures: i386 amd64 armel armhf arm64
       Components: $components
       Description: The official APT repository for Platypush
       Date: $(date -Ru)
