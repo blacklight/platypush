@@ -338,7 +338,7 @@ steps:
     - dpkg --build "$GIT_BUILD_DIR"
 
     - echo "--- Pushing package to the S3 bucket"
-    - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/dev/all/"
+    - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/dev/"
 
 ###
 ### Update the Debian (oldstable) packages
@@ -413,7 +413,7 @@ steps:
     - dpkg --build "$GIT_BUILD_DIR"
 
     - echo "--- Pushing package to the S3 bucket"
-    - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/dev/all/"
+    - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/dev/"
 
 ###
 ### Updates the APT repository after new packages have been pushed
