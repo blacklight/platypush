@@ -309,10 +309,9 @@ steps:
     - git config --global --add safe.directory $PWD
     - git pull --rebase origin master --tags
     - export VERSION=$(python3 setup.py --version)
-    - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1)
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
     - export TAG_ARCHIVE="platypush-$VERSION.tar.gz"
-    - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).$HEAD"
+    - export GIT_VERSION="$VERSION-$(( $(git log --pretty=oneline HEAD...v$VERSION | wc -l) + 1))"
     - export GIT_BUILD_DIR="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all"
     - export GIT_DEB="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all.deb"
 
@@ -384,10 +383,9 @@ steps:
     - git config --global --add safe.directory $PWD
     - git pull --rebase origin master --tags
     - export VERSION=$(python3 setup.py --version)
-    - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1)
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
     - export TAG_ARCHIVE="platypush-$VERSION.tar.gz"
-    - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).$HEAD"
+    - export GIT_VERSION="$VERSION-$(( $(git log --pretty=oneline HEAD...v$VERSION | wc -l) + 1))"
     - export GIT_BUILD_DIR="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all"
     - export GIT_DEB="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all.deb"
 
