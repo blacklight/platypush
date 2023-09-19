@@ -499,7 +499,6 @@ steps:
       Label: Platypush
       Suite: $distro
       Codename: $distro
-      Version: 1.0
       Architectures: i386 amd64 armel armhf arm64
       Components: $components
       Description: The official APT repository for Platypush
