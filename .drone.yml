@@ -276,7 +276,7 @@ steps:
     WORKDIR: /tmp/workdir
     STABLE_PKG_NAME: platypush
     PKG_NAME: platypush
-    S3_URL: s3://platypush-pkg/apt/dists
+    S3_URL: s3://platypush-pkg/apt
     AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
     AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
@@ -338,7 +338,7 @@ steps:
     - dpkg --build "$GIT_BUILD_DIR"
 
     - echo "--- Pushing package to the S3 bucket"
-    - aws s3 cp "$GIT_DEB" "$S3_URL/$DEB_VERSION/dev/all/"
+    - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/dev/all/"
 
 ###
 ### Update the Debian (oldstable) packages
@@ -351,7 +351,7 @@ steps:
     WORKDIR: /tmp/workdir
     STABLE_PKG_NAME: platypush
     PKG_NAME: platypush
-    S3_URL: s3://platypush-pkg/apt/dists
+    S3_URL: s3://platypush-pkg/apt
     AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
     AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
@@ -413,7 +413,7 @@ steps:
     - dpkg --build "$GIT_BUILD_DIR"
 
     - echo "--- Pushing package to the S3 bucket"
-    - aws s3 cp "$GIT_DEB" "$S3_URL/$DEB_VERSION/dev/all/"
+    - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/dev/all/"
 
 ###
 ### Updates the APT repository after new packages have been pushed
@@ -425,7 +425,6 @@ steps:
   environment:
     S3_BUCKET: platypush-pkg
     BUCKET_MNT: /mnt/s3
-    MAX_PKG_PER_BRANCH: 10
     AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
     AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
@@ -446,18 +445,72 @@ steps:
   commands:
     - echo "-- Installing dependencies"
     - apt update
-    - apt install -y s3fs
+    - apt install -y s3fs dpkg-dev
 
     - echo "-- Mounting the S3 bucket"
     - mkdir -p "$BUCKET_MNT"
     - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL"
+    - export APT_ROOT="$BUCKET_MNT/apt"
 
     - echo "-- Cleaning up older apt releases"
     - |
-      find "$BUCKET_MNT/apt/dists" -mindepth 3 -maxdepth 3 -type d | tail -n+2 | while read reldir; do
-        pkg_to_remove=$(( $(ls "$reldir" | wc -l) - $MAX_PKG_PER_BRANCH ))
-        [ $pkg_to_remove -le 0 ] && break
-        ls -rt "$reldir" | head -n$pkg_to_remove | xargs printf -- "$reldir/%s\n" | xargs rm -f
+      find "$APT_ROOT/pool" -mindepth 2 -maxdepth 2 -type d | while read reldir; do
+        pkg_to_remove=$(( $(ls "$reldir"/*.deb | wc -l) - 1 ))
+        [ $pkg_to_remove -le 0 ] && continue
+        ls "$reldir"/*.deb | sort -V | head -n$pkg_to_remove | xargs rm -f
+      done
+
+    - echo "-- Updating Packages files"
+    - |
+      echo "stable\noldstable" | while read distro; do
+        echo "main\ndev" | while read branch; do
+          branch_dir="$APT_ROOT/pool/$distro/$branch"
+          [ -d "$branch_dir" ] || continue
+          dist_dir="$APT_ROOT/dists/$distro/$branch/all"
+          mkdir -p "$dist_dir"
+          pkg_file="$dist_dir/Packages"
+          dpkg-scanpackages --arch all "$branch_dir" > "$pkg_file"
+          sed -i "$pkg_file" -re "s|^Filename: $APT_ROOT/|Filename: |"
+          cat "$pkg_file" | gzip -9 > "$pkg_file.gz"
+        done
+      done
+
+    - echo "-- Updating Release files"
+    - |
+      echo "stable\noldstable" | while read distro; do
+        dist_dir="$APT_ROOT/dists/$distro"
+        components=$(find "$dist_dir" -name Packages | awk -F '/' '{print $(NF-2)}' | uniq | tr '\n' ' ')
+        release_file="$dist_dir/Release"
+
+        cat <<EOF > "$release_file"
+      Origin: Platypush repository
+      Label: Platypush
+      Suite: $distro
+      Codename: $distro
+      Version: 1.0
+      Architectures: all
+      Components: $components
+      Description: The official APT repository for Platypush
+      Date: $(date -Ru)
+      EOF
+
+        echo "MD5Sum:" >> "$release_file"
+        find "$dist_dir" -name 'Packages*' | while read file; do
+          basename="$(echo "$file" | sed -r -e "s|^$dist_dir/(.*)|\1|")"
+          echo " $(md5sum "$file" | cut -d" " -f1) $(wc -c < $file) $basename"
+        done >> "$release_file"
+
+        echo "SHA1:" >> "$release_file"
+        find "$dist_dir" -name 'Packages*' | while read file; do
+          basename="$(echo "$file" | sed -r -e "s|^$dist_dir/(.*)|\1|")"
+          echo " $(sha1sum "$file" | cut -d" " -f1) $(wc -c < $file) $basename"
+        done >> "$release_file"
+
+        echo "SHA256:" >> "$release_file"
+        find "$dist_dir" -name 'Packages*' | while read file; do
+          basename="$(echo "$file" | sed -r -e "s|^$dist_dir/(.*)|\1|")"
+          echo " $(sha256sum "$file" | cut -d" " -f1) $(wc -c < $file) $basename"
+        done >> "$release_file"
       done
 
 ###
