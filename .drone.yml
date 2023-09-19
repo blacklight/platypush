@@ -486,11 +486,11 @@ steps:
           hash="$($hash_cmd "$file" | cut -d" " -f1)"
           size="$(wc -c < $file)"
           echo " $hash $size $basename"
-          echo " $hash $size $(echo basename | sed -re 's|/all/|/binary-i386/|')"
-          echo " $hash $size $(echo basename | sed -re 's|/all/|/binary-amd64/|')"
-          echo " $hash $size $(echo basename | sed -re 's|/all/|/binary-armel/|')"
-          echo " $hash $size $(echo basename | sed -re 's|/all/|/binary-armhf/|')"
-          echo " $hash $size $(echo basename | sed -re 's|/all/|/binary-arm64/|')"
+          echo " $hash $size $(echo $basename | sed -re 's|/all/|/binary-i386/|')"
+          echo " $hash $size $(echo $basename | sed -re 's|/all/|/binary-amd64/|')"
+          echo " $hash $size $(echo $basename | sed -re 's|/all/|/binary-armel/|')"
+          echo " $hash $size $(echo $basename | sed -re 's|/all/|/binary-armhf/|')"
+          echo " $hash $size $(echo $basename | sed -re 's|/all/|/binary-arm64/|')"
         done
       }
 
