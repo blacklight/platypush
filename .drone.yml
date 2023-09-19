@@ -429,6 +429,10 @@ steps:
       from_secret: aws_access_key_id
     AWS_SECRET_ACCESS_KEY:
       from_secret: aws_secret_access_key
+    PGP_PUBKEY:
+      from_secret: apt_pgp_pub_key
+    PGP_PRIVKEY:
+      from_secret: apt_pgp_priv_key
 
   when:
     branch:
@@ -443,7 +447,7 @@ steps:
   commands:
     - echo "-- Installing dependencies"
     - apt update
-    - apt install -y s3fs dpkg-dev
+    - apt install -y s3fs dpkg-dev gpg
 
     - echo "-- Mounting the S3 bucket"
     - mkdir -p "$BUCKET_MNT"
@@ -513,6 +517,22 @@ steps:
         add_hashes "$dist_dir" "md5sum" "MD5Sum" >> "$release_file"
         add_hashes "$dist_dir" "sha1sum" "SHA1" >> "$release_file"
         add_hashes "$dist_dir" "sha256sum" "SHA256" >> "$release_file"
+      done
+
+    - echo "-- Importing and refreshing PGP key"
+    - echo "$PGP_PUBKEY" > "$APT_ROOT/pubkey.txt"
+    - export PGP_KEYID=$(echo "$PGP_PUBKEY" | gpg --with-colons --import-options show-only --import --fingerprint | grep -e '^fpr:' | head -1 | awk -F ':' '{print $(NF - 1)}')
+    - |
+      cat <<EOF | gpg --import --armor
+      $PGP_PRIVKEY
+      EOF
+
+    - echo "-- Signing Release files"
+    - |
+      find "$APT_ROOT/dists" -type f -name Release | while read file; do
+        dirname="$(dirname "$file")"
+        cat "$file" | gpg -q --default-key "$PGP_KEYID" -abs > "$file.gpg"
+        cat "$file" | gpg -q --default-key "$PGP_KEYID" -abs --clearsign > "$dirname/InRelease"
       done
 
 ###
