@@ -203,7 +203,6 @@ steps:
     - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1)
     - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).$HEAD"
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
-    - export TAG_ARCHIVE="platypush-$VERSION.tar.gz"
 
     - echo "--- Preparing environment"
     - mkdir -p ~/.ssh
@@ -309,8 +308,6 @@ steps:
     - git config --global --add safe.directory $PWD
     - git pull --rebase origin master --tags
     - export VERSION=$(python3 setup.py --version)
-    - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
-    - export TAG_ARCHIVE="platypush-$VERSION.tar.gz"
     - export GIT_VERSION="$VERSION-$(( $(git log --pretty=oneline HEAD...v$VERSION | wc -l) + 1))"
     - export GIT_BUILD_DIR="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all"
     - export GIT_DEB="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all.deb"
@@ -338,6 +335,29 @@ steps:
 
     - echo "--- Pushing package to the S3 bucket"
     - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/dev/"
+
+    # If main/all/Packages doesn't exist, then we should create the first main release
+    - export PKGURL="https://apt.platypush.tech/dists/$DEB_VERSION/main/all/Packages"
+    - |
+      [ -z "$UPDATE_STABLE_PKG" ] &&
+        curl -ILs -o /dev/null -w "%{http_code}" "$PKGURL" |
+          grep -e '^4' >/dev/null && export UPDATE_STABLE_PKG=1
+
+    # If the published release version differs from the current one, then we should publish a new main release
+    - |
+      if [ -z "$UPDATE_STABLE_PKG" ]; then
+        RELEASED_VERSION=$(curl -s "$PKGURL" | grep -e '^Version: ' | head -1 | awk '{print $2}' | cut -d- -f 1)
+        [ "$RELEASED_VERSION" != "$VERSION" ] && export UPDATE_STABLE_PKG=1
+      fi
+
+    # Don't proceed and update the main release if it hasn't changed
+    - |
+      if [ -z "$UPDATE_STABLE_PKG" ]; then
+        exit 0
+      fi
+
+    - echo "--- Updating main package"
+    - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
 
 ###
 ### Update the Debian (oldstable) packages
@@ -383,8 +403,6 @@ steps:
     - git config --global --add safe.directory $PWD
     - git pull --rebase origin master --tags
     - export VERSION=$(python3 setup.py --version)
-    - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
-    - export TAG_ARCHIVE="platypush-$VERSION.tar.gz"
     - export GIT_VERSION="$VERSION-$(( $(git log --pretty=oneline HEAD...v$VERSION | wc -l) + 1))"
     - export GIT_BUILD_DIR="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all"
     - export GIT_DEB="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all.deb"
@@ -412,6 +430,29 @@ steps:
 
     - echo "--- Pushing package to the S3 bucket"
     - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/dev/"
+
+    # If main/all/Packages doesn't exist, then we should create the first main release
+    - export PKGURL="https://apt.platypush.tech/dists/$DEB_VERSION/main/all/Packages"
+    - |
+      [ -z "$UPDATE_STABLE_PKG" ] &&
+        curl -ILs -o /dev/null -w "%{http_code}" "$PKGURL" |
+          grep -e '^4' >/dev/null && export UPDATE_STABLE_PKG=1
+
+    # If the published release version differs from the current one, then we should publish a new main release
+    - |
+      if [ -z "$UPDATE_STABLE_PKG" ]; then
+        RELEASED_VERSION=$(curl -s "$PKGURL" | grep -e '^Version: ' | head -1 | awk '{print $2}' | cut -d- -f 1)
+        [ "$RELEASED_VERSION" != "$VERSION" ] && export UPDATE_STABLE_PKG=1
+      fi
+
+    # Don't proceed and update the main release if it hasn't changed
+    - |
+      if [ -z "$UPDATE_STABLE_PKG" ]; then
+        exit 0
+      fi
+
+    - echo "--- Updating main package"
+    - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
 
 ###
 ### Updates the APT repository after new packages have been pushed
