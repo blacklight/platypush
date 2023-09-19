@@ -477,6 +477,20 @@ steps:
 
     - echo "-- Updating Release files"
     - |
+      add_hashes() {
+        dist_dir=$1
+        hash_cmd=$2
+        hash_label=$3
+
+        echo "$hash_label:"
+        find "$dist_dir" -name 'Packages*' | while read file; do
+          basename="$(echo "$file" | sed -r -e "s|^$dist_dir/||")"
+          hash="$($hash_cmd "$file" | cut -d" " -f1)"
+          size="$(wc -c < $file)"
+          echo " $hash $size $basename"
+        done
+      }
+
       echo "stable\noldstable" | while read distro; do
         dist_dir="$APT_ROOT/dists/$distro"
         components=$(find "$dist_dir" -name Packages | awk -F '/' '{print $(NF-2)}' | uniq | tr '\n' ' ')
@@ -494,23 +508,9 @@ steps:
       Date: $(date -Ru)
       EOF
 
-        echo "MD5Sum:" >> "$release_file"
-        find "$dist_dir" -name 'Packages*' | while read file; do
-          basename="$(echo "$file" | sed -r -e "s|^$dist_dir/(.*)|\1|")"
-          echo " $(md5sum "$file" | cut -d" " -f1) $(wc -c < $file) $basename"
-        done >> "$release_file"
-
-        echo "SHA1:" >> "$release_file"
-        find "$dist_dir" -name 'Packages*' | while read file; do
-          basename="$(echo "$file" | sed -r -e "s|^$dist_dir/(.*)|\1|")"
-          echo " $(sha1sum "$file" | cut -d" " -f1) $(wc -c < $file) $basename"
-        done >> "$release_file"
-
-        echo "SHA256:" >> "$release_file"
-        find "$dist_dir" -name 'Packages*' | while read file; do
-          basename="$(echo "$file" | sed -r -e "s|^$dist_dir/(.*)|\1|")"
-          echo " $(sha256sum "$file" | cut -d" " -f1) $(wc -c < $file) $basename"
-        done >> "$release_file"
+        add_hashes "$dist_dir" "md5sum" "MD5Sum" >> "$release_file"
+        add_hashes "$dist_dir" "sha1sum" "SHA1" >> "$release_file"
+        add_hashes "$dist_dir" "sha256sum" "SHA256" >> "$release_file"
       done
 
 ###
