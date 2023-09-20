@@ -27,7 +27,6 @@ Backends
     platypush/backend/joystick.jstest.rst
     platypush/backend/joystick.linux.rst
     platypush/backend/kafka.rst
-    platypush/backend/light.hue.rst
     platypush/backend/log.http.rst
     platypush/backend/mail.rst
     platypush/backend/midi.rst
