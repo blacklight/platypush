@@ -128,7 +128,7 @@ steps:
       fi
 
     - |
-      if [ "$(git log --pretty=format:%s HEAD...HEAD~1)" == "[Automatic] Updated UI files" ]; then
+      if [ "$(git log --pretty=format:%s HEAD...HEAD~1 | head -1)" == "[Automatic] Updated UI files" ]; then
         echo "UI changes have already been committed, skipping build"
         exit 0
       fi
@@ -200,7 +200,7 @@ steps:
     - git config --global --add safe.directory $PWD
     - git pull --rebase origin master --tags
     - export VERSION=$(python setup.py --version)
-    - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1)
+    - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1 | head -1)
     - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).$HEAD"
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
 
