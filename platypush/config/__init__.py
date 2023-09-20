@@ -106,7 +106,9 @@ class Config:
         if cfgfile is None:
             cfgfile = self._get_default_cfgfile()
 
-        cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
+        if cfgfile:
+            cfgfile = os.path.abspath(os.path.expanduser(cfgfile))
+
         if cfgfile is None or not os.path.exists(cfgfile):
             cfgfile = self._create_default_config(cfgfile)
 
