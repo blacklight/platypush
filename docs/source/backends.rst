@@ -21,7 +21,6 @@ Backends
     platypush/backend/google.pubsub.rst
     platypush/backend/gps.rst
     platypush/backend/http.rst
-    platypush/backend/http.poll.rst
     platypush/backend/inotify.rst
     platypush/backend/joystick.rst
     platypush/backend/joystick.jstest.rst
