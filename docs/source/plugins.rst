@@ -129,7 +129,6 @@ Plugins
     platypush/plugins/tensorflow.rst
     platypush/plugins/todoist.rst
     platypush/plugins/torrent.rst
-    platypush/plugins/travisci.rst
     platypush/plugins/trello.rst
     platypush/plugins/tts.rst
     platypush/plugins/tts.google.rst
