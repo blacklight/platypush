@@ -13,7 +13,6 @@ Backends
     platypush/backend/button.flic.rst
     platypush/backend/camera.pi.rst
     platypush/backend/chat.telegram.rst
-    platypush/backend/covid19.rst
     platypush/backend/file.monitor.rst
     platypush/backend/foursquare.rst
     platypush/backend/github.rst
