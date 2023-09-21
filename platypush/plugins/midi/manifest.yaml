@@ -3,6 +3,8 @@ manifest:
   install:
     apt:
       - python3-rtmidi
+    dnf:
+      - python-rtmidi
     pacman:
       - python-rtmidi
     pip:

@@ -5,6 +5,8 @@ manifest:
       - ffmpeg
     apt:
       - ffmpeg
+    dnf:
+      - ffmpeg
     pacman:
       - ffmpeg
       - python-ffmpeg

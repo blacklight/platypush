@@ -9,6 +9,10 @@ manifest:
       - sudo
       - nodejs
       - npm
+    dnf:
+      - sudo
+      - nodejs
+      - npm
     pacman:
       - sudo
       - nodejs

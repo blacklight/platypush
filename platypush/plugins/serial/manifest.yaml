@@ -6,6 +6,8 @@ manifest:
       - py3-pyserial
     apt:
       - python3-serial
+    dnf:
+      - python-pyserial
     pacman:
       - python-pyserial
     pip:

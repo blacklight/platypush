@@ -1,7 +1,15 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-feedparser
+    apt:
+      - python3-feedparser
+    dnf:
+      - python-feedparser
+    pacman:
+      - python-feedparser
     pip:
-    - feedparser
+      - feedparser
   package: platypush.plugins.http.request.rss
   type: plugin

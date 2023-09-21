@@ -43,6 +43,10 @@ manifest:
     - olm-dev
   apt:
     - libolm-devel
+    - python3-async-lru
+  dnf:
+    - libolm-devel
+    - python-async-lru
   pacman:
     - libolm
     - python-async-lru

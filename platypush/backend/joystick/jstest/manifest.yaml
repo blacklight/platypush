@@ -17,6 +17,8 @@ manifest:
       - linuxconsoletools
     apt:
       - joystick
+    dnf:
+      - joystick
     pacman:
       - joyutils
   package: platypush.backend.joystick.jstest

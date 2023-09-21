@@ -19,6 +19,8 @@ manifest:
       - rtorrent
     apt:
       - rtorrent
+    dnf:
+      - rtorrent
     pacman:
       - rtorrent
   package: platypush.plugins.rtorrent

@@ -4,8 +4,12 @@ manifest:
     platypush.message.event.hid.HidDeviceDisconnectedEvent: when a previously available device is disconnected
     platypush.message.event.hid.HidDeviceDataEvent: when a monitored device sends some data
   install:
+    apk:
+      - python3-hidapi
     apt:
       - python3-hid
+    dnf:
+      - python-hidapi
     pacman:
       - python-hid
     pip:

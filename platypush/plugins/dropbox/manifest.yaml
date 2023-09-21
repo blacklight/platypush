@@ -3,6 +3,8 @@ manifest:
   install:
     apt:
       - python3-dropbox
+    dnf:
+      - python-dropbox
     pacman:
       - python-dropbox
     pip:

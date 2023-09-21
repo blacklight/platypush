@@ -7,6 +7,9 @@ manifest:
     apt:
       - vlc
       - python3-vlc
+    dnf:
+      - vlc
+      - python3-vlc
     pacman:
       - vlc
     pip:

@@ -20,6 +20,9 @@ manifest:
       - libbluetooth-dev
       - python3-pydbus
       - git
+    dnf:
+      - python-pydbus
+      - git
     pacman:
       - python-pydbus
       - python-bleak

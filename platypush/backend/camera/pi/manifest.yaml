@@ -4,6 +4,9 @@ manifest:
     apk:
       - py3-numpy
       - py3-pillow
+    dnf:
+      - python-numpy
+      - python-pillow
     pacman:
       - python-numpy
       - python-pillow

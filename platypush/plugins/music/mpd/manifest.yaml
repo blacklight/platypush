@@ -3,6 +3,8 @@ manifest:
   install:
     apt:
       - python3-mpd
+    dnf:
+      - python3-mpd2
     pacman:
       - python-mpd2
     pip:

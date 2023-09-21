@@ -5,6 +5,8 @@ manifest:
       - mplayer
     apt:
       - mplayer
+    dnf:
+      - mplayer
     pacman:
       - mplayer
   package: platypush.plugins.media.mplayer

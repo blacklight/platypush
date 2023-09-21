@@ -5,14 +5,18 @@ manifest:
       - i2c-tools-dev
       - py3-numpy
       - py3-pillow
-    pacman:
-      - i2c-tools
-      - python-numpy
-      - python-pillow
     apt:
       - libi2c-dev
       - python3-numpy
       - python3-pillow
+    dnf:
+      - i2c-tools
+      - python-numpy
+      - python-pillow
+    pacman:
+      - i2c-tools
+      - python-numpy
+      - python-pillow
     pip:
       - numpy
       - Pillow

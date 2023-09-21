@@ -5,6 +5,8 @@ manifest:
     - git
   apt:
     - git
+  dnf:
+    - git
   pacman:
     - git
   install:

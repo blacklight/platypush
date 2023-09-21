@@ -3,6 +3,11 @@ manifest:
     platypush.message.event.wiimote.WiimoteEvent: when the state of the Wiimote (battery,
       buttons, acceleration etc.) changes
   install:
-    pip: []
+    apt:
+      - libcwiid1
+    pacman:
+      - cwiid-git
+    pip:
+      - cwiid
   package: platypush.backend.wiimote
   type: backend
