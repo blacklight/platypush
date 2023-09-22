@@ -42,6 +42,7 @@ class BaseImage(Enum):
 
     ALPINE = 'alpine'
     DEBIAN = 'debian'
+    FEDORA = 'fedora'
     UBUNTU = 'ubuntu'
 
     def __str__(self) -> str:
@@ -127,6 +128,15 @@ class PackageManagers(Enum):
         list=('apt', 'list', '--installed'),
         default_os='debian',
         parse_list_line=lambda line: line.split('/')[0],
+    )
+
+    DNF = PackageManager(
+        executable='dnf',
+        install=('dnf', 'install', '-y'),
+        uninstall=('dnf', 'remove', '-y'),
+        list=('dnf', 'list', '--installed'),
+        default_os='fedora',
+        parse_list_line=lambda line: re.split(r'\s+', line)[0].split('.')[0],
     )
 
     PACMAN = PackageManager(
