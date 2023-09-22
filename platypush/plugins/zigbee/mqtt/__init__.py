@@ -1080,7 +1080,7 @@ class ZigbeeMqttPlugin(
             devices = list(
                 {
                     self._preferred_name(device)
-                    for device in list(self.devices(**kwargs).output)  # type: ignore
+                    for device in list(self.devices(**kwargs).output or [])
                     if self._preferred_name(device)
                 }
             )
