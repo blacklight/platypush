@@ -1,4 +1,7 @@
+import os
+import pathlib
 import random
+import shutil
 import statistics
 import time
 
@@ -10,11 +13,13 @@ from typing import (
     Dict,
     Iterable,
     Mapping,
+    Optional,
     Set,
     Union,
 )
 import warnings
 
+from platypush.config import Config
 from platypush.context import get_bus
 from platypush.entities import Entity, LightEntityManager
 from platypush.entities.lights import Light as LightEntity
@@ -72,20 +77,23 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
             return False
 
     def __init__(
-        self, bridge, lights=None, groups=None, poll_interval: float = 20.0, **kwargs
+        self,
+        bridge: str,
+        lights: Optional[Iterable[str]] = None,
+        groups: Optional[Iterable[str]] = None,
+        poll_interval: float = 20.0,
+        config_file: Optional[str] = None,
+        **kwargs,
     ):
         """
         :param bridge: Bridge address or hostname
-        :type bridge: str
-
         :param lights: Default lights to be controlled (default: all)
-        :type lights: list[str]
-
         :param groups Default groups to be controlled (default: all)
-        :type groups: list[str]
-
         :param poll_interval: How often the plugin should check the bridge for light
             updates (default: 20 seconds).
+        :param config_file: Path to the phue configuration file containing the
+            access token to authenticate to the Hue bridge and the bridge
+            configuration (default: ``<WORKDIR>/light.hue/config.json``).
         """
 
         poll_seconds = kwargs.pop('poll_seconds', None)
@@ -107,6 +115,7 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
             'Initializing Hue lights plugin - bridge: "%s"', self.bridge_address
         )
 
+        self._init_config_file(config_file)
         self.connect()
         self.lights = set()
         self.groups = set()
@@ -126,6 +135,22 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         self._animation_stop = Event()
         self._init_animations()
         self.logger.info('Configured lights: %s', self.lights)
+
+    def _init_config_file(self, config_file: Optional[str] = None):
+        self.config_file = os.path.abspath(
+            os.path.expanduser(
+                config_file
+                or os.path.join(Config.get_workdir(), 'light.hue', 'config.json')
+            )
+        )
+
+        pathlib.Path(self.config_file).parent.mkdir(parents=True, exist_ok=True)
+
+        # Check if the phue default ~/.python_hue file is present, and if so
+        # copy it to our location
+        legacy_config_file = os.path.join(os.path.expanduser('~'), '.python_hue')
+        if os.path.isfile(legacy_config_file) and not os.path.exists(self.config_file):
+            shutil.copy(legacy_config_file, self.config_file)
 
     def _expand_groups(self, groups: Iterable[str]) -> Set[str]:
         lights = set()
@@ -172,7 +197,10 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
             while not success:
                 try:
                     n_tries += 1
-                    self.bridge = Bridge(self.bridge_address)
+                    self.bridge = Bridge(
+                        self.bridge_address, config_file_path=self.config_file
+                    )
+
                     success = True
                 except PhueRegistrationException as e:
                     self.logger.warning('Bridge registration error: %s', e)
