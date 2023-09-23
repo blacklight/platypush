@@ -273,10 +273,9 @@ steps:
   environment:
     DEB_VERSION: stable
     WORKDIR: /tmp/workdir
-    STABLE_PKG_NAME: platypush
     PKG_NAME: platypush
     S3_URL: s3://platypush-pkg/apt
-    AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
+    AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud
     AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
       from_secret: aws_access_key_id
@@ -368,10 +367,9 @@ steps:
   environment:
     DEB_VERSION: oldstable
     WORKDIR: /tmp/workdir
-    STABLE_PKG_NAME: platypush
     PKG_NAME: platypush
     S3_URL: s3://platypush-pkg/apt
-    AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
+    AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud
     AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
       from_secret: aws_access_key_id
@@ -464,7 +462,7 @@ steps:
   environment:
     S3_BUCKET: platypush-pkg
     BUCKET_MNT: /mnt/s3
-    AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud      
+    AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud
     AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
       from_secret: aws_access_key_id
@@ -614,10 +612,10 @@ steps:
       - master
     event:
       - push
-      - tag
 
   depends_on:
     - update-arch-packages
+    - update-rpm-repo
     - update-apt-repo
 
   commands:
@@ -639,7 +637,6 @@ steps:
 
   depends_on:
     - update-pip-package
-    - wait-pkg-update
 
   commands:
     - apk add --update --no-cache curl
