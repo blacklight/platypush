@@ -27,7 +27,6 @@ Plugins
     platypush/plugins/chat.telegram.rst
     platypush/plugins/clipboard.rst
     platypush/plugins/config.rst
-    platypush/plugins/covid19.rst
     platypush/plugins/csv.rst
     platypush/plugins/db.rst
     platypush/plugins/dbus.rst
