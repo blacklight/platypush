@@ -768,9 +768,9 @@ steps:
     - export OLD_RPM_ROOT="$BUCKET_MNT/rpm_old"
     - cp -r "$TMP_RPM_ROOT" "$NEW_RPM_ROOT"
     - rm -rf "$TMP_RPM_ROOT"
-    - mv "$RPM_ROOT" "$OLD_TMP_ROOT"
+    - mv "$RPM_ROOT" "$OLD_RPM_ROOT"
     - mv "$NEW_RPM_ROOT" "$RPM_ROOT"
-    - rm -rf "$OLD_TMP_ROOT"
+    - rm -rf "$OLD_RPM_ROOT"
 
 ###
 ### Updates the pip package upon new releases
