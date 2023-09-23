@@ -15,6 +15,9 @@ manifest:
     apt:
       - sudo
       - cargo
+    dnf:
+      - sudo
+      - cargo
     pacman:
       - sudo
       - cargo

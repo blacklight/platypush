@@ -5,13 +5,17 @@ manifest:
       - py3-numpy
       - py3-pillow
       - ffmpeg
-    pacman:
-      - python-numpy
-      - python-pillow
-      - ffmpeg
     apt:
       - python3-numpy
       - python3-pillow
+      - ffmpeg
+    dnf:
+      - python-numpy
+      - python-pillow
+      - ffmpeg
+    pacman:
+      - python-numpy
+      - python-pillow
       - ffmpeg
     pip:
       - numpy

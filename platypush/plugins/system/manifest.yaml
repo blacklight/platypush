@@ -5,6 +5,8 @@ manifest:
       - py3-py-cpuinfo
     apt:
       - python3-cpuinfo
+    dnf:
+      - python-cpuinfo
     pacman:
       - python-py-cpuinfo
     pip:

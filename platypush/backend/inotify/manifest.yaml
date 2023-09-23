@@ -13,6 +13,8 @@ manifest:
       - py3-inotify
     apt:
       - python3-inotify
+    dnf:
+      - python-inotify
     pip:
       - inotify
   package: platypush.backend.inotify

@@ -5,6 +5,8 @@ manifest:
       - py3-otp
     apt:
       - python3-pyotp
+    dnf:
+      - python-pyotp
     pacman:
       - python-pyotp
     pip:

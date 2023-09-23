@@ -16,14 +16,17 @@ manifest:
     apk:
       - py3-numpy
       - py3-pandas
+    apt:
+      - python3-numpy
+      - python3-pandas
+    dnf:
+      - python3-numpy
+      - python3-pandas
     pacman:
       - python-numpy
       - python-pandas
       - python-tensorflow
       - python-keras
-    apt:
-      - python3-numpy
-      - python3-pandas
     pip:
       - numpy
       - pandas

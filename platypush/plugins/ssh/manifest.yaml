@@ -5,6 +5,8 @@ manifest:
       - py3-paramiko
     apt:
       - python3-paramiko
+    dnf:
+      - python-paramiko
     pacman:
       - python-paramiko
     pip:

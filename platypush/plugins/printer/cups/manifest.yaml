@@ -6,6 +6,8 @@ manifest:
     apt:
       - libcups2-dev
       - python3-cups
+    dnf:
+      - python-cups
     pacman:
       - python-pycups
     pip:

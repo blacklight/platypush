@@ -23,6 +23,8 @@ manifest:
   install:
     apt:
       - python3-irc
+    dnf:
+      - python-irc
     pacman:
       - python-irc
     pip:

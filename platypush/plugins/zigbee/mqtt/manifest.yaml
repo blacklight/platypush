@@ -41,10 +41,12 @@ manifest:
   install:
     apk:
       - py3-paho-mqtt
-    pacman:
-      - python-paho-mqtt
     apt:
       - python3-paho-mqtt
+    dnf:
+      - python-paho-mqtt
+    pacman:
+      - python-paho-mqtt
     pip:
       - paho-mqtt
   package: platypush.plugins.zigbee.mqtt

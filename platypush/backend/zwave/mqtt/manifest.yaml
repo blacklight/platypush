@@ -16,6 +16,8 @@ manifest:
   install:
     apk:
       - py3-paho-mqtt
+    dnf:
+      - python-paho-mqtt
     pacman:
       - python-paho-mqtt
     apt:

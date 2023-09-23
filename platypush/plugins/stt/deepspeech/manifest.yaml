@@ -8,6 +8,8 @@ manifest:
       - python-sounddevice
     apt:
       - python3-numpy
+    dnf:
+      - python-numpy
     pip:
       - deepspeech
       - numpy

@@ -6,16 +6,21 @@ manifest:
       - py3-pillow
       - py3-qrcode
       - py3-pyzbar
-    pacman:
-      - python-numpy
-      - python-pillow
-      - python-qrcode
-      - pyzbar
     apt:
       - python3-numpy
       - python3-pillow
       - python3-pyzbar
       - python3-qrcode
+    dnf:
+      - python-numpy
+      - python-pillow
+      - python-qrcode
+      - python-zbar
+    pacman:
+      - python-numpy
+      - python-pillow
+      - python-qrcode
+      - pyzbar
     pip:
       - numpy
       - qrcode

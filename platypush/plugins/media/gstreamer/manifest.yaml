@@ -7,6 +7,9 @@ manifest:
     apt:
       - python3-gi
       - python3-gst-1.0
+    dnf:
+      - python-gstreamer1
+      - python-gobject
     pacman:
       - gst-python
       - python-gobject

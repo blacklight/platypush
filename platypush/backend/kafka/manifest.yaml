@@ -3,6 +3,8 @@ manifest:
   install:
     apt:
       - python3-kafka
+    dnf:
+      - python-kafka
     pip:
       - kafka
   package: platypush.backend.kafka

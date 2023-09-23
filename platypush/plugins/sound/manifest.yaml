@@ -17,6 +17,10 @@ manifest:
       - ffmpeg
       - portaudio19-dev
       - python3-numpy
+    dnf:
+      - ffmpeg
+      - portaudio-devel
+      - python-numpy
     pacman:
       - ffmpeg
       - portaudio

@@ -8,6 +8,10 @@ manifest:
     apt:
       - python3-google-auth
       - python3-oauth2client
+    dnf:
+      - python-google-api-client
+      - python-google-auth
+      - python-oauth2client
     pacman:
       - python-google-api-python-client
       - python-google-auth

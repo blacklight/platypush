@@ -35,6 +35,7 @@ class DockerBuilder(BaseBuilder):
     _pkg_manager_by_base_image = {
         BaseImage.ALPINE: PackageManagers.APK,
         BaseImage.DEBIAN: PackageManagers.APT,
+        BaseImage.FEDORA: PackageManagers.DNF,
         BaseImage.UBUNTU: PackageManagers.APT,
     }
 

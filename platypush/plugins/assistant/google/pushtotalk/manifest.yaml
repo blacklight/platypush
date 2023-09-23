@@ -13,6 +13,9 @@ manifest:
     apt:
       - python3-tenacity
       - python3-google-auth
+    dnf:
+      - python-tenacity
+      - python-google-auth
     pacman:
       - python-tenacity
       - python-google-auth
