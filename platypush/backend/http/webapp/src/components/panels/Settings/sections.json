@@ -11,5 +11,12 @@
     "icon": {
       "class": "fas fa-key"
     }
+  },
+
+  "integrations": {
+    "name": "Integrations",
+    "icon": {
+      "class": "fas fa-puzzle-piece"
+    }
   }
 }

@@ -5,6 +5,7 @@
              v-if="selectedPanel === 'users' && currentUser" />
       <Token :session-token="sessionToken" :current-user="currentUser"
              v-else-if="selectedPanel === 'tokens' && currentUser" />
+      <Integrations v-else-if="selectedPanel === 'integrations'" />
     </main>
   </div>
 </template>
@@ -12,11 +13,12 @@
 <script>
 import Token from "@/components/panels/Settings/Token";
 import Users from "@/components/panels/Settings/Users";
+import Integrations from "@/components/panels/Settings/Integrations";
 import Utils from "@/Utils";
 
 export default {
   name: "Settings",
-  components: {Users, Token},
+  components: {Users, Token, Integrations},
   mixins: [Utils],
 
   props: {
