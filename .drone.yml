@@ -750,7 +750,8 @@ steps:
       EOF
 
     - export PGP_KEYID=$(echo "$PGP_PUBKEY" | gpg --with-colons --import-options show-only --import --fingerprint | grep -e '^fpr:' | head -1 | awk -F ':' '{print $(NF - 1)}')
-    - cat <<EOF > $HOME/.rpmmacros
+    - |
+      cat <<EOF > $HOME/.rpmmacros
       %signature gpg
       %_gpg_name $PGP_KEYID
       EOF
