@@ -7,13 +7,7 @@ from platypush.plugins.calendar import CalendarInterface
 
 class GoogleCalendarPlugin(GooglePlugin, CalendarInterface):
     """
-    Google calendar plugin.
-
-    Requires:
-
-        * **google-api-python-client** (``pip install google-api-python-client``)
-        * **oauth2client** (``pip install oauth2client``)
-
+    Google Calendar plugin.
     """
 
     scopes = ['https://www.googleapis.com/auth/calendar.readonly']

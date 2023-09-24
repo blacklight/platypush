@@ -24,19 +24,19 @@ class GoogleTranslatePlugin(Plugin):
         4. Create a new private JSON key for the service account and download it. By default platypush will look for the
            credentials file under ``~/.credentials/platypush/google/translate.json``.
 
-    Requires:
-
-        * **google-api-python-client** (``pip install google-api-python-client``)
-        * **oauth2client** (``pip install oauth2client``)
-        * **google-cloud-translate** (``pip install google-cloud-translate``)
-
     """
 
     _maximum_text_length = 2000
-    default_credentials_file = os.path.join(os.path.expanduser('~'), '.credentials', 'platypush', 'google',
-                                            'translate.json')
+    default_credentials_file = os.path.join(
+        os.path.expanduser('~'), '.credentials', 'platypush', 'google', 'translate.json'
+    )
 
-    def __init__(self, target_language: str = 'en', credentials_file: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        target_language: str = 'en',
+        credentials_file: Optional[str] = None,
+        **kwargs
+    ):
         """
         :param target_language: Default target language (default: 'en').
         :param credentials_file: Google service account JSON credentials file. If none is specified then the plugin will
@@ -50,7 +50,9 @@ class GoogleTranslatePlugin(Plugin):
         self.credentials_file = None
 
         if credentials_file:
-            self.credentials_file = os.path.abspath(os.path.expanduser(credentials_file))
+            self.credentials_file = os.path.abspath(
+                os.path.expanduser(credentials_file)
+            )
         elif os.path.isfile(self.default_credentials_file):
             self.credentials_file = self.default_credentials_file
 
@@ -59,11 +61,11 @@ class GoogleTranslatePlugin(Plugin):
 
     @staticmethod
     def _nearest_delimiter_index(text: str, pos: int) -> int:
-        for i in range(min(pos, len(text)-1), -1, -1):
+        for i in range(min(pos, len(text) - 1), -1, -1):
             if text[i] in [' ', '\t', ',', '.', ')', '>']:
                 return i
             elif text[i] in ['(', '<']:
-                return i-1 if i > 0 else 0
+                return i - 1 if i > 0 else 0
 
         return 0
 
@@ -77,17 +79,22 @@ class GoogleTranslatePlugin(Plugin):
                 parts.append(text)
                 text = ''
             else:
-                part = text[:i+1]
+                part = text[: i + 1]
                 if part:
                     parts.append(part.strip())
-                text = text[i+1:]
+                text = text[i + 1 :]
 
         return parts
 
     # noinspection PyShadowingBuiltins
     @action
-    def translate(self, text: str, target_language: Optional[str] = None, source_language: Optional[str] = None,
-                  format: Optional[str] = None) -> TranslateResponse:
+    def translate(
+        self,
+        text: str,
+        target_language: Optional[str] = None,
+        source_language: Optional[str] = None,
+        format: Optional[str] = None,
+    ) -> TranslateResponse:
         """
         Translate a piece of text or HTML.
 

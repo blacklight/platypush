@@ -7,13 +7,8 @@ from platypush.plugins import Plugin, action
 class LcdPlugin(Plugin, ABC):
     """
     Abstract class for plugins to communicate with LCD displays.
-
-    Requires:
-
-        * **RPLCD** (``pip install RPLCD``)
-        * **RPi.GPIO** (``pip install RPi.GPIO``)
-
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.lcd = None
@@ -21,9 +16,12 @@ class LcdPlugin(Plugin, ABC):
     @staticmethod
     def _get_pin_mode(pin_mode: str) -> int:
         import RPi.GPIO
+
         pin_modes = ['BOARD', 'BCM']
         pin_mode = pin_mode.upper()
-        assert pin_mode in pin_modes, 'Invalid pin_mode: {}. Supported modes: {}'.format(pin_mode, pin_modes)
+        assert (
+            pin_mode in pin_modes
+        ), 'Invalid pin_mode: {}. Supported modes: {}'.format(pin_mode, pin_modes)
         return getattr(RPi.GPIO, pin_mode).value
 
     @abstractmethod
@@ -105,7 +103,8 @@ class LcdPlugin(Plugin, ABC):
         modes = ['left', 'right']
         mode = mode.lower()
         assert mode in modes, 'Unsupported text mode: {}. Supported modes: {}'.format(
-            mode, modes)
+            mode, modes
+        )
 
         self._init_lcd()
         self.lcd.text_align_mode = mode

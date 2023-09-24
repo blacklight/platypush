@@ -28,34 +28,41 @@ class PwmPca9685Plugin(Plugin):
         # pip3 install --upgrade adafruit-circuitpython-pca9685
 
     This plugin works with a PCA9685 circuit connected to the Platypush host over I2C interface.
-
-    Requires:
-
-        - **adafruit-circuitpython-pca9685** (``pip install adafruit-circuitpython-pca9685``)
-
     """
 
-    def __init__(self, frequency: float, min_duty_cycle: int = 0, max_duty_cycle: int = 0xffff, channels: Iterable[int] = tuple(range(16)), **kwargs):
+    def __init__(
+        self,
+        frequency: float,
+        min_duty_cycle: int = 0,
+        max_duty_cycle: int = 0xFFFF,
+        channels: Optional[Iterable[int]] = None,
+        **kwargs
+    ):
         """
         :param frequency: Default PWM frequency to use for the driver, in Hz.
         :param min_duty_cycle: Minimum PWM duty cycle (you can often find it in the documentation of your device).
             Default: 0.
         :param max_duty_cycle: Maximum PWM duty cycle (you can often find it in the documentation of your device).
             Default: 0xffff.
-        :param Indices of the default channels to be controlled (default: all channels,
+        :param channels: Indices of the default channels to be controlled (default: all channels,
             i.e. ``[0-15]``).
         """
         super().__init__(**kwargs)
         self.frequency = frequency
         self.min_duty_cycle = min_duty_cycle
         self.max_duty_cycle = max_duty_cycle
-        self.channels = channels
+        self.channels = channels or tuple(range(16))
         self._pca = None
 
     @action
-    def write(self, value: Optional[int] = None, channels: Optional[Dict[int, float]] = None,
-              frequency: Optional[float] = None, step: Optional[int] = None,
-              step_duration: Optional[float] = None):
+    def write(
+        self,
+        value: Optional[int] = None,
+        channels: Optional[Dict[int, float]] = None,
+        frequency: Optional[float] = None,
+        step: Optional[int] = None,
+        step_duration: Optional[float] = None,
+    ):
         """
         Send PWM values to the channels.
 
@@ -85,7 +92,7 @@ class PwmPca9685Plugin(Plugin):
         i2c_bus = busio.I2C(SCL, SDA)
         pca = self._pca = self._pca or PCA9685(i2c_bus)
         pca.frequency = frequency or self.frequency
-        step_duration = step_duration or 1/pca.frequency
+        step_duration = step_duration or 1 / pca.frequency
 
         if not step:
             for i, val in channels.items():
@@ -93,10 +100,7 @@ class PwmPca9685Plugin(Plugin):
             return
 
         done = False
-        cur_values = {
-            i: channel.duty_cycle
-            for i, channel in enumerate(pca.channels)
-        }
+        cur_values = {i: channel.duty_cycle for i, channel in enumerate(pca.channels)}
 
         while not done:
             done = True
@@ -106,9 +110,11 @@ class PwmPca9685Plugin(Plugin):
                     continue
 
                 done = False
-                val = min(cur_values[i] + step, val, self.max_duty_cycle) \
-                        if val > pca.channels[i].duty_cycle \
-                        else max(cur_values[i] - step, val, self.min_duty_cycle)
+                val = (
+                    min(cur_values[i] + step, val, self.max_duty_cycle)
+                    if val > pca.channels[i].duty_cycle
+                    else max(cur_values[i] - step, val, self.min_duty_cycle)
+                )
 
                 pca.channels[i].duty_cycle = cur_values[i] = val
 
@@ -125,10 +131,7 @@ class PwmPca9685Plugin(Plugin):
         if not self._pca:
             return {i: 0 for i in self.channels}
 
-        return {
-            i: channel.duty_cycle
-            for i, channel in enumerate(self._pca.channels)
-        }
+        return {i: channel.duty_cycle for i, channel in enumerate(self._pca.channels)}
 
     @action
     def deinit(self):
@@ -152,4 +155,3 @@ class PwmPca9685Plugin(Plugin):
             return
 
         self._pca.reset()
-

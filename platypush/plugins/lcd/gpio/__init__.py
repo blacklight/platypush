@@ -6,23 +6,26 @@ from platypush.plugins.lcd import LcdPlugin
 class LcdGpioPlugin(LcdPlugin):
     """
     Plugin to write to an LCD display connected via GPIO.
-
-    Requires:
-
-        * **RPLCD** (``pip install RPLCD``)
-        * **RPi.GPIO** (``pip install RPi.GPIO``)
-
     """
 
-    def __init__(self, pin_rs: int, pin_e: int, pins_data: List[int],
-                 pin_rw: Optional[int] = None, pin_mode: str = 'BOARD',
-                 pin_backlight: Optional[int] = None,
-                 cols: int = 16, rows: int = 2,
-                 backlight_enabled: bool = True,
-                 backlight_mode: str = 'active_low',
-                 dotsize: int = 8, charmap: str = 'A02',
-                 auto_linebreaks: bool = True,
-                 compat_mode: bool = False, **kwargs):
+    def __init__(
+        self,
+        pin_rs: int,
+        pin_e: int,
+        pins_data: List[int],
+        pin_rw: Optional[int] = None,
+        pin_mode: str = 'BOARD',
+        pin_backlight: Optional[int] = None,
+        cols: int = 16,
+        rows: int = 2,
+        backlight_enabled: bool = True,
+        backlight_mode: str = 'active_low',
+        dotsize: int = 8,
+        charmap: str = 'A02',
+        auto_linebreaks: bool = True,
+        compat_mode: bool = False,
+        **kwargs
+    ):
         """
         :param pin_rs: Pin for register select (RS).
         :param pin_e: Pin to start data read or write (E).
@@ -70,15 +73,23 @@ class LcdGpioPlugin(LcdPlugin):
 
     def _get_lcd(self):
         from RPLCD.gpio import CharLCD
-        return CharLCD(cols=self.cols, rows=self.rows, pin_rs=self.pin_rs,
-                       pin_e=self.pin_e, pins_data=self.pins_data,
-                       numbering_mode=self.pin_mode, pin_rw=self.pin_rw,
-                       pin_backlight=self.pin_backlight,
-                       backlight_enabled=self.backlight_enabled,
-                       backlight_mode=self.backlight_mode,
-                       dotsize=self.dotsize, charmap=self.charmap,
-                       auto_linebreaks=self.auto_linebreaks,
-                       compat_mode=self.compat_mode)
+
+        return CharLCD(
+            cols=self.cols,
+            rows=self.rows,
+            pin_rs=self.pin_rs,
+            pin_e=self.pin_e,
+            pins_data=self.pins_data,
+            numbering_mode=self.pin_mode,
+            pin_rw=self.pin_rw,
+            pin_backlight=self.pin_backlight,
+            backlight_enabled=self.backlight_enabled,
+            backlight_mode=self.backlight_mode,
+            dotsize=self.dotsize,
+            charmap=self.charmap,
+            auto_linebreaks=self.auto_linebreaks,
+            compat_mode=self.compat_mode,
+        )
 
 
 # vim:sw=4:ts=4:et:

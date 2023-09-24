@@ -13,24 +13,24 @@ class GoogleFitBackend(Backend):
     measurements, new fitness activities etc.) on the specified data streams and
     fire an event upon new data.
 
-    Triggers:
-
-        * :class:`platypush.message.event.google.fit.GoogleFitEvent` when a new
-            data point is received on one of the registered streams.
-
     Requires:
 
         * The **google.fit** plugin
             (:class:`platypush.plugins.google.fit.GoogleFitPlugin`) enabled.
-        * The **db** plugin (:class:`platypush.plugins.db`) configured
     """
 
     _default_poll_seconds = 60
     _default_user_id = 'me'
     _last_timestamp_varname = '_GOOGLE_FIT_LAST_TIMESTAMP_'
 
-    def __init__(self, data_sources, user_id=_default_user_id,
-                 poll_seconds=_default_poll_seconds, *args, **kwargs):
+    def __init__(
+        self,
+        data_sources,
+        user_id=_default_user_id,
+        poll_seconds=_default_poll_seconds,
+        *args,
+        **kwargs
+    ):
         """
         :param data_sources: Google Fit data source IDs to monitor. You can
             get a list of the available data sources through the
@@ -53,23 +53,31 @@ class GoogleFitBackend(Backend):
 
     def run(self):
         super().run()
-        self.logger.info('Started Google Fit backend on data sources {}'.format(
-            self.data_sources))
+        self.logger.info(
+            'Started Google Fit backend on data sources {}'.format(self.data_sources)
+        )
 
         while not self.should_stop():
             try:
                 for data_source in self.data_sources:
                     varname = self._last_timestamp_varname + data_source
-                    last_timestamp = float(get_plugin('variable').
-                                           get(varname).output.get(varname) or 0)
+                    last_timestamp = float(
+                        get_plugin('variable').get(varname).output.get(varname) or 0
+                    )
 
                     new_last_timestamp = last_timestamp
-                    self.logger.info('Processing new entries from data source {}, last timestamp: {}'.
-                                     format(data_source,
-                                            str(datetime.datetime.fromtimestamp(last_timestamp))))
+                    self.logger.info(
+                        'Processing new entries from data source {}, last timestamp: {}'.format(
+                            data_source,
+                            str(datetime.datetime.fromtimestamp(last_timestamp)),
+                        )
+                    )
 
-                    data_points = get_plugin('google.fit').get_data(
-                        user_id=self.user_id, data_source_id=data_source).output
+                    data_points = (
+                        get_plugin('google.fit')
+                        .get_data(user_id=self.user_id, data_source_id=data_source)
+                        .output
+                    )
                     new_data_points = 0
 
                     for dp in data_points:
@@ -78,25 +86,34 @@ class GoogleFitBackend(Backend):
                             del dp['dataSourceId']
 
                         if dp_time > last_timestamp:
-                            self.bus.post(GoogleFitEvent(
-                                user_id=self.user_id, data_source_id=data_source,
-                                data_type=dp.pop('dataTypeName'),
-                                start_time=dp_time,
-                                end_time=dp.pop('endTime'),
-                                modified_time=dp.pop('modifiedTime'),
-                                values=dp.pop('values'),
-                                **{camel_case_to_snake_case(k): v
-                                    for k, v in dp.items()}
-                            ))
+                            self.bus.post(
+                                GoogleFitEvent(
+                                    user_id=self.user_id,
+                                    data_source_id=data_source,
+                                    data_type=dp.pop('dataTypeName'),
+                                    start_time=dp_time,
+                                    end_time=dp.pop('endTime'),
+                                    modified_time=dp.pop('modifiedTime'),
+                                    values=dp.pop('values'),
+                                    **{
+                                        camel_case_to_snake_case(k): v
+                                        for k, v in dp.items()
+                                    }
+                                )
+                            )
 
                             new_data_points += 1
 
                         new_last_timestamp = max(dp_time, new_last_timestamp)
 
                     last_timestamp = new_last_timestamp
-                    self.logger.info('Got {} new entries from data source {}, last timestamp: {}'.
-                                     format(new_data_points, data_source,
-                                            str(datetime.datetime.fromtimestamp(last_timestamp))))
+                    self.logger.info(
+                        'Got {} new entries from data source {}, last timestamp: {}'.format(
+                            new_data_points,
+                            data_source,
+                            str(datetime.datetime.fromtimestamp(last_timestamp)),
+                        )
+                    )
 
                     get_plugin('variable').set(**{varname: last_timestamp})
             except Exception as e:

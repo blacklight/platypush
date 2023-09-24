@@ -23,13 +23,6 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
     """
     Sensor abstract plugin. Any plugin that interacts with sensors
     should implement this class.
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
     """
 
     _max_retry_secs = 60.0

@@ -52,17 +52,6 @@ class SerialPlugin(SensorPlugin):
     ``/dev/ttyUSB<n>``), you may consider creating `static mappings through
     udev
     <https://dev.to/enbis/how-udev-rules-can-help-us-to-recognize-a-usb-to-serial-device-over-dev-tty-interface-pbk>`_.
-
-    Requires:
-
-        * **pyserial** (``pip install pyserial``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
     """
 
     _default_lock_timeout: float = 2.0

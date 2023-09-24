@@ -58,12 +58,6 @@ from platypush.schemas.system import (
 class SystemPlugin(SensorPlugin, EntityManager):
     """
     Plugin to get system info.
-
-    Requires:
-
-        - **py-cpuinfo** (``pip install py-cpuinfo``) for CPU model and info.
-        - **psutil** (``pip install psutil``) for CPU load and stats.
-
     """
 
     def __init__(self, *args, poll_interval: Optional[float] = 60, **kwargs):

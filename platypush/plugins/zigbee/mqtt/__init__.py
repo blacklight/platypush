@@ -184,32 +184,6 @@ class ZigbeeMqttPlugin(
 
         - You are now ready to use this integration.
 
-    Requires:
-
-        * **paho-mqtt** (``pip install paho-mqtt``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttOnlineEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttOfflineEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePropertySetEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePairingEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceConnectedEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBannedEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedFailedEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceWhitelistedEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRenamedEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBindEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceUnbindEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedFailedEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedFailedEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllFailedEvent`
-        * :class:`platypush.message.event.zigbee.mqtt.ZigbeeMqttErrorEvent`
-
     """  # noqa: E501
 
     def __init__(

@@ -43,11 +43,6 @@ class Permission(IntEnum):
 class NextcloudPlugin(Plugin):
     """
     Plugin to interact with a NextCloud instance.
-
-    Requires:
-
-        * **nextcloud-api-wrapper** (``pip install nextcloud-api-wrapper``)
-
     """
 
     def __init__(

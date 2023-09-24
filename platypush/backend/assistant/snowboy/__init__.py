@@ -15,16 +15,7 @@ class AssistantSnowboyBackend(AssistantBackend):
     HotwordDetectedEvent to trigger the conversation on whichever assistant
     plugin you're using (Google, Alexa...)
 
-    Triggers:
-
-        * :class:`platypush.message.event.assistant.HotwordDetectedEvent` \
-            whenever the hotword has been detected
-
-    Requires:
-
-        * **snowboy** (``pip install snowboy``)
-
-    Manual installation for snowboy and its Python bindings if the command above fails::
+    Manual installation for snowboy and its Python bindings if the installation via package fails::
 
         $ [sudo] apt-get install libatlas-base-dev swig
         $ [sudo] pip install pyaudio

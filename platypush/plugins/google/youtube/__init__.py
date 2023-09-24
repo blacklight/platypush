@@ -5,12 +5,6 @@ from platypush.plugins.google import GooglePlugin
 class GoogleYoutubePlugin(GooglePlugin):
     """
     YouTube plugin.
-
-    Requires:
-
-        * **google-api-python-client** (``pip install google-api-python-client``)
-        * **oauth2client** (``pip install oauth2client``)
-
     """
 
     scopes = ['https://www.googleapis.com/auth/youtube.readonly']

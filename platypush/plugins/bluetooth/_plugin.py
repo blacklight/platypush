@@ -53,29 +53,6 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
 
     Note that the support for Bluetooth low-energy devices requires a Bluetooth
     adapter compatible with the Bluetooth 5.0 specification or higher.
-
-    Requires:
-
-        * **bleak** (``pip install bleak``)
-        * **bluetooth-numbers** (``pip install bluetooth-numbers``)
-        * **TheengsDecoder** (``pip install TheengsDecoder``)
-        * **pydbus** (``pip install pydbus``)
-        * **pybluez** (``pip install git+https://github.com/pybluez/pybluez``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.bluetooth.BluetoothConnectionFailedEvent`
-        * :class:`platypush.message.event.bluetooth.BluetoothDeviceConnectedEvent`
-        * :class:`platypush.message.event.bluetooth.BluetoothDeviceDisconnectedEvent`
-        * :class:`platypush.message.event.bluetooth.BluetoothDeviceFoundEvent`
-        * :class:`platypush.message.event.bluetooth.BluetoothDeviceLostEvent`
-        * :class:`platypush.message.event.bluetooth.BluetoothFileReceivedEvent`
-        * :class:`platypush.message.event.bluetooth.BluetoothFileSentEvent`
-        * :class:`platypush.message.event.bluetooth.BluetoothFileTransferStartedEvent`
-        * :class:`platypush.message.event.bluetooth.BluetoothScanPausedEvent`
-        * :class:`platypush.message.event.bluetooth.BluetoothScanResumedEvent`
-        * :class:`platypush.message.event.entities.EntityUpdateEvent`
-
     """
 
     _default_connect_timeout: Final[int] = 20

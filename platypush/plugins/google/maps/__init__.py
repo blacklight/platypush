@@ -14,12 +14,6 @@ datetime_types = Union[str, int, float, datetime]
 class GoogleMapsPlugin(GooglePlugin):
     """
     Plugins that provides utilities to interact with Google Maps API services.
-
-    Requires:
-
-        * **google-api-python-client** (``pip install google-api-python-client``)
-        * **oauth2client** (``pip install oauth2client``)
-
     """
 
     scopes = []

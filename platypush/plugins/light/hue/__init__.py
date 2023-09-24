@@ -34,18 +34,6 @@ from platypush.plugins import RunnablePlugin, action
 class LightHuePlugin(RunnablePlugin, LightEntityManager):
     """
     Philips Hue lights plugin.
-
-    Requires:
-
-        * **phue** (``pip install phue``)
-
-    Triggers:
-
-        - :class:`platypush.message.event.light.LightAnimationStartedEvent` when an animation is started.
-        - :class:`platypush.message.event.light.LightAnimationStoppedEvent` when an animation is stopped.
-        - :class:`platypush.message.event.light.LightStatusChangeEvent` when the status of a lightbulb
-          changes.
-
     """
 
     MAX_BRI = 255

@@ -85,17 +85,6 @@ class SensorEnvirophatPlugin(SensorPlugin):
 
     You can use an enviropHAT device to read e.g. temperature, pressure,
     altitude, accelerometer, magnetometer and luminosity data.
-
-    Requires:
-
-        * ``envirophat`` (``pip install envirophat``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
     """
 
     @action

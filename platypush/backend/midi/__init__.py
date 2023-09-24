@@ -10,18 +10,16 @@ class MidiBackend(Backend):
     """
     This backend will listen for events from a MIDI device and post a
     MidiMessageEvent whenever a new MIDI event happens.
-
-    Triggers:
-
-        * :class:`platypush.message.event.midi.MidiMessageEvent` when a new MIDI event is received
-
-    Requires:
-
-        * **rtmidi** (``pip install rtmidi``)
     """
 
-    def __init__(self, device_name=None, port_number=None,
-                 midi_throttle_time=None, *args, **kwargs):
+    def __init__(
+        self,
+        device_name=None,
+        port_number=None,
+        midi_throttle_time=None,
+        *args,
+        **kwargs
+    ):
         """
         :param device_name: Name of the MIDI device.  *N.B.* either
             `device_name` or `port_number` must be set.
@@ -40,12 +38,16 @@ class MidiBackend(Backend):
         """
 
         import rtmidi
+
         super().__init__(*args, **kwargs)
 
-        if (device_name and port_number is not None) or \
-                (not device_name and port_number is None):
-            raise RuntimeError('Either device_name or port_number (not both) ' +
-                               'must be set in the MIDI backend configuration')
+        if (device_name and port_number is not None) or (
+            not device_name and port_number is None
+        ):
+            raise RuntimeError(
+                'Either device_name or port_number (not both) '
+                + 'must be set in the MIDI backend configuration'
+            )
 
         self.midi_throttle_time = midi_throttle_time
         self.midi = rtmidi.MidiIn()
@@ -75,9 +77,12 @@ class MidiBackend(Backend):
     def _on_midi_message(self):
         def flush_midi_message(message):
             def _f():
-                self.logger.info('Flushing throttled MIDI message {} to the bus'.format(message))
+                self.logger.info(
+                    'Flushing throttled MIDI message {} to the bus'.format(message)
+                )
                 delay = time.time() - self.last_trigger_event_time
                 self.bus.post(MidiMessageEvent(message=message, delay=delay))
+
             return _f
 
         # noinspection PyUnusedLocal
@@ -95,8 +100,9 @@ class MidiBackend(Backend):
                         self.midi_flush_timeout.cancel()
 
                     self.midi_flush_timeout = Timer(
-                        self.midi_throttle_time-event_delta,
-                        flush_midi_message(message))
+                        self.midi_throttle_time - event_delta,
+                        flush_midi_message(message),
+                    )
 
                     self.midi_flush_timeout.start()
                     return
@@ -110,8 +116,11 @@ class MidiBackend(Backend):
         super().run()
 
         self.midi.open_port(self.port_number)
-        self.logger.info('Initialized MIDI backend, listening for events on device {}'.
-                         format(self.device_name))
+        self.logger.info(
+            'Initialized MIDI backend, listening for events on device {}'.format(
+                self.device_name
+            )
+        )
 
         while not self.should_stop():
             try:

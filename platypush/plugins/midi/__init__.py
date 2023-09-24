@@ -7,10 +7,6 @@ class MidiPlugin(Plugin):
     """
     Virtual MIDI controller plugin. It allows you to send custom MIDI messages
     to any connected devices.
-
-    Requires:
-
-        * **python-rtmidi** (``pip install python-rtmidi``)
     """
 
     _played_notes = set()
@@ -21,6 +17,7 @@ class MidiPlugin(Plugin):
         :type device_name: str
         """
         import rtmidi
+
         super().__init__(**kwargs)
 
         self.device_name = device_name
@@ -32,7 +29,9 @@ class MidiPlugin(Plugin):
             self.logger.info('Initialized MIDI plugin on port 0')
         else:
             self.midiout.open_virtual_port(self.device_name)
-            self.logger.info('Initialized MIDI plugin on virtual device {}'.format(self.device_name))
+            self.logger.info(
+                'Initialized MIDI plugin on virtual device {}'.format(self.device_name)
+            )
 
     @action
     def send_message(self, values):
@@ -117,12 +116,14 @@ class MidiPlugin(Plugin):
         """
 
         import rtmidi
+
         in_ports = rtmidi.MidiIn().get_ports()
         out_ports = rtmidi.MidiOut().get_ports()
 
         return {
-            'in': {i: port for i, port in enumerate(in_ports)},
-            'out': {i: port for i, port in enumerate(out_ports)},
+            'in': dict(enumerate(in_ports)),
+            'out': dict(enumerate(out_ports)),
         }
+
 
 # vim:sw=4:ts=4:et:

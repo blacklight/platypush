@@ -25,15 +25,15 @@ class CameraIrMlx90640Plugin(CameraPlugin):
         $ make bcm2835
         $ make examples/rawrgb I2C_MODE=LINUX
 
-    Requires:
-
-        * **mlx90640-library** installation (see instructions above)
-        * **PIL** image library (``pip install Pillow``)
-
     """
 
-    def __init__(self, rawrgb_path: Optional[str] = None, resolution: Tuple[int, int] = (32, 24),
-                 warmup_frames: Optional[int] = 5, **kwargs):
+    def __init__(
+        self,
+        rawrgb_path: Optional[str] = None,
+        resolution: Tuple[int, int] = (32, 24),
+        warmup_frames: Optional[int] = 5,
+        **kwargs
+    ):
         """
         :param rawrgb_path: Specify it if the rawrgb executable compiled from
             https://github.com/pimoroni/mlx90640-library is in another folder than
@@ -42,14 +42,22 @@ class CameraIrMlx90640Plugin(CameraPlugin):
         :param warmup_frames: Number of frames to be skipped on sensor initialization/warmup (default: 2).
         :param kwargs: Extra parameters to be passed to :class:`platypush.plugins.camera.CameraPlugin`.
         """
-        super().__init__(device='mlx90640', resolution=resolution, warmup_frames=warmup_frames, **kwargs)
+        super().__init__(
+            device='mlx90640',
+            resolution=resolution,
+            warmup_frames=warmup_frames,
+            **kwargs
+        )
 
         if not rawrgb_path:
-            rawrgb_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lib', 'examples', 'rawrgb')
+            rawrgb_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), 'lib', 'examples', 'rawrgb'
+            )
         rawrgb_path = os.path.abspath(os.path.expanduser(rawrgb_path))
 
-        assert os.path.isfile(rawrgb_path),\
-            'rawrgb executable not found. Please follow the documentation of this plugin to build it'
+        assert os.path.isfile(
+            rawrgb_path
+        ), 'rawrgb executable not found. Please follow the documentation of this plugin to build it'
 
         self.rawrgb_path = rawrgb_path
         self._capture_proc = None
@@ -59,8 +67,11 @@ class CameraIrMlx90640Plugin(CameraPlugin):
 
     def prepare_device(self, device: Camera):
         if not self._is_capture_running():
-            self._capture_proc = subprocess.Popen([self.rawrgb_path, '{}'.format(device.info.fps)],
-                                                  stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            self._capture_proc = subprocess.Popen(
+                [self.rawrgb_path, '{}'.format(device.info.fps)],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
 
         return self._capture_proc
 
@@ -77,11 +88,14 @@ class CameraIrMlx90640Plugin(CameraPlugin):
         from PIL import Image
 
         camera = self.prepare_device(device)
-        frame = camera.stdout.read(device.info.resolution[0] * device.info.resolution[1] * 3)
+        frame = camera.stdout.read(
+            device.info.resolution[0] * device.info.resolution[1] * 3
+        )
         return Image.frombytes('RGB', device.info.resolution, frame)
 
     def to_grayscale(self, image):
         from PIL import Image
+
         new_image = Image.new('L', image.size)
 
         for i in range(0, image.size[0]):

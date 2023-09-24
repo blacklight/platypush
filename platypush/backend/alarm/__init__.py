@@ -11,7 +11,11 @@ from dateutil.tz import gettz
 
 from platypush.backend import Backend
 from platypush.context import get_bus, get_plugin
-from platypush.message.event.alarm import AlarmStartedEvent, AlarmDismissedEvent, AlarmSnoozedEvent
+from platypush.message.event.alarm import (
+    AlarmStartedEvent,
+    AlarmDismissedEvent,
+    AlarmSnoozedEvent,
+)
 from platypush.plugins.media import MediaPlugin, PlayerState
 from platypush.procedure import Procedure
 
@@ -28,10 +32,17 @@ class Alarm:
     _alarms_count = 0
     _id_lock = threading.RLock()
 
-    def __init__(self, when: str, actions: Optional[list] = None, name: Optional[str] = None,
-                 audio_file: Optional[str] = None, audio_plugin: Optional[str] = None,
-                 audio_volume: Optional[Union[int, float]] = None,
-                 snooze_interval: float = 300.0, enabled: bool = True):
+    def __init__(
+        self,
+        when: str,
+        actions: Optional[list] = None,
+        name: Optional[str] = None,
+        audio_file: Optional[str] = None,
+        audio_plugin: Optional[str] = None,
+        audio_volume: Optional[Union[int, float]] = None,
+        snooze_interval: float = 300.0,
+        enabled: bool = True,
+    ):
         with self._id_lock:
             self._alarms_count += 1
             self.id = self._alarms_count
@@ -42,20 +53,26 @@ class Alarm:
 
         if audio_file:
             self.audio_file = os.path.abspath(os.path.expanduser(audio_file))
-            assert os.path.isfile(self.audio_file), 'No such audio file: {}'.format(self.audio_file)
+            assert os.path.isfile(self.audio_file), 'No such audio file: {}'.format(
+                self.audio_file
+            )
 
         self.audio_plugin = audio_plugin
         self.audio_volume = audio_volume
         self.snooze_interval = snooze_interval
         self.state: Optional[AlarmState] = None
         self.timer: Optional[threading.Timer] = None
-        self.actions = Procedure.build(name=name, _async=False, requests=actions or [], id=self.id)
+        self.actions = Procedure.build(
+            name=name, _async=False, requests=actions or [], id=self.id
+        )
 
         self._enabled = enabled
         self._runtime_snooze_interval = snooze_interval
 
     def get_next(self) -> float:
-        now = datetime.datetime.now().replace(tzinfo=gettz())  # lgtm [py/call-to-non-callable]
+        now = datetime.datetime.now().replace(
+            tzinfo=gettz()
+        )  # lgtm [py/call-to-non-callable]
 
         try:
             cron = croniter.croniter(self.when, now)
@@ -63,10 +80,14 @@ class Alarm:
         except (AttributeError, croniter.CroniterBadCronError):
             try:
                 timestamp = datetime.datetime.fromisoformat(self.when).replace(
-                    tzinfo=gettz())  # lgtm [py/call-to-non-callable]
+                    tzinfo=gettz()
+                )  # lgtm [py/call-to-non-callable]
             except (TypeError, ValueError):
-                timestamp = (datetime.datetime.now().replace(tzinfo=gettz()) +  # lgtm [py/call-to-non-callable]
-                             datetime.timedelta(seconds=int(self.when)))
+                timestamp = datetime.datetime.now().replace(
+                    tzinfo=gettz()
+                ) + datetime.timedelta(  # lgtm [py/call-to-non-callable]
+                    seconds=int(self.when)
+                )
 
             return timestamp.timestamp() if timestamp >= now else None
 
@@ -88,7 +109,9 @@ class Alarm:
         self._runtime_snooze_interval = interval or self.snooze_interval
         self.state = AlarmState.SNOOZED
         self.stop_audio()
-        get_bus().post(AlarmSnoozedEvent(name=self.name, interval=self._runtime_snooze_interval))
+        get_bus().post(
+            AlarmSnoozedEvent(name=self.name, interval=self._runtime_snooze_interval)
+        )
 
     def start(self):
         if self.timer:
@@ -159,7 +182,9 @@ class Alarm:
                     break
 
                 if not sleep_time:
-                    sleep_time = self.get_next() - time.time() if self.get_next() else 10
+                    sleep_time = (
+                        self.get_next() - time.time() if self.get_next() else 10
+                    )
 
                 time.sleep(sleep_time)
 
@@ -179,18 +204,15 @@ class Alarm:
 class AlarmBackend(Backend):
     """
     Backend to handle user-configured alarms.
-
-    Triggers:
-
-        * :class:`platypush.message.event.alarm.AlarmStartedEvent` when an alarm starts.
-        * :class:`platypush.message.event.alarm.AlarmSnoozedEvent` when an alarm is snoozed.
-        * :class:`platypush.message.event.alarm.AlarmTimeoutEvent` when an alarm times out.
-        * :class:`platypush.message.event.alarm.AlarmDismissedEvent` when an alarm is dismissed.
-
     """
 
-    def __init__(self, alarms: Optional[Union[list, Dict[str, Any]]] = None, audio_plugin: str = 'media.mplayer',
-                 *args, **kwargs):
+    def __init__(
+        self,
+        alarms: Optional[Union[list, Dict[str, Any]]] = None,
+        audio_plugin: str = 'media.mplayer',
+        *args,
+        **kwargs
+    ):
         """
         :param alarms: List or name->value dict with the configured alarms. Example:
 
@@ -231,13 +253,29 @@ class AlarmBackend(Backend):
             alarms = [{'name': name, **alarm} for name, alarm in alarms.items()]
 
         self.audio_plugin = audio_plugin
-        alarms = [Alarm(**{'audio_plugin': self.audio_plugin, **alarm}) for alarm in alarms]
+        alarms = [
+            Alarm(**{'audio_plugin': self.audio_plugin, **alarm}) for alarm in alarms
+        ]
         self.alarms: Dict[str, Alarm] = {alarm.name: alarm for alarm in alarms}
 
-    def add_alarm(self, when: str, actions: list, name: Optional[str] = None, audio_file: Optional[str] = None,
-                  audio_volume: Optional[Union[int, float]] = None, enabled: bool = True) -> Alarm:
-        alarm = Alarm(when=when, actions=actions, name=name, enabled=enabled, audio_file=audio_file,
-                      audio_plugin=self.audio_plugin, audio_volume=audio_volume)
+    def add_alarm(
+        self,
+        when: str,
+        actions: list,
+        name: Optional[str] = None,
+        audio_file: Optional[str] = None,
+        audio_volume: Optional[Union[int, float]] = None,
+        enabled: bool = True,
+    ) -> Alarm:
+        alarm = Alarm(
+            when=when,
+            actions=actions,
+            name=name,
+            enabled=enabled,
+            audio_file=audio_file,
+            audio_plugin=self.audio_plugin,
+            audio_volume=audio_volume,
+        )
 
         if alarm.name in self.alarms:
             self.logger.info('Overwriting existing alarm {}'.format(alarm.name))
@@ -274,10 +312,15 @@ class AlarmBackend(Backend):
         alarm.snooze(interval=interval)
 
     def get_alarms(self) -> List[Alarm]:
-        return sorted([alarm for alarm in self.alarms.values()], key=lambda alarm: alarm.get_next())
+        return sorted(
+            self.alarms.values(),
+            key=lambda alarm: alarm.get_next(),
+        )
 
     def get_running_alarm(self) -> Optional[Alarm]:
-        running_alarms = [alarm for alarm in self.alarms.values() if alarm.state == AlarmState.RUNNING]
+        running_alarms = [
+            alarm for alarm in self.alarms.values() if alarm.state == AlarmState.RUNNING
+        ]
         return running_alarms[0] if running_alarms else None
 
     def __enter__(self):
@@ -285,9 +328,11 @@ class AlarmBackend(Backend):
             alarm.stop()
             alarm.start()
 
-        self.logger.info('Initialized alarm backend with {} alarms'.format(len(self.alarms)))
+        self.logger.info(
+            'Initialized alarm backend with {} alarms'.format(len(self.alarms))
+        )
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, *_, **__):
         for alarm in self.alarms.values():
             alarm.stop()
 
@@ -295,7 +340,9 @@ class AlarmBackend(Backend):
 
     def loop(self):
         for name, alarm in self.alarms.copy().items():
-            if not alarm.timer or (not alarm.timer.is_alive() and alarm.state == AlarmState.SHUTDOWN):
+            if not alarm.timer or (
+                not alarm.timer.is_alive() and alarm.state == AlarmState.SHUTDOWN
+            ):
                 del self.alarms[name]
 
         time.sleep(10)

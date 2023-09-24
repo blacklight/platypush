@@ -26,17 +26,6 @@ class SensorMcp3008Plugin(SensorPlugin):
     Raspberry Pi or a regular laptop.  See
     https://learn.adafruit.com/raspberry-pi-analog-to-digital-converters/mcp3008
     for more info.
-
-    Requires:
-
-        * ``adafruit-mcp3008`` (``pip install adafruit-mcp3008``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
     """
 
     N_CHANNELS = 8

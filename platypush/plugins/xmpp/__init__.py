@@ -29,45 +29,6 @@ from ._types import Errors, XmppPresence
 class XmppPlugin(AsyncRunnablePlugin, XmppBasePlugin):
     """
     XMPP integration.
-
-    Requires:
-
-        * **aioxmpp** (``pip install aioxmpp``)
-        * **pytz** (``pip install pytz``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.xmpp.XmppConnectedEvent`
-        * :class:`platypush.message.event.xmpp.XmppContactAddRequestAcceptedEvent`
-        * :class:`platypush.message.event.xmpp.XmppContactAddRequestEvent`
-        * :class:`platypush.message.event.xmpp.XmppContactAddRequestRejectedEvent`
-        * :class:`platypush.message.event.xmpp.XmppConversationAddedEvent`
-        * :class:`platypush.message.event.xmpp.XmppConversationEnterEvent`
-        * :class:`platypush.message.event.xmpp.XmppConversationExitEvent`
-        * :class:`platypush.message.event.xmpp.XmppConversationJoinEvent`
-        * :class:`platypush.message.event.xmpp.XmppConversationLeaveEvent`
-        * :class:`platypush.message.event.xmpp.XmppConversationNickChangedEvent`
-        * :class:`platypush.message.event.xmpp.XmppDisconnectedEvent`
-        * :class:`platypush.message.event.xmpp.XmppMessageReceivedEvent`
-        * :class:`platypush.message.event.xmpp.XmppPresenceChangedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomAffiliationChangedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomEnterEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomExitEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomInviteAcceptedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomInviteEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomInviteRejectedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomJoinEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomLeaveEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomMessageReceivedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomNickChangedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomPresenceChangedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomRoleChangedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomTopicChangedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomUserAvailableEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomUserUnavailableEvent`
-        * :class:`platypush.message.event.xmpp.XmppUserAvailableEvent`
-        * :class:`platypush.message.event.xmpp.XmppUserUnavailableEvent`
-
     """
 
     def __init__(

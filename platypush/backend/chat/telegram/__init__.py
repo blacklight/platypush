@@ -22,17 +22,6 @@ class ChatTelegramBackend(Backend):
     """
     Telegram bot that listens for messages and updates.
 
-    Triggers:
-
-        * :class:`platypush.message.event.chat.telegram.TextMessageEvent` when a text message is received.
-        * :class:`platypush.message.event.chat.telegram.PhotoMessageEvent` when a photo is received.
-        * :class:`platypush.message.event.chat.telegram.VideoMessageEvent` when a video is received.
-        * :class:`platypush.message.event.chat.telegram.LocationMessageEvent` when a location is received.
-        * :class:`platypush.message.event.chat.telegram.ContactMessageEvent` when a contact is received.
-        * :class:`platypush.message.event.chat.telegram.DocumentMessageEvent` when a document is received.
-        * :class:`platypush.message.event.chat.telegram.CommandMessageEvent` when a command message is received.
-        * :class:`platypush.message.event.chat.telegram.GroupChatCreatedEvent` when the bot is invited to a new group.
-
     Requires:
 
         * The :class:`platypush.plugins.chat.telegram.ChatTelegramPlugin` plugin configured

@@ -27,15 +27,6 @@ class MediaPlugin(Plugin, ABC):
     """
     Generic plugin to interact with a media player.
 
-    Requires:
-
-        * A media player installed (supported so far: mplayer, vlc, mpv, omxplayer, chromecast)
-        * **python-libtorrent** (``pip install python-libtorrent``), optional, for torrent support over native
-            library
-        * *rtorrent* installed - optional, for torrent support over rtorrent
-        * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
-        * **ffmpeg**,optional, to get media files metadata
-
     To start the local media stream service over HTTP you will also need the
     :class:`platypush.backend.http.HttpBackend` backend enabled.
     """

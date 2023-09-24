@@ -12,19 +12,7 @@ from platypush.plugins.sensor import SensorPlugin
 class SensorLtr559Plugin(SensorPlugin):
     """
     Plugin to interact with an `LTR559 <https://shop.pimoroni.com/products/ltr-559-light-proximity-sensor-breakout>`_
-    light and proximity sensor
-
-    Requires:
-
-        * ``ltr559`` (``pip install ltr559``)
-        * ``smbus`` (``pip install smbus``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
+    light and proximity sensor.
     """
 
     def __init__(self, **kwargs):

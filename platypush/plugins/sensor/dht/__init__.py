@@ -12,17 +12,6 @@ from platypush.plugins.sensor import SensorPlugin
 class SensorDhtPlugin(SensorPlugin):
     """
     Plugin to interact with a DHT11/DHT22/AM2302 temperature/humidity sensor through GPIO.
-
-    Requires:
-
-        * ``Adafruit_Python_DHT`` (``pip install git+https://github.com/adafruit/Adafruit_Python_DHT.git``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
     """
 
     def __init__(

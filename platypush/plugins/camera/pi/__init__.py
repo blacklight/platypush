@@ -12,30 +12,44 @@ class CameraPiPlugin(CameraPlugin):
     """
     Plugin to control a Pi camera.
 
-    Requires:
-
-        * **picamera** (``pip install picamera``)
-        * **numpy** (``pip install numpy``)
-        * **Pillow** (``pip install Pillow``)
+    .. warning::
+        This plugin is **DEPRECATED*, as it relies on the old ``picamera`` module.
+        On recent systems, it should be possible to access the Pi Camera through the FFmpeg or GStreamer integrations.
 
     """
 
     _camera_class = PiCamera
     _camera_info_class = PiCameraInfo
 
-    def __init__(self, device: int = 0, fps: float = 30., warmup_seconds: float = 2., sharpness: int = 0,
-                 contrast: int = 0, brightness: int = 50, video_stabilization: bool = False, iso: int = 0,
-                 exposure_compensation: int = 0, exposure_mode: str = 'auto', meter_mode: str = 'average',
-                 awb_mode: str = 'auto', image_effect: str = 'none', led_pin: Optional[int] = None,
-                 color_effects: Optional[Union[str, List[str]]] = None,
-                 zoom: Tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0), **camera):
+    def __init__(
+        self,
+        device: int = 0,
+        fps: float = 30.0,
+        warmup_seconds: float = 2.0,
+        sharpness: int = 0,
+        contrast: int = 0,
+        brightness: int = 50,
+        video_stabilization: bool = False,
+        iso: int = 0,
+        exposure_compensation: int = 0,
+        exposure_mode: str = 'auto',
+        meter_mode: str = 'average',
+        awb_mode: str = 'auto',
+        image_effect: str = 'none',
+        led_pin: Optional[int] = None,
+        color_effects: Optional[Union[str, List[str]]] = None,
+        zoom: Tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
+        **camera
+    ):
         """
         See https://www.raspberrypi.org/documentation/usage/camera/python/README.md
         for a detailed reference about the Pi camera options.
 
         :param camera: Options for the base camera plugin (see :class:`platypush.plugins.camera.CameraPlugin`).
         """
-        super().__init__(device=device, fps=fps, warmup_seconds=warmup_seconds, **camera)
+        super().__init__(
+            device=device, fps=fps, warmup_seconds=warmup_seconds, **camera
+        )
 
         self.camera_info.sharpness = sharpness
         self.camera_info.contrast = contrast
@@ -56,8 +70,12 @@ class CameraPiPlugin(CameraPlugin):
         # noinspection PyUnresolvedReferences
         import picamera
 
-        camera = picamera.PiCamera(camera_num=device.info.device, resolution=device.info.resolution,
-                                   framerate=device.info.fps, led_pin=device.info.led_pin)
+        camera = picamera.PiCamera(
+            camera_num=device.info.device,
+            resolution=device.info.resolution,
+            framerate=device.info.fps,
+            led_pin=device.info.led_pin,
+        )
 
         camera.hflip = device.info.horizontal_flip
         camera.vflip = device.info.vertical_flip
@@ -97,9 +115,11 @@ class CameraPiPlugin(CameraPlugin):
         import numpy as np
         from PIL import Image
 
-        shape = (camera.info.resolution[1] + (camera.info.resolution[1] % 16),
-                 camera.info.resolution[0] + (camera.info.resolution[0] % 32),
-                 3)
+        shape = (
+            camera.info.resolution[1] + (camera.info.resolution[1] % 16),
+            camera.info.resolution[0] + (camera.info.resolution[0] % 32),
+            3,
+        )
 
         frame = np.empty(shape, dtype=np.uint8)
         camera.object.capture(frame, 'rgb')
@@ -121,7 +141,9 @@ class CameraPiPlugin(CameraPlugin):
             self.logger.warning(str(e))
 
     @action
-    def capture_preview(self, duration: Optional[float] = None, n_frames: Optional[int] = None, **camera) -> dict:
+    def capture_preview(
+        self, duration: Optional[float] = None, n_frames: Optional[int] = None, **camera
+    ) -> dict:
         camera = self.open_device(**camera)
         self.start_preview(camera)
 
@@ -132,11 +154,15 @@ class CameraPiPlugin(CameraPlugin):
 
         return self.status()
 
-    def streaming_thread(self, camera: PiCamera, stream_format: str, duration: Optional[float] = None):
+    def streaming_thread(
+        self, camera: PiCamera, stream_format: str, duration: Optional[float] = None
+    ):
         server_socket = self._prepare_server_socket(camera)
         sock = None
         streaming_started_time = time.time()
-        self.logger.info('Starting streaming on port {}'.format(camera.info.listen_port))
+        self.logger.info(
+            'Starting streaming on port {}'.format(camera.info.listen_port)
+        )
 
         try:
             while camera.stream_event.is_set():
@@ -161,7 +187,9 @@ class CameraPiPlugin(CameraPlugin):
                         try:
                             sock.close()
                         except Exception as e:
-                            self.logger.warning('Error while closing client socket: {}'.format(str(e)))
+                            self.logger.warning(
+                                'Error while closing client socket: {}'.format(str(e))
+                            )
 
                     self.close_device(camera)
         finally:
@@ -169,7 +197,9 @@ class CameraPiPlugin(CameraPlugin):
             self.logger.info('Stopped camera stream')
 
     @action
-    def start_streaming(self, duration: Optional[float] = None, stream_format: str = 'h264', **camera) -> dict:
+    def start_streaming(
+        self, duration: Optional[float] = None, stream_format: str = 'h264', **camera
+    ) -> dict:
         camera = self.open_device(stream_format=stream_format, **camera)
         return self._start_streaming(camera, duration, stream_format)
 

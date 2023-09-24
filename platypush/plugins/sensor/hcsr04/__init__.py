@@ -18,19 +18,6 @@ class SensorHcsr04Plugin(GpioPlugin, SensorPlugin):
     <https://www.sparkfun.com/products/15569>`_, but it should be compatible
     with any GPIO-compatible sensor that relies on the same trigger-and-echo
     principle.
-
-    Requires:
-
-        * ``RPi.GPIO`` (``pip install RPi.GPIO``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-        * :class:`platypush.message.event.distance.DistanceSensorEvent` when a
-          new distance measurement is available (legacy event)
-
     """
 
     def __init__(

@@ -8,14 +8,6 @@ class JoystickBackend(Backend):
     """
     This backend will listen for events from a joystick device and post a
     JoystickEvent whenever a new event is captured.
-
-    Triggers:
-
-        * :class:`platypush.message.event.joystick.JoystickEvent` when a new joystick event is received
-
-    Requires:
-
-        * **inputs** (``pip install inputs``)
     """
 
     def __init__(self, device, *args, **kwargs):
@@ -32,7 +24,9 @@ class JoystickBackend(Backend):
         import inputs
 
         super().run()
-        self.logger.info('Initialized joystick backend on device {}'.format(self.device))
+        self.logger.info(
+            'Initialized joystick backend on device {}'.format(self.device)
+        )
 
         while not self.should_stop():
             try:

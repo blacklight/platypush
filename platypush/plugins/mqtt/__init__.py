@@ -22,16 +22,6 @@ class MqttPlugin(RunnablePlugin):
     """
     This plugin allows you to send custom message to a message queue compatible
     with the MQTT protocol, see https://mqtt.org/
-
-    Requires:
-
-        * **paho-mqtt** (``pip install paho-mqtt``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.mqtt.MQTTMessageEvent` when a new
-            message is received on a subscribed topic.
-
     """
 
     def __init__(
@@ -328,6 +318,7 @@ class MqttPlugin(RunnablePlugin):
             ), 'No host specified and no configured default host'
             kwargs = self.default_listener.configuration
 
+        on_message = on_message or self.on_mqtt_message()
         kwargs.update(
             {
                 'topics': topics,
@@ -336,7 +327,6 @@ class MqttPlugin(RunnablePlugin):
             }
         )
 
-        on_message = on_message or self.on_mqtt_message()
         client_id = self._get_client_id(
             host=kwargs['host'],
             port=kwargs['port'],

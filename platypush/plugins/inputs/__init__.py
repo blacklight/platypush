@@ -7,23 +7,20 @@ class InputsPlugin(Plugin):
     """
     This plugin emulates user input on a keyboard/mouse. It requires the a graphical server (X server or Mac/Win
     interface) to be running - it won't work in console mode.
-
-    Requires:
-
-        * **pyuserinput** (``pip install pyuserinput``)
-
     """
 
     @staticmethod
     def _get_keyboard():
         # noinspection PyPackageRequirements
         from pykeyboard import PyKeyboard
+
         return PyKeyboard()
 
     @staticmethod
     def _get_mouse():
         # noinspection PyPackageRequirements
         from pymouse import PyMouse
+
         return PyMouse()
 
     @classmethod

@@ -60,14 +60,6 @@ class MailBackend(Backend):
 
     It requires at least one plugin that extends :class:`platypush.plugins.mail.MailInPlugin` (e.g. ``mail.imap``) to
     be installed.
-
-    Triggers:
-
-        - :class:`platypush.message.event.mail.MailReceivedEvent` when a new message is received.
-        - :class:`platypush.message.event.mail.MailSeenEvent` when a message is marked as seen.
-        - :class:`platypush.message.event.mail.MailFlaggedEvent` when a message is marked as flagged/starred.
-        - :class:`platypush.message.event.mail.MailUnflaggedEvent` when a message is marked as unflagged/unstarred.
-
     """
 
     def __init__(

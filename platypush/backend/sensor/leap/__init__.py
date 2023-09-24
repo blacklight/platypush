@@ -7,8 +7,13 @@ import Leap
 
 from platypush.backend import Backend
 from platypush.context import get_backend
-from platypush.message.event.sensor.leap import LeapFrameEvent, \
-    LeapFrameStartEvent, LeapFrameStopEvent, LeapConnectEvent, LeapDisconnectEvent
+from platypush.message.event.sensor.leap import (
+    LeapFrameEvent,
+    LeapFrameStartEvent,
+    LeapFrameStopEvent,
+    LeapConnectEvent,
+    LeapDisconnectEvent,
+)
 
 
 class SensorLeapBackend(Backend):
@@ -26,40 +31,38 @@ class SensorLeapBackend(Backend):
 
     Requires:
 
-        * The Redis backend enabled
-        * The Leap Motion SDK compiled with Python 3 support, see my port at https://github.com:BlackLight/leap-sdk-python3.git
-        * The `leapd` daemon to be running and your Leap Motion connected
+        * The Leap Motion SDK compiled with Python 3 support, see my port at
+            https://github.com:BlackLight/leap-sdk-python3.git
+        * The ``leapd`` daemon to be running and your Leap Motion connected
 
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.leap.LeapFrameEvent` when a new frame is received
-        * :class:`platypush.message.event.sensor.leap.LeapFrameStartEvent` when a new sequence of frame starts
-        * :class:`platypush.message.event.sensor.leap.LeapFrameStopEvent` when a sequence of frame stops
-        * :class:`platypush.message.event.sensor.leap.LeapConnectEvent` when a Leap Motion device is connected
-        * :class:`platypush.message.event.sensor.leap.LeapDisconnectEvent` when a Leap Motion device disconnects
     """
 
     _listener_proc = None
 
-    def __init__(self,
-                 position_ranges=None,
-                 position_tolerance=0.0,  # Position variation tolerance in %
-                 frames_throttle_secs=None,
-                 *args, **kwargs):
+    def __init__(
+        self,
+        position_ranges=None,
+        position_tolerance=0.0,  # Position variation tolerance in %
+        frames_throttle_secs=None,
+        *args,
+        **kwargs
+    ):
         """
-        :param position_ranges: It specifies how wide the hand space (x, y and z axes) should be in millimiters.
+        :param position_ranges: It specifies how wide the hand space (x, y and
+            z axes) should be in millimiters.
 
-        Default::
+            Default::
 
-            [
-                [-300.0, 300.0],  # x axis
-                [25.0, 600.0],    # y axis
-                [-300.0, 300.0],  # z axis
-            ]
+                [
+                    [-300.0, 300.0],  # x axis
+                    [25.0, 600.0],    # y axis
+                    [-300.0, 300.0],  # z axis
+                ]
 
         :type position_ranges: list[list[float]]
 
-        :param position_tolerance: % of change between a frame and the next to really consider the next frame as a new one (default: 0)
+        :param position_tolerance: % of change between a frame and the next to
+            really consider the next frame as a new one (default: 0).
         :type position_tolerance: float
 
         :param frames_throttle_secs: If set, the frame events will be throttled
@@ -87,16 +90,20 @@ class SensorLeapBackend(Backend):
         super().run()
 
         def _listener_process():
-            listener = LeapListener(position_ranges=self.position_ranges,
-                                    position_tolerance=self.position_tolerance,
-                                    frames_throttle_secs=self.frames_throttle_secs,
-                                    logger=self.logger)
+            listener = LeapListener(
+                position_ranges=self.position_ranges,
+                position_tolerance=self.position_tolerance,
+                frames_throttle_secs=self.frames_throttle_secs,
+                logger=self.logger,
+            )
 
             controller = Leap.Controller()
 
             if not controller:
-                raise RuntimeError('No Leap Motion controller found - is your ' +
-                                'device connected and is leapd running?')
+                raise RuntimeError(
+                    'No Leap Motion controller found - is your '
+                    + 'device connected and is leapd running?'
+                )
 
             controller.add_listener(listener)
             self.logger.info('Leap Motion backend initialized')
@@ -120,12 +127,14 @@ class LeapFuture(Timer):
     def _callback_wrapper(self):
         def _callback():
             self.listener._send_event(self.event)
+
         return _callback
 
 
 class LeapListener(Leap.Listener):
-    def __init__(self, position_ranges, position_tolerance, logger,
-                 frames_throttle_secs=None):
+    def __init__(
+        self, position_ranges, position_tolerance, logger, frames_throttle_secs=None
+    ):
         super().__init__()
 
         self.prev_frame = None
@@ -138,8 +147,11 @@ class LeapListener(Leap.Listener):
     def _send_event(self, event):
         backend = get_backend('redis')
         if not backend:
-            self.logger.warning('Redis backend not configured, I cannot propagate the following event: {}'.
-                                format(event))
+            self.logger.warning(
+                'Redis backend not configured, I cannot propagate the following event: {}'.format(
+                    event
+                )
+            )
             return
 
         backend.send_message(event)
@@ -147,8 +159,9 @@ class LeapListener(Leap.Listener):
     def send_event(self, event):
         if self.frames_throttle_secs:
             if not self.running_future or not self.running_future.is_alive():
-                self.running_future = LeapFuture(seconds=self.frames_throttle_secs,
-                                                 listener=self, event=event)
+                self.running_future = LeapFuture(
+                    seconds=self.frames_throttle_secs, listener=self, event=event
+                )
                 self.running_future.start()
         else:
             self._send_event(event)
@@ -193,23 +206,38 @@ class LeapListener(Leap.Listener):
                 'id': hand.id,
                 'is_left': hand.is_left,
                 'is_right': hand.is_right,
-                'palm_normal': [hand.palm_normal[0], hand.palm_normal[1], hand.palm_normal[2]],
+                'palm_normal': [
+                    hand.palm_normal[0],
+                    hand.palm_normal[1],
+                    hand.palm_normal[2],
+                ],
                 'palm_position': self._normalize_position(hand.palm_position),
-                'palm_velocity': [hand.palm_velocity[0], hand.palm_velocity[1], hand.palm_velocity[2]],
+                'palm_velocity': [
+                    hand.palm_velocity[0],
+                    hand.palm_velocity[1],
+                    hand.palm_velocity[2],
+                ],
                 'palm_width': hand.palm_width,
-                'sphere_center': [hand.sphere_center[0], hand.sphere_center[1], hand.sphere_center[2]],
+                'sphere_center': [
+                    hand.sphere_center[0],
+                    hand.sphere_center[1],
+                    hand.sphere_center[2],
+                ],
                 'sphere_radius': hand.sphere_radius,
-                'stabilized_palm_position': self._normalize_position(hand.stabilized_palm_position),
+                'stabilized_palm_position': self._normalize_position(
+                    hand.stabilized_palm_position
+                ),
                 'time_visible': hand.time_visible,
                 'wrist_position': self._normalize_position(hand.wrist_position),
             }
             for i, hand in enumerate(frame.hands)
-            if hand.is_valid and (
-                len(frame.hands) != len(self.prev_frame.hands) or
-                self._position_changed(
+            if hand.is_valid
+            and (
+                len(frame.hands) != len(self.prev_frame.hands)
+                or self._position_changed(
                     old_position=self.prev_frame.hands[i].stabilized_palm_position,
-                    new_position=hand.stabilized_palm_position)
-
+                    new_position=hand.stabilized_palm_position,
+                )
                 if self.prev_frame
                 else True
             )
@@ -220,25 +248,38 @@ class LeapListener(Leap.Listener):
         # having x_range = z_range = [-100, 100], y_range = [0, 100]
 
         return [
-            self._scale_scalar(value=position[0], range=self.position_ranges[0], new_range=[-100.0, 100.0]),
-            self._scale_scalar(value=position[1], range=self.position_ranges[1], new_range=[0.0, 100.0]),
-            self._scale_scalar(value=position[2], range=self.position_ranges[2], new_range=[-100.0, 100.0]),
+            self._scale_scalar(
+                value=position[0],
+                range=self.position_ranges[0],
+                new_range=[-100.0, 100.0],
+            ),
+            self._scale_scalar(
+                value=position[1], range=self.position_ranges[1], new_range=[0.0, 100.0]
+            ),
+            self._scale_scalar(
+                value=position[2],
+                range=self.position_ranges[2],
+                new_range=[-100.0, 100.0],
+            ),
         ]
 
     @staticmethod
     def _scale_scalar(value, range, new_range):
         if value < range[0]:
-            value=range[0]
+            value = range[0]
         if value > range[1]:
-            value=range[1]
+            value = range[1]
 
-        return ((new_range[1]-new_range[0])/(range[1]-range[0]))*(value-range[0]) + new_range[0]
+        return ((new_range[1] - new_range[0]) / (range[1] - range[0])) * (
+            value - range[0]
+        ) + new_range[0]
 
     def _position_changed(self, old_position, new_position):
         return (
-            abs(old_position[0]-new_position[0]) > self.position_tolerance or
-            abs(old_position[1]-new_position[1]) > self.position_tolerance or
-            abs(old_position[2]-new_position[2]) > self.position_tolerance)
+            abs(old_position[0] - new_position[0]) > self.position_tolerance
+            or abs(old_position[1] - new_position[1]) > self.position_tolerance
+            or abs(old_position[2] - new_position[2]) > self.position_tolerance
+        )
 
 
 # vim:sw=4:ts=4:et:

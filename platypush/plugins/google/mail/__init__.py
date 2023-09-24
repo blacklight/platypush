@@ -17,12 +17,6 @@ from platypush.plugins.google import GooglePlugin
 class GoogleMailPlugin(GooglePlugin):
     """
     GMail plugin. It allows you to programmatically compose and (TODO) get emails
-
-    Requires:
-
-        * **google-api-python-client** (``pip install google-api-python-client``)
-        * **oauth2client** (``pip install oauth2client``)
-
     """
 
     scopes = ['https://www.googleapis.com/auth/gmail.modify']

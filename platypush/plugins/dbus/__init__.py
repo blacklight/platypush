@@ -2,7 +2,7 @@ import enum
 import json
 from typing import Set, Dict, Optional, Iterable, Callable, Union
 
-from gi.repository import GLib   # type: ignore
+from gi.repository import GLib  # type: ignore
 from pydbus import SessionBus, SystemBus
 from pydbus.bus import Bus
 from defusedxml import ElementTree
@@ -27,7 +27,7 @@ class BusType(enum.Enum):
     SESSION = 'session'
 
 
-class DBusService():
+class DBusService:
     """
     <node>
       <interface name="org.platypush.Bus">
@@ -94,21 +94,14 @@ class DbusPlugin(RunnablePlugin):
         * It can be used to execute methods exponsed by D-Bus objects through the
           :meth:`.execute` method.
 
-    Requires:
-
-        * **pydbus** (``pip install pydbus``)
-        * **defusedxml** (``pip install defusedxml``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.dbus.DbusSignalEvent` when a signal is received.
-
     """
 
     def __init__(
-            self, signals: Optional[Iterable[dict]] = None,
-            service_name: Optional[str] = _default_service_name,
-            service_path: Optional[str] = _default_service_path, **kwargs
+        self,
+        signals: Optional[Iterable[dict]] = None,
+        service_name: Optional[str] = _default_service_name,
+        service_path: Optional[str] = _default_service_path,
+        **kwargs,
     ):
         """
         :param signals: Specify this if you want to subscribe to specific DBus
@@ -138,8 +131,7 @@ class DbusPlugin(RunnablePlugin):
         self._loop = None
         self._signals = DbusSignalSchema().load(signals or [], many=True)
         self._signal_handlers = [
-            self._get_signal_handler(**signal)
-            for signal in self._signals
+            self._get_signal_handler(**signal) for signal in self._signals
         ]
 
         self.service_name = service_name
@@ -150,8 +142,12 @@ class DbusPlugin(RunnablePlugin):
         def handler(sender, path, interface, signal, params):
             get_bus().post(
                 DbusSignalEvent(
-                    bus=bus, signal=signal, path=path,
-                    interface=interface, sender=sender, params=params
+                    bus=bus,
+                    signal=signal,
+                    path=path,
+                    interface=interface,
+                    sender=sender,
+                    params=params,
                 )
             )
 
@@ -201,7 +197,9 @@ class DbusPlugin(RunnablePlugin):
     def _get_bus_names(bus: Bus) -> Set[str]:
         return {str(name) for name in bus.dbus.ListNames() if not name.startswith(':')}
 
-    def path_names(self, bus: Bus, service: str, object_path='/', paths=None, service_dict=None):
+    def path_names(
+        self, bus: Bus, service: str, object_path='/', paths=None, service_dict=None
+    ):
         if paths is None:
             paths = {}
         if service_dict is None:
@@ -212,10 +210,14 @@ class DbusPlugin(RunnablePlugin):
             obj = bus.get(service, object_path)
             interface = obj['org.freedesktop.DBus.Introspectable']
         except GLib.GError as e:
-            self.logger.warning(f'Could not inspect D-Bus object {service}, path={object_path}: {e}')
+            self.logger.warning(
+                f'Could not inspect D-Bus object {service}, path={object_path}: {e}'
+            )
             return {}
         except KeyError as e:
-            self.logger.warning(f'Could not get interfaces on the D-Bus object {service}, path={object_path}: {e}')
+            self.logger.warning(
+                f'Could not get interfaces on the D-Bus object {service}, path={object_path}: {e}'
+            )
             return {}
 
         xml_string = interface.Introspect()
@@ -226,7 +228,9 @@ class DbusPlugin(RunnablePlugin):
                 if object_path == '/':
                     object_path = ''
                 new_path = '/'.join((object_path, child.attrib['name']))
-                self.path_names(bus, service, new_path, paths, service_dict=service_dict)
+                self.path_names(
+                    bus, service, new_path, paths, service_dict=service_dict
+                )
             else:
                 if not object_path:
                     object_path = '/'
@@ -253,8 +257,9 @@ class DbusPlugin(RunnablePlugin):
         return service_dict
 
     @action
-    def query(self, service: Optional[str] = None, bus=tuple(t.value for t in BusType)) \
-            -> Dict[str, dict]:
+    def query(
+        self, service: Optional[str] = None, bus=tuple(t.value for t in BusType)
+    ) -> Dict[str, dict]:
         """
         Query DBus for a specific service or for the full list of services.
 
@@ -427,13 +432,13 @@ class DbusPlugin(RunnablePlugin):
 
     @action
     def execute(
-            self,
-            service: str,
-            interface: str,
-            method_name: str,
-            bus: str = BusType.SESSION.value,
-            path: str = '/',
-            args: Optional[list] = None
+        self,
+        service: str,
+        interface: str,
+        method_name: str,
+        bus: str = BusType.SESSION.value,
+        path: str = '/',
+        args: Optional[list] = None,
     ):
         """
         Execute a method exposed on DBus.

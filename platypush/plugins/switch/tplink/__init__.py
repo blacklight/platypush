@@ -24,11 +24,6 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
     """
     Plugin to interact with TP-Link smart switches/plugs like the HS100
     (https://www.tp-link.com/us/products/details/cat-5516_HS100.html).
-
-    Requires:
-
-        * **pyHS100** (``pip install pyHS100``)
-
     """
 
     _ip_to_dev: Dict[str, SmartDevice] = {}

@@ -10,17 +10,13 @@ from platypush.message.response.google.drive import GoogleDriveFile
 class GoogleDrivePlugin(GooglePlugin):
     """
     Google Drive plugin.
-
-    Requires:
-
-        * **google-api-python-client** (``pip install google-api-python-client``)
-        * **oauth2client** (``pip install oauth2client``)
-
     """
 
-    scopes = ['https://www.googleapis.com/auth/drive',
-              'https://www.googleapis.com/auth/drive.appfolder',
-              'https://www.googleapis.com/auth/drive.photos.readonly']
+    scopes = [
+        'https://www.googleapis.com/auth/drive',
+        'https://www.googleapis.com/auth/drive.appfolder',
+        'https://www.googleapis.com/auth/drive.photos.readonly',
+    ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(scopes=self.scopes, *args, **kwargs)
@@ -30,13 +26,15 @@ class GoogleDrivePlugin(GooglePlugin):
 
     # noinspection PyShadowingBuiltins
     @action
-    def files(self,
-              filter: Optional[str] = None,
-              folder_id: Optional[str] = None,
-              limit: Optional[int] = 100,
-              drive_id: Optional[str] = None,
-              spaces: Optional[Union[str, List[str]]] = None,
-              order_by: Optional[Union[str, List[str]]] = None) -> Union[GoogleDriveFile, List[GoogleDriveFile]]:
+    def files(
+        self,
+        filter: Optional[str] = None,
+        folder_id: Optional[str] = None,
+        limit: Optional[int] = 100,
+        drive_id: Optional[str] = None,
+        spaces: Optional[Union[str, List[str]]] = None,
+        order_by: Optional[Union[str, List[str]]] = None,
+    ) -> Union[GoogleDriveFile, List[GoogleDriveFile]]:
         """
         Get the list of files.
 
@@ -90,25 +88,32 @@ class GoogleDrivePlugin(GooglePlugin):
             filter += "'{}' in parents".format(folder_id)
 
         while True:
-            results = service.files().list(
-                q=filter,
-                driveId=drive_id,
-                pageSize=limit,
-                orderBy=order_by,
-                fields="nextPageToken, files(id, name, kind, mimeType)",
-                pageToken=page_token,
-                spaces=spaces,
-            ).execute()
+            results = (
+                service.files()
+                .list(
+                    q=filter,
+                    driveId=drive_id,
+                    pageSize=limit,
+                    orderBy=order_by,
+                    fields="nextPageToken, files(id, name, kind, mimeType)",
+                    pageToken=page_token,
+                    spaces=spaces,
+                )
+                .execute()
+            )
 
             page_token = results.get('nextPageToken')
-            files.extend([
-                GoogleDriveFile(
-                    id=f.get('id'),
-                    name=f.get('name'),
-                    type=f.get('kind').split('#')[1],
-                    mime_type=f.get('mimeType'),
-                ) for f in results.get('files', [])
-            ])
+            files.extend(
+                [
+                    GoogleDriveFile(
+                        id=f.get('id'),
+                        name=f.get('name'),
+                        type=f.get('kind').split('#')[1],
+                        mime_type=f.get('mimeType'),
+                    )
+                    for f in results.get('files', [])
+                ]
+            )
 
             if not page_token or (limit and len(files) >= limit):
                 break
@@ -131,14 +136,16 @@ class GoogleDrivePlugin(GooglePlugin):
         )
 
     @action
-    def upload(self,
-               path: str,
-               mime_type: Optional[str] = None,
-               name: Optional[str] = None,
-               description: Optional[str] = None,
-               parents: Optional[List[str]] = None,
-               starred: bool = False,
-               target_mime_type: Optional[str] = None) -> GoogleDriveFile:
+    def upload(
+        self,
+        path: str,
+        mime_type: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        parents: Optional[List[str]] = None,
+        starred: bool = False,
+        target_mime_type: Optional[str] = None,
+    ) -> GoogleDriveFile:
         """
         Upload a file to Google Drive.
 
@@ -171,11 +178,11 @@ class GoogleDrivePlugin(GooglePlugin):
 
         media = MediaFileUpload(path, mimetype=mime_type)
         service = self.get_service()
-        file = service.files().create(
-            body=metadata,
-            media_body=media,
-            fields='*'
-        ).execute()
+        file = (
+            service.files()
+            .create(body=metadata, media_body=media, fields='*')
+            .execute()
+        )
 
         return GoogleDriveFile(
             type=file.get('kind').split('#')[1],
@@ -216,12 +223,14 @@ class GoogleDrivePlugin(GooglePlugin):
         return path
 
     @action
-    def create(self,
-               name: str,
-               description: Optional[str] = None,
-               mime_type: Optional[str] = None,
-               parents: Optional[List[str]] = None,
-               starred: bool = False) -> GoogleDriveFile:
+    def create(
+        self,
+        name: str,
+        description: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        parents: Optional[List[str]] = None,
+        starred: bool = False,
+    ) -> GoogleDriveFile:
         """
         Create a file.
 
@@ -242,10 +251,7 @@ class GoogleDrivePlugin(GooglePlugin):
             metadata['mimeType'] = mime_type
 
         service = self.get_service()
-        file = service.files().create(
-            body=metadata,
-            fields='*'
-        ).execute()
+        file = service.files().create(body=metadata, fields='*').execute()
 
         return GoogleDriveFile(
             type=file.get('kind').split('#')[1],
@@ -255,15 +261,17 @@ class GoogleDrivePlugin(GooglePlugin):
         )
 
     @action
-    def update(self,
-               file_id: str,
-               name: Optional[str] = None,
-               description: Optional[str] = None,
-               add_parents: Optional[List[str]] = None,
-               remove_parents: Optional[List[str]] = None,
-               mime_type: Optional[str] = None,
-               starred: bool = None,
-               trashed: bool = None) -> GoogleDriveFile:
+    def update(
+        self,
+        file_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        add_parents: Optional[List[str]] = None,
+        remove_parents: Optional[List[str]] = None,
+        mime_type: Optional[str] = None,
+        starred: bool = None,
+        trashed: bool = None,
+    ) -> GoogleDriveFile:
         """
         Update the metadata or the content of a file.
 
@@ -293,11 +301,9 @@ class GoogleDrivePlugin(GooglePlugin):
             metadata['trashed'] = trashed
 
         service = self.get_service()
-        file = service.files().update(
-            fileId=file_id,
-            body=metadata,
-            fields='*'
-        ).execute()
+        file = (
+            service.files().update(fileId=file_id, body=metadata, fields='*').execute()
+        )
 
         return GoogleDriveFile(
             type=file.get('kind').split('#')[1],

@@ -18,12 +18,7 @@ from platypush.plugins import action
 
 class MediaMpvPlugin(MediaPlugin):
     """
-    Plugin to control MPV instances
-
-    Requires:
-
-        * **python-mpv** (``pip install python-mpv``)
-        * **mpv** executable on your system
+    Plugin to control MPV instances.
     """
 
     _default_mpv_args = {

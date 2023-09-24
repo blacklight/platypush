@@ -44,11 +44,6 @@ class SmartthingsPlugin(
 ):
     """
     Plugin to interact with devices and locations registered to a Samsung SmartThings account.
-
-    Requires:
-
-        * **pysmartthings** (``pip install pysmartthings``)
-
     """
 
     _timeout = aiohttp.ClientTimeout(total=20.0)

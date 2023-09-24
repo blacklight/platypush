@@ -34,13 +34,6 @@ class TrelloBackend(Backend):
 
         * The :class:`platypush.plugins.trello.TrelloPlugin` configured.
 
-    Triggers:
-
-        * :class:`platypush.message.event.trello.NewCardEvent` when a card is created.
-        * :class:`platypush.message.event.trello.MoveCardEvent` when a card is moved.
-        * :class:`platypush.message.event.trello.ArchivedCardEvent` when a card is archived/closed.
-        * :class:`platypush.message.event.trello.UnarchivedCardEvent` when a card is un-archived/opened.
-
     """
 
     _websocket_url_base = 'wss://trello.com/1/Session/socket?token={token}'

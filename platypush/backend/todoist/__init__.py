@@ -3,31 +3,21 @@ import time
 
 from platypush.backend import Backend
 from platypush.context import get_plugin
-from platypush.message.event.todoist import NewItemEvent, RemovedItemEvent, ModifiedItemEvent, CheckedItemEvent, \
-    ItemContentChangeEvent, TodoistSyncRequiredEvent
+from platypush.message.event.todoist import (
+    NewItemEvent,
+    RemovedItemEvent,
+    ModifiedItemEvent,
+    CheckedItemEvent,
+    ItemContentChangeEvent,
+    TodoistSyncRequiredEvent,
+)
 
 from platypush.plugins.todoist import TodoistPlugin
 
 
 class TodoistBackend(Backend):
     """
-    This backend listens for events on a remote Todoist account.
-
-    Requires:
-
-        * **todoist-python** (``pip install todoist-python``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.todoist.NewItemEvent` when a new item is created.
-        * :class:`platypush.message.event.todoist.RemovedItemEvent` when an item is removed.
-        * :class:`platypush.message.event.todoist.CheckedItemEvent` when an item is checked.
-        * :class:`platypush.message.event.todoist.ItemContentChangeEvent` when the content of an item is changed.
-        * :class:`platypush.message.event.todoist.ModifiedItemEvent` when an item is changed and the change
-            doesn't fall into the categories above.
-        * :class:`platypush.message.event.todoist.TodoistSyncRequiredEvent` when an update has occurred that doesn't
-            fall into the categories above and a sync is required to get up-to-date.
-
+    This backend listens for events on a Todoist account.
     """
 
     def __init__(self, api_token: str = None, **kwargs):
@@ -35,7 +25,9 @@ class TodoistBackend(Backend):
         self._plugin: TodoistPlugin = get_plugin('todoist')
 
         if not api_token:
-            assert self._plugin and self._plugin.api_token, 'No api_token specified either on Todoist backend or plugin'
+            assert (
+                self._plugin and self._plugin.api_token
+            ), 'No api_token specified either on Todoist backend or plugin'
             self.api_token = self._plugin.api_token
         else:
             self.api_token = api_token
@@ -97,16 +89,15 @@ class TodoistBackend(Backend):
         import websocket
 
         if not self._ws:
-            self._ws = websocket.WebSocketApp(self.url,
-                                              on_message=self._on_msg(),
-                                              on_error=self._on_error(),
-                                              on_close=self._on_close())
+            self._ws = websocket.WebSocketApp(
+                self.url,
+                on_message=self._on_msg(),
+                on_error=self._on_error(),
+                on_close=self._on_close(),
+            )
 
     def _refresh_items(self):
-        new_items = {
-            i['id']: i
-            for i in self._plugin.get_items().output
-        }
+        new_items = {i['id']: i for i in self._plugin.get_items().output}
 
         if self._todoist_initialized:
             for id, item in new_items.items():
