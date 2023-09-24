@@ -130,12 +130,12 @@ class AssistantGoogleBackend(AssistantBackend):
             self.bus.post(event)
 
     def start_conversation(self):
-        """Starts an assistant conversation"""
+        """Starts a conversation."""
         if self.assistant:
             self.assistant.start_conversation()
 
     def stop_conversation(self):
-        """Stops an assistant conversation"""
+        """Stops an active conversation."""
         if self.assistant:
             self.assistant.stop_conversation()
 
