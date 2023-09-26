@@ -5,7 +5,7 @@ import logging
 import os
 import pathlib
 import sys
-from typing import Final, Optional, Sequence
+from typing import Optional, Sequence
 
 from platypush.config import Config
 from platypush.utils.manifest import (
@@ -29,7 +29,7 @@ class BaseBuilder(ABC):
     and :module:`platypush.platydock` modules/scripts.
     """
 
-    REPO_URL: Final[str] = 'https://github.com/BlackLight/platypush.git'
+    REPO_URL: str = 'https://github.com/BlackLight/platypush.git'
     """
     We use the Github URL here rather than the self-hosted Gitea URL to prevent
     too many requests to the Gitea server.
