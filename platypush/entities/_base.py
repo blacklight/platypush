@@ -7,7 +7,7 @@ import subprocess
 import sys
 import types
 from datetime import datetime
-from typing import Callable, Dict, Final, List, Optional, Set, Type, Tuple, Any
+from typing import Callable, Dict, List, Optional, Set, Type, Tuple, Any
 
 import pkgutil
 
@@ -41,7 +41,7 @@ EntityKey = Tuple[str, str]
 EntityMapping = Dict[EntityKey, 'Entity']
 """ Internal mapping for entities used for deduplication/merge/upsert. """
 
-_import_error_ignored_modules: Final[Set[str]] = {'bluetooth'}
+_import_error_ignored_modules: Set[str] = {'bluetooth'}
 """
 ImportError exceptions will be ignored for these entity submodules when
 imported dynamically. An ImportError for these modules means that some optional
