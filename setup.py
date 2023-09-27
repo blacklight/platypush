@@ -43,6 +43,11 @@ setup(
             'migrations/alembic.ini',
             'migrations/alembic/*',
             'migrations/alembic/**/*',
+            'install/**',
+            'install/scripts/*',
+            'install/scripts/**/*',
+            'install/requirements/*',
+            'install/docker/*',
         ],
     },
     entry_points={
