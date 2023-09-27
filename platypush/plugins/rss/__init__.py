@@ -82,7 +82,9 @@ class RssPlugin(RunnablePlugin):
         t = var.get(varname)
 
         if t:
-            return dateutil.parser.isoparse(t)
+            if not isinstance(t, datetime.datetime):
+                t = dateutil.parser.isoparse(t)
+            return t
 
         return None
 
