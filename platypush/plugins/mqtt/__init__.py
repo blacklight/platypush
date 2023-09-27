@@ -469,8 +469,9 @@ class MqttPlugin(RunnablePlugin):
         client.stop()
         del client
 
-    @staticmethod
-    def _response_callback(reply_topic: str, event: threading.Event, buffer: IO[bytes]):
+    def _response_callback(
+        self, reply_topic: str, event: threading.Event, buffer: IO[bytes]
+    ):
         """
         A response callback that writes the response to an IOBuffer and stops
         the client loop.
@@ -480,9 +481,15 @@ class MqttPlugin(RunnablePlugin):
             if msg.topic != reply_topic:
                 return
 
-            buffer.write(msg.payload)
-            client.loop_stop()
-            event.set()
+            try:
+                buffer.write(msg.payload)
+                client.loop_stop()
+            except Exception as e:
+                self.logger.warning(
+                    'Could not write the response back to the MQTT client: %s', e
+                )
+            finally:
+                event.set()
 
         return on_message
 
