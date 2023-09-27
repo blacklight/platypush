@@ -2,14 +2,14 @@ from enum import IntEnum
 import logging
 import os
 import threading
-from typing import Any, Callable, Dict, Final, Iterable, Optional, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Union
 
 import paho.mqtt.client as mqtt
 
 from platypush.config import Config
 
 MqttCallback = Callable[["MqttClient", Any, mqtt.MQTTMessage], Any]
-DEFAULT_TIMEOUT: Final[int] = 30
+DEFAULT_TIMEOUT: int = 30
 
 
 class MqttClient(mqtt.Client, threading.Thread):
