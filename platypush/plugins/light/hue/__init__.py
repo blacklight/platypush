@@ -76,7 +76,7 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         """
         :param bridge: Bridge address or hostname
         :param lights: Default lights to be controlled (default: all)
-        :param groups Default groups to be controlled (default: all)
+        :param groups: Default groups to be controlled (default: all)
         :param poll_interval: How often the plugin should check the bridge for light
             updates (default: 20 seconds).
         :param config_file: Path to the phue configuration file containing the

@@ -58,7 +58,7 @@ class SerialPlugin(SensorPlugin):
 
     def __init__(
         self,
-        device: Optional[str] = None,
+        device: str,
         baud_rate: int = 9600,
         max_size: int = 1 << 19,
         timeout: float = _default_lock_timeout,
@@ -67,7 +67,7 @@ class SerialPlugin(SensorPlugin):
         **kwargs,
     ):
         """
-        :param device: Device path (e.g. ``/dev/ttyUSB0`` or ``/dev/ttyACM0``)
+        :param device: Device path (e.g. ``/dev/ttyUSB0`` or ``/dev/ttyACM0``).
         :param baud_rate: Serial baud rate (default: 9600)
         :param max_size: Maximum size of a JSON payload (default: 512 KB). The
             plugin will keep reading bytes from the wire until it can form a
@@ -195,9 +195,6 @@ class SerialPlugin(SensorPlugin):
 
         :param device: Default device path override.
         :param baud_rate: Default baud rate override.
-        :param reset: By default, if a connection to the device is already open
-            then the current object will be returned. If ``reset=True``, the
-            connection will be reset and a new one will be created instead.
         """
         try:
             return self.__get_serial(device, baud_rate)
@@ -262,7 +259,6 @@ class SerialPlugin(SensorPlugin):
         """
 
         device, baud_rate = self._get_device_and_baud_rate(device, baud_rate)
-        data = None
 
         with get_lock(self.serial_lock, timeout=self._timeout) as serial_available:
             if serial_available:

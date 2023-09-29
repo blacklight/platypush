@@ -41,8 +41,8 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
     """
     Plugin to interact with Bluetooth devices.
 
-    This plugin uses `_Bleak_ <https://github.com/hbldh/bleak>`_ to interact
-    with the Bluetooth stack and `_Theengs_ <https://github.com/theengs/decoder>`_
+    This plugin uses `Bleak <https://github.com/hbldh/bleak>`_ to interact
+    with the Bluetooth stack and `Theengs <https://github.com/theengs/decoder>`_
     to map the services exposed by the devices into native entities.
 
     The full list of devices natively supported can be found
