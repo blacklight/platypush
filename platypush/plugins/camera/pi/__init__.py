@@ -13,8 +13,9 @@ class CameraPiPlugin(CameraPlugin):
     Plugin to control a Pi camera.
 
     .. warning::
-        This plugin is **DEPRECATED*, as it relies on the old ``picamera`` module.
-        On recent systems, it should be possible to access the Pi Camera through the FFmpeg or GStreamer integrations.
+        This plugin is **DEPRECATED**, as it relies on the old ``picamera`` module.
+        On recent systems, it should be possible to access the Pi Camera through
+        the ffmpeg or gstreamer integrations.
 
     """
 

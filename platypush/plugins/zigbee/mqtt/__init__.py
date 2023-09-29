@@ -112,8 +112,10 @@ class ZigbeeMqttPlugin(
 
           .. code-block:: shell
 
-             wget https://github.com/Koenkk/Z-Stack-firmware/raw/master\
-                     /coordinator/Z-Stack_Home_1.2/bin/default/CC2531_DEFAULT_20201127.zip
+             # Check out the latest version of the coordinator firmware at
+             # https://github.com/Koenkk/Z-Stack-firmware/tree/master/coordinator
+
+             wget https://github.com/Koenkk/Z-Stack-firmware/raw/master/coordinator/<dir>/bin/default/<version>.zip
              unzip CC2531_DEFAULT_20201127.zip
              [sudo] cc-tool -e -w CC2531ZNP-Prod.hex
 
@@ -129,19 +131,18 @@ class ZigbeeMqttPlugin(
           .. code-block:: shell
 
              # Clone zigbee2mqtt repository
-             [sudo] git clone https://github.com/Koenkk/zigbee2mqtt.git /opt/zigbee2mqtt
-             [sudo] chown -R pi:pi /opt/zigbee2mqtt  # Or whichever is your user
-
-             # Install dependencies (as user "pi")
-             cd /opt/zigbee2mqtt
+             export ZIGBEE2MQTT_DIR="$HOME/zigbee2mqtt"
+             git clone https://github.com/Koenkk/zigbee2mqtt.git "$ZIGBEE2MQTT_DIR"
+             cd "$ZIGBEE2MQTT_DIR"
+             # Install dependencies
              npm install
 
         - You need to have an MQTT broker running somewhere. If not, you can
           install `Mosquitto <https://mosquitto.org/>`_ through your package
           manager on any device in your network.
 
-        - Edit the ``/opt/zigbee2mqtt/data/configuration.yaml`` file to match
-          the configuration of your MQTT broker:
+        - Edit ``$ZIGBEE2MQTT_DIR/data/configuration.yaml`` file to match the configuration of
+          your MQTT broker:
 
           .. code-block:: yaml
 
@@ -169,7 +170,7 @@ class ZigbeeMqttPlugin(
 
           .. code-block:: shell
 
-              cd /opt/zigbee2mqtt
+              cd "$ZIGBEE2MQTT_DIR"
               npm start
 
         - If you have Zigbee devices that are paired to other bridges, unlink
@@ -205,7 +206,7 @@ class ZigbeeMqttPlugin(
         :param host: Default MQTT broker where ``zigbee2mqtt`` publishes its messages.
         :param port: Broker listen port (default: 1883).
         :param topic_prefix: Prefix for the published topics, as specified in
-            ``/opt/zigbee2mqtt/data/configuration.yaml`` (default: '``zigbee2mqtt``').
+            ``ZIGBEE2MQTT_DIR/data/configuration.yaml`` (default: '``zigbee2mqtt``').
         :param base_topic: Legacy alias for ``topic_prefix`` (default:
             '``zigbee2mqtt``').
         :param timeout: If the command expects from a response, then this
