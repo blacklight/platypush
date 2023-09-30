@@ -184,6 +184,11 @@ class DocstringParser:
             ctx.state = ParseState.PARAM
             idx = len(ctx.parsed_params)
             ctx.cur_param = m.group("name")
+
+            # Skip vararg/var keyword parameters
+            if ctx.cur_param == ctx.spec.varkw or ctx.spec.varargs:
+                return
+
             ctx.parsed_params[ctx.cur_param] = Parameter(
                 name=ctx.cur_param,
                 required=(
