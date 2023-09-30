@@ -99,7 +99,7 @@ class DocstringParser:
     _param_doc_re = re.compile(r"^:param\s+(?P<name>[\w_]+):\s+(?P<doc>.*)$")
     _type_doc_re = re.compile(r"^:type\s+[\w_]+:.*$")
     _return_doc_re = re.compile(r"^:return:\s+(?P<doc>.*)$")
-    _default_docstring = re.compile(r"^Initialize self. See help")
+    _default_docstring = re.compile(r"^\s*Initialize self\. See help.*$")
 
     def __init__(
         self,
@@ -186,7 +186,7 @@ class DocstringParser:
             ctx.cur_param = m.group("name")
 
             # Skip vararg/var keyword parameters
-            if ctx.cur_param == ctx.spec.varkw or ctx.spec.varargs:
+            if ctx.cur_param in {ctx.spec.varkw, ctx.spec.varargs}:
                 return
 
             ctx.parsed_params[ctx.cur_param] = Parameter(
