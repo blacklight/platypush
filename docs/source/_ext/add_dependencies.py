@@ -80,7 +80,9 @@ class IntegrationEnricher:
             idx += 1
 
         if parsed_deps['pip']:
-            source.insert(idx, cls._shellify('pip', 'pip ' + ' '.join(deps.pip)))
+            source.insert(
+                idx, cls._shellify('pip', 'pip install ' + ' '.join(deps.pip))
+            )
             idx += 1
 
         for pkg_manager, sys_deps in deps.by_pkg_manager.items():
