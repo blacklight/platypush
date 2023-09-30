@@ -99,6 +99,7 @@ class DocstringParser:
     _param_doc_re = re.compile(r"^:param\s+(?P<name>[\w_]+):\s+(?P<doc>.*)$")
     _type_doc_re = re.compile(r"^:type\s+[\w_]+:.*$")
     _return_doc_re = re.compile(r"^:return:\s+(?P<doc>.*)$")
+    _default_docstring = re.compile(r"^Initialize self. See help")
 
     def __init__(
         self,
@@ -162,6 +163,10 @@ class DocstringParser:
             ctx.state == ParseState.TYPE and cls._is_continuation_line(line)
         ):
             ctx.state = ParseState.TYPE
+            return
+
+        # Ignore the default constructor docstring
+        if cls._default_docstring.match(line):
             return
 
         # Update the return type docstring if required
