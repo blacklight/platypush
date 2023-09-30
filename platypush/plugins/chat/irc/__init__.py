@@ -22,7 +22,27 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
 
     def __init__(self, servers: Sequence[dict], **kwargs):
         """
-        :param servers: List of servers/channels that the bot will automatically connect/join.
+        :param servers: List of servers/channels that the bot will
+            automatically connect/join. Format:
+
+              .. code-block:: yaml
+
+                servers:
+                  - server: irc.example.org
+                    port: 6697
+                    ssl: true
+                    ipv6: false
+                    username: foo
+                    password: bar
+                    nickname: testbot
+                    realname: Test Bot
+
+                    # List of channels that the bot will automatically join
+                    channels:
+                      - #channel1
+                      - #channel2
+                      - #channel3
+
         """
         super().__init__(**kwargs)
         try:
