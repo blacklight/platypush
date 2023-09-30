@@ -133,7 +133,7 @@ class DocstringParser:
                 return None
 
             lines = text.split("\n")
-            return (lines[0] + tw.dedent("\n".join(lines[1:]) or "")).strip()
+            return (lines[0] + " " + tw.dedent("\n".join(lines[1:]) or "")).strip()
 
         ctx = ParseContext(obj)
         yield ctx
@@ -179,9 +179,6 @@ class DocstringParser:
             ctx.state = ParseState.PARAM
             idx = len(ctx.parsed_params)
             ctx.cur_param = m.group("name")
-            if ctx.cur_param not in ctx.param_names:
-                return
-
             ctx.parsed_params[ctx.cur_param] = Parameter(
                 name=ctx.cur_param,
                 required=(

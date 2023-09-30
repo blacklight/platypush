@@ -130,7 +130,7 @@ class RunnablePlugin(Plugin):
     ):
         """
         :param poll_interval: How often the :meth:`.loop` function should be
-            execute (default: 15 seconds). *NOTE*: For back-compatibility
+            executed (default: 15 seconds). *NOTE*: For back-compatibility
             reasons, the `poll_seconds` argument is also supported, but it's
             deprecated.
         :param stop_timeout: How long we should wait for any running
