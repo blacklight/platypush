@@ -301,11 +301,11 @@ backend.http:
 # # Installing the dependencies: pip install 'platypush[ical,google]'
 # calendar:
 #     calendars:
-#         - type: platypush.plugins.google.calendar.GoogleCalendarPlugin
-#         - type: platypush.plugins.calendar.ical.CalendarIcalPlugin
+#         - type: google.calendar
+#         - type: calendar.ical
 #           url: https://www.facebook.com/events/ical/upcoming/?uid=your_user_id&key=your_key
-#         - type: platypush.plugins.calendar.ical.CalendarIcalPlugin
-#           url: http://riemann/nextcloud/remote.php/dav/public-calendars/9JBWHR7iioM88Y4D?export
+#         - type: calendar.ical
+#           url: https://my.nextcloud.org/remote.php/dav/public-calendars/id?export
 ###
 
 ###
