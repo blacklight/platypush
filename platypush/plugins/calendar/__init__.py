@@ -1,3 +1,5 @@
+from typing import Collection
+
 import dateutil.parser
 import importlib
 
@@ -20,31 +22,25 @@ class CalendarPlugin(Plugin, CalendarInterface):
     iCal URLs) and get joined events from all of them.
     """
 
-    def __init__(self, calendars=None, *args, **kwargs):
+    def __init__(self, calendars: Collection[dict], *args, **kwargs):
         """
         :param calendars: List of calendars to be queried. Supported types so far: Google Calendar and iCal URLs.
-        :type calendars: list
 
-        Example format::
+        Example:
 
-            calendars = [
-                {
-                    "type": "platypush.plugins.google.calendar.GoogleCalendarPlugin"
-                },
+            .. code-block:: yaml
 
-                {
-                    "type": "platypush.plugins.calendar.ical.IcalCalendarPlugin",
-                    "url": "https://www.facebook.com/ical/u.php?uid=USER_ID&key=FB_KEY"
-                },
+                calendars:
+                    # Use the Google Calendar integration
+                    - type: platypush.plugins.google.calendar.GoogleCalendarPlugin
 
-                ...
-            ]
+                    # Import the Facebook events calendar via iCal URL
+                    - type: platypush.plugins.calendar.ical.IcalCalendarPlugin
+                      url: https://www.facebook.com/ical/u.php?uid=USER_ID&key=FB_KEY
+
         """
 
         super().__init__(*args, **kwargs)
-
-        if calendars is None:
-            calendars = []
         self.calendars = []
 
         for calendar in calendars:
