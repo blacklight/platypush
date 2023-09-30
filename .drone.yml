@@ -49,7 +49,7 @@ steps:
 
   commands:
     - echo "Installing required build dependencies"
-    - apk add --update --no-cache make py3-sphinx py3-pip py3-paho-mqtt py3-yaml
+    - apk add --update --no-cache make py3-sphinx py3-pip $(cat platypush/install/requirements/alpine.txt)
     - pip install -U hid sphinx-rtd-theme sphinx-book-theme
     - pip install .
     - mkdir -p /docs/current
