@@ -79,6 +79,16 @@ class IntegrationMetadata:
             if param.doc and not params[param_name].doc:
                 params[param_name].doc = param.doc
 
+            # If the new parameter has required=False,
+            # then that should also be the value for the current ones
+            if param.required is False:
+                params[param_name].required = False
+
+            # If the new parameter has a default value, and the current
+            # one doesn't, then the default value should be set as the new one.
+            if param.default is not None and params[param_name].default is None:
+                params[param_name].default = param.default
+
     @classmethod
     def _merge_actions(cls, actions: Dict[str, Action], new_actions: Dict[str, Action]):
         """
