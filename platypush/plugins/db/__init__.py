@@ -25,7 +25,7 @@ class DbPlugin(Plugin):
     _db_error_wait_interval = 5.0
     _db_error_retries = 3
 
-    def __init__(self, engine=None, **kwargs):
+    def __init__(self, engine=None, *args, **kwargs):
         """
         :param engine: Default SQLAlchemy connection engine string (e.g.
             ``sqlite:///:memory:`` or ``mysql://user:pass@localhost/test``)
@@ -42,7 +42,7 @@ class DbPlugin(Plugin):
 
         super().__init__()
         self.engine_url = engine
-        self.engine = self.get_engine(engine, **kwargs)
+        self.engine = self.get_engine(engine, *args, **kwargs)
 
     def get_engine(
         self, engine: Optional[Union[str, Engine]] = None, *args, **kwargs

@@ -134,7 +134,7 @@ class DocstringParser:
                 return None
 
             lines = text.split("\n")
-            return (lines[0] + " " + tw.dedent("\n".join(lines[1:]) or "")).strip()
+            return (lines[0] + "\n" + tw.dedent("\n".join(lines[1:]) or "")).strip()
 
         ctx = ParseContext(obj)
         yield ctx
@@ -203,17 +203,18 @@ class DocstringParser:
             return
 
         # Update the current parameter docstring if required
-        if (
-            ctx.state == ParseState.PARAM
-            and cls._is_continuation_line(line)
-            and ctx.cur_param in ctx.parsed_params
-        ):
-            ctx.parsed_params[ctx.cur_param].doc = (
-                ((ctx.parsed_params[ctx.cur_param].doc or "") + "\n" + line.rstrip())
-                if ctx.parsed_params.get(ctx.cur_param)
-                and ctx.parsed_params[ctx.cur_param].doc
-                else ""
-            )
+        if ctx.state == ParseState.PARAM and cls._is_continuation_line(line):
+            if ctx.cur_param in ctx.parsed_params:
+                ctx.parsed_params[ctx.cur_param].doc = (
+                    (
+                        (ctx.parsed_params[ctx.cur_param].doc or "")
+                        + "\n"
+                        + line.rstrip()
+                    )
+                    if ctx.parsed_params.get(ctx.cur_param)
+                    and ctx.parsed_params[ctx.cur_param].doc
+                    else ""
+                )
             return
 
         # Update the current docstring if required

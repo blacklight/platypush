@@ -110,6 +110,7 @@ setup(
         # Support for Google text2speech plugin
         'google-tts': [
             'oauth2client',
+            'httplib2',
             'google-api-python-client',
             'google-auth',
             'google-cloud-texttospeech',
@@ -130,7 +131,12 @@ setup(
         'google-assistant-legacy': ['google-assistant-library', 'google-auth'],
         'google-assistant': ['google-assistant-sdk[samples]', 'google-auth'],
         # Support for the Google APIs
-        'google': ['oauth2client', 'google-auth', 'google-api-python-client'],
+        'google': [
+            'oauth2client',
+            'google-auth',
+            'google-api-python-client',
+            'httplib2',
+        ],
         # Support for Last.FM scrobbler plugin
         'lastfm': ['pylast'],
         # Support for custom hotword detection
@@ -213,9 +219,9 @@ setup(
         # Support for Trello integration
         'trello': ['py-trello'],
         # Support for Google Pub/Sub
-        'google-pubsub': ['google-cloud-pubsub', 'google-auth'],
+        'google-pubsub': ['google-cloud-pubsub', 'google-auth', 'httplib2'],
         # Support for Google Translate
-        'google-translate': ['google-cloud-translate', 'google-auth'],
+        'google-translate': ['google-cloud-translate', 'google-auth', 'httplib2'],
         # Support for keyboard/mouse plugin
         'inputs': ['pyuserinput'],
         # Support for Buienradar weather forecast
