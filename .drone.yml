@@ -76,14 +76,11 @@ steps:
 ###
 
 - name: tests
-  image: python:3.11-alpine
+  image: alpine
   commands:
-    - apk add --update --no-cache redis
-    - apk add --update --no-cache --virtual build-base g++ rust linux-headers
-    - pip install -U pip
+    - apk add --update --no-cache $(cat platypush/install/requirements/alpine.txt)
     - pip install .
     - pip install -r requirements-tests.txt
-    - apk del build-base g++ rust linux-headers
     - pytest tests
 
 ###
