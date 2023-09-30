@@ -23,26 +23,6 @@ class SoundPlugin(RunnablePlugin):
     It can also be used as a general-purpose audio player and synthesizer,
     supporting both local and remote audio resources, as well as a MIDI-like
     interface through the :meth:`.play` command.
-
-    Triggers:
-
-        * :class:`platypush.message.event.sound.SoundPlaybackStartedEvent` on playback start
-        * :class:`platypush.message.event.sound.SoundPlaybackStoppedEvent` on playback stop
-        * :class:`platypush.message.event.sound.SoundPlaybackPausedEvent` on playback pause
-        * :class:`platypush.message.event.sound.SoundPlaybackResumedEvent` on playback resume
-        * :class:`platypush.message.event.sound.SoundRecordingStartedEvent` on recording start
-        * :class:`platypush.message.event.sound.SoundRecordingStoppedEvent` on recording stop
-        * :class:`platypush.message.event.sound.SoundRecordingPausedEvent` on recording pause
-        * :class:`platypush.message.event.sound.SoundRecordingResumedEvent` on recording resume
-
-    Requires:
-
-        * **sounddevice** (``pip install sounddevice``)
-        * **numpy** (``pip install numpy``)
-        * **ffmpeg** package installed on the system
-        * **portaudio** package installed on the system - either
-          ``portaudio19-dev`` on Debian-like systems, or ``portaudio`` on Arch.
-
     """
 
     _DEFAULT_BLOCKSIZE = 1024

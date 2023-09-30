@@ -10,16 +10,6 @@ class GpioPlugin(RunnablePlugin):
     """
     This plugin can be used to interact with custom electronic devices
     connected to a Raspberry Pi (or compatible device) over GPIO pins.
-
-    Requires:
-
-        * **RPi.GPIO** (``pip install RPi.GPIO``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.gpio.GPIOEvent` when the value of a
-            monitored PIN changes.
-
     """
 
     def __init__(

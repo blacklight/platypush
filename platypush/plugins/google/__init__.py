@@ -22,11 +22,6 @@ class GooglePlugin(Plugin):
             python -m platypush.plugins.google.credentials \
                 'https://www.googleapis.com/auth/gmail.compose' ~/client_secret.json
 
-    Requires:
-
-        * **google-api-python-client** (``pip install google-api-python-client``)
-        * **oauth2client** (``pip install oauth2client``)
-
     """
 
     def __init__(self, scopes=None, **kwargs):

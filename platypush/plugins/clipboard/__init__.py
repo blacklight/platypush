@@ -10,15 +10,6 @@ class ClipboardPlugin(RunnablePlugin):
     """
     Plugin to programmatically copy strings to your system clipboard,
     monitor and get the current clipboard content.
-
-    Requires:
-
-        - **pyclip** (``pip install pyclip``)
-
-    Triggers:
-
-        - :class:`platypush.message.event.clipboard.ClipboardEvent` on clipboard update.
-
     """
 
     def __init__(self, *args, **kwargs):

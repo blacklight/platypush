@@ -8,8 +8,13 @@ import time
 from platypush.context import get_bus
 from platypush.message.response import Response
 from platypush.plugins.media import PlayerState, MediaPlugin
-from platypush.message.event.media import MediaPlayEvent, MediaPlayRequestEvent, \
-    MediaPauseEvent, MediaStopEvent, NewPlayingMediaEvent
+from platypush.message.event.media import (
+    MediaPlayEvent,
+    MediaPlayRequestEvent,
+    MediaPauseEvent,
+    MediaStopEvent,
+    NewPlayingMediaEvent,
+)
 
 from platypush.plugins import action
 from platypush.utils import find_bins_in_path
@@ -17,21 +22,29 @@ from platypush.utils import find_bins_in_path
 
 class MediaMplayerPlugin(MediaPlugin):
     """
-    Plugin to control MPlayer instances
-
-    Requires:
-
-        * **mplayer** executable on your system
+    Plugin to control MPlayer instances.
     """
 
     _mplayer_default_communicate_timeout = 0.5
 
-    _mplayer_bin_default_args = ['-slave', '-quiet', '-idle', '-input',
-                                 'nodefault-bindings', '-noconfig', 'all']
+    _mplayer_bin_default_args = [
+        '-slave',
+        '-quiet',
+        '-idle',
+        '-input',
+        'nodefault-bindings',
+        '-noconfig',
+        'all',
+    ]
 
-    def __init__(self, mplayer_bin=None,
-                 mplayer_timeout=_mplayer_default_communicate_timeout,
-                 args=None, *argv, **kwargs):
+    def __init__(
+        self,
+        mplayer_bin=None,
+        mplayer_timeout=_mplayer_default_communicate_timeout,
+        args=None,
+        *argv,
+        **kwargs,
+    ):
         """
         Create the MPlayer wrapper. Note that the plugin methods are populated
         dynamically by introspecting the mplayer executable. You can verify the
@@ -69,17 +82,22 @@ class MediaMplayerPlugin(MediaPlugin):
             bins = find_bins_in_path(bin_name)
 
             if not bins:
-                raise RuntimeError('MPlayer executable not specified and not ' +
-                                   'found in your PATH. Make sure that mplayer' +
-                                   'is either installed or configured')
+                raise RuntimeError(
+                    'MPlayer executable not specified and not '
+                    + 'found in your PATH. Make sure that mplayer'
+                    + 'is either installed or configured'
+                )
 
             self.mplayer_bin = bins[0]
         else:
             mplayer_bin = os.path.expanduser(mplayer_bin)
-            if not (os.path.isfile(mplayer_bin)
-                    and (os.name == 'nt' or os.access(mplayer_bin, os.X_OK))):
-                raise RuntimeError('{} is does not exist or is not a valid ' +
-                                   'executable file'.format(mplayer_bin))
+            if not (
+                os.path.isfile(mplayer_bin)
+                and (os.name == 'nt' or os.access(mplayer_bin, os.X_OK))
+            ):
+                raise RuntimeError(
+                    f'{mplayer_bin} is does not exist or is not a valid executable file'
+                )
 
             self.mplayer_bin = mplayer_bin
 
@@ -88,8 +106,9 @@ class MediaMplayerPlugin(MediaPlugin):
             try:
                 self._player.terminate()
             except Exception as e:
-                self.logger.debug('Failed to quit mplayer before _exec: {}'.
-                                  format(str(e)))
+                self.logger.debug(
+                    'Failed to quit mplayer before _exec: {}'.format(str(e))
+                )
 
         mplayer_args = mplayer_args or []
         args = [self.mplayer_bin] + self._mplayer_bin_default_args
@@ -109,11 +128,14 @@ class MediaMplayerPlugin(MediaPlugin):
         threading.Thread(target=self._process_monitor()).start()
 
     def _build_actions(self):
-        """ Populates the actions list by introspecting the mplayer executable """
+        """Populates the actions list by introspecting the mplayer executable"""
 
         self._actions = {}
-        mplayer = subprocess.Popen([self.mplayer_bin, '-input', 'cmdlist'],
-                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        mplayer = subprocess.Popen(
+            [self.mplayer_bin, '-input', 'cmdlist'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+        )
 
         def args_pprint(txt):
             lc = txt.lower()
@@ -133,8 +155,9 @@ class MediaMplayerPlugin(MediaPlugin):
             arguments = ', '.join([args_pprint(a) for a in args])
             self._actions[cmd_name] = '{}({})'.format(cmd_name, arguments)
 
-    def _exec(self, cmd, *args, mplayer_args=None, prefix=None,
-              wait_for_response=False):
+    def _exec(
+        self, cmd, *args, mplayer_args=None, prefix=None, wait_for_response=False
+    ):
         cmd_name = cmd
         response = None
 
@@ -146,29 +169,32 @@ class MediaMplayerPlugin(MediaPlugin):
 
         cmd = '{}{}{}{}\n'.format(
             prefix + ' ' if prefix else '',
-            cmd_name, ' ' if args else '',
-            ' '.join(repr(a) for a in args)).encode()
+            cmd_name,
+            ' ' if args else '',
+            ' '.join(repr(a) for a in args),
+        ).encode()
 
         if not self._player:
-            self.logger.warning('Cannot send command {}: player unavailable'.format(cmd))
+            self.logger.warning(
+                'Cannot send command {}: player unavailable'.format(cmd)
+            )
             return
 
         self._player.stdin.write(cmd)
         self._player.stdin.flush()
 
-        if cmd_name == 'loadfile' or cmd_name == 'loadlist':
+        if cmd_name in {'loadfile', 'loadlist'}:
             self._post_event(NewPlayingMediaEvent, resource=args[0])
         elif cmd_name == 'pause':
             self._post_event(MediaPauseEvent)
-        elif cmd_name == 'quit' or cmd_name == 'stop':
-            if cmd_name == 'quit':
-                self._player.terminate()
-                self._player.wait()
-                try:
-                    self._player.kill()
-                except Exception:
-                    pass
-                self._player = None
+        elif cmd_name == 'quit':
+            self._player.terminate()
+            self._player.wait()
+            try:
+                self._player.kill()
+            except Exception:
+                pass
+            self._player = None
 
         if not wait_for_response:
             return
@@ -217,8 +243,10 @@ class MediaMplayerPlugin(MediaPlugin):
 
     @action
     def list_actions(self):
-        return [{'action': a, 'args': self._actions[a]}
-                for a in sorted(self._actions.keys())]
+        return [
+            {'action': a, 'args': self._actions[a]}
+            for a in sorted(self._actions.keys())
+        ]
 
     def _process_monitor(self):
         def _thread():
@@ -278,66 +306,66 @@ class MediaMplayerPlugin(MediaPlugin):
 
     @action
     def pause(self):
-        """ Toggle the paused state """
+        """Toggle the paused state"""
         self._exec('pause')
         self._post_event(MediaPauseEvent)
         return self.status()
 
     @action
     def stop(self):
-        """ Stop the playback """
+        """Stop the playback"""
         # return self._exec('stop')
         self.quit()
         return self.status()
 
     @action
     def quit(self):
-        """ Quit the player """
+        """Quit the player"""
         self._exec('quit')
         self._post_event(MediaStopEvent)
         return self.status()
 
     @action
     def voldown(self, step=10.0):
-        """ Volume down by (default: 10)% """
+        """Volume down by (default: 10)%"""
         self._exec('volume', -step * 10)
         return self.status()
 
     @action
     def volup(self, step=10.0):
-        """ Volume up by (default: 10)% """
+        """Volume up by (default: 10)%"""
         self._exec('volume', step * 10)
         return self.status()
 
     @action
     def back(self, offset=30.0):
-        """ Back by (default: 30) seconds """
+        """Back by (default: 30) seconds"""
         self.step_property('time_pos', -offset)
         return self.status()
 
     @action
     def forward(self, offset=30.0):
-        """ Forward by (default: 30) seconds """
+        """Forward by (default: 30) seconds"""
         self.step_property('time_pos', offset)
         return self.status()
 
     @action
     def toggle_subtitles(self):
-        """ Toggle the subtitles visibility """
+        """Toggle the subtitles visibility"""
         subs = self.get_property('sub_visibility').output.get('sub_visibility')
         self._exec('sub_visibility', int(not subs))
         return self.status()
 
     @action
     def add_subtitles(self, filename, **__):
-        """ Sets media subtitles from filename """
+        """Sets media subtitles from filename"""
         self._exec('sub_visibility', 1)
         self._exec('sub_load', filename)
         return self.status()
 
     @action
     def remove_subtitles(self, index=None):
-        """ Removes the subtitle specified by the index (default: all) """
+        """Removes the subtitle specified by the index (default: all)"""
         if index is None:
             self._exec('sub_remove')
         else:
@@ -363,7 +391,7 @@ class MediaMplayerPlugin(MediaPlugin):
 
     @action
     def mute(self):
-        """ Toggle mute state """
+        """Toggle mute state"""
         self._exec('mute')
         return self.status()
 
@@ -438,11 +466,15 @@ class MediaMplayerPlugin(MediaPlugin):
                 if value is not None:
                     status[prop] = value.get(player_prop)
 
-        status['seekable'] = True if status['duration'] is not None else False
-        status['state'] = PlayerState.PAUSE.value if status['pause'] else PlayerState.PLAY.value
+        status['seekable'] = bool(status['duration'])
+        status['state'] = (
+            PlayerState.PAUSE.value if status['pause'] else PlayerState.PLAY.value
+        )
 
         if status['path']:
-            status['url'] = ('file://' if os.path.isfile(status['path']) else '') + status['path']
+            status['url'] = (
+                'file://' if os.path.isfile(status['path']) else ''
+            ) + status['path']
 
         status['volume_max'] = 100
         return status
@@ -458,8 +490,16 @@ class MediaMplayerPlugin(MediaPlugin):
         args = args or []
         response = Response(output={})
 
-        result = self._exec('get_property', property, prefix='pausing_keep_force',
-                            wait_for_response=True, *args) or {}
+        result = (
+            self._exec(
+                'get_property',
+                property,
+                prefix='pausing_keep_force',
+                wait_for_response=True,
+                *args,
+            )
+            or {}
+        )
 
         for k, v in result.items():
             if k == 'ERROR' and v not in response.errors:
@@ -480,14 +520,21 @@ class MediaMplayerPlugin(MediaPlugin):
         args = args or []
         response = Response(output={})
 
-        result = self._exec('set_property', property, value,
-                            prefix='pausing_keep_force' if property != 'pause'
-                            else None, wait_for_response=True, *args) or {}
+        result = (
+            self._exec(
+                'set_property',
+                property,
+                value,
+                prefix='pausing_keep_force' if property != 'pause' else None,
+                wait_for_response=True,
+                *args,
+            )
+            or {}
+        )
 
         for k, v in result.items():
             if k == 'ERROR' and v not in response.errors:
-                response.errors.append('{} {}{}: {}'.format(property, value,
-                                                            args, v))
+                response.errors.append('{} {}{}: {}'.format(property, value, args, v))
             else:
                 response.output[k] = v
 
@@ -504,14 +551,21 @@ class MediaMplayerPlugin(MediaPlugin):
         args = args or []
         response = Response(output={})
 
-        result = self._exec('step_property', property, value,
-                            prefix='pausing_keep_force',
-                            wait_for_response=True, *args) or {}
+        result = (
+            self._exec(
+                'step_property',
+                property,
+                value,
+                prefix='pausing_keep_force',
+                wait_for_response=True,
+                *args,
+            )
+            or {}
+        )
 
         for k, v in result.items():
             if k == 'ERROR' and v not in response.errors:
-                response.errors.append('{} {}{}: {}'.format(property, value,
-                                                            args, v))
+                response.errors.append('{} {}{}: {}'.format(property, value, args, v))
             else:
                 response.output[k] = v
 

@@ -14,18 +14,6 @@ class NfcBackend(Backend):
     """
     Backend to detect NFC card events from a compatible reader.
 
-    Triggers:
-
-        * :class:`platypush.message.event.nfc.NFCDeviceConnectedEvent` when an NFC reader/writer is connected
-        * :class:`platypush.message.event.nfc.NFCDeviceDisconnectedEvent` when an NFC reader/writer is disconnected
-        * :class:`platypush.message.event.nfc.NFCTagDetectedEvent` when an NFC tag is detected
-        * :class:`platypush.message.event.nfc.NFCTagRemovedEvent` when an NFC tag is removed
-
-    Requires:
-
-        * **nfcpy** >= 1.0 (``pip install 'nfcpy>=1.0'``)
-        * **ndef** (``pip install ndeflib``)
-
     Run the following to check if your device is compatible with nfcpy and the right permissions are set::
 
         python -m nfc

@@ -9,15 +9,11 @@ from platypush.plugins import Plugin, action
 class FfmpegPlugin(Plugin):
     """
     Generic FFmpeg plugin to interact with media files and devices.
-
-    Requires:
-
-        * **ffmpeg-python** (``pip install ffmpeg-python``)
-        * The **ffmpeg** package installed on the system.
-
     """
 
-    def __init__(self, ffmpeg_cmd: str = 'ffmpeg', ffprobe_cmd: str = 'ffprobe', **kwargs):
+    def __init__(
+        self, ffmpeg_cmd: str = 'ffmpeg', ffprobe_cmd: str = 'ffprobe', **kwargs
+    ):
         super().__init__(**kwargs)
         self.ffmpeg_cmd = ffmpeg_cmd
         self.ffprobe_cmd = ffprobe_cmd
@@ -102,14 +98,19 @@ class FfmpegPlugin(Plugin):
         """
         # noinspection PyPackageRequirements
         import ffmpeg
+
         filename = os.path.abspath(os.path.expanduser(filename))
         info = ffmpeg.probe(filename, cmd=self.ffprobe_cmd, **kwargs)
         return info
 
     @staticmethod
-    def _poll_thread(proc: subprocess.Popen, packet_size: int, on_packet: Callable[[bytes], None],
-                     on_open: Optional[Callable[[], None]] = None,
-                     on_close: Optional[Callable[[], None]] = None):
+    def _poll_thread(
+        proc: subprocess.Popen,
+        packet_size: int,
+        on_packet: Callable[[bytes], None],
+        on_open: Optional[Callable[[], None]] = None,
+        on_close: Optional[Callable[[], None]] = None,
+    ):
         try:
             if on_open:
                 on_open()
@@ -122,25 +123,49 @@ class FfmpegPlugin(Plugin):
                 on_close()
 
     @action
-    def start(self, pipeline: List[dict], pipe_stdin: bool = False, pipe_stdout: bool = False,
-              pipe_stderr: bool = False, quiet: bool = False, overwrite_output: bool = False,
-              on_packet: Callable[[bytes], None] = None, packet_size: int = 4096):
+    def start(
+        self,
+        pipeline: List[dict],
+        pipe_stdin: bool = False,
+        pipe_stdout: bool = False,
+        pipe_stderr: bool = False,
+        quiet: bool = False,
+        overwrite_output: bool = False,
+        on_packet: Callable[[bytes], None] = None,
+        packet_size: int = 4096,
+    ):
         # noinspection PyPackageRequirements
         import ffmpeg
+
         stream = ffmpeg
 
         for step in pipeline:
             args = step.pop('args') if 'args' in step else []
             stream = getattr(stream, step.pop('method'))(*args, **step)
 
-        self.logger.info('Executing {cmd} {args}'.format(cmd=self.ffmpeg_cmd, args=stream.get_args()))
-        proc = stream.run_async(cmd=self.ffmpeg_cmd, pipe_stdin=pipe_stdin, pipe_stdout=pipe_stdout,
-                                pipe_stderr=pipe_stderr, quiet=quiet, overwrite_output=overwrite_output)
+        self.logger.info(
+            'Executing {cmd} {args}'.format(cmd=self.ffmpeg_cmd, args=stream.get_args())
+        )
+        proc = stream.run_async(
+            cmd=self.ffmpeg_cmd,
+            pipe_stdin=pipe_stdin,
+            pipe_stdout=pipe_stdout,
+            pipe_stderr=pipe_stderr,
+            quiet=quiet,
+            overwrite_output=overwrite_output,
+        )
 
         if on_packet:
             with self._thread_lock:
-                self._threads[self._next_thread_id] = threading.Thread(target=self._poll_thread, kwargs=dict(
-                    proc=proc, on_packet=on_packet, packet_size=packet_size))
+                self._threads[self._next_thread_id] = threading.Thread(
+                    target=self._poll_thread,
+                    kwargs={
+                        'proc': proc,
+                        'on_packet': on_packet,
+                        'packet_size': packet_size,
+                    },
+                )
+
                 self._threads[self._next_thread_id].start()
                 self._next_thread_id += 1
 

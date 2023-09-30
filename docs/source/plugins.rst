@@ -50,7 +50,6 @@ Plugins
     platypush/plugins/graphite.rst
     platypush/plugins/hid.rst
     platypush/plugins/http.request.rst
-    platypush/plugins/http.request.rss.rst
     platypush/plugins/http.webpage.rst
     platypush/plugins/ifttt.rst
     platypush/plugins/inputs.rst

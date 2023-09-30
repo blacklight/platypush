@@ -9,11 +9,6 @@ from platypush.plugins.calendar import CalendarInterface
 class CalendarIcalPlugin(Plugin, CalendarInterface):
     """
     iCal calendars plugin. Interact with remote calendars in iCal format.
-
-    Requires:
-
-        * **icalendar** (``pip install icalendar``)
-
     """
 
     def __init__(self, url, *args, **kwargs):

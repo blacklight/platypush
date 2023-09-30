@@ -101,21 +101,6 @@ class ZwaveMqttPlugin(
             * Gateway -> Send Zwave Events: Set to true.
             * Gateway -> Include Node Info: Set to true.
 
-    Requires:
-
-        * **paho-mqtt** (``pip install paho-mqtt``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.zwave.ZwaveNodeEvent`
-        * :class:`platypush.message.event.zwave.ZwaveNodeAddedEvent`
-        * :class:`platypush.message.event.zwave.ZwaveNodeRemovedEvent`
-        * :class:`platypush.message.event.zwave.ZwaveNodeRenamedEvent`
-        * :class:`platypush.message.event.zwave.ZwaveNodeReadyEvent`
-        * :class:`platypush.message.event.zwave.ZwaveValueChangedEvent`
-        * :class:`platypush.message.event.zwave.ZwaveNodeAsleepEvent`
-        * :class:`platypush.message.event.zwave.ZwaveNodeAwakeEvent`
-
     """
 
     # These classes are ignored by the entity parsing logic

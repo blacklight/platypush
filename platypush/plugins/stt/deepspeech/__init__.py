@@ -13,23 +13,19 @@ class SttDeepspeechPlugin(SttPlugin):
     """
     This plugin performs speech-to-text and speech detection using the
     `Mozilla DeepSpeech <https://github.com/mozilla/DeepSpeech>`_ engine.
-
-    Requires:
-
-        * **deepspeech** (``pip install 'deepspeech>=0.6.0'``)
-        * **numpy** (``pip install numpy``)
-        * **sounddevice** (``pip install sounddevice``)
-
     """
 
-    def __init__(self,
-                 model_file: str,
-                 lm_file: str,
-                 trie_file: str,
-                 lm_alpha: float = 0.75,
-                 lm_beta: float = 1.85,
-                 beam_width: int = 500,
-                 *args, **kwargs):
+    def __init__(
+        self,
+        model_file: str,
+        lm_file: str,
+        trie_file: str,
+        lm_alpha: float = 0.75,
+        lm_beta: float = 1.85,
+        beam_width: int = 500,
+        *args,
+        **kwargs
+    ):
         """
         In order to run the speech-to-text engine you'll need to download the right model files for the
         Deepspeech engine that you have installed:
@@ -43,7 +39,8 @@ class SttDeepspeechPlugin(SttPlugin):
 
             # Download and extract the model files for your version of Deepspeech. This may take a while.
             export DEEPSPEECH_VERSION=0.6.1
-            wget https://github.com/mozilla/DeepSpeech/releases/download/v$DEEPSPEECH_VERSION/deepspeech-$DEEPSPEECH_VERSION-models.tar.gz
+            wget \
+                'https://github.com/mozilla/DeepSpeech/releases/download/v$DEEPSPEECH_VERSION/deepspeech-$DEEPSPEECH_VERSION-models.tar.gz'
             tar -xvzf deepspeech-$DEEPSPEECH_VERSION-models.tar.gz
             x deepspeech-0.6.1-models/
             x deepspeech-0.6.1-models/lm.binary
@@ -79,6 +76,7 @@ class SttDeepspeechPlugin(SttPlugin):
         """
 
         import deepspeech
+
         super().__init__(*args, **kwargs)
         self.model_file = os.path.abspath(os.path.expanduser(model_file))
         self.lm_file = os.path.abspath(os.path.expanduser(lm_file))
@@ -91,9 +89,12 @@ class SttDeepspeechPlugin(SttPlugin):
 
     def _get_model(self):
         import deepspeech
+
         if not self._model:
             self._model = deepspeech.Model(self.model_file, self.beam_width)
-            self._model.enableDecoderWithLM(self.lm_file, self.trie_file, self.lm_alpha, self.lm_beta)
+            self._model.enableDecoderWithLM(
+                self.lm_file, self.trie_file, self.lm_alpha, self.lm_beta
+            )
 
         return self._model
 

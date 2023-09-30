@@ -14,11 +14,6 @@ class SensorIrZeroborgBackend(Backend):
     remote by running the scan utility::
 
         python -m platypush.backend.sensor.ir.zeroborg.scan
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.ir.IrKeyDownEvent` when a key is pressed
-        * :class:`platypush.message.event.sensor.ir.IrKeyUpEvent` when a key is released
     """
 
     last_message = None
@@ -40,20 +35,29 @@ class SensorIrZeroborgBackend(Backend):
                 if self.zb.HasNewIrMessage():
                     message = self.zb.GetIrMessage()
                     if message != self.last_message:
-                        self.logger.info('Received key down event on the IR sensor: {}'.format(message))
+                        self.logger.info(
+                            'Received key down event on the IR sensor: {}'.format(
+                                message
+                            )
+                        )
                         self.bus.post(IrKeyDownEvent(message=message))
 
                     self.last_message = message
                     self.last_message_timestamp = time.time()
             except OSError as e:
-                self.logger.warning('Failed reading IR sensor status: {}: {}'.format(type(e), str(e)))
+                self.logger.warning(
+                    'Failed reading IR sensor status: {}: {}'.format(type(e), str(e))
+                )
 
-            if self.last_message_timestamp and \
-                    time.time() - self.last_message_timestamp > self.no_message_timeout:
+            if (
+                self.last_message_timestamp
+                and time.time() - self.last_message_timestamp > self.no_message_timeout
+            ):
                 self.logger.info('Received key up event on the IR sensor')
                 self.bus.post(IrKeyUpEvent(message=self.last_message))
 
                 self.last_message = None
                 self.last_message_timestamp = None
+
 
 # vim:sw=4:ts=4:et:

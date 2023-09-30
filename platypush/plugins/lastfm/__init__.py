@@ -8,10 +8,6 @@ class LastfmPlugin(Plugin):
     """
     Plugin to interact with your Last.FM (https://last.fm) account, update your
     current track and your scrobbles.
-
-    Requires:
-
-        * **pylast** (``pip install pylast``)
     """
 
     def __init__(self, api_key, api_secret, username, password):

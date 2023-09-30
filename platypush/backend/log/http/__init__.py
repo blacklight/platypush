@@ -7,7 +7,11 @@ from logging import getLogger
 from threading import RLock
 from typing import List, Optional, Iterable
 
-from platypush.backend.file.monitor import FileMonitorBackend, EventHandler, MonitoredResource
+from platypush.backend.file.monitor import (
+    FileMonitorBackend,
+    EventHandler,
+    MonitoredResource,
+)
 from platypush.context import get_bus
 from platypush.message.event.log.http import HttpLogEvent
 
@@ -15,8 +19,10 @@ logger = getLogger(__name__)
 
 
 class LogEventHandler(EventHandler):
-    http_line_regex = re.compile(r'^([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+\[([^]]+)]\s+"([^"]+)"\s+([\d]+)\s+'
-                                 r'([\d]+)\s*("([^"\s]+)")?\s*("([^"]+)")?$')
+    http_line_regex = re.compile(
+        r'^([^\s]+)\s+([^\s]+)\s+([^\s]+)\s+\[([^]]+)]\s+"([^"]+)"\s+([\d]+)\s+'
+        r'([\d]+)\s*("([^"\s]+)")?\s*("([^"]+)")?$'
+    )
 
     @dataclass
     class FileResource:
@@ -25,16 +31,17 @@ class LogEventHandler(EventHandler):
         lock: RLock = RLock()
         last_timestamp: Optional[datetime.datetime] = None
 
-    def __init__(self, *args, monitored_files: Optional[Iterable[str]] = None, **kwargs):
+    def __init__(
+        self, *args, monitored_files: Optional[Iterable[str]] = None, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self._monitored_files = {}
         self.monitor_files(monitored_files or [])
 
     def monitor_files(self, files: Iterable[str]):
-        self._monitored_files.update({
-            f: self.FileResource(path=f, pos=self._get_size(f))
-            for f in files
-        })
+        self._monitored_files.update(
+            {f: self.FileResource(path=f, pos=self._get_size(f)) for f in files}
+        )
 
     @staticmethod
     def _get_size(file: str) -> int:
@@ -68,12 +75,17 @@ class LogEventHandler(EventHandler):
         try:
             file_size = os.path.getsize(event.src_path)
         except OSError as e:
-            logger.warning('Could not get the size of {}: {}'.format(event.src_path, str(e)))
+            logger.warning(
+                'Could not get the size of {}: {}'.format(event.src_path, str(e))
+            )
             return
 
         if file_info.pos > file_size:
-            logger.warning('The size of {} been unexpectedly decreased from {} to {} bytes'.format(
-                event.src_path, file_info.pos, file_size))
+            logger.warning(
+                'The size of {} been unexpectedly decreased from {} to {} bytes'.format(
+                    event.src_path, file_info.pos, file_size
+                )
+            )
             file_info.pos = 0
 
         try:
@@ -81,13 +93,18 @@ class LogEventHandler(EventHandler):
                 f.seek(file_info.pos)
                 for line in f.readlines():
                     evt = self._build_event(file=event.src_path, line=line)
-                    if evt and (not file_info.last_timestamp or evt.args['time'] >= file_info.last_timestamp):
+                    if evt and (
+                        not file_info.last_timestamp
+                        or evt.args['time'] >= file_info.last_timestamp
+                    ):
                         get_bus().post(evt)
                         file_info.last_timestamp = evt.args['time']
 
                 file_info.pos = f.tell()
         except OSError as e:
-            logger.warning('Error while reading from {}: {}'.format(self.resource.path, str(e)))
+            logger.warning(
+                'Error while reading from {}: {}'.format(self.resource.path, str(e))
+            )
 
     @classmethod
     def _build_event(cls, file: str, line: str) -> Optional[HttpLogEvent]:
@@ -139,15 +156,6 @@ class LogHttpBackend(FileMonitorBackend):
     """
     This backend can be used to monitor one or more HTTP log files (tested on Apache and Nginx) and trigger events
     whenever a new log line is added.
-
-    Triggers:
-
-        * :class:`platypush.message.event.log.http.HttpLogEvent` when a new log line is created.
-
-    Requires:
-
-        * **watchdog** (``pip install watchdog``)
-
     """
 
     class EventHandlerFactory:

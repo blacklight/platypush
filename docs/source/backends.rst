@@ -20,7 +20,6 @@ Backends
     platypush/backend/google.pubsub.rst
     platypush/backend/gps.rst
     platypush/backend/http.rst
-    platypush/backend/inotify.rst
     platypush/backend/joystick.rst
     platypush/backend/joystick.jstest.rst
     platypush/backend/joystick.linux.rst
@@ -28,7 +27,6 @@ Backends
     platypush/backend/log.http.rst
     platypush/backend/mail.rst
     platypush/backend/midi.rst
-    platypush/backend/mqtt.rst
     platypush/backend/music.mopidy.rst
     platypush/backend/music.mpd.rst
     platypush/backend/music.snapcast.rst
@@ -52,4 +50,3 @@ Backends
     platypush/backend/weather.darksky.rst
     platypush/backend/weather.openweathermap.rst
     platypush/backend/wiimote.rst
-    platypush/backend/zwave.mqtt.rst

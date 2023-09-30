@@ -62,13 +62,6 @@ class MatrixPlugin(AsyncRunnablePlugin):
     """
     Matrix chat integration.
 
-    Requires:
-
-        * **matrix-nio** (``pip install 'matrix-nio[e2e]'``)
-        * **libolm** (on Debian ```apt-get install libolm-devel``, on Arch
-            ``pacman -S libolm``)
-        * **async_lru** (``pip install async_lru``)
-
     Note that ``libolm`` and the ``[e2e]`` module are only required if you want
     E2E encryption support.
 
@@ -100,50 +93,6 @@ class MatrixPlugin(AsyncRunnablePlugin):
     ``mxc://<server>/<media_id>`` format. You can either convert them to HTTP
     through the :meth:`.mxc_to_http` method, or download them through the
     :meth:`.download` method.
-
-    Triggers:
-
-        * :class:`platypush.message.event.matrix.MatrixMessageEvent`: when a
-            message is received.
-        * :class:`platypush.message.event.matrix.MatrixMessageImageEvent`: when a
-            message containing an image is received.
-        * :class:`platypush.message.event.matrix.MatrixMessageAudioEvent`: when a
-            message containing an audio file is received.
-        * :class:`platypush.message.event.matrix.MatrixMessageVideoEvent`: when a
-            message containing a video file is received.
-        * :class:`platypush.message.event.matrix.MatrixMessageFileEvent`: when a
-            message containing a generic file is received.
-        * :class:`platypush.message.event.matrix.MatrixSyncEvent`: when the
-            startup synchronization has been completed and the plugin is ready to
-            use.
-        * :class:`platypush.message.event.matrix.MatrixRoomCreatedEvent`: when
-            a room is created.
-        * :class:`platypush.message.event.matrix.MatrixRoomJoinEvent`: when a
-            user joins a room.
-        * :class:`platypush.message.event.matrix.MatrixRoomLeaveEvent`: when a
-            user leaves a room.
-        * :class:`platypush.message.event.matrix.MatrixRoomInviteEvent`: when
-            the user is invited to a room.
-        * :class:`platypush.message.event.matrix.MatrixRoomTopicChangedEvent`:
-            when the topic/title of a room changes.
-        * :class:`platypush.message.event.matrix.MatrixCallInviteEvent`: when
-            the user is invited to a call.
-        * :class:`platypush.message.event.matrix.MatrixCallAnswerEvent`: when a
-            called user wishes to pick the call.
-        * :class:`platypush.message.event.matrix.MatrixCallHangupEvent`: when a
-            called user exits the call.
-        * :class:`platypush.message.event.matrix.MatrixEncryptedMessageEvent`:
-            when a message is received but the client doesn't have the E2E keys
-            to decrypt it, or encryption has not been enabled.
-        * :class:`platypush.message.event.matrix.MatrixRoomTypingStartEvent`:
-            when a user in a room starts typing.
-        * :class:`platypush.message.event.matrix.MatrixRoomTypingStopEvent`:
-            when a user in a room stops typing.
-        * :class:`platypush.message.event.matrix.MatrixRoomSeenReceiptEvent`:
-            when the last message seen by a user in a room is updated.
-        * :class:`platypush.message.event.matrix.MatrixUserPresenceEvent`:
-            when a user comes online or goes offline.
-
     """
 
     def __init__(

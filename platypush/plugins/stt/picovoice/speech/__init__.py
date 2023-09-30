@@ -19,20 +19,18 @@ class SttPicovoiceSpeechPlugin(SttPlugin):
     NOTE: The PicoVoice product used for real-time speech-to-text (Cheetah) can be used freely for
     personal applications on x86_64 Linux. Other architectures and operating systems require a commercial license.
     You can ask for a license `here <https://picovoice.ai/contact.html>`_.
-
-    Requires:
-
-        * **cheetah** (``pip install git+https://github.com/BlackLight/cheetah``)
-
     """
 
-    def __init__(self,
-                 library_path: Optional[str] = None,
-                 acoustic_model_path: Optional[str] = None,
-                 language_model_path: Optional[str] = None,
-                 license_path: Optional[str] = None,
-                 end_of_speech_timeout: int = 1,
-                 *args, **kwargs):
+    def __init__(
+        self,
+        library_path: Optional[str] = None,
+        acoustic_model_path: Optional[str] = None,
+        language_model_path: Optional[str] = None,
+        license_path: Optional[str] = None,
+        end_of_speech_timeout: int = 1,
+        *args,
+        **kwargs
+    ):
         """
         :param library_path: Path to the Cheetah binary library for your OS
             (default: ``CHEETAH_INSTALL_DIR/lib/OS/ARCH/libpv_cheetah.EXT``).
@@ -46,17 +44,26 @@ class SttPicovoiceSpeechPlugin(SttPlugin):
             a phrase over (default: 1).
         """
         from pvcheetah import Cheetah
+
         super().__init__(*args, **kwargs)
 
-        self._basedir = os.path.abspath(os.path.join(inspect.getfile(Cheetah), '..', '..', '..'))
+        self._basedir = os.path.abspath(
+            os.path.join(inspect.getfile(Cheetah), '..', '..', '..')
+        )
         if not library_path:
             library_path = self._get_library_path()
         if not language_model_path:
-            language_model_path = os.path.join(self._basedir, 'lib', 'common', 'language_model.pv')
+            language_model_path = os.path.join(
+                self._basedir, 'lib', 'common', 'language_model.pv'
+            )
         if not acoustic_model_path:
-            acoustic_model_path = os.path.join(self._basedir, 'lib', 'common', 'acoustic_model.pv')
+            acoustic_model_path = os.path.join(
+                self._basedir, 'lib', 'common', 'acoustic_model.pv'
+            )
         if not license_path:
-            license_path = os.path.join(self._basedir, 'resources', 'license', 'cheetah_eval_linux_public.lic')
+            license_path = os.path.join(
+                self._basedir, 'resources', 'license', 'cheetah_eval_linux_public.lic'
+            )
 
         self._library_path = library_path
         self._language_model_path = language_model_path
@@ -67,8 +74,12 @@ class SttPicovoiceSpeechPlugin(SttPlugin):
         self._speech_in_progress = threading.Event()
 
     def _get_library_path(self) -> str:
-        path = os.path.join(self._basedir, 'lib', platform.system().lower(), platform.machine())
-        return os.path.join(path, [f for f in os.listdir(path) if f.startswith('libpv_cheetah.')][0])
+        path = os.path.join(
+            self._basedir, 'lib', platform.system().lower(), platform.machine()
+        )
+        return os.path.join(
+            path, [f for f in os.listdir(path) if f.startswith('libpv_cheetah.')][0]
+        )
 
     def convert_frames(self, frames: bytes) -> tuple:
         assert self._stt_engine, 'The speech engine is not running'
@@ -115,13 +126,18 @@ class SttPicovoiceSpeechPlugin(SttPlugin):
         """
         pass
 
-    def recording_thread(self, input_device: Optional[str] = None, *args, **kwargs) -> None:
+    def recording_thread(
+        self, input_device: Optional[str] = None, *args, **kwargs
+    ) -> None:
         assert self._stt_engine, 'The hotword engine has not yet been initialized'
-        super().recording_thread(block_size=self._stt_engine.frame_length, input_device=input_device)
+        super().recording_thread(
+            block_size=self._stt_engine.frame_length, input_device=input_device
+        )
 
     @action
     def start_detection(self, *args, **kwargs) -> None:
         from pvcheetah import Cheetah
+
         self._stt_engine = Cheetah(
             library_path=self._library_path,
             acoustic_model_path=self._acoustic_model_path,

@@ -12,14 +12,16 @@ class OtpPlugin(Plugin):
     """
     This plugin can be used to generate OTP (One-Time Password) codes compatible with Google Authenticator and
     other 2FA (Two-Factor Authentication) applications.
-
-    Requires:
-
-        * **pyotp** (``pip install pyotp``)
     """
 
-    def __init__(self, secret: Optional[str] = None, secret_path: Optional[str] = None,
-                 provisioning_name: Optional[str] = None, issuer_name: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        secret: Optional[str] = None,
+        secret_path: Optional[str] = None,
+        provisioning_name: Optional[str] = None,
+        issuer_name: Optional[str] = None,
+        **kwargs
+    ):
         """
         :param secret: Base32-encoded secret to be used for password generation.
         :param secret_path: If no secret is provided statically, then it will be read from this path
@@ -48,7 +50,9 @@ class OtpPlugin(Plugin):
 
         return secret
 
-    def _get_secret(self, secret: Optional[str] = None, secret_path: Optional[str] = None) -> str:
+    def _get_secret(
+        self, secret: Optional[str] = None, secret_path: Optional[str] = None
+    ) -> str:
         if secret:
             return secret
         if secret_path:
@@ -60,10 +64,14 @@ class OtpPlugin(Plugin):
 
         raise AssertionError('No secret nor secret_file specified')
 
-    def _get_topt(self, secret: Optional[str] = None, secret_path: Optional[str] = None) -> pyotp.TOTP:
+    def _get_topt(
+        self, secret: Optional[str] = None, secret_path: Optional[str] = None
+    ) -> pyotp.TOTP:
         return pyotp.TOTP(self._get_secret(secret, secret_path))
 
-    def _get_hopt(self, secret: Optional[str] = None, secret_path: Optional[str] = None) -> pyotp.HOTP:
+    def _get_hopt(
+        self, secret: Optional[str] = None, secret_path: Optional[str] = None
+    ) -> pyotp.HOTP:
         return pyotp.HOTP(self._get_secret(secret, secret_path))
 
     @action
@@ -77,15 +85,20 @@ class OtpPlugin(Plugin):
         secret_path = secret_path or self.secret_path
         assert secret_path, 'No secret_path configured'
 
-        os.makedirs(os.path.dirname(os.path.abspath(os.path.expanduser(secret_path))), exist_ok=True)
+        os.makedirs(
+            os.path.dirname(os.path.abspath(os.path.expanduser(secret_path))),
+            exist_ok=True,
+        )
         secret = pyotp.random_base32()
         with open(secret_path, 'w') as f:
-            f.writelines([secret])    # lgtm [py/clear-text-storage-sensitive-data]
+            f.writelines([secret])  # lgtm [py/clear-text-storage-sensitive-data]
         os.chmod(secret_path, 0o600)
         return secret
 
     @action
-    def get_time_otp(self, secret: Optional[str] = None, secret_path: Optional[str] = None) -> str:
+    def get_time_otp(
+        self, secret: Optional[str] = None, secret_path: Optional[str] = None
+    ) -> str:
         """
         :param secret: Secret token to be used (overrides configured ``secret``).
         :param secret_path: File containing the secret to be used (overrides configured ``secret_path``).
@@ -95,7 +108,12 @@ class OtpPlugin(Plugin):
         return otp.now()
 
     @action
-    def get_counter_otp(self, count: int, secret: Optional[str] = None, secret_path: Optional[str] = None) -> str:
+    def get_counter_otp(
+        self,
+        count: int,
+        secret: Optional[str] = None,
+        secret_path: Optional[str] = None,
+    ) -> str:
         """
         :param count: Index for the counter-OTP.
         :param secret: Secret token to be used (overrides configured ``secret``).
@@ -106,7 +124,9 @@ class OtpPlugin(Plugin):
         return otp.at(count)
 
     @action
-    def verify_time_otp(self, otp: str, secret: Optional[str] = None, secret_path: Optional[str] = None) -> bool:
+    def verify_time_otp(
+        self, otp: str, secret: Optional[str] = None, secret_path: Optional[str] = None
+    ) -> bool:
         """
         Verify a code against a stored time-OTP.
 
@@ -119,8 +139,13 @@ class OtpPlugin(Plugin):
         return _otp.verify(otp)
 
     @action
-    def verify_counter_otp(self, otp: str, count: int, secret: Optional[str] = None,
-                           secret_path: Optional[str] = None) -> bool:
+    def verify_counter_otp(
+        self,
+        otp: str,
+        count: int,
+        secret: Optional[str] = None,
+        secret_path: Optional[str] = None,
+    ) -> bool:
         """
         Verify a code against a stored counter-OTP.
 
@@ -134,8 +159,13 @@ class OtpPlugin(Plugin):
         return _otp.verify(otp, count)
 
     @action
-    def provision_time_otp(self, name: Optional[str] = None, issuer_name: Optional[str] = None,
-                           secret: Optional[str] = None, secret_path: Optional[str] = None) -> str:
+    def provision_time_otp(
+        self,
+        name: Optional[str] = None,
+        issuer_name: Optional[str] = None,
+        secret: Optional[str] = None,
+        secret_path: Optional[str] = None,
+    ) -> str:
         """
         Generate a provisioning URI for a time-OTP that can be imported in Google Authenticator.
 
@@ -154,8 +184,14 @@ class OtpPlugin(Plugin):
         return _otp.provisioning_uri(name, issuer_name=issuer_name)
 
     @action
-    def provision_counter_otp(self, name: Optional[str] = None, issuer_name: Optional[str] = None, initial_count=0,
-                              secret: Optional[str] = None, secret_path: Optional[str] = None) -> str:
+    def provision_counter_otp(
+        self,
+        name: Optional[str] = None,
+        issuer_name: Optional[str] = None,
+        initial_count=0,
+        secret: Optional[str] = None,
+        secret_path: Optional[str] = None,
+    ) -> str:
         """
         Generate a provisioning URI for a counter-OTP that can be imported in Google Authenticator.
 
@@ -172,7 +208,9 @@ class OtpPlugin(Plugin):
         assert name, 'No account name or default provisioning address provided'
 
         _otp = self._get_hopt(secret, secret_path)
-        return _otp.provisioning_uri(name, issuer_name=issuer_name, initial_count=initial_count)
+        return _otp.provisioning_uri(
+            name, issuer_name=issuer_name, initial_count=initial_count
+        )
 
 
 # vim:sw=4:ts=4:et:

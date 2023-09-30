@@ -14,19 +14,16 @@ class PushbulletBackend(Backend):
     Pushbullet app and/or through Tasker), synchronize clipboards, send pictures
     and files to other devices etc. You can also wrap Platypush messages as JSON
     into a push body to execute them.
-
-    Triggers:
-
-        * :class:`platypush.message.event.pushbullet.PushbulletEvent` if a new push is received
-
-    Requires:
-
-        * **pushbullet.py** (``pip install git+https://github.com/pushbullet.py/pushbullet.py``)
-
     """
 
-    def __init__(self, token: str, device: str = 'Platypush', proxy_host: Optional[str] = None,
-                 proxy_port: Optional[int] = None, **kwargs):
+    def __init__(
+        self,
+        token: str,
+        device: str = 'Platypush',
+        proxy_host: Optional[str] = None,
+        proxy_port: Optional[int] = None,
+        **kwargs,
+    ):
         """
         :param token: Your Pushbullet API token, see https://docs.pushbullet.com/#authentication
         :param device: Name of the virtual device for Platypush (default: Platypush)
@@ -47,12 +44,15 @@ class PushbulletBackend(Backend):
     def _initialize(self):
         # noinspection PyPackageRequirements
         from pushbullet import Pushbullet
+
         self.pb = Pushbullet(self.token)
 
         try:
             self.device = self.pb.get_device(self.device_name)
         except Exception as e:
-            self.logger.info(f'Device {self.device_name} does not exist: {e}. Creating it')
+            self.logger.info(
+                f'Device {self.device_name} does not exist: {e}. Creating it'
+            )
             self.device = self.pb.new_device(self.device_name)
 
         self.pb_device_id = self.get_device_id()
@@ -98,8 +98,10 @@ class PushbulletBackend(Backend):
                     body = json.loads(body)
                     self.on_message(body)
                 except Exception as e:
-                    self.logger.debug('Unexpected message received on the ' +
-                                      f'Pushbullet backend: {e}. Message: {body}')
+                    self.logger.debug(
+                        'Unexpected message received on the '
+                        + f'Pushbullet backend: {e}. Message: {body}'
+                    )
             except Exception as e:
                 self.logger.exception(e)
                 return
@@ -111,8 +113,12 @@ class PushbulletBackend(Backend):
         try:
             return self.pb.get_device(self.device_name).device_iden
         except Exception:
-            device = self.pb.new_device(self.device_name, model='Platypush virtual device',
-                                        manufacturer='platypush', icon='system')
+            device = self.pb.new_device(
+                self.device_name,
+                model='Platypush virtual device',
+                manufacturer='platypush',
+                icon='system',
+            )
 
             self.logger.info(f'Created Pushbullet device {self.device_name}')
             return device.device_iden
@@ -158,14 +164,18 @@ class PushbulletBackend(Backend):
     def run_listener(self):
         from .listener import Listener
 
-        self.logger.info(f'Initializing Pushbullet backend - device_id: {self.device_name}')
-        self.listener = Listener(account=self.pb,
-                                 on_push=self.on_push(),
-                                 on_open=self.on_open(),
-                                 on_close=self.on_close(),
-                                 on_error=self.on_error(),
-                                 http_proxy_host=self.proxy_host,
-                                 http_proxy_port=self.proxy_port)
+        self.logger.info(
+            f'Initializing Pushbullet backend - device_id: {self.device_name}'
+        )
+        self.listener = Listener(
+            account=self.pb,
+            on_push=self.on_push(),
+            on_open=self.on_open(),
+            on_close=self.on_close(),
+            on_error=self.on_error(),
+            http_proxy_host=self.proxy_host,
+            http_proxy_port=self.proxy_port,
+        )
 
         self.listener.run_forever()
 

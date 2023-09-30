@@ -26,14 +26,6 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
         - Go to My Profile -> API Tokens -> Add a Personal Access Token.
         - Select the scopes that you want to provide to your new token.
 
-    Requires:
-
-        * **linode_api4** (``pip install linode_api4``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.linode.LinodeInstanceStatusChanged` when the status of an instance changes.
-
     """
 
     def __init__(self, token: str, poll_interval: float = 60.0, **kwargs):

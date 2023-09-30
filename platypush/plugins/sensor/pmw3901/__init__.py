@@ -36,18 +36,7 @@ class SPISlot(enum.Enum):
 class SensorPmw3901Plugin(SensorPlugin):
     """
     Plugin to interact with an `PMW3901 <https://github.com/pimoroni/pmw3901-python>`_
-    optical flow and motion sensor
-
-    Requires:
-
-        * ``pmw3901`` (``pip install pmw3901``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
+    optical flow and motion sensor.
     """
 
     def __init__(

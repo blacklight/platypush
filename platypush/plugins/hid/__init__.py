@@ -46,15 +46,6 @@ class HidPlugin(RunnablePlugin):
 
         # udevadm control --reload && udevadm trigger
 
-    Triggers:
-
-        * :class:`platypush.message.event.hid.HidDeviceConnectedEvent` when a
-          device is connected
-        * :class:`platypush.message.event.hid.HidDeviceDisconnectedEvent` when
-          a previously available device is disconnected
-        * :class:`platypush.message.event.hid.HidDeviceDataEvent` when a
-          monitored device sends some data
-
     """
 
     def __init__(

@@ -1,5 +1,6 @@
 manifest:
-  events: {}
+  events:
+    - platypush.message.event.qrcode.QrcodeScannedEvent
   install:
     apk:
       - py3-numpy

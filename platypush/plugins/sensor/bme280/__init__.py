@@ -62,18 +62,7 @@ _sensor_entity_mappings = {
 class SensorBme280Plugin(SensorPlugin):
     """
     Plugin to interact with a `BME280 <https://shop.pimoroni.com/products/bme280-breakout>`_ environment sensor for
-    temperature, humidity and pressure measurements over I2C interface
-
-    Requires:
-
-        * ``pimoroni-bme280`` (``pip install pimoroni-bme280``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
+    temperature, humidity and pressure measurements over I2C interface.
     """
 
     def __init__(self, port: int = 1, **kwargs):

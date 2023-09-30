@@ -6,8 +6,12 @@ import requests
 from websocket import WebSocketApp
 
 from platypush.context import get_bus
-from platypush.message.event.chat.slack import SlackMessageReceivedEvent, SlackMessageDeletedEvent, \
-    SlackMessageEditedEvent, SlackAppMentionReceivedEvent
+from platypush.message.event.chat.slack import (
+    SlackMessageReceivedEvent,
+    SlackMessageDeletedEvent,
+    SlackMessageEditedEvent,
+    SlackAppMentionReceivedEvent,
+)
 from platypush.plugins import RunnablePlugin, action
 from platypush.plugins.chat import ChatPlugin
 
@@ -35,22 +39,13 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
           see a Bot User OAuth Token, used to authenticate API calls performed as the app/bot. If you also granted
           user permissions to the app then you should also see a User OAuth Token on the page.
 
-    Triggers:
-
-        - :class:`platypush.message.event.chat.slack.SlackMessageReceivedEvent` when a message is received on a
-            monitored channel.
-        - :class:`platypush.message.event.chat.slack.SlackMessageEditedEvent` when a message is edited on a
-            monitored channel.
-        - :class:`platypush.message.event.chat.slack.SlackMessageDeletedEvent` when a message is deleted from a
-            monitored channel.
-        - :class:`platypush.message.event.chat.slack.SlackAppMentionReceivedEvent` when a message that mentions
-            the app is received on a monitored channel.
-
     """
 
     _api_base_url = 'https://slack.com/api'
 
-    def __init__(self, app_token: str, bot_token: str, user_token: Optional[str] = None, **kwargs):
+    def __init__(
+        self, app_token: str, bot_token: str, user_token: Optional[str] = None, **kwargs
+    ):
         """
         :param app_token: Your Slack app token.
         :param bot_token: Bot OAuth token reported on the *Install App* menu.
@@ -72,8 +67,14 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
         return f'{cls._api_base_url}/{method}'
 
     @action
-    def send_message(self, channel: str, as_user: bool = False, text: Optional[str] = None,
-                     blocks: Optional[Iterable[str]] = None, **kwargs):
+    def send_message(
+        self,
+        channel: str,
+        as_user: bool = False,
+        text: Optional[str] = None,
+        blocks: Optional[Iterable[str]] = None,
+        **kwargs,
+    ):
         """
         Send a message to a channel.
         It requires a token with ``chat:write`` bot/user scope.
@@ -94,7 +95,7 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
                 'channel': channel,
                 'text': text,
                 'blocks': blocks or [],
-            }
+            },
         )
 
         try:
@@ -109,7 +110,9 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
         stop_events = []
 
         while not any(stop_events):
-            stop_events = self._should_stop.wait(timeout=1), self._disconnected_event.wait(timeout=1)
+            stop_events = self._should_stop.wait(
+                timeout=1
+            ), self._disconnected_event.wait(timeout=1)
 
     def stop(self):
         if self._ws_app:
@@ -122,7 +125,9 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
             self._ws_listener.join(5)
 
         if self._ws_listener and self._ws_listener.is_alive():
-            self.logger.warning('Terminating the websocket process failed, killing the process')
+            self.logger.warning(
+                'Terminating the websocket process failed, killing the process'
+            )
             self._ws_listener.kill()
 
         if self._ws_listener:
@@ -137,15 +142,20 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
                 return
 
             self._ws_url = None
-            rs = requests.post('https://slack.com/api/apps.connections.open', headers={
-                'Authorization': f'Bearer {self._app_token}',
-            })
+            rs = requests.post(
+                'https://slack.com/api/apps.connections.open',
+                headers={
+                    'Authorization': f'Bearer {self._app_token}',
+                },
+            )
 
             try:
                 rs.raise_for_status()
-            except:   # lgtm [py/catch-base-exception]
+            except Exception:
                 if rs.status_code == 401 or rs.status_code == 403:
-                    self.logger.error('Unauthorized/Forbidden Slack API request, stopping the service')
+                    self.logger.error(
+                        'Unauthorized/Forbidden Slack API request, stopping the service'
+                    )
                     self.stop()
                     return
 
@@ -154,11 +164,13 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
             rs = rs.json()
             assert rs.get('ok')
             self._ws_url = rs.get('url')
-            self._ws_app = WebSocketApp(self._ws_url,
-                                        on_open=self._on_open(),
-                                        on_message=self._on_msg(),
-                                        on_error=self._on_error(),
-                                        on_close=self._on_close())
+            self._ws_app = WebSocketApp(
+                self._ws_url,
+                on_open=self._on_open(),
+                on_message=self._on_msg(),
+                on_error=self._on_error(),
+                on_close=self._on_close(),
+            )
 
             def server():
                 self._ws_app.run_forever()
@@ -180,9 +192,13 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
         envelope_id = msg.get('envelope_id')
         if envelope_id:
             # Send ACK
-            ws.send(json.dumps({
-                'envelope_id': envelope_id,
-            }))
+            ws.send(
+                json.dumps(
+                    {
+                        'envelope_id': envelope_id,
+                    }
+                )
+            )
 
     def _on_msg(self):
         def hndl(*args):
@@ -203,7 +219,7 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
                         team=event['team'],
                         timestamp=event['event_ts'],
                         icons=event.get('icons'),
-                        blocks=event.get('blocks')
+                        blocks=event.get('blocks'),
                     )
                 elif event['type'] == 'message':
                     msg = event.copy()
@@ -221,14 +237,16 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
                             event_args['previous_message'] = prev_msg
                             event_type = SlackMessageEditedEvent
 
-                    event_args.update({
-                        'text': msg.get('text'),
-                        'user': msg.get('user'),
-                        'channel': msg.get('channel', event.get('channel')),
-                        'team': msg.get('team'),
-                        'icons': msg.get('icons'),
-                        'blocks': msg.get('blocks'),
-                    })
+                    event_args.update(
+                        {
+                            'text': msg.get('text'),
+                            'user': msg.get('user'),
+                            'channel': msg.get('channel', event.get('channel')),
+                            'team': msg.get('team'),
+                            'icons': msg.get('icons'),
+                            'blocks': msg.get('blocks'),
+                        }
+                    )
 
                     output_event = event_type(**event_args)
 

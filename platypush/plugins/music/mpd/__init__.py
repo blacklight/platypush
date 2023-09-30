@@ -19,11 +19,6 @@ class MusicMpdPlugin(MusicPlugin):
 
     **NOTE**: As of Mopidy 3.0 MPD is an optional interface provided by the ``mopidy-mpd`` extension. Make sure that you
     have the extension installed and enabled on your instance to use this plugin with your server.
-
-    Requires:
-
-        * **python-mpd2** (``pip install python-mpd2``)
-
     """
 
     _client_lock = threading.RLock()
@@ -58,8 +53,11 @@ class MusicMpdPlugin(MusicPlugin):
                     return self.client
                 except Exception as e:
                     error = e
-                    self.logger.warning('Connection exception: {}{}'.
-                                        format(str(e), (': Retrying' if n_tries > 0 else '')))
+                    self.logger.warning(
+                        'Connection exception: {}{}'.format(
+                            str(e), (': Retrying' if n_tries > 0 else '')
+                        )
+                    )
                     time.sleep(0.5)
 
         self.client = None
@@ -69,8 +67,9 @@ class MusicMpdPlugin(MusicPlugin):
     def _exec(self, method, *args, **kwargs):
         error = None
         n_tries = int(kwargs.pop('n_tries')) if 'n_tries' in kwargs else 2
-        return_status = kwargs.pop('return_status') \
-            if 'return_status' in kwargs else True
+        return_status = (
+            kwargs.pop('return_status') if 'return_status' in kwargs else True
+        )
 
         while n_tries > 0:
             try:
@@ -84,8 +83,9 @@ class MusicMpdPlugin(MusicPlugin):
                 return response
             except Exception as e:
                 error = str(e)
-                self.logger.warning('Exception while executing MPD method {}: {}'.
-                                    format(method, error))
+                self.logger.warning(
+                    'Exception while executing MPD method {}: {}'.format(method, error)
+                )
                 self.client = None
 
         return None, error
@@ -117,7 +117,7 @@ class MusicMpdPlugin(MusicPlugin):
 
     @action
     def pause(self):
-        """ Pause playback """
+        """Pause playback"""
 
         status = self.status().output['state']
         if status == 'play':
@@ -127,7 +127,7 @@ class MusicMpdPlugin(MusicPlugin):
 
     @action
     def pause_if_playing(self):
-        """ Pause playback only if it's playing """
+        """Pause playback only if it's playing"""
 
         status = self.status().output['state']
         if status == 'play':
@@ -135,7 +135,7 @@ class MusicMpdPlugin(MusicPlugin):
 
     @action
     def play_if_paused(self):
-        """ Play only if it's paused (resume) """
+        """Play only if it's paused (resume)"""
 
         status = self.status().output['state']
         if status == 'pause':
@@ -143,7 +143,7 @@ class MusicMpdPlugin(MusicPlugin):
 
     @action
     def play_if_paused_or_stopped(self):
-        """ Play only if it's paused or stopped """
+        """Play only if it's paused or stopped"""
 
         status = self.status().output['state']
         if status == 'pause' or status == 'stop':
@@ -151,12 +151,12 @@ class MusicMpdPlugin(MusicPlugin):
 
     @action
     def stop(self):
-        """ Stop playback """
+        """Stop playback"""
         return self._exec('stop')
 
     @action
     def play_or_stop(self):
-        """ Play or stop (play state toggle) """
+        """Play or stop (play state toggle)"""
         status = self.status().output['state']
         if status == 'play':
             return self._exec('stop')
@@ -176,12 +176,12 @@ class MusicMpdPlugin(MusicPlugin):
 
     @action
     def next(self):
-        """ Play the next track """
+        """Play the next track"""
         return self._exec('next')
 
     @action
     def previous(self):
-        """ Play the previous track """
+        """Play the previous track"""
         return self._exec('previous')
 
     @action
@@ -416,7 +416,7 @@ class MusicMpdPlugin(MusicPlugin):
 
     @action
     def clear(self):
-        """ Clear the current playlist """
+        """Clear the current playlist"""
         return self._exec('clear')
 
     @action
@@ -443,13 +443,13 @@ class MusicMpdPlugin(MusicPlugin):
 
     @action
     def forward(self):
-        """ Go forward by 15 seconds """
+        """Go forward by 15 seconds"""
 
         return self._exec('seekcur', '+15')
 
     @action
     def back(self):
-        """ Go backward by 15 seconds """
+        """Go backward by 15 seconds"""
 
         return self._exec('seekcur', '-15')
 
@@ -492,8 +492,9 @@ class MusicMpdPlugin(MusicPlugin):
                     return self.client.status()
             except Exception as e:
                 error = e
-                self.logger.warning('Exception while getting MPD status: {}'.
-                                    format(str(e)))
+                self.logger.warning(
+                    'Exception while getting MPD status: {}'.format(str(e))
+                )
                 self.client = None
 
         return None, error
@@ -529,10 +530,12 @@ class MusicMpdPlugin(MusicPlugin):
         """
 
         track = self._exec('currentsong', return_status=False)
-        if 'title' in track and ('artist' not in track
-                                 or not track['artist']
-                                 or re.search('^https?://', track['file'])
-                                 or re.search('^tunein:', track['file'])):
+        if 'title' in track and (
+            'artist' not in track
+            or not track['artist']
+            or re.search('^https?://', track['file'])
+            or re.search('^tunein:', track['file'])
+        ):
             m = re.match(r'^\s*(.+?)\s+-\s+(.*)\s*$', track['title'])
             if m and m.group(1) and m.group(2):
                 track['artist'] = m.group(1)
@@ -600,8 +603,10 @@ class MusicMpdPlugin(MusicPlugin):
                 }
             ]
         """
-        return sorted(self._exec('listplaylists', return_status=False),
-                      key=lambda p: p['playlist'])
+        return sorted(
+            self._exec('listplaylists', return_status=False),
+            key=lambda p: p['playlist'],
+        )
 
     @action
     def listplaylists(self):
@@ -622,7 +627,9 @@ class MusicMpdPlugin(MusicPlugin):
         """
         return self._exec(
             'listplaylistinfo' if with_tracks else 'listplaylist',
-            playlist, return_status=False)
+            playlist,
+            return_status=False,
+        )
 
     @action
     def listplaylist(self, name):
@@ -742,8 +749,11 @@ class MusicMpdPlugin(MusicPlugin):
         Returns the list of playlists and directories on the server
         """
 
-        return self._exec('lsinfo', uri, return_status=False) \
-            if uri else self._exec('lsinfo', return_status=False)
+        return (
+            self._exec('lsinfo', uri, return_status=False)
+            if uri
+            else self._exec('lsinfo', return_status=False)
+        )
 
     @action
     def plchanges(self, version):
@@ -768,10 +778,13 @@ class MusicMpdPlugin(MusicPlugin):
         :type name: str
         """
 
-        playlists = list(map(lambda _: _['playlist'],
-                             filter(lambda playlist:
-                                    name.lower() in playlist['playlist'].lower(),
-                                    self._exec('listplaylists', return_status=False))))
+        playlists = [
+            pl['playlist']
+            for pl in filter(
+                lambda playlist: name.lower() in playlist['playlist'].lower(),
+                self._exec('listplaylists', return_status=False),
+            )
+        ]
 
         if len(playlists):
             self._exec('clear')
@@ -814,7 +827,13 @@ class MusicMpdPlugin(MusicPlugin):
 
     # noinspection PyShadowingBuiltins
     @action
-    def search(self, query: Optional[Union[str, dict]] = None, filter: Optional[dict] = None, *args, **kwargs):
+    def search(
+        self,
+        query: Optional[Union[str, dict]] = None,
+        filter: Optional[dict] = None,
+        *args,
+        **kwargs
+    ):
         """
         Free search by filter.
 
@@ -827,7 +846,9 @@ class MusicMpdPlugin(MusicPlugin):
         items = self._exec('search', *filter, *args, return_status=False, **kwargs)
 
         # Spotify results first
-        return sorted(items, key=lambda item: 0 if item['file'].startswith('spotify:') else 1)
+        return sorted(
+            items, key=lambda item: 0 if item['file'].startswith('spotify:') else 1
+        )
 
     # noinspection PyShadowingBuiltins
     @action

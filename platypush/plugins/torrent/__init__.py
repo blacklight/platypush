@@ -25,11 +25,6 @@ from platypush.message.event.torrent import (
 class TorrentPlugin(Plugin):
     """
     Plugin to search and download torrents.
-
-    Requires:
-
-        * **python-libtorrent** (``pip install python-libtorrent``)
-
     """
 
     # Wait time in seconds between two torrent transfer checks

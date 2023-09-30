@@ -71,8 +71,6 @@ class HttpWebpagePlugin(Plugin):
 
     Requires:
 
-        * **weasyprint** (``pip install weasyprint``), optional, for HTML->PDF conversion
-        * **node** and **npm** installed on your system (to use the mercury-parser interface)
         * The mercury-parser library installed (``npm install -g @postlight/mercury-parser``)
 
     """

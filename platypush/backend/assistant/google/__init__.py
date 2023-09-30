@@ -31,40 +31,6 @@ class AssistantGoogleBackend(AssistantBackend):
     https://developers.google.com/assistant/sdk/reference/library/python/. This backend still works on most of the
     devices where I use it, but its correct functioning is not guaranteed as the assistant library is no longer
     maintained.
-
-    Triggers:
-
-        * :class:`platypush.message.event.assistant.ConversationStartEvent` \
-            when a new conversation starts
-        * :class:`platypush.message.event.assistant.SpeechRecognizedEvent` \
-            when a new voice command is recognized
-        * :class:`platypush.message.event.assistant.NoResponse` \
-            when a conversation returned no response
-        * :class:`platypush.message.event.assistant.ResponseEvent` \
-            when the assistant is speaking a response
-        * :class:`platypush.message.event.assistant.ConversationTimeoutEvent` \
-            when a conversation times out
-        * :class:`platypush.message.event.assistant.ConversationEndEvent` \
-            when a new conversation ends
-        * :class:`platypush.message.event.assistant.AlarmStartedEvent` \
-            when an alarm starts
-        * :class:`platypush.message.event.assistant.AlarmEndEvent` \
-            when an alarm ends
-        * :class:`platypush.message.event.assistant.TimerStartedEvent` \
-            when a timer starts
-        * :class:`platypush.message.event.assistant.TimerEndEvent` \
-            when a timer ends
-        * :class:`platypush.message.event.assistant.MicMutedEvent` \
-            when the microphone is muted.
-        * :class:`platypush.message.event.assistant.MicUnmutedEvent` \
-            when the microphone is un-muted.
-
-    Requires:
-
-        * **google-assistant-library** (``pip install google-assistant-library``)
-        * **google-assistant-sdk[samples]** (``pip install google-assistant-sdk[samples]``)
-        * **google-auth** (``pip install google-auth``)
-
     """
 
     _default_credentials_file = os.path.join(
@@ -164,12 +130,12 @@ class AssistantGoogleBackend(AssistantBackend):
             self.bus.post(event)
 
     def start_conversation(self):
-        """Starts an assistant conversation"""
+        """Starts a conversation."""
         if self.assistant:
             self.assistant.start_conversation()
 
     def stop_conversation(self):
-        """Stops an assistant conversation"""
+        """Stops an active conversation."""
         if self.assistant:
             self.assistant.stop_conversation()
 

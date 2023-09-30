@@ -5,21 +5,23 @@ from typing import Optional
 
 from platypush.context import get_bus
 from platypush.plugins.media import PlayerState, MediaPlugin
-from platypush.message.event.media import MediaPlayEvent, MediaPlayRequestEvent, \
-    MediaPauseEvent, MediaStopEvent, MediaSeekEvent, MediaVolumeChangedEvent, \
-    MediaMuteChangedEvent, NewPlayingMediaEvent
+from platypush.message.event.media import (
+    MediaPlayEvent,
+    MediaPlayRequestEvent,
+    MediaPauseEvent,
+    MediaStopEvent,
+    MediaSeekEvent,
+    MediaVolumeChangedEvent,
+    MediaMuteChangedEvent,
+    NewPlayingMediaEvent,
+)
 
 from platypush.plugins import action
 
 
 class MediaVlcPlugin(MediaPlugin):
     """
-    Plugin to control vlc instances
-
-    Requires:
-
-        * **python-vlc** (``pip install python-vlc``)
-        * **vlc** executable on your system
+    Plugin to control VLC instances.
     """
 
     def __init__(self, args=None, fullscreen=False, volume=100, *argv, **kwargs):
@@ -56,16 +58,30 @@ class MediaVlcPlugin(MediaPlugin):
     @classmethod
     def _watched_event_types(cls):
         import vlc
-        return [getattr(vlc.EventType, evt) for evt in [
-            'MediaPlayerLengthChanged', 'MediaPlayerMediaChanged',
-            'MediaDurationChanged', 'MediaPlayerMuted',
-            'MediaPlayerUnmuted', 'MediaPlayerOpening', 'MediaPlayerPaused',
-            'MediaPlayerPlaying', 'MediaPlayerPositionChanged',
-            'MediaPlayerStopped', 'MediaPlayerTimeChanged', 'MediaStateChanged',
-            'MediaPlayerForward', 'MediaPlayerBackward',
-            'MediaPlayerEndReached', 'MediaPlayerTitleChanged',
-            'MediaPlayerAudioVolume',
-        ] if hasattr(vlc.EventType, evt)]
+
+        return [
+            getattr(vlc.EventType, evt)
+            for evt in [
+                'MediaPlayerLengthChanged',
+                'MediaPlayerMediaChanged',
+                'MediaDurationChanged',
+                'MediaPlayerMuted',
+                'MediaPlayerUnmuted',
+                'MediaPlayerOpening',
+                'MediaPlayerPaused',
+                'MediaPlayerPlaying',
+                'MediaPlayerPositionChanged',
+                'MediaPlayerStopped',
+                'MediaPlayerTimeChanged',
+                'MediaStateChanged',
+                'MediaPlayerForward',
+                'MediaPlayerBackward',
+                'MediaPlayerEndReached',
+                'MediaPlayerTitleChanged',
+                'MediaPlayerAudioVolume',
+            ]
+            if hasattr(vlc.EventType, evt)
+        ]
 
     def _init_vlc(self, resource):
         import vlc
@@ -86,7 +102,8 @@ class MediaVlcPlugin(MediaPlugin):
 
         for evt in self._watched_event_types():
             self._player.event_manager().event_attach(
-                eventtype=evt, callback=self._event_callback())
+                eventtype=evt, callback=self._event_callback()
+            )
 
     def _player_monitor(self):
         self._on_stop_event.wait()
@@ -118,35 +135,41 @@ class MediaVlcPlugin(MediaPlugin):
     def _event_callback(self):
         def callback(event):
             from vlc import EventType
+
             self.logger.debug('Received vlc event: {}'.format(event))
 
             if event.type == EventType.MediaPlayerPlaying:
                 self._post_event(MediaPlayEvent, resource=self._get_current_resource())
             elif event.type == EventType.MediaPlayerPaused:
                 self._post_event(MediaPauseEvent)
-            elif event.type == EventType.MediaPlayerStopped or \
-                    event.type == EventType.MediaPlayerEndReached:
+            elif (
+                event.type == EventType.MediaPlayerStopped
+                or event.type == EventType.MediaPlayerEndReached
+            ):
                 self._on_stop_event.set()
                 self._post_event(MediaStopEvent)
                 for cbk in self._on_stop_callbacks:
                     cbk()
             elif (
-                    event.type == EventType.MediaPlayerTitleChanged or
-                    event.type == EventType.MediaPlayerMediaChanged
+                event.type == EventType.MediaPlayerTitleChanged
+                or event.type == EventType.MediaPlayerMediaChanged
             ):
                 self._title = self._player.get_title() or self._filename
                 if event.type == EventType.MediaPlayerMediaChanged:
                     self._post_event(NewPlayingMediaEvent, resource=self._title)
             elif event.type == EventType.MediaPlayerLengthChanged:
-                self._post_event(NewPlayingMediaEvent, resource=self._get_current_resource())
+                self._post_event(
+                    NewPlayingMediaEvent, resource=self._get_current_resource()
+                )
             elif event.type == EventType.MediaPlayerTimeChanged:
-                pos = float(self._player.get_time()/1000)
-                if self._latest_seek is None or \
-                        abs(pos-self._latest_seek) > 5:
+                pos = float(self._player.get_time() / 1000)
+                if self._latest_seek is None or abs(pos - self._latest_seek) > 5:
                     self._post_event(MediaSeekEvent, position=pos)
                 self._latest_seek = pos
             elif event.type == EventType.MediaPlayerAudioVolume:
-                self._post_event(MediaVolumeChangedEvent, volume=self._player.audio_get_volume())
+                self._post_event(
+                    MediaVolumeChangedEvent, volume=self._player.audio_get_volume()
+                )
             elif event.type == EventType.MediaPlayerMuted:
                 self._post_event(MediaMuteChangedEvent, mute=True)
             elif event.type == EventType.MediaPlayerUnmuted:
@@ -181,13 +204,13 @@ class MediaVlcPlugin(MediaPlugin):
         resource = self._get_resource(resource)
 
         if resource.startswith('file://'):
-            resource = resource[len('file://'):]
+            resource = resource[len('file://') :]
 
         self._filename = resource
         self._init_vlc(resource)
         if subtitles:
             if subtitles.startswith('file://'):
-                subtitles = subtitles[len('file://'):]
+                subtitles = subtitles[len('file://') :]
             self._player.video_set_subtitle_file(subtitles)
 
         self._player.play()
@@ -198,14 +221,13 @@ class MediaVlcPlugin(MediaPlugin):
             self.set_fullscreen(True)
 
         if volume is not None or self._default_volume is not None:
-            self.set_volume(volume if volume is not None
-                            else self._default_volume)
+            self.set_volume(volume if volume is not None else self._default_volume)
 
         return self.status()
 
     @action
     def pause(self):
-        """ Toggle the paused state """
+        """Toggle the paused state"""
         if not self._player:
             return None, 'No vlc instance is running'
         if not self._player.can_pause():
@@ -216,7 +238,7 @@ class MediaVlcPlugin(MediaPlugin):
 
     @action
     def quit(self):
-        """ Quit the player (same as `stop`) """
+        """Quit the player (same as `stop`)"""
         with self._stop_lock:
             if not self._player:
                 return None, 'No vlc instance is running'
@@ -228,22 +250,22 @@ class MediaVlcPlugin(MediaPlugin):
 
     @action
     def stop(self):
-        """ Stop the application (same as `quit`) """
+        """Stop the application (same as `quit`)"""
         return self.quit()
 
     @action
     def voldown(self, step=10.0):
-        """ Volume down by (default: 10)% """
+        """Volume down by (default: 10)%"""
         if not self._player:
             return None, 'No vlc instance is running'
-        return self.set_volume(int(max(0, self._player.audio_get_volume()-step)))
+        return self.set_volume(int(max(0, self._player.audio_get_volume() - step)))
 
     @action
     def volup(self, step=10.0):
-        """ Volume up by (default: 10)% """
+        """Volume up by (default: 10)%"""
         if not self._player:
             return None, 'No vlc instance is running'
-        return self.set_volume(int(min(100, self._player.audio_get_volume()+step)))
+        return self.set_volume(int(min(100, self._player.audio_get_volume() + step)))
 
     @action
     def set_volume(self, volume):
@@ -279,13 +301,13 @@ class MediaVlcPlugin(MediaPlugin):
         if not media:
             return None, 'No media loaded'
 
-        pos = min(media.get_duration()/1000, max(0, position))
-        self._player.set_time(int(pos*1000))
+        pos = min(media.get_duration() / 1000, max(0, position))
+        self._player.set_time(int(pos * 1000))
         return self.status()
 
     @action
     def back(self, offset=30.0):
-        """ Back by (default: 30) seconds """
+        """Back by (default: 30) seconds"""
         if not self._player:
             return None, 'No vlc instance is running'
 
@@ -293,12 +315,12 @@ class MediaVlcPlugin(MediaPlugin):
         if not media:
             return None, 'No media loaded'
 
-        pos = max(0, (self._player.get_time()/1000)-offset)
+        pos = max(0, (self._player.get_time() / 1000) - offset)
         return self.seek(pos)
 
     @action
     def forward(self, offset=30.0):
-        """ Forward by (default: 30) seconds """
+        """Forward by (default: 30) seconds"""
         if not self._player:
             return None, 'No vlc instance is running'
 
@@ -306,51 +328,52 @@ class MediaVlcPlugin(MediaPlugin):
         if not media:
             return None, 'No media loaded'
 
-        pos = min(media.get_duration()/1000, (self._player.get_time()/1000)+offset)
+        pos = min(
+            media.get_duration() / 1000, (self._player.get_time() / 1000) + offset
+        )
         return self.seek(pos)
 
     @action
     def toggle_subtitles(self, visibile=None):
-        """ Toggle the subtitles visibility """
+        """Toggle the subtitles visibility"""
         if not self._player:
             return None, 'No vlc instance is running'
 
         if self._player.video_get_spu_count() == 0:
             return None, 'The media file has no subtitles set'
 
-        if self._player.video_get_spu() is None or \
-                self._player.video_get_spu() == -1:
+        if self._player.video_get_spu() is None or self._player.video_get_spu() == -1:
             self._player.video_set_spu(0)
         else:
             self._player.video_set_spu(-1)
 
     @action
     def toggle_fullscreen(self):
-        """ Toggle the fullscreen mode """
+        """Toggle the fullscreen mode"""
         if not self._player:
             return None, 'No vlc instance is running'
         self._player.toggle_fullscreen()
 
     @action
     def set_fullscreen(self, fullscreen=True):
-        """ Set fullscreen mode """
+        """Set fullscreen mode"""
         if not self._player:
             return None, 'No vlc instance is running'
         self._player.set_fullscreen(fullscreen)
 
     @action
     def set_subtitles(self, filename, **args):
-        """ Sets media subtitles from filename """
+        """Sets media subtitles from filename"""
         if not self._player:
             return None, 'No vlc instance is running'
         if filename.startswith('file://'):
-            filename = filename[len('file://'):]
+            filename = filename[len('file://') :]
 
         self._player.video_set_subtitle_file(filename)
 
     @action
     def remove_subtitles(self):
-        """ Removes (hides) the subtitles """
+        """Removes (hides) the subtitles"""
         if not self._player:
             return None, 'No vlc instance is running'
         self._player.video_set_spu(-1)
@@ -376,7 +399,7 @@ class MediaVlcPlugin(MediaPlugin):
 
     @action
     def mute(self):
-        """ Toggle mute state """
+        """Toggle mute state"""
         if not self._player:
             return None, 'No vlc instance is running'
         self._player.audio_toggle_mute()
@@ -418,18 +441,30 @@ class MediaVlcPlugin(MediaPlugin):
             else:
                 status['state'] = PlayerState.STOP.value
 
-            status['url'] = urllib.parse.unquote(self._player.get_media().get_mrl()) if self._player.get_media() else None
-            status['position'] = float(self._player.get_time()/1000) if self._player.get_time() is not None else None
+            status['url'] = (
+                urllib.parse.unquote(self._player.get_media().get_mrl())
+                if self._player.get_media()
+                else None
+            )
+            status['position'] = (
+                float(self._player.get_time() / 1000)
+                if self._player.get_time() is not None
+                else None
+            )
 
             media = self._player.get_media()
-            status['duration'] = media.get_duration()/1000 if media and media.get_duration() is not None else None
+            status['duration'] = (
+                media.get_duration() / 1000
+                if media and media.get_duration() is not None
+                else None
+            )
 
             status['seekable'] = status['duration'] is not None
             status['fullscreen'] = self._player.get_fullscreen()
             status['mute'] = self._player.audio_get_mute()
             status['path'] = status['url']
             status['pause'] = status['state'] == PlayerState.PAUSE.value
-            status['percent_pos'] = self._player.get_position()*100
+            status['percent_pos'] = self._player.get_position() * 100
             status['filename'] = self._filename
             status['title'] = self._title
             status['volume'] = self._player.audio_get_volume()

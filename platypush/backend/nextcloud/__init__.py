@@ -11,71 +11,76 @@ class NextcloudBackend(Backend):
     """
     This backend triggers events when new activities occur on a NextCloud instance.
 
-    Triggers:
+    The field ``activity_type`` in the triggered :class:`platypush.message.event.nextcloud.NextCloudActivityEvent`
+    events identifies the activity type (e.g. ``file_created``, ``file_deleted``,
+    ``file_changed``). Example in the case of the creation of new files:
 
-        - :class:`platypush.message.event.nextcloud.NextCloudActivityEvent` when new activity occurs on the instance.
-          The field ``activity_type`` identifies the activity type (e.g. ``file_created``, ``file_deleted``,
-          ``file_changed``). Example in the case of the creation of new files:
+    .. code-block:: json
 
-          .. code-block:: json
-
-            {
-              "activity_id": 387,
-              "app": "files",
-              "activity_type": "file_created",
-              "user": "your-user",
-              "subject": "You created InstantUpload/Camera/IMG_0100.jpg, InstantUpload/Camera/IMG_0101.jpg and InstantUpload/Camera/IMG_0102.jpg",
-              "subject_rich": [
-                "You created {file3}, {file2} and {file1}",
-                {
-                  "file1": {
-                    "type": "file",
-                    "id": "41994",
-                    "name": "IMG_0100.jpg",
-                    "path": "InstantUpload/Camera/IMG_0100.jpg",
-                    "link": "https://your-domain/nextcloud/index.php/f/41994"
-                  },
-                  "file2": {
-                    "type": "file",
-                    "id": "42005",
-                    "name": "IMG_0101.jpg",
-                    "path": "InstantUpload/Camera/IMG_0102.jpg",
-                    "link": "https://your-domain/nextcloud/index.php/f/42005"
-                  },
-                  "file3": {
-                    "type": "file",
-                    "id": "42014",
-                    "name": "IMG_0102.jpg",
-                    "path": "InstantUpload/Camera/IMG_0102.jpg",
-                    "link": "https://your-domain/nextcloud/index.php/f/42014"
-                  }
-                }
-              ],
-              "message": "",
-              "message_rich": [
-                "",
-                []
-              ],
-              "object_type": "files",
-              "object_id": 41994,
-              "object_name": "/InstantUpload/Camera/IMG_0102.jpg",
-              "objects": {
-                "42014": "/InstantUpload/Camera/IMG_0100.jpg",
-                "42005": "/InstantUpload/Camera/IMG_0101.jpg",
-                "41994": "/InstantUpload/Camera/IMG_0102.jpg"
-              },
-              "link": "https://your-domain/nextcloud/index.php/apps/files/?dir=/InstantUpload/Camera",
-              "icon": "https://your-domain/nextcloud/apps/files/img/add-color.svg",
-              "datetime": "2020-09-07T17:04:29+00:00"
+      {
+        "activity_id": 387,
+        "app": "files",
+        "activity_type": "file_created",
+        "user": "your-user",
+        "subject": "You created InstantUpload/Camera/IMG_0100.jpg",
+        "subject_rich": [
+          "You created {file3}, {file2} and {file1}",
+          {
+            "file1": {
+              "type": "file",
+              "id": "41994",
+              "name": "IMG_0100.jpg",
+              "path": "InstantUpload/Camera/IMG_0100.jpg",
+              "link": "https://your-domain/nextcloud/index.php/f/41994"
+            },
+            "file2": {
+              "type": "file",
+              "id": "42005",
+              "name": "IMG_0101.jpg",
+              "path": "InstantUpload/Camera/IMG_0102.jpg",
+              "link": "https://your-domain/nextcloud/index.php/f/42005"
+            },
+            "file3": {
+              "type": "file",
+              "id": "42014",
+              "name": "IMG_0102.jpg",
+              "path": "InstantUpload/Camera/IMG_0102.jpg",
+              "link": "https://your-domain/nextcloud/index.php/f/42014"
             }
+          }
+        ],
+        "message": "",
+        "message_rich": [
+          "",
+          []
+        ],
+        "object_type": "files",
+        "object_id": 41994,
+        "object_name": "/InstantUpload/Camera/IMG_0102.jpg",
+        "objects": {
+          "42014": "/InstantUpload/Camera/IMG_0100.jpg",
+          "42005": "/InstantUpload/Camera/IMG_0101.jpg",
+          "41994": "/InstantUpload/Camera/IMG_0102.jpg"
+        },
+        "link": "https://your-domain/nextcloud/index.php/apps/files/?dir=/InstantUpload/Camera",
+        "icon": "https://your-domain/nextcloud/apps/files/img/add-color.svg",
+        "datetime": "2020-09-07T17:04:29+00:00"
+      }
 
     """
 
     _LAST_ACTIVITY_VARNAME = '_NEXTCLOUD_LAST_ACTIVITY_ID'
 
-    def __init__(self, url: Optional[str] = None, username: Optional[str] = None, password: Optional[str] = None,
-                 object_type: Optional[str] = None, object_id: Optional[int] = None,
-                 poll_seconds: Optional[float] = 60., **kwargs):
+    def __init__(
+        self,
+        url: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        object_type: Optional[str] = None,
+        object_id: Optional[int] = None,
+        poll_seconds: Optional[float] = 60.0,
+        **kwargs
+    ):
         """
         :param url: NextCloud instance URL (default: same as the :class:`platypush.plugins.nextcloud.NextCloudPlugin`).
         :param username: NextCloud username (default: same as the :class:`platypush.plugins.nextcloud.NextCloudPlugin`).
@@ -106,14 +111,17 @@ class NextcloudBackend(Backend):
         self.username = username if username else self.username
         self.password = password if password else self.password
 
-        assert self.url and self.username and self.password, \
-            'No configuration provided neither for the NextCloud plugin nor the backend'
+        assert (
+            self.url and self.username and self.password
+        ), 'No configuration provided neither for the NextCloud plugin nor the backend'
 
     @property
     def last_seen_id(self) -> Optional[int]:
         if self._last_seen_id is None:
             variables: VariablePlugin = get_plugin('variable')
-            last_seen_id = variables.get(self._LAST_ACTIVITY_VARNAME).output.get(self._LAST_ACTIVITY_VARNAME)
+            last_seen_id = variables.get(self._LAST_ACTIVITY_VARNAME).output.get(
+                self._LAST_ACTIVITY_VARNAME
+            )
             self._last_seen_id = last_seen_id
 
         return self._last_seen_id
@@ -133,8 +141,14 @@ class NextcloudBackend(Backend):
         new_last_seen_id = int(last_seen_id)
         plugin: NextcloudPlugin = get_plugin('nextcloud')
         # noinspection PyUnresolvedReferences
-        activities = plugin.get_activities(sort='desc', url=self.url, username=self.username, password=self.password,
-                                           object_type=self.object_type, object_id=self.object_id).output
+        activities = plugin.get_activities(
+            sort='desc',
+            url=self.url,
+            username=self.username,
+            password=self.password,
+            object_type=self.object_type,
+            object_id=self.object_id,
+        ).output
 
         events = []
         for activity in activities:

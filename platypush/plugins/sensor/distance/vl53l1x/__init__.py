@@ -12,17 +12,7 @@ class SensorDistanceVl53l1xPlugin(SensorPlugin):
     """
     Plugin to interact with an `VL53L1x
     <https://www.st.com/en/imaging-and-photonics-solutions/vl53l1x.html>`_
-    laser ranger/distance sensor
-
-    Requires:
-
-        * ``smbus2`` (``pip install smbus2``)
-        * ``vl53l1x`` (``pip install vl53l1x``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
+    laser ranger/distance sensor.
     """
 
     def __init__(self, i2c_bus=1, i2c_address=0x29, poll_interval=3, **kwargs):

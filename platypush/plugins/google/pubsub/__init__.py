@@ -19,19 +19,13 @@ class GooglePubsubPlugin(Plugin):
         3. Download the JSON service credentials file. By default platypush will look for the credentials file under
            ~/.credentials/platypush/google/pubsub.json.
 
-    Requires:
-
-        * **google-api-python-client** (``pip install google-api-python-client``)
-        * **oauth2client** (``pip install oauth2client``)
-        * **google-cloud-pubsub** (``pip install google-cloud-pubsub``)
-
-
     """
 
     publisher_audience = 'https://pubsub.googleapis.com/google.pubsub.v1.Publisher'
     subscriber_audience = 'https://pubsub.googleapis.com/google.pubsub.v1.Subscriber'
-    default_credentials_file = os.path.join(os.path.expanduser('~'),
-                                            '.credentials', 'platypush', 'google', 'pubsub.json')
+    default_credentials_file = os.path.join(
+        os.path.expanduser('~'), '.credentials', 'platypush', 'google', 'pubsub.json'
+    )
 
     def __init__(self, credentials_file: str = default_credentials_file, **kwargs):
         """
@@ -43,13 +37,15 @@ class GooglePubsubPlugin(Plugin):
         self.project_id = self.get_project_id()
 
     def get_project_id(self):
-        credentials = json.load(open(self.credentials_file))
-        return credentials.get('project_id')
+        with open(self.credentials_file) as f:
+            return json.load(f).get('project_id')
 
     def get_credentials(self, audience: str):
-        # noinspection PyPackageRequirements
         from google.auth import jwt
-        return jwt.Credentials.from_service_account_file(self.credentials_file, audience=audience)
+
+        return jwt.Credentials.from_service_account_file(
+            self.credentials_file, audience=audience
+        )
 
     @action
     def send_message(self, topic: str, msg, **kwargs):
@@ -63,9 +59,7 @@ class GooglePubsubPlugin(Plugin):
         :param msg: Message to be sent. It can be a list, a dict, or a Message object
         :param kwargs: Extra arguments to be passed to .publish()
         """
-        # noinspection PyPackageRequirements
         from google.cloud import pubsub_v1
-        # noinspection PyPackageRequirements
         from google.api_core.exceptions import AlreadyExists
 
         credentials = self.get_credentials(self.publisher_audience)
@@ -79,9 +73,9 @@ class GooglePubsubPlugin(Plugin):
         except AlreadyExists:
             pass
 
-        if isinstance(msg, int) or isinstance(msg, float):
+        if isinstance(msg, (int, float)):
             msg = str(msg)
-        if isinstance(msg, dict) or isinstance(msg, list):
+        if isinstance(msg, (dict, list)):
             msg = json.dumps(msg)
         if isinstance(msg, str):
             msg = msg.encode()

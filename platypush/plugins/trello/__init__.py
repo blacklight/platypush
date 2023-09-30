@@ -4,14 +4,32 @@ from typing import Optional, Dict, List, Union
 
 # noinspection PyPackageRequirements
 import trello
+
 # noinspection PyPackageRequirements
 from trello.board import Board, List as List_
+
 # noinspection PyPackageRequirements
 from trello.exceptions import ResourceUnavailable
 
-from platypush.message.response.trello import TrelloBoard, TrelloBoardsResponse, TrelloCardsResponse, TrelloCard, \
-    TrelloAttachment, TrelloPreview, TrelloChecklist, TrelloChecklistItem, TrelloUser, TrelloComment, TrelloLabel, \
-    TrelloList, TrelloBoardResponse, TrelloListsResponse, TrelloMembersResponse, TrelloMember, TrelloCardResponse
+from platypush.message.response.trello import (
+    TrelloBoard,
+    TrelloBoardsResponse,
+    TrelloCardsResponse,
+    TrelloCard,
+    TrelloAttachment,
+    TrelloPreview,
+    TrelloChecklist,
+    TrelloChecklistItem,
+    TrelloUser,
+    TrelloComment,
+    TrelloLabel,
+    TrelloList,
+    TrelloBoardResponse,
+    TrelloListsResponse,
+    TrelloMembersResponse,
+    TrelloMember,
+    TrelloCardResponse,
+)
 
 from platypush.plugins import Plugin, action
 
@@ -20,17 +38,19 @@ class TrelloPlugin(Plugin):
     """
     Trello integration.
 
-    Requires:
-
-        * **py-trello** (``pip install py-trello``)
-
-    You'll also need a Trello API key. You can get it `here <https://trello.com/app-key>`.
+    You'll need a Trello API key. You can get it `here <https://trello.com/app-key>`.
     You'll also need an auth token if you want to view/change private resources. You can generate a permanent token
     linked to your account on
     https://trello.com/1/connect?key=<KEY>&name=platypush&response_type=token&expiration=never&scope=read,write
     """
 
-    def __init__(self, api_key: str, api_secret: Optional[str] = None, token: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        api_key: str,
+        api_secret: Optional[str] = None,
+        token: Optional[str] = None,
+        **kwargs
+    ):
         """
         :param api_key: Trello API key. You can get it `here <https://trello.com/app-key>`.
         :param api_secret: Trello API secret. You can get it `here <https://trello.com/app-key>`.
@@ -75,17 +95,19 @@ class TrelloPlugin(Plugin):
         """
         client = self._get_client()
 
-        return TrelloBoardsResponse([
-            TrelloBoard(
-                id=b.id,
-                name=b.name,
-                description=b.description,
-                url=b.url,
-                date_last_activity=b.date_last_activity,
-                closed=b.closed,
-            )
-            for b in client.list_boards(board_filter='all' if all else 'open')
-        ])
+        return TrelloBoardsResponse(
+            [
+                TrelloBoard(
+                    id=b.id,
+                    name=b.name,
+                    description=b.description,
+                    url=b.url,
+                    date_last_activity=b.date_last_activity,
+                    closed=b.closed,
+                )
+                for b in client.list_boards(board_filter='all' if all else 'open')
+            ]
+        )
 
     @action
     def get_board(self, board: str) -> TrelloBoardResponse:
@@ -105,9 +127,14 @@ class TrelloPlugin(Plugin):
                 description=board.description,
                 date_last_activity=board.date_last_activity,
                 lists=[
-                    TrelloList(id=ll.id, name=ll.name, closed=ll.closed, subscribed=ll.subscribed)
+                    TrelloList(
+                        id=ll.id,
+                        name=ll.name,
+                        closed=ll.closed,
+                        subscribed=ll.subscribed,
+                    )
                     for ll in board.list_lists()
-                ]
+                ],
             )
         )
 
@@ -181,10 +208,7 @@ class TrelloPlugin(Plugin):
         try:
             board.delete_label(label)
         except ResourceUnavailable:
-            labels = [
-                ll for ll in board.get_labels()
-                if ll.name == label
-            ]
+            labels = [ll for ll in board.get_labels() if ll.name == label]
 
             assert labels, 'No such label: {}'.format(label)
             label = labels[0].id
@@ -213,22 +237,26 @@ class TrelloPlugin(Plugin):
         board = self._get_board(board)
         board.remove_member(member_id)
 
-    def _get_members(self, board: str, only_admin: bool = False) -> TrelloMembersResponse:
+    def _get_members(
+        self, board: str, only_admin: bool = False
+    ) -> TrelloMembersResponse:
         board = self._get_board(board)
         members = board.admin_members() if only_admin else board.get_members()
 
-        return TrelloMembersResponse([
-            TrelloMember(
-                id=m.id,
-                full_name=m.full_name,
-                bio=m.bio,
-                url=m.url,
-                username=m.username,
-                initials=m.initials,
-                member_type=getattr(m, 'member_type') if hasattr(m, 'member_type') else None
-            )
-            for m in members
-        ])
+        return TrelloMembersResponse(
+            [
+                TrelloMember(
+                    id=m.id,
+                    full_name=m.full_name,
+                    bio=m.bio,
+                    url=m.url,
+                    username=m.username,
+                    initials=m.initials,
+                    member_type=getattr(m, 'member_type', None),
+                )
+                for m in members
+            ]
+        )
 
     @action
     def get_members(self, board: str) -> TrelloMembersResponse:
@@ -258,10 +286,14 @@ class TrelloPlugin(Plugin):
         """
 
         board = self._get_board(board)
-        return TrelloListsResponse([
-            TrelloList(id=ll.id, name=ll.name, closed=ll.closed, subscribed=ll.subscribed)
-            for ll in board.list_lists('all' if all else 'open')
-        ])
+        return TrelloListsResponse(
+            [
+                TrelloList(
+                    id=ll.id, name=ll.name, closed=ll.closed, subscribed=ll.subscribed
+                )
+                for ll in board.list_lists('all' if all else 'open')
+            ]
+        )
 
     @action
     def add_list(self, board: str, name: str, pos: Optional[int] = None):
@@ -388,10 +420,18 @@ class TrelloPlugin(Plugin):
 
     # noinspection PyShadowingBuiltins
     @action
-    def add_card(self, board: str, list: str, name: str, description: Optional[str] = None,
-                 position: Optional[int] = None, labels: Optional[List[str]] = None,
-                 due: Optional[Union[str, datetime.datetime]] = None, source: Optional[str] = None,
-                 assign: Optional[List[str]] = None) -> TrelloCardResponse:
+    def add_card(
+        self,
+        board: str,
+        list: str,
+        name: str,
+        description: Optional[str] = None,
+        position: Optional[int] = None,
+        labels: Optional[List[str]] = None,
+        due: Optional[Union[str, datetime.datetime]] = None,
+        source: Optional[str] = None,
+        assign: Optional[List[str]] = None,
+    ) -> TrelloCardResponse:
         """
         Add a card to a list.
 
@@ -409,42 +449,48 @@ class TrelloPlugin(Plugin):
 
         if labels:
             labels = [
-                ll for ll in list.board.get_labels()
+                ll
+                for ll in list.board.get_labels()
                 if ll.id in labels or ll.name in labels
             ]
 
-        card = list.add_card(name=name, desc=description, labels=labels, due=due, source=source, position=position,
-                             assign=assign)
+        card = list.add_card(
+            name=name,
+            desc=description,
+            labels=labels,
+            due=due,
+            source=source,
+            position=position,
+            assign=assign,
+        )
 
-        return TrelloCardResponse(TrelloCard(id=card.id,
-                                             name=card.name,
-                                             url=card.url,
-                                             closed=card.closed,
-                                             board=TrelloBoard(
-                                                 id=list.board.id,
-                                                 name=list.board.name,
-                                                 url=list.board.url,
-                                                 closed=list.board.closed,
-                                                 description=list.board.description,
-                                                 date_last_activity=list.board.date_last_activity
-                                             ),
-
-                                             is_due_complete=card.is_due_complete,
-                                             list=None,
-                                             comments=[],
-                                             labels=[
-                                                 TrelloLabel(
-                                                     id=lb.id,
-                                                     name=lb.name,
-                                                     color=lb.color
-                                                 )
-                                                 for lb in (card.labels or [])
-                                             ],
-                                             description=card.description,
-                                             due_date=card.due_date,
-                                             latest_card_move_date=card.latestCardMove_date,
-                                             date_last_activity=card.date_last_activity
-                                             ))
+        return TrelloCardResponse(
+            TrelloCard(
+                id=card.id,
+                name=card.name,
+                url=card.url,
+                closed=card.closed,
+                board=TrelloBoard(
+                    id=list.board.id,
+                    name=list.board.name,
+                    url=list.board.url,
+                    closed=list.board.closed,
+                    description=list.board.description,
+                    date_last_activity=list.board.date_last_activity,
+                ),
+                is_due_complete=card.is_due_complete,
+                list=None,
+                comments=[],
+                labels=[
+                    TrelloLabel(id=lb.id, name=lb.name, color=lb.color)
+                    for lb in (card.labels or [])
+                ],
+                description=card.description,
+                due_date=card.due_date,
+                latest_card_move_date=card.latestCardMove_date,
+                date_last_activity=card.date_last_activity,
+            )
+        )
 
     @action
     def delete_card(self, card_id: str):
@@ -480,7 +526,13 @@ class TrelloPlugin(Plugin):
         card.set_closed(True)
 
     @action
-    def add_checklist(self, card_id: str, title: str, items: List[str], states: Optional[List[bool]] = None):
+    def add_checklist(
+        self,
+        card_id: str,
+        title: str,
+        items: List[str],
+        states: Optional[List[bool]] = None,
+    ):
         """
         Add a checklist to a card.
 
@@ -504,10 +556,7 @@ class TrelloPlugin(Plugin):
         client = self._get_client()
         card = client.get_card(card_id)
 
-        labels = [
-            ll for ll in card.board.get_labels()
-            if ll.name == label
-        ]
+        labels = [ll for ll in card.board.get_labels() if ll.name == label]
 
         assert labels, 'No such label: {}'.format(label)
         label = labels[0]
@@ -524,10 +573,7 @@ class TrelloPlugin(Plugin):
         client = self._get_client()
         card = client.get_card(card_id)
 
-        labels = [
-            ll for ll in card.board.get_labels()
-            if ll.name == label
-        ]
+        labels = [ll for ll in card.board.get_labels() if ll.name == label]
 
         assert labels, 'No such label: {}'.format(label)
         label = labels[0]
@@ -558,8 +604,14 @@ class TrelloPlugin(Plugin):
         card.unassign(member_id)
 
     @action
-    def attach_card(self, card_id: str, name: Optional[str] = None, mime_type: Optional[str] = None,
-                    file: Optional[str] = None, url: Optional[str] = None):
+    def attach_card(
+        self,
+        card_id: str,
+        name: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        file: Optional[str] = None,
+        url: Optional[str] = None,
+    ):
         """
         Add an attachment to a card. It can be either a local file or a remote URL.
 
@@ -777,7 +829,9 @@ class TrelloPlugin(Plugin):
 
     # noinspection PyShadowingBuiltins
     @action
-    def get_cards(self, board: str, list: Optional[str] = None, all: bool = False) -> TrelloCardsResponse:
+    def get_cards(
+        self, board: str, list: Optional[str] = None, all: bool = False
+    ) -> TrelloCardsResponse:
         """
         Get the list of cards on a board.
 
@@ -790,7 +844,9 @@ class TrelloPlugin(Plugin):
 
         board = self._get_board(board)
         lists: Dict[str, TrelloList] = {
-            ll.id: TrelloList(id=ll.id, name=ll.name, closed=ll.closed, subscribed=ll.subscribed)
+            ll.id: TrelloList(
+                id=ll.id, name=ll.name, closed=ll.closed, subscribed=ll.subscribed
+            )
             for ll in board.list_lists()
         }
 
@@ -807,102 +863,92 @@ class TrelloPlugin(Plugin):
                 list_id = ll[0].id
 
         # noinspection PyUnresolvedReferences
-        return TrelloCardsResponse([
-            TrelloCard(
-                id=c.id,
-                name=c.name,
-                url=c.url,
-                closed=c.closed,
-                list=lists.get(c.list_id),
-
-                board=TrelloBoard(
-                    id=c.board.id,
-                    name=c.board.name,
-                    url=c.board.url,
-                    closed=c.board.closed,
-                    description=c.board.description,
-                    date_last_activity=c.board.date_last_activity
-                ),
-
-                attachments=[
-                    TrelloAttachment(
-                        id=a.get('id'),
-                        bytes=a.get('bytes'),
-                        date=a.get('date'),
-                        edge_color=a.get('edgeColor'),
-                        id_member=a.get('idMember'),
-                        is_upload=a.get('isUpload'),
-                        name=a.get('name'),
-                        previews=[
-                            TrelloPreview(
-                                id=p.get('id'),
-                                scaled=p.get('scaled'),
-                                url=p.get('url'),
-                                bytes=p.get('bytes'),
-                                height=p.get('height'),
-                                width=p.get('width')
-                            )
-                            for p in a.get('previews', [])
-                        ],
-                        url=a.get('url'),
-                        mime_type=a.get('mimeType')
-                    )
-                    for a in c.attachments
-                ],
-
-                checklists=[
-                    TrelloChecklist(
-                        id=ch.id,
-                        name=ch.name,
-                        checklist_items=[
-                            TrelloChecklistItem(
-                                id=i.get('id'),
-                                name=i.get('name'),
-                                checked=i.get('checked')
-                            )
-                            for i in ch.items
-                        ]
-                    )
-                    for ch in c.checklists
-                ],
-
-                comments=[
-                    TrelloComment(
-                        id=co.get('id'),
-                        text=co.get('data', {}).get('text'),
-                        type=co.get('type'),
-                        date=co.get('date'),
-                        creator=TrelloUser(
-                            id=co.get('memberCreator', {}).get('id'),
-                            username=co.get('memberCreator', {}).get('username'),
-                            fullname=co.get('memberCreator', {}).get('fullName'),
-                            initials=co.get('memberCreator', {}).get('initials'),
-                            avatar_url=co.get('memberCreator', {}).get('avatarUrl')
+        return TrelloCardsResponse(
+            [
+                TrelloCard(
+                    id=c.id,
+                    name=c.name,
+                    url=c.url,
+                    closed=c.closed,
+                    list=lists.get(c.list_id),
+                    board=TrelloBoard(
+                        id=c.board.id,
+                        name=c.board.name,
+                        url=c.board.url,
+                        closed=c.board.closed,
+                        description=c.board.description,
+                        date_last_activity=c.board.date_last_activity,
+                    ),
+                    attachments=[
+                        TrelloAttachment(
+                            id=a.get('id'),
+                            bytes=a.get('bytes'),
+                            date=a.get('date'),
+                            edge_color=a.get('edgeColor'),
+                            id_member=a.get('idMember'),
+                            is_upload=a.get('isUpload'),
+                            name=a.get('name'),
+                            previews=[
+                                TrelloPreview(
+                                    id=p.get('id'),
+                                    scaled=p.get('scaled'),
+                                    url=p.get('url'),
+                                    bytes=p.get('bytes'),
+                                    height=p.get('height'),
+                                    width=p.get('width'),
+                                )
+                                for p in a.get('previews', [])
+                            ],
+                            url=a.get('url'),
+                            mime_type=a.get('mimeType'),
                         )
-                    )
-                    for co in c.comments
-                ],
-
-                labels=[
-                    TrelloLabel(
-                        id=lb.id,
-                        name=lb.name,
-                        color=lb.color
-                    )
-                    for lb in (c.labels or [])
-                ],
-
-                is_due_complete=c.is_due_complete,
-                due_date=c.due_date,
-                description=c.description,
-                latest_card_move_date=c.latestCardMove_date,
-                date_last_activity=c.date_last_activity
-            )
-            for c in board.all_cards() if (
-                (all or not c.closed) and
-                (not list or c.list_id == list_id)
-            )
-        ])
+                        for a in c.attachments
+                    ],
+                    checklists=[
+                        TrelloChecklist(
+                            id=ch.id,
+                            name=ch.name,
+                            checklist_items=[
+                                TrelloChecklistItem(
+                                    id=i.get('id'),
+                                    name=i.get('name'),
+                                    checked=i.get('checked'),
+                                )
+                                for i in ch.items
+                            ],
+                        )
+                        for ch in c.checklists
+                    ],
+                    comments=[
+                        TrelloComment(
+                            id=co.get('id'),
+                            text=co.get('data', {}).get('text'),
+                            type=co.get('type'),
+                            date=co.get('date'),
+                            creator=TrelloUser(
+                                id=co.get('memberCreator', {}).get('id'),
+                                username=co.get('memberCreator', {}).get('username'),
+                                fullname=co.get('memberCreator', {}).get('fullName'),
+                                initials=co.get('memberCreator', {}).get('initials'),
+                                avatar_url=co.get('memberCreator', {}).get('avatarUrl'),
+                            ),
+                        )
+                        for co in c.comments
+                    ],
+                    labels=[
+                        TrelloLabel(id=lb.id, name=lb.name, color=lb.color)
+                        for lb in (c.labels or [])
+                    ],
+                    is_due_complete=c.is_due_complete,
+                    due_date=c.due_date,
+                    description=c.description,
+                    latest_card_move_date=c.latestCardMove_date,
+                    date_last_activity=c.date_last_activity,
+                )
+                for c in board.all_cards()
+                if ((all or not c.closed) and (not list or c.list_id == list_id))
+            ]
+        )
 
 
 # vim:sw=4:ts=4:et:

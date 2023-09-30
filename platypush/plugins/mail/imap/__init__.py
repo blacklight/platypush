@@ -11,20 +11,27 @@ from platypush.plugins.mail import MailInPlugin, ServerInfo, Mail
 class MailImapPlugin(MailInPlugin):
     """
     Plugin to interact with a mail server over IMAP.
-
-    Requires:
-
-        * **imapclient** (``pip install imapclient``)
-
     """
 
     _default_port = 143
     _default_ssl_port = 993
 
-    def __init__(self, server: str, port: Optional[int] = None, username: Optional[str] = None,
-                 password: Optional[str] = None, password_cmd: Optional[str] = None, access_token: Optional[str] = None,
-                 oauth_mechanism: Optional[str] = 'XOAUTH2', oauth_vendor: Optional[str] = None, ssl: bool = False,
-                 keyfile: Optional[str] = None, certfile: Optional[str] = None, timeout: Optional[int] = 60, **kwargs):
+    def __init__(
+        self,
+        server: str,
+        port: Optional[int] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        password_cmd: Optional[str] = None,
+        access_token: Optional[str] = None,
+        oauth_mechanism: Optional[str] = 'XOAUTH2',
+        oauth_vendor: Optional[str] = None,
+        ssl: bool = False,
+        keyfile: Optional[str] = None,
+        certfile: Optional[str] = None,
+        timeout: Optional[int] = 60,
+        **kwargs
+    ):
         """
         :param server: Server name/address.
         :param port: Port (default: 143 for plain, 993 for SSL).
@@ -41,21 +48,53 @@ class MailImapPlugin(MailInPlugin):
         :param timeout: Server connect/read timeout in seconds (default: 60).
         """
         super().__init__(**kwargs)
-        self.server_info = self._get_server_info(server=server, port=port, username=username, password=password,
-                                                 password_cmd=password_cmd, ssl=ssl, keyfile=keyfile, certfile=certfile,
-                                                 access_token=access_token, oauth_mechanism=oauth_mechanism,
-                                                 oauth_vendor=oauth_vendor, timeout=timeout)
+        self.server_info = self._get_server_info(
+            server=server,
+            port=port,
+            username=username,
+            password=password,
+            password_cmd=password_cmd,
+            ssl=ssl,
+            keyfile=keyfile,
+            certfile=certfile,
+            access_token=access_token,
+            oauth_mechanism=oauth_mechanism,
+            oauth_vendor=oauth_vendor,
+            timeout=timeout,
+        )
 
-    def _get_server_info(self, server: Optional[str] = None, port: Optional[int] = None, username: Optional[str] = None,
-                         password: Optional[str] = None, password_cmd: Optional[str] = None,
-                         access_token: Optional[str] = None, oauth_mechanism: Optional[str] = None,
-                         oauth_vendor: Optional[str] = None, ssl: Optional[bool] = None, keyfile: Optional[str] = None,
-                         certfile: Optional[str] = None, timeout: Optional[int] = None, **kwargs) -> ServerInfo:
-        return super()._get_server_info(server=server, port=port, username=username, password=password,
-                                        password_cmd=password_cmd, ssl=ssl, keyfile=keyfile, certfile=certfile,
-                                        default_port=self._default_port, default_ssl_port=self._default_ssl_port,
-                                        access_token=access_token, oauth_mechanism=oauth_mechanism,
-                                        oauth_vendor=oauth_vendor, timeout=timeout)
+    def _get_server_info(
+        self,
+        server: Optional[str] = None,
+        port: Optional[int] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        password_cmd: Optional[str] = None,
+        access_token: Optional[str] = None,
+        oauth_mechanism: Optional[str] = None,
+        oauth_vendor: Optional[str] = None,
+        ssl: Optional[bool] = None,
+        keyfile: Optional[str] = None,
+        certfile: Optional[str] = None,
+        timeout: Optional[int] = None,
+        **kwargs
+    ) -> ServerInfo:
+        return super()._get_server_info(
+            server=server,
+            port=port,
+            username=username,
+            password=password,
+            password_cmd=password_cmd,
+            ssl=ssl,
+            keyfile=keyfile,
+            certfile=certfile,
+            default_port=self._default_port,
+            default_ssl_port=self._default_ssl_port,
+            access_token=access_token,
+            oauth_mechanism=oauth_mechanism,
+            oauth_vendor=oauth_vendor,
+            timeout=timeout,
+        )
 
     def connect(self, **connect_args) -> IMAPClient:
         info = self._get_server_info(**connect_args)
@@ -64,15 +103,22 @@ class MailImapPlugin(MailInPlugin):
 
         if info.ssl:
             import ssl
+
             context = ssl.create_default_context()
             context.load_cert_chain(certfile=info.certfile, keyfile=info.keyfile)
 
-        client = IMAPClient(host=info.server, port=info.port, ssl=info.ssl, ssl_context=context)
+        client = IMAPClient(
+            host=info.server, port=info.port, ssl=info.ssl, ssl_context=context
+        )
         if info.password:
             client.login(info.username, info.password)
         elif info.access_token:
-            client.oauth2_login(info.username, access_token=info.access_token, mech=info.oauth_mechanism,
-                                vendor=info.oauth_vendor)
+            client.oauth2_login(
+                info.username,
+                access_token=info.access_token,
+                mech=info.oauth_mechanism,
+                vendor=info.oauth_vendor,
+            )
 
         return client
 
@@ -81,16 +127,20 @@ class MailImapPlugin(MailInPlugin):
         folders = []
         for line in data:
             (flags), delimiter, mailbox_name = line
-            folders.append({
-                'name': mailbox_name,
-                'flags': [flag.decode() for flag in flags],
-                'delimiter': delimiter.decode(),
-            })
+            folders.append(
+                {
+                    'name': mailbox_name,
+                    'flags': [flag.decode() for flag in flags],
+                    'delimiter': delimiter.decode(),
+                }
+            )
 
         return folders
 
     @action
-    def get_folders(self, folder: str = '', pattern: str = '*', **connect_args) -> List[Dict[str, str]]:
+    def get_folders(
+        self, folder: str = '', pattern: str = '*', **connect_args
+    ) -> List[Dict[str, str]]:
         """
         Get the list of all the folders hosted on the server or those matching a pattern.
 
@@ -126,7 +176,9 @@ class MailImapPlugin(MailInPlugin):
         return self._get_folders(data)
 
     @action
-    def get_sub_folders(self, folder: str = '', pattern: str = '*', **connect_args) -> List[Dict[str, str]]:
+    def get_sub_folders(
+        self, folder: str = '', pattern: str = '*', **connect_args
+    ) -> List[Dict[str, str]]:
         """
         Get the list of all the sub-folders hosted on the server or those matching a pattern.
 
@@ -166,11 +218,15 @@ class MailImapPlugin(MailInPlugin):
         return {
             'name': imap_addr.name.decode() if imap_addr.name else None,
             'route': imap_addr.route.decode() if imap_addr.route else None,
-            'email': '{name}@{host}'.format(name=imap_addr.mailbox.decode(), host=imap_addr.host.decode())
+            'email': '{name}@{host}'.format(
+                name=imap_addr.mailbox.decode(), host=imap_addr.host.decode()
+            ),
         }
 
     @classmethod
-    def _parse_addresses(cls, addresses: Optional[Tuple[Address]] = None) -> Dict[str, Dict[str, str]]:
+    def _parse_addresses(
+        cls, addresses: Optional[Tuple[Address]] = None
+    ) -> Dict[str, Dict[str, str]]:
         ret = {}
         if addresses:
             for addr in addresses:
@@ -198,8 +254,12 @@ class MailImapPlugin(MailInPlugin):
             message['cc'] = cls._parse_addresses(envelope.cc)
             message['date'] = envelope.date
             message['from'] = cls._parse_addresses(envelope.from_)
-            message['message_id'] = envelope.message_id.decode() if envelope.message_id else None
-            message['in_reply_to'] = envelope.in_reply_to.decode() if envelope.in_reply_to else None
+            message['message_id'] = (
+                envelope.message_id.decode() if envelope.message_id else None
+            )
+            message['in_reply_to'] = (
+                envelope.in_reply_to.decode() if envelope.in_reply_to else None
+            )
             message['reply_to'] = cls._parse_addresses(envelope.reply_to)
             message['sender'] = cls._parse_addresses(envelope.sender)
             message['subject'] = envelope.subject.decode() if envelope.subject else None
@@ -208,8 +268,13 @@ class MailImapPlugin(MailInPlugin):
         return Mail(**message)
 
     @action
-    def search(self, criteria: Union[str, List[str]] = 'ALL', folder: str = 'INBOX',
-               attributes: Optional[List[str]] = None, **connect_args) -> List[Mail]:
+    def search(
+        self,
+        criteria: Union[str, List[str]] = 'ALL',
+        folder: str = 'INBOX',
+        attributes: Optional[List[str]] = None,
+        **connect_args
+    ) -> List[Mail]:
         """
         Search for messages on the server that fit the specified criteria.
 
@@ -302,34 +367,48 @@ class MailImapPlugin(MailInPlugin):
                 data = client.fetch(list(ids), attributes)
 
         return [
-            self._parse_message(msg_id, data[msg_id])
-            for msg_id in sorted(data.keys())
+            self._parse_message(msg_id, data[msg_id]) for msg_id in sorted(data.keys())
         ]
 
     @action
-    def search_unseen_messages(self, folder: str = 'INBOX', **connect_args) -> List[Mail]:
+    def search_unseen_messages(
+        self, folder: str = 'INBOX', **connect_args
+    ) -> List[Mail]:
         """
         Shortcut for :meth:`.search` that returns only the unread messages.
         """
-        return self.search(criteria='UNSEEN', directory=folder, attributes=['ALL'], **connect_args)
+        return self.search(
+            criteria='UNSEEN', directory=folder, attributes=['ALL'], **connect_args
+        )
 
     @action
-    def search_flagged_messages(self, folder: str = 'INBOX', **connect_args) -> List[Mail]:
+    def search_flagged_messages(
+        self, folder: str = 'INBOX', **connect_args
+    ) -> List[Mail]:
         """
         Shortcut for :meth:`.search` that returns only the flagged/starred messages.
         """
-        return self.search(criteria='Flagged', directory=folder, attributes=['ALL'], **connect_args)
+        return self.search(
+            criteria='Flagged', directory=folder, attributes=['ALL'], **connect_args
+        )
 
     @action
-    def search_starred_messages(self, folder: str = 'INBOX', **connect_args) -> List[Mail]:
+    def search_starred_messages(
+        self, folder: str = 'INBOX', **connect_args
+    ) -> List[Mail]:
         """
         Shortcut for :meth:`.search` that returns only the flagged/starred messages.
         """
         return self.search_flagged_messages(folder, **connect_args)
 
     @action
-    def sort(self, folder: str = 'INBOX', sort_criteria: Union[str, List[str]] = 'ARRIVAL',
-             criteria: Union[str, List[str]] = 'ALL', **connect_args) -> List[int]:
+    def sort(
+        self,
+        folder: str = 'INBOX',
+        sort_criteria: Union[str, List[str]] = 'ARRIVAL',
+        criteria: Union[str, List[str]] = 'ALL',
+        **connect_args
+    ) -> List[int]:
         """
         Return a list of message ids from the currently selected folder, sorted by ``sort_criteria`` and optionally
         filtered by ``criteria``. Note that SORT is an extension to the IMAP4 standard so it may not be supported by
@@ -420,7 +499,13 @@ class MailImapPlugin(MailInPlugin):
         return [('\\' + flag).encode() for flag in flags]
 
     @action
-    def add_flags(self, messages: List[int], flags: Union[str, List[str]], folder: str = 'INBOX', **connect_args):
+    def add_flags(
+        self,
+        messages: List[int],
+        flags: Union[str, List[str]],
+        folder: str = 'INBOX',
+        **connect_args
+    ):
         """
         Add a set of flags to the specified set of message IDs.
 
@@ -441,7 +526,13 @@ class MailImapPlugin(MailInPlugin):
             client.add_flags(messages, self._convert_flags(flags))
 
     @action
-    def set_flags(self, messages: List[int], flags: Union[str, List[str]], folder: str = 'INBOX', **connect_args):
+    def set_flags(
+        self,
+        messages: List[int],
+        flags: Union[str, List[str]],
+        folder: str = 'INBOX',
+        **connect_args
+    ):
         """
         Set a set of flags to the specified set of message IDs.
 
@@ -462,7 +553,13 @@ class MailImapPlugin(MailInPlugin):
             client.set_flags(messages, self._convert_flags(flags))
 
     @action
-    def remove_flags(self, messages: List[int], flags: Union[str, List[str]], folder: str = 'INBOX', **connect_args):
+    def remove_flags(
+        self,
+        messages: List[int],
+        flags: Union[str, List[str]],
+        folder: str = 'INBOX',
+        **connect_args
+    ):
         """
         Remove a set of flags to the specified set of message IDs.
 
@@ -494,7 +591,9 @@ class MailImapPlugin(MailInPlugin):
         return self.add_flags(messages, ['Flagged'], folder=folder, **connect_args)
 
     @action
-    def unflag_messages(self, messages: List[int], folder: str = 'INBOX', **connect_args):
+    def unflag_messages(
+        self, messages: List[int], folder: str = 'INBOX', **connect_args
+    ):
         """
         Remove a flag/star from the specified set of message IDs.
 
@@ -527,7 +626,13 @@ class MailImapPlugin(MailInPlugin):
         return self.unflag_messages([message], folder=folder, **connect_args)
 
     @action
-    def delete_messages(self, messages: List[int], folder: str = 'INBOX', expunge: bool = True, **connect_args):
+    def delete_messages(
+        self,
+        messages: List[int],
+        folder: str = 'INBOX',
+        expunge: bool = True,
+        **connect_args
+    ):
         """
         Set a specified set of message IDs as deleted.
 
@@ -542,7 +647,9 @@ class MailImapPlugin(MailInPlugin):
             self.expunge_messages(folder=folder, messages=messages, **connect_args)
 
     @action
-    def undelete_messages(self, messages: List[int], folder: str = 'INBOX', **connect_args):
+    def undelete_messages(
+        self, messages: List[int], folder: str = 'INBOX', **connect_args
+    ):
         """
         Remove the ``Deleted`` flag from the specified set of message IDs.
 
@@ -553,7 +660,13 @@ class MailImapPlugin(MailInPlugin):
         return self.remove_flags(messages, ['Deleted'], folder=folder, **connect_args)
 
     @action
-    def copy_messages(self, messages: List[int], dest_folder: str, source_folder: str = 'INBOX', **connect_args):
+    def copy_messages(
+        self,
+        messages: List[int],
+        dest_folder: str,
+        source_folder: str = 'INBOX',
+        **connect_args
+    ):
         """
         Copy a set of messages IDs from a folder to another.
 
@@ -567,7 +680,13 @@ class MailImapPlugin(MailInPlugin):
             client.copy(messages, dest_folder)
 
     @action
-    def move_messages(self, messages: List[int], dest_folder: str, source_folder: str = 'INBOX', **connect_args):
+    def move_messages(
+        self,
+        messages: List[int],
+        dest_folder: str,
+        source_folder: str = 'INBOX',
+        **connect_args
+    ):
         """
         Move a set of messages IDs from a folder to another.
 
@@ -581,7 +700,12 @@ class MailImapPlugin(MailInPlugin):
             client.move(messages, dest_folder)
 
     @action
-    def expunge_messages(self, folder: str = 'INBOX', messages: Optional[List[int]] = None, **connect_args):
+    def expunge_messages(
+        self,
+        folder: str = 'INBOX',
+        messages: Optional[List[int]] = None,
+        **connect_args
+    ):
         """
         When ``messages`` is not set, remove all the messages from ``folder`` marked as ``Deleted``.
 

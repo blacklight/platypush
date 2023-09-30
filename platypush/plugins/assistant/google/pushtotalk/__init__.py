@@ -20,22 +20,6 @@ from platypush.plugins.assistant import AssistantPlugin
 class AssistantGooglePushtotalkPlugin(AssistantPlugin):
     """
     Plugin for the Google Assistant push-to-talk API.
-
-    Triggers:
-
-        * :class:`platypush.message.event.assistant.ConversationStartEvent`
-            when a new conversation starts
-        * :class:`platypush.message.event.assistant.SpeechRecognizedEvent`
-            when a new voice command is recognized
-        * :class:`platypush.message.event.assistant.ConversationEndEvent`
-            when a new conversation ends
-
-    Requires:
-
-        * **tenacity** (``pip install tenacity``)
-        * **google-assistant-sdk** (``pip install google-assistant-sdk[samples]``)
-        * **google-auth** (``pip install google-auth``)
-
     """
 
     api_endpoint = 'embeddedassistant.googleapis.com'

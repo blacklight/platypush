@@ -25,18 +25,6 @@ class AssistantEchoPlugin(AssistantPlugin):
         4. Log in to your Amazon account
         5. The required credentials will be stored to ~/.avs.json
 
-    Triggers:
-
-        * :class:`platypush.message.event.assistant.ConversationStartEvent`
-            when a new conversation starts
-        * :class:`platypush.message.event.assistant.SpeechRecognizedEvent`
-            when a new voice command is recognized
-        * :class:`platypush.message.event.assistant.ConversationEndEvent`
-            when a new conversation ends
-
-    Requires:
-
-        * **avs** (``pip install avs``)
     """
 
     def __init__(

@@ -15,17 +15,14 @@ import sys
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath("./_ext"))
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'Platypush'
-copyright = '2017-2021, Fabio Manganiello'
-author = 'Fabio Manganiello'
+copyright = '2017-2023, Fabio Manganiello'
+author = 'Fabio Manganiello <fabio@manganiello.tech>'
 
 # The short X.Y version
 version = ''
@@ -52,6 +49,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx_rtd_theme',
     'sphinx_marshmallow',
+    'add_dependencies',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -189,11 +187,6 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
-
-# -- Options for todo extension ----------------------------------------------
-
-# If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = True
 
 autodoc_default_options = {
     'members': True,

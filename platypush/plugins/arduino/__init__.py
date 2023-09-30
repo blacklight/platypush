@@ -58,17 +58,6 @@ class ArduinoPlugin(SensorPlugin):
     Download and flash the
     `Standard Firmata <https://github.com/firmata/arduino/blob/master/examples/StandardFirmata/StandardFirmata.ino>`_
     firmware to the Arduino in order to use this plugin.
-
-    Requires:
-
-        * **pyfirmata2** (``pip install pyfirmata2``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
     """
 
     def __init__(

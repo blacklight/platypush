@@ -27,16 +27,6 @@ def _variable() -> VariablePlugin:
 class RssPlugin(RunnablePlugin):
     """
     A plugin for parsing and subscribing to RSS feeds.
-
-    Triggers:
-
-        - :class:`platypush.message.event.rss.NewFeedEntryEvent` when a new entry is received on a subscribed feed.
-
-    Requires:
-
-        * **feedparser** (``pip install feedparser``)
-        * **defusedxml** (``pip install defusedxml``)
-
     """
 
     user_agent = (

@@ -26,16 +26,6 @@ class MusicTidalPlugin(RunnablePlugin):
     Upon the first login, the application will prompt you with a link to
     connect to your Tidal account. Once authorized, you should no longer be
     required to explicitly login.
-
-    Triggers:
-
-        * :class:`platypush.message.event.music.TidalPlaylistUpdatedEvent`: when a user playlist
-          is updated.
-
-    Requires:
-
-        * **tidalapi** (``pip install 'tidalapi >= 0.7.0'``)
-
     """
 
     _base_url = 'https://api.tidalhifi.com/v1/'

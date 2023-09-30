@@ -5,21 +5,30 @@ import time
 from platypush.context import get_bus
 from platypush.plugins import action
 from platypush.plugins.media import MediaPlugin, PlayerState
-from platypush.message.event.media import MediaPlayEvent, MediaPauseEvent, MediaStopEvent, \
-    MediaSeekEvent, MediaVolumeChangedEvent
+from platypush.message.event.media import (
+    MediaPlayEvent,
+    MediaPauseEvent,
+    MediaStopEvent,
+    MediaSeekEvent,
+    MediaVolumeChangedEvent,
+)
 
 
 class MediaKodiPlugin(MediaPlugin):
     """
     Plugin to interact with a Kodi media player instance
-
-    Requires:
-
-        * **kodi-json** (``pip install kodi-json``)
     """
 
     # noinspection HttpUrlsUsage
-    def __init__(self, host, http_port=8080, websocket_port=9090, username=None, password=None, **kwargs):
+    def __init__(
+        self,
+        host,
+        http_port=8080,
+        websocket_port=9090,
+        username=None,
+        password=None,
+        **kwargs,
+    ):
         """
         :param host: Kodi host name or IP
         :type host: str
@@ -79,14 +88,18 @@ class MediaKodiPlugin(MediaPlugin):
             try:
                 import websocket
             except ImportError:
-                self.logger.warning('websocket-client is not installed, Kodi events will be disabled')
+                self.logger.warning(
+                    'websocket-client is not installed, Kodi events will be disabled'
+                )
                 return
 
             if not self._ws:
-                self._ws = websocket.WebSocketApp(self.websocket_url,
-                                                  on_message=self._on_ws_msg(),
-                                                  on_error=self._on_ws_error(),
-                                                  on_close=self._on_ws_close())
+                self._ws = websocket.WebSocketApp(
+                    self.websocket_url,
+                    on_message=self._on_ws_msg(),
+                    on_error=self._on_ws_error(),
+                    on_close=self._on_ws_close(),
+                )
 
                 self.logger.info('Kodi websocket interface for events started')
                 self._ws.run_forever()
@@ -107,20 +120,30 @@ class MediaKodiPlugin(MediaPlugin):
             if method == 'Player.OnPlay':
                 item = msg.get('params', {}).get('data', {}).get('item', {})
                 player = msg.get('params', {}).get('data', {}).get('player', {})
-                self._post_event(MediaPlayEvent, player_id=player.get('playerid'),
-                                 title=item.get('title'), media_type=item.get('type'))
+                self._post_event(
+                    MediaPlayEvent,
+                    player_id=player.get('playerid'),
+                    title=item.get('title'),
+                    media_type=item.get('type'),
+                )
             elif method == 'Player.OnPause':
                 item = msg.get('params', {}).get('data', {}).get('item', {})
                 player = msg.get('params', {}).get('data', {}).get('player', {})
-                self._post_event(MediaPauseEvent, player_id=player.get('playerid'),
-                                 title=item.get('title'), media_type=item.get('type'))
+                self._post_event(
+                    MediaPauseEvent,
+                    player_id=player.get('playerid'),
+                    title=item.get('title'),
+                    media_type=item.get('type'),
+                )
             elif method == 'Player.OnStop':
                 player = msg.get('params', {}).get('data', {}).get('player', {})
                 self._post_event(MediaStopEvent, player_id=player.get('playerid'))
             elif method == 'Player.OnSeek':
                 player = msg.get('params', {}).get('data', {}).get('player', {})
                 position = self._time_obj_to_pos(player.get('seekoffset'))
-                self._post_event(MediaSeekEvent, position=position, player_id=player.get('playerid'))
+                self._post_event(
+                    MediaSeekEvent, position=position, player_id=player.get('playerid')
+                )
             elif method == 'Application.OnVolumeChanged':
                 volume = msg.get('params', {}).get('data', {}).get('volume')
                 self._post_event(MediaVolumeChangedEvent, volume=volume)
@@ -131,6 +154,7 @@ class MediaKodiPlugin(MediaPlugin):
         def hndl(*args):
             error = args[1] if len(args) > 1 else args[0]
             self.logger.warning("Kodi websocket connection error: {}".format(error))
+
         return hndl
 
     def _on_ws_close(self):
@@ -160,8 +184,15 @@ class MediaKodiPlugin(MediaPlugin):
             try:
                 resource = self.get_youtube_url(youtube_id).output
             except Exception as e:
-                self.logger.warning('youtube-dl error, falling back to Kodi YouTube plugin: {}'.format(str(e)))
-                resource = 'plugin://plugin.video.youtube/?action=play_video&videoid=' + youtube_id
+                self.logger.warning(
+                    'youtube-dl error, falling back to Kodi YouTube plugin: {}'.format(
+                        str(e)
+                    )
+                )
+                resource = (
+                    'plugin://plugin.video.youtube/?action=play_video&videoid='
+                    + youtube_id
+                )
 
         if resource.startswith('file://'):
             resource = resource[7:]
@@ -295,27 +326,38 @@ class MediaKodiPlugin(MediaPlugin):
 
     @action
     def get_volume(self, *args, **kwargs):
-        result = self._get_kodi().Application.GetProperties(
-            properties=['volume'])
+        result = self._get_kodi().Application.GetProperties(properties=['volume'])
 
         return result.get('result'), result.get('error')
 
     @action
     def volup(self, step=10.0, *args, **kwargs):
-        """ Volume up (default: +10%) """
-        volume = self._get_kodi().Application.GetProperties(
-            properties=['volume']).get('result', {}).get('volume')
+        """Volume up (default: +10%)"""
+        volume = (
+            self._get_kodi()
+            .Application.GetProperties(properties=['volume'])
+            .get('result', {})
+            .get('volume')
+        )
 
-        result = self._get_kodi().Application.SetVolume(volume=int(min(volume+step, 100)))
+        result = self._get_kodi().Application.SetVolume(
+            volume=int(min(volume + step, 100))
+        )
         return self._build_result(result)
 
     @action
     def voldown(self, step=10.0, *args, **kwargs):
-        """ Volume down (default: -10%) """
-        volume = self._get_kodi().Application.GetProperties(
-            properties=['volume']).get('result', {}).get('volume')
+        """Volume down (default: -10%)"""
+        volume = (
+            self._get_kodi()
+            .Application.GetProperties(properties=['volume'])
+            .get('result', {})
+            .get('volume')
+        )
 
-        result = self._get_kodi().Application.SetVolume(volume=int(max(volume-step, 0)))
+        result = self._get_kodi().Application.SetVolume(
+            volume=int(max(volume - step, 0))
+        )
         return self._build_result(result)
 
     @action
@@ -336,8 +378,12 @@ class MediaKodiPlugin(MediaPlugin):
         Mute/unmute the application
         """
 
-        muted = self._get_kodi().Application.GetProperties(
-            properties=['muted']).get('result', {}).get('muted')
+        muted = (
+            self._get_kodi()
+            .Application.GetProperties(properties=['muted'])
+            .get('result', {})
+            .get('muted')
+        )
 
         result = self._get_kodi().Application.SetMute(mute=(not muted))
         return self._build_result(result)
@@ -429,8 +475,12 @@ class MediaKodiPlugin(MediaPlugin):
         Set/unset fullscreen mode
         """
 
-        fullscreen = self._get_kodi().GUI.GetProperties(
-            properties=['fullscreen']).get('result', {}).get('fullscreen')
+        fullscreen = (
+            self._get_kodi()
+            .GUI.GetProperties(properties=['fullscreen'])
+            .get('result', {})
+            .get('fullscreen')
+        )
 
         result = self._get_kodi().GUI.SetFullscreen(fullscreen=(not fullscreen))
         return result.get('result'), result.get('error')
@@ -447,12 +497,16 @@ class MediaKodiPlugin(MediaPlugin):
             return None, 'No active players found'
 
         if shuffle is None:
-            shuffle = self._get_kodi().Player.GetProperties(
-                playerid=player_id,
-                properties=['shuffled']).get('result', {}).get('shuffled')
+            shuffle = (
+                self._get_kodi()
+                .Player.GetProperties(playerid=player_id, properties=['shuffled'])
+                .get('result', {})
+                .get('shuffled')
+            )
 
         result = self._get_kodi().Player.SetShuffle(
-           playerid=player_id,  shuffle=(not shuffle))
+            playerid=player_id, shuffle=(not shuffle)
+        )
         return result.get('result'), result.get('error')
 
     @action
@@ -467,21 +521,24 @@ class MediaKodiPlugin(MediaPlugin):
             return None, 'No active players found'
 
         if repeat is None:
-            repeat = self._get_kodi().Player.GetProperties(
-                playerid=player_id,
-                properties=['repeat']).get('result', {}).get('repeat')
+            repeat = (
+                self._get_kodi()
+                .Player.GetProperties(playerid=player_id, properties=['repeat'])
+                .get('result', {})
+                .get('repeat')
+            )
 
         result = self._get_kodi().Player.SetRepeat(
-            playerid=player_id,
-            repeat='off' if repeat in ('one','all') else 'off')
+            playerid=player_id, repeat='off' if repeat in ('one', 'all') else 'off'
+        )
 
         return result.get('result'), result.get('error')
 
     @staticmethod
     def _time_pos_to_obj(t):
-        hours = int(t/3600)
-        minutes = int((t - hours*3600)/60)
-        seconds = t - hours*3600 - minutes*60
+        hours = int(t / 3600)
+        minutes = int((t - hours * 3600) / 60)
+        seconds = t - hours * 3600 - minutes * 60
         milliseconds = t - int(t)
 
         return {
@@ -493,8 +550,12 @@ class MediaKodiPlugin(MediaPlugin):
 
     @staticmethod
     def _time_obj_to_pos(t):
-        return t.get('hours', 0) * 3600 + t.get('minutes', 0) * 60 + \
-               t.get('seconds', 0) + t.get('milliseconds', 0)/1000
+        return (
+            t.get('hours', 0) * 3600
+            + t.get('minutes', 0) * 60
+            + t.get('seconds', 0)
+            + t.get('milliseconds', 0) / 1000
+        )
 
     @action
     def seek(self, position, player_id=None, *args, **kwargs):
@@ -541,8 +602,12 @@ class MediaKodiPlugin(MediaPlugin):
         if player_id is None:
             return None, 'No active players found'
 
-        position = self._get_kodi().Player.GetProperties(
-            playerid=player_id, properties=['time']).get('result', {}).get('time', {})
+        position = (
+            self._get_kodi()
+            .Player.GetProperties(playerid=player_id, properties=['time'])
+            .get('result', {})
+            .get('time', {})
+        )
 
         position = self._time_obj_to_pos(position)
         return self.seek(player_id=player_id, position=position)
@@ -562,8 +627,12 @@ class MediaKodiPlugin(MediaPlugin):
         if player_id is None:
             return None, 'No active players found'
 
-        position = self._get_kodi().Player.GetProperties(
-            playerid=player_id, properties=['time']).get('result', {}).get('time', {})
+        position = (
+            self._get_kodi()
+            .Player.GetProperties(playerid=player_id, properties=['time'])
+            .get('result', {})
+            .get('time', {})
+        )
 
         position = self._time_obj_to_pos(position)
         return self.seek(player_id=player_id, position=position)
@@ -609,7 +678,9 @@ class MediaKodiPlugin(MediaPlugin):
             return ret
 
         ret['state'] = PlayerState.STOP.value
-        app = kodi.Application.GetProperties(properties=list(set(app_props.values()))).get('result', {})
+        app = kodi.Application.GetProperties(
+            properties=list(set(app_props.values()))
+        ).get('result', {})
 
         for status_prop, kodi_prop in app_props.items():
             ret[status_prop] = app.get(kodi_prop)
@@ -628,15 +699,20 @@ class MediaKodiPlugin(MediaPlugin):
         if player_id is None:
             return ret
 
-        media = kodi.Player.GetItem(playerid=player_id,
-                                    properties=list(set(media_props.values()))).get('result', {}).get('item', {})
+        media = (
+            kodi.Player.GetItem(
+                playerid=player_id, properties=list(set(media_props.values()))
+            )
+            .get('result', {})
+            .get('item', {})
+        )
 
         for status_prop, kodi_prop in media_props.items():
             ret[status_prop] = media.get(kodi_prop)
 
         player_info = kodi.Player.GetProperties(
-            playerid=player_id,
-            properties=list(set(player_props.values()))).get('result', {})
+            playerid=player_id, properties=list(set(player_props.values()))
+        ).get('result', {})
 
         for status_prop, kodi_prop in player_props.items():
             ret[status_prop] = player_info.get(kodi_prop)
@@ -647,7 +723,11 @@ class MediaKodiPlugin(MediaPlugin):
         if ret['position']:
             ret['position'] = self._time_obj_to_pos(ret['position'])
 
-        ret['state'] = PlayerState.PAUSE.value if player_info.get('speed', 0) == 0 else PlayerState.PLAY.value
+        ret['state'] = (
+            PlayerState.PAUSE.value
+            if player_info.get('speed', 0) == 0
+            else PlayerState.PLAY.value
+        )
         return ret
 
     def toggle_subtitles(self, *args, **kwargs):

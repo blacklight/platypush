@@ -34,18 +34,6 @@ from platypush.plugins import RunnablePlugin, action
 class LightHuePlugin(RunnablePlugin, LightEntityManager):
     """
     Philips Hue lights plugin.
-
-    Requires:
-
-        * **phue** (``pip install phue``)
-
-    Triggers:
-
-        - :class:`platypush.message.event.light.LightAnimationStartedEvent` when an animation is started.
-        - :class:`platypush.message.event.light.LightAnimationStoppedEvent` when an animation is stopped.
-        - :class:`platypush.message.event.light.LightStatusChangeEvent` when the status of a lightbulb
-          changes.
-
     """
 
     MAX_BRI = 255
@@ -88,7 +76,7 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         """
         :param bridge: Bridge address or hostname
         :param lights: Default lights to be controlled (default: all)
-        :param groups Default groups to be controlled (default: all)
+        :param groups: Default groups to be controlled (default: all)
         :param poll_interval: How often the plugin should check the bridge for light
             updates (default: 20 seconds).
         :param config_file: Path to the phue configuration file containing the
