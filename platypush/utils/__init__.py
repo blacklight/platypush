@@ -5,17 +5,17 @@ import hashlib
 import importlib
 import inspect
 import logging
-from multiprocessing import Lock as PLock
 import os
 import pathlib
 import re
 import signal
 import socket
 import ssl
-import urllib.request
-from threading import Lock as TLock
-from tempfile import gettempdir
 import time
+import urllib.request
+from multiprocessing import Lock as PLock
+from tempfile import gettempdir
+from threading import Lock as TLock
 from typing import Generator, Optional, Tuple, Type, Union
 
 from dateutil import parser, tz

@@ -28,7 +28,6 @@ from typing import (
 
 import yaml
 
-from platypush.message.event import Event
 from platypush.utils import get_src_root, is_root
 
 _available_package_manager = None
@@ -53,6 +52,28 @@ class BaseImage(Enum):
 
 
 @dataclass
+class OSMeta:
+    """
+    Operating system metadata.
+    """
+
+    name: str
+    description: str
+
+
+class OS(Enum):
+    """
+    Supported operating systems.
+    """
+
+    ALPINE = OSMeta('alpine', 'Alpine')
+    ARCH = OSMeta('arch', 'Arch Linux')
+    DEBIAN = OSMeta('debian', 'Debian')
+    FEDORA = OSMeta('fedora', 'Fedora')
+    UBUNTU = OSMeta('ubuntu', 'Ubuntu')
+
+
+@dataclass
 class PackageManager:
     """
     Representation of a package manager.
@@ -60,11 +81,13 @@ class PackageManager:
 
     executable: str
     """ The executable name. """
-    default_os: str
+    default_os: OS
     """
     The default distro whose configuration we should use if this package
     manager is detected.
     """
+    install_doc: str
+    """ The base install command that will be used in the generated documentation. """
     install: Sequence[str] = field(default_factory=tuple)
     """ The install command, as a sequence of strings. """
     uninstall: Sequence[str] = field(default_factory=tuple)
@@ -79,8 +102,8 @@ class PackageManager:
 
     def _get_installed(self) -> Sequence[str]:
         """
-        :return: The install context-aware list of installed packages.
-            It should only used within the context of :meth:`.get_installed`.
+        :return: The context-aware list of installed packages.
+            It should only be used within the context of :meth:`.get_installed`.
         """
 
         if os.environ.get('DOCKER_CTX'):
@@ -114,39 +137,56 @@ class PackageManagers(Enum):
 
     APK = PackageManager(
         executable='apk',
+        install_doc='apk add',
         install=('apk', 'add', '--update', '--no-interactive', '--no-cache'),
         uninstall=('apk', 'del', '--no-interactive'),
         list=('apk', 'list', '--installed'),
-        default_os='alpine',
-        parse_list_line=lambda line: re.sub(r'.*\s*\{(.+?)\}\s*.*', r'\1', line),
+        default_os=OS.ALPINE,
+        parse_list_line=lambda line: re.sub(r'.*\s*\{(.+?)}\s*.*', r'\1', line),
     )
 
     APT = PackageManager(
         executable='apt',
+        install_doc='apt install',
         install=('apt', 'install', '-y'),
         uninstall=('apt', 'remove', '-y'),
         list=('apt', 'list', '--installed'),
-        default_os='debian',
+        default_os=OS.DEBIAN,
         parse_list_line=lambda line: line.split('/')[0],
     )
 
     DNF = PackageManager(
         executable='dnf',
+        install_doc='yum install',
         install=('dnf', 'install', '-y'),
         uninstall=('dnf', 'remove', '-y'),
         list=('dnf', 'list', '--installed'),
-        default_os='fedora',
+        default_os=OS.FEDORA,
         parse_list_line=lambda line: re.split(r'\s+', line)[0].split('.')[0],
     )
 
     PACMAN = PackageManager(
         executable='pacman',
+        install_doc='pacman -S',
         install=('pacman', '-S', '--noconfirm', '--needed'),
         uninstall=('pacman', '-R', '--noconfirm'),
         list=('pacman', '-Q'),
-        default_os='arch',
+        default_os=OS.ARCH,
         parse_list_line=lambda line: line.split(' ')[0],
     )
+
+    @classmethod
+    def by_executable(cls, name: str) -> "PackageManagers":
+        """
+        :param name: The name of the package manager executable to get the
+            package manager for.
+        :return: The `PackageManager` object for the given executable.
+        """
+        pkg_manager = next(iter(pm for pm in cls if pm.value.executable == name), None)
+        if not pkg_manager:
+            raise ValueError(f'Unknown package manager: {name}')
+
+        return pkg_manager
 
     @classmethod
     def get_command(cls, name: str) -> Iterable[str]:
@@ -230,6 +270,8 @@ class Dependencies:
     """ The installation context - Docker, virtual environment or bare metal. """
     base_image: Optional[BaseImage] = None
     """ Base image used in case of Docker installations. """
+    by_pkg_manager: Dict[PackageManagers, Set[str]] = field(default_factory=dict)
+    """ All system dependencies, grouped by package manager. """
 
     @property
     def _is_venv(self) -> bool:
@@ -313,7 +355,7 @@ class Dependencies:
 
         return cls._parse_requirements_file(
             os.path.join(
-                cls._get_requirements_dir(), pkg_manager.value.default_os + '.txt'
+                cls._get_requirements_dir(), pkg_manager.value.default_os.name + '.txt'
             ),
             install_context,
         )
@@ -484,15 +526,17 @@ class Manifest(ABC):
                 deps.before += items
             elif key == 'after':
                 deps.after += items
-            elif self._pkg_manager and key == self._pkg_manager.value.executable:
-                deps.packages.update(items)
+            else:
+                deps.by_pkg_manager[PackageManagers.by_executable(key)] = set(items)
+                if self._pkg_manager and key == self._pkg_manager.value.executable:
+                    deps.packages.update(items)
 
         return deps
 
     @staticmethod
     def _init_events(
         events: Union[Iterable[str], Mapping[str, Optional[str]]]
-    ) -> Dict[Type[Event], str]:
+    ) -> Dict[Type, str]:
         evt_dict = events if isinstance(events, Mapping) else {e: None for e in events}
         ret = {}
 
