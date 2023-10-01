@@ -1,10 +1,41 @@
+from typing import Collection, Optional, Union
 from platypush.plugins import action
 from platypush.plugins.google import GooglePlugin
 
 
 class GoogleYoutubePlugin(GooglePlugin):
-    """
+    r"""
     YouTube plugin.
+
+    Requirements:
+
+        1. Create your Google application, if you don't have one already, on
+           the `developers console <https://console.developers.google.com>`_.
+
+        2. You may have to explicitly enable your user to use the app if the app
+           is created in test mode. Go to "OAuth consent screen" and add your user's
+           email address to the list of authorized users.
+
+        3. Select the scopes that you want to enable for your application, depending
+           on the integrations that you want to use.
+           See https://developers.google.com/identity/protocols/oauth2/scopes
+           for a list of the available scopes.
+
+        4. Click on "Credentials", then "Create credentials" -> "OAuth client ID".
+
+        5 Select "Desktop app", enter whichever name you like, and click "Create".
+
+        6. Click on the "Download JSON" icon next to your newly created client ID.
+
+        7. Generate a credentials file for the required scope:
+
+            .. code-block:: bash
+
+              mkdir -p <WORKDIR>/credentials/google
+              python -m platypush.plugins.google.credentials \
+                  'youtube.readonly' \
+                  <WORKDIR>/credentials/google/client_secret.json
+
     """
 
     scopes = ['https://www.googleapis.com/auth/youtube.readonly']
@@ -19,28 +50,28 @@ class GoogleYoutubePlugin(GooglePlugin):
         super().__init__(scopes=self.scopes, *args, **kwargs)
 
     @action
-    def search(self, parts=None, query='', types=None, max_results=25, **kwargs):
+    def search(
+        self,
+        parts: Optional[Union[str, Collection[str]]] = None,
+        query: str = '',
+        types: Optional[Union[str, Collection[str]]] = None,
+        max_results: int = 25,
+        **kwargs
+    ):
         """
         Search for YouTube content.
 
         :param parts: List of parts to get (default: snippet).
-            See the `Getting started - Part <https://developers.google.com/youtube/v3/getting-started#part>`_.
-        :type parts: list[str] or str
-
+            See the `Getting started - Part
+            <https://developers.google.com/youtube/v3/getting-started#part>`_.
         :param query: Query string (default: empty string)
-        :type query: str
-
         :param types: List of types to retrieve (default: video).
-            See the `Getting started - Resources <https://developers.google.com/youtube/v3/getting-started#resources>`_.
-        :type types: list[str] or str
-
+            See the `Getting started - Resources
+            <https://developers.google.com/youtube/v3/getting-started#resources>`_.
         :param max_results: Maximum number of items that will be returned (default: 25).
-        :type max_results: int
-
         :param kwargs: Any extra arguments that will be transparently passed to the YouTube API.
             See the `Getting started - parameters
             <https://developers.google.com/youtube/v3/docs/search/list#parameters>`_.
-
         :return: A list of YouTube resources.
             See the `Getting started - Resource
             <https://developers.google.com/youtube/v3/docs/search#resource>`_.

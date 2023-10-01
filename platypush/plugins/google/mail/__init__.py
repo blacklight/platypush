@@ -15,8 +15,38 @@ from platypush.plugins.google import GooglePlugin
 
 
 class GoogleMailPlugin(GooglePlugin):
-    """
-    GMail plugin. It allows you to programmatically compose and (TODO) get emails
+    r"""
+    GMail plugin. It allows you to programmatically compose and (TODO) get emails.
+
+    To use this plugin:
+
+        1. Create your Google application, if you don't have one already, on
+           the `developers console <https://console.developers.google.com>`_.
+
+        2. You may have to explicitly enable your user to use the app if the app
+           is created in test mode. Go to "OAuth consent screen" and add your user's
+           email address to the list of authorized users.
+
+        3. Select the scopes that you want to enable for your application, depending
+           on the integrations that you want to use.
+           See https://developers.google.com/identity/protocols/oauth2/scopes
+           for a list of the available scopes.
+
+        4. Click on "Credentials", then "Create credentials" -> "OAuth client ID".
+
+        5 Select "Desktop app", enter whichever name you like, and click "Create".
+
+        6. Click on the "Download JSON" icon next to your newly created client ID.
+
+        7. Generate a credentials file for the required scope:
+
+            .. code-block:: bash
+
+              mkdir -p <WORKDIR>/credentials/google
+              python -m platypush.plugins.google.credentials \
+                  'gmail.modify' \
+                  <WORKDIR>/credentials/google/client_secret.json
+
     """
 
     scopes = ['https://www.googleapis.com/auth/gmail.modify']
@@ -64,8 +94,7 @@ class GoogleMailPlugin(GooglePlugin):
                     content = fp.read()
 
                 if main_type == 'text':
-                    # noinspection PyUnresolvedReferences
-                    msg = mimetypes.MIMEText(content, _subtype=sub_type)
+                    msg = MIMEText(str(content), _subtype=sub_type)
                 elif main_type == 'image':
                     msg = MIMEImage(content, _subtype=sub_type)
                 elif main_type == 'audio':

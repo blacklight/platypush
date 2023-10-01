@@ -3,8 +3,45 @@ from platypush.plugins.google import GooglePlugin
 
 
 class GoogleFitPlugin(GooglePlugin):
-    """
+    r"""
     Google Fit plugin.
+
+    In order to use this plugin:
+
+        1. Create your Google application, if you don't have one already, on
+           the `developers console <https://console.developers.google.com>`_.
+
+        2. You may have to explicitly enable your user to use the app if the app
+           is created in test mode. Go to "OAuth consent screen" and add your user's
+           email address to the list of authorized users.
+
+        3. Select the scopes that you want to enable for your application, depending
+           on the integrations that you want to use.
+           See https://developers.google.com/identity/protocols/oauth2/scopes
+           for a list of the available scopes.
+
+        4. Click on "Credentials", then "Create credentials" -> "OAuth client ID".
+
+        5 Select "Desktop app", enter whichever name you like, and click "Create".
+
+        6. Click on the "Download JSON" icon next to your newly created client ID.
+
+        7. Generate a credentials file for the required scope:
+
+            .. code-block:: bash
+
+              $ mkdir -p <WORKDIR>/credentials/google
+              $ roles="
+              fitness.activity.read,
+              fitness.body.read,
+              fitness.body_temperature.read,
+              fitness.heart_rate.read,
+              fitness.sleep.read,
+              fitness.location.read
+              "
+              $ python -m platypush.plugins.google.credentials "$roles" \
+                  <WORKDIR>/credentials/google/client_secret.json
+
     """
 
     scopes = [

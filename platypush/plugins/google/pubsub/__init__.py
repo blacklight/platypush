@@ -9,15 +9,18 @@ class GooglePubsubPlugin(Plugin):
     Send messages over a Google pub/sub instance.
     You'll need a Google Cloud active project and a set of credentials to use this plugin:
 
-        1. Create a project on the `Google Cloud console <https://console.cloud.google.com/projectcreate>`_ if
-           you don't have one already.
+        1. Create a project on the `Google Cloud console
+        <https://console.cloud.google.com/projectcreate>`_ if you don't have
+        one already.
 
-        2. In the `Google Cloud API console <https://console.cloud.google.com/apis/credentials/serviceaccountkey>`_
-           create a new service account key. Select "New Service Account", choose the role "Pub/Sub Editor" and leave
-           the key type as JSON.
+        2. In the `Google Cloud API console
+        <https://console.cloud.google.com/apis/credentials/serviceaccountkey>`_
+        create a new service account key. Select "New Service Account", choose
+        the role "Pub/Sub Editor" and leave the key type as JSON.
 
-        3. Download the JSON service credentials file. By default platypush will look for the credentials file under
-           ~/.credentials/platypush/google/pubsub.json.
+        3. Download the JSON service credentials file. By default Platypush
+        will look for the credentials file under
+        ``~/.credentials/platypush/google/pubsub.json``.
 
     """
 
@@ -29,8 +32,8 @@ class GooglePubsubPlugin(Plugin):
 
     def __init__(self, credentials_file: str = default_credentials_file, **kwargs):
         """
-        :param credentials_file: Path to the JSON credentials file for Google pub/sub (default:
-            ~/.credentials/platypush/google/pubsub.json)
+        :param credentials_file: Path to the JSON credentials file for Google
+            pub/sub (default: ``~/.credentials/platypush/google/pubsub.json``)
         """
         super().__init__(**kwargs)
         self.credentials_file = credentials_file
@@ -52,10 +55,13 @@ class GooglePubsubPlugin(Plugin):
         """
         Sends a message to a topic
 
-        :param topic: Topic/channel where the message will be delivered. You can either specify the full topic name in
-            the format ``projects/<project_id>/topics/<topic_name>``, where ``<project_id>`` must be the ID of your
-            Google Pub/Sub project, or just ``<topic_name>``  - in such case it's implied that you refer to the
-            ``topic_name`` under the ``project_id`` of your service credentials.
+        :param topic: Topic/channel where the message will be delivered. You
+            can either specify the full topic name in the format
+            ``projects/<project_id>/topics/<topic_name>``, where
+            ``<project_id>`` must be the ID of your Google Pub/Sub project, or
+            just ``<topic_name>`` - in such case it's implied that you refer to
+            the ``topic_name`` under the ``project_id`` of your service
+            credentials.
         :param msg: Message to be sent. It can be a list, a dict, or a Message object
         :param kwargs: Extra arguments to be passed to .publish()
         """
@@ -65,8 +71,8 @@ class GooglePubsubPlugin(Plugin):
         credentials = self.get_credentials(self.publisher_audience)
         publisher = pubsub_v1.PublisherClient(credentials=credentials)
 
-        if not topic.startswith('projects/{}/topics/'.format(self.project_id)):
-            topic = 'projects/{}/topics/{}'.format(self.project_id, topic)
+        if not topic.startswith(f'projects/{self.project_id}/topics/'):
+            topic = f'projects/{self.project_id}/topics/{topic}'
 
         try:
             publisher.create_topic(topic)
