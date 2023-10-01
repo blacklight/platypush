@@ -84,8 +84,11 @@ steps:
     - git remote rm origin
     - git remote add origin git@git.platypush.tech:platypush/platypush.git
 
-    # Push to the `stable` branch
+    # Merge and push to the `stable` branch
+    - git checkout stable
+    - git rebase master
     - git push -u origin stable
+    - git checkout master
 
     # Restore the original git configuration
     - mv /tmp/git.config.orig $GIT_CONF
