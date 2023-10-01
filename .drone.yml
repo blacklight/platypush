@@ -38,6 +38,63 @@ steps:
     - git push --all -v github
 
 ###
+### Synchronize the `stable` branch to the new release
+###
+
+- name: sync-stable-branch
+  image: alpine
+  environment:
+    SSH_PUBKEY:
+      from_secret: ssh_pubkey
+    SSH_PRIVKEY:
+      from_secret: ssh_privkey
+    PGP_KEY:
+      from_secret: pgp_key
+    PGP_KEY_ID:
+      from_secret: pgp_key_id
+
+  commands:
+    - apk add --update --no-cache git bash gnupg openssh
+
+    # Backup the original git configuration before changing attributes
+    - export GIT_CONF=$PWD/.git/config
+    - cp $GIT_CONF /tmp/git.config.orig
+    - git config --global --add safe.directory $PWD
+
+    # Install the SSH and PGP keys
+    - mkdir -p ~/.ssh
+    - |
+      cat <<EOF | gpg --import --armor
+      $PGP_KEY
+      EOF
+
+    - echo $SSH_PUBKEY > ~/.ssh/id_rsa.pub
+    - |
+      cat <<EOF > ~/.ssh/id_rsa
+      $SSH_PRIVKEY
+      EOF
+    - chmod 0600 ~/.ssh/id_rsa
+    - ssh-keyscan git.platypush.tech >> ~/.ssh/known_hosts 2>/dev/null
+
+    # Git configuration
+    - git config user.name "Platypush CI/CD Automation"
+    - git config user.email "admin@platypush.tech"
+    - git config commit.gpgsign true
+    - git config user.signingkey $PGP_KEY_ID
+    - git remote rm origin
+    - git remote add origin git@git.platypush.tech:platypush/platypush.git
+
+    # Push to the `stable` branch
+    - git push -u origin stable
+
+    # Restore the original git configuration
+    - mv /tmp/git.config.orig $GIT_CONF
+
+  when:
+    event:
+      - tag
+
+###
 ### Rebuild the docs
 ###
 
@@ -70,6 +127,9 @@ steps:
   when:
     event:
       - tag
+
+  depends_on:
+    - sync-stable-branch
 
 ###
 ### Run the tests
