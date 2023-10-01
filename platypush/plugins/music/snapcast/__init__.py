@@ -1,6 +1,7 @@
 import json
 import socket
 import threading
+from typing import Collection, Optional
 
 from platypush.config import Config
 from platypush.context import get_backend
@@ -9,7 +10,7 @@ from platypush.plugins import Plugin, action
 
 class MusicSnapcastPlugin(Plugin):
     """
-    Plugin to interact with a [Snapcast](https://github.com/badaix/snapcast)
+    Plugin to interact with a `Snapcast <https://github.com/badaix/snapcast>`_
     instance, control clients mute status, volume, playback etc.
 
     See https://github.com/badaix/snapcast/blob/master/doc/json_rpc_api/v2_0_0.md
@@ -19,15 +20,13 @@ class MusicSnapcastPlugin(Plugin):
     _DEFAULT_SNAPCAST_PORT = 1705
     _SOCKET_EOL = '\r\n'.encode()
 
-    def __init__(self, host='localhost', port=_DEFAULT_SNAPCAST_PORT, **kwargs):
+    def __init__(
+        self, host: str = 'localhost', port: int = _DEFAULT_SNAPCAST_PORT, **kwargs
+    ):
         """
         :param host: Default Snapcast server host (default: localhost)
-        :type host: str
-
         :param port: Default Snapcast server control port (default: 1705)
-        :type port: int
         """
-
         super().__init__(**kwargs)
 
         self.host = host
@@ -46,23 +45,24 @@ class MusicSnapcastPlugin(Plugin):
             self._latest_req_id += 1
             return self._latest_req_id
 
-    def _connect(self, host=None, port=None):
+    def _connect(self, host: Optional[str] = None, port: Optional[int] = None):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.logger.info('Connecting to Snapcast host {}:{}'.format(host, port))
+        self.logger.info('Connecting to Snapcast host %s:%d', host, port)
         sock.connect((host or self.host, port or self.port))
         return sock
 
     @classmethod
-    def _send(cls, sock, req):
+    def _send(cls, sock: socket.socket, req: dict):
         if isinstance(req, dict):
-            req = json.dumps(req)
+            r = json.dumps(req)
         if isinstance(req, str):
-            req = req.encode()
-        if not isinstance(req, bytes):
-            raise RuntimeError('Unsupported type {} for Snapcast request: {}'.
-                               format(type(req), req))
+            r = req.encode()
+        if not isinstance(r, bytes):
+            raise RuntimeError(
+                f'Unsupported type {type(req)} for Snapcast request: {req}'
+            )
 
-        sock.send(req + cls._SOCKET_EOL)
+        sock.send(r + cls._SOCKET_EOL)
 
     @classmethod
     def _recv(cls, sock):
@@ -71,133 +71,137 @@ class MusicSnapcastPlugin(Plugin):
             buf += sock.recv(1)
         return json.loads(buf.decode().strip()).get('result')
 
-    def _get_group(self, sock, group):
+    def _get_group(self, sock: socket.socket, group: str):
         for g in self._status(sock).get('groups', []):
             if group == g.get('id') or group == g.get('name'):
                 return g
 
-    def _get_client(self, sock, client):
+        return None
+
+    def _get_client(self, sock: socket.socket, client: str):
         for g in self._status(sock).get('groups', []):
             clients = g.get('clients', [])
 
             for c in clients:
-                if client == c.get('id') or \
-                        client == c.get('name') or \
-                        client == c.get('host', {}).get('name') or \
-                        client == c.get('host', {}).get('ip'):
+                if (
+                    client == c.get('id')
+                    or client == c.get('name')
+                    or client == c.get('host', {}).get('name')
+                    or client == c.get('host', {}).get('ip')
+                ):
                     c['group_id'] = g.get('id')
                     return c
 
-    def _status(self, sock):
+        return None
+
+    def _status(self, sock: socket.socket):
         request = {
             'id': self._get_req_id(),
             'jsonrpc': '2.0',
-            'method': 'Server.GetStatus'
+            'method': 'Server.GetStatus',
         }
 
-        # noinspection PyTypeChecker
         self._send(sock, request)
         return (self._recv(sock) or {}).get('server', {})
 
     @action
-    def status(self, host=None, port=None, client=None, group=None):
+    def status(
+        self,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        client: Optional[str] = None,
+        group: Optional[str] = None,
+    ):
         """
         Get the status either of a Snapcast server, client or group
 
         :param host: Snapcast server to query (default: default configured host)
-        :type host: str
-
         :param port: Snapcast server port (default: default configured port)
-        :type port: int
-
         :param client: Client ID or name (default: None)
-        :type client: str
-
         :param group: Group ID or name (default: None)
-        :type group: str
 
-        :returns: dict.
+        :returns: dict. Example:
 
-        Example::
+            .. code-block:: json
 
-            "output": {
-                "groups": [
-                    {
-                    "clients": [
+                "output": {
+                    "groups": [
                         {
-                        "config": {
-                            "instance": 1,
-                            "latency": 0,
-                            "name": "",
-                            "volume": {
-                            "muted": false,
-                            "percent": 96
+                        "clients": [
+                            {
+                            "config": {
+                                "instance": 1,
+                                "latency": 0,
+                                "name": "",
+                                "volume": {
+                                "muted": false,
+                                "percent": 96
+                                }
+                            },
+                            "connected": true,
+                            "host": {
+                                "arch": "x86_64",
+                                "ip": "YOUR_IP",
+                                "mac": "YOUR_MAC",
+                                "name": "YOUR_NAME",
+                                "os": "YOUR_OS"
+                            },
+                            "id": "YOUR_ID",
+                            "lastSeen": {
+                                "sec": 1546648311,
+                                "usec": 86011
+                            },
+                            "snapclient": {
+                                "name": "Snapclient",
+                                "protocolVersion": 2,
+                                "version": "0.15.0"
                             }
-                        },
-                        "connected": true,
-                        "host": {
-                            "arch": "x86_64",
-                            "ip": "YOUR_IP",
-                            "mac": "YOUR_MAC",
-                            "name": "YOUR_NAME",
-                            "os": "YOUR_OS"
-                        },
+                            }
+                        ],
                         "id": "YOUR_ID",
-                        "lastSeen": {
-                            "sec": 1546648311,
-                            "usec": 86011
-                        },
-                        "snapclient": {
-                            "name": "Snapclient",
-                            "protocolVersion": 2,
-                            "version": "0.15.0"
-                        }
+                        "muted": false,
+                        "name": "",
+                        "stream_id": "mopidy"
                         }
                     ],
-                    "id": "YOUR_ID",
-                    "muted": false,
-                    "name": "",
-                    "stream_id": "mopidy"
-                    }
-                ],
-                "server": {
-                    "host": {
-                    "arch": "armv7l",
-                    "ip": "",
-                    "mac": "",
-                    "name": "YOUR_NAME",
-                    "os": "YOUR_OS"
-                    },
-                    "snapserver": {
-                    "controlProtocolVersion": 1,
-                    "name": "Snapserver",
-                    "protocolVersion": 1,
-                    "version": "0.15.0"
-                    }
-                },
-                "streams": [
-                    {
-                        "id": "mopidy",
-                        "meta": {
-                            "STREAM": "mopidy"
+                    "server": {
+                        "host": {
+                        "arch": "armv7l",
+                        "ip": "",
+                        "mac": "",
+                        "name": "YOUR_NAME",
+                        "os": "YOUR_OS"
                         },
-                        "status": "playing",
-                        "uri": {
-                            "fragment": "",
-                            "host": "",
-                            "path": "/tmp/snapfifo",
-                            "query": {
-                            "buffer_ms": "20",
-                            "codec": "pcm",
-                            "name": "mopidy",
-                            "sampleformat": "48000:16:2"
-                            },
-                            "raw": "pipe:////tmp/snapfifo?buffer_ms=20&codec=pcm&name=mopidy&sampleformat=48000:16:2",
-                            "scheme": "pipe"
+                        "snapserver": {
+                        "controlProtocolVersion": 1,
+                        "name": "Snapserver",
+                        "protocolVersion": 1,
+                        "version": "0.15.0"
                         }
-                    }
-                ]
-            }
+                    },
+                    "streams": [
+                        {
+                            "id": "mopidy",
+                            "meta": {
+                                "STREAM": "mopidy"
+                            },
+                            "status": "playing",
+                            "uri": {
+                                "fragment": "",
+                                "host": "",
+                                "path": "/tmp/snapfifo",
+                                "query": {
+                                "buffer_ms": "20",
+                                "codec": "pcm",
+                                "name": "mopidy",
+                                "sampleformat": "48000:16:2"
+                                },
+                                "raw": "pipe:////tmp/fifo?buffer_ms=20&codec=pcm&name=mopidy&sampleformat=48000:16:2",
+                                "scheme": "pipe"
+                            }
+                        }
+                    ]
+                }
 
         """
 
@@ -213,33 +217,32 @@ class MusicSnapcastPlugin(Plugin):
             return self._status(sock)
         finally:
             try:
-                sock.close()
+                if sock:
+                    sock.close()
             except Exception as e:
-                self.logger.warning(f'Error on socket close: {e}')
+                self.logger.warning('Error on socket close: %s', e)
 
     @action
-    def mute(self, client=None, group=None, mute=None, host=None, port=None):
+    def mute(
+        self,
+        client: Optional[str] = None,
+        group: Optional[str] = None,
+        mute: Optional[bool] = None,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+    ):
         """
         Set the mute status of a connected client or group
 
         :param client: Client name or ID to mute
-        :type client: str
-
         :param group: Group ID to mute
-        :type group: str
-
         :param mute: Mute status. If not set, the mute status of the selected
             client/group will be toggled.
-        :type mute: bool
-
         :param host: Snapcast server to query (default: default configured host)
-        :type host: str
-
         :param port: Snapcast server port (default: default configured port)
-        :type port: int
         """
 
-        if not client and not group:
+        if not (client and group):
             raise RuntimeError('Please specify either a client or a group')
 
         sock = None
@@ -250,59 +253,62 @@ class MusicSnapcastPlugin(Plugin):
                 'id': self._get_req_id(),
                 'jsonrpc': '2.0',
                 'method': 'Group.SetMute' if group else 'Client.SetVolume',
-                'params': {}
+                'params': {},
             }
 
             if group:
-                group = self._get_group(sock, group)
-                cur_muted = group['muted']
-                request['params']['id'] = group['id']
+                g = self._get_group(sock, group)
+                assert g, f'No such group: {group}'
+                cur_muted = g['muted']
+                request['params']['id'] = g['id']
                 request['params']['mute'] = not cur_muted if mute is None else mute
-            else:
-                client = self._get_client(sock, client)
-                cur_muted = client['config']['volume']['muted']
-                request['params']['id'] = client['id']
+            elif client:
+                c = self._get_client(sock, client)
+                assert c, f'No such client: {client}'
+                cur_muted = c['config']['volume']['muted']
+                request['params']['id'] = c['id']
                 request['params']['volume'] = {}
-                request['params']['volume']['percent'] = client['config']['volume']['percent']
-                request['params']['volume']['muted'] = not cur_muted if mute is None else mute
+                request['params']['volume']['percent'] = c['config']['volume'][
+                    'percent'
+                ]
+                request['params']['volume']['muted'] = (
+                    not cur_muted if mute is None else mute
+                )
 
-            # noinspection PyTypeChecker
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
-                sock.close()
+                if sock:
+                    sock.close()
             except Exception as e:
-                self.logger.warning('Error on socket close', e)
+                self.logger.warning('Error on socket close: %s', e)
 
     @action
-    def volume(self, client, volume=None, delta=None, mute=None, host=None,
-               port=None):
+    def volume(
+        self,
+        client: str,
+        volume: Optional[int] = None,
+        delta: Optional[int] = None,
+        mute: Optional[bool] = None,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+    ):
         """
-        Set the volume of a connected client
+        Set the volume of a connected client.
 
         :param client: Client name or ID
-        :type client: str
-
         :param volume: Absolute volume to set between 0 and 100
-        :type volume: int
-
         :param delta: Relative volume change in percentage (e.g. +10 or -10)
-        :type delta: int
-
         :param mute: Set to true or false if you want to toggle the muted status
-        :type mute: bool
-
         :param host: Snapcast server (default: default configured host)
-        :type host: str
-
         :param port: Snapcast server port (default: default configured port)
-        :type port: int
         """
 
         if volume is None and delta is None and mute is None:
-            raise RuntimeError('Please specify either an absolute volume or ' +
-                               'relative delta')
+            raise RuntimeError(
+                'Please specify either an absolute volume or ' + 'relative delta'
+            )
 
         sock = None
 
@@ -312,56 +318,51 @@ class MusicSnapcastPlugin(Plugin):
                 'id': self._get_req_id(),
                 'jsonrpc': '2.0',
                 'method': 'Client.SetVolume',
-                'params': {}
+                'params': {},
             }
 
-            client = self._get_client(sock, client)
-            cur_volume = int(client['config']['volume']['percent'])
-            cur_mute = bool(client['config']['volume']['muted'])
+            c = self._get_client(sock, client)
+            assert c, f'No such client: {client}'
+            cur_volume = int(c['config']['volume']['percent'])
+            cur_mute = bool(c['config']['volume']['muted'])
 
             if volume is not None:
                 volume = int(volume)
             elif delta is not None:
                 volume = cur_volume + int(delta)
 
-            if volume is not None:
-                if volume > 100: volume = 100
-                if volume < 0: volume = 0
-            else:
-                volume = cur_volume
-
+            volume = max(0, min(100, volume)) if volume is not None else cur_volume
             if mute is None:
                 mute = cur_mute
 
-            request['params']['id'] = client['id']
+            request['params']['id'] = c['id']
             request['params']['volume'] = {}
             request['params']['volume']['percent'] = volume
             request['params']['volume']['muted'] = mute
-            # noinspection PyTypeChecker
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
-                sock.close()
+                if sock:
+                    sock.close()
             except Exception as e:
-                self.logger.warning('Error on socket close', e)
+                self.logger.warning('Error on socket close: %s', e)
 
     @action
-    def set_client_name(self, client, name, host=None, port=None):
+    def set_client_name(
+        self,
+        client: str,
+        name: str,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+    ):
         """
         Set/change the name of a connected client
 
         :param client: Current client name or ID to rename
-        :type client: str
-
         :param name: New name
-        :type name: str
-
         :param host: Snapcast server (default: default configured host)
-        :type host: str
-
         :param port: Snapcast server port (default: default configured port)
-        :type port: int
         """
 
         sock = None
@@ -372,37 +373,37 @@ class MusicSnapcastPlugin(Plugin):
                 'id': self._get_req_id(),
                 'jsonrpc': '2.0',
                 'method': 'Client.SetName',
-                'params': {}
+                'params': {},
             }
 
-            client = self._get_client(sock, client)
-            request['params']['id'] = client['id']
+            c = self._get_client(sock, client)
+            assert c, f'No such client: {client}'
+            request['params']['id'] = c['id']
             request['params']['name'] = name
-            # noinspection PyTypeChecker
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
-                sock.close()
+                if sock:
+                    sock.close()
             except Exception as e:
-                self.logger.warning('Error on socket close', e)
+                self.logger.warning('Error on socket close: %s', e)
 
     @action
-    def set_group_name(self, group, name, host=None, port=None):
+    def set_group_name(
+        self,
+        group: str,
+        name: str,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+    ):
         """
         Set/change the name of a group
 
         :param group: Group ID to rename
-        :type group: str
-
         :param name: New name
-        :type name: str
-
         :param host: Snapcast server (default: default configured host)
-        :type host: str
-
         :param port: Snapcast server port (default: default configured port)
-        :type port: int
         """
 
         sock = None
@@ -416,34 +417,33 @@ class MusicSnapcastPlugin(Plugin):
                 'params': {
                     'id': group,
                     'name': name,
-                }
+                },
             }
 
-            # noinspection PyTypeChecker
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
-                sock.close()
+                if sock:
+                    sock.close()
             except Exception as e:
-                self.logger.warning('Error on socket close', e)
+                self.logger.warning('Error on socket close: %s', e)
 
     @action
-    def set_latency(self, client, latency, host=None, port=None):
+    def set_latency(
+        self,
+        client: str,
+        latency: float,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+    ):
         """
         Set/change the latency of a connected client
 
         :param client: Client name or ID
-        :type client: str
-
         :param latency: New latency in milliseconds
-        :type latency: float
-
         :param host: Snapcast server (default: default configured host)
-        :type host: str
-
         :param port: Snapcast server port (default: default configured port)
-        :type port: int
         """
 
         sock = None
@@ -454,35 +454,31 @@ class MusicSnapcastPlugin(Plugin):
                 'id': self._get_req_id(),
                 'jsonrpc': '2.0',
                 'method': 'Client.SetLatency',
-                'params': {
-                    'latency': latency
-                }
+                'params': {'latency': latency},
             }
 
-            client = self._get_client(sock, client)
-            request['params']['id'] = client['id']
-            # noinspection PyTypeChecker
+            c = self._get_client(sock, client)
+            assert c, f'No such client: {client}'
+            request['params']['id'] = c['id']
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
-                sock.close()
+                if sock:
+                    sock.close()
             except Exception as e:
-                self.logger.warning('Error on socket close', e)
+                self.logger.warning('Error on socket close: %s', e)
 
     @action
-    def delete_client(self, client, host=None, port=None):
+    def delete_client(
+        self, client: str, host: Optional[str] = None, port: Optional[int] = None
+    ):
         """
         Delete a client from the Snapcast server
 
         :param client: Client name or ID
-        :type client: str
-
         :param host: Snapcast server (default: default configured host)
-        :type host: str
-
         :param port: Snapcast server port (default: default configured port)
-        :type port: int
         """
 
         sock = None
@@ -493,176 +489,188 @@ class MusicSnapcastPlugin(Plugin):
                 'id': self._get_req_id(),
                 'jsonrpc': '2.0',
                 'method': 'Server.DeleteClient',
-                'params': {}
+                'params': {},
             }
 
-            client = self._get_client(sock, client)
-            request['params']['id'] = client['id']
-            # noinspection PyTypeChecker
+            c = self._get_client(sock, client)
+            assert c, f'No such client: {client}'
+            request['params']['id'] = c['id']
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
-                sock.close()
+                if sock:
+                    sock.close()
             except Exception as e:
-                self.logger.warning('Error on socket close', e)
+                self.logger.warning('Error on socket close: %s', e)
 
     @action
-    def group_set_clients(self, group, clients, host=None, port=None):
+    def group_set_clients(
+        self,
+        group: str,
+        clients: Collection[str],
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+    ):
         """
         Sets the clients for a group on a Snapcast server
 
         :param group: Group name or ID
-        :type group: str
-
         :param clients: List of client names or IDs
-        :type clients: list[str]
-
         :param host: Snapcast server (default: default configured host)
-        :type host: str
-
         :param port: Snapcast server port (default: default configured port)
-        :type port: int
         """
 
         sock = None
 
         try:
             sock = self._connect(host or self.host, port or self.port)
-            group = self._get_group(sock, group)
+            g = self._get_group(sock, group)
+            assert g, f'No such group: {group}'
             request = {
                 'id': self._get_req_id(),
                 'jsonrpc': '2.0',
                 'method': 'Group.SetClients',
-                'params': {
-                    'id': group['id'],
-                    'clients': []
-                }
+                'params': {'id': g['id'], 'clients': []},
             }
 
             for client in clients:
-                client = self._get_client(sock, client)
-                request['params']['clients'].append(client['id'])
+                c = self._get_client(sock, client)
+                assert c, f'No such client: {client}'
+                request['params']['clients'].append(c['id'])
 
-            # noinspection PyTypeChecker
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
-                sock.close()
+                if sock:
+                    sock.close()
             except Exception as e:
-                self.logger.warning('Error on socket close', e)
+                self.logger.warning('Error on socket close: %s', e)
 
     @action
-    def group_set_stream(self, group, stream_id, host=None, port=None):
+    def group_set_stream(
+        self,
+        group: str,
+        stream_id: str,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+    ):
         """
         Sets the active stream for a group.
 
         :param group: Group name or ID
-        :type group: str
-
         :param stream_id: Stream ID
-        :type stream_id: str
-
         :param host: Snapcast server (default: default configured host)
-        :type host: str
-
         :param port: Snapcast server port (default: default configured port)
-        :type port: int
         """
 
         sock = None
 
         try:
             sock = self._connect(host or self.host, port or self.port)
-            group = self._get_group(sock, group)
+            g = self._get_group(sock, group)
+            assert g, f'No such group: {group}'
             request = {
                 'id': self._get_req_id(),
                 'jsonrpc': '2.0',
                 'method': 'Group.SetStream',
                 'params': {
-                    'id': group['id'],
+                    'id': g['id'],
                     'stream_id': stream_id,
-                }
+                },
             }
 
-            # noinspection PyTypeChecker
             self._send(sock, request)
             return self._recv(sock)
         finally:
             try:
-                sock.close()
+                if sock:
+                    sock.close()
             except Exception as e:
-                self.logger.warning('Error on socket close', e)
+                self.logger.warning('Error on socket close: %s', e)
 
     @action
     def get_backend_hosts(self):
         """
         :return: A dict with the Snapcast hosts configured on the backend
-            in the format host -> port
+            in the format ``host -> port``.
         """
 
-        hosts = {}
-        for i in range(len(self.backend_hosts)):
-            hosts[self.backend_hosts[i]] = self.backend_ports[i]
-        return hosts
+        return {
+            host: self.backend_ports[i] for i, host in enumerate(self.backend_hosts)
+        }
 
     @action
-    def get_playing_streams(self, exclude_local=False):
+    def get_playing_streams(self, exclude_local: bool = False):
         """
         Returns the remote streams configured in the `music.snapcast` backend
         that are currently active and unmuted.
 
         :param exclude_local: Exclude localhost connections (default: False)
-        :type exclude_local: bool
 
-        :returns: dict with the host->port mapping.
+        :returns: dict with the host->port mapping. Example:
 
-        Example::
+            .. code-block:: json
 
-            {
-                "hosts": {
-                    "server_1": 1705,
-                    "server_2": 1705,
-                    "server_3": 1705
+                {
+                    "hosts": {
+                        "server_1": 1705,
+                        "server_2": 1705,
+                        "server_3": 1705
+                    }
                 }
-            }
 
         """
 
-        backend_hosts = self.get_backend_hosts().output
+        backend_hosts: dict = self.get_backend_hosts().output  # type: ignore
         playing_hosts = {}
 
         def _worker(host, port):
             try:
-                if exclude_local and (host == 'localhost'
-                                      or host == Config.get('device_id')):
+                if exclude_local and (
+                    host == 'localhost' or host == Config.get('device_id')
+                ):
                     return
 
-                server_status = self.status(host=host, port=port).output
-                client_status = self.status(host=host, port=port,
-                                            client=Config.get('device_id')).output
+                server_status: dict = self.status(host=host, port=port).output  # type: ignore
+                client_status: dict = self.status(  # type: ignore
+                    host=host, port=port, client=Config.get('device_id')
+                ).output
 
                 if client_status.get('config', {}).get('volume', {}).get('muted'):
                     return
 
-                group = [g for g in server_status.get('groups', {})
-                         if g.get('id') == client_status.get('group_id')].pop(0)
+                group = next(
+                    iter(
+                        g
+                        for g in server_status.get('groups', {})
+                        if g.get('id') == client_status.get('group_id')
+                    )
+                )
 
                 if group.get('muted'):
                     return
 
-                stream = [s for s in server_status.get('streams')
-                          if s.get('id') == group.get('stream_id')].pop(0)
+                stream = next(
+                    iter(
+                        s
+                        for s in server_status.get('streams', {})
+                        if s.get('id') == group.get('stream_id')
+                    )
+                )
 
                 if stream.get('status') != 'playing':
                     return
 
                 playing_hosts[host] = port
             except Exception as e:
-                self.logger.warning(('Error while retrieving the status of ' +
-                                     'Snapcast host at {}:{}: {}').format(
-                    host, port, str(e)))
+                self.logger.warning(
+                    'Error while retrieving the status of Snapcast host at %s:%d: %s',
+                    host,
+                    port,
+                    e,
+                )
 
         workers = []
 
@@ -676,5 +684,6 @@ class MusicSnapcastPlugin(Plugin):
             w.join()
 
         return {'hosts': playing_hosts}
+
 
 # vim:sw=4:ts=4:et:

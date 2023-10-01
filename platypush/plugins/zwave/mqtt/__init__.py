@@ -79,10 +79,6 @@ class ZwaveMqttPlugin(
     This plugin allows you to manage a Z-Wave network over MQTT through
     `zwave-js-ui <https://github.com/zwave-js/zwave-js-ui>`_.
 
-    For historical reasons, it is advised to enable this plugin together
-    with the ``zwave.mqtt`` backend, or you may lose the ability to listen
-    to asynchronous events.
-
     Configuration required on the zwave-js-ui gateway:
 
         * Install the gateway following the instructions reported
