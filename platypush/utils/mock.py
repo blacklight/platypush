@@ -146,9 +146,9 @@ class MockFinder(MetaPathFinder):
     def find_spec(
         self,
         fullname: str,
-        path: Sequence[Optional[bytes]] | None,
+        path: Optional[Sequence[Optional[bytes]]] = None,
         target: Optional[ModuleType] = None,
-    ) -> ModuleSpec | None:
+    ) -> Optional[ModuleSpec]:
         for modname in self.modules:
             # check if fullname is (or is a descendant of) one of our targets
             if modname == fullname or fullname.startswith(modname + "."):
