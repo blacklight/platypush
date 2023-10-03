@@ -55,9 +55,27 @@
 # # If not specified, then one of the following will be used:
 # #
 # # - $XDG_DATA_HOME/platypush if the XDG_DATA_HOME environment variable is set.
+# # - /var/lib/platypush if the user is root.
 # # - $HOME/.local/share/platypush otherwise.
 #
 # workdir: ~/.local/share/platypush
+###
+
+### -----------------
+### Cache directory
+### -----------------
+
+###
+# # Note that the cache directory can also be specified at runtime using the
+# # --cachedir option.
+# #
+# # If not specified, then one of the following will be used:
+# #
+# # - $XDG_CACHE_DIR/platypush if the XDG_CACHE_DIR environment variable is set.
+# # - /var/cache/platypush if the user is root.
+# # - $HOME/.cache/platypush otherwise.
+#
+# cachedir: ~/.cache/platypush
 ###
 
 ### ----------------------

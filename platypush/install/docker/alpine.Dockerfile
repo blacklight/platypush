@@ -16,8 +16,10 @@ EXPOSE 8008
 
 VOLUME /etc/platypush
 VOLUME /var/lib/platypush
+VOLUME /var/cache/platypush
 
 CMD platypush \
   --start-redis \
   --config /etc/platypush/config.yaml \
-  --workdir /var/lib/platypush
+  --workdir /var/lib/platypush \
+  --cachedir /var/cache/platypush

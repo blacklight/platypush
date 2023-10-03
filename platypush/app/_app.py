@@ -42,6 +42,7 @@ class Application:
         config_file: Optional[str] = None,
         workdir: Optional[str] = None,
         logsdir: Optional[str] = None,
+        cachedir: Optional[str] = None,
         device_id: Optional[str] = None,
         pidfile: Optional[str] = None,
         requests_to_process: Optional[int] = None,
@@ -62,6 +63,8 @@ class Application:
             ``filename`` setting under the ``logging`` section of the
             configuration file is used. If not set, logging will be sent to
             stdout and stderr.
+        :param cachedir: Overrides the ``cachedir`` setting in the configuration
+            file (default: None).
         :param device_id: Override the device ID used to identify this
             instance. If not passed here, it is inferred from the configuration
             (device_id field). If not present there either, it is inferred from
@@ -106,6 +109,9 @@ class Application:
             self.config_file,
             device_id=device_id,
             workdir=os.path.abspath(os.path.expanduser(workdir)) if workdir else None,
+            cachedir=os.path.abspath(os.path.expanduser(cachedir))
+            if cachedir
+            else None,
             ctrl_sock=os.path.abspath(os.path.expanduser(ctrl_sock))
             if ctrl_sock
             else None,
@@ -206,6 +212,7 @@ class Application:
         return cls(
             config_file=opts.config,
             workdir=opts.workdir,
+            cachedir=opts.cachedir,
             logsdir=opts.logsdir,
             device_id=opts.device_id,
             pidfile=opts.pidfile,

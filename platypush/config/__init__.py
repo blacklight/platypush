@@ -56,17 +56,48 @@ class Config:
         'now': datetime.datetime.now,
     }
 
+    # Default working directory:
+    #  - $XDG_DATA_HOME/platypush if XDG_DATA_HOME is set
+    #  - /var/lib/platypush if the user is root
+    #  - $HOME/.local/share/platypush otherwise
     _workdir_location = os.path.join(
         *(
-            (os.environ['XDG_DATA_HOME'], 'platypush')
+            (os.environ['XDG_DATA_HOME'],)
             if os.environ.get('XDG_DATA_HOME')
-            else (os.path.expanduser('~'), '.local', 'share', 'platypush')
-        )
+            else (
+                (os.sep, 'var', 'lib')
+                if os.geteuid() == 0
+                else (os.path.expanduser('~'), '.local', 'share')
+            )
+        ),
+        'platypush',
+    )
+
+    # Default cache directory:
+    #  - $XDG_CACHE_DIR/platypush if XDG_CACHE_DIR is set
+    #  - /var/cache/platypush if the user is root
+    #  - $HOME/.cache/platypush otherwise
+    _cachedir_location = os.path.join(
+        *(
+            (os.environ['XDG_CACHE_DIR'],)
+            if os.environ.get('XDG_CACHE_DIR')
+            else (
+                (os.sep, 'var', 'cache')
+                if os.geteuid() == 0
+                else (os.path.expanduser('~'), '.cache')
+            )
+        ),
+        'platypush',
     )
 
     _included_files: Set[str] = set()
 
-    def __init__(self, cfgfile: Optional[str] = None, workdir: Optional[str] = None):
+    def __init__(
+        self,
+        cfgfile: Optional[str] = None,
+        workdir: Optional[str] = None,
+        cachedir: Optional[str] = None,
+    ):
         """
         Constructor. Always use the class as a singleton (i.e. through
         Config.init), you won't probably need to call the constructor directly
@@ -74,6 +105,7 @@ class Config:
         :param cfgfile: Config file path (default: retrieve the first available
             location in _cfgfile_locations).
         :param workdir: Overrides the default working directory.
+        :param cachedir: Overrides the default cache directory.
         """
 
         self.backends = {}
@@ -91,7 +123,7 @@ class Config:
         self._config = self._read_config_file(self.config_file)
 
         self._init_secrets()
-        self._init_dirs(workdir=workdir)
+        self._init_dirs(workdir=workdir, cachedir=cachedir)
         self._init_db()
         self._init_logging()
         self._init_device_id()
@@ -168,28 +200,31 @@ class Config:
             for k, v in self._config['environment'].items():
                 os.environ[k] = str(v)
 
-    def _init_dirs(self, workdir: Optional[str] = None):
+    def _init_workdir(self, workdir: Optional[str] = None):
         if workdir:
             self._config['workdir'] = workdir
         if not self._config.get('workdir'):
             self._config['workdir'] = self._workdir_location
 
-        self._config['workdir'] = os.path.expanduser(
-            os.path.expanduser(self._config['workdir'])
-        )
+        self._config['workdir'] = os.path.expanduser(self._config['workdir'])
         pathlib.Path(self._config['workdir']).mkdir(parents=True, exist_ok=True)
 
+    def _init_cachedir(self, cachedir: Optional[str] = None):
+        if cachedir:
+            self._config['cachedir'] = cachedir
+        if not self._config.get('cachedir'):
+            self._config['cachedir'] = self._cachedir_location
+
+        self._config['cachedir'] = os.path.expanduser(self._config['cachedir'])
+        pathlib.Path(self._config['cachedir']).mkdir(parents=True, exist_ok=True)
+
+    def _init_scripts_dir(self):
+        # Create the scripts directory if it doesn't exist
         if 'scripts_dir' not in self._config:
             self._config['scripts_dir'] = os.path.join(
                 os.path.dirname(self.config_file), 'scripts'
             )
         os.makedirs(self._config['scripts_dir'], mode=0o755, exist_ok=True)
-
-        if 'dashboards_dir' not in self._config:
-            self._config['dashboards_dir'] = os.path.join(
-                os.path.dirname(self.config_file), 'dashboards'
-            )
-        os.makedirs(self._config['dashboards_dir'], mode=0o755, exist_ok=True)
 
         # Create a default (empty) __init__.py in the scripts folder
         init_py = os.path.join(self._config['scripts_dir'], '__init__.py')
@@ -203,6 +238,19 @@ class Config:
             pathlib.Path(self._config['scripts_dir']).absolute().parent
         )
         sys.path = [scripts_parent_dir] + sys.path
+
+    def _init_dashboards_dir(self):
+        if 'dashboards_dir' not in self._config:
+            self._config['dashboards_dir'] = os.path.join(
+                os.path.dirname(self.config_file), 'dashboards'
+            )
+        os.makedirs(self._config['dashboards_dir'], mode=0o755, exist_ok=True)
+
+    def _init_dirs(self, workdir: Optional[str] = None, cachedir: Optional[str] = None):
+        self._init_workdir(workdir=workdir)
+        self._init_cachedir(cachedir=cachedir)
+        self._init_scripts_dir()
+        self._init_dashboards_dir()
 
     def _init_secrets(self):
         if 'token' in self._config:
@@ -425,6 +473,7 @@ class Config:
         cls,
         cfgfile: Optional[str] = None,
         workdir: Optional[str] = None,
+        cachedir: Optional[str] = None,
         force_reload: bool = False,
     ) -> "Config":
         """
@@ -432,7 +481,7 @@ class Config:
         """
         if force_reload or cls._instance is None:
             cfg_args = [cfgfile] if cfgfile else []
-            cls._instance = Config(*cfg_args, workdir=workdir)
+            cls._instance = Config(*cfg_args, workdir=workdir, cachedir=cachedir)
         return cls._instance
 
     @classmethod
@@ -496,6 +545,7 @@ class Config:
         cfgfile: Optional[str] = None,
         device_id: Optional[str] = None,
         workdir: Optional[str] = None,
+        cachedir: Optional[str] = None,
         ctrl_sock: Optional[str] = None,
         **_,
     ):
@@ -505,13 +555,18 @@ class Config:
         :param cfgfile: Path to the config file (default: _cfgfile_locations)
         :param device_id: Override the configured device_id.
         :param workdir: Override the configured working directory.
+        :param cachedir: Override the configured cache directory.
         :param ctrl_sock: Override the configured control socket.
         """
-        cfg = cls._get_instance(cfgfile, workdir=workdir, force_reload=True)
+        cfg = cls._get_instance(
+            cfgfile, workdir=workdir, cachedir=cachedir, force_reload=True
+        )
         if device_id:
             cfg.set('device_id', device_id)
         if workdir:
             cfg.set('workdir', workdir)
+        if cachedir:
+            cfg.set('cachedir', cachedir)
         if ctrl_sock:
             cfg.set('ctrl_sock', ctrl_sock)
 
@@ -523,6 +578,15 @@ class Config:
         :return: The path of the configured working directory.
         """
         workdir = cls._get_instance().get('workdir')
+        assert workdir
+        return workdir  # type: ignore
+
+    @classmethod
+    def get_cachedir(cls) -> str:
+        """
+        :return: The path of the configured cache directory.
+        """
+        workdir = cls._get_instance().get('cachedir')
         assert workdir
         return workdir  # type: ignore
 
