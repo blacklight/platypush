@@ -1,6 +1,6 @@
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, JSON, String
 
-from platypush.common.db import Base
+from platypush.common.db import is_defined
 
 from . import Entity
 from .devices import Device
@@ -8,7 +8,7 @@ from .sensors import NumericSensor, PercentSensor
 from .temperature import TemperatureSensor
 
 
-if 'cpu' not in Base.metadata:
+if not is_defined('cpu'):
 
     class Cpu(Entity):
         """
@@ -23,12 +23,13 @@ if 'cpu' not in Base.metadata:
 
         percent = Column(Float)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
 
 
-if 'cpu_info' not in Base.metadata:
+if not is_defined('cpu_info'):
 
     class CpuInfo(Entity):
         """
@@ -54,12 +55,13 @@ if 'cpu_info' not in Base.metadata:
         l2_cache_size = Column(Integer)
         l3_cache_size = Column(Integer)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
 
 
-if 'cpu_times' not in Base.metadata:
+if not is_defined('cpu_times'):
 
     class CpuTimes(Entity):
         """
@@ -72,12 +74,13 @@ if 'cpu_times' not in Base.metadata:
             Integer, ForeignKey(Entity.id, ondelete='CASCADE'), primary_key=True
         )
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
 
 
-if 'cpu_stats' not in Base.metadata:
+if not is_defined('cpu_stats'):
 
     class CpuStats(Entity):
         """
@@ -90,12 +93,13 @@ if 'cpu_stats' not in Base.metadata:
             Integer, ForeignKey(Entity.id, ondelete='CASCADE'), primary_key=True
         )
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
 
 
-if 'memory_stats' not in Base.metadata:
+if not is_defined('memory_stats'):
 
     class MemoryStats(Entity):
         """
@@ -119,12 +123,13 @@ if 'memory_stats' not in Base.metadata:
         shared = Column(Integer)
         percent = Column(Float)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
 
 
-if 'swap_stats' not in Base.metadata:
+if not is_defined('swap_stats'):
 
     class SwapStats(Entity):
         """
@@ -142,12 +147,13 @@ if 'swap_stats' not in Base.metadata:
         free = Column(Integer)
         percent = Column(Float)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
 
 
-if 'disk' not in Base.metadata:
+if not is_defined('disk'):
 
     class Disk(Entity):
         """
@@ -175,12 +181,13 @@ if 'disk' not in Base.metadata:
         write_time = Column(Float)
         busy_time = Column(Float)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
 
 
-if 'network_interface' not in Base.metadata:
+if not is_defined('network_interface'):
 
     class NetworkInterface(Device):
         """
@@ -207,12 +214,13 @@ if 'network_interface' not in Base.metadata:
         duplex = Column(String)
         flags = Column(JSON)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
 
 
-if 'system_temperature' not in Base.metadata:
+if not is_defined('system_temperature'):
 
     class SystemTemperature(TemperatureSensor):
         """
@@ -230,12 +238,13 @@ if 'system_temperature' not in Base.metadata:
         high = Column(Float)
         critical = Column(Float)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
 
 
-if 'system_fan' not in Base.metadata:
+if not is_defined('system_fan'):
 
     class SystemFan(NumericSensor):
         """
@@ -250,12 +259,13 @@ if 'system_fan' not in Base.metadata:
             primary_key=True,
         )
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
 
 
-if 'system_battery' not in Base.metadata:
+if not is_defined('system_battery'):
 
     class SystemBattery(PercentSensor):
         """
@@ -273,6 +283,7 @@ if 'system_battery' not in Base.metadata:
         seconds_left = Column(Float)
         power_plugged = Column(Boolean)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }

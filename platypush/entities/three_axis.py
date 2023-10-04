@@ -1,13 +1,13 @@
 from typing import Iterable, Mapping, Optional, Union
 from sqlalchemy import Column, Integer, ForeignKey
 
-from platypush.common.db import Base
+from platypush.common.db import is_defined
 from platypush.common.sensors import Numeric
 
 from .sensors import RawSensor
 
 
-if 'three_axis_sensor' not in Base.metadata:
+if not is_defined('three_axis_sensor'):
 
     class ThreeAxisSensor(RawSensor):
         """
@@ -20,6 +20,7 @@ if 'three_axis_sensor' not in Base.metadata:
             Integer, ForeignKey(RawSensor.id, ondelete='CASCADE'), primary_key=True
         )
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }

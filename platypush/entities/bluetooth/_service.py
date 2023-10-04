@@ -8,10 +8,10 @@ from sqlalchemy import (
     String,
 )
 
-from platypush.common.db import Base
+from platypush.common.db import is_defined
 from platypush.entities import Entity
 
-if 'bluetooth_service' not in Base.metadata:
+if not is_defined('bluetooth_service'):
 
     class BluetoothService(Entity):
         """
@@ -44,6 +44,7 @@ if 'bluetooth_service' not in Base.metadata:
         connected = Column(Boolean, default=False)
         """ Whether an active connection exists to this service. """
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }

@@ -30,7 +30,7 @@ from sqlalchemy.orm.exc import ObjectDeletedError
 
 import platypush
 from platypush.config import Config
-from platypush.common.db import Base
+from platypush.common.db import Base, is_defined
 from platypush.message import JSONAble, Message
 
 EntityRegistryType = Dict[str, Type['Entity']]
@@ -52,7 +52,7 @@ fail.
 logger = logging.getLogger(__name__)
 
 
-if 'entity' not in Base.metadata:
+if not is_defined('entity'):
 
     class Entity(Base):
         """

@@ -1,11 +1,11 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Float
 
-from platypush.common.db import Base
+from platypush.common.db import is_defined
 
 from .devices import Device
 
 
-if 'light' not in Base.metadata:
+if not is_defined('light'):
 
     class Light(Device):
         __tablename__ = 'light'
@@ -34,6 +34,7 @@ if 'light' not in Base.metadata:
         temperature_min = Column(Float)
         temperature_max = Column(Float)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
