@@ -368,7 +368,7 @@ class RssPlugin(RunnablePlugin):
                     responses[url] = response['content']
 
             responses = {
-                k: v for k, v in responses.items() if not isinstance(v, Exception)
+                k: v for k, v in responses.items() if v and not isinstance(v, Exception)
             }
 
             for url, response in responses.items():
