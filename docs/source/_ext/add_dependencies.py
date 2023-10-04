@@ -3,7 +3,6 @@ import os
 import re
 import sys
 import textwrap as tw
-from contextlib import contextmanager
 
 from sphinx.application import Sphinx
 
@@ -13,14 +12,15 @@ base_path = os.path.abspath(
 
 sys.path.insert(0, base_path)
 
-from platypush.utils import get_plugin_name_by_class  # noqa
-from platypush.utils.mock import mock  # noqa
-from platypush.utils.reflection import IntegrationMetadata, import_file  # noqa
+from platypush.common.reflection import Integration  # noqa
+from platypush.utils import get_plugin_name_by_class, import_file  # noqa
+from platypush.utils.mock import auto_mocks  # noqa
+from platypush.utils.mock.modules import mock_imports  # noqa
 
 
 class IntegrationEnricher:
     @staticmethod
-    def add_events(source: list[str], manifest: IntegrationMetadata, idx: int) -> int:
+    def add_events(source: list[str], manifest: Integration, idx: int) -> int:
         if not manifest.events:
             return idx
 
@@ -37,7 +37,7 @@ class IntegrationEnricher:
         return idx + 1
 
     @staticmethod
-    def add_actions(source: list[str], manifest: IntegrationMetadata, idx: int) -> int:
+    def add_actions(source: list[str], manifest: Integration, idx: int) -> int:
         if not (manifest.actions and manifest.cls):
             return idx
 
@@ -60,7 +60,7 @@ class IntegrationEnricher:
 
     @classmethod
     def add_install_deps(
-        cls, source: list[str], manifest: IntegrationMetadata, idx: int
+        cls, source: list[str], manifest: Integration, idx: int
     ) -> int:
         deps = manifest.deps
         parsed_deps = {
@@ -106,9 +106,7 @@ class IntegrationEnricher:
         return idx
 
     @classmethod
-    def add_description(
-        cls, source: list[str], manifest: IntegrationMetadata, idx: int
-    ) -> int:
+    def add_description(cls, source: list[str], manifest: Integration, idx: int) -> int:
         docs = (
             doc
             for doc in (
@@ -127,7 +125,7 @@ class IntegrationEnricher:
 
     @classmethod
     def add_conf_snippet(
-        cls, source: list[str], manifest: IntegrationMetadata, idx: int
+        cls, source: list[str], manifest: Integration, idx: int
     ) -> int:
         source.insert(
             idx,
@@ -163,8 +161,8 @@ class IntegrationEnricher:
         if not os.path.isfile(manifest_file):
             return
 
-        with mock_imports():
-            manifest = IntegrationMetadata.from_manifest(manifest_file)
+        with auto_mocks():
+            manifest = Integration.from_manifest(manifest_file)
             idx = self.add_description(src, manifest, idx=3)
             idx = self.add_conf_snippet(src, manifest, idx=idx)
             idx = self.add_install_deps(src, manifest, idx=idx)
@@ -173,14 +171,6 @@ class IntegrationEnricher:
 
         src.insert(idx, '\n\nModule reference\n----------------\n\n')
         source[0] = '\n'.join(src)
-
-
-@contextmanager
-def mock_imports():
-    conf_mod = import_file(os.path.join(base_path, 'docs', 'source', 'conf.py'))
-    mock_mods = getattr(conf_mod, 'autodoc_mock_imports', [])
-    with mock(*mock_mods):
-        yield
 
 
 def setup(app: Sphinx):

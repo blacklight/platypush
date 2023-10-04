@@ -1,97 +1,16 @@
-import inspect
 import re
 import textwrap as tw
 from contextlib import contextmanager
-from dataclasses import dataclass, field
-from enum import IntEnum
-from typing import (
-    Any,
-    Optional,
-    Iterable,
-    Type,
-    get_type_hints,
-    Callable,
-    Tuple,
-    Generator,
-    Dict,
-)
+from typing import Optional, Dict, Callable, Generator, Any
+
+from .._model.argument import Argument
+from .._model.returns import ReturnValue
+from .._serialize import Serializable
+from .context import ParseContext
+from .state import ParseState
 
 
-@dataclass
-class ReturnValue:
-    """
-    Represents the return value of an action.
-    """
-
-    doc: Optional[str] = None
-    type: Optional[Type] = None
-
-
-@dataclass
-class Parameter:
-    """
-    Represents an integration constructor/action parameter.
-    """
-
-    name: str
-    required: bool = False
-    doc: Optional[str] = None
-    type: Optional[Type] = None
-    default: Optional[str] = None
-
-
-class ParseState(IntEnum):
-    """
-    Parse state.
-    """
-
-    DOC = 0
-    PARAM = 1
-    TYPE = 2
-    RETURN = 3
-
-
-@dataclass
-class ParseContext:
-    """
-    Runtime parsing context.
-    """
-
-    obj: Callable
-    state: ParseState = ParseState.DOC
-    cur_param: Optional[str] = None
-    doc: Optional[str] = None
-    returns: ReturnValue = field(default_factory=ReturnValue)
-    parsed_params: dict[str, Parameter] = field(default_factory=dict)
-
-    def __post_init__(self):
-        annotations = getattr(self.obj, "__annotations__", {})
-        if annotations:
-            self.returns.type = annotations.get("return")
-
-    @property
-    def spec(self) -> inspect.FullArgSpec:
-        return inspect.getfullargspec(self.obj)
-
-    @property
-    def param_names(self) -> Iterable[str]:
-        return self.spec.args[1:]
-
-    @property
-    def param_defaults(self) -> Tuple[Any]:
-        defaults = self.spec.defaults or ()
-        return ((Any,) * (len(self.spec.args[1:]) - len(defaults))) + defaults
-
-    @property
-    def param_types(self) -> dict[str, Type]:
-        return get_type_hints(self.obj)
-
-    @property
-    def doc_lines(self) -> Iterable[str]:
-        return tw.dedent(inspect.getdoc(self.obj) or "").split("\n")
-
-
-class DocstringParser:
+class DocstringParser(Serializable):
     """
     Mixin for objects that can parse docstrings.
     """
@@ -105,13 +24,41 @@ class DocstringParser:
         self,
         name: str,
         doc: Optional[str] = None,
-        params: Optional[Dict[str, Parameter]] = None,
+        args: Optional[Dict[str, Argument]] = None,
+        has_varargs: bool = False,
+        has_kwargs: bool = False,
         returns: Optional[ReturnValue] = None,
     ):
         self.name = name
         self.doc = doc
-        self.params = params or {}
+        self.args = args or {}
+        self.has_varargs = has_varargs
+        self.has_kwargs = has_kwargs
         self.returns = returns
+
+    def to_dict(self) -> dict:
+        return {
+            "name": self.name,
+            "doc": self.doc,
+            "args": {k: v.to_dict() for k, v in self.args.items()},
+            "has_varargs": self.has_varargs,
+            "has_kwargs": self.has_kwargs,
+            "returns": self.returns.to_dict() if self.returns else None,
+        }
+
+    @staticmethod
+    def _norm_indent(text: Optional[str]) -> Optional[str]:
+        """
+        Normalize the indentation of a docstring.
+
+        :param text: Input docstring
+        :return: A representation of the docstring where all the leading spaces have been removed.
+        """
+        if not text:
+            return None
+
+        lines = text.split("\n")
+        return (lines[0] + "\n" + tw.dedent("\n".join(lines[1:]) or "")).strip()
 
     @classmethod
     @contextmanager
@@ -123,28 +70,15 @@ class DocstringParser:
         :return: The parsing context.
         """
 
-        def norm_indent(text: Optional[str]) -> Optional[str]:
-            """
-            Normalize the indentation of a docstring.
-
-            :param text: Input docstring
-            :return: A representation of the docstring where all the leading spaces have been removed.
-            """
-            if not text:
-                return None
-
-            lines = text.split("\n")
-            return (lines[0] + "\n" + tw.dedent("\n".join(lines[1:]) or "")).strip()
-
         ctx = ParseContext(obj)
         yield ctx
 
         # Normalize the parameters docstring indentation
         for param in ctx.parsed_params.values():
-            param.doc = norm_indent(param.doc)
+            param.doc = cls._norm_indent(param.doc)
 
         # Normalize the return docstring indentation
-        ctx.returns.doc = norm_indent(ctx.returns.doc)
+        ctx.returns.doc = cls._norm_indent(ctx.returns.doc)
 
     @staticmethod
     def _is_continuation_line(line: str) -> bool:
@@ -189,7 +123,7 @@ class DocstringParser:
             if ctx.cur_param in {ctx.spec.varkw, ctx.spec.varargs}:
                 return
 
-            ctx.parsed_params[ctx.cur_param] = Parameter(
+            ctx.parsed_params[ctx.cur_param] = Argument(
                 name=ctx.cur_param,
                 required=(
                     idx >= len(ctx.param_defaults) or ctx.param_defaults[idx] is Any
@@ -236,6 +170,8 @@ class DocstringParser:
         return cls(
             name=obj.__name__,
             doc=ctx.doc,
-            params=ctx.parsed_params,
+            args=ctx.parsed_params,
+            has_varargs=ctx.spec.varargs is not None,
+            has_kwargs=ctx.spec.varkw is not None,
             returns=ctx.returns,
         )

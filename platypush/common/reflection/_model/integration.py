@@ -4,49 +4,23 @@ import os
 import re
 import textwrap as tw
 from dataclasses import dataclass, field
-from importlib.machinery import SourceFileLoader
-from importlib.util import spec_from_loader, module_from_spec
-from typing import Optional, Type, Union, Callable, Dict, Set
+from typing import Type, Optional, Dict, Set
 
 from platypush.utils import (
     get_backend_class_by_name,
-    get_backend_name_by_class,
     get_plugin_class_by_name,
     get_plugin_name_by_class,
+    get_backend_name_by_class,
     get_decorators,
 )
 from platypush.utils.manifest import Manifest, ManifestType, Dependencies
-from platypush.utils.reflection._parser import DocstringParser, Parameter
 
-
-class Action(DocstringParser):
-    """
-    Represents an integration action.
-    """
-
-
-class Constructor(DocstringParser):
-    """
-    Represents an integration constructor.
-    """
-
-    @classmethod
-    def parse(cls, obj: Union[Type, Callable]) -> "Constructor":
-        """
-        Parse the parameters of a class constructor or action method.
-
-        :param obj: Base type of the object.
-        :return: The parsed parameters.
-        """
-        init = getattr(obj, "__init__", None)
-        if init and callable(init):
-            return super().parse(init)
-
-        return super().parse(obj)
+from .._serialize import Serializable
+from . import Constructor, Action, Argument
 
 
 @dataclass
-class IntegrationMetadata:
+class Integration(Serializable):
     """
     Represents the metadata of an integration (plugin or backend).
     """
@@ -65,8 +39,25 @@ class IntegrationMetadata:
         if not self._skip_manifest:
             self._init_manifest()
 
+    def to_dict(self) -> dict:
+        return {
+            "name": self.name,
+            "type": f'{self.type.__module__}.{self.type.__qualname__}',
+            "doc": self.doc,
+            "args": {
+                **(
+                    {name: arg.to_dict() for name, arg in self.constructor.args.items()}
+                    if self.constructor
+                    else {}
+                ),
+            },
+            "actions": {k: v.to_dict() for k, v in self.actions.items()},
+            "events": [f'{e.__module__}.{e.__qualname__}' for e in self.events],
+            "deps": self.deps.to_dict(),
+        }
+
     @staticmethod
-    def _merge_params(params: Dict[str, Parameter], new_params: Dict[str, Parameter]):
+    def _merge_params(params: Dict[str, Argument], new_params: Dict[str, Argument]):
         """
         Utility function to merge a new mapping of parameters into an existing one.
         """
@@ -104,7 +95,7 @@ class IntegrationMetadata:
                 actions[action_name].doc = action.doc
 
             # Merge the parameters
-            cls._merge_params(actions[action_name].params, action.params)
+            cls._merge_params(actions[action_name].args, action.args)
 
     @classmethod
     def _merge_events(cls, events: Set[Type], new_events: Set[Type]):
@@ -114,7 +105,7 @@ class IntegrationMetadata:
         events.update(new_events)
 
     @classmethod
-    def by_name(cls, name: str) -> "IntegrationMetadata":
+    def by_name(cls, name: str) -> "Integration":
         """
         :param name: Integration name.
         :return: A parsed Integration class given its type.
@@ -127,7 +118,7 @@ class IntegrationMetadata:
         return cls.by_type(type)
 
     @classmethod
-    def by_type(cls, type: Type, _skip_manifest: bool = False) -> "IntegrationMetadata":
+    def by_type(cls, type: Type, _skip_manifest: bool = False) -> "Integration":
         """
         :param type: Integration type (plugin or backend).
         :param _skip_manifest: Whether we should skip parsing the manifest file for this integration
@@ -167,7 +158,7 @@ class IntegrationMetadata:
                 p_obj = cls.by_type(p_type, _skip_manifest=True)
                 # Merge constructor parameters
                 if obj.constructor and p_obj.constructor:
-                    cls._merge_params(obj.constructor.params, p_obj.constructor.params)
+                    cls._merge_params(obj.constructor.args, p_obj.constructor.args)
 
                 # Merge actions
                 cls._merge_actions(obj.actions, p_obj.actions)
@@ -194,8 +185,24 @@ class IntegrationMetadata:
 
         return getter(".".join(self.manifest.package.split(".")[2:]))
 
+    @property
+    def base_type(self) -> Type:
+        """
+        :return: The base type of this integration, either :class:`platypush.backend.Backend` or
+            :class:`platypush.plugins.Plugin`.
+        """
+        from platypush.backend import Backend
+        from platypush.plugins import Plugin
+
+        if issubclass(self.cls, Plugin):
+            return Plugin
+        if issubclass(self.cls, Backend):
+            return Backend
+
+        raise RuntimeError(f"Unknown base type for {self.cls}")
+
     @classmethod
-    def from_manifest(cls, manifest_file: str) -> "IntegrationMetadata":
+    def from_manifest(cls, manifest_file: str) -> "Integration":
         """
         Create an `IntegrationMetadata` object from a manifest file.
 
@@ -302,27 +309,9 @@ class IntegrationMetadata:
                         else ""
                     )
                     + "\n"
-                    for name, param in self.constructor.params.items()
+                    for name, param in self.constructor.args.items()
                 )
-                if self.constructor and self.constructor.params
+                if self.constructor and self.constructor.args
                 else "    # No configuration required\n"
             )
         )
-
-
-def import_file(path: str, name: Optional[str] = None):
-    """
-    Import a Python file as a module, even if no __init__.py is
-    defined in the directory.
-
-    :param path: Path of the file to import.
-    :param name: Custom name for the imported module (default: same as the file's basename).
-    :return: The imported module.
-    """
-    name = name or re.split(r"\.py$", os.path.basename(path))[0]
-    loader = SourceFileLoader(name, os.path.expanduser(path))
-    mod_spec = spec_from_loader(name, loader)
-    assert mod_spec, f"Cannot create module specification for {path}"
-    mod = module_from_spec(mod_spec)
-    loader.exec_module(mod)
-    return mod

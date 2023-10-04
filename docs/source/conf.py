@@ -163,9 +163,9 @@ latex_documents = [
 man_pages = [(master_doc, 'platypush', 'platypush Documentation', [author], 1)]
 
 
-# -- Options for Texinfo output ----------------------------------------------
+# -- Options for TexInfo output ----------------------------------------------
 
-# Grouping the document tree into Texinfo files. List of tuples
+# Grouping the document tree into TexInfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
@@ -193,126 +193,25 @@ autodoc_default_options = {
     'show-inheritance': True,
 }
 
-autodoc_mock_imports = [
-    'gunicorn',
-    'googlesamples.assistant.grpc.audio_helpers',
-    'google.assistant.embedded',
-    'google.assistant.library',
-    'google.assistant.library.event',
-    'google.assistant.library.file_helpers',
-    'google.oauth2.credentials',
-    'oauth2client',
-    'apiclient',
-    'tenacity',
-    'smartcard',
-    'Leap',
-    'oauth2client',
-    'rtmidi',
-    'bluetooth',
-    'gevent.wsgi',
-    'Adafruit_IO',
-    'pyclip',
-    'pydbus',
-    'inputs',
-    'inotify',
-    'omxplayer',
-    'plexapi',
-    'cwiid',
-    'sounddevice',
-    'soundfile',
-    'numpy',
-    'cv2',
-    'nfc',
-    'ndef',
-    'bcrypt',
-    'google',
-    'feedparser',
-    'kafka',
-    'googlesamples',
-    'icalendar',
-    'httplib2',
-    'mpd',
-    'serial',
-    'pyHS100',
-    'grpc',
-    'envirophat',
-    'gps',
-    'picamera',
-    'pmw3901',
-    'PIL',
-    'croniter',
-    'pyaudio',
-    'avs',
-    'PyOBEX',
-    'PyOBEX.client',
-    'todoist',
-    'trello',
-    'telegram',
-    'telegram.ext',
-    'pyfirmata2',
-    'cups',
-    'graphyte',
-    'cpuinfo',
-    'psutil',
-    'openzwave',
-    'deepspeech',
-    'wave',
-    'pvporcupine ',
-    'pvcheetah',
-    'pyotp',
-    'linode_api4',
-    'pyzbar',
-    'tensorflow',
-    'keras',
-    'pandas',
-    'samsungtvws',
-    'paramiko',
-    'luma',
-    'zeroconf',
-    'dbus',
-    'gi',
-    'gi.repository',
-    'twilio',
-    'Adafruit_Python_DHT',
-    'RPi.GPIO',
-    'RPLCD',
-    'imapclient',
-    'pysmartthings',
-    'aiohttp',
-    'watchdog',
-    'pyngrok',
-    'irc',
-    'irc.bot',
-    'irc.strings',
-    'irc.client',
-    'irc.connection',
-    'irc.events',
-    'defusedxml',
-    'nio',
-    'aiofiles',
-    'aiofiles.os',
-    'async_lru',
-    'bleak',
-    'bluetooth_numbers',
-    'TheengsDecoder',
-    'simple_websocket',
-    'uvicorn',
-    'websockets',
-    'docutils',
-    'aioxmpp',
-]
-
 sys.path.insert(0, os.path.abspath('../..'))
 
+from platypush.utils.mock.modules import mock_imports  # noqa
 
-def skip(app, what, name, obj, skip, options):
+autodoc_mock_imports = [*mock_imports]
+
+
+# _ = app
+# __ = what
+# ___ = obj
+# ____ = options
+def _skip(_, __, name, ___, skip, ____):
     if name == "__init__":
         return False
     return skip
 
 
 def setup(app):
-    app.connect("autodoc-skip-member", skip)
+    app.connect("autodoc-skip-member", _skip)
 
 
 # vim:sw=4:ts=4:et:

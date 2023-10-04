@@ -273,6 +273,14 @@ class Dependencies:
     by_pkg_manager: Dict[PackageManagers, Set[str]] = field(default_factory=dict)
     """ All system dependencies, grouped by package manager. """
 
+    def to_dict(self):
+        return {
+            'before': self.before,
+            'packages': list(self.packages),
+            'pip': self.pip,
+            'after': self.after,
+        }
+
     @property
     def _is_venv(self) -> bool:
         """
@@ -516,6 +524,17 @@ class Manifest(ABC):
         """
         :return: The type of the manifest.
         """
+
+    @property
+    def file(self) -> str:
+        """
+        :return: The path to the manifest file.
+        """
+        return os.path.join(
+            get_src_root(),
+            *self.package.split('.')[1:],
+            'manifest.yaml',
+        )
 
     def _init_deps(self, install: Mapping[str, Iterable[str]]) -> Dependencies:
         deps = Dependencies()

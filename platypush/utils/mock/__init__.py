@@ -6,6 +6,8 @@ from importlib.machinery import ModuleSpec
 from types import ModuleType
 from typing import Any, Iterator, Sequence, Generator, Optional, List
 
+from .modules import mock_imports
+
 
 class MockObject:
     """
@@ -137,7 +139,7 @@ class MockModule(ModuleType):
 class MockFinder(MetaPathFinder):
     """A finder for mocking."""
 
-    def __init__(self, modules: Sequence[str]) -> None:
+    def __init__(self, modules: Sequence[str]) -> None:  # noqa
         super().__init__()
         self.modules = modules
         self.loader = MockLoader(self)
@@ -178,7 +180,7 @@ class MockLoader(Loader):
 
 
 @contextmanager
-def mock(*modules: str) -> Generator[None, None, None]:
+def mock(*mods: str) -> Generator[None, None, None]:
     """
     Insert mock modules during context::
 
@@ -188,10 +190,25 @@ def mock(*modules: str) -> Generator[None, None, None]:
     """
     finder = None
     try:
-        finder = MockFinder(modules)
+        finder = MockFinder(mods)
         sys.meta_path.insert(0, finder)
         yield
     finally:
         if finder:
             sys.meta_path.remove(finder)
             finder.invalidate_caches()
+
+
+@contextmanager
+def auto_mocks():
+    """
+    Automatically mock all the modules listed in ``mock_imports``.
+    """
+    with mock(*mock_imports):
+        yield
+
+
+__all__ = [
+    "auto_mocks",
+    "mock",
+]

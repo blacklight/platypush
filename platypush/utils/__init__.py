@@ -13,6 +13,8 @@ import socket
 import ssl
 import time
 import urllib.request
+from importlib.machinery import SourceFileLoader
+from importlib.util import spec_from_loader, module_from_spec
 from multiprocessing import Lock as PLock
 from tempfile import gettempdir
 from threading import Lock as TLock
@@ -86,7 +88,7 @@ def get_backend_module_by_name(backend_name):
         return None
 
 
-def get_plugin_class_by_name(plugin_name):
+def get_plugin_class_by_name(plugin_name) -> Optional[type]:
     """Gets the class of a plugin by name (e.g. "music.mpd" or "media.vlc")"""
 
     module = get_plugin_module_by_name(plugin_name)
@@ -123,7 +125,7 @@ def get_plugin_name_by_class(plugin) -> Optional[str]:
     return '.'.join(class_tokens)
 
 
-def get_backend_class_by_name(backend_name: str):
+def get_backend_class_by_name(backend_name: str) -> Optional[type]:
     """Gets the class of a backend by name (e.g. "backend.http" or "backend.mqtt")"""
 
     module = get_backend_module_by_name(backend_name)
@@ -683,6 +685,24 @@ def get_message_response(msg):
         response = None
 
     return response
+
+
+def import_file(path: str, name: Optional[str] = None):
+    """
+    Import a Python file as a module, even if no __init__.py is
+    defined in the directory.
+
+    :param path: Path of the file to import.
+    :param name: Custom name for the imported module (default: same as the file's basename).
+    :return: The imported module.
+    """
+    name = name or re.split(r"\.py$", os.path.basename(path))[0]
+    loader = SourceFileLoader(name, os.path.expanduser(path))
+    mod_spec = spec_from_loader(name, loader)
+    assert mod_spec, f"Cannot create module specification for {path}"
+    mod = module_from_spec(mod_spec)
+    loader.exec_module(mod)
+    return mod
 
 
 # vim:sw=4:ts=4:et:

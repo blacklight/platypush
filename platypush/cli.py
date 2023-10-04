@@ -33,6 +33,14 @@ def parse_cmdline(args: Sequence[str]) -> argparse.Namespace:
     )
 
     parser.add_argument(
+        '--cachedir',
+        dest='cachedir',
+        required=False,
+        default=None,
+        help='Custom cache directory',
+    )
+
+    parser.add_argument(
         '--device-id',
         '-d',
         dest='device_id',
