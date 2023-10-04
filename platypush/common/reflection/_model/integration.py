@@ -26,6 +26,8 @@ class Integration(Serializable):
     """
 
     _class_type_re = re.compile(r"^<class '(?P<name>[\w_]+)'>$")
+    _doc_base_url = 'https://docs.platypush.tech/platypush'
+    """Base public URL for the documentation"""
 
     name: str
     type: Type
@@ -36,14 +38,18 @@ class Integration(Serializable):
     _skip_manifest: bool = False
 
     def __post_init__(self):
+        """
+        Initialize the manifest object.
+        """
         if not self._skip_manifest:
             self._init_manifest()
 
     def to_dict(self) -> dict:
         return {
             "name": self.name,
-            "type": f'{self.type.__module__}.{self.type.__qualname__}',
+            "type": f"{self.type.__module__}.{self.type.__qualname__}",
             "doc": self.doc,
+            "doc_url": self.doc_url,
             "args": {
                 **(
                     {name: arg.to_dict() for name, arg in self.constructor.args.items()}
@@ -51,8 +57,23 @@ class Integration(Serializable):
                     else {}
                 ),
             },
-            "actions": {k: v.to_dict() for k, v in self.actions.items()},
-            "events": [f'{e.__module__}.{e.__qualname__}' for e in self.events],
+            "actions": {
+                k: {
+                    "doc_url": f"{self.doc_url}#{self.cls.__module__}.{self.cls.__qualname__}.{k}",
+                    **v.to_dict(),
+                }
+                for k, v in self.actions.items()
+                if self.cls
+            },
+            "events": {
+                f"{e.__module__}.{e.__qualname__}": {
+                    "doc": inspect.getdoc(e),
+                    "doc_url": f"{self._doc_base_url}/events/"
+                    + ".".join(e.__module__.split(".")[3:])
+                    + f".html#{e.__module__}.{e.__qualname__}",
+                }
+                for e in self.events
+            },
             "deps": self.deps.to_dict(),
         }
 
@@ -194,12 +215,13 @@ class Integration(Serializable):
         from platypush.backend import Backend
         from platypush.plugins import Plugin
 
+        assert self.cls, f'No class found for integration {self.name}'
         if issubclass(self.cls, Plugin):
             return Plugin
         if issubclass(self.cls, Backend):
             return Backend
 
-        raise RuntimeError(f"Unknown base type for {self.cls}")
+        raise AssertionError(f"Unknown base type for {self.cls}")
 
     @classmethod
     def from_manifest(cls, manifest_file: str) -> "Integration":
@@ -315,3 +337,26 @@ class Integration(Serializable):
                 else "    # No configuration required\n"
             )
         )
+
+    @property
+    def doc_url(self) -> str:
+        """
+        :return: URL of the documentation for the integration.
+        """
+        from platypush.backend import Backend
+        from platypush.message.event import Event
+        from platypush.message.response import Response
+        from platypush.plugins import Plugin
+
+        if issubclass(self.type, Plugin):
+            section = 'plugins'
+        elif issubclass(self.type, Backend):
+            section = 'backend'
+        elif issubclass(self.type, Event):
+            section = 'events'
+        elif issubclass(self.type, Response):
+            section = 'responses'
+        else:
+            raise AssertionError(f'Unknown integration type {self.type}')
+
+        return f"{self._doc_base_url}/{section}/{self.name}.html"
