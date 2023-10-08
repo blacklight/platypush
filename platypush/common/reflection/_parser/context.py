@@ -1,7 +1,16 @@
 import inspect
 import textwrap as tw
 from dataclasses import dataclass, field
-from typing import Callable, Optional, Iterable, Tuple, Any, Type, get_type_hints
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    get_type_hints,
+)
 
 from .._model.argument import Argument
 from .._model.returns import ReturnValue
@@ -22,17 +31,36 @@ class ParseContext:
     parsed_params: dict[str, Argument] = field(default_factory=dict)
 
     def __post_init__(self):
+        """
+        Initialize the return type and parameters from the function annotations.
+        """
+
+        # Initialize the return type from the annotations
         annotations = getattr(self.obj, "__annotations__", {})
         if annotations:
             self.returns.type = annotations.get("return")
+
+        # Initialize the parameters from the signature
+        spec = inspect.getfullargspec(self.obj)
+        defaults = spec.defaults or ()
+        defaults = defaults + ((Any,) * (len(self.param_names) - len(defaults or ())))
+        self.parsed_params = {
+            name: Argument(
+                name=name,
+                type=self.param_types.get(name),
+                default=default if default is not Any else None,
+                required=default is Any,
+            )
+            for name, default in zip(self.param_names, defaults)
+        }
 
     @property
     def spec(self) -> inspect.FullArgSpec:
         return inspect.getfullargspec(self.obj)
 
     @property
-    def param_names(self) -> Iterable[str]:
-        return self.spec.args[1:]
+    def param_names(self) -> List[str]:
+        return list(self.spec.args[1:])
 
     @property
     def param_defaults(self) -> Tuple[Any]:

@@ -1,16 +1,17 @@
 import re
 import textwrap as tw
 from contextlib import contextmanager
-from typing import Optional, Dict, Callable, Generator, Any
+from typing import Callable, Dict, Generator, Optional
 
 from .._model.argument import Argument
 from .._model.returns import ReturnValue
 from .._serialize import Serializable
 from .context import ParseContext
+from .rst import RstExtensionsMixin
 from .state import ParseState
 
 
-class DocstringParser(Serializable):
+class DocstringParser(Serializable, RstExtensionsMixin):
     """
     Mixin for objects that can parse docstrings.
     """
@@ -103,6 +104,9 @@ class DocstringParser(Serializable):
         if cls._default_docstring.match(line):
             return
 
+        # Expand any custom RST extensions
+        line = cls._expand_rst_extensions(line, ctx)
+
         # Update the return type docstring if required
         m = cls._return_doc_re.match(line)
         if m or (ctx.state == ParseState.RETURN and cls._is_continuation_line(line)):
@@ -112,28 +116,17 @@ class DocstringParser(Serializable):
             ).rstrip()
             return
 
-        # Create a new parameter entry if the docstring says so
+        # Initialize the documentation of a parameter on :param: docstring lines
         m = cls._param_doc_re.match(line)
-        if m:
+        if m and ctx.parsed_params.get(m.group("name")):
             ctx.state = ParseState.PARAM
-            idx = len(ctx.parsed_params)
             ctx.cur_param = m.group("name")
 
             # Skip vararg/var keyword parameters
             if ctx.cur_param in {ctx.spec.varkw, ctx.spec.varargs}:
                 return
 
-            ctx.parsed_params[ctx.cur_param] = Argument(
-                name=ctx.cur_param,
-                required=(
-                    idx >= len(ctx.param_defaults) or ctx.param_defaults[idx] is Any
-                ),
-                doc=m.group("doc"),
-                type=ctx.param_types.get(ctx.cur_param),
-                default=ctx.param_defaults[idx]
-                if idx < len(ctx.param_defaults) and ctx.param_defaults[idx] is not Any
-                else None,
-            )
+            ctx.parsed_params[ctx.cur_param].doc = m.group("doc")
             return
 
         # Update the current parameter docstring if required

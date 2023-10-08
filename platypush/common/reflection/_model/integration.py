@@ -16,18 +16,18 @@ from platypush.utils import (
 from platypush.utils.manifest import Manifest, ManifestType, Dependencies
 
 from .._serialize import Serializable
-from . import Constructor, Action, Argument
+from . import Constructor, Action
+from .component import Component
+from .constants import doc_base_url
 
 
 @dataclass
-class Integration(Serializable):
+class Integration(Component, Serializable):
     """
     Represents the metadata of an integration (plugin or backend).
     """
 
     _class_type_re = re.compile(r"^<class '(?P<name>[\w_]+)'>$")
-    _doc_base_url = 'https://docs.platypush.tech/platypush'
-    """Base public URL for the documentation"""
 
     name: str
     type: Type
@@ -68,7 +68,7 @@ class Integration(Serializable):
             "events": {
                 f"{e.__module__}.{e.__qualname__}": {
                     "doc": inspect.getdoc(e),
-                    "doc_url": f"{self._doc_base_url}/events/"
+                    "doc_url": f"{doc_base_url}/events/"
                     + ".".join(e.__module__.split(".")[3:])
                     + f".html#{e.__module__}.{e.__qualname__}",
                 }
@@ -76,30 +76,6 @@ class Integration(Serializable):
             },
             "deps": self.deps.to_dict(),
         }
-
-    @staticmethod
-    def _merge_params(params: Dict[str, Argument], new_params: Dict[str, Argument]):
-        """
-        Utility function to merge a new mapping of parameters into an existing one.
-        """
-        for param_name, param in new_params.items():
-            # Set the parameter if it doesn't exist
-            if param_name not in params:
-                params[param_name] = param
-
-            # Set the parameter documentation if it's not set
-            if param.doc and not params[param_name].doc:
-                params[param_name].doc = param.doc
-
-            # If the new parameter has required=False,
-            # then that should also be the value for the current ones
-            if param.required is False:
-                params[param_name].required = False
-
-            # If the new parameter has a default value, and the current
-            # one doesn't, then the default value should be set as the new one.
-            if param.default is not None and params[param_name].default is None:
-                params[param_name].default = param.default
 
     @classmethod
     def _merge_actions(cls, actions: Dict[str, Action], new_actions: Dict[str, Action]):
@@ -344,19 +320,13 @@ class Integration(Serializable):
         :return: URL of the documentation for the integration.
         """
         from platypush.backend import Backend
-        from platypush.message.event import Event
-        from platypush.message.response import Response
         from platypush.plugins import Plugin
 
         if issubclass(self.type, Plugin):
             section = 'plugins'
         elif issubclass(self.type, Backend):
             section = 'backend'
-        elif issubclass(self.type, Event):
-            section = 'events'
-        elif issubclass(self.type, Response):
-            section = 'responses'
         else:
             raise AssertionError(f'Unknown integration type {self.type}')
 
-        return f"{self._doc_base_url}/{section}/{self.name}.html"
+        return f"{doc_base_url}/{section}/{self.name}.html"

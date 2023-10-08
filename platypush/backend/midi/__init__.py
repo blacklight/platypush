@@ -23,7 +23,7 @@ class MidiBackend(Backend):
         """
         :param device_name: Name of the MIDI device.  *N.B.* either
             `device_name` or `port_number` must be set.
-            Use :meth:`platypush.plugins.midi.query_ports` to get the
+            Use :meth:`platypush.plugins.midi.MidiPlugin.query_ports` to get the
             available ports indices and names
         :type device_name: str
 
