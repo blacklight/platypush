@@ -245,7 +245,7 @@ class MediaMplayerPlugin(MediaPlugin):
         """
         Execute a raw MPlayer command. See
         https://www.mplayerhq.hu/DOCS/tech/slave.txt for a reference or call
-        :meth:`platypush.plugins.media.mplayer.list_actions` to get a list
+        :meth:`.list_actions` to get a list
         """
 
         args = args or []

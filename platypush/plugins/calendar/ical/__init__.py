@@ -73,7 +73,7 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
     def get_upcoming_events(self, *_, only_participating=True, **__):
         """
         Get the upcoming events. See
-        :func:`~platypush.plugins.calendar.CalendarPlugin.get_upcoming_events`.
+        :meth:`platypush.plugins.calendar.CalendarPlugin.get_upcoming_events`.
         """
 
         from icalendar import Calendar

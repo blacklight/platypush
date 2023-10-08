@@ -40,11 +40,11 @@ class SoundPlugin(RunnablePlugin):
     ):
         """
         :param input_device: Index or name of the default input device. Use
-            :meth:`platypush.plugins.sound.query_devices` to get the
-            available devices. Default: system default
+            :meth:`.query_devices` to get the available devices. Default: system
+            default
         :param output_device: Index or name of the default output device.
-            Use :meth:`platypush.plugins.sound.query_devices` to get the
-            available devices. Default: system default
+            Use :meth:`.query_devices` to get the available devices. Default:
+            system default
         :param input_blocksize: Blocksize to be applied to the input device.
             Try to increase this value if you get input overflow errors while
             recording. Default: 1024
@@ -160,8 +160,7 @@ class SoundPlugin(RunnablePlugin):
             in the audio file in file mode, 1 if in synth mode
         :param volume: Playback volume, between 0 and 100. Default: 100.
         :param stream_index: If specified, play to an already active stream
-            index (you can get them through
-            :meth:`platypush.plugins.sound.query_streams`). Default:
+            index (you can get them through :meth:`.query_streams`). Default:
             creates a new audio stream through PortAudio.
         :param stream_name: Name of the stream to play to. If set, the sound
             will be played to the specified stream name, or a stream with that

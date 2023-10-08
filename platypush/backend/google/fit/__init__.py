@@ -34,7 +34,8 @@ class GoogleFitBackend(Backend):
         """
         :param data_sources: Google Fit data source IDs to monitor. You can
             get a list of the available data sources through the
-            :meth:`platypush.plugins.google.fit.get_data_sources` action
+            :meth:`platypush.plugins.google.fit.GoogleFitPlugin.get_data_sources`
+            action
         :type data_sources: list[str]
 
         :param user_id: Google user ID to track (default: 'me')

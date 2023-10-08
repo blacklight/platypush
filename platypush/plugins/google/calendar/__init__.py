@@ -49,7 +49,7 @@ class GoogleCalendarPlugin(GooglePlugin, CalendarInterface):
     def get_upcoming_events(self, max_results=10):
         """
         Get the upcoming events. See
-        :func:`~platypush.plugins.calendar.CalendarPlugin.get_upcoming_events`.
+        :meth:`platypush.plugins.calendar.CalendarPlugin.get_upcoming_events`.
         """
 
         now = datetime.datetime.utcnow().isoformat() + 'Z'
