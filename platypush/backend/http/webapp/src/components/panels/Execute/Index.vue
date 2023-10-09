@@ -3,16 +3,18 @@
     <Loading v-if="loading" />
     <div class="section command-container">
       <div class="section-title">Execute Action</div>
-      <form class="action-form" ref="actionForm" autocomplete="off" @submit.prevent="executeAction">
-        <div class="request-type-container">
-          <input type="radio" id="action-structured-input"
-                 :checked="structuredInput" @change="onInputTypeChange(true)">
-          <label for="action-structured-input">Structured request</label>
-          <input type="radio" id="action-raw-input"
-                 :checked="!structuredInput" @change="onInputTypeChange(false)">
-          <label for="action-raw-input">Raw request</label>
-        </div>
 
+      <Tabs>
+        <Tab :selected="structuredInput" icon-class="fas fa-list" @input="onInputTypeChange(true)">
+          Structured
+        </Tab>
+
+        <Tab :selected="!structuredInput" icon-class="fas fa-code" @input="onInputTypeChange(false)">
+          Raw
+        </Tab>
+      </Tabs>
+
+      <form class="action-form" ref="actionForm" autocomplete="off" @submit.prevent="executeAction">
         <div class="request structured-request" :class="structuredInput ? '' : 'hidden'">
           <div class="request-header">
             <div class="autocomplete">
@@ -32,7 +34,8 @@
 
           <div class="doc-container" v-if="selectedDoc">
             <div class="title">
-              <a :href="currentActionDocURL">Action documentation</a>
+              <i class="fas fa-book" /> &nbsp;
+              <a :href="this.action?.doc_url">Action documentation</a>
             </div>
 
             <div class="doc html">
@@ -41,64 +44,71 @@
             </div>
           </div>
 
-          <div class="options" v-if="action.name in actions && (Object.keys(action.args).length ||
-              action.supportsExtraArgs)">
-            <div class="params" ref="params"
-                 v-if="Object.keys(action.args).length || action.supportsExtraArgs">
-              <div class="param" :key="name" v-for="name in Object.keys(action.args)">
-                <label>
-                  <input type="text" class="action-param-value" :disabled="running"
-                         :placeholder="name" v-model="action.args[name].value"
-                         @focus="selectAttrDoc(name)"
-                         @blur="resetAttrDoc">
-                </label>
-
-                <div class="attr-doc-container mobile" v-if="selectedAttrDoc && selectedAttr === name">
-                  <div class="title">
-                    Attribute: <div class="attr-name" v-text="selectedAttr" />
-                  </div>
-
-                  <div class="doc html">
-                    <Loading v-if="docLoading" />
-                    <span v-html="selectedAttrDoc" v-else />
-                  </div>
-                </div>
-              </div>
-
-              <div class="extra-params" ref="extraParams" v-if="Object.keys(action.extraArgs).length">
-                <div class="param extra-param" :key="i" v-for="i in Object.keys(action.extraArgs)">
-                  <label class="col-5">
-                    <input type="text" class="action-extra-param-name" :disabled="running"
-                           placeholder="Name" v-model="action.extraArgs[i].name">
-                  </label>
-                  <label class="col-6">
-                    <input type="text" class="action-extra-param-value" :disabled="running"
-                           placeholder="Value" v-model="action.extraArgs[i].value">
-                  </label>
-                  <label class="col-1 buttons">
-                    <button type="button" class="action-extra-param-del" title="Remove parameter"
-                            @click="removeParameter(i)">
-                      <i class="fas fa-trash" />
-                    </button>
-                  </label>
-                </div>
-              </div>
-
-              <div class="add-param" v-if="action.supportsExtraArgs">
-                <button type="button" title="Add a parameter" @click="addParameter">
-                  <i class="fas fa-plus" />
-                </button>
-              </div>
+          <div class="options-container"
+              v-if="action.name in actions && (Object.keys(action.args).length || action.supportsExtraArgs)">
+            <div class="header title row">
+              <i class="fas fa-code" /> &nbsp;
+              Arguments
             </div>
 
-            <div class="attr-doc-container widescreen" v-if="selectedAttrDoc">
-              <div class="title">
-                Attribute: <div class="attr-name" v-text="selectedAttr" />
+            <div class="options">
+              <div class="params" ref="params"
+                   v-if="Object.keys(action.args).length || action.supportsExtraArgs">
+                <div class="param" :key="name" v-for="name in Object.keys(action.args)">
+                  <label>
+                    <input type="text" class="action-param-value" :disabled="running"
+                           :placeholder="name" v-model="action.args[name].value"
+                           @focus="selectAttrDoc(name)"
+                           @blur="resetAttrDoc">
+                  </label>
+
+                  <div class="attr-doc-container mobile" v-if="selectedAttrDoc && selectedAttr === name">
+                    <div class="title">
+                      Attribute: <div class="attr-name" v-text="selectedAttr" />
+                    </div>
+
+                    <div class="doc html">
+                      <Loading v-if="docLoading" />
+                      <span v-html="selectedAttrDoc" v-else />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="extra-params" ref="extraParams" v-if="Object.keys(action.extraArgs).length">
+                  <div class="param extra-param" :key="i" v-for="i in Object.keys(action.extraArgs)">
+                    <label class="col-5">
+                      <input type="text" class="action-extra-param-name" :disabled="running"
+                             placeholder="Name" v-model="action.extraArgs[i].name">
+                    </label>
+                    <label class="col-6">
+                      <input type="text" class="action-extra-param-value" :disabled="running"
+                             placeholder="Value" v-model="action.extraArgs[i].value">
+                    </label>
+                    <label class="col-1 buttons">
+                      <button type="button" class="action-extra-param-del" title="Remove parameter"
+                              @click="removeParameter(i)">
+                        <i class="fas fa-trash" />
+                      </button>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="add-param" v-if="action.supportsExtraArgs">
+                  <button type="button" title="Add a parameter" @click="addParameter">
+                    <i class="fas fa-plus" />
+                  </button>
+                </div>
               </div>
 
-              <div class="doc html">
-                <Loading v-if="docLoading" />
-                <span v-html="selectedAttrDoc" v-else />
+              <div class="attr-doc-container widescreen" v-if="selectedAttrDoc">
+                <div class="title">
+                  Attribute: <div class="attr-name" v-text="selectedAttr" />
+                </div>
+
+                <div class="doc html">
+                  <Loading v-if="docLoading" />
+                  <span v-html="selectedAttrDoc" v-else />
+                </div>
               </div>
             </div>
           </div>
@@ -143,7 +153,7 @@
       </form>
     </div>
 
-    <div class="section procedures-container">
+    <div class="section procedures-container" v-if="Object.keys(procedures).length">
       <div class="section-title">Execute Procedure</div>
       <div class="procedure" :class="selectedProcedure.name === name ? 'selected' : ''"
            v-for="name in Object.keys(procedures).sort()" :key="name" @click="updateProcedure(name, $event)">
@@ -176,12 +186,14 @@
 
 <script>
 import autocomplete from "@/components/elements/Autocomplete"
+import Tabs from "@/components/elements/Tabs";
+import Tab from "@/components/elements/Tab";
 import Utils from "@/Utils"
 import Loading from "@/components/Loading";
 
 export default {
   name: "Execute",
-  components: {Loading},
+  components: {Loading, Tabs, Tab},
   mixins: [Utils],
 
   data() {
@@ -219,19 +231,7 @@ export default {
 
   computed: {
     currentActionDocURL() {
-      if (!this.action?.name?.length)
-        return undefined
-
-      const plugin = this.action.name.split('.').slice(0, -1).join('.')
-      const actionName = this.action.name.split('.').slice(-1)
-      const actionClass = this.action.name
-        .split('.')
-        .slice(0, -1)
-        .map((token) => token.slice(0, 1).toUpperCase() + token.slice(1))
-        .join('') + 'Plugin'
-
-      return 'https://docs.platypush.tech/platypush/plugins/' +
-        `${plugin}.html#platypush.plugins.${plugin}.${actionClass}.${actionName}`
+      return this.action?.doc_url
     },
   },
 
@@ -505,10 +505,11 @@ $params-tablet-width: 20em;
 $request-headers-btn-width: 7.5em;
 
 @mixin header {
-  background: $default-bg-5;
   display: flex;
+  background: $header-bg-2;
   align-items: center;
   padding: 0.5em;
+  margin-bottom: 0.1em;
   border: $title-border;
   border-radius: 1em;
   box-shadow: $title-shadow;
@@ -582,16 +583,6 @@ $request-headers-btn-width: 7.5em;
     }
   }
 
-  .request-type-container {
-    display: flex;
-    flex-direction: row;
-    align-items: baseline;
-
-    label {
-      margin: 0 1em 0 .5em;
-    }
-  }
-
   .request {
     display: flex;
     flex-direction: column;
@@ -608,9 +599,7 @@ $request-headers-btn-width: 7.5em;
 
     .options {
       display: flex;
-      margin-top: .5em;
       margin-bottom: 1.5em;
-      padding-top: .5em;
 
       @include until($tablet) {
         flex-direction: column;
@@ -753,7 +742,10 @@ $request-headers-btn-width: 7.5em;
       }
     }
 
-    .output-container, .doc-container, .attr-doc-container {
+    .output-container,
+    .doc-container,
+    .attr-doc-container,
+    .options-container {
       max-height: 50vh;
       display: flex;
       flex-direction: column;
@@ -806,6 +798,11 @@ $request-headers-btn-width: 7.5em;
         background: $doc-bg;
         box-shadow: $doc-shadow;
       }
+    }
+
+    .options-container {
+      margin-top: .5em;
+      padding-top: .5em;
     }
 
     textarea {
