@@ -1,6 +1,7 @@
 import ast
 import contextlib
 import datetime
+import functools
 import hashlib
 import importlib
 import inspect
@@ -703,6 +704,38 @@ def import_file(path: str, name: Optional[str] = None):
     mod = module_from_spec(mod_spec)
     loader.exec_module(mod)
     return mod
+
+
+def get_defining_class(meth) -> Optional[type]:
+    """
+    See https://stackoverflow.com/a/25959545/622364.
+
+    This is the best way I could find of answering the question "given a bound
+    method, get the class that defined it",
+    """
+    if isinstance(meth, functools.partial):
+        return get_defining_class(meth.func)
+
+    if inspect.ismethod(meth) or (
+        inspect.isbuiltin(meth)
+        and getattr(meth, '__self__', None) is not None
+        and getattr(meth.__self__, '__class__', None)
+    ):
+        for cls in inspect.getmro(meth.__self__.__class__):
+            if meth.__name__ in cls.__dict__:
+                return cls
+        meth = getattr(meth, '__func__', meth)  # fallback to __qualname__ parsing
+
+    if inspect.isfunction(meth):
+        cls = getattr(
+            inspect.getmodule(meth),
+            meth.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0],
+            None,
+        )
+        if isinstance(cls, type):
+            return cls
+
+    return getattr(meth, '__objclass__', None)  # handle special descriptor objects
 
 
 # vim:sw=4:ts=4:et:
