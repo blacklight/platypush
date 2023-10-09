@@ -35,15 +35,18 @@ class ParseContext:
         Initialize the return type and parameters from the function annotations.
         """
 
+        # If we're dealing with a wrapped @action, then unwrap the underlying function
+        if hasattr(self.obj, "wrapped"):
+            self.obj = self.obj.wrapped
+
         # Initialize the return type from the annotations
         annotations = getattr(self.obj, "__annotations__", {})
         if annotations:
             self.returns.type = annotations.get("return")
 
         # Initialize the parameters from the signature
-        spec = inspect.getfullargspec(self.obj)
-        defaults = spec.defaults or ()
-        defaults = defaults + ((Any,) * (len(self.param_names) - len(defaults or ())))
+        defaults = self.spec.defaults or ()
+        defaults = ((Any,) * (len(self.param_names) - len(defaults or ()))) + defaults
         self.parsed_params = {
             name: Argument(
                 name=name,
@@ -53,6 +56,19 @@ class ParseContext:
             )
             for name, default in zip(self.param_names, defaults)
         }
+
+        # Update the parameters with the keyword-only arguments
+        self.parsed_params.update(
+            {
+                arg: Argument(
+                    name=arg,
+                    type=self.param_types.get(arg),
+                    default=(self.spec.kwonlydefaults or {}).get(arg),
+                    required=arg not in (self.spec.kwonlydefaults or {}),
+                )
+                for arg in self.spec.kwonlyargs
+            }
+        )
 
     @property
     def spec(self) -> inspect.FullArgSpec:
