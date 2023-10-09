@@ -107,7 +107,7 @@ def get_plugin_class_by_name(plugin_name) -> Optional[type]:
         return None
 
 
-def get_plugin_name_by_class(plugin) -> Optional[str]:
+def get_plugin_name_by_class(plugin) -> str:
     """Gets the common name of a plugin (e.g. "music.mpd" or "media.vlc") given its class."""
 
     from platypush.plugins import Plugin

@@ -56,6 +56,8 @@ def action(f: Callable[..., Any]) -> Callable[..., Response]:
 
     # Propagate the docstring
     _execute_action.__doc__ = f.__doc__
+    # Expose the wrapped function
+    _execute_action.wrapped = f  # type: ignore
     return _execute_action
 
 
@@ -64,6 +66,7 @@ class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to
 
     def __init__(self, **kwargs):
         super().__init__()
+
         self.logger = logging.getLogger(
             'platypush:plugin:' + get_plugin_name_by_class(self.__class__)
         )
@@ -264,6 +267,7 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
         """
         Initialize an event loop and run the listener as a task.
         """
+        assert self._loop, 'The loop is not initialized'
         asyncio.set_event_loop(self._loop)
 
         self._task = self._loop.create_task(self._listen())
