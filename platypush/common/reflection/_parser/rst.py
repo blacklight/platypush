@@ -3,6 +3,8 @@ import logging
 import re
 import textwrap as tw
 
+from platypush.utils import get_defining_class
+
 from .._model.constants import doc_base_url
 from .context import ParseContext
 
@@ -130,9 +132,13 @@ class RstExtensionsMixin:
         cls, docstr: str, ex_name: str, match: re.Match, ctx: ParseContext
     ) -> str:
         value = match.group("name")
+        modname = obj_name = url_path = None
+
         if value.startswith("."):
-            modname = ctx.obj.__module__  # noqa
-            obj_name = ctx.obj.__qualname__
+            base_cls = get_defining_class(ctx.obj)
+            if base_cls:
+                modname = base_cls.__module__
+                obj_name = f'{base_cls.__qualname__}.{value[1:]}'
         elif ex_name == "method":
             modname = ".".join(value.split(".")[:-2])
             obj_name = ".".join(value.split(".")[-2:])
@@ -140,16 +146,15 @@ class RstExtensionsMixin:
             modname = ".".join(value.split(".")[:-1])
             obj_name = value.split(".")[-1]
 
-        url_path = None
-
-        if modname.startswith("platypush.plugins"):
-            url_path = "plugins/" + ".".join(modname.split(".")[2:])
-        elif modname.startswith("platypush.backend"):
-            url_path = "backends/" + ".".join(modname.split(".")[2:])
-        elif modname.startswith("platypush.message.event"):
-            url_path = "events/" + ".".join(modname.split(".")[3:])
-        elif modname.startswith("platypush.message.response"):
-            url_path = "responses/" + ".".join(modname.split(".")[3:])
+        if modname and obj_name:
+            if modname.startswith("platypush.plugins"):
+                url_path = "plugins/" + ".".join(modname.split(".")[2:])
+            elif modname.startswith("platypush.backend"):
+                url_path = "backends/" + ".".join(modname.split(".")[2:])
+            elif modname.startswith("platypush.message.event"):
+                url_path = "events/" + ".".join(modname.split(".")[3:])
+            elif modname.startswith("platypush.message.response"):
+                url_path = "responses/" + ".".join(modname.split(".")[3:])
 
         if url_path:
             docstr = docstr.replace(
