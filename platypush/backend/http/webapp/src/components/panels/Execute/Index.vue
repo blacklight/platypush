@@ -21,7 +21,8 @@
               <label>
                 <input ref="actionName" type="text" class="action-name"
                        placeholder="Action Name" :disabled="running" v-model="action.name"
-                       @change="actionChanged=true" @blur="updateAction">
+                       @input="updateAction(action.name)"
+                       @blur="updateAction(action.name)">
               </label>
             </div>
             <div class="buttons">
@@ -58,8 +59,7 @@
                   <label>
                     <input type="text" class="action-param-value" :disabled="running"
                            :placeholder="name" v-model="action.args[name].value"
-                           @focus="selectAttrDoc(name)"
-                           @blur="resetAttrDoc">
+                           @focus="selectAttrDoc(name)">
                   </label>
 
                   <div class="attr-doc-container mobile" v-if="selectedAttrDoc && selectedAttr === name">
@@ -202,7 +202,6 @@ export default {
       running: false,
       docLoading: false,
       structuredInput: true,
-      actionChanged: false,
       selectedDoc: undefined,
       selectedAttr: undefined,
       selectedAttrDoc: undefined,
@@ -256,20 +255,23 @@ export default {
       }
 
       const self = this
-      autocomplete(this.$refs.actionName, Object.keys(this.actions).sort(), (_, value) => {
-        this.action.name = value
-        self.updateAction()
-      })
+      autocomplete(
+        this.$refs.actionName,
+        Object.keys(this.actions).sort(), (_, value) => self.updateAction(value)
+      )
     },
 
-    async updateAction() {
-      if (!(this.action.name in this.actions))
+    async updateAction(actionName) {
+      this.action.name = actionName
+      if (!(this.action.name in this.actions)) {
         this.selectedDoc = undefined
-
-      if (!this.actionChanged || !(this.action.name in this.actions))
+        this.resetAttrDoc()
         return
+      }
 
+      this.resetAttrDoc()
       this.docLoading = true
+
       try {
         this.action = {
           ...this.actions[this.action.name],
@@ -295,7 +297,6 @@ export default {
         this.actionDocsCache[this.action.name] = {}
       this.actionDocsCache[this.action.name].html = this.selectedDoc
 
-      this.actionChanged = false
       this.response = undefined
       this.error = undefined
     },
@@ -497,8 +498,11 @@ export default {
 </script>
 
 <style lang="scss">
-@import "vars";
 @import "~@/style/autocomplete.scss";
+</style>
+
+<style lang="scss" scoped>
+@import "vars";
 
 $params-desktop-width: 30em;
 $params-tablet-width: 20em;
@@ -599,6 +603,7 @@ $request-headers-btn-width: 7.5em;
 
     .options {
       display: flex;
+      margin-top: 0.15em;
       margin-bottom: 1.5em;
 
       @include until($tablet) {
@@ -914,6 +919,12 @@ $request-headers-btn-width: 7.5em;
         box-shadow: none;
       }
     }
+  }
+}
+
+:deep(.doc) {
+  blockquote {
+    margin-left: 0;
   }
 }
 </style>
