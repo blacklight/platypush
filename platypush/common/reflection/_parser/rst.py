@@ -72,7 +72,7 @@ class RstExtensionsMixin:
                 ("[" if obj.many else "")
                 + "{\n"
                 + tw.indent(
-                    "\n".join(
+                    ",\n".join(
                         (
                             (
                                 "# " + field.metadata["description"] + "\n"
