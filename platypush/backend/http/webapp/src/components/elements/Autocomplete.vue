@@ -52,6 +52,11 @@ export default {
       default: false,
     },
 
+    autofocus: {
+      type: Boolean,
+      default: false,
+    },
+
     label: {
       type: String,
     },
@@ -194,6 +199,8 @@ export default {
 
   mounted() {
     document.addEventListener("click", this.onDocumentClick)
+    if (this.autofocus)
+      this.$refs.input.focus()
   },
 }
 </script>
