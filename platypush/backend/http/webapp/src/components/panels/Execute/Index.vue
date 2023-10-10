@@ -17,13 +17,16 @@
       <form class="action-form" ref="actionForm" autocomplete="off" @submit.prevent="executeAction">
         <div class="request structured-request" :class="structuredInput ? '' : 'hidden'">
           <div class="request-header">
-            <div class="autocomplete">
-              <label>
-                <input ref="actionName" type="text" class="action-name"
-                       placeholder="Action Name" :disabled="running" v-model="action.name"
-                       @input="updateAction(action.name)"
-                       @blur="updateAction(action.name)">
-              </label>
+            <div class="autocomplete-container">
+              <Autocomplete
+                ref="autocomplete"
+                :items="autocompleteItems"
+                @input="updateAction"
+                placeholder="Action Name"
+                show-results-when-blank
+                autofocus
+                :disabled="running"
+                :value="action.name" />
             </div>
             <div class="buttons">
               <button type="submit" class="run-btn btn-primary"
@@ -185,15 +188,15 @@
 </template>
 
 <script>
-import autocomplete from "@/components/elements/Autocomplete"
-import Tabs from "@/components/elements/Tabs";
-import Tab from "@/components/elements/Tab";
+import Autocomplete from "@/components/elements/Autocomplete"
+import Loading from "@/components/Loading"
+import Tab from "@/components/elements/Tab"
+import Tabs from "@/components/elements/Tabs"
 import Utils from "@/Utils"
-import Loading from "@/components/Loading";
 
 export default {
   name: "Execute",
-  components: {Loading, Tabs, Tab},
+  components: {Autocomplete, Loading, Tab, Tabs},
   mixins: [Utils],
 
   data() {
@@ -232,6 +235,18 @@ export default {
     currentActionDocURL() {
       return this.action?.doc_url
     },
+
+    autocompleteItems() {
+      if (this.getPluginName(this.action.name) in this.plugins) {
+        return Object.keys(this.actions).sort()
+      }
+
+      return Object.keys(this.plugins).sort().map((pluginName) => `${pluginName}.`)
+    },
+
+    actionInput() {
+      return this.$refs.autocomplete.$el.parentElement.querySelector('input[type=text]')
+    },
   },
 
   methods: {
@@ -253,12 +268,6 @@ export default {
           this.actions[action.name] = action
         }
       }
-
-      const self = this
-      autocomplete(
-        this.$refs.actionName,
-        Object.keys(this.actions).sort(), (_, value) => self.updateAction(value)
-      )
     },
 
     async updateAction(actionName) {
@@ -370,7 +379,7 @@ export default {
       this.error = undefined
       this.$nextTick(() => {
         if (structuredInput) {
-          this.$refs.actionName.focus()
+          this.actionInput.focus()
         } else {
           this.$refs.rawAction.focus()
         }
@@ -397,6 +406,13 @@ export default {
       ).replace(/^\s*<pre>/g, '').replace(/<\/pre>\s*/g, '')
 
       await navigator.clipboard.writeText(output)
+    },
+
+    getPluginName(actionName) {
+      if (!actionName?.length)
+        return ''
+
+      return actionName.split('.').slice(0, -1).join('.')
     },
 
     executeAction() {
@@ -488,18 +504,10 @@ export default {
   },
 
   mounted() {
-    this.$nextTick(() => {
-      this.$refs.actionName.focus()
-    })
-
     this.refresh()
   },
 }
 </script>
-
-<style lang="scss">
-@import "~@/style/autocomplete.scss";
-</style>
 
 <style lang="scss" scoped>
 @import "vars";
@@ -562,7 +570,7 @@ $request-headers-btn-width: 7.5em;
     display: flex;
     align-items: center;
 
-    .autocomplete {
+    .autocomplete-container {
       width: calc(100% - $request-headers-btn-width);
       flex-grow: 1;
     }
@@ -594,11 +602,6 @@ $request-headers-btn-width: 7.5em;
 
     form {
       margin-bottom: 0 !important;
-    }
-
-    .action-name {
-      box-shadow: $action-name-shadow;
-      width: 100%;
     }
 
     .options {
