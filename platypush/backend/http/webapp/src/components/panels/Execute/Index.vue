@@ -306,6 +306,7 @@ export default {
         this.actionDocsCache[this.action.name] = {}
       this.actionDocsCache[this.action.name].html = this.selectedDoc
 
+      this.$el.querySelector('.action-param-value')?.focus()
       this.response = undefined
       this.error = undefined
     },
