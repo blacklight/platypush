@@ -536,7 +536,7 @@ class ZigbeeMqttPlugin(
         Get the list of devices registered to the service.
 
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
 
         :return: List of paired devices. Example output:
@@ -716,7 +716,7 @@ class ZigbeeMqttPlugin(
         :param permit: Set to True to allow joins, False otherwise.
         :param timeout: Allow/disallow joins only for this amount of time.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         if timeout:
@@ -742,7 +742,7 @@ class ZigbeeMqttPlugin(
         the back of the bulb is pressed).
 
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         self.publish(
@@ -760,7 +760,7 @@ class ZigbeeMqttPlugin(
 
         :param level: Possible values: 'debug', 'info', 'warn', 'error'.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         return self._run_request(
@@ -781,7 +781,7 @@ class ZigbeeMqttPlugin(
         :param option: Option name.
         :param value: New value.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         return self._run_request(
@@ -807,7 +807,7 @@ class ZigbeeMqttPlugin(
             internal database, but the device is likely to connect again when
             restarted unless it's factory reset (default: False).
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         return self._run_request(
@@ -824,7 +824,7 @@ class ZigbeeMqttPlugin(
 
         :param device: Display name of the device.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         return self._run_request(
@@ -844,7 +844,7 @@ class ZigbeeMqttPlugin(
 
         :param device: Display name of the device.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         return self._run_request(
@@ -864,7 +864,7 @@ class ZigbeeMqttPlugin(
             specified then the rename will affect the last device that joined
             the network.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         if name == device:
@@ -988,7 +988,7 @@ class ZigbeeMqttPlugin(
         :param property: Name of the property that should be retrieved (default:
             all).
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         :return: Key->value map of the device properties.
         """
@@ -1033,7 +1033,7 @@ class ZigbeeMqttPlugin(
         :param devices: If set, then only the status of these devices (by
             friendly name) will be retrieved (default: retrieve all).
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         :return: Key->value map of the device properties:
 
@@ -1129,7 +1129,7 @@ class ZigbeeMqttPlugin(
         :param values: If you want to set multiple values, then pass this
             mapping instead of ``property``+``value``.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         msg = (values or {}).copy()
@@ -1186,7 +1186,7 @@ class ZigbeeMqttPlugin(
             format.
         :param data: Value to set for the property.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         dev, prop = self._ieee_address_and_property(device)
@@ -1206,7 +1206,7 @@ class ZigbeeMqttPlugin(
 
         :param device: Address or friendly name of the device.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
 
         :return:
@@ -1240,7 +1240,7 @@ class ZigbeeMqttPlugin(
 
         :param device: Address or friendly name of the device.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         return self._run_request(
@@ -1256,7 +1256,7 @@ class ZigbeeMqttPlugin(
         Get the groups registered on the device.
 
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         return self._get_network_info(**kwargs).get('groups', [])
@@ -1267,7 +1267,7 @@ class ZigbeeMqttPlugin(
         Get the information, configuration and state of the network.
 
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
 
         :return: Example:
@@ -1406,7 +1406,7 @@ class ZigbeeMqttPlugin(
         :param name: Display name of the group.
         :param id: Optional numeric ID (default: auto-generated).
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         payload = (
@@ -1442,7 +1442,7 @@ class ZigbeeMqttPlugin(
         :param property: Name of the property to retrieve (default: all
             available properties)
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         msg = {}
@@ -1480,7 +1480,7 @@ class ZigbeeMqttPlugin(
         :param property: Name of the property that should be set.
         :param value: New value of the property.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         properties = self._run_request(
@@ -1504,7 +1504,7 @@ class ZigbeeMqttPlugin(
         :param name: New name.
         :param group: Current name of the group to rename.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         if name == group:
@@ -1532,7 +1532,7 @@ class ZigbeeMqttPlugin(
 
         :param name: Display name of the group.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         return self._run_request(
@@ -1550,7 +1550,7 @@ class ZigbeeMqttPlugin(
         :param group: Display name of the group.
         :param device: Display name of the device to be added.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         return self._run_request(
@@ -1573,7 +1573,7 @@ class ZigbeeMqttPlugin(
             specified then all the devices registered to the specified group
             will be removed.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         remove_suffix = '_all' if device is None else ''
@@ -1609,7 +1609,7 @@ class ZigbeeMqttPlugin(
         :param target: Name of the target device. You can also bind a specific
             device endpoint - for example ``MyLight/state``.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         return self._run_request(
@@ -1629,7 +1629,7 @@ class ZigbeeMqttPlugin(
         :param target: Name of the target device. You can also bind a specific
             device endpoint - for example ``MyLight/state``.
         :param kwargs: Extra arguments to be passed to
-            :meth:`platypush.plugins.mqtt.MqttPlugin.publish`` (default: query
+            :meth:`platypush.plugins.mqtt.MqttPlugin.publish` (default: query
             the default configured device).
         """
         return self._run_request(
