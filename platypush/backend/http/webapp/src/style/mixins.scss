@@ -34,3 +34,18 @@
   #{$property}: -moz-calc( #{$expression} );
   #{$property}: calc( #{$expression} );
 }
+
+@mixin header {
+  width: 100%;
+  display: flex;
+  background: $header-bg-2;
+  align-items: center;
+  padding: 0.5em;
+  margin-bottom: 0.1em;
+  border: $title-border;
+  border-radius: 1em;
+  box-shadow: $title-shadow;
+  font-weight: normal;
+  font-size: 1em;
+}
+

@@ -1,9 +1,12 @@
 <template>
   <div class="row plugin execute-container" @click="onClick">
     <Loading v-if="loading" />
-    <div class="section command-container">
-      <div class="section-title">Execute Action</div>
 
+    <!-- Action executor container -->
+    <main>
+      <h1>Execute Action</h1>
+
+      <!-- Execute panel views -->
       <Tabs>
         <Tab :selected="structuredInput" icon-class="fas fa-list" @input="onInputTypeChange(true)">
           Structured
@@ -14,15 +17,18 @@
         </Tab>
       </Tabs>
 
-      <form class="action-form" ref="actionForm" autocomplete="off" @submit.prevent="executeAction">
-        <div class="request structured-request" :class="structuredInput ? '' : 'hidden'">
-          <div class="request-header">
+      <form ref="actionForm" autocomplete="off" @submit.prevent="executeAction">
+        <!-- Structured request container -->
+        <div class="request structured" v-if="structuredInput">
+          <!-- Request header -->
+          <header>
+            <!-- Action autocomplete container -->
             <div class="autocomplete-container">
               <Autocomplete
                 ref="autocomplete"
                 :items="autocompleteItems"
                 @input="updateAction"
-                placeholder="Action Name"
+                placeholder="Action"
                 show-results-when-blank
                 autofocus
                 :disabled="running"
@@ -34,103 +40,105 @@
                 <i class="fas fa-play" />
               </button>
             </div>
-          </div>
+          </header>
 
-          <div class="doc-container" v-if="selectedDoc">
-            <div class="title">
+          <!-- Action documentation container -->
+          <section class="doc-container" v-if="selectedDoc">
+            <h2>
               <i class="fas fa-book" /> &nbsp;
               <a :href="this.action?.doc_url">Action documentation</a>
-            </div>
+            </h2>
 
             <div class="doc html">
               <Loading v-if="docLoading" />
               <span v-html="selectedDoc" v-else />
             </div>
-          </div>
+          </section>
 
-          <div class="options-container"
+          <!-- Action arguments container -->
+          <section class="args"
               v-if="action.name in actions && (Object.keys(action.args).length || action.supportsExtraArgs)">
-            <div class="header title row">
+            <h2>
               <i class="fas fa-code" /> &nbsp;
               Arguments
-            </div>
+            </h2>
 
-            <div class="options">
-              <div class="params" ref="params"
+            <div class="args-body">
+              <div class="args-list"
                    v-if="Object.keys(action.args).length || action.supportsExtraArgs">
-                <div class="param" :key="name" v-for="name in Object.keys(action.args)">
+                <!-- Supported action arguments -->
+                <div class="arg" :key="name" v-for="name in Object.keys(action.args)">
                   <label>
-                    <input type="text" class="action-param-value" :disabled="running"
-                           :placeholder="name" v-model="action.args[name].value"
-                           @focus="selectAttrDoc(name)">
+                    <input
+                        type="text"
+                        class="action-arg-value"
+                        :class="{required: action.args[name].required}"
+                        :disabled="running"
+                        :placeholder="name"
+                        v-model="action.args[name].value"
+                        @focus="selectArgdoc(name)">
+                    <span class="required-flag" v-if="action.args[name].required">*</span>
                   </label>
 
-                  <div class="attr-doc-container mobile" v-if="selectedAttrDoc && selectedAttr === name">
-                    <div class="title">
-                      Attribute: <div class="attr-name" v-text="selectedAttr" />
-                    </div>
-
-                    <div class="doc html">
-                      <Loading v-if="docLoading" />
-                      <span v-html="selectedAttrDoc" v-else />
-                    </div>
-                  </div>
+                  <Argdoc :name="selectedArg"
+                          :args="action.args[selectedArg]"
+                          :doc="selectedArgdoc"
+                          :loading="docLoading"
+                          is-mobile
+                          v-if="selectedArgdoc && selectedArg && name === selectedArg" />
                 </div>
 
-                <div class="extra-params" ref="extraParams" v-if="Object.keys(action.extraArgs).length">
-                  <div class="param extra-param" :key="i" v-for="i in Object.keys(action.extraArgs)">
+                <!-- Extra action arguments -->
+                <div class="extra-args" v-if="Object.keys(action.extraArgs).length">
+                  <div class="arg extra-arg" :key="i" v-for="i in Object.keys(action.extraArgs)">
                     <label class="col-5">
-                      <input type="text" class="action-extra-param-name" :disabled="running"
+                      <input type="text" class="action-extra-arg-name" :disabled="running"
                              placeholder="Name" v-model="action.extraArgs[i].name">
                     </label>
                     <label class="col-6">
-                      <input type="text" class="action-extra-param-value" :disabled="running"
+                      <input type="text" class="action-extra-arg-value" :disabled="running"
                              placeholder="Value" v-model="action.extraArgs[i].value">
                     </label>
                     <label class="col-1 buttons">
-                      <button type="button" class="action-extra-param-del" title="Remove parameter"
-                              @click="removeParameter(i)">
+                      <button type="button" class="action-extra-arg-del" title="Remove argument"
+                              @click="removeArg(i)">
                         <i class="fas fa-trash" />
                       </button>
                     </label>
                   </div>
                 </div>
 
-                <div class="add-param" v-if="action.supportsExtraArgs">
-                  <button type="button" title="Add a parameter" @click="addParameter">
+                <div class="add-arg" v-if="action.supportsExtraArgs">
+                  <button type="button" title="Add an argument" @click="addArg">
                     <i class="fas fa-plus" />
                   </button>
                 </div>
               </div>
 
-              <div class="attr-doc-container widescreen" v-if="selectedAttrDoc">
-                <div class="title">
-                  Attribute: <div class="attr-name" v-text="selectedAttr" />
-                </div>
-
-                <div class="doc html">
-                  <Loading v-if="docLoading" />
-                  <span v-html="selectedAttrDoc" v-else />
-                </div>
-              </div>
+              <Argdoc :name="selectedArg"
+                      :args="action.args[selectedArg]"
+                      :doc="selectedArgdoc"
+                      :loading="docLoading"
+                      v-if="selectedArgdoc && selectedArg" />
             </div>
-          </div>
+          </section>
 
-          <div class="output-container">
-            <div class="header" v-if="error != null || response != null">
-              <div class="title" v-text="error != null ? 'Error' : 'Output'" />
+          <section class="response">
+            <hgroup v-if="error != null || response != null">
+              <h2 v-text="error != null ? 'Error' : 'Output'" />
               <div class="buttons">
                 <button type="button" title="Copy to clipboard" @click="copyToClipboard">
                   <i class="fas fa-clipboard" />
                 </button>
               </div>
-            </div>
+            </hgroup>
             <div class="response" v-html="response" v-if="response != null" />
             <div class="error" v-html="error" v-else-if="error != null" />
-          </div>
+          </section>
         </div>
 
-        <div class="request raw-request" :class="structuredInput ? 'hidden' : ''">
+        <!-- Raw request container -->
+        <div class="request raw-request" v-if="!structuredInput">
           <div class="first-row">
             <label>
               <textarea v-model="rawRequest" ref="rawAction" :placeholder="rawRequestPlaceholder" />
@@ -140,24 +148,25 @@
             </button>
           </div>
 
-          <div class="output-container" v-if="response != null || error != null">
-            <div class="header" v-if="error != null || response != null">
-              <div class="title" v-text="error != null ? 'Error' : 'Output'" />
+          <section class="response" v-if="response != null || error != null">
+            <hgroup v-if="error != null || response != null">
+              <h2 v-text="error != null ? 'Error' : 'Output'" />
               <div class="buttons">
                 <button type="button" title="Copy to clipboard" @click="copyToClipboard">
                   <i class="fas fa-clipboard" />
                 </button>
               </div>
-            </div>
+            </hgroup>
             <div class="error" v-html="error" v-if="error != null" />
             <div class="response" v-html="response" v-else-if="response != null" />
-          </div>
+          </section>
         </div>
       </form>
-    </div>
+    </main>
 
+    <!-- Procedures section (to be removed) -->
     <div class="section procedures-container" v-if="Object.keys(procedures).length">
-      <div class="section-title">Execute Procedure</div>
+      <h1>Execute Procedure</h1>
       <div class="procedure" :class="selectedProcedure.name === name ? 'selected' : ''"
            v-for="name in Object.keys(procedures).sort()" :key="name" @click="updateProcedure(name, $event)">
         <form ref="procedureForm" autocomplete="off" @submit.prevent="executeProcedure">
@@ -171,12 +180,12 @@
             </div>
           </div>
 
-          <div class="params" v-if="selectedProcedure.name === name">
-            <div class="param"
+          <div class="args-list" v-if="selectedProcedure.name === name">
+            <div class="arg"
                  v-for="argname in Object.keys(selectedProcedure.args)"
                  :key="argname">
               <label>
-                <input type="text" class="action-param-value" @click="$event.stopPropagation()" :disabled="running"
+                <input type="text" class="action-arg-value" @click="$event.stopPropagation()" :disabled="running"
                        :placeholder="argname" v-model="selectedProcedure.args[argname]">
               </label>
             </div>
@@ -188,6 +197,7 @@
 </template>
 
 <script>
+import Argdoc from "./Argdoc"
 import Autocomplete from "@/components/elements/Autocomplete"
 import Loading from "@/components/Loading"
 import Tab from "@/components/elements/Tab"
@@ -196,7 +206,7 @@ import Utils from "@/Utils"
 
 export default {
   name: "Execute",
-  components: {Autocomplete, Loading, Tab, Tabs},
+  components: {Argdoc, Autocomplete, Loading, Tab, Tabs},
   mixins: [Utils],
 
   data() {
@@ -206,8 +216,8 @@ export default {
       docLoading: false,
       structuredInput: true,
       selectedDoc: undefined,
-      selectedAttr: undefined,
-      selectedAttrDoc: undefined,
+      selectedArg: undefined,
+      selectedArgdoc: undefined,
       selectedProcedure: {
         name: undefined,
         args: {},
@@ -274,11 +284,11 @@ export default {
       this.action.name = actionName
       if (!(this.action.name in this.actions)) {
         this.selectedDoc = undefined
-        this.resetAttrDoc()
+        this.resetArgdoc()
         return
       }
 
-      this.resetAttrDoc()
+      this.resetArgdoc()
       this.docLoading = true
 
       try {
@@ -306,7 +316,7 @@ export default {
         this.actionDocsCache[this.action.name] = {}
       this.actionDocsCache[this.action.name].html = this.selectedDoc
 
-      this.$el.querySelector('.action-param-value')?.focus()
+      this.$el.querySelector('.action-arg-value')?.focus()
       this.response = undefined
       this.error = undefined
     },
@@ -346,32 +356,32 @@ export default {
       }
     },
 
-    addParameter() {
+    addArg() {
       this.action.extraArgs.push({
         name: undefined,
         value: undefined,
       })
     },
 
-    removeParameter(i) {
+    removeArg(i) {
       this.action.extraArgs.pop(i)
     },
 
-    async selectAttrDoc(name) {
-      this.selectedAttr = name
-      this.selectedAttrDoc =
+    async selectArgdoc(name) {
+      this.selectedArg = name
+      this.selectedArgdoc =
         this.actionDocsCache[this.action.name]?.[name]?.html ||
         await this.parseDoc(this.action.args[name].doc)
 
       if (!this.actionDocsCache[this.action.name])
         this.actionDocsCache[this.action.name] = {}
 
-      this.actionDocsCache[this.action.name][name] = {html: this.selectedAttrDoc}
+      this.actionDocsCache[this.action.name][name] = {html: this.selectedArgdoc}
     },
 
-    resetAttrDoc() {
-      this.selectedAttr = undefined
-      this.selectedAttrDoc = undefined
+    resetArgdoc() {
+      this.selectedArg = undefined
+      this.selectedArgdoc = undefined
     },
 
     onInputTypeChange(structuredInput) {
@@ -423,9 +433,9 @@ export default {
       this.running = true
       if (this.structuredInput) {
         const args = {
-          ...Object.entries(this.action.args).reduce((args, param) => {
-            if (param[1].value != null) {
-              let value = param[1].value
+          ...Object.entries(this.action.args).reduce((args, arg) => {
+            if (arg[1].value != null) {
+              let value = arg[1].value
               try {
                 value = JSON.parse(value)
               } catch (e) {
@@ -433,13 +443,13 @@ export default {
                 console.debug(value)
               }
 
-              args[param[0]] = value
+              args[arg[0]] = value
             }
             return args
           }, {}),
 
-          ...this.action.extraArgs.reduce((args, param) => {
-            let value = args[param.value]
+          ...this.action.extraArgs.reduce((args, arg) => {
+            let value = args[arg.value]
             try {
               value = JSON.parse(value)
             } catch (e) {
@@ -447,7 +457,7 @@ export default {
               console.debug(value)
             }
 
-            args[param.name] = value
+            args[arg.name] = value
             return args
           }, {})
         }
@@ -474,9 +484,9 @@ export default {
       event.stopPropagation()
       this.running = true
       const args = {
-        ...Object.entries(this.selectedProcedure.args).reduce((args, param) => {
-          if (param[1] != null) {
-            let value = param[1]
+        ...Object.entries(this.selectedProcedure.args).reduce((args, arg) => {
+          if (arg[1] != null) {
+            let value = arg[1]
             try {
               value = JSON.parse(value)
             } catch (e) {
@@ -484,7 +494,7 @@ export default {
               console.debug(value)
             }
 
-            args[param[0]] = value
+            args[arg[0]] = value
           }
           return args
         }, {}),
@@ -511,24 +521,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "vars";
-
-$params-desktop-width: 30em;
-$params-tablet-width: 20em;
-$request-headers-btn-width: 7.5em;
-
-@mixin header {
-  display: flex;
-  background: $header-bg-2;
-  align-items: center;
-  padding: 0.5em;
-  margin-bottom: 0.1em;
-  border: $title-border;
-  border-radius: 1em;
-  box-shadow: $title-shadow;
-  font-weight: normal;
-  font-size: 1em;
-}
+@import "common";
 
 .execute-container {
   width: 100%;
@@ -541,7 +534,7 @@ $request-headers-btn-width: 7.5em;
   flex-direction: column;
   align-items: center;
 
-  .section {
+  main {
     width: 100%;
     max-width: 1000px;
     display: flex;
@@ -554,304 +547,10 @@ $request-headers-btn-width: 7.5em;
     }
   }
 
-  form {
-    padding: 0;
-    margin: 0;
-    border-radius: 0;
-    border: none;
-  }
-
-  .action-form {
-    background: $default-bg-2;
-    padding: 1em .5em;
-  }
-
-  .request-header {
-    width: 100%;
-    display: flex;
-    align-items: center;
-
-    .autocomplete-container {
-      width: calc(100% - $request-headers-btn-width);
-      flex-grow: 1;
-    }
-
-    .buttons {
-      width: $request-headers-btn-width;
-      display: inline-flex;
-      justify-content: flex-end;
-      margin-right: 0.5em;
-    }
-  }
-
-  .section-title {
-    background: $header-bg;
-    padding: .75em .5em;
-    box-shadow: $title-shadow;
-    font-size: 1.1em;
-    margin-bottom: 0 !important;
-
-    @include from($desktop) {
-      border-radius: 0.5em 0.5em 0 0;
-    }
-  }
-
   .request {
     display: flex;
     flex-direction: column;
     margin: 0 .5em;
-
-    form {
-      margin-bottom: 0 !important;
-    }
-
-    .options {
-      display: flex;
-      margin-top: 0.15em;
-      margin-bottom: 1.5em;
-
-      @include until($tablet) {
-        flex-direction: column;
-      }
-    }
-
-    .params {
-      @include until($tablet) {
-        width: 100%;
-      }
-
-      @include from($tablet) {
-        width: $params-tablet-width;
-        margin-right: 1.5em;
-      }
-
-      @include from($desktop) {
-        width: $params-desktop-width;
-      }
-
-      .param {
-        margin-bottom: .25em;
-        @include until($tablet) {
-          width: 100%;
-        }
-      }
-
-      .action-param-value {
-        width: 100%;
-      }
-    }
-
-    .add-param {
-      width: 100%;
-
-      button {
-        width: 100%;
-        background: $extra-params-btn-bg;
-        border: $title-border;
-      }
-    }
-
-    .extra-param {
-      display: flex;
-      margin-bottom: .5em;
-
-      label {
-        margin-left: 0.25em;
-      }
-
-      .buttons {
-        display: flex;
-        flex-grow: 1;
-        justify-content: right;
-      }
-
-      .action-extra-param-del {
-        border: 0;
-        text-align: right;
-        padding: 0 .5em;
-      }
-
-      input[type=text] {
-        width: 100%;
-      }
-
-      .buttons {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: .25em;
-
-        button {
-          background: none;
-
-          &:hover {
-            color: $default-hover-fg;
-          }
-        }
-      }
-    }
-
-    .doc-container,
-    .output-container {
-      margin-top: .5em;
-    }
-
-    .doc-container,
-    .attr-doc-container {
-      .title {
-        @include header;
-      }
-    }
-
-    .attr-doc-container {
-      .title {
-        .attr-name {
-          font-weight: bold;
-          margin-left: 0.25em;
-        }
-      }
-    }
-
-    .output-container {
-      flex-grow: 1;
-    }
-
-    .attr-doc-container {
-      @include from($tablet) {
-        width: calc(100% - #{$params-tablet-width} - 2em);
-      }
-
-      @include from($desktop) {
-        width: calc(100% - #{$params-desktop-width} - 2em);
-      }
-
-      .doc {
-        width: 100%;
-        overflow: auto;
-      }
-
-      &.widescreen {
-        @include until($tablet) {
-          display: none;
-        }
-      }
-
-      &.mobile {
-        width: 100%;
-        @include from($tablet) {
-          display: none;
-        }
-      }
-    }
-
-    .doc-container,
-    .attr-doc-container {
-      .doc {
-        padding: 1em !important;
-      }
-    }
-
-    .output-container,
-    .doc-container,
-    .attr-doc-container,
-    .options-container {
-      max-height: 50vh;
-      display: flex;
-      flex-direction: column;
-
-      .header {
-        @include header;
-
-        .title {
-          flex-grow: 1;
-        }
-
-        button {
-          background: none;
-          border: none;
-          box-shadow: none;
-
-          &:hover {
-            color: $default-hover-fg;
-          }
-        }
-
-        .attr-name {
-          display: inline-block;
-          font-weight: bold;
-        }
-      }
-
-      .response,
-      .error,
-      .doc {
-        height: 100%;
-        padding: .5em .5em 0 .5em;
-        border-radius: 1em;
-        overflow: auto;
-        margin-top: 0.1em;
-      }
-
-      .response {
-        background: $response-bg;
-        box-shadow: $response-shadow;
-      }
-
-      .error {
-        background: $error-bg;
-        padding: 1em;
-        box-shadow: $error-shadow;
-      }
-
-      .doc {
-        background: $doc-bg;
-        box-shadow: $doc-shadow;
-      }
-    }
-
-    .options-container {
-      margin-top: .5em;
-      padding-top: .5em;
-    }
-
-    textarea {
-      width: 100%;
-      height: 10em;
-      margin-bottom: .5em;
-      padding: .5em;
-      border: $default-border-2;
-      border-radius: 1em;
-      box-shadow: $border-shadow-bottom-right;
-      outline: none;
-
-      &:hover {
-        border: 1px solid $default-hover-fg-2;
-      }
-
-      &:focus {
-        border: 1px solid $selected-fg;
-      }
-    }
-  }
-
-  .raw-request {
-    .first-row {
-      @include until($tablet) {
-        width: 100%;
-      }
-
-      @include from($tablet) {
-        width: 80%;
-        max-width: 60em;
-      }
-
-      display: flex;
-      flex-direction: column;
-
-      button {
-        margin-left: 0;
-      }
-    }
   }
 
   .procedures-container {
@@ -891,13 +590,9 @@ $request-headers-btn-width: 7.5em;
       }
     }
 
-    .action-param-value {
+    .action-arg-value {
       margin: 0.25em 0;
     }
-  }
-
-  pre {
-    background: none;
   }
 
   .run-btn {
@@ -923,12 +618,6 @@ $request-headers-btn-width: 7.5em;
         box-shadow: none;
       }
     }
-  }
-}
-
-:deep(.doc) {
-  blockquote {
-    margin-left: 0;
   }
 }
 </style>
