@@ -137,25 +137,7 @@
             </div>
           </section>
 
-          <section class="response">
-            <h2 v-if="error != null || response != null">
-              <span class="title">
-                {{ error != null ? 'Error' : 'Output' }}
-              </span>
-              <span class="buttons">
-                <button type="button" title="Copy to clipboard" @click="copyToClipboard(response)">
-                  <i class="fas fa-clipboard" />
-                </button>
-              </span>
-            </h2>
-            <div class="output response" v-if="response != null">
-              <pre v-text="response" />
-            </div>
-
-            <div class="output error" v-else-if="error != null">
-              <pre v-text="error" />
-            </div>
-          </section>
+          <Response :response="response" :error="error" />
         </div>
 
         <!-- Raw request container -->
@@ -169,18 +151,7 @@
             </button>
           </div>
 
-          <section class="response" v-if="response != null || error != null">
-            <hgroup v-if="error != null || response != null">
-              <h2 v-text="error != null ? 'Error' : 'Output'" />
-              <div class="buttons">
-                <button type="button" title="Copy to clipboard" @click="copyToClipboard(error)">
-                  <i class="fas fa-clipboard" />
-                </button>
-              </div>
-            </hgroup>
-            <div class="error" v-html="error" v-if="error != null" />
-            <div class="response" v-html="response" v-else-if="response != null" />
-          </section>
+          <Response :response="response" :error="error" />
         </div>
       </form>
     </main>
@@ -222,13 +193,14 @@ import Argdoc from "./Argdoc"
 import Autocomplete from "@/components/elements/Autocomplete"
 import Loading from "@/components/Loading"
 import Modal from "@/components/Modal";
+import Response from "./Response"
 import Tab from "@/components/elements/Tab"
 import Tabs from "@/components/elements/Tabs"
 import Utils from "@/Utils"
 
 export default {
   name: "Execute",
-  components: {Argdoc, Autocomplete, Loading, Modal, Tab, Tabs},
+  components: {Argdoc, Autocomplete, Loading, Modal, Response, Tab, Tabs},
   mixins: [Utils],
 
   data() {
