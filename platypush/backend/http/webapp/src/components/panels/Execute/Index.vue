@@ -124,16 +124,23 @@
           </section>
 
           <section class="response">
-            <hgroup v-if="error != null || response != null">
-              <h2 v-text="error != null ? 'Error' : 'Output'" />
-              <div class="buttons">
+            <h2 v-if="error != null || response != null">
+              <span class="title">
+                {{ error != null ? 'Error' : 'Output' }}
+              </span>
+              <span class="buttons">
                 <button type="button" title="Copy to clipboard" @click="copyToClipboard">
                   <i class="fas fa-clipboard" />
                 </button>
-              </div>
-            </hgroup>
-            <div class="response" v-html="response" v-if="response != null" />
-            <div class="error" v-html="error" v-else-if="error != null" />
+              </span>
+            </h2>
+            <div class="output response" v-if="response != null">
+              <pre v-text="response" />
+            </div>
+
+            <div class="output error" v-else-if="error != null">
+              <pre v-text="error" />
+            </div>
           </section>
         </div>
 
@@ -398,7 +405,10 @@ export default {
     },
 
     onResponse(response) {
-      this.response = '<pre>' + JSON.stringify(response, null, 2) + '</pre>'
+      this.response = (
+        typeof response === 'string' ? response : JSON.stringify(response, null, 2)
+      ).trim()
+
       this.error = undefined
     },
 
@@ -414,7 +424,7 @@ export default {
     async copyToClipboard() {
       const output = (
         this.error != null ? this.error : this.response
-      ).replace(/^\s*<pre>/g, '').replace(/<\/pre>\s*/g, '')
+      )
 
       await navigator.clipboard.writeText(output)
     },
@@ -528,7 +538,6 @@ export default {
   height: 100%;
   color: $default-fg-2;
   font-weight: 400;
-  border-bottom: $default-border-2;
   border-radius: 0 0 1em 1em;
   display: flex;
   flex-direction: column;

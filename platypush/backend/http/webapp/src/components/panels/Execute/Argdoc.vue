@@ -82,7 +82,7 @@ export default {
   .flag {
     font-size: 0.9em;
     margin-left: 0.5em;
-    margin-bottom: 0.1em;
+    margin-bottom: 0.2em;
 
     &.required {
       color: $error-fg;

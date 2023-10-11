@@ -1,17 +1,17 @@
 @import "vars.scss";
 
+button {
+  background: none;
+  border: none;
+  box-shadow: none;
+
+  &:hover {
+    color: $default-hover-fg;
+  }
+}
+
 hgroup {
   flex-grow: 1;
-
-  button {
-    background: none;
-    border: none;
-    box-shadow: none;
-
-    &:hover {
-      color: $default-hover-fg;
-    }
-  }
 }
 
 h1 {
@@ -36,24 +36,9 @@ section {
   flex-direction: column;
   margin-top: .5em;
 
-  &.response {
-    flex-grow: 1;
-  }
-
   &.args {
     margin-top: .5em;
     padding-top: .5em;
-  }
-
-  .response {
-    background: $response-bg;
-    box-shadow: $response-shadow;
-  }
-
-  .error {
-    background: $error-bg;
-    padding: 1em;
-    box-shadow: $error-shadow;
   }
 }
 
@@ -63,14 +48,6 @@ section {
   justify-content: center;
   margin-bottom: 0.25em;
   flex-grow: 1;
-
-  button {
-    background: none;
-
-    &:hover {
-      color: $default-hover-fg;
-    }
-  }
 }
 
 header {
@@ -105,10 +82,6 @@ header {
   blockquote {
     margin-left: 0;
   }
-}
-
-pre {
-  background: none;
 }
 
 textarea {
@@ -231,6 +204,43 @@ form {
 
   input[type=text] {
     width: 100%;
+  }
+}
+
+.response {
+  flex-grow: 1;
+
+  h2 {
+    display: inline-flex;
+
+    .title {
+      width: calc(100% - 2em);
+    }
+
+    .buttons {
+      width: 2em;
+
+      button {
+        padding: 0;
+      }
+    }
+  }
+
+  .output {
+    background: $output-bg;
+    padding: 0 0.75em;
+    overflow: auto;
+    margin-top: 0.1em;
+    border-radius: 1em;
+    box-shadow: $output-shadow;
+
+    &.response {
+      color: $response-fg;
+    }
+
+    &.error {
+      color: $error-fg;
+    }
   }
 }
 
