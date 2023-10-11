@@ -207,7 +207,7 @@ form {
   }
 }
 
-.response {
+.response, .doc-container {
   flex-grow: 1;
 
   h2 {
@@ -225,22 +225,28 @@ form {
       }
     }
   }
+}
 
-  .output {
-    background: $output-bg;
-    padding: 0 0.75em;
-    overflow: auto;
-    margin-top: 0.1em;
-    border-radius: 1em;
-    box-shadow: $output-shadow;
+.output {
+  background: $output-bg;
+  padding: 0 0.75em;
+  overflow: auto;
+  margin-top: 0.1em;
+  border-radius: 1em;
+  box-shadow: $output-shadow;
+  color: $response-fg;
 
-    &.response {
-      color: $response-fg;
-    }
-
-    &.error {
-      color: $error-fg;
-    }
+  &.error {
+    color: $error-fg;
   }
 }
 
+textarea.curl-snippet {
+  width: calc(100vw - 5em);
+  height: 100vh;
+  max-width: 40em;
+  max-height: 25em;
+  line-break: anywhere;
+  overflow: auto;
+  padding: 0.5em;
+}

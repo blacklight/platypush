@@ -6,6 +6,12 @@
     <main>
       <h1>Execute Action</h1>
 
+      <!-- cURL snippet modal -->
+      <Modal ref="curlModal" title="curl request" v-if="curlSnippet?.length">
+        <textarea class="output curl-snippet" readonly :value="curlSnippet"
+          @click="copyToClipboard(curlSnippet)" />
+      </Modal>
+
       <!-- Execute panel views -->
       <Tabs>
         <Tab :selected="structuredInput" icon-class="fas fa-list" @input="onInputTypeChange(true)">
@@ -45,8 +51,16 @@
           <!-- Action documentation container -->
           <section class="doc-container" v-if="selectedDoc">
             <h2>
-              <i class="fas fa-book" /> &nbsp;
-              <a :href="this.action?.doc_url">Action documentation</a>
+              <div class="title">
+                <i class="fas fa-book" /> &nbsp;
+                <a :href="this.action?.doc_url">Action documentation</a>
+              </div>
+              <div class="buttons" v-if="action?.name">
+                <button type="button" title="cURL command" v-if="curlSnippet?.length"
+                        @click="$refs.curlModal.show()">
+                  <i class="fas fa-terminal" />
+                </button>
+              </div>
             </h2>
 
             <div class="doc html">
@@ -129,7 +143,7 @@
                 {{ error != null ? 'Error' : 'Output' }}
               </span>
               <span class="buttons">
-                <button type="button" title="Copy to clipboard" @click="copyToClipboard">
+                <button type="button" title="Copy to clipboard" @click="copyToClipboard(response)">
                   <i class="fas fa-clipboard" />
                 </button>
               </span>
@@ -159,7 +173,7 @@
             <hgroup v-if="error != null || response != null">
               <h2 v-text="error != null ? 'Error' : 'Output'" />
               <div class="buttons">
-                <button type="button" title="Copy to clipboard" @click="copyToClipboard">
+                <button type="button" title="Copy to clipboard" @click="copyToClipboard(error)">
                   <i class="fas fa-clipboard" />
                 </button>
               </div>
@@ -207,13 +221,14 @@
 import Argdoc from "./Argdoc"
 import Autocomplete from "@/components/elements/Autocomplete"
 import Loading from "@/components/Loading"
+import Modal from "@/components/Modal";
 import Tab from "@/components/elements/Tab"
 import Tabs from "@/components/elements/Tabs"
 import Utils from "@/Utils"
 
 export default {
   name: "Execute",
-  components: {Argdoc, Autocomplete, Loading, Tab, Tabs},
+  components: {Argdoc, Autocomplete, Loading, Modal, Tab, Tabs},
   mixins: [Utils],
 
   data() {
@@ -263,6 +278,64 @@ export default {
 
     actionInput() {
       return this.$refs.autocomplete.$el.parentElement.querySelector('input[type=text]')
+    },
+
+    requestArgs() {
+      if (!this.action.name)
+        return {}
+
+      return {
+        ...Object.entries(this.action.args).reduce((args, arg) => {
+          if (arg[1].value != null) {
+            let value = arg[1].value
+            try {
+              value = JSON.parse(value)
+            } catch (e) {
+              console.debug('Not a valid JSON value')
+              console.debug(value)
+            }
+
+            args[arg[0]] = value
+          }
+          return args
+        }, {}),
+
+        ...this.action.extraArgs.reduce((args, arg) => {
+          let value = args[arg.value]
+          try {
+            value = JSON.parse(value)
+          } catch (e) {
+            console.debug('Not a valid JSON value')
+            console.debug(value)
+          }
+
+          args[arg.name] = value
+          return args
+        }, {})
+      }
+    },
+
+    curlURL() {
+      return `${window.location.protocol}//${window.location.host}/execute`
+    },
+
+    curlSnippet() {
+      if (!this.action.name)
+        return ''
+
+      const request = {
+        type: 'request',
+        action: this.action.name,
+        args: this.requestArgs,
+      }
+
+      return (
+        'curl -XPOST -H "Content-Type: application/json" \\\n\t' +
+        `-H "Cookie: session_token=${this.getCookies()['session_token']}"`+
+        " \\\n\t -d '" +
+        this.indent(JSON.stringify(request, null, 2), 2).trim() + "' \\\n\t" +
+        `'${this.curlURL}'`
+      )
     },
   },
 
@@ -421,14 +494,6 @@ export default {
       this.running = false
     },
 
-    async copyToClipboard() {
-      const output = (
-        this.error != null ? this.error : this.response
-      )
-
-      await navigator.clipboard.writeText(output)
-    },
-
     getPluginName(actionName) {
       if (!actionName?.length)
         return ''
@@ -442,37 +507,7 @@ export default {
 
       this.running = true
       if (this.structuredInput) {
-        const args = {
-          ...Object.entries(this.action.args).reduce((args, arg) => {
-            if (arg[1].value != null) {
-              let value = arg[1].value
-              try {
-                value = JSON.parse(value)
-              } catch (e) {
-                console.debug('Not a valid JSON value')
-                console.debug(value)
-              }
-
-              args[arg[0]] = value
-            }
-            return args
-          }, {}),
-
-          ...this.action.extraArgs.reduce((args, arg) => {
-            let value = args[arg.value]
-            try {
-              value = JSON.parse(value)
-            } catch (e) {
-              console.debug('Not a valid JSON value')
-              console.debug(value)
-            }
-
-            args[arg.name] = value
-            return args
-          }, {})
-        }
-
-        this.request(this.action.name, args).then(this.onResponse).catch(this.onError).finally(this.onDone)
+        this.request(this.action.name, this.requestArgs).then(this.onResponse).catch(this.onError).finally(this.onDone)
       } else {
         try {
           const request = JSON.parse(this.rawRequest)

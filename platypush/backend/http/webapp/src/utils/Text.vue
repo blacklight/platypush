@@ -12,6 +12,10 @@ export default {
     prettify(text) {
       return text.split('_').map((t) => this.capitalize(t)).join(' ')
     },
+
+    indent(text, tabs = 1) {
+      return text.split('\n').map((t) => `${'\t'.repeat(tabs)}${t}`).join('\n')
+    },
   },
 }
 </script>
