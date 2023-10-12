@@ -21,8 +21,11 @@
 </template>
 
 <script>
+import Utils from "@/Utils"
+
 export default {
   name: 'Response',
+  mixins: [Utils],
   props: {
     response: String,
     error: String,

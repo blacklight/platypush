@@ -49,25 +49,12 @@
           </header>
 
           <!-- Action documentation container -->
-          <section class="doc-container" v-if="selectedDoc">
-            <h2>
-              <div class="title">
-                <i class="fas fa-book" /> &nbsp;
-                <a :href="this.action?.doc_url">Action documentation</a>
-              </div>
-              <div class="buttons" v-if="action?.name">
-                <button type="button" title="cURL command" v-if="curlSnippet?.length"
-                        @click="$refs.curlModal.show()">
-                  <i class="fas fa-terminal" />
-                </button>
-              </div>
-            </h2>
-
-            <div class="doc html">
-              <Loading v-if="docLoading" />
-              <span v-html="selectedDoc" v-else />
-            </div>
-          </section>
+          <ActionDoc
+            :action="action"
+            :curl-snippet="curlSnippet"
+            :loading="docLoading"
+            :doc="selectedDoc"
+            @curl-modal="$refs.curlModal.show()" />
 
           <!-- Action arguments container -->
           <section class="args"
@@ -77,66 +64,20 @@
               Arguments
             </h2>
 
-            <div class="args-body">
-              <div class="args-list"
-                   v-if="Object.keys(action.args).length || action.supportsExtraArgs">
-                <!-- Supported action arguments -->
-                <div class="arg" :key="name" v-for="name in Object.keys(action.args)">
-                  <label>
-                    <input
-                        type="text"
-                        class="action-arg-value"
-                        :class="{required: action.args[name].required}"
-                        :disabled="running"
-                        :placeholder="name"
-                        v-model="action.args[name].value"
-                        @focus="selectArgdoc(name)">
-                    <span class="required-flag" v-if="action.args[name].required">*</span>
-                  </label>
-
-                  <Argdoc :name="selectedArg"
-                          :args="action.args[selectedArg]"
-                          :doc="selectedArgdoc"
-                          :loading="docLoading"
-                          is-mobile
-                          v-if="selectedArgdoc && selectedArg && name === selectedArg" />
-                </div>
-
-                <!-- Extra action arguments -->
-                <div class="extra-args" v-if="Object.keys(action.extraArgs).length">
-                  <div class="arg extra-arg" :key="i" v-for="i in Object.keys(action.extraArgs)">
-                    <label class="col-5">
-                      <input type="text" class="action-extra-arg-name" :disabled="running"
-                             placeholder="Name" v-model="action.extraArgs[i].name">
-                    </label>
-                    <label class="col-6">
-                      <input type="text" class="action-extra-arg-value" :disabled="running"
-                             placeholder="Value" v-model="action.extraArgs[i].value">
-                    </label>
-                    <label class="col-1 buttons">
-                      <button type="button" class="action-extra-arg-del" title="Remove argument"
-                              @click="removeArg(i)">
-                        <i class="fas fa-trash" />
-                      </button>
-                    </label>
-                  </div>
-                </div>
-
-                <div class="add-arg" v-if="action.supportsExtraArgs">
-                  <button type="button" title="Add an argument" @click="addArg">
-                    <i class="fas fa-plus" />
-                  </button>
-                </div>
-              </div>
-
-              <Argdoc :name="selectedArg"
-                      :args="action.args[selectedArg]"
-                      :doc="selectedArgdoc"
-                      :loading="docLoading"
-                      v-if="selectedArgdoc && selectedArg" />
-            </div>
+            <ActionArgs :action="action"
+                        :loading="loading"
+                        :running="running"
+                        :selected-arg="selectedArg"
+                        :selected-argdoc="selectedArgdoc"
+                        @add="addArg"
+                        @select="selectArgdoc"
+                        @remove="removeArg"
+                        @arg-edit="action.args[$event.name].value = $event.value"
+                        @extra-arg-name-edit="action.extraArgs[$event.index].name = $event.value"
+                        @extra-arg-value-edit="action.extraArgs[$event.index].value = $event.value" />
           </section>
 
+          <!-- Structured response container -->
           <Response :response="response" :error="error" />
         </div>
 
@@ -151,45 +92,17 @@
             </button>
           </div>
 
+          <!-- Raw response container -->
           <Response :response="response" :error="error" />
         </div>
       </form>
     </main>
-
-    <!-- Procedures section (to be removed) -->
-    <div class="section procedures-container" v-if="Object.keys(procedures).length">
-      <h1>Execute Procedure</h1>
-      <div class="procedure" :class="selectedProcedure.name === name ? 'selected' : ''"
-           v-for="name in Object.keys(procedures).sort()" :key="name" @click="updateProcedure(name, $event)">
-        <form ref="procedureForm" autocomplete="off" @submit.prevent="executeProcedure">
-          <div class="head">
-            <div class="name col-no-margin-11" v-text="name" />
-            <div class="btn-container col-no-margin-1">
-              <button type="submit" class="run-btn btn-default" :disabled="running" title="Run"
-                      @click.stop="$emit('submit')" v-if="selectedProcedure.name === name">
-                <i class="fas fa-play" />
-              </button>
-            </div>
-          </div>
-
-          <div class="args-list" v-if="selectedProcedure.name === name">
-            <div class="arg"
-                 v-for="argname in Object.keys(selectedProcedure.args)"
-                 :key="argname">
-              <label>
-                <input type="text" class="action-arg-value" @click="$event.stopPropagation()" :disabled="running"
-                       :placeholder="argname" v-model="selectedProcedure.args[argname]">
-              </label>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
 </template>
 
 <script>
-import Argdoc from "./Argdoc"
+import ActionArgs from "./ActionArgs"
+import ActionDoc from "./ActionDoc"
 import Autocomplete from "@/components/elements/Autocomplete"
 import Loading from "@/components/Loading"
 import Modal from "@/components/Modal";
@@ -200,7 +113,16 @@ import Utils from "@/Utils"
 
 export default {
   name: "Execute",
-  components: {Argdoc, Autocomplete, Loading, Modal, Response, Tab, Tabs},
+  components: {
+    ActionArgs,
+    ActionDoc,
+    Autocomplete,
+    Loading,
+    Modal,
+    Response,
+    Tab,
+    Tabs,
+  },
   mixins: [Utils],
 
   data() {
@@ -212,11 +134,6 @@ export default {
       selectedDoc: undefined,
       selectedArg: undefined,
       selectedArgdoc: undefined,
-      selectedProcedure: {
-        name: undefined,
-        args: {},
-      },
-
       response: undefined,
       error: undefined,
       rawRequest: undefined,
@@ -273,7 +190,7 @@ export default {
         }, {}),
 
         ...this.action.extraArgs.reduce((args, arg) => {
-          let value = args[arg.value]
+          let value = arg.value
           try {
             value = JSON.parse(value)
           } catch (e) {
@@ -301,11 +218,16 @@ export default {
         args: this.requestArgs,
       }
 
+      const reqStr = JSON.stringify(request, null, 2)
+
       return (
-        'curl -XPOST -H "Content-Type: application/json" \\\n\t' +
+        'curl -XPOST -H "Content-Type: application/json" \\\n  ' +
         `-H "Cookie: session_token=${this.getCookies()['session_token']}"`+
-        " \\\n\t -d '" +
-        this.indent(JSON.stringify(request, null, 2), 2).trim() + "' \\\n\t" +
+        " \\\n  -d '\n  {\n    " +
+        this.indent(
+          reqStr.split('\n').slice(1, reqStr.length - 2).join('\n'), 2
+        ).trim() +
+        "' \\\n  " +
         `'${this.curlURL}'`
       )
     },
@@ -316,12 +238,36 @@ export default {
       this.loading = true
 
       try {
-        this.procedures = await this.request('inspect.get_procedures')
-        this.plugins = await this.request('inspect.get_all_plugins')
+        [this.procedures, this.plugins] = await Promise.all([
+          this.request('inspect.get_procedures'),
+          this.request('inspect.get_all_plugins'),
+        ])
       } finally {
         this.loading = false
       }
 
+      // Register procedures as actions
+      this.plugins.procedure = {
+        name: 'procedure',
+        actions: Object.entries(this.procedures || {}).reduce((actions, [name, procedure]) => {
+          actions[name] = {
+            name: name,
+            args: (procedure.args || []).reduce((args, arg) => {
+              args[arg] = {
+                name: arg,
+                required: false,
+              }
+
+              return args
+            }, {}),
+            supportsExtraArgs: true,
+          }
+
+          return actions
+        }, {}),
+      }
+
+      // Parse actions from the plugins map
       for (const plugin of Object.values(this.plugins)) {
         for (const action of Object.values(plugin.actions)) {
           action.name = plugin.name + '.' + action.name
@@ -378,34 +324,6 @@ export default {
         return docString
 
       return await this.request('utils.rst_to_html', {text: docString})
-    },
-
-    updateProcedure(name, event) {
-      if (event.target.getAttribute('type') === 'submit') {
-        return
-      }
-
-      if (this.selectedProcedure.name === name) {
-        this.selectedProcedure = {
-          name: undefined,
-          args: {},
-        }
-
-        return
-      }
-
-      if (!(name in this.procedures)) {
-        console.warn('Procedure not found: ' + name)
-        return
-      }
-
-      this.selectedProcedure = {
-        name: name,
-        args: (this.procedures[name].args || []).reduce((args, arg) => {
-          args[arg] = undefined
-          return args
-        }, {})
-      }
     },
 
     addArg() {
@@ -494,33 +412,6 @@ export default {
       }
     },
 
-    executeProcedure(event) {
-      if (!this.selectedProcedure.name || this.running)
-        return
-
-      event.stopPropagation()
-      this.running = true
-      const args = {
-        ...Object.entries(this.selectedProcedure.args).reduce((args, arg) => {
-          if (arg[1] != null) {
-            let value = arg[1]
-            try {
-              value = JSON.parse(value)
-            } catch (e) {
-              console.debug('Not a valid JSON value')
-              console.debug(value)
-            }
-
-            args[arg[0]] = value
-          }
-          return args
-        }, {}),
-      }
-
-      this.request('procedure.' + this.selectedProcedure.name, args)
-          .then(this.onResponse).catch(this.onError).finally(this.onDone)
-    },
-
     onClick(event) {
       // Intercept any clicks from RST rendered links and open them in a new tab
       if (event.target.tagName.toLowerCase() === 'a') {
@@ -567,48 +458,6 @@ export default {
     display: flex;
     flex-direction: column;
     margin: 0 .5em;
-  }
-
-  .procedures-container {
-    .procedure {
-      background: $background-color;
-      border-bottom: $default-border-2;
-      padding: 1.5em .5em;
-      cursor: pointer;
-
-      &:hover {
-        background: $hover-bg;
-      }
-
-      &.selected {
-        background: $selected-bg;
-      }
-
-      form {
-        background: none;
-        display: flex;
-        margin-bottom: 0 !important;
-        flex-direction: column;
-        box-shadow: none;
-      }
-
-      .head {
-        display: flex;
-        align-items: center;
-      }
-
-      .btn-container {
-        text-align: right;
-      }
-
-      button {
-        background: $procedure-submit-btn-bg;
-      }
-    }
-
-    .action-arg-value {
-      margin: 0.25em 0;
-    }
   }
 
   .run-btn {

@@ -19,7 +19,7 @@ h1 {
   padding: .75em .5em;
   box-shadow: $title-shadow;
   font-size: 1.1em;
-  margin-bottom: 0 !important;
+  margin: 0;
 
   @include from($desktop) {
     border-radius: 0.5em 0.5em 0 0;
@@ -246,6 +246,7 @@ textarea.curl-snippet {
   height: 100vh;
   max-width: 40em;
   max-height: 25em;
+  font-family: monospace;
   line-break: anywhere;
   overflow: auto;
   padding: 0.5em;
