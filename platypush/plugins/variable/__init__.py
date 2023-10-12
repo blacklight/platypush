@@ -28,7 +28,7 @@ def ensure_initialized(f: Callable[..., Any]):
                     self._initialized.set()
                     with self._db.get_session() as session:
                         self._db_vars.update(
-                            {  # type: ignore
+                            {
                                 str(var.name): var.value
                                 for var in session.query(Variable).all()
                             }
@@ -57,8 +57,8 @@ class VariablePlugin(Plugin, EntityManager):
         self._init_lock = RLock()
         """ Lock for the _db_vars map initialization. """
 
-    @action
     @ensure_initialized
+    @action
     def get(self, name: Optional[str] = None, default_value=None):
         """
         Get the value of a variable by name from the local db.
@@ -74,8 +74,8 @@ class VariablePlugin(Plugin, EntityManager):
             else self.status().output
         )
 
-    @action
     @ensure_initialized
+    @action
     def set(self, **kwargs):
         """
         Set a variable or a set of variables on the local db.
@@ -87,8 +87,8 @@ class VariablePlugin(Plugin, EntityManager):
         self._db_vars.update(kwargs)
         return kwargs
 
-    @action
     @ensure_initialized
+    @action
     def delete(self, name: str):
         """
         Delete a variable from the database.
@@ -107,8 +107,8 @@ class VariablePlugin(Plugin, EntityManager):
         self._db_vars.pop(name, None)
         return True
 
-    @action
     @ensure_initialized
+    @action
     def unset(self, name: str):
         """
         Unset a variable by name if it's set on the local db.
@@ -121,8 +121,8 @@ class VariablePlugin(Plugin, EntityManager):
 
         return self.set(**{name: None})
 
-    @action
     @ensure_initialized
+    @action
     def mget(self, name: str):
         """
         Get the value of a variable by name from Redis.
@@ -133,8 +133,8 @@ class VariablePlugin(Plugin, EntityManager):
 
         return self._redis.mget([name])
 
-    @action
     @ensure_initialized
+    @action
     def mset(self, **kwargs):
         """
         Set a variable or a set of variables on Redis.
@@ -146,8 +146,8 @@ class VariablePlugin(Plugin, EntityManager):
         self._redis.mset(**kwargs)
         return kwargs
 
-    @action
     @ensure_initialized
+    @action
     def munset(self, name: str):
         """
         Unset a Redis variable by name if it's set
@@ -157,8 +157,8 @@ class VariablePlugin(Plugin, EntityManager):
 
         return self._redis.delete(name)
 
-    @action
     @ensure_initialized
+    @action
     def expire(self, name: str, expire: int):
         """
         Set a variable expiration on Redis
@@ -191,8 +191,8 @@ class VariablePlugin(Plugin, EntityManager):
             ]
         )
 
-    @action
     @ensure_initialized
+    @action
     def status(self, *_, **__):
         variables = {
             name: value for name, value in self._db_vars.items() if value is not None

@@ -113,6 +113,7 @@ import Utils from "@/Utils"
 
 export default {
   name: "Execute",
+  mixins: [Utils],
   components: {
     ActionArgs,
     ActionDoc,
@@ -123,7 +124,6 @@ export default {
     Tab,
     Tabs,
   },
-  mixins: [Utils],
 
   data() {
     return {
