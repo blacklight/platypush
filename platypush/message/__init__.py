@@ -46,8 +46,8 @@ class Message:
                 if isinstance(obj, (bytes, bytearray)):
                     return '0x' + ''.join([f'{x:02x}' for x in obj])
                 if callable(obj):
-                    return '<function at {}.{}>'.format(obj.__module__, obj.__name__)
-            except (ImportError, TypeError):
+                    return f'<function at {obj.__module__}.{obj.__name__}>'
+            except (AttributeError, ImportError, TypeError):
                 pass
 
             return
