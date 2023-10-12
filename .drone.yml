@@ -225,7 +225,7 @@ steps:
     - git commit dist -S -m "[Automatic] Updated UI files" --no-verify
     - git remote rm origin
     - git remote add origin git@git.platypush.tech:platypush/platypush.git
-    - git push origin master
+    - git push -f origin master
 
     # Restore the original git configuration
     - mv /tmp/git.config.orig $GIT_CONF
