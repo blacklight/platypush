@@ -1,5 +1,9 @@
 @import "vars.scss";
 
+main {
+  min-height: calc(100vh - 2em);
+}
+
 button {
   background: none;
   border: none;
@@ -40,6 +44,15 @@ section {
     margin-top: .5em;
     padding-top: .5em;
   }
+
+  &.response {
+    flex-grow: 1;
+    max-height: 40em;
+
+    .output {
+      overflow: auto;
+    }
+  }
 }
 
 .buttons {
@@ -58,6 +71,10 @@ header {
   .autocomplete-container {
     width: calc(100% - $request-headers-btn-width);
     flex-grow: 1;
+
+    .items {
+      background: $background-color;
+    }
   }
 
   .buttons {
@@ -105,6 +122,7 @@ textarea {
 
 form {
   background: $default-bg-2;
+  flex-grow: 1;
   margin: 0;
   border-radius: 0;
   border: none;

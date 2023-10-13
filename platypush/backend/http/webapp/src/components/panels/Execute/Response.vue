@@ -10,8 +10,9 @@
         </button>
       </span>
     </h2>
+
     <div class="output response" v-if="response != null">
-      <pre v-text="response" />
+      <pre><code v-html="jsonResponse" v-if="jsonResponse != null" /><code v-text="response" v-else /></pre>
     </div>
 
     <div class="output error" v-else-if="error != null">
@@ -21,6 +22,9 @@
 </template>
 
 <script>
+import 'highlight.js/lib/common'
+import 'highlight.js/styles/stackoverflow-dark.css'
+import hljs from "highlight.js"
 import Utils from "@/Utils"
 
 export default {
@@ -29,6 +33,24 @@ export default {
   props: {
     response: String,
     error: String,
+  },
+
+  computed: {
+    isJSON() {
+      try {
+        return JSON.parse(this.response) != null
+      } catch (e) {
+        return false
+      }
+    },
+
+    jsonResponse() {
+      if (this.isJSON) {
+        return hljs.highlight('json', this.response).value
+      }
+
+      return null
+    }
   },
 }
 </script>

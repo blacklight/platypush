@@ -142,22 +142,20 @@ class HttpWebpagePlugin(Plugin):
             and PDF.
         :return: dict
 
-        Example if outfile is not specified::
+        Example return payload outfile is not specified::
 
             {
                 "url": <url>,
                 "title": <page title>,
                 "content": <page parsed content>
-
             }
 
-        Example if outfile is specified::
+        Example return payload if outfile is specified::
 
             {
                 "url": <url>,
                 "title": <page title>,
                 "outfile": <output file absolute path>
-
             }
 
         """

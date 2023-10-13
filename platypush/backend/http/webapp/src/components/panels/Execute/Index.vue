@@ -8,8 +8,9 @@
 
       <!-- cURL snippet modal -->
       <Modal ref="curlModal" title="curl request" v-if="curlSnippet?.length">
-        <textarea class="output curl-snippet" readonly :value="curlSnippet"
-          @click="copyToClipboard(curlSnippet)" />
+        <div class="output curl-snippet" @click="copyToClipboard(curlSnippet)" >
+          <pre><code v-html="highlightedCurlSnippet" /></pre>
+        </div>
       </Modal>
 
       <!-- Execute panel views -->
@@ -101,6 +102,9 @@
 </template>
 
 <script>
+import 'highlight.js/lib/common'
+import 'highlight.js/styles/stackoverflow-dark.css'
+import hljs from "highlight.js"
 import ActionArgs from "./ActionArgs"
 import ActionDoc from "./ActionDoc"
 import Autocomplete from "@/components/elements/Autocomplete"
@@ -230,6 +234,14 @@ export default {
         "' \\\n  " +
         `'${this.curlURL}'`
       )
+    },
+
+    highlightedCurlSnippet() {
+      return hljs.highlight(
+        'bash',
+        '# Note: Replace the cookie with a JWT token for production cases\n' +
+        this.curlSnippet
+      ).value
     },
   },
 
