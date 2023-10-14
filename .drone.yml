@@ -568,10 +568,15 @@ steps:
     - mkdir -p "$BUCKET_MNT"
     - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL"
     - export APT_ROOT="$BUCKET_MNT/apt"
+    - mkdir -p "$APT_ROOT"
+
+    - echo "-- Creating a new apt root folder"
+    - export TMP_APT_ROOT="/tmp/apt"
+    - cp -r "$APT_ROOT" "$TMP_APT_ROOT"
 
     - echo "-- Cleaning up older apt releases"
     - |
-      find "$APT_ROOT/pool" -mindepth 2 -maxdepth 2 -type d | while read reldir; do
+      find "$TMP_APT_ROOT/pool" -mindepth 2 -maxdepth 2 -type d | while read reldir; do
         pkg_to_remove=$(( $(ls "$reldir"/*.deb | wc -l) - 1 ))
         [ $pkg_to_remove -le 0 ] && continue
         ls "$reldir"/*.deb | sort -V | head -n$pkg_to_remove | xargs rm -f
@@ -581,13 +586,13 @@ steps:
     - |
       echo "stable\noldstable" | while read distro; do
         echo "main\ndev" | while read branch; do
-          branch_dir="$APT_ROOT/pool/$distro/$branch"
+          branch_dir="$TMP_APT_ROOT/pool/$distro/$branch"
           [ -d "$branch_dir" ] || continue
-          dist_dir="$APT_ROOT/dists/$distro/$branch/all"
+          dist_dir="$TMP_APT_ROOT/dists/$distro/$branch/all"
           mkdir -p "$dist_dir"
           pkg_file="$dist_dir/Packages"
           dpkg-scanpackages --arch all "$branch_dir" > "$pkg_file"
-          sed -i "$pkg_file" -re "s|^Filename: $APT_ROOT/|Filename: |"
+          sed -i "$pkg_file" -re "s|^Filename: $TMP_APT_ROOT/|Filename: |"
           cat "$pkg_file" | gzip -9 > "$pkg_file.gz"
         done
       done
@@ -614,7 +619,7 @@ steps:
       }
 
       echo "stable\noldstable" | while read distro; do
-        dist_dir="$APT_ROOT/dists/$distro"
+        dist_dir="$TMP_APT_ROOT/dists/$distro"
         components=$(find "$dist_dir" -name Packages | awk -F '/' '{print $(NF-2)}' | uniq | tr '\n' ' ')
         release_file="$dist_dir/Release"
 
@@ -635,7 +640,7 @@ steps:
       done
 
     - echo "-- Importing and refreshing PGP key"
-    - echo "$PGP_PUBKEY" > "$APT_ROOT/pubkey.txt"
+    - echo "$PGP_PUBKEY" > "$TMP_APT_ROOT/pubkey.txt"
     - export PGP_KEYID=$(echo "$PGP_PUBKEY" | gpg --with-colons --import-options show-only --import --fingerprint | grep -e '^fpr:' | head -1 | awk -F ':' '{print $(NF - 1)}')
     - |
       cat <<EOF | gpg --import --armor
@@ -644,11 +649,20 @@ steps:
 
     - echo "-- Signing Release files"
     - |
-      find "$APT_ROOT/dists" -type f -name Release | while read file; do
+      find "$TMP_APT_ROOT/dists" -type f -name Release | while read file; do
         dirname="$(dirname "$file")"
         cat "$file" | gpg -q --default-key "$PGP_KEYID" -abs > "$file.gpg"
         cat "$file" | gpg -q --default-key "$PGP_KEYID" -abs --clearsign > "$dirname/InRelease"
       done
+
+    - echo "-- Updating the apt repo root on S3"
+    - export OLD_APT_ROOT="$BUCKET_MNT/oldapt"
+    - |
+      if [ ! -d "$OLD_APT_ROOT" ]; then
+        mv "$APT_ROOT" "$OLD_APT_ROOT"
+        mv "$TMP_APT_ROOT" "$APT_ROOT"
+        rm -rf "$OLD_APT_ROOT"
+      fi
 
 ###
 ### Update the RPM (stable) packages
