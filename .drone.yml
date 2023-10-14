@@ -466,6 +466,11 @@ steps:
     - apt update
     - apt install -y curl dpkg-dev gpg git python3 python3-pip s3fs
 
+    - echo "-- Mounting the S3 bucket"
+    - mkdir -p "$BUCKET_MNT"
+    - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL"
+    - export APT_ROOT="$BUCKET_MNT/apt"
+
     - echo "--- Parsing metadata"
     - git config --global --add safe.directory $PWD
     - git pull --rebase origin master --tags
@@ -494,11 +499,6 @@ steps:
       Description: Universal command executor and automation hub.
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
-
-    - echo "-- Mounting the S3 bucket"
-    - mkdir -p "$BUCKET_MNT"
-    - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL"
-    - export APT_ROOT="$BUCKET_MNT/apt"
 
     - echo "--- Pushing package to the S3 bucket"
     - mkdir -p "$APT_ROOT/pool/$DEB_VERSION/dev"
