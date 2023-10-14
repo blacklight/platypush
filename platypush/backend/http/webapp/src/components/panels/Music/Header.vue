@@ -20,7 +20,7 @@ export default {
   padding: .5em;
   box-shadow: $border-shadow-bottom;
 
-  ::v-deep(.dropdown) {
+  :deep(.dropdown) {
     .item.active {
       color: $default-hover-fg;
     }

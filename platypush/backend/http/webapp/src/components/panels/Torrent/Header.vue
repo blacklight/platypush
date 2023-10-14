@@ -50,7 +50,7 @@ export default {
     }
   }
 
-  ::v-deep(button) {
+  :deep(button) {
     background: none;
     padding: 0 .25em;
     border: 0;

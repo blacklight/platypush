@@ -55,7 +55,7 @@ $header-height: 3.5em;
   }
 
   .actions {
-    ::v-deep(button) {
+    :deep(button) {
       opacity: .65;
     }
   }
@@ -65,7 +65,7 @@ $header-height: 3.5em;
     margin-right: .75em;
   }
 
-  ::v-deep(.dropdown-container) {
+  :deep(.dropdown-container) {
     .item {
       box-shadow: none;
     }

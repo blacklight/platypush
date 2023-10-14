@@ -398,11 +398,11 @@ export default {
   }
 }
 
-::v-deep(.loading) {
+:deep(.loading) {
   z-index: 10;
 }
 
-::v-deep(.media-info-container) {
+:deep(.media-info-container) {
   .modal-container {
     .content {
       max-width: 75%;
@@ -415,7 +415,7 @@ export default {
   }
 }
 
-::v-deep(.subtitles-container) {
+:deep(.subtitles-container) {
   .body {
     padding: 0 !important;
 
@@ -425,7 +425,7 @@ export default {
   }
 }
 
-::v-deep(.play-url-container) {
+:deep(.play-url-container) {
   .body {
     padding: 1em !important;
   }

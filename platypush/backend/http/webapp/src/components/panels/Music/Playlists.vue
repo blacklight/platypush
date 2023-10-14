@@ -357,7 +357,7 @@ export default {
     width: 100%;
   }
 
-  ::v-deep(.header) {
+  :deep(.header) {
     .back-btn {
       padding-left: .25em;
     }
