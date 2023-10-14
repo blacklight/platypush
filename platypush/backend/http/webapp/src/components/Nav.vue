@@ -93,10 +93,17 @@ export default {
 
   computed: {
     panelNames() {
+      const prepend = (names, name) => {
+        const idx = panelNames.indexOf(name)
+        if (idx >= 0)
+          names = [name].concat((names.slice(0, idx).concat(names.slice(idx+1))))
+
+        return names
+      }
+
       let panelNames = Object.keys(this.panels)
-      const homeIdx = panelNames.indexOf('entities')
-      if (homeIdx >= 0)
-        return ['entities'].concat((panelNames.slice(0, homeIdx).concat(panelNames.slice(homeIdx+1))).sort())
+      panelNames = prepend(panelNames, 'execute')
+      panelNames = prepend(panelNames, 'entities')
       return panelNames.sort()
     },
 
