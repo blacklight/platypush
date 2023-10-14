@@ -330,11 +330,13 @@ steps:
 
 - name: update-debian-stable-packages
   image: debian:stable
+  privileged: true  # Required to use the FUSE module for s3fs
   environment:
     DEB_VERSION: stable
     WORKDIR: /tmp/workdir
     PKG_NAME: platypush
-    S3_URL: s3://platypush-pkg/apt
+    S3_BUCKET: platypush-pkg
+    BUCKET_MNT: /mnt/s3
     AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud
     AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
@@ -354,8 +356,7 @@ steps:
   commands:
     - echo "-- Installing dependencies"
     - apt update
-    - apt install -y curl dpkg-dev gpg git python3 python3-pip
-    - pip install awscli --break-system-packages
+    - apt install -y curl dpkg-dev gpg git python3 python3-pip s3fs
 
     - echo "-- Copying source directory"
     - mkdir -p "$WORKDIR"
@@ -392,8 +393,14 @@ steps:
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
 
+    - echo "-- Mounting the S3 bucket"
+    - mkdir -p "$BUCKET_MNT"
+    - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL"
+    - export APT_ROOT="$BUCKET_MNT/apt"
+
     - echo "--- Pushing package to the S3 bucket"
-    - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/dev/"
+    - mkdir -p "$APT_ROOT/pool/$DEB_VERSION/dev"
+    - cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/dev/"
 
     # If main/all/Packages doesn't exist, then we should create the first main release
     - export PKGURL="https://apt.platypush.tech/dists/$DEB_VERSION/main/all/Packages"
@@ -416,7 +423,8 @@ steps:
       fi
 
     - echo "--- Updating main package"
-    - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
+    - mkdir -p "$APT_ROOT/pool/$DEB_VERSION/main"
+    - cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
 
 ###
 ### Update the Debian (oldstable) packages
@@ -424,11 +432,13 @@ steps:
 
 - name: update-debian-oldstable-packages
   image: debian:oldstable
+  privileged: true  # Required to use the FUSE module for s3fs
   environment:
     DEB_VERSION: oldstable
     WORKDIR: /tmp/workdir
     PKG_NAME: platypush
-    S3_URL: s3://platypush-pkg/apt
+    S3_BUCKET: platypush-pkg
+    BUCKET_MNT: /mnt/s3
     AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud
     AWS_DEFAULT_REGION: nl-ams
     AWS_ACCESS_KEY_ID:
@@ -454,8 +464,7 @@ steps:
 
     - echo "-- Installing dependencies"
     - apt update
-    - apt install -y curl dpkg-dev gpg git python3 python3-pip
-    - pip install awscli
+    - apt install -y curl dpkg-dev gpg git python3 python3-pip s3fs
 
     - echo "--- Parsing metadata"
     - git config --global --add safe.directory $PWD
@@ -486,8 +495,14 @@ steps:
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
 
+    - echo "-- Mounting the S3 bucket"
+    - mkdir -p "$BUCKET_MNT"
+    - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL"
+    - export APT_ROOT="$BUCKET_MNT/apt"
+
     - echo "--- Pushing package to the S3 bucket"
-    - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/dev/"
+    - mkdir -p "$APT_ROOT/pool/$DEB_VERSION/dev"
+    - cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/dev/"
 
     # If main/all/Packages doesn't exist, then we should create the first main release
     - export PKGURL="https://apt.platypush.tech/dists/$DEB_VERSION/main/all/Packages"
@@ -510,7 +525,8 @@ steps:
       fi
 
     - echo "--- Updating main package"
-    - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
+    - mkdir -p "$APT_ROOT/pool/$DEB_VERSION/main"
+    - cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
 
 ###
 ### Updates the APT repository after new packages have been pushed
