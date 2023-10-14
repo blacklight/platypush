@@ -39,7 +39,7 @@
               </span>
 
               <span class="section center">
-                <div class="title" v-text="group.name" />
+                <div class="title" v-text="pluginDisplayName(group.name)" />
               </span>
 
               <span class="section right">

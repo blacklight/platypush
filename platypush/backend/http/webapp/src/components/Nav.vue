@@ -36,7 +36,7 @@
           <img :src="icons[name].imgUrl" v-else-if="icons[name]?.imgUrl"  alt="name"/>
           <i class="fas fa-puzzle-piece" v-else />
         </span>
-        <span class="name" v-if="!collapsed" v-text="name == 'entities' ? 'Home' : name" />
+        <span class="name" v-if="!collapsed" v-text="displayName(name)" />
         </a>
       </li>
     </ul>
@@ -111,6 +111,15 @@ export default {
     onItemClick(name) {
       this.$emit('select', name)
       this.collapsed = this.isMobile() ? true : this.collapsedDefault
+    },
+
+    displayName(name) {
+      if (name === 'entities')
+        return 'Home'
+      if (name === 'execute')
+        return 'Execute'
+
+      return name
     },
   },
 
@@ -256,9 +265,9 @@ nav {
       .icon {
         margin-right: 0;
 
-        & img {
-          width: 1.25em;
-          height: 1.25em;
+        & img, i {
+          width: 1.5em;
+          height: 1.5em;
         }
       }
     }
