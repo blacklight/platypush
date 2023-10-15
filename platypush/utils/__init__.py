@@ -713,6 +713,9 @@ def get_defining_class(meth) -> Optional[type]:
     This is the best way I could find of answering the question "given a bound
     method, get the class that defined it",
     """
+    if isinstance(meth, type):
+        return meth
+
     if isinstance(meth, functools.partial):
         return get_defining_class(meth.func)
 

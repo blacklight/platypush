@@ -105,7 +105,7 @@ class DocstringParser(Serializable, RstExtensionsMixin):
             return
 
         # Expand any custom RST extensions
-        line = cls._expand_rst_extensions(line, ctx)
+        line = cls._expand_rst_extensions(line, ctx.obj)
 
         # Update the return type docstring if required
         m = cls._return_doc_re.match(line)

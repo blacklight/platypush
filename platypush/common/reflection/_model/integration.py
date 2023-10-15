@@ -15,6 +15,7 @@ from platypush.utils import (
 )
 from platypush.utils.manifest import Manifest, ManifestType, Dependencies
 
+from .._parser import DocstringParser
 from .._serialize import Serializable
 from . import Constructor, Action
 from .component import Component
@@ -22,7 +23,7 @@ from .constants import doc_base_url
 
 
 @dataclass
-class Integration(Component, Serializable):
+class Integration(Component, DocstringParser, Serializable):
     """
     Represents the metadata of an integration (plugin or backend).
     """
@@ -139,7 +140,7 @@ class Integration(Component, Serializable):
         obj = cls(
             name=name,
             type=type,
-            doc=inspect.getdoc(type),
+            doc=cls._expand_rst_extensions(inspect.getdoc(type) or '', type) or None,
             constructor=Constructor.parse(type),
             actions={
                 name: Action.parse(getattr(type, name))

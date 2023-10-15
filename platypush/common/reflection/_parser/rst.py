@@ -2,11 +2,11 @@ import importlib
 import logging
 import re
 import textwrap as tw
+from typing import Callable, Union
 
 from platypush.utils import get_defining_class
 
 from .._model.constants import doc_base_url
-from .context import ParseContext
 
 
 # pylint: disable=too-few-public-methods
@@ -20,6 +20,7 @@ class RstExtensionsMixin:
         for name, regex in {
             "class": "(:class:`(?P<name>[^`]+)`)",
             "method": "(:meth:`(?P<name>[^`]+)`)",
+            "module": "(:mod:`(?P<name>[^`]+)`)",
             "function": "(:func:`(?P<name>[^`]+)`)",
             "schema": r"^((?P<indent>\s*)(?P<before>.*)"
             r"(\.\. schema:: (?P<name>[\w.]+)\s*"
@@ -30,28 +31,33 @@ class RstExtensionsMixin:
     logger = logging.getLogger(__name__)
 
     @classmethod
-    def _expand_rst_extensions(cls, docstr: str, ctx: ParseContext) -> str:
+    def _expand_rst_extensions(cls, docstr: str, obj: Union[Callable, type]) -> str:
         """
         Expand the known reStructuredText extensions in a docstring.
         """
         for ex_name, regex in cls._rst_extensions.items():
-            match = regex.search(docstr)
-            if not match:
-                continue
+            while True:
+                match = regex.search(docstr)
+                if not match:
+                    break
 
-            try:
-                docstr = (
-                    cls._expand_schema(docstr, match)
-                    if ex_name == "schema"
-                    else cls._expand_module(docstr, ex_name, match, ctx)
-                )
-            except Exception as e:
-                cls.logger.warning(
-                    "Could not import module %s: %s", match.group("name"), e
-                )
-                continue
+                try:
+                    docstr = cls._expand_rst_extension(docstr, ex_name, match, obj)
+                except Exception as e:
+                    cls.logger.warning(
+                        "Could not import module %s: %s", match.group("name"), e
+                    )
 
         return docstr
+
+    @classmethod
+    def _expand_rst_extension(
+        cls, docstr: str, ex_name: str, match: re.Match[str], obj: Union[Callable, type]
+    ) -> str:
+        if ex_name == "schema":
+            return cls._expand_schema(docstr, match)
+
+        return cls._expand_module(docstr, ex_name, match, obj)
 
     @classmethod
     def _expand_schema(cls, docstr: str, match: re.Match) -> str:
@@ -129,13 +135,19 @@ class RstExtensionsMixin:
 
     @classmethod
     def _expand_module(
-        cls, docstr: str, ex_name: str, match: re.Match, ctx: ParseContext
+        cls,
+        docstr: str,
+        ex_name: str,
+        match: re.Match,
+        obj: Union[Callable, type],
     ) -> str:
         value = match.group("name")
         modname = obj_name = url_path = None
 
-        if value.startswith("."):
-            base_cls = get_defining_class(ctx.obj)
+        if ex_name == "module":
+            modname = obj_name = value
+        elif value.startswith("."):
+            base_cls = get_defining_class(obj)
             if base_cls:
                 modname = base_cls.__module__
                 obj_name = f'{base_cls.__qualname__}.{value[1:]}'
@@ -150,7 +162,7 @@ class RstExtensionsMixin:
             if modname.startswith("platypush.plugins"):
                 url_path = "plugins/" + ".".join(modname.split(".")[2:])
             elif modname.startswith("platypush.backend"):
-                url_path = "backends/" + ".".join(modname.split(".")[2:])
+                url_path = "backend/" + ".".join(modname.split(".")[2:])
             elif modname.startswith("platypush.message.event"):
                 url_path = "events/" + ".".join(modname.split(".")[3:])
             elif modname.startswith("platypush.message.response"):
@@ -159,7 +171,9 @@ class RstExtensionsMixin:
         if url_path:
             docstr = docstr.replace(
                 match.group(0),
-                f"`{obj_name} <{doc_base_url}/{url_path}.html#{modname}.{obj_name}>`_",
+                f"`{obj_name} <{doc_base_url}/{url_path}.html"
+                + (f"#{modname}.{obj_name}" if ex_name != "module" else "")
+                + ">`_",
             )
         else:
             docstr = docstr.replace(match.group(0), f"``{value}``")
