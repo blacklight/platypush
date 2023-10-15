@@ -16,7 +16,8 @@ class GoogleFitBackend(Backend):
     Requires:
 
         * The **google.fit** plugin
-            (:class:`platypush.plugins.google.fit.GoogleFitPlugin`) enabled.
+          (:class:`platypush.plugins.google.fit.GoogleFitPlugin`) enabled.
+
     """
 
     _default_poll_seconds = 60
