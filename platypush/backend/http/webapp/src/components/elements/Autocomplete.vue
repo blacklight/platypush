@@ -25,8 +25,8 @@
         v-for="(item, i) in visibleItems"
         @click="onItemSelect(item)"
       >
-        <span class="matching">{{ item.substr(0, value.length) }}</span>
-        <span class="normal">{{ item.substr(value.length) }}</span>
+        <span class="matching" v-if="value?.length">{{ item.substr(0, value.length) }}</span>
+        <span class="normal">{{ item.substr(value?.length || 0) }}</span>
       </div>
     </div>
   </div>
@@ -80,6 +80,9 @@ export default {
 
   computed: {
     visibleItems() {
+      if (!this.value?.length)
+        return this.items
+
       const val = this.value.toUpperCase()
       if (!val?.length)
         return this.showResultsWhenBlank ? this.items : []
@@ -125,6 +128,9 @@ export default {
     },
 
     valueIsInItems() {
+      if (!this.value)
+        return false
+
       return this.items.indexOf(this.value) >= 0
     },
 
