@@ -476,22 +476,4 @@ button {
   flex-grow: 1;
   margin: 0 .5em;
 }
-
-.mobile {
-  @include from($tablet) {
-    display: none;
-  }
-}
-
-.tablet {
-  @media screen and (max-width: $tablet), screen and (min-width: $desktop - 1) {
-    display: none;
-  }
-}
-
-.desktop {
-  @include until($desktop) {
-    display: none;
-  }
-}
 </style>
