@@ -1,6 +1,6 @@
 <script>
 export default {
-  name: "Integrations",
+  name: "Extensions",
   methods: {
     pluginDisplayName(name) {
       const words = name.split('.')

@@ -93,8 +93,9 @@ export default {
     },
 
     initializeDefaultViews() {
-      this.plugins.execute = {}
       this.plugins.entities = {}
+      this.plugins.execute = {}
+      this.plugins.extensions = {}
     },
   },
 

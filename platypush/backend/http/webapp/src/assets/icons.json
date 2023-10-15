@@ -29,6 +29,9 @@
   "execute": {
     "class": "fa fa-play"
   },
+  "extensions": {
+    "class": "fas fa-puzzle-piece"
+  },
   "light.hue": {
     "class": "fas fa-lightbulb"
   },

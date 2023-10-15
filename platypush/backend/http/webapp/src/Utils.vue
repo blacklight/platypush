@@ -4,7 +4,7 @@ import Clipboard from "@/utils/Clipboard";
 import Cookies from "@/utils/Cookies";
 import DateTime from "@/utils/DateTime";
 import Events from "@/utils/Events";
-import Integrations from "@/utils/Integrations";
+import Extensions from "@/utils/Extensions";
 import Notification from "@/utils/Notification";
 import Screen from "@/utils/Screen";
 import Text from "@/utils/Text";
@@ -19,7 +19,7 @@ export default {
     DateTime,
     Events,
     Notification,
-    Integrations,
+    Extensions,
     Screen,
     Text,
     Types,

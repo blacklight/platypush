@@ -101,10 +101,11 @@ export default {
         return names
       }
 
-      let panelNames = Object.keys(this.panels)
+      let panelNames = Object.keys(this.panels).sort()
+      panelNames = prepend(panelNames, 'extensions')
       panelNames = prepend(panelNames, 'execute')
       panelNames = prepend(panelNames, 'entities')
-      return panelNames.sort()
+      return panelNames
     },
 
     collapsedDefault() {
@@ -125,6 +126,8 @@ export default {
         return 'Home'
       if (name === 'execute')
         return 'Execute'
+      if (name === 'extensions')
+        return 'Extensions'
 
       return name
     },
@@ -252,12 +255,12 @@ nav {
   }
 
   .plugins {
-    height: calc(100% - #{$toggler-height} - #{$footer-expanded-height} - 1em);
+    height: calc(100% - #{$toggler-height} - #{$footer-expanded-height} - 1.5em);
     overflow: auto;
   }
 
   .footer {
-    height: $footer-expanded-height;
+    height: calc($footer-expanded-height + 0.4em);
     background: $nav-footer-bg;
     padding: 0;
     margin: 0;
