@@ -12,8 +12,8 @@
           <span class="from tablet">Install</span>
         </Tab>
 
-        <Tab :selected="selectedTab === 'conf'" icon-class="fas fa-square-check"
-             @input="selectedTab = 'conf'">
+        <Tab :selected="selectedTab === 'config'" icon-class="fas fa-square-check"
+             @input="selectedTab = 'config'">
           <span class="from tablet">Configuration</span>
         </Tab>
 
@@ -26,6 +26,7 @@
 
     <div class="extension-body">
       <Doc v-if="selectedTab === 'doc'" :extension="extension" />
+      <Config v-else-if="selectedTab === 'config'" :extension="extension" />
     </div>
   </div>
 </template>
@@ -33,15 +34,18 @@
 <script>
 import Tab from "@/components/elements/Tab"
 import Tabs from "@/components/elements/Tabs"
+import Config from "./Config"
 import Doc from "./Doc"
 
 export default {
   name: "Extension",
   components: {
+    Config,
     Doc,
     Tab,
     Tabs,
   },
+
   props: {
     extension: {
       type: Object,
@@ -60,7 +64,7 @@ export default {
 <style lang="scss" scoped>
 @import "src/style/items";
 
-$header-height: 4em;
+$header-height: 3.6em;
 
 .extension {
   width: 100%;
@@ -81,6 +85,8 @@ $header-height: 4em;
 
   .extension-body {
     height: calc(100% - #{$header-height});
+    display: flex;
+    flex-direction: column;
     overflow: auto;
 
     :deep(section) {

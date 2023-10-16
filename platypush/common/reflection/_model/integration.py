@@ -76,6 +76,7 @@ class Integration(Component, DocstringParser, Serializable):
                 for e in self.events
             },
             "deps": self.deps.to_dict(),
+            "config_snippet": self.config_snippet,
         }
 
     @classmethod

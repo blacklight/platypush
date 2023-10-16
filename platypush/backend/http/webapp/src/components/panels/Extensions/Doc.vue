@@ -67,7 +67,7 @@ export default {
         return
       }
 
-      let [_, type, name] = match
+      let [type, name] = match.slice(1)
       if (type === 'backend')
         name = `backend.${name}`
 

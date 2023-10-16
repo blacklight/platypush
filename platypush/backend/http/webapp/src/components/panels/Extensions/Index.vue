@@ -42,7 +42,7 @@
 import Loading from "@/components/Loading"
 import Utils from "@/Utils"
 import Extension from "./Extension"
-import { bus } from "@/bus";
+import { bus } from "@/bus"
 
 export default {
   name: "Extensions",
@@ -50,7 +50,6 @@ export default {
   components: {
     Extension,
     Loading,
-    Utils,
   },
 
   data() {
