@@ -45,5 +45,6 @@ export default {
   padding: 0.5em;
   font-size: 1.5em;
   cursor: pointer;
+  z-index: 1;
 }
 </style>
