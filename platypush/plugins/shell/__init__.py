@@ -1,7 +1,8 @@
 from base64 import b64encode
 import json
-import threading
 import subprocess
+import threading
+import time
 from typing import Callable, Optional
 from uuid import uuid1
 
@@ -54,16 +55,28 @@ class ShellPlugin(Plugin):
                 shell=True,
                 stdout=subprocess.PIPE,
             ) as proc:
-                while proc.poll() is None:
-                    if not proc.stdout:
-                        break
+                first_loop = True
 
-                    while True:
-                        buf = proc.stdout.read(1024)
-                        if not buf:
+                while proc.poll() is None and proc.stdout and proc.stdout.readable():
+                    buf = b''
+                    bufsize = 1024
+
+                    while len(buf) < bufsize:
+                        ch = proc.stdout.read(1)
+                        if not ch:
                             break
 
-                        self._send_ws_output(cmd_id, buf)
+                        buf += ch
+                        if ch in (b'\r', b'\n'):
+                            break
+
+                    if first_loop:
+                        first_loop = False
+                        # An artificial delay to let the client connect to the websocket,
+                        # otherwise the first few lines of output might be lost.
+                        time.sleep(2)
+
+                    self._send_ws_output(cmd_id, buf)
         finally:
             self._send_ws_output(cmd_id, None)
 
