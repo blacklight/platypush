@@ -117,6 +117,7 @@ class PubSubMixin:
         """
         try:
             with self.pubsub as pubsub:
+                pubsub.subscribe(*self._subscriptions)
                 for msg in pubsub.listen():
                     channel = msg.get('channel', b'').decode()
                     if msg.get('type') != 'message' or not (
