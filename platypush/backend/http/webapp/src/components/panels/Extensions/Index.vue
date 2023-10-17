@@ -24,7 +24,8 @@
 
             <div class="extension-body-container until tablet"
                  v-if="selectedExtension && name === selectedExtension">
-              <Extension :extension="extensions[selectedExtension]" />
+              <Extension :extension="extensions[selectedExtension]"
+                         :config-file="configFile" />
             </div>
           </div>
         </div>
@@ -32,7 +33,8 @@
 
       <div class="extension-body-container from desktop"
            v-if="selectedExtension">
-        <Extension :extension="extensions[selectedExtension]" />
+        <Extension :extension="extensions[selectedExtension]"
+                   :config-file="configFile" />
       </div>
     </main>
   </div>
@@ -59,6 +61,7 @@ export default {
       backends: {},
       filter: '',
       selectedExtension: null,
+      configFile: null,
     }
   },
 
@@ -127,9 +130,14 @@ export default {
         this.loading = false
       }
     },
+
+    async loadConfigFile() {
+      this.configFile = await this.request('config.get_config_file')
+    },
   },
 
   mounted() {
+    this.loadConfigFile()
     this.loadExtensions()
     bus.on('update:extension', (ext) => this.onInput(ext, false))
     this.$nextTick(() => this.$refs.filter.focus())

@@ -18,10 +18,15 @@ export default {
   components: {
     CopyButton,
   },
+
   props: {
     extension: {
       type: Object,
       required: true,
+    },
+
+    configFile: {
+      type: String,
     },
   },
 
@@ -29,6 +34,7 @@ export default {
     highlightedConfigSnippet() {
       return hljs.highlight(
         'yaml',
+        `# Add this configuration template to ${this.configFile}\n` +
         this.extension.config_snippet,
       ).value.trim()
     },
