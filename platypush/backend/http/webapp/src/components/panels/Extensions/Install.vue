@@ -70,6 +70,7 @@ export default {
       installRunning: false,
       installOutput: null,
       pendingCommands: 0,
+      error: null,
     }
   },
 
@@ -105,9 +106,16 @@ export default {
         ws.onerror = this.onError
         ws.onclose = this.onClose
       } catch (err) {
-        console.error('Websocket initialization error')  // TODO notify
+        this.notify({
+          error: true,
+          title: `Websocket initialization error`,
+          text: err.toString(),
+        })
+
+        console.error('Websocket initialization error')
         console.error(err)
-        return
+        this.error = err
+        this.installRunning = false
       }
     },
 
@@ -121,14 +129,31 @@ export default {
     onClose() {
       this.installRunning = false
       this.$emit('install-end', this.extension)
+      if (!this.error)
+        this.notify({
+          title: `Extension installed`,
+          html: `Extension <b>${this.extension.name}</b> installed successfully`,
+          image: {
+            iconClass: 'fas fa-check',
+          },
+        })
     },
 
     onError(error) {
-      console.error('Websocket error')  // TODO notify
+        this.notify({
+          error: true,
+          title: `Websocket error`,
+          text: error.toString(),
+        })
+
+      console.error('Websocket error')
       console.error(error)
+      this.error = error
+      this.installRunning = false
     },
 
     installExtension() {
+      this.error = null
       this.installRunning = true
       this.installOutput = ''
       this.$emit('install-start', this.extension)
@@ -140,7 +165,9 @@ export default {
       }).then((output) => {
         this.wsProcess(output.ws_path)
       }).catch((err) => {
-        console.error(err)  // TODO notify
+        this.error = err
+        this.installRunning = false
+        this.$emit('install-end', this.extension)
       })
     },
   },
