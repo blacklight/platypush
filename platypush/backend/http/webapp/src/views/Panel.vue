@@ -112,6 +112,7 @@ export default {
       await this.parseConfig()
       this.initPanels()
       this.initSelectedPanel()
+      this.$watch('$route.hash', this.initSelectedPanel)
     } finally {
       this.loading = false
     }
