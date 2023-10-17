@@ -42,6 +42,15 @@
     </ul>
 
     <ul class="footer">
+      <li :class="{selected: selectedPanel === 'extensions'}" title="Extensions" @click="onItemClick('extensions')">
+        <a href="/#extensions">
+          <span class="icon">
+            <i class="fa fa-puzzle-piece" />
+          </span>
+          <span class="name" v-if="!collapsed">Extensions</span>
+        </a>
+      </li>
+
       <li :class="{selected: selectedPanel === 'settings'}" title="Settings" @click="onItemClick('settings')">
         <a href="/#settings">
           <span class="icon">
@@ -102,7 +111,6 @@ export default {
       }
 
       let panelNames = Object.keys(this.panels).sort()
-      panelNames = prepend(panelNames, 'extensions')
       panelNames = prepend(panelNames, 'execute')
       panelNames = prepend(panelNames, 'entities')
       return panelNames
@@ -126,8 +134,6 @@ export default {
         return 'Home'
       if (name === 'execute')
         return 'Execute'
-      if (name === 'extensions')
-        return 'Extensions'
 
       return name
     },
@@ -151,8 +157,8 @@ export default {
 <!--suppress SassScssResolvedByNameOnly -->
 <style lang="scss" scoped>
 $toggler-height: 2em;
-$footer-collapsed-height: 4em;
-$footer-expanded-height: 7.1em;
+$footer-collapsed-height: 7.5em;
+$footer-expanded-height: 11em;
 
 nav {
   @media screen and (max-width: #{$tablet - 1px}) {

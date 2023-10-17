@@ -16,6 +16,12 @@
       </div>
     </div>
 
+    <div class="canvas" v-else-if="selectedPanel === 'extensions'">
+      <div class="panel">
+        <Extensions />
+      </div>
+    </div>
+
     <div class="canvas" v-else>
       <div class="panel" :class="{hidden: name !== selectedPanel}" v-for="(panel, name) in components" :key="name">
         <component :is="panel.component" :config="panel.config" :plugin-name="name" v-if="name === selectedPanel" />
@@ -29,12 +35,13 @@ import { defineAsyncComponent, shallowRef } from "vue";
 import Utils from '@/Utils'
 import Loading from "@/components/Loading";
 import Nav from "@/components/Nav";
+import Extensions from "@/components/panels/Extensions/Index";
 import Settings from "@/components/panels/Settings/Index";
 
 export default {
   name: 'Panel',
   mixins: [Utils],
-  components: {Settings, Nav, Loading},
+  components: {Extensions, Settings, Nav, Loading},
 
   data() {
     return {
@@ -95,7 +102,6 @@ export default {
     initializeDefaultViews() {
       this.plugins.entities = {}
       this.plugins.execute = {}
-      this.plugins.extensions = {}
     },
   },
 
