@@ -9,7 +9,39 @@
       </h2>
     </header>
 
-    <article v-html="doc" v-if="doc" @click="onDocClick" />
+    <article v-if="doc" @click="onDocClick">
+      <div class="doc-content" v-html="doc" />
+
+      <div class="actions" v-if="Object.keys(extension.actions || {}).length > 0">
+        <h3>
+          <i class="icon fas fa-play" /> &nbsp;
+          Actions
+        </h3>
+
+        <ul>
+          <li class="action" v-for="actionName in actionNames" :key="actionName">
+            <a :href="extension.actions[actionName].doc_url" target="_blank">
+              <pre>{{ extension.name }}.{{ actionName }}</pre>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="events" v-if="Object.keys(extension.events || {}).length > 0">
+        <h3>
+          <i class="icon fas fa-flag" /> &nbsp;
+          Events
+        </h3>
+
+        <ul>
+          <li class="event" v-for="eventName in eventNames" :key="eventName">
+            <a :href="extension.events[eventName].doc_url" target="_blank">
+              <pre>{{ eventName }}</pre>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </article>
   </section>
 </template>
 
@@ -33,6 +65,16 @@ export default {
     }
   },
 
+  computed: {
+    actionNames() {
+      return Object.keys(this.extension.actions).sort()
+    },
+
+    eventNames() {
+      return Object.keys(this.extension.events).sort()
+    },
+  },
+
   methods: {
     async parseDoc() {
       if (!this.extension.doc?.length)
@@ -52,19 +94,19 @@ export default {
     // in-app connections, or opens them in a new tab if they
     // don't point to an internal documentation page.
     onDocClick(event) {
-      if (!event.target.tagName.toLowerCase() === 'a')
-        return
+      if (event.target.tagName.toLowerCase() !== 'a')
+        return true
 
       event.preventDefault()
       const href = event.target.getAttribute('href')
       if (!href)
-        return
+        return true
 
       const match = href.match(/^https:\/\/docs\.platypush\.tech\/platypush\/(plugins|backend)\/([\w.]+)\.html#?.*$/)
       if (!match) {
         event.preventDefault()
         window.open(href, '_blank')
-        return
+        return true
       }
 
       let [type, name] = match.slice(1)
@@ -112,6 +154,35 @@ section {
       li {
         list-style: disc;
       }
+    }
+  }
+
+  .actions, .events {
+    padding: 0.5em;
+    overflow: auto;
+
+    h3 {
+      width: calc(100% - 1em);
+      margin: 0 -0.5em;
+      padding: 0 0.5em;
+      font-size: 1.25em;
+      opacity: 0.85;
+      border-bottom: 1px solid $border-color-1;
+    }
+
+    ul {
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+
+      li {
+        margin: 0.5em 0;
+        list-style: none;
+      }
+    }
+
+    pre {
+      margin: 0;
     }
   }
 }

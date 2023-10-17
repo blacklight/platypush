@@ -16,11 +16,6 @@
              @input="selectedTab = 'config'">
           <span class="from tablet">Configuration</span>
         </Tab>
-
-        <Tab :selected="selectedTab === 'actions'" icon-class="fas fa-play"
-             @input="selectedTab = 'actions'">
-          <span class="from tablet">Actions</span>
-        </Tab>
       </Tabs>
     </header>
 
