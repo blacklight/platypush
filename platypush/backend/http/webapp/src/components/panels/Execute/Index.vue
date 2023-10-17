@@ -103,7 +103,7 @@
 
 <script>
 import 'highlight.js/lib/common'
-import 'highlight.js/styles/stackoverflow-dark.css'
+import 'highlight.js/styles/stackoverflow-dark.min.css'
 import hljs from "highlight.js"
 import ActionArgs from "./ActionArgs"
 import ActionDoc from "./ActionDoc"
