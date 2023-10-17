@@ -40,6 +40,11 @@ export default {
   border-right: $default-border-2;
   cursor: pointer;
 
+  @include until($tablet) {
+    flex-grow: 1;
+    justify-content: center;
+  }
+
   &.selected {
     background: $selected-bg;
     font-weight: bold;
