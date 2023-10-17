@@ -279,6 +279,7 @@ class Dependencies:
             'packages': list(self.packages),
             'pip': self.pip,
             'after': self.after,
+            'install_cmd': list(self.to_install_commands()),
         }
 
     @property
@@ -418,7 +419,6 @@ class Dependencies:
         dependencies on the system.
         """
 
-        wants_sudo = not (self._is_docker or is_root())
         pkg_manager = self.pkg_manager or PackageManagers.scan()
 
         if self.packages and pkg_manager:
@@ -436,9 +436,9 @@ class Dependencies:
             if to_install:
                 yield ' '.join(
                     [
-                        *(['sudo'] if wants_sudo else []),
+                        *(['sudo'] if self._wants_sudo else []),
                         *pkg_manager.value.install,
-                        *to_install,
+                        '\\\n  '.join(to_install),
                     ]
                 )
 
@@ -466,13 +466,14 @@ class Dependencies:
             deps = sorted(self.pip)
             if full_command:
                 yield (
-                    'pip install -U --no-input --no-cache-dir '
+                    'pip install -U --no-input '
+                    + ('--no-cache-dir ' if self._is_docker else '')
                     + (
                         '--break-system-packages '
                         if wants_break_system_packages
                         else ''
                     )
-                    + ' '.join(deps)
+                    + ' \\\n  '.join(deps)
                 )
             else:
                 for dep in deps:
