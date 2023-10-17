@@ -1,12 +1,6 @@
 <template>
   <div class="config-container" ref="root">
-    <button class="copy-button"
-            ref="copyButton"
-            title="Copy to clipboard"
-            :data-clipboard-text="extension.config_snippet"
-            @click="copyToClipboard(extension.config_snippet)">
-      <i class="fas fa-clipboard" />
-    </button>
+    <CopyButton :text="extension.config_snippet" />
     <pre><code class="config-snippet" v-html="highlightedConfigSnippet" /></pre>
   </div>
 </template>
@@ -15,11 +9,15 @@
 import 'highlight.js/lib/common'
 import 'highlight.js/styles/stackoverflow-dark.min.css'
 import hljs from "highlight.js"
+import CopyButton from "@/components/elements/CopyButton"
 import Utils from "@/Utils";
 
 export default {
   name: "Extension",
   mixins: [Utils],
+  components: {
+    CopyButton,
+  },
   props: {
     extension: {
       type: Object,
@@ -39,29 +37,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "common.scss";
+
 .config-container {
   width: 100%;
   height: 100%;
   position: relative;
   display: flex;
-
-  .copy-button {
-    position: absolute;
-    top: 0;
-    right: 0;
-    background: none;
-    color: $code-dark-fg;
-    border: none;
-    padding: 0.5em;
-    font-size: 1.5em;
-    cursor: pointer;
-  }
-
-  pre {
-    width: 100%;
-    margin: 0;
-    background: $code-dark-bg;
-    padding: 0.5em;
-  }
 }
 </style>

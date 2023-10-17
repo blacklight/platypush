@@ -27,6 +27,7 @@
     <div class="extension-body">
       <Doc v-if="selectedTab === 'doc'" :extension="extension" />
       <Config v-else-if="selectedTab === 'config'" :extension="extension" />
+      <Install v-else-if="selectedTab === 'install'" :extension="extension" />
     </div>
   </div>
 </template>
@@ -36,12 +37,14 @@ import Tab from "@/components/elements/Tab"
 import Tabs from "@/components/elements/Tabs"
 import Config from "./Config"
 import Doc from "./Doc"
+import Install from "./Install"
 
 export default {
   name: "Extension",
   components: {
     Config,
     Doc,
+    Install,
     Tab,
     Tabs,
   },
