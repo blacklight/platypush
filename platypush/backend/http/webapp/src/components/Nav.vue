@@ -3,6 +3,9 @@
     <div class="toggler" @click="collapsed = !collapsed">
       <i class="fas fa-bars" />
       <span class="hostname" v-if="hostname" v-text="hostname" />
+      <i class="icon status fas fa-circle"
+         :class="{ok: connected, error: !connected}"
+         :title="connected ? 'Connected' : 'Disconnected'" />
     </div>
 
     <ul class="plugins" v-if="selectedPanel === 'settings'">
@@ -76,6 +79,7 @@
 import icons from '@/assets/icons.json'
 import Utils from "@/Utils";
 import configSections from '@/components/panels/Settings/sections.json';
+import { bus } from "@/bus";
 
 export default {
   name: "Nav",
@@ -137,11 +141,18 @@ export default {
 
       return name
     },
+
+    setConnected(connected) {
+      return () => {
+        this.connected = connected
+      }
+    },
   },
 
   data() {
     return {
       collapsed: true,
+      connected: false,
       icons: icons,
       host: null,
       configSections: configSections,
@@ -150,6 +161,8 @@ export default {
 
   mounted() {
     this.collapsed = this.collapsedDefault
+    bus.on('connect', this.setConnected(true))
+    bus.on('disconnect', this.setConnected(false))
   },
 }
 </script>
@@ -239,10 +252,26 @@ nav {
     background: $nav-toggler-bg;
     display: flex;
     font-size: 1.5em;
+    position: relative;
     cursor: pointer;
     padding: 0.4em;
     align-items: center;
     box-shadow: $nav-toggler-shadow;
+
+    .icon.status {
+      position: absolute;
+      top: calc($toggler-height / 2 + 0.3em);
+      right: 0.5em;
+      font-size: 0.5em;
+
+      &.ok {
+        color: $ok-fg;
+      }
+
+      &.error {
+        color: $error-fg;
+      }
+    }
   }
 
   .hostname {
@@ -327,6 +356,11 @@ nav {
       @media screen and (max-width: #{$tablet - 1px}) {
         background: $nav-toggler-collapsed-mobile-bg;
         color: $nav-toggler-collapsed-mobile-fg;
+      }
+
+      .icon.status {
+        top: 0.75em;
+        left: 2em;
       }
     }
 
