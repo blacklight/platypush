@@ -16,15 +16,20 @@
       <div class="items">
         <div class="extension-container" v-for="name in extensionNames" :key="name">
           <div class="extension" v-if="matchesFilter(name)">
-            <div class="item name"
+            <div class="item"
                  :class="{selected: name === selectedExtension}"
                  :data-name="name"
-                 @click="onInput(name, false)"
-                 v-text="extensions[name].name" />
+                 @click="onClick(name, false)">
+              <span class="name">{{ extensions[name].name }}</span>
+              <span class="enabled icon" title="Enabled" v-if="enabledExtensions[name]">
+                <i class="enabled icon fas fa-circle-check" v-if="enabledExtensions[name]" />
+              </span>
+            </div>
 
             <div class="extension-body-container until tablet"
                  v-if="selectedExtension && name === selectedExtension">
               <Extension :extension="extensions[selectedExtension]"
+                         :config="enabledExtensions[selectedExtension]"
                          :config-file="configFile" />
             </div>
           </div>
@@ -34,6 +39,7 @@
       <div class="extension-body-container from desktop"
            v-if="selectedExtension">
         <Extension :extension="extensions[selectedExtension]"
+                   :config="enabledExtensions[selectedExtension]"
                    :config-file="configFile" />
       </div>
     </main>
@@ -59,9 +65,12 @@ export default {
       loading: false,
       plugins: {},
       backends: {},
+      enabledPlugins: {},
+      enabledBackends: {},
       filter: '',
       selectedExtension: null,
       configFile: null,
+      config: {},
     }
   },
 
@@ -87,12 +96,30 @@ export default {
       return extensions
     },
 
+    enabledExtensions() {
+      return [this.enabledPlugins, this.enabledBackends].reduce((acc, extensions) => {
+        Object.entries(extensions).forEach(([name, config]) => {
+          acc[name] = config
+        })
+
+        return acc
+      }, {})
+    },
+
     extensionNames() {
       return Object.keys(this.extensions).sort()
     },
   },
 
   methods: {
+    onClick(input, setFilter = true, setUrlArgs = true) {
+      if (this.selectedExtension === input) {
+        this.selectedExtension = null
+      } else {
+        this.onInput(input, setFilter, setUrlArgs)
+      }
+    },
+
     onInput(input, setFilter = true, setUrlArgs = true) {
       if (setFilter) {
         this.filter = input
@@ -124,16 +151,37 @@ export default {
 
     async loadExtensions() {
       this.loading = true
+      let [enabledPlugins, enabledBackends] = [[], []]
 
       try {
-          [this.plugins, this.backends] =
+          [
+            this.plugins,
+            this.backends,
+            enabledPlugins,
+            enabledBackends,
+            this.config,
+          ] =
             await Promise.all([
               this.request('inspect.get_all_plugins'),
               this.request('inspect.get_all_backends'),
+              this.request('inspect.get_enabled_plugins'),
+              this.request('inspect.get_enabled_backends'),
+              this.request('inspect.get_config'),
             ])
       } finally {
         this.loading = false
       }
+
+      this.enabledPlugins = enabledPlugins.reduce((acc, name) => {
+        acc[name] = this.config[name] || {}
+        return acc
+      }, {})
+
+      this.enabledBackends = enabledBackends.reduce((acc, name) => {
+        name = `backend.${name}`
+        acc[name] = this.config[name] || {}
+        return acc
+      }, {})
 
       this.loadExtensionFromUrl()
       this.$watch('$route.hash', () => this.loadExtensionFromUrl())
@@ -206,8 +254,18 @@ $header-height: 3.25em;
       display: flex;
       flex-direction: column;
 
-      .name {
+      .item {
+        width: 100%;
+        display: flex;
         padding: 1em;
+        position: relative;
+
+        .icon {
+          width: 2.5em;
+          position: absolute;
+          right: -1em;
+          top: 0.65em;
+        }
 
         &.selected {
           font-weight: bold;

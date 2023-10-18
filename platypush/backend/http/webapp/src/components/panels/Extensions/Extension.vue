@@ -23,6 +23,7 @@
       <Doc v-if="selectedTab === 'doc'" :extension="extension" />
       <Config v-else-if="selectedTab === 'config'"
               :extension="extension"
+              :config="config"
               :config-file="configFile" />
       <Install v-else-if="selectedTab === 'install'" :extension="extension" />
     </div>
@@ -50,6 +51,10 @@ export default {
     extension: {
       type: Object,
       required: true,
+    },
+
+    config: {
+      type: Object,
     },
 
     configFile: {
