@@ -93,19 +93,24 @@ export default {
   },
 
   methods: {
-    onInput(input, setFilter = true) {
+    onInput(input, setFilter = true, setUrlArgs = true) {
       if (setFilter) {
         this.filter = input
       }
 
       const name = input?.toLowerCase()?.trim()
-      if (name?.length && name !== this.selectedExtension && this.extensions[name]) {
+      if (name?.length && this.extensions[name]) {
         this.selectedExtension = name
+        if (setUrlArgs)
+          this.setUrlArgs({extension: name})
+
         const el = this.$el.querySelector(`.extensions-container .item[data-name="${name}"]`)
         if (el)
           el.scrollIntoView({behavior: 'smooth'})
       } else {
         this.selectedExtension = null
+        if (setUrlArgs)
+          this.setUrlArgs({})
       }
     },
 
@@ -129,10 +134,19 @@ export default {
       } finally {
         this.loading = false
       }
+
+      this.loadExtensionFromUrl()
+      this.$watch('$route.hash', () => this.loadExtensionFromUrl())
     },
 
     async loadConfigFile() {
       this.configFile = await this.request('config.get_config_file')
+    },
+
+    loadExtensionFromUrl() {
+      const extension = this.getUrlArgs().extension
+      if (extension)
+        this.$nextTick(() => this.onInput(extension, false, false))
     },
   },
 
