@@ -12,10 +12,9 @@ base_path = os.path.abspath(
 
 sys.path.insert(0, base_path)
 
-from platypush.common.reflection import Integration  # noqa
-from platypush.utils import get_plugin_name_by_class, import_file  # noqa
-from platypush.utils.mock import auto_mocks  # noqa
-from platypush.utils.mock.modules import mock_imports  # noqa
+from platypush.common.reflection import Integration  # noqa: E402
+from platypush.utils import get_plugin_name_by_class  # noqa: E402
+from platypush.utils.mock import auto_mocks  # noqa: E402
 
 
 class IntegrationEnricher:
