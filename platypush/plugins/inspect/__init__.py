@@ -15,6 +15,7 @@ from platypush.plugins import Plugin, action
 from platypush.message import Message
 from platypush.message.event import Event
 from platypush.message.response import Response
+from platypush.utils import get_enabled_backends, get_enabled_plugins
 from platypush.utils.mock import auto_mocks
 from platypush.utils.manifest import Manifest, Manifests
 
@@ -269,6 +270,20 @@ class InspectPlugin(Plugin):
             return Config.get(entry)
 
         return Config.get()
+
+    @action
+    def get_enabled_plugins(self) -> List[str]:
+        """
+        Get the list of enabled plugins.
+        """
+        return list(get_enabled_plugins().keys())
+
+    @action
+    def get_enabled_backends(self) -> List[str]:
+        """
+        Get the list of enabled backends.
+        """
+        return list(get_enabled_backends().keys())
 
 
 # vim:sw=4:ts=4:et:

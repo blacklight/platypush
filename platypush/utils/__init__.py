@@ -564,6 +564,29 @@ def get_enabled_plugins() -> dict:
     return plugins
 
 
+def get_enabled_backends() -> dict:
+    """
+    Get the enabled backends.
+
+    :return: A dictionary with the enabled backends, in the format ``name`` ->
+        :class:`platypush.backend.Backend` instance.
+    """
+    from platypush.config import Config
+    from platypush.context import get_backend
+
+    backends = {}
+    for name in Config.get_backends():
+        try:
+            backend = get_backend(name.removeprefix('backend.'))
+            if backend:
+                backends[name] = backend
+        except Exception as e:
+            logger.warning('Could not initialize backend %s', name)
+            logger.exception(e)
+
+    return backends
+
+
 def get_redis_conf() -> dict:
     """
     Get the Redis connection arguments from the configuration.
