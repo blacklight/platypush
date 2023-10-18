@@ -47,14 +47,14 @@
                   <DropdownItem text="Refresh" icon-class="fa fa-sync-alt" @click="refresh(group)" />
                   <DropdownItem text="Hide" icon-class="fa fa-eye-slash" @click="hideGroup(group)" />
                   <DropdownItem text="Collapse" icon-class="fa fa-caret-up"
-                    @click="collapsedGroups[group] = true" v-if="!collapsedGroups[group]" />
+                    @click="collapsedGroups[group.name] = true" v-if="!collapsedGroups[group.name]" />
                   <DropdownItem text="Expand" icon-class="fa fa-caret-down"
-                    @click="collapsedGroups[group] = false" v-else />
+                    @click="collapsedGroups[group.name] = false" v-else />
                 </Dropdown>
               </span>
             </div>
 
-            <div class="body" v-if="!collapsedGroups[group]">
+            <div class="body" v-if="!collapsedGroups[group.name]">
               <div class="entity-frame"
                  v-for="entity in Object.values(group.entities).sort((a, b) => a.name.localeCompare(b.name))"
                  :key="entity.id">
