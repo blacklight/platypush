@@ -11,5 +11,12 @@
     "icon": {
       "class": "fas fa-key"
     }
+  },
+
+  "application": {
+    "name": "Application",
+    "icon": {
+      "class": "fas fa-gears"
+    }
   }
 }
