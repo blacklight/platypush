@@ -193,7 +193,7 @@ export default {
           return args
         }, {}),
 
-        ...this.action.extraArgs.reduce((args, arg) => {
+        ...(this.action.extraArgs || []).reduce((args, arg) => {
           let value = arg.value
           try {
             value = JSON.parse(value)
@@ -288,9 +288,19 @@ export default {
           this.actions[action.name] = action
         }
       }
+
+      // If an action has been passed on the URL, set it
+      const args = this.getUrlArgs()
+      const actionName = args?.action
+      if (actionName?.length && actionName in this.actions && actionName !== this.action.name) {
+        this.updateAction(actionName)
+      }
     },
 
     async updateAction(actionName) {
+      if (actionName === this.action.name)
+        return
+
       this.action.name = actionName
       if (!(this.action.name in this.actions)) {
         this.selectedDoc = undefined
@@ -324,9 +334,19 @@ export default {
 
       if (!this.actionDocsCache[this.action.name])
         this.actionDocsCache[this.action.name] = {}
-      this.actionDocsCache[this.action.name].html = this.selectedDoc
 
-      this.$el.querySelector('.action-arg-value')?.focus()
+      this.actionDocsCache[this.action.name].html = this.selectedDoc
+      this.setUrlArgs({action: this.action.name})
+
+      const firstArg = this.$el.querySelector('.action-arg-value')
+      if (firstArg) {
+        firstArg.focus()
+      } else {
+        this.$nextTick(() => {
+          this.actionInput.focus()
+        })
+      }
+
       this.response = undefined
       this.error = undefined
     },
