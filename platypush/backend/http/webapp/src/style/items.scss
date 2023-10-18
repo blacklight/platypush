@@ -4,7 +4,7 @@ $header-height: 3.5em;
   display: flex;
   align-items: center;
   padding: .75em .25em;
-  box-shadow: 0 2.5px 2px -1px $default-shadow-color;
+  border-bottom: 1px solid $default-shadow-color;
   cursor: pointer;
 
   &:hover {

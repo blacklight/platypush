@@ -9,6 +9,7 @@ import Notification from "@/utils/Notification";
 import Screen from "@/utils/Screen";
 import Text from "@/utils/Text";
 import Types from "@/utils/Types";
+import Url from "@/utils/Url";
 
 export default {
   name: "Utils",
@@ -23,6 +24,7 @@ export default {
     Screen,
     Text,
     Types,
+    Url,
   ],
 }
 </script>
