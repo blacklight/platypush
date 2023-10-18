@@ -12,6 +12,7 @@
         </div>
 
         <div class="buttons install-btn" v-if="installCmd?.length">
+          <RestartButton v-if="installDone" />
           <button type="button"
                   class="btn btn-default"
                   :disabled="installRunning"
@@ -47,6 +48,7 @@ import 'highlight.js/styles/stackoverflow-dark.min.css'
 import hljs from "highlight.js"
 import CopyButton from "@/components/elements/CopyButton"
 import Loading from "@/components/Loading"
+import RestartButton from "@/components/elements/RestartButton"
 import Utils from "@/Utils"
 
 export default {
@@ -56,6 +58,7 @@ export default {
   components: {
     CopyButton,
     Loading,
+    RestartButton,
   },
 
   props: {
@@ -68,6 +71,7 @@ export default {
   data() {
     return {
       installRunning: false,
+      installDone: false,
       installOutput: null,
       pendingCommands: 0,
       error: null,
@@ -129,7 +133,9 @@ export default {
     onClose() {
       this.installRunning = false
       this.$emit('install-end', this.extension)
+
       if (!this.error)
+        this.installDone = true
         this.notify({
           title: `Extension installed`,
           html: `Extension <b>${this.extension.name}</b> installed successfully`,
@@ -237,7 +243,7 @@ $header-height: 3.5em;
     border-radius: 1em;
   }
 
-  .install-btn {
+  :deep(.install-btn) {
     width: 100%;
     margin-top: 1em;
     display: flex;
