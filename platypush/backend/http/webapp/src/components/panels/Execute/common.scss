@@ -150,6 +150,7 @@ form {
 
 .args-list {
   padding-top: 0.5em;
+  overflow: auto;
 
   @include until($tablet) {
     width: 100%;
@@ -187,6 +188,7 @@ form {
 }
 
 .args-body {
+  max-height: calc(50vh - 4.5em);
   display: flex;
   margin-top: 0.15em;
   margin-bottom: 1.5em;
