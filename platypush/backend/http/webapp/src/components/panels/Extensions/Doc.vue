@@ -20,8 +20,8 @@
 
         <ul>
           <li class="action" v-for="actionName in actionNames" :key="actionName">
-            <a :href="extension.actions[actionName].doc_url" target="_blank">
-              <pre>{{ extension.name }}.{{ actionName }}</pre>
+            <a :href="`/#execute?action=${extension.name}.${actionName}`">
+              {{ extension.name }}.{{ actionName }}
             </a>
           </li>
         </ul>
@@ -36,7 +36,7 @@
         <ul>
           <li class="event" v-for="eventName in eventNames" :key="eventName">
             <a :href="extension.events[eventName].doc_url" target="_blank">
-              <pre>{{ eventName }}</pre>
+              {{ eventName }}
             </a>
           </li>
         </ul>
@@ -62,6 +62,7 @@ export default {
   data() {
     return {
       doc: null,
+      localPageRegex: new RegExp('^/?#.*$'),
     }
   },
 
@@ -101,6 +102,11 @@ export default {
       const href = event.target.getAttribute('href')
       if (!href)
         return true
+
+      if (href.match(this.localPageRegex)) {
+        window.location.href = href
+        return true
+      }
 
       const match = href.match(/^https:\/\/docs\.platypush\.tech\/platypush\/(plugins|backend)\/([\w.]+)\.html#?.*$/)
       if (!match) {
@@ -176,8 +182,15 @@ section {
       margin: 0;
 
       li {
+        width: 100%;
+        display: block;
         margin: 0.5em 0;
         list-style: none;
+
+        a {
+          width: 100%;
+          display: block;
+        }
       }
     }
 
