@@ -452,7 +452,6 @@ steps:
 
   depends_on:
     - build-ui
-    - update-debian-stable-packages
 
   commands:
     - echo "-- Copying source directory"
