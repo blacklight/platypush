@@ -8,6 +8,10 @@ volumes:
     host:
       path: /opt/docs/platypush
 
+  - name: repos
+    host:
+      path: /opt/repos/platypush
+
 steps:
 
 ###
@@ -330,19 +334,15 @@ steps:
 
 - name: update-debian-stable-packages
   image: debian:stable
-  privileged: true  # Required to use the FUSE module for s3fs
+  volumes:
+    - name: repos
+      path: /repos
+
   environment:
     DEB_VERSION: stable
     WORKDIR: /tmp/workdir
+    APT_ROOT: /repos/apt
     PKG_NAME: platypush
-    S3_BUCKET: platypush-pkg
-    BUCKET_MNT: /mnt/s3
-    AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud
-    AWS_DEFAULT_REGION: nl-ams
-    AWS_ACCESS_KEY_ID:
-      from_secret: aws_access_key_id
-    AWS_SECRET_ACCESS_KEY:
-      from_secret: aws_secret_access_key
 
   when:
     branch:
@@ -356,7 +356,7 @@ steps:
   commands:
     - echo "-- Installing dependencies"
     - apt update
-    - apt install -y curl dpkg-dev gpg git python3 python3-pip s3fs
+    - apt install -y curl dpkg-dev gpg git python3 python3-pip
 
     - echo "-- Copying source directory"
     - mkdir -p "$WORKDIR"
@@ -393,12 +393,7 @@ steps:
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
 
-    - echo "-- Mounting the S3 bucket"
-    - mkdir -p "$BUCKET_MNT"
-    - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL" -o nomixupload
-    - export APT_ROOT="$BUCKET_MNT/apt"
-
-    - echo "--- Pushing package to the S3 bucket"
+    - echo "--- Copying package to the repo"
     - mkdir -p "$APT_ROOT/pool/$DEB_VERSION/dev"
     - cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/dev/"
 
@@ -432,17 +427,14 @@ steps:
 
 - name: update-debian-oldstable-packages
   image: debian:oldstable
+  volumes:
+    - name: repos
+      path: /repos
+
   environment:
     DEB_VERSION: oldstable
     WORKDIR: /tmp/workdir
-    PKG_NAME: platypush
-    S3_URL: s3://platypush-pkg/apt
-    AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud
-    AWS_DEFAULT_REGION: nl-ams
-    AWS_ACCESS_KEY_ID:
-      from_secret: aws_access_key_id
-    AWS_SECRET_ACCESS_KEY:
-      from_secret: aws_secret_access_key
+    APT_ROOT: /repos/apt
 
   when:
     branch:
@@ -463,7 +455,6 @@ steps:
     - echo "-- Installing dependencies"
     - apt update
     - apt install -y curl dpkg-dev gpg git python3 python3-pip
-    - pip install awscli
 
     - echo "--- Parsing metadata"
     - git config --global --add safe.directory $PWD
@@ -494,8 +485,9 @@ steps:
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
 
-    - echo "--- Pushing package to the S3 bucket"
-    - aws s3 cp "$GIT_DEB" "$S3_URL/pool/$DEB_VERSION/dev/"
+    - echo "--- Copying package to the repo"
+    - mkdir -p "$APT_ROOT/pool/$DEB_VERSION/dev"
+    - cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/dev/"
 
     # If main/all/Packages doesn't exist, then we should create the first main release
     - export PKGURL="https://apt.platypush.tech/dists/$DEB_VERSION/main/all/Packages"
@@ -527,16 +519,13 @@ steps:
 
 - name: update-apt-repo
   image: debian:stable
-  privileged: true  # Required to use the FUSE module for s3fs
+  volumes:
+    - name: repos
+      path: /repos
+
   environment:
-    S3_BUCKET: platypush-pkg
-    BUCKET_MNT: /mnt/s3
-    AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud
-    AWS_DEFAULT_REGION: nl-ams
-    AWS_ACCESS_KEY_ID:
-      from_secret: aws_access_key_id
-    AWS_SECRET_ACCESS_KEY:
-      from_secret: aws_secret_access_key
+    REPOS_ROOT: /repos
+    APT_ROOT: /repos/apt
     PGP_PUBKEY:
       from_secret: apt_pgp_pub_key
     PGP_PRIVKEY:
@@ -555,13 +544,7 @@ steps:
   commands:
     - echo "-- Installing dependencies"
     - apt update
-    - apt install -y s3fs dpkg-dev gpg
-
-    - echo "-- Mounting the S3 bucket"
-    - mkdir -p "$BUCKET_MNT"
-    - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL" -o nomixupload
-    - export APT_ROOT="$BUCKET_MNT/apt"
-    - mkdir -p "$APT_ROOT"
+    - apt install -y dpkg-dev gpg
 
     - echo "-- Creating a new apt root folder"
     - export TMP_APT_ROOT="/tmp/apt"
@@ -648,8 +631,8 @@ steps:
         cat "$file" | gpg -q --default-key "$PGP_KEYID" -abs --clearsign > "$dirname/InRelease"
       done
 
-    - echo "-- Updating the apt repo root on S3"
-    - export OLD_APT_ROOT="$BUCKET_MNT/oldapt"
+    - echo "-- Updating the apt repo root"
+    - export OLD_APT_ROOT="$REPOS_ROOT/oldapt"
     - |
       if [ ! -d "$OLD_APT_ROOT" ]; then
         mv "$APT_ROOT" "$OLD_APT_ROOT"
@@ -663,19 +646,16 @@ steps:
 
 - name: update-rpm-repo
   image: fedora
-  privileged: true  # Required to use the FUSE module for s3fs
+  volumes:
+    - name: repos
+      path: /repos
+
   environment:
     RPM_VERSION: stable
+    REPOS_ROOT: /repos
+    RPM_ROOT: /repos/rpm
     WORKDIR: /tmp/workdir
     PKG_NAME: platypush
-    S3_BUCKET: platypush-pkg
-    BUCKET_MNT: /mnt/s3
-    AWS_ENDPOINT_URL: https://s3.nl-ams.scw.cloud
-    AWS_DEFAULT_REGION: nl-ams
-    AWS_ACCESS_KEY_ID:
-      from_secret: aws_access_key_id
-    AWS_SECRET_ACCESS_KEY:
-      from_secret: aws_secret_access_key
     PGP_PUBKEY:
       from_secret: rpm_pgp_pub_key
     PGP_PRIVKEY:
@@ -692,18 +672,13 @@ steps:
 
   commands:
     - echo "-- Installing dependencies"
-    - yum install -y createrepo rpm-build rpm-sign gpg wget yum-utils git python python-pip s3fs-fuse
+    - yum install -y createrepo rpm-build rpm-sign gpg wget yum-utils git python python-pip
 
     - echo "-- Copying source directory"
     - mkdir -p "$WORKDIR"
     - export SRCDIR="$WORKDIR/src"
     - cp -r "$PWD" "$SRCDIR"
     - cd "$SRCDIR"
-
-    - echo "-- Mounting the S3 bucket"
-    - mkdir -p "$BUCKET_MNT"
-    - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL" -o nomixupload
-    - export RPM_ROOT="$BUCKET_MNT/rpm"
     - mkdir -p "$RPM_ROOT"
 
     - echo "--- Parsing metadata"
@@ -846,9 +821,9 @@ steps:
     - createrepo "$TMP_RPM_ROOT"
     - gpg --detach-sign --armor "$TMP_RPM_ROOT/repodata/repomd.xml"
 
-    - echo "--- Updating the S3 bucket"
-    - export NEW_RPM_ROOT="$BUCKET_MNT/rpm_new"
-    - export OLD_RPM_ROOT="$BUCKET_MNT/rpm_old"
+    - echo "--- Updating the repository"
+    - export NEW_RPM_ROOT="$REPOS_ROOT/rpm_new"
+    - export OLD_RPM_ROOT="$REPOS_ROOT/rpm_old"
     - cp -r "$TMP_RPM_ROOT" "$NEW_RPM_ROOT"
     - rm -rf "$TMP_RPM_ROOT"
     - mv "$RPM_ROOT" "$OLD_RPM_ROOT"
