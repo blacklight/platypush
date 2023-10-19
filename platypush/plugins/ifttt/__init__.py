@@ -5,8 +5,8 @@ from platypush.plugins import Plugin, action
 
 class IftttPlugin(Plugin):
     """
-    This plugin allows you to interact with the IFTTT maker API
-    <https://ifttt.com/maker_webhooks> to programmatically trigger your own
+    This plugin allows you to interact with the `IFTTT maker API
+    <https://ifttt.com/maker_webhooks>`_ to programmatically trigger your own
     IFTTT hooks from Platypush - e.g. send a tweet or a Facebook post, create a
     Todoist item or a Trello task, trigger events on your mobile device, or run
     any action not natively supported by Platypush but available on your IFTTT
@@ -54,12 +54,16 @@ class IftttPlugin(Plugin):
         if not values:
             values = []
 
-        response = requests.post(url, json={'value{}'.format(i + 1): v
-                                            for (i, v) in enumerate(values)})
+        response = requests.post(
+            url, json={'value{}'.format(i + 1): v for (i, v) in enumerate(values)}
+        )
 
         if not response.ok:
-            raise RuntimeError("IFTTT event '{}' error: {}: {}".format(
-                event_name, response.status_code, response.reason))
+            raise RuntimeError(
+                "IFTTT event '{}' error: {}: {}".format(
+                    event_name, response.status_code, response.reason
+                )
+            )
 
 
 # vim:sw=4:ts=4:et:
