@@ -435,6 +435,7 @@ steps:
     DEB_VERSION: oldstable
     WORKDIR: /tmp/workdir
     APT_ROOT: /repos/apt
+    PKG_NAME: platypush
 
   when:
     branch:
