@@ -351,7 +351,6 @@ steps:
       - push
 
   depends_on:
-    - update-debian-oldstable-packages
     - build-ui
 
   commands:
@@ -453,6 +452,7 @@ steps:
 
   depends_on:
     - build-ui
+    - update-debian-stable-packages
 
   commands:
     - echo "-- Copying source directory"
