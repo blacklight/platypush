@@ -44,8 +44,9 @@ class ApplicationPlugin(Plugin):
         Install the dependencies of an extension.
 
         :param extension: Extension name. For plugins, it will be the plugin
-        name (e.g. ``light.hue`` or ``music.mpd``); for backend, the name will
-        be prefixed by ``backend.`` (e.g. ``backend.http`` or ``backend.tcp``).
+            name (e.g. ``light.hue`` or ``music.mpd``); for backend, the name
+            will be prefixed by ``backend.`` (e.g. ``backend.http`` or
+            ``backend.tcp``).
         """
         getter = get_plugin_class_by_name
         if extension.startswith('backend.'):
