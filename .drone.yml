@@ -109,7 +109,7 @@ steps:
 
   commands:
     - echo "Installing required build dependencies"
-    - apk add --update --no-cache make py3-sphinx py3-pip py3-paho-mqtt $(cat platypush/install/requirements/alpine.txt)
+    - apk add --update --no-cache make py3-sphinx py3-myst-parser py3-pip py3-paho-mqtt $(cat platypush/install/requirements/alpine.txt)
     - pip install -U hid sphinx-rtd-theme sphinx-book-theme
     - pip install .
     - mkdir -p /docs/current
@@ -351,6 +351,7 @@ steps:
       - push
 
   depends_on:
+    - update-debian-oldstable-packages
     - build-ui
 
   commands:
