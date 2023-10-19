@@ -908,6 +908,10 @@ steps:
       ====================
 
       $ sudo yum install platypush
+
+      Or, if you want to install a version always up-to-date with the git repo:
+
+      $ sudo yum install platypush-git
       EOF
 
     - |
