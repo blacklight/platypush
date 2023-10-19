@@ -113,8 +113,8 @@ steps:
 
   commands:
     - echo "Installing required build dependencies"
-    - apk add --update --no-cache make py3-sphinx py3-myst-parser py3-pip py3-paho-mqtt $(cat platypush/install/requirements/alpine.txt)
-    - pip install -U hid sphinx-rtd-theme sphinx-book-theme
+    - apk add --update --no-cache make py3-sphinx py3-myst-parser py3-pip $(cat platypush/install/requirements/alpine.txt)
+    - pip install -U sphinx-rtd-theme sphinx-book-theme
     - pip install .
     - mkdir -p /docs/current
     - export APPDIR=$PWD

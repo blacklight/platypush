@@ -1,6 +1,12 @@
 manifest:
   events: {}
   install:
-    pip: []
+    apt:
+      - iputils-ping
+    dnf:
+      - iputils
+    pacman:
+      - iputils
+
   package: platypush.plugins.ping
   type: plugin
