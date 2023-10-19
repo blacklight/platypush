@@ -616,6 +616,58 @@ steps:
         add_hashes "$dist_dir" "sha256sum" "SHA256" >> "$release_file"
       done
 
+    - echo "-- Updating index file"
+    - |
+      cat <<EOF > "$TMP_APT_ROOT/index.txt"
+      Welcome to the Platypush APT repository!
+
+      Project homepage: https://platypush.tech
+      Source code: https://git.platypush.tech/platypush/platypush
+      Documentation / API reference: https://docs.platypush.tech
+
+      You can use this APT repository to install Platypush on Debian, Ubuntu or any
+      Debian-based distro.
+
+      Steps:
+
+      1. Add this repository's PGP key to your apt keyring
+      ====================================================
+
+      $ sudo wget -q -O \
+          /etc/apt/trusted.gpg.d/platypush.asc \
+          https://apt.platypush.tech/pubkey.txt
+
+      2. Add the repository to your sources
+      =====================================
+
+      $ sudo wget -q -O \
+          /etc/apt/sources.list.d/platypush.list \
+          https://apt.platypush.tech/lists/platypush-<deb_version>-<branch>.list
+
+      Where:
+
+      - deb_version can be either *stable* (for the current Debian stable version) or
+        *oldstable* (for the previous Debian stable version)
+      - branch can be either *main* (for the latest releases) or *dev* (for a package
+        that is always in sync with the git version)
+
+      For example, to install the latest stable tags on Debian stable:
+
+      $ sudo wget -q -O \
+          /etc/apt/sources.list.d/platypush.list \
+          https://apt.platypush.tech/lists/platypush-stable-main.list
+
+      3. Update your repos
+      ====================
+
+      $ sudo apt update
+
+      4. Install Platypush
+      ====================
+
+      $ sudo apt install platypush
+      EOF
+
     - echo "-- Importing and refreshing PGP key"
     - echo "$PGP_PUBKEY" > "$TMP_APT_ROOT/pubkey.txt"
     - export PGP_KEYID=$(echo "$PGP_PUBKEY" | gpg --with-colons --import-options show-only --import --fingerprint | grep -e '^fpr:' | head -1 | awk -F ':' '{print $(NF - 1)}')
@@ -821,6 +873,47 @@ steps:
     - echo "--- Creating a new copy of the RPM repository"
     - createrepo "$TMP_RPM_ROOT"
     - gpg --detach-sign --armor "$TMP_RPM_ROOT/repodata/repomd.xml"
+
+    - |
+      cat <<EOF > "$TMP_RPM_ROOT/platypush.repo"
+      [platypush]
+      name=Platypush repository
+      baseurl=https://rpm.platypush.tech
+      enabled=1
+      type=rpm
+      gpgcheck=1
+      gpgkey=https://rpm.platypush.tech/pubkey.txt
+      EOF
+
+    - |
+      cat <<EOF > "$TMP_RPM_ROOT/index.txt"
+      Welcome to the Platypush RPM repository!
+
+      Project homepage: https://platypush.tech
+      Source code: https://git.platypush.tech/platypush/platypush
+      Documentation / API reference: https://docs.platypush.tech
+
+      You can use this RPM repository to install Platypush on Fedora or other
+      RPM-based distros - as long as they are compatible with the latest Fedora
+      release.
+
+      Steps:
+
+      1. Add the repository to your sources
+      =====================================
+
+      $ sudo yum config-manager --add-repo https://rpm.platypush.tech/platypush.repo
+
+      2. Install Platypush
+      ====================
+
+      $ sudo yum install platypush
+      EOF
+
+    - |
+      cat <<EOF > "$TMP_RPM_ROOT/pubkey.txt"
+      $PGP_PUBKEY
+      EOF
 
     - echo "--- Updating the repository"
     - export NEW_RPM_ROOT="$REPOS_ROOT/rpm_new"
