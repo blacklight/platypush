@@ -69,6 +69,7 @@ mock_imports = [
     "oauth2client",
     "omxplayer",
     "openzwave",
+    "paho.mqtt",
     "pandas",
     "paramiko",
     "picamera",

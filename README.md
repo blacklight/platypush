@@ -10,7 +10,6 @@ Platypush
 
 <!-- toc -->
 
-- [Useful links](#useful-links)
 - [Introduction](#introduction)
     + [What it can do](#what-it-can-do)
 - [Installation](#installation)
@@ -46,33 +45,10 @@ Platypush
     + [PWA support](#pwa-support)
 - [Mobile app](#mobile-app)
 - [Tests](#tests)
+- [Useful links](#useful-links)
 - [Funding](#funding)
 
 <!-- tocstop -->
-
-## Useful links
-- Recommended read: [**Getting started with Platypush**](https://blog.platypush.tech/article/Ultimate-self-hosted-automation-with-Platypush).
-
-- The [blog](https://blog.platypush.tech) is a good place to get more insights
-  and inspiration on what you can build.
-
-- The [wiki](https://git.platypush.tech/platypush/platypush/wiki) also
-  contains many resources on getting started.
-
-- Extensive documentation for all the available integrations and messages [is
-  available](https://docs.platypush.tech/).
-
-- If you have issues/feature requests/enhancements please [create an
-  issue](https://git.platypush.tech/platypush/platypush/issues).
-
-- A [Matrix instance](https://matrix.to/#/#platypush:matrix.platypush.tech) is
-  available if you are looking for interactive support.
-
-- An IRC channel is also available at `#platypush@irc.platypush.tech:6697` (SSL
-  only).
-
-- A [Lemmy instance](https://lemmy.platypush.tech/c/platypush) is available for
-  general questions.
 
 ## Introduction
 
@@ -811,6 +787,30 @@ of Platypush to your fingertips.
 
 To run the tests simply run `pytest` either from the project root folder or the
 `tests/` folder.
+
+## Useful links
+- Recommended read: [**Getting started with Platypush**](https://blog.platypush.tech/article/Ultimate-self-hosted-automation-with-Platypush).
+
+- The [blog](https://blog.platypush.tech) is a good place to get more insights
+  and inspiration on what you can build.
+
+- The [wiki](https://git.platypush.tech/platypush/platypush/wiki) also
+  contains many resources on getting started.
+
+- Extensive documentation for all the available integrations and messages [is
+  available](https://docs.platypush.tech/).
+
+- If you have issues/feature requests/enhancements please [create an
+  issue](https://git.platypush.tech/platypush/platypush/issues).
+
+- A [Matrix instance](https://matrix.to/#/#platypush:matrix.platypush.tech) is
+  available if you are looking for interactive support.
+
+- An IRC channel is also available at `#platypush@irc.platypush.tech:6697` (SSL
+  only).
+
+- A [Lemmy instance](https://lemmy.platypush.tech/c/platypush) is available for
+  general questions.
 
 ---
 
