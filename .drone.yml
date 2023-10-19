@@ -395,7 +395,7 @@ steps:
 
     - echo "-- Mounting the S3 bucket"
     - mkdir -p "$BUCKET_MNT"
-    - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL"
+    - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL" -o nomixupload
     - export APT_ROOT="$BUCKET_MNT/apt"
 
     - echo "--- Pushing package to the S3 bucket"
@@ -559,7 +559,7 @@ steps:
 
     - echo "-- Mounting the S3 bucket"
     - mkdir -p "$BUCKET_MNT"
-    - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL"
+    - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL" -o nomixupload
     - export APT_ROOT="$BUCKET_MNT/apt"
     - mkdir -p "$APT_ROOT"
 
@@ -702,7 +702,7 @@ steps:
 
     - echo "-- Mounting the S3 bucket"
     - mkdir -p "$BUCKET_MNT"
-    - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL"
+    - s3fs "$S3_BUCKET" "$BUCKET_MNT" -o url="$AWS_ENDPOINT_URL" -o nomixupload
     - export RPM_ROOT="$BUCKET_MNT/rpm"
     - mkdir -p "$RPM_ROOT"
 
