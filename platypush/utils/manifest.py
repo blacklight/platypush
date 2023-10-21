@@ -364,7 +364,8 @@ class Dependencies:
 
         return cls._parse_requirements_file(
             os.path.join(
-                cls._get_requirements_dir(), pkg_manager.value.default_os.name + '.txt'
+                cls._get_requirements_dir(),
+                pkg_manager.value.default_os.name.lower() + '.txt',
             ),
             install_context,
         )
