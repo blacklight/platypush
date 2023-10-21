@@ -6,7 +6,6 @@ virtual environment for Platypush starting from a configuration file.
 from contextlib import contextmanager
 import logging
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -63,7 +62,23 @@ class VenvBuilder(BaseBuilder):
         """
         for cmd in deps.to_pkg_install_commands():
             logger.info('Installing system packages: %s', cmd)
-            subprocess.call(re.split(r'\s+', cmd.strip()))
+            subprocess.run(cmd, shell=True, check=True)
+
+    def _run_before_commands(self, deps: Dependencies):
+        """
+        Runs any commands that should be executed before the installation.
+        """
+        for cmd in deps.before:
+            logger.info('Running: %s', cmd)
+            subprocess.run(cmd, shell=True, check=True)
+
+    def _run_after_commands(self, deps: Dependencies):
+        """
+        Runs any commands that should be executed after the installation.
+        """
+        for cmd in deps.after:
+            logger.info('Running: %s', cmd)
+            subprocess.run(cmd, shell=True, check=True)
 
     @contextmanager
     def _prepare_src_dir(self) -> Generator[str, None, None]:
@@ -146,12 +161,15 @@ class VenvBuilder(BaseBuilder):
             install_context=InstallContext.VENV,
         )
 
+        self._run_before_commands(deps)
         self._install_system_packages(deps)
 
         with self._prepare_src_dir():
             self._prepare_venv()
 
         self._install_extra_pip_packages(deps)
+        self._run_after_commands(deps)
+
         self._print_instructions(
             textwrap.dedent(
                 f"""
