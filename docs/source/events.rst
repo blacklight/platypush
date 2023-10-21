@@ -69,7 +69,6 @@ Events
     platypush/events/tensorflow.rst
     platypush/events/todoist.rst
     platypush/events/torrent.rst
-    platypush/events/travisci.rst
     platypush/events/trello.rst
     platypush/events/video.rst
     platypush/events/weather.rst
