@@ -68,4 +68,4 @@ class ApplicationPlugin(Plugin):
 
         for cmd in install_cmds:
             self.logger.info('> %s', cmd)
-            subprocess.check_call(cmd, shell=True)
+            subprocess.check_call(cmd, shell=True, stderr=subprocess.STDOUT)
