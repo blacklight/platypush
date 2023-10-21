@@ -1,0 +1,71 @@
+a, a:visited {
+  /* Don't change the color for visited links */
+  color: var(--pst-color-link) !important;
+}
+
+ul.grid {
+  display: grid;
+
+  @media screen and (max-width: 500px) {
+    grid-template-columns: repeat(1, 1fr);
+  }
+
+  @media screen and (min-width: 501px) and (max-width: 699px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media screen and (min-width: 700px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+a.grid-title {
+  width: 100%;
+  display: block;
+  margin: 1.5em 0;
+  font-size: 1.5em !important;
+  border-bottom: 1px solid #ccc;
+}
+
+ul.grid li {
+  display: flex;
+  align-items: center;
+  margin: 0 10px 10px 0;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 15px;
+}
+
+ul.grid img {
+  width: 32px;
+  margin-right: 5px;
+}
+
+ul.grid li code {
+  width: 100%;
+}
+
+ul.grid li code .pre {
+  width: 100%;
+  display: block;
+  white-space: pre-wrap;
+}
+
+ul.grid li:hover {
+  background: linear-gradient(0deg, #e0ffe8, #e3ffff);
+}
+
+ul.grid li a {
+  width: calc(100% - 35px);
+  display: flex;
+  justify-content: center;
+}
+
+ul.grid li a code {
+  background: none;
+  border: none;
+}
+
+ul.grid .icon {
+  width: 32px;
+}
