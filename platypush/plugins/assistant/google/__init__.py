@@ -32,6 +32,37 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
     device. It requires you to have an audio microphone and a speaker connected
     to the device.
 
+    If you have multiple sound devices, you can specify which one(s) to use for
+    input and output through a ``~/.asoundrc`` configuration file like this:
+
+        .. code-block:: text
+
+            pcm.!default {
+              type asym
+               playback.pcm {
+                 type plug
+                 slave.pcm "hw:0,0"
+               }
+               capture.pcm {
+                 type plug
+                 slave.pcm "hw:1,0"
+               }
+            }
+
+    You can use ``aplay -l`` and ``arecord -l`` to respectively list the
+    detected audio output and input devices with their indices.
+
+    If you are using PulseAudio instead of bare ALSA, then you can:
+
+        1. Use the ``pavucontrol`` (GUI) tool to select the audio input and
+           output devices and volumes for the assistant.
+        2. Use a program like ``pamix`` (ncurses) or ``pamixer`` (CLI).
+        3. Run the ``pactl list sources`` and ``pactl list sinks`` commands to
+           respectively list the detected audio input and output devices. Take
+           note of their name, and specify which ones the assistant should use
+           by starting the application with the right ``PULSE_SOURCE`` and
+           ``PULSE_SINK`` environment variables.
+
     .. warning:: The Google Assistant library used by this backend has
         been deprecated by Google:
         https://developers.google.com/assistant/sdk/reference/library/python/.
