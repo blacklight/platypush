@@ -1,8 +1,6 @@
-import logging
 import re
 import sys
 
-from platypush.context import get_backend, get_plugin
 from platypush.message.event import Event
 
 
@@ -11,18 +9,7 @@ class AssistantEvent(Event):
 
     def __init__(self, *args, assistant=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.logger = logging.getLogger('platypush:assistant')
-
-        if assistant:
-            self._assistant = assistant
-        else:
-            try:
-                self._assistant = get_backend('assistant.google')
-                if not self._assistant:
-                    self._assistant = get_plugin('assistant.google.pushtotalk')
-            except Exception as e:
-                self.logger.debug('Could not initialize the assistant component: %s', e)
-                self._assistant = None
+        self._assistant = assistant
 
 
 class ConversationStartEvent(AssistantEvent):

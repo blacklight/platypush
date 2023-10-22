@@ -8,7 +8,6 @@ Backends
 
     platypush/backend/adafruit.io.rst
     platypush/backend/alarm.rst
-    platypush/backend/assistant.google.rst
     platypush/backend/assistant.snowboy.rst
     platypush/backend/button.flic.rst
     platypush/backend/camera.pi.rst
