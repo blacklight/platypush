@@ -3,6 +3,7 @@ import os
 import signal
 import subprocess
 import sys
+import time
 
 from platypush.process import ControllableProcess
 
@@ -28,17 +29,30 @@ class ApplicationProcess(ControllableProcess):
 
     def main(self):
         self.logger.info('Starting application...')
+        app = None
 
-        with subprocess.Popen(
-            [sys.executable, '-m', 'platypush.app', *self.args],
-            stdin=sys.stdin,
-            stdout=sys.stdout,
-            stderr=sys.stderr,
-        ) as app:
-            try:
+        try:
+            with subprocess.Popen(
+                [sys.executable, '-m', 'platypush.app', *self.args],
+                stdin=sys.stdin,
+                stdout=sys.stdout,
+                stderr=sys.stderr,
+            ) as app:
                 app.wait()
-            except KeyboardInterrupt:
-                pass
+        except KeyboardInterrupt:
+            pass
+
+        if app and app.poll() is None:
+            app.terminate()
+
+        wait_start = time.time()
+        while app and app.poll() is None:
+            if time.time() - wait_start > 5:
+                self.logger.warning('Application did not terminate, killing it')
+                app.kill()
+                break
+
+            time.sleep(0.1)
 
     def on_stop(self):
         try:
