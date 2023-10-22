@@ -51,7 +51,7 @@ class DeviceManager:
         if type:
             devices = [dev for dev in devices if dev.get(f'max_{type.value}_channels')]
 
-        return [AudioDevice(**info) for info in devices]
+        return [AudioDevice(index=idx, **info) for idx, info in enumerate(devices)]
 
     def get_device(
         self,
@@ -75,8 +75,11 @@ class DeviceManager:
             if type == StreamType.OUTPUT and self.output_device is not None:
                 return self.output_device
 
+        all_devices: List[dict] = sd.query_devices()  # type: ignore
+        assert all_devices, 'No sound devices found'
+
         try:
-            info: dict = sd.query_devices(
+            dev: dict = sd.query_devices(
                 kind=type.value if type else None, device=device  # type: ignore
             )
         except sd.PortAudioError as e:
@@ -87,5 +90,15 @@ class DeviceManager:
                 e,
             ) from e
 
-        assert info, f'No such device: {device}'
-        return AudioDevice(**info)
+        if not dev:
+            if device:
+                raise AssertionError(f'No such device: {device}')
+            if type:
+                raise AssertionError(f'No default device for type={type}')
+
+        idx = next(
+            iter(i for i, d in enumerate(all_devices) if d['name'] == dev['name']), None
+        )
+
+        assert idx is not None, 'Could not infer the sound device index'
+        return AudioDevice(index=idx, **dev)
