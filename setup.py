@@ -139,9 +139,6 @@ setup(
         ],
         # Support for Last.FM scrobbler plugin
         'lastfm': ['pylast'],
-        # Support for custom hotword detection
-        'hotword': ['snowboy'],
-        'snowboy': ['snowboy'],
         # Support for real-time MIDI events
         'midi': ['rtmidi'],
         # Support for RaspberryPi GPIO
