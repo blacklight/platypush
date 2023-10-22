@@ -133,6 +133,9 @@ class VenvBuilder(BaseBuilder):
         logger.info('Installing base Python dependencies under %s...', self.output)
         subprocess.call([*self._pip_cmd, 'pip', '.'])
 
+        # Add <output>/bin to the PATH
+        os.environ['PATH'] = os.path.join(self.output, 'bin') + ':' + os.environ['PATH']
+
     def _install_extra_pip_packages(self, deps: Dependencies):
         """
         Install the extra pip dependencies inferred from the configured
