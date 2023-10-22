@@ -102,7 +102,7 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
     @property
     def credentials_file(self) -> str:
         if self._credentials_file:
-            return self._credentials_file
+            return os.path.abspath(os.path.expanduser(self._credentials_file))
 
         f = None
         for default_file in self._default_credentials_files:

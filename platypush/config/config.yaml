@@ -281,6 +281,35 @@ backend.http:
 ###
 
 ###
+# # Example configuration of a voice assistant.
+# # Several voice assistant plugins and engines are available - Google
+# # Assistant, Alexa, DeepSpeech, Picovoice etc.
+# #
+# # The Google Assistant is probably the most straightforward to configure and
+# # the richest in terms of features provided out-of-the-box and speech
+# # detection quality, while others may require further tinkering, may perform
+# # worse than the Google model, and/or may run models on-device which could not
+# # be within reach for some machines.
+# #
+# # Check the documentation of the `assistant.google` plugin for instructions on
+# # how to get a credentials file that you can use with a custom assistant
+# # installation.
+# #
+# # Note however that the Google Assistant plugin leverages the
+# # `google-assistant-library`, which has been deprecated a while ago by Google
+# # and it's unlikely to receive updates (although it still works and I'd still
+# # expect it to work).
+#
+# assistant.google:
+#   # Path to your credentials file (by default it will look either under
+#   # ~/.config/google-oauthlib-tool/credentials.json or
+#   # <WORKDIR>/credentials/google/assistant.json
+#   # credentials_file: ~/credentials/assistant.json
+#   # If specified, then this sound will be played when a conversation starts
+#   # conversation_start_sound: ~/sounds/assistant-start.mp3
+###
+
+###
 # # Example configuration of music.mpd plugin, a plugin to interact with MPD and
 # # Mopidy music server instances. See
 # # https://docs.platypush.tech/en/latest/platypush/plugins/music.mpd.html
