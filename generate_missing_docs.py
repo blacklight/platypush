@@ -11,6 +11,7 @@ from platypush.message.event import Event
 from platypush.message.response import Response
 from platypush.plugins import Plugin
 from platypush.utils.manifest import Manifests
+from platypush.utils.mock import auto_mocks
 
 
 def get_all_plugins():
@@ -159,10 +160,11 @@ def generate_responses_doc():
 
 
 def main():
-    generate_plugins_doc()
-    generate_backends_doc()
-    generate_events_doc()
-    generate_responses_doc()
+    with auto_mocks():
+        generate_plugins_doc()
+        generate_backends_doc()
+        generate_events_doc()
+        generate_responses_doc()
 
 
 if __name__ == '__main__':
