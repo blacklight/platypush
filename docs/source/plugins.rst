@@ -12,7 +12,6 @@ Plugins
     platypush/plugins/arduino.rst
     platypush/plugins/assistant.echo.rst
     platypush/plugins/assistant.google.rst
-    platypush/plugins/assistant.google.pushtotalk.rst
     platypush/plugins/autoremote.rst
     platypush/plugins/bluetooth.rst
     platypush/plugins/calendar.rst
