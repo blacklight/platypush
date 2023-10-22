@@ -10,7 +10,6 @@ Plugins
     platypush/plugins/alarm.rst
     platypush/plugins/application.rst
     platypush/plugins/arduino.rst
-    platypush/plugins/assistant.echo.rst
     platypush/plugins/assistant.google.rst
     platypush/plugins/autoremote.rst
     platypush/plugins/bluetooth.rst

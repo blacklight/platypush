@@ -190,8 +190,6 @@ setup(
         'flic': [
             'flic @ https://github.com/50ButtonsEach/fliclib-linux-hci/tarball/master'
         ],
-        # Support for Alexa/Echo plugin
-        'alexa': ['avs @ https://github.com/BlackLight/avs/tarball/master'],
         # Support for Bluetooth devices
         'bluetooth': [
             'bleak',
