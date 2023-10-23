@@ -4,9 +4,6 @@ from typing import Callable, Optional
 
 import sounddevice as sd
 
-import numpy as np
-from numpy.typing import NDArray
-
 
 # pylint: disable=too-few-public-methods
 class AudioOutputCallback:
@@ -18,7 +15,7 @@ class AudioOutputCallback:
     def __init__(
         self,
         *args,
-        audio_queue: Queue[NDArray[np.number]],
+        audio_queue: Queue,  # Queue[NDArray[np.number]],
         channels: int,
         blocksize: int,
         should_stop: Callable[[], bool] = lambda: False,
@@ -50,7 +47,8 @@ class AudioOutputCallback:
         assert not status.output_underflow, 'Output underflow: increase blocksize?'
         assert not status, f'Audio callback failed: {status}'
 
-    def _audio_callback(self, outdata: NDArray[np.number], frames: int, status):
+    # outdata: NDArray[np.number]
+    def _audio_callback(self, outdata, frames: int, status):
         if self._is_paused():
             return
 
@@ -72,7 +70,8 @@ class AudioOutputCallback:
         outdata[:audio_length] = data[:audio_length]
 
     # _ = time
-    def __call__(self, outdata: NDArray[np.number], frames: int, _, status):
+    # outdata: NDArray[np.number]
+    def __call__(self, outdata, frames: int, _, status):
         try:
             self._audio_callback(outdata, frames, status)
         except AssertionError as e:

@@ -3,9 +3,7 @@ from queue import Queue
 from threading import Event
 from typing import Any, Generator, Iterable, Optional, Type
 
-import numpy as np
 import sounddevice as sd
-from numpy.typing import DTypeLike, NDArray
 
 from ...._model import AudioState
 from ..._player import AudioPlayer
@@ -26,7 +24,7 @@ class AudioSynthPlayer(AudioPlayer):
         *args,
         volume: float,
         channels: int,
-        dtype: DTypeLike,
+        dtype,  # : DTypeLike,
         sounds: Optional[Iterable[Sound]] = None,
         **kwargs
     ):
@@ -36,7 +34,7 @@ class AudioSynthPlayer(AudioPlayer):
         super().__init__(*args, volume=volume, channels=channels, dtype=dtype, **kwargs)
         self._generator_stopped = Event()
         self._completed_callback_event = Event()
-        self._audio_queue: Queue[NDArray[np.number]] = Queue(
+        self._audio_queue = Queue(  # Queue[NDArray[np.number]]
             maxsize=self.queue_size or 0
         )
 

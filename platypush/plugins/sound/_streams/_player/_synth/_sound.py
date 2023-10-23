@@ -1,9 +1,8 @@
 from enum import Enum
 import json
-from typing import Final, Optional, Tuple, Union
+from typing import Final, Optional, Union
 
 import numpy as np
-from numpy.typing import NDArray
 
 from ._base import SoundBase
 
@@ -103,7 +102,7 @@ class Sound(SoundBase):
 
     def _get_audio_pad(
         self, sample_rate: float, t_start: float, t_end: float
-    ) -> Tuple[NDArray[np.floating], NDArray[np.floating]]:
+    ):  # -> Tuple[NDArray[np.floating], NDArray[np.floating]]:
         """
         Return the left and right audio pads for a given audio length as a
         ``(left, right)`` tuple of numpy zero-filled arrays.
@@ -120,7 +119,7 @@ class Sound(SoundBase):
             )
         )
 
-    def _generate_wave(self, x: NDArray[np.floating]):
+    def _generate_wave(self, x):
         """
         Generate a raw audio wave as a numpy array of floating between -1 and 1
         given ``x`` as a set of timestamp samples.
@@ -149,7 +148,7 @@ class Sound(SoundBase):
         t_start: float = 0,
         t_end: float = 0,
         **_,
-    ) -> NDArray[np.floating]:
+    ):  # -> NDArray[np.floating]:
         """
         Get the wave binary data associated to this sound
 
