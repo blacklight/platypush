@@ -85,6 +85,7 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         super().__init__(*args, **kwargs)
         self.tts_plugin = tts_plugin
         self.tts_plugin_args = tts_plugin_args or {}
+        self._conversation_start_sound = None
         if conversation_start_sound:
             self._conversation_start_sound = os.path.abspath(
                 os.path.expanduser(conversation_start_sound)
