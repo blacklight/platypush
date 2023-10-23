@@ -415,15 +415,16 @@ steps:
         [ "$RELEASED_VERSION" != "$VERSION" ] && export UPDATE_STABLE_PKG=1
       fi
 
-    # Don't proceed and update the main release if it hasn't changed
+    # Proceed and update the main release if the version number has changed
     - |
-      if [ -z "$UPDATE_STABLE_PKG" ]; then
-        exit 0
+      if [ -n "$UPDATE_STABLE_PKG" ]; then
+        echo "--- Updating main package"
+        mkdir -p "$APT_ROOT/pool/$DEB_VERSION/main"
+        cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
       fi
 
-    - echo "--- Updating main package"
-    - mkdir -p "$APT_ROOT/pool/$DEB_VERSION/main"
-    - cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
+    - chown -R a+r "$APT_ROOT"
+    - chown a+x "$APT_ROOT"
 
 ###
 ### Update the Debian (oldstable) packages
@@ -508,15 +509,16 @@ steps:
         [ "$RELEASED_VERSION" != "$VERSION" ] && export UPDATE_STABLE_PKG=1
       fi
 
-    # Don't proceed and update the main release if it hasn't changed
+    # Proceed and update the main release if the version number has changed
     - |
-      if [ -z "$UPDATE_STABLE_PKG" ]; then
-        exit 0
+      if [ -n "$UPDATE_STABLE_PKG" ]; then
+        echo "--- Updating main package"
+        mkdir -p "$APT_ROOT/pool/$DEB_VERSION/main"
+        cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
       fi
 
-    - echo "--- Updating main package"
-    - mkdir -p "$APT_ROOT/pool/$DEB_VERSION/main"
-    - cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
+    - chown -R a+r "$APT_ROOT"
+    - chown a+x "$APT_ROOT"
 
 ###
 ### Updates the APT repository after new packages have been pushed
