@@ -193,6 +193,11 @@ nav {
       top: 0;
       left: 0;
       z-index: 5;
+
+      .icon.status {
+        top: 0.75em !important;
+        left: 2em;
+      }
     }
   }
 
@@ -319,6 +324,10 @@ nav {
     }
   }
 
+  .icon.status {
+    width: 1em;
+  }
+
   &.collapsed {
     display: flex;
     flex-direction: column;
@@ -354,14 +363,18 @@ nav {
       box-shadow: none;
       background: $nav-toggler-collapsed-bg;
 
-      @media screen and (max-width: #{$tablet - 1px}) {
-        background: $nav-toggler-collapsed-mobile-bg;
-        color: $nav-toggler-collapsed-mobile-fg;
-      }
-
       .icon.status {
         top: 0.75em;
         left: 2em;
+      }
+
+      @include until($tablet) {
+        background: $nav-toggler-collapsed-mobile-bg;
+        color: $nav-toggler-collapsed-mobile-fg;
+
+        .icon.status {
+          top: 0.75em !important;
+        }
       }
     }
 
