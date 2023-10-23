@@ -2,6 +2,9 @@
   "arduino": {
     "class": "fas fa-microchip"
   },
+  "assistant.google": {
+    "class": "fas fa-microphone-lines"
+  },
   "bluetooth": {
     "class": "fab fa-bluetooth"
   },

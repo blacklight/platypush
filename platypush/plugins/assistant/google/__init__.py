@@ -3,23 +3,6 @@ import os
 from typing import Optional
 
 from platypush.config import Config
-from platypush.context import get_bus, get_plugin
-from platypush.message.event.assistant import (
-    ConversationStartEvent,
-    ConversationEndEvent,
-    ConversationTimeoutEvent,
-    ResponseEvent,
-    NoResponseEvent,
-    SpeechRecognizedEvent,
-    AlarmStartedEvent,
-    AlarmEndEvent,
-    TimerStartedEvent,
-    TimerEndEvent,
-    AlertStartedEvent,
-    AlertEndEvent,
-    MicMutedEvent,
-    MicUnmutedEvent,
-)
 from platypush.plugins import RunnablePlugin, action
 from platypush.plugins.assistant import AssistantPlugin
 
@@ -79,6 +62,8 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
         the automated ways fail.
     """
 
+    _entity_name = 'Google Assistant'
+
     _default_credentials_files = (
         os.path.join(Config.get_workdir(), 'credentials', 'google', 'assistant.json'),
         os.path.join(
@@ -90,7 +75,6 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
         self,
         credentials_file: Optional[str] = None,
         device_model_id: str = 'Platypush',
-        conversation_start_sound: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -109,11 +93,6 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
         :param device_model_id: The device model ID that identifies the device
             where the assistant is running (default: Platypush). It can be a
             custom string.
-
-        :param conversation_start_sound: If set, the assistant will play this
-            audio file when it detects a speech. The sound file will be played
-            on the default audio output device. If not set, the assistant won't
-            play any sound when it detects a speech.
         """
 
         super().__init__(**kwargs)
@@ -121,13 +100,6 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
         self.device_model_id = device_model_id
         self.credentials = None
         self._assistant = None
-        self._is_muted = False
-
-        if conversation_start_sound:
-            self._conversation_start_sound = os.path.abspath(
-                os.path.expanduser(conversation_start_sound)
-            )
-
         self.logger.info('Initialized Google Assistant plugin')
 
     @property
@@ -152,79 +124,54 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
 
         return self._assistant
 
-    def _play_conversation_start_sound(self):
-        if not self._conversation_start_sound:
-            return
-
-        audio = get_plugin('sound')
-        if not audio:
-            self.logger.warning(
-                'Unable to play conversation start sound: sound plugin not found'
-            )
-            return
-
-        audio.play(self._conversation_start_sound)
-
     def _process_event(self, event):
         from google.assistant.library.event import EventType, AlertType
 
         self.logger.info('Received assistant event: %s', event)
 
         if event.type == EventType.ON_CONVERSATION_TURN_STARTED:
-            get_bus().post(ConversationStartEvent(assistant=self))
-            self._play_conversation_start_sound()
+            self._on_conversation_start()
         elif event.type == EventType.ON_CONVERSATION_TURN_FINISHED:
             if not event.args.get('with_follow_on_turn'):
-                get_bus().post(ConversationEndEvent(assistant=self))
+                self._on_conversation_end()
         elif event.type == EventType.ON_CONVERSATION_TURN_TIMEOUT:
-            get_bus().post(ConversationTimeoutEvent(assistant=self))
+            self._on_conversation_timeout()
         elif event.type == EventType.ON_NO_RESPONSE:
-            get_bus().post(NoResponseEvent(assistant=self))
+            self._on_no_response()
         elif (
             hasattr(EventType, 'ON_RENDER_RESPONSE')
             and event.type == EventType.ON_RENDER_RESPONSE
         ):
-            get_bus().post(
-                ResponseEvent(assistant=self, response_text=event.args.get('text'))
-            )
-            tts = self._get_tts_plugin()
-
-            if tts and event.args.get('text'):
-                self.stop_conversation()
-                tts.say(text=event.args['text'], **self.tts_plugin_args)
+            self._on_reponse_rendered(event.args.get('text'))
         elif (
             hasattr(EventType, 'ON_RESPONDING_STARTED')
             and event.type == EventType.ON_RESPONDING_STARTED
-            and event.args.get('is_error_response', False) is True
+            and event.args.get('is_error_response') is True
         ):
-            self.logger.warning('Assistant response error')
+            self.logger.warning('Assistant response error: %s', json.dumps(event.args))
         elif event.type == EventType.ON_RECOGNIZING_SPEECH_FINISHED:
-            phrase = event.args['text'].lower().strip()
-            self.logger.info('Speech recognized: %s', phrase)
-            get_bus().post(SpeechRecognizedEvent(assistant=self, phrase=phrase))
+            self._on_speech_recognized(event.args.get('text'))
         elif event.type == EventType.ON_ALERT_STARTED:
             if event.args.get('alert_type') == AlertType.ALARM:
-                get_bus().post(AlarmStartedEvent(assistant=self))
+                self._on_alarm_start()
             elif event.args.get('alert_type') == AlertType.TIMER:
-                get_bus().post(TimerStartedEvent(assistant=self))
+                self._on_timer_start()
             else:
-                get_bus().post(AlertStartedEvent(assistant=self))
+                self._on_alert_start()
         elif event.type == EventType.ON_ALERT_FINISHED:
             if event.args.get('alert_type') == AlertType.ALARM:
-                get_bus().post(AlarmEndEvent(assistant=self))
+                self._on_alarm_end()
             elif event.args.get('alert_type') == AlertType.TIMER:
-                get_bus().post(TimerEndEvent(assistant=self))
+                self._on_timer_end()
             else:
-                get_bus().post(AlertEndEvent(assistant=self))
+                self._on_alert_end()
         elif event.type == EventType.ON_ASSISTANT_ERROR:
             if event.args.get('is_fatal'):
                 raise RuntimeError(f'Fatal assistant error: {json.dumps(event.args)}')
 
             self.logger.warning('Assistant error: %s', json.dumps(event.args))
         elif event.type == EventType.ON_MUTED_CHANGED:
-            self._is_muted = event.args.get('is_muted')
-            event = MicMutedEvent() if self._is_muted else MicUnmutedEvent()
-            get_bus().post(event)
+            self._on_mute_changed(event.args.get('is_muted', False))
 
     @action
     def start_conversation(self, *_, **__):
@@ -235,7 +182,7 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
             self.assistant.start_conversation()
 
     @action
-    def stop_conversation(self):
+    def stop_conversation(self, *_, **__):
         """
         Programmatically stop a running conversation with the assistant
         """
@@ -243,20 +190,20 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
             self.assistant.stop_conversation()
 
     @action
-    def mute(self):
+    def mute(self, *_, **__):
         """
         Mute the microphone. Alias for :meth:`.set_mic_mute` with
         ``muted=True``.
         """
-        return self.set_mic_mute(muted=True)
+        self.set_mic_mute(muted=True)
 
     @action
-    def unmute(self):
+    def unmute(self, *_, **__):
         """
         Unmute the microphone. Alias for :meth:`.set_mic_mute` with
         ``muted=False``.
         """
-        return self.set_mic_mute(muted=False)
+        self.set_mic_mute(muted=False)
 
     @action
     def set_mic_mute(self, muted: bool):
@@ -268,23 +215,27 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
         if self.assistant:
             self.assistant.set_mic_mute(muted)
 
+            if muted:
+                self._on_mute()
+            else:
+                self._on_unmute()
+
     @action
-    def is_muted(self) -> bool:
+    def toggle_mute(self, *_, **__):
         """
-        :return: True if the microphone is muted, False otherwise.
+        Toggle the mic mute state.
         """
-        return self._is_muted
+        self.set_mic_mute(muted=not self._is_muted)
 
     @action
     def toggle_mic_mute(self):
         """
-        Toggle the mic mute state.
+        Deprecated alias for :meth:`.toggle_mute`.
         """
-        is_muted = self.is_muted()
-        self.set_mic_mute(muted=not is_muted)
+        return self.toggle_mute()
 
     @action
-    def send_text_query(self, query: str):
+    def send_text_query(self, *_, query: str, **__):
         """
         Send a text query to the assistant.
 
@@ -323,6 +274,7 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
                 with Assistant(
                     self.credentials, self.device_model_id
                 ) as self._assistant:
+                    self.publish_entities([self])
                     for event in self._assistant.start():
                         last_sleep = 0
 
