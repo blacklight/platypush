@@ -163,6 +163,7 @@ export default {
     this.collapsed = this.collapsedDefault
     bus.on('connect', this.setConnected(true))
     bus.on('disconnect', this.setConnected(false))
+    this.setConnected(this.$root.connected)
   },
 }
 </script>
