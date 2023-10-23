@@ -96,9 +96,13 @@ class DeviceManager:
             if type:
                 raise AssertionError(f'No default device for type={type}')
 
-        idx = next(
-            iter(i for i, d in enumerate(all_devices) if d['name'] == dev['name']), None
-        )
+        if dev.get('idx') is None:
+            idx = next(
+                iter(i for i, d in enumerate(all_devices) if d['name'] == dev['name']),
+                None,
+            )
 
-        assert idx is not None, 'Could not infer the sound device index'
-        return AudioDevice(index=idx, **dev)
+            assert idx is not None, 'Could not infer the sound device index'
+            dev['index'] = idx
+
+        return AudioDevice(**dev)
