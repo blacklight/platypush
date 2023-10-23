@@ -693,8 +693,8 @@ steps:
         rm -rf "$OLD_APT_ROOT"
       fi
 
-      chmod -R a+r "$APT_ROOT"
-      chmod a+x "$APT_ROOT"
+    - chmod -R a+r "$APT_ROOT"
+    - chmod a+x "$APT_ROOT"
 
 ###
 ### Update the RPM (stable) packages
