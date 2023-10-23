@@ -423,9 +423,6 @@ steps:
         cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
       fi
 
-    - chmod -R a+r "$APT_ROOT"
-    - chmod a+x "$APT_ROOT"
-
 ###
 ### Update the Debian (oldstable) packages
 ###
@@ -516,9 +513,6 @@ steps:
         mkdir -p "$APT_ROOT/pool/$DEB_VERSION/main"
         cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
       fi
-
-    - chmod -R a+r "$APT_ROOT"
-    - chmod a+x "$APT_ROOT"
 
 ###
 ### Updates the APT repository after new packages have been pushed
@@ -697,6 +691,8 @@ steps:
         mv "$APT_ROOT" "$OLD_APT_ROOT"
         mv "$TMP_APT_ROOT" "$APT_ROOT"
         rm -rf "$OLD_APT_ROOT"
+        chmod -R a+r "$APT_ROOT"
+        chmod a+x "$APT_ROOT"
       fi
 
 ###
