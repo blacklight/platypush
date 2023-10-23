@@ -691,9 +691,10 @@ steps:
         mv "$APT_ROOT" "$OLD_APT_ROOT"
         mv "$TMP_APT_ROOT" "$APT_ROOT"
         rm -rf "$OLD_APT_ROOT"
-        chmod -R a+r "$APT_ROOT"
-        chmod a+x "$APT_ROOT"
       fi
+
+      chmod -R a+r "$APT_ROOT"
+      chmod a+x "$APT_ROOT"
 
 ###
 ### Update the RPM (stable) packages
