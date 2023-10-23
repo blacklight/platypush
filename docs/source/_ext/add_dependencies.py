@@ -55,7 +55,12 @@ class IntegrationEnricher:
 
     @staticmethod
     def _shellify(title: str, cmd: str) -> str:
-        return f'**{title}**\n\n' + '.. code-block:: bash\n\n\t' + cmd + '\n\n'
+        return (
+            f'**{title}**\n\n'
+            + '.. code-block:: bash\n\n'
+            + tw.indent(cmd, '\t')
+            + '\n\n'
+        )
 
     @classmethod
     def add_install_deps(
