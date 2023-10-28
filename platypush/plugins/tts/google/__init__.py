@@ -19,7 +19,7 @@ class TtsGooglePlugin(TtsPlugin):
         voice: Optional[str] = None,
         gender: str = 'FEMALE',
         credentials_file: str = '~/.credentials/platypush/google/platypush-tts.json',
-        **kwargs
+        **kwargs,
     ):
         """
         :param language: Language code, see
@@ -124,7 +124,7 @@ class TtsGooglePlugin(TtsPlugin):
         language: Optional[str] = None,
         voice: Optional[str] = None,
         gender: Optional[str] = None,
-        player_args: Optional[dict] = None,
+        **player_args,
     ):
         """
         Say a phrase.
@@ -133,9 +133,9 @@ class TtsGooglePlugin(TtsPlugin):
         :param language: Language code override.
         :param voice: Voice type override.
         :param gender: Gender override.
-        :param player_args: Optional arguments that should be passed to the
-            player plugin's :meth:`platypush.plugins.media.MediaPlugin.play`
-            method.
+        :param player_args: Extends the additional arguments to be passed to
+            :meth:`platypush.plugins.sound.SoundPlugin.play` (like volume,
+            duration, channels etc.).
         """
 
         from google.cloud import texttospeech
@@ -159,11 +159,10 @@ class TtsGooglePlugin(TtsPlugin):
         response = client.synthesize_speech(
             input=synthesis_input, voice=voice, audio_config=audio_config
         )
-        player_args = player_args or {}
 
         with tempfile.NamedTemporaryFile() as f:
             f.write(response.audio_content)
-            self.media_plugin.play(f.name, **player_args)
+            self._playback(f.name, **player_args)
 
 
 # vim:sw=4:ts=4:et:
