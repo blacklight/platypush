@@ -5,6 +5,8 @@ from flask import abort, request, Blueprint
 
 from platypush.backend.http.app import template_folder
 
+# Upstream /api/tts response timeout, in seconds
+_default_timeout = 30
 mimic3 = Blueprint('mimic3', __name__, template_folder=template_folder)
 
 # Declare routes list
@@ -35,6 +37,7 @@ def proxy_tts_request():
     rs = requests.post(
         urljoin(args['server_url'], '/api/tts'),
         data=args['text'],
+        timeout=int(request.args.get('timeout', _default_timeout)),
         params={
             'voice': args['voice'],
         },
