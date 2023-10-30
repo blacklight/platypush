@@ -165,13 +165,15 @@ class MediaPlugin(Plugin, ABC):
 
         :param torrent_plugin: Optional plugin to be used for torrent download. Possible values:
 
-            - ``torrent`` - native ``libtorrent``-based plugin (default)
-            - ``rtorrent`` - torrent support over rtorrent RPC/XML interface (recommended)
+            - ``torrent`` - native ``libtorrent``-based plugin (default, recommended)
+            - ``rtorrent`` - torrent support over rtorrent RPC/XML interface
             - ``webtorrent`` - torrent support over webtorrent (unstable)
 
-        :param youtube_format: Select the preferred video/audio format for YouTube videos (default: ``best``).
-            See the `youtube-dl documentation <https://github.com/ytdl-org/youtube-dl#format-selection>`_ for
-            more info on supported formats.
+        :param youtube_format: Select the preferred video/audio format for
+            YouTube videos (default: ``best``). See the `youtube-dl
+            documentation
+            <https://github.com/ytdl-org/youtube-dl#format-selection>`_ for more
+            info on supported formats.
         """
 
         super().__init__(**kwargs)
