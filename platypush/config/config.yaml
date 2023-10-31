@@ -760,11 +760,9 @@ backend.http:
 #
 # tts.mimic3:
 #     # The base URL of the mimic3 server
-#     server_url: http://riemann:59125
+#     server_url: http://127.0.0.1:59125
 #     # Path of the default voice that should be used
-#     voice: 'en_UK/apope_low'
-#     # The media plugin that should be used to play the audio response
-#     media_plugin: media.vlc
+#     voice: 'en_US/vctk_low'
 ###
 
 ## ----------
