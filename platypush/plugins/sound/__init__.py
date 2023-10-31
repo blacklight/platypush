@@ -86,8 +86,11 @@ class SoundPlugin(RunnablePlugin):
         sample_rate: Optional[int] = None,
         channels: int = 2,
         volume: float = 100,
+        dtype: Optional[str] = None,
+        format: Optional[str] = None,  # pylint: disable=redefined-builtin
         stream_name: Optional[str] = None,
         stream_index: Optional[int] = None,
+        join: bool = False,
     ):
         """
         Plays an audio file/URL (any audio format supported by ffmpeg works) or
@@ -159,6 +162,12 @@ class SoundPlugin(RunnablePlugin):
         :param channels: Number of audio channels. Default: number of channels
             in the audio file in file mode, 1 if in synth mode
         :param volume: Playback volume, between 0 and 100. Default: 100.
+        :param dtype: Data type for the audio samples, if playing raw PCM audio
+            frames. Supported types: 'float64', 'float32', 'int32', 'int16',
+            'int8', 'uint8'.
+        :param format: Output audio format, if you want to convert the audio to
+            another format before playing it. The list of available formats can
+            be retrieved through the ``ffmpeg -formats`` command. Default: None
         :param stream_index: If specified, play to an already active stream
             index (you can get them through :meth:`.query_streams`). Default:
             creates a new audio stream through PortAudio.
@@ -167,6 +176,8 @@ class SoundPlugin(RunnablePlugin):
             name will be created. If not set, and ``stream_index`` is not set
             either, then a new stream will be created on the next available
             index and named ``platypush-stream-<index>``.
+        :param join: If True, then the method will block until the playback is
+            completed. Default: False.
         """
 
         dev = self._manager.get_device(device=device, type=StreamType.OUTPUT)
@@ -193,7 +204,13 @@ class SoundPlugin(RunnablePlugin):
             stream_index,
         )
 
-        self._manager.create_player(
+        player_kwargs = {}
+        if dtype:
+            player_kwargs['dtype'] = dtype
+        if format:
+            player_kwargs['format'] = format
+
+        player = self._manager.create_player(
             device=dev.index,
             infile=resource,
             sound=sound,
@@ -203,7 +220,12 @@ class SoundPlugin(RunnablePlugin):
             channels=channels,
             volume=volume,
             stream_name=stream_name,
-        ).start()
+            **player_kwargs,
+        )
+
+        player.start()
+        if join:
+            player.join()
 
     @action
     def stream_recording(self, *args, **kwargs):
@@ -255,7 +277,7 @@ class SoundPlugin(RunnablePlugin):
         :param sample_rate: Recording sample rate (default: device default rate)
         :param dtype: Data type for the audio samples. Supported types:
             'float64', 'float32', 'int32', 'int16', 'int8', 'uint8'. Default:
-            float32
+            int16.
         :param blocksize: Audio block size (default: configured
             `input_blocksize` or 2048)
         :param play_audio: If True, then the recorded audio will be played in

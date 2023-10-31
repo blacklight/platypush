@@ -81,7 +81,7 @@ class AudioRecorder(AudioThread):
     @property
     def _converter_args(self) -> dict:
         return {
-            'format': self.output_format,
+            'output_format': self.output_format,
             **super()._converter_args,
         }
 

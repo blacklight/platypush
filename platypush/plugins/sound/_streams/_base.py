@@ -43,6 +43,8 @@ class AudioThread(Thread, ABC):
         infile: Optional[str] = None,
         outfile: Optional[str] = None,
         duration: Optional[float] = None,
+        input_format: Optional[str] = None,
+        output_format: Optional[str] = None,
         latency: Union[float, str] = 'high',
         redis_queue: Optional[str] = None,
         should_stop: Optional[Event] = None,
@@ -66,6 +68,8 @@ class AudioThread(Thread, ABC):
             stream.
         :param outfile: Path to the output file.
         :param duration: Duration of the audio stream.
+        :param input_format: Input format override.
+        :param output_format: Output format override.
         :param latency: Latency to use.
         :param redis_queue: Redis queue to use.
         :param should_stop: Synchronize with upstream stop events.
@@ -83,6 +87,8 @@ class AudioThread(Thread, ABC):
         self.volume = volume
         self.sample_rate = sample_rate
         self.dtype = dtype
+        self.input_format = input_format
+        self.output_format = output_format
         self.stream = stream
         self.duration = duration
         self.blocksize = blocksize * channels
@@ -349,6 +355,9 @@ class AudioThread(Thread, ABC):
             self.logger.warning(
                 'Audio callback timeout for %s', self.__class__.__name__
             )
+        except Exception as e:
+            self.logger.warning('Unhandled sound on %s', self.__class__.__name__)
+            self.logger.exception(e)
         finally:
             self.notify_stop()
 

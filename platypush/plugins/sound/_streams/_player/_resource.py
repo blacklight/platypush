@@ -20,6 +20,7 @@ class AudioResourcePlayer(AudioPlayer):
     def _converter_args(self) -> dict:
         return {
             'infile': self.infile,
+            'output_format': self.output_format,
             **super()._converter_args,
         }
 

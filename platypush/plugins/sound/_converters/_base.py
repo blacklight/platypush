@@ -7,8 +7,9 @@ from threading import Event, RLock, Thread
 from typing import Any, Callable, Coroutine, Iterable, Optional
 
 from platypush.context import get_or_create_event_loop
+from platypush.utils import is_debug_enabled
 
-_dtype_to_ffmpeg_format = {
+dtype_to_ffmpeg_format = {
     'int8': 's8',
     'uint8': 'u8',
     'int16': 's16le',
@@ -46,7 +47,8 @@ class AudioConverter(Thread, ABC):
         volume: float,
         dtype: str,
         chunk_size: int,
-        format: Optional[str] = None,  # pylint: disable=redefined-builtin
+        input_format: Optional[str] = None,  # pylint: disable=redefined-builtin
+        output_format: Optional[str] = None,  # pylint: disable=redefined-builtin
         on_exit: Optional[Callable[[], Any]] = None,
         **kwargs,
     ):
@@ -58,24 +60,20 @@ class AudioConverter(Thread, ABC):
         :param dtype: The (numpy) data type of the raw input/output audio.
         :param chunk_size: Number of bytes that will be read at once from the
             ffmpeg process.
-        :param format: Input/output audio format.
+        :param input_format: Input audio format.
+        :param output_format: Output audio format.
         :param on_exit: Function to call when the ffmpeg process exits.
         """
         super().__init__(*args, **kwargs)
 
-        ffmpeg_format = _dtype_to_ffmpeg_format.get(dtype)
-        assert ffmpeg_format, (
-            f'Unsupported data type: {dtype}. Supported data types: '
-            f'{list(_dtype_to_ffmpeg_format.keys())}'
-        )
-
         self._ffmpeg_bin = ffmpeg_bin
-        self._ffmpeg_format = ffmpeg_format
         self._ffmpeg_task: Optional[Coroutine] = None
         self._sample_rate = sample_rate
         self._channels = channels
         self._chunk_size = chunk_size
-        self._format = format
+        self._input_format = input_format
+        self._output_format = output_format
+        self._dtype = dtype
         self._closed = False
         self._out_queue = Queue()
         self.ffmpeg = None
@@ -120,7 +118,8 @@ class AudioConverter(Thread, ABC):
         """
         Set of arguments common to all ffmpeg converter instances.
         """
-        return ('-hide_banner', '-loglevel', 'warning', '-y')
+        log_level = 'debug' if is_debug_enabled() else 'warning'
+        return ('-hide_banner', '-loglevel', log_level, '-y')
 
     @property
     @abstractmethod
@@ -149,20 +148,6 @@ class AudioConverter(Thread, ABC):
         if self._channels == 2:
             return args + ('-channel_layout', 'stereo')
         return args
-
-    @property
-    def _raw_ffmpeg_args(self) -> Iterable[str]:
-        """
-        Ffmpeg arguments for raw audio input/output given the current
-        configuration.
-        """
-        return (
-            '-f',
-            self._ffmpeg_format,
-            '-ar',
-            str(self._sample_rate),
-            *self._channel_layout_args,
-        )
 
     @property
     def _audio_volume_args(self) -> Iterable[str]:
@@ -197,23 +182,6 @@ class AudioConverter(Thread, ABC):
         """
         return PIPE
 
-    @property
-    def _compressed_ffmpeg_args(self) -> Iterable[str]:
-        """
-        Ffmpeg arguments for the compressed audio given the current
-        configuration.
-        """
-        if not self._format:
-            return ()
-
-        ffmpeg_args = self._format_to_ffmpeg_args.get(self._format)
-        assert ffmpeg_args, (
-            f'Unsupported output format: {self._format}. Supported formats: '
-            f'{list(self._format_to_ffmpeg_args.keys())}'
-        )
-
-        return ffmpeg_args
-
     async def _audio_proxy(self, timeout: Optional[float] = None):
         """
         Proxy the converted audio stream to the output queue for downstream
@@ -235,11 +203,6 @@ class AudioConverter(Thread, ABC):
         )
 
         self.logger.info('Running ffmpeg: %s', ' '.join(ffmpeg_args))
-
-        try:
-            await asyncio.wait_for(self.ffmpeg.wait(), 0.1)
-        except asyncio.TimeoutError:
-            pass
 
         while (
             self._loop
@@ -298,6 +261,9 @@ class AudioConverter(Thread, ABC):
             self._loop.run_until_complete(self._ffmpeg_task)
         except RuntimeError as e:
             self.logger.warning(e)
+        except Exception as e:
+            self.logger.warning('Audio converter error: %s', e)
+            self.logger.exception(e)
         finally:
             self.stop()
 

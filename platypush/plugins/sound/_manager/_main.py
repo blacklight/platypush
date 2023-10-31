@@ -61,6 +61,7 @@ class AudioManager:
         duration: Optional[float] = None,
         sample_rate: Optional[int] = None,
         dtype: str = 'int16',
+        format: Optional[str] = None,  # pylint: disable=redefined-builtin
         blocksize: Optional[int] = None,
         latency: Union[float, str] = 'high',
         stream_name: Optional[str] = None,
@@ -77,6 +78,7 @@ class AudioManager:
         :param duration: Duration of the stream in seconds.
         :param sample_rate: Sample rate of the stream.
         :param dtype: Data type of the stream.
+        :param format: Output format of the stream.
         :param blocksize: Block size of the stream.
         :param latency: Latency of the stream.
         :param stream_name: Name of the stream.
@@ -93,6 +95,7 @@ class AudioManager:
             blocksize=blocksize or self.output_blocksize,
             latency=latency,
             channels=channels,
+            output_format=format,
             queue_size=self.queue_size,
             should_stop=self._should_stop,
         )
