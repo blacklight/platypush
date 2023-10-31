@@ -764,4 +764,13 @@ def get_defining_class(meth) -> Optional[type]:
     return getattr(meth, '__objclass__', None)  # handle special descriptor objects
 
 
+def is_debug_enabled() -> bool:
+    """
+    :return: True if the debug mode is enabled.
+    """
+    from platypush.config import Config
+
+    return (Config.get('logging') or {}).get('level') == logging.DEBUG
+
+
 # vim:sw=4:ts=4:et:
