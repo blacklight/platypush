@@ -69,3 +69,62 @@ ul.grid li a code {
 ul.grid .icon {
   width: 32px;
 }
+
+/* Clipboard button */
+.clipboard {
+  position: absolute;
+  display: inline-block;
+  width: 32px;
+  top: 0.5em;
+  right: 0.5em;
+  cursor: pointer;
+}
+
+/* Tabs */
+.tabs {
+  margin: 0 0 1em 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tabs ul {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 1em 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid #ccc;
+}
+
+.tabs ul li {
+  display: inline-flex;
+  max-width: 25%;
+  margin: 0;
+  padding: 0.25em 0.5em;
+  list-style: none;
+  cursor: pointer;
+  flex-grow: 1;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0.75em 0.75em 0 0;
+  border: 1px solid #ddd;
+}
+
+.tabs ul li.selected {
+  background: rgb(200,255,208);
+}
+
+.tabs ul li:hover {
+  background: rgb(190,246,218);
+}
+
+.tabs .body {
+  margin-top: -1em;
+  padding: 1em;
+  border: 1px solid #ccc;
+  border-top: none;
+  border-radius: 0 0 0.75em 0.75em;
+}
+
