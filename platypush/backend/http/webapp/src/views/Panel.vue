@@ -134,6 +134,7 @@ main {
     flex-grow: 100;
     background: $menu-panel-bg;
     overflow: auto;
+    z-index: 1;
 
     .panel {
       width: 100%;

@@ -331,6 +331,7 @@ nav {
   &.collapsed {
     display: flex;
     flex-direction: column;
+    margin-right: 1px;
 
     @media screen and (min-width: $tablet) {
       width: 2.5em;
