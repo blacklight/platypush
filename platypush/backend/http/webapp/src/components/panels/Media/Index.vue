@@ -458,4 +458,10 @@ export default {
     padding: 0;
   }
 }
+
+:deep(.media-info-container) {
+  .modal {
+    max-width: 70em;
+  }
+}
 </style>
