@@ -246,7 +246,7 @@ export default {
   }
 }
 
-::v-deep(.modal-body) {
+:deep(.modal-body) {
   .row {
     display: flex;
     border-bottom: $default-border;
@@ -276,7 +276,7 @@ export default {
   }
 }
 
-::v-deep(.modal-body) {
+:deep(.modal-body) {
   .dropdown-container {
     .row {
       box-shadow: none;

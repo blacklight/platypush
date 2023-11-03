@@ -1,11 +1,11 @@
 from sqlalchemy import Column, Integer, ForeignKey
 
-from platypush.common.db import Base
+from platypush.common.db import is_defined
 
 from .sensors import NumericSensor
 
 
-if 'illuminance_sensor' not in Base.metadata:
+if not is_defined('illuminance_sensor'):
 
     class IlluminanceSensor(NumericSensor):
         __tablename__ = 'illuminance_sensor'
@@ -14,6 +14,7 @@ if 'illuminance_sensor' not in Base.metadata:
             Integer, ForeignKey(NumericSensor.id, ondelete='CASCADE'), primary_key=True
         )
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }

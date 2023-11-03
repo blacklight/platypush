@@ -6,12 +6,12 @@ from sqlalchemy import (
     String,
 )
 
-from platypush.common.db import Base
+from platypush.common.db import is_defined
 
 from .devices import Device
 
 
-if 'cloud_instance' not in Base.metadata:
+if not is_defined('cloud_instance'):
 
     class CloudInstance(Device):
         """
@@ -38,6 +38,7 @@ if 'cloud_instance' not in Base.metadata:
         alerts = Column(JSON)
         backups = Column(JSON)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }

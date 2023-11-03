@@ -1,11 +1,11 @@
 from sqlalchemy import Column, Integer, Boolean, ForeignKey
 
-from platypush.common.db import Base
+from platypush.common.db import is_defined
 
 from ._base import Entity
 
 
-if 'device' not in Base.metadata:
+if not is_defined('device'):
 
     class Device(Entity):
         """
@@ -19,6 +19,7 @@ if 'device' not in Base.metadata:
         )
         reachable = Column(Boolean, default=True)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }

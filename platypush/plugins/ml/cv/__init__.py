@@ -43,11 +43,6 @@ class MlCvPlugin(Plugin):
     """
     Plugin to train and make computer vision predictions using machine learning models.
 
-    Requires:
-
-        * **numpy** (``pip install numpy``)
-        * **opencv** (``pip install cv2``)
-
     Also make sure that your OpenCV installation comes with the ``dnn`` module. To test it::
 
         >>> import cv2.dnn
@@ -80,7 +75,9 @@ class MlCvPlugin(Plugin):
         if model_file not in self.models:
             self.models[model_file] = MlModel(model_file, classes=classes)
 
-        return self.models[model_file].predict(img, resize=resize, color_convert=color_convert)
+        return self.models[model_file].predict(
+            img, resize=resize, color_convert=color_convert
+        )
 
 
 # vim:sw=4:ts=4:et:

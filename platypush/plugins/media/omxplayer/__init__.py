@@ -1,15 +1,27 @@
 import enum
 import threading
+from typing import Collection, Optional
+
 import urllib.parse
 
 from platypush.context import get_bus
 from platypush.plugins.media import MediaPlugin, PlayerState
-from platypush.message.event.media import MediaPlayEvent, MediaPauseEvent, MediaStopEvent, MediaSeekEvent, MediaPlayRequestEvent
+from platypush.message.event.media import (
+    MediaPlayEvent,
+    MediaPauseEvent,
+    MediaStopEvent,
+    MediaSeekEvent,
+    MediaPlayRequestEvent,
+)
 
 from platypush.plugins import action
 
 
 class PlayerEvent(enum.Enum):
+    """
+    Supported player events.
+    """
+
     STOP = 'stop'
     PLAY = 'play'
     PAUSE = 'pause'
@@ -18,24 +30,20 @@ class PlayerEvent(enum.Enum):
 class MediaOmxplayerPlugin(MediaPlugin):
     """
     Plugin to control video and media playback using OMXPlayer.
-
-    Requires:
-
-        * **omxplayer** installed on your system (see your distro instructions)
-        * **omxplayer-wrapper** (``pip install omxplayer-wrapper``)
     """
 
-    def __init__(self, args=None, *argv, timeout: float = 20., **kwargs):
+    def __init__(
+        self, args: Optional[Collection[str]] = None, timeout: float = 20.0, **kwargs
+    ):
         """
         :param args: Arguments that will be passed to the OMXPlayer constructor
             (e.g. subtitles, volume, start position, window size etc.) see
             https://github.com/popcornmix/omxplayer#synopsis and
             https://python-omxplayer-wrapper.readthedocs.io/en/latest/omxplayer/#omxplayer.player.OMXPlayer
-        :type args: list
         :param timeout: How long the plugin should wait for a video to start upon play request (default: 20 seconds).
         """
 
-        super().__init__(*argv, **kwargs)
+        super().__init__(**kwargs)
 
         if args is None:
             args = []
@@ -47,7 +55,7 @@ class MediaOmxplayerPlugin(MediaPlugin):
         self._play_started = threading.Event()
 
     @action
-    def play(self, resource=None, subtitles=None, *args, **kwargs):
+    def play(self, *args, resource=None, subtitles=None, **_):
         """
         Play or resume playing a resource.
 
@@ -67,9 +75,8 @@ class MediaOmxplayerPlugin(MediaPlugin):
                 self._player.play()
 
             return self.status()
-        else:
-            self._play_started.clear()
 
+        self._play_started.clear()
         self._post_event(MediaPlayRequestEvent, resource=resource)
 
         if subtitles:
@@ -82,40 +89,47 @@ class MediaOmxplayerPlugin(MediaPlugin):
                 self._player = None
             except Exception as e:
                 self.logger.exception(e)
-                self.logger.warning('Unable to stop a previously running instance ' +
-                                    'of OMXPlayer, trying to play anyway')
+                self.logger.warning(
+                    'Unable to stop a previously running instance '
+                    + 'of OMXPlayer, trying to play anyway'
+                )
 
         from dbus import DBusException
 
         try:
             from omxplayer import OMXPlayer
+
             self._player = OMXPlayer(resource, args=self.args)
         except DBusException as e:
-            self.logger.warning('DBus connection failed: you will probably not ' +
-                                'be able to control the media')
+            self.logger.warning(
+                'DBus connection failed: you will probably not '
+                + 'be able to control the media'
+            )
             self.logger.exception(e)
 
         self._post_event(MediaPlayEvent, resource=resource)
         self._init_player_handlers()
         if not self._play_started.wait(timeout=self.timeout):
-            self.logger.warning(f'The player has not sent a play started event within {self.timeout}')
+            self.logger.warning(
+                f'The player has not sent a play started event within {self.timeout}'
+            )
         return self.status()
 
     @action
     def pause(self):
-        """ Pause the playback """
+        """Pause the playback"""
         if self._player:
             self._player.play_pause()
         return self.status()
 
     @action
     def stop(self):
-        """ Stop the playback (same as quit) """
+        """Stop the playback (same as quit)"""
         return self.quit()
 
     @action
     def quit(self):
-        """ Quit the player """
+        """Quit the player"""
         from omxplayer.player import OMXPlayerDeadError
 
         if self._player:
@@ -133,12 +147,12 @@ class MediaOmxplayerPlugin(MediaPlugin):
 
         return {'status': 'stop'}
 
-    def get_volume(self) -> float:
+    def get_volume(self) -> Optional[float]:
         """
         :return: The player volume in percentage [0, 100].
         """
         if self._player:
-            return self._player.volume()*100
+            return self._player.volume() * 100
 
     @action
     def voldown(self, step=10.0):
@@ -149,7 +163,9 @@ class MediaOmxplayerPlugin(MediaPlugin):
         :type step: float
         """
         if self._player:
-            self.set_volume(max(0, self.get_volume()-step))
+            vol = self.get_volume()
+            if vol is not None:
+                self.set_volume(max(0, vol - step))
         return self.status()
 
     @action
@@ -161,26 +177,28 @@ class MediaOmxplayerPlugin(MediaPlugin):
         :type step: float
         """
         if self._player:
-            self.set_volume(min(100, self.get_volume()+step))
+            vol = self.get_volume()
+            if vol is not None:
+                self.set_volume(min(100, vol + step))
         return self.status()
 
     @action
     def back(self, offset=30):
-        """ Back by (default: 30) seconds """
+        """Back by (default: 30) seconds"""
         if self._player:
             self._player.seek(-offset)
         return self.status()
 
     @action
     def forward(self, offset=30):
-        """ Forward by (default: 30) seconds """
+        """Forward by (default: 30) seconds"""
         if self._player:
             self._player.seek(offset)
         return self.status()
 
     @action
     def next(self):
-        """ Play the next track/video """
+        """Play the next track/video"""
         if self._player:
             self._player.stop()
 
@@ -192,36 +210,32 @@ class MediaOmxplayerPlugin(MediaPlugin):
 
     @action
     def hide_subtitles(self):
-        """ Hide the subtitles """
+        """Hide the subtitles"""
         if self._player:
             self._player.hide_subtitles()
         return self.status()
 
     @action
     def hide_video(self):
-        """ Hide the video """
+        """Hide the video"""
         if self._player:
             self._player.hide_video()
         return self.status()
 
     @action
-    def is_playing(self):
+    def is_playing(self, *_, **__) -> bool:
         """
         :returns: True if it's playing, False otherwise
         """
-
-        return self._player.is_playing()
+        return self._player.is_playing() if self._player else False
 
     @action
-    def load(self, resource, pause=False, **kwargs):
+    def load(self, resource: str, *_, pause: bool = False, **__):
         """
         Load a resource/video in the player.
 
         :param resource: URL or filename to load
-        :type resource: str
-
         :param pause: If set, load the video in paused mode (default: False)
-        :type pause: bool
         """
 
         if self._player:
@@ -230,59 +244,55 @@ class MediaOmxplayerPlugin(MediaPlugin):
 
     @action
     def metadata(self):
-        """ Get the metadata of the current video """
+        """Get the metadata of the current video"""
         if self._player:
             return self._player.metadata()
         return self.status()
 
     @action
-    def mute(self):
-        """ Mute the player """
+    def mute(self, *_, **__):
+        """Mute the player"""
         if self._player:
             self._player.mute()
         return self.status()
 
     @action
-    def unmute(self):
-        """ Unmute the player """
+    def unmute(self, *_, **__):
+        """Unmute the player"""
         if self._player:
             self._player.unmute()
         return self.status()
 
     @action
-    def seek(self, position):
+    def seek(self, position: float, **__):
         """
         Seek to the specified number of seconds from the start.
 
         :param position: Number of seconds from the start
-        :type position: float
         """
         if self._player:
             self._player.set_position(position)
         return self.status()
 
     @action
-    def set_position(self, position):
+    def set_position(self, position: float, **__):
         """
         Seek to the specified number of seconds from the start (same as :meth:`.seek`).
 
         :param position: Number of seconds from the start
-        :type position: float
         """
         return self.seek(position)
 
-
     @action
-    def set_volume(self, volume):
+    def set_volume(self, volume: float, *_, **__):
         """
         Set the volume
 
         :param volume: Volume value between 0 and 100
-        :type volume: float
         """
 
         if self._player:
-            self._player.set_volume(volume/100)
+            self._player.set_volume(volume / 100)
         return self.status()
 
     @action
@@ -315,20 +325,16 @@ class MediaOmxplayerPlugin(MediaPlugin):
         from dbus import DBusException
 
         if not self._player:
-            return {
-                'state': PlayerState.STOP.value
-            }
+            return {'state': PlayerState.STOP.value}
 
         try:
             state = self._player.playback_status().lower()
         except (OMXPlayerDeadError, DBusException) as e:
-            self.logger.warning(f'Could not retrieve player status: {e}')
+            self.logger.warning('Could not retrieve player status: %s', e)
             if isinstance(e, OMXPlayerDeadError):
                 self._player = None
 
-            return {
-                'state': PlayerState.STOP.value
-            }
+            return {'state': PlayerState.STOP.value}
 
         if state == 'playing':
             state = PlayerState.PLAY.value
@@ -339,7 +345,9 @@ class MediaOmxplayerPlugin(MediaPlugin):
 
         return {
             'duration': self._player.duration(),
-            'filename': urllib.parse.unquote(self._player.get_source()).split('/')[-1] if self._player.get_source().startswith('file://') else None,
+            'filename': urllib.parse.unquote(self._player.get_source()).split('/')[-1]
+            if self._player.get_source().startswith('file://')
+            else None,
             'fullscreen': self._player.fullscreen(),
             'mute': self._player._is_muted,
             'path': self._player.get_source(),
@@ -347,7 +355,9 @@ class MediaOmxplayerPlugin(MediaPlugin):
             'position': max(0, self._player.position()),
             'seekable': self._player.can_seek(),
             'state': state,
-            'title': urllib.parse.unquote(self._player.get_source()).split('/')[-1] if self._player.get_source().startswith('file://') else None,
+            'title': urllib.parse.unquote(self._player.get_source()).split('/')[-1]
+            if self._player.get_source().startswith('file://')
+            else None,
             'url': self._player.get_source(),
             'volume': self.get_volume(),
             'volume_max': 100,
@@ -355,8 +365,7 @@ class MediaOmxplayerPlugin(MediaPlugin):
 
     def add_handler(self, event_type, callback):
         if event_type not in self._handlers.keys():
-            raise AttributeError('{} is not a valid PlayerEvent type'.
-                                 format(event_type))
+            raise AttributeError(f'{event_type} is not a valid PlayerEvent type')
 
         self._handlers[event_type].append(callback)
 
@@ -392,11 +401,13 @@ class MediaOmxplayerPlugin(MediaPlugin):
             self._post_event(MediaStopEvent)
             for callback in self._handlers[PlayerEvent.STOP.value]:
                 callback()
+
         return _f
 
     def on_seek(self):
         def _f(player, *_, **__):
             self._post_event(MediaSeekEvent, position=player.position())
+
         return _f
 
     def _init_player_handlers(self):
@@ -410,13 +421,13 @@ class MediaOmxplayerPlugin(MediaPlugin):
         self._player.positionEvent += self.on_seek()
         self._player.seekEvent += self.on_seek()
 
-    def toggle_subtitles(self, *args, **kwargs):
+    def toggle_subtitles(self, *_, **__):
         raise NotImplementedError
 
-    def set_subtitles(self, filename, *args, **kwargs):
+    def set_subtitles(self, *_, **__):
         raise NotImplementedError
 
-    def remove_subtitles(self, *args, **kwargs):
+    def remove_subtitles(self, *_, **__):
         raise NotImplementedError
 
 

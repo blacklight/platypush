@@ -400,7 +400,7 @@ export default {
   background: $background-color;
 }
 
-::v-deep(.info) {
+:deep(.info) {
   .modal {
     .content {
       width: 90%;

@@ -2,8 +2,12 @@ import os
 from typing import Optional, Union, Callable
 
 from platypush.context import get_bus
-from platypush.message.event.ngrok import NgrokProcessStartedEvent, NgrokTunnelStartedEvent, NgrokTunnelStoppedEvent, \
-    NgrokProcessStoppedEvent
+from platypush.message.event.ngrok import (
+    NgrokProcessStartedEvent,
+    NgrokTunnelStartedEvent,
+    NgrokTunnelStoppedEvent,
+    NgrokProcessStoppedEvent,
+)
 from platypush.plugins import Plugin, action
 from platypush.schemas.ngrok import NgrokTunnelSchema
 
@@ -11,22 +15,15 @@ from platypush.schemas.ngrok import NgrokTunnelSchema
 class NgrokPlugin(Plugin):
     """
     Plugin to dynamically create and manage network tunnels using `ngrok <https://ngrok.com/>`_.
-
-    Requires:
-
-        * **pyngrok** (``pip install pyngrok``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.ngrok.NgrokProcessStartedEvent` when the ``ngrok`` process is started.
-        * :class:`platypush.message.event.ngrok.NgrokProcessStoppedEvent` when the ``ngrok`` process is stopped.
-        * :class:`platypush.message.event.ngrok.NgrokTunnelStartedEvent` when a tunnel is started.
-        * :class:`platypush.message.event.ngrok.NgrokTunnelStoppedEvent` when a tunnel is stopped.
-
     """
 
-    def __init__(self, auth_token: Optional[str] = None, ngrok_bin: Optional[str] = None, region: Optional[str] = None,
-                 **kwargs):
+    def __init__(
+        self,
+        auth_token: Optional[str] = None,
+        ngrok_bin: Optional[str] = None,
+        region: Optional[str] = None,
+        **kwargs,
+    ):
         """
         :param auth_token: Specify the ``ngrok`` auth token, enabling authenticated features (e.g. more concurrent
             tunnels, custom subdomains, etc.).
@@ -35,6 +32,7 @@ class NgrokPlugin(Plugin):
         :param region: ISO code of the region/country that should host the ``ngrok`` tunnel (default: ``us``).
         """
         from pyngrok import conf, ngrok
+
         super().__init__(**kwargs)
 
         conf.get_default().log_event_callback = self._get_event_callback()
@@ -50,8 +48,7 @@ class NgrokPlugin(Plugin):
     @property
     def _active_tunnels_by_name(self) -> dict:
         return {
-            tunnel['name']: tunnel
-            for tunnel in self._active_tunnels_by_url.values()
+            tunnel['name']: tunnel for tunnel in self._active_tunnels_by_url.values()
         }
 
     def _get_event_callback(self) -> Callable:
@@ -61,23 +58,23 @@ class NgrokPlugin(Plugin):
             if log.msg == 'client session established':
                 get_bus().post(NgrokProcessStartedEvent())
             elif log.msg == 'started tunnel':
-                # noinspection PyUnresolvedReferences
-                tunnel = dict(
-                    name=log.name,
-                    url=log.url,
-                    protocol=log.url.split(':')[0]
-                )
+                tunnel = {
+                    'name': log.name,
+                    'url': log.url,
+                    'protocol': log.url.split(':')[0],
+                }
 
                 self._active_tunnels_by_url[tunnel['url']] = tunnel
                 get_bus().post(NgrokTunnelStartedEvent(**tunnel))
             elif (
-                    log.msg == 'end' and
-                    int(getattr(log, 'status', 0)) == 204 and
-                    getattr(log, 'pg', '').startswith('/api/tunnels')
+                log.msg == 'end'
+                and int(getattr(log, 'status', 0)) == 204
+                and getattr(log, 'pg', '').startswith('/api/tunnels')
             ):
-                # noinspection PyUnresolvedReferences
                 tunnel = log.pg.split('/')[-1]
-                tunnel = self._active_tunnels_by_name.pop(tunnel, self._active_tunnels_by_url.pop(tunnel, None))
+                tunnel = self._active_tunnels_by_name.pop(
+                    tunnel, self._active_tunnels_by_url.pop(tunnel, None)
+                )
                 if tunnel:
                     get_bus().post(NgrokTunnelStoppedEvent(**tunnel))
             elif log.msg == 'received stop request':
@@ -86,8 +83,14 @@ class NgrokPlugin(Plugin):
         return callback
 
     @action
-    def create_tunnel(self, resource: Union[int, str] = 80, protocol: str = 'tcp',
-                      name: Optional[str] = None, auth: Optional[str] = None, **kwargs) -> dict:
+    def create_tunnel(
+        self,
+        resource: Union[int, str] = 80,
+        protocol: str = 'tcp',
+        name: Optional[str] = None,
+        auth: Optional[str] = None,
+        **kwargs,
+    ) -> dict:
         """
         Create an ``ngrok`` tunnel to the specified localhost port/protocol.
 
@@ -110,6 +113,7 @@ class NgrokPlugin(Plugin):
         :return: .. schema:: ngrok.NgrokTunnelSchema
         """
         from pyngrok import ngrok
+
         if isinstance(resource, str) and resource.startswith('file://'):
             protocol = None
 
@@ -128,7 +132,9 @@ class NgrokPlugin(Plugin):
         if tunnel in self._active_tunnels_by_name:
             tunnel = self._active_tunnels_by_name[tunnel]['url']
 
-        assert tunnel in self._active_tunnels_by_url, f'No such tunnel URL or name: {tunnel}'
+        assert (
+            tunnel in self._active_tunnels_by_url
+        ), f'No such tunnel URL or name: {tunnel}'
         ngrok.disconnect(tunnel)
 
     @action
@@ -139,6 +145,7 @@ class NgrokPlugin(Plugin):
         :return: .. schema:: ngrok.NgrokTunnelSchema(many=True)
         """
         from pyngrok import ngrok
+
         tunnels = ngrok.get_tunnels()
         return NgrokTunnelSchema().dump(tunnels, many=True)
 
@@ -149,6 +156,7 @@ class NgrokPlugin(Plugin):
         The process will stay alive until the Python interpreter is stopped or this action is invoked.
         """
         from pyngrok import ngrok
+
         proc = ngrok.get_ngrok_process()
         assert proc and proc.proc, 'The ngrok process is not running'
         proc.proc.kill()

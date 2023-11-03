@@ -181,6 +181,11 @@ export default {
   created() {
     bus.on('subscribe', this.subscribe)
     bus.on('unsubscribe', this.unsubscribe)
+
+    this.$watch('opened', (open) => {
+      bus.emit(open ? 'connect' : 'disconnect')
+    })
+
     this.init()
   },
 }

@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import Collection, Iterable, List, Mapping, Optional, Tuple, Type, Union
-from typing_extensions import override
 
 from platypush.common.sensors import Numeric, SensorDataType
 from platypush.context import get_bus
@@ -24,13 +23,6 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
     """
     Sensor abstract plugin. Any plugin that interacts with sensors
     should implement this class.
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
     """
 
     _max_retry_secs = 60.0
@@ -327,12 +319,10 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
 
         return {k: v for k, v in data.items() if k in self._enabled_sensors}
 
-    @override
     @abstractmethod
     def transform_entities(self, entities: SensorDataType) -> Collection[Entity]:
         raise NotImplementedError()
 
-    @override
     def publish_entities(
         self, entities: SensorDataType, *args, **kwargs
     ) -> Collection[Entity]:
@@ -393,7 +383,6 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
             self.publish_entities(self._last_measurement)
         return self._last_measurement
 
-    @override
     def main(self):
         sleep_retry_secs = 1  # Exponential back-off
 

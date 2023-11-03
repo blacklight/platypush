@@ -1,9 +1,42 @@
-from typing import Collection, Dict, Iterable, Optional, Union
-from typing_extensions import override
+from functools import wraps
+from threading import Event, RLock
+from typing import Any, Callable, Collection, Dict, Iterable, Optional, Union
 
-from platypush.entities import EntityManager
+from platypush.entities import EntityManager, get_entities_engine
 from platypush.entities.variables import Variable
 from platypush.plugins import Plugin, action
+
+
+# pylint: disable=protected-access
+def ensure_initialized(f: Callable[..., Any]):
+    """
+    Ensures that the entities engine has been initialized before
+    reading/writing the db.
+
+    It also performs lazy initialization of the variables in the local cache.
+    """
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        self: VariablePlugin = args[0]
+
+        if not self._initialized.is_set():
+            with self._init_lock:
+                get_entities_engine(timeout=20)
+
+                if not self._initialized.is_set():
+                    self._initialized.set()
+                    with self._db.get_session() as session:
+                        self._db_vars.update(
+                            {
+                                str(var.name): var.value
+                                for var in session.query(Variable).all()
+                            }
+                        )
+
+        return f(*args, **kwargs)
+
+    return wrapper
 
 
 class VariablePlugin(Plugin, EntityManager):
@@ -17,17 +50,14 @@ class VariablePlugin(Plugin, EntityManager):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        db = self._db
         self._db_vars: Dict[str, Optional[str]] = {}
         """ Local cache for db variables. """
+        self._initialized = Event()
+        """ Lazy initialization event for the _db_vars map. """
+        self._init_lock = RLock()
+        """ Lock for the _db_vars map initialization. """
 
-        with db.get_session() as session:
-            self._db_vars.update(
-                {  # type: ignore
-                    str(var.name): var.value for var in session.query(Variable).all()
-                }
-            )
-
+    @ensure_initialized
     @action
     def get(self, name: Optional[str] = None, default_value=None):
         """
@@ -44,6 +74,7 @@ class VariablePlugin(Plugin, EntityManager):
             else self.status().output
         )
 
+    @ensure_initialized
     @action
     def set(self, **kwargs):
         """
@@ -56,6 +87,7 @@ class VariablePlugin(Plugin, EntityManager):
         self._db_vars.update(kwargs)
         return kwargs
 
+    @ensure_initialized
     @action
     def delete(self, name: str):
         """
@@ -75,6 +107,7 @@ class VariablePlugin(Plugin, EntityManager):
         self._db_vars.pop(name, None)
         return True
 
+    @ensure_initialized
     @action
     def unset(self, name: str):
         """
@@ -88,6 +121,7 @@ class VariablePlugin(Plugin, EntityManager):
 
         return self.set(**{name: None})
 
+    @ensure_initialized
     @action
     def mget(self, name: str):
         """
@@ -99,6 +133,7 @@ class VariablePlugin(Plugin, EntityManager):
 
         return self._redis.mget([name])
 
+    @ensure_initialized
     @action
     def mset(self, **kwargs):
         """
@@ -111,6 +146,7 @@ class VariablePlugin(Plugin, EntityManager):
         self._redis.mset(**kwargs)
         return kwargs
 
+    @ensure_initialized
     @action
     def munset(self, name: str):
         """
@@ -121,6 +157,7 @@ class VariablePlugin(Plugin, EntityManager):
 
         return self._redis.delete(name)
 
+    @ensure_initialized
     @action
     def expire(self, name: str, expire: int):
         """
@@ -132,7 +169,6 @@ class VariablePlugin(Plugin, EntityManager):
 
         return self._redis.expire(name, expire)
 
-    @override
     def transform_entities(
         self, entities: Union[dict, Iterable]
     ) -> Collection[Variable]:
@@ -155,7 +191,7 @@ class VariablePlugin(Plugin, EntityManager):
             ]
         )
 
-    @override
+    @ensure_initialized
     @action
     def status(self, *_, **__):
         variables = {

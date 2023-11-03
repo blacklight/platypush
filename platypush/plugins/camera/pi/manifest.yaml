@@ -1,9 +1,21 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-numpy
+      - py3-pillow
+    apt:
+      - python3-numpy
+      - python3-pillow
+    dnf:
+      - python-numpy
+      - python-pillow
+    pacman:
+      - python-numpy
+      - python-pillow
     pip:
-    - picamera
-    - numpy
-    - Pillow
+      - picamera
+      - numpy
+      - Pillow
   package: platypush.plugins.camera.pi
   type: plugin

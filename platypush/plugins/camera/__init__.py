@@ -60,25 +60,6 @@ class CameraPlugin(Plugin, ABC):
 
     Both the endpoints support the same parameters of the constructor of this class (e.g. ``device``, ``warmup_frames``,
     ``duration`` etc.) as ``GET`` parameters.
-
-    Requires:
-
-        * **Pillow** (``pip install Pillow``) [optional] default handler for image transformations.
-        * **wxPython** (``pip install wxPython``) [optional] default handler for camera previews (``ffplay`` will be
-            used as a fallback if ``wxPython`` is not installed).
-        * **ffmpeg** (see installation instructions for your OS) for rendering/streaming videos.
-
-    Triggers:
-
-        * :class:`platypush.message.event.camera.CameraRecordingStartedEvent`
-            when a new video recording/photo burst starts
-        * :class:`platypush.message.event.camera.CameraRecordingStoppedEvent`
-            when a video recording/photo burst ends
-        * :class:`platypush.message.event.camera.CameraVideoRenderedEvent`
-            when a sequence of captured is successfully rendered into a video
-        * :class:`platypush.message.event.camera.CameraPictureTakenEvent`
-            when a snapshot is captured and stored to an image file
-
     """
 
     _camera_class = Camera

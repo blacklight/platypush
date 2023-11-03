@@ -69,7 +69,7 @@
   }
 
   .actions {
-    ::v-deep(button) {
+    :deep(button) {
       opacity: .7;
     }
   }

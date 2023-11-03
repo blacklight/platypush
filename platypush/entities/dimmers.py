@@ -1,11 +1,11 @@
 from sqlalchemy import Column, Integer, ForeignKey, Float, String
 
-from platypush.common.db import Base
+from platypush.common.db import is_defined
 
 from .devices import Device
 
 
-if 'dimmer' not in Base.metadata:
+if not is_defined('dimmer'):
 
     class Dimmer(Device):
         """
@@ -24,6 +24,7 @@ if 'dimmer' not in Base.metadata:
         value = Column(Float)
         unit = Column(String)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }

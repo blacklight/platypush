@@ -1,7 +1,6 @@
 manifest:
   events: {}
   install:
-    pip:
-    - docutils
+    pip: []
   package: platypush.plugins.inspect
   type: plugin

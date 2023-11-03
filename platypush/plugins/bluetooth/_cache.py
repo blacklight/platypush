@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from threading import RLock
 from typing import Any, Dict, Iterable, Optional, Tuple, Union
-from typing_extensions import override
 
 from platypush.entities.bluetooth import BluetoothDevice
 
@@ -95,21 +94,17 @@ class EntityCache(BaseCache):
     _by_name: Dict[str, BluetoothDevice]
 
     @property
-    @override
     def _address_field(self) -> str:
         return 'address'
 
     @property
-    @override
     def _name_field(self) -> str:
         return 'name'
 
-    @override
     def get(self, device: Union[str, BluetoothDevice]) -> Optional[BluetoothDevice]:
         dev_filter = device.address if isinstance(device, BluetoothDevice) else device
         return super().get(dev_filter)
 
-    @override
     def add(self, device: BluetoothDevice) -> BluetoothDevice:
         with self._insert_locks[device.address]:
             existing_device = self.get(device)
@@ -120,15 +115,12 @@ class EntityCache(BaseCache):
 
             return super().add(device)
 
-    @override
     def values(self) -> Iterable[BluetoothDevice]:
         return super().values()
 
-    @override
     def items(self) -> Iterable[Tuple[str, BluetoothDevice]]:
         return super().items()
 
-    @override
     def __contains__(self, device: Union[str, BluetoothDevice]) -> bool:
         """
         Override the default ``__contains__`` to support lookup by partial

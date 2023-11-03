@@ -27,15 +27,6 @@ class MediaPlugin(Plugin, ABC):
     """
     Generic plugin to interact with a media player.
 
-    Requires:
-
-        * A media player installed (supported so far: mplayer, vlc, mpv, omxplayer, chromecast)
-        * **python-libtorrent** (``pip install python-libtorrent``), optional, for torrent support over native
-            library
-        * *rtorrent* installed - optional, for torrent support over rtorrent
-        * **youtube-dl** installed on your system (see your distro instructions), optional for YouTube support
-        * **ffmpeg**,optional, to get media files metadata
-
     To start the local media stream service over HTTP you will also need the
     :class:`platypush.backend.http.HttpBackend` backend enabled.
     """
@@ -174,13 +165,15 @@ class MediaPlugin(Plugin, ABC):
 
         :param torrent_plugin: Optional plugin to be used for torrent download. Possible values:
 
-            - ``torrent`` - native ``libtorrent``-based plugin (default)
-            - ``rtorrent`` - torrent support over rtorrent RPC/XML interface (recommended)
+            - ``torrent`` - native ``libtorrent``-based plugin (default, recommended)
+            - ``rtorrent`` - torrent support over rtorrent RPC/XML interface
             - ``webtorrent`` - torrent support over webtorrent (unstable)
 
-        :param youtube_format: Select the preferred video/audio format for YouTube videos (default: ``best``).
-            See the `youtube-dl documentation <https://github.com/ytdl-org/youtube-dl#format-selection>`_ for
-            more info on supported formats.
+        :param youtube_format: Select the preferred video/audio format for
+            YouTube videos (default: ``best``). See the `youtube-dl
+            documentation
+            <https://github.com/ytdl-org/youtube-dl#format-selection>`_ for more
+            info on supported formats.
         """
 
         super().__init__(**kwargs)

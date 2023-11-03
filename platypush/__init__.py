@@ -5,12 +5,14 @@ Platypush
 .. license: MIT
 """
 
-from .app import Application, main
+from .app import Application
 from .config import Config
 from .context import get_backend, get_bus, get_plugin
 from .message.event import Event
 from .message.request import Request
 from .message.response import Response
+from .runner import main
+from .utils import run
 
 
 __author__ = 'Fabio Manganiello <fabio@manganiello.tech>'
@@ -25,6 +27,7 @@ __all__ = [
     'get_bus',
     'get_plugin',
     'main',
+    'run',
 ]
 
 

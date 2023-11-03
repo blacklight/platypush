@@ -6,8 +6,12 @@ from websocket import WebSocketApp
 
 from platypush.backend import Backend
 from platypush.context import get_plugin
-from platypush.message.event.trello import MoveCardEvent, NewCardEvent, ArchivedCardEvent, \
-        UnarchivedCardEvent
+from platypush.message.event.trello import (
+    MoveCardEvent,
+    NewCardEvent,
+    ArchivedCardEvent,
+    UnarchivedCardEvent,
+)
 
 from platypush.plugins.trello import TrelloPlugin
 
@@ -29,13 +33,6 @@ class TrelloBackend(Backend):
     Requires:
 
         * The :class:`platypush.plugins.trello.TrelloPlugin` configured.
-
-    Triggers:
-
-        * :class:`platypush.message.event.trello.NewCardEvent` when a card is created.
-        * :class:`platypush.message.event.MoveCardEvent` when a card is moved.
-        * :class:`platypush.message.event.ArchivedCardEvent` when a card is archived/closed.
-        * :class:`platypush.message.event.UnarchivedCardEvent` when a card is un-archived/opened.
 
     """
 
@@ -69,21 +66,26 @@ class TrelloBackend(Backend):
 
     def _initialize_connection(self, ws: WebSocketApp):
         for board_id in self._boards_by_id.keys():
-            self._send(ws, {
-                'type': 'subscribe',
-                'modelType': 'Board',
-                'idModel': board_id,
-                'tags': ['clientActions', 'updates'],
-                'invitationTokens': [],
-            })
+            self._send(
+                ws,
+                {
+                    'type': 'subscribe',
+                    'modelType': 'Board',
+                    'idModel': board_id,
+                    'tags': ['clientActions', 'updates'],
+                    'invitationTokens': [],
+                },
+            )
 
         self.logger.info('Trello boards subscribed')
 
     def _on_msg(self):
         def hndl(*args):
             if len(args) < 2:
-                self.logger.warning('Missing websocket argument - make sure that you are using '
-                                    'a version of websocket-client < 0.53.0 or >= 0.58.0')
+                self.logger.warning(
+                    'Missing websocket argument - make sure that you are using '
+                    'a version of websocket-client < 0.53.0 or >= 0.58.0'
+                )
                 return
 
             ws, msg = args[:2]
@@ -96,7 +98,9 @@ class TrelloBackend(Backend):
             try:
                 msg = json.loads(msg)
             except Exception as e:
-                self.logger.warning('Received invalid JSON message from Trello: {}: {}'.format(msg, e))
+                self.logger.warning(
+                    'Received invalid JSON message from Trello: {}: {}'.format(msg, e)
+                )
                 return
 
             if 'error' in msg:
@@ -119,8 +123,12 @@ class TrelloBackend(Backend):
                 args = {
                     'card_id': delta['data']['card']['id'],
                     'card_name': delta['data']['card']['name'],
-                    'list_id': (delta['data'].get('list') or delta['data'].get('listAfter', {})).get('id'),
-                    'list_name': (delta['data'].get('list') or delta['data'].get('listAfter', {})).get('name'),
+                    'list_id': (
+                        delta['data'].get('list') or delta['data'].get('listAfter', {})
+                    ).get('id'),
+                    'list_name': (
+                        delta['data'].get('list') or delta['data'].get('listAfter', {})
+                    ).get('name'),
                     'board_id': delta['data']['board']['id'],
                     'board_name': delta['data']['board']['name'],
                     'closed': delta.get('closed'),
@@ -134,14 +142,20 @@ class TrelloBackend(Backend):
                     self.bus.post(NewCardEvent(**args))
                 elif delta.get('type') == 'updateCard':
                     if 'listBefore' in delta['data']:
-                        args.update({
-                            'old_list_id': delta['data']['listBefore']['id'],
-                            'old_list_name': delta['data']['listBefore']['name'],
-                        })
+                        args.update(
+                            {
+                                'old_list_id': delta['data']['listBefore']['id'],
+                                'old_list_name': delta['data']['listBefore']['name'],
+                            }
+                        )
 
                         self.bus.post(MoveCardEvent(**args))
                     elif 'closed' in delta['data'].get('old', {}):
-                        cls = UnarchivedCardEvent if delta['data']['old']['closed'] else ArchivedCardEvent
+                        cls = (
+                            UnarchivedCardEvent
+                            if delta['data']['old']['closed']
+                            else ArchivedCardEvent
+                        )
                         self.bus.post(cls(**args))
 
         return hndl
@@ -185,11 +199,13 @@ class TrelloBackend(Backend):
         self._req_id += 1
 
     def _connect(self) -> WebSocketApp:
-        return WebSocketApp(self.url,
-                            on_open=self._on_open(),
-                            on_message=self._on_msg(),
-                            on_error=self._on_error(),
-                            on_close=self._on_close())
+        return WebSocketApp(
+            self.url,
+            on_open=self._on_open(),
+            on_message=self._on_msg(),
+            on_error=self._on_error(),
+            on_close=self._on_close(),
+        )
 
     def run(self):
         super().run()

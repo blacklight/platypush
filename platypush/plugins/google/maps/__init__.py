@@ -15,23 +15,23 @@ class GoogleMapsPlugin(GooglePlugin):
     """
     Plugins that provides utilities to interact with Google Maps API services.
 
-    Requires:
+    It requires you to create a Google application - you can create one at the
+    `developers console <https://console.developers.google.com>`_.
 
-        * **google-api-python-client** (``pip install google-api-python-client``)
-        * **oauth2client** (``pip install oauth2client``)
+    After that, you'll need to create a new API key from the _Credentials_ tab.
 
+    This integration doesn't require any additional scopes.
     """
 
     scopes = []
 
-    def __init__(self, api_key, *args, **kwargs):
+    def __init__(self, api_key: str, **kwargs):
         """
         :param api_key: Server-side API key to be used for the requests, get one at
             https://console.developers.google.com
-        :type api_key: str
         """
 
-        super().__init__(scopes=self.scopes, *args, **kwargs)
+        super().__init__(scopes=self.scopes, **kwargs)
         self.api_key = api_key
 
     @action
@@ -49,7 +49,7 @@ class GoogleMapsPlugin(GooglePlugin):
         response = requests.get(
             'https://maps.googleapis.com/maps/api/geocode/json',
             params={
-                'latlng': '{},{}'.format(latitude, longitude),
+                'latlng': f'{latitude},{longitude}',
                 'key': self.api_key,
             },
         ).json()
@@ -65,9 +65,10 @@ class GoogleMapsPlugin(GooglePlugin):
         if 'results' in response and response['results']:
             result = response['results'][0]
             self.logger.info(
-                'Google Maps geocode response for latlng ({},{}): {}'.format(
-                    latitude, longitude, result
-                )
+                'Google Maps geocode response for latlng (%f,%f): %s',
+                latitude,
+                longitude,
+                result,
             )
 
             address['address'] = result['formatted_address'].split(',')[0]
@@ -97,7 +98,7 @@ class GoogleMapsPlugin(GooglePlugin):
         response = requests.get(
             'https://maps.googleapis.com/maps/api/elevation/json',
             params={
-                'locations': '{},{}'.format(latitude, longitude),
+                'locations': f'{latitude},{longitude}',
                 'key': self.api_key,
             },
         ).json()
@@ -198,16 +199,21 @@ class GoogleMapsPlugin(GooglePlugin):
         """
         rs = requests.get(
             'https://maps.googleapis.com/maps/api/distancematrix/json',
+            timeout=20,
             params={
                 'origins': '|'.join(origins),
                 'destinations': '|'.join(destinations),
                 'units': units,
                 **(
-                    {'departure_time': to_datetime(departure_time)}
+                    {'departure_time': to_datetime(departure_time).isoformat()}
                     if departure_time
                     else {}
                 ),
-                **({'arrival_time': to_datetime(arrival_time)} if arrival_time else {}),
+                **(
+                    {'arrival_time': to_datetime(arrival_time).isoformat()}
+                    if arrival_time
+                    else {}
+                ),
                 **({'avoid': '|'.join(avoid)} if avoid else {}),
                 **({'language': language} if language else {}),
                 **({'mode': mode} if mode else {}),

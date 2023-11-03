@@ -365,7 +365,7 @@ export default {
   }
 }
 
-::v-deep(.track-info-content) {
+:deep(.track-info-content) {
   .attr {
     opacity: 0.75;
   }

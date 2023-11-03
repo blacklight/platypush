@@ -1,6 +1,5 @@
 from threading import Thread, current_thread
 from typing import Set
-from typing_extensions import override
 
 from platypush.backend.http.app.utils import send_message
 from platypush.message.request import Request
@@ -21,7 +20,6 @@ class WSRequestsProxy(WSRoute):
         self._requests: Set[Thread] = set()
 
     @classmethod
-    @override
     def app_name(cls) -> str:
         return 'requests'
 

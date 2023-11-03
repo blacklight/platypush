@@ -7,10 +7,6 @@ from platypush.plugins import Plugin, action
 class DropboxPlugin(Plugin):
     """
     Plugin to manage a Dropbox account and its files and folders.
-
-    Requires:
-
-        * **dropbox** (``pip install dropbox``)
     """
 
     def __init__(self, access_token, **kwargs):
@@ -101,15 +97,26 @@ class DropboxPlugin(Plugin):
         for item in files:
             entry = {
                 attr: getattr(item, attr)
-                for attr in ['id', 'name', 'path_display', 'path_lower',
-                             'parent_shared_folder_id', 'property_groups']
+                for attr in [
+                    'id',
+                    'name',
+                    'path_display',
+                    'path_lower',
+                    'parent_shared_folder_id',
+                    'property_groups',
+                ]
             }
 
             if item.sharing_info:
                 entry['sharing_info'] = {
                     attr: getattr(item.sharing_info, attr)
-                    for attr in ['no_access', 'parent_shared_folder_id', 'read_only',
-                                 'shared_folder_id', 'traverse_only']
+                    for attr in [
+                        'no_access',
+                        'parent_shared_folder_id',
+                        'read_only',
+                        'shared_folder_id',
+                        'traverse_only',
+                    ]
                 }
             else:
                 entry['sharing_info'] = {}
@@ -118,7 +125,13 @@ class DropboxPlugin(Plugin):
                 entry['client_modified'] = item.client_modified.isoformat()
                 entry['server_modified'] = item.server_modified.isoformat()
 
-                for attr in ['content_hash', 'has_explicit_shared_members', 'is_downloadable', 'rev', 'size']:
+                for attr in [
+                    'content_hash',
+                    'has_explicit_shared_members',
+                    'is_downloadable',
+                    'rev',
+                    'size',
+                ]:
                     if hasattr(item, attr):
                         entry[attr] = getattr(item, attr)
 
@@ -127,8 +140,14 @@ class DropboxPlugin(Plugin):
         return entries
 
     @action
-    def copy(self, from_path: str, to_path: str, allow_shared_folder=True, autorename=False,
-             allow_ownership_transfer=False):
+    def copy(
+        self,
+        from_path: str,
+        to_path: str,
+        allow_shared_folder=True,
+        autorename=False,
+        allow_ownership_transfer=False,
+    ):
         """
         Copy a file or folder to a different location in the user's Dropbox. If the source path is a folder all
         its contents will be copied.
@@ -148,12 +167,23 @@ class DropboxPlugin(Plugin):
         """
 
         dbx = self._get_instance()
-        dbx.files_copy_v2(from_path, to_path, allow_shared_folder=allow_shared_folder,
-                          autorename=autorename, allow_ownership_transfer=allow_ownership_transfer)
+        dbx.files_copy_v2(
+            from_path,
+            to_path,
+            allow_shared_folder=allow_shared_folder,
+            autorename=autorename,
+            allow_ownership_transfer=allow_ownership_transfer,
+        )
 
     @action
-    def move(self, from_path: str, to_path: str, allow_shared_folder=True, autorename=False,
-             allow_ownership_transfer=False):
+    def move(
+        self,
+        from_path: str,
+        to_path: str,
+        allow_shared_folder=True,
+        autorename=False,
+        allow_ownership_transfer=False,
+    ):
         """
         Move a file or folder to a different location in the user's Dropbox. If the source path is a folder all its
         contents will be moved.
@@ -173,8 +203,13 @@ class DropboxPlugin(Plugin):
         """
 
         dbx = self._get_instance()
-        dbx.files_move_v2(from_path, to_path, allow_shared_folder=allow_shared_folder,
-                          autorename=autorename, allow_ownership_transfer=allow_ownership_transfer)
+        dbx.files_move_v2(
+            from_path,
+            to_path,
+            allow_shared_folder=allow_shared_folder,
+            autorename=autorename,
+            allow_ownership_transfer=allow_ownership_transfer,
+        )
 
     @action
     def delete(self, path: str):
@@ -251,7 +286,9 @@ class DropboxPlugin(Plugin):
 
         if download_path:
             if os.path.isdir(download_path):
-                download_path = os.path.join(download_path, result.metadata.name + '.zip')
+                download_path = os.path.join(
+                    download_path, result.metadata.name + '.zip'
+                )
 
             with open(download_path, 'wb') as f:
                 f.write(response.content)
@@ -350,8 +387,13 @@ class DropboxPlugin(Plugin):
         from dropbox.files import SearchMode
 
         dbx = self._get_instance()
-        response = dbx.files_search(query=query, path=path, start=start, max_results=max_results,
-                                    mode=SearchMode.filename_and_content if content else SearchMode.filename)
+        response = dbx.files_search(
+            query=query,
+            path=path,
+            start=start,
+            max_results=max_results,
+            mode=SearchMode.filename_and_content if content else SearchMode.filename,
+        )
 
         results = [self._parse_metadata(match.metadata) for match in response.matches]
 
@@ -397,8 +439,12 @@ class DropboxPlugin(Plugin):
         else:
             raise SyntaxError('Please specify either a file or text to be uploaded')
 
-        metadata = dbx.files_upload(content, path, autorename=autorename,
-                                    mode=WriteMode.overwrite if overwrite else WriteMode.add)
+        metadata = dbx.files_upload(
+            content,
+            path,
+            autorename=autorename,
+            mode=WriteMode.overwrite if overwrite else WriteMode.add,
+        )
 
         return self._parse_metadata(metadata)
 

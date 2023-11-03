@@ -43,13 +43,18 @@
               </span>
 
               <span class="section right">
-                <button title="Refresh" @click="refresh(group)">
-                  <i class="fa fa-sync-alt" />
-                </button>
+                <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
+                  <DropdownItem text="Refresh" icon-class="fa fa-sync-alt" @click="refresh(group)" />
+                  <DropdownItem text="Hide" icon-class="fa fa-eye-slash" @click="hideGroup(group)" />
+                  <DropdownItem text="Collapse" icon-class="fa fa-caret-up"
+                    @click="collapsedGroups[group.name] = true" v-if="!collapsedGroups[group.name]" />
+                  <DropdownItem text="Expand" icon-class="fa fa-caret-down"
+                    @click="collapsedGroups[group.name] = false" v-else />
+                </Dropdown>
               </span>
             </div>
 
-            <div class="body">
+            <div class="body" v-if="!collapsedGroups[group.name]">
               <div class="entity-frame"
                  v-for="entity in Object.values(group.entities).sort((a, b) => a.name.localeCompare(b.name))"
                  :key="entity.id">
@@ -76,6 +81,8 @@
 
 <script>
 import Utils from "@/Utils"
+import Dropdown from "@/components/elements/Dropdown";
+import DropdownItem from "@/components/elements/DropdownItem";
 import Loading from "@/components/Loading";
 import Icon from "@/components/elements/Icon";
 import NoItems from "@/components/elements/NoItems";
@@ -91,6 +98,8 @@ export default {
   name: "Entities",
   mixins: [Utils],
   components: {
+    Dropdown,
+    DropdownItem,
     Entity,
     EntityModal,
     Icon,
@@ -129,6 +138,7 @@ export default {
         selectedEntities: {},
         selectedGroups: {},
       },
+      collapsedGroups: {},
     }
   },
 
@@ -168,10 +178,11 @@ export default {
 
   methods: {
     addEntity(entity) {
+      this.entities[entity.id] = entity
+
       if (entity.parent_id != null)
         return  // Only group entities that have no parent
 
-      this.entities[entity.id] = entity;
       ['id', 'type', 'category', 'plugin'].forEach((attr) => {
         if (entity[attr] == null)
           return
@@ -214,6 +225,14 @@ export default {
         entity.is_write_only ||
         (children.length && !hasReadableChildren)
       )
+    },
+
+    hideGroup(group) {
+      Object.keys(group.entities).forEach((id) => {
+        if (this.selector.selectedEntities[id])
+          delete this.selector.selectedEntities[id]
+      })
+      delete this.selector.selectedGroups[group.name]
     },
 
     async refresh(group) {
@@ -622,6 +641,21 @@ export default {
           padding: 0.5em;
         }
       }
+    }
+  }
+
+  :deep(.dropdown-container) {
+    .dropdown {
+      min-width: 10em;
+      margin-left: 0;
+
+      .item {
+        box-shadow: none;
+      }
+    }
+
+    button {
+      background: none;
     }
   }
 }

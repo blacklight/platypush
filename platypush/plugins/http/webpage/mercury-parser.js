@@ -1,4 +1,4 @@
-#!node
+#!/usr/bin/node
 
 // This script will parse the content and title of a webpage using the
 // mercury-parser JavaScript library (https://github.com/postlight/mercury-parser)

@@ -1,32 +1,57 @@
+import importlib
+import inspect
 import os
+import sys
 from typing import Iterable, Optional
 
+import pkgutil
+
 from platypush.backend import Backend
-from platypush.context import get_plugin
+from platypush.message.event import Event
+from platypush.message.response import Response
 from platypush.plugins import Plugin
-from platypush.utils.manifest import get_manifests
-
-
-def _get_inspect_plugin():
-    p = get_plugin('inspect')
-    assert p, 'Could not load the `inspect` plugin'
-    return p
+from platypush.utils.manifest import Manifests
+from platypush.utils.mock import auto_mocks
 
 
 def get_all_plugins():
-    return sorted([mf.component_name for mf in get_manifests(Plugin)])
+    return sorted([mf.component_name for mf in Manifests.by_base_class(Plugin)])
 
 
 def get_all_backends():
-    return sorted([mf.component_name for mf in get_manifests(Backend)])
+    return sorted([mf.component_name for mf in Manifests.by_base_class(Backend)])
 
 
 def get_all_events():
-    return _get_inspect_plugin().get_all_events().output
+    return _get_modules(Event)
 
 
 def get_all_responses():
-    return _get_inspect_plugin().get_all_responses().output
+    return _get_modules(Response)
+
+
+def _get_modules(base_type: type):
+    ret = set()
+    base_dir = os.path.dirname(inspect.getfile(base_type))
+    package = base_type.__module__
+
+    for _, mod_name, _ in pkgutil.walk_packages([base_dir], prefix=package + '.'):
+        try:
+            module = importlib.import_module(mod_name)
+        except Exception:
+            print('Could not import module', mod_name, file=sys.stderr)
+            continue
+
+        for _, obj_type in inspect.getmembers(module):
+            if (
+                inspect.isclass(obj_type)
+                and issubclass(obj_type, base_type)
+                # Exclude the base_type itself
+                and obj_type != base_type
+            ):
+                ret.add(obj_type.__module__.replace(package + '.', '', 1))
+
+    return list(ret)
 
 
 def _generate_components_doc(
@@ -122,7 +147,7 @@ def generate_events_doc():
     _generate_components_doc(
         index_name='events',
         package_name='message.event',
-        components=sorted(event for event in get_all_events().keys() if event),
+        components=sorted(event for event in get_all_events() if event),
     )
 
 
@@ -130,17 +155,16 @@ def generate_responses_doc():
     _generate_components_doc(
         index_name='responses',
         package_name='message.response',
-        components=sorted(
-            response for response in get_all_responses().keys() if response
-        ),
+        components=sorted(response for response in get_all_responses() if response),
     )
 
 
 def main():
-    generate_plugins_doc()
-    generate_backends_doc()
-    generate_events_doc()
-    generate_responses_doc()
+    with auto_mocks():
+        generate_plugins_doc()
+        generate_backends_doc()
+        generate_events_doc()
+        generate_responses_doc()
 
 
 if __name__ == '__main__':

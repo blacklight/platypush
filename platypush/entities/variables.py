@@ -2,14 +2,14 @@ import logging
 
 from sqlalchemy import Column, ForeignKey, Integer, String
 
-from platypush.common.db import Base
+from platypush.common.db import is_defined
 
 from . import Entity
 
 logger = logging.getLogger(__name__)
 
 
-if 'variable' not in Base.metadata:
+if not is_defined('variable'):
 
     class Variable(Entity):
         """

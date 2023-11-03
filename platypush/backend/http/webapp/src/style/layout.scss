@@ -12,141 +12,185 @@ $widths: (
     xxl:  $fullhd,
 );
 
+$width-ranges: (
+    tablet:     ($tablet, $desktop),
+    desktop:    ($desktop, $widescreen),
+    widescreen: ($widescreen, $fullhd),
+);
+
 @for $i from 1 through 12 {
-    .col-#{$i} {
-        float: left;
-        box-sizing: border-box;
-
-        @if $i < 12 {
-            width: (4.66666666667%*$i) + (4% * if($i > 1, $i - 1, 0));
-            margin-left: 4%;
-        } @else {
-            width: 100%;
-            margin-left: 0;
-        }
-
-        &:first-child {
-            margin-left: 0;
-        }
-    }
-
-    .col-no-margin-#{$i} {
-        float: left;
-        box-sizing: border-box;
-        width: ((math.div(100%, 12))*$i);
-        margin: 0;
-    }
+  .col-#{$i} {
+    float: left;
+    box-sizing: border-box;
 
     @if $i < 12 {
-        .col-offset-#{$i}:first-child {
-            margin-left: (8.66666666667%*$i) !important;
-        }
-        .col-offset-#{$i}:not(first-child) {
-            margin-left: 4% + (8.66666666667%*$i) !important;
-        }
+      width: (4.66666666667%*$i) + (4% * if($i > 1, $i - 1, 0));
+      margin-left: 4%;
+    } @else {
+      width: 100%;
+      margin-left: 0;
     }
+
+    &:first-child {
+      margin-left: 0;
+    }
+  }
+
+  .col-no-margin-#{$i} {
+    float: left;
+    box-sizing: border-box;
+    width: ((math.div(100%, 12))*$i);
+    margin: 0;
+  }
+
+  @if $i < 12 {
+    .col-offset-#{$i}:first-child {
+      margin-left: (8.66666666667%*$i) !important;
+    }
+    .col-offset-#{$i}:not(first-child) {
+      margin-left: 4% + (8.66666666667%*$i) !important;
+    }
+  }
 }
 
 @media screen and (max-width: calc(#{$tablet} - 1px)) {
-    @for $i from 1 through 12 {
-        .col-s-#{$i} {
-            float: left;
-            box-sizing: border-box;
+  @for $i from 1 through 12 {
+    .col-s-#{$i} {
+      float: left;
+      box-sizing: border-box;
 
-            @if $i < 12 {
-                width: (4.66666666667%*$i) + (4% * if($i > 1, $i - 1, 0));
-                margin-left: 4%;
-            } @else {
-                width: 100%;
-                margin-left: 0;
-            }
+      @if $i < 12 {
+        width: (4.66666666667%*$i) + (4% * if($i > 1, $i - 1, 0));
+        margin-left: 4%;
+      } @else {
+        width: 100%;
+        margin-left: 0;
+      }
 
-            &:first-child {
-                margin-left: 0;
-            }
-        }
-
-        @if $i < 12 {
-            .col-offset-s-#{$i} {
-                margin-left: (8.66666666667%*$i);
-            }
-        }
-
-        .col-no-margin-s-#{$i} {
-            float: left;
-            box-sizing: border-box;
-            width: (math.div(100%, 12)*$i);
-        }
+      &:first-child {
+        margin-left: 0;
+      }
     }
 
-    .s-hidden {
-        display: none !important;
+    @if $i < 12 {
+      .col-offset-s-#{$i} {
+        margin-left: (8.66666666667%*$i);
+      }
     }
 
-    .s-visible {
-        display: block !important;
+    .col-no-margin-s-#{$i} {
+      float: left;
+      box-sizing: border-box;
+      width: (math.div(100%, 12)*$i);
     }
-}
+  }
 
-@each $size, $width in $widths {
-    @media screen and (min-width: $width) {
-        @for $i from 1 through 12 {
-            .col-#{$size}-#{$i} {
-                float: left;
-                box-sizing: border-box;
+  .s-hidden {
+    display: none !important;
+  }
 
-                @if $i < 12 {
-                    width: #{(4.66666666667%*$i) + (4% * if($i > 1, $i - 1, 0))};
-                    margin-left: 4%;
-                } @else {
-                    width: 100%;
-                    margin-left: 0;
-                }
-
-                &:first-child {
-                    margin-left: 0;
-                }
-            }
-
-            @if $i < 12 {
-                .col-offset-#{$size}-#{$i} {
-                    margin-left: #{(8.66666666667%*$i)};
-                }
-            }
-
-            .col-no-margin-#{$size}-#{$i} {
-                float: left;
-                box-sizing: border-box;
-                width: (math.div(100%, 12)*$i);
-            }
-        }
-
-        .#{$size}-hidden {
-            display: none !important;
-        }
-
-        .#{$size}-visible {
-            display: block !important;
-        }
-    }
+  .s-visible {
+    display: block !important;
+  }
 }
 
 @mixin from($device) {
-    @media screen and (min-width: $device) {
-        @content;
-    }
+  @media screen and (min-width: $device) {
+    @content;
+  }
 }
 
 @mixin until($device) {
-    @media screen and (max-width: calc(#{$device} - 1px)) {
-        @content;
-    }
+  @media screen and (max-width: calc(#{$device} - 1px)) {
+    @content;
+  }
 }
 
 @mixin between($from, $until) {
-    @media screen and (min-width: $from) and (max-width: calc(#{$until} - 1px)) {
-        @content;
+  @media screen and (min-width: $from) and (max-width: calc(#{$until} - 1px)) {
+    @content;
+  }
+}
+
+@each $size, $width in $widths {
+  @media screen and (min-width: $width) {
+    @for $i from 1 through 12 {
+      .col-#{$size}-#{$i} {
+        float: left;
+        box-sizing: border-box;
+
+        @if $i < 12 {
+          width: #{(4.66666666667%*$i) + (4% * if($i > 1, $i - 1, 0))};
+          margin-left: 4%;
+        } @else {
+          width: 100%;
+          margin-left: 0;
+        }
+
+        &:first-child {
+          margin-left: 0;
+        }
+      }
+
+      @if $i < 12 {
+        .col-offset-#{$size}-#{$i} {
+          margin-left: #{(8.66666666667%*$i)};
+        }
+      }
+
+      .col-no-margin-#{$size}-#{$i} {
+        float: left;
+        box-sizing: border-box;
+        width: (math.div(100%, 12)*$i);
+      }
     }
+
+    .#{$size}-hidden {
+      display: none !important;
+    }
+
+    .#{$size}-visible {
+      display: block !important;
+    }
+  }
+}
+
+@each $name, $range in $width-ranges {
+  .#{$name} {
+    &.from {
+      @include until(nth($range, 1)) {
+        display: none;
+      }
+    }
+
+    &.until {
+      @include from(nth($range, 2)) {
+        display: none;
+      }
+    }
+
+    &.only {
+      @include until(nth($range, 1)) {
+        display: none;
+      }
+
+      @include from(nth($range, 2)) {
+        display: none;
+      }
+    }
+  }
+}
+
+.mobile {
+  @include from($tablet) {
+    display: none;
+  }
+}
+
+.fullhd {
+  @include until($fullhd) {
+    display: none;
+  }
 }
 
 .vertical-center {
@@ -182,3 +226,4 @@ $widths: (
   align-items: center;
   justify-content: center;
 }
+

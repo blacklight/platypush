@@ -92,7 +92,7 @@ export default {
         margin-right: .5em;
       }
 
-      ::v-deep(.dropdown-container) {
+      :deep(.dropdown-container) {
         .item {
           box-shadow: none;
         }

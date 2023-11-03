@@ -15,17 +15,14 @@ import sys
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath("./_ext"))
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'Platypush'
-copyright = '2017-2021, Fabio Manganiello'
-author = 'Fabio Manganiello'
+copyright = '2017-2023, Fabio Manganiello'
+author = 'Fabio Manganiello <fabio@manganiello.tech>'
 
 # The short X.Y version
 version = ''
@@ -43,6 +40,7 @@ release = ''
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'myst_parser',
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
@@ -52,6 +50,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx_rtd_theme',
     'sphinx_marshmallow',
+    'add_dependencies',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -60,8 +59,8 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
+# source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'
@@ -113,7 +112,14 @@ html_theme_options = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ['_static']
+html_static_path = ['_static']
+html_css_files = [
+    'styles/custom.css',
+]
+
+html_js_files = [
+    'scripts/custom.js',
+]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -165,9 +171,9 @@ latex_documents = [
 man_pages = [(master_doc, 'platypush', 'platypush Documentation', [author], 1)]
 
 
-# -- Options for Texinfo output ----------------------------------------------
+# -- Options for TexInfo output ----------------------------------------------
 
-# Grouping the document tree into Texinfo files. List of tuples
+# Grouping the document tree into TexInfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
@@ -190,136 +196,30 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
-# -- Options for todo extension ----------------------------------------------
-
-# If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = True
-
 autodoc_default_options = {
     'members': True,
     'show-inheritance': True,
 }
 
-autodoc_mock_imports = [
-    'gunicorn',
-    'googlesamples.assistant.grpc.audio_helpers',
-    'google.assistant.embedded',
-    'google.assistant.library',
-    'google.assistant.library.event',
-    'google.assistant.library.file_helpers',
-    'google.oauth2.credentials',
-    'oauth2client',
-    'apiclient',
-    'tenacity',
-    'smartcard',
-    'Leap',
-    'oauth2client',
-    'rtmidi',
-    'bluetooth',
-    'gevent.wsgi',
-    'Adafruit_IO',
-    'pyclip',
-    'pydbus',
-    'inputs',
-    'inotify',
-    'omxplayer',
-    'plexapi',
-    'cwiid',
-    'sounddevice',
-    'soundfile',
-    'numpy',
-    'cv2',
-    'nfc',
-    'ndef',
-    'bcrypt',
-    'google',
-    'feedparser',
-    'kafka',
-    'googlesamples',
-    'icalendar',
-    'httplib2',
-    'mpd',
-    'serial',
-    'pyHS100',
-    'grpc',
-    'envirophat',
-    'gps',
-    'picamera',
-    'pmw3901',
-    'PIL',
-    'croniter',
-    'pyaudio',
-    'avs',
-    'PyOBEX',
-    'PyOBEX.client',
-    'todoist',
-    'trello',
-    'telegram',
-    'telegram.ext',
-    'pyfirmata2',
-    'cups',
-    'graphyte',
-    'cpuinfo',
-    'psutil',
-    'openzwave',
-    'deepspeech',
-    'wave',
-    'pvporcupine ',
-    'pvcheetah',
-    'pyotp',
-    'linode_api4',
-    'pyzbar',
-    'tensorflow',
-    'keras',
-    'pandas',
-    'samsungtvws',
-    'paramiko',
-    'luma',
-    'zeroconf',
-    'dbus',
-    'gi',
-    'gi.repository',
-    'twilio',
-    'Adafruit_Python_DHT',
-    'RPi.GPIO',
-    'RPLCD',
-    'imapclient',
-    'pysmartthings',
-    'aiohttp',
-    'watchdog',
-    'pyngrok',
-    'irc',
-    'irc.bot',
-    'irc.strings',
-    'irc.client',
-    'irc.connection',
-    'irc.events',
-    'defusedxml',
-    'nio',
-    'aiofiles',
-    'aiofiles.os',
-    'async_lru',
-    'bleak',
-    'bluetooth_numbers',
-    'TheengsDecoder',
-    'simple_websocket',
-    'uvicorn',
-    'websockets',
-    'docutils',
-    'aioxmpp',
-]
-
 sys.path.insert(0, os.path.abspath('../..'))
 
+from platypush.utils.mock.modules import mock_imports  # noqa
 
-def skip(app, what, name, obj, skip, options):
+autodoc_mock_imports = [*mock_imports]
+
+
+# _ = app
+# __ = what
+# ___ = obj
+# ____ = options
+def _skip(_, __, name, ___, skip, ____):
     if name == "__init__":
         return False
     return skip
 
 
 def setup(app):
-    app.connect("autodoc-skip-member", skip)
+    app.connect("autodoc-skip-member", _skip)
 
 
 # vim:sw=4:ts=4:et:

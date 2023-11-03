@@ -17,11 +17,6 @@ class GotifyPlugin(RunnablePlugin):
 
     `Gotify <https://gotify.net>`_ allows you process messages and notifications asynchronously
     over your own devices without relying on 3rd-party cloud services.
-
-    Triggers:
-
-        * :class:`platypush.message.event.gotify.GotifyMessageEvent` when a new message is received.
-
     """
 
     def __init__(self, server_url: str, app_token: str, client_token: str, **kwargs):
@@ -47,11 +42,13 @@ class GotifyPlugin(RunnablePlugin):
         rs = getattr(requests, method)(
             f'{self.server_url}/{endpoint}',
             headers={
-                'X-Gotify-Key': self.app_token if method == 'post' else self.client_token,
+                'X-Gotify-Key': self.app_token
+                if method == 'post'
+                else self.client_token,
                 'Content-Type': 'application/json',
                 **kwargs.pop('headers', {}),
             },
-            **kwargs
+            **kwargs,
         )
 
         rs.raise_for_status()
@@ -65,7 +62,9 @@ class GotifyPlugin(RunnablePlugin):
         stop_events = []
 
         while not any(stop_events):
-            stop_events = self._should_stop.wait(timeout=1), self._disconnected_event.wait(timeout=1)
+            stop_events = self._should_stop.wait(
+                timeout=1
+            ), self._disconnected_event.wait(timeout=1)
 
     def stop(self):
         if self._ws_app:
@@ -78,7 +77,9 @@ class GotifyPlugin(RunnablePlugin):
             self._ws_listener.join(5)
 
         if self._ws_listener and self._ws_listener.is_alive():
-            self.logger.warning('Terminating the websocket process failed, killing the process')
+            self.logger.warning(
+                'Terminating the websocket process failed, killing the process'
+            )
             self._ws_listener.kill()
 
         if self._ws_listener:
@@ -92,13 +93,18 @@ class GotifyPlugin(RunnablePlugin):
             if self.should_stop() or self._connected_event.is_set():
                 return
 
-            ws_url = '/'.join([self.server_url.split('/')[0].replace('http', 'ws'), *self.server_url.split('/')[1:]])
+            ws_url = '/'.join(
+                [
+                    self.server_url.split('/')[0].replace('http', 'ws'),
+                    *self.server_url.split('/')[1:],
+                ]
+            )
             self._ws_app = websocket.WebSocketApp(
                 f'{ws_url}/stream?token={self.client_token}',
                 on_open=self._on_open(),
                 on_message=self._on_msg(),
                 on_error=self._on_error(),
-                on_close=self._on_close()
+                on_close=self._on_close(),
             )
 
             def server():
@@ -144,7 +150,13 @@ class GotifyPlugin(RunnablePlugin):
         return hndl
 
     @action
-    def send_message(self, message: str, title: Optional[str] = None, priority: int = 0, extras: Optional[dict] = None):
+    def send_message(
+        self,
+        message: str,
+        title: Optional[str] = None,
+        priority: int = 0,
+        extras: Optional[dict] = None,
+    ):
         """
         Send a message to the server.
 
@@ -155,12 +167,16 @@ class GotifyPlugin(RunnablePlugin):
         :return: .. schema:: gotify.GotifyMessageSchema
         """
         return GotifyMessageSchema().dump(
-            self._execute('post', 'message', json={
-                'message': message,
-                'title': title,
-                'priority': priority,
-                'extras': extras or {},
-            })
+            self._execute(
+                'post',
+                'message',
+                json={
+                    'message': message,
+                    'title': title,
+                    'priority': priority,
+                    'extras': extras or {},
+                },
+            )
         )
 
     @action
@@ -174,11 +190,14 @@ class GotifyPlugin(RunnablePlugin):
         """
         return GotifyMessageSchema().dump(
             self._execute(
-                'get', 'message', params={
+                'get',
+                'message',
+                params={
                     'limit': limit,
                     **({'since': since} if since else {}),
-                }
-            ).get('messages', []), many=True
+                },
+            ).get('messages', []),
+            many=True,
         )
 
     @action

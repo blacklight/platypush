@@ -6,18 +6,21 @@ import todoist
 import todoist.managers.items
 
 from platypush.plugins import Plugin, action
-from platypush.message.response.todoist import TodoistUserResponse, TodoistProjectsResponse, TodoistItemsResponse, \
-    TodoistFiltersResponse, TodoistLiveNotificationsResponse, TodoistCollaboratorsResponse, TodoistNotesResponse, \
-    TodoistProjectNotesResponse
+from platypush.message.response.todoist import (
+    TodoistUserResponse,
+    TodoistProjectsResponse,
+    TodoistItemsResponse,
+    TodoistFiltersResponse,
+    TodoistLiveNotificationsResponse,
+    TodoistCollaboratorsResponse,
+    TodoistNotesResponse,
+    TodoistProjectNotesResponse,
+)
 
 
 class TodoistPlugin(Plugin):
     """
     Todoist integration.
-
-    Requires:
-
-        * **todoist-python** (``pip install todoist-python``)
 
     You'll also need a Todoist token. You can get it `here <https://todoist.com/prefs/integrations>`.
     """
@@ -38,7 +41,10 @@ class TodoistPlugin(Plugin):
         if not self._api:
             self._api = todoist.TodoistAPI(self.api_token)
 
-        if not self._last_sync_time or time.time() - self._last_sync_time > self._sync_timeout:
+        if (
+            not self._last_sync_time
+            or time.time() - self._last_sync_time > self._sync_timeout
+        ):
             self._api.sync()
 
         return self._api

@@ -1,7 +1,5 @@
 import os
-
 from typing import Tuple, Union, List, Optional
-from typing_extensions import override
 
 import psutil
 
@@ -60,12 +58,6 @@ from platypush.schemas.system import (
 class SystemPlugin(SensorPlugin, EntityManager):
     """
     Plugin to get system info.
-
-    Requires:
-
-        - **py-cpuinfo** (``pip install py-cpuinfo``) for CPU model and info.
-        - **psutil** (``pip install psutil``) for CPU load and stats.
-
     """
 
     def __init__(self, *args, poll_interval: Optional[float] = 60, **kwargs):
@@ -506,7 +498,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
         """
         self._get_process(pid).wait(timeout)
 
-    @override
     @action
     def get_measurement(self, *_, **__):
         """
@@ -532,7 +523,6 @@ class SystemPlugin(SensorPlugin, EntityManager):
             }
         )
 
-    @override
     def transform_entities(self, entities: dict) -> List[Entity]:
         cpu = entities['cpu'].copy()
         battery = entities['battery']

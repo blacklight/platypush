@@ -1,7 +1,11 @@
 manifest:
   events: {}
   install:
+    apk:
+      - mplayer
     apt:
+      - mplayer
+    dnf:
       - mplayer
     pacman:
       - mplayer

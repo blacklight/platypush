@@ -1,9 +1,18 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-numpy
+    pacman:
+      - python-numpy
+      - python-sounddevice
+    apt:
+      - python3-numpy
+    dnf:
+      - python-numpy
     pip:
-    - deepspeech
-    - numpy
-    - sounddevice
+      - deepspeech
+      - numpy
+      - sounddevice
   package: platypush.plugins.stt.deepspeech
   type: plugin

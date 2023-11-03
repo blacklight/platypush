@@ -58,7 +58,7 @@
           <form @submit.prevent="playUrl(urlPlay)">
             <div class="row">
               <label>
-                Play URL (use <tt>file://</tt> prefix for local files)
+                Play URL (use the file:// prefix for local files)
                 <input type="text" v-model="urlPlay" ref="playUrlInput" autofocus />
               </label>
             </div>
@@ -398,11 +398,11 @@ export default {
   }
 }
 
-::v-deep(.loading) {
+:deep(.loading) {
   z-index: 10;
 }
 
-::v-deep(.media-info-container) {
+:deep(.media-info-container) {
   .modal-container {
     .content {
       max-width: 75%;
@@ -415,7 +415,7 @@ export default {
   }
 }
 
-::v-deep(.subtitles-container) {
+:deep(.subtitles-container) {
   .body {
     padding: 0 !important;
 
@@ -425,7 +425,7 @@ export default {
   }
 }
 
-::v-deep(.play-url-container) {
+:deep(.play-url-container) {
   .body {
     padding: 1em !important;
   }
@@ -456,6 +456,12 @@ export default {
     display: flex;
     justify-content: right;
     padding: 0;
+  }
+}
+
+:deep(.media-info-container) {
+  .modal {
+    max-width: 70em;
   }
 }
 </style>

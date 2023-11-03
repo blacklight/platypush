@@ -1,5 +1,3 @@
-from typing_extensions import override
-
 from platypush.backend.http.app.mixins import MessageType
 from platypush.message.event import Event
 
@@ -16,7 +14,6 @@ class WSEventProxy(WSRoute):
         super().__init__(*args, subscriptions=[self.events_channel], **kwargs)
 
     @classmethod
-    @override
     def app_name(cls) -> str:
         return 'events'
 
@@ -25,12 +22,10 @@ class WSEventProxy(WSRoute):
     def events_channel(cls) -> str:
         return cls.get_channel('events')
 
-    @override
     @classmethod
     def publish(cls, data: MessageType, *_) -> None:
         super().publish(data, cls.events_channel)
 
-    @override
     def on_message(self, message):
         try:
             event = Event.build(message)
@@ -42,7 +37,6 @@ class WSEventProxy(WSRoute):
 
         send_message(event, wait_for_response=False)
 
-    @override
     def run(self) -> None:
         for msg in self.listen():
             try:

@@ -1,10 +1,7 @@
 import numpy as np
-from numpy.typing import DTypeLike, NDArray
 
 
-def convert_nd_array(  # pylint: disable=too-many-return-statements
-    wave: NDArray[np.floating], dtype: DTypeLike
-) -> NDArray[np.number]:
+def convert_nd_array(wave, dtype):  # pylint: disable=too-many-return-statements
     """
     Given a wave as a series of floating point numbers, convert them to the
     appropriate data type.

@@ -81,7 +81,7 @@ export default {
     align-items: center;
   }
 
-  ::v-deep(.icon-container) {
+  :deep(.icon-container) {
     width: 2em;
     display: inline-flex;
     align-items: center;

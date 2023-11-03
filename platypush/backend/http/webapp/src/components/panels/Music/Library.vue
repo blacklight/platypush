@@ -205,7 +205,7 @@ export default {
     }
   }
 
-  ::v-deep(.header) {
+  :deep(.header) {
     display: flex;
     width: 100%;
     align-items: center;

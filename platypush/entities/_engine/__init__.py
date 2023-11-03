@@ -1,5 +1,6 @@
 from logging import getLogger
-from threading import Thread, Event
+from threading import Thread, Event, get_ident
+from time import time
 from typing import Dict, Optional
 
 from platypush.context import get_bus
@@ -9,6 +10,7 @@ from platypush.message.event.entities import EntityUpdateEvent
 from platypush.entities._base import EntityKey, EntitySavedCallback
 from platypush.entities._engine.queue import EntitiesQueue
 from platypush.entities._engine.repo import EntitiesRepository
+from platypush.utils import get_remaining_timeout
 
 
 class EntitiesEngine(Thread):
@@ -23,8 +25,8 @@ class EntitiesEngine(Thread):
            together (preventing excessive writes and throttling events), and
            prevents race conditions when SQLite is used.
         2. Merge any existing entities with their newer representations.
-        3. Update the entities taxonomy.
-        4. Persist the new state to the entities database.
+        3. Update the entities' taxonomy.
+        4. Persist the new state to the entities' database.
         5. Trigger events for the updated entities.
 
     """
@@ -68,6 +70,20 @@ class EntitiesEngine(Thread):
 
     def stop(self):
         self._should_stop.set()
+
+    def wait_stop(self, timeout: Optional[float] = None):
+        start = time()
+        stopped = self._should_stop.wait(
+            timeout=get_remaining_timeout(timeout=timeout, start=start)
+        )
+
+        if not stopped:
+            raise TimeoutError(
+                f'Timeout waiting for {self.__class__.__name__} to stop.'
+            )
+
+        if get_ident() != self.ident:
+            self.join(timeout=get_remaining_timeout(timeout=timeout, start=start))
 
     def notify(self, *entities: Entity):
         """

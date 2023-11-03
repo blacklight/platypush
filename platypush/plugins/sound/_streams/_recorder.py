@@ -1,5 +1,4 @@
 from typing import Type
-from typing_extensions import override
 
 import sounddevice as sd
 
@@ -27,11 +26,9 @@ class AudioRecorder(AudioThread):
         self.output_format = output_format
 
     @property
-    @override
     def direction(self) -> StreamType:
         return StreamType.INPUT
 
-    @override
     def _audio_callback(self):
         # _ = frames
         # __ = time
@@ -62,40 +59,33 @@ class AudioRecorder(AudioThread):
         return callback
 
     @property
-    @override
     def _audio_converter_type(self) -> Type[RawInputAudioConverter]:
         return RawInputAudioConverter
 
     @property
-    @override
     def _started_event_type(self) -> Type[SoundRecordingStartedEvent]:
         return SoundRecordingStartedEvent
 
     @property
-    @override
     def _stopped_event_type(self) -> Type[SoundRecordingStoppedEvent]:
         return SoundRecordingStoppedEvent
 
     @property
-    @override
     def _paused_event_type(self) -> Type[SoundRecordingPausedEvent]:
         return SoundRecordingPausedEvent
 
     @property
-    @override
     def _resumed_event_type(self) -> Type[SoundRecordingResumedEvent]:
         return SoundRecordingResumedEvent
 
     @property
-    @override
     def _converter_args(self) -> dict:
         return {
-            'format': self.output_format,
+            'output_format': self.output_format,
             **super()._converter_args,
         }
 
     @property
-    @override
     def _stream_args(self) -> dict:
         return {
             'callback': self._audio_callback(),

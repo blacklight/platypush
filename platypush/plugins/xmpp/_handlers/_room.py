@@ -1,6 +1,5 @@
 import asyncio
 from typing import Iterable, Optional, Union
-from typing_extensions import override
 
 import aioxmpp
 import aioxmpp.im
@@ -49,7 +48,6 @@ class XmppRoomHandler(XmppBaseHandler):
                 ]
             )
 
-    @override
     def restore_state(self):
         self._async_run(self._restore_state, wait_result=False)
 

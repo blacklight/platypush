@@ -18,37 +18,31 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
 
     This plugin allows you to easily create IRC bots with custom logic that reacts to IRC events
     and interact with IRC sessions.
-
-    Triggers:
-
-        * :class:`platypush.message.event.irc.IRCChannelJoinEvent` when a user joins a channel.
-        * :class:`platypush.message.event.irc.IRCChannelKickEvent` when a user is kicked from a channel.
-        * :class:`platypush.message.event.irc.IRCModeEvent` when a user/channel mode change event occurs.
-        * :class:`platypush.message.event.irc.IRCPartEvent` when a user parts a channel.
-        * :class:`platypush.message.event.irc.IRCQuitEvent` when a user quits.
-        * :class:`platypush.message.event.irc.IRCNickChangeEvent` when a user nick changes.
-        * :class:`platypush.message.event.irc.IRCConnectEvent` when the bot connects to a server.
-        * :class:`platypush.message.event.irc.IRCDisconnectEvent` when the bot disconnects from a server.
-        * :class:`platypush.message.event.irc.IRCPrivateMessageEvent` when a private message is received.
-        * :class:`platypush.message.event.irc.IRCPublicMessageEvent` when a public message is received.
-        * :class:`platypush.message.event.irc.IRCDCCRequestEvent` when a DCC connection request is received.
-        * :class:`platypush.message.event.irc.IRCDCCMessageEvent` when a DCC message is received.
-        * :class:`platypush.message.event.irc.IRCCTCPMessageEvent` when a CTCP message is received.
-        * :class:`platypush.message.event.irc.IRCDCCFileRequestEvent` when a DCC file request is received.
-        * :class:`platypush.message.event.irc.IRCDCCFileRecvCompletedEvent` when a DCC file download is completed.
-        * :class:`platypush.message.event.irc.IRCDCCFileRecvCancelledEvent` when a DCC file download is cancelled.
-        * :class:`platypush.message.event.irc.IRCDCCFileSendCompletedEvent` when a DCC file upload is completed.
-        * :class:`platypush.message.event.irc.IRCDCCFileSendCancelledEvent` when a DCC file upload is cancelled.
-
-    Requires:
-
-        * **irc** (``pip install irc``)
-
     """
 
     def __init__(self, servers: Sequence[dict], **kwargs):
         """
-        :param servers: List of servers/channels that the bot will automatically connect/join.
+        :param servers: List of servers/channels that the bot will
+            automatically connect/join. Format:
+
+              .. code-block:: yaml
+
+                servers:
+                  - server: irc.example.org
+                    port: 6697
+                    ssl: true
+                    ipv6: false
+                    username: foo
+                    password: bar
+                    nickname: testbot
+                    realname: Test Bot
+
+                    # List of channels that the bot will automatically join
+                    channels:
+                      - #channel1
+                      - #channel2
+                      - #channel3
+
         """
         super().__init__(**kwargs)
         try:

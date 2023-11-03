@@ -1,7 +1,6 @@
 manifest:
   events:
-    - platypush.message.event.music.TidalPlaylistUpdatedEvent: when a user playlist
-        is updated.
+    - platypush.message.event.music.tidal.TidalPlaylistUpdatedEvent
   install:
     pip:
       - tidalapi >= 0.7.0

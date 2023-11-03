@@ -1,7 +1,13 @@
 manifest:
   events: {}
   install:
+    apt:
+      - python3-mpd
+    dnf:
+      - python3-mpd2
+    pacman:
+      - python-mpd2
     pip:
-    - python-mpd2
+      - python-mpd2
   package: platypush.plugins.music.mpd
   type: plugin

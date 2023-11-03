@@ -9,11 +9,6 @@ from platypush.plugins.calendar import CalendarInterface
 class CalendarIcalPlugin(Plugin, CalendarInterface):
     """
     iCal calendars plugin. Interact with remote calendars in iCal format.
-
-    Requires:
-
-        * **icalendar** (``pip install icalendar``)
-
     """
 
     def __init__(self, url, *args, **kwargs):
@@ -78,7 +73,7 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
     def get_upcoming_events(self, *_, only_participating=True, **__):
         """
         Get the upcoming events. See
-        :func:`~platypush.plugins.calendar.CalendarPlugin.get_upcoming_events`.
+        :meth:`platypush.plugins.calendar.CalendarPlugin.get_upcoming_events`.
         """
 
         from icalendar import Calendar

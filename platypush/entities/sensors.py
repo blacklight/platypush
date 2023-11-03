@@ -12,7 +12,7 @@ from sqlalchemy import (
     String,
 )
 
-from platypush.common.db import Base
+from platypush.common.db import is_defined
 
 from .devices import Device
 
@@ -32,7 +32,7 @@ class Sensor(Device):
         super().__init__(*args, **kwargs)
 
 
-if 'raw_sensor' not in Base.metadata:
+if not is_defined('raw_sensor'):
 
     class RawSensor(Sensor):
         """
@@ -86,12 +86,13 @@ if 'raw_sensor' not in Base.metadata:
                 self.is_binary = False
                 self.is_json = False
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
 
 
-if 'numeric_sensor' not in Base.metadata and 'percent_sensor' not in Base.metadata:
+if not is_defined('numeric_sensor') and not is_defined('percent_sensor'):
 
     class NumericSensor(Sensor):
         """
@@ -109,6 +110,7 @@ if 'numeric_sensor' not in Base.metadata and 'percent_sensor' not in Base.metada
         max = Column(Float)
         unit = Column(String)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
@@ -124,6 +126,7 @@ if 'numeric_sensor' not in Base.metadata and 'percent_sensor' not in Base.metada
             Integer, ForeignKey(NumericSensor.id, ondelete='CASCADE'), primary_key=True
         )
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
@@ -135,7 +138,7 @@ if 'numeric_sensor' not in Base.metadata and 'percent_sensor' not in Base.metada
             super().__init__(*args, **kwargs)
 
 
-if 'binary_sensor' not in Base.metadata:
+if not is_defined('binary_sensor'):
 
     class BinarySensor(Sensor):
         """
@@ -163,12 +166,13 @@ if 'binary_sensor' not in Base.metadata:
         )
         value = Column(Boolean)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
 
 
-if 'enum_sensor' not in Base.metadata:
+if not is_defined('enum_sensor'):
 
     class EnumSensor(Sensor):
         """
@@ -184,12 +188,13 @@ if 'enum_sensor' not in Base.metadata:
         values = Column(JSON)
         """ Possible values for the sensor, as a JSON array. """
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
 
 
-if 'composite_sensor' not in Base.metadata:
+if not is_defined('composite_sensor'):
 
     class CompositeSensor(Sensor):
         """
@@ -204,6 +209,7 @@ if 'composite_sensor' not in Base.metadata:
         )
         value = Column(JSON)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }

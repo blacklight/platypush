@@ -242,13 +242,13 @@ export default {
       width: 100%;
     }
 
-    ::v-deep(.form-footer) {
+    :deep(.form-footer) {
       height: 3em;
       padding-right: 0;
       border: 0;
     }
 
-    ::v-deep(button) {
+    :deep(button) {
       border: 0;
 
       &[type=submit] {
@@ -268,7 +268,7 @@ export default {
     overflow: auto;
   }
 
-  ::v-deep(.header) {
+  :deep(.header) {
     display: flex;
     width: 100%;
     align-items: center;

@@ -11,20 +11,6 @@ from platypush.plugins.media.gstreamer.model import MediaPipeline
 class MediaGstreamerPlugin(MediaPlugin):
     """
     Plugin to play media over GStreamer.
-
-    Requires:
-
-        * **gst-python**
-        * **pygobject**
-
-    On Debian and derived systems:
-
-        * ``[sudo] apt-get install python3-gi python3-gst-1.0``
-
-    On Arch and derived systems:
-
-        * ``[sudo] pacman -S gst-python``
-
     """
 
     def __init__(self, sink: Optional[str] = None, *args, **kwargs):

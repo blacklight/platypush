@@ -8,14 +8,6 @@ from platypush.plugins import Plugin, action
 class KafkaPlugin(Plugin):
     """
     Plugin to send messages to an Apache Kafka instance (https://kafka.apache.org/)
-
-    Triggers:
-
-        * :class:`platypush.message.event.kafka.KafkaMessageEvent` when a new message is received on the consumer topic.
-
-    Requires:
-
-        * **kafka** (``pip install kafka-python``)
     """
 
     def __init__(self, server=None, port=9092, **kwargs):
@@ -30,8 +22,9 @@ class KafkaPlugin(Plugin):
 
         super().__init__(**kwargs)
 
-        self.server = '{server}:{port}'.format(server=server, port=port) \
-            if server else None
+        self.server = (
+            '{server}:{port}'.format(server=server, port=port) if server else None
+        )
 
         self.producer = None
 
@@ -60,13 +53,15 @@ class KafkaPlugin(Plugin):
                     kafka_backend = get_backend('kafka')
                     server = kafka_backend.server
                 except Exception as e:
-                    raise RuntimeError(f'No Kafka server nor default server specified: {str(e)}')
+                    raise RuntimeError(
+                        f'No Kafka server nor default server specified: {str(e)}'
+                    )
             else:
                 server = self.server
 
-        if isinstance(msg, dict) or isinstance(msg, list):
+        if isinstance(msg, (dict, list)):
             msg = json.dumps(msg)
-        msg = str(msg).encode('utf-8')
+        msg = str(msg).encode()
 
         producer = KafkaProducer(bootstrap_servers=server)
         producer.send(topic, msg)

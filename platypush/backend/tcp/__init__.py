@@ -10,7 +10,18 @@ from platypush.message import Message
 
 class TcpBackend(Backend):
     """
-    Backend that reads messages from a configured TCP port
+    Backend that reads messages from a configured TCP port.
+
+    You can use this backend to send messages to Platypush from any TCP client, for example:
+
+      .. code-block:: bash
+
+        $ echo '{"type": "request", "action": "shell.exec", "args": {"cmd": "ls /"}}' | nc localhost 1234
+
+    .. warning:: Be **VERY** careful when exposing this backend to the Internet. Unlike the HTTP backend, this backend
+        doesn't implement any authentication mechanisms, so anyone who can connect to the TCP port will be able to
+        execute commands on your Platypush instance.
+
     """
 
     # Maximum length of a request to be processed

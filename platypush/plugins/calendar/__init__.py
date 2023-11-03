@@ -1,8 +1,11 @@
+from typing import Collection
+
 import dateutil.parser
 import importlib
 
 from abc import ABCMeta, abstractmethod
 
+from platypush.context import get_plugin
 from platypush.plugins import Plugin, action
 
 
@@ -20,45 +23,46 @@ class CalendarPlugin(Plugin, CalendarInterface):
     iCal URLs) and get joined events from all of them.
     """
 
-    def __init__(self, calendars=None, *args, **kwargs):
+    def __init__(self, calendars: Collection[dict], *args, **kwargs):
         """
         :param calendars: List of calendars to be queried. Supported types so far: Google Calendar and iCal URLs.
-        :type calendars: list
 
-        Example format::
+        Example:
 
-            calendars = [
-                {
-                    "type": "platypush.plugins.google.calendar.GoogleCalendarPlugin"
-                },
+            .. code-block:: yaml
 
-                {
-                    "type": "platypush.plugins.calendar.ical.IcalCalendarPlugin",
-                    "url": "https://www.facebook.com/ical/u.php?uid=USER_ID&key=FB_KEY"
-                },
+                calendars:
+                    # Use the Google Calendar integration
+                    - type: google.calendar
 
-                ...
-            ]
+                    # Import the Facebook events calendar via iCal URL
+                    - type: calendar.ical
+                      url: https://www.facebook.com/ical/u.php?uid=USER_ID&key=FB_KEY
+
         """
 
         super().__init__(*args, **kwargs)
-
-        if calendars is None:
-            calendars = []
         self.calendars = []
 
         for calendar in calendars:
-            if 'type' not in calendar:
+            cal_type = calendar.pop('type', None)
+            if cal_type is None:
                 self.logger.warning(
-                    "Invalid calendar with no type specified: {}".format(calendar)
+                    "Invalid calendar with no type specified: %s", calendar
                 )
                 continue
 
-            cal_type = calendar.pop('type')
-            module_name = '.'.join(cal_type.split('.')[:-1])
-            class_name = cal_type.split('.')[-1]
-            module = importlib.import_module(module_name)
-            self.calendars.append(getattr(module, class_name)(**calendar))
+            try:
+                # New `calendar.name` format
+                cal_plugin = get_plugin(cal_type).__class__
+            except Exception:
+                # Legacy `platypush.plugins.calendar.name.CalendarNamePlugin` format
+                module_name = '.'.join(cal_type.split('.')[:-1])
+                class_name = cal_type.split('.')[-1]
+                module = importlib.import_module(module_name)
+                cal_plugin = getattr(module, class_name)
+
+            self.calendars.append(cal_plugin(**calendar))
 
     @action
     def get_upcoming_events(self, max_results=10):
@@ -109,7 +113,9 @@ class CalendarPlugin(Plugin, CalendarInterface):
                 cal_events = calendar.get_upcoming_events().output or []
                 events.extend(cal_events)
             except Exception as e:
-                self.logger.warning('Could not retrieve events: {}'.format(str(e)))
+                self.logger.warning(
+                    'Could not retrieve events from calendar %s: %s', calendar, e
+                )
 
         events = sorted(
             events,

@@ -5,7 +5,7 @@ import pathlib
 import re
 
 from dataclasses import dataclass
-from typing import Collection, Coroutine, Sequence
+from typing import Collection, Coroutine, Optional, Sequence
 from urllib.parse import urlparse
 
 from nio import (
@@ -47,7 +47,7 @@ class Credentials:
     server_url: str
     user_id: str
     access_token: str
-    device_id: str | None
+    device_id: Optional[str] = None
 
     def to_dict(self) -> dict:
         return {
@@ -61,13 +61,6 @@ class Credentials:
 class MatrixPlugin(AsyncRunnablePlugin):
     """
     Matrix chat integration.
-
-    Requires:
-
-        * **matrix-nio** (``pip install 'matrix-nio[e2e]'``)
-        * **libolm** (on Debian ```apt-get install libolm-devel``, on Arch
-            ``pacman -S libolm``)
-        * **async_lru** (``pip install async_lru``)
 
     Note that ``libolm`` and the ``[e2e]`` module are only required if you want
     E2E encryption support.
@@ -100,71 +93,27 @@ class MatrixPlugin(AsyncRunnablePlugin):
     ``mxc://<server>/<media_id>`` format. You can either convert them to HTTP
     through the :meth:`.mxc_to_http` method, or download them through the
     :meth:`.download` method.
-
-    Triggers:
-
-        * :class:`platypush.message.event.matrix.MatrixMessageEvent`: when a
-            message is received.
-        * :class:`platypush.message.event.matrix.MatrixMessageImageEvent`: when a
-            message containing an image is received.
-        * :class:`platypush.message.event.matrix.MatrixMessageAudioEvent`: when a
-            message containing an audio file is received.
-        * :class:`platypush.message.event.matrix.MatrixMessageVideoEvent`: when a
-            message containing a video file is received.
-        * :class:`platypush.message.event.matrix.MatrixMessageFileEvent`: when a
-            message containing a generic file is received.
-        * :class:`platypush.message.event.matrix.MatrixSyncEvent`: when the
-            startup synchronization has been completed and the plugin is ready to
-            use.
-        * :class:`platypush.message.event.matrix.MatrixRoomCreatedEvent`: when
-            a room is created.
-        * :class:`platypush.message.event.matrix.MatrixRoomJoinEvent`: when a
-            user joins a room.
-        * :class:`platypush.message.event.matrix.MatrixRoomLeaveEvent`: when a
-            user leaves a room.
-        * :class:`platypush.message.event.matrix.MatrixRoomInviteEvent`: when
-            the user is invited to a room.
-        * :class:`platypush.message.event.matrix.MatrixRoomTopicChangedEvent`:
-            when the topic/title of a room changes.
-        * :class:`platypush.message.event.matrix.MatrixCallInviteEvent`: when
-            the user is invited to a call.
-        * :class:`platypush.message.event.matrix.MatrixCallAnswerEvent`: when a
-            called user wishes to pick the call.
-        * :class:`platypush.message.event.matrix.MatrixCallHangupEvent`: when a
-            called user exits the call.
-        * :class:`platypush.message.event.matrix.MatrixEncryptedMessageEvent`:
-            when a message is received but the client doesn't have the E2E keys
-            to decrypt it, or encryption has not been enabled.
-        * :class:`platypush.message.event.matrix.MatrixRoomTypingStartEvent`:
-            when a user in a room starts typing.
-        * :class:`platypush.message.event.matrix.MatrixRoomTypingStopEvent`:
-            when a user in a room stops typing.
-        * :class:`platypush.message.event.matrix.MatrixRoomSeenReceiptEvent`:
-            when the last message seen by a user in a room is updated.
-        * :class:`platypush.message.event.matrix.MatrixUserPresenceEvent`:
-            when a user comes online or goes offline.
-
     """
 
     def __init__(
         self,
         server_url: str = 'https://matrix-client.matrix.org',
-        user_id: str | None = None,
-        password: str | None = None,
-        access_token: str | None = None,
-        device_name: str | None = 'platypush',
-        device_id: str | None = None,
-        download_path: str | None = None,
+        user_id: Optional[str] = None,
+        password: Optional[str] = None,
+        access_token: Optional[str] = None,
+        device_name: Optional[str] = 'platypush',
+        device_id: Optional[str] = None,
+        download_path: Optional[str] = None,
         autojoin_on_invite: bool = True,
         autotrust_devices: bool = False,
-        autotrust_devices_whitelist: Collection[str] | None = None,
-        autotrust_users_whitelist: Collection[str] | None = None,
-        autotrust_rooms_whitelist: Collection[str] | None = None,
+        autotrust_devices_whitelist: Optional[Collection[str]] = None,
+        autotrust_users_whitelist: Optional[Collection[str]] = None,
+        autotrust_rooms_whitelist: Optional[Collection[str]] = None,
         **kwargs,
     ):
         """
         Authentication requires user_id/password on the first login.
-        Afterwards, session credentials are stored under
+        Afterward, session credentials are stored under
         ``<$PLATYPUSH_WORKDIR>/matrix/credentials.json`` (default:
         ``~/.local/share/platypush/matrix/credentials.json``), and you can
         remove the cleartext credentials from your configuration file.
@@ -350,9 +299,9 @@ class MatrixPlugin(AsyncRunnablePlugin):
         self,
         room_id: str,
         message_type: str = 'text',
-        body: str | None = None,
-        attachment: str | None = None,
-        tx_id: str | None = None,
+        body: Optional[str] = None,
+        attachment: Optional[str] = None,
+        tx_id: Optional[str] = None,
         ignore_unverified_devices: bool = False,
     ):
         """
@@ -439,8 +388,8 @@ class MatrixPlugin(AsyncRunnablePlugin):
     def get_messages(
         self,
         room_id: str,
-        start: str | None = None,
-        end: str | None = None,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
         backwards: bool = True,
         limit: int = 10,
     ):
@@ -493,10 +442,11 @@ class MatrixPlugin(AsyncRunnablePlugin):
         return MatrixDeviceSchema().dump(self._get_device(device_id))
 
     @action
-    def update_device(self, device_id: str, display_name: str | None = None):
+    def update_device(self, device_id: str, display_name: Optional[str] = None):
         """
         Update information about a user's device.
 
+        :param device_id: Device ID.
         :param display_name: New display name.
         :return: .. schema:: matrix.MatrixDeviceSchema
         """
@@ -511,8 +461,8 @@ class MatrixPlugin(AsyncRunnablePlugin):
     def delete_devices(
         self,
         devices: Sequence[str],
-        username: str | None = None,
-        password: str | None = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
     ):
         """
         Delete a list of devices from the user's authorized list and invalidate
@@ -615,7 +565,7 @@ class MatrixPlugin(AsyncRunnablePlugin):
         self.client.unverify_device(device)
 
     @action
-    def mxc_to_http(self, url: str, homeserver: str | None = None) -> str:
+    def mxc_to_http(self, url: str, homeserver: Optional[str] = None) -> str:
         """
         Convert a Matrix URL (in the format ``mxc://server/media_id``) to an
         HTTP URL.
@@ -638,8 +588,8 @@ class MatrixPlugin(AsyncRunnablePlugin):
     def download(
         self,
         url: str,
-        download_path: str | None = None,
-        filename: str | None = None,
+        download_path: Optional[str] = None,
+        filename: Optional[str] = None,
         allow_remote=True,
     ):
         """
@@ -692,8 +642,8 @@ class MatrixPlugin(AsyncRunnablePlugin):
     def upload(
         self,
         file: str,
-        name: str | None = None,
-        content_type: str | None = None,
+        name: Optional[str] = None,
+        content_type: Optional[str] = None,
         encrypt: bool = False,
     ) -> str:
         """
@@ -716,9 +666,9 @@ class MatrixPlugin(AsyncRunnablePlugin):
     @action
     def create_room(
         self,
-        name: str | None = None,
-        alias: str | None = None,
-        topic: str | None = None,
+        name: Optional[str] = None,
+        alias: Optional[str] = None,
+        topic: Optional[str] = None,
         is_public: bool = False,
         is_direct: bool = False,
         federate: bool = True,
@@ -780,7 +730,7 @@ class MatrixPlugin(AsyncRunnablePlugin):
         self._loop_execute(self.client.room_invite(room_id, user_id))
 
     @action
-    def kick(self, room_id: str, user_id: str, reason: str | None = None):
+    def kick(self, room_id: str, user_id: str, reason: Optional[str] = None):
         """
         Kick a user out of a room.
 
@@ -791,7 +741,7 @@ class MatrixPlugin(AsyncRunnablePlugin):
         self._loop_execute(self.client.room_kick(room_id, user_id, reason))
 
     @action
-    def ban(self, room_id: str, user_id: str, reason: str | None = None):
+    def ban(self, room_id: str, user_id: str, reason: Optional[str] = None):
         """
         Ban a user from a room.
 

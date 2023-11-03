@@ -180,6 +180,8 @@ $icon-margin: 0.5em;
 
   .modal {
     display: flex;
+    max-width: 100%;
+    justify-content: center;
 
     .content {
       --width: auto;

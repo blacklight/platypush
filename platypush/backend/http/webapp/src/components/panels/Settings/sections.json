@@ -1,0 +1,22 @@
+{
+  "users": {
+    "name": "Users",
+    "icon": {
+      "class": "fas fa-user"
+    }
+  },
+
+  "tokens": {
+    "name": "Tokens",
+    "icon": {
+      "class": "fas fa-key"
+    }
+  },
+
+  "application": {
+    "name": "Application",
+    "icon": {
+      "class": "fas fa-gears"
+    }
+  }
+}

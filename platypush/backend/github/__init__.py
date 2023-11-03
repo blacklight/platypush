@@ -60,27 +60,6 @@ class GithubBackend(Backend):
         - ``notifications``
         - ``read:org`` if you want to access repositories on organization level.
 
-    Triggers:
-
-        - :class:`platypush.message.event.github.GithubPushEvent` when a new push is created.
-        - :class:`platypush.message.event.github.GithubCommitCommentEvent` when a new commit comment is created.
-        - :class:`platypush.message.event.github.GithubCreateEvent` when a tag or branch is created.
-        - :class:`platypush.message.event.github.GithubDeleteEvent` when a tag or branch is deleted.
-        - :class:`platypush.message.event.github.GithubForkEvent` when a user forks a repository.
-        - :class:`platypush.message.event.github.GithubWikiEvent` when new activity happens on a repository wiki.
-        - :class:`platypush.message.event.github.GithubIssueCommentEvent` when new activity happens on an issue comment.
-        - :class:`platypush.message.event.github.GithubIssueEvent` when new repository issue activity happens.
-        - :class:`platypush.message.event.github.GithubMemberEvent` when new repository collaborators activity happens.
-        - :class:`platypush.message.event.github.GithubPublicEvent` when a repository goes public.
-        - :class:`platypush.message.event.github.GithubPullRequestEvent` when new pull request related activity happens.
-        - :class:`platypush.message.event.github.GithubPullRequestReviewCommentEvent` when activity happens on a pull
-            request commit.
-        - :class:`platypush.message.event.github.GithubReleaseEvent` when a new release happens.
-        - :class:`platypush.message.event.github.GithubSponsorshipEvent` when new sponsorship related activity happens.
-        - :class:`platypush.message.event.github.GithubWatchEvent` when someone stars/starts watching a repository.
-        - :class:`platypush.message.event.github.GithubEvent` for any event that doesn't fall in the above categories
-            (``event_type`` will be set accordingly).
-
     """
 
     _base_url = 'https://api.github.com'

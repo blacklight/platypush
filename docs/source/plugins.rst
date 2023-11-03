@@ -8,10 +8,9 @@ Plugins
 
     platypush/plugins/adafruit.io.rst
     platypush/plugins/alarm.rst
+    platypush/plugins/application.rst
     platypush/plugins/arduino.rst
-    platypush/plugins/assistant.echo.rst
     platypush/plugins/assistant.google.rst
-    platypush/plugins/assistant.google.pushtotalk.rst
     platypush/plugins/autoremote.rst
     platypush/plugins/bluetooth.rst
     platypush/plugins/calendar.rst
@@ -26,7 +25,6 @@ Plugins
     platypush/plugins/chat.telegram.rst
     platypush/plugins/clipboard.rst
     platypush/plugins/config.rst
-    platypush/plugins/covid19.rst
     platypush/plugins/csv.rst
     platypush/plugins/db.rst
     platypush/plugins/dbus.rst
@@ -50,7 +48,6 @@ Plugins
     platypush/plugins/graphite.rst
     platypush/plugins/hid.rst
     platypush/plugins/http.request.rst
-    platypush/plugins/http.request.rss.rst
     platypush/plugins/http.webpage.rst
     platypush/plugins/ifttt.rst
     platypush/plugins/inputs.rst
@@ -128,7 +125,6 @@ Plugins
     platypush/plugins/tensorflow.rst
     platypush/plugins/todoist.rst
     platypush/plugins/torrent.rst
-    platypush/plugins/travisci.rst
     platypush/plugins/trello.rst
     platypush/plugins/tts.rst
     platypush/plugins/tts.google.rst
@@ -148,5 +144,4 @@ Plugins
     platypush/plugins/xmpp.rst
     platypush/plugins/zeroconf.rst
     platypush/plugins/zigbee.mqtt.rst
-    platypush/plugins/zwave.rst
     platypush/plugins/zwave.mqtt.rst

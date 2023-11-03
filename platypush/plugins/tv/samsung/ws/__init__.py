@@ -12,15 +12,17 @@ class TvSamsungWsPlugin(Plugin):
     """
     Control a Samsung smart TV with Tizen OS over WiFi/ethernet. It should support any post-2016 Samsung with Tizen OS
     and enabled websocket-based connection.
-
-    Requires:
-
-        * **samsungtvws** (``pip install samsungtvws``)
-
     """
 
-    def __init__(self, host: Optional[str] = None, port: int = 8002, timeout: Optional[int] = 5, name='platypush',
-                 token_file: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        host: Optional[str] = None,
+        port: int = 8002,
+        timeout: Optional[int] = 5,
+        name='platypush',
+        token_file: Optional[str] = None,
+        **kwargs
+    ):
         """
         :param host: IP address or host name of the smart TV.
         :param port: Websocket port (default: 8002).
@@ -41,22 +43,36 @@ class TvSamsungWsPlugin(Plugin):
         self._connections: Dict[Tuple[host, port], SamsungTVWS] = {}
         os.makedirs(self.workdir, mode=0o700, exist_ok=True)
 
-    def _get_host_and_port(self, host: Optional[str] = None, port: Optional[int] = None) -> Tuple[str, int]:
+    def _get_host_and_port(
+        self, host: Optional[str] = None, port: Optional[int] = None
+    ) -> Tuple[str, int]:
         host = host or self.host
         port = port or self.port
         assert host and port, 'No host/port specified'
         return host, port
 
-    def connect(self, host: Optional[str] = None, port: Optional[int] = None) -> SamsungTVWS:
+    def connect(
+        self, host: Optional[str] = None, port: Optional[int] = None
+    ) -> SamsungTVWS:
         host, port = self._get_host_and_port(host, port)
         if (host, port) not in self._connections:
-            self._connections[(host, port)] = SamsungTVWS(host=host, port=port, token_file=self.token_file,
-                                                          timeout=self.timeout, name=self.name)
+            self._connections[(host, port)] = SamsungTVWS(
+                host=host,
+                port=port,
+                token_file=self.token_file,
+                timeout=self.timeout,
+                name=self.name,
+            )
 
         return self._connections[(host, port)]
 
-    def exec(self, func: Callable[[SamsungTVWS], Any], host: Optional[str] = None, port: Optional[int] = None,
-             n_tries=2) -> Any:
+    def exec(
+        self,
+        func: Callable[[SamsungTVWS], Any],
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        n_tries=2,
+    ) -> Any:
         tv = self.connect(host, port)
 
         try:
@@ -67,7 +83,7 @@ class TvSamsungWsPlugin(Plugin):
                 raise e
             else:
                 time.sleep(1)
-                return self.exec(func, host, port, n_tries-1)
+                return self.exec(func, host, port, n_tries - 1)
 
     @action
     def power(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
@@ -90,7 +106,9 @@ class TvSamsungWsPlugin(Plugin):
         return self.exec(lambda tv: tv.shortcuts().volume_up(), host=host, port=port)
 
     @action
-    def volume_down(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
+    def volume_down(
+        self, host: Optional[str] = None, port: Optional[int] = None
+    ) -> None:
         """
         Send volume down control to the device.
 
@@ -110,7 +128,9 @@ class TvSamsungWsPlugin(Plugin):
         return self.exec(lambda tv: tv.shortcuts().back(), host=host, port=port)
 
     @action
-    def channel(self, channel: int, host: Optional[str] = None, port: Optional[int] = None) -> None:
+    def channel(
+        self, channel: int, host: Optional[str] = None, port: Optional[int] = None
+    ) -> None:
         """
         Change to the selected channel.
 
@@ -118,10 +138,14 @@ class TvSamsungWsPlugin(Plugin):
         :param host: Default host IP/name override.
         :param port: Default port override.
         """
-        return self.exec(lambda tv: tv.shortcuts().channel(channel), host=host, port=port)
+        return self.exec(
+            lambda tv: tv.shortcuts().channel(channel), host=host, port=port
+        )
 
     @action
-    def channel_up(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
+    def channel_up(
+        self, host: Optional[str] = None, port: Optional[int] = None
+    ) -> None:
         """
         Send channel_up key to the device.
 
@@ -131,7 +155,9 @@ class TvSamsungWsPlugin(Plugin):
         return self.exec(lambda tv: tv.shortcuts().channel_up(), host=host, port=port)
 
     @action
-    def channel_down(self, host: Optional[str] = None, port: Optional[int] = None) -> None:
+    def channel_down(
+        self, host: Optional[str] = None, port: Optional[int] = None
+    ) -> None:
         """
         Send channel_down key to the device.
 
@@ -301,7 +327,9 @@ class TvSamsungWsPlugin(Plugin):
         return self.exec(lambda tv: tv.shortcuts().yellow(), host=host, port=port)
 
     @action
-    def digit(self, digit: int, host: Optional[str] = None, port: Optional[int] = None) -> None:
+    def digit(
+        self, digit: int, host: Optional[str] = None, port: Optional[int] = None
+    ) -> None:
         """
         Send a digit key to the device.
 
@@ -312,7 +340,12 @@ class TvSamsungWsPlugin(Plugin):
         return self.exec(lambda tv: tv.shortcuts().digit(digit), host=host, port=port)
 
     @action
-    def run_app(self, app_id: Union[int, str], host: Optional[str] = None, port: Optional[int] = None) -> None:
+    def run_app(
+        self,
+        app_id: Union[int, str],
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+    ) -> None:
         """
         Run an app by ID.
 
@@ -324,7 +357,12 @@ class TvSamsungWsPlugin(Plugin):
         tv.rest_app_run(str(app_id))
 
     @action
-    def close_app(self, app_id: Union[int, str], host: Optional[str] = None, port: Optional[int] = None) -> None:
+    def close_app(
+        self,
+        app_id: Union[int, str],
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+    ) -> None:
         """
         Close an app.
 
@@ -336,7 +374,12 @@ class TvSamsungWsPlugin(Plugin):
         tv.rest_app_close(str(app_id))
 
     @action
-    def install_app(self, app_id: Union[int, str], host: Optional[str] = None, port: Optional[int] = None) -> None:
+    def install_app(
+        self,
+        app_id: Union[int, str],
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+    ) -> None:
         """
         Install an app.
 
@@ -348,7 +391,12 @@ class TvSamsungWsPlugin(Plugin):
         tv.rest_app_install(str(app_id))
 
     @action
-    def status_app(self, app_id: Union[int, str], host: Optional[str] = None, port: Optional[int] = None) -> dict:
+    def status_app(
+        self,
+        app_id: Union[int, str],
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+    ) -> dict:
         """
         Get the status of an app.
 
@@ -370,7 +418,9 @@ class TvSamsungWsPlugin(Plugin):
         return self.exec(lambda tv: tv.app_list(), host=host, port=port)
 
     @action
-    def open_browser(self, url: str, host: Optional[str] = None, port: Optional[int] = None) -> None:
+    def open_browser(
+        self, url: str, host: Optional[str] = None, port: Optional[int] = None
+    ) -> None:
         """
         Open a URL in the browser.
 
@@ -381,7 +431,9 @@ class TvSamsungWsPlugin(Plugin):
         return self.exec(lambda tv: tv.open_browser(url), host=host, port=port)
 
     @action
-    def device_info(self, host: Optional[str] = None, port: Optional[int] = None) -> dict:
+    def device_info(
+        self, host: Optional[str] = None, port: Optional[int] = None
+    ) -> dict:
         """
         Return the info of the device.
 

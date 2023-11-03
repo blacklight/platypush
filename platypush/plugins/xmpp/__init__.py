@@ -1,6 +1,5 @@
 import os
 from typing import Iterable, Optional, Type, Union
-from typing_extensions import override
 
 import aioxmpp
 import aioxmpp.im
@@ -30,45 +29,6 @@ from ._types import Errors, XmppPresence
 class XmppPlugin(AsyncRunnablePlugin, XmppBasePlugin):
     """
     XMPP integration.
-
-    Requires:
-
-        * **aioxmpp** (``pip install aioxmpp``)
-        * **pytz** (``pip install pytz``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.xmpp.XmppConnectedEvent`
-        * :class:`platypush.message.event.xmpp.XmppContactAddRequestAcceptedEvent`
-        * :class:`platypush.message.event.xmpp.XmppContactAddRequestEvent`
-        * :class:`platypush.message.event.xmpp.XmppContactAddRequestRejectedEvent`
-        * :class:`platypush.message.event.xmpp.XmppConversationAddedEvent`
-        * :class:`platypush.message.event.xmpp.XmppConversationEnterEvent`
-        * :class:`platypush.message.event.xmpp.XmppConversationExitEvent`
-        * :class:`platypush.message.event.xmpp.XmppConversationJoinEvent`
-        * :class:`platypush.message.event.xmpp.XmppConversationLeaveEvent`
-        * :class:`platypush.message.event.xmpp.XmppConversationNickChangedEvent`
-        * :class:`platypush.message.event.xmpp.XmppDisconnectedEvent`
-        * :class:`platypush.message.event.xmpp.XmppMessageReceivedEvent`
-        * :class:`platypush.message.event.xmpp.XmppPresenceChangedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomAffiliationChangedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomEnterEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomExitEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomInviteAcceptedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomInviteEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomInviteRejectedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomJoinEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomLeaveEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomMessageReceivedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomNickChangedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomPresenceChangedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomRoleChangedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomTopicChangedEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomUserAvailableEvent`
-        * :class:`platypush.message.event.xmpp.XmppRoomUserUnavailableEvent`
-        * :class:`platypush.message.event.xmpp.XmppUserAvailableEvent`
-        * :class:`platypush.message.event.xmpp.XmppUserUnavailableEvent`
-
     """
 
     def __init__(
@@ -117,7 +77,7 @@ class XmppPlugin(AsyncRunnablePlugin, XmppBasePlugin):
             auto_accept_invites=auto_accept_invites,
             restore_state=restore_state,
             state_file=os.path.expanduser(
-                state_file or os.path.join(Config.workdir, 'xmpp', 'state.json')
+                state_file or os.path.join(Config.get_workdir(), 'xmpp', 'state.json')
             ),
         )
         self._loaded_state = SerializedState()
@@ -177,11 +137,9 @@ class XmppPlugin(AsyncRunnablePlugin, XmppBasePlugin):
 
         return self._handlers[hndl_type]
 
-    @override
     def should_stop(self) -> bool:
         return super().should_stop() or self._state.should_stop.is_set()
 
-    @override
     def stop(self):
         self._state.should_stop.set()
         self._stop_state_serializer()
@@ -199,7 +157,6 @@ class XmppPlugin(AsyncRunnablePlugin, XmppBasePlugin):
             self._client.stop()
             self._client = None
 
-    @override
     async def listen(self):
         self._client = aioxmpp.PresenceManagedClient(self._jid, self._security)
 

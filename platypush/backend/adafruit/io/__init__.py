@@ -2,22 +2,16 @@ from typing import Optional
 
 from platypush.backend import Backend
 from platypush.context import get_plugin
-from platypush.message.event.adafruit import ConnectedEvent, DisconnectedEvent, \
-    FeedUpdateEvent
+from platypush.message.event.adafruit import (
+    ConnectedEvent,
+    DisconnectedEvent,
+    FeedUpdateEvent,
+)
 
 
 class AdafruitIoBackend(Backend):
     """
     Backend that listens to messages received over the Adafruit IO message queue
-
-    Triggers:
-
-        * :class:`platypush.message.event.adafruit.ConnectedEvent` when the
-            backend connects to the Adafruit queue
-        * :class:`platypush.message.event.adafruit.DisconnectedEvent` when the
-            backend disconnects from the Adafruit queue
-        * :class:`platypush.message.event.adafruit.FeedUpdateEvent` when an
-            update event is received on a monitored feed
 
     Requires:
 
@@ -33,6 +27,7 @@ class AdafruitIoBackend(Backend):
 
         super().__init__(*args, **kwargs)
         from Adafruit_IO import MQTTClient
+
         self.feeds = feeds
         self._client: Optional[MQTTClient] = None
 
@@ -41,6 +36,7 @@ class AdafruitIoBackend(Backend):
             return
 
         from Adafruit_IO import MQTTClient
+
         plugin = get_plugin('adafruit.io')
         if not plugin:
             raise RuntimeError('Adafruit IO plugin not configured')
@@ -80,8 +76,11 @@ class AdafruitIoBackend(Backend):
     def run(self):
         super().run()
 
-        self.logger.info(('Initialized Adafruit IO backend, listening on ' +
-                          'feeds {}').format(self.feeds))
+        self.logger.info(
+            ('Initialized Adafruit IO backend, listening on ' + 'feeds {}').format(
+                self.feeds
+            )
+        )
 
         while not self.should_stop():
             try:
@@ -93,5 +92,6 @@ class AdafruitIoBackend(Backend):
             except Exception as e:
                 self.logger.exception(e)
                 self._client = None
+
 
 # vim:sw=4:ts=4:et:

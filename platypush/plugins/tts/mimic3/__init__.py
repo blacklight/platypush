@@ -1,16 +1,18 @@
-import requests
-from typing import Optional
-from urllib.parse import urljoin, urlencode
-from platypush.backend.http.app.utils import get_local_base_url
+from contextlib import contextmanager
+import os
+import tempfile
+from typing import Generator, Optional
+from urllib.parse import urljoin
 
-from platypush.context import get_backend
+import requests
+
 from platypush.plugins import action
 from platypush.plugins.tts import TtsPlugin
 from platypush.schemas.tts.mimic3 import Mimic3VoiceSchema
 
 
 class TtsMimic3Plugin(TtsPlugin):
-    """
+    r"""
     TTS plugin that uses the `Mimic3 webserver
     <https://github.com/MycroftAI/mimic3>`_ provided by `Mycroft
     <https://mycroft.ai/>`_ as a text-to-speech engine.
@@ -26,52 +28,74 @@ class TtsMimic3Plugin(TtsPlugin):
             -v "%h/.local/share/mycroft/mimic3:/home/mimic3/.local/share/mycroft/mimic3" \
             'mycroftai/mimic3'
 
-    Requires:
-
-        * At least a *media plugin* (see
-          :class:`platypush.plugins.media.MediaPlugin`) enabled/configured -
-          used for speech playback.
-        * The ``http`` backend (:class:`platypush.backend.http.HttpBackend`)
-          enabled - used for proxying the API calls.
-
     """
 
     def __init__(
         self,
         server_url: str,
-        voice: str = 'en_UK/apope_low',
-        media_plugin: Optional[str] = None,
-        player_args: Optional[dict] = None,
-        **kwargs
+        voice: str = 'en_US/vctk_low',
+        **kwargs,
     ):
         """
         :param server_url: Base URL of the web server that runs the Mimic3 engine.
-        :param voice: Default voice to be used (default: ``en_UK/apope_low``).
+        :param voice: Default voice to be used (default: ``en_US/vctk_low``).
             You can get a full list of the voices available on the server
             through :meth:`.voices`.
-        :param media_plugin: Media plugin to be used for audio playback. Supported:
-
-            - ``media.gstreamer``
-            - ``media.omxplayer``
-            - ``media.mplayer``
-            - ``media.mpv``
-            - ``media.vlc``
-
-        :param player_args: Optional arguments that should be passed to the player plugin's
-            :meth:`platypush.plugins.media.MediaPlugin.play` method.
         """
-        super().__init__(media_plugin=media_plugin, player_args=player_args, **kwargs)
-
+        super().__init__(**kwargs)
         self.server_url = server_url
         self.voice = voice
+        self.player_args.update(
+            {
+                'channels': 1,
+                'sample_rate': 22050,
+                'dtype': 'int16',
+            }
+        )
+
+    @staticmethod
+    @contextmanager
+    def _save_audio(
+        text: str,
+        server_url: str,
+        voice: str,
+        timeout: Optional[float] = None,
+    ) -> Generator[str, None, None]:
+        """
+        Saves the raw audio stream from the Mimic3 server to an audio file for
+        playback.
+
+        :param text: Text to be spoken.
+        :param server_url: Base URL of the Mimic3 server.
+        :param voice: Voice to be used.
+        :param timeout: Timeout for the audio stream retrieval.
+        """
+
+        rs = requests.post(
+            urljoin(server_url, '/api/tts'),
+            data=text,
+            timeout=timeout,
+            params={
+                'voice': voice,
+            },
+        )
+
+        rs.raise_for_status()
+        tmp_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+        tmp_file.write(rs.content)
+        yield tmp_file.name
+
+        tmp_file.close()
+        os.unlink(tmp_file.name)
 
     @action
     def say(
         self,
         text: str,
+        *_,
         server_url: Optional[str] = None,
         voice: Optional[str] = None,
-        player_args: Optional[dict] = None,
+        **player_args,
     ):
         """
         Say some text.
@@ -79,28 +103,16 @@ class TtsMimic3Plugin(TtsPlugin):
         :param text: Text to say.
         :param server_url: Default ``server_url`` override.
         :param voice: Default ``voice`` override.
-        :param player_args: Default ``player_args`` override.
+        :param player_args: Extends the additional arguments to be passed to
+            :meth:`platypush.plugins.sound.SoundPlugin.play` (like volume,
+            duration, channels etc.).
         """
+
         server_url = server_url or self.server_url
         voice = voice or self.voice
-        player_args = player_args or self.player_args
-        http = get_backend('http')
-        assert http, 'http backend not configured'
-        assert self.media_plugin, 'No media plugin configured'
 
-        url = (
-            urljoin(get_local_base_url(), '/tts/mimic3/say')
-            + '?'
-            + urlencode(
-                {
-                    'text': text,
-                    'server_url': server_url,
-                    'voice': voice,
-                }
-            )
-        )
-
-        self.media_plugin.play(url, **player_args)
+        with self._save_audio(text, server_url, voice) as audio_file:
+            self._playback(audio_file, join=True, **player_args)
 
     @action
     def voices(self, server_url: Optional[str] = None):
@@ -111,7 +123,7 @@ class TtsMimic3Plugin(TtsPlugin):
         :return: .. schema:: tts.mimic3.Mimic3VoiceSchema(many=True)
         """
         server_url = server_url or self.server_url
-        rs = requests.get(urljoin(server_url, '/api/voices'))
+        rs = requests.get(urljoin(server_url, '/api/voices'), timeout=10)
         rs.raise_for_status()
         return Mimic3VoiceSchema().dump(rs.json(), many=True)
 

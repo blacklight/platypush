@@ -2,17 +2,16 @@ import time
 
 from platypush.backend import Backend
 from platypush.context import get_plugin
-from platypush.message.event.weather import NewWeatherConditionEvent, NewPrecipitationForecastEvent
+from platypush.message.event.weather import (
+    NewWeatherConditionEvent,
+    NewPrecipitationForecastEvent,
+)
 from platypush.plugins.weather.buienradar import WeatherBuienradarPlugin
 
 
 class WeatherBuienradarBackend(Backend):
     """
     Buienradar weather forecast backend. Listens for new weather or precipitation updates.
-
-    Triggers:
-
-        * :class:`platypush.message.event.weather.NewWeatherConditionEvent` when there is a weather condition update
 
     Requires:
 
@@ -37,16 +36,24 @@ class WeatherBuienradarBackend(Backend):
             del weather['measured']
 
             if precip != self.last_precip:
-                self.bus.post(NewPrecipitationForecastEvent(plugin_name='weather.buienradar',
-                                                            average=precip.get('average'),
-                                                            total=precip.get('total'),
-                                                            time_frame=precip.get('time_frame')))
+                self.bus.post(
+                    NewPrecipitationForecastEvent(
+                        plugin_name='weather.buienradar',
+                        average=precip.get('average'),
+                        total=precip.get('total'),
+                        time_frame=precip.get('time_frame'),
+                    )
+                )
 
             if weather != self.last_weather:
-                self.bus.post(NewWeatherConditionEvent(**{
-                    **weather,
-                    'plugin_name': 'weather.buienradar',
-                }))
+                self.bus.post(
+                    NewWeatherConditionEvent(
+                        **{
+                            **weather,
+                            'plugin_name': 'weather.buienradar',
+                        }
+                    )
+                )
 
             self.last_weather = weather
             self.last_precip = precip

@@ -24,18 +24,19 @@ class UserPlugin(Plugin):
         **kwargs
     ):
         """
-        Create a user. This action needs to be executed by an already existing user, who needs to authenticate with
-            their own credentials, unless this is the first user created on the system.
+        Create a user. This action needs to be executed by an already existing
+        user, who needs to authenticate with their own credentials, unless this
+        is the first user created on the system.
 
-        :return: dict.
+        :return:
 
-        Format::
+            .. code-block:: json
 
-            {
-                "user_id": int,
-                "username": str,
-                "created_at": str (in ISO format)
-            }
+                {
+                    "user_id": 1,
+                    "username": "test-user",
+                    "created_at": "2020-11-26T22:41:40.550574"
+                }
 
         """
 
@@ -67,8 +68,10 @@ class UserPlugin(Plugin):
     @action
     def authenticate_user(self, username, password):
         """
-        Authenticate a user
-        :return: True if the provided username and password are correct, False otherwise
+        Authenticate a user.
+
+        :return: True if the provided username and password are correct, False
+            otherwise.
         """
 
         return bool(self.user_manager.authenticate_user(username, password))
@@ -76,7 +79,8 @@ class UserPlugin(Plugin):
     @action
     def update_password(self, username, old_password, new_password):
         """
-        Update the password of a user
+        Update the password of a user.
+
         :return: True if the password was successfully updated, false otherwise
         """
 
@@ -91,7 +95,7 @@ class UserPlugin(Plugin):
         session_token=None,
     ):
         """
-        Delete a user
+        Delete a user.
         """
 
         if not self.user_manager.authenticate_user(
@@ -109,15 +113,19 @@ class UserPlugin(Plugin):
     @action
     def create_session(self, username, password, expires_at=None):
         """
-        Create a user session
-        :return: dict::
+        Create a user session.
 
-            {
-                "session_token": str,
-                "user_id": int,
-                "created_at": str (in ISO format),
-                "expires_at": str (in ISO format),
-            }
+        :return:
+
+            .. code-block:: json
+
+                {
+                    "session_token": "secret",
+                    "user_id": 1,
+                    "username": "test-user",
+                    "created_at": "2020-11-26T22:41:40.550574",
+                    "expires_at": "2020-11-26T22:41:40.550574"
+                }
 
         """
 
@@ -140,16 +148,17 @@ class UserPlugin(Plugin):
     @action
     def authenticate_session(self, session_token):
         """
-        Authenticate a session by token and return the associated user
-        :return: dict.
+        Authenticate a session by token and return the associated user.
 
-        Format::
+        :return:
 
-            {
-                "user_id": int,
-                "username": str,
-                "created_at": str (in ISO format)
-            }
+            .. code-block:: json
+
+                {
+                    "user_id": 1,
+                    "username": "test-user",
+                    "created_at": "2020-11-26T22:41:40.550574"
+                }
 
         """
 
@@ -168,7 +177,7 @@ class UserPlugin(Plugin):
     @action
     def delete_session(self, session_token):
         """
-        Delete a user session
+        Delete a user session.
         """
 
         return self.user_manager.delete_user_session(session_token)
@@ -177,6 +186,7 @@ class UserPlugin(Plugin):
     def get_users(self) -> List[Dict[str, Any]]:
         """
         Get the list of registered users.
+
         :return:
 
             .. code-block:: json

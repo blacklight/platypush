@@ -18,11 +18,6 @@ class AdafruitIoPlugin(Plugin):
     You can send values to feeds on your Adafruit IO account and read the
     values of those feeds as well through any device.
 
-    Requires:
-
-        * **adafruit-io** (``pip install adafruit-io``)
-        * Redis server running and Redis backend configured if you want to enable throttling
-
     Some example usages::
 
         # Send the temperature value for a connected sensor to the "temperature" feed
@@ -63,6 +58,7 @@ class AdafruitIoPlugin(Plugin):
         """
 
         from Adafruit_IO import Client
+
         global data_throttler_lock
         super().__init__(**kwargs)
 
@@ -109,15 +105,19 @@ class AdafruitIoPlugin(Plugin):
                 while True:
                     try:
                         new_data = ast.literal_eval(
-                            redis.blpop(self._DATA_THROTTLER_QUEUE)[1].decode('utf-8'))
+                            redis.blpop(self._DATA_THROTTLER_QUEUE)[1].decode('utf-8')
+                        )
 
                         for (key, value) in new_data.items():
                             data.setdefault(key, []).append(value)
                     except QueueTimeoutError:
                         pass
 
-                    if data and (last_processed_batch_timestamp is None or
-                                 time.time() - last_processed_batch_timestamp >= self.throttle_seconds):
+                    if data and (
+                        last_processed_batch_timestamp is None
+                        or time.time() - last_processed_batch_timestamp
+                        >= self.throttle_seconds
+                    ):
                         last_processed_batch_timestamp = time.time()
                         self.logger.info('Processing feeds batch for Adafruit IO')
 
@@ -128,8 +128,10 @@ class AdafruitIoPlugin(Plugin):
                                 try:
                                     self.send(feed, value, enqueue=False)
                                 except ThrottlingError:
-                                    self.logger.warning('Adafruit IO throttling threshold hit, taking a nap ' +
-                                                        'before retrying')
+                                    self.logger.warning(
+                                        'Adafruit IO throttling threshold hit, taking a nap '
+                                        + 'before retrying'
+                                    )
                                     time.sleep(self.throttle_seconds)
 
                         data = {}
@@ -184,11 +186,15 @@ class AdafruitIoPlugin(Plugin):
         :type value: Numeric or string
         """
 
-        self.aio.send_data(feed=feed, value=value, metadata={
-            'lat': lat,
-            'lon': lon,
-            'ele': ele,
-        })
+        self.aio.send_data(
+            feed=feed,
+            value=value,
+            metadata={
+                'lat': lat,
+                'lon': lon,
+                'ele': ele,
+            },
+        )
 
     @classmethod
     def _cast_value(cls, value):
@@ -205,9 +211,12 @@ class AdafruitIoPlugin(Plugin):
         return [
             {
                 attr: self._cast_value(getattr(i, attr))
-                if attr == 'value' else getattr(i, attr)
-                for attr in DATA_FIELDS if getattr(i, attr) is not None
-            } for i in data
+                if attr == 'value'
+                else getattr(i, attr)
+                for attr in DATA_FIELDS
+                if getattr(i, attr) is not None
+            }
+            for i in data
         ]
 
     @action

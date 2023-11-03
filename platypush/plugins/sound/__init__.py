@@ -1,7 +1,6 @@
 from dataclasses import asdict
 import warnings
 from typing import Iterable, List, Optional, Union
-from typing_extensions import override
 
 from platypush.plugins import RunnablePlugin, action
 
@@ -24,26 +23,6 @@ class SoundPlugin(RunnablePlugin):
     It can also be used as a general-purpose audio player and synthesizer,
     supporting both local and remote audio resources, as well as a MIDI-like
     interface through the :meth:`.play` command.
-
-    Triggers:
-
-        * :class:`platypush.message.event.sound.SoundPlaybackStartedEvent` on playback start
-        * :class:`platypush.message.event.sound.SoundPlaybackStoppedEvent` on playback stop
-        * :class:`platypush.message.event.sound.SoundPlaybackPausedEvent` on playback pause
-        * :class:`platypush.message.event.sound.SoundPlaybackResumedEvent` on playback resume
-        * :class:`platypush.message.event.sound.SoundRecordingStartedEvent` on recording start
-        * :class:`platypush.message.event.sound.SoundRecordingStoppedEvent` on recording stop
-        * :class:`platypush.message.event.sound.SoundRecordingPausedEvent` on recording pause
-        * :class:`platypush.message.event.sound.SoundRecordingResumedEvent` on recording resume
-
-    Requires:
-
-        * **sounddevice** (``pip install sounddevice``)
-        * **numpy** (``pip install numpy``)
-        * **ffmpeg** package installed on the system
-        * **portaudio** package installed on the system - either
-          ``portaudio19-dev`` on Debian-like systems, or ``portaudio`` on Arch.
-
     """
 
     _DEFAULT_BLOCKSIZE = 1024
@@ -61,11 +40,11 @@ class SoundPlugin(RunnablePlugin):
     ):
         """
         :param input_device: Index or name of the default input device. Use
-            :meth:`platypush.plugins.sound.query_devices` to get the
-            available devices. Default: system default
+            :meth:`.query_devices` to get the available devices. Default: system
+            default
         :param output_device: Index or name of the default output device.
-            Use :meth:`platypush.plugins.sound.query_devices` to get the
-            available devices. Default: system default
+            Use :meth:`.query_devices` to get the available devices. Default:
+            system default
         :param input_blocksize: Blocksize to be applied to the input device.
             Try to increase this value if you get input overflow errors while
             recording. Default: 1024
@@ -107,8 +86,11 @@ class SoundPlugin(RunnablePlugin):
         sample_rate: Optional[int] = None,
         channels: int = 2,
         volume: float = 100,
+        dtype: Optional[str] = None,
+        format: Optional[str] = None,  # pylint: disable=redefined-builtin
         stream_name: Optional[str] = None,
         stream_index: Optional[int] = None,
+        join: bool = False,
     ):
         """
         Plays an audio file/URL (any audio format supported by ffmpeg works) or
@@ -180,15 +162,22 @@ class SoundPlugin(RunnablePlugin):
         :param channels: Number of audio channels. Default: number of channels
             in the audio file in file mode, 1 if in synth mode
         :param volume: Playback volume, between 0 and 100. Default: 100.
+        :param dtype: Data type for the audio samples, if playing raw PCM audio
+            frames. Supported types: 'float64', 'float32', 'int32', 'int16',
+            'int8', 'uint8'.
+        :param format: Output audio format, if you want to convert the audio to
+            another format before playing it. The list of available formats can
+            be retrieved through the ``ffmpeg -formats`` command. Default: None
         :param stream_index: If specified, play to an already active stream
-            index (you can get them through
-            :meth:`platypush.plugins.sound.query_streams`). Default:
+            index (you can get them through :meth:`.query_streams`). Default:
             creates a new audio stream through PortAudio.
         :param stream_name: Name of the stream to play to. If set, the sound
             will be played to the specified stream name, or a stream with that
             name will be created. If not set, and ``stream_index`` is not set
             either, then a new stream will be created on the next available
             index and named ``platypush-stream-<index>``.
+        :param join: If True, then the method will block until the playback is
+            completed. Default: False.
         """
 
         dev = self._manager.get_device(device=device, type=StreamType.OUTPUT)
@@ -215,7 +204,13 @@ class SoundPlugin(RunnablePlugin):
             stream_index,
         )
 
-        self._manager.create_player(
+        player_kwargs = {}
+        if dtype:
+            player_kwargs['dtype'] = dtype
+        if format:
+            player_kwargs['format'] = format
+
+        player = self._manager.create_player(
             device=dev.index,
             infile=resource,
             sound=sound,
@@ -225,7 +220,12 @@ class SoundPlugin(RunnablePlugin):
             channels=channels,
             volume=volume,
             stream_name=stream_name,
-        ).start()
+            **player_kwargs,
+        )
+
+        player.start()
+        if join:
+            player.join()
 
     @action
     def stream_recording(self, *args, **kwargs):
@@ -277,7 +277,7 @@ class SoundPlugin(RunnablePlugin):
         :param sample_rate: Recording sample rate (default: device default rate)
         :param dtype: Data type for the audio samples. Supported types:
             'float64', 'float32', 'int32', 'int16', 'int8', 'uint8'. Default:
-            float32
+            int16.
         :param blocksize: Audio block size (default: configured
             `input_blocksize` or 2048)
         :param play_audio: If True, then the recorded audio will be played in
@@ -471,7 +471,6 @@ class SoundPlugin(RunnablePlugin):
         """
         self._manager.set_volume(volume=volume, device=device, streams=streams)
 
-    @override
     def main(self):
         try:
             self.wait_stop()

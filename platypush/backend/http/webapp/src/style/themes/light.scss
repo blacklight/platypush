@@ -6,12 +6,14 @@ $default-bg-4: #f1f3f2 !default;
 $default-bg-5: #edf0ee !default;
 $default-bg-6: #e4eae8 !default;
 $default-bg-7: #e4e4e4 !default;
+$ok-fg: #17ad17 !default;
 $error-fg: #ad1717 !default;
 
 $default-fg: black !default;
 $default-fg-2: #23513a !default;
 $default-fg-3: #195331b3 !default;
 $header-bg: linear-gradient(0deg, #c0e8e4, #e4f8f4) !default;
+$header-bg-2: linear-gradient(90deg, #f3f3f3, white) !default;
 $no-items-color: #555555;
 
 //// Notifications
@@ -47,6 +49,10 @@ $default-border: 1px solid $border-color-1 !default;
 $default-border-2: 1px solid $border-color-2 !default;
 $default-border-3: 1px solid $border-color-3 !default;
 
+//// Tabs
+$tabs-bg: #f6f6f6 !default;
+$tab-bg: linear-gradient(0deg, #ececec, #f6f6f6) !default;
+
 //// Shadows
 $default-shadow-color: #c0c0c0 !default;
 $border-shadow-top: 0 -2.5px 4px 0 $default-shadow-color;
@@ -57,6 +63,7 @@ $border-shadow-bottom-right: 2.5px 2.5px 3px 0 $default-shadow-color;
 $header-shadow: 0px 1px 3px 1px #bbb !default;
 $group-shadow: 3px -2px 6px 1px #98b0a0;
 $primary-btn-shadow: 1px 1px 0.5px 0.75px #32b64640 !default;
+$search-bar-shadow: 1px 1px 1px 1px #ddd !default;
 
 //// Modals
 $modal-header-bg: #e0e0e0 !default;
@@ -158,3 +165,9 @@ $scrollbar-thumb-bg: #a5a2a2 !default;
 
 //// Rows
 $row-shadow: 0 0 1px 0.5px #cfcfcf !default;
+
+//// Code blocks
+$code-dark-bg: rgb(11, 11, 13) !default;
+$code-dark-fg: rgb(243, 243, 250) !default;
+$code-light-bg: #f2f0e9 !default;
+$code-light-fg: #090909 !default;

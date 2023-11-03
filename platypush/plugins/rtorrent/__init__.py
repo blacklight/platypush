@@ -11,17 +11,26 @@ from typing import List, Optional
 from platypush.context import get_bus
 from platypush.plugins import action
 from platypush.plugins.torrent import TorrentPlugin
-from platypush.message.event.torrent import \
-    TorrentDownloadStartEvent, TorrentDownloadedMetadataEvent, TorrentDownloadProgressEvent, \
-    TorrentDownloadCompletedEvent, TorrentPausedEvent, TorrentResumedEvent, TorrentQueuedEvent, TorrentRemovedEvent, \
-    TorrentEvent
+from platypush.message.event.torrent import (
+    TorrentDownloadStartEvent,
+    TorrentDownloadedMetadataEvent,
+    TorrentDownloadProgressEvent,
+    TorrentDownloadCompletedEvent,
+    TorrentPausedEvent,
+    TorrentResumedEvent,
+    TorrentQueuedEvent,
+    TorrentRemovedEvent,
+    TorrentEvent,
+)
 
 
 class RtorrentPlugin(TorrentPlugin):
     """
     Plugin to interact search, download and manage torrents through RTorrent.
-    The usage of this plugin is advised over :class:`platypush.plugins.torrent.TorrentPlugin`, as RTorrent is a more
-    flexible and optimized solution for downloading and managing torrents compared to the Platypush native plugin.
+
+    You may prefer the built-in :class:`platypush.plugins.torrent.TorrentPlugin` over this one, unless you have heavy
+    dependencies on RTorrent, as quite some extra configuration is required to enable RTorrent's RPC API -
+    which is required to communicate with this integration.
 
     Configuration:
 
@@ -105,21 +114,15 @@ class RtorrentPlugin(TorrentPlugin):
 
         - In this example, the URL to configure in the plugin would be ``http://localhost:5000/RPC2``.
 
-    Triggers:
-
-        * :class:`platypush.message.event.torrent.TorrentQueuedEvent` when a new torrent transfer is queued.
-        * :class:`platypush.message.event.torrent.TorrentRemovedEvent` when a torrent transfer is removed.
-        * :class:`platypush.message.event.torrent.TorrentDownloadStartEvent` when a torrent transfer starts.
-        * :class:`platypush.message.event.torrent.TorrentDownloadedMetadataEvent` when the metadata of a torrent
-            transfer has been downloaded.
-        * :class:`platypush.message.event.torrent.TorrentDownloadProgressEvent` when a transfer is progressing.
-        * :class:`platypush.message.event.torrent.TorrentPausedEvent` when a transfer is paused.
-        * :class:`platypush.message.event.torrent.TorrentResumedEvent` when a transfer is resumed.
-        * :class:`platypush.message.event.torrent.TorrentDownloadCompletedEvent` when a transfer is completed.
-
     """
 
-    def __init__(self, url: str, poll_seconds: float = 5.0, download_dir: str = '~/.rtorrent/watch', **kwargs):
+    def __init__(
+        self,
+        url: str,
+        poll_seconds: float = 5.0,
+        download_dir: str = '~/.rtorrent/watch',
+        **kwargs
+    ):
         """
         :param url: HTTP URL that exposes the XML/RPC interface of RTorrent (e.g. ``http://localhost:5000/RPC2``).
         :param poll_seconds: How often the plugin will monitor for changes in the torrent state (default: 5 seconds).
@@ -174,9 +177,8 @@ class RtorrentPlugin(TorrentPlugin):
         elif not is_active and last_status.get('is_active'):
             self._fire_event(TorrentPausedEvent(**status))
 
-        if progress > 0:
-            if progress > last_status.get('progress', 0):
-                self._fire_event(TorrentDownloadProgressEvent(**status))
+        if progress > 0 and progress > last_status.get('progress', 0):
+            self._fire_event(TorrentDownloadProgressEvent(**status))
 
         if finish_date and not last_status.get('finish_date'):
             self._fire_event(TorrentDownloadCompletedEvent(**status))
@@ -194,7 +196,10 @@ class RtorrentPlugin(TorrentPlugin):
                     torrent_hashes = set(statuses.keys()).union(last_statuses.keys())
 
                     for torrent_hash in torrent_hashes:
-                        self._process_events(statuses.get(torrent_hash, {}), last_statuses.get(torrent_hash, {}))
+                        self._process_events(
+                            statuses.get(torrent_hash, {}),
+                            last_statuses.get(torrent_hash, {}),
+                        )
                 except Exception as e:
                     self.logger.warning('Error while monitoring torrent status')
                     self.logger.exception(e)
@@ -252,10 +257,16 @@ class RtorrentPlugin(TorrentPlugin):
             m = re.search(r'xt=urn:btih:([^&/]+)', torrent)
             assert m, 'Invalid magnet link: {}'.format(torrent)
             torrent_hash = m.group(1)
-            torrent_file = os.path.join(self.torrent_files_dir, '{}.torrent'.format(torrent_hash))
+            torrent_file = os.path.join(
+                self.torrent_files_dir, '{}.torrent'.format(torrent_hash)
+            )
 
             with open(torrent_file, 'w') as f:
-                f.write('d10:magnet-uri{length}:{info}e'.format(length=len(torrent), info=torrent))
+                f.write(
+                    'd10:magnet-uri{length}:{info}e'.format(
+                        length=len(torrent), info=torrent
+                    )
+                )
 
             self._torrent_urls[torrent_hash] = torrent
             return torrent_file
@@ -277,7 +288,9 @@ class RtorrentPlugin(TorrentPlugin):
         torrent_file = os.path.abspath(os.path.expanduser(torrent))
         assert os.path.isfile(torrent_file), 'No such torrent file: {}'.format(torrent)
 
-        self._torrent_urls[os.path.basename(torrent_file).split('.')[0]] = 'file://' + torrent
+        self._torrent_urls[os.path.basename(torrent_file).split('.')[0]] = (
+            'file://' + torrent
+        )
         return torrent_file
 
     @action
@@ -344,12 +357,40 @@ class RtorrentPlugin(TorrentPlugin):
             }
 
         """
-        attrs = ['hash', 'name', 'save_path', 'is_active', 'is_open', 'completed_bytes', 'download_rate',
-                 'is_multi_file', 'remaining_bytes', 'size_bytes', 'load_date', 'peers', 'start_date',
-                 'finish_date', 'upload_rate']
-        cmds = ['d.hash=', 'd.name=', 'd.directory=', 'd.is_active=', 'd.is_open=', 'd.completed_bytes=',
-                'd.down.rate=', 'd.is_multi_file=', 'd.left_bytes=', 'd.size_bytes=', 'd.load_date=',
-                'd.peers_connected=', 'd.timestamp.started=', 'd.timestamp.finished=', 'd.up.rate=']
+        attrs = [
+            'hash',
+            'name',
+            'save_path',
+            'is_active',
+            'is_open',
+            'completed_bytes',
+            'download_rate',
+            'is_multi_file',
+            'remaining_bytes',
+            'size_bytes',
+            'load_date',
+            'peers',
+            'start_date',
+            'finish_date',
+            'upload_rate',
+        ]
+        cmds = [
+            'd.hash=',
+            'd.name=',
+            'd.directory=',
+            'd.is_active=',
+            'd.is_open=',
+            'd.completed_bytes=',
+            'd.down.rate=',
+            'd.is_multi_file=',
+            'd.left_bytes=',
+            'd.size_bytes=',
+            'd.load_date=',
+            'd.peers_connected=',
+            'd.timestamp.started=',
+            'd.timestamp.finished=',
+            'd.up.rate=',
+        ]
 
         mappers = {
             'is_active': lambda v: bool(v),
@@ -370,11 +411,17 @@ class RtorrentPlugin(TorrentPlugin):
             }
 
         for torrent_id, info in torrents.items():
-            torrents[torrent_id]['progress'] = round(100. * (info['completed_bytes']/info['size_bytes']), 1)
+            torrents[torrent_id]['progress'] = round(
+                100.0 * (info['completed_bytes'] / info['size_bytes']), 1
+            )
             torrents[torrent_id]['url'] = self._torrent_urls.get(torrent_id, torrent_id)
             torrents[torrent_id]['is_paused'] = not info['is_active']
-            torrents[torrent_id]['paused'] = not info['is_active']  # Back compatibility with TorrentPlugin
-            torrents[torrent_id]['size'] = info['size_bytes']  # Back compatibility with TorrentPlugin
+            torrents[torrent_id]['paused'] = not info[
+                'is_active'
+            ]  # Back compatibility with TorrentPlugin
+            torrents[torrent_id]['size'] = info[
+                'size_bytes'
+            ]  # Back compatibility with TorrentPlugin
             torrents[torrent_id]['files'] = []
 
             if not info['is_open']:
@@ -385,8 +432,11 @@ class RtorrentPlugin(TorrentPlugin):
                 torrents[torrent_id]['state'] = 'downloading'
 
             if info.get('save_path'):
-                torrents[torrent_id]['files'] = list(str(f) for f in Path(info['save_path']).rglob('*')) \
-                    if info.get('is_multi_file') else info['save_path']
+                torrents[torrent_id]['files'] = (
+                    [str(f) for f in Path(info['save_path']).rglob('*')]
+                    if info.get('is_multi_file')
+                    else info['save_path']
+                )
 
         return torrents.get(torrent, {}) if torrent else torrents
 

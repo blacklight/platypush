@@ -3,9 +3,34 @@
     <div class="toggler" @click="collapsed = !collapsed">
       <i class="fas fa-bars" />
       <span class="hostname" v-if="hostname" v-text="hostname" />
+      <i class="icon status fas fa-circle"
+         :class="{ok: connected, error: !connected}"
+         :title="connected ? 'Connected' : 'Disconnected'" />
     </div>
 
-    <ul class="plugins">
+    <ul class="plugins" v-if="selectedPanel === 'settings'">
+      <li class="entry" title="Home" @click="onItemClick('entities')">
+        <a href="/#">
+          <i class="fas fa-home" />
+          <span class="name" v-if="!collapsed">Home</span>
+        </a>
+      </li>
+
+      <li v-for="config, name in configSections" :key="name" class="entry"
+          :class="{selected: name === selectedConfigPanel}"
+          :title="config.name" @click="$emit('select-config', name)">
+        <a href="/#settings">
+        <span class="icon">
+          <i :class="config.icon['class']" v-if="config.icon?.['class']" />
+          <img :src="config.icon?.imgUrl" v-else-if="config.icon?.imgUrl" alt="name"/>
+          <i class="fas fa-puzzle-piece" v-else />
+        </span>
+        <span class="name" v-if="!collapsed" v-text="config.name" />
+        </a>
+      </li>
+    </ul>
+
+    <ul class="plugins" v-else>
       <li v-for="name in panelNames" :key="name" class="entry" :class="{selected: name === selectedPanel}"
           :title="name" @click="onItemClick(name)">
         <a :href="`/#${name}`">
@@ -14,14 +39,22 @@
           <img :src="icons[name].imgUrl" v-else-if="icons[name]?.imgUrl"  alt="name"/>
           <i class="fas fa-puzzle-piece" v-else />
         </span>
-        <span class="name" v-if="!collapsed" v-text="name == 'entities' ? 'Home' : name" />
+        <span class="name" v-if="!collapsed" v-text="displayName(name)" />
         </a>
       </li>
     </ul>
 
     <ul class="footer">
+      <li :class="{selected: selectedPanel === 'extensions'}" title="Extensions" @click="onItemClick('extensions')">
+        <a href="/#extensions">
+          <span class="icon">
+            <i class="fa fa-puzzle-piece" />
+          </span>
+          <span class="name" v-if="!collapsed">Extensions</span>
+        </a>
+      </li>
+
       <li :class="{selected: selectedPanel === 'settings'}" title="Settings" @click="onItemClick('settings')">
-        <!--suppress HtmlUnknownAnchorTarget -->
         <a href="/#settings">
           <span class="icon">
             <i class="fa fa-cog" />
@@ -31,7 +64,6 @@
       </li>
 
       <li title="Logout" @click="onItemClick('logout')">
-        <!--suppress HtmlUnknownTarget -->
         <a href="/logout">
           <span class="icon">
             <i class="fas fa-sign-out-alt" />
@@ -46,10 +78,12 @@
 <script>
 import icons from '@/assets/icons.json'
 import Utils from "@/Utils";
+import configSections from '@/components/panels/Settings/sections.json';
+import { bus } from "@/bus";
 
 export default {
   name: "Nav",
-  emits: ['select'],
+  emits: ['select', 'select-config'],
   mixins: [Utils],
   props: {
     panels: {
@@ -61,6 +95,10 @@ export default {
       type: String,
     },
 
+    selectedConfigPanel: {
+      type: String,
+    },
+
     hostname: {
       type: String,
     },
@@ -68,11 +106,18 @@ export default {
 
   computed: {
     panelNames() {
-      let panelNames = Object.keys(this.panels)
-      const homeIdx = panelNames.indexOf('entities')
-      if (homeIdx >= 0)
-        return ['entities'].concat((panelNames.slice(0, homeIdx).concat(panelNames.slice(homeIdx+1))).sort())
-      return panelNames.sort()
+      const prepend = (names, name) => {
+        const idx = panelNames.indexOf(name)
+        if (idx >= 0)
+          names = [name].concat((names.slice(0, idx).concat(names.slice(idx+1))))
+
+        return names
+      }
+
+      let panelNames = Object.keys(this.panels).sort()
+      panelNames = prepend(panelNames, 'execute')
+      panelNames = prepend(panelNames, 'entities')
+      return panelNames
     },
 
     collapsedDefault() {
@@ -87,18 +132,38 @@ export default {
       this.$emit('select', name)
       this.collapsed = this.isMobile() ? true : this.collapsedDefault
     },
+
+    displayName(name) {
+      if (name === 'entities')
+        return 'Home'
+      if (name === 'execute')
+        return 'Execute'
+
+      return name
+    },
+
+    setConnected(connected) {
+      return () => {
+        this.connected = connected
+      }
+    },
   },
 
   data() {
     return {
       collapsed: true,
+      connected: false,
       icons: icons,
       host: null,
+      configSections: configSections,
     }
   },
 
   mounted() {
     this.collapsed = this.collapsedDefault
+    bus.on('connect', this.setConnected(true))
+    bus.on('disconnect', this.setConnected(false))
+    this.setConnected(this.$root.connected)
   },
 }
 </script>
@@ -106,8 +171,8 @@ export default {
 <!--suppress SassScssResolvedByNameOnly -->
 <style lang="scss" scoped>
 $toggler-height: 2em;
-$footer-collapsed-height: 4em;
-$footer-expanded-height: 7.1em;
+$footer-collapsed-height: 7.5em;
+$footer-expanded-height: 11em;
 
 nav {
   @media screen and (max-width: #{$tablet - 1px}) {
@@ -128,6 +193,11 @@ nav {
       top: 0;
       left: 0;
       z-index: 5;
+
+      .icon.status {
+        top: 0.75em !important;
+        left: 2em;
+      }
     }
   }
 
@@ -188,10 +258,26 @@ nav {
     background: $nav-toggler-bg;
     display: flex;
     font-size: 1.5em;
+    position: relative;
     cursor: pointer;
     padding: 0.4em;
     align-items: center;
     box-shadow: $nav-toggler-shadow;
+
+    .icon.status {
+      position: absolute;
+      top: calc($toggler-height / 2 + 0.3em);
+      right: 0.5em;
+      font-size: 0.5em;
+
+      &.ok {
+        color: $ok-fg;
+      }
+
+      &.error {
+        color: $error-fg;
+      }
+    }
   }
 
   .hostname {
@@ -210,14 +296,13 @@ nav {
   }
 
   .plugins {
-    height: calc(100% - #{$toggler-height} - #{$footer-expanded-height} - 1em);
+    height: calc(100% - #{$toggler-height} - #{$footer-expanded-height} - 1.5em);
     overflow: auto;
   }
 
   .footer {
-    height: $footer-expanded-height;
+    height: calc($footer-expanded-height + 0.4em);
     background: $nav-footer-bg;
-    box-shadow: $nav-footer-shadow;
     padding: 0;
     margin: 0;
 
@@ -231,17 +316,22 @@ nav {
       .icon {
         margin-right: 0;
 
-        & img {
-          width: 1.25em;
-          height: 1.25em;
+        & img, i {
+          width: 1.5em;
+          height: 1.5em;
         }
       }
     }
   }
 
+  .icon.status {
+    width: 1em;
+  }
+
   &.collapsed {
     display: flex;
     flex-direction: column;
+    margin-right: 1px;
 
     @media screen and (min-width: $tablet) {
       width: 2.5em;
@@ -274,9 +364,18 @@ nav {
       box-shadow: none;
       background: $nav-toggler-collapsed-bg;
 
-      @media screen and (max-width: #{$tablet - 1px}) {
+      .icon.status {
+        top: 0.75em;
+        left: 2em;
+      }
+
+      @include until($tablet) {
         background: $nav-toggler-collapsed-mobile-bg;
         color: $nav-toggler-collapsed-mobile-fg;
+
+        .icon.status {
+          top: 0.75em !important;
+        }
       }
     }
 

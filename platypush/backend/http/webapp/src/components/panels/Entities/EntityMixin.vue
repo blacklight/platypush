@@ -4,7 +4,7 @@ import Utils from "@/Utils"
 export default {
   name: "EntityMixin",
   mixins: [Utils],
-  emits: ['input'],
+  emits: ['input', 'loading'],
   props: {
     loading: {
       type: Boolean,

@@ -7,8 +7,14 @@ from typing import Optional, Dict, Any
 from platypush.backend import Backend
 from platypush.common.spotify import SpotifyMixin
 from platypush.config import Config
-from platypush.message.event.music import MusicPlayEvent, MusicPauseEvent, MusicStopEvent, \
-    NewPlayingTrackEvent, SeekChangeEvent, VolumeChangeEvent
+from platypush.message.event.music import (
+    MusicPlayEvent,
+    MusicPauseEvent,
+    MusicStopEvent,
+    NewPlayingTrackEvent,
+    SeekChangeEvent,
+    VolumeChangeEvent,
+)
 from platypush.utils import get_redis
 
 from .event import status_queue
@@ -21,53 +27,47 @@ class MusicSpotifyBackend(Backend, SpotifyMixin):
     stream Spotify through the Platypush host. After the backend has started, you should see a new entry in the
     Spotify Connect devices list in your app.
 
-    Triggers:
-
-        * :class:`platypush.message.event.music.MusicPlayEvent` if the playback state changed to play
-        * :class:`platypush.message.event.music.MusicPauseEvent` if the playback state changed to pause
-        * :class:`platypush.message.event.music.MusicStopEvent` if the playback state changed to stop
-        * :class:`platypush.message.event.music.NewPlayingTrackEvent` if a new track is being played
-        * :class:`platypush.message.event.music.VolumeChangeEvent` if the volume changes
-
     Requires:
 
         * **librespot**. Consult the `README <https://github.com/librespot-org/librespot>`_ for instructions.
 
     """
 
-    def __init__(self,
-                 librespot_path: str = 'librespot',
-                 device_name: Optional[str] = None,
-                 device_type: str = 'speaker',
-                 audio_backend: str = 'alsa',
-                 audio_device: Optional[str] = None,
-                 mixer: str = 'softvol',
-                 mixer_name: str = 'PCM',
-                 mixer_card: str = 'default',
-                 mixer_index: int = 0,
-                 volume: int = 100,
-                 volume_ctrl: str = 'linear',
-                 bitrate: int = 160,
-                 autoplay: bool = False,
-                 disable_gapless: bool = False,
-                 username: Optional[str] = None,
-                 password: Optional[str] = None,
-                 client_id: Optional[str] = None,
-                 client_secret: Optional[str] = None,
-                 proxy: Optional[str] = None,
-                 ap_port: Optional[int] = None,
-                 disable_discovery: bool = False,
-                 cache_dir: Optional[str] = None,
-                 system_cache_dir: Optional[str] = None,
-                 disable_audio_cache=False,
-                 enable_volume_normalization: bool = False,
-                 normalization_method: str = 'dynamic',
-                 normalization_pre_gain: Optional[float] = None,
-                 normalization_threshold: float = -1.,
-                 normalization_attack: int = 5,
-                 normalization_release: int = 100,
-                 normalization_knee: float = 1.,
-                 **kwargs):
+    def __init__(
+        self,
+        librespot_path: str = 'librespot',
+        device_name: Optional[str] = None,
+        device_type: str = 'speaker',
+        audio_backend: str = 'alsa',
+        audio_device: Optional[str] = None,
+        mixer: str = 'softvol',
+        mixer_name: str = 'PCM',
+        mixer_card: str = 'default',
+        mixer_index: int = 0,
+        volume: int = 100,
+        volume_ctrl: str = 'linear',
+        bitrate: int = 160,
+        autoplay: bool = False,
+        disable_gapless: bool = False,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None,
+        proxy: Optional[str] = None,
+        ap_port: Optional[int] = None,
+        disable_discovery: bool = False,
+        cache_dir: Optional[str] = None,
+        system_cache_dir: Optional[str] = None,
+        disable_audio_cache=False,
+        enable_volume_normalization: bool = False,
+        normalization_method: str = 'dynamic',
+        normalization_pre_gain: Optional[float] = None,
+        normalization_threshold: float = -1.0,
+        normalization_attack: int = 5,
+        normalization_release: int = 100,
+        normalization_knee: float = 1.0,
+        **kwargs,
+    ):
         """
         :param librespot_path: Librespot path/executable name (default: ``librespot``).
         :param device_name: Device name (default: same as configured Platypush ``device_id`` or hostname).
@@ -121,17 +121,36 @@ class MusicSpotifyBackend(Backend, SpotifyMixin):
         SpotifyMixin.__init__(self, client_id=client_id, client_secret=client_secret)
         self.device_name = device_name or Config.get('device_id')
         self._librespot_args = [
-            librespot_path, '--name', self.device_name, '--backend', audio_backend,
-            '--device-type', device_type, '--mixer', mixer, '--alsa-mixer-control', mixer_name,
-            '--initial-volume', str(volume), '--volume-ctrl', volume_ctrl, '--bitrate', str(bitrate),
-            '--emit-sink-events', '--onevent', 'python -m platypush.backend.music.spotify.event',
+            librespot_path,
+            '--name',
+            self.device_name,
+            '--backend',
+            audio_backend,
+            '--device-type',
+            device_type,
+            '--mixer',
+            mixer,
+            '--alsa-mixer-control',
+            mixer_name,
+            '--initial-volume',
+            str(volume),
+            '--volume-ctrl',
+            volume_ctrl,
+            '--bitrate',
+            str(bitrate),
+            '--emit-sink-events',
+            '--onevent',
+            'python -m platypush.backend.music.spotify.event',
         ]
 
         if audio_device:
             self._librespot_args += ['--alsa-mixer-device', audio_device]
         else:
             self._librespot_args += [
-                '--alsa-mixer-device', mixer_card, '--alsa-mixer-index', str(mixer_index)
+                '--alsa-mixer-device',
+                mixer_card,
+                '--alsa-mixer-index',
+                str(mixer_index),
             ]
         if autoplay:
             self._librespot_args += ['--autoplay']
@@ -148,17 +167,30 @@ class MusicSpotifyBackend(Backend, SpotifyMixin):
         if cache_dir:
             self._librespot_args += ['--cache', os.path.expanduser(cache_dir)]
         if system_cache_dir:
-            self._librespot_args += ['--system-cache', os.path.expanduser(system_cache_dir)]
+            self._librespot_args += [
+                '--system-cache',
+                os.path.expanduser(system_cache_dir),
+            ]
         if enable_volume_normalization:
             self._librespot_args += [
-                '--enable-volume-normalisation', '--normalisation-method', normalization_method,
-                '--normalisation-threshold', str(normalization_threshold), '--normalisation-attack',
-                str(normalization_attack), '--normalisation-release', str(normalization_release),
-                '--normalisation-knee', str(normalization_knee),
+                '--enable-volume-normalisation',
+                '--normalisation-method',
+                normalization_method,
+                '--normalisation-threshold',
+                str(normalization_threshold),
+                '--normalisation-attack',
+                str(normalization_attack),
+                '--normalisation-release',
+                str(normalization_release),
+                '--normalisation-knee',
+                str(normalization_knee),
             ]
 
             if normalization_pre_gain:
-                self._librespot_args += ['--normalisation-pregain', str(normalization_pre_gain)]
+                self._librespot_args += [
+                    '--normalisation-pregain',
+                    str(normalization_pre_gain),
+                ]
 
         self._librespot_dump_args = self._librespot_args.copy()
         if username and password:
@@ -227,11 +259,21 @@ class MusicSpotifyBackend(Backend, SpotifyMixin):
 
     def _process_status_msg(self, status):
         event_type = status.get('PLAYER_EVENT')
-        volume = int(status['VOLUME'])/655.35 if status.get('VOLUME') is not None else None
+        volume = (
+            int(status['VOLUME']) / 655.35 if status.get('VOLUME') is not None else None
+        )
         track_id = status.get('TRACK_ID')
         old_track_id = status.get('OLD_TRACK_ID', self.track['id'])
-        duration = int(status['DURATION_MS'])/1000. if status.get('DURATION_MS') is not None else None
-        elapsed = int(status['POSITION_MS'])/1000. if status.get('POSITION_MS') is not None else None
+        duration = (
+            int(status['DURATION_MS']) / 1000.0
+            if status.get('DURATION_MS') is not None
+            else None
+        )
+        elapsed = (
+            int(status['POSITION_MS']) / 1000.0
+            if status.get('POSITION_MS') is not None
+            else None
+        )
 
         if volume is not None:
             self.status['volume'] = volume
@@ -275,7 +317,7 @@ class MusicSpotifyBackend(Backend, SpotifyMixin):
             self._librespot_proc.terminate()
 
             try:
-                self._librespot_proc.wait(timeout=5.)
+                self._librespot_proc.wait(timeout=5.0)
             except subprocess.TimeoutExpired:
                 self.logger.warning('Librespot has not yet terminated: killing it')
                 self._librespot_proc.kill()

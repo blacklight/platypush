@@ -21,14 +21,6 @@ from platypush.utils import get_plugin_class_by_name
 class QrcodePlugin(Plugin):
     """
     Plugin to generate and scan QR and bar codes.
-
-    Requires:
-
-        * **numpy** (``pip install numpy``).
-        * **qrcode** (``pip install 'qrcode[pil]'``) for QR generation.
-        * **pyzbar** (``pip install pyzbar``) for decoding code from images.
-        * **Pillow** (``pip install Pillow``) for image management.
-
     """
 
     def __init__(self, camera_plugin: Optional[str] = None, **kwargs):
@@ -140,10 +132,6 @@ class QrcodePlugin(Plugin):
     ) -> Optional[List[ResultModel]]:
         """
         Decode QR-codes and bar codes using a camera.
-
-        Triggers:
-
-            - :class:`platypush.message.event.qrcode.QrcodeScannedEvent` when a code is successfully scanned.
 
         :param camera_plugin: Camera plugin (overrides default ``camera_plugin``).
         :param duration: How long the capturing phase should run (default: until ``stop_scanning`` or app termination).

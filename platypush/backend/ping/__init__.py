@@ -11,12 +11,6 @@ from platypush.utils.workers import Worker, Workers
 class PingBackend(Backend):
     """
     This backend allows you to ping multiple remote hosts at regular intervals.
-
-    Triggers:
-
-        - :class:`platypush.message.event.ping.HostDownEvent` if a host stops responding ping requests
-        - :class:`platypush.message.event.ping.HostUpEvent` if a host starts responding ping requests
-
     """
 
     class Pinger(Worker):
@@ -30,7 +24,15 @@ class PingBackend(Backend):
             response = pinger.ping(host, timeout=self.timeout, count=self.count).output
             return host, response['success'] is True
 
-    def __init__(self, hosts: List[str], timeout: float = 5.0, interval: float = 60.0, count: int = 1,  *args, **kwargs):
+    def __init__(
+        self,
+        hosts: List[str],
+        timeout: float = 5.0,
+        interval: float = 60.0,
+        count: int = 1,
+        *args,
+        **kwargs
+    ):
         """
         :param hosts: List of IP addresses or host names to monitor.
         :param timeout: Ping timeout.
@@ -47,7 +49,9 @@ class PingBackend(Backend):
 
     def run(self):
         super().run()
-        self.logger.info('Starting ping backend with {} hosts to monitor'.format(len(self.hosts)))
+        self.logger.info(
+            'Starting ping backend with {} hosts to monitor'.format(len(self.hosts))
+        )
 
         while not self.should_stop():
             workers = Workers(10, self.Pinger, timeout=self.timeout, count=self.count)

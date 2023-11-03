@@ -1,11 +1,11 @@
 from sqlalchemy import Column, Integer, ForeignKey, Boolean, String, JSON
 
-from platypush.common.db import Base
+from platypush.common.db import is_defined
 
 from .devices import Device
 
 
-if 'switch' not in Base.metadata:
+if not is_defined('switch'):
 
     class Switch(Device):
         __tablename__ = 'switch'
@@ -15,12 +15,13 @@ if 'switch' not in Base.metadata:
         )
         state = Column(Boolean)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
 
 
-if 'enum_switch' not in Base.metadata:
+if not is_defined('enum_switch'):
 
     class EnumSwitch(Device):
         __tablename__ = 'enum_switch'
@@ -31,6 +32,7 @@ if 'enum_switch' not in Base.metadata:
         value = Column(String)
         values = Column(JSON)
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }

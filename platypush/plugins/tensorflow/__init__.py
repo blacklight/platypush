@@ -31,29 +31,6 @@ class TensorflowPlugin(Plugin):
     """
     This plugin can be used to create, train, load and make predictions with TensorFlow-compatible machine learning
     models.
-
-    Triggers:
-
-        - :class:`platypush.message.event.tensorflow.TensorflowEpochStartedEvent`
-            when a Tensorflow model training/evaluation epoch begins.
-        - :class:`platypush.message.event.tensorflow.TensorflowEpochEndedEvent`
-            when a Tensorflow model training/evaluation epoch ends.
-        - :class:`platypush.message.event.tensorflow.TensorflowBatchStartedEvent`
-            when a Tensorflow model training/evaluation batch starts being processed.
-        - :class:`platypush.message.event.tensorflow.TensorflowBatchEndedEvent`
-            when a the processing of a Tensorflow model training/evaluation batch ends.
-        - :class:`platypush.message.event.tensorflow.TensorflowTrainStartedEvent`
-            when a Tensorflow model starts being trained.
-        - :class:`platypush.message.event.tensorflow.TensorflowTrainEndedEvent`
-            when the training phase of a Tensorflow model ends.
-
-    Requires:
-
-        * **numpy** (``pip install numpy``)
-        * **pandas** (``pip install pandas``) (optional, for CSV parsing)
-        * **tensorflow** (``pip install 'tensorflow>=2.0'``)
-        * **keras** (``pip install keras``)
-
     """
 
     _image_extensions = ['jpg', 'jpeg', 'bmp', 'tiff', 'tif', 'png', 'gif']

@@ -7,7 +7,7 @@ import subprocess
 import sys
 import types
 from datetime import datetime
-from typing import Callable, Dict, Final, List, Optional, Set, Type, Tuple, Any
+from typing import Callable, Dict, List, Optional, Set, Type, Tuple, Any
 
 import pkgutil
 
@@ -24,11 +24,13 @@ from sqlalchemy import (
     UniqueConstraint,
     inspect as schema_inspect,
 )
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import ColumnProperty, backref, relationship
 from sqlalchemy.orm.exc import ObjectDeletedError
 
 import platypush
-from platypush.common.db import Base
+from platypush.config import Config
+from platypush.common.db import Base, is_defined
 from platypush.message import JSONAble, Message
 
 EntityRegistryType = Dict[str, Type['Entity']]
@@ -39,7 +41,7 @@ EntityKey = Tuple[str, str]
 EntityMapping = Dict[EntityKey, 'Entity']
 """ Internal mapping for entities used for deduplication/merge/upsert. """
 
-_import_error_ignored_modules: Final[Set[str]] = {'bluetooth'}
+_import_error_ignored_modules: Set[str] = {'bluetooth'}
 """
 ImportError exceptions will be ignored for these entity submodules when
 imported dynamically. An ImportError for these modules means that some optional
@@ -50,7 +52,7 @@ fail.
 logger = logging.getLogger(__name__)
 
 
-if 'entity' not in Base.metadata:
+if not is_defined('entity'):
 
     class Entity(Base):
         """
@@ -117,9 +119,8 @@ if 'entity' not in Base.metadata:
             'polymorphic_on': type,
         }
 
-        @classmethod  # type: ignore
-        @property
-        def columns(cls) -> Tuple[ColumnProperty, ...]:
+        @classmethod
+        def get_columns(cls) -> Tuple[ColumnProperty, ...]:
             inspector = schema_inspect(cls)
             return tuple(inspector.mapper.column_attrs)
 
@@ -146,7 +147,7 @@ if 'entity' not in Base.metadata:
             return self.__class__(
                 **dict(
                     key_value_pair(col)  # type: ignore
-                    for col in self.columns
+                    for col in self.get_columns()
                     if key_value_pair(col) is not None
                 ),
                 children=[child.copy() for child in self.children],
@@ -213,7 +214,7 @@ if 'entity' not in Base.metadata:
             return {
                 **dict(
                     self._column_to_pair(col)
-                    for col in self.columns
+                    for col in self.get_columns()
                     if self._column_to_pair(col)
                 ),
                 'children_ids': self.children_ids,
@@ -241,7 +242,7 @@ if 'entity' not in Base.metadata:
             """
             Serializes the new value before assigning it to an attribute.
             """
-            matching_columns = [c for c in self.columns if c.expression.name == key]  # type: ignore
+            matching_columns = [c for c in self.get_columns() if c.expression.name == key]  # type: ignore
 
             if (
                 matching_columns
@@ -304,6 +305,24 @@ def _discover_entity_types():
                 entities_registry[obj] = {}  # type: ignore
 
 
+def _get_db():
+    """
+    Utility method to get the db plugin.
+    """
+    from platypush.context import get_plugin
+
+    db = get_plugin('db')
+    assert db
+    return db
+
+
+def _get_db_engine() -> Engine:
+    """
+    Utility method to get the db engine.
+    """
+    return _get_db().get_engine()
+
+
 def get_entities_registry() -> EntityRegistryType:
     """
     :returns: A copy of the entities registry.
@@ -315,13 +334,9 @@ def init_entities_db():
     """
     Initializes the entities database.
     """
-    from platypush.context import get_plugin
-
     run_db_migrations()
     _discover_entity_types()
-    db = get_plugin('db')
-    assert db
-    db.create_all(db.get_engine(), Base)
+    _get_db().create_all(_get_db_engine(), Base)
 
 
 def run_db_migrations():
@@ -340,6 +355,10 @@ def run_db_migrations():
             'alembic',
             '-c',
             alembic_ini,
+            '-x',
+            f'CFGFILE={Config.get_file()}',
+            '-x',
+            f'DBNAME={_get_db_engine().url}',
             'upgrade',
             'head',
         ],

@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import Optional, Tuple
 
 import numpy as np
-from numpy.typing import NDArray
 
 from ._parser import SoundParser
 
@@ -31,7 +30,7 @@ class SoundBase(SoundParser, ABC):
         t_start: float = 0,
         t_end: float = 0,
         **_,
-    ) -> NDArray[np.floating]:
+    ):  # -> NDArray[np.floating]:
         """
         Get the wave binary data associated to this sound
 
@@ -50,7 +49,7 @@ class SoundBase(SoundParser, ABC):
         t_end: float = 0.0,
         freq_range: Optional[Tuple[float, float]] = None,
         freq_buckets: Optional[int] = None,
-    ) -> NDArray[np.floating]:
+    ):  # -> NDArray[np.floating]:
         """
         Get the real part of the Fourier transform associated to a time-bounded
             sample of this sound.

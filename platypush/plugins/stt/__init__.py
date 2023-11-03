@@ -6,8 +6,14 @@ from typing import Optional, Union, List
 import sounddevice as sd
 
 from platypush.context import get_bus
-from platypush.message.event.stt import SpeechDetectionStartedEvent, SpeechDetectionStoppedEvent, SpeechStartedEvent, \
-    SpeechDetectedEvent, HotwordDetectedEvent, ConversationDetectedEvent
+from platypush.message.event.stt import (
+    SpeechDetectionStartedEvent,
+    SpeechDetectionStoppedEvent,
+    SpeechStartedEvent,
+    SpeechDetectedEvent,
+    HotwordDetectedEvent,
+    ConversationDetectedEvent,
+)
 from platypush.message.response.stt import SpeechDetectedResponse
 from platypush.plugins import Plugin, action
 
@@ -15,28 +21,20 @@ from platypush.plugins import Plugin, action
 class SttPlugin(ABC, Plugin):
     """
     Abstract class for speech-to-text plugins.
-
-    Triggers:
-
-        * :class:`platypush.message.event.stt.SpeechStartedEvent` when speech starts being detected.
-        * :class:`platypush.message.event.stt.SpeechDetectedEvent` when speech is detected.
-        * :class:`platypush.message.event.stt.SpeechDetectionStartedEvent` when speech detection starts.
-        * :class:`platypush.message.event.stt.SpeechDetectionStoppedEvent` when speech detection stops.
-        * :class:`platypush.message.event.stt.HotwordDetectedEvent` when a user-defined hotword is detected.
-        * :class:`platypush.message.event.stt.ConversationDetectedEvent` when speech is detected after a hotword.
-
     """
 
     _thread_stop_timeout = 10.0
     rate = 16000
     channels = 1
 
-    def __init__(self,
-                 input_device: Optional[Union[int, str]] = None,
-                 hotword: Optional[str] = None,
-                 hotwords: Optional[List[str]] = None,
-                 conversation_timeout: Optional[float] = 10.0,
-                 block_duration: float = 1.0):
+    def __init__(
+        self,
+        input_device: Optional[Union[int, str]] = None,
+        hotword: Optional[str] = None,
+        hotwords: Optional[List[str]] = None,
+        conversation_timeout: Optional[float] = 10.0,
+        block_duration: float = 1.0,
+    ):
         """
         :param input_device: PortAudio device index or name that will be used for recording speech (default: default
             system audio input device).
@@ -104,7 +102,9 @@ class SttPlugin(ABC, Plugin):
             event = HotwordDetectedEvent(hotword=speech)
             if self.conversation_timeout:
                 self._conversation_event.set()
-                threading.Timer(self.conversation_timeout, lambda: self._conversation_event.clear()).start()
+                threading.Timer(
+                    self.conversation_timeout, lambda: self._conversation_event.clear()
+                ).start()
         elif self._conversation_event.is_set():
             event = ConversationDetectedEvent(speech=speech)
         else:
@@ -113,7 +113,7 @@ class SttPlugin(ABC, Plugin):
         get_bus().post(event)
 
     @staticmethod
-    def convert_frames(frames:  bytes) -> bytes:
+    def convert_frames(frames: bytes) -> bytes:
         """
         Conversion method for raw audio frames. It just returns the input frames as bytes. Override it if required
         by your logic.
@@ -193,7 +193,9 @@ class SttPlugin(ABC, Plugin):
                 frames = self._audio_queue.get()
                 frames = self.convert_frames(frames)
             except Exception as e:
-                self.logger.warning('Error while feeding audio to the model: {}'.format(str(e)))
+                self.logger.warning(
+                    'Error while feeding audio to the model: {}'.format(str(e))
+                )
                 continue
 
             text = self.detect_speech(frames).strip()
@@ -202,8 +204,12 @@ class SttPlugin(ABC, Plugin):
         self.on_detection_ended()
         self.logger.debug('Detection thread terminated')
 
-    def recording_thread(self, block_duration: Optional[float] = None, block_size: Optional[int] = None,
-                         input_device: Optional[str] = None) -> None:
+    def recording_thread(
+        self,
+        block_duration: Optional[float] = None,
+        block_size: Optional[int] = None,
+        input_device: Optional[str] = None,
+    ) -> None:
         """
         Recording thread. It reads raw frames from the audio device and dispatches them to ``detection_thread``.
 
@@ -211,8 +217,9 @@ class SttPlugin(ABC, Plugin):
         :param block_size: Size of the audio blocks. Specify either ``block_duration`` or ``block_size``.
         :param input_device: Input device
         """
-        assert (block_duration or block_size) and not (block_duration and block_size), \
-            'Please specify either block_duration or block_size'
+        assert (block_duration or block_size) and not (
+            block_duration and block_size
+        ), 'Please specify either block_duration or block_size'
 
         if not block_size:
             block_size = int(self.rate * self.channels * block_duration)
@@ -220,9 +227,14 @@ class SttPlugin(ABC, Plugin):
         self.before_recording()
         self.logger.debug('Recording thread started')
         device = self._get_input_device(input_device)
-        self._input_stream = sd.InputStream(samplerate=self.rate, device=device,
-                                            channels=self.channels, dtype='int16', latency=0,
-                                            blocksize=block_size)
+        self._input_stream = sd.InputStream(
+            samplerate=self.rate,
+            device=device,
+            channels=self.channels,
+            dtype='int16',
+            latency=0,
+            blocksize=block_size,
+        )
         self._input_stream.start()
         self.on_recording_started()
         get_bus().post(SpeechDetectionStartedEvent())
@@ -231,7 +243,9 @@ class SttPlugin(ABC, Plugin):
             try:
                 frames = self._input_stream.read(block_size)[0]
             except Exception as e:
-                self.logger.warning('Error while reading from the audio input: {}'.format(str(e)))
+                self.logger.warning(
+                    'Error while reading from the audio input: {}'.format(str(e))
+                )
                 continue
 
             self._audio_queue.put(frames)
@@ -264,8 +278,12 @@ class SttPlugin(ABC, Plugin):
         self.stop_detection()
 
     @action
-    def start_detection(self, input_device: Optional[str] = None, seconds: Optional[float] = None,
-                        block_duration: Optional[float] = None) -> None:
+    def start_detection(
+        self,
+        input_device: Optional[str] = None,
+        seconds: Optional[float] = None,
+        block_duration: Optional[float] = None,
+    ) -> None:
         """
         Start the speech detection engine.
 
@@ -274,15 +292,22 @@ class SttPlugin(ABC, Plugin):
             start running until ``stop_detection`` is called or application stop.
         :param block_duration: ``block_duration`` override.
         """
-        assert not self._input_stream and not self._recording_thread, 'Speech detection is already running'
+        assert (
+            not self._input_stream and not self._recording_thread
+        ), 'Speech detection is already running'
         block_duration = block_duration or self.block_duration
         input_device = input_device if input_device is not None else self.input_device
         self._audio_queue = queue.Queue()
         self._recording_thread = threading.Thread(
-            target=lambda: self.recording_thread(block_duration=block_duration, input_device=input_device))
+            target=lambda: self.recording_thread(
+                block_duration=block_duration, input_device=input_device
+            )
+        )
 
         self._recording_thread.start()
-        self._detection_thread = threading.Thread(target=lambda: self.detection_thread())
+        self._detection_thread = threading.Thread(
+            target=lambda: self.detection_thread()
+        )
         self._detection_thread.start()
 
         if seconds:

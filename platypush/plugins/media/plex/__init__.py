@@ -6,11 +6,7 @@ from platypush.plugins import Plugin, action
 
 class MediaPlexPlugin(Plugin):
     """
-    Plugin to interact with a Plex media server
-
-    Requires:
-
-        * **plexapi** (``pip install plexapi``)
+    Plugin to interact with a Plex media server.
     """
 
     def __init__(self, server, username, password, **kwargs):
@@ -26,6 +22,7 @@ class MediaPlexPlugin(Plugin):
         """
 
         from plexapi.myplex import MyPlexAccount
+
         super().__init__(**kwargs)
 
         self.resource = MyPlexAccount(username, password).resource(server)
@@ -44,18 +41,21 @@ class MediaPlexPlugin(Plugin):
         Get the list of active clients
         """
 
-        return [{
-            'device': c.device,
-            'device_class': c.deviceClass,
-            'local': c.local,
-            'model': c.model,
-            'platform': c.platform,
-            'platform_version': c.platformVersion,
-            'product': c.product,
-            'state': c.state,
-            'title': c.title,
-            'version': c.version,
-        } for c in self.plex.clients()]
+        return [
+            {
+                'device': c.device,
+                'device_class': c.deviceClass,
+                'local': c.local,
+                'model': c.model,
+                'platform': c.platform,
+                'platform_version': c.platformVersion,
+                'product': c.product,
+                'state': c.state,
+                'title': c.title,
+                'version': c.version,
+            }
+            for c in self.plex.clients()
+        ]
 
     def _get_client(self, name):
         return self.plex.client(name)
@@ -104,7 +104,8 @@ class MediaPlexPlugin(Plugin):
                 'summary': pl.summary,
                 'viewed_at': pl.viewedAt,
                 'items': [self._flatten_item(item) for item in pl.items()],
-            } for pl in self.plex.playlists()
+            }
+            for pl in self.plex.playlists()
         ]
 
     @action
@@ -113,9 +114,7 @@ class MediaPlexPlugin(Plugin):
         Get the history of items played on the server
         """
 
-        return [
-            self._flatten_item(item) for item in self.plex.history()
-        ]
+        return [self._flatten_item(item) for item in self.plex.history()]
 
     @staticmethod
     def get_chromecast(chromecast):
@@ -386,12 +385,18 @@ class MediaPlexPlugin(Plugin):
                             'file': part.file,
                             'size': part.size,
                             'duration': (part.duration or 0) / 1000,
-                            'url': self.plex.url(part.key) + '?' + urllib.parse.urlencode({
-                                'X-Plex-Token': self.plex._token,
-                            }),
-                        } for part in item.media[i].parts
-                    ]
-                } for i in range(0, len(item.media))
+                            'url': self.plex.url(part.key)
+                            + '?'
+                            + urllib.parse.urlencode(
+                                {
+                                    'X-Plex-Token': self.plex._token,
+                                }
+                            ),
+                        }
+                        for part in item.media[i].parts
+                    ],
+                }
+                for i in range(0, len(item.media))
             ]
 
         elif isinstance(item, Show):
@@ -419,7 +424,9 @@ class MediaPlexPlugin(Plugin):
                                     'audio_channels': episode.media[i].audioChannels,
                                     'audio_codec': episode.media[i].audioCodec,
                                     'video_codec': episode.media[i].videoCodec,
-                                    'video_resolution': episode.media[i].videoResolution,
+                                    'video_resolution': episode.media[
+                                        i
+                                    ].videoResolution,
                                     'video_frame_rate': episode.media[i].videoFrameRate,
                                     'title': episode.title,
                                     'parts': [
@@ -427,35 +434,45 @@ class MediaPlexPlugin(Plugin):
                                             'file': part.file,
                                             'size': part.size,
                                             'duration': part.duration / 1000,
-                                            'url': self.plex.url(part.key) + '?' + urllib.parse.urlencode({
-                                                'X-Plex-Token': self.plex._token,
-                                            }),
-                                        } for part in episode.media[i].parts
-                                    ]
-                                } for i in range(0, len(episode.locations))
-                            ]
-                        } for episode in season.episodes()
-                    ]
-                } for season in item.seasons()
+                                            'url': self.plex.url(part.key)
+                                            + '?'
+                                            + urllib.parse.urlencode(
+                                                {
+                                                    'X-Plex-Token': self.plex._token,
+                                                }
+                                            ),
+                                        }
+                                        for part in episode.media[i].parts
+                                    ],
+                                }
+                                for i in range(0, len(episode.locations))
+                            ],
+                        }
+                        for episode in season.episodes()
+                    ],
+                }
+                for season in item.seasons()
             ]
 
         elif isinstance(item, Track):
-            _item.update({
-                'artist': item.grandparentTitle,
-                'album': item.parentTitle,
-                'title': item.title,
-                'name': item.title,
-                'duration': item.duration / 1000.,
-                'index': item.index,
-                'track_number': item.trackNumber,
-                'year': item.year,
-                'locations': [item.locations],
-            })
+            _item.update(
+                {
+                    'artist': item.grandparentTitle,
+                    'album': item.parentTitle,
+                    'title': item.title,
+                    'name': item.title,
+                    'duration': item.duration / 1000.0,
+                    'index': item.index,
+                    'track_number': item.trackNumber,
+                    'year': item.year,
+                    'locations': [item.locations],
+                }
+            )
 
             _item['media'] = [
                 {
                     'title': media.title,
-                    'duration': media.duration / 1000.,
+                    'duration': media.duration / 1000.0,
                     'bitrate': media.bitrate,
                     'width': media.width,
                     'height': media.height,
@@ -469,12 +486,18 @@ class MediaPlexPlugin(Plugin):
                             'file': part.file,
                             'duration': part.duration / 1000,
                             'size': part.size,
-                            'url': self.plex.url(part.key) + '?' + urllib.parse.urlencode({
-                                'X-Plex-Token': self.plex._token,
-                            }),
-                        } for part in media.parts
-                    ]
-                } for media in item.media
+                            'url': self.plex.url(part.key)
+                            + '?'
+                            + urllib.parse.urlencode(
+                                {
+                                    'X-Plex-Token': self.plex._token,
+                                }
+                            ),
+                        }
+                        for part in media.parts
+                    ],
+                }
+                for media in item.media
             ]
 
         return _item

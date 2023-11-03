@@ -36,6 +36,7 @@ module.exports = {
     proxy: {
       '^/ws/events': wsProxy,
       '^/ws/requests': wsProxy,
+      '^/ws/shell': wsProxy,
       '^/execute': httpProxy,
       '^/auth': httpProxy,
       '^/camera/': httpProxy,

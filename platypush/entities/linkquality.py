@@ -1,11 +1,11 @@
 from sqlalchemy import Column, Integer, ForeignKey
 
-from platypush.common.db import Base
+from platypush.common.db import is_defined
 
 from .sensors import NumericSensor
 
 
-if 'link_quality' not in Base.metadata:
+if not is_defined('link_quality'):
 
     class LinkQuality(NumericSensor):
         __tablename__ = 'link_quality'
@@ -19,6 +19,7 @@ if 'link_quality' not in Base.metadata:
             Integer, ForeignKey(NumericSensor.id, ondelete='CASCADE'), primary_key=True
         )
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }

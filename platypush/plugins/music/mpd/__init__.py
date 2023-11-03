@@ -1,7 +1,7 @@
 import re
 import threading
 import time
-from typing import Optional, Union
+from typing import Collection, Optional, Union
 
 from platypush.plugins import action
 from platypush.plugins.music import MusicPlugin
@@ -9,32 +9,29 @@ from platypush.plugins.music import MusicPlugin
 
 class MusicMpdPlugin(MusicPlugin):
     """
-    This plugin allows you to interact with an MPD/Mopidy music server.  MPD
-    (https://www.musicpd.org/) is a flexible server-side protocol/application
-    for handling music collections and playing music, mostly aimed to manage
-    local libraries. Mopidy (https://www.mopidy.com/) is an evolution of MPD,
-    compatible with the original protocol and with support for multiple music
-    sources through plugins (e.g. Spotify, TuneIn, Soundcloud, local files
-    etc.).
+    This plugin allows you to interact with an MPD/Mopidy music server.
 
-    **NOTE**: As of Mopidy 3.0 MPD is an optional interface provided by the ``mopidy-mpd`` extension. Make sure that you
-    have the extension installed and enabled on your instance to use this plugin with your server.
+    `MPD <https://www.musicpd.org/>`_ is a flexible server-side
+    protocol/application for handling music collections and playing music,
+    mostly aimed to manage local libraries.
 
-    Requires:
+    `Mopidy <https://www.mopidy.com/>`_ is an evolution of MPD, compatible with
+    the original protocol and with support for multiple music sources through
+    plugins (e.g. Spotify, TuneIn, Soundcloud, local files etc.).
 
-        * **python-mpd2** (``pip install python-mpd2``)
+    .. note:: As of Mopidy 3.0 MPD is an optional interface provided by the
+        ``mopidy-mpd`` extension. Make sure that you have the extension
+        installed and enabled on your instance to use this plugin with your
+        server.
 
     """
 
     _client_lock = threading.RLock()
 
-    def __init__(self, host, port=6600):
+    def __init__(self, host: str, port: int = 6600):
         """
         :param host: MPD IP/hostname
-        :type host: str
-
         :param port: MPD port (default: 6600)
-        :type port: int
         """
 
         super().__init__()
@@ -42,12 +39,12 @@ class MusicMpdPlugin(MusicPlugin):
         self.port = port
         self.client = None
 
-    def _connect(self, n_tries=2):
+    def _connect(self, n_tries: int = 2):
         import mpd
 
         with self._client_lock:
             if self.client:
-                return
+                return self.client
 
             error = None
             while n_tries > 0:
@@ -58,19 +55,25 @@ class MusicMpdPlugin(MusicPlugin):
                     return self.client
                 except Exception as e:
                     error = e
-                    self.logger.warning('Connection exception: {}{}'.
-                                        format(str(e), (': Retrying' if n_tries > 0 else '')))
+                    self.logger.warning(
+                        'Connection exception: %s%s',
+                        e,
+                        (': Retrying' if n_tries > 0 else ''),
+                    )
                     time.sleep(0.5)
 
         self.client = None
         if error:
             raise error
 
-    def _exec(self, method, *args, **kwargs):
+        return self.client
+
+    def _exec(self, method: str, *args, **kwargs):
         error = None
         n_tries = int(kwargs.pop('n_tries')) if 'n_tries' in kwargs else 2
-        return_status = kwargs.pop('return_status') \
-            if 'return_status' in kwargs else True
+        return_status = (
+            kwargs.pop('return_status') if 'return_status' in kwargs else True
+        )
 
         while n_tries > 0:
             try:
@@ -84,16 +87,17 @@ class MusicMpdPlugin(MusicPlugin):
                 return response
             except Exception as e:
                 error = str(e)
-                self.logger.warning('Exception while executing MPD method {}: {}'.
-                                    format(method, error))
+                self.logger.warning(
+                    'Exception while executing MPD method %s: %s', method, error
+                )
                 self.client = None
 
         return None, error
 
     @action
-    def play(self, resource=None):
+    def play(self, resource: Optional[str] = None, **__):
         """
-        Play a resource by path/URI
+        Play a resource by path/URI.
 
         :param resource: Resource path/URI
         :type resource: str
@@ -106,213 +110,184 @@ class MusicMpdPlugin(MusicPlugin):
         return self._exec('play')
 
     @action
-    def play_pos(self, pos):
+    def play_pos(self, pos: int):
         """
-        Play a track in the current playlist by position number
+        Play a track in the current playlist by position number.
 
-        :param pos: Position number
+        :param pos: Position number.
         """
 
         return self._exec('play', pos)
 
     @action
-    def pause(self):
-        """ Pause playback """
+    def pause(self, *_, **__):
+        """Pause playback"""
 
-        status = self.status().output['state']
-        if status == 'play':
-            return self._exec('pause')
-        else:
-            return self._exec('play')
+        status = self._status()['state']
+        return self._exec('pause') if status == 'play' else self._exec('play')
 
     @action
     def pause_if_playing(self):
-        """ Pause playback only if it's playing """
-
-        status = self.status().output['state']
-        if status == 'play':
-            return self._exec('pause')
+        """Pause playback only if it's playing"""
+        status = self._status()['state']
+        return self._exec('pause') if status == 'play' else None
 
     @action
     def play_if_paused(self):
-        """ Play only if it's paused (resume) """
-
-        status = self.status().output['state']
-        if status == 'pause':
-            return self._exec('play')
+        """Play only if it's paused (resume)"""
+        status = self._status()['state']
+        return self._exec('play') if status == 'pause' else None
 
     @action
     def play_if_paused_or_stopped(self):
-        """ Play only if it's paused or stopped """
-
-        status = self.status().output['state']
-        if status == 'pause' or status == 'stop':
-            return self._exec('play')
+        """Play only if it's paused or stopped"""
+        status = self._status()['state']
+        return self._exec('play') if status in ('pause', 'stop') else None
 
     @action
-    def stop(self):
-        """ Stop playback """
+    def stop(self, *_, **__):
+        """Stop playback"""
         return self._exec('stop')
 
     @action
     def play_or_stop(self):
-        """ Play or stop (play state toggle) """
-        status = self.status().output['state']
+        """Play or stop (play state toggle)"""
+        status = self._status()['state']
         if status == 'play':
             return self._exec('stop')
-        else:
-            return self._exec('play')
+        return self._exec('play')
 
     @action
-    def playid(self, track_id):
+    def playid(self, track_id: str):
         """
-        Play a track by ID
+        Play a track by ID.
 
-        :param track_id: Track ID
-        :type track_id: str
+        :param track_id: Track ID.
         """
-
         return self._exec('playid', track_id)
 
     @action
-    def next(self):
-        """ Play the next track """
+    def next(self, *_, **__):
+        """Play the next track"""
         return self._exec('next')
 
     @action
-    def previous(self):
-        """ Play the previous track """
+    def previous(self, *_, **__):
+        """Play the previous track"""
         return self._exec('previous')
 
     @action
-    def setvol(self, vol):
+    def setvol(self, vol: int):
         """
-        Set the volume (DEPRECATED, use :meth:`.set_volume` instead).
+        Set the volume.
 
-        :param vol: Volume value (range: 0-100)
-        :type vol: int
+        ..warning :: **DEPRECATED**, use :meth:`.set_volume` instead.
+
+        :param vol: Volume value (range: 0-100).
         """
         return self.set_volume(vol)
 
     @action
-    def set_volume(self, volume):
+    def set_volume(self, volume: int, *_, **__):
         """
         Set the volume.
 
-        :param volume: Volume value (range: 0-100)
-        :type volume: int
+        :param volume: Volume value (range: 0-100).
         """
         return self._exec('setvol', str(volume))
 
     @action
-    def volup(self, delta=10):
+    def volup(self, *_, delta: int = 10, **__):
         """
-        Turn up the volume
+        Turn up the volume.
 
-        :param delta: Volume up delta (default: +10%)
-        :type delta: int
+        :param delta: Volume up delta (default: +10%).
         """
-
-        volume = int(self.status().output['volume'])
+        volume = int(self._status()['volume'])
         new_volume = min(volume + delta, 100)
         return self.setvol(new_volume)
 
     @action
-    def voldown(self, delta=10):
+    def voldown(self, *_, delta: int = 10, **__):
         """
-        Turn down the volume
+        Turn down the volume.
 
-        :param delta: Volume down delta (default: -10%)
-        :type delta: int
+        :param delta: Volume down delta (default: -10%).
         """
-
-        volume = int(self.status().output['volume'])
+        volume = int(self._status()['volume'])
         new_volume = max(volume - delta, 0)
         return self.setvol(new_volume)
 
-    @action
-    def random(self, value=None):
-        """
-        Set random mode
-
-        :param value: If set, set the random state this value (true/false). Default: None (toggle current state)
-        :type value: bool
-        """
-
+    def _toggle(self, key: str, value: Optional[bool] = None):
         if value is None:
-            value = int(self.status().output['random'])
-            value = 1 if value == 0 else 0
-        return self._exec('random', value)
+            value = bool(self._status()[key])
+        return self._exec(key, int(value))
 
     @action
-    def consume(self, value=None):
+    def random(self, value: Optional[bool] = None):
         """
-        Set consume mode
+        Set random mode.
 
-        :param value: If set, set the consume state this value (true/false). Default: None (toggle current state)
-        :type value: bool
+        :param value: If set, set the random state this value (true/false).
+            Default: None (toggle current state).
         """
-
-        if value is None:
-            value = int(self.status().output['consume'])
-            value = 1 if value == 0 else 0
-        return self._exec('consume', value)
+        return self._toggle('random', value)
 
     @action
-    def single(self, value=None):
+    def consume(self, value: Optional[bool] = None):
         """
-        Set single mode
+        Set consume mode.
 
-        :param value: If set, set the consume state this value (true/false). Default: None (toggle current state)
-        :type value: bool
+        :param value: If set, set the consume state this value (true/false).
+            Default: None (toggle current state)
         """
-
-        if value is None:
-            value = int(self.status().output['single'])
-            value = 1 if value == 0 else 0
-        return self._exec('single', value)
+        return self._toggle('consume', value)
 
     @action
-    def repeat(self, value=None):
+    def single(self, value: Optional[bool] = None):
         """
-        Set repeat mode
+        Set single mode.
 
-        :param value: If set, set the repeat state this value (true/false). Default: None (toggle current state)
-        :type value: bool
+        :param value: If set, set the consume state this value (true/false).
+            Default: None (toggle current state)
         """
+        return self._toggle('single', value)
 
-        if value is None:
-            value = int(self.status().output['repeat'])
-            value = 1 if value == 0 else 0
-        return self._exec('repeat', value)
+    @action
+    def repeat(self, value: Optional[bool] = None):
+        """
+        Set repeat mode.
+
+        :param value: If set, set the repeat state this value (true/false).
+            Default: None (toggle current state)
+        """
+        return self._toggle('repeat', value)
 
     @action
     def shuffle(self):
         """
-        Shuffles the current playlist
+        Shuffles the current playlist.
         """
         return self._exec('shuffle')
 
     @action
-    def save(self, name):
+    def save(self, name: str):
         """
-        Save the current tracklist to a new playlist with the specified name
+        Save the current tracklist to a new playlist with the specified name.
 
         :param name: Name of the playlist
-        :type name: str
         """
         return self._exec('save', name)
 
     @action
-    def add(self, resource, position=None):
+    def add(self, resource: str, *_, position: Optional[int] = None, **__):
         """
-        Add a resource (track, album, artist, folder etc.) to the current playlist
+        Add a resource (track, album, artist, folder etc.) to the current
+        playlist.
 
-        :param resource: Resource path or URI
-        :type resource: str
-
-        :param position: Position where the track(s) will be inserted (default: end of the playlist)
-        :type position: int
+        :param resource: Resource path or URI.
+        :param position: Position where the track(s) will be inserted (default:
+            end of the playlist).
         """
 
         if isinstance(resource, list):
@@ -324,7 +299,7 @@ class MusicMpdPlugin(MusicPlugin):
                     else:
                         self._exec('addid', r, position)
                 except Exception as e:
-                    self.logger.warning('Could not add {}: {}'.format(r, e))
+                    self.logger.warning('Could not add %s: %s', r, e)
 
             return self.status().output
 
@@ -361,7 +336,7 @@ class MusicMpdPlugin(MusicPlugin):
         if isinstance(playlist, str):
             playlist = [playlist]
         elif not isinstance(playlist, list):
-            raise RuntimeError('Invalid type for playlist: {}'.format(type(playlist)))
+            raise RuntimeError(f'Invalid type for playlist: {type(playlist)}')
 
         for p in playlist:
             self._exec('rm', p)
@@ -382,11 +357,11 @@ class MusicMpdPlugin(MusicPlugin):
     @classmethod
     def _parse_resource(cls, resource):
         if not resource:
-            return
+            return None
 
         m = re.search(r'^https?://open\.spotify\.com/([^?]+)', resource)
         if m:
-            resource = 'spotify:{}'.format(m.group(1).replace('/', ':'))
+            resource = 'spotify:' + m.group(1).replace('/', ':')
 
         if resource.startswith('spotify:'):
             resource = resource.split('?')[0]
@@ -415,46 +390,59 @@ class MusicMpdPlugin(MusicPlugin):
         return ret
 
     @action
-    def clear(self):
-        """ Clear the current playlist """
+    def clear(self, *_, **__):
+        """Clear the current playlist"""
         return self._exec('clear')
 
     @action
-    def seekcur(self, value):
+    def seekcur(self, value: float):
         """
         Seek to the specified position (DEPRECATED, use :meth:`.seek` instead).
 
-        :param value: Seek position in seconds, or delta string (e.g. '+15' or '-15') to indicate a seek relative to
-            the current position :type value: int
+        :param value: Seek position in seconds, or delta string (e.g. '+15' or
+            '-15') to indicate a seek relative to the current position
         """
-
         return self.seek(value)
 
     @action
-    def seek(self, position):
+    def seek(self, position: float, *_, **__):
         """
         Seek to the specified position
 
-        :param position: Seek position in seconds, or delta string (e.g. '+15' or '-15') to indicate a seek relative
-            to the current position :type position: int
+        :param position: Seek position in seconds, or delta string (e.g. '+15'
+            or '-15') to indicate a seek relative to the current position
         """
-
         return self._exec('seekcur', position)
 
     @action
     def forward(self):
-        """ Go forward by 15 seconds """
-
+        """Go forward by 15 seconds"""
         return self._exec('seekcur', '+15')
 
     @action
     def back(self):
-        """ Go backward by 15 seconds """
-
+        """Go backward by 15 seconds"""
         return self._exec('seekcur', '-15')
 
+    def _status(self) -> dict:
+        n_tries = 2
+        error = None
+
+        while n_tries > 0:
+            try:
+                n_tries -= 1
+                self._connect()
+                if self.client:
+                    return self.client.status()  # type: ignore
+            except Exception as e:
+                error = e
+                self.logger.warning('Exception while getting MPD status: %s', e)
+                self.client = None
+
+        raise AssertionError(str(error))
+
     @action
-    def status(self):
+    def status(self, *_, **__):
         """
         :returns: The current state.
 
@@ -480,23 +468,7 @@ class MusicMpdPlugin(MusicPlugin):
             }
 
         """
-
-        n_tries = 2
-        error = None
-
-        while n_tries > 0:
-            try:
-                n_tries -= 1
-                self._connect()
-                if self.client:
-                    return self.client.status()
-            except Exception as e:
-                error = e
-                self.logger.warning('Exception while getting MPD status: {}'.
-                                    format(str(e)))
-                self.client = None
-
-        return None, error
+        return self._status()
 
     @action
     def currentsong(self):
@@ -505,9 +477,8 @@ class MusicMpdPlugin(MusicPlugin):
         """
         return self.current_track()
 
-    # noinspection PyTypeChecker
     @action
-    def current_track(self):
+    def current_track(self, *_, **__):
         """
         :returns: The currently played track.
 
@@ -529,10 +500,15 @@ class MusicMpdPlugin(MusicPlugin):
         """
 
         track = self._exec('currentsong', return_status=False)
-        if 'title' in track and ('artist' not in track
-                                 or not track['artist']
-                                 or re.search('^https?://', track['file'])
-                                 or re.search('^tunein:', track['file'])):
+        if not isinstance(track, dict):
+            return None
+
+        if 'title' in track and (
+            'artist' not in track
+            or not track['artist']
+            or re.search('^https?://', track['file'])
+            or re.search('^tunein:', track['file'])
+        ):
             m = re.match(r'^\s*(.+?)\s+-\s+(.*)\s*$', track['title'])
             if m and m.group(1) and m.group(2):
                 track['artist'] = m.group(1)
@@ -580,7 +556,7 @@ class MusicMpdPlugin(MusicPlugin):
         return self._exec('playlistinfo', return_status=False)
 
     @action
-    def get_playlists(self):
+    def get_playlists(self, *_, **__):
         """
         :returns: The playlists available on the server as a list of dicts.
 
@@ -599,9 +575,12 @@ class MusicMpdPlugin(MusicPlugin):
                     # ...
                 }
             ]
+
         """
-        return sorted(self._exec('listplaylists', return_status=False),
-                      key=lambda p: p['playlist'])
+        playlists: list = self._exec(  # type: ignore
+            'listplaylists', return_status=False
+        )
+        return sorted(playlists, key=lambda p: p['playlist'])
 
     @action
     def listplaylists(self):
@@ -611,43 +590,41 @@ class MusicMpdPlugin(MusicPlugin):
         return self.get_playlists()
 
     @action
-    def get_playlist(self, playlist, with_tracks=False):
+    def get_playlist(self, playlist: str, *_, with_tracks: bool = False, **__):
         """
         List the items in the specified playlist.
 
         :param playlist: Name of the playlist
-        :type playlist: str
-        :param with_tracks: If True then the list of tracks in the playlist will be returned as well (default: False).
-        :type with_tracks: bool
+        :param with_tracks: If True then the list of tracks in the playlist will
+            be returned as well (default: False).
         """
         return self._exec(
             'listplaylistinfo' if with_tracks else 'listplaylist',
-            playlist, return_status=False)
+            playlist,
+            return_status=False,
+        )
 
     @action
-    def listplaylist(self, name):
+    def listplaylist(self, name: str):
         """
         Deprecated alias for :meth:`.playlist`.
         """
         return self._exec('listplaylist', name, return_status=False)
 
     @action
-    def listplaylistinfo(self, name):
+    def listplaylistinfo(self, name: str):
         """
-        Deprecated alias for :meth:`.playlist` with `with_tracks=True`.
+        Deprecated alias for :meth:`.playlist` with ``with_tracks=True``.
         """
         return self.get_playlist(name, with_tracks=True)
 
     @action
-    def add_to_playlist(self, playlist, resources):
+    def add_to_playlist(self, playlist: str, resources: Union[str, Collection[str]]):
         """
         Add one or multiple resources to a playlist.
 
         :param playlist: Playlist name
-        :type playlist: str
-
         :param resources: URI or path of the resource(s) to be added
-        :type resources: str or list[str]
         """
 
         if isinstance(resources, str):
@@ -657,22 +634,21 @@ class MusicMpdPlugin(MusicPlugin):
             self._exec('playlistadd', playlist, res)
 
     @action
-    def playlistadd(self, name, uri):
+    def playlistadd(self, name: str, uri: str):
         """
         Deprecated alias for :meth:`.add_to_playlist`.
         """
         return self.add_to_playlist(name, uri)
 
     @action
-    def remove_from_playlist(self, playlist, resources):
+    def remove_from_playlist(
+        self, playlist: str, resources: Union[int, Collection[int]], *_, **__
+    ):
         """
         Remove one or multiple tracks from a playlist.
 
         :param playlist: Playlist name
-        :type playlist: str
-
         :param resources: Position or list of positions to remove
-        :type resources: int or list[int]
         """
 
         if isinstance(resources, str):
@@ -684,100 +660,92 @@ class MusicMpdPlugin(MusicPlugin):
             self._exec('playlistdelete', playlist, p)
 
     @action
-    def playlist_move(self, playlist, from_pos, to_pos):
+    def playlist_move(self, playlist: str, from_pos: int, to_pos: int, *_, **__):
         """
         Change the position of a track in the specified playlist.
 
         :param playlist: Playlist name
-        :type playlist: str
-
         :param from_pos: Original track position
-        :type from_pos: int
-
         :param to_pos: New track position
-        :type to_pos: int
         """
         self._exec('playlistmove', playlist, from_pos, to_pos)
 
     @action
-    def playlistdelete(self, name, pos):
+    def playlistdelete(self, name: str, pos: int):
         """
         Deprecated alias for :meth:`.remove_from_playlist`.
         """
         return self.remove_from_playlist(name, pos)
 
     @action
-    def playlistmove(self, name, from_pos, to_pos):
+    def playlistmove(self, name: str, from_pos: int, to_pos: int):
         """
         Deprecated alias for :meth:`.playlist_move`.
         """
         return self.playlist_move(name, from_pos=from_pos, to_pos=to_pos)
 
     @action
-    def playlistclear(self, name):
+    def playlistclear(self, name: str):
         """
-        Clears all the elements from the specified playlist
+        Clears all the elements from the specified playlist.
 
-        :param name: Playlist name
-        :type name: str
+        :param name: Playlist name.
         """
         self._exec('playlistclear', name)
 
     @action
-    def rename(self, name, new_name):
+    def rename(self, name: str, new_name: str):
         """
-        Rename a playlist
+        Rename a playlist.
 
         :param name: Original playlist name
-        :type name: str
-
         :param new_name: New playlist name
-        :type name: str
         """
         self._exec('rename', name, new_name)
 
     @action
-    def lsinfo(self, uri=None):
+    def lsinfo(self, uri: Optional[str] = None):
         """
-        Returns the list of playlists and directories on the server
+        Returns the list of playlists and directories on the server.
         """
 
-        return self._exec('lsinfo', uri, return_status=False) \
-            if uri else self._exec('lsinfo', return_status=False)
+        return (
+            self._exec('lsinfo', uri, return_status=False)
+            if uri
+            else self._exec('lsinfo', return_status=False)
+        )
 
     @action
-    def plchanges(self, version):
+    def plchanges(self, version: int):
         """
         Show what has changed on the current playlist since a specified playlist
         version number.
 
         :param version: Version number
-        :type version: int
-
         :returns: A list of dicts representing the songs being added since the specified version
         """
-
         return self._exec('plchanges', version, return_status=False)
 
     @action
-    def searchaddplaylist(self, name):
+    def searchaddplaylist(self, name: str):
         """
-        Search and add a playlist by (partial or full) name
+        Search and add a playlist by (partial or full) name.
 
-        :param name: Playlist name, can be partial
-        :type name: str
+        :param name: Playlist name, can be partial.
         """
 
-        playlists = list(map(lambda _: _['playlist'],
-                             filter(lambda playlist:
-                                    name.lower() in playlist['playlist'].lower(),
-                                    self._exec('listplaylists', return_status=False))))
+        resp: list = self._exec('listplaylists', return_status=False)  # type: ignore
+        playlists = [
+            pl['playlist'] for pl in resp if name.lower() in pl['playlist'].lower()
+        ]
 
-        if len(playlists):
-            self._exec('clear')
-            self._exec('load', playlists[0])
-            self._exec('play')
-            return {'playlist': playlists[0]}
+        if not playlists:
+            return None
+
+        self._exec('clear')
+        self._exec('load', playlists[0])
+        self._exec('play')
+        return {'playlist': playlists[0]}
 
     @staticmethod
     def _make_filter(f: dict) -> list:
@@ -786,35 +754,38 @@ class MusicMpdPlugin(MusicPlugin):
             ll.extend([k, v])
         return ll
 
-    # noinspection PyShadowingBuiltins
     @action
-    def find(self, filter: dict, *args, **kwargs):
+    def find(self, filter: dict, *args, **kwargs):  # pylint: disable=redefined-builtin
         """
         Find in the database/library by filter.
 
         :param filter: Search filter (e.g. ``{"artist": "Led Zeppelin", "album": "IV"}``)
         :returns: list[dict]
         """
+        filter_list = self._make_filter(filter)
+        return self._exec('find', *filter_list, *args, return_status=False, **kwargs)
 
-        filter = self._make_filter(filter)
-        return self._exec('find', *filter, *args, return_status=False, **kwargs)
-
-    # noinspection PyShadowingBuiltins
     @action
-    def findadd(self, filter: dict, *args, **kwargs):
+    def findadd(
+        self, filter: dict, *args, **kwargs  # pylint: disable=redefined-builtin
+    ):
         """
         Find in the database/library by filter and add to the current playlist.
 
         :param filter: Search filter (e.g. ``{"artist": "Led Zeppelin", "album": "IV"}``)
         :returns: list[dict]
         """
+        filter_list = self._make_filter(filter)
+        return self._exec('findadd', *filter_list, *args, return_status=False, **kwargs)
 
-        filter = self._make_filter(filter)
-        return self._exec('findadd', *filter, *args, return_status=False, **kwargs)
-
-    # noinspection PyShadowingBuiltins
     @action
-    def search(self, query: Optional[Union[str, dict]] = None, filter: Optional[dict] = None, *args, **kwargs):
+    def search(
+        self,
+        *args,
+        query: Optional[Union[str, dict]] = None,
+        filter: Optional[dict] = None,  # pylint: disable=redefined-builtin
+        **kwargs,
+    ):
         """
         Free search by filter.
 
@@ -823,24 +794,37 @@ class MusicMpdPlugin(MusicPlugin):
             ``query``, it's still here for back-compatibility reasons.
         :returns: list[dict]
         """
-        filter = self._make_filter(query or filter)
-        items = self._exec('search', *filter, *args, return_status=False, **kwargs)
+        assert query or filter, 'Specify either `query` or `filter`'
+
+        filt = filter
+        if isinstance(query, str):
+            filt = query
+        elif isinstance(query, dict):
+            filt = {**(filter or {}), **query}
+
+        filter_list = self._make_filter(filt) if isinstance(filt, dict) else [query]
+
+        items: list = self._exec(  # type: ignore
+            'search', *filter_list, *args, return_status=False, **kwargs
+        )
 
         # Spotify results first
-        return sorted(items, key=lambda item: 0 if item['file'].startswith('spotify:') else 1)
+        return sorted(
+            items, key=lambda item: 0 if item['file'].startswith('spotify:') else 1
+        )
 
-    # noinspection PyShadowingBuiltins
     @action
-    def searchadd(self, filter, *args, **kwargs):
+    def searchadd(self, filter: dict, *args, **kwargs):
         """
         Free search by filter and add the results to the current playlist.
 
         :param filter: Search filter (e.g. ``{"artist": "Led Zeppelin", "album": "IV"}``)
         :returns: list[dict]
         """
-
-        filter = self._make_filter(filter)
-        return self._exec('searchadd', *filter, *args, return_status=False, **kwargs)
+        filter_list = self._make_filter(filter)
+        return self._exec(
+            'searchadd', *filter_list, *args, return_status=False, **kwargs
+        )
 
 
 # vim:sw=4:ts=4:et:

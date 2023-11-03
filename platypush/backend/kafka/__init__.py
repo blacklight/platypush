@@ -11,10 +11,6 @@ class KafkaBackend(Backend):
     """
     Backend to interact with an Apache Kafka (https://kafka.apache.org/)
     streaming platform, send and receive messages.
-
-    Requires:
-
-        * **kafka** (``pip install kafka-python``)
     """
 
     _conn_retry_secs = 5
@@ -24,7 +20,9 @@ class KafkaBackend(Backend):
         :param server: Kafka server name or address + port (default: ``localhost:9092``)
         :type server: str
 
-        :param topic: (Prefix) topic to listen to (default: platypush). The Platypush device_id (by default the hostname) will be appended to the topic (the real topic name will e.g. be "platypush.my_rpi")
+        :param topic: (Prefix) topic to listen to (default: platypush). The
+            Platypush device_id (by default the hostname) will be appended to
+            the topic (the real topic name will e.g. be "platypush.my_rpi")
         :type topic: str
         """
 
@@ -40,7 +38,8 @@ class KafkaBackend(Backend):
         logging.getLogger('kafka').setLevel(logging.ERROR)
 
     def _on_record(self, record):
-        if record.topic != self.topic: return
+        if record.topic != self.topic:
+            return
         msg = record.value.decode('utf-8')
         is_platypush_message = False
 
@@ -60,12 +59,12 @@ class KafkaBackend(Backend):
     def _topic_by_device_id(self, device_id):
         return '{}.{}'.format(self.topic_prefix, device_id)
 
-    def send_message(self, msg, **kwargs):
+    def send_message(self, msg, **_):
         target = msg.target
         kafka_plugin = get_plugin('kafka')
-        kafka_plugin.send_message(msg=msg,
-                                  topic=self._topic_by_device_id(target),
-                                  server=self.server)
+        kafka_plugin.send_message(
+            msg=msg, topic=self._topic_by_device_id(target), server=self.server
+        )
 
     def on_stop(self):
         super().on_stop()
@@ -82,21 +81,29 @@ class KafkaBackend(Backend):
 
     def run(self):
         from kafka import KafkaConsumer
+
         super().run()
 
         self.consumer = KafkaConsumer(self.topic, bootstrap_servers=self.server)
-        self.logger.info('Initialized kafka backend - server: {}, topic: {}'
-                     .format(self.server, self.topic))
+        self.logger.info(
+            'Initialized kafka backend - server: {}, topic: {}'.format(
+                self.server, self.topic
+            )
+        )
 
         try:
             for msg in self.consumer:
                 self._on_record(msg)
-                if self.should_stop(): break
+                if self.should_stop():
+                    break
         except Exception as e:
-            self.logger.warning('Kafka connection error, reconnecting in {} seconds'.
-                            format(self._conn_retry_secs))
+            self.logger.warning(
+                'Kafka connection error, reconnecting in {} seconds'.format(
+                    self._conn_retry_secs
+                )
+            )
             self.logger.exception(e)
             time.sleep(self._conn_retry_secs)
 
-# vim:sw=4:ts=4:et:
 
+# vim:sw=4:ts=4:et:
