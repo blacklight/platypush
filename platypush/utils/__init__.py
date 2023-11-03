@@ -773,4 +773,11 @@ def is_debug_enabled() -> bool:
     return (Config.get('logging') or {}).get('level') == logging.DEBUG
 
 
+def get_default_downloads_dir() -> str:
+    """
+    :return: The default downloads directory.
+    """
+    return os.path.join(os.path.expanduser('~'), 'Downloads')
+
+
 # vim:sw=4:ts=4:et:

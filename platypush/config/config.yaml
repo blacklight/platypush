@@ -723,7 +723,6 @@ backend.http:
 #
 # tts:
 #     # The media plugin that should be used to play the audio response
-#     media_plugin: media.vlc
 #     # The default language of the voice
 #     language: en-gb
 ###
@@ -740,8 +739,6 @@ backend.http:
 # # account.
 #
 # tts.google:
-#     # The media plugin that should be used to play the audio response
-#     media_plugin: media.vlc
 #     # The default language of the voice
 #     language: en-US
 #     # The gender of the voice (MALE or FEMALE)
