@@ -12,6 +12,7 @@ from .message.event import Event
 from .message.request import Request
 from .message.response import Response
 from .runner import main
+from .utils import run
 
 
 __author__ = 'Fabio Manganiello <fabio@manganiello.tech>'
@@ -26,6 +27,7 @@ __all__ = [
     'get_bus',
     'get_plugin',
     'main',
+    'run',
 ]
 
 
