@@ -3,7 +3,7 @@ from platypush.plugins import action
 from platypush.plugins.google import GooglePlugin
 
 
-class GoogleYoutubePlugin(GooglePlugin):
+class YoutubePlugin(GooglePlugin):
     r"""
     YouTube plugin.
 

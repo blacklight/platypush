@@ -25,5 +25,5 @@ manifest:
       - google-auth
       - oauth2client
       - httplib2
-  package: platypush.plugins.google.youtube
+  package: platypush.plugins.youtube
   type: plugin

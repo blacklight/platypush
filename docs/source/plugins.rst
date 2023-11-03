@@ -41,7 +41,6 @@ Plugins
     platypush/plugins/google.maps.rst
     platypush/plugins/google.pubsub.rst
     platypush/plugins/google.translate.rst
-    platypush/plugins/google.youtube.rst
     platypush/plugins/gotify.rst
     platypush/plugins/gpio.rst
     platypush/plugins/gpio.zeroborg.rst
@@ -142,6 +141,7 @@ Plugins
     platypush/plugins/websocket.rst
     platypush/plugins/wiimote.rst
     platypush/plugins/xmpp.rst
+    platypush/plugins/youtube.rst
     platypush/plugins/zeroconf.rst
     platypush/plugins/zigbee.mqtt.rst
     platypush/plugins/zwave.mqtt.rst
