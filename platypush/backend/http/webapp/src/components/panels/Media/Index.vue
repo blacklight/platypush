@@ -58,7 +58,7 @@
           <form @submit.prevent="playUrl(urlPlay)">
             <div class="row">
               <label>
-                Play URL (use <tt>file://</tt> prefix for local files)
+                Play URL (use the file:// prefix for local files)
                 <input type="text" v-model="urlPlay" ref="playUrlInput" autofocus />
               </label>
             </div>
