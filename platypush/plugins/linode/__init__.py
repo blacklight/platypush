@@ -1,7 +1,5 @@
 from typing import Collection, List, Optional
 
-from typing_extensions import override
-
 from linode_api4 import LinodeClient, Instance, objects
 
 from platypush.context import get_bus
@@ -27,14 +25,6 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
         - Login to <https://cloud.linode.com/>.
         - Go to My Profile -> API Tokens -> Add a Personal Access Token.
         - Select the scopes that you want to provide to your new token.
-
-    Requires:
-
-        * **linode_api4** (``pip install linode_api4``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.linode.LinodeInstanceStatusChanged` when the status of an instance changes.
 
     """
 
@@ -88,7 +78,6 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
             if not key.startswith('_')
         }
 
-    @override
     def main(self):
         instances = []
 
@@ -133,7 +122,6 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
             instances = new_status.values()
             self.wait_stop(self.poll_interval)
 
-    @override
     def transform_entities(
         self, entities: Collection[LinodeInstance]
     ) -> Collection[CloudInstance]:
@@ -157,7 +145,6 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
         )
 
     @action
-    @override
     def status(
         self,
         *_,
@@ -196,7 +183,6 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
 
         return mapped_instances
 
-    @override
     @action
     def reboot(self, instance: InstanceId, token: Optional[str] = None, **_):
         """
@@ -208,7 +194,6 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
         node = self._get_instance(instance=instance, token=token)
         assert node.reboot(), 'Reboot failed'
 
-    @override
     @action
     def boot(self, instance: InstanceId, token: Optional[str] = None, **_):
         """
@@ -220,7 +205,6 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
         node = self._get_instance(instance=instance, token=token)
         assert node.boot(), 'Boot failed'
 
-    @override
     @action
     def shutdown(self, instance: InstanceId, token: Optional[str] = None, **_):
         """
@@ -232,7 +216,6 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
         node = self._get_instance(instance=instance, token=token)
         assert node.shutdown(), 'Shutdown failed'
 
-    @override
     @action
     def set(self, entity: str, value: str, **kwargs):
         """

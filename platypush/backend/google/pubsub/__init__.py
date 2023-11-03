@@ -10,18 +10,8 @@ from platypush.message.event.google.pubsub import GooglePubsubMessageEvent
 class GooglePubsubBackend(Backend):
     """
     Subscribe to a list of topics on a Google Pub/Sub instance. See
-        :class:`platypush.plugins.google.pubsub.GooglePubsubPlugin` for a reference on how to generate your
-        project and credentials file.
-
-    Triggers:
-
-        * :class:`platypush.message.event.google.pubsub.GooglePubsubMessageEvent` when a new message is received on
-          a subscribed topic.
-
-    Requires:
-
-        * **google-cloud-pubsub** (``pip install google-cloud-pubsub``)
-
+    :class:`platypush.plugins.google.pubsub.GooglePubsubPlugin` for a reference on how to generate your
+    project and credentials file.
     """
 
     def __init__(

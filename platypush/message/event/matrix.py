@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any, Dict, Optional
 
 from platypush.message.event import Event
 
@@ -13,13 +13,13 @@ class MatrixEvent(Event):
         self,
         *args,
         server_url: str,
-        sender_id: str | None = None,
-        sender_display_name: str | None = None,
-        sender_avatar_url: str | None = None,
-        room_id: str | None = None,
-        room_name: str | None = None,
-        room_topic: str | None = None,
-        server_timestamp: datetime | None = None,
+        sender_id: Optional[str] = None,
+        sender_display_name: Optional[str] = None,
+        sender_avatar_url: Optional[str] = None,
+        room_id: Optional[str] = None,
+        room_name: Optional[str] = None,
+        room_topic: Optional[str] = None,
+        server_timestamp: Optional[datetime] = None,
         **kwargs
     ):
         """
@@ -70,11 +70,11 @@ class MatrixMessageEvent(MatrixEvent):
         self,
         *args,
         body: str = '',
-        url: str | None = None,
-        thumbnail_url: str | None = None,
-        mimetype: str | None = None,
-        formatted_body: str | None = None,
-        format: str | None = None,
+        url: Optional[str] = None,
+        thumbnail_url: Optional[str] = None,
+        mimetype: Optional[str] = None,
+        formatted_body: Optional[str] = None,
+        format: Optional[str] = None,
         **kwargs
     ):
         """
@@ -148,7 +148,7 @@ class MatrixCallEvent(MatrixEvent):
     """
 
     def __init__(
-        self, *args, call_id: str, version: int, sdp: str | None = None, **kwargs
+        self, *args, call_id: str, version: int, sdp: Optional[str] = None, **kwargs
     ):
         """
         :param call_id: The unique ID of the call.
@@ -163,7 +163,7 @@ class MatrixCallInviteEvent(MatrixCallEvent):
     Event triggered when the user is invited to a call.
     """
 
-    def __init__(self, *args, invite_validity: float | None = None, **kwargs):
+    def __init__(self, *args, invite_validity: Optional[float] = None, **kwargs):
         """
         :param invite_validity: For how long the invite will be valid, in seconds.
         :param sdp: SDP text of the session description.
@@ -242,7 +242,9 @@ class MatrixUserPresenceEvent(MatrixEvent):
     Event triggered when a user comes online or goes offline.
     """
 
-    def __init__(self, *args, is_active: bool, last_active: datetime | None, **kwargs):
+    def __init__(
+        self, *args, is_active: bool, last_active: Optional[datetime], **kwargs
+    ):
         """
         :param is_active: True if the user is currently online.
         :param topic: When the user was last active.

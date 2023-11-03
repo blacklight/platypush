@@ -16,7 +16,6 @@ Events
     platypush/events/chat.slack.rst
     platypush/events/chat.telegram.rst
     platypush/events/clipboard.rst
-    platypush/events/covid19.rst
     platypush/events/custom.rst
     platypush/events/dbus.rst
     platypush/events/distance.rst
@@ -70,7 +69,6 @@ Events
     platypush/events/tensorflow.rst
     platypush/events/todoist.rst
     platypush/events/torrent.rst
-    platypush/events/travisci.rst
     platypush/events/trello.rst
     platypush/events/video.rst
     platypush/events/weather.rst

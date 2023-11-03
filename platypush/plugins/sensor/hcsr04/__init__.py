@@ -1,8 +1,6 @@
 from collections.abc import Collection
 import time
-
 from typing import List, Optional, Union
-from typing_extensions import override
 import warnings
 
 from platypush.context import get_bus
@@ -20,19 +18,6 @@ class SensorHcsr04Plugin(GpioPlugin, SensorPlugin):
     <https://www.sparkfun.com/products/15569>`_, but it should be compatible
     with any GPIO-compatible sensor that relies on the same trigger-and-echo
     principle.
-
-    Requires:
-
-        * ``RPi.GPIO`` (``pip install RPi.GPIO``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-        * :class:`platypush.message.event.distance.DistanceSensorEvent` when a
-          new distance measurement is available (legacy event)
-
     """
 
     def __init__(
@@ -142,7 +127,6 @@ class SensorHcsr04Plugin(GpioPlugin, SensorPlugin):
         # s = vt where v = 1/2 * avg speed of sound in mm/s
         return round(pulse_duration * 171500.0, 2)
 
-    @override
     @action
     def get_measurement(self, *_, **__) -> Optional[float]:
         """
@@ -161,7 +145,6 @@ class SensorHcsr04Plugin(GpioPlugin, SensorPlugin):
             self.cleanup()
             raise e
 
-    @override
     def transform_entities(
         self, entities: Union[Optional[float], Collection[Optional[float]]]
     ) -> List[DistanceSensor]:

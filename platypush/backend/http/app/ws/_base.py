@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from logging import getLogger
 from threading import Thread
-from typing_extensions import override
 
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
@@ -24,7 +23,6 @@ class WSRoute(WebSocketHandler, Thread, PubSubMixin, ABC):
         Thread.__init__(self)
         self._io_loop = IOLoop.current()
 
-    @override
     def open(self, *_, **__):
         auth_status = get_auth_status(self.request)
         if auth_status != AuthStatus.OK:
@@ -37,11 +35,9 @@ class WSRoute(WebSocketHandler, Thread, PubSubMixin, ABC):
         self.name = f'ws:{self.app_name()}@{self.request.remote_ip}'
         self.start()
 
-    @override
     def data_received(self, *_, **__):
         pass
 
-    @override
     def on_message(self, message):
         return message
 
@@ -63,12 +59,10 @@ class WSRoute(WebSocketHandler, Thread, PubSubMixin, ABC):
             self.write_message, self._serialize(msg)
         )
 
-    @override
     def run(self) -> None:
         super().run()
         self.subscribe(*self._subscriptions)
 
-    @override
     def on_close(self):
         super().on_close()
         for channel in self._subscriptions.copy():

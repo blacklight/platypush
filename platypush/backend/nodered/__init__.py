@@ -13,11 +13,6 @@ class NoderedBackend(Backend):
     used in your flows. This block will accept JSON requests as input in the format
     ``{"type":"request", "action":"plugin.name.action_name", "args": {...}}`` and return the output
     of the action as block output, or raise an exception if the action failed.
-
-    Requires:
-
-        * **pynodered** (``pip install pynodered``)
-
     """
 
     def __init__(self, port: int = 5051, *args, **kwargs):
@@ -27,7 +22,8 @@ class NoderedBackend(Backend):
         super().__init__(*args, **kwargs)
         self.port = port
         self._runner_path = os.path.join(
-            os.path.dirname(inspect.getfile(self.__class__)), 'runner.py')
+            os.path.dirname(inspect.getfile(self.__class__)), 'runner.py'
+        )
         self._server = None
 
     def on_stop(self):
@@ -40,8 +36,16 @@ class NoderedBackend(Backend):
         super().run()
         self.register_service(port=self.port, name='node')
 
-        self._server = subprocess.Popen([sys.executable, '-m', 'pynodered.server',
-                                         '--port', str(self.port), self._runner_path])
+        self._server = subprocess.Popen(
+            [
+                sys.executable,
+                '-m',
+                'pynodered.server',
+                '--port',
+                str(self.port),
+                self._runner_path,
+            ]
+        )
 
         self.logger.info('Started Node-RED backend on port {}'.format(self.port))
         self._server.wait()

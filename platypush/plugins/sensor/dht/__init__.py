@@ -1,8 +1,7 @@
 from typing import List, Optional, Dict
-from typing_extensions import override
+
 from platypush.common.sensors import Numeric
 from platypush.entities.devices import Device
-
 from platypush.entities.humidity import HumiditySensor
 from platypush.entities.temperature import TemperatureSensor
 from platypush.plugins import action
@@ -13,17 +12,6 @@ from platypush.plugins.sensor import SensorPlugin
 class SensorDhtPlugin(SensorPlugin):
     """
     Plugin to interact with a DHT11/DHT22/AM2302 temperature/humidity sensor through GPIO.
-
-    Requires:
-
-        * ``Adafruit_Python_DHT`` (``pip install git+https://github.com/adafruit/Adafruit_Python_DHT.git``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
     """
 
     def __init__(
@@ -101,7 +89,6 @@ class SensorDhtPlugin(SensorPlugin):
             'temperature': temperature,
         }
 
-    @override
     @action
     def get_measurement(self, *_, **__) -> Dict[str, float]:
         """
@@ -119,7 +106,6 @@ class SensorDhtPlugin(SensorPlugin):
         """
         return self.read()  # type: ignore
 
-    @override
     def transform_entities(self, entities: Dict[str, Numeric]) -> List[Device]:
         return [
             Device(

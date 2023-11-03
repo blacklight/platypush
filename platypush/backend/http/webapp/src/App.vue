@@ -32,6 +32,7 @@ export default {
     return {
       config: {},
       userAuthenticated: false,
+      connected: false,
       pwaInstallEvent: null,
     }
   },
@@ -97,6 +98,8 @@ export default {
 
   mounted() {
     bus.onNotification(this.onNotification)
+    bus.on('connect', () => this.connected = true)
+    bus.on('disconnect', () => this.connected = false)
   },
 }
 </script>

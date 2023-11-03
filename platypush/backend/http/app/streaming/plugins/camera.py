@@ -1,7 +1,6 @@
 from enum import Enum
 import json
 from typing import Optional
-from typing_extensions import override
 
 from tornado.web import stream_request_body
 from platypush.context import get_plugin
@@ -37,7 +36,6 @@ class CameraRoute(StreamingRoute):
         self._request_type = RequestType.UNKNOWN
         self._extension: str = ''
 
-    @override
     @classmethod
     def path(cls) -> str:
         return r"/camera/([a-zA-Z0-9_./]+)/([a-zA-Z0-9_]+)\.?([a-zA-Z0-9_]+)?"
@@ -95,7 +93,6 @@ class CameraRoute(StreamingRoute):
 
         return kwargs
 
-    @override
     @classmethod
     def _get_redis_queue(cls, camera: CameraPlugin, *_, **__) -> str:
         plugin_name = get_plugin_name_by_class(camera.__class__)

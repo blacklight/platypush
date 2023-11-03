@@ -16,12 +16,6 @@ from platypush.utils import get_ssl_client_context
 class WebsocketPlugin(AsyncRunnablePlugin):
     """
     Plugin to send and receive messages over websocket connections.
-
-    Triggers:
-
-        * :class:`platypush.message.event.websocket.WebsocketMessageEvent` when
-            a message is received on a subscribed websocket.
-
     """
 
     def __init__(self, subscriptions: Optional[Collection[str]] = None, **kwargs):

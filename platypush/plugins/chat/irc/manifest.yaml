@@ -21,5 +21,11 @@ manifest:
   package: platypush.plugins.chat.irc
   type: plugin
   install:
+    apt:
+      - python3-irc
+    dnf:
+      - python-irc
+    pacman:
+      - python-irc
     pip:
       - irc

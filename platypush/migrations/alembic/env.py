@@ -74,14 +74,19 @@ def run_migrations_online() -> None:
 
 
 def set_db_engine():
-    db_conf = Config.get('db')
-    assert db_conf, 'Could not retrieve the database configuration'
-    engine = db_conf['engine']
-    assert engine, 'No database engine configured'
+    app_conf_file = context.get_x_argument(as_dictionary=True).get('CFGFILE')
+    if app_conf_file:
+        Config.init(app_conf_file)
 
-    config = context.config
+    engine_url = context.get_x_argument(as_dictionary=True).get('DBNAME')
+    if not engine_url:
+        db_conf = Config.get('db')
+        assert db_conf, 'Could not retrieve the database configuration'
+        engine_url = db_conf['engine']
+        assert engine_url, 'No database engine configured'
+
     section = config.config_ini_section
-    config.set_section_option(section, 'DB_ENGINE', engine)
+    config.set_section_option(section, 'DB_ENGINE', engine_url)
 
 
 set_db_engine()

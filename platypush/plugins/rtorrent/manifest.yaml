@@ -15,7 +15,11 @@ manifest:
       removed.
     platypush.message.event.torrent.TorrentResumedEvent: when a transfer is resumed.
   install:
+    apk:
+      - rtorrent
     apt:
+      - rtorrent
+    dnf:
       - rtorrent
     pacman:
       - rtorrent

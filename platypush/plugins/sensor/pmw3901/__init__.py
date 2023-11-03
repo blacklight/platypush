@@ -2,7 +2,6 @@ import enum
 import math
 import time
 from typing import Dict, List
-from typing_extensions import override
 
 from platypush.common.sensors import Numeric
 from platypush.entities.devices import Device
@@ -37,18 +36,7 @@ class SPISlot(enum.Enum):
 class SensorPmw3901Plugin(SensorPlugin):
     """
     Plugin to interact with an `PMW3901 <https://github.com/pimoroni/pmw3901-python>`_
-    optical flow and motion sensor
-
-    Requires:
-
-        * ``pmw3901`` (``pip install pmw3901``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
+    optical flow and motion sensor.
     """
 
     def __init__(
@@ -114,7 +102,6 @@ class SensorPmw3901Plugin(SensorPlugin):
 
         return self._sensor
 
-    @override
     @action
     def get_measurement(self, *_, **__):
         """
@@ -156,7 +143,6 @@ class SensorPmw3901Plugin(SensorPlugin):
             'motion_events_per_sec': self._events_per_sec.get(secs, 0),
         }
 
-    @override
     def transform_entities(self, entities: Dict[str, Numeric]) -> List[Device]:
         return [
             Device(

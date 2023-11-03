@@ -19,11 +19,6 @@ class NtfyPlugin(AsyncRunnablePlugin):
     `ntfy <https://ntfy.sh/>`_ allows you to process asynchronous notification
     across multiple devices and it's compatible with the
     `UnifiedPush <https://unifiedpush.org/>` specification.
-
-    Triggers:
-
-        * :class:`platypush.message.event.ntfy.NotificationEvent` when a new notification is received.
-
     """
 
     def __init__(

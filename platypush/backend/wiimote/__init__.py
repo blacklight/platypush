@@ -13,14 +13,10 @@ class WiimoteBackend(Backend):
     """
     Backend to communicate with a Nintendo WiiMote controller
 
-    Triggers:
-
-        * :class:`platypush.message.event.Wiimote.WiimoteEvent` \
-            when the state of the Wiimote (battery, buttons, acceleration etc.) changes
-
     Requires:
 
         * **python3-wiimote** (follow instructions at https://github.com/azzra/python3-wiimote)
+
     """
 
     _wiimote = None

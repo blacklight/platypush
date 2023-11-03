@@ -10,17 +10,6 @@ from .entities.resources import MonitoredResource, MonitoredPattern, MonitoredRe
 class FileMonitorBackend(Backend):
     """
     This backend monitors changes to local files and directories using the Watchdog API.
-
-    Triggers:
-
-        * :class:`platypush.message.event.file.FileSystemCreateEvent` if a resource is created.
-        * :class:`platypush.message.event.file.FileSystemDeleteEvent` if a resource is removed.
-        * :class:`platypush.message.event.file.FileSystemModifyEvent` if a resource is modified.
-
-    Requires:
-
-        * **watchdog** (``pip install watchdog``)
-
     """
 
     class EventHandlerFactory:
@@ -29,20 +18,28 @@ class FileMonitorBackend(Backend):
         """
 
         @staticmethod
-        def from_resource(resource: Union[str, Dict[str, Any], MonitoredResource]) -> EventHandler:
+        def from_resource(
+            resource: Union[str, Dict[str, Any], MonitoredResource]
+        ) -> EventHandler:
             if isinstance(resource, str):
                 resource = MonitoredResource(resource)
             elif isinstance(resource, dict):
                 if 'regexes' in resource or 'ignore_regexes' in resource:
                     resource = MonitoredRegex(**resource)
-                elif 'patterns' in resource or 'ignore_patterns' in resource or 'ignore_directories' in resource:
+                elif (
+                    'patterns' in resource
+                    or 'ignore_patterns' in resource
+                    or 'ignore_directories' in resource
+                ):
                     resource = MonitoredPattern(**resource)
                 else:
                     resource = MonitoredResource(**resource)
 
             return EventHandler.from_resource(resource)
 
-    def __init__(self, paths: Iterable[Union[str, Dict[str, Any], MonitoredResource]], **kwargs):
+    def __init__(
+        self, paths: Iterable[Union[str, Dict[str, Any], MonitoredResource]], **kwargs
+    ):
         """
         :param paths: List of paths to monitor. Paths can either be expressed in any of the following ways:
 
@@ -113,7 +110,9 @@ class FileMonitorBackend(Backend):
 
         for path in paths:
             handler = self.EventHandlerFactory.from_resource(path)
-            self._observer.schedule(handler, handler.resource.path, recursive=handler.resource.recursive)
+            self._observer.schedule(
+                handler, handler.resource.path, recursive=handler.resource.recursive
+            )
 
     def run(self):
         super().run()

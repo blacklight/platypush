@@ -34,21 +34,21 @@ class Message:
         def parse_numpy(obj):
             try:
                 import numpy as np
-            except ImportError:
-                return
 
-            if isinstance(obj, np.floating):
-                return float(obj)
-            if isinstance(obj, np.integer):
-                return int(obj)
-            if isinstance(obj, np.ndarray):
-                return obj.tolist()
-            if isinstance(obj, decimal.Decimal):
-                return float(obj)
-            if isinstance(obj, (bytes, bytearray)):
-                return '0x' + ''.join([f'{x:02x}' for x in obj])
-            if callable(obj):
-                return '<function at {}.{}>'.format(obj.__module__, obj.__name__)
+                if isinstance(obj, np.floating):
+                    return float(obj)
+                if isinstance(obj, np.integer):
+                    return int(obj)
+                if isinstance(obj, np.ndarray):
+                    return obj.tolist()
+                if isinstance(obj, decimal.Decimal):
+                    return float(obj)
+                if isinstance(obj, (bytes, bytearray)):
+                    return '0x' + ''.join([f'{x:02x}' for x in obj])
+                if callable(obj):
+                    return f'<function at {obj.__module__}.{obj.__name__}>'
+            except (AttributeError, ImportError, TypeError):
+                pass
 
             return
 

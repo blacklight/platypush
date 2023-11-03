@@ -1,7 +1,11 @@
 manifest:
   events: {}
   install:
+    apk:
+      - py3-kodi
+    pacman:
+      - python-kodi-json
     pip:
-    - kodi-json
+      - kodi-json
   package: platypush.plugins.media.kodi
   type: plugin

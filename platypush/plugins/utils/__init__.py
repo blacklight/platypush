@@ -3,6 +3,8 @@ import threading
 import time
 from typing import Dict, Union
 
+import yaml
+
 from platypush.backend.http.utils import HttpUtils
 from platypush.config import Config
 from platypush.plugins import Plugin, action
@@ -362,6 +364,13 @@ class UtilsPlugin(Plugin):
             return text
 
         return docutils.core.publish_parts(text, writer_name='html')['html_body']
+
+    @action
+    def to_yaml(self, obj: Union[dict, list, tuple, str, int, float, bool]):
+        """
+        Convert an object to YAML
+        """
+        return yaml.dump(obj, indent=2)
 
 
 # vim:sw=4:ts=4:et:

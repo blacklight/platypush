@@ -1,7 +1,6 @@
 manifest:
   events: {}
   install:
-    pip:
-    - gunicorn
+    pip: []
   package: platypush.backend.http
   type: backend

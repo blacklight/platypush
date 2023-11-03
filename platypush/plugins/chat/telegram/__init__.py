@@ -4,21 +4,28 @@ import os
 from threading import RLock
 from typing import Optional, Union
 
-# noinspection PyPackageRequirements
 from telegram.ext import Updater
-# noinspection PyPackageRequirements
 from telegram.message import Message as TelegramMessage
-# noinspection PyPackageRequirements
 from telegram.user import User as TelegramUser
 
-from platypush.message.response.chat.telegram import TelegramMessageResponse, TelegramFileResponse, \
-    TelegramChatResponse, TelegramUserResponse, TelegramUsersResponse
+from platypush.message.response.chat.telegram import (
+    TelegramMessageResponse,
+    TelegramFileResponse,
+    TelegramChatResponse,
+    TelegramUserResponse,
+    TelegramUsersResponse,
+)
 from platypush.plugins import action
 from platypush.plugins.chat import ChatPlugin
 
 
 class Resource:
-    def __init__(self, file_id: Optional[int] = None, url: Optional[str] = None, path: Optional[str] = None):
+    def __init__(
+        self,
+        file_id: Optional[int] = None,
+        url: Optional[str] = None,
+        path: Optional[str] = None,
+    ):
         assert file_id or url or path, 'You need to specify either file_id, url or path'
         self.file_id = file_id
         self.url = url
@@ -27,12 +34,14 @@ class Resource:
 
     def __enter__(self):
         if self.path:
-            self._file = open(os.path.abspath(os.path.expanduser(self.path)), 'rb')
+            self._file = open(  # noqa
+                os.path.abspath(os.path.expanduser(self.path)), 'rb'
+            )
             return self._file
 
         return self.file_id or self.url
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, *_, **__):
         if self._file:
             self._file.close()
 
@@ -46,10 +55,6 @@ class ChatTelegramPlugin(ChatPlugin):
         2. Send ``/start`` followed by ``/newbot``. Choose a display name and a username for your bot.
         3. Copy the provided API token in the configuration of this plugin.
         4. Open a conversation with your newly created bot.
-
-    Requires:
-
-        * **python-telegram-bot** (``pip install python-telegram-bot``)
 
     """
 
@@ -117,7 +122,7 @@ class ChatTelegramPlugin(ChatPlugin):
             contact_user_id=msg.contact.user_id if msg.contact else None,
             contact_vcard=msg.contact.vcard if msg.contact else None,
             link=msg.link,
-            media_group_id=msg.media_group_id
+            media_group_id=msg.media_group_id,
         )
 
     @staticmethod
@@ -129,13 +134,19 @@ class ChatTelegramPlugin(ChatPlugin):
             first_name=user.first_name,
             last_name=user.last_name,
             language_code=user.language_code,
-            link=user.link
+            link=user.link,
         )
 
     @action
-    def send_message(self, chat_id: Union[str, int], text: str, parse_mode: Optional[str] = None,
-                     disable_web_page_preview: bool = False, disable_notification: bool = False,
-                     reply_to_message_id: Optional[int] = None) -> TelegramMessageResponse:
+    def send_message(
+        self,
+        chat_id: Union[str, int],
+        text: str,
+        parse_mode: Optional[str] = None,
+        disable_web_page_preview: bool = False,
+        disable_notification: bool = False,
+        reply_to_message_id: Optional[int] = None,
+    ) -> TelegramMessageResponse:
         """
         Send a message to a chat.
 
@@ -152,25 +163,30 @@ class ChatTelegramPlugin(ChatPlugin):
         """
 
         telegram = self.get_telegram()
-        msg = telegram.bot.send_message(chat_id=chat_id,
-                                        text=text,
-                                        parse_mode=parse_mode,
-                                        disable_web_page_preview=disable_web_page_preview,
-                                        disable_notification=disable_notification,
-                                        reply_to_message_id=reply_to_message_id)
+        msg = telegram.bot.send_message(
+            chat_id=chat_id,
+            text=text,
+            parse_mode=parse_mode,
+            disable_web_page_preview=disable_web_page_preview,
+            disable_notification=disable_notification,
+            reply_to_message_id=reply_to_message_id,
+        )
 
         return self.parse_msg(msg)
 
     @action
-    def send_photo(self, chat_id: Union[str, int],
-                   file_id: Optional[int] = None,
-                   url: Optional[str] = None,
-                   path: Optional[str] = None,
-                   caption: Optional[str] = None,
-                   parse_mode: Optional[str] = None,
-                   disable_notification: bool = False,
-                   reply_to_message_id: Optional[int] = None,
-                   timeout: int = 20) -> TelegramMessageResponse:
+    def send_photo(
+        self,
+        chat_id: Union[str, int],
+        file_id: Optional[int] = None,
+        url: Optional[str] = None,
+        path: Optional[str] = None,
+        caption: Optional[str] = None,
+        parse_mode: Optional[str] = None,
+        disable_notification: bool = False,
+        reply_to_message_id: Optional[int] = None,
+        timeout: int = 20,
+    ) -> TelegramMessageResponse:
         """
         Send a picture to a chat.
 
@@ -198,28 +214,34 @@ class ChatTelegramPlugin(ChatPlugin):
         telegram = self.get_telegram()
 
         with Resource(file_id=file_id, url=url, path=path) as resource:
-            msg = telegram.bot.send_photo(chat_id=chat_id,
-                                          photo=resource,
-                                          caption=caption,
-                                          disable_notification=disable_notification,
-                                          reply_to_message_id=reply_to_message_id,
-                                          timeout=timeout, parse_mode=parse_mode)
+            msg = telegram.bot.send_photo(
+                chat_id=chat_id,
+                photo=resource,
+                caption=caption,
+                disable_notification=disable_notification,
+                reply_to_message_id=reply_to_message_id,
+                timeout=timeout,
+                parse_mode=parse_mode,
+            )
 
         return self.parse_msg(msg)
 
     @action
-    def send_audio(self, chat_id: Union[str, int],
-                   file_id: Optional[int] = None,
-                   url: Optional[str] = None,
-                   path: Optional[str] = None,
-                   caption: Optional[str] = None,
-                   performer: Optional[str] = None,
-                   title: Optional[str] = None,
-                   duration: Optional[float] = None,
-                   parse_mode: Optional[str] = None,
-                   disable_notification: bool = False,
-                   reply_to_message_id: Optional[int] = None,
-                   timeout: int = 20) -> TelegramMessageResponse:
+    def send_audio(
+        self,
+        chat_id: Union[str, int],
+        file_id: Optional[int] = None,
+        url: Optional[str] = None,
+        path: Optional[str] = None,
+        caption: Optional[str] = None,
+        performer: Optional[str] = None,
+        title: Optional[str] = None,
+        duration: Optional[float] = None,
+        parse_mode: Optional[str] = None,
+        disable_notification: bool = False,
+        reply_to_message_id: Optional[int] = None,
+        timeout: int = 20,
+    ) -> TelegramMessageResponse:
         """
         Send audio to a chat.
 
@@ -250,30 +272,35 @@ class ChatTelegramPlugin(ChatPlugin):
         telegram = self.get_telegram()
 
         with Resource(file_id=file_id, url=url, path=path) as resource:
-            msg = telegram.bot.send_audio(chat_id=chat_id,
-                                          audio=resource,
-                                          caption=caption,
-                                          disable_notification=disable_notification,
-                                          performer=performer,
-                                          title=title,
-                                          duration=duration,
-                                          reply_to_message_id=reply_to_message_id,
-                                          timeout=timeout,
-                                          parse_mode=parse_mode)
+            msg = telegram.bot.send_audio(
+                chat_id=chat_id,
+                audio=resource,
+                caption=caption,
+                disable_notification=disable_notification,
+                performer=performer,
+                title=title,
+                duration=duration,
+                reply_to_message_id=reply_to_message_id,
+                timeout=timeout,
+                parse_mode=parse_mode,
+            )
 
         return self.parse_msg(msg)
 
     @action
-    def send_document(self, chat_id: Union[str, int],
-                      file_id: Optional[int] = None,
-                      url: Optional[str] = None,
-                      path: Optional[str] = None,
-                      filename: Optional[str] = None,
-                      caption: Optional[str] = None,
-                      parse_mode: Optional[str] = None,
-                      disable_notification: bool = False,
-                      reply_to_message_id: Optional[int] = None,
-                      timeout: int = 20) -> TelegramMessageResponse:
+    def send_document(
+        self,
+        chat_id: Union[str, int],
+        file_id: Optional[int] = None,
+        url: Optional[str] = None,
+        path: Optional[str] = None,
+        filename: Optional[str] = None,
+        caption: Optional[str] = None,
+        parse_mode: Optional[str] = None,
+        disable_notification: bool = False,
+        reply_to_message_id: Optional[int] = None,
+        timeout: int = 20,
+    ) -> TelegramMessageResponse:
         """
         Send a document to a chat.
 
@@ -302,30 +329,35 @@ class ChatTelegramPlugin(ChatPlugin):
         telegram = self.get_telegram()
 
         with Resource(file_id=file_id, url=url, path=path) as resource:
-            msg = telegram.bot.send_document(chat_id=chat_id,
-                                             document=resource,
-                                             filename=filename,
-                                             caption=caption,
-                                             disable_notification=disable_notification,
-                                             reply_to_message_id=reply_to_message_id,
-                                             timeout=timeout,
-                                             parse_mode=parse_mode)
+            msg = telegram.bot.send_document(
+                chat_id=chat_id,
+                document=resource,
+                filename=filename,
+                caption=caption,
+                disable_notification=disable_notification,
+                reply_to_message_id=reply_to_message_id,
+                timeout=timeout,
+                parse_mode=parse_mode,
+            )
 
         return self.parse_msg(msg)
 
     @action
-    def send_video(self, chat_id: Union[str, int],
-                   file_id: Optional[int] = None,
-                   url: Optional[str] = None,
-                   path: Optional[str] = None,
-                   duration: Optional[int] = None,
-                   caption: Optional[str] = None,
-                   width: Optional[int] = None,
-                   height: Optional[int] = None,
-                   parse_mode: Optional[str] = None,
-                   disable_notification: bool = False,
-                   reply_to_message_id: Optional[int] = None,
-                   timeout: int = 20) -> TelegramMessageResponse:
+    def send_video(
+        self,
+        chat_id: Union[str, int],
+        file_id: Optional[int] = None,
+        url: Optional[str] = None,
+        path: Optional[str] = None,
+        duration: Optional[int] = None,
+        caption: Optional[str] = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        parse_mode: Optional[str] = None,
+        disable_notification: bool = False,
+        reply_to_message_id: Optional[int] = None,
+        timeout: int = 20,
+    ) -> TelegramMessageResponse:
         """
         Send a video to a chat.
 
@@ -356,32 +388,37 @@ class ChatTelegramPlugin(ChatPlugin):
         telegram = self.get_telegram()
 
         with Resource(file_id=file_id, url=url, path=path) as resource:
-            msg = telegram.bot.send_video(chat_id=chat_id,
-                                          video=resource,
-                                          duration=duration,
-                                          caption=caption,
-                                          width=width,
-                                          height=height,
-                                          disable_notification=disable_notification,
-                                          reply_to_message_id=reply_to_message_id,
-                                          timeout=timeout,
-                                          parse_mode=parse_mode)
+            msg = telegram.bot.send_video(
+                chat_id=chat_id,
+                video=resource,
+                duration=duration,
+                caption=caption,
+                width=width,
+                height=height,
+                disable_notification=disable_notification,
+                reply_to_message_id=reply_to_message_id,
+                timeout=timeout,
+                parse_mode=parse_mode,
+            )
 
         return self.parse_msg(msg)
 
     @action
-    def send_animation(self, chat_id: Union[str, int],
-                       file_id: Optional[int] = None,
-                       url: Optional[str] = None,
-                       path: Optional[str] = None,
-                       duration: Optional[int] = None,
-                       caption: Optional[str] = None,
-                       width: Optional[int] = None,
-                       height: Optional[int] = None,
-                       parse_mode: Optional[str] = None,
-                       disable_notification: bool = False,
-                       reply_to_message_id: Optional[int] = None,
-                       timeout: int = 20) -> TelegramMessageResponse:
+    def send_animation(
+        self,
+        chat_id: Union[str, int],
+        file_id: Optional[int] = None,
+        url: Optional[str] = None,
+        path: Optional[str] = None,
+        duration: Optional[int] = None,
+        caption: Optional[str] = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        parse_mode: Optional[str] = None,
+        disable_notification: bool = False,
+        reply_to_message_id: Optional[int] = None,
+        timeout: int = 20,
+    ) -> TelegramMessageResponse:
         """
         Send an animation (GIF or H.264/MPEG-4 AVC video without sound) to a chat.
 
@@ -412,30 +449,35 @@ class ChatTelegramPlugin(ChatPlugin):
         telegram = self.get_telegram()
 
         with Resource(file_id=file_id, url=url, path=path) as resource:
-            msg = telegram.bot.send_animation(chat_id=chat_id,
-                                              animation=resource,
-                                              duration=duration,
-                                              caption=caption,
-                                              width=width,
-                                              height=height,
-                                              disable_notification=disable_notification,
-                                              reply_to_message_id=reply_to_message_id,
-                                              timeout=timeout,
-                                              parse_mode=parse_mode)
+            msg = telegram.bot.send_animation(
+                chat_id=chat_id,
+                animation=resource,
+                duration=duration,
+                caption=caption,
+                width=width,
+                height=height,
+                disable_notification=disable_notification,
+                reply_to_message_id=reply_to_message_id,
+                timeout=timeout,
+                parse_mode=parse_mode,
+            )
 
         return self.parse_msg(msg)
 
     @action
-    def send_voice(self, chat_id: Union[str, int],
-                   file_id: Optional[int] = None,
-                   url: Optional[str] = None,
-                   path: Optional[str] = None,
-                   caption: Optional[str] = None,
-                   duration: Optional[float] = None,
-                   parse_mode: Optional[str] = None,
-                   disable_notification: bool = False,
-                   reply_to_message_id: Optional[int] = None,
-                   timeout: int = 20) -> TelegramMessageResponse:
+    def send_voice(
+        self,
+        chat_id: Union[str, int],
+        file_id: Optional[int] = None,
+        url: Optional[str] = None,
+        path: Optional[str] = None,
+        caption: Optional[str] = None,
+        duration: Optional[float] = None,
+        parse_mode: Optional[str] = None,
+        disable_notification: bool = False,
+        reply_to_message_id: Optional[int] = None,
+        timeout: int = 20,
+    ) -> TelegramMessageResponse:
         """
         Send audio to a chat as a voice file. For this to work, your audio must be in an .ogg file encoded with OPUS
         (other formats may be sent as Audio or Document).
@@ -465,25 +507,31 @@ class ChatTelegramPlugin(ChatPlugin):
         telegram = self.get_telegram()
 
         with Resource(file_id=file_id, url=url, path=path) as resource:
-            msg = telegram.bot.send_voice(chat_id=chat_id,
-                                          voice=resource,
-                                          caption=caption,
-                                          disable_notification=disable_notification,
-                                          duration=duration,
-                                          reply_to_message_id=reply_to_message_id,
-                                          timeout=timeout, parse_mode=parse_mode)
+            msg = telegram.bot.send_voice(
+                chat_id=chat_id,
+                voice=resource,
+                caption=caption,
+                disable_notification=disable_notification,
+                duration=duration,
+                reply_to_message_id=reply_to_message_id,
+                timeout=timeout,
+                parse_mode=parse_mode,
+            )
 
         return self.parse_msg(msg)
 
     @action
-    def send_video_note(self, chat_id: Union[str, int],
-                        file_id: Optional[int] = None,
-                        url: Optional[str] = None,
-                        path: Optional[str] = None,
-                        duration: Optional[int] = None,
-                        disable_notification: bool = False,
-                        reply_to_message_id: Optional[int] = None,
-                        timeout: int = 20) -> TelegramMessageResponse:
+    def send_video_note(
+        self,
+        chat_id: Union[str, int],
+        file_id: Optional[int] = None,
+        url: Optional[str] = None,
+        path: Optional[str] = None,
+        duration: Optional[int] = None,
+        disable_notification: bool = False,
+        reply_to_message_id: Optional[int] = None,
+        timeout: int = 20,
+    ) -> TelegramMessageResponse:
         """
         Send a video note to a chat. As of v.4.0, Telegram clients support rounded square mp4 videos of up to
         1 minute long.
@@ -511,22 +559,27 @@ class ChatTelegramPlugin(ChatPlugin):
         telegram = self.get_telegram()
 
         with Resource(file_id=file_id, url=url, path=path) as resource:
-            msg = telegram.bot.send_video_note(chat_id=chat_id,
-                                               video=resource,
-                                               duration=duration,
-                                               disable_notification=disable_notification,
-                                               reply_to_message_id=reply_to_message_id,
-                                               timeout=timeout)
+            msg = telegram.bot.send_video_note(
+                chat_id=chat_id,
+                video=resource,
+                duration=duration,
+                disable_notification=disable_notification,
+                reply_to_message_id=reply_to_message_id,
+                timeout=timeout,
+            )
 
         return self.parse_msg(msg)
 
     @action
-    def send_location(self, chat_id: Union[str, int],
-                      latitude: float,
-                      longitude: float,
-                      disable_notification: bool = False,
-                      reply_to_message_id: Optional[int] = None,
-                      timeout: int = 20) -> TelegramMessageResponse:
+    def send_location(
+        self,
+        chat_id: Union[str, int],
+        latitude: float,
+        longitude: float,
+        disable_notification: bool = False,
+        reply_to_message_id: Optional[int] = None,
+        timeout: int = 20,
+    ) -> TelegramMessageResponse:
         """
         Send a location to a chat.
 
@@ -543,26 +596,31 @@ class ChatTelegramPlugin(ChatPlugin):
         """
 
         telegram = self.get_telegram()
-        msg = telegram.bot.send_location(chat_id=chat_id,
-                                         latitude=latitude,
-                                         longitude=longitude,
-                                         disable_notification=disable_notification,
-                                         reply_to_message_id=reply_to_message_id,
-                                         timeout=timeout)
+        msg = telegram.bot.send_location(
+            chat_id=chat_id,
+            latitude=latitude,
+            longitude=longitude,
+            disable_notification=disable_notification,
+            reply_to_message_id=reply_to_message_id,
+            timeout=timeout,
+        )
 
         return self.parse_msg(msg)
 
     @action
-    def send_venue(self, chat_id: Union[str, int],
-                   latitude: float,
-                   longitude: float,
-                   title: str,
-                   address: str,
-                   foursquare_id: Optional[str] = None,
-                   foursquare_type: Optional[str] = None,
-                   disable_notification: bool = False,
-                   reply_to_message_id: Optional[int] = None,
-                   timeout: int = 20) -> TelegramMessageResponse:
+    def send_venue(
+        self,
+        chat_id: Union[str, int],
+        latitude: float,
+        longitude: float,
+        title: str,
+        address: str,
+        foursquare_id: Optional[str] = None,
+        foursquare_type: Optional[str] = None,
+        disable_notification: bool = False,
+        reply_to_message_id: Optional[int] = None,
+        timeout: int = 20,
+    ) -> TelegramMessageResponse:
         """
         Send the address of a venue to a chat.
 
@@ -583,28 +641,33 @@ class ChatTelegramPlugin(ChatPlugin):
         """
 
         telegram = self.get_telegram()
-        msg = telegram.bot.send_venue(chat_id=chat_id,
-                                      latitude=latitude,
-                                      longitude=longitude,
-                                      title=title,
-                                      address=address,
-                                      foursquare_id=foursquare_id,
-                                      foursquare_type=foursquare_type,
-                                      disable_notification=disable_notification,
-                                      reply_to_message_id=reply_to_message_id,
-                                      timeout=timeout)
+        msg = telegram.bot.send_venue(
+            chat_id=chat_id,
+            latitude=latitude,
+            longitude=longitude,
+            title=title,
+            address=address,
+            foursquare_id=foursquare_id,
+            foursquare_type=foursquare_type,
+            disable_notification=disable_notification,
+            reply_to_message_id=reply_to_message_id,
+            timeout=timeout,
+        )
 
         return self.parse_msg(msg)
 
     @action
-    def send_contact(self, chat_id: Union[str, int],
-                     phone_number: str,
-                     first_name: str,
-                     last_name: Optional[str] = None,
-                     vcard: Optional[str] = None,
-                     disable_notification: bool = False,
-                     reply_to_message_id: Optional[int] = None,
-                     timeout: int = 20) -> TelegramMessageResponse:
+    def send_contact(
+        self,
+        chat_id: Union[str, int],
+        phone_number: str,
+        first_name: str,
+        last_name: Optional[str] = None,
+        vcard: Optional[str] = None,
+        disable_notification: bool = False,
+        reply_to_message_id: Optional[int] = None,
+        timeout: int = 20,
+    ) -> TelegramMessageResponse:
         """
         Send a contact to a chat.
 
@@ -623,14 +686,16 @@ class ChatTelegramPlugin(ChatPlugin):
         """
 
         telegram = self.get_telegram()
-        msg = telegram.bot.send_contact(chat_id=chat_id,
-                                        phone_number=phone_number,
-                                        first_name=first_name,
-                                        last_name=last_name,
-                                        vcard=vcard,
-                                        disable_notification=disable_notification,
-                                        reply_to_message_id=reply_to_message_id,
-                                        timeout=timeout)
+        msg = telegram.bot.send_contact(
+            chat_id=chat_id,
+            phone_number=phone_number,
+            first_name=first_name,
+            last_name=last_name,
+            vcard=vcard,
+            disable_notification=disable_notification,
+            reply_to_message_id=reply_to_message_id,
+            timeout=timeout,
+        )
 
         return self.parse_msg(msg)
 
@@ -645,10 +710,14 @@ class ChatTelegramPlugin(ChatPlugin):
 
         telegram = self.get_telegram()
         file = telegram.bot.get_file(file_id, timeout=timeout)
-        return TelegramFileResponse(file_id=file.file_id, file_path=file.file_path, file_size=file.file_size)
+        return TelegramFileResponse(
+            file_id=file.file_id, file_path=file.file_path, file_size=file.file_size
+        )
 
     @action
-    def get_chat(self, chat_id: Union[int, str], timeout: int = 20) -> TelegramChatResponse:
+    def get_chat(
+        self, chat_id: Union[int, str], timeout: int = 20
+    ) -> TelegramChatResponse:
         """
         Get the info about a Telegram chat.
 
@@ -658,18 +727,22 @@ class ChatTelegramPlugin(ChatPlugin):
 
         telegram = self.get_telegram()
         chat = telegram.bot.get_chat(chat_id, timeout=timeout)
-        return TelegramChatResponse(chat_id=chat.id,
-                                    link=chat.link,
-                                    username=chat.username,
-                                    invite_link=chat.invite_link,
-                                    title=chat.title,
-                                    description=chat.description,
-                                    type=chat.type,
-                                    first_name=chat.first_name,
-                                    last_name=chat.last_name)
+        return TelegramChatResponse(
+            chat_id=chat.id,
+            link=chat.link,
+            username=chat.username,
+            invite_link=chat.invite_link,
+            title=chat.title,
+            description=chat.description,
+            type=chat.type,
+            first_name=chat.first_name,
+            last_name=chat.last_name,
+        )
 
     @action
-    def get_chat_user(self, chat_id: Union[int, str], user_id: int, timeout: int = 20) -> TelegramUserResponse:
+    def get_chat_user(
+        self, chat_id: Union[int, str], user_id: int, timeout: int = 20
+    ) -> TelegramUserResponse:
         """
         Get the info about a user connected to a chat.
 
@@ -680,16 +753,20 @@ class ChatTelegramPlugin(ChatPlugin):
 
         telegram = self.get_telegram()
         user = telegram.bot.get_chat_member(chat_id, user_id, timeout=timeout)
-        return TelegramUserResponse(user_id=user.user.id,
-                                    link=user.user.link,
-                                    username=user.user.username,
-                                    first_name=user.user.first_name,
-                                    last_name=user.user.last_name,
-                                    is_bot=user.user.is_bot,
-                                    language_code=user.user.language_code)
+        return TelegramUserResponse(
+            user_id=user.user.id,
+            link=user.user.link,
+            username=user.user.username,
+            first_name=user.user.first_name,
+            last_name=user.user.last_name,
+            is_bot=user.user.is_bot,
+            language_code=user.user.language_code,
+        )
 
     @action
-    def get_chat_administrators(self, chat_id: Union[int, str], timeout: int = 20) -> TelegramUsersResponse:
+    def get_chat_administrators(
+        self, chat_id: Union[int, str], timeout: int = 20
+    ) -> TelegramUsersResponse:
         """
         Get the list of the administrators of a chat.
 
@@ -699,20 +776,25 @@ class ChatTelegramPlugin(ChatPlugin):
 
         telegram = self.get_telegram()
         admins = telegram.bot.get_chat_administrators(chat_id, timeout=timeout)
-        return TelegramUsersResponse([
-            TelegramUserResponse(
-                user_id=user.user.id,
-                link=user.user.link,
-                username=user.user.username,
-                first_name=user.user.first_name,
-                last_name=user.user.last_name,
-                is_bot=user.user.is_bot,
-                language_code=user.user.language_code,
-            ) for user in admins
-        ])
+        return TelegramUsersResponse(
+            [
+                TelegramUserResponse(
+                    user_id=user.user.id,
+                    link=user.user.link,
+                    username=user.user.username,
+                    first_name=user.user.first_name,
+                    last_name=user.user.last_name,
+                    is_bot=user.user.is_bot,
+                    language_code=user.user.language_code,
+                )
+                for user in admins
+            ]
+        )
 
     @action
-    def get_chat_members_count(self, chat_id: Union[int, str], timeout: int = 20) -> int:
+    def get_chat_members_count(
+        self, chat_id: Union[int, str], timeout: int = 20
+    ) -> int:
         """
         Get the number of users in a chat.
 
@@ -723,10 +805,13 @@ class ChatTelegramPlugin(ChatPlugin):
         return telegram.bot.get_chat_members_count(chat_id, timeout=timeout)
 
     @action
-    def kick_chat_member(self, chat_id: Union[str, int],
-                         user_id: int,
-                         until_date: Optional[datetime.datetime] = None,
-                         timeout: int = 20):
+    def kick_chat_member(
+        self,
+        chat_id: Union[str, int],
+        user_id: int,
+        until_date: Optional[datetime.datetime] = None,
+        timeout: int = 20,
+    ):
         """
         Kick a user from a chat.
 
@@ -742,15 +827,13 @@ class ChatTelegramPlugin(ChatPlugin):
 
         telegram = self.get_telegram()
         telegram.bot.kick_chat_member(
-            chat_id=chat_id,
-            user_id=user_id,
-            until_date=until_date,
-            timeout=timeout)
+            chat_id=chat_id, user_id=user_id, until_date=until_date, timeout=timeout
+        )
 
     @action
-    def unban_chat_member(self, chat_id: Union[str, int],
-                          user_id: int,
-                          timeout: int = 20):
+    def unban_chat_member(
+        self, chat_id: Union[str, int], user_id: int, timeout: int = 20
+    ):
         """
         Lift the ban from a chat member.
 
@@ -765,22 +848,24 @@ class ChatTelegramPlugin(ChatPlugin):
 
         telegram = self.get_telegram()
         telegram.bot.unban_chat_member(
-            chat_id=chat_id,
-            user_id=user_id,
-            timeout=timeout)
+            chat_id=chat_id, user_id=user_id, timeout=timeout
+        )
 
     @action
-    def promote_chat_member(self, chat_id: Union[str, int],
-                            user_id: int,
-                            can_change_info: Optional[bool] = None,
-                            can_post_messages: Optional[bool] = None,
-                            can_edit_messages: Optional[bool] = None,
-                            can_delete_messages: Optional[bool] = None,
-                            can_invite_users: Optional[bool] = None,
-                            can_restrict_members: Optional[bool] = None,
-                            can_promote_members: Optional[bool] = None,
-                            can_pin_messages: Optional[bool] = None,
-                            timeout: int = 20):
+    def promote_chat_member(
+        self,
+        chat_id: Union[str, int],
+        user_id: int,
+        can_change_info: Optional[bool] = None,
+        can_post_messages: Optional[bool] = None,
+        can_edit_messages: Optional[bool] = None,
+        can_delete_messages: Optional[bool] = None,
+        can_invite_users: Optional[bool] = None,
+        can_restrict_members: Optional[bool] = None,
+        can_promote_members: Optional[bool] = None,
+        can_pin_messages: Optional[bool] = None,
+        timeout: int = 20,
+    ):
         """
         Promote or demote a member.
 
@@ -813,12 +898,11 @@ class ChatTelegramPlugin(ChatPlugin):
             can_restrict_members=can_restrict_members,
             can_promote_members=can_promote_members,
             can_pin_messages=can_pin_messages,
-            timeout=timeout)
+            timeout=timeout,
+        )
 
     @action
-    def set_chat_title(self, chat_id: Union[str, int],
-                       title: str,
-                       timeout: int = 20):
+    def set_chat_title(self, chat_id: Union[str, int], title: str, timeout: int = 20):
         """
         Set the title of a channel/group.
 
@@ -832,15 +916,12 @@ class ChatTelegramPlugin(ChatPlugin):
         """
 
         telegram = self.get_telegram()
-        telegram.bot.set_chat_title(
-            chat_id=chat_id,
-            description=title,
-            timeout=timeout)
+        telegram.bot.set_chat_title(chat_id=chat_id, description=title, timeout=timeout)
 
     @action
-    def set_chat_description(self, chat_id: Union[str, int],
-                             description: str,
-                             timeout: int = 20):
+    def set_chat_description(
+        self, chat_id: Union[str, int], description: str, timeout: int = 20
+    ):
         """
         Set the description of a channel/group.
 
@@ -855,14 +936,11 @@ class ChatTelegramPlugin(ChatPlugin):
 
         telegram = self.get_telegram()
         telegram.bot.set_chat_description(
-            chat_id=chat_id,
-            description=description,
-            timeout=timeout)
+            chat_id=chat_id, description=description, timeout=timeout
+        )
 
     @action
-    def set_chat_photo(self, chat_id: Union[str, int],
-                       path: str,
-                       timeout: int = 20):
+    def set_chat_photo(self, chat_id: Union[str, int], path: str, timeout: int = 20):
         """
         Set the photo of a channel/group.
 
@@ -879,13 +957,11 @@ class ChatTelegramPlugin(ChatPlugin):
 
         with Resource(path=path) as resource:
             telegram.bot.set_chat_photo(
-                chat_id=chat_id,
-                photo=resource,
-                timeout=timeout)
+                chat_id=chat_id, photo=resource, timeout=timeout
+            )
 
     @action
-    def delete_chat_photo(self, chat_id: Union[str, int],
-                          timeout: int = 20):
+    def delete_chat_photo(self, chat_id: Union[str, int], timeout: int = 20):
         """
         Delete the photo of a channel/group.
 
@@ -898,15 +974,16 @@ class ChatTelegramPlugin(ChatPlugin):
         """
 
         telegram = self.get_telegram()
-        telegram.bot.delete_chat_photo(
-            chat_id=chat_id,
-            timeout=timeout)
+        telegram.bot.delete_chat_photo(chat_id=chat_id, timeout=timeout)
 
     @action
-    def pin_chat_message(self, chat_id: Union[str, int],
-                         message_id: int,
-                         disable_notification: Optional[bool] = None,
-                         timeout: int = 20):
+    def pin_chat_message(
+        self,
+        chat_id: Union[str, int],
+        message_id: int,
+        disable_notification: Optional[bool] = None,
+        timeout: int = 20,
+    ):
         """
         Pin a message in a chat.
 
@@ -925,11 +1002,11 @@ class ChatTelegramPlugin(ChatPlugin):
             chat_id=chat_id,
             message_id=message_id,
             disable_notification=disable_notification,
-            timeout=timeout)
+            timeout=timeout,
+        )
 
     @action
-    def unpin_chat_message(self, chat_id: Union[str, int],
-                           timeout: int = 20):
+    def unpin_chat_message(self, chat_id: Union[str, int], timeout: int = 20):
         """
         Unpin the message of a chat.
 
@@ -942,13 +1019,10 @@ class ChatTelegramPlugin(ChatPlugin):
         """
 
         telegram = self.get_telegram()
-        telegram.bot.unpin_chat_message(
-            chat_id=chat_id,
-            timeout=timeout)
+        telegram.bot.unpin_chat_message(chat_id=chat_id, timeout=timeout)
 
     @action
-    def leave_chat(self, chat_id: Union[str, int],
-                   timeout: int = 20):
+    def leave_chat(self, chat_id: Union[str, int], timeout: int = 20):
         """
         Leave a chat.
 
@@ -961,9 +1035,7 @@ class ChatTelegramPlugin(ChatPlugin):
         """
 
         telegram = self.get_telegram()
-        telegram.bot.leave_chat(
-            chat_id=chat_id,
-            timeout=timeout)
+        telegram.bot.leave_chat(chat_id=chat_id, timeout=timeout)
 
 
 # vim:sw=4:ts=4:et:

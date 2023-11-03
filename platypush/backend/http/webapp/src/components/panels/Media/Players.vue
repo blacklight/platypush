@@ -118,7 +118,7 @@ export default {
 }
 
 .players {
-  ::v-deep(.dropdown) {
+  :deep(.dropdown) {
     direction: ltr;
     .item {
       padding: .5em;
@@ -129,13 +129,13 @@ export default {
     }
   }
 
-  ::v-deep(.refresh) {
+  :deep(.refresh) {
     font-weight: bold;
     font-size: .8em;
     opacity: .7;
   }
 
-  ::v-deep(.player.selected) {
+  :deep(.player.selected) {
     color: $selected-fg;
   }
 }

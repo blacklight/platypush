@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import Dict, List, Type
-from typing_extensions import override
 
 from platypush.common.sensors import Numeric
 from platypush.entities.devices import Device
@@ -63,18 +62,7 @@ _sensor_entity_mappings = {
 class SensorBme280Plugin(SensorPlugin):
     """
     Plugin to interact with a `BME280 <https://shop.pimoroni.com/products/bme280-breakout>`_ environment sensor for
-    temperature, humidity and pressure measurements over I2C interface
-
-    Requires:
-
-        * ``pimoroni-bme280`` (``pip install pimoroni-bme280``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
+    temperature, humidity and pressure measurements over I2C interface.
     """
 
     def __init__(self, port: int = 1, **kwargs):
@@ -98,7 +86,6 @@ class SensorBme280Plugin(SensorPlugin):
         self._device = BME280(i2c_dev=self._bus)
         return self._device
 
-    @override
     @action
     def get_measurement(self, *_, **__):
         """
@@ -123,7 +110,6 @@ class SensorBme280Plugin(SensorPlugin):
             'altitude': device.get_altitude(),
         }
 
-    @override
     def transform_entities(self, entities: Dict[str, Numeric]) -> List[Device]:
         sensors = []
         for sensor, value in entities.items():

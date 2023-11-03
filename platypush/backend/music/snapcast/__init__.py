@@ -21,19 +21,7 @@ from platypush.message.event.music.snapcast import (
 class MusicSnapcastBackend(Backend):
     """
     Backend that listens for notification and status changes on one or more
-    [Snapcast](https://github.com/badaix/snapcast) servers.
-
-    Triggers:
-
-        * :class:`platypush.message.event.music.snapcast.ClientConnectedEvent`
-        * :class:`platypush.message.event.music.snapcast.ClientDisconnectedEvent`
-        * :class:`platypush.message.event.music.snapcast.ClientVolumeChangeEvent`
-        * :class:`platypush.message.event.music.snapcast.ClientLatencyChangeEvent`
-        * :class:`platypush.message.event.music.snapcast.ClientNameChangeEvent`
-        * :class:`platypush.message.event.music.snapcast.GroupMuteChangeEvent`
-        * :class:`platypush.message.event.music.snapcast.GroupStreamChangeEvent`
-        * :class:`platypush.message.event.music.snapcast.StreamUpdateEvent`
-        * :class:`platypush.message.event.music.snapcast.ServerUpdateEvent`
+    `Snapcast <https://github.com/badaix/snapcast>`_ servers.
     """
 
     _DEFAULT_SNAPCAST_PORT = 1705

@@ -1,5 +1,5 @@
 <template>
-  <div class="entity variable-container" v-if="value.value != null">
+  <div class="entity variable-container">
     <div class="head" :class="{collapsed: collapsed}">
       <div class="icon">
         <EntityIcon :entity="value" :loading="loading" :error="error" />
@@ -10,7 +10,7 @@
       </div>
 
       <div class="value-and-toggler" @click.stop="collapsed = !collapsed">
-        <div class="value" v-text="value.value" v-if="value?.value != null" />
+        <div class="value" v-text="value.value" />
         <div class="collapse-toggler" @click.stop="collapsed = !collapsed">
           <i class="fas" :class="{'fa-chevron-down': collapsed, 'fa-chevron-up': !collapsed}" />
         </div>

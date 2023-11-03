@@ -1,6 +1,14 @@
 manifest:
   events:
     platypush.message.event.pushbullet.PushbulletEvent: if a new push is received
+  apk:
+    - git
+  apt:
+    - git
+  dnf:
+    - git
+  pacman:
+    - git
   install:
     pip:
     - git+https://github.com/rbrcsk/pushbullet.py

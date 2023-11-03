@@ -22,12 +22,6 @@ class GpioZeroborgPlugin(Plugin):
     ZeroBorg plugin. It allows you to control a ZeroBorg
     (https://www.piborg.org/motor-control-1135/zeroborg) motor controller and
     infrared sensor circuitry for Raspberry Pi
-
-    Triggers:
-
-        * :class:`platypush.message.event.zeroborg.ZeroborgDriveEvent` when motors direction changes
-        * :class:`platypush.message.event.zeroborg.ZeroborgStopEvent` upon motors stop
-
     """
 
     def __init__(self, directions: Dict[str, List[float]] = None, **kwargs):
@@ -72,6 +66,7 @@ class GpioZeroborgPlugin(Plugin):
             directions = {}
 
         import platypush.plugins.gpio.zeroborg.lib as ZeroBorg
+
         super().__init__(**kwargs)
 
         self.directions = directions
@@ -109,13 +104,19 @@ class GpioZeroborgPlugin(Plugin):
                         if self._direction in self.directions:
                             self._motors = self.directions[self._direction]
                         else:
-                            self.logger.warning('Invalid direction {}: stopping motors'.format(self._direction))
+                            self.logger.warning(
+                                'Invalid direction {}: stopping motors'.format(
+                                    self._direction
+                                )
+                            )
                     except Exception as e:
-                        self.logger.error('Error on _get_direction_from_sensors: {}'.format(str(e)))
+                        self.logger.error(
+                            'Error on _get_direction_from_sensors: {}'.format(str(e))
+                        )
                         break
 
                     for i, power in enumerate(self._motors):
-                        method = getattr(self.zb, 'SetMotor{}'.format(i+1))
+                        method = getattr(self.zb, 'SetMotor{}'.format(i + 1))
                         method(power)
             finally:
                 self.zb.MotorsOff()
@@ -129,7 +130,11 @@ class GpioZeroborgPlugin(Plugin):
             drive_thread.start()
             self._drive_thread = drive_thread
 
-        get_bus().post(ZeroborgDriveEvent(direction=self._direction, motors=self.directions[self._direction]))
+        get_bus().post(
+            ZeroborgDriveEvent(
+                direction=self._direction, motors=self.directions[self._direction]
+            )
+        )
         return {'status': 'running', 'direction': direction}
 
     @action
@@ -163,7 +168,9 @@ class GpioZeroborgPlugin(Plugin):
         return {
             'status': 'running' if self._direction else 'stopped',
             'direction': self._direction,
-            'motors': [getattr(self.zb, 'GetMotor{}'.format(i+1))() for i in range(4)],
+            'motors': [
+                getattr(self.zb, 'GetMotor{}'.format(i + 1))() for i in range(4)
+            ],
         }
 
 

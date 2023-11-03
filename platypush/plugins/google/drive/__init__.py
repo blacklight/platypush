@@ -8,35 +8,61 @@ from platypush.message.response.google.drive import GoogleDriveFile
 
 
 class GoogleDrivePlugin(GooglePlugin):
-    """
+    r"""
     Google Drive plugin.
 
-    Requires:
+        1. Create your Google application, if you don't have one already, on
+           the `developers console <https://console.developers.google.com>`_.
 
-        * **google-api-python-client** (``pip install google-api-python-client``)
-        * **oauth2client** (``pip install oauth2client``)
+        2. You may have to explicitly enable your user to use the app if the app
+           is created in test mode. Go to "OAuth consent screen" and add your user's
+           email address to the list of authorized users.
+
+        3. Select the scopes that you want to enable for your application, depending
+           on the integrations that you want to use.
+           See https://developers.google.com/identity/protocols/oauth2/scopes
+           for a list of the available scopes.
+
+        4. Click on "Credentials", then "Create credentials" -> "OAuth client ID".
+
+        5 Select "Desktop app", enter whichever name you like, and click "Create".
+
+        6. Click on the "Download JSON" icon next to your newly created client ID.
+
+        7. Generate a credentials file for the required scope:
+
+            .. code-block:: bash
+
+              mkdir -p <WORKDIR>/credentials/google
+              python -m platypush.plugins.google.credentials \
+                  'drive,drive.appfolder,drive.photos.readonly' \
+                  <WORKDIR>/credentials/google/client_secret.json
 
     """
 
-    scopes = ['https://www.googleapis.com/auth/drive',
-              'https://www.googleapis.com/auth/drive.appfolder',
-              'https://www.googleapis.com/auth/drive.photos.readonly']
+    scopes = [
+        'https://www.googleapis.com/auth/drive',
+        'https://www.googleapis.com/auth/drive.appfolder',
+        'https://www.googleapis.com/auth/drive.photos.readonly',
+    ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(scopes=self.scopes, *args, **kwargs)
 
-    def get_service(self, **kwargs):
+    def get_service(self, **_):
         return super().get_service(service='drive', version='v3')
 
     # noinspection PyShadowingBuiltins
     @action
-    def files(self,
-              filter: Optional[str] = None,
-              folder_id: Optional[str] = None,
-              limit: Optional[int] = 100,
-              drive_id: Optional[str] = None,
-              spaces: Optional[Union[str, List[str]]] = None,
-              order_by: Optional[Union[str, List[str]]] = None) -> Union[GoogleDriveFile, List[GoogleDriveFile]]:
+    def files(
+        self,
+        filter: Optional[str] = None,
+        folder_id: Optional[str] = None,
+        limit: Optional[int] = 100,
+        drive_id: Optional[str] = None,
+        spaces: Optional[Union[str, List[str]]] = None,
+        order_by: Optional[Union[str, List[str]]] = None,
+    ) -> Union[GoogleDriveFile, List[GoogleDriveFile]]:
         """
         Get the list of files.
 
@@ -87,28 +113,35 @@ class GoogleDrivePlugin(GooglePlugin):
             else:
                 filter += ' '
 
-            filter += "'{}' in parents".format(folder_id)
+            filter += f"'{folder_id}' in parents"
 
         while True:
-            results = service.files().list(
-                q=filter,
-                driveId=drive_id,
-                pageSize=limit,
-                orderBy=order_by,
-                fields="nextPageToken, files(id, name, kind, mimeType)",
-                pageToken=page_token,
-                spaces=spaces,
-            ).execute()
+            results = (
+                service.files()
+                .list(
+                    q=filter,
+                    driveId=drive_id,
+                    pageSize=limit,
+                    orderBy=order_by,
+                    fields="nextPageToken, files(id, name, kind, mimeType)",
+                    pageToken=page_token,
+                    spaces=spaces,
+                )
+                .execute()
+            )
 
             page_token = results.get('nextPageToken')
-            files.extend([
-                GoogleDriveFile(
-                    id=f.get('id'),
-                    name=f.get('name'),
-                    type=f.get('kind').split('#')[1],
-                    mime_type=f.get('mimeType'),
-                ) for f in results.get('files', [])
-            ])
+            files.extend(
+                [
+                    GoogleDriveFile(
+                        id=f.get('id'),
+                        name=f.get('name'),
+                        type=f.get('kind').split('#')[1],
+                        mime_type=f.get('mimeType'),
+                    )
+                    for f in results.get('files', [])
+                ]
+            )
 
             if not page_token or (limit and len(files) >= limit):
                 break
@@ -131,14 +164,16 @@ class GoogleDrivePlugin(GooglePlugin):
         )
 
     @action
-    def upload(self,
-               path: str,
-               mime_type: Optional[str] = None,
-               name: Optional[str] = None,
-               description: Optional[str] = None,
-               parents: Optional[List[str]] = None,
-               starred: bool = False,
-               target_mime_type: Optional[str] = None) -> GoogleDriveFile:
+    def upload(
+        self,
+        path: str,
+        mime_type: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        parents: Optional[List[str]] = None,
+        starred: bool = False,
+        target_mime_type: Optional[str] = None,
+    ) -> GoogleDriveFile:
         """
         Upload a file to Google Drive.
 
@@ -171,11 +206,11 @@ class GoogleDrivePlugin(GooglePlugin):
 
         media = MediaFileUpload(path, mimetype=mime_type)
         service = self.get_service()
-        file = service.files().create(
-            body=metadata,
-            media_body=media,
-            fields='*'
-        ).execute()
+        file = (
+            service.files()
+            .create(body=metadata, media_body=media, fields='*')
+            .execute()
+        )
 
         return GoogleDriveFile(
             type=file.get('kind').split('#')[1],
@@ -209,19 +244,21 @@ class GoogleDrivePlugin(GooglePlugin):
 
         while not done:
             status, done = downloader.next_chunk()
-            self.logger.info('Download progress: {}%'.format(status.progress()))
+            self.logger.info('Download progress: %s%%', status.progress())
 
         with open(path, 'wb') as f:
             f.write(fh.getbuffer().tobytes())
         return path
 
     @action
-    def create(self,
-               name: str,
-               description: Optional[str] = None,
-               mime_type: Optional[str] = None,
-               parents: Optional[List[str]] = None,
-               starred: bool = False) -> GoogleDriveFile:
+    def create(
+        self,
+        name: str,
+        description: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        parents: Optional[List[str]] = None,
+        starred: bool = False,
+    ) -> GoogleDriveFile:
         """
         Create a file.
 
@@ -242,10 +279,7 @@ class GoogleDrivePlugin(GooglePlugin):
             metadata['mimeType'] = mime_type
 
         service = self.get_service()
-        file = service.files().create(
-            body=metadata,
-            fields='*'
-        ).execute()
+        file = service.files().create(body=metadata, fields='*').execute()
 
         return GoogleDriveFile(
             type=file.get('kind').split('#')[1],
@@ -255,15 +289,17 @@ class GoogleDrivePlugin(GooglePlugin):
         )
 
     @action
-    def update(self,
-               file_id: str,
-               name: Optional[str] = None,
-               description: Optional[str] = None,
-               add_parents: Optional[List[str]] = None,
-               remove_parents: Optional[List[str]] = None,
-               mime_type: Optional[str] = None,
-               starred: bool = None,
-               trashed: bool = None) -> GoogleDriveFile:
+    def update(
+        self,
+        file_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        add_parents: Optional[List[str]] = None,
+        remove_parents: Optional[List[str]] = None,
+        mime_type: Optional[str] = None,
+        starred: Optional[bool] = None,
+        trashed: Optional[bool] = None,
+    ) -> GoogleDriveFile:
         """
         Update the metadata or the content of a file.
 
@@ -293,11 +329,9 @@ class GoogleDrivePlugin(GooglePlugin):
             metadata['trashed'] = trashed
 
         service = self.get_service()
-        file = service.files().update(
-            fileId=file_id,
-            body=metadata,
-            fields='*'
-        ).execute()
+        file = (
+            service.files().update(fileId=file_id, body=metadata, fields='*').execute()
+        )
 
         return GoogleDriveFile(
             type=file.get('kind').split('#')[1],

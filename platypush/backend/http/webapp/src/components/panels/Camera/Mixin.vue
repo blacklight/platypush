@@ -86,8 +86,21 @@ export default {
     onSizeChanged() {
       const degToRad = (deg) => (deg * Math.PI)/180
       const rot = degToRad(this.params.rotate)
-      this.$refs.frameContainer.style.width = Math.round(this.params.scale_x * Math.abs(this.params.resolution[0] * Math.cos(rot) + this.params.resolution[1] * Math.sin(rot))) + 'px'
-      this.$refs.frameContainer.style.height = Math.round(this.params.scale_y * Math.abs(this.params.resolution[0] * Math.sin(rot) + this.params.resolution[1] * Math.cos(rot))) + 'px'
+      let width = Math.round(this.params.scale_x * Math.abs(this.params.resolution[0] * Math.cos(rot) + this.params.resolution[1] * Math.sin(rot)))
+      let height = Math.round(this.params.scale_y * Math.abs(this.params.resolution[0] * Math.sin(rot) + this.params.resolution[1] * Math.cos(rot)))
+
+      if (width > window.innerWidth) {
+        height = Math.round(height * (window.innerWidth / width))
+        width = window.innerWidth
+      }
+
+      if (height > window.innerHeight) {
+        width = Math.round(width * (window.innerHeight / height))
+        height = window.innerHeight
+      }
+
+      this.$refs.frameContainer.style.width = `${width}px`
+      this.$refs.frameContainer.style.height = `${height}px`
     },
 
     onFpsChanged() {},

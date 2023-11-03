@@ -10,13 +10,7 @@ from platypush.utils import find_files_by_ext
 
 class MediaSubtitlesPlugin(Plugin):
     """
-    Plugin to get video subtitles from OpenSubtitles
-
-    Requires:
-
-        * **python-opensubtitles** (``pip install -e 'git+https://github.com/agonzalezro/python-opensubtitles#egg=python-opensubtitles'``)
-        * **webvtt** (``pip install webvtt-py``), optional, to convert srt subtitles into vtt format ready for web streaming
-
+    Plugin to get video subtitles from OpenSubtitles.
     """
 
     def __init__(self, username, password, language=None, **kwargs):
@@ -46,10 +40,11 @@ class MediaSubtitlesPlugin(Plugin):
             if isinstance(language, str):
                 self.languages.append(language.lower())
             elif isinstance(language, list):
-                self.languages.extend([l.lower() for l in language])
+                self.languages.extend([lang.lower() for lang in language])
             else:
-                raise AttributeError('{} is neither a string nor a list'.format(
-                    language))
+                raise AttributeError(
+                    '{} is neither a string nor a list'.format(language)
+                )
 
     @action
     def get_subtitles(self, resource, language=None):
@@ -67,7 +62,7 @@ class MediaSubtitlesPlugin(Plugin):
         from pythonopensubtitles.utils import File
 
         if resource.startswith('file://'):
-            resource = resource[len('file://'):]
+            resource = resource[len('file://') :]
 
         resource = os.path.abspath(os.path.expanduser(resource))
         if not os.path.isfile(resource):
@@ -79,37 +74,49 @@ class MediaSubtitlesPlugin(Plugin):
         os.chdir(media_dir)
         file = file.split(os.sep)[-1]
 
-        local_subs = [{
-            'IsLocal': True,
-            'MovieName': '[Local subtitle]',
-            'SubFileName': sub.split(os.sep)[-1],
-            'SubDownloadLink': 'file://' + os.path.join(media_dir, sub),
-        } for sub in find_files_by_ext(media_dir, '.srt', '.vtt')]
+        local_subs = [
+            {
+                'IsLocal': True,
+                'MovieName': '[Local subtitle]',
+                'SubFileName': sub.split(os.sep)[-1],
+                'SubDownloadLink': 'file://' + os.path.join(media_dir, sub),
+            }
+            for sub in find_files_by_ext(media_dir, '.srt', '.vtt')
+        ]
 
-        self.logger.info('Found {} local subtitles for {}'.format(
-            len(local_subs), file))
+        self.logger.info(
+            'Found {} local subtitles for {}'.format(len(local_subs), file)
+        )
 
         languages = [language.lower()] if language else self.languages
 
         try:
             file_hash = File(file).get_hash()
-            subs = self._ost.search_subtitles([{
-                'sublanguageid': 'all',
-                'moviehash': file_hash,
-            }])
+            subs = self._ost.search_subtitles(
+                [
+                    {
+                        'sublanguageid': 'all',
+                        'moviehash': file_hash,
+                    }
+                ]
+            )
 
             subs = [
-                sub for sub in subs if not languages or languages[0] == 'all' or
-                sub.get('LanguageName', '').lower() in languages or
-                sub.get('SubLanguageID', '').lower() in languages or
-                sub.get('ISO639', '').lower() in languages
+                sub
+                for sub in subs
+                if not languages
+                or languages[0] == 'all'
+                or sub.get('LanguageName', '').lower() in languages
+                or sub.get('SubLanguageID', '').lower() in languages
+                or sub.get('ISO639', '').lower() in languages
             ]
 
             for sub in subs:
                 sub['IsLocal'] = False
 
-            self.logger.info('Found {} OpenSubtitles items for {}'.format(
-                len(subs), file))
+            self.logger.info(
+                'Found {} OpenSubtitles items for {}'.format(len(subs), file)
+            )
 
             return local_subs + subs
         finally:
@@ -159,7 +166,7 @@ class MediaSubtitlesPlugin(Plugin):
         """
 
         if link.startswith('file://'):
-            link = link[len('file://'):]
+            link = link[len('file://') :]
         if os.path.isfile(link):
             if convert_to_vtt:
                 link = self.to_vtt(link).output
@@ -169,18 +176,23 @@ class MediaSubtitlesPlugin(Plugin):
 
         if not path and media_resource:
             if media_resource.startswith('file://'):
-                media_resource = media_resource[len('file://'):]
+                media_resource = media_resource[len('file://') :]
             if os.path.isfile(media_resource):
                 media_resource = os.path.abspath(media_resource)
-                path = os.path.join(
-                    os.path.dirname(media_resource),
-                    '.'.join(os.path.basename(media_resource).split('.')[:-1])) + '.srt'
+                path = (
+                    os.path.join(
+                        os.path.dirname(media_resource),
+                        '.'.join(os.path.basename(media_resource).split('.')[:-1]),
+                    )
+                    + '.srt'
+                )
 
         if path:
-            f = open(path, 'wb')
+            f = open(path, 'wb')  # noqa
         else:
-            f = tempfile.NamedTemporaryFile(prefix='media_subs_',
-                                            suffix='.srt', delete=False)
+            f = tempfile.NamedTemporaryFile(
+                prefix='media_subs_', suffix='.srt', delete=False
+            )
             path = f.name
 
         try:

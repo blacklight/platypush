@@ -4,9 +4,6 @@ from threading import Thread
 from time import time
 from typing import Any, Callable, Optional
 
-import numpy as np
-from numpy.typing import NDArray
-
 from ._mix import Mix
 
 
@@ -20,7 +17,7 @@ class AudioGenerator(Thread):
     def __init__(
         self,
         *args,
-        audio_queue: Queue[NDArray[np.number]],
+        audio_queue: Queue,  # Queue[NDArray[np.number]],
         mix: Mix,
         blocksize: int,
         sample_rate: int,

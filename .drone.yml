@@ -3,7 +3,21 @@ kind: pipeline
 type: docker
 name: default
 
+volumes:
+  - name: docs
+    host:
+      path: /opt/docs/platypush
+
+  - name: repos
+    host:
+      path: /opt/repos/platypush
+
 steps:
+
+###
+### Mirror the current repository state to Github
+###
+
 - name: github-mirror
   image: alpine
   environment:
@@ -15,10 +29,7 @@ steps:
   commands:
     - apk add --update --no-cache git openssh
     - mkdir -p ~/.ssh
-    - |
-      cat <<EOF > ~/.ssh/id_rsa.pub
-      $SSH_PUBKEY
-      EOF
+    - echo $SSH_PUBKEY > ~/.ssh/id_rsa.pub
     - |
       cat <<EOF > ~/.ssh/id_rsa
       $SSH_PRIVKEY
@@ -27,16 +38,995 @@ steps:
     - ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
     - git config --global --add safe.directory $PWD
     - git remote add github git@github.com:/BlackLight/platypush.git
-    - git pull github master
+    - git pull --rebase github "$(git branch | head -1 | awk '{print $2}')" || echo "No such branch on Github"
     - git push --all -v github
 
-- name: run-tests
-  image: python:3.11-alpine
+###
+### Synchronize the `stable` branch to the new release
+###
+
+- name: sync-stable-branch
+  image: alpine
+  environment:
+    SSH_PUBKEY:
+      from_secret: ssh_pubkey
+    SSH_PRIVKEY:
+      from_secret: ssh_privkey
+    PGP_KEY:
+      from_secret: pgp_key
+    PGP_KEY_ID:
+      from_secret: pgp_key_id
+
   commands:
-    - apk add --update --no-cache redis
-    - apk add --update --no-cache --virtual build-base g++ rust
-    - pip install -U pip
+    - apk add --update --no-cache git bash gnupg openssh
+
+    # Backup the original git configuration before changing attributes
+    - export GIT_CONF=$PWD/.git/config
+    - cp $GIT_CONF /tmp/git.config.orig
+    - git config --global --add safe.directory $PWD
+
+    # Install the SSH and PGP keys
+    - mkdir -p ~/.ssh
+    - |
+      cat <<EOF | gpg --import --armor
+      $PGP_KEY
+      EOF
+
+    - echo $SSH_PUBKEY > ~/.ssh/id_rsa.pub
+    - |
+      cat <<EOF > ~/.ssh/id_rsa
+      $SSH_PRIVKEY
+      EOF
+    - chmod 0600 ~/.ssh/id_rsa
+    - ssh-keyscan git.platypush.tech >> ~/.ssh/known_hosts 2>/dev/null
+
+    # Git configuration
+    - git config user.name "Platypush CI/CD Automation"
+    - git config user.email "admin@platypush.tech"
+    - git config commit.gpgsign true
+    - git config user.signingkey $PGP_KEY_ID
+    - git remote rm origin
+    - git remote add origin git@git.platypush.tech:platypush/platypush.git
+
+    # Merge and push to the `stable` branch
+    - git checkout stable
+    - git rebase master
+    - git push -u origin stable
+    - git checkout master
+
+    # Restore the original git configuration
+    - mv /tmp/git.config.orig $GIT_CONF
+
+  when:
+    event:
+      - tag
+
+###
+### Rebuild the docs
+###
+
+- name: docs
+  image: alpine
+  volumes:
+    - name: docs
+      path: /docs
+
+  commands:
+    - echo "Installing required build dependencies"
+    - apk add --update --no-cache git make py3-sphinx py3-myst-parser py3-pip $(cat platypush/install/requirements/alpine.txt)
+    - pip install -U sphinx-rtd-theme sphinx-book-theme
+    - pip install .
+    - mkdir -p /docs/current
+    - export APPDIR=$PWD
+    - rm -rf "$APPDIR/docs/build"
+    - echo "Building the updated documentation"
+    - cd "$APPDIR/docs/source"
+    - git clone 'https://git.platypush.tech/platypush/platypush.wiki.git' wiki
+    - cd wiki
+    - ln -s Home.md index.md
+    - cd "$APPDIR/docs"
+    - make html
+    - rm -f config*.yaml
+    - cd "$APPDIR"
+    - echo "Copying the new documentation files to the target folder"
+    - mv -v "$APPDIR/docs/build" /docs/new
+    - cd /docs
+    - mv current old
+    - mv new current
+    - rm -rf old
+
+  when:
+    event:
+      - tag
+
+  depends_on:
+    - sync-stable-branch
+
+###
+### Run the tests
+###
+
+- name: tests
+  image: alpine
+  commands:
+    - apk add --update --no-cache $(cat platypush/install/requirements/alpine.txt)
     - pip install .
     - pip install -r requirements-tests.txt
-    - apk del build-base g++ rust
     - pytest tests
+
+###
+### Rebuild the UI files
+###
+
+- name: build-ui
+  image: node:current-alpine3.18
+
+  environment:
+    SSH_PUBKEY:
+      from_secret: ssh_pubkey
+    SSH_PRIVKEY:
+      from_secret: ssh_privkey
+    PGP_KEY:
+      from_secret: pgp_key
+    PGP_KEY_ID:
+      from_secret: pgp_key_id
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+
+  depends_on:
+    - tests
+
+  commands:
+    - apk add --update --no-cache git
+
+    # Backup the original git configuration before changing attributes
+    - export GIT_CONF=$PWD/.git/config
+    - cp $GIT_CONF /tmp/git.config.orig
+
+    - git config --global --add safe.directory $PWD
+    - cd platypush/backend/http/webapp
+    - |
+      if [ $(git log --pretty=oneline $DRONE_COMMIT_AFTER...$DRONE_COMMIT_BEFORE . | wc -l) -eq 0 ]; then
+        echo "No UI changes detected, skipping build"
+        exit 0
+      fi
+
+    - |
+      if [ "$(git log --pretty=format:%s HEAD...HEAD~1 | head -1)" == "[Automatic] Updated UI files" ]; then
+        echo "UI changes have already been committed, skipping build"
+        exit 0
+      fi
+
+    - rm -rf node_modules
+    - npm install
+    - npm run build
+    - |
+      if [ $(git status --porcelain dist | wc -l) -eq 0 ]; then
+        echo "No build files have been changed"
+        exit 0
+      fi
+
+    - apk add --update --no-cache bash gnupg openssh
+    - mkdir -p ~/.ssh
+    - |
+      cat <<EOF | gpg --import --armor
+      $PGP_KEY
+      EOF
+
+    - echo $SSH_PUBKEY > ~/.ssh/id_rsa.pub
+    - |
+      cat <<EOF > ~/.ssh/id_rsa
+      $SSH_PRIVKEY
+      EOF
+    - chmod 0600 ~/.ssh/id_rsa
+    - ssh-keyscan git.platypush.tech >> ~/.ssh/known_hosts 2>/dev/null
+
+    - git config user.name "Platypush CI/CD Automation"
+    - git config user.email "admin@platypush.tech"
+    - git config commit.gpgsign true
+    - git config user.signingkey $PGP_KEY_ID
+    - git add dist
+    - git commit dist -S -m "[Automatic] Updated UI files" --no-verify
+    - git remote rm origin
+    - git remote add origin git@git.platypush.tech:platypush/platypush.git
+    - git push -f origin master
+
+    # Restore the original git configuration
+    - mv /tmp/git.config.orig $GIT_CONF
+
+###
+### Update the Arch packages
+###
+
+- name: update-arch-packages
+  image: python:3.11-alpine
+  environment:
+    WORKDIR: /tmp/workdir
+    SSH_PUBKEY:
+      from_secret: ssh_pubkey
+    SSH_PRIVKEY:
+      from_secret: ssh_privkey
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+
+  depends_on:
+    - build-ui
+
+  commands:
+    - echo "-- Installing dependencies"
+    - apk add --update --no-cache curl git openssh pacman sudo
+
+    - echo "--- Parsing metadata"
+    - git config --global --add safe.directory $PWD
+    - git pull --rebase origin master --tags
+    - export VERSION=$(python setup.py --version)
+    - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1 | head -1)
+    - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).$HEAD"
+    - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
+
+    - echo "--- Preparing environment"
+    - mkdir -p ~/.ssh
+    - echo $SSH_PUBKEY > ~/.ssh/id_rsa.pub
+    - |
+      cat <<EOF > ~/.ssh/id_rsa
+      $SSH_PRIVKEY
+      EOF
+    - chmod 0600 ~/.ssh/id_rsa
+    - ssh-keyscan git.platypush.tech >> ~/.ssh/known_hosts 2>/dev/null
+    - ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts 2>/dev/null
+    - adduser -u 1000 -D build
+    - mkdir -p $WORKDIR
+
+    - echo "--- Updating Arch git version"
+    - export PKGDIR=$WORKDIR/git
+    - git clone ssh://aur@aur.archlinux.org/platypush-git.git $PKGDIR
+    - git config --global --add safe.directory $PKGDIR
+    - chown -R build $PKGDIR
+    - cd $PKGDIR
+    - |
+      sed -i 'PKGBUILD' -r \
+        -e "s/^pkgver=.*/pkgver=$GIT_VERSION/" \
+        -e "s/^pkgrel=.*/pkgrel=1/" \
+    - sudo -u build makepkg --printsrcinfo > .SRCINFO
+    - export FILES_CHANGED=$(git status --porcelain --untracked-files=no | wc -l)
+    - |
+      if [ $FILES_CHANGED -gt 0 ]; then
+        echo "--- Pushing git package version $GIT_VERSION"
+        git commit -a -m '[Automatic] Package update'
+        git push origin master
+      fi
+
+    - echo "--- Updating Arch stable version"
+    - export PKGDIR=$WORKDIR/stable
+    - git clone ssh://aur@aur.archlinux.org/platypush.git $PKGDIR
+    - git config --global --add safe.directory $PKGDIR
+    - chown -R build $PKGDIR
+    - cd $PKGDIR
+    - export RELEASED_VERSION=$(grep -e '^pkgver=' PKGBUILD | sed -r -e 's/^pkgver=(.*)\s*/\1/')
+    - |
+      if [ "$RELEASED_VERSION" == "$VERSION" ]; then
+        exit 0
+      fi
+
+    - export TAG_CHECKSUM=$(curl --silent "$TAG_URL" | sha512sum | awk '{print $1}')
+    - |
+      sed -i 'PKGBUILD' -r \
+        -e "s/^pkgver=.*/pkgver=$VERSION/" \
+        -e "s/^pkgrel=.*/pkgrel=1/" \
+        -e "s/^sha512sums=.*/sha512sums=('$TAG_CHECKSUM')/"
+
+    - sudo -u build makepkg --printsrcinfo > .SRCINFO
+    - export FILES_CHANGED=$(git status --porcelain --untracked-files=no | wc -l)
+    - |
+      if [ $FILES_CHANGED -gt 0 ]; then
+        echo "--- Pushing stable package version $VERSION"
+        git commit -a -m '[Automatic] Package update'
+        git push origin master
+      fi
+
+###
+### Update the Debian (stable) packages
+###
+
+- name: update-debian-stable-packages
+  image: debian:stable
+  volumes:
+    - name: repos
+      path: /repos
+
+  environment:
+    DEB_VERSION: stable
+    WORKDIR: /tmp/workdir
+    APT_ROOT: /repos/apt
+    PKG_NAME: platypush
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+
+  depends_on:
+    - build-ui
+
+  commands:
+    - echo "-- Installing dependencies"
+    - apt update
+    - apt install -y curl dpkg-dev gpg git python3 python3-pip
+
+    - echo "-- Copying source directory"
+    - mkdir -p "$WORKDIR"
+    - export SRCDIR="$WORKDIR/src"
+    - cp -r "$PWD" "$SRCDIR"
+    - cd "$SRCDIR"
+
+    - echo "--- Parsing metadata"
+    - git config --global --add safe.directory $PWD
+    - git pull --rebase origin master --tags
+    - export VERSION=$(python3 setup.py --version)
+    - export GIT_VERSION="$VERSION-$(( $(git log --pretty=oneline HEAD...v$VERSION | wc -l) + 1))"
+    - export GIT_BUILD_DIR="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all"
+    - export GIT_DEB="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all.deb"
+
+    - echo "--- Building git package"
+    - pip install --prefix="$GIT_BUILD_DIR/usr" --no-cache --no-deps .
+    - |
+      find "$GIT_BUILD_DIR" -name "site-packages" | while read dir; do
+        base="$(dirname "$dir")"
+        mv "$dir" "$base/dist-packages"
+      done
+
+    - mkdir -p "$GIT_BUILD_DIR/DEBIAN"
+    - |
+      cat <<EOF > "$GIT_BUILD_DIR/DEBIAN/control"
+      Package: $PKG_NAME
+      Version: $GIT_VERSION
+      Maintainer: Fabio Manganiello <fabio@platypush.tech>
+      Depends: $(cat platypush/install/requirements/debian.txt | tr '\n' ',' | sed -re 's/,$//' -e 's/,/, /g')
+      Architecture: all
+      Homepage: https://platypush.tech
+      Description: Universal command executor and automation hub.
+      EOF
+    - dpkg --build "$GIT_BUILD_DIR"
+
+    - echo "--- Copying package to the repo"
+    - mkdir -p "$APT_ROOT/pool/$DEB_VERSION/dev"
+    - cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/dev/"
+
+    # If main/all/Packages doesn't exist, then we should create the first main release
+    - export PKGURL="https://apt.platypush.tech/dists/$DEB_VERSION/main/all/Packages"
+    - |
+      [ -z "$UPDATE_STABLE_PKG" ] &&
+        curl -ILs -o /dev/null -w "%{http_code}" "$PKGURL" |
+          grep -e '^4' >/dev/null && export UPDATE_STABLE_PKG=1
+
+    # If the published release version differs from the current one, then we should publish a new main release
+    - |
+      if [ -z "$UPDATE_STABLE_PKG" ]; then
+        RELEASED_VERSION=$(curl -s "$PKGURL" | grep -e '^Version: ' | head -1 | awk '{print $2}' | cut -d- -f 1)
+        [ "$RELEASED_VERSION" != "$VERSION" ] && export UPDATE_STABLE_PKG=1
+      fi
+
+    # Proceed and update the main release if the version number has changed
+    - |
+      if [ -n "$UPDATE_STABLE_PKG" ]; then
+        echo "--- Updating main package"
+        mkdir -p "$APT_ROOT/pool/$DEB_VERSION/main"
+        cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
+      fi
+
+###
+### Update the Debian (oldstable) packages
+###
+
+- name: update-debian-oldstable-packages
+  image: debian:oldstable
+  volumes:
+    - name: repos
+      path: /repos
+
+  environment:
+    DEB_VERSION: oldstable
+    WORKDIR: /tmp/workdir
+    APT_ROOT: /repos/apt
+    PKG_NAME: platypush
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+
+  depends_on:
+    - build-ui
+
+  commands:
+    - echo "-- Copying source directory"
+    - mkdir -p "$WORKDIR"
+    - export SRCDIR="$WORKDIR/src"
+    - cp -r "$PWD" "$SRCDIR"
+    - cd "$SRCDIR"
+
+    - echo "-- Installing dependencies"
+    - apt update
+    - apt install -y curl dpkg-dev gpg git python3 python3-pip
+
+    - echo "--- Parsing metadata"
+    - git config --global --add safe.directory $PWD
+    - git pull --rebase origin master --tags
+    - export VERSION=$(python3 setup.py --version)
+    - export GIT_VERSION="$VERSION-$(( $(git log --pretty=oneline HEAD...v$VERSION | wc -l) + 1))"
+    - export GIT_BUILD_DIR="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all"
+    - export GIT_DEB="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all.deb"
+
+    - echo "--- Building git package"
+    - pip install --prefix="$GIT_BUILD_DIR/usr" --no-cache --no-deps .
+    - |
+      find "$GIT_BUILD_DIR" -name "site-packages" | while read dir; do
+        base="$(dirname "$dir")"
+        mv "$dir" "$base/dist-packages"
+      done
+
+    - mkdir -p "$GIT_BUILD_DIR/DEBIAN"
+    - |
+      cat <<EOF > "$GIT_BUILD_DIR/DEBIAN/control"
+      Package: $PKG_NAME
+      Version: $GIT_VERSION
+      Maintainer: Fabio Manganiello <fabio@platypush.tech>
+      Depends: $(cat platypush/install/requirements/debian.txt | tr '\n' ',' | sed -re 's/,$//' -e 's/,/, /g')
+      Architecture: all
+      Homepage: https://platypush.tech
+      Description: Universal command executor and automation hub.
+      EOF
+    - dpkg --build "$GIT_BUILD_DIR"
+
+    - echo "--- Copying package to the repo"
+    - mkdir -p "$APT_ROOT/pool/$DEB_VERSION/dev"
+    - cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/dev/"
+
+    # If main/all/Packages doesn't exist, then we should create the first main release
+    - export PKGURL="https://apt.platypush.tech/dists/$DEB_VERSION/main/all/Packages"
+    - |
+      [ -z "$UPDATE_STABLE_PKG" ] &&
+        curl -ILs -o /dev/null -w "%{http_code}" "$PKGURL" |
+          grep -e '^4' >/dev/null && export UPDATE_STABLE_PKG=1
+
+    # If the published release version differs from the current one, then we should publish a new main release
+    - |
+      if [ -z "$UPDATE_STABLE_PKG" ]; then
+        RELEASED_VERSION=$(curl -s "$PKGURL" | grep -e '^Version: ' | head -1 | awk '{print $2}' | cut -d- -f 1)
+        [ "$RELEASED_VERSION" != "$VERSION" ] && export UPDATE_STABLE_PKG=1
+      fi
+
+    # Proceed and update the main release if the version number has changed
+    - |
+      if [ -n "$UPDATE_STABLE_PKG" ]; then
+        echo "--- Updating main package"
+        mkdir -p "$APT_ROOT/pool/$DEB_VERSION/main"
+        cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
+      fi
+
+###
+### Updates the APT repository after new packages have been pushed
+###
+
+- name: update-apt-repo
+  image: debian:stable
+  volumes:
+    - name: repos
+      path: /repos
+
+  environment:
+    REPOS_ROOT: /repos
+    APT_ROOT: /repos/apt
+    PGP_PUBKEY:
+      from_secret: apt_pgp_pub_key
+    PGP_PRIVKEY:
+      from_secret: apt_pgp_priv_key
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+
+  depends_on:
+    - update-debian-stable-packages
+    - update-debian-oldstable-packages
+
+  commands:
+    - echo "-- Installing dependencies"
+    - apt update
+    - apt install -y dpkg-dev gpg
+
+    - echo "-- Creating a new apt root folder"
+    - export TMP_APT_ROOT="/tmp/apt"
+    - cp -r "$APT_ROOT" "$TMP_APT_ROOT"
+
+    - echo "-- Cleaning up older apt releases"
+    - |
+      find "$TMP_APT_ROOT/pool" -mindepth 2 -maxdepth 2 -type d | while read reldir; do
+        pkg_to_remove=$(( $(ls "$reldir"/*.deb | wc -l) - 1 ))
+        [ $pkg_to_remove -le 0 ] && continue
+        ls "$reldir"/*.deb | sort -V | head -n$pkg_to_remove | xargs rm -f
+      done
+
+    - echo "-- Updating Packages files"
+    - |
+      echo "stable\noldstable" | while read distro; do
+        echo "main\ndev" | while read branch; do
+          branch_dir="$TMP_APT_ROOT/pool/$distro/$branch"
+          [ -d "$branch_dir" ] || continue
+          dist_dir="$TMP_APT_ROOT/dists/$distro/$branch/all"
+          mkdir -p "$dist_dir"
+          pkg_file="$dist_dir/Packages"
+          dpkg-scanpackages --arch all "$branch_dir" > "$pkg_file"
+          sed -i "$pkg_file" -re "s|^Filename: $TMP_APT_ROOT/|Filename: |"
+          cat "$pkg_file" | gzip -9 > "$pkg_file.gz"
+        done
+      done
+
+    - echo "-- Updating Release files"
+    - |
+      add_hashes() {
+        dist_dir=$1
+        hash_cmd=$2
+        hash_label=$3
+
+        echo "$hash_label:"
+        find "$dist_dir" -name 'Packages*' | while read file; do
+          basename="$(echo "$file" | sed -r -e "s|^$dist_dir/||")"
+          hash="$($hash_cmd "$file" | cut -d" " -f1)"
+          size="$(wc -c < $file)"
+          echo " $hash $size $basename"
+          echo " $hash $size $(echo $basename | sed -re 's|/all/|/binary-i386/|')"
+          echo " $hash $size $(echo $basename | sed -re 's|/all/|/binary-amd64/|')"
+          echo " $hash $size $(echo $basename | sed -re 's|/all/|/binary-armel/|')"
+          echo " $hash $size $(echo $basename | sed -re 's|/all/|/binary-armhf/|')"
+          echo " $hash $size $(echo $basename | sed -re 's|/all/|/binary-arm64/|')"
+        done
+      }
+
+      echo "stable\noldstable" | while read distro; do
+        dist_dir="$TMP_APT_ROOT/dists/$distro"
+        components=$(find "$dist_dir" -name Packages | awk -F '/' '{print $(NF-2)}' | uniq | tr '\n' ' ')
+        release_file="$dist_dir/Release"
+
+        cat <<EOF > "$release_file"
+      Origin: Platypush repository
+      Label: Platypush
+      Suite: $distro
+      Codename: $distro
+      Architectures: i386 amd64 armel armhf arm64
+      Components: $components
+      Description: The official APT repository for Platypush
+      Date: $(date -Ru)
+      EOF
+
+        add_hashes "$dist_dir" "md5sum" "MD5Sum" >> "$release_file"
+        add_hashes "$dist_dir" "sha1sum" "SHA1" >> "$release_file"
+        add_hashes "$dist_dir" "sha256sum" "SHA256" >> "$release_file"
+      done
+
+    - echo "-- Updating index file"
+    - |
+      cat <<EOF > "$TMP_APT_ROOT/index.txt"
+      Welcome to the Platypush APT repository!
+
+      Project homepage: https://platypush.tech
+      Source code: https://git.platypush.tech/platypush/platypush
+      Documentation / API reference: https://docs.platypush.tech
+
+      You can use this APT repository to install Platypush on Debian, Ubuntu or any
+      Debian-based distro.
+
+      Steps:
+
+      1. Add this repository's PGP key to your apt keyring
+      ====================================================
+
+      $ sudo wget -q -O \
+          /etc/apt/trusted.gpg.d/platypush.asc \
+          https://apt.platypush.tech/pubkey.txt
+
+      2. Add the repository to your sources
+      =====================================
+
+      $ sudo wget -q -O \
+          /etc/apt/sources.list.d/platypush.list \
+          https://apt.platypush.tech/lists/platypush-<deb_version>-<branch>.list
+
+      Where:
+
+      - deb_version can be either *stable* (for the current Debian stable version) or
+        *oldstable* (for the previous Debian stable version)
+      - branch can be either *main* (for the latest releases) or *dev* (for a package
+        that is always in sync with the git version)
+
+      For example, to install the latest stable tags on Debian stable:
+
+      $ sudo wget -q -O \
+          /etc/apt/sources.list.d/platypush.list \
+          https://apt.platypush.tech/lists/platypush-stable-main.list
+
+      3. Update your repos
+      ====================
+
+      $ sudo apt update
+
+      4. Install Platypush
+      ====================
+
+      $ sudo apt install platypush
+      EOF
+
+    - echo "-- Importing and refreshing PGP key"
+    - echo "$PGP_PUBKEY" > "$TMP_APT_ROOT/pubkey.txt"
+    - export PGP_KEYID=$(echo "$PGP_PUBKEY" | gpg --with-colons --import-options show-only --import --fingerprint | grep -e '^fpr:' | head -1 | awk -F ':' '{print $(NF - 1)}')
+    - |
+      cat <<EOF | gpg --import --armor
+      $PGP_PRIVKEY
+      EOF
+
+    - echo "-- Signing Release files"
+    - |
+      find "$TMP_APT_ROOT/dists" -type f -name Release | while read file; do
+        dirname="$(dirname "$file")"
+        cat "$file" | gpg -q --default-key "$PGP_KEYID" -abs > "$file.gpg"
+        cat "$file" | gpg -q --default-key "$PGP_KEYID" -abs --clearsign > "$dirname/InRelease"
+      done
+
+    - echo "-- Updating the apt repo root"
+    - export OLD_APT_ROOT="$REPOS_ROOT/oldapt"
+    - |
+      if [ ! -d "$OLD_APT_ROOT" ]; then
+        mv "$APT_ROOT" "$OLD_APT_ROOT"
+        mv "$TMP_APT_ROOT" "$APT_ROOT"
+        rm -rf "$OLD_APT_ROOT"
+      fi
+
+    - chmod -R a+r "$APT_ROOT"
+    - chmod a+x "$APT_ROOT"
+
+###
+### Update the RPM (stable) packages
+###
+
+- name: update-rpm-repo
+  image: fedora
+  volumes:
+    - name: repos
+      path: /repos
+
+  environment:
+    RPM_VERSION: stable
+    REPOS_ROOT: /repos
+    RPM_ROOT: /repos/rpm
+    WORKDIR: /tmp/workdir
+    PKG_NAME: platypush
+    PGP_PUBKEY:
+      from_secret: rpm_pgp_pub_key
+    PGP_PRIVKEY:
+      from_secret: rpm_pgp_priv_key
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+
+  depends_on:
+    - build-ui
+
+  commands:
+    - echo "-- Installing dependencies"
+    - yum install -y createrepo rpm-build rpm-sign gpg wget yum-utils git python python-pip
+
+    - echo "-- Copying source directory"
+    - mkdir -p "$WORKDIR"
+    - export SRCDIR="$WORKDIR/src"
+    - cp -r "$PWD" "$SRCDIR"
+    - cd "$SRCDIR"
+    - mkdir -p "$RPM_ROOT"
+
+    - echo "--- Parsing metadata"
+    - git config --global --add safe.directory $PWD
+    - git pull --rebase origin master --tags
+    - export VERSION=$(python3 setup.py --version)
+    - export RELNUM=$(git log --pretty=oneline HEAD...v$VERSION | wc -l)
+    - export SPECFILE="$WORKDIR/$PKG_NAME.spec"
+    - export BUILD_DIR="$WORKDIR/build"
+    - export TMP_RPM_ROOT="$WORKDIR/repo"
+    - export SRC_URL="https://git.platypush.tech/platypush/platypush/archive/master.tar.gz"
+
+    - echo "--- Creating git package spec"
+    - |
+      cat <<EOF > $SPECFILE
+      Summary: Universal command executor and automation hub.
+      Name: $PKG_NAME-git
+      Version: $VERSION
+      Release: $RELNUM
+      URL: https://platypush.tech
+      Group: System
+      License: MIT
+      Packager: Fabio Manganiello <fabio@platypush.tech>
+      Source: $SRC_URL
+      Requires: $(cat platypush/install/requirements/fedora.txt | tr '\n' ' ')
+      Conflicts: $PKG_NAME
+      Prefix: %{_prefix}
+      BuildRoot: %{_tmppath}/%{name}-root
+
+      %description
+      Universal command executor and automation hub.
+
+      %install
+      mkdir -p %{buildroot}/
+      cp -r "$BUILD_DIR"/* %{buildroot}/
+
+      %clean
+
+      %files
+      /usr/bin/*
+      /usr/lib/python$(python3 --version | awk '{print $2}' | cut -d. -f 1,2)/site-packages/platypush
+      /usr/lib/python$(python3 --version | awk '{print $2}' | cut -d. -f 1,2)/site-packages/platypush-$VERSION.dist-info
+
+      %changelog
+      * $(date +'%a %b %d %Y') admin <admin@platypush.tech>
+      - [Automatic] Release $VERSION-$RELNUM
+      EOF
+
+    - echo "--- Building git package"
+    - mkdir -p "$BUILD_DIR"
+    - pip install --prefix="$BUILD_DIR/usr" --no-cache --no-deps .
+    - rpmbuild --target "noarch" -bb "$SPECFILE"
+
+    - echo "--- Copying the new RPM package"
+    - mkdir -p "$TMP_RPM_ROOT"
+    - cp "$HOME/rpmbuild/RPMS/noarch/$PKG_NAME-git-$VERSION-$RELNUM.noarch.rpm" "$TMP_RPM_ROOT"
+
+    - echo "--- Checking the latest released stable version"
+    - export LATEST_STABLE_PKG=$(ls -rt "$RPM_ROOT/$PKG_NAME"*.rpm 2>/dev/null | grep -v "$PKG_NAME-git" | tail -1)
+    - |
+      if [ -z "$LATEST_STABLE_PKG" ]; then
+        # If not stable release is available, then create one
+        export UPDATE_STABLE_PKG=1
+      else
+        # Otherwise, create a new release if the reported version on the repo is different
+        # from the latest released version.
+        export LATEST_STABLE_VERSION=$(basename $LATEST_STABLE_PKG | cut -d- -f 2)
+        if [ "$VERSION" != "$LATEST_STABLE_VERSION" ]; then
+          export UPDATE_STABLE_PKG=1
+        else
+          # If the version has remained the same, then simply copy the existing RPM to the
+          # new repository directory.
+          echo "Copying the existing release $LATEST_STABLE_VERSION to the new repository"
+          cp "$LATEST_STABLE_PKG" "$TMP_RPM_ROOT"
+        fi
+      fi
+
+    # If a new stable release is required, build another RPM
+    - |
+      if [ -n "$UPDATE_STABLE_PKG" ]; then
+      export RELNUM=1
+      export SRC_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
+
+      cat <<EOF > $SPECFILE
+      Summary: Universal command executor and automation hub.
+      Name: $PKG_NAME
+      Version: $VERSION
+      Release: $RELNUM
+      URL: https://platypush.tech
+      Group: System
+      License: MIT
+      Packager: Fabio Manganiello <fabio@platypush.tech>
+      Source: $SRC_URL
+      Requires: $(cat platypush/install/requirements/fedora.txt | tr '\n' ' ')
+      Conflicts: $PKG_NAME-git
+      Prefix: %{_prefix}
+      BuildRoot: %{_tmppath}/%{name}-root
+
+      %description
+      Universal command executor and automation hub.
+
+      %install
+      mkdir -p %{buildroot}/
+      cp -r "$BUILD_DIR"/* %{buildroot}/
+
+      %clean
+
+      %files
+      /usr/bin/*
+      /usr/lib/python$(python3 --version | awk '{print $2}' | cut -d. -f 1,2)/site-packages/platypush
+      /usr/lib/python$(python3 --version | awk '{print $2}' | cut -d. -f 1,2)/site-packages/platypush-$VERSION.dist-info
+
+      %changelog
+      * $(date +'%a %b %d %Y') admin <admin@platypush.tech>
+      - [Automatic] Release $VERSION-$RELNUM
+      EOF
+
+      echo "--- Building package for stable release $VERSION"
+      rpmbuild --target "noarch" -bb "$SPECFILE"
+      cp "$HOME/rpmbuild/RPMS/noarch/$PKG_NAME-$VERSION-$RELNUM.noarch.rpm" "$TMP_RPM_ROOT"
+      fi
+
+    - echo "--- Importing the repository keys"
+    - |
+      cat <<EOF | gpg --import --armor
+      $PGP_PRIVKEY
+      EOF
+
+    - export PGP_KEYID=$(echo "$PGP_PUBKEY" | gpg --with-colons --import-options show-only --import --fingerprint | grep -e '^fpr:' | head -1 | awk -F ':' '{print $(NF - 1)}')
+    - |
+      cat <<EOF > $HOME/.rpmmacros
+      %signature gpg
+      %_gpg_name $PGP_KEYID
+      EOF
+
+    - echo "--- Signing the new RPM packages"
+    - rpm --addsign "$TMP_RPM_ROOT"/*.rpm
+
+    - echo "--- Creating a new copy of the RPM repository"
+    - createrepo "$TMP_RPM_ROOT"
+    - gpg --detach-sign --armor "$TMP_RPM_ROOT/repodata/repomd.xml"
+
+    - |
+      cat <<EOF > "$TMP_RPM_ROOT/platypush.repo"
+      [platypush]
+      name=Platypush repository
+      baseurl=https://rpm.platypush.tech
+      enabled=1
+      type=rpm
+      gpgcheck=1
+      gpgkey=https://rpm.platypush.tech/pubkey.txt
+      EOF
+
+    - |
+      cat <<EOF > "$TMP_RPM_ROOT/index.txt"
+      Welcome to the Platypush RPM repository!
+
+      Project homepage: https://platypush.tech
+      Source code: https://git.platypush.tech/platypush/platypush
+      Documentation / API reference: https://docs.platypush.tech
+
+      You can use this RPM repository to install Platypush on Fedora or other
+      RPM-based distros - as long as they are compatible with the latest Fedora
+      release.
+
+      Steps:
+
+      1. Add the repository to your sources
+      =====================================
+
+      $ sudo yum config-manager --add-repo https://rpm.platypush.tech/platypush.repo
+
+      2. Install Platypush
+      ====================
+
+      $ sudo yum install platypush
+
+      Or, if you want to install a version always up-to-date with the git repo:
+
+      $ sudo yum install platypush-git
+      EOF
+
+    - |
+      cat <<EOF > "$TMP_RPM_ROOT/pubkey.txt"
+      $PGP_PUBKEY
+      EOF
+
+    - echo "--- Updating the repository"
+    - export NEW_RPM_ROOT="$REPOS_ROOT/rpm_new"
+    - export OLD_RPM_ROOT="$REPOS_ROOT/rpm_old"
+    - cp -r "$TMP_RPM_ROOT" "$NEW_RPM_ROOT"
+    - rm -rf "$TMP_RPM_ROOT"
+    - mv "$RPM_ROOT" "$OLD_RPM_ROOT"
+    - mv "$NEW_RPM_ROOT" "$RPM_ROOT"
+    - rm -rf "$OLD_RPM_ROOT"
+
+###
+### Updates the pip package upon new releases
+###
+
+- name: update-pip-package
+  image: python:3.11-alpine
+  environment:
+    TWINE_USERNAME:
+      from_secret: pypi_user
+    TWINE_PASSWORD:
+      from_secret: pypi_pass
+
+  when:
+    event:
+      - tag
+
+  depends_on:
+    - tests
+    - docs
+
+  commands:
+    - apk add --update --no-cache py3-twine
+    - python setup.py sdist bdist_wheel
+    - twine upload dist/platypush-$(python setup.py --version).tar.gz
+
+###
+### Checkpoint step that waits for all the package update
+### steps to complete before proceeding to the next steps.
+###
+
+- name: wait-pkg-update
+  image: alpine
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+
+  depends_on:
+    - update-arch-packages
+    - update-rpm-repo
+    - update-apt-repo
+
+  commands:
+    - echo "All packages have been successfully updated"
+
+###
+### Notifies about a new release
+###
+
+- name: notify-release
+  image: python:3.11-alpine
+  environment:
+    WORKER_RPC_SECRET:
+      from_secret: worker_rpc_secret
+
+  when:
+    event:
+      - tag
+
+  depends_on:
+    - update-pip-package
+
+  commands:
+    - apk add --update --no-cache curl
+    - |
+      curl --silent -XPOST \
+        -H "X-Token: $WORKER_RPC_SECRET" \
+        "https://worker.ci-cd.platypush.tech/hook/notify-platypush-release?version=$(python setup.py --version)"
+
+###
+### Notifies about a change in the CI/CD build status
+###
+
+- name: notify-build-status
+  image: alpine
+  environment:
+    WORKER_RPC_SECRET:
+      from_secret: worker_rpc_secret
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+    status:
+      - success
+      - failure
+
+  depends_on:
+    - wait-pkg-update
+
+  commands:
+    - apk add --update --no-cache curl
+    - |
+      curl --silent -XPOST \
+        -H "X-Token: $WORKER_RPC_SECRET" \
+        "https://worker.ci-cd.platypush.tech/hook/notify-platypush-build?status=$DRONE_BUILD_STATUS"

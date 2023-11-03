@@ -1,20 +1,25 @@
 import ast
 import contextlib
 import datetime
+import functools
 import hashlib
 import importlib
 import inspect
 import logging
-from multiprocessing import Lock as PLock
 import os
 import pathlib
 import re
 import signal
 import socket
 import ssl
+import time
 import urllib.request
+from importlib.machinery import SourceFileLoader
+from importlib.util import spec_from_loader, module_from_spec
+from multiprocessing import Lock as PLock
+from tempfile import gettempdir
 from threading import Lock as TLock
-from typing import Generator, Optional, Tuple, Union
+from typing import Generator, Optional, Tuple, Type, Union
 
 from dateutil import parser, tz
 from redis import Redis
@@ -84,7 +89,7 @@ def get_backend_module_by_name(backend_name):
         return None
 
 
-def get_plugin_class_by_name(plugin_name):
+def get_plugin_class_by_name(plugin_name) -> Optional[type]:
     """Gets the class of a plugin by name (e.g. "music.mpd" or "media.vlc")"""
 
     module = get_plugin_module_by_name(plugin_name)
@@ -103,7 +108,7 @@ def get_plugin_class_by_name(plugin_name):
         return None
 
 
-def get_plugin_name_by_class(plugin) -> Optional[str]:
+def get_plugin_name_by_class(plugin) -> str:
     """Gets the common name of a plugin (e.g. "music.mpd" or "media.vlc") given its class."""
 
     from platypush.plugins import Plugin
@@ -121,7 +126,7 @@ def get_plugin_name_by_class(plugin) -> Optional[str]:
     return '.'.join(class_tokens)
 
 
-def get_backend_class_by_name(backend_name: str):
+def get_backend_class_by_name(backend_name: str) -> Optional[type]:
     """Gets the class of a backend by name (e.g. "backend.http" or "backend.mqtt")"""
 
     module = get_backend_module_by_name(backend_name)
@@ -521,7 +526,7 @@ def get_or_generate_jwt_rsa_key_pair():
     """
     from platypush.config import Config
 
-    key_dir = os.path.join(Config.workdir, 'jwt')
+    key_dir = os.path.join(Config.get_workdir(), 'jwt')
     priv_key_file = os.path.join(key_dir, 'id_rsa')
     pub_key_file = priv_key_file + '.pub'
 
@@ -557,6 +562,29 @@ def get_enabled_plugins() -> dict:
             logger.exception(e)
 
     return plugins
+
+
+def get_enabled_backends() -> dict:
+    """
+    Get the enabled backends.
+
+    :return: A dictionary with the enabled backends, in the format ``name`` ->
+        :class:`platypush.backend.Backend` instance.
+    """
+    from platypush.config import Config
+    from platypush.context import get_backend
+
+    backends = {}
+    for name in Config.get_backends():
+        try:
+            backend = get_backend(name.removeprefix('backend.'))
+            if backend:
+                backends[name] = backend
+        except Exception as e:
+            logger.warning('Could not initialize backend %s', name)
+            logger.exception(e)
+
+    return backends
 
 
 def get_redis_conf() -> dict:
@@ -623,6 +651,133 @@ def get_lock(
     finally:
         if result:
             lock.release()
+
+
+def get_default_pid_file() -> str:
+    """
+    Get the default PID file path.
+    """
+    return os.path.join(gettempdir(), 'platypush.pid')
+
+
+def get_remaining_timeout(
+    timeout: Optional[float], start: float, cls: Union[Type[int], Type[float]] = float
+) -> Optional[Union[int, float]]:
+    """
+    Get the remaining timeout, given a start time.
+    """
+    if timeout is None:
+        return None
+
+    return cls(max(0, timeout - (time.time() - start)))
+
+
+def get_src_root() -> str:
+    """
+    :return: The root source folder of the application.
+    """
+    import platypush
+
+    return os.path.dirname(inspect.getfile(platypush))
+
+
+def is_root() -> bool:
+    """
+    :return: True if the current user is root/administrator.
+    """
+    return os.getuid() == 0
+
+
+def get_message_response(msg):
+    """
+    Get the response to the given message.
+
+    :param msg: The message to get the response for.
+    :return: The response to the given message.
+    """
+    from platypush.message import Message
+
+    redis = get_redis()
+    redis_queue = get_redis_queue_name_by_message(msg)
+    if not redis_queue:
+        return None
+
+    response = redis.blpop(redis_queue, timeout=60)
+    if response and len(response) > 1:
+        response = Message.build(response[1])
+    else:
+        response = None
+
+    return response
+
+
+def import_file(path: str, name: Optional[str] = None):
+    """
+    Import a Python file as a module, even if no __init__.py is
+    defined in the directory.
+
+    :param path: Path of the file to import.
+    :param name: Custom name for the imported module (default: same as the file's basename).
+    :return: The imported module.
+    """
+    name = name or re.split(r"\.py$", os.path.basename(path))[0]
+    loader = SourceFileLoader(name, os.path.expanduser(path))
+    mod_spec = spec_from_loader(name, loader)
+    assert mod_spec, f"Cannot create module specification for {path}"
+    mod = module_from_spec(mod_spec)
+    loader.exec_module(mod)
+    return mod
+
+
+def get_defining_class(meth) -> Optional[type]:
+    """
+    See https://stackoverflow.com/a/25959545/622364.
+
+    This is the best way I could find of answering the question "given a bound
+    method, get the class that defined it",
+    """
+    if isinstance(meth, type):
+        return meth
+
+    if isinstance(meth, functools.partial):
+        return get_defining_class(meth.func)
+
+    if inspect.ismethod(meth) or (
+        inspect.isbuiltin(meth)
+        and getattr(meth, '__self__', None) is not None
+        and getattr(meth.__self__, '__class__', None)
+    ):
+        for cls in inspect.getmro(meth.__self__.__class__):
+            if meth.__name__ in cls.__dict__:
+                return cls
+        meth = getattr(meth, '__func__', meth)  # fallback to __qualname__ parsing
+
+    if inspect.isfunction(meth):
+        cls = getattr(
+            inspect.getmodule(meth),
+            meth.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0],
+            None,
+        )
+        if isinstance(cls, type):
+            return cls
+
+    return getattr(meth, '__objclass__', None)  # handle special descriptor objects
+
+
+def is_debug_enabled() -> bool:
+    """
+    :return: True if the debug mode is enabled.
+    """
+    from platypush.config import Config
+
+    return (Config.get('logging') or {}).get('level') == logging.DEBUG
+
+
+def get_default_downloads_dir() -> str:
+    """
+    :return: The default downloads directory.
+    """
+    return os.path.join(os.path.expanduser('~'), 'Downloads')
 
 
 # vim:sw=4:ts=4:et:

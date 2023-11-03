@@ -2,7 +2,6 @@ import enum
 import time
 
 from typing import List, Optional, Dict, Union, Callable, Tuple, Type
-from typing_extensions import override
 
 from pyfirmata2 import (
     Arduino,
@@ -59,17 +58,6 @@ class ArduinoPlugin(SensorPlugin):
     Download and flash the
     `Standard Firmata <https://github.com/firmata/arduino/blob/master/examples/StandardFirmata/StandardFirmata.ino>`_
     firmware to the Arduino in order to use this plugin.
-
-    Requires:
-
-        * **pyfirmata2** (``pip install pyfirmata2``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
     """
 
     def __init__(
@@ -485,7 +473,6 @@ class ArduinoPlugin(SensorPlugin):
 
         return ret
 
-    @override
     def transform_entities(self, entities: Dict[str, Numeric]) -> List[Device]:  # type: ignore
         dev_id = 'arduino'
         dev_name = 'Arduino'

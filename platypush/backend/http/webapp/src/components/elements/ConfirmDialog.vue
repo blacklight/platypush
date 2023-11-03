@@ -60,6 +60,10 @@ export default {
     padding: 1em;
   }
 
+  .body {
+    padding: 1.5em;
+  }
+
   .buttons {
     display: flex;
     flex-direction: row;

@@ -1,5 +1,4 @@
 from typing import Iterable, List
-from typing_extensions import override
 
 from sqlalchemy import (
     Boolean,
@@ -10,13 +9,13 @@ from sqlalchemy import (
     String,
 )
 
-from platypush.common.db import Base
+from platypush.common.db import is_defined
 
 from ..devices import Device
 from ._service import BluetoothService
 
 
-if 'bluetooth_device' not in Base.metadata:
+if not is_defined('bluetooth_device'):
 
     class BluetoothDevice(Device):
         """
@@ -69,6 +68,7 @@ if 'bluetooth_device' not in Base.metadata:
         model_id = Column(String, default=None)
         """ Device model ID. """
 
+        __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
             'polymorphic_identity': __tablename__,
         }
@@ -156,7 +156,6 @@ if 'bluetooth_device' not in Base.metadata:
                 and child.service_class != ServiceClass.UNKNOWN
             }
 
-        @override
         def to_dict(self):
             """
             Overwrites ``to_dict`` to transform private column names into their

@@ -6,11 +6,15 @@ manifest:
     platypush.message.event.gps.GPSVersionEvent: when a GPS device advertises its
       version data
   install:
-    pip:
-      - gps
-    pacman:
+    apk:
       - gpsd
     apt:
       - gpsd
+    dnf:
+      - gpsd
+    pacman:
+      - gpsd
+    pip:
+      - gps
   package: platypush.backend.gps
   type: backend

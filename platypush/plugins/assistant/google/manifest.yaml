@@ -1,6 +1,74 @@
 manifest:
-  events: {}
-  install:
-    pip: []
   package: platypush.plugins.assistant.google
   type: plugin
+  events:
+    - platypush.message.event.assistant.AlarmEndEvent
+    - platypush.message.event.assistant.AlarmStartedEvent
+    - platypush.message.event.assistant.ConversationEndEvent
+    - platypush.message.event.assistant.ConversationStartEvent
+    - platypush.message.event.assistant.ConversationTimeoutEvent
+    - platypush.message.event.assistant.MicMutedEvent
+    - platypush.message.event.assistant.MicUnmutedEvent
+    - platypush.message.event.assistant.NoResponseEvent
+    - platypush.message.event.assistant.ResponseEvent
+    - platypush.message.event.assistant.SpeechRecognizedEvent
+    - platypush.message.event.assistant.TimerEndEvent
+    - platypush.message.event.assistant.TimerStartedEvent
+
+  install:
+    apk:
+      - ffmpeg
+      - portaudio-dev
+      - py3-cachetools
+      - py3-grpcio
+      - py3-google-auth
+      - py3-numpy
+      - py3-pathlib2
+      - py3-tenacity
+      - py3-urllib3
+    apt:
+      - ffmpeg
+      - portaudio19-dev
+      - python3-cachetools
+      - python3-grpcio
+      - python3-google-auth
+      - python3-monotonic
+      - python3-tenacity
+      - python3-urllib3
+    dnf:
+      - ffmpeg
+      - portaudio-devel
+      - python-cachetools
+      - python-grpcio
+      - python-google-auth
+      - python-monotonic
+      - python-numpy
+      - python-tenacity
+      - python-urllib3
+    pacman:
+      - ffmpeg
+      - portaudio
+      - python-cachetools
+      - python-grpcio
+      - python-google-auth
+      - python-monotonic
+      - python-numpy
+      - python-sounddevice
+      - python-tenacity
+      - python-urllib3
+    pip:
+      - google-assistant-library
+      - google-assistant-sdk[samples]
+      - google-auth
+      - numpy
+      - sounddevice
+    after:
+      # Uninstall old versions of packages that break things on recent versions
+      # of Python, when the new versions work just fine
+      - yes | pip uninstall --break-system-packages enum34 click urllib3 requests google-auth
+      # Upgrade the dependencies (back) to the latest version.
+      # NOTE: Be careful when running this command on older distros that may
+      # not ship the latest versions of all the packages! This is a workaround
+      # caused by the fact that google-assistant-library pulls in some old
+      # breaking dependencies that need to be surgically removed.
+      - pip install -U --no-input --break-system-packages click urllib3 requests google-auth

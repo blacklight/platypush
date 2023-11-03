@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import Any
-from typing_extensions import override
 
 from . import EntityManager
 
@@ -42,7 +41,6 @@ class SwitchEntityManager(WriteableEntityManager, ABC):
         """Toggle the state of a device (on->off or off->on)"""
         raise NotImplementedError()
 
-    @override
     def set(self, entity: str, value: Any, **kwargs):
         method = self.on if value else self.off
         return method(entity, **kwargs)

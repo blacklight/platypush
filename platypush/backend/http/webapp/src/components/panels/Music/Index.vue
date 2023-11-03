@@ -347,7 +347,7 @@ main {
     overflow: auto;
   }
 
-  ::v-deep(button) {
+  :deep(button) {
     background: none;
     padding: .5em .75em;
     border: 0;
@@ -358,7 +358,7 @@ main {
     }
   }
 
-  ::v-deep(a) {
+  :deep(a) {
     color: $default-fg;
     opacity: 0.65;
 
@@ -370,13 +370,13 @@ main {
 }
 
 .playlists-modal-container {
-  ::v-deep(.body) {
+  :deep(.body) {
     display: flex;
     flex-direction: column;
     padding: 0 !important;
   }
 
-  ::v-deep(.filter) {
+  :deep(.filter) {
     padding: .33em;
     background-color: $default-bg-6;
     border-bottom: $default-border-2;
@@ -386,7 +386,7 @@ main {
     }
   }
 
-  ::v-deep(.playlists) {
+  :deep(.playlists) {
     overflow: auto;
     padding: 1.5em;
 
@@ -406,7 +406,7 @@ main {
 }
 
 .track-info-container {
-  ::v-deep(.body) {
+  :deep(.body) {
     height: 15em;
     overflow: auto;
 

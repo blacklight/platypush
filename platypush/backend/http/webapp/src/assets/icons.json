@@ -2,6 +2,9 @@
   "arduino": {
     "class": "fas fa-microchip"
   },
+  "assistant.google": {
+    "class": "fas fa-microphone-lines"
+  },
   "bluetooth": {
     "class": "fab fa-bluetooth"
   },
@@ -28,6 +31,9 @@
   },
   "execute": {
     "class": "fa fa-play"
+  },
+  "extensions": {
+    "class": "fas fa-puzzle-piece"
   },
   "light.hue": {
     "class": "fas fa-lightbulb"

@@ -6,7 +6,6 @@ import warnings
 from abc import ABC, abstractmethod
 from functools import wraps
 from typing import Any, Callable, Optional
-from typing_extensions import override
 
 from platypush.bus import Bus
 from platypush.common import ExtensionWithManifest
@@ -15,7 +14,7 @@ from platypush.message.response import Response
 from platypush.utils import get_decorators, get_plugin_name_by_class
 
 PLUGIN_STOP_TIMEOUT = 5  # Plugin stop timeout in seconds
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def action(f: Callable[..., Any]) -> Callable[..., Response]:
@@ -32,8 +31,11 @@ def action(f: Callable[..., Any]) -> Callable[..., Response]:
         response = Response()
         try:
             result = f(*args, **kwargs)
-        except TypeError as e:
-            logger.exception(e)
+        except Exception as e:
+            if isinstance(e, KeyboardInterrupt):
+                return response
+
+            _logger.exception(e)
             result = Response(errors=[str(e)])
 
         if result and isinstance(result, Response):
@@ -54,6 +56,8 @@ def action(f: Callable[..., Any]) -> Callable[..., Response]:
 
     # Propagate the docstring
     _execute_action.__doc__ = f.__doc__
+    # Expose the wrapped function
+    _execute_action.wrapped = f  # type: ignore
     return _execute_action
 
 
@@ -62,6 +66,7 @@ class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to
 
     def __init__(self, **kwargs):
         super().__init__()
+
         self.logger = logging.getLogger(
             'platypush:plugin:' + get_plugin_name_by_class(self.__class__)
         )
@@ -128,7 +133,7 @@ class RunnablePlugin(Plugin):
     ):
         """
         :param poll_interval: How often the :meth:`.loop` function should be
-            execute (default: 15 seconds). *NOTE*: For back-compatibility
+            executed (default: 15 seconds). *NOTE*: For back-compatibility
             reasons, the `poll_seconds` argument is also supported, but it's
             deprecated.
         :param stop_timeout: How long we should wait for any running
@@ -262,6 +267,7 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
         """
         Initialize an event loop and run the listener as a task.
         """
+        assert self._loop, 'The loop is not initialized'
         asyncio.set_event_loop(self._loop)
 
         self._task = self._loop.create_task(self._listen())
@@ -276,7 +282,6 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
 
         self._task.cancel()
 
-    @override
     def main(self):
         if self.should_stop():
             self.logger.info('The plugin is already scheduled to stop')
@@ -293,7 +298,6 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
         else:
             self.wait_stop()
 
-    @override
     def stop(self):
         if self._loop and self._loop.is_running():
             self._loop.call_soon_threadsafe(self._loop.stop)

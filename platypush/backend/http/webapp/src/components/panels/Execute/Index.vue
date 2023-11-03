@@ -1,26 +1,45 @@
 <template>
   <div class="row plugin execute-container" @click="onClick">
     <Loading v-if="loading" />
-    <div class="section command-container">
-      <div class="section-title">Execute Action</div>
-      <form class="action-form" ref="actionForm" autocomplete="off" @submit.prevent="executeAction">
-        <div class="request-type-container">
-          <input type="radio" id="action-structured-input"
-                 :checked="structuredInput" @change="onInputTypeChange(true)">
-          <label for="action-structured-input">Structured request</label>
-          <input type="radio" id="action-raw-input"
-                 :checked="!structuredInput" @change="onInputTypeChange(false)">
-          <label for="action-raw-input">Raw request</label>
-        </div>
 
-        <div class="request structured-request" :class="structuredInput ? '' : 'hidden'">
-          <div class="request-header">
-            <div class="autocomplete">
-              <label>
-                <input ref="actionName" type="text" class="action-name"
-                       placeholder="Action Name" :disabled="running" v-model="action.name"
-                       @change="actionChanged=true" @blur="updateAction">
-              </label>
+    <!-- Action executor container -->
+    <main>
+      <h1>Execute Action</h1>
+
+      <!-- cURL snippet modal -->
+      <Modal ref="curlModal" title="curl request" v-if="curlSnippet?.length">
+        <div class="output curl-snippet" @click="copyToClipboard(curlSnippet)" >
+          <pre><code v-html="highlightedCurlSnippet" /></pre>
+        </div>
+      </Modal>
+
+      <!-- Execute panel views -->
+      <Tabs>
+        <Tab :selected="structuredInput" icon-class="fas fa-list" @input="onInputTypeChange(true)">
+          Structured
+        </Tab>
+
+        <Tab :selected="!structuredInput" icon-class="fas fa-code" @input="onInputTypeChange(false)">
+          Raw
+        </Tab>
+      </Tabs>
+
+      <form ref="actionForm" autocomplete="off" @submit.prevent="executeAction">
+        <!-- Structured request container -->
+        <div class="request structured" v-if="structuredInput">
+          <!-- Request header -->
+          <header>
+            <!-- Action autocomplete container -->
+            <div class="autocomplete-container">
+              <Autocomplete
+                ref="autocomplete"
+                :items="autocompleteItems"
+                @input="updateAction"
+                placeholder="Action"
+                show-results-when-blank
+                autofocus
+                :disabled="running"
+                :value="action.name" />
             </div>
             <div class="buttons">
               <button type="submit" class="run-btn btn-primary"
@@ -28,96 +47,43 @@
                 <i class="fas fa-play" />
               </button>
             </div>
-          </div>
+          </header>
 
-          <div class="doc-container" v-if="selectedDoc">
-            <div class="title">
-              <a :href="currentActionDocURL">Action documentation</a>
-            </div>
+          <!-- Action documentation container -->
+          <ActionDoc
+            :action="action"
+            :curl-snippet="curlSnippet"
+            :loading="docLoading"
+            :doc="selectedDoc"
+            @curl-modal="$refs.curlModal.show()" />
 
-            <div class="doc html">
-              <Loading v-if="docLoading" />
-              <span v-html="selectedDoc" v-else />
-            </div>
-          </div>
+          <!-- Action arguments container -->
+          <section class="args"
+              v-if="action.name in actions && (Object.keys(action.args).length || action.supportsExtraArgs)">
+            <h2>
+              <i class="fas fa-code" /> &nbsp;
+              Arguments
+            </h2>
 
-          <div class="options" v-if="action.name in actions && (Object.keys(action.args).length ||
-              action.supportsExtraArgs)">
-            <div class="params" ref="params"
-                 v-if="Object.keys(action.args).length || action.supportsExtraArgs">
-              <div class="param" :key="name" v-for="name in Object.keys(action.args)">
-                <label>
-                  <input type="text" class="action-param-value" :disabled="running"
-                         :placeholder="name" v-model="action.args[name].value"
-                         @focus="selectAttrDoc(name)"
-                         @blur="resetAttrDoc">
-                </label>
+            <ActionArgs :action="action"
+                        :loading="loading"
+                        :running="running"
+                        :selected-arg="selectedArg"
+                        :selected-argdoc="selectedArgdoc"
+                        @add="addArg"
+                        @select="selectArgdoc"
+                        @remove="removeArg"
+                        @arg-edit="action.args[$event.name].value = $event.value"
+                        @extra-arg-name-edit="action.extraArgs[$event.index].name = $event.value"
+                        @extra-arg-value-edit="action.extraArgs[$event.index].value = $event.value" />
+          </section>
 
-                <div class="attr-doc-container mobile" v-if="selectedAttrDoc && selectedAttr === name">
-                  <div class="title">
-                    Attribute: <div class="attr-name" v-text="selectedAttr" />
-                  </div>
-
-                  <div class="doc html">
-                    <Loading v-if="docLoading" />
-                    <span v-html="selectedAttrDoc" v-else />
-                  </div>
-                </div>
-              </div>
-
-              <div class="extra-params" ref="extraParams" v-if="Object.keys(action.extraArgs).length">
-                <div class="param extra-param" :key="i" v-for="i in Object.keys(action.extraArgs)">
-                  <label class="col-5">
-                    <input type="text" class="action-extra-param-name" :disabled="running"
-                           placeholder="Name" v-model="action.extraArgs[i].name">
-                  </label>
-                  <label class="col-6">
-                    <input type="text" class="action-extra-param-value" :disabled="running"
-                           placeholder="Value" v-model="action.extraArgs[i].value">
-                  </label>
-                  <label class="col-1 buttons">
-                    <button type="button" class="action-extra-param-del" title="Remove parameter"
-                            @click="removeParameter(i)">
-                      <i class="fas fa-trash" />
-                    </button>
-                  </label>
-                </div>
-              </div>
-
-              <div class="add-param" v-if="action.supportsExtraArgs">
-                <button type="button" title="Add a parameter" @click="addParameter">
-                  <i class="fas fa-plus" />
-                </button>
-              </div>
-            </div>
-
-            <div class="attr-doc-container widescreen" v-if="selectedAttrDoc">
-              <div class="title">
-                Attribute: <div class="attr-name" v-text="selectedAttr" />
-              </div>
-
-              <div class="doc html">
-                <Loading v-if="docLoading" />
-                <span v-html="selectedAttrDoc" v-else />
-              </div>
-            </div>
-          </div>
-
-          <div class="output-container">
-            <div class="header" v-if="error != null || response != null">
-              <div class="title" v-text="error != null ? 'Error' : 'Output'" />
-              <div class="buttons">
-                <button type="button" title="Copy to clipboard" @click="copyToClipboard">
-                  <i class="fas fa-clipboard" />
-                </button>
-              </div>
-            </div>
-            <div class="response" v-html="response" v-if="response != null" />
-            <div class="error" v-html="error" v-else-if="error != null" />
-          </div>
+          <!-- Structured response container -->
+          <Response :response="response" :error="error" />
         </div>
 
-        <div class="request raw-request" :class="structuredInput ? 'hidden' : ''">
+        <!-- Raw request container -->
+        <div class="request raw-request" v-if="!structuredInput">
           <div class="first-row">
             <label>
               <textarea v-model="rawRequest" ref="rawAction" :placeholder="rawRequestPlaceholder" />
@@ -127,62 +93,41 @@
             </button>
           </div>
 
-          <div class="output-container" v-if="response != null || error != null">
-            <div class="header" v-if="error != null || response != null">
-              <div class="title" v-text="error != null ? 'Error' : 'Output'" />
-              <div class="buttons">
-                <button type="button" title="Copy to clipboard" @click="copyToClipboard">
-                  <i class="fas fa-clipboard" />
-                </button>
-              </div>
-            </div>
-            <div class="error" v-html="error" v-if="error != null" />
-            <div class="response" v-html="response" v-else-if="response != null" />
-          </div>
+          <!-- Raw response container -->
+          <Response :response="response" :error="error" />
         </div>
       </form>
-    </div>
-
-    <div class="section procedures-container">
-      <div class="section-title">Execute Procedure</div>
-      <div class="procedure" :class="selectedProcedure.name === name ? 'selected' : ''"
-           v-for="name in Object.keys(procedures).sort()" :key="name" @click="updateProcedure(name, $event)">
-        <form ref="procedureForm" autocomplete="off" @submit.prevent="executeProcedure">
-          <div class="head">
-            <div class="name col-no-margin-11" v-text="name" />
-            <div class="btn-container col-no-margin-1">
-              <button type="submit" class="run-btn btn-default" :disabled="running" title="Run"
-                      @click.stop="$emit('submit')" v-if="selectedProcedure.name === name">
-                <i class="fas fa-play" />
-              </button>
-            </div>
-          </div>
-
-          <div class="params" v-if="selectedProcedure.name === name">
-            <div class="param"
-                 v-for="argname in Object.keys(selectedProcedure.args)"
-                 :key="argname">
-              <label>
-                <input type="text" class="action-param-value" @click="$event.stopPropagation()" :disabled="running"
-                       :placeholder="argname" v-model="selectedProcedure.args[argname]">
-              </label>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <script>
-import autocomplete from "@/components/elements/Autocomplete"
+import 'highlight.js/lib/common'
+import 'highlight.js/styles/stackoverflow-dark.min.css'
+import hljs from "highlight.js"
+import ActionArgs from "./ActionArgs"
+import ActionDoc from "./ActionDoc"
+import Autocomplete from "@/components/elements/Autocomplete"
+import Loading from "@/components/Loading"
+import Modal from "@/components/Modal";
+import Response from "./Response"
+import Tab from "@/components/elements/Tab"
+import Tabs from "@/components/elements/Tabs"
 import Utils from "@/Utils"
-import Loading from "@/components/Loading";
 
 export default {
   name: "Execute",
-  components: {Loading},
   mixins: [Utils],
+  components: {
+    ActionArgs,
+    ActionDoc,
+    Autocomplete,
+    Loading,
+    Modal,
+    Response,
+    Tab,
+    Tabs,
+  },
 
   data() {
     return {
@@ -190,15 +135,9 @@ export default {
       running: false,
       docLoading: false,
       structuredInput: true,
-      actionChanged: false,
       selectedDoc: undefined,
-      selectedAttr: undefined,
-      selectedAttrDoc: undefined,
-      selectedProcedure: {
-        name: undefined,
-        args: {},
-      },
-
+      selectedArg: undefined,
+      selectedArgdoc: undefined,
       response: undefined,
       error: undefined,
       rawRequest: undefined,
@@ -219,19 +158,90 @@ export default {
 
   computed: {
     currentActionDocURL() {
-      if (!this.action?.name?.length)
-        return undefined
+      return this.action?.doc_url
+    },
 
-      const plugin = this.action.name.split('.').slice(0, -1).join('.')
-      const actionName = this.action.name.split('.').slice(-1)
-      const actionClass = this.action.name
-        .split('.')
-        .slice(0, -1)
-        .map((token) => token.slice(0, 1).toUpperCase() + token.slice(1))
-        .join('') + 'Plugin'
+    autocompleteItems() {
+      if (this.getPluginName(this.action.name) in this.plugins) {
+        return Object.keys(this.actions).sort()
+      }
 
-      return 'https://docs.platypush.tech/platypush/plugins/' +
-        `${plugin}.html#platypush.plugins.${plugin}.${actionClass}.${actionName}`
+      return Object.keys(this.plugins).sort().map((pluginName) => `${pluginName}.`)
+    },
+
+    actionInput() {
+      return this.$refs.autocomplete.$el.parentElement.querySelector('input[type=text]')
+    },
+
+    requestArgs() {
+      if (!this.action.name)
+        return {}
+
+      return {
+        ...Object.entries(this.action.args).reduce((args, arg) => {
+          if (arg[1].value != null) {
+            let value = arg[1].value
+            try {
+              value = JSON.parse(value)
+            } catch (e) {
+              console.debug('Not a valid JSON value')
+              console.debug(value)
+            }
+
+            args[arg[0]] = value
+          }
+          return args
+        }, {}),
+
+        ...(this.action.extraArgs || []).reduce((args, arg) => {
+          let value = arg.value
+          try {
+            value = JSON.parse(value)
+          } catch (e) {
+            console.debug('Not a valid JSON value')
+            console.debug(value)
+          }
+
+          args[arg.name] = value
+          return args
+        }, {})
+      }
+    },
+
+    curlURL() {
+      return `${window.location.protocol}//${window.location.host}/execute`
+    },
+
+    curlSnippet() {
+      if (!this.action.name)
+        return ''
+
+      const request = {
+        type: 'request',
+        action: this.action.name,
+        args: this.requestArgs,
+      }
+
+      const reqStr = JSON.stringify(request, null, 2)
+
+      return (
+        'curl -XPOST -H "Content-Type: application/json" \\\n  ' +
+        `-H "Cookie: session_token=${this.getCookies()['session_token']}"`+
+        " \\\n  -d '\n  {\n    " +
+        this.indent(
+          reqStr.split('\n').slice(1, reqStr.length - 2).join('\n'), 2
+        ).trim() +
+        "' \\\n  " +
+        `'${this.curlURL}'`
+      )
+    },
+
+    highlightedCurlSnippet() {
+      return hljs.highlight(
+        'bash',
+        '# Note: Replace the cookie with a JWT token for production cases\n' +
+        this.curlSnippet
+      ).value
     },
   },
 
@@ -240,12 +250,36 @@ export default {
       this.loading = true
 
       try {
-        this.procedures = await this.request('inspect.get_procedures')
-        this.plugins = await this.request('inspect.get_all_plugins')
+        [this.procedures, this.plugins] = await Promise.all([
+          this.request('inspect.get_procedures'),
+          this.request('inspect.get_all_plugins'),
+        ])
       } finally {
         this.loading = false
       }
 
+      // Register procedures as actions
+      this.plugins.procedure = {
+        name: 'procedure',
+        actions: Object.entries(this.procedures || {}).reduce((actions, [name, procedure]) => {
+          actions[name] = {
+            name: name,
+            args: (procedure.args || []).reduce((args, arg) => {
+              args[arg] = {
+                name: arg,
+                required: false,
+              }
+
+              return args
+            }, {}),
+            supportsExtraArgs: true,
+          }
+
+          return actions
+        }, {}),
+      }
+
+      // Parse actions from the plugins map
       for (const plugin of Object.values(this.plugins)) {
         for (const action of Object.values(plugin.actions)) {
           action.name = plugin.name + '.' + action.name
@@ -255,21 +289,28 @@ export default {
         }
       }
 
-      const self = this
-      autocomplete(this.$refs.actionName, Object.keys(this.actions).sort(), (_, value) => {
-        this.action.name = value
-        self.updateAction()
-      })
+      // If an action has been passed on the URL, set it
+      const args = this.getUrlArgs()
+      const actionName = args?.action
+      if (actionName?.length && actionName in this.actions && actionName !== this.action.name) {
+        this.updateAction(actionName)
+      }
     },
 
-    async updateAction() {
-      if (!(this.action.name in this.actions))
-        this.selectedDoc = undefined
-
-      if (!this.actionChanged || !(this.action.name in this.actions))
+    async updateAction(actionName) {
+      if (actionName === this.action.name)
         return
 
+      this.action.name = actionName
+      if (!(this.action.name in this.actions)) {
+        this.selectedDoc = undefined
+        this.resetArgdoc()
+        return
+      }
+
+      this.resetArgdoc()
       this.docLoading = true
+
       try {
         this.action = {
           ...this.actions[this.action.name],
@@ -293,9 +334,19 @@ export default {
 
       if (!this.actionDocsCache[this.action.name])
         this.actionDocsCache[this.action.name] = {}
-      this.actionDocsCache[this.action.name].html = this.selectedDoc
 
-      this.actionChanged = false
+      this.actionDocsCache[this.action.name].html = this.selectedDoc
+      this.setUrlArgs({action: this.action.name})
+
+      const firstArg = this.$el.querySelector('.action-arg-value')
+      if (firstArg) {
+        firstArg.focus()
+      } else {
+        this.$nextTick(() => {
+          this.actionInput.focus()
+        })
+      }
+
       this.response = undefined
       this.error = undefined
     },
@@ -307,60 +358,32 @@ export default {
       return await this.request('utils.rst_to_html', {text: docString})
     },
 
-    updateProcedure(name, event) {
-      if (event.target.getAttribute('type') === 'submit') {
-        return
-      }
-
-      if (this.selectedProcedure.name === name) {
-        this.selectedProcedure = {
-          name: undefined,
-          args: {},
-        }
-
-        return
-      }
-
-      if (!(name in this.procedures)) {
-        console.warn('Procedure not found: ' + name)
-        return
-      }
-
-      this.selectedProcedure = {
-        name: name,
-        args: (this.procedures[name].args || []).reduce((args, arg) => {
-          args[arg] = undefined
-          return args
-        }, {})
-      }
-    },
-
-    addParameter() {
+    addArg() {
       this.action.extraArgs.push({
         name: undefined,
         value: undefined,
       })
     },
 
-    removeParameter(i) {
+    removeArg(i) {
       this.action.extraArgs.pop(i)
     },
 
-    async selectAttrDoc(name) {
-      this.selectedAttr = name
-      this.selectedAttrDoc =
+    async selectArgdoc(name) {
+      this.selectedArg = name
+      this.selectedArgdoc =
         this.actionDocsCache[this.action.name]?.[name]?.html ||
         await this.parseDoc(this.action.args[name].doc)
 
       if (!this.actionDocsCache[this.action.name])
         this.actionDocsCache[this.action.name] = {}
 
-      this.actionDocsCache[this.action.name][name] = {html: this.selectedAttrDoc}
+      this.actionDocsCache[this.action.name][name] = {html: this.selectedArgdoc}
     },
 
-    resetAttrDoc() {
-      this.selectedAttr = undefined
-      this.selectedAttrDoc = undefined
+    resetArgdoc() {
+      this.selectedArg = undefined
+      this.selectedArgdoc = undefined
     },
 
     onInputTypeChange(structuredInput) {
@@ -369,7 +392,7 @@ export default {
       this.error = undefined
       this.$nextTick(() => {
         if (structuredInput) {
-          this.$refs.actionName.focus()
+          this.actionInput.focus()
         } else {
           this.$refs.rawAction.focus()
         }
@@ -377,7 +400,10 @@ export default {
     },
 
     onResponse(response) {
-      this.response = '<pre>' + JSON.stringify(response, null, 2) + '</pre>'
+      this.response = (
+        typeof response === 'string' ? response : JSON.stringify(response, null, 2)
+      ).trim()
+
       this.error = undefined
     },
 
@@ -390,12 +416,11 @@ export default {
       this.running = false
     },
 
-    async copyToClipboard() {
-      const output = (
-        this.error != null ? this.error : this.response
-      ).replace(/^\s*<pre>/g, '').replace(/<\/pre>\s*/g, '')
+    getPluginName(actionName) {
+      if (!actionName?.length)
+        return ''
 
-      await navigator.clipboard.writeText(output)
+      return actionName.split('.').slice(0, -1).join('.')
     },
 
     executeAction() {
@@ -404,37 +429,7 @@ export default {
 
       this.running = true
       if (this.structuredInput) {
-        const args = {
-          ...Object.entries(this.action.args).reduce((args, param) => {
-            if (param[1].value != null) {
-              let value = param[1].value
-              try {
-                value = JSON.parse(value)
-              } catch (e) {
-                console.debug('Not a valid JSON value')
-                console.debug(value)
-              }
-
-              args[param[0]] = value
-            }
-            return args
-          }, {}),
-
-          ...this.action.extraArgs.reduce((args, param) => {
-            let value = args[param.value]
-            try {
-              value = JSON.parse(value)
-            } catch (e) {
-              console.debug('Not a valid JSON value')
-              console.debug(value)
-            }
-
-            args[param.name] = value
-            return args
-          }, {})
-        }
-
-        this.request(this.action.name, args).then(this.onResponse).catch(this.onError).finally(this.onDone)
+        this.request(this.action.name, this.requestArgs).then(this.onResponse).catch(this.onError).finally(this.onDone)
       } else {
         try {
           const request = JSON.parse(this.rawRequest)
@@ -449,33 +444,6 @@ export default {
       }
     },
 
-    executeProcedure(event) {
-      if (!this.selectedProcedure.name || this.running)
-        return
-
-      event.stopPropagation()
-      this.running = true
-      const args = {
-        ...Object.entries(this.selectedProcedure.args).reduce((args, param) => {
-          if (param[1] != null) {
-            let value = param[1]
-            try {
-              value = JSON.parse(value)
-            } catch (e) {
-              console.debug('Not a valid JSON value')
-              console.debug(value)
-            }
-
-            args[param[0]] = value
-          }
-          return args
-        }, {}),
-      }
-
-      this.request('procedure.' + this.selectedProcedure.name, args)
-          .then(this.onResponse).catch(this.onError).finally(this.onDone)
-    },
-
     onClick(event) {
       // Intercept any clicks from RST rendered links and open them in a new tab
       if (event.target.tagName.toLowerCase() === 'a') {
@@ -487,47 +455,25 @@ export default {
   },
 
   mounted() {
-    this.$nextTick(() => {
-      this.$refs.actionName.focus()
-    })
-
     this.refresh()
   },
 }
 </script>
 
-<style lang="scss">
-@import "vars";
-@import "~@/style/autocomplete.scss";
-
-$params-desktop-width: 30em;
-$params-tablet-width: 20em;
-$request-headers-btn-width: 7.5em;
-
-@mixin header {
-  background: $default-bg-5;
-  display: flex;
-  align-items: center;
-  padding: 0.5em;
-  border: $title-border;
-  border-radius: 1em;
-  box-shadow: $title-shadow;
-  font-weight: normal;
-  font-size: 1em;
-}
+<style lang="scss" scoped>
+@import "common";
 
 .execute-container {
   width: 100%;
   height: 100%;
   color: $default-fg-2;
   font-weight: 400;
-  border-bottom: $default-border-2;
   border-radius: 0 0 1em 1em;
   display: flex;
   flex-direction: column;
   align-items: center;
 
-  .section {
+  main {
     width: 100%;
     max-width: 1000px;
     display: flex;
@@ -540,358 +486,10 @@ $request-headers-btn-width: 7.5em;
     }
   }
 
-  form {
-    padding: 0;
-    margin: 0;
-    border-radius: 0;
-    border: none;
-  }
-
-  .action-form {
-    background: $default-bg-2;
-    padding: 1em .5em;
-  }
-
-  .request-header {
-    width: 100%;
-    display: flex;
-    align-items: center;
-
-    .autocomplete {
-      width: calc(100% - $request-headers-btn-width);
-      flex-grow: 1;
-    }
-
-    .buttons {
-      width: $request-headers-btn-width;
-      display: inline-flex;
-      justify-content: flex-end;
-      margin-right: 0.5em;
-    }
-  }
-
-  .section-title {
-    background: $header-bg;
-    padding: .75em .5em;
-    box-shadow: $title-shadow;
-    font-size: 1.1em;
-    margin-bottom: 0 !important;
-
-    @include from($desktop) {
-      border-radius: 0.5em 0.5em 0 0;
-    }
-  }
-
-  .request-type-container {
-    display: flex;
-    flex-direction: row;
-    align-items: baseline;
-
-    label {
-      margin: 0 1em 0 .5em;
-    }
-  }
-
   .request {
     display: flex;
     flex-direction: column;
     margin: 0 .5em;
-
-    form {
-      margin-bottom: 0 !important;
-    }
-
-    .action-name {
-      box-shadow: $action-name-shadow;
-      width: 100%;
-    }
-
-    .options {
-      display: flex;
-      margin-top: .5em;
-      margin-bottom: 1.5em;
-      padding-top: .5em;
-
-      @include until($tablet) {
-        flex-direction: column;
-      }
-    }
-
-    .params {
-      @include until($tablet) {
-        width: 100%;
-      }
-
-      @include from($tablet) {
-        width: $params-tablet-width;
-        margin-right: 1.5em;
-      }
-
-      @include from($desktop) {
-        width: $params-desktop-width;
-      }
-
-      .param {
-        margin-bottom: .25em;
-        @include until($tablet) {
-          width: 100%;
-        }
-      }
-
-      .action-param-value {
-        width: 100%;
-      }
-    }
-
-    .add-param {
-      width: 100%;
-
-      button {
-        width: 100%;
-        background: $extra-params-btn-bg;
-        border: $title-border;
-      }
-    }
-
-    .extra-param {
-      display: flex;
-      margin-bottom: .5em;
-
-      label {
-        margin-left: 0.25em;
-      }
-
-      .buttons {
-        display: flex;
-        flex-grow: 1;
-        justify-content: right;
-      }
-
-      .action-extra-param-del {
-        border: 0;
-        text-align: right;
-        padding: 0 .5em;
-      }
-
-      input[type=text] {
-        width: 100%;
-      }
-
-      .buttons {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: .25em;
-
-        button {
-          background: none;
-
-          &:hover {
-            color: $default-hover-fg;
-          }
-        }
-      }
-    }
-
-    .doc-container,
-    .output-container {
-      margin-top: .5em;
-    }
-
-    .doc-container,
-    .attr-doc-container {
-      .title {
-        @include header;
-      }
-    }
-
-    .attr-doc-container {
-      .title {
-        .attr-name {
-          font-weight: bold;
-          margin-left: 0.25em;
-        }
-      }
-    }
-
-    .output-container {
-      flex-grow: 1;
-    }
-
-    .attr-doc-container {
-      @include from($tablet) {
-        width: calc(100% - #{$params-tablet-width} - 2em);
-      }
-
-      @include from($desktop) {
-        width: calc(100% - #{$params-desktop-width} - 2em);
-      }
-
-      .doc {
-        width: 100%;
-        overflow: auto;
-      }
-
-      &.widescreen {
-        @include until($tablet) {
-          display: none;
-        }
-      }
-
-      &.mobile {
-        width: 100%;
-        @include from($tablet) {
-          display: none;
-        }
-      }
-    }
-
-    .doc-container,
-    .attr-doc-container {
-      .doc {
-        padding: 1em !important;
-      }
-    }
-
-    .output-container, .doc-container, .attr-doc-container {
-      max-height: 50vh;
-      display: flex;
-      flex-direction: column;
-
-      .header {
-        @include header;
-
-        .title {
-          flex-grow: 1;
-        }
-
-        button {
-          background: none;
-          border: none;
-          box-shadow: none;
-
-          &:hover {
-            color: $default-hover-fg;
-          }
-        }
-
-        .attr-name {
-          display: inline-block;
-          font-weight: bold;
-        }
-      }
-
-      .response,
-      .error,
-      .doc {
-        height: 100%;
-        padding: .5em .5em 0 .5em;
-        border-radius: 1em;
-        overflow: auto;
-        margin-top: 0.1em;
-      }
-
-      .response {
-        background: $response-bg;
-        box-shadow: $response-shadow;
-      }
-
-      .error {
-        background: $error-bg;
-        padding: 1em;
-        box-shadow: $error-shadow;
-      }
-
-      .doc {
-        background: $doc-bg;
-        box-shadow: $doc-shadow;
-      }
-    }
-
-    textarea {
-      width: 100%;
-      height: 10em;
-      margin-bottom: .5em;
-      padding: .5em;
-      border: $default-border-2;
-      border-radius: 1em;
-      box-shadow: $border-shadow-bottom-right;
-      outline: none;
-
-      &:hover {
-        border: 1px solid $default-hover-fg-2;
-      }
-
-      &:focus {
-        border: 1px solid $selected-fg;
-      }
-    }
-  }
-
-  .raw-request {
-    .first-row {
-      @include until($tablet) {
-        width: 100%;
-      }
-
-      @include from($tablet) {
-        width: 80%;
-        max-width: 60em;
-      }
-
-      display: flex;
-      flex-direction: column;
-
-      button {
-        margin-left: 0;
-      }
-    }
-  }
-
-  .procedures-container {
-    .procedure {
-      background: $background-color;
-      border-bottom: $default-border-2;
-      padding: 1.5em .5em;
-      cursor: pointer;
-
-      &:hover {
-        background: $hover-bg;
-      }
-
-      &.selected {
-        background: $selected-bg;
-      }
-
-      form {
-        background: none;
-        display: flex;
-        margin-bottom: 0 !important;
-        flex-direction: column;
-        box-shadow: none;
-      }
-
-      .head {
-        display: flex;
-        align-items: center;
-      }
-
-      .btn-container {
-        text-align: right;
-      }
-
-      button {
-        background: $procedure-submit-btn-bg;
-      }
-    }
-
-    .action-param-value {
-      margin: 0.25em 0;
-    }
-  }
-
-  pre {
-    background: none;
   }
 
   .run-btn {

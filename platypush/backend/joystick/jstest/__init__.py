@@ -6,8 +6,14 @@ import time
 from typing import Optional, List
 
 from platypush.backend import Backend
-from platypush.message.event.joystick import JoystickConnectedEvent, JoystickDisconnectedEvent, JoystickStateEvent, \
-    JoystickButtonPressedEvent, JoystickButtonReleasedEvent, JoystickAxisEvent
+from platypush.message.event.joystick import (
+    JoystickConnectedEvent,
+    JoystickDisconnectedEvent,
+    JoystickStateEvent,
+    JoystickButtonPressedEvent,
+    JoystickButtonReleasedEvent,
+    JoystickAxisEvent,
+)
 
 
 class JoystickState:
@@ -38,9 +44,7 @@ class JoystickState:
             },
         }
 
-        return {
-            k: v for k, v in diff.items() if v
-        }
+        return {k: v for k, v in diff.items() if v}
 
 
 class JoystickJstestBackend(Backend):
@@ -49,34 +53,16 @@ class JoystickJstestBackend(Backend):
     :class:`platypush.backend.joystick.JoystickBackend` backend (this may especially happen with some Bluetooth
     joysticks that don't support the ``ioctl`` requests used by ``inputs``).
 
-    This backend only works on Linux and it requires the ``joystick`` package to be installed.
+    This backend only works on Linux, and it requires the ``joystick`` package to be installed.
 
     **NOTE**: This backend can be quite slow, since it has to run another program (``jstest``) and parse its output.
     Consider it as a last resort if your joystick works with neither :class:`platypush.backend.joystick.JoystickBackend`
     nor :class:`platypush.backend.joystick.JoystickLinuxBackend`.
 
-    Instructions on Debian-based distros::
-
-        # apt-get install joystick
-
-    Instructions on Arch-based distros::
-
-        # pacman -S joyutils
-
     To test if your joystick is compatible, connect it to your device, check for its path (usually under
     ``/dev/input/js*``) and run::
 
         $ jstest /dev/input/js[n]
-
-    Triggers:
-
-        * :class:`platypush.message.event.joystick.JoystickConnectedEvent` when the joystick is connected.
-        * :class:`platypush.message.event.joystick.JoystickDisconnectedEvent` when the joystick is disconnected.
-        * :class:`platypush.message.event.joystick.JoystickStateEvent` when the state of the joystick (i.e. some of its
-            axes or buttons values) changes.
-        * :class:`platypush.message.event.joystick.JoystickButtonPressedEvent` when a joystick button is pressed.
-        * :class:`platypush.message.event.joystick.JoystickButtonReleasedEvent` when a joystick button is released.
-        * :class:`platypush.message.event.joystick.JoystickAxisEvent` when an axis value of the joystick changes.
 
     """
 
@@ -85,10 +71,12 @@ class JoystickJstestBackend(Backend):
     js_axis_regex = re.compile(r'^\s*(\d+):\s*([\-\d]+)\s*(.*)')
     js_button_regex = re.compile(r'^\s*(\d+):\s*(on|off)\s*(.*)')
 
-    def __init__(self,
-                 device: str = '/dev/input/js0',
-                 jstest_path: str = '/usr/bin/jstest',
-                 **kwargs):
+    def __init__(
+        self,
+        device: str = '/dev/input/js0',
+        jstest_path: str = '/usr/bin/jstest',
+        **kwargs,
+    ):
         """
         :param device: Path to the joystick device (default: ``/dev/input/js0``).
         :param jstest_path: Path to the ``jstest`` executable that comes with the ``joystick`` system package
@@ -140,7 +128,11 @@ class JoystickJstestBackend(Backend):
             if line.endswith('Axes:  '):
                 break
 
-        while os.path.exists(self.device) and not self.should_stop() and len(axes) < len(self._state.axes):
+        while (
+            os.path.exists(self.device)
+            and not self.should_stop()
+            and len(axes) < len(self._state.axes)
+        ):
             ch = ' '
             while ch == ' ':
                 ch = self._process.stdout.read(1).decode()
@@ -174,7 +166,11 @@ class JoystickJstestBackend(Backend):
             if line.endswith('Buttons:  '):
                 break
 
-        while os.path.exists(self.device) and not self.should_stop() and len(buttons) < len(self._state.buttons):
+        while (
+            os.path.exists(self.device)
+            and not self.should_stop()
+            and len(buttons) < len(self._state.buttons)
+        ):
             ch = ' '
             while ch == ' ':
                 ch = self._process.stdout.read(1).decode()
@@ -195,10 +191,12 @@ class JoystickJstestBackend(Backend):
         return JoystickState(axes=axes, buttons=buttons)
 
     def _initialize(self):
-        while self._process.poll() is None and \
-                os.path.exists(self.device) and \
-                not self.should_stop() and \
-                not self._state:
+        while (
+            self._process.poll() is None
+            and os.path.exists(self.device)
+            and not self.should_stop()
+            and not self._state
+        ):
             line = b''
             ch = None
 
@@ -243,7 +241,9 @@ class JoystickJstestBackend(Backend):
         self.bus.post(JoystickStateEvent(device=self.device, **state.__dict__))
 
         for button, pressed in diff.get('buttons', {}).items():
-            evt_class = JoystickButtonPressedEvent if pressed else JoystickButtonReleasedEvent
+            evt_class = (
+                JoystickButtonPressedEvent if pressed else JoystickButtonReleasedEvent
+            )
             self.bus.post(evt_class(device=self.device, button=button))
 
         for axis, value in diff.get('axes', {}).items():
@@ -259,8 +259,8 @@ class JoystickJstestBackend(Backend):
                 self._wait_ready()
 
                 with subprocess.Popen(
-                        [self.jstest_path, '--normal', self.device],
-                        stdout=subprocess.PIPE) as self._process:
+                    [self.jstest_path, '--normal', self.device], stdout=subprocess.PIPE
+                ) as self._process:
                     self.logger.info('Device opened')
                     self._initialize()
 
@@ -268,7 +268,9 @@ class JoystickJstestBackend(Backend):
                         break
 
                     for state in self._read_states():
-                        if self._process.poll() is not None or not os.path.exists(self.device):
+                        if self._process.poll() is not None or not os.path.exists(
+                            self.device
+                        ):
                             self.logger.warning(f'Connection to {self.device} lost')
                             self.bus.post(JoystickDisconnectedEvent(self.device))
                             break

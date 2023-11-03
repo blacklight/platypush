@@ -15,10 +15,6 @@ class CameraPiBackend(Backend):
     the :class:`platypush.plugins.camera.pi` plugin. Note that the Redis backend
     must be configured and running to enable camera control.
 
-    Requires:
-
-        * **picamera** (``pip install picamera``)
-
     This backend is **DEPRECATED**. Use the plugin :class:`platypush.plugins.camera.pi.CameraPiPlugin` instead to run
     Pi camera actions. If you want to start streaming the camera on application start then simply create an event hook
     on :class:`platypush.message.event.application.ApplicationStartedEvent` that runs ``camera.pi.start_streaming``.
@@ -33,15 +29,32 @@ class CameraPiBackend(Backend):
             return self.value == other
 
     # noinspection PyUnresolvedReferences,PyPackageRequirements
-    def __init__(self, listen_port, bind_address='0.0.0.0', x_resolution=640, y_resolution=480,
-                 redis_queue='platypush/camera/pi',
-                 start_recording_on_startup=True,
-                 framerate=24, hflip=False, vflip=False,
-                 sharpness=0, contrast=0, brightness=50,
-                 video_stabilization=False, iso=0, exposure_compensation=0,
-                 exposure_mode='auto', meter_mode='average', awb_mode='auto',
-                 image_effect='none', color_effects=None, rotation=0,
-                 crop=(0.0, 0.0, 1.0, 1.0), **kwargs):
+    def __init__(
+        self,
+        listen_port,
+        bind_address='0.0.0.0',
+        x_resolution=640,
+        y_resolution=480,
+        redis_queue='platypush/camera/pi',
+        start_recording_on_startup=True,
+        framerate=24,
+        hflip=False,
+        vflip=False,
+        sharpness=0,
+        contrast=0,
+        brightness=50,
+        video_stabilization=False,
+        iso=0,
+        exposure_compensation=0,
+        exposure_mode='auto',
+        meter_mode='average',
+        awb_mode='auto',
+        image_effect='none',
+        color_effects=None,
+        rotation=0,
+        crop=(0.0, 0.0, 1.0, 1.0),
+        **kwargs
+    ):
         """
         See https://www.raspberrypi.org/documentation/usage/camera/python/README.md
         for a detailed reference about the Pi camera options.
@@ -58,7 +71,9 @@ class CameraPiBackend(Backend):
         self.bind_address = bind_address
         self.listen_port = listen_port
         self.server_socket = socket.socket()
-        self.server_socket.bind((self.bind_address, self.listen_port))   # lgtm [py/bind-socket-all-network-interfaces]
+        self.server_socket.bind(
+            (self.bind_address, self.listen_port)
+        )  # lgtm [py/bind-socket-all-network-interfaces]
         self.server_socket.listen(0)
 
         import picamera
@@ -87,10 +102,7 @@ class CameraPiBackend(Backend):
         self._recording_thread = None
 
     def send_camera_action(self, action, **kwargs):
-        action = {
-            'action': action.value,
-            **kwargs
-        }
+        action = {'action': action.value, **kwargs}
 
         self.redis.send_message(msg=json.dumps(action), queue_name=self.redis_queue)
 
@@ -127,7 +139,9 @@ class CameraPiBackend(Backend):
             else:
                 while not self.should_stop():
                     connection = self.server_socket.accept()[0].makefile('wb')
-                    self.logger.info('Accepted client connection on port {}'.format(self.listen_port))
+                    self.logger.info(
+                        'Accepted client connection on port {}'.format(self.listen_port)
+                    )
 
                     try:
                         self.camera.start_recording(connection, format=format)
@@ -138,12 +152,16 @@ class CameraPiBackend(Backend):
                         try:
                             self.stop_recording()
                         except Exception as e:
-                            self.logger.warning('Could not stop recording: {}'.format(str(e)))
+                            self.logger.warning(
+                                'Could not stop recording: {}'.format(str(e))
+                            )
 
                         try:
                             connection.close()
                         except Exception as e:
-                            self.logger.warning('Could not close connection: {}'.format(str(e)))
+                            self.logger.warning(
+                                'Could not close connection: {}'.format(str(e))
+                            )
 
                         self.send_camera_action(self.CameraAction.START_RECORDING)
 
@@ -152,12 +170,13 @@ class CameraPiBackend(Backend):
             return
 
         self.logger.info('Starting camera recording')
-        self._recording_thread = Thread(target=recording_thread,
-                                        name='PiCameraRecorder')
+        self._recording_thread = Thread(
+            target=recording_thread, name='PiCameraRecorder'
+        )
         self._recording_thread.start()
 
     def stop_recording(self):
-        """ Stops recording """
+        """Stops recording"""
 
         self.logger.info('Stopping camera recording')
 

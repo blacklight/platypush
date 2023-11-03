@@ -1,10 +1,8 @@
 import json
 import logging
 from typing import List, Tuple, Union
-from typing_extensions import override
 
 import numpy as np
-from numpy.typing import DTypeLike, NDArray
 
 from ...._utils import convert_nd_array
 from ._base import SoundBase
@@ -17,7 +15,7 @@ class Mix(SoundBase):
     through an audio stream to an audio device
     """
 
-    def __init__(self, *sounds, channels: int, dtype: DTypeLike, **kwargs):
+    def __init__(self, *sounds, channels: int, dtype, **kwargs):
         super().__init__(**kwargs)
         self._sounds: List[Sound] = []
         self.logger = logging.getLogger(__name__)
@@ -57,7 +55,6 @@ class Mix(SoundBase):
         for sound_index in sound_indices[::-1]:
             self._sounds.pop(sound_index)
 
-    @override
     def get_wave(
         self,
         sample_rate: float,
@@ -66,7 +63,7 @@ class Mix(SoundBase):
         normalize_range: Tuple[float, float] = (-1.0, 1.0),
         on_clip: str = 'scale',
         **_,
-    ) -> NDArray[np.number]:
+    ):  # -> NDArray[np.number]:
         wave = None
 
         for sound in self._sounds:

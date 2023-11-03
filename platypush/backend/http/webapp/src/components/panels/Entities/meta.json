@@ -1,4 +1,12 @@
 {
+  "assistant": {
+    "name": "Assistant",
+    "name_plural": "Assistants",
+    "icon": {
+      "class": "fas fa-microphone-lines"
+    }
+  },
+
   "battery": {
     "name": "Battery",
     "name_plural": "Batteries",

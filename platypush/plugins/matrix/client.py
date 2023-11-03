@@ -100,7 +100,7 @@ class Credentials:
     server_url: str
     user_id: str
     access_token: str
-    device_id: str | None
+    device_id: Optional[str] = None
 
     def to_dict(self) -> dict:
         return {
@@ -116,13 +116,13 @@ class MatrixClient(AsyncClient):
         self,
         *args,
         credentials_file: str,
-        store_path: str | None = None,
+        store_path: Optional[str] = None,
         config: Optional[AsyncClientConfig] = None,
         autojoin_on_invite=True,
         autotrust_devices=False,
-        autotrust_devices_whitelist: Collection[str] | None = None,
-        autotrust_rooms_whitelist: Collection[str] | None = None,
-        autotrust_users_whitelist: Collection[str] | None = None,
+        autotrust_devices_whitelist: Optional[Collection[str]] = None,
+        autotrust_rooms_whitelist: Optional[Collection[str]] = None,
+        autotrust_users_whitelist: Optional[Collection[str]] = None,
         **kwargs,
     ):
         credentials_file = os.path.abspath(os.path.expanduser(credentials_file))
@@ -158,7 +158,7 @@ class MatrixClient(AsyncClient):
             store_path, 'attachment_keys.json'
         )
         self._encrypted_attachments_keystore = {}
-        self._sync_store_timer: threading.Timer | None = None
+        self._sync_store_timer: Optional[threading.Timer] = None
         keystore = {}
 
         try:
@@ -206,9 +206,9 @@ class MatrixClient(AsyncClient):
 
     async def login(
         self,
-        password: str | None = None,
-        device_name: str | None = None,
-        token: str | None = None,
+        password: Optional[str] = None,
+        device_name: Optional[str] = None,
+        token: Optional[str] = None,
     ) -> LoginResponse:
         self._load_from_file()
         login_res = None
@@ -289,7 +289,7 @@ class MatrixClient(AsyncClient):
 
     @logged_in
     async def room_messages(
-        self, room_id: str, start: str | None = None, *args, **kwargs
+        self, room_id: str, start: Optional[str] = None, *args, **kwargs
     ) -> RoomMessagesResponse:
         if not start:
             start = self._last_batches_by_room.get(room_id, {}).get('prev_batch')
@@ -351,9 +351,9 @@ class MatrixClient(AsyncClient):
             )
 
     def get_devices_by_user(
-        self, user_id: str | None = None
+        self, user_id: Optional[str] = None
     ) -> Dict[str, Dict[str, OlmDevice]] | Dict[str, OlmDevice]:
-        devices = {user: devices for user, devices in self.device_store.items()}
+        devices = dict(self.device_store.items())
 
         if user_id:
             devices = devices.get(user_id, {})
@@ -370,7 +370,7 @@ class MatrixClient(AsyncClient):
         return self.get_devices().get(device_id)
 
     def get_devices_by_room(
-        self, room_id: str | None = None
+        self, room_id: Optional[str] = None
     ) -> Dict[str, Dict[str, OlmDevice]] | Dict[str, OlmDevice]:
         devices = {
             room_id: {
@@ -432,7 +432,7 @@ class MatrixClient(AsyncClient):
 
     @alru_cache(maxsize=500)
     @client_session
-    async def get_profile(self, user_id: str | None = None) -> ProfileGetResponse:
+    async def get_profile(self, user_id: Optional[str] = None) -> ProfileGetResponse:
         """
         Cached version of get_profile.
         """
@@ -459,7 +459,7 @@ class MatrixClient(AsyncClient):
         self,
         server_name: str,
         media_id: str,
-        filename: str | None = None,
+        filename: Optional[str] = None,
         allow_remote: bool = True,
     ):
         response = await super().download(

@@ -1,5 +1,4 @@
 from typing import Any, Dict, List
-from typing_extensions import override
 
 from platypush.entities.acceleration import Accelerometer
 from platypush.plugins import action
@@ -12,17 +11,6 @@ class SensorLis3dhPlugin(SensorPlugin):
     Plugin to interact with an `Adafruit LIS3DH accelerometer
     <https://www.adafruit.com/product/2809>`_ and get X,Y,Z measurement. Tested
     with a Raspberry Pi over I2C connection.
-
-    Requires:
-
-        * ``Adafruit-GPIO`` (``pip install Adafruit-GPIO``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
     """
 
     def __init__(self, g=4, precision=None, poll_interval=1, **kwargs):
@@ -56,7 +44,6 @@ class SensorLis3dhPlugin(SensorPlugin):
         self.sensor = LIS3DH()
         self.sensor.setRange(self.g)
 
-    @override
     @action
     def get_measurement(self, *_, **__):
         """
@@ -74,7 +61,6 @@ class SensorLis3dhPlugin(SensorPlugin):
             'value': {'x': values[0], 'y': values[1], 'z': values[2]},
         }
 
-    @override
     def transform_entities(self, entities: Dict[str, Any]) -> List[Accelerometer]:
         return Accelerometer(
             id='lis3dh',

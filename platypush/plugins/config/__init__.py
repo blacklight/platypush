@@ -59,5 +59,12 @@ class ConfigPlugin(Plugin):
         """
         return Config.get('device_id')
 
+    @action
+    def get_config_file(self) -> str:
+        """
+        Get the path to the main configuration file.
+        """
+        return Config._instance.config_file
+
 
 # vim:sw=4:ts=4:et:

@@ -3,7 +3,6 @@ from collections import namedtuple
 import json
 from typing import Dict, List, Optional, Union
 import threading
-from typing_extensions import override
 
 from serial import Serial
 
@@ -53,24 +52,13 @@ class SerialPlugin(SensorPlugin):
     ``/dev/ttyUSB<n>``), you may consider creating `static mappings through
     udev
     <https://dev.to/enbis/how-udev-rules-can-help-us-to-recognize-a-usb-to-serial-device-over-dev-tty-interface-pbk>`_.
-
-    Requires:
-
-        * **pyserial** (``pip install pyserial``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
     """
 
     _default_lock_timeout: float = 2.0
 
     def __init__(
         self,
-        device: Optional[str] = None,
+        device: str,
         baud_rate: int = 9600,
         max_size: int = 1 << 19,
         timeout: float = _default_lock_timeout,
@@ -79,7 +67,7 @@ class SerialPlugin(SensorPlugin):
         **kwargs,
     ):
         """
-        :param device: Device path (e.g. ``/dev/ttyUSB0`` or ``/dev/ttyACM0``)
+        :param device: Device path (e.g. ``/dev/ttyUSB0`` or ``/dev/ttyACM0``).
         :param baud_rate: Serial baud rate (default: 9600)
         :param max_size: Maximum size of a JSON payload (default: 512 KB). The
             plugin will keep reading bytes from the wire until it can form a
@@ -207,9 +195,6 @@ class SerialPlugin(SensorPlugin):
 
         :param device: Default device path override.
         :param baud_rate: Default baud rate override.
-        :param reset: By default, if a connection to the device is already open
-            then the current object will be returned. If ``reset=True``, the
-            connection will be reset and a new one will be created instead.
         """
         try:
             return self.__get_serial(device, baud_rate)
@@ -258,7 +243,6 @@ class SerialPlugin(SensorPlugin):
 
         return _DeviceAndRate(device, baud_rate)
 
-    @override
     @action
     def get_measurement(
         self,
@@ -275,7 +259,6 @@ class SerialPlugin(SensorPlugin):
         """
 
         device, baud_rate = self._get_device_and_baud_rate(device, baud_rate)
-        data = None
 
         with get_lock(self.serial_lock, timeout=self._timeout) as serial_available:
             if serial_available:
@@ -386,7 +369,6 @@ class SerialPlugin(SensorPlugin):
             self.logger.info('Writing %d bytes to %s', len(data), device)
             ser.write(data)
 
-    @override
     def transform_entities(self, entities: Dict[str, Numeric]) -> List[Device]:
         transformed_entities = []
 
@@ -415,7 +397,6 @@ class SerialPlugin(SensorPlugin):
             )
         ]
 
-    @override
     def main(self):
         if not self._enable_polling:
             # If the polling is disabled, we don't need to do anything here
@@ -424,7 +405,6 @@ class SerialPlugin(SensorPlugin):
 
         super().main()
 
-    @override
     def stop(self):
         super().stop()
         self._close_serial()

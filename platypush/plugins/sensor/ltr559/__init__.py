@@ -1,7 +1,5 @@
 from typing import Dict, List
 
-from typing_extensions import override
-
 from platypush.common.sensors import Numeric
 from platypush.entities.devices import Device
 from platypush.entities.distance import DistanceSensor
@@ -14,19 +12,7 @@ from platypush.plugins.sensor import SensorPlugin
 class SensorLtr559Plugin(SensorPlugin):
     """
     Plugin to interact with an `LTR559 <https://shop.pimoroni.com/products/ltr-559-light-proximity-sensor-breakout>`_
-    light and proximity sensor
-
-    Requires:
-
-        * ``ltr559`` (``pip install ltr559``)
-        * ``smbus`` (``pip install smbus``)
-
-    Triggers:
-
-        * :class:`platypush.message.event.sensor.SensorDataAboveThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataBelowThresholdEvent`
-        * :class:`platypush.message.event.sensor.SensorDataChangeEvent`
-
+    light and proximity sensor.
     """
 
     def __init__(self, **kwargs):
@@ -35,7 +21,6 @@ class SensorLtr559Plugin(SensorPlugin):
         super().__init__(**kwargs)
         self.ltr = ltr559.LTR559()
 
-    @override
     @action
     def get_measurement(self, *_, **__):
         """
@@ -55,7 +40,6 @@ class SensorLtr559Plugin(SensorPlugin):
             'proximity': self.ltr.get_proximity(),
         }
 
-    @override
     def transform_entities(self, entities: Dict[str, Numeric]) -> List[Device]:
         sensors = []
 

@@ -3,22 +3,55 @@ from platypush.plugins.google import GooglePlugin
 
 
 class GoogleFitPlugin(GooglePlugin):
-    """
+    r"""
     Google Fit plugin.
 
-    Requires:
+    In order to use this plugin:
 
-        * **google-api-python-client** (``pip install google-api-python-client``)
-        * **oauth2client** (``pip install oauth2client``)
+        1. Create your Google application, if you don't have one already, on
+           the `developers console <https://console.developers.google.com>`_.
+
+        2. You may have to explicitly enable your user to use the app if the app
+           is created in test mode. Go to "OAuth consent screen" and add your user's
+           email address to the list of authorized users.
+
+        3. Select the scopes that you want to enable for your application, depending
+           on the integrations that you want to use.
+           See https://developers.google.com/identity/protocols/oauth2/scopes
+           for a list of the available scopes.
+
+        4. Click on "Credentials", then "Create credentials" -> "OAuth client ID".
+
+        5 Select "Desktop app", enter whichever name you like, and click "Create".
+
+        6. Click on the "Download JSON" icon next to your newly created client ID.
+
+        7. Generate a credentials file for the required scope:
+
+            .. code-block:: bash
+
+              $ mkdir -p <WORKDIR>/credentials/google
+              $ roles="
+              fitness.activity.read,
+              fitness.body.read,
+              fitness.body_temperature.read,
+              fitness.heart_rate.read,
+              fitness.sleep.read,
+              fitness.location.read
+              "
+              $ python -m platypush.plugins.google.credentials "$roles" \
+                  <WORKDIR>/credentials/google/client_secret.json
 
     """
 
-    scopes = ['https://www.googleapis.com/auth/fitness.activity.read',
-              'https://www.googleapis.com/auth/fitness.body.read',
-              'https://www.googleapis.com/auth/fitness.body_temperature.read',
-              'https://www.googleapis.com/auth/fitness.heart_rate.read',
-              'https://www.googleapis.com/auth/fitness.sleep.read',
-              'https://www.googleapis.com/auth/fitness.location.read']
+    scopes = [
+        'https://www.googleapis.com/auth/fitness.activity.read',
+        'https://www.googleapis.com/auth/fitness.body.read',
+        'https://www.googleapis.com/auth/fitness.body_temperature.read',
+        'https://www.googleapis.com/auth/fitness.heart_rate.read',
+        'https://www.googleapis.com/auth/fitness.sleep.read',
+        'https://www.googleapis.com/auth/fitness.location.read',
+    ]
 
     def __init__(self, user_id='me', *args, **kwargs):
         """
@@ -30,7 +63,6 @@ class GoogleFitPlugin(GooglePlugin):
         super().__init__(scopes=self.scopes, *args, **kwargs)
         self.user_id = user_id
 
-
     @action
     def get_data_sources(self, user_id=None):
         """
@@ -38,8 +70,9 @@ class GoogleFitPlugin(GooglePlugin):
         """
 
         service = self.get_service(service='fitness', version='v1')
-        sources = service.users().dataSources(). \
-            list(userId=user_id or self.user_id).execute()
+        sources = (
+            service.users().dataSources().list(userId=user_id or self.user_id).execute()
+        )
 
         return sources['dataSource']
 
@@ -64,11 +97,19 @@ class GoogleFitPlugin(GooglePlugin):
             kwargs['limit'] = limit
         data_points = []
 
-        for data_point in service.users().dataSources().dataPointChanges(). \
-                list(**kwargs).execute().get('insertedDataPoint', []):
-            data_point['startTime'] = float(data_point.pop('startTimeNanos'))/1e9
-            data_point['endTime'] = float(data_point.pop('endTimeNanos'))/1e9
-            data_point['modifiedTime'] = float(data_point.pop('modifiedTimeMillis'))/1e6
+        for data_point in (
+            service.users()
+            .dataSources()
+            .dataPointChanges()
+            .list(**kwargs)
+            .execute()
+            .get('insertedDataPoint', [])
+        ):
+            data_point['startTime'] = float(data_point.pop('startTimeNanos')) / 1e9
+            data_point['endTime'] = float(data_point.pop('endTimeNanos')) / 1e9
+            data_point['modifiedTime'] = (
+                float(data_point.pop('modifiedTimeMillis')) / 1e6
+            )
             values = []
 
             for value in data_point.pop('value'):
@@ -81,9 +122,11 @@ class GoogleFitPlugin(GooglePlugin):
                 elif value.get('mapVal'):
                     value = {
                         v['key']: v['value'].get(
-                            'intVal', v['value'].get(
-                                'fpVal', v['value'].get('stringVal')))
-                        for v in value['mapVal'] }
+                            'intVal',
+                            v['value'].get('fpVal', v['value'].get('stringVal')),
+                        )
+                        for v in value['mapVal']
+                    }
 
                 values.append(value)
 

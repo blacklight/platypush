@@ -1,12 +1,24 @@
 <template>
   <main>
     <Loading v-if="loading" />
-    <Nav :panels="components" :selected-panel="selectedPanel" :hostname="hostname"
-         @select="selectedPanel = $event" v-else />
+    <Nav :panels="components"
+         :selected-panel="selectedPanel"
+         :selected-config-panel="selectedConfigPanel"
+         :hostname="hostname"
+         @select="selectedPanel = $event"
+         @select-config="selectedConfigPanel = $event"
+         v-else
+    />
 
     <div class="canvas" v-if="selectedPanel === 'settings'">
       <div class="panel">
-        <Settings />
+        <Settings :selected-panel="selectedConfigPanel" />
+      </div>
+    </div>
+
+    <div class="canvas" v-else-if="selectedPanel === 'extensions'">
+      <div class="panel">
+        <Extensions />
       </div>
     </div>
 
@@ -23,12 +35,13 @@ import { defineAsyncComponent, shallowRef } from "vue";
 import Utils from '@/Utils'
 import Loading from "@/components/Loading";
 import Nav from "@/components/Nav";
+import Extensions from "@/components/panels/Extensions/Index";
 import Settings from "@/components/panels/Settings/Index";
 
 export default {
   name: 'Panel',
   mixins: [Utils],
-  components: {Settings, Nav, Loading},
+  components: {Extensions, Settings, Nav, Loading},
 
   data() {
     return {
@@ -39,6 +52,7 @@ export default {
       components: {},
       hostname: undefined,
       selectedPanel: undefined,
+      selectedConfigPanel: 'users',
     }
   },
 
@@ -86,8 +100,8 @@ export default {
     },
 
     initializeDefaultViews() {
-      this.plugins.execute = {}
       this.plugins.entities = {}
+      this.plugins.execute = {}
     },
   },
 
@@ -98,6 +112,7 @@ export default {
       await this.parseConfig()
       this.initPanels()
       this.initSelectedPanel()
+      this.$watch('$route.hash', this.initSelectedPanel)
     } finally {
       this.loading = false
     }
@@ -119,6 +134,7 @@ main {
     flex-grow: 100;
     background: $menu-panel-bg;
     overflow: auto;
+    z-index: 1;
 
     .panel {
       width: 100%;

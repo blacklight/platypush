@@ -1,5 +1,4 @@
 from abc import ABC
-from typing_extensions import override
 
 from ._events import XmppEventMixin
 from ._state import XmppStateMixin
@@ -12,7 +11,6 @@ class XmppEventStateMixin(XmppEventMixin, XmppStateMixin, ABC):
     features to handle events.
     """
 
-    @override
     def _post_event(self, *args, **kwargs):
         if self._state_serializer:
             self._state_serializer.enqueue(self._state)

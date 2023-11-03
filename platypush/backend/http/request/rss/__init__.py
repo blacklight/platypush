@@ -40,15 +40,6 @@ class RssUpdates(HttpRequest):
                   poll_seconds: 86400  # Poll once a day
                   digest_format: html  # Generate an HTML feed with the new items
 
-    Triggers:
-
-        - :class:`platypush.message.event.http.rss.NewFeedEvent` when new items are parsed from a feed or a new digest
-          is available.
-
-    Requires:
-
-        * **feedparser** (``pip install feedparser``)
-
     """
 
     user_agent = (

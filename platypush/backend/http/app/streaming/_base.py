@@ -3,7 +3,6 @@ from http.client import responses
 import json
 from logging import getLogger
 from typing import Optional
-from typing_extensions import override
 
 from tornado.web import RequestHandler, stream_request_body
 
@@ -22,7 +21,6 @@ class StreamingRoute(RequestHandler, PubSubMixin, ABC):
         super().__init__(*args, **kwargs)
         self.logger = getLogger(__name__)
 
-    @override
     def prepare(self):
         """
         Request preparation logic. It performs user authentication if
@@ -38,7 +36,6 @@ class StreamingRoute(RequestHandler, PubSubMixin, ABC):
             'Client %s connected to %s', self.request.remote_ip, self.request.path
         )
 
-    @override
     def write_error(self, status_code: int, error: Optional[str] = None, **_):
         """
         Make sure that errors are always returned in JSON format.

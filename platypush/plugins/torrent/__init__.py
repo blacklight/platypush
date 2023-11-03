@@ -1,11 +1,12 @@
 import os
 import queue
 import random
-from typing import List, Optional
-
-import requests
 import threading
 import time
+from urllib.parse import quote_plus
+from typing import Iterable, List, Optional, Union
+
+import requests
 
 from platypush.context import get_bus
 from platypush.plugins import Plugin, action
@@ -20,69 +21,44 @@ from platypush.message.event.torrent import (
     TorrentResumedEvent,
     TorrentQueuedEvent,
 )
+from platypush.utils import get_default_downloads_dir
 
 
 class TorrentPlugin(Plugin):
     """
     Plugin to search and download torrents.
-
-    Requires:
-
-        * **python-libtorrent** (``pip install python-libtorrent``)
-
     """
+
+    _http_timeout = 20
 
     # Wait time in seconds between two torrent transfer checks
     _MONITOR_CHECK_INTERVAL = 3
 
-    default_torrent_ports = [6881, 6891]
-    categories = {
-        'movies': None,
-        'tv': None,
-    }
-
+    default_torrent_ports = (6881, 6891)
     torrent_state = {}
     transfers = {}
-    # noinspection HttpUrlsUsage
-    default_popcorn_base_url = 'http://popcorn-time.ga'
+    default_popcorn_base_url = 'https://shows.cf'
 
     def __init__(
         self,
-        download_dir=None,
-        torrent_ports=None,
-        imdb_key=None,
-        popcorn_base_url=default_popcorn_base_url,
+        download_dir: Optional[str] = None,
+        torrent_ports: Iterable[int] = default_torrent_ports,
+        popcorn_base_url: str = default_popcorn_base_url,
         **kwargs,
     ):
         """
-        :param download_dir: Directory where the videos/torrents will be downloaded (default: none)
-        :type download_dir: str
-
+        :param download_dir: Directory where the videos/torrents will be
+            downloaded (default: ``~/Downloads``).
         :param torrent_ports: Torrent ports to listen on (default: 6881 and 6891)
-        :type torrent_ports: list[int]
-
-        :param imdb_key: The IMDb API (https://imdb-api.com/) is used to search for movies and series. Insert your
-            IMDb API key if you want support for content search.
-        :type imdb_key: str
-
         :param popcorn_base_url: Custom base URL to use for the PopcornTime API.
-        :type popcorn_base_url: str
         """
 
         super().__init__(**kwargs)
 
-        if torrent_ports is None:
-            torrent_ports = []
-
-        for category in self.categories.keys():
-            self.categories[category] = getattr(self, 'search_' + category)
-
-        self.imdb_key = imdb_key
-        self.imdb_urls = {}
-        self.torrent_ports = (
-            torrent_ports if torrent_ports else self.default_torrent_ports
+        self.torrent_ports = torrent_ports
+        self.download_dir = os.path.abspath(
+            os.path.expanduser(download_dir or get_default_downloads_dir())
         )
-        self.download_dir = None
         self._sessions = {}
         self._lt_session = None
         self.popcorn_base_url = popcorn_base_url
@@ -91,48 +67,38 @@ class TorrentPlugin(Plugin):
             'tv': f'{popcorn_base_url}/show/{{}}',
         }
 
-        if imdb_key:
-            self.imdb_urls = {
-                'movies': f'https://imdb-api.com/API/SearchMovie/{self.imdb_key}/{{}}',
-                'tv': f'https://imdb-api.com/API/SearchSeries/{self.imdb_key}/{{}}',
-            }
-
-        if download_dir:
-            self.download_dir = os.path.abspath(os.path.expanduser(download_dir))
-
     @action
-    def search(self, query, category=None, language=None, *args, **kwargs):
+    def search(
+        self,
+        query: str,
+        *args,
+        category: Optional[Union[str, Iterable[str]]] = None,
+        language: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Perform a search of video torrents.
 
         :param query: Query string, video name or partial name
-        :type query: str
-
         :param category: Category to search. Supported types: "movies", "tv".
             Default: None (search all categories)
-        :type category: str or list
-
         :param language: Language code for the results - example: "en" (default: None, no filter)
-        :type language: str
         """
 
-        assert self.imdb_key, 'No imdb_key specified'
         results = []
         if isinstance(category, str):
             category = [category]
 
-        # noinspection PyCallingNonCallable
         def worker(cat):
             if cat not in self.categories:
                 raise RuntimeError(
-                    'Unsupported category {}. Supported category: {}'.format(
-                        cat, self.categories.keys()
-                    )
+                    f'Unsupported category {cat}. Supported categories: '
+                    f'{list(self.categories.keys())}'
                 )
 
-            self.logger.info('Searching {} torrents for "{}"'.format(cat, query))
+            self.logger.info('Searching %s torrents for "%s"', cat, query)
             results.extend(
-                self.categories[cat](query, *args, language=language, **kwargs)
+                self.categories[cat](self, query, *args, language=language, **kwargs)
             )
 
         workers = [
@@ -140,29 +106,40 @@ class TorrentPlugin(Plugin):
             for category in (category or self.categories.keys())
         ]
 
-        for worker in workers:
-            worker.start()
-        for worker in workers:
-            worker.join()
+        for wrk in workers:
+            wrk.start()
+        for wrk in workers:
+            wrk.join()
 
         return results
 
     def _imdb_query(self, query: str, category: str):
-        assert self.imdb_key, 'No imdb_key specified'
-        imdb_url = self.imdb_urls.get(category)
+        if not query:
+            return []
 
-        assert imdb_url, f'No such category: {category}'
-        imdb_url = imdb_url.format(query)
-        response = requests.get(imdb_url).json()
+        if category == 'movies':
+            imdb_category = 'movie'
+        elif category == 'tv':
+            imdb_category = 'tvSeries'
+        else:
+            raise RuntimeError(f'Unsupported category: {category}')
 
+        imdb_url = f'https://v3.sg.media-imdb.com/suggestion/x/{quote_plus(query)}.json?includeVideos=1'
+        response = requests.get(imdb_url, timeout=self._http_timeout)
+        response.raise_for_status()
+        response = response.json()
         assert not response.get('errorMessage'), response['errorMessage']
-        return response.get('results', [])
+        return [
+            item for item in response.get('d', []) if item.get('qid') == imdb_category
+        ]
 
     def _torrent_search_worker(self, imdb_id: str, category: str, q: queue.Queue):
         base_url = self.torrent_base_urls.get(category)
         assert base_url, f'No such category: {category}'
         try:
-            results = requests.get(base_url.format(imdb_id)).json()
+            results = requests.get(
+                base_url.format(imdb_id), timeout=self._http_timeout
+            ).json()
             q.put(results)
         except Exception as e:
             q.put(e)
@@ -197,7 +174,7 @@ class TorrentPlugin(Plugin):
             worker.join()
 
         if errors:
-            self.logger.warning(f'Torrent search errors: {[str(e) for e in errors]}')
+            self.logger.warning('Torrent search errors: %s', [str(e) for e in errors])
 
         return results
 
@@ -211,8 +188,9 @@ class TorrentPlugin(Plugin):
                     'imdb_id': result.get('imdb_id'),
                     'type': 'movies',
                     'file': item.get('file'),
-                    'title': '{title} [movies][{language}][{quality}]'.format(
-                        title=result.get('title'), language=lang, quality=quality
+                    'title': (
+                        result.get('title', '[No Title]')
+                        + f' [movies][{lang}][{quality}]'
                     ),
                     'duration': int(result.get('runtime') or 0),
                     'year': int(result.get('year') or 0),
@@ -249,12 +227,10 @@ class TorrentPlugin(Plugin):
                     'type': 'tv',
                     'file': item.get('file'),
                     'series': result.get('title'),
-                    'title': '{series} [S{season:02d}E{episode:02d}] {title} [tv][{quality}]'.format(
-                        series=result.get('title'),
-                        season=episode.get('season'),
-                        episode=episode.get('episode'),
-                        title=episode.get('title'),
-                        quality=quality,
+                    'title': (
+                        result.get('title', '[No Title]')
+                        + f'[S{episode.get("season", 0):02d}E{episode.get("episode", 0):02d}] '
+                        + f'{episode.get("title", "[No Title]")} [tv][{quality}]'
                     ),
                     'duration': int(result.get('runtime') or 0),
                     'year': int(result.get('year') or 0),
@@ -280,11 +256,15 @@ class TorrentPlugin(Plugin):
                 for quality, item in (episode.get('torrents', {}) or {}).items()
                 if quality != '0'
             ],
-            key=lambda item: '{series}.{quality}.{season:02d}.{episode:02d}'.format(
-                series=item.get('series'),
-                quality=item.get('quality'),
-                season=item.get('season'),
-                episode=item.get('episode'),
+            key=lambda item: (
+                '.'.join(
+                    [
+                        item.get('series', ''),
+                        item.get('quality', ''),
+                        str(item.get('season', 0)).zfill(2),
+                        str(item.get('episode', 0)).zfill(2),
+                    ]
+                )
             ),
         )
 
@@ -304,7 +284,6 @@ class TorrentPlugin(Plugin):
         info = {}
         file_info = {}
 
-        # noinspection HttpUrlsUsage
         if torrent.startswith('magnet:?'):
             magnet = torrent
             magnet_info = lt.parse_magnet_uri(magnet)
@@ -325,7 +304,9 @@ class TorrentPlugin(Plugin):
                     'save_path': download_dir,
                 }
         elif torrent.startswith('http://') or torrent.startswith('https://'):
-            response = requests.get(torrent, allow_redirects=True)
+            response = requests.get(
+                torrent, timeout=self._http_timeout, allow_redirects=True
+            )
             torrent_file = os.path.join(download_dir, self._generate_rand_filename())
 
             with open(torrent_file, 'wb') as f:
@@ -333,13 +314,10 @@ class TorrentPlugin(Plugin):
         else:
             torrent_file = os.path.abspath(os.path.expanduser(torrent))
             if not os.path.isfile(torrent_file):
-                raise RuntimeError(
-                    '{} is not a valid torrent file'.format(torrent_file)
-                )
+                raise RuntimeError(f'{torrent_file} is not a valid torrent file')
 
         if torrent_file:
             file_info = lt.torrent_info(torrent_file)
-            # noinspection PyArgumentList
             info = {
                 'name': file_info.name(),
                 'url': torrent,
@@ -357,7 +335,7 @@ class TorrentPlugin(Plugin):
             if event_hndl:
                 event_hndl(event)
         except Exception as e:
-            self.logger.warning('Exception in torrent event handler: {}'.format(str(e)))
+            self.logger.warning('Exception in torrent event handler: %s', e)
             self.logger.exception(e)
 
     def _torrent_monitor(self, torrent, transfer, download_dir, event_hndl, is_media):
@@ -369,9 +347,7 @@ class TorrentPlugin(Plugin):
 
             while not transfer.is_finished():
                 if torrent not in self.transfers:
-                    self.logger.info(
-                        'Torrent {} has been stopped and removed'.format(torrent)
-                    )
+                    self.logger.info('Torrent %s has been stopped and removed', torrent)
                     self._fire_event(TorrentDownloadStopEvent(url=torrent), event_hndl)
                     break
 
@@ -388,7 +364,6 @@ class TorrentPlugin(Plugin):
                     if is_media:
                         from platypush.plugins.media import MediaPlugin
 
-                        # noinspection PyProtectedMember
                         files = [f for f in files if MediaPlugin.is_video_file(f)]
 
                 self.torrent_state[torrent]['download_rate'] = status.download_rate
@@ -463,7 +438,6 @@ class TorrentPlugin(Plugin):
 
         import libtorrent as lt
 
-        # noinspection PyArgumentList
         self._lt_session = lt.session()
         return self._lt_session
 
@@ -517,9 +491,7 @@ class TorrentPlugin(Plugin):
         )
 
         if torrent in self._sessions:
-            self.logger.info(
-                'A torrent session is already running for {}'.format(torrent)
-            )
+            self.logger.info('A torrent session is already running for %s', torrent)
             return self.torrent_state.get(torrent, {})
 
         session = self._get_session()
@@ -548,9 +520,7 @@ class TorrentPlugin(Plugin):
 
         self._fire_event(TorrentQueuedEvent(url=torrent), event_hndl)
         self.logger.info(
-            'Downloading "{}" to "{}" from [{}]'.format(
-                info['name'], download_dir, torrent
-            )
+            'Downloading "%s" to "%s" from [%s]', info['name'], download_dir, torrent
         )
         monitor_thread = self._torrent_monitor(
             torrent=torrent,
@@ -592,7 +562,7 @@ class TorrentPlugin(Plugin):
         """
 
         if torrent not in self.transfers:
-            return None, "No transfer in progress for {}".format(torrent)
+            return None, f"No transfer in progress for {torrent}"
 
         if self.torrent_state[torrent].get('paused', False):
             self.transfers[torrent].resume()
@@ -610,9 +580,7 @@ class TorrentPlugin(Plugin):
         :type torrent: str
         """
 
-        if torrent not in self.transfers:
-            return None, "No transfer in progress for {}".format(torrent)
-
+        assert torrent in self.transfers, f"No transfer in progress for {torrent}"
         self.transfers[torrent].resume()
 
     @action
@@ -624,13 +592,11 @@ class TorrentPlugin(Plugin):
         :type torrent: str
         """
 
-        if torrent not in self.transfers:
-            return None, "No transfer in progress for {}".format(torrent)
+        assert torrent in self.transfers, f"No transfer in progress for {torrent}"
 
         self.transfers[torrent].pause()
         del self.torrent_state[torrent]
         del self.transfers[torrent]
-
         if torrent in self._sessions:
             del self._sessions[torrent]
 
@@ -649,6 +615,11 @@ class TorrentPlugin(Plugin):
         for _ in range(0, length):
             name += hex(random.randint(0, 15))[2:].upper()
         return name + '.torrent'
+
+    categories = {
+        'movies': search_movies,
+        'tv': search_tv,
+    }
 
 
 # vim:sw=4:ts=4:et:

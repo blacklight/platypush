@@ -7,16 +7,15 @@ from platypush.plugins.camera.model.writer.cv import CvFileWriter
 class CameraCvPlugin(CameraPlugin):
     """
     Plugin to control generic cameras over OpenCV.
-
-    Requires:
-
-        * **opencv** (``pip install opencv-python``)
-        * **Pillow** (``pip install Pillow``)
-
     """
 
-    def __init__(self, color_transform: Optional[str] = 'COLOR_BGR2RGB', video_type: str = 'XVID',
-                 video_writer: str = 'ffmpeg', **kwargs):
+    def __init__(
+        self,
+        color_transform: Optional[str] = 'COLOR_BGR2RGB',
+        video_type: str = 'XVID',
+        video_writer: str = 'ffmpeg',
+        **kwargs
+    ):
         """
         :param device: Device ID (0 for the first camera, 1 for the second etc.) or path (e.g. ``/dev/video0``).
         :param video_type: Default video type to use when exporting captured frames to camera (default: 0, infers the
@@ -38,7 +37,9 @@ class CameraCvPlugin(CameraPlugin):
 
         :param kwargs: Extra arguments to be passed up to :class:`platypush.plugins.camera.CameraPlugin`.
         """
-        super().__init__(color_transform=color_transform, video_type=video_type, **kwargs)
+        super().__init__(
+            color_transform=color_transform, video_type=video_type, **kwargs
+        )
         if video_writer == 'cv':
             self._video_writer_class = CvFileWriter
 
@@ -60,12 +61,15 @@ class CameraCvPlugin(CameraPlugin):
     def capture_frame(self, camera: Camera, *args, **kwargs):
         import cv2
         from PIL import Image
+
         ret, frame = camera.object.read()
         assert ret, 'Cannot retrieve frame from {}'.format(camera.info.device)
 
         color_transform = camera.info.color_transform
         if isinstance(color_transform, str):
-            color_transform = getattr(cv2, color_transform or self.camera_info.color_transform)
+            color_transform = getattr(
+                cv2, color_transform or self.camera_info.color_transform
+            )
         if color_transform:
             frame = cv2.cvtColor(frame, color_transform)
 

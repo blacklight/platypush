@@ -43,28 +43,36 @@
       <li v-for="user in users" :key="user.user_id" class="item user" @click="selectedUser = user.username">
         <div class="name col-8" v-text="user.username" />
         <div class="actions pull-right col-4">
-          <Dropdown title="User Actions" icon-class="fa fa-cog">
+          <Dropdown title="User Actions" icon-class="fa fa-ellipsis">
             <DropdownItem text="Change Password" :disabled="commandRunning" icon-class="fa fa-key"
-                          @click="selectedUser = user.username; $refs.changePasswordModal.show()" />
+                          @click="showChangePasswordModal(user)" />
             <DropdownItem text="Delete User" :disabled="commandRunning" icon-class="fa fa-trash"
-                          @click="deleteUser(user)" />
+                          @click="$refs.deleteUserDialog.show()" />
           </Dropdown>
         </div>
       </li>
     </ul>
+
+    <FloatingButton icon-class="fa fa-plus" text="Add User" @click="showAddUserModal" />
+
+    <ConfirmDialog ref="deleteUserDialog" @input="deleteUser(selectedUser)">
+      Are you sure that you want to remove the user {{ selectedUser }}?
+    </ConfirmDialog>
   </div>
 </template>
 
 <script>
+import ConfirmDialog from "@/components/elements/ConfirmDialog";
 import Dropdown from "@/components/elements/Dropdown";
 import Modal from "@/components/Modal";
 import Loading from "@/components/Loading";
 import Utils from "@/Utils";
 import DropdownItem from "@/components/elements/DropdownItem";
+import FloatingButton from "@/components/elements/FloatingButton";
 
 export default {
   name: "Users",
-  components: {DropdownItem, Loading, Modal, Dropdown},
+  components: {ConfirmDialog, Dropdown, DropdownItem, FloatingButton, Loading, Modal},
   mixins: [Utils],
 
   props: {
@@ -196,13 +204,10 @@ export default {
     },
 
     async deleteUser(user) {
-      if (!confirm('Are you sure that you want to remove the user ' + user.username + '?'))
-        return
-
       this.commandRunning = true
       try {
         await this.request('user.delete_user', {
-          username: user.username,
+          username: user,
           session_token: this.sessionToken,
         })
       } finally {
@@ -210,13 +215,30 @@ export default {
       }
 
       this.notify({
-        text: 'User ' + user.username + ' removed',
+        text: `User ${user} removed`,
         image: {
           iconClass: 'fas fa-check',
         },
       })
 
+      this.selectedUser = null
       await this.refresh()
+    },
+
+    showAddUserModal() {
+      this.$refs.addUserModal.show()
+      this.$nextTick(() => {
+        this.$refs.addUserForm.reset()
+        this.$refs.addUserForm.username.focus()
+      })
+    },
+
+    showChangePasswordModal(user) {
+      this.$refs.changePasswordModal.show()
+      this.$nextTick(() => {
+        this.$refs.changePasswordForm.password.focus()
+        this.selectedUser = user.username
+      })
     },
   },
 
@@ -226,7 +248,7 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .settings-container {
   .body {
     width: 100%;
@@ -257,7 +279,10 @@ export default {
       display: flex;
       align-items: center;
       padding: .75em;
-      box-shadow: $border-shadow-bottom;
+
+      &:not(:last-child) {
+        box-shadow: $border-shadow-bottom;
+      }
 
       &:hover {
         background: $hover-bg;
@@ -268,6 +293,7 @@ export default {
         justify-content: right;
 
         button {
+          background: none !important;
           width: min-content;
         }
       }
@@ -289,9 +315,31 @@ export default {
       box-shadow: $border-shadow-bottom;
 
       .user {
-        border-radius: 1em;
+        border-radius: 0;
+
+        &:first-child {
+          border-top-left-radius: 1em;
+          border-top-right-radius: 1em;
+        }
+
+        &:last-child {
+          border-bottom-left-radius: 1em;
+          border-bottom-right-radius: 1em;
+        }
       }
     }
+  }
+}
+
+:deep(.dropdown-container) {
+  button {
+    background: none !important;
+  }
+}
+
+:deep(.modal) {
+  .btn {
+    border-radius: 1em;
   }
 }
 </style>

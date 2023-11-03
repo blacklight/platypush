@@ -9,13 +9,19 @@ manifest:
     platypush.message.event.music.NewPlayingTrackEvent: if a new track is being played
     platypush.message.event.music.VolumeChangeEvent: if the volume changes
   install:
+    apk:
+      - sudo
+      - cargo
     apt:
+      - sudo
+      - cargo
+    dnf:
       - sudo
       - cargo
     pacman:
       - sudo
       - cargo
-    exec:
+    after:
       - sudo cargo install librespot
   package: platypush.backend.music.spotify
   type: backend

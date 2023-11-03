@@ -1,11 +1,18 @@
 manifest:
   events: {}
   install:
-    pip:
-      - python-vlc
+    apk:
+      - vlc
+      - py3-vlc
     apt:
       - vlc
+      - python3-vlc
+    dnf:
+      - vlc
+      - python3-vlc
     pacman:
       - vlc
+    pip:
+      - python-vlc
   package: platypush.plugins.media.vlc
   type: plugin

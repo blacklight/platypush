@@ -14,7 +14,7 @@ def get_http_port():
     from platypush.backend.http import HttpBackend
 
     http_conf = Config.get('backend.http') or {}
-    return http_conf.get('port', HttpBackend._DEFAULT_HTTP_PORT)
+    return http_conf.get('port', HttpBackend.DEFAULT_HTTP_PORT)
 
 
 def get_routes():

@@ -1,5 +1,4 @@
 from typing import Optional, Type
-from typing_extensions import override
 
 from platypush.message.event.sound import SoundEvent
 
@@ -14,24 +13,21 @@ class AudioResourcePlayer(AudioPlayer):
     """
 
     @property
-    @override
     def _audio_converter_type(self) -> Type[RawOutputAudioFromFileConverter]:
         return RawOutputAudioFromFileConverter
 
     @property
-    @override
     def _converter_args(self) -> dict:
         return {
             'infile': self.infile,
+            'output_format': self.output_format,
             **super()._converter_args,
         }
 
     @property
-    @override
     def _converter_stdin(self) -> Optional[int]:
         return None
 
-    @override
     def _notify(self, event_type: Type[SoundEvent], **kwargs):
         return super()._notify(event_type, resource=self.infile, **kwargs)
 
