@@ -29,14 +29,10 @@ class SoundRoute(StreamingRoute):
 
     @contextmanager
     def _audio_stream(self, **kwargs) -> Generator[None, None, None]:
-        response = send_request(
+        send_request(
             'sound.record',
             dtype='int16',
             **kwargs,
-        )
-
-        assert response and not response.is_error(), (
-            'Streaming error: ' + str(response.errors) if response else '(unknown)'
         )
 
         yield

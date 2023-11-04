@@ -64,4 +64,9 @@ def send_request(action, wait_for_response=True, **kwargs):
     if kwargs:
         msg['args'] = kwargs
 
-    return send_message(msg, wait_for_response=wait_for_response)
+    rs = send_message(msg, wait_for_response=wait_for_response)
+    assert rs, 'Got an empty response from the server'
+    if rs:
+        assert not rs.errors, '\n'.join(rs.errors)
+
+    return rs.output
