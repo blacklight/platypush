@@ -160,7 +160,7 @@ export default {
       }
 
       if (!this.selectedPlayer.component.supports(item))
-        item = await this.startStreaming(item)
+        item = await this.startStreaming(item, this.pluginName)
 
       await this.selectedPlayer.component.play(item, this.selectedSubtitles, this.selectedPlayer)
       await this.refresh()
@@ -187,7 +187,7 @@ export default {
     },
 
     async view(item) {
-      const ret = await this.startStreaming(item, true)
+      const ret = await this.startStreaming(item, this.pluginName, true)
       window.open(ret.url, '_blank')
     },
 

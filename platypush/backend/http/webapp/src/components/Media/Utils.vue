@@ -54,7 +54,7 @@ export default {
       return ret.join(':')
     },
 
-    async startStreaming(resource, download=false) {
+    async startStreaming(resource, pluginName, download=false) {
       let url = resource
       let subtitles = null
 
@@ -65,7 +65,7 @@ export default {
         resource = {url: url}
       }
 
-      const ret = await this.request(`media.start_streaming`, {
+      const ret = await this.request(`${pluginName}.start_streaming`, {
         media: url,
         subtitles: subtitles,
         download: download,
@@ -74,8 +74,8 @@ export default {
       return {...resource, ...ret}
     },
 
-    async stopStreaming(mediaId) {
-      await this.request('media.stop_streaming', {media_id: mediaId})
+    async stopStreaming(mediaId, pluginName) {
+      await this.request(`${pluginName}.stop_streaming`, {media_id: mediaId})
     },
   },
 }
