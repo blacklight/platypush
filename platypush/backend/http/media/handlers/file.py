@@ -8,29 +8,37 @@ from . import MediaHandler
 
 
 class FileHandler(MediaHandler):
+    """
+    Handler for local media files.
+    """
+
     prefix_handlers = ['file://']
 
     def __init__(self, source, *args, **kwargs):
         super().__init__(source, *args, **kwargs)
 
-        self.path = os.path.abspath(os.path.expanduser(
-            self.source[len(self._matched_handler):]))
+        self.path = os.path.abspath(
+            os.path.expanduser(self.source[len(self._matched_handler) :])
+        )
         self.filename = self.path.split('/')[-1]
 
         if not os.path.isfile(self.path):
-            raise FileNotFoundError('{} is not a valid file'.
-                                    format(self.path))
+            raise FileNotFoundError(f'{self.path} is not a valid file')
 
         self.mime_type = get_mime_type(source)
-        if self.mime_type[:5] not in ['video', 'audio', 'image'] and self.mime_type != 'application/octet-stream':
-            raise AttributeError('{} is not a valid media file (detected format: {})'.
-                                 format(source, self.mime_type))
+        assert self.mime_type, f'Could not detect mime type for {source}'
+        if (
+            self.mime_type[:5] not in ['video', 'audio', 'image']
+            and self.mime_type != 'application/octet-stream'
+        ):
+            raise AttributeError(
+                f'{source} is not a valid media file (detected format: {self.mime_type})'
+            )
 
         self.extension = mimetypes.guess_extension(self.mime_type)
         if self.url:
             self.url += self.extension
         self.content_length = os.path.getsize(self.path)
-
 
     def get_data(self, from_bytes=None, to_bytes=None, chunk_size=None):
         if from_bytes is None:
@@ -42,8 +50,9 @@ class FileHandler(MediaHandler):
 
         with open(self.path, 'rb') as f:
             f.seek(from_bytes)
-            for chunk in iter(functools.partial(
-                    f.read, min(to_bytes-from_bytes, chunk_size)), b''):
+            for chunk in iter(
+                functools.partial(f.read, min(to_bytes - from_bytes, chunk_size)), b''
+            ):
                 yield chunk
 
 
