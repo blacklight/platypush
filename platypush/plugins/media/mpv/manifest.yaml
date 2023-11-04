@@ -4,15 +4,20 @@ manifest:
     apk:
       - mpv
       - py3-mpv
+      - yt-dlp
     apt:
       - mpv
       - python3-mpv
+      - yt-dlp
     dnf:
       - mpv
+      - yt-dlp
     pacman:
       - mpv
       - python-mpv
+      - yt-dlp
     pip:
       - python-mpv
+      - yt-dlp
   package: platypush.plugins.media.mpv
   type: plugin

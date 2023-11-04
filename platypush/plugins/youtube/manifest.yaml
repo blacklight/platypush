@@ -2,28 +2,14 @@ manifest:
   events: {}
   install:
     apk:
-      - py3-google-api-python-client
-      - py3-google-auth
-      - py3-oauth2client
-      - py3-httplib2
+      - yt-dlp
     apt:
-      - python3-google-auth
-      - python3-oauth2client
-      - python3-httplib2
+      - yt-dlp
     dnf:
-      - python-google-api-client
-      - python-google-auth
-      - python-oauth2client
-      - python-httplib2
+      - yt-dlp
     pacman:
-      - python-google-api-python-client
-      - python-google-auth
-      - python-oauth2client
-      - python-httplib2
+      - yt-dlp
     pip:
-      - google-api-python-client
-      - google-auth
-      - oauth2client
-      - httplib2
+      - yt-dlp
   package: platypush.plugins.youtube
   type: plugin

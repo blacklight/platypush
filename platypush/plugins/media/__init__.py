@@ -14,6 +14,7 @@ import requests
 from platypush.config import Config
 from platypush.context import get_plugin, get_backend
 from platypush.plugins import Plugin, action
+from platypush.utils import get_default_downloads_dir
 
 
 class PlayerState(enum.Enum):
@@ -147,7 +148,9 @@ class MediaPlugin(Plugin, ABC):
         env: Optional[Dict[str, str]] = None,
         volume: Optional[Union[float, int]] = None,
         torrent_plugin: str = 'torrent',
-        youtube_format: str = 'best',
+        # youtube_format: Optional[str] = 'bv*[height<=?1080][ext=mp4]+bestaudio/best',
+        youtube_format: Optional[str] = 'best[height<=?1080][ext=mp4]',
+        youtube_dl: str = 'yt-dlp',
         **kwargs,
     ):
         """
@@ -169,10 +172,17 @@ class MediaPlugin(Plugin, ABC):
             - ``webtorrent`` - torrent support over webtorrent (unstable)
 
         :param youtube_format: Select the preferred video/audio format for
-            YouTube videos (default: ``best``). See the `youtube-dl
-            documentation
+            YouTube videos. See the `youtube-dl documentation
             <https://github.com/ytdl-org/youtube-dl#format-selection>`_ for more
-            info on supported formats.
+            info on supported formats. Default:
+            ``bv*[height<=?1080][ext=mp4]+bestaudio/best`` - select the best
+            mp4 video with a resolution <= 1080p, and the best audio format.
+
+        :param youtube_dl: Path to the ``youtube-dl`` executable, used to
+            extract information from YouTube videos and other media platforms.
+            Default: ``yt-dlp``. The default has changed from ``youtube-dl`` to
+            the ``yt-dlp`` fork because the former is badly maintained and its
+            latest release was pushed in 2021.
         """
 
         super().__init__(**kwargs)
@@ -216,16 +226,12 @@ class MediaPlugin(Plugin, ABC):
             os.path.expanduser(
                 download_dir
                 or player_config.get('download_dir')
-                or os.path.join(
-                    (os.path.expanduser('~') or self._env.get('HOME') or '/'),
-                    'Downloads',
-                )
+                or get_default_downloads_dir()
             )
         )
 
-        if not os.path.isdir(self.download_dir):
-            os.makedirs(self.download_dir, exist_ok=True)
-
+        os.makedirs(self.download_dir, exist_ok=True)
+        self._ytdl = youtube_dl
         self.media_dirs.add(self.download_dir)
         self.volume = volume
         self._videos_queue = []
@@ -468,7 +474,7 @@ class MediaPlugin(Plugin, ABC):
                 self.logger.exception(e)
 
         results = [
-            {'type': media_type, **result}
+            {**result, 'type': media_type}
             for media_type in self._supported_media_types
             for result in results.get(media_type, [])
             if media_type in results
@@ -580,17 +586,20 @@ class MediaPlugin(Plugin, ABC):
 
     def get_youtube_video_url(self, url, youtube_format: Optional[str] = None):
         ytdl_cmd = [
-            'youtube-dl',
-            '-f',
-            youtube_format or self.youtube_format,
+            self._ytdl,
+            *(
+                ['-f', youtube_format or self.youtube_format]
+                if youtube_format or self.youtube_format
+                else []
+            ),
             '-g',
             url,
         ]
 
         self.logger.info('Executing command %s', ' '.join(ytdl_cmd))
-        with subprocess.Popen(ytdl_cmd, stdout=subprocess.PIPE) as youtube_dl:
-            url = youtube_dl.communicate()[0].decode().strip()
-            youtube_dl.wait()
+        with subprocess.Popen(ytdl_cmd, stdout=subprocess.PIPE) as ytdl:
+            url = ytdl.communicate()[0].decode().strip()
+            ytdl.wait()
 
         return url
 
@@ -628,9 +637,7 @@ class MediaPlugin(Plugin, ABC):
         if m:
             url = f'https://www.youtube.com/watch?v={m.group(1)}'
 
-        with subprocess.Popen(
-            ['youtube-dl', '-j', url], stdout=subprocess.PIPE
-        ) as proc:
+        with subprocess.Popen([self._ytdl, '-j', url], stdout=subprocess.PIPE) as proc:
             if proc.stdout is None:
                 return None
 

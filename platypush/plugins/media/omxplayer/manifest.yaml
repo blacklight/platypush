@@ -3,7 +3,9 @@ manifest:
   install:
     pip:
       - omxplayer-wrapper
+      - yt-dlp
     apt:
       - omxplayer
+      - yt-dlp
   package: platypush.plugins.media.omxplayer
   type: plugin

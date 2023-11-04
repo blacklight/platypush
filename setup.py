@@ -118,7 +118,7 @@ setup(
         # Support for OMXPlayer plugin
         'omxplayer': ['omxplayer-wrapper'],
         # Support for YouTube
-        'youtube': ['youtube-dl'],
+        'youtube': ['yt-dlp'],
         # Support for torrents download
         'torrent': ['python-libtorrent'],
         # Generic support for cameras
