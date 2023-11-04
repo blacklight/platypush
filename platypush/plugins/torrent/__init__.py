@@ -1,4 +1,5 @@
 import os
+import pathlib
 import queue
 import random
 import threading
@@ -66,6 +67,8 @@ class TorrentPlugin(Plugin):
             'movies': f'{popcorn_base_url}/movie/{{}}',
             'tv': f'{popcorn_base_url}/show/{{}}',
         }
+
+        pathlib.Path(self.download_dir).mkdir(parents=True, exist_ok=True)
 
     @action
     def search(
