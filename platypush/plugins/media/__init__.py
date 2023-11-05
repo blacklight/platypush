@@ -1,5 +1,6 @@
 import enum
 import functools
+import inspect
 import os
 import queue
 import re
@@ -172,7 +173,8 @@ class MediaPlugin(Plugin, ABC):
             - ``webtorrent`` - torrent support over webtorrent (unstable)
 
         :param youtube_format: Select the preferred video/audio format for
-            YouTube videos. See the `youtube-dl documentation
+            YouTube videos - and any media supported by youtube-dl or the
+            selected fork. See the `youtube-dl documentation
             <https://github.com/ytdl-org/youtube-dl#format-selection>`_ for more
             info on supported formats. Default:
             ``bv*[height<=?1080][ext=mp4]+bestaudio/best`` - select the best
@@ -248,13 +250,25 @@ class MediaPlugin(Plugin, ABC):
 
         return handler
 
-    @staticmethod
-    def _is_youtube_resource(resource):
-        return (
-            resource.startswith('youtube:')
-            or resource.startswith('https://youtu.be/')
-            or resource.startswith('https://www.youtube.com/watch?v=')
-            or resource.startswith('https://youtube.com/watch?v=')
+    def get_extractors(self):
+        try:
+            from yt_dlp.extractor import _extractors  # type: ignore
+        except ImportError:
+            self.logger.debug('yt_dlp not installed')
+            return
+
+        for _, obj_type in inspect.getmembers(_extractors):
+            if (
+                inspect.isclass(obj_type)
+                and isinstance(getattr(obj_type, "_VALID_URL", None), str)
+                and obj_type.__name__ != "GenericIE"
+            ):
+                yield obj_type
+
+    def _is_youtube_resource(self, resource: str):
+        return any(
+            re.search(getattr(extractor, '_VALID_URL', '^$'), resource)
+            for extractor in self.get_extractors()
         )
 
     def _get_resource(self, resource):
@@ -263,21 +277,12 @@ class MediaPlugin(Plugin, ABC):
 
             * Local files (format: ``file://<path>/<file>``)
             * Remote videos (format: ``https://<url>/<resource>``)
-            * YouTube videos (format: ``https://www.youtube.com/watch?v=<id>``)
             * Torrents (format: Magnet links, Torrent URLs or local Torrent files)
+            * Any URL that is supported by a yt_dlp extractor
+
         """
 
         if self._is_youtube_resource(resource):
-            m = re.match('youtube:video:(.*)', resource)
-            if not m:
-                m = re.match('https://youtu.be/(.*)', resource)
-            if m:
-                resource = f'https://www.youtube.com/watch?v={m.group(1)}'
-
-            if self.__class__.__name__ == 'MediaChromecastPlugin':
-                # The Chromecast has already its native way to handle YouTube
-                return resource
-
             resource = self.get_youtube_video_url(resource)
         elif resource.startswith('magnet:?'):
             self.logger.info(
