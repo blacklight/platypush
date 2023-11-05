@@ -6,6 +6,7 @@ from typing import Optional
 
 from tornado.web import RequestHandler, stream_request_body
 
+from platypush.backend.http.app.utils import logger
 from platypush.backend.http.app.utils.auth import AuthStatus, get_auth_status
 
 from ..mixins import PubSubMixin
@@ -121,3 +122,20 @@ class StreamingRoute(RequestHandler, PubSubMixin, ABC):
             return self.request.connection.stream.closed()  # type: ignore
 
         return True
+
+    def _on_error(self, e: Exception):
+        """
+        Handler for uncaught exceptions.
+        """
+        if isinstance(e, FileNotFoundError):
+            self.set_status(404, str(e))
+        elif isinstance(e, NotImplementedError):
+            self.set_status(422, str(e))
+        else:
+            logger().exception(e)
+            if isinstance(e, AssertionError):
+                self.set_status(400, str(e))
+            else:
+                self.set_status(500, str(e))
+
+        self.finish(json.dumps({"error": str(e)}))
