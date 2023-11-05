@@ -23,20 +23,17 @@ class FileHandler(MediaHandler):
         self.filename = self.path.split('/')[-1]
 
         if not os.path.isfile(self.path):
-            raise FileNotFoundError(f'{self.path} is not a valid file')
+            raise FileNotFoundError(self.path)
 
         self.mime_type = get_mime_type(source)
         assert self.mime_type, f'Could not detect mime type for {source}'
-        if (
-            self.mime_type[:5] not in ['video', 'audio', 'image']
-            and self.mime_type != 'application/octet-stream'
-        ):
-            raise AttributeError(
-                f'{source} is not a valid media file (detected format: {self.mime_type})'
-            )
+        assert (
+            self.mime_type[:5] in ['video', 'audio', 'image']
+            or self.mime_type == 'application/octet-stream'
+        ), f'{source} is not a valid media file (detected format: {self.mime_type})'
 
         self.extension = mimetypes.guess_extension(self.mime_type)
-        if self.url:
+        if self.url and self.extension:
             self.url += self.extension
         self.content_length = os.path.getsize(self.path)
 

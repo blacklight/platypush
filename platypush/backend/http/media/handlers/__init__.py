@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import hashlib
 import logging
-from typing import Optional
+from typing import Generator, Optional
 
 from platypush.message import JSONAble
 
@@ -66,7 +66,7 @@ class MediaHandler(JSONAble, ABC):
         from_bytes: Optional[int] = None,
         to_bytes: Optional[int] = None,
         chunk_size: Optional[int] = None,
-    ) -> bytes:
+    ) -> Generator[bytes, None, None]:
         raise NotImplementedError()
 
     @property
