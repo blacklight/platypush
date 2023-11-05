@@ -5,7 +5,7 @@
 
       <MediaView :plugin-name="pluginName" :status="selectedPlayer?.status || {}" :track="selectedPlayer?.status || {}"
                  :buttons="mediaButtons" @play="pause" @pause="pause" @stop="stop" @set-volume="setVolume"
-                 @seek="seek" @search="search">
+                 @seek="seek" @search="search" @mute="toggleMute" @unmute="toggleMute">
         <main>
           <div class="nav-container">
             <Nav :selected-view="selectedView" @input="selectedView = $event" />
@@ -180,6 +180,11 @@ export default {
 
     async setVolume(volume) {
       await this.selectedPlayer.component.setVolume(volume, this.selectedPlayer)
+      await this.refresh()
+    },
+
+    async toggleMute() {
+      await this.selectedPlayer.component.toggleMute(this.selectedPlayer)
       await this.refresh()
     },
 

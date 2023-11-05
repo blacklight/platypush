@@ -22,15 +22,9 @@
 
     <div class="row">
       <div class="col-9 volume-container">
-        <div class="col-1">
-          <button :disabled="status.muted == null" @click="$emit(status.muted ? 'unmute' : 'mute')">
-            <i class="icon fa fa-volume-up"></i>
-          </button>
-        </div>
-        <div class="col-11 volume-slider">
-          <Slider :value="status.volume" :range="volumeRange" :disabled="status.volume == null"
-                  @mouseup="$emit('set-volume', $event.target.value)" />
-        </div>
+        <VolumeSlider :value="status.volume" :range="volumeRange" :status="status"
+          @mute="$emit('mute')" @unmute="$emit('unmute')"
+          @set-volume="$emit('set-volume', $event)" />
       </div>
 
       <div class="col-3 list-controls">
@@ -68,7 +62,7 @@
   </div>
 
   <div class="controls">
-    <div class="playback-controls mobile tablet col-2">
+    <div class="playback-controls until tablet col-2">
       <button @click="$emit(status.state === 'play' ? 'pause' : 'play')"
               :title="status.state === 'play' ? 'Pause' : 'Play'">
         <i class="icon play-pause fa fa-pause" v-if="status.state === 'play'"></i>
@@ -90,7 +84,7 @@
       </div>
     </div>
 
-    <div class="playback-controls desktop col-6">
+    <div class="playback-controls from desktop col-6">
       <div class="row buttons">
         <button @click="$emit('previous')" title="Play previous track" v-if="buttons_.previous">
           <i class="icon fa fa-step-backward"></i>
@@ -124,13 +118,18 @@
       </div>
     </div>
 
-    <div class="col-2 pull-right mobile tablet right-buttons">
+    <div class="col-2 pull-right until tablet right-buttons">
       <button @click="expanded = !expanded" :title="expanded ? 'Show more controls' : 'Hide extra controls'">
         <i class="fas" :class="[`fa-chevron-${expanded ? 'down' : 'up'}`]" />
       </button>
     </div>
 
-    <div class="col-3 pull-right desktop">
+    <div class="col-3 pull-right from desktop">
+      <div class="row volume-container">
+        <VolumeSlider :value="status.volume" :range="volumeRange" :status="status"
+          @mute="$emit('mute')" @unmute="$emit('unmute')"
+          @set-volume="$emit('set-volume', $event)" />
+      </div>
       <div class="row list-controls">
         <button @click="$emit('consume')" :class="{enabled: status.consume}" title="Toggle consume mode" v-if="buttons_.consume">
           <i class="icon fa fa-utensils"></i>
@@ -143,17 +142,6 @@
         </button>
       </div>
 
-      <div class="row volume-container">
-        <div class="col-2">
-          <button :disabled="status.muted == null" @click="$emit(status.muted ? 'unmute' : 'mute')">
-            <i class="icon fa fa-volume-up"></i>
-          </button>
-        </div>
-        <div class="col-10">
-          <Slider :value="status.volume" :range="volumeRange" :disabled="status.volume == null"
-                  @mouseup="$emit('set-volume', $event.target.value)" />
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -162,13 +150,26 @@
 import Utils from "@/Utils"
 import MediaUtils from "@/components/Media/Utils";
 import Slider from "@/components/elements/Slider";
+import VolumeSlider from "./VolumeSlider";
 
 export default {
-  name: "Controls",
-  components: {Slider},
+  components: {Slider, VolumeSlider},
   mixins: [Utils, MediaUtils],
-  emits: ['search', 'previous', 'next', 'play', 'pause', 'stop', 'seek', 'consume', 'random', 'repeat',
-    'set-volume', 'mute', 'unmute'],
+  emits: [
+    'consume',
+    'mute',
+    'next',
+    'pause',
+    'play',
+    'previous',
+    'random',
+    'repeat',
+    'search',
+    'seek',
+    'set-volume',
+    'stop',
+    'unmute',
+  ],
 
   props: {
     track: {
@@ -320,10 +321,6 @@ button {
       margin-right: .25em;
     }
   }
-
-  .volume-slider {
-    flex-grow: 1;
-  }
 }
 
 .controls {
@@ -332,10 +329,17 @@ button {
   display: flex;
   padding: 1em .5em;
   overflow: hidden;
+  align-items: center;
 
   .row {
     width: 100%;
     display: flex;
+  }
+
+  .volume-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .track-container {
@@ -441,24 +445,10 @@ button {
     button {
       padding: 0.5em;
     }
-
-    .volume-container {
-      align-items: center;
-      margin-top: -1.25em;
-
-      button {
-        background: none;
-      }
-    }
   }
 
   .seek-slider {
     width: 75%;
-  }
-
-  .volume-slider {
-    width: 75%;
-    margin-right: .5em;
   }
 }
 

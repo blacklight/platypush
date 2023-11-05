@@ -50,11 +50,12 @@ export default {
 <style lang="scss" scoped>
 .item {
   display: flex;
+  min-width: 7.5em;
   padding: 0.75em 0.5em;
   cursor: pointer;
   align-items: center;
   color: $default-fg-2;
-  border: 0;
+  border: 0 !important;
   box-shadow: none;
 
   &:hover {
