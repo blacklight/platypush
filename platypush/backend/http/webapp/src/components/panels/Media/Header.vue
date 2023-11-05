@@ -40,7 +40,7 @@
                  @status="$emit('player-status', $event)" />
 
         <button title="Play URL" @click="$emit('play-url')">
-          <i class="fa fa-plus-circle" />
+          <i class="fas fa-play" />
         </button>
       </div>
     </div>

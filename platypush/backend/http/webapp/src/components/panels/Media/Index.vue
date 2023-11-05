@@ -18,7 +18,7 @@
                       ? selectedPlayer.status : results[selectedResult]" :selected-subtitles="selectedSubtitles"
                     :browser-filter="browserFilter" @search="search" @select-player="selectedPlayer = $event"
                     @player-status="onStatusUpdate" @torrent-add="downloadTorrent($event)"
-                    @show-subtitles="showSubtitlesModal = !showSubtitlesModal" @play-url="$refs.playUrlModal.show()"
+                    @show-subtitles="showSubtitlesModal = !showSubtitlesModal" @play-url="showPlayUrlModal"
                     @filter="browserFilter = $event" @source-toggle="sources[$event] = !sources[$event]" />
 
             <div class="body-container" :class="{'expanded-header': $refs.header?.filterVisible}">
@@ -64,7 +64,9 @@
             </div>
 
             <div class="row footer">
-              <button type="submit" :disabled="!urlPlay?.length">Play</button>
+              <button type="submit" :disabled="!urlPlay?.length">
+                <i class="fa fa-play"></i> Play
+              </button>
             </div>
           </form>
         </Modal>
@@ -309,6 +311,15 @@ export default {
       }
     },
 
+    showPlayUrlModal() {
+      this.$refs.playUrlModal.show()
+      this.$refs.playUrlInput.value = ''
+      this.$nextTick(() => {
+        this.$refs.playUrlInput.value = ''
+        this.$refs.playUrlInput.focus()
+      })
+    },
+
     async playUrl(url) {
       this.loading = true
 
@@ -456,6 +467,7 @@ export default {
     display: flex;
     justify-content: right;
     padding: 0;
+    margin-top: 1em;
   }
 }
 
