@@ -57,10 +57,10 @@ class YoutubePlugin(Plugin):
         results = [
             {
                 "url": "https://www.youtube.com" + item["url"],
-                "title": item["title"],
-                "image": item["thumbnail"],
-                "duration": item["duration"],
-                "description": item["shortDescription"],
+                "title": item.get("title", '[No title]'),
+                "image": item.get("thumbnail"),
+                "duration": item.get("duration", 0),
+                "description": item.get("shortDescription"),
             }
             for item in rs.json().get("items", [])
         ]
