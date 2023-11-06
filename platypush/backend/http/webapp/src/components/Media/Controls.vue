@@ -38,11 +38,7 @@
 
   <div class="controls">
     <div class="playback-controls until tablet col-2">
-      <button @click="$emit(status.state === 'play' ? 'pause' : 'play')"
-              :title="status.state === 'play' ? 'Pause' : 'Play'">
-        <i class="icon play-pause fa fa-pause" v-if="status.state === 'play'"></i>
-        <i class="icon play-pause fa fa-play" v-else></i>
-      </button>
+      <PlayPauseButton :status="status" @play="$emit('play')" @pause="$emit('pause')" />
     </div>
 
     <div class="track-container col-s-9 col-m-9 col-l-3">
@@ -64,11 +60,7 @@
         <button @click="$emit('previous')" title="Play previous track" v-if="buttons_.previous">
           <i class="icon fa fa-step-backward"></i>
         </button>
-        <button @click="$emit(status.state === 'play' ? 'pause' : 'play')"
-                :title="status.state === 'play' ? 'Pause' : 'Play'">
-          <i class="icon play-pause fa fa-pause" v-if="status.state === 'play'"></i>
-          <i class="icon play-pause fa fa-play" v-else></i>
-        </button>
+        <PlayPauseButton :status="status" @play="$emit('play')" @pause="$emit('pause')" />
         <button @click="$emit('stop')" v-if="buttons_.stop && status.state !== 'stop'" title="Stop playback">
           <i class="icon fa fa-stop"></i>
         </button>
@@ -105,11 +97,12 @@
 import Utils from "@/Utils"
 import MediaUtils from "@/components/Media/Utils";
 import ExtraControls from "./ExtraControls";
+import PlayPauseButton from "./PlayPauseButton";
 import ProgressBar from "./ProgressBar";
 import VolumeSlider from "./VolumeSlider";
 
 export default {
-  components: {ExtraControls, ProgressBar, VolumeSlider},
+  components: {ExtraControls, PlayPauseButton, ProgressBar, VolumeSlider},
   mixins: [Utils, MediaUtils],
   emits: [
     'consume',
@@ -316,7 +309,6 @@ button {
     }
 
     .buttons {
-      height: 50%;
       margin-bottom: .5em;
       align-items: center;
     }
