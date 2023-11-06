@@ -342,7 +342,7 @@ button {
     display: flex;
     flex-direction: column;
     flex: 1;
-    align-items: end;
+    align-items: flex-end;
 
     button {
       padding: 0.5em;
