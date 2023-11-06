@@ -4,8 +4,13 @@ import requests
 from marshmallow import Schema
 
 from platypush.plugins import Plugin, action
-from platypush.schemas.media.jellyfin import JellyfinArtistSchema, \
-    JellyfinCollectionSchema, JellyfinMovieSchema, JellyfinEpisodeSchema
+from platypush.schemas.media.jellyfin import (
+    JellyfinArtistSchema,
+    JellyfinCollectionSchema,
+    JellyfinMovieSchema,
+    JellyfinVideoSchema,
+    JellyfinEpisodeSchema,
+)
 
 
 class MediaJellyfinPlugin(Plugin):
@@ -20,7 +25,9 @@ class MediaJellyfinPlugin(Plugin):
     # Maximum number of results returned per query action
     _default_limit = 100
 
-    def __init__(self, server: str, api_key: str, username: Optional[str] = None, **kwargs):
+    def __init__(
+        self, server: str, api_key: str, username: Optional[str] = None, **kwargs
+    ):
         """
         :param server: Jellyfin base server URL (including ``http://`` or ``https://``).
         :param api_key: Server API key. You can generate one from
@@ -35,16 +42,14 @@ class MediaJellyfinPlugin(Plugin):
         self._api_key = api_key
         self.__user_id = None
 
-    def _execute(
-        self, method: str, url: str, *args, **kwargs
-    ) -> dict:
+    def _execute(self, method: str, url: str, *args, **kwargs) -> dict:
         url = '/' + url.lstrip('/')
         url = self.server + url
 
         kwargs['headers'] = {
             **kwargs.get('headers', {}),
             'X-Emby-Authorization': 'MediaBrowser Client="Platypush", Device="Platypush", '
-            f'Token="{self._api_key}"'
+            f'Token="{self._api_key}"',
         }
 
         rs = getattr(requests, method.lower())(url, *args, **kwargs)
@@ -58,19 +63,21 @@ class MediaJellyfinPlugin(Plugin):
             try:
                 self.__user_id = self._execute('GET', '/Users/Me')['Id']
             except requests.exceptions.HTTPError as e:
-                assert e.response.status_code == 400, (
-                    f'Could not get the current user: {e}'
-                )
+                assert (
+                    e.response.status_code == 400
+                ), f'Could not get the current user: {e}'
 
                 self.__user_id = self._execute('GET', '/Users')[0]['Id']
 
         return self.__user_id
 
     def _query(
-        self, url: str,
+        self,
+        url: str,
         schema_class: Optional[Type[Schema]] = None,
         query: Optional[str] = None,
-        limit: Optional[int] = _default_limit, offset: int = 0,
+        limit: Optional[int] = _default_limit,
+        offset: int = 0,
         parent_id: Optional[str] = None,
         is_played: Optional[bool] = None,
         is_favourite: Optional[bool] = None,
@@ -78,7 +85,7 @@ class MediaJellyfinPlugin(Plugin):
         genres: Optional[Iterable[str]] = None,
         tags: Optional[Iterable[str]] = None,
         years: Optional[Iterable[int]] = None,
-        **kwargs
+        **kwargs,
     ) -> Iterable[dict]:
         filters = []
         if is_played is not None:
@@ -107,46 +114,51 @@ class MediaJellyfinPlugin(Plugin):
 
         return results
 
-    def _flatten_series_result(
-        self, search_result: dict
-    ) -> Iterable[dict]:
+    def _flatten_series_result(self, search_result: dict) -> Iterable[dict]:
         episodes = []
         show_id = search_result['Id']
         seasons = self._execute(
-            'get', f'/Shows/{show_id}/Seasons',
+            'get',
+            f'/Shows/{show_id}/Seasons',
             params={
                 'userId': self._user_id,
-            }
+            },
         ).get('Items', [])
 
         for i, season in enumerate(seasons):
             episodes.extend(
-                JellyfinEpisodeSchema().dump([
-                    {**episode, 'SeasonIndex': i+1}
-                    for episode in self._execute(
-                        'get', f'/Shows/{show_id}/Episodes',
-                        params={
-                            'userId': self._user_id,
-                            'seasonId': season['Id'],
-                        }
-                    ).get('Items', [])
-                ], many=True)
+                JellyfinEpisodeSchema().dump(
+                    [
+                        {**episode, 'SeasonIndex': i + 1}
+                        for episode in self._execute(
+                            'get',
+                            f'/Shows/{show_id}/Episodes',
+                            params={
+                                'userId': self._user_id,
+                                'seasonId': season['Id'],
+                            },
+                        ).get('Items', [])
+                    ],
+                    many=True,
+                )
             )
 
         return episodes
 
-    def _serialize_search_results(self, search_results: Iterable[dict]) -> Iterable[dict]:
+    def _serialize_search_results(
+        self, search_results: Iterable[dict]
+    ) -> Iterable[dict]:
         serialized_results = []
         for result in search_results:
             if result['Type'] == 'CollectionFolder':
                 result = JellyfinCollectionSchema().dump(result)
-                result['type'] = 'collection'    # type: ignore
+                result['type'] = 'collection'  # type: ignore
             elif result['Type'] == 'Movie':
                 result = JellyfinMovieSchema().dump(result)
-                result['type'] = 'movie'         # type: ignore
-            elif result['Type'] == 'Movie':
-                result = JellyfinMovieSchema().dump(result)
-                result['type'] = 'movie'         # type: ignore
+                result['type'] = 'movie'  # type: ignore
+            elif result['Type'] == 'Video':
+                result = JellyfinVideoSchema().dump(result)
+                result['type'] = 'video'  # type: ignore
             elif result['Type'] == 'Series':
                 serialized_results += self._flatten_series_result(result)
                 for r in serialized_results:
@@ -185,10 +197,17 @@ class MediaJellyfinPlugin(Plugin):
         :return: .. schema:: media.jellyfin.JellyfinArtistSchema(many=True)
         """
         return self._query(
-            '/Artists', schema_class=JellyfinArtistSchema,
-            limit=limit, offset=offset, is_favourite=is_favourite,
-            is_played=is_played, is_liked=is_liked, genres=genres,
-            query=query, tags=tags, years=years
+            '/Artists',
+            schema_class=JellyfinArtistSchema,
+            limit=limit,
+            offset=offset,
+            is_favourite=is_favourite,
+            is_played=is_played,
+            is_liked=is_liked,
+            genres=genres,
+            query=query,
+            tags=tags,
+            years=years,
         )
 
     @action
@@ -202,7 +221,7 @@ class MediaJellyfinPlugin(Plugin):
             f'/Users/{self._user_id}/Items',
             parent_id=None,
             schema_class=JellyfinCollectionSchema,
-            params=dict(recursive=False),
+            params={'recursive': False},
         )
 
     @action
@@ -258,9 +277,10 @@ class MediaJellyfinPlugin(Plugin):
 
         """
         if collection:
-            collections = self.get_collections().output   # type: ignore
+            collections = self.get_collections().output  # type: ignore
             matching_collections = [
-                c for c in collections
+                c
+                for c in collections
                 if c['id'] == collection or c['name'].lower() == collection.lower()
             ]
 
@@ -272,28 +292,36 @@ class MediaJellyfinPlugin(Plugin):
 
         results = self._query(
             f'/Users/{self._user_id}/Items',
-            limit=limit, offset=offset, is_favourite=is_favourite,
-            is_played=is_played, is_liked=is_liked, genres=genres,
-            query=query, tags=tags, years=years, parent_id=parent_id,
+            limit=limit,
+            offset=offset,
+            is_favourite=is_favourite,
+            is_played=is_played,
+            is_liked=is_liked,
+            genres=genres,
+            query=query,
+            tags=tags,
+            years=years,
+            parent_id=parent_id,
             params={
                 **(
                     {'sortOrder': 'Descending' if sort_desc else 'Ascending'}
-                    if sort_desc is not None else {}
+                    if sort_desc is not None
+                    else {}
                 ),
                 **(
-                    {'hasSubtitles': has_subtitles}
-                    if has_subtitles is not None else {}
+                    {'hasSubtitles': has_subtitles} if has_subtitles is not None else {}
                 ),
                 **(
                     {'minCriticRating': minimum_critic_rating}
-                    if minimum_critic_rating is not None else {}
+                    if minimum_critic_rating is not None
+                    else {}
                 ),
                 **(
                     {'minCommunityRating': minimum_community_rating}
-                    if minimum_community_rating is not None else {}
+                    if minimum_community_rating is not None
+                    else {}
                 ),
-            }
+            },
         )
 
         return self._serialize_search_results(results)
-
