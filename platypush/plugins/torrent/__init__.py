@@ -195,7 +195,7 @@ class TorrentPlugin(Plugin):
                         result.get('title', '[No Title]')
                         + f' [movies][{lang}][{quality}]'
                     ),
-                    'duration': int(result.get('runtime') or 0),
+                    'duration': int(result.get('runtime') or 0) * 60,
                     'year': int(result.get('year') or 0),
                     'synopsis': result.get('synopsis'),
                     'trailer': result.get('trailer'),
