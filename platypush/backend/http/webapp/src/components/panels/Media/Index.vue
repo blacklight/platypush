@@ -7,19 +7,30 @@
                  :buttons="mediaButtons" @play="pause" @pause="pause" @stop="stop" @set-volume="setVolume"
                  @seek="seek" @search="search" @mute="toggleMute" @unmute="toggleMute">
         <main>
-          <div class="nav-container">
-            <Nav :selected-view="selectedView" @input="selectedView = $event" />
+          <div class="nav-container from tablet" :style="navContainerStyle">
+            <Nav :selected-view="selectedView" @input="selectedView = $event"
+              @toggle="forceShowNav = !forceShowNav" />
           </div>
 
           <div class="view-container">
-            <Header :plugin-name="pluginName" :selected-view="selectedView" :has-subtitles-plugin="hasSubtitlesPlugin"
-                    ref="header" :sources="sources" :selected-item="selectedPlayer && selectedPlayer.status &&
-                      (selectedPlayer.status.state === 'play' || selectedPlayer.status.state === 'pause')
-                      ? selectedPlayer.status : results[selectedResult]" :selected-subtitles="selectedSubtitles"
-                    :browser-filter="browserFilter" @search="search" @select-player="selectedPlayer = $event"
-                    @player-status="onStatusUpdate" @torrent-add="downloadTorrent($event)"
-                    @show-subtitles="showSubtitlesModal = !showSubtitlesModal" @play-url="showPlayUrlModal"
-                    @filter="browserFilter = $event" @source-toggle="sources[$event] = !sources[$event]" />
+            <Header :plugin-name="pluginName"
+                    :selected-view="selectedView"
+                    :has-subtitles-plugin="hasSubtitlesPlugin"
+                    :sources="sources"
+                    :selected-item="selectedItem"
+                    :selected-subtitles="selectedSubtitles"
+                    :browser-filter="browserFilter"
+                    :show-nav-button="!forceShowNav"
+                    ref="header"
+                    @search="search"
+                    @select-player="selectedPlayer = $event"
+                    @player-status="onStatusUpdate"
+                    @torrent-add="downloadTorrent($event)"
+                    @show-subtitles="showSubtitlesModal = !showSubtitlesModal"
+                    @play-url="showPlayUrlModal"
+                    @filter="browserFilter = $event"
+                    @toggle-nav="forceShowNav = !forceShowNav"
+                    @source-toggle="sources[$event] = !sources[$event]" />
 
             <div class="body-container" :class="{'expanded-header': $refs.header?.filterVisible}">
               <Results :results="results" :selected-result="selectedResult" @select="onResultSelect($event)"
@@ -120,6 +131,7 @@ export default {
       selectedView: 'search',
       selectedSubtitles: null,
       showSubtitlesModal: false,
+      forceShowNav: false,
       awaitingPlayTorrent: null,
       urlPlay: null,
       browserFilter: null,
@@ -140,6 +152,28 @@ export default {
   computed: {
     hasSubtitlesPlugin() {
       return 'media.subtitles' in this.$root.config
+    },
+
+    navContainerStyle() {
+      if (this.forceShowNav)
+        return {
+          display: 'flex !important',
+        }
+
+      return {}
+    },
+
+    selectedItem() {
+      if (
+        this.selectedPlayer && this.selectedPlayer.status &&
+        (
+          this.selectedPlayer.status.state === 'play' ||
+          this.selectedPlayer.status.state === 'pause'
+        )
+      )
+        return this.selectedPlayer.status
+
+      return this.results[this.selectedResult]
     },
   },
 
@@ -420,12 +454,9 @@ export default {
 
 :deep(.media-info-container) {
   .modal-container {
-    .content {
-      max-width: 75%;
-    }
-
     .body {
-      padding: 1em .5em;
+      max-width: calc(100vw - 2px);
+      padding: 0;
       overflow: auto;
     }
   }

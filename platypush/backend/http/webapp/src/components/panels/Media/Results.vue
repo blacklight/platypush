@@ -87,6 +87,11 @@ export default {
       display: inline-flex;
       align-items: center;
 
+      &.left {
+        overflow: hidden;
+        text-overflow: " [...]";
+      }
+
       &.right {
         justify-content: flex-end;
         margin-right: .5em;

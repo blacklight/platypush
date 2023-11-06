@@ -1,7 +1,7 @@
 <template>
   <div class="header" :class="{'with-filter': filterVisible}">
     <div class="row">
-      <div class="col-7 left side" v-if="selectedView === 'search'">
+      <div class="col-s-8 col-m-7 left side" v-if="selectedView === 'search'">
         <button title="Filter" class="filter-btn" :class="{selected: filterVisible}"
                 @click="filterVisible = !filterVisible">
           <i class="fa fa-filter" />
@@ -14,7 +14,7 @@
         </form>
       </div>
 
-      <div class="col-7 left side" v-else-if="selectedView === 'torrents'">
+      <div class="col-s-8 col-m-7 left side" v-else-if="selectedView === 'torrents'">
         <form @submit.prevent="$emit('torrent-add', torrentURL)">
           <label class="search-box">
             <input type="search" placeholder="Add torrent URL" v-model="torrentURL">
@@ -22,14 +22,18 @@
         </form>
       </div>
 
-      <div class="col-7 left side" v-else-if="selectedView === 'browser'">
+      <div class="col-s-8 col-m-7 left side" v-else-if="selectedView === 'browser'">
         <label class="search-box">
           <input type="search" placeholder="Filter" :value="browserFilter" @change="$emit('filter', $event.target.value)"
                  @keyup="$emit('filter', $event.target.value)">
         </label>
       </div>
 
-      <div class="col-5 right side">
+      <div class="col-s-4 col-m-5 right side">
+        <button class="mobile" title="Menu" @click="$emit('toggle-nav')" v-if="showNavButton">
+          <i class="fas fa-bars" />
+        </button>
+
         <button title="Select subtitles" class="captions-btn" :class="{selected: selectedSubtitles != null}"
                 @click="$emit('show-subtitles')" v-if="hasSubtitlesPlugin && selectedItem &&
                   (selectedItem.type === 'file' || (selectedItem.url || '').startsWith('file://'))">
@@ -59,8 +63,17 @@ import Players from "@/components/panels/Media/Players";
 export default {
   name: "Header",
   components: {Players},
-  emits: ['search', 'select-player', 'player-status', 'torrent-add', 'show-subtitles', 'play-url', 'filter',
-    'source-toggle'],
+  emits: [
+    'filter',
+    'play-url',
+    'player-status',
+    'search',
+    'select-player',
+    'show-subtitles',
+    'source-toggle',
+    'toggle-nav',
+    'torrent-add',
+  ],
 
   props: {
     pluginName: {
@@ -84,6 +97,10 @@ export default {
     hasSubtitlesPlugin: {
       type: Boolean,
       default: false,
+    },
+
+    showNavButton: {
+      type: Boolean,
     },
 
     browserFilter: {
@@ -165,9 +182,8 @@ export default {
 
   :deep(button) {
     background: none;
-    padding: 0 .25em;
+    padding: 0 .5em;
     border: 0;
-    margin-right: .25em;
 
     &:hover {
       color: $default-hover-fg-2;
