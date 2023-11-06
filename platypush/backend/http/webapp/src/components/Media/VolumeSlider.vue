@@ -45,13 +45,15 @@ export default {
 
 .volume-slider-container {
   min-width: 15em;
+  max-width: 25em;
   display: inline-flex;
   align-items: center;
+  flex: 1;
 
   .volume-slider {
     margin: 0;
     padding: 0 .5em 0 1em;
-    flex-grow: 1;
+    flex: 1;
   }
 
   button {

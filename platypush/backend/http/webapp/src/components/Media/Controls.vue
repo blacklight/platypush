@@ -3,7 +3,7 @@
     <div class="row">
       <div class="col-3">
       </div>
-      <div class="col-6">
+      <div class="col-6 buttons">
         <div class="buttons">
           <button @click="$emit('previous')" title="Play previous track" v-if="buttons_.previous">
             <i class="icon fa fa-step-backward"></i>
@@ -21,43 +21,18 @@
     </div>
 
     <div class="row">
-      <div class="col-9 volume-container">
-        <VolumeSlider :value="status.volume" :range="volumeRange" :status="status"
-          @mute="$emit('mute')" @unmute="$emit('unmute')"
-          @set-volume="$emit('set-volume', $event)" />
-      </div>
+      <VolumeSlider :value="status.volume" :range="volumeRange" :status="status"
+        @mute="$emit('mute')" @unmute="$emit('unmute')"
+        @set-volume="$emit('set-volume', $event)" />
 
-      <div class="col-3 list-controls">
-        <button @click="$emit('consume', !status.consume)" :class="{enabled: status.consume}"
-                title="Toggle consume mode" v-if="buttons_.consume">
-          <i class="icon fa fa-utensils"></i>
-        </button>
-
-        <button @click="$emit('random', !status.random)" :class="{enabled: status.random}"
-                title="Toggle shuffle" v-if="buttons_.random">
-          <i class="icon fa fa-random"></i>
-        </button>
-
-        <button @click="$emit('repeat', !status.repeat)" :class="{enabled: status.repeat}"
-                title="Toggle repeat" v-if="buttons_.repeat">
-          <i class="icon fa fa-redo"></i>
-        </button>
-      </div>
+      <ExtraControls :status="status" :buttons="buttons_"
+          @consume="$emit('consume', !status.consume)"
+          @random="$emit('random', !status.random)"
+          @repeat="$emit('repeat', !status.repeat)" />
     </div>
 
     <div class="row">
-      <div class="col-s-2 col-m-1 time">
-          <span class="elapsed-time"
-                v-text="elapsed != null && (status.state === 'play' || status.state === 'pause') ? convertTime(elapsed) : '-:--'"></span>
-      </div>
-      <div class="col-s-8 col-m-10 time-bar">
-        <Slider :value="elapsed" :range="[0, duration]" :disabled="!duration || status.state === 'stop'"
-                @mouseup="$emit('seek', $event.target.value)" />
-      </div>
-      <div class="col-s-2 col-m-1 time">
-          <span class="total-time"
-                v-text="duration && status.state !== 'stop' ? convertTime(duration) : '-:--'"></span>
-      </div>
+      <ProgressBar :elapsed="elapsed" :duration="duration" :status="status" @seek="$emit('seek', $event)" />
     </div>
   </div>
 
@@ -70,7 +45,7 @@
       </button>
     </div>
 
-    <div class="track-container col-s-8 col-m-8 col-l-3">
+    <div class="track-container col-s-9 col-m-9 col-l-3">
       <div class="track-info" v-if="track && status?.state !== 'stop'">
         <div class="title" v-if="status.state === 'play' || status.state === 'pause'">
           <a :href="$route.fullPath" v-text="track.title?.length ? track.title : '[No Title]'"
@@ -103,45 +78,25 @@
       </div>
 
       <div class="row">
-        <div class="col-1 time">
-          <span class="elapsed-time"
-                v-text="elapsed != null && (status.state === 'play' || status.state === 'pause') ? convertTime(elapsed) : '-:--'"></span>
-        </div>
-        <div class="col-10">
-          <Slider :value="elapsed" :range="[0, duration]" :disabled="!duration || status.state === 'stop'"
-                  @mouseup="$emit('seek', $event.target.value)" />
-        </div>
-        <div class="col-1 time">
-          <span class="total-time"
-                v-text="duration && status.state !== 'stop' ? convertTime(duration) : '-:--'"></span>
-        </div>
+        <ProgressBar :elapsed="elapsed" :duration="duration" :status="status" @seek="$emit('seek', $event)" />
       </div>
     </div>
 
-    <div class="col-2 pull-right until tablet right-buttons">
+    <div class="col-1 until tablet right-controls">
       <button @click="expanded = !expanded" :title="expanded ? 'Show more controls' : 'Hide extra controls'">
         <i class="fas" :class="[`fa-chevron-${expanded ? 'down' : 'up'}`]" />
       </button>
     </div>
 
-    <div class="col-3 pull-right from desktop">
-      <div class="row volume-container">
-        <VolumeSlider :value="status.volume" :range="volumeRange" :status="status"
-          @mute="$emit('mute')" @unmute="$emit('unmute')"
-          @set-volume="$emit('set-volume', $event)" />
-      </div>
-      <div class="row list-controls">
-        <button @click="$emit('consume')" :class="{enabled: status.consume}" title="Toggle consume mode" v-if="buttons_.consume">
-          <i class="icon fa fa-utensils"></i>
-        </button>
-        <button @click="$emit('random')" :class="{enabled: status.random}" title="Toggle shuffle" v-if="buttons_.random">
-          <i class="icon fa fa-random"></i>
-        </button>
-        <button @click="$emit('repeat')" :class="{enabled: status.repeat}" title="Toggle repeat" v-if="buttons_.repeat">
-          <i class="icon fa fa-redo"></i>
-        </button>
-      </div>
+    <div class="col-3 from desktop right-controls">
+      <VolumeSlider :value="status.volume" :range="volumeRange" :status="status"
+        @mute="$emit('mute')" @unmute="$emit('unmute')"
+        @set-volume="$emit('set-volume', $event)" />
 
+      <ExtraControls :status="status" :buttons="buttons_"
+          @consume="$emit('consume', !status.consume)"
+          @random="$emit('random', !status.random)"
+          @repeat="$emit('repeat', !status.repeat)" />
     </div>
   </div>
 </template>
@@ -149,11 +104,12 @@
 <script>
 import Utils from "@/Utils"
 import MediaUtils from "@/components/Media/Utils";
-import Slider from "@/components/elements/Slider";
+import ExtraControls from "./ExtraControls";
+import ProgressBar from "./ProgressBar";
 import VolumeSlider from "./VolumeSlider";
 
 export default {
-  components: {Slider, VolumeSlider},
+  components: {ExtraControls, ProgressBar, VolumeSlider},
   mixins: [Utils, MediaUtils],
   emits: [
     'consume',
@@ -282,10 +238,15 @@ button {
   flex-direction: column;
   display: none;
   overflow: hidden;
+  padding: .5em;
 
   @include until($desktop) {
     display: flex;
-    padding-top: .5em;
+  }
+
+  :deep(.extra-controls-container) {
+    @extend .pull-right;
+    flex: 1;
   }
 
   .row {
@@ -293,33 +254,9 @@ button {
   }
 
   .buttons {
+    display: flex;
     justify-content: center;
     margin: 0;
-  }
-
-  .volume-container,
-  .list-controls {
-    display: flex;
-    align-items: center;
-
-    button {
-      padding: 0 .25em;
-    }
-  }
-
-  .list-controls {
-    margin-top: -.5em;
-    flex-flow: row-reverse;
-  }
-
-  .time {
-    &:first-child {
-      margin-left: .25em;
-    }
-
-    &:last-child {
-      margin-right: .25em;
-    }
   }
 }
 
@@ -334,12 +271,6 @@ button {
   .row {
     width: 100%;
     display: flex;
-  }
-
-  .volume-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
   }
 
   .track-container {
@@ -380,24 +311,6 @@ button {
   }
 
   .playback-controls {
-    &.mobile {
-      display: none;
-
-      @include until($tablet) {
-        display: flex !important;
-        align-items: center;
-      }
-    }
-
-    &.tablet {
-      display: none;
-
-      @media screen and (min-width: $tablet) and (max-width: $desktop - 1) {
-        display: flex !important;
-        align-items: center;
-      }
-    }
-
     .row {
       justify-content: center;
     }
@@ -423,47 +336,25 @@ button {
     }
   }
 
-  .list-controls {
-    height: 50%;
-    opacity: 0.7;
+  .right-controls {
+    @extend .pull-right;
+
     display: flex;
-    align-items: center;
-    margin-bottom: 1em;
-    flex-flow: row-reverse;
-  }
+    flex-direction: column;
+    flex: 1;
+    align-items: end;
 
-  .mobile.right-buttons {
-    @include until ($desktop) {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      flex: 1;
-    }
-  }
-
-  .pull-right {
     button {
       padding: 0.5em;
+    }
+
+    :deep(.extra-controls-container) {
+      @extend .pull-right;
     }
   }
 
   .seek-slider {
     width: 75%;
   }
-}
-
-.time {
-  font-size: .7em;
-  position: relative;
-}
-
-.elapsed-time {
-  text-align: right;
-  float: right;
-}
-
-.time-bar {
-  flex-grow: 1;
-  margin: 0 .5em;
 }
 </style>

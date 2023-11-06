@@ -159,23 +159,23 @@ $width-ranges: (
   .#{$name} {
     &.from {
       @include until(nth($range, 1)) {
-        display: none;
+        display: none !important;
       }
     }
 
     &.until {
       @include from(nth($range, 2)) {
-        display: none;
+        display: none !important;
       }
     }
 
     &.only {
       @include until(nth($range, 1)) {
-        display: none;
+        display: none !important;
       }
 
       @include from(nth($range, 2)) {
-        display: none;
+        display: none !important;
       }
     }
   }
@@ -183,13 +183,13 @@ $width-ranges: (
 
 .mobile {
   @include from($tablet) {
-    display: none;
+    display: none !important;
   }
 }
 
 .fullhd {
   @include until($fullhd) {
-    display: none;
+    display: none !important;
   }
 }
 

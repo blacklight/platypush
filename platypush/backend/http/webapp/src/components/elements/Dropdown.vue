@@ -120,7 +120,7 @@ export default {
   flex-direction: column;
 
   button {
-    background: $default-bg-2;
+    background: none;
     border: 0;
     padding: 0.5em;
 
