@@ -1,3 +1,4 @@
+from dataclasses import asdict
 import os
 import threading
 import urllib.parse
@@ -204,10 +205,6 @@ class MediaVlcPlugin(MediaPlugin):
 
         self._post_event(MediaPlayRequestEvent, resource=resource)
         resource = self._get_resource(resource)
-
-        if resource.startswith('file://'):
-            resource = resource[len('file://') :]
-
         self._filename = resource
         self._init_vlc(resource)
         if subtitles and self._player:
@@ -411,6 +408,7 @@ class MediaVlcPlugin(MediaPlugin):
                 "filename": "filename or stream URL",
                 "state": "play"  # or "stop" or "pause"
             }
+
         """
         import vlc
 
@@ -457,6 +455,18 @@ class MediaVlcPlugin(MediaPlugin):
             status['title'] = self._title
             status['volume'] = self._player.audio_get_volume()
             status['volume_max'] = 100
+
+            if (
+                status['state'] in (PlayerState.PLAY.value, PlayerState.PAUSE.value)
+                and self._latest_resource
+            ):
+                status.update(
+                    {
+                        k: v
+                        for k, v in asdict(self._latest_resource).items()
+                        if v is not None
+                    }
+                )
 
             return status
 

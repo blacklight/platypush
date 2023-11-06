@@ -1,3 +1,4 @@
+from dataclasses import asdict
 import os
 import threading
 
@@ -410,7 +411,7 @@ class MediaMpvPlugin(MediaPlugin):
         if not self._player or not hasattr(self._player, 'pause'):
             return {'state': PlayerState.STOP.value}
 
-        return {
+        status = {
             'audio_channels': getattr(self._player, 'audio_channels', None),
             'audio_codec': getattr(self._player, 'audio_codec_name', None),
             'delay': getattr(self._player, 'delay', None),
@@ -441,6 +442,17 @@ class MediaMpvPlugin(MediaPlugin):
             'volume_max': getattr(self._player, 'volume_max', None),
             'width': getattr(self._player, 'width', None),
         }
+
+        if self._latest_resource:
+            status.update(
+                {
+                    k: v
+                    for k, v in asdict(self._latest_resource).items()
+                    if v is not None
+                }
+            )
+
+        return status
 
     def on_stop(self, callback):
         self._on_stop_callbacks.append(callback)

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import enum
 import functools
 import inspect
@@ -28,6 +29,25 @@ class PlayerState(enum.Enum):
     PLAY = 'play'
     PAUSE = 'pause'
     IDLE = 'idle'
+
+
+@dataclass
+class MediaResource:
+    """
+    Models a media resource
+    """
+
+    resource: str
+    url: str
+    title: Optional[str] = None
+    description: Optional[str] = None
+    filename: Optional[str] = None
+    image: Optional[str] = None
+    duration: Optional[float] = None
+    channel: Optional[str] = None
+    channel_url: Optional[str] = None
+    type: Optional[str] = None
+    resolution: Optional[str] = None
 
 
 class MediaPlugin(Plugin, ABC):
@@ -241,6 +261,7 @@ class MediaPlugin(Plugin, ABC):
         self._youtube_proc = None
         self.torrent_plugin = torrent_plugin
         self.youtube_format = youtube_format
+        self._latest_resource: Optional[MediaResource] = None
 
     @staticmethod
     def _torrent_event_handler(evt_queue):
@@ -272,7 +293,29 @@ class MediaPlugin(Plugin, ABC):
             for extractor in self.get_extractors()
         )
 
-    def _get_resource(self, resource):
+    def _get_youtube_best_thumbnail(self, info: Dict[str, dict]):
+        thumbnails = info.get('thumbnails', {})
+        if not thumbnails:
+            return None
+
+        # Preferred resolution
+        for res in ((640, 480), (480, 360), (320, 240)):
+            thumb = next(
+                (
+                    thumb
+                    for thumb in thumbnails
+                    if thumb.get('width') == res[0] and thumb.get('height') == res[1]
+                ),
+                None,
+            )
+
+            if thumb:
+                return thumb.get('url')
+
+        # Default fallback (best quality)
+        return info.get('thumbnail')
+
+    def _get_resource(self, resource: str):
         """
         :param resource: Resource to play/parse. Supported types:
 
@@ -283,8 +326,33 @@ class MediaPlugin(Plugin, ABC):
 
         """
 
-        if self._is_youtube_resource(resource):
-            resource = self._get_youtube_info(resource).get('url')
+        if resource.startswith('file://'):
+            resource = resource[len('file://') :]
+            assert os.path.isfile(resource), f'File {resource} not found'
+            self._latest_resource = MediaResource(
+                resource=resource,
+                url=f'file://{resource}',
+                title=os.path.basename(resource),
+                filename=os.path.basename(resource),
+            )
+        elif self._is_youtube_resource(resource):
+            info = self._get_youtube_info(resource)
+            url = info.get('url')
+            if url:
+                resource = url
+                self._latest_resource = MediaResource(
+                    resource=resource,
+                    url=resource,
+                    title=info.get('title'),
+                    description=info.get('description'),
+                    filename=info.get('filename'),
+                    image=info.get('thumbnail'),
+                    duration=float(info.get('duration') or 0) or None,
+                    channel=info.get('channel'),
+                    channel_url=info.get('channel_url'),
+                    resolution=info.get('resolution'),
+                    type=info.get('extractor'),
+                )
         elif resource.startswith('magnet:?'):
             self.logger.info(
                 'Downloading torrent %s to %s', resource, self.download_dir
@@ -308,8 +376,6 @@ class MediaPlugin(Plugin, ABC):
                 resource = self._videos_queue.pop(0)
             else:
                 raise RuntimeError(f'No media file found in torrent {resource}')
-        elif re.search(r'^https?://', resource):
-            return resource
 
         assert resource, 'Unable to find any compatible media resource'
         return resource
@@ -539,6 +605,12 @@ class MediaPlugin(Plugin, ABC):
     def is_audio_file(cls, filename: str):
         return filename.lower().split('.')[-1] in cls.audio_extensions
 
+    def _get_info(self, resource: str):
+        if self._is_youtube_resource(resource):
+            return self.get_youtube_info(resource)
+
+        return {'url': resource}
+
     @action
     def start_streaming(
         self, media: str, subtitles: Optional[str] = None, download: bool = False
@@ -656,10 +728,7 @@ class MediaPlugin(Plugin, ABC):
 
     @action
     def get_info(self, resource: str):
-        if self._is_youtube_resource(resource):
-            return self.get_youtube_info(resource)
-
-        return {'url': resource}
+        return self._get_info(resource)
 
     @action
     def get_media_file_duration(self, filename):

@@ -1,3 +1,4 @@
+from dataclasses import asdict
 import os
 import re
 import select
@@ -500,6 +501,16 @@ class MediaMplayerPlugin(MediaPlugin):
             ) + status['path']
 
         status['volume_max'] = 100
+
+        if self._latest_resource:
+            status.update(
+                {
+                    k: v
+                    for k, v in asdict(self._latest_resource).items()
+                    if v is not None
+                }
+            )
+
         return status
 
     @action
