@@ -33,25 +33,31 @@
                     @source-toggle="sources[$event] = !sources[$event]" />
 
             <div class="body-container" :class="{'expanded-header': $refs.header?.filterVisible}">
-              <Results :results="results" :selected-result="selectedResult" @select="onResultSelect($event)"
-                       @play="play" @info="$refs.mediaInfo.isVisible = true" @view="view" @download="download"
-                       :sources="sources" v-if="selectedView === 'search'" />
+              <Results :results="results"
+                       :selected-result="selectedResult"
+                       :sources="sources"
+                       :loading="loading"
+                       @select="onResultSelect($event)"
+                       @play="play"
+                       @view="view"
+                       @download="download"
+                       v-if="selectedView === 'search'" />
 
-              <TorrentView :plugin-name="torrentPlugin" :is-media="true" @play="play"
+              <TorrentView :plugin-name="torrentPlugin"
+                           :is-media="true"
+                           @play="play"
                            v-else-if="selectedView === 'torrents'" />
 
-              <Browser :plugin-name="torrentPlugin" :is-media="true" :filter="browserFilter"
-                       @path-change="browserFilter = ''" @play="play($event)" v-else-if="selectedView === 'browser'" />
+              <Browser :plugin-name="torrentPlugin"
+                       :is-media="true"
+                       :filter="browserFilter"
+                       @path-change="browserFilter = ''"
+                       @play="play($event)"
+                       v-else-if="selectedView === 'browser'" />
             </div>
           </div>
         </main>
       </MediaView>
-
-      <div class="media-info-container">
-        <Modal title="Media info" ref="mediaInfo">
-          <Info :item="results[selectedResult]" v-if="selectedResult != null" />
-        </Modal>
-      </div>
 
       <div class="subtitles-container">
         <Modal title="Available subtitles" :visible="showSubtitlesModal" ref="subtitlesSelector"
@@ -65,21 +71,8 @@
       </div>
 
       <div class="play-url-container">
-        <Modal title="Play URL" ref="playUrlModal" @open="$refs.playUrlInput.focus()">
-          <form @submit.prevent="playUrl(urlPlay)">
-            <div class="row">
-              <label>
-                Play URL (use the file:// prefix for local files)
-                <input type="text" v-model="urlPlay" ref="playUrlInput" autofocus />
-              </label>
-            </div>
-
-            <div class="row footer">
-              <button type="submit" :disabled="!urlPlay?.length">
-                <i class="fa fa-play"></i> Play
-              </button>
-            </div>
-          </form>
+        <Modal title="Play URL" ref="playUrlModal" @open="onPlayUrlModalOpen">
+          <UrlPlayer :value="urlPlay" @input="urlPlay = $event.target.value" @play="playUrl($event)" />
         </Modal>
       </div>
     </div>
@@ -90,20 +83,33 @@
 import Loading from "@/components/Loading";
 import Modal from "@/components/Modal";
 import Utils from "@/Utils";
+
+import Browser from "@/components/File/Browser";
+import Header from "@/components/panels/Media/Header";
 import MediaUtils from "@/components/Media/Utils";
 import MediaView from "@/components/Media/View";
-import Header from "@/components/panels/Media/Header";
-import Info from "@/components/panels/Media/Info";
 import Nav from "@/components/panels/Media/Nav";
 import Results from "@/components/panels/Media/Results";
 import Subtitles from "@/components/panels/Media/Subtitles";
 import TorrentView from "@/components/panels/Torrent/View";
-import Browser from "@/components/File/Browser";
+import UrlPlayer from "@/components/panels/Media/UrlPlayer";
 
 export default {
   name: "Media",
   mixins: [Utils, MediaUtils],
-  components: {Browser, Loading, MediaView, Header, Results, Modal, Info, Nav, TorrentView, Subtitles},
+  components: {
+    Browser,
+    Header,
+    Loading,
+    MediaView,
+    Modal,
+    Nav,
+    Results,
+    Subtitles,
+    TorrentView,
+    UrlPlayer,
+  },
+
   props: {
     pluginName: {
       type: String,
@@ -249,6 +255,18 @@ export default {
       this.selectedPlayer.status = status
     },
 
+    onPlayUrlModalOpen() {
+      const modal = this.$refs.playUrlModal
+      this.urlPlay = ''
+      modal.$nextTick(() => {
+        const input = modal.$el.querySelector('input[type=text]')
+        if (input) {
+          input.focus()
+          input.select()
+        }
+      })
+    },
+
     onTorrentQueued(event) {
       this.notify({
         title: 'Torrent queued for download',
@@ -347,19 +365,17 @@ export default {
       if (this.selectedResult == null || this.selectedResult !== result) {
         this.selectedResult = result
         this.selectedSubtitles = null
+      } else {
+        this.selectedResult = null
       }
     },
 
     showPlayUrlModal() {
       this.$refs.playUrlModal.show()
-      this.$refs.playUrlInput.value = ''
-      this.$nextTick(() => {
-        this.$refs.playUrlInput.value = ''
-        this.$refs.playUrlInput.focus()
-      })
     },
 
     async playUrl(url) {
+      this.urlPlay = url
       this.loading = true
 
       try {
@@ -452,16 +468,6 @@ export default {
   z-index: 10;
 }
 
-:deep(.media-info-container) {
-  .modal-container {
-    .body {
-      max-width: calc(100vw - 2px);
-      padding: 0;
-      overflow: auto;
-    }
-  }
-}
-
 :deep(.subtitles-container) {
   .body {
     padding: 0 !important;
@@ -469,47 +475,6 @@ export default {
     .item {
       padding: 1em;
     }
-  }
-}
-
-:deep(.play-url-container) {
-  .body {
-    padding: 1em !important;
-  }
-
-  form {
-    padding: 0;
-    margin: 0;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  input[type=text] {
-    width: 100%;
-  }
-
-  [type=submit] {
-    background: initial;
-    border-color: initial;
-    border-radius: 1.5em;
-
-    &:hover {
-      color: $default-hover-fg-2;
-    }
-  }
-
-  .footer {
-    display: flex;
-    justify-content: right;
-    padding: 0;
-    margin-top: 1em;
-  }
-}
-
-:deep(.media-info-container) {
-  .modal {
-    max-width: 70em;
   }
 }
 </style>

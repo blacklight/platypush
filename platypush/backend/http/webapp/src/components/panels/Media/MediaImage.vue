@@ -1,5 +1,17 @@
 <template>
-  <div class="image-container">
+  <div class="image-container" :class="{ 'with-image': !!item?.image }">
+    <div class="play-overlay" @click="$emit('play', item)">
+      <i class="fas fa-play" />
+    </div>
+
+    <span class="icon type-icon" v-if="typeIcons[item?.type]">
+      <a :href="item.url" target="_blank" v-if="item.url">
+        <i :class="typeIcons[item.type]" :title="item.type">
+          &nbsp;
+        </i>
+      </a>
+    </span>
+
     <img class="image" :src="item.image" :alt="item.title" v-if="item?.image" />
     <div class="image" v-else>
       <div class="inner">
@@ -7,7 +19,7 @@
       </div>
     </div>
 
-    <span class="imdb-link" v-if="item?.imdb_id">
+    <span class="icon imdb-link" v-if="item?.imdb_id">
       <a :href="`https://www.imdb.com/title/${item.imdb_id}`" target="_blank">
         <i class="fab fa-imdb" />
       </a>
@@ -19,37 +31,67 @@
 </template>
 
 <script>
+import Icons from "./icons.json";
 import MediaUtils from "@/components/Media/Utils";
 
 export default {
-  mixins: [MediaUtils],
+  mixins: [Icons, MediaUtils],
+  emits: ['play'],
   props: {
     item: {
       type: Object,
       default: () => {},
     }
-  }
+  },
+
+  data() {
+    return {
+      typeIcons: Icons,
+    }
+  },
 }
 </script>
 
 <style lang="scss" scoped>
 @import "vars";
 
-.imdb-link {
+.icon {
   position: absolute;
-  top: 0;
-  right: 0;
-  height: 1em;
-  font-size: 2em;
+  width: 30px;
+  height: 30px;
+  font-size: 30px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 0.25em;
+  color: $default-media-img-fg;
 
-  &:hover {
-    color: $default-hover-fg;
+  a {
+    width: 100%;
+    height: 100%;
+    color: $default-media-img-fg;
+
+    &:hover {
+      color: $default-hover-fg;
+    }
   }
 
   i {
-    background: #ffff00;
-    border-radius: 0.25em;
+    margin: 2.5px;
   }
+
+  .fa-imdb {
+    position: absolute;
+    top: 0;
+    margin: 1px 2.5px 3px 2.5px;
+  }
+
+  .fa-youtube {
+    margin-left: 1px;
+  }
+}
+
+.imdb-link {
+  top: 0;
+  right: 0;
 }
 
 .duration {
@@ -63,20 +105,43 @@ export default {
   border-radius: 0.25em;
 }
 
+.type-icon {
+  top: 0;
+  left: 0;
+  font-size: 25px;
+}
+
 .image-container {
-  width: 100%;
-  min-height: 240px;
+  max-width: 100%;
+  min-height: 200px;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  justify-content: center;
   position: relative;
 
-  img {
-    @include from($tablet) {
-      height: 480px;
+  &.with-image {
+    background: black;
+
+    .icon {
+      background: none;
     }
+
+    .play-overlay {
+      border-radius: 0;
+    }
+  }
+
+  img {
+    height: 100%;
   }
 }
 
+.image {
+  max-width: 100%;
+}
+
 div.image {
-  height: 400px;
+  width: 100%;
   color: $default-media-img-fg;
   font-size: 5em;
   display: flex;
@@ -84,14 +149,38 @@ div.image {
   justify-content: center;
 
   .inner {
-    width: calc(100% - 20px);
-    height: calc(100% - 20px);
-    min-height: 240px;
+    width: 100%;
+    height: 100%;
     background: $default-media-img-bg;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 1em;
+    border-radius: 0.5em;
+  }
+}
+
+.play-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 2em;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  i {
+    font-size: 5em;
+    color: $default-media-img-fg;
   }
 }
 </style>

@@ -1,9 +1,16 @@
 <template>
   <div class="media-info">
     <div class="row header">
-      <MediaImage :item="item" />
+      <div class="image-container">
+        <MediaImage :item="item" @play="$emit('play')" />
+      </div>
 
       <div class="title">
+        <i :class="typeIcons[item.type]"
+           :title="item.type" 
+           v-if="typeIcons[item?.type]">
+          &nbsp;
+        </i>
         <a :href="item.url" target="_blank" v-if="item.url" v-text="item.title" />
         <span v-else v-text="item.title" />
       </div>
@@ -79,11 +86,10 @@
       <div class="right side" v-text="item.genres.join(', ')" />
     </div>
 
-    <div class="row" v-if="item?.channelId">
+    <div class="row" v-if="channel">
       <div class="left side">Channel</div>
       <div class="right side">
-        <a :href="`https://www.youtube.com/channel/${item.channelId}`" target="_blank"
-           v-text="item.channelTitle || `https://www.youtube.com/channel/${item.channelId}`" />
+        <a :href="channel.url" target="_blank" v-text="channel.title || channel.url" />
       </div>
     </div>
 
@@ -92,9 +98,9 @@
       <div class="right side" v-text="item.year" />
     </div>
 
-    <div class="row" v-if="item?.publishedAt">
+    <div class="row" v-if="publishedDate">
       <div class="left side">Published at</div>
-      <div class="right side" v-text="formatDate(item.publishedAt, true)" />
+      <div class="right side" v-text="publishedDate" />
     </div>
 
     <div class="row" v-if="item?.file">
@@ -140,17 +146,58 @@
 import Utils from "@/Utils";
 import MediaUtils from "@/components/Media/Utils";
 import MediaImage from "./MediaImage";
+import Icons from "./icons.json";
 
 export default {
   name: "Info",
   components: {MediaImage},
   mixins: [Utils, MediaUtils],
+  emits: ['play'],
   props: {
     item: {
       type: Object,
       default: () => {},
     }
-  }
+  },
+
+  data() {
+    return {
+      typeIcons: Icons,
+    }
+  },
+
+  computed: {
+    channel() {
+      let ret = null
+      if (this.item?.channelId)
+        ret = {
+          url: `https://www.youtube.com/channel/${this.item.channelId}`,
+        }
+      else if (this.item?.channel_url)
+        ret = {
+          url: this.item.channel_url,
+        }
+
+      if (!ret)
+        return null
+
+      if (this.item?.channelTitle)
+        ret.title = this.item.channelTitle
+      else if (this.item?.channel)
+        ret.title = this.item.channel
+
+      return ret
+    },
+
+    publishedDate() {
+      if (this.item?.publishedAt)
+        return this.formatDate(this.item.publishedAt, true)
+      if (this.item?.created_at)
+        return this.formatDate(this.item.created_at, true)
+
+      return null
+    },
+  },
 }
 </script>
 
@@ -159,10 +206,6 @@ export default {
 
 .media-info {
   width: 100%;
-
-  @include from($tablet) {
-    width: 640px;
-  }
 }
 
 .row {
@@ -231,6 +274,14 @@ export default {
   flex-direction: column;
   position: relative;
 
+  .image-container {
+    @include from($desktop) {
+      .image-container {
+        width: 420px;
+      }
+    }
+  }
+
   .title {
     width: 100%;
     font-size: 1.5em;
@@ -238,6 +289,11 @@ export default {
     margin-top: 0.5em;
     text-align: center;
     overflow-wrap: break-word;
+
+    @include from($desktop) {
+      flex: 1;
+      padding-left: 1em;
+    }
   }
 
   &:hover {
