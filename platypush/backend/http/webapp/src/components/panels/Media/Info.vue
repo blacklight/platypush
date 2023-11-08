@@ -73,7 +73,17 @@
 
     <div class="row" v-if="item?.rating">
       <div class="left side">Rating</div>
-      <div class="right side" v-text="item.rating.percentage" />
+      <div class="right side">{{ item.rating.percentage }}%</div>
+    </div>
+
+    <div class="row" v-if="item?.critic_rating">
+      <div class="left side">Critic Rating</div>
+      <div class="right side">{{ item.critic_rating }}%</div>
+    </div>
+
+    <div class="row" v-if="item?.community_rating">
+      <div class="left side">Community Rating</div>
+      <div class="right side">{{ item.community_rating }}%</div>
     </div>
 
     <div class="row" v-if="item?.rating">
