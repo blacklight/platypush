@@ -74,6 +74,7 @@ class JellyfinCollectionSchema(JellyfinSchema, MediaCollectionSchema):
 
 
 class JellyfinVideoSchema(JellyfinSchema, MediaVideoSchema):
+    duration = fields.Number(attribute='RunTimeTicks')
     community_rating = fields.Number(attribute='CommunityRating')
     critic_rating = fields.Number(attribute='CriticRating')
 
@@ -81,6 +82,18 @@ class JellyfinVideoSchema(JellyfinSchema, MediaVideoSchema):
         super().__init__(*args, **kwargs)
         self.fields['year'].attribute = 'ProductionYear'
         self.fields['has_subtitles'].attribute = 'HasSubtitles'
+
+    @post_dump
+    def _normalize_community_rating(self, data: dict, **_) -> dict:
+        if data.get('community_rating'):
+            data['community_rating'] *= 10
+        return data
+
+    @post_dump
+    def _normalize_duration(self, data: dict, **_) -> dict:
+        if data.get('duration'):
+            data['duration'] //= 1e7
+        return data
 
 
 class JellyfinMovieSchema(JellyfinVideoSchema):
