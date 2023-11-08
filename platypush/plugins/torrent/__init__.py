@@ -200,7 +200,7 @@ class TorrentPlugin(Plugin):
                     'synopsis': result.get('synopsis'),
                     'trailer': result.get('trailer'),
                     'genres': result.get('genres', []),
-                    'images': result.get('images', []),
+                    'image': result.get('images', {}).get('poster'),
                     'rating': result.get('rating', {}),
                     'language': lang,
                     'quality': quality,
