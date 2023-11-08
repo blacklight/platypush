@@ -8,24 +8,31 @@
     Would you like to install this application locally?
   </ConfirmDialog>
 
+  <DropdownContainer />
   <router-view />
 </template>
 
 <script>
 import ConfirmDialog from "@/components/elements/ConfirmDialog";
+import DropdownContainer from "@/components/elements/DropdownContainer";
 import Notifications from "@/components/Notifications";
 import Utils from "@/Utils";
 import Events from "@/Events";
 import VoiceAssistant from "@/components/VoiceAssistant";
-import { bus } from "@/bus";
 import Ntfy from "@/components/Ntfy";
 import Pushbullet from "@/components/Pushbullet";
+import { bus } from "@/bus";
 
 export default {
-  name: 'App',
   mixins: [Utils],
   components: {
-    ConfirmDialog, Pushbullet, Ntfy, Notifications, Events, VoiceAssistant
+    ConfirmDialog,
+    DropdownContainer,
+    Events,
+    Notifications,
+    Ntfy,
+    Pushbullet,
+    VoiceAssistant,
   },
 
   data() {
@@ -104,7 +111,6 @@ export default {
 }
 </script>
 
-<!--suppress CssUnusedSymbol -->
 <style lang="scss">
 $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "~@fortawesome/fontawesome-free/scss/fontawesome";

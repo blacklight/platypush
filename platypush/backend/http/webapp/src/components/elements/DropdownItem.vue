@@ -9,9 +9,9 @@
 
 <script>
 import Icon from "@/components/elements/Icon";
+import { bus } from "@/bus";
 
 export default {
-  name: "DropdownItem",
   components: {Icon},
   props: {
     iconClass: {
@@ -35,13 +35,12 @@ export default {
   },
 
   methods: {
-    clicked(event) {
+    clicked() {
       if (this.disabled)
         return false
 
-      this.$parent.$emit('click', event)
       if (!this.$parent.keepOpenOnItemClick)
-        this.$parent.visible = false
+        bus.emit('dropdown-close')
     }
   }
 }
@@ -50,20 +49,22 @@ export default {
 <style lang="scss" scoped>
 .item {
   display: flex;
+  flex-direction: row !important;
   min-width: 7.5em;
   padding: 0.75em 0.5em;
   cursor: pointer;
   align-items: center;
   color: $default-fg-2;
   border: 0 !important;
-  box-shadow: none;
+  cursor: pointer !important;
+  box-shadow: none !important;
 
   &:hover {
-    background: $hover-bg;
+    background: $hover-bg !important;
   }
 
   &.selected {
-    font-weight: bold;
+    font-weight: bold !important;
   }
 
   &.disabled {

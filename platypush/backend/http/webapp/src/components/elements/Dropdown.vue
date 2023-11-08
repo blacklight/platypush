@@ -1,28 +1,28 @@
 <template>
-  <div class="dropdown-container" ref="container">
+  <div class="dropdown-container">
     <button :title="title" ref="button" @click.stop="toggle($event)">
       <i class="icon" :class="iconClass" v-if="iconClass" />
       <span class="text" v-text="text" v-if="text" />
     </button>
 
-    <div class="dropdown fade-in" :id="id" :class="{hidden: !visible}" ref="dropdown">
-      <slot />
+    <div class="body-container hidden" ref="dropdownContainer">
+      <DropdownBody :id="id" :keepOpenOnItemClick="keepOpenOnItemClick" ref="dropdown">
+        <slot />
+      </DropdownBody>
     </div>
   </div>
 </template>
 
 <script>
+import DropdownBody from "./DropdownBody";
+import { bus } from "@/bus";
+
 export default {
-  name: "Dropdown",
+  components: { DropdownBody },
   emits: ['click'],
   props: {
     id: {
       type: String,
-    },
-
-    items: {
-      type: Array,
-      default: () => [],
     },
 
     iconClass: {
@@ -49,6 +49,39 @@ export default {
     }
   },
 
+  computed: {
+    dropdownWidth() {
+      const dropdown = this.$refs.dropdown?.$el
+      if (!dropdown)
+        return 0
+
+      return parseFloat(getComputedStyle(dropdown).width)
+    },
+
+    dropdownHeight() {
+      const dropdown = this.$refs.dropdown?.$el
+      if (!dropdown)
+        return 0
+
+      return parseFloat(getComputedStyle(dropdown).height)
+    },
+
+    buttonStyle() {
+      if (!this.$refs.button)
+        return {}
+
+      return getComputedStyle(this.$refs.button)
+    },
+
+    buttonWidth() {
+      return parseFloat(this.buttonStyle.width || 0)
+    },
+
+    buttonHeight() {
+      return parseFloat(this.buttonStyle.height || 0)
+    },
+  },
+
   methods: {
     documentClickHndl(event) {
       if (!this.visible)
@@ -56,9 +89,7 @@ export default {
 
       let element = event.target
       while (element) {
-        if (!this.$refs.dropdown)
-          break
-        if (element === this.$refs.dropdown.element)
+        if (element.classList.contains('dropdown'))
           return
 
         element = element.parentElement
@@ -70,23 +101,40 @@ export default {
     close() {
       this.visible = false
       document.removeEventListener('click', this.documentClickHndl)
+      bus.emit('dropdown-close')
     },
 
     open() {
       document.addEventListener('click', this.documentClickHndl)
       this.visible = true
+      this.$refs.dropdownContainer.classList.remove('hidden')
+      this.$nextTick(() => {
+        const buttonRect = this.$refs.button.getBoundingClientRect()
+        const buttonPos = {
+          left: buttonRect.left + window.scrollX,
+          top: buttonRect.top + window.scrollY,
+        }
 
-      setTimeout(() => {
-        const element = this.$refs.dropdown
-        element.style.left = 0
-        element.style.top = parseFloat(getComputedStyle(this.$refs.button).height) + 'px'
+        const pos = {
+          left: buttonPos.left,
+          top: buttonPos.top + this.buttonHeight,
+        }
 
-        if (element.getBoundingClientRect().left > window.innerWidth/2)
-          element.style.left = (-element.clientWidth + parseFloat(getComputedStyle(this.$refs.button).width)) + 'px'
+        if ((pos.left + this.dropdownWidth) > (window.innerWidth + window.scrollX) / 2) {
+          pos.left -= (this.dropdownWidth - this.buttonWidth)
+        }
 
-        if (element.getBoundingClientRect().top > window.innerHeight/2)
-          element.style.top = (-element.clientHeight + parseFloat(getComputedStyle(this.$refs.button).height)) + 'px'
-      }, 10)
+        if ((pos.top + this.dropdownHeight) > (window.innerHeight + window.scrollY) / 2) {
+          pos.top -= (this.dropdownHeight + this.buttonHeight - 10)
+        }
+
+        const element = this.$refs.dropdown.$el
+        element.classList.add('fade-in')
+        element.style.top = `${pos.top}px`
+        element.style.left = `${pos.left}px`
+        bus.emit('dropdown-open', this.$refs.dropdown)
+        this.$refs.dropdownContainer.classList.add('hidden')
+      })
     },
 
     toggle(event) {
@@ -128,40 +176,5 @@ export default {
       color: $default-hover-fg;
     }
   }
-
-  .dropdown {
-    position: absolute;
-    width: max-content;
-    background: $dropdown-bg;
-    border-radius: .25em;
-    border: $default-border-3;
-    box-shadow: $dropdown-shadow;
-    display: flex;
-    flex-direction: column;
-    z-index: 1;
-  }
 }
-
-:deep(.dropdown-container) {
-  button {
-    width: 100%;
-    height: 100%;
-    color: $default-fg-2;
-    background: $dropdown-bg;
-    border: 0;
-    padding: 0.75em 0.5em;
-    text-align: left;
-    letter-spacing: 0.01em;
-
-    &:hover {
-      background: $hover-bg;
-      color: $default-fg-2;
-    }
-
-    .text {
-      padding-left: 0.25em;
-    }
-  }
-}
-
 </style>
