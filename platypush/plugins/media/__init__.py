@@ -170,7 +170,6 @@ class MediaPlugin(Plugin, ABC):
         env: Optional[Dict[str, str]] = None,
         volume: Optional[Union[float, int]] = None,
         torrent_plugin: str = 'torrent',
-        # youtube_format: Optional[str] = 'bv*[height<=?1080][ext=mp4]+bestaudio/best',
         youtube_format: Optional[str] = 'best[height<=?1080][ext=mp4]',
         youtube_dl: str = 'yt-dlp',
         **kwargs,

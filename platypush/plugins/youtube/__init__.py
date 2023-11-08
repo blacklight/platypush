@@ -1,3 +1,4 @@
+from datetime import datetime
 import urllib.parse
 
 import requests
@@ -61,6 +62,14 @@ class YoutubePlugin(Plugin):
                 "image": item.get("thumbnail"),
                 "duration": item.get("duration", 0),
                 "description": item.get("shortDescription"),
+                "channel": item.get("uploaderName"),
+                "channel_url": "https://www.youtube.com" + item["uploaderUrl"]
+                if item.get("uploaderUrl")
+                else None,
+                "channel_image": item.get("uploaderAvatar"),
+                "created_at": datetime.fromtimestamp(item["uploaded"] / 1000)
+                if item.get("uploaded")
+                else None,
             }
             for item in rs.json().get("items", [])
         ]
