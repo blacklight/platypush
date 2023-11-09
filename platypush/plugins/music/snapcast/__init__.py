@@ -1,7 +1,7 @@
 import json
 import socket
 import threading
-from typing import Collection, Optional
+from typing import Collection, Optional, Union
 
 from platypush.config import Config
 from platypush.context import get_backend
@@ -52,17 +52,17 @@ class MusicSnapcastPlugin(Plugin):
         return sock
 
     @classmethod
-    def _send(cls, sock: socket.socket, req: dict):
+    def _send(cls, sock: socket.socket, req: Union[dict, str, bytes]):
         if isinstance(req, dict):
-            r = json.dumps(req)
+            req = json.dumps(req)
         if isinstance(req, str):
-            r = req.encode()
-        if not isinstance(r, bytes):
+            req = req.encode()
+        if isinstance(req, bytes):
+            sock.send(req + cls._SOCKET_EOL)
+        else:
             raise RuntimeError(
                 f'Unsupported type {type(req)} for Snapcast request: {req}'
             )
-
-        sock.send(r + cls._SOCKET_EOL)
 
     @classmethod
     def _recv(cls, sock):
