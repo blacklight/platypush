@@ -71,6 +71,13 @@
       <div class="right side" v-text="item.status" />
     </div>
 
+    <div class="row" v-if="item?.width && item?.height">
+      <div class="left side">Resolution</div>
+      <div class="right side">
+        {{ item.width }}x{{ item.height }}
+      </div>
+    </div>
+
     <div class="row" v-if="item?.rating">
       <div class="left side">Rating</div>
       <div class="right side">{{ item.rating.percentage }}%</div>
