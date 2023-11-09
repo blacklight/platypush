@@ -5,7 +5,7 @@
       No search results
     </NoItems>
 
-    <div class="media-grid" v-else>
+    <div class="grid" v-else>
       <Item v-for="(item, i) in results"
             :key="i"
             :item="item"
@@ -76,34 +76,6 @@ export default {
   height: 100%;
   background: $background-color;
   overflow: auto;
-
-  .media-grid {
-    width: 100%;
-    display: grid;
-    row-gap: 1em;
-    column-gap: 1.5em;
-    padding: 1em;
-
-    @include until($tablet) {
-      grid-template-columns: repeat(1, minmax(0, 1fr));
-    }
-
-    @media (min-width: 640px) and (max-width: $tablet) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    @include between($tablet, $desktop) {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    @include between($desktop, $widescreen) {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    @include from($widescreen) {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-    }
-  }
 
   .info-container {
     width: 100%;
