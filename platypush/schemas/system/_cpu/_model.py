@@ -59,7 +59,7 @@ class CpuInfo:
         }
     )
 
-    frequency_advertised: Optional[int] = field(
+    frequency_advertised: Optional[float] = field(
         metadata={
             'metadata': {
                 'description': 'Advertised CPU frequency, in Hz',
@@ -68,7 +68,7 @@ class CpuInfo:
         }
     )
 
-    frequency_actual: Optional[int] = field(
+    frequency_actual: Optional[float] = field(
         metadata={
             'metadata': {
                 'description': 'Actual CPU frequency, in Hz',
@@ -86,7 +86,7 @@ class CpuInfo:
         }
     )
 
-    l1_instruction_cache_size: Optional[int] = field(
+    l1_instruction_cache_size: Optional[float] = field(
         metadata={
             'metadata': {
                 'description': 'Size of the L1 instruction cache, in bytes',
@@ -95,7 +95,7 @@ class CpuInfo:
         }
     )
 
-    l1_data_cache_size: Optional[int] = field(
+    l1_data_cache_size: Optional[float] = field(
         metadata={
             'metadata': {
                 'description': 'Size of the L1 data cache, in bytes',
@@ -104,7 +104,7 @@ class CpuInfo:
         }
     )
 
-    l2_cache_size: Optional[int] = field(
+    l2_cache_size: Optional[float] = field(
         metadata={
             'metadata': {
                 'description': 'Size of the L2 cache, in bytes',
@@ -113,7 +113,7 @@ class CpuInfo:
         }
     )
 
-    l3_cache_size: Optional[int] = field(
+    l3_cache_size: Optional[float] = field(
         metadata={
             'metadata': {
                 'description': 'Size of the L2 cache, in bytes',
