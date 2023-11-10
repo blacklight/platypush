@@ -103,5 +103,9 @@ export default {
       cursor: pointer;
     }
   }
+
+  .slider-container {
+    padding-right: 1em;
+  }
 }
 </style>
