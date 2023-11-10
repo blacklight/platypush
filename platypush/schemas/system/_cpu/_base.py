@@ -16,6 +16,19 @@ class CpuInfoBaseSchema(SystemBaseSchema):
         if data.get('hz_actual'):
             data['frequency_actual'] = data.pop('hz_actual')[0]
 
+        for key, value in data.items():
+            if key.endswith("_cache_size") and isinstance(value, str):
+                value, unit = value.split(" ")
+                value = int(value)
+                if unit == "KiB":
+                    value *= 1024
+                elif unit == "MiB":
+                    value *= 1024 * 1024
+                elif unit == "GiB":
+                    value *= 1024 * 1024 * 1024
+
+                data[key] = value
+
         return data
 
 
