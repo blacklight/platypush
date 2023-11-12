@@ -165,7 +165,12 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
                 raise RuntimeError(f'Device {chromecast} not found')
 
         cast = self.chromecasts[chromecast]
-        cast.wait()
+
+        try:
+            cast.wait()
+        except Exception as e:
+            self.logger.warning('Failed to wait Chromecast sync: %s', e)
+
         return cast
 
     @action
