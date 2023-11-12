@@ -6,7 +6,7 @@
     </button>
 
     <div class="body-container hidden" ref="dropdownContainer">
-      <DropdownBody :id="id" :keepOpenOnItemClick="keepOpenOnItemClick" ref="dropdown">
+      <DropdownBody :id="id" :keepOpenOnItemClick="keepOpenOnItemClick" ref="dropdown" @click="onClick">
         <slot />
       </DropdownBody>
     </div>
@@ -50,22 +50,6 @@ export default {
   },
 
   computed: {
-    dropdownWidth() {
-      const dropdown = this.$refs.dropdown?.$el
-      if (!dropdown)
-        return 0
-
-      return parseFloat(getComputedStyle(dropdown).width)
-    },
-
-    dropdownHeight() {
-      const dropdown = this.$refs.dropdown?.$el
-      if (!dropdown)
-        return 0
-
-      return parseFloat(getComputedStyle(dropdown).height)
-    },
-
     buttonStyle() {
       if (!this.$refs.button)
         return {}
@@ -98,6 +82,27 @@ export default {
       this.close()
     },
 
+    getDropdownWidth() {
+      const dropdown = this.$refs.dropdown?.$el
+      if (!dropdown)
+        return 0
+
+      return parseFloat(getComputedStyle(dropdown).width)
+    },
+
+    getDropdownHeight() {
+      const dropdown = this.$refs.dropdown?.$el
+      if (!dropdown)
+        return 0
+
+      return parseFloat(getComputedStyle(dropdown).height)
+    },
+
+    onClick() {
+      if (!this.keepOpenOnItemClick)
+        this.close()
+    },
+
     close() {
       this.visible = false
       document.removeEventListener('click', this.documentClickHndl)
@@ -106,6 +111,10 @@ export default {
 
     open() {
       document.addEventListener('click', this.documentClickHndl)
+      const element = this.$refs.dropdown?.$el
+      if (!element.parentElement)
+        this.$el.appendChild(element)
+
       this.visible = true
       this.$refs.dropdownContainer.classList.remove('hidden')
       this.$nextTick(() => {
@@ -120,12 +129,15 @@ export default {
           top: buttonPos.top + this.buttonHeight,
         }
 
-        if ((pos.left + this.dropdownWidth) > (window.innerWidth + window.scrollX) / 2) {
-          pos.left -= (this.dropdownWidth - this.buttonWidth)
+        const dropdownWidth = this.getDropdownWidth()
+        const dropdownHeight = this.getDropdownHeight()
+
+        if ((pos.left + dropdownWidth) > (window.innerWidth + window.scrollX) / 2) {
+          pos.left -= (dropdownWidth - this.buttonWidth)
         }
 
-        if ((pos.top + this.dropdownHeight) > (window.innerHeight + window.scrollY) / 2) {
-          pos.top -= (this.dropdownHeight + this.buttonHeight - 10)
+        if ((pos.top + dropdownHeight) > (window.innerHeight + window.scrollY) / 2) {
+          pos.top -= (dropdownHeight + this.buttonHeight - 10)
         }
 
         const element = this.$refs.dropdown.$el

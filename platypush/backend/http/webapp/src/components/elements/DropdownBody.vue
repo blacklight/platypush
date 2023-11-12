@@ -1,5 +1,5 @@
 <template>
-  <div class="dropdown" :id="id">
+  <div class="dropdown" :id="id" @click="$emit('click', $event)">
     <slot />
   </div>
 </template>
