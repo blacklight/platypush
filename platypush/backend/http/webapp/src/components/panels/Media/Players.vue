@@ -1,36 +1,38 @@
 <template>
-  <div class="plugins">
-    <Chromecast :player="selectedPlayer?.pluginName === 'media.chromecast' ? selectedPlayer : null"
-                ref="chromecastPlugin" @status="$emit('status', $event)" />
-    <Kodi :player="selectedPlayer?.pluginName === 'media.kodi' ? selectedPlayer : null" ref="kodiPlugin"
+  <div class="media-players">
+    <div class="plugins">
+      <Chromecast :player="selectedPlayer?.pluginName === 'media.chromecast' ? selectedPlayer : null"
+                  ref="chromecastPlugin" @status="$emit('status', $event)" />
+      <Kodi :player="selectedPlayer?.pluginName === 'media.kodi' ? selectedPlayer : null" ref="kodiPlugin"
+             @status="$emit('status', $event)" />
+      <Mplayer :player="selectedPlayer?.pluginName === 'media.mplayer' ? selectedPlayer : null" ref="mplayerPlugin"
+                @status="$emit('status', $event)" />
+      <Mpv :player="selectedPlayer?.pluginName === 'media.mpv' ? selectedPlayer : null" ref="mpvPlugin"
            @status="$emit('status', $event)" />
-    <Mplayer :player="selectedPlayer?.pluginName === 'media.mplayer' ? selectedPlayer : null" ref="mplayerPlugin"
-              @status="$emit('status', $event)" />
-    <Mpv :player="selectedPlayer?.pluginName === 'media.mpv' ? selectedPlayer : null" ref="mpvPlugin"
-         @status="$emit('status', $event)" />
-    <Omxplayer :player="selectedPlayer?.pluginName === 'media.omxplayer' ? selectedPlayer : null" ref="omxplayerPlugin"
-               @status="$emit('status', $event)" />
-    <Vlc :player="selectedPlayer?.pluginName === 'media.vlc' ? selectedPlayer : null" ref="vlcPlugin"
-         @status="$emit('status', $event)" />
-  </div>
+      <Omxplayer :player="selectedPlayer?.pluginName === 'media.omxplayer' ? selectedPlayer : null" ref="omxplayerPlugin"
+                 @status="$emit('status', $event)" />
+      <Vlc :player="selectedPlayer?.pluginName === 'media.vlc' ? selectedPlayer : null" ref="vlcPlugin"
+           @status="$emit('status', $event)" />
+    </div>
 
-  <div class="players">
-    <Dropdown :title="selectedPlayer?.name || 'Players'"
-              :icon-class="selectedPlayer ? selectedPlayer.iconClass : 'fab fa-chromecast'">
-      <Loading v-if="loading" />
+    <div class="players">
+      <Dropdown :title="selectedPlayer?.name || 'Players'"
+                :icon-class="selectedPlayer ? selectedPlayer.iconClass : 'fab fa-chromecast'">
+        <Loading v-if="loading" />
 
-      <div class="refresh">
-        <DropdownItem text="Refresh" icon-class="fa fa-sync-alt" @click="refresh" />
-      </div>
+        <div class="refresh">
+          <DropdownItem text="Refresh" icon-class="fa fa-sync-alt" @click="refresh" />
+        </div>
 
-      <div class="no-results" v-if="!players?.length">No players found</div>
+        <div class="no-results" v-if="!players?.length">No players found</div>
 
-      <div class="player" v-for="(player, i) in players" :key="i"
-           :class="{selected: selectedPlayer != null && selectedPlayer.pluginName === player.pluginName
-           && selectedPlayer.name === player.name}">
-        <DropdownItem :text="player.name" :icon-class="player.iconClass" @click="select(player)" />
-      </div>
-    </Dropdown>
+        <div class="player" v-for="(player, i) in players" :key="i"
+             :class="{selected: selectedPlayer != null && selectedPlayer.pluginName === player.pluginName
+             && selectedPlayer.name === player.name}">
+          <DropdownItem :text="player.name" :icon-class="player.iconClass" @click="select(player)" />
+        </div>
+      </Dropdown>
+    </div>
   </div>
 </template>
 
@@ -108,35 +110,28 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
-.plugins {
-  display: none;
-}
-
-.no-results {
-  padding: 1em;
-}
-
-.players {
-  :deep(.dropdown) {
-    direction: ltr;
-    .item {
-      padding: .5em;
-    }
-
-    .icon {
-      margin-right: 1em !important;
-    }
+<style lang="scss">
+.media-players {
+  .plugins {
+    display: none;
   }
 
-  :deep(.refresh) {
+  .no-results {
+    padding: 1em;
+  }
+}
+
+.dropdown-container {
+  .refresh {
     font-weight: bold;
     font-size: .8em;
     opacity: .7;
   }
 
-  :deep(.player.selected) {
-    color: $selected-fg;
+  .player.selected {
+    .item {
+      color: $selected-fg;
+    }
   }
 }
 </style>
