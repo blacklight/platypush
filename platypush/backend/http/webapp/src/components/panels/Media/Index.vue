@@ -48,9 +48,7 @@
                            @play="play"
                            v-else-if="selectedView === 'torrents'" />
 
-              <Browser :plugin-name="torrentPlugin"
-                       :is-media="true"
-                       :filter="browserFilter"
+              <Browser :filter="browserFilter"
                        @path-change="browserFilter = ''"
                        @play="play($event)"
                        v-else-if="selectedView === 'browser'" />
@@ -84,7 +82,7 @@ import Loading from "@/components/Loading";
 import Modal from "@/components/Modal";
 import Utils from "@/Utils";
 
-import Browser from "@/components/File/Browser";
+import Browser from "@/components/panels/Media/Browser";
 import Header from "@/components/panels/Media/Header";
 import MediaUtils from "@/components/Media/Utils";
 import MediaView from "@/components/Media/View";
