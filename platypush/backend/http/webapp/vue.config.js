@@ -41,6 +41,7 @@ module.exports = {
       '^/auth': httpProxy,
       '^/camera/': httpProxy,
       '^/sound/': httpProxy,
+      '^/media/': httpProxy,
       '^/logo.svg': httpProxy,
     }
   }
