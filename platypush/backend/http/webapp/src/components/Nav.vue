@@ -143,9 +143,7 @@ export default {
     },
 
     setConnected(connected) {
-      return () => {
-        this.connected = connected
-      }
+      this.connected = connected
     },
   },
 
@@ -161,8 +159,9 @@ export default {
 
   mounted() {
     this.collapsed = this.collapsedDefault
-    bus.on('connect', this.setConnected(true))
-    bus.on('disconnect', this.setConnected(false))
+    bus.on('connect', () => this.setConnected(true))
+    bus.on('disconnect', () => this.setConnected(false))
+    this.$watch(() => this.$root.connected, (value) => this.setConnected(value))
     this.setConnected(this.$root.connected)
   },
 }
