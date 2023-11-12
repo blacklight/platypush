@@ -18,13 +18,15 @@ export default {
 
   methods: {
     async getPlayers() {
-      const devices = await this.request(`${this.pluginName}.get_chromecasts`)
+      const devices = Object.values(
+        await this.request(`${this.pluginName}.status`)
+      )
+
       return Promise.all(devices.map(async (device) => {
         return {
           ...device,
           iconClass: device.type === 'audio' ? 'fa fa-volume-up' : 'fab fa-chromecast',
           pluginName: this.pluginName,
-          status: this.request(`${this.pluginName}.status`, {chromecast: device.name}),
           component: this,
         }
       }))
@@ -41,7 +43,9 @@ export default {
     },
 
     async status(player) {
-      return await this.request(`${this.pluginName}.status`, {chromecast: this.getPlayerName(player)})
+      return (
+        await this.request(`${this.pluginName}.status`, {chromecast: this.getPlayerName(player)})
+      )?.status
     },
 
     async play(resource, player) {
@@ -76,9 +80,8 @@ export default {
       return true
     },
 
-    supports(resource) {
-      return resource?.type === 'youtube' ||
-          (resource.url || resource).startsWith('http://') || (resource.url || resource).startsWith('https://')
+    supports() {
+      return true
     },
   },
 }

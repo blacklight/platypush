@@ -326,11 +326,11 @@ class MediaPlugin(Plugin, ABC):
         """
 
         if resource.startswith('file://'):
-            resource = resource[len('file://') :]
-            assert os.path.isfile(resource), f'File {resource} not found'
+            path = resource[len('file://') :]
+            assert os.path.isfile(path), f'File {path} not found'
             self._latest_resource = MediaResource(
                 resource=resource,
-                url=f'file://{resource}',
+                url=resource,
                 title=os.path.basename(resource),
                 filename=os.path.basename(resource),
             )
@@ -635,7 +635,11 @@ class MediaPlugin(Plugin, ABC):
             }
 
         """
+        return self._start_streaming(media, subtitles=subtitles, download=download)
 
+    def _start_streaming(
+        self, media: str, subtitles: Optional[str] = None, download: bool = False
+    ):
         http = get_backend('http')
         assert http, f'Unable to stream {media}: HTTP backend not configured'
 
@@ -715,6 +719,7 @@ class MediaPlugin(Plugin, ABC):
 
     @action
     def get_youtube_info(self, url):
+        # Legacy conversion for Mopidy YouTube URIs
         m = re.match('youtube:video:(.*)', url)
         if m:
             url = f'https://www.youtube.com/watch?v={m.group(1)}'
@@ -759,7 +764,7 @@ class MediaPlugin(Plugin, ABC):
                             .pop()
                             .strip(),
                         )
-                        .group(1)
+                        .group(1)  # type: ignore
                         .split(':')[::-1]
                     )
                 ],
@@ -797,7 +802,7 @@ class MediaPlugin(Plugin, ABC):
         return self._is_local
 
     @staticmethod
-    def get_subtitles_file(subtitles):
+    def get_subtitles_file(subtitles: Optional[str] = None):
         if not subtitles:
             return None
 

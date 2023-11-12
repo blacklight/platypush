@@ -82,6 +82,7 @@ mock_imports = [
     "pvporcupine ",
     "pyHS100",
     "pyaudio",
+    "pychromecast",
     "pyclip",
     "pydbus",
     "pyfirmata2",
