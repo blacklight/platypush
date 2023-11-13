@@ -1,12 +1,12 @@
 <template>
-  <div class="media-results">
+  <div class="media-results" @scroll="onScroll">
     <Loading v-if="loading" />
     <NoItems v-else-if="!results?.length" :with-shadow="false">
       No search results
     </NoItems>
 
-    <div class="grid" v-else>
-      <Item v-for="(item, i) in results"
+    <div class="grid" ref="grid" v-else>
+      <Item v-for="(item, i) in visibleResults"
             :key="i"
             :item="item"
             :selected="selectedResult === i"
@@ -53,6 +53,37 @@ export default {
     sources: {
       type: Object,
       default: () => {},
+    },
+
+    resultIndexStep: {
+      type: Number,
+      default: 25,
+    },
+  },
+
+  data() {
+    return {
+      maxResultIndex: this.resultIndexStep,
+    }
+  },
+
+  computed: {
+    visibleResults() {
+      return this.results.slice(0, this.maxResultIndex)
+    },
+  },
+
+  methods: {
+    onScroll(e) {
+      const el = e.target
+      if (!el)
+        return
+
+      const bottom = (el.scrollHeight - el.scrollTop) <= el.clientHeight + 150
+      if (!bottom)
+        return
+
+      this.maxResultIndex += this.resultIndexStep
     },
   },
 
