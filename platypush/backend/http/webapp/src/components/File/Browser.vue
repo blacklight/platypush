@@ -1,5 +1,5 @@
 <template>
-  <div class="browser-container">
+  <div class="browser">
     <Loading v-if="loading" />
 
     <div class="nav" ref="nav">
@@ -140,9 +140,7 @@ export default {
 <style lang="scss" scoped>
 @import "src/style/items";
 
-$nav-height: 2.5em;
-
-.browser-container {
+.browser {
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -151,33 +149,6 @@ $nav-height: 2.5em;
     .actions {
       display: inline-flex;
       justify-content: right;
-    }
-  }
-
-  .nav {
-    width: 100%;
-    height: $nav-height;
-    padding: 0.5em 1em;
-    background: $tab-bg;
-    box-shadow: $border-shadow-bottom;
-    white-space: nowrap;
-    overflow: hidden;
-
-    .path {
-      cursor: pointer;
-
-      .token {
-        &:hover {
-          color: $default-hover-fg;
-          text-decoration: underline;
-        }
-      }
-
-      .separator {
-        font-size: 1em;
-        width: 1.2em;
-        padding: 0 1em;
-      }
     }
   }
 

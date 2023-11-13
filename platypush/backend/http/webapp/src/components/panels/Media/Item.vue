@@ -26,6 +26,10 @@
           <span class="channel-name" v-text="item.channel" />
         </a>
       </div>
+
+      <div class="row creation-date" v-if="item.created_at">
+        {{ formatDateTime(item.created_at, true) }}
+      </div>
     </div>
   </div>
 </template>
@@ -35,9 +39,11 @@ import Dropdown from "@/components/elements/Dropdown";
 import DropdownItem from "@/components/elements/DropdownItem";
 import Icons from "./icons.json";
 import MediaImage from "./MediaImage";
+import Utils from "@/Utils";
 
 export default {
   components: {Dropdown, DropdownItem, MediaImage},
+  mixins: [Utils],
   emits: ['play', 'select', 'view', 'download'],
   props: {
     item: {
@@ -188,6 +194,12 @@ export default {
     height: 2em;
     border-radius: 50%;
     margin-right: .5em;
+  }
+
+  .creation-date {
+    font-size: .85em;
+    color: $default-fg-2;
+    flex: 1;
   }
 }
 </style>

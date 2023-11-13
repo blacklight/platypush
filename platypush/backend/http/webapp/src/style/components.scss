@@ -71,3 +71,35 @@ body {
   scrollbar-color: $scrollbar-thumb-bg $scrollbar-track-bg;
 }
 
+// Browser navigator layout
+$nav-height: 2.5em;
+
+.browser {
+  :deep(.nav) {
+    width: 100%;
+    height: $nav-height;
+    padding: 0.5em 1em;
+    background: $tab-bg;
+    box-shadow: $border-shadow-bottom;
+    white-space: nowrap;
+    overflow: hidden;
+
+    .path {
+      cursor: pointer;
+
+      .token {
+        &:hover {
+          color: $default-hover-fg;
+          text-decoration: underline;
+        }
+      }
+
+      .separator {
+        font-size: 1em;
+        width: 1.2em;
+        padding: 0 1em;
+      }
+    }
+  }
+}
+

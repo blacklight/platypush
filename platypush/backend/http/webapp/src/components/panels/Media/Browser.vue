@@ -3,36 +3,45 @@
     <div class="media-browser">
       <Loading v-if="loading" />
 
-      <div class="media-index grid" v-else-if="!collection">
-        <div class="item" @click="collection = 'files'">
+      <div class="media-index grid" v-else-if="!mediaProvider">
+        <div class="item"
+             v-for="(provider, name) in mediaProviders"
+             :key="name"
+             @click="mediaProvider = provider">
           <div class="icon">
-            <i class="fas fa-folder"></i>
+            <i v-bind="providersMetadata[name].icon"
+               :style="{ color: providersMetadata[name].icon?.color || 'inherit' }"
+               v-if="providersMetadata[name].icon" />
           </div>
           <div class="name">
-            Files
+            {{ providersMetadata[name].name }}
           </div>
         </div>
       </div>
 
-      <div class="media-browser fade-in" v-else>
-        <Browser :is-media="true"
-           :filter="filter"
-           :has-back="true"
-           @back="collection = null"
-           @path-change="$emit('path-change', $event)"
-           @play="$emit('play', $event)"
-           v-if="collection === 'files'" />
+      <div class="media-browser-body" v-else-if="mediaProvider">
+        <component
+            :is="mediaProvider"
+            :filter="filter"
+            ref="mediaProvider"
+            @back="mediaProvider = null"
+            @path-change="$emit('path-change', $event)"
+            @play="$emit('play', $event)" />
       </div>
     </div>
   </keep-alive>
 </template>
 
 <script>
+import { defineAsyncComponent, shallowRef } from "vue";
 import Browser from "@/components/File/Browser";
 import Loading from "@/components/Loading";
+import Utils from "@/Utils";
+import providersMetadata from "./Providers/meta.json";
 
 export default {
   emits: ['path-change', 'play'],
+  mixins: [Utils],
   components: {
     Browser,
     Loading,
@@ -48,39 +57,46 @@ export default {
   data() {
     return {
       loading: false,
-      collection: null,
+      mediaProvider: null,
+      mediaProviders: {},
+      providersMetadata: providersMetadata,
     }
+  },
+
+  methods: {
+    getMediaProviderComponent(type) {
+      return shallowRef(
+        defineAsyncComponent(
+          () => import(`@/components/panels/Media/Providers/${type}`)
+        )
+      )
+    },
+
+    async refreshMediaProviders() {
+      const config = await this.request('config.get')
+      this.mediaProviders = {}
+      // The local File provider is always enabled
+      this.mediaProviders['File'] = this.getMediaProviderComponent('File')
+
+      if (config.youtube)
+        this.mediaProviders['YouTube'] = this.getMediaProviderComponent('YouTube')
+    },
+  },
+
+  mounted() {
+    this.refreshMediaProviders()
   },
 }
 </script>
 
 <style lang="scss" scoped>
+@import "./style.scss";
+
 .media-browser {
   height: 100%;
 
-  .item {
-    height: 100px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border: $default-border-2;
-    cursor: pointer;
-
-    &:hover {
-      background: $hover-bg;
-    }
-
-    .icon {
-      height: 60%;
-      display: inline-flex;
-      justify-content: center;
-      opacity: 0.5;
-
-      i {
-        font-size: 40px;
-      }
-    }
+  .media-browser-body {
+    height: 100%;
   }
 }
 </style>
