@@ -43,6 +43,7 @@
 
     <div class="track-container col-s-9 col-m-9 col-l-3">
       <div class="track-info" v-if="track && status?.state !== 'stop'">
+        <img class="image from desktop" :src="track.image" :alt="track.title" v-if="track.image">
         <div class="title" v-if="status.state === 'play' || status.state === 'pause'">
           <a :href="$route.fullPath" v-text="track.title?.length ? track.title : '[No Title]'"
              @click.prevent="$emit('search', {artist: track.artist, album: track.album})" v-if="track.album"></a>
@@ -268,8 +269,7 @@ button {
 
   .track-container {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    align-items: center;
     margin-left: 0;
 
     @include until($tablet) {
@@ -300,6 +300,29 @@ button {
       font-size: 1em;
       letter-spacing: .05em;
       margin-bottom: .25em;
+    }
+
+    .image {
+      width: 5em;
+      max-height: 100%;
+      display: inline-flex;
+    }
+  }
+
+  .track-info {
+    display: flex;
+
+    @include until($desktop) {
+      flex-direction: column;
+    }
+
+    @include from($desktop) {
+      flex-direction: row;
+      align-items: center;
+
+      .image {
+        margin-right: 0.75em;
+      }
     }
   }
 
