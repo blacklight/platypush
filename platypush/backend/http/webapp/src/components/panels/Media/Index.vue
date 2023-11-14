@@ -37,6 +37,7 @@
                        :selected-result="selectedResult"
                        :sources="sources"
                        :loading="loading"
+                       :filter="browserFilter"
                        @select="onResultSelect($event)"
                        @play="play"
                        @view="view"

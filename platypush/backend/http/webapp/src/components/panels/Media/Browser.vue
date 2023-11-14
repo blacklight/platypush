@@ -23,7 +23,6 @@
         <component
             :is="mediaProvider"
             :filter="filter"
-            ref="mediaProvider"
             @back="mediaProvider = null"
             @path-change="$emit('path-change', $event)"
             @play="$emit('play', $event)" />
@@ -64,22 +63,25 @@ export default {
   },
 
   methods: {
-    getMediaProviderComponent(type) {
-      return shallowRef(
+    registerMediaProvider(type) {
+      const component = shallowRef(
         defineAsyncComponent(
           () => import(`@/components/panels/Media/Providers/${type}`)
         )
       )
+
+      this.$options.components[type] = component
+      this.mediaProviders[type] = component
     },
 
     async refreshMediaProviders() {
       const config = await this.request('config.get')
       this.mediaProviders = {}
       // The local File provider is always enabled
-      this.mediaProviders['File'] = this.getMediaProviderComponent('File')
+      this.registerMediaProvider('File')
 
       if (config.youtube)
-        this.mediaProviders['YouTube'] = this.getMediaProviderComponent('YouTube')
+        this.registerMediaProvider('YouTube')
     },
   },
 

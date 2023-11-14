@@ -7,8 +7,10 @@
       <NoToken v-if="!authToken" />
 
       <div class="body" v-else>
-        <Feed @play="$emit('play', $event)" v-if="selectedView === 'feed'" />
-        <Playlists :selected-playlist="selectedPlaylist"
+        <Feed :filter="filter"
+              @play="$emit('play', $event)" v-if="selectedView === 'feed'" />
+        <Playlists :filter="filter"
+                   :selected-playlist="selectedPlaylist"
                    @play="$emit('play', $event)"
                    @select="onPlaylistSelected"
                    v-else-if="selectedView === 'playlists'" />

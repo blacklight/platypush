@@ -6,6 +6,7 @@
     </NoItems>
 
     <Results :results="feed"
+             :filter="filter"
              :sources="{'youtube': true}"
              :selected-result="selectedResult"
              @select="selectedResult = $event"
@@ -27,6 +28,13 @@ export default {
     Loading,
     NoItems,
     Results,
+  },
+
+  props: {
+    filter: {
+      type: String,
+      default: null,
+    },
   },
 
   data() {

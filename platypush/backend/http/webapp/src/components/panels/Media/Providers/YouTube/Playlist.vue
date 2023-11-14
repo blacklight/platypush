@@ -7,6 +7,7 @@
 
     <Results :results="items"
              :sources="{'youtube': true}"
+             :filter="filter"
              :selected-result="selectedResult"
              @select="selectedResult = $event"
              @play="$emit('play', $event)"
@@ -33,6 +34,11 @@ export default {
     id: {
       type: String,
       required: true,
+    },
+
+    filter: {
+      type: String,
+      default: null,
     },
   },
 

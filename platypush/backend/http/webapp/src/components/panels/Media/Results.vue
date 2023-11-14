@@ -55,6 +55,11 @@ export default {
       default: () => {},
     },
 
+    filter: {
+      type: String,
+      default: null,
+    },
+
     resultIndexStep: {
       type: Number,
       default: 25,
@@ -69,7 +74,14 @@ export default {
 
   computed: {
     visibleResults() {
-      return this.results.slice(0, this.maxResultIndex)
+      return this.results
+        .filter((item) => {
+          if (!this.filter)
+            return true
+
+          return item.title.toLowerCase().includes(this.filter.toLowerCase())
+        })
+        .slice(0, this.maxResultIndex)
     },
   },
 

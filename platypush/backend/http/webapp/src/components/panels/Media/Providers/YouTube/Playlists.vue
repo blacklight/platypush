@@ -18,7 +18,7 @@
     </div>
 
     <div class="playlist-body" v-else>
-      <Playlist :id="selectedPlaylist" @play="$emit('play', $event)" />
+      <Playlist :id="selectedPlaylist" :filter="filter" @play="$emit('play', $event)" />
     </div>
   </div>
 </template>
@@ -45,6 +45,11 @@ export default {
       type: String,
       default: null,
     },
+
+    filter: {
+      type: String,
+      default: null,
+    },
   },
 
   data() {
@@ -56,10 +61,12 @@ export default {
 
   computed: {
     playlistsById() {
-      return this.playlists.reduce((acc, playlist) => {
-        acc[playlist.id] = playlist
-        return acc
-      }, {})
+      return this.playlists
+        .filter(playlist => !this.filter || playlist.name.toLowerCase().includes(this.filter.toLowerCase()))
+        .reduce((acc, playlist) => {
+          acc[playlist.id] = playlist
+          return acc
+        }, {})
     },
   },
 
