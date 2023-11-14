@@ -1,9 +1,9 @@
-from typing import Optional
+from typing import List, Optional
 
 import requests
 
 from platypush.plugins import Plugin, action
-from platypush.schemas.piped import PipedVideoSchema
+from platypush.schemas.piped import PipedPlaylistSchema, PipedVideoSchema
 
 
 class YoutubePlugin(Plugin):
@@ -16,7 +16,7 @@ class YoutubePlugin(Plugin):
     prevent scraping, and it requires the user to tinker with the OAuth layer,
     app permissions and app validation in order to get it working.
 
-    Instead, it relies on a `Piped <https://docs.piped.video/`_, an open-source
+    Instead, it relies on a `Piped <https://docs.piped.video/>`_, an open-source
     alternative YouTube gateway.
 
     It thus requires a link to a valid Piped instance.
@@ -58,13 +58,15 @@ class YoutubePlugin(Plugin):
         if auth:
             kwargs['params'] = kwargs.get('params', {})
             kwargs['params']['authToken'] = self._auth_token
+            kwargs['headers'] = kwargs.get('headers', {})
+            kwargs['headers']['Authorization'] = self._auth_token
 
         rs = requests.get(self._api_url(path), timeout=timeout, **kwargs)
         rs.raise_for_status()
         return rs.json()
 
     @action
-    def search(self, query: str, **_):
+    def search(self, query: str, **_) -> List[dict]:
         """
         Search for YouTube videos.
 
@@ -83,7 +85,7 @@ class YoutubePlugin(Plugin):
         return results
 
     @action
-    def get_feed(self):
+    def get_feed(self) -> List[dict]:
         """
         Retrieve the YouTube feed.
 
@@ -94,6 +96,33 @@ class YoutubePlugin(Plugin):
         :return: .. schema:: piped.PipedVideoSchema(many=True)
         """
         return PipedVideoSchema(many=True).dump(self._request('feed')) or []
+
+    @action
+    def get_playlists(self) -> List[dict]:
+        """
+        Retrieve the playlists saved by the user logged in to the Piped
+        instance.
+
+        :return: .. schema:: piped.PipedPlaylistSchema(many=True)
+        """
+        return (
+            PipedPlaylistSchema(many=True).dump(self._request('user/playlists')) or []
+        )
+
+    @action
+    def get_playlist(self, id: str) -> List[dict]:  # pylint: disable=redefined-builtin
+        """
+        Retrieve the videos in a playlist.
+
+        :param id: Piped playlist ID.
+        :return: .. schema:: piped.PipedVideoSchema(many=True)
+        """
+        return (
+            PipedVideoSchema(many=True).dump(
+                self._request(f'playlists/{id}').get('relatedStreams', [])
+            )
+            or []
+        )
 
 
 # vim:sw=4:ts=4:et:

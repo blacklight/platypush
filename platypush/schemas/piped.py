@@ -104,3 +104,56 @@ class PipedVideoSchema(Schema):
             data['uploaded'] = datetime.fromtimestamp(data["uploaded"] / 1000)
 
         return data
+
+
+class PipedPlaylistSchema(Schema):
+    """
+    Class for playlist items returned by the Piped API.
+    """
+
+    class Meta:
+        """
+        Exclude unknown fields.
+        """
+
+        unknown = EXCLUDE
+
+    id = fields.UUID(
+        required=True,
+        metadata={
+            'description': 'Playlist ID',
+            'example': '12345678-1234-1234-1234-1234567890ab',
+        },
+    )
+
+    name = StrippedString(
+        missing='[No Name]',
+        metadata={
+            'description': 'Playlist name',
+            'example': 'My Playlist Name',
+        },
+    )
+
+    image = fields.Url(
+        attribute='thumbnail',
+        metadata={
+            'description': 'Image URL',
+            'example': 'https://i.ytimg.com/vi/1234567890/hqdefault.jpg',
+        },
+    )
+
+    description = StrippedString(
+        attribute='shortDescription',
+        metadata={
+            'description': 'Video description',
+            'example': 'My video description',
+        },
+    )
+
+    videos = fields.Int(
+        missing=0,
+        metadata={
+            'description': 'Number of videos in the playlist',
+            'example': 10,
+        },
+    )

@@ -8,6 +8,7 @@
 
       <div class="body" v-else>
         <Feed @play="$emit('play', $event)" v-if="selectedView === 'feed'" />
+        <Playlists @play="$emit('play', $event)" v-if="selectedView === 'playlists'" />
         <Index @select="selectView" v-else />
       </div>
     </div>
@@ -22,6 +23,7 @@ import MediaProvider from "./Mixin";
 import Feed from "./YouTube/Feed";
 import Index from "./YouTube/Index";
 import NoToken from "./YouTube/NoToken";
+import Playlists from "./YouTube/Playlists";
 
 export default {
   mixins: [MediaProvider],
@@ -31,6 +33,7 @@ export default {
     Loading,
     MediaNav,
     NoToken,
+    Playlists,
   },
 
   data() {

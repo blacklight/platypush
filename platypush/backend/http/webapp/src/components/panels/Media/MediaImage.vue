@@ -1,6 +1,7 @@
 <template>
-  <div class="image-container" :class="{ 'with-image': !!item?.image }">
-    <div class="play-overlay" @click="$emit('play', item)">
+  <div class="image-container"
+       :class="{ 'with-image': !!item?.image }">
+    <div class="play-overlay" @click="$emit('play', item)" v-if="hasPlay">
       <i class="fas fa-play" />
     </div>
 
@@ -25,8 +26,11 @@
       </a>
     </span>
 
-    <span class="duration" v-if="item?.duration != null"
+    <span class="bottom-overlay duration" v-if="item?.duration != null"
           v-text="convertTime(item.duration)" />
+    <span class="bottom-overlay videos" v-else-if="item?.videos != null">
+      {{ item.videos }} items
+    </span>
   </div>
 </template>
 
@@ -41,7 +45,12 @@ export default {
     item: {
       type: Object,
       default: () => {},
-    }
+    },
+
+    hasPlay: {
+      type: Boolean,
+      default: true,
+    },
   },
 
   data() {
@@ -94,7 +103,7 @@ export default {
   right: 0;
 }
 
-.duration {
+.bottom-overlay {
   position: absolute;
   bottom: 0;
   right: 0;
