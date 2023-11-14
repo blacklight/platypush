@@ -195,15 +195,28 @@ export default {
     async play(item) {
       if (item?.type === 'torrent') {
         this.awaitingPlayTorrent = item.url
+        this.notify({
+          text: 'Torrent queued for download',
+          image: {
+            iconClass: 'fa fa-magnet',
+          }
+        })
+
         await this.download(item)
         return
       }
 
-      if (!this.selectedPlayer.component.supports(item))
-        item = await this.startStreaming(item, this.pluginName)
+      this.loading = true
 
-      await this.selectedPlayer.component.play(item, this.selectedSubtitles, this.selectedPlayer)
-      await this.refresh()
+      try {
+        if (!this.selectedPlayer.component.supports(item))
+          item = await this.startStreaming(item, this.pluginName)
+
+        await this.selectedPlayer.component.play(item, this.selectedSubtitles, this.selectedPlayer)
+        await this.refresh()
+      } finally {
+        this.loading = false
+      }
     },
 
     async pause() {
