@@ -8,7 +8,10 @@
 
       <div class="body" v-else>
         <Feed @play="$emit('play', $event)" v-if="selectedView === 'feed'" />
-        <Playlists @play="$emit('play', $event)" v-if="selectedView === 'playlists'" />
+        <Playlists :selected-playlist="selectedPlaylist"
+                   @play="$emit('play', $event)"
+                   @select="onPlaylistSelected"
+                   v-else-if="selectedView === 'playlists'" />
         <Index @select="selectView" v-else />
       </div>
     </div>
@@ -40,6 +43,7 @@ export default {
     return {
       youtubeConfig: null,
       selectedView: null,
+      selectedPlaylist: null,
       path: [],
     }
   },
@@ -75,15 +79,26 @@ export default {
 
     selectView(view) {
       this.selectedView = view
+      if (view === 'playlists')
+        this.selectedPlaylist = null
+
       if (view?.length) {
         this.path = [
           {
             title: view.slice(0, 1).toUpperCase() + view.slice(1),
+            click: () => this.selectView(view),
           },
         ]
       } else {
         this.path = []
       }
+    },
+
+    onPlaylistSelected(playlist) {
+      this.selectedPlaylist = playlist.id
+      this.path.push({
+        title: playlist.name,
+      })
     },
   },
 

@@ -10,7 +10,7 @@
         <div class="playlist item"
              v-for="(playlist, id) in playlistsById"
              :key="id"
-             @click="selectedPlaylist = id">
+             @click="$emit('select', playlist)">
           <MediaImage :item="playlist" :has-play="false" />
           <div class="title">{{ playlist.name }}</div>
         </div>
@@ -31,7 +31,7 @@ import Playlist from "./Playlist";
 import Utils from "@/Utils";
 
 export default {
-  emits: ['play'],
+  emits: ['play', 'select'],
   mixins: [Utils],
   components: {
     Loading,
@@ -40,11 +40,17 @@ export default {
     Playlist,
   },
 
+  props: {
+    selectedPlaylist: {
+      type: String,
+      default: null,
+    },
+  },
+
   data() {
     return {
       playlists: [],
       loading: false,
-      selectedPlaylist: null,
     }
   },
 
@@ -79,11 +85,20 @@ export default {
   height: 100%;
   overflow: auto;
 
-  .item {
+  :deep(.playlist.item) {
     cursor: pointer;
+
+    .title {
+      font-size: 1.1em;
+      margin-top: 0.5em;
+    }
 
     &:hover {
       text-decoration: underline;
+
+      img {
+        filter: contrast(70%);
+      }
     }
   }
 }
