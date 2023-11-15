@@ -63,7 +63,7 @@ nav {
   position: relative;
   box-shadow: 2.5px 0 4.5px 2px $nav-collapsed-fg;
   margin-left: 2.5px;
-  overflow: hidden;
+  overflow: auto;
 
   .menu-button {
     position: absolute;

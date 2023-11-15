@@ -1,16 +1,12 @@
 <template>
   <div class="media-results" @scroll="onScroll">
     <Loading v-if="loading" />
-    <NoItems v-else-if="!results?.length" :with-shadow="false">
-      No search results
-    </NoItems>
-
-    <div class="grid" ref="grid" v-else>
+    <div class="grid" ref="grid" v-if="results?.length">
       <Item v-for="(item, i) in visibleResults"
             :key="i"
             :item="item"
             :selected="selectedResult === i"
-            :hidden="!sources[item.type]"
+            :hidden="!!Object.keys(sources || {}).length && !sources[item.type]"
             @select="$emit('select', i)"
             @play="$emit('play', item)"
             @view="$emit('view', item)"
@@ -30,11 +26,10 @@ import Info from "@/components/panels/Media/Info";
 import Item from "./Item";
 import Loading from "@/components/Loading";
 import Modal from "@/components/Modal";
-import NoItems from "@/components/elements/NoItems";
 
 export default {
-  components: {Info, Item, Loading, Modal, NoItems},
-  emits: ['select', 'play', 'view', 'download'],
+  components: {Info, Item, Loading, Modal},
+  emits: ['select', 'play', 'view', 'download', 'scroll-end'],
   props: {
     loading: {
       type: Boolean,
@@ -95,6 +90,7 @@ export default {
       if (!bottom)
         return
 
+      this.$emit('scroll-end')
       this.maxResultIndex += this.resultIndexStep
     },
   },

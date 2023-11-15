@@ -14,6 +14,11 @@
                    @play="$emit('play', $event)"
                    @select="onPlaylistSelected"
                    v-else-if="selectedView === 'playlists'" />
+        <Subscriptions :filter="filter"
+                       :selected-channel="selectedChannel"
+                       @play="$emit('play', $event)"
+                       @select="onChannelSelected"
+                       v-else-if="selectedView === 'subscriptions'" />
         <Index @select="selectView" v-else />
       </div>
     </div>
@@ -29,6 +34,7 @@ import Feed from "./YouTube/Feed";
 import Index from "./YouTube/Index";
 import NoToken from "./YouTube/NoToken";
 import Playlists from "./YouTube/Playlists";
+import Subscriptions from "./YouTube/Subscriptions";
 
 export default {
   mixins: [MediaProvider],
@@ -39,6 +45,7 @@ export default {
     MediaNav,
     NoToken,
     Playlists,
+    Subscriptions,
   },
 
   data() {
@@ -46,6 +53,7 @@ export default {
       youtubeConfig: null,
       selectedView: null,
       selectedPlaylist: null,
+      selectedChannel: null,
       path: [],
     }
   },
@@ -83,6 +91,8 @@ export default {
       this.selectedView = view
       if (view === 'playlists')
         this.selectedPlaylist = null
+      else if (view === 'subscriptions')
+        this.selectedChannel = null
 
       if (view?.length) {
         this.path = [
@@ -100,6 +110,13 @@ export default {
       this.selectedPlaylist = playlist.id
       this.path.push({
         title: playlist.name,
+      })
+    },
+
+    onChannelSelected(channel) {
+      this.selectedChannel = channel.id
+      this.path.push({
+        title: channel.name,
       })
     },
   },

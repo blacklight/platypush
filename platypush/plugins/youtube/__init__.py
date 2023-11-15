@@ -1,9 +1,15 @@
+import base64
+from functools import lru_cache
 from typing import List, Optional
 
 import requests
 
 from platypush.plugins import Plugin, action
-from platypush.schemas.piped import PipedPlaylistSchema, PipedVideoSchema
+from platypush.schemas.piped import (
+    PipedChannelSchema,
+    PipedPlaylistSchema,
+    PipedVideoSchema,
+)
 
 
 class YoutubePlugin(Plugin):
@@ -53,7 +59,9 @@ class YoutubePlugin(Plugin):
     def _api_url(self, path: str = '') -> str:
         return f"{self._piped_api_url}/{path}"
 
-    def _request(self, path: str, auth: bool = True, **kwargs):
+    def _request(
+        self, path: str, body: Optional[str] = None, auth: bool = True, **kwargs
+    ):
         timeout = kwargs.pop('timeout', self._timeout)
         if auth:
             kwargs['params'] = kwargs.get('params', {})
@@ -61,9 +69,25 @@ class YoutubePlugin(Plugin):
             kwargs['headers'] = kwargs.get('headers', {})
             kwargs['headers']['Authorization'] = self._auth_token
 
+        if body:
+            kwargs['data'] = body
+
         rs = requests.get(self._api_url(path), timeout=timeout, **kwargs)
         rs.raise_for_status()
         return rs.json()
+
+    @lru_cache(maxsize=10)  # noqa
+    def _get_channel(self, id: str) -> dict:  # pylint: disable=redefined-builtin
+        if (
+            id.startswith('http')
+            or id.startswith('https')
+            or id.startswith('/channel/')
+        ):
+            id = id.split('/')[-1]
+
+        return (
+            PipedChannelSchema().dump(self._request(f'channel/{id}')) or {}  # type: ignore
+        )
 
     @action
     def search(self, query: str, **_) -> List[dict]:
@@ -123,6 +147,54 @@ class YoutubePlugin(Plugin):
             )
             or []
         )
+
+    @action
+    def get_subscriptions(self) -> List[dict]:
+        """
+        Retrieve the channels subscribed by the user logged in to the Piped
+        instance.
+
+        :return: .. schema:: piped.PipedChannelSchema(many=True)
+        """
+        return PipedChannelSchema(many=True).dump(self._request('subscriptions')) or []
+
+    @action
+    def get_channel(
+        self,
+        id: str,  # pylint: disable=redefined-builtin
+        next_page_token: Optional[str] = None,
+    ) -> dict:
+        """
+        Retrieve the information and videos of a channel given its ID or URL.
+
+        :param id: Channel ID or URL.
+        :param next_page_token: Optional token to retrieve the next page of
+            results.
+        :return: .. schema:: piped.PipedChannelSchema
+        """
+        if (
+            id.startswith('http')
+            or id.startswith('https')
+            or id.startswith('/channel/')
+        ):
+            id = id.split('/')[-1]
+
+        info = {}
+        if next_page_token:
+            info = self._get_channel(id).copy()
+            info.pop('next_page_token', None)
+            info['items'] = []
+            next_page = base64.b64decode(next_page_token.encode()).decode()
+            response = {
+                **info,
+                **self._request(
+                    f'nextpage/channel/{id}', params={'nextpage': next_page}, auth=False
+                ),
+            }
+        else:
+            response = self._request(f'channel/{id}')
+
+        return PipedChannelSchema().dump(response) or {}  # type: ignore
 
 
 # vim:sw=4:ts=4:et:
