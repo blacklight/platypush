@@ -287,6 +287,9 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
     @action
     def stop(self, *_, chromecast: Optional[str] = None, **__):
         chromecast = chromecast or self.chromecast
+        if not chromecast:
+            return
+
         cast = self.get_chromecast(chromecast)
         cast.media_controller.stop()
         cast.wait()

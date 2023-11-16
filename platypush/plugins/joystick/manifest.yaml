@@ -1,8 +1,6 @@
 manifest:
   events:
     platypush.message.event.joystick.JoystickEvent: when a new joystick event is received
-  install:
-    pip:
-    - inputs
+  install: {}
   package: platypush.backend.joystick
   type: backend
