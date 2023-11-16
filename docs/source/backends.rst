@@ -18,9 +18,6 @@ Backends
     platypush/backend/google.pubsub.rst
     platypush/backend/gps.rst
     platypush/backend/http.rst
-    platypush/backend/joystick.rst
-    platypush/backend/joystick.jstest.rst
-    platypush/backend/joystick.linux.rst
     platypush/backend/kafka.rst
     platypush/backend/log.http.rst
     platypush/backend/mail.rst
