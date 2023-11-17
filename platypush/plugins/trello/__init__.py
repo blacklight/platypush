@@ -1,20 +1,30 @@
 import datetime
-
+import json
+from threading import Event
 from typing import Optional, Dict, List, Union
 
-# noinspection PyPackageRequirements
 import trello
+from trello.board import Board, List as List_  # type: ignore
+from trello.exceptions import ResourceUnavailable  # type: ignore
+from websocket import WebSocketApp
 
-# noinspection PyPackageRequirements
-from trello.board import Board, List as List_
+from platypush.context import get_bus
+from platypush.message.event.trello import (
+    MoveCardEvent,
+    NewCardEvent,
+    ArchivedCardEvent,
+    UnarchivedCardEvent,
+)
+from platypush.plugins import RunnablePlugin, action
+from platypush.schemas.trello import (
+    TrelloBoardSchema,
+    TrelloCardSchema,
+    TrelloListSchema,
+    TrelloMemberSchema,
+)
 
-# noinspection PyPackageRequirements
-from trello.exceptions import ResourceUnavailable
-
-from platypush.message.response.trello import (
+from ._model import (
     TrelloBoard,
-    TrelloBoardsResponse,
-    TrelloCardsResponse,
     TrelloCard,
     TrelloAttachment,
     TrelloPreview,
@@ -24,50 +34,84 @@ from platypush.message.response.trello import (
     TrelloComment,
     TrelloLabel,
     TrelloList,
-    TrelloBoardResponse,
-    TrelloListsResponse,
-    TrelloMembersResponse,
     TrelloMember,
-    TrelloCardResponse,
 )
 
-from platypush.plugins import Plugin, action
 
-
-class TrelloPlugin(Plugin):
+class TrelloPlugin(RunnablePlugin):
     """
     Trello integration.
 
     You'll need a Trello API key. You can get it `here <https://trello.com/app-key>`.
-    You'll also need an auth token if you want to view/change private resources. You can generate a permanent token
-    linked to your account on
-    https://trello.com/1/connect?key=<KEY>&name=platypush&response_type=token&expiration=never&scope=read,write
+
+    You'll also need an auth token if you want to view/change private
+    resources. You can generate a permanent token linked to your account on
+    ``https://trello.com/1/connect?key=<KEY>&name=platypush&response_type=token&expiration=never&scope=read,write``.
+
+    Also, polling of events requires you to follow a separate procedure to
+    retrieve the Websocket tokens, since Trello uses a different (and
+    undocumented) authorization mechanism:
+
+        1. Open https://trello.com in your browser.
+        2. Open the developer tools (F12), go to the Network tab, select
+           'Websocket' or 'WS' in the filter bar and refresh the page.
+        3. You should see an entry in the format
+           ``wss://trello.com/1/Session/socket?clientVersion=...&x-b3-traceid=...&x-b3-spanid=...``.
+        4. Copy the ``x-b3-traceid`` and ``x-b3-spanid`` values into the
+           configuration of this plugin.
+        5. Go to the Cookies tab
+        6. Copy the value of the ``cloud.session.token`` cookie.
+
     """
+
+    _websocket_url_base = 'wss://trello.com/1/Session/socket?clientVersion=build-194674'
 
     def __init__(
         self,
         api_key: str,
         api_secret: Optional[str] = None,
         token: Optional[str] = None,
-        **kwargs
+        cloud_session_token: Optional[str] = None,
+        boards: Optional[List[str]] = None,
+        **kwargs,
     ):
         """
         :param api_key: Trello API key. You can get it `here <https://trello.com/app-key>`.
         :param api_secret: Trello API secret. You can get it `here <https://trello.com/app-key>`.
         :param token: Trello token. It is required if you want to access or modify private resources. You can get
             a permanent token on
-            https://trello.com/1/connect?key=<KEY>&name=platypush&response_type=token&expiration=never&scope=read,write
+            ``https://trello.com/1/connect?key=<KEY>&name=platypush&response_type=token&expiration=never&scope=read,write``.
+        :param cloud_session_token: Cloud session token. It is required
+            if you want to monitor your boards for changes. See
+            :class:`platypush.plugins.trello.TrelloPlugin` for the procedure to
+            retrieve it.
+        :param boards: List of boards to subscribe, by ID or name. If
+            specified, then the plugin will listen for changes only on these boards.
         """
 
         super().__init__(**kwargs)
         self.api_key = api_key
         self.api_secret = api_secret
         self.token = token
+        self.cloud_session_token = cloud_session_token
         self._client = None
+        self._req_id = 0
+        self._boards_by_id = {}
+        self._boards_by_name = {}
+        self._monitored_boards = boards
+        self.url = None
 
-    def _get_client(self) -> trello.TrelloClient:
+        if token:
+            self.url = self._websocket_url_base
+
+        self._connected = Event()
+        self._items = {}
+        self._event_handled = False
+        self._ws: Optional[WebSocketApp] = None
+
+    def _get_client(self) -> trello.TrelloClient:  # type: ignore
         if not self._client:
-            self._client = trello.TrelloClient(
+            self._client = trello.TrelloClient(  # type: ignore
                 api_key=self.api_key,
                 api_secret=self.api_secret,
                 token=self.token,
@@ -81,21 +125,25 @@ class TrelloPlugin(Plugin):
             return client.get_board(board)
         except ResourceUnavailable:
             boards = [b for b in client.list_boards() if b.name == board]
-            assert boards, 'No such board: {}'.format(board)
+            assert boards, f'No such board: {board}'
             return boards[0]
 
-    # noinspection PyShadowingBuiltins
+    def _get_boards(
+        self, all: bool = False  # pylint: disable=redefined-builtin
+    ) -> List[Board]:
+        client = self._get_client()
+        return client.list_boards(board_filter='all' if all else 'open')
+
     @action
-    def get_boards(self, all: bool = False) -> TrelloBoardsResponse:
+    def get_boards(self, all: bool = False):  # pylint: disable=redefined-builtin
         """
         Get the list of boards.
 
-        :param all: If True, return all the boards included those that have been closed/archived/deleted. Otherwise,
-            only return open/active boards (default: False).
+        :param all: If True, return all the boards included those that have
+            been closed/archived/deleted. Otherwise, only return open/active
+            boards (default: False).
         """
-        client = self._get_client()
-
-        return TrelloBoardsResponse(
+        return TrelloBoardSchema().dump(
             [
                 TrelloBoard(
                     id=b.id,
@@ -105,27 +153,28 @@ class TrelloPlugin(Plugin):
                     date_last_activity=b.date_last_activity,
                     closed=b.closed,
                 )
-                for b in client.list_boards(board_filter='all' if all else 'open')
-            ]
+                for b in self._get_boards(all=all)
+            ],
+            many=True,
         )
 
     @action
-    def get_board(self, board: str) -> TrelloBoardResponse:
+    def get_board(self, board: str):
         """
         Get the info about a board.
 
         :param board: Board ID or name
         """
 
-        board = self._get_board(board)
-        return TrelloBoardResponse(
+        b = self._get_board(board)
+        return TrelloBoardSchema().dump(
             TrelloBoard(
-                id=board.id,
-                name=board.name,
-                url=board.url,
-                closed=board.closed,
-                description=board.description,
-                date_last_activity=board.date_last_activity,
+                id=b.id,
+                name=b.name,
+                url=b.url,
+                closed=b.closed,
+                description=b.description,
+                date_last_activity=b.date_last_activity,
                 lists=[
                     TrelloList(
                         id=ll.id,
@@ -133,7 +182,7 @@ class TrelloPlugin(Plugin):
                         closed=ll.closed,
                         subscribed=ll.subscribed,
                     )
-                    for ll in board.list_lists()
+                    for ll in b.list_lists()
                 ],
             )
         )
@@ -145,8 +194,7 @@ class TrelloPlugin(Plugin):
 
         :param board: Board ID or name
         """
-        board = self._get_board(board)
-        board.open()
+        self._get_board(board).open()
 
     @action
     def close_board(self, board: str):
@@ -155,8 +203,7 @@ class TrelloPlugin(Plugin):
 
         :param board: Board ID or name
         """
-        board = self._get_board(board)
-        board.close()
+        self._get_board(board).close()
 
     @action
     def set_board_name(self, board: str, name: str):
@@ -166,8 +213,7 @@ class TrelloPlugin(Plugin):
         :param board: Board ID or name.
         :param name: New name.
         """
-        board = self._get_board(board)
-        board.set_name(name)
+        self._get_board(board).set_name(name)
         return self.get_board(name)
 
     @action
@@ -178,8 +224,7 @@ class TrelloPlugin(Plugin):
         :param board: Board ID or name.
         :param description: New description.
         """
-        board = self._get_board(board)
-        board.set_description(description)
+        self._get_board(board).set_description(description)
         return self.get_board(description)
 
     @action
@@ -191,8 +236,7 @@ class TrelloPlugin(Plugin):
         :param name: Label name
         :param color: Optional HTML color
         """
-        board = self._get_board(board)
-        board.add_label(name=name, color=color)
+        self._get_board(board).add_label(name=name, color=color)
 
     @action
     def delete_label(self, board: str, label: str):
@@ -203,16 +247,15 @@ class TrelloPlugin(Plugin):
         :param label: Label ID or name
         """
 
-        board = self._get_board(board)
+        b = self._get_board(board)
 
         try:
-            board.delete_label(label)
+            b.delete_label(label)
         except ResourceUnavailable:
-            labels = [ll for ll in board.get_labels() if ll.name == label]
-
-            assert labels, 'No such label: {}'.format(label)
-            label = labels[0].id
-            board.delete_label(label)
+            label_ = next(iter(ll for ll in b.get_labels() if ll.name == label), None)
+            assert label_, f'No such label: {label}'
+            label = label_.id
+            b.delete_label(label)
 
     @action
     def add_member(self, board: str, member_id: str, member_type: str = 'normal'):
@@ -223,8 +266,7 @@ class TrelloPlugin(Plugin):
         :param member_id: Member ID to add.
         :param member_type: Member type - can be 'normal' or 'admin' (default: 'normal').
         """
-        board = self._get_board(board)
-        board.add_member(member_id, member_type=member_type)
+        self._get_board(board).add_member(member_id, member_type=member_type)
 
     @action
     def remove_member(self, board: str, member_id: str):
@@ -234,20 +276,17 @@ class TrelloPlugin(Plugin):
         :param board: Board ID or name.
         :param member_id: Member ID to remove.
         """
-        board = self._get_board(board)
-        board.remove_member(member_id)
+        self._get_board(board).remove_member(member_id)
 
-    def _get_members(
-        self, board: str, only_admin: bool = False
-    ) -> TrelloMembersResponse:
-        board = self._get_board(board)
-        members = board.admin_members() if only_admin else board.get_members()
+    def _get_members(self, board: str, only_admin: bool = False):
+        b = self._get_board(board)
+        members = b.admin_members() if only_admin else b.get_members()
 
-        return TrelloMembersResponse(
+        return TrelloMemberSchema().dump(
             [
                 TrelloMember(
                     id=m.id,
-                    full_name=m.full_name,
+                    fullname=m.full_name,
                     bio=m.bio,
                     url=m.url,
                     username=m.username,
@@ -255,11 +294,12 @@ class TrelloPlugin(Plugin):
                     member_type=getattr(m, 'member_type', None),
                 )
                 for m in members
-            ]
+            ],
+            many=True,
         )
 
     @action
-    def get_members(self, board: str) -> TrelloMembersResponse:
+    def get_members(self, board: str):
         """
         Get the list of all the members of a board.
         :param board: Board ID or name.
@@ -267,16 +307,17 @@ class TrelloPlugin(Plugin):
         return self._get_members(board, only_admin=False)
 
     @action
-    def get_admin_members(self, board: str) -> TrelloMembersResponse:
+    def get_admin_members(self, board: str):
         """
         Get the list of the admin members of a board.
         :param board: Board ID or name.
         """
         return self._get_members(board, only_admin=True)
 
-    # noinspection PyShadowingBuiltins
     @action
-    def get_lists(self, board: str, all: bool = False) -> TrelloListsResponse:
+    def get_lists(
+        self, board: str, all: bool = False  # pylint: disable=redefined-builtin
+    ):
         """
         Get the list of lists on a board.
 
@@ -284,15 +325,14 @@ class TrelloPlugin(Plugin):
         :param all: If True, return all the lists, included those that have been closed/archived/deleted. Otherwise,
             only return open/active lists (default: False).
         """
-
-        board = self._get_board(board)
-        return TrelloListsResponse(
+        return TrelloListSchema().dump(
             [
                 TrelloList(
                     id=ll.id, name=ll.name, closed=ll.closed, subscribed=ll.subscribed
                 )
-                for ll in board.list_lists('all' if all else 'open')
-            ]
+                for ll in self._get_board(board).list_lists('all' if all else 'open')
+            ],
+            many=True,
         )
 
     @action
@@ -304,24 +344,24 @@ class TrelloPlugin(Plugin):
         :param name: List name
         :param pos: Optional position (default: last)
         """
+        self._get_board(board).add_list(name=name, pos=pos)
 
-        board = self._get_board(board)
-        board.add_list(name=name, pos=pos)
-
-    # noinspection PyShadowingBuiltins
-    def _get_list(self, board: str, list: str) -> List_:
-        board = self._get_board(board)
+    def _get_list(
+        self, board: str, list: str  # pylint: disable=redefined-builtin
+    ) -> List_:
+        b = self._get_board(board)
 
         try:
-            return board.get_list(list)
+            return b.get_list(list)
         except ResourceUnavailable:
-            lists = [ll for ll in board.list_lists() if ll.name == list]
-            assert lists, 'No such list: {}'.format(list)
+            lists = [ll for ll in b.list_lists() if ll.name == list]
+            assert lists, f'No such list: {list}'
             return lists[0]
 
-    # noinspection PyShadowingBuiltins
     @action
-    def set_list_name(self, board: str, list: str, name: str):
+    def set_list_name(
+        self, board: str, list: str, name: str  # pylint: disable=redefined-builtin
+    ):
         """
         Change the name of a board list.
 
@@ -329,44 +369,43 @@ class TrelloPlugin(Plugin):
         :param list: List ID or name
         :param name: New name
         """
-        list = self._get_list(board, list)
-        list.set_name(name)
+        self._get_list(board, list).set_name(name)
 
-    # noinspection PyShadowingBuiltins
     @action
-    def list_subscribe(self, board: str, list: str):
+    def list_subscribe(
+        self, board: str, list: str  # pylint: disable=redefined-builtin
+    ):
         """
         Subscribe to a list.
 
         :param board: Board ID or name
         :param list: List ID or name
         """
-        list = self._get_list(board, list)
-        list.subscribe()
+        self._get_list(board, list).subscribe()
 
-    # noinspection PyShadowingBuiltins
     @action
-    def list_unsubscribe(self, board: str, list: str):
+    def list_unsubscribe(
+        self, board: str, list: str  # pylint: disable=redefined-builtin
+    ):
         """
         Unsubscribe from a list.
 
         :param board: Board ID or name
         :param list: List ID or name
         """
-        list = self._get_list(board, list)
-        list.unsubscribe()
+        self._get_list(board, list).unsubscribe()
 
-    # noinspection PyShadowingBuiltins
     @action
-    def archive_all_cards(self, board: str, list: str):
+    def archive_all_cards(
+        self, board: str, list: str  # pylint: disable=redefined-builtin
+    ):
         """
         Archive all the cards on a list.
 
         :param board: Board ID or name
         :param list: List ID or name
         """
-        list = self._get_list(board, list)
-        list.archive_all_cards()
+        self._get_list(board, list).archive_all_cards()
 
     @action
     def move_all_cards(self, board: str, src: str, dest: str):
@@ -377,37 +416,34 @@ class TrelloPlugin(Plugin):
         :param src: Source list
         :param dest: Target list
         """
-        src = self._get_list(board, src)
-        dest = self._get_list(board, dest)
-        src.move_all_cards(dest.id)
+        src_list = self._get_list(board, src)
+        dest_list = self._get_list(board, dest)
+        src_list.move_all_cards(dest_list.id)
 
-    # noinspection PyShadowingBuiltins
     @action
-    def open_list(self, board: str, list: str):
+    def open_list(self, board: str, list: str):  # pylint: disable=redefined-builtin
         """
         Open/un-archive a list.
 
         :param board: Board ID or name
         :param list: List ID or name
         """
-        list = self._get_list(board, list)
-        list.open()
+        self._get_list(board, list).open()
 
-    # noinspection PyShadowingBuiltins
     @action
-    def close_list(self, board: str, list: str):
+    def close_list(self, board: str, list: str):  # pylint: disable=redefined-builtin
         """
         Close/archive a list.
 
         :param board: Board ID or name
         :param list: List ID or name
         """
-        list = self._get_list(board, list)
-        list.close()
+        self._get_list(board, list).close()
 
-    # noinspection PyShadowingBuiltins
     @action
-    def move_list(self, board: str, list: str, position: int):
+    def move_list(
+        self, board: str, list: str, position: int  # pylint: disable=redefined-builtin
+    ):
         """
         Move a list to another position.
 
@@ -415,15 +451,13 @@ class TrelloPlugin(Plugin):
         :param list: List ID or name
         :param position: New position index
         """
-        list = self._get_list(board, list)
-        list.move(position)
+        self._get_list(board, list).move(position)
 
-    # noinspection PyShadowingBuiltins
     @action
     def add_card(
         self,
         board: str,
-        list: str,
+        list: str,  # pylint: disable=redefined-builtin
         name: str,
         description: Optional[str] = None,
         position: Optional[int] = None,
@@ -431,7 +465,7 @@ class TrelloPlugin(Plugin):
         due: Optional[Union[str, datetime.datetime]] = None,
         source: Optional[str] = None,
         assign: Optional[List[str]] = None,
-    ) -> TrelloCardResponse:
+    ):
         """
         Add a card to a list.
 
@@ -445,16 +479,16 @@ class TrelloPlugin(Plugin):
         :param source: Card ID to clone from
         :param assign: List of assignee member IDs
         """
-        list = self._get_list(board, list)
+        list_ = self._get_list(board, list)
 
         if labels:
             labels = [
                 ll
-                for ll in list.board.get_labels()
+                for ll in list_.board.get_labels()
                 if ll.id in labels or ll.name in labels
             ]
 
-        card = list.add_card(
+        card = list_.add_card(
             name=name,
             desc=description,
             labels=labels,
@@ -464,19 +498,19 @@ class TrelloPlugin(Plugin):
             assign=assign,
         )
 
-        return TrelloCardResponse(
+        return TrelloCardSchema().dump(
             TrelloCard(
                 id=card.id,
                 name=card.name,
                 url=card.url,
                 closed=card.closed,
                 board=TrelloBoard(
-                    id=list.board.id,
-                    name=list.board.name,
-                    url=list.board.url,
-                    closed=list.board.closed,
-                    description=list.board.description,
-                    date_last_activity=list.board.date_last_activity,
+                    id=list_.board.id,
+                    name=list_.board.name,
+                    url=list_.board.url,
+                    closed=list_.board.closed,
+                    description=list_.board.description,
+                    date_last_activity=list_.board.date_last_activity,
                 ),
                 is_due_complete=card.is_due_complete,
                 list=None,
@@ -558,7 +592,7 @@ class TrelloPlugin(Plugin):
 
         labels = [ll for ll in card.board.get_labels() if ll.name == label]
 
-        assert labels, 'No such label: {}'.format(label)
+        assert labels, f'No such label: {label}'
         label = labels[0]
         card.add_label(label)
 
@@ -575,7 +609,7 @@ class TrelloPlugin(Plugin):
 
         labels = [ll for ll in card.board.get_labels() if ll.name == label]
 
-        assert labels, 'No such label: {}'.format(label)
+        assert labels, f'No such label: {label}'
         label = labels[0]
         card.remove_label(label)
 
@@ -637,9 +671,13 @@ class TrelloPlugin(Plugin):
         card = client.get_card(card_id)
         card.remove_attachment(attachment_id)
 
-    # noinspection PyShadowingBuiltins
     @action
-    def change_card_board(self, card_id: str, board: str, list: str = None):
+    def change_card_board(
+        self,
+        card_id: str,
+        board: str,
+        list: Optional[str] = None,  # pylint: disable=redefined-builtin
+    ):
         """
         Move a card to a new board.
 
@@ -649,17 +687,18 @@ class TrelloPlugin(Plugin):
         """
         client = self._get_client()
         card = client.get_card(card_id)
-        board = self._get_board(board)
+        board_id = self._get_board(board).id
 
         list_id = None
         if list:
-            list_id = self._get_list(board.id, list).id
+            list_id = self._get_list(board_id, list).id
 
-        card.change_board(board.id, list_id)
+        card.change_board(board_id, list_id)
 
-    # noinspection PyShadowingBuiltins
     @action
-    def change_card_list(self, card_id: str, list: str):
+    def change_card_list(
+        self, card_id: str, list: str  # pylint: disable=redefined-builtin
+    ):
         """
         Move a card to a new list.
 
@@ -668,8 +707,7 @@ class TrelloPlugin(Plugin):
         """
         client = self._get_client()
         card = client.get_card(card_id)
-        list = self._get_list(card.board.id, list)
-        card.change_list(list.id)
+        card.change_list(self._get_list(card.board.id, list).id)
 
     @action
     def change_card_pos(self, card_id: str, position: int):
@@ -827,11 +865,13 @@ class TrelloPlugin(Plugin):
         card = client.get_card(card_id)
         card.subscribe()
 
-    # noinspection PyShadowingBuiltins
     @action
     def get_cards(
-        self, board: str, list: Optional[str] = None, all: bool = False
-    ) -> TrelloCardsResponse:
+        self,
+        board: str,
+        list: Optional[str] = None,  # pylint: disable=redefined-builtin
+        all: bool = False,  # pylint: disable=redefined-builtin
+    ):
         """
         Get the list of cards on a board.
 
@@ -842,12 +882,12 @@ class TrelloPlugin(Plugin):
             only return open/active cards (default: False).
         """
 
-        board = self._get_board(board)
+        b = self._get_board(board)
         lists: Dict[str, TrelloList] = {
             ll.id: TrelloList(
                 id=ll.id, name=ll.name, closed=ll.closed, subscribed=ll.subscribed
             )
-            for ll in board.list_lists()
+            for ll in b.list_lists()
         }
 
         list_id = None
@@ -856,14 +896,16 @@ class TrelloPlugin(Plugin):
             if list in lists:
                 list_id = list
             else:
-                # noinspection PyUnresolvedReferences
-                ll = [l1 for l1 in lists.values() if l1.name == list]
-                assert ll, 'No such list ID/name: {}'.format(list)
-                # noinspection PyUnresolvedReferences
-                list_id = ll[0].id
+                ll = next(
+                    iter(
+                        l1 for l1 in lists.values() if l1.name == list  # type: ignore
+                    ),
+                    None,
+                )
+                assert ll, f'No such list ID/name: {list}'
+                list_id = ll.id  # type: ignore
 
-        # noinspection PyUnresolvedReferences
-        return TrelloCardsResponse(
+        return TrelloCardSchema().dump(
             [
                 TrelloCard(
                     id=c.id,
@@ -882,10 +924,11 @@ class TrelloPlugin(Plugin):
                     attachments=[
                         TrelloAttachment(
                             id=a.get('id'),
-                            bytes=a.get('bytes'),
+                            url=a.get('url'),
+                            size=a.get('bytes'),
                             date=a.get('date'),
                             edge_color=a.get('edgeColor'),
-                            id_member=a.get('idMember'),
+                            member_id=a.get('idMember'),
                             is_upload=a.get('isUpload'),
                             name=a.get('name'),
                             previews=[
@@ -893,13 +936,12 @@ class TrelloPlugin(Plugin):
                                     id=p.get('id'),
                                     scaled=p.get('scaled'),
                                     url=p.get('url'),
-                                    bytes=p.get('bytes'),
+                                    size=p.get('bytes'),
                                     height=p.get('height'),
                                     width=p.get('width'),
                                 )
                                 for p in a.get('previews', [])
                             ],
-                            url=a.get('url'),
                             mime_type=a.get('mimeType'),
                         )
                         for a in c.attachments
@@ -908,7 +950,7 @@ class TrelloPlugin(Plugin):
                         TrelloChecklist(
                             id=ch.id,
                             name=ch.name,
-                            checklist_items=[
+                            items=[
                                 TrelloChecklistItem(
                                     id=i.get('id'),
                                     name=i.get('name'),
@@ -945,10 +987,181 @@ class TrelloPlugin(Plugin):
                     latest_card_move_date=c.latestCardMove_date,
                     date_last_activity=c.date_last_activity,
                 )
-                for c in board.all_cards()
+                for c in b.all_cards()
                 if ((all or not c.closed) and (not list or c.list_id == list_id))
-            ]
+            ],
+            many=True,
         )
+
+    def _initialize_connection(self, ws: WebSocketApp):
+        boards = [
+            b
+            for b in (self._get_boards() or [])
+            if not self._monitored_boards
+            or b.id in self._monitored_boards
+            or b.name in self._monitored_boards
+        ]
+
+        for b in boards:
+            self._boards_by_id[b.id] = b
+            self._boards_by_name[b.name] = b
+
+        for board_id in self._boards_by_id.keys():
+            self._send(
+                ws,
+                {
+                    'type': 'subscribe',
+                    'modelType': 'Board',
+                    'idModel': board_id,
+                    'tags': ['clientActions', 'updates'],
+                    'invitationTokens': [],
+                },
+            )
+
+        self.logger.info('Trello boards subscribed')
+
+    def _on_msg(self, *args):  # pylint: disable=too-many-return-statements
+        if len(args) < 2:
+            self.logger.warning(
+                'Missing websocket argument - make sure that you are using '
+                'a version of websocket-client < 0.53.0 or >= 0.58.0'
+            )
+            return
+
+        ws, msg = args[:2]
+        if not msg:
+            # Reply back with an empty message when the server sends an empty message
+            ws.send('')
+            return
+
+        try:
+            msg = json.loads(msg)
+        except Exception as e:
+            self.logger.warning(
+                'Received invalid JSON message from Trello: %s: %s', msg, e
+            )
+            return
+
+        if 'error' in msg:
+            self.logger.warning('Trello error: %s', msg['error'])
+            return
+
+        if msg.get('reqid') == 0:
+            self.logger.debug('Ping response received, subscribing boards')
+            self._initialize_connection(ws)
+            return
+
+        notify = msg.get('notify')
+        if not notify:
+            return
+
+        if notify['event'] != 'updateModels' or notify['typeName'] != 'Action':
+            return
+
+        for delta in notify['deltas']:
+            args = {
+                'card_id': delta['data']['card']['id'],
+                'card_name': delta['data']['card']['name'],
+                'list_id': (
+                    delta['data'].get('list') or delta['data'].get('listAfter', {})
+                ).get('id'),
+                'list_name': (
+                    delta['data'].get('list') or delta['data'].get('listAfter', {})
+                ).get('name'),
+                'board_id': delta['data']['board']['id'],
+                'board_name': delta['data']['board']['name'],
+                'closed': delta.get('closed'),
+                'member_id': delta['memberCreator']['id'],
+                'member_username': delta['memberCreator']['username'],
+                'member_fullname': delta['memberCreator']['fullName'],
+                'date': delta['date'],
+            }
+
+            if delta.get('type') == 'createCard':
+                get_bus().post(NewCardEvent(**args))
+            elif delta.get('type') == 'updateCard':
+                if 'listBefore' in delta['data']:
+                    args.update(
+                        {
+                            'old_list_id': delta['data']['listBefore']['id'],
+                            'old_list_name': delta['data']['listBefore']['name'],
+                        }
+                    )
+
+                    get_bus().post(MoveCardEvent(**args))
+                elif 'closed' in delta['data'].get('old', {}):
+                    cls = (
+                        UnarchivedCardEvent
+                        if delta['data']['old']['closed']
+                        else ArchivedCardEvent
+                    )
+                    get_bus().post(cls(**args))
+
+    def _on_error(self, *args):
+        error = args[1] if len(args) > 1 else args[0]
+        self.logger.warning('Trello websocket error: %s', error)
+
+    def _on_close(self, *_):
+        self.logger.warning('Trello websocket connection closed')
+        self._connected.clear()
+        self._req_id = 0
+
+        while not self.should_stop():
+            try:
+                self._connect(reconnect=True)
+                self._connected.wait(timeout=10)
+                break
+            except TimeoutError:
+                continue
+
+    def _on_open(self, *args):
+        ws = args[0] if args else None
+        self._connected.set()
+        if ws:
+            self._send(ws, {'type': 'ping'})
+        self.logger.info('Trello websocket connected')
+
+    def _send(self, ws: WebSocketApp, msg: dict):
+        msg['reqid'] = self._req_id
+        ws.send(json.dumps(msg))
+        self._req_id += 1
+
+    def _connect(self, reconnect: bool = False) -> WebSocketApp:
+        assert self.url, 'Trello websocket URL not set'
+        if reconnect:
+            self.stop()
+
+        if not self._ws:
+            self._ws = WebSocketApp(
+                self.url,
+                header={
+                    'Cookie': (
+                        f'token={self.token}; '
+                        f'cloud.session.token={self.cloud_session_token}'
+                    )
+                },
+                on_open=self._on_open,
+                on_message=self._on_msg,
+                on_error=self._on_error,
+                on_close=self._on_close,
+            )
+
+        return self._ws
+
+    def main(self):
+        if not self.url:
+            self.logger.info(
+                "token/cloud_session_token not set: your Trello boards won't be monitored for changes"
+            )
+            self.wait_stop()
+        else:
+            ws = self._connect()
+            ws.run_forever()
+
+    def stop(self):
+        if self._ws:
+            self._ws.close()
+            self._ws = None
 
 
 # vim:sw=4:ts=4:et:

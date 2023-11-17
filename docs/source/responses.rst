@@ -19,5 +19,4 @@ Responses
     platypush/responses/tensorflow.rst
     platypush/responses/todoist.rst
     platypush/responses/translate.rst
-    platypush/responses/trello.rst
     platypush/responses/weather.buienradar.rst
