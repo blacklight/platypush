@@ -53,14 +53,9 @@ class TrelloPlugin(RunnablePlugin):
     undocumented) authorization mechanism:
 
         1. Open https://trello.com in your browser.
-        2. Open the developer tools (F12), go to the Network tab, select
-           'Websocket' or 'WS' in the filter bar and refresh the page.
-        3. You should see an entry in the format
-           ``wss://trello.com/1/Session/socket?clientVersion=...&x-b3-traceid=...&x-b3-spanid=...``.
-        4. Copy the ``x-b3-traceid`` and ``x-b3-spanid`` values into the
-           configuration of this plugin.
-        5. Go to the Cookies tab
-        6. Copy the value of the ``cloud.session.token`` cookie.
+        2. Open the developer tools (F12).
+        3. Go to the Cookies tab.
+        4. Copy the value of the ``cloud.session.token`` cookie.
 
     """
 
@@ -78,8 +73,8 @@ class TrelloPlugin(RunnablePlugin):
         """
         :param api_key: Trello API key. You can get it `here <https://trello.com/app-key>`.
         :param api_secret: Trello API secret. You can get it `here <https://trello.com/app-key>`.
-        :param token: Trello token. It is required if you want to access or modify private resources. You can get
-            a permanent token on
+        :param token: Trello token. It is required if you want to access or
+            modify private resources. You can get a permanent token on
             ``https://trello.com/1/connect?key=<KEY>&name=platypush&response_type=token&expiration=never&scope=read,write``.
         :param cloud_session_token: Cloud session token. It is required
             if you want to monitor your boards for changes. See
