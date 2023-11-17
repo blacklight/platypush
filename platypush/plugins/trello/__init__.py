@@ -137,6 +137,7 @@ class TrelloPlugin(RunnablePlugin):
         :param all: If True, return all the boards included those that have
             been closed/archived/deleted. Otherwise, only return open/active
             boards (default: False).
+        :return: .. schema:: trello.TrelloBoardSchema(many=True)
         """
         return TrelloBoardSchema().dump(
             [
@@ -159,6 +160,7 @@ class TrelloPlugin(RunnablePlugin):
         Get the info about a board.
 
         :param board: Board ID or name
+        :return: .. schema:: trello.TrelloBoardSchema
         """
 
         b = self._get_board(board)
@@ -297,7 +299,9 @@ class TrelloPlugin(RunnablePlugin):
     def get_members(self, board: str):
         """
         Get the list of all the members of a board.
+
         :param board: Board ID or name.
+        :return: .. schema:: trello.TrelloMemberSchema(many=True)
         """
         return self._get_members(board, only_admin=False)
 
@@ -305,7 +309,9 @@ class TrelloPlugin(RunnablePlugin):
     def get_admin_members(self, board: str):
         """
         Get the list of the admin members of a board.
+
         :param board: Board ID or name.
+        :return: .. schema:: trello.TrelloMemberSchema(many=True)
         """
         return self._get_members(board, only_admin=True)
 
@@ -319,6 +325,7 @@ class TrelloPlugin(RunnablePlugin):
         :param board: Board ID or name
         :param all: If True, return all the lists, included those that have been closed/archived/deleted. Otherwise,
             only return open/active lists (default: False).
+        :return: .. schema:: trello.TrelloListSchema(many=True)
         """
         return TrelloListSchema().dump(
             [
@@ -473,6 +480,7 @@ class TrelloPlugin(RunnablePlugin):
         :param due: Due date (``datetime.datetime`` object or ISO-format string)
         :param source: Card ID to clone from
         :param assign: List of assignee member IDs
+        :return: .. schema:: trello.TrelloCardSchema
         """
         list_ = self._get_list(board, list)
 
@@ -875,6 +883,7 @@ class TrelloPlugin(RunnablePlugin):
             (default: None)
         :param all: If True, return all the cards included those that have been closed/archived/deleted. Otherwise,
             only return open/active cards (default: False).
+        :return: .. schema:: trello.TrelloCardSchema(many=True)
         """
 
         b = self._get_board(board)
