@@ -467,7 +467,7 @@ class Dependencies:
             deps = sorted(self.pip)
             if full_command:
                 yield (
-                    'pip install -U --no-input '
+                    'pip install --no-input '
                     + ('--no-cache-dir ' if self._is_docker else '')
                     + (
                         '--break-system-packages '
