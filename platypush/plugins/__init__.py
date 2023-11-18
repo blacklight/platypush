@@ -102,6 +102,15 @@ class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to
         return redis
 
     @property
+    def _bus(self):
+        """
+        :return: The reference to the :class:`platypush.bus.Bus`.
+        """
+        from platypush.context import get_bus
+
+        return get_bus()
+
+    @property
     def _entities(self):
         """
         :return: The reference to the :class:`platypush.plugins.entities.EntitiesPlugin`.
