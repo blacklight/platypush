@@ -1,6 +1,0 @@
-manifest:
-  events: {}
-  install:
-    pip: []
-  package: platypush.plugins.weather.darksky
-  type: plugin
