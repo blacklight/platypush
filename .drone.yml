@@ -514,11 +514,13 @@ steps:
         cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-1_all.deb"
       fi
 
-    - cat <<EOF > "$TMP_APT_ROOT/platypush-oldstable-main.list"
+    - |
+      cat <<EOF > "$TMP_APT_ROOT/platypush-oldstable-main.list"
       deb https://apt.platypush.tech/ oldstable main
       EOF
 
-    - cat <<EOF > "$TMP_APT_ROOT/platypush-oldstable-dev.list"
+    - |
+      cat <<EOF > "$TMP_APT_ROOT/platypush-oldstable-dev.list"
       deb https://apt.platypush.tech/ oldstable dev
       EOF
 
@@ -624,11 +626,13 @@ steps:
         add_hashes "$dist_dir" "sha256sum" "SHA256" >> "$release_file"
       done
 
-    - cat <<EOF > "$TMP_APT_ROOT/platypush-stable-main.list"
+    - |
+      cat <<EOF > "$TMP_APT_ROOT/platypush-stable-main.list"
       deb https://apt.platypush.tech/ stable main
       EOF
 
-    - cat <<EOF > "$TMP_APT_ROOT/platypush-stable-dev.list"
+    - |
+      cat <<EOF > "$TMP_APT_ROOT/platypush-stable-dev.list"
       deb https://apt.platypush.tech/ stable dev
       EOF
 
