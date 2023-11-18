@@ -60,7 +60,6 @@ manifest:
       - google-assistant-library
       - google-assistant-sdk[samples]
       - google-auth
-      - numpy
       - sounddevice
     after:
       # Uninstall old versions of packages that break things on recent versions
