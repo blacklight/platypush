@@ -17,6 +17,5 @@ Responses
     platypush/responses/ssh.rst
     platypush/responses/stt.rst
     platypush/responses/tensorflow.rst
-    platypush/responses/todoist.rst
     platypush/responses/translate.rst
     platypush/responses/weather.buienradar.rst

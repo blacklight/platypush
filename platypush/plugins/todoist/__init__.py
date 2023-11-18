@@ -1,20 +1,20 @@
 import time
-
 from typing import Optional
 
 import todoist
-import todoist.managers.items
+import todoist.managers.items  # type: ignore
+import websocket
 
 from platypush.plugins import Plugin, action
-from platypush.message.response.todoist import (
-    TodoistUserResponse,
-    TodoistProjectsResponse,
-    TodoistItemsResponse,
-    TodoistFiltersResponse,
-    TodoistLiveNotificationsResponse,
-    TodoistCollaboratorsResponse,
-    TodoistNotesResponse,
-    TodoistProjectNotesResponse,
+from platypush.schemas.todoist import (
+    TodoistCollaboratorSchema,
+    TodoistFilterSchema,
+    TodoistItemSchema,
+    TodoistLiveNotificationSchema,
+    TodoistNoteSchema,
+    TodoistProjectNoteSchema,
+    TodoistProjectSchema,
+    TodoistUserSchema,
 )
 
 
@@ -22,14 +22,16 @@ class TodoistPlugin(Plugin):
     """
     Todoist integration.
 
-    You'll also need a Todoist token. You can get it `here <https://todoist.com/prefs/integrations>`.
+    You'll also need a Todoist token. You can get it `here
+        <https://todoist.com/prefs/integrations>`_.
     """
 
     _sync_timeout = 60.0
 
     def __init__(self, api_token: str, **kwargs):
         """
-        :param api_token: Todoist API token. You can get it `here <https://todoist.com/prefs/integrations>`.
+        :param api_token: Todoist API token. You can get it `here
+            <https://todoist.com/prefs/integrations>`_.
         """
 
         super().__init__(**kwargs)
@@ -37,9 +39,17 @@ class TodoistPlugin(Plugin):
         self._api = None
         self._last_sync_time = None
 
-    def _get_api(self) -> todoist.TodoistAPI:
+        self._ws_url: Optional[str] = None
+        self._ws: Optional[websocket.WebSocketApp] = None
+        self._connected = False
+        self._todoist_initialized = False
+
+        self._items = {}
+        self._event_handled = False
+
+    def _get_api(self) -> todoist.TodoistAPI:  # type: ignore
         if not self._api:
-            self._api = todoist.TodoistAPI(self.api_token)
+            self._api = todoist.TodoistAPI(self.api_token)  # type: ignore
 
         if (
             not self._last_sync_time
@@ -50,68 +60,82 @@ class TodoistPlugin(Plugin):
         return self._api
 
     @action
-    def get_user(self) -> TodoistUserResponse:
+    def get_user(self):
         """
         Get logged user info.
+
+        :return: .. schema:: todoist.TodoistUserSchema
         """
-        api = self._get_api()
-        return TodoistUserResponse(**api.state['user'])
+        return TodoistUserSchema().dump(self._get_api().state['user'])
 
     @action
-    def get_projects(self) -> TodoistProjectsResponse:
+    def get_projects(self):
         """
         Get list of Todoist projects.
+
+        :return: .. schema:: todoist.TodoistProjectSchema(many=True)
         """
-        api = self._get_api()
-        return TodoistProjectsResponse(api.state['projects'])
+        return TodoistProjectSchema().dump(self._get_api().state['projects'], many=True)
 
     @action
-    def get_items(self) -> TodoistItemsResponse:
+    def get_items(self):
         """
         Get list of Todoist projects.
+
+        :return .. schema:: todoist.TodoistItemSchema(many=True)
         """
-        api = self._get_api()
-        return TodoistItemsResponse(api.state['items'])
+        return TodoistItemSchema().dump(self._get_api().state['items'], many=True)
 
     @action
-    def get_filters(self) -> TodoistFiltersResponse:
+    def get_filters(self):
         """
         Get list of Todoist filters.
+
+        :return: .. schema:: todoist.TodoistFilterSchema(many=True)
         """
-        api = self._get_api()
-        return TodoistFiltersResponse(api.state['filters'])
+        return TodoistFilterSchema().dump(self._get_api().state['filters'], many=True)
 
     @action
-    def get_live_notifications(self) -> TodoistLiveNotificationsResponse:
+    def get_live_notifications(self):
         """
         Get list of Todoist live notifications.
+
+        :return: .. schema:: todoist.TodoistLiveNotificationSchema(many=True)
         """
-        api = self._get_api()
-        return TodoistLiveNotificationsResponse(api.state['live_notifications'])
+        return TodoistLiveNotificationSchema().dump(
+            self._get_api().state['live_notifications'], many=True
+        )
 
     @action
-    def get_collaborators(self) -> TodoistCollaboratorsResponse:
+    def get_collaborators(self):
         """
         Get list of collaborators.
+
+        :return: .. schema:: todoist.TodoistCollaboratorSchema(many=True)
         """
-        api = self._get_api()
-        return TodoistCollaboratorsResponse(api.state['collaborators'])
+        return TodoistCollaboratorSchema().dump(
+            self._get_api().state['collaborators'], many=True
+        )
 
     @action
-    def get_notes(self) -> TodoistNotesResponse:
+    def get_notes(self):
         """
         Get list of Todoist notes.
+
+        :return: .. schema:: todoist.TodoistNoteSchema(many=True)
         """
-        api = self._get_api()
-        return TodoistNotesResponse(api.state['notes'])
+        return TodoistNoteSchema().dump(self._get_api().state['notes'], many=True)
 
     @action
-    def get_project_notes(self) -> TodoistProjectNotesResponse:
+    def get_project_notes(self):
         """
         Get list of Todoist project notes.
+
+        :return: .. schema:: todoist.TodoistProjectNoteSchema(many=True)
         """
-        api = self._get_api()
-        return TodoistProjectNotesResponse(api.state['project_notes'])
+        return TodoistProjectNoteSchema().dump(
+            self._get_api().state['project_notes'], many=True
+        )
 
     @action
     def add_item(self, content: str, project_id: Optional[int] = None, **kwargs):

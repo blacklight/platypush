@@ -38,7 +38,6 @@ Backends
     platypush/backend/stt.picovoice.hotword.rst
     platypush/backend/stt.picovoice.speech.rst
     platypush/backend/tcp.rst
-    platypush/backend/todoist.rst
     platypush/backend/weather.buienradar.rst
     platypush/backend/weather.darksky.rst
     platypush/backend/weather.openweathermap.rst
