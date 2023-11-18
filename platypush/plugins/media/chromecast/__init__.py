@@ -397,6 +397,7 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
             all the discovered/available Chromecasts. Format:
 
                 .. code-block:: python
+
                     {
                       "type": "cast",  # Can be "cast" or "audio"
                       "name": "Living Room TV",
@@ -481,6 +482,7 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
                         "track": null
                       }
                 }
+
         """
         return self._status(chromecast=chromecast)
 
