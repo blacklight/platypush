@@ -582,6 +582,15 @@ class Config:
         return workdir  # type: ignore
 
     @classmethod
+    def get_device_id(cls) -> str:
+        """
+        :return: The configured/default device ID.
+        """
+        device_id = cls._get_instance().get('device_id')
+        assert device_id
+        return device_id  # type: ignore
+
+    @classmethod
     def get_cachedir(cls) -> str:
         """
         :return: The path of the configured cache directory.
