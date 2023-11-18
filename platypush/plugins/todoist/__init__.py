@@ -23,7 +23,7 @@ class TodoistPlugin(Plugin):
     Todoist integration.
 
     You'll also need a Todoist token. You can get it `here
-        <https://todoist.com/prefs/integrations>`_.
+    <https://todoist.com/prefs/integrations>`_.
     """
 
     _sync_timeout = 60.0
@@ -31,7 +31,7 @@ class TodoistPlugin(Plugin):
     def __init__(self, api_token: str, **kwargs):
         """
         :param api_token: Todoist API token. You can get it `here
-            <https://todoist.com/prefs/integrations>`_.
+        <https://todoist.com/prefs/integrations>`_.
         """
 
         super().__init__(**kwargs)
