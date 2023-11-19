@@ -392,6 +392,7 @@ export default {
     @include from($tablet) {
       .icon-container {
         justify-content: right;
+        margin-right: 0.5em;
       }
     }
   }
