@@ -73,8 +73,9 @@ class TrelloPlugin(RunnablePlugin):
     ):
         """
         :param api_key: Trello API key. You can get it `here
-        <https://trello.com/app-key>`_.
-        :param api_secret: Trello API secret. You can get it `here <https://trello.com/app-key>`.
+            <https://trello.com/app-key>`_.
+        :param api_secret: Trello API secret. You can get it `here
+            <https://trello.com/app-key>`_.
         :param token: Trello token. It is required if you want to access or
             modify private resources. You can get a permanent token on
             ``https://trello.com/1/connect?key=<KEY>&name=platypush&response_type=token&expiration=never&scope=read,write``.
