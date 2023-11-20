@@ -18,4 +18,3 @@ Responses
     platypush/responses/stt.rst
     platypush/responses/tensorflow.rst
     platypush/responses/translate.rst
-    platypush/responses/weather.buienradar.rst

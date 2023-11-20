@@ -15,12 +15,14 @@ class NewWeatherConditionEvent(Event):
         plugin_name: str,
         summary: Optional[str] = None,
         icon: Optional[str] = None,
+        image: Optional[str] = None,
         precip_intensity: Optional[float] = None,
         precip_type: Optional[str] = None,
         temperature: Optional[float] = None,
         apparent_temperature: Optional[float] = None,
         humidity: Optional[float] = None,
         pressure: Optional[float] = None,
+        rain_chance: Optional[float] = None,
         wind_speed: Optional[float] = None,
         wind_gust: Optional[float] = None,
         wind_direction: Optional[float] = None,
@@ -35,6 +37,7 @@ class NewWeatherConditionEvent(Event):
         :param plugin_name: Plugin that triggered the event.
         :param summary: Summary of the weather condition.
         :param icon: Icon representing the weather condition.
+        :param image: Image URL representing the weather condition.
         :param precip_intensity: Intensity of the precipitation.
         :param precip_type: Type of precipitation.
         :param temperature: Temperature, in the configured unit system.
@@ -42,6 +45,7 @@ class NewWeatherConditionEvent(Event):
             unit system.
         :param humidity: Humidity percentage, between 0 and 100.
         :param pressure: Pressure, in the configured unit system.
+        :param rain_chance: Chance of rain, between 0 and 100.
         :param wind_speed: Wind speed, in the configured unit system.
         :param wind_gust: Wind gust, in the configured unit system.
         :param wind_direction: Wind direction, in degrees.
@@ -56,12 +60,14 @@ class NewWeatherConditionEvent(Event):
             plugin_name=plugin_name,
             summary=summary,
             icon=icon,
+            image=image,
             precip_intensity=precip_intensity,
             precip_type=precip_type,
             temperature=temperature,
             apparent_temperature=apparent_temperature,
             humidity=humidity,
             pressure=pressure,
+            rain_chance=rain_chance,
             wind_speed=wind_speed,
             wind_gust=wind_gust,
             wind_direction=wind_direction,

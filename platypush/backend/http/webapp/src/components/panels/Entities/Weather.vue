@@ -19,6 +19,11 @@
                class="weather-icon"
                v-if="value.icon" />
 
+          <img :src="value.image"
+               :alt="value?.summary"
+               class="weather-icon"
+               v-else-if="value.image" />
+
           <span class="temperature"
                 v-text="normTemperature"
                 v-if="normTemperature != null" />
@@ -98,6 +103,15 @@
         </div>
       </div>
 
+      <div class="child" v-if="value.rain_chance != null">
+        <div class="col-s-12 col-m-6 label">
+          <div class="name">Rain Chance</div>
+        </div>
+        <div class="value">
+          <div class="name" v-text="normPercentage(value.rain_chance)" />
+        </div>
+      </div>
+
       <div class="child" v-if="value.wind_speed != null">
         <div class="col-s-12 col-m-6 label">
           <div class="name">Wind</div>
@@ -113,7 +127,7 @@
 
       <div class="child" v-if="value.wind_gust != null">
         <div class="col-s-12 col-m-6 label">
-          <div class="name">Wind</div>
+          <div class="name">Wind Gust</div>
         </div>
         <div class="value">
           <div class="name">
@@ -197,7 +211,7 @@ export default {
     },
 
     normPrecipIntensity() {
-      if (this.value.precip_intensity == null)
+      if (!this.value.precip_intensity)
         return null
 
       return (

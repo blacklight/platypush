@@ -136,7 +136,6 @@ Plugins
     platypush/plugins/variable.rst
     platypush/plugins/wallabag.rst
     platypush/plugins/weather.buienradar.rst
-    platypush/plugins/weather.darksky.rst
     platypush/plugins/weather.openweathermap.rst
     platypush/plugins/websocket.rst
     platypush/plugins/wiimote.rst

@@ -19,6 +19,7 @@ mock_imports = [
     "bleak",
     "bluetooth",
     "bluetooth_numbers",
+    "buienradar",
     "cpuinfo",
     "croniter",
     "cups",
