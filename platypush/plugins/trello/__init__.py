@@ -42,7 +42,8 @@ class TrelloPlugin(RunnablePlugin):
     """
     Trello integration.
 
-    You'll need a Trello API key. You can get it `here <https://trello.com/app-key>`.
+    You'll need a Trello API key. You can get it `here
+    <https://trello.com/app-key>`_.
 
     You'll also need an auth token if you want to view/change private
     resources. You can generate a permanent token linked to your account on
@@ -71,7 +72,8 @@ class TrelloPlugin(RunnablePlugin):
         **kwargs,
     ):
         """
-        :param api_key: Trello API key. You can get it `here <https://trello.com/app-key>`.
+        :param api_key: Trello API key. You can get it `here
+        <https://trello.com/app-key>`_.
         :param api_secret: Trello API secret. You can get it `here <https://trello.com/app-key>`.
         :param token: Trello token. It is required if you want to access or
             modify private resources. You can get a permanent token on
