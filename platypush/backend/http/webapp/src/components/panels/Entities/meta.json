@@ -15,6 +15,14 @@
     }
   },
 
+  "weather": {
+    "name": "Weather",
+    "name_plural": "Weather",
+    "icon": {
+      "class": "fas fa-cloud-sun-rain"
+    }
+  },
+
   "button": {
     "name": "Button",
     "name_plural": "Buttons",

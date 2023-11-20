@@ -1,6 +1,10 @@
 from typing import Optional
+
+from datetime import datetime
+from dateutil.tz import tzutc
 from marshmallow import fields, pre_dump
 from marshmallow.schema import Schema
+from marshmallow.validate import OneOf
 
 from platypush.schemas import DateTime
 
@@ -135,6 +139,19 @@ class WeatherSchema(Schema):
         },
     )
 
+    units = fields.String(
+        missing='metric',
+        validate=OneOf(['metric', 'imperial']),
+        metadata={
+            'description': 'Unit of measure',
+            'example': 'metric',
+        },
+    )
+
+    @staticmethod
+    def _timestamp_to_dt(timestamp: float) -> datetime:
+        return datetime.fromtimestamp(timestamp, tz=tzutc())
+
     @pre_dump
     def _pre_dump(self, data: dict, **_) -> dict:
         sun_data = data.pop('sys', {})
@@ -142,8 +159,8 @@ class WeatherSchema(Schema):
         sunset = sun_data.get('sunset')
 
         if sunrise is not None:
-            data['sunrise'] = sunrise
+            data['sunrise'] = self._timestamp_to_dt(sunrise)
         if sunset is not None:
-            data['sunset'] = sunset
+            data['sunset'] = self._timestamp_to_dt(sunset)
 
         return data

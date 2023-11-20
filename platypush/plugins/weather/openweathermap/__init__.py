@@ -2,12 +2,11 @@ from typing import Optional
 
 import requests
 
-from platypush.plugins import action
 from platypush.plugins.weather import WeatherPlugin
 from platypush.schemas.weather.openweathermap import WeatherSchema
 
 
-class WeatherOpenweathermapPlugin(WeatherPlugin):
+class WeatherOpenweathermapPlugin(WeatherPlugin):  # pylint: disable=too-many-ancestors
     """
     OpenWeatherMap plugin.
 
@@ -76,8 +75,7 @@ class WeatherOpenweathermapPlugin(WeatherPlugin):
         assert self._location_query, 'Specify either location, city_id or lat/long'
         return self._location_query
 
-    @action
-    def get_current_weather(
+    def _get_current_weather(
         self,
         *_,
         location: Optional[str] = None,
@@ -99,9 +97,10 @@ class WeatherOpenweathermapPlugin(WeatherPlugin):
         :param units: Override the ``units`` configuration value.
         :return: .. schema:: weather.openweathermap.WeatherSchema
         """
+        units = units or self.units
         params = {
             'appid': self._token,
-            'units': units or self.units,
+            'units': units,
             **self._get_location_query(
                 location=location,
                 city_id=city_id,
@@ -113,4 +112,6 @@ class WeatherOpenweathermapPlugin(WeatherPlugin):
 
         rs = requests.get(self.base_url, params=params, timeout=10)
         rs.raise_for_status()
-        return dict(WeatherSchema().dump(rs.json()))
+        state = rs.json()
+        state['units'] = units
+        return dict(WeatherSchema().dump(state))

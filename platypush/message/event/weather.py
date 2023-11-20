@@ -28,6 +28,7 @@ class NewWeatherConditionEvent(Event):
         visibility: Optional[float] = None,
         sunrise: Optional[datetime] = None,
         sunset: Optional[datetime] = None,
+        units: str = 'metric',
         **kwargs,
     ):
         """
@@ -48,6 +49,7 @@ class NewWeatherConditionEvent(Event):
         :param visibility: Visibility, in meters.
         :param sunrise: Sunrise time.
         :param sunset: Sunset time.
+        :param units: Unit system (default: metric).
         """
         super().__init__(
             *args,
@@ -67,6 +69,7 @@ class NewWeatherConditionEvent(Event):
             visibility=visibility,
             sunrise=sunrise,
             sunset=sunset,
+            units=units,
             **kwargs,
         )
 

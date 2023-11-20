@@ -134,6 +134,9 @@
   "variable": {
     "class": "fas fa-square-root-variable"
   },
+  "weather.openweathermap": {
+    "class": "fas fa-cloud-sun-rain"
+  },
   "zigbee.mqtt": {
     "imgUrl": "/icons/zigbee.svg"
   },
