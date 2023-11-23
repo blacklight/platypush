@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 import requests
 
@@ -14,7 +14,7 @@ class WeatherOpenweathermapPlugin(WeatherPlugin):  # pylint: disable=too-many-an
     <https://openweathermap.org/api>`_ in order to use this API.
     """
 
-    base_url = 'https://api.openweathermap.org/data/2.5/weather'
+    base_url = 'https://api.openweathermap.org/data/2.5'
 
     def __init__(
         self,
@@ -25,7 +25,8 @@ class WeatherOpenweathermapPlugin(WeatherPlugin):  # pylint: disable=too-many-an
         long: Optional[float] = None,
         zip_code: Optional[str] = None,
         units: str = 'metric',
-        **kwargs
+        lang: Optional[str] = None,
+        **kwargs,
     ):
         """
         :param token: OpenWeatherMap API token.
@@ -44,8 +45,7 @@ class WeatherOpenweathermapPlugin(WeatherPlugin):  # pylint: disable=too-many-an
             ``zip,country_code``) will be used by default for weather lookup.
         :param units: Supported: ``metric`` (default), ``standard`` and
             ``imperial``.
-        :param poll_interval: How often the weather should be refreshed, in
-            seconds.
+        :param lang: Language code for the weather description (default: en).
         """
         super().__init__(**kwargs)
         self._token = token
@@ -54,6 +54,7 @@ class WeatherOpenweathermapPlugin(WeatherPlugin):  # pylint: disable=too-many-an
             location=location, city_id=city_id, lat=lat, long=long, zip_code=zip_code
         )
         self.units = units
+        self.lang = lang
 
     def _get_location_query(
         self,
@@ -75,8 +76,9 @@ class WeatherOpenweathermapPlugin(WeatherPlugin):  # pylint: disable=too-many-an
         assert self._location_query, 'Specify either location, city_id or lat/long'
         return self._location_query
 
-    def _get_current_weather(
+    def _weather_request(
         self,
+        path: str,
         *_,
         location: Optional[str] = None,
         city_id: Optional[int] = None,
@@ -84,23 +86,13 @@ class WeatherOpenweathermapPlugin(WeatherPlugin):  # pylint: disable=too-many-an
         long: Optional[float] = None,
         zip_code: Optional[str] = None,
         units: Optional[str] = None,
-        **__
+        **__,
     ) -> dict:
-        """
-        Returns the current weather.
-
-        :param location: Override the ``location`` configuration value.
-        :param city_id: Override the ``city_id`` configuration value.
-        :param lat: Override the ``lat`` configuration value.
-        :param long: Override the ``long`` configuration value.
-        :param zip_code: Override the ``zip_code`` configuration value.
-        :param units: Override the ``units`` configuration value.
-        :return: .. schema:: weather.openweathermap.WeatherSchema
-        """
         units = units or self.units
         params = {
             'appid': self._token,
             'units': units,
+            'lang': self.lang,
             **self._get_location_query(
                 location=location,
                 city_id=city_id,
@@ -110,8 +102,68 @@ class WeatherOpenweathermapPlugin(WeatherPlugin):  # pylint: disable=too-many-an
             ),
         }
 
-        rs = requests.get(self.base_url, params=params, timeout=10)
+        rs = requests.get(f'{self.base_url}/{path}', params=params, timeout=10)
         rs.raise_for_status()
-        state = rs.json()
-        state['units'] = units
-        return dict(WeatherSchema().dump(state))
+        return rs.json()
+
+    def _get_current_weather(
+        self,
+        *_,
+        location: Optional[str] = None,
+        city_id: Optional[int] = None,
+        lat: Optional[float] = None,
+        long: Optional[float] = None,
+        zip_code: Optional[str] = None,
+        units: Optional[str] = None,
+        **__,
+    ) -> dict:
+        units = units or self.units
+        return dict(
+            WeatherSchema().dump(
+                {
+                    'units': units,
+                    **self._weather_request(
+                        'weather',
+                        location=location,
+                        city_id=city_id,
+                        lat=lat,
+                        long=long,
+                        zip_code=zip_code,
+                        units=units,
+                    ),
+                }
+            )
+        )
+
+    def _get_forecast(
+        self,
+        *_,
+        location: Optional[str] = None,
+        city_id: Optional[int] = None,
+        lat: Optional[float] = None,
+        long: Optional[float] = None,
+        zip_code: Optional[str] = None,
+        units: Optional[str] = None,
+        **__,
+    ) -> List[dict]:
+        units = units or self.units
+        return list(
+            WeatherSchema().dump(
+                [
+                    {
+                        'units': units,
+                        **data,
+                    }
+                    for data in self._weather_request(
+                        'forecast',
+                        location=location,
+                        city_id=city_id,
+                        lat=lat,
+                        long=long,
+                        zip_code=zip_code,
+                        units=units,
+                    ).get('list', [])
+                ],
+                many=True,
+            )
+        )

@@ -23,6 +23,14 @@
     }
   },
 
+  "weather_forecast": {
+    "name": "Weather Forecast",
+    "name_plural": "Weather Forecast",
+    "icon": {
+      "class": "fas fa-cloud-sun-rain"
+    }
+  },
+
   "button": {
     "name": "Button",
     "name_plural": "Buttons",

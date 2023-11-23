@@ -2,28 +2,16 @@
   <div class="entity weather-container">
     <div class="head">
       <div class="col-1 icon">
-        <EntityIcon
-          :entity="value"
-          :loading="loading"
-          :error="error" />
+        <WeatherIcon :value="value" />
       </div>
 
       <div class="col-5 name">
-        <div class="name" v-text="value.name" />
+        <div class="name" v-text="formatDateTime(value.time, year=false, seconds=false)" v-if="isForecast" />
+        <div class="name" v-text="value.name" v-else />
       </div>
 
       <div class="col-5 current-weather" @click.stop="isCollapsed = !isCollapsed">
         <div class="weather-summary">
-          <img :src="`/icons/openweathermap/dark/${value.icon}.png`"
-               :alt="value?.summary"
-               class="weather-icon"
-               v-if="value.icon" />
-
-          <img :src="value.image"
-               :alt="value?.summary"
-               class="weather-icon"
-               v-else-if="value.image" />
-
           <span class="temperature"
                 v-text="normTemperature"
                 v-if="normTemperature != null" />
@@ -184,10 +172,19 @@
 <script>
 import EntityIcon from "./EntityIcon"
 import EntityMixin from "./EntityMixin"
+import WeatherIcon from "./WeatherIcon"
 
 export default {
-  components: {EntityIcon},
+  components: {EntityIcon, WeatherIcon},
   mixins: [EntityMixin],
+
+  props: {
+    value: Object,
+    isForecast: {
+      type: Boolean,
+      default: false,
+    },
+  },
 
   data() {
     return {
@@ -274,13 +271,6 @@ export default {
       justify-content: flex-end;
       flex-grow: 1;
       margin-right: 0.5em;
-    }
-
-    .weather-icon {
-      max-width: 100%;
-      max-height: 100%;
-      width: 1.5em;
-      height: 1.5em;
     }
 
     .temperature {

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Float, Integer, ForeignKey, String
+from sqlalchemy import JSON, Column, DateTime, Float, Integer, ForeignKey, String
 
 from . import Entity
 
@@ -30,6 +30,23 @@ class Weather(Entity):
     sunrise = Column(DateTime)
     sunset = Column(DateTime)
     units = Column(String)
+
+    __table_args__ = {'extend_existing': True}
+    __mapper_args__ = {
+        'polymorphic_identity': __tablename__,
+    }
+
+
+class WeatherForecast(Entity):
+    """
+    Weather forecast entity.
+    """
+
+    __tablename__ = 'weather_forecast'
+
+    id = Column(Integer, ForeignKey(Entity.id, ondelete='CASCADE'), primary_key=True)
+    # forecast contains a list of serialized Weather entities
+    forecast = Column(JSON)
 
     __table_args__ = {'extend_existing': True}
     __mapper_args__ = {

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from platypush.message.event import Event
 
@@ -100,6 +100,32 @@ class NewPrecipitationForecastEvent(Event):
             average=average,
             total=total,
             time_frame=time_frame,
+            **kwargs,
+        )
+
+
+class NewWeatherForecastEvent(Event):
+    """
+    Event triggered when a new weather forecast is received.
+    """
+
+    def __init__(
+        self,
+        *args,
+        plugin_name: str,
+        forecast: List[dict],
+        **kwargs,
+    ):
+        """
+        :param forecast: List of weather forecast items. Format:
+
+            .. schema:: weather.openweathermap.WeatherSchema(many=True)
+
+        """
+        super().__init__(
+            *args,
+            plugin_name=plugin_name,
+            forecast=forecast,
             **kwargs,
         )
 

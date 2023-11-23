@@ -22,6 +22,15 @@ class WeatherSchema(Schema):
     Schema for weather data.
     """
 
+    time = DateTime(
+        required=True,
+        attribute='dt',
+        metadata={
+            'description': 'Time of the weather condition',
+            'example': '2020-01-01T12:00:00+00:00',
+        },
+    )
+
     summary = fields.Function(
         lambda obj: obj.get('weather', [{'main': 'Unknown'}])[0].get('main', 'Unknown'),
         metadata={
@@ -164,3 +173,12 @@ class WeatherSchema(Schema):
             data['sunset'] = self._timestamp_to_dt(sunset)
 
         return data
+
+
+class WeatherReportSchema(Schema):
+    """
+    Schema for full weather reports.
+    """
+
+    current = fields.Nested(WeatherSchema, required=True)
+    forecast = fields.List(fields.Nested(WeatherSchema), required=True)
