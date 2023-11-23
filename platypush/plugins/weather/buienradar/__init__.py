@@ -61,17 +61,12 @@ class WeatherBuienradarPlugin(WeatherPlugin):  # pylint: disable=too-many-ancest
         """
         return WeatherSchema().dump(self.get_data(lat, long, 60))
 
-    @action
-    def get_forecast(self, lat: Optional[float] = None, long: Optional[float] = None):
-        """
-        Get the weather forecast for the next days.
-
-        :param lat: Weather latitude (default: configured latitude)
-        :param long: Weather longitude (default: configured longitude)
-        """
+    def _get_forecast(
+        self, *_, lat: Optional[float] = None, long: Optional[float] = None, **__
+    ):
         return [
             {
-                'datetime': weather.get('datetime'),
+                'datetime': weather['datetime'].isoformat(),
                 **dict(WeatherSchema().dump(weather)),
             }
             for weather in self.get_data(lat, long, 60).get('forecast', [])

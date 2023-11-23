@@ -1,6 +1,8 @@
 from marshmallow import EXCLUDE, fields
 from marshmallow.schema import Schema
 
+from platypush.schemas import DateTime
+
 
 class WeatherSchema(Schema):
     """
@@ -13,6 +15,15 @@ class WeatherSchema(Schema):
         """
 
         unknown = EXCLUDE
+
+    time = DateTime(
+        required=True,
+        attribute='datetime',
+        metadata={
+            'description': 'Date and time of the weather data',
+            'example': '2020-01-01T00:00:00+00:00',
+        },
+    )
 
     summary = fields.Function(
         lambda obj: obj.get('condition', {}).get('exact', 'Unknown'),

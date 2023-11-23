@@ -6,7 +6,9 @@
       </div>
 
       <div class="col-5 name">
-        <div class="name" v-text="formatDateTime(value.time, year=false, seconds=false)" v-if="isForecast" />
+        <div class="name"
+             v-text="formatDateTime(value.time, year=false, seconds=false, skipTimeIfMidnight=true)"
+             v-if="isForecast" />
         <div class="name" v-text="value.name" v-else />
       </div>
 
@@ -170,12 +172,11 @@
 </template>
 
 <script>
-import EntityIcon from "./EntityIcon"
 import EntityMixin from "./EntityMixin"
 import WeatherIcon from "./WeatherIcon"
 
 export default {
-  components: {EntityIcon, WeatherIcon},
+  components: {WeatherIcon},
   mixins: [EntityMixin],
 
   props: {
