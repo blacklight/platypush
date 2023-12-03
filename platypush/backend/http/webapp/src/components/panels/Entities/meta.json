@@ -327,6 +327,14 @@
     }
   },
 
+  "ping_host": {
+    "name": "Host",
+    "name_plural": "Hosts",
+    "icon": {
+      "class": "fas fa-server"
+    }
+  },
+
   "time_duration_sensor": {
     "name": "Sensor",
     "name_plural": "Sensors",

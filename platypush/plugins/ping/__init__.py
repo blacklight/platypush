@@ -3,8 +3,11 @@ import re
 import subprocess
 import sys
 from concurrent.futures import ProcessPoolExecutor
-from typing import Dict, Optional, List
+from concurrent.futures.process import BrokenProcessPool
+from typing import Collection, Dict, Iterable, Optional, List
 
+from platypush.entities import EntityManager
+from platypush.entities.ping import PingHost
 from platypush.message.event.ping import HostUpEvent, HostDownEvent, PingResponseEvent
 from platypush.plugins import RunnablePlugin, action
 from platypush.schemas.ping import PingResponseSchema
@@ -19,6 +22,8 @@ WIN32_PING_MATCHER = re.compile(r"(?P<min>\d+)ms.+(?P<max>\d+)ms.+(?P<avg>\d+)ms
 
 
 def ping(host: str, ping_cmd: List[str], logger: logging.Logger) -> dict:
+    out = None
+    pinger = None
     err_response = dict(
         PingResponseSchema().dump(
             {
@@ -28,12 +33,12 @@ def ping(host: str, ping_cmd: List[str], logger: logging.Logger) -> dict:
         )
     )
 
-    with subprocess.Popen(
-        ping_cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    ) as pinger:
-        try:
+    try:
+        with subprocess.Popen(
+            ping_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ) as pinger:
             out = pinger.communicate()
             if sys.platform == "win32":
                 match = WIN32_PING_MATCHER.search(str(out).rsplit("\n", maxsplit=1)[-1])
@@ -43,12 +48,12 @@ def ping(host: str, ping_cmd: List[str], logger: logging.Logger) -> dict:
                 match = PING_MATCHER_BUSYBOX.search(
                     str(out).rsplit("\n", maxsplit=1)[-1]
                 )
-                assert match is not None, f"No match found in {out}"
+                assert match is not None, out
                 min_val, avg_val, max_val = match.groups()
                 mdev_val = None
             else:
                 match = PING_MATCHER.search(str(out).rsplit("\n", maxsplit=1)[-1])
-                assert match is not None, f"No match found in {out}"
+                assert match is not None, out
                 min_val, avg_val, max_val, mdev_val = match.groups()
 
             return dict(
@@ -63,17 +68,22 @@ def ping(host: str, ping_cmd: List[str], logger: logging.Logger) -> dict:
                     }
                 )
             )
-        except Exception as e:
-            if not isinstance(e, (subprocess.CalledProcessError, KeyboardInterrupt)):
-                logger.warning("Error while pinging host %s: %s", host, e)
-                logger.exception(e)
+    except Exception as e:
+        err = (
+            '\n'.join(line.decode().strip() for line in out)
+            if isinstance(out, (tuple, list))
+            else str(e)
+        )
 
+        logger.warning("Error while pinging host %s: %s", host, err)
+        if pinger and pinger.poll() is None:
             pinger.kill()
             pinger.wait()
-            return err_response
+
+        return err_response
 
 
-class PingPlugin(RunnablePlugin):
+class PingPlugin(RunnablePlugin, EntityManager):
     """
     This integration allows you to:
 
@@ -88,7 +98,7 @@ class PingPlugin(RunnablePlugin):
         count: int = 1,
         timeout: float = 5.0,
         hosts: Optional[List[str]] = None,
-        poll_interval: float = 10.0,
+        poll_interval: float = 20.0,
         **kwargs,
     ):
         """
@@ -103,7 +113,7 @@ class PingPlugin(RunnablePlugin):
         self.executable = executable
         self.count = count
         self.timeout = timeout
-        self.hosts: Dict[str, Optional[bool]] = {h: None for h in (hosts or [])}
+        self.hosts: Dict[str, Optional[dict]] = {h: None for h in (hosts or [])}
 
     def _get_ping_cmd(self, host: str, count: int, timeout: float) -> List[str]:
         if sys.platform == 'win32':
@@ -162,17 +172,46 @@ class PingPlugin(RunnablePlugin):
         if success is None:
             return
 
+        prev_result = self.hosts.get(host)
         if success:
-            if self.hosts.get(host) in (False, None):
+            if not (prev_result and prev_result.get("success")):
                 self._bus.post(HostUpEvent(host=host))
 
-            result.pop("success", None)
             self._bus.post(PingResponseEvent(**result))
-            self.hosts[host] = True
+            self.hosts[host] = result
         else:
-            if self.hosts.get(host) in (True, None):
+            if not prev_result or prev_result.get("success"):
                 self._bus.post(HostDownEvent(host=host))
-            self.hosts[host] = False
+            self.hosts[host] = result
+
+    @action
+    def status(self) -> Collection[PingHost]:
+        """
+        Get the status of the monitored hosts.
+        :return: Dictionary of monitored hosts and their status.
+        """
+        return self.publish_entities()
+
+    def publish_entities(self, *_, **__) -> Collection[PingHost]:
+        return super().publish_entities(self.hosts.values())
+
+    def transform_entities(
+        self, entities: Collection[Optional[dict]], **_
+    ) -> Iterable[PingHost]:
+        return super().transform_entities(
+            [
+                PingHost(
+                    id=status.get("host"),
+                    name=status.get("host"),
+                    reachable=status.get("success"),
+                    min=status.get("min"),
+                    max=status.get("max"),
+                    avg=status.get("avg"),
+                )
+                for status in entities
+                if status
+            ]
+        )
 
     def main(self):
         # Don't start the thread if no monitored hosts are configured
@@ -193,12 +232,13 @@ class PingPlugin(RunnablePlugin):
                         [self.logger] * len(self.hosts),
                     ):
                         self._process_ping_result(result)
-            except KeyboardInterrupt:
+            except (KeyboardInterrupt, BrokenProcessPool):
                 break
             except Exception as e:
                 self.logger.warning("Error while pinging hosts: %s", e)
                 self.logger.exception(e)
             finally:
+                self.publish_entities()
                 self.wait_stop(self.poll_interval)
 
 

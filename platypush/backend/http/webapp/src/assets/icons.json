@@ -71,6 +71,9 @@
   "music.spotify": {
     "class": "fab fa-spotify"
   },
+  "ping": {
+    "class": "fas fa-server"
+  },
   "torrent": {
     "class": "fa fa-magnet"
   },
