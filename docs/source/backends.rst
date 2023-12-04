@@ -11,7 +11,6 @@ Backends
     platypush/backend/button.flic.rst
     platypush/backend/camera.pi.rst
     platypush/backend/chat.telegram.rst
-    platypush/backend/file.monitor.rst
     platypush/backend/foursquare.rst
     platypush/backend/github.rst
     platypush/backend/google.fit.rst
@@ -28,7 +27,6 @@ Backends
     platypush/backend/nextcloud.rst
     platypush/backend/nfc.rst
     platypush/backend/nodered.rst
-    platypush/backend/ping.rst
     platypush/backend/pushbullet.rst
     platypush/backend/redis.rst
     platypush/backend/scard.rst

@@ -383,6 +383,30 @@ backend.http:
 ###
 
 ###
+# # The file monitor plugin can be used to track modifications to the
+# # filesystem - for example, when a file or a directory is modified, created
+# # or removed.
+#
+# file.monitor:
+#     paths:
+#         # Recursively monitor changes on the
+#         # ~/my-images folder that include all the files
+#         # matching a JPEG extension in case-insensitive
+#         # mode, excluding those whose name starts with
+#         # tmp_ and all the files contained in the
+#         # __MACOSX folders
+#         - path: ~/my-images
+#           recursive: true
+#           case_sensitive: false
+#           regexes:
+#             - '.*\\.jpe?g$'
+#           ignore_patterns:
+#             - '^tmp_.*'
+#           ignore_directories:
+#             - '__MACOSX'
+###
+
+###
 # # Example configuration of a weather plugin
 #
 # weather.openweathermap:

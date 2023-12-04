@@ -33,6 +33,7 @@ Plugins
     platypush/plugins/esp.rst
     platypush/plugins/ffmpeg.rst
     platypush/plugins/file.rst
+    platypush/plugins/file.monitor.rst
     platypush/plugins/foursquare.rst
     platypush/plugins/google.calendar.rst
     platypush/plugins/google.drive.rst
