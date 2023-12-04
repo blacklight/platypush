@@ -8,33 +8,6 @@ from .entities.handlers import EventHandler
 from .entities.resources import MonitoredResource, MonitoredPattern, MonitoredRegex
 
 
-def event_handler_from_resource(
-    resource: Union[str, Dict[str, Any], MonitoredResource]
-) -> Optional[EventHandler]:
-    """
-    Create a file system event handler from a string, dictionary or
-    ``MonitoredResource`` resource.
-    """
-
-    if isinstance(resource, str):
-        res = MonitoredResource(resource)
-    elif isinstance(resource, dict):
-        if 'regexes' in resource or 'ignore_regexes' in resource:
-            res = MonitoredRegex(**resource)
-        elif (
-            'patterns' in resource
-            or 'ignore_patterns' in resource
-            or 'ignore_directories' in resource
-        ):
-            res = MonitoredPattern(**resource)
-        else:
-            res = MonitoredResource(**resource)
-    else:
-        return None
-
-    return EventHandler.from_resource(res)
-
-
 class FileMonitorPlugin(RunnablePlugin):
     """
     A plugin to monitor changes to files and directories.
@@ -120,15 +93,44 @@ class FileMonitorPlugin(RunnablePlugin):
 
         super().__init__(**kwargs)
         self._observer = Observer()
+        self.paths = set()
 
         for path in paths:
-            handler = event_handler_from_resource(path)
+            handler = self.event_handler_from_resource(path)
             if not handler:
                 continue
 
+            self.paths.add(handler.resource.path)
             self._observer.schedule(
                 handler, handler.resource.path, recursive=handler.resource.recursive
             )
+
+    @staticmethod
+    def event_handler_from_resource(
+        resource: Union[str, Dict[str, Any], MonitoredResource]
+    ) -> Optional[EventHandler]:
+        """
+        Create a file system event handler from a string, dictionary or
+        ``MonitoredResource`` resource.
+        """
+
+        if isinstance(resource, str):
+            res = MonitoredResource(resource)
+        elif isinstance(resource, dict):
+            if 'regexes' in resource or 'ignore_regexes' in resource:
+                res = MonitoredRegex(**resource)
+            elif (
+                'patterns' in resource
+                or 'ignore_patterns' in resource
+                or 'ignore_directories' in resource
+            ):
+                res = MonitoredPattern(**resource)
+            else:
+                res = MonitoredResource(**resource)
+        else:
+            return None
+
+        return EventHandler.from_resource(res)
 
     def stop(self):
         self._observer.stop()

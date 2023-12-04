@@ -5,10 +5,10 @@ import re
 from dataclasses import dataclass
 from logging import getLogger
 from threading import RLock
-from typing import List, Optional, Iterable
+from typing import Optional, Iterable
 
-from platypush.backend.file.monitor import (
-    FileMonitorBackend,
+from platypush.plugins.file.monitor import (
+    FileMonitorPlugin,
     EventHandler,
     MonitoredResource,
 )
@@ -152,28 +152,32 @@ class LogEventHandler(EventHandler):
         return HttpLogEvent(logfile=file, **info)
 
 
-class LogHttpBackend(FileMonitorBackend):
+class LogHttpPlugin(FileMonitorPlugin):
     """
-    This backend can be used to monitor one or more HTTP log files (tested on Apache and Nginx) and trigger events
-    whenever a new log line is added.
+    This plugin can be used to monitor one or more HTTP log files (tested on
+    Apache and Nginx) and trigger events whenever a new log line is added.
     """
 
-    class EventHandlerFactory:
-        @staticmethod
-        def from_resource(resource: str) -> LogEventHandler:
-            resource = MonitoredResource(resource)
-            return LogEventHandler.from_resource(resource)
+    def __init__(
+        self, paths: Iterable[str], log_files: Optional[Iterable[str]] = None, **kwargs
+    ):
+        """
+        :param paths: List of log files to be monitored.
+        """
+        if log_files:
+            self.logger.warning(
+                'The log_files parameter is deprecated, use paths instead'
+            )
 
-    def __init__(self, log_files: List[str], **kwargs):
-        """
-        :param log_files: List of log files to be monitored.
-        """
-        self.log_files = {os.path.expanduser(log) for log in log_files}
-        directories = {os.path.dirname(log) for log in self.log_files}
+        paths = {os.path.expanduser(log) for log in {*paths, *(log_files or [])}}
+        directories = {os.path.dirname(log) for log in paths}
         super().__init__(paths=directories, **kwargs)
 
-        # noinspection PyProtectedMember
         handlers = self._observer._handlers
         for hndls in handlers.values():
             for hndl in hndls:
-                hndl.monitor_files(self.log_files)
+                hndl.monitor_files(paths)
+
+    @staticmethod
+    def event_handler_from_resource(resource: str) -> LogEventHandler:
+        return LogEventHandler.from_resource(MonitoredResource(resource))

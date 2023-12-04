@@ -1,6 +1,6 @@
 manifest:
   events:
-    platypush.message.event.log.http.HttpLogEvent: when a new log line is created.
+    - platypush.message.event.log.http.HttpLogEvent
   install:
     apk:
       - py3-watchdog
@@ -12,5 +12,5 @@ manifest:
       - python-watchdog
     pip:
       - watchdog
-  package: platypush.backend.log.http
-  type: backend
+  package: platypush.plugins.log.http
+  type: plugin
