@@ -87,9 +87,8 @@ class PingPlugin(RunnablePlugin, EntityManager):
     """
     This integration allows you to:
 
-        1. Programmatic ping a remote host.
-        2. Monitor the status of a remote host.
-
+        - Programmatic ping a remote host.
+        - Monitor the status of a remote host.
     """
 
     def __init__(
@@ -143,6 +142,7 @@ class PingPlugin(RunnablePlugin, EntityManager):
     ) -> dict:
         """
         Ping a remote host.
+
         :param host: Remote host IP or name
         :param count: Overrides the configured number of packets that should be
             sent (default: 1).
