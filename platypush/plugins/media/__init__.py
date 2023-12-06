@@ -151,14 +151,14 @@ class MediaPlugin(Plugin, ABC):
         'f4b',
     }
 
-    _supported_media_plugins = {
+    supported_media_plugins = [
         'media.mplayer',
         'media.omxplayer',
         'media.mpv',
         'media.vlc',
         'media.chromecast',
         'media.gstreamer',
-    }
+    ]
 
     _supported_media_types = ['file', 'jellyfin', 'plex', 'torrent', 'youtube']
     _default_search_timeout = 60  # 60 seconds
@@ -217,7 +217,7 @@ class MediaPlugin(Plugin, ABC):
         if self.__class__.__name__ == 'MediaPlugin':
             # Abstract class, initialize with the default configured player
             for plugin_name in Config.get_plugins().keys():
-                if plugin_name in self._supported_media_plugins:
+                if plugin_name in self.supported_media_plugins:
                     player = get_plugin(plugin_name)
                     if player and player.is_local():
                         # Local players have priority as default if configured
