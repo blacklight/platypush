@@ -129,7 +129,11 @@ class Alarm:
         return self._enabled
 
     def is_shut_down(self):
-        return self.state == AlarmState.SHUTDOWN
+        return self.state in {
+            AlarmState.SHUTDOWN,
+            AlarmState.DISMISSED,
+            AlarmState.UNKNOWN,
+        }
 
     def is_expired(self):
         return (self.get_next() or 0) < time.time()
@@ -283,6 +287,7 @@ class Alarm:
             snooze_interval=alarm.snooze_interval,  # type: ignore
             enabled=bool(alarm.enabled),
             static=bool(alarm.static),
+            state=getattr(AlarmState, str(alarm.state)),
             **kwargs,
         )
 

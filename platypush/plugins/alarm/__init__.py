@@ -3,7 +3,7 @@ import sys
 from threading import RLock
 from typing import Collection, Generator, Optional, Dict, Any, List, Union
 
-from sqlalchemy.orm import Session, make_transient
+from sqlalchemy.orm import Session
 
 from platypush.context import get_plugin
 from platypush.entities import EntityManager
@@ -182,7 +182,6 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
     def _clear_alarm(self, alarm: DbAlarm, session: Session):
         self.alarms.pop(str(alarm.name), None)
         session.delete(alarm)
-        make_transient(alarm)
         self._bus.post(EntityDeleteEvent(entity=alarm))
 
     def _clear_expired_alarms(self, session: Session):
