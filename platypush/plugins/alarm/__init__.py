@@ -1,8 +1,15 @@
+from contextlib import contextmanager
 import sys
-from typing import Optional, Dict, Any, List, Union
-from platypush.context import get_plugin
+from threading import RLock
+from typing import Collection, Generator, Optional, Dict, Any, List, Union
 
+from sqlalchemy.orm import Session
+
+from platypush.context import get_plugin
+from platypush.entities import EntityManager
+from platypush.entities.alarm import Alarm as AlarmTable
 from platypush.plugins import RunnablePlugin, action
+from platypush.plugins.db import DbPlugin
 from platypush.plugins.media import MediaPlugin
 from platypush.utils import get_plugin_name_by_class
 from platypush.utils.media import get_default_media_plugin
@@ -10,7 +17,7 @@ from platypush.utils.media import get_default_media_plugin
 from ._model import Alarm, AlarmState
 
 
-class AlarmPlugin(RunnablePlugin):
+class AlarmPlugin(RunnablePlugin, EntityManager):
     """
     Alarm/timer plugin.
 
@@ -84,6 +91,7 @@ class AlarmPlugin(RunnablePlugin):
             alarms that are configured to play an audio resource.
         """
         super().__init__(poll_interval=poll_interval, **kwargs)
+        self._db_lock = RLock()
         alarms = alarms or []
         if isinstance(alarms, dict):
             alarms = [{'name': name, **alarm} for name, alarm in alarms.items()]
@@ -106,15 +114,91 @@ class AlarmPlugin(RunnablePlugin):
                 'No media plugin configured. Alarms that require audio playback will not work'
             )
 
-        alarms = [
-            Alarm(
-                stop_event=self._should_stop,
-                **{'media_plugin': self.media_plugin, **alarm},
-            )
-            for alarm in alarms
+        self.alarms = {
+            alarm.name: alarm
+            for alarm in [
+                Alarm(
+                    stop_event=self._should_stop,
+                    static=True,
+                    media_plugin=alarm.pop('media_plugin', self.media_plugin),
+                    on_change=self._on_alarm_update,
+                    **alarm,
+                )
+                for alarm in alarms
+            ]
+        }
+
+        self._synced = False
+
+    @property
+    def _db(self) -> DbPlugin:
+        db = get_plugin('db')
+        assert db, 'No database plugin configured'
+        return db
+
+    @contextmanager
+    def _get_session(self) -> Generator[Session, None, None]:
+        with self._db_lock, self._db.get_session() as session:
+            yield session
+
+    def _merge_alarms(self, alarms: Dict[str, AlarmTable], session: Session):
+        for name, alarm in alarms.items():
+            if name in self.alarms:
+                existing_alarm = self.alarms[name]
+
+                # If the alarm is static, then we only want to override its
+                # enabled state from the db record
+                if existing_alarm.static:
+                    existing_alarm.set_enabled(bool(alarm.enabled))
+            else:
+                # If the alarm record on the db is static, but the alarm is no
+                # longer present in the configuration, then we want to delete it
+                if alarm.static:
+                    session.delete(alarm)
+                else:
+                    self.alarms[name] = Alarm.from_db(
+                        alarm,
+                        stop_event=self._should_stop,
+                        media_plugin=self.media_plugin,
+                    )
+
+    def _sync_alarms(self):
+        with self._get_session() as session:
+            db_alarms = {
+                str(alarm.name): alarm for alarm in session.query(AlarmTable).all()
+            }
+
+            self._merge_alarms(db_alarms, session)
+            self._clear_expired_alarms(session)
+            for name, alarm in self.alarms.copy().items():
+                if not (name in db_alarms or alarm.static):
+                    self.alarms.pop(name, None)
+
+        if not self._synced:
+            self.publish_entities(self.alarms.values())
+            self._synced = True
+
+    def _clear_expired_alarms(self, session: Session):
+        expired_alarms = [
+            alarm
+            for alarm in self.alarms.values()
+            if alarm.is_expired() and alarm.is_shut_down()
         ]
 
-        self.alarms: Dict[str, Alarm] = {alarm.name: alarm for alarm in alarms}
+        if not expired_alarms:
+            return
+
+        expired_alarm_records = session.query(AlarmTable).filter(
+            AlarmTable.name.in_([alarm.name for alarm in expired_alarms])
+        )
+
+        for alarm in expired_alarms:
+            self.alarms.pop(alarm.name, None)
+            if alarm.static:
+                continue
+
+        for alarm in expired_alarm_records:
+            session.delete(alarm)
 
     def _get_alarms(self) -> List[Alarm]:
         return sorted(
@@ -142,6 +226,10 @@ class AlarmPlugin(RunnablePlugin):
     def _disable(self, name: str):
         self._get_alarm(name).disable()
 
+    def _on_alarm_update(self, alarm: Alarm):
+        with self._db_lock:
+            self.publish_entities([alarm])
+
     def _add(
         self,
         when: Union[str, int, float],
@@ -161,15 +249,22 @@ class AlarmPlugin(RunnablePlugin):
             media_plugin=self.media_plugin,
             audio_volume=audio_volume,
             stop_event=self._should_stop,
+            on_change=self._on_alarm_update,
         )
 
         if alarm.name in self.alarms:
+            assert not self.alarms[alarm.name].static, (
+                f'Alarm {alarm.name} is statically defined in the configuration, '
+                'cannot overwrite it programmatically'
+            )
+
             self.logger.info('Overwriting existing alarm: %s', alarm.name)
             self.alarms[alarm.name].stop()
 
         self.alarms[alarm.name] = alarm
-        self.alarms[alarm.name].start()
-        return self.alarms[alarm.name]
+        alarm.start()
+        self.publish_entities([alarm])
+        return alarm
 
     def _dismiss(self):
         alarm = self._get_current_alarm()
@@ -197,13 +292,9 @@ class AlarmPlugin(RunnablePlugin):
         audio_file: Optional[str] = None,
         audio_volume: Optional[Union[int, float]] = None,
         enabled: bool = True,
-    ) -> str:
+    ) -> dict:
         """
-        Add a new alarm. NOTE: alarms that aren't statically defined in the
-        plugin configuration will only run in the current session. If you want
-        an alarm to be permanently stored, you should configure it in the alarm
-        backend configuration. You may want to add an alarm dynamically if it's
-        a one-time alarm instead.
+        Add a new alarm.
 
         :param when: When the alarm should be executed. It can be either a cron
             expression (for recurrent alarms), or a datetime string in ISO
@@ -215,14 +306,14 @@ class AlarmPlugin(RunnablePlugin):
         :param media: Path of the audio file to be played.
         :param audio_volume: Volume of the audio.
         :param enabled: Whether the new alarm should be enabled (default: True).
-        :return: The alarm name.
+        :return: The newly created alarm.
         """
         if audio_file:
             self.logger.warning(
                 'The audio_file parameter is deprecated. Use media instead'
             )
 
-        alarm = self._add(
+        return self._add(
             when=when,
             media=media,
             audio_file=audio_file,
@@ -230,8 +321,7 @@ class AlarmPlugin(RunnablePlugin):
             name=name,
             enabled=enabled,
             audio_volume=audio_volume,
-        )
-        return alarm.name
+        ).to_dict()
 
     @action
     def enable(self, name: str):
@@ -278,7 +368,7 @@ class AlarmPlugin(RunnablePlugin):
         return self.status()  # type: ignore
 
     @action
-    def status(self) -> List[Dict[str, Any]]:
+    def status(self, *_, **__) -> List[Dict[str, Any]]:
         """
         Get the list of configured alarms and their status.
 
@@ -293,24 +383,40 @@ class AlarmPlugin(RunnablePlugin):
                         "when": "0 8 * * 1-5",
                         "next_run": "2023-12-06T08:00:00.000000",
                         "enabled": true,
+                        "media": "/path/to/media.mp3",
+                        "media_plugin": "media.vlc",
+                        "audio_volume": 10,
+                        "snooze_interval": 300,
+                        "actions": [
+                            {
+                                "action": "tts.say",
+                                "args": {
+                                    "text": "Good morning"
+                                }
+                            },
+                            {
+                                "action": "light.hue.on"
+                            }
+                        ],
                         "state": "RUNNING"
                     }
                 ]
 
         """
-        return [alarm.to_dict() for alarm in self._get_alarms()]
+        ret = [alarm.to_dict() for alarm in self._get_alarms()]
+        self.publish_entities(self.alarms.values())
+        return ret
+
+    def transform_entities(self, entities: Collection[Alarm], **_) -> List[AlarmTable]:
+        return [alarm.to_db() for alarm in entities]
 
     def main(self):
+        self._sync_alarms()
         for alarm in self.alarms.values():
             alarm.start()
 
         while not self.should_stop():
-            for name, alarm in self.alarms.copy().items():
-                if not alarm.timer or (
-                    not alarm.timer.is_alive() and alarm.state == AlarmState.SHUTDOWN
-                ):
-                    del self.alarms[name]
-
+            self._sync_alarms()
             self.wait_stop(self.poll_interval)
 
     def stop(self):

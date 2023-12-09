@@ -3,11 +3,13 @@ import enum
 import os
 import time
 import threading
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 
 import croniter
 
 from platypush.context import get_bus, get_plugin
+from platypush.entities.alarm import Alarm as AlarmTable
+from platypush.message.request import Request
 from platypush.message.event.alarm import (
     AlarmStartedEvent,
     AlarmDismissedEvent,
@@ -49,7 +51,10 @@ class Alarm:
         snooze_interval: float = 300,
         poll_interval: float = 5,
         enabled: bool = True,
+        static: bool = False,
         stop_event: Optional[threading.Event] = None,
+        on_change: Optional[Callable[['Alarm'], None]] = None,
+        **_,
     ):
         with self._id_lock:
             self._alarms_count += 1
@@ -63,6 +68,7 @@ class Alarm:
         self.snooze_interval = snooze_interval
         self.state = AlarmState.UNKNOWN
         self.timer: Optional[threading.Timer] = None
+        self.static = static
         self.actions = Procedure.build(
             name=name, _async=False, requests=actions or [], id=self.id
         )
@@ -71,6 +77,11 @@ class Alarm:
         self._runtime_snooze_interval = snooze_interval
         self.stop_event = stop_event or threading.Event()
         self.poll_interval = poll_interval
+        self.on_change = on_change
+
+    def _on_change(self):
+        if self.on_change:
+            self.on_change(self)
 
     @staticmethod
     def _get_media_resource(media: Optional[str]) -> Optional[str]:
@@ -113,16 +124,26 @@ class Alarm:
     def is_enabled(self):
         return self._enabled
 
+    def is_shut_down(self):
+        return self.state == AlarmState.SHUTDOWN
+
+    def is_expired(self):
+        return (self.get_next() or 0) < time.time()
+
     def disable(self):
-        self._enabled = False
+        self.set_enabled(False)
 
     def enable(self):
-        self._enabled = True
+        self.set_enabled(True)
+
+    def set_enabled(self, enabled: bool):
+        self._enabled = enabled
 
     def dismiss(self):
         self.state = AlarmState.DISMISSED
         self.stop_audio()
         get_bus().post(AlarmDismissedEvent(name=self.name))
+        self._on_change()
 
     def snooze(self, interval: Optional[float] = None):
         self._runtime_snooze_interval = interval or self.snooze_interval
@@ -131,13 +152,11 @@ class Alarm:
         get_bus().post(
             AlarmSnoozedEvent(name=self.name, interval=self._runtime_snooze_interval)
         )
+        self._on_change()
 
     def start(self):
         if self.timer:
             self.timer.cancel()
-
-        if self.get_next() is None:
-            return
 
         next_run = self.get_next()
         if next_run is None:
@@ -147,12 +166,15 @@ class Alarm:
         self.timer = threading.Timer(interval, self.alarm_callback)
         self.timer.start()
         self.state = AlarmState.WAITING
+        self._on_change()
 
     def stop(self):
         self.state = AlarmState.SHUTDOWN
         if self.timer:
             self.timer.cancel()
             self.timer = None
+
+        self._on_change()
 
     def _get_media_plugin(self) -> MediaPlugin:
         plugin = get_plugin(self.media_plugin)
@@ -170,7 +192,6 @@ class Alarm:
             if self.audio_volume is not None:
                 self._get_media_plugin().set_volume(self.audio_volume)
 
-        self.state = AlarmState.RUNNING
         audio_thread = threading.Thread(target=thread)
         audio_thread.start()
 
@@ -180,7 +201,9 @@ class Alarm:
     def alarm_callback(self):
         while not self.should_stop():
             if self.is_enabled():
+                self.state = AlarmState.RUNNING
                 get_bus().post(AlarmStartedEvent(name=self.name))
+                self._on_change()
                 if self.media_plugin and self.media:
                     self.play_audio()
 
@@ -226,17 +249,57 @@ class Alarm:
         self.stop_event.wait(timeout)
 
     def should_stop(self):
-        return self.stop_event.is_set() or self.state == AlarmState.SHUTDOWN
+        return self.stop_event.is_set() or (self.is_expired() and self.is_shut_down())
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         return {
+            'id': self.name,
             'name': self.name,
-            'id': self.id,
             'when': self.when,
             'next_run': self.get_next(),
             'enabled': self.is_enabled(),
             'state': self.state.name,
+            'media': self.media,
+            'media_plugin': self.media_plugin,
+            'audio_volume': self.audio_volume,
+            'snooze_interval': self.snooze_interval,
+            'actions': self.actions.requests,
+            'static': self.static,
         }
+
+    @classmethod
+    def from_db(cls, alarm: AlarmTable, **kwargs) -> 'Alarm':
+        return cls(
+            when=str(alarm.when),
+            name=str(alarm.name),
+            media=alarm.media,  # type: ignore
+            media_plugin=kwargs.pop('media_plugin', alarm.media_plugin),  # type: ignore
+            audio_volume=alarm.audio_volume,  # type: ignore
+            actions=alarm.actions,  # type: ignore
+            snooze_interval=alarm.snooze_interval,  # type: ignore
+            enabled=bool(alarm.enabled),
+            static=bool(alarm.static),
+            **kwargs,
+        )
+
+    def to_db(self) -> AlarmTable:
+        return AlarmTable(
+            id=self.name,
+            name=self.name,
+            when=self.when,
+            state=self.state.name,
+            next_run=self.get_next(),
+            media=self.media,
+            media_plugin=self.media_plugin,
+            audio_volume=self.audio_volume,
+            actions=[
+                Request.to_dict(req) if isinstance(req, Request) else req
+                for req in self.actions.requests
+            ],
+            snooze_interval=self.snooze_interval,
+            enabled=self.is_enabled(),
+            static=self.static,
+        )
 
 
 # vim:sw=4:ts=4:et:
