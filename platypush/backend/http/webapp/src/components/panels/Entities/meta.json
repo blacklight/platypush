@@ -1,4 +1,12 @@
 {
+  "alarm": {
+    "name": "Alarm",
+    "name_plural": "Alarms",
+    "icon": {
+      "class": "fas fa-stopwatch"
+    }
+  },
+
   "assistant": {
     "name": "Assistant",
     "name_plural": "Assistants",

@@ -1,4 +1,7 @@
 {
+  "alarm": {
+    "class": "fas fa-stopwatch"
+  },
   "arduino": {
     "class": "fas fa-microchip"
   },
