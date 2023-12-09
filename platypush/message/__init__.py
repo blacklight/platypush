@@ -84,6 +84,9 @@ class Message:
             if is_dataclass(obj):
                 return asdict(obj)
 
+            if isinstance(obj, Message):
+                return obj.to_dict(obj)
+
             # Don't serialize I/O wrappers/objects
             if isinstance(obj, io.IOBase):
                 return None
@@ -167,6 +170,20 @@ class Message:
             msg['_timestamp'] = time.time()
 
         return msg
+
+    @classmethod
+    def to_dict(cls, msg):
+        """
+        Converts a Message object into a dictionary
+
+        :param msg: Message object
+        """
+
+        return {
+            k: v
+            for k, v in cls.parse(msg).items()
+            if k not in ('id', 'token', 'target', 'origin', '_timestamp')
+        }
 
     @classmethod
     def build(cls, msg):
