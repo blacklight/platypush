@@ -1,6 +1,8 @@
 manifest:
   events:
+    - platypush.message.event.alarm.AlarmDisabledEvent
     - platypush.message.event.alarm.AlarmDismissedEvent
+    - platypush.message.event.alarm.AlarmEnabledEvent
     - platypush.message.event.alarm.AlarmSnoozedEvent
     - platypush.message.event.alarm.AlarmStartedEvent
     - platypush.message.event.alarm.AlarmTimeoutEvent

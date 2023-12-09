@@ -12,9 +12,11 @@ from platypush.context import get_bus, get_plugin
 from platypush.entities.alarm import Alarm as AlarmDb
 from platypush.message.request import Request
 from platypush.message.event.alarm import (
-    AlarmStartedEvent,
+    AlarmDisabledEvent,
     AlarmDismissedEvent,
+    AlarmEnabledEvent,
     AlarmSnoozedEvent,
+    AlarmStartedEvent,
 )
 from platypush.plugins.media import MediaPlugin, PlayerState
 from platypush.procedure import Procedure
@@ -145,7 +147,13 @@ class Alarm:
         self.set_enabled(True)
 
     def set_enabled(self, enabled: bool):
+        if enabled == self._enabled:
+            return
+
         self._enabled = enabled
+        evt_type = AlarmEnabledEvent if enabled else AlarmDisabledEvent
+        get_bus().post(evt_type(name=self.name))
+        self._on_change()
 
     def dismiss(self):
         self.state = AlarmState.DISMISSED
@@ -232,6 +240,7 @@ class Alarm:
                             sleep_time = self._runtime_snooze_interval
                         else:
                             self.state = AlarmState.WAITING
+                            self._on_change()
 
                         break
 

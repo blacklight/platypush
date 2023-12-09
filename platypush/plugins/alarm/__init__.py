@@ -79,6 +79,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         alarms: Optional[Union[list, Dict[str, Any]]] = None,
         media_plugin: Optional[str] = None,
         poll_interval: Optional[float] = 5.0,
+        snooze_interval: float = 300.0,
         **kwargs,
     ):
         """
@@ -90,8 +91,11 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             ``media.gstreamer`` etc. If not specified, the first available
             configured local media plugin will be used. This only applies to
             alarms that are configured to play an audio resource.
+        :param poll_interval: Poll interval in seconds (default: 5).
+        :param snooze_interval: Default snooze interval in seconds (default: 300).
         """
         super().__init__(poll_interval=poll_interval, **kwargs)
+        self.snooze_interval = snooze_interval
         self._db_lock = RLock()
         alarms = alarms or []
         if isinstance(alarms, dict):
@@ -160,7 +164,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
                     self.alarms[name] = Alarm.from_db(
                         alarm,
                         stop_event=self._should_stop,
-                        media_plugin=self.media_plugin,
+                        media_plugin=alarm.media_plugin or self.media_plugin,
                     )
 
     def _sync_alarms(self):
@@ -240,6 +244,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         audio_file: Optional[str] = None,
         audio_volume: Optional[Union[int, float]] = None,
         enabled: bool = True,
+        snooze_interval: Optional[float] = None,
     ) -> Alarm:
         alarm = Alarm(
             when=when,
@@ -249,6 +254,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             media=media or audio_file,
             media_plugin=self.media_plugin,
             audio_volume=audio_volume,
+            snooze_interval=snooze_interval or self.snooze_interval,
             stop_event=self._should_stop,
             on_change=self._on_alarm_update,
         )
@@ -281,6 +287,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             self.logger.info('No alarm is running')
             return
 
+        interval = interval or alarm.snooze_interval or self.snooze_interval
         alarm.snooze(interval=interval)
 
     @action
@@ -293,6 +300,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         audio_file: Optional[str] = None,
         audio_volume: Optional[Union[int, float]] = None,
         enabled: bool = True,
+        snooze_interval: Optional[float] = None,
     ) -> dict:
         """
         Add a new alarm.
@@ -307,6 +315,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         :param media: Path of the audio file to be played.
         :param audio_volume: Volume of the audio.
         :param enabled: Whether the new alarm should be enabled (default: True).
+        :param snooze_interval: Snooze seconds before playing the alarm again.
         :return: The newly created alarm.
         """
         if audio_file:
@@ -322,6 +331,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             name=name,
             enabled=enabled,
             audio_volume=audio_volume,
+            snooze_interval=snooze_interval,
         ).to_dict()
 
     @action
@@ -344,6 +354,19 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         self._disable(name)
 
     @action
+    def set_enabled(self, name: str, enabled: bool):
+        """
+        Enable/disable an alarm.
+
+        :param name: Alarm name.
+        :param enabled: Whether the alarm should be enabled.
+        """
+        if enabled:
+            self._enable(name)
+        else:
+            self._disable(name)
+
+    @action
     def dismiss(self):
         """
         Dismiss the alarm that is currently running.
@@ -351,7 +374,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         self._dismiss()
 
     @action
-    def snooze(self, interval: Optional[float] = 300.0):
+    def snooze(self, interval: Optional[float] = None):
         """
         Snooze the alarm that is currently running for the specified number of seconds.
         The alarm will stop and resume again later.
