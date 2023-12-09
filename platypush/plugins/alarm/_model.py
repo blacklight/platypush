@@ -6,9 +6,10 @@ import threading
 from typing import Callable, Optional, Union
 
 import croniter
+from dateutil.tz import gettz
 
 from platypush.context import get_bus, get_plugin
-from platypush.entities.alarm import Alarm as AlarmTable
+from platypush.entities.alarm import Alarm as AlarmDb
 from platypush.message.request import Request
 from platypush.message.event.alarm import (
     AlarmStartedEvent,
@@ -111,7 +112,10 @@ class Alarm:
 
             try:
                 # If when is a cron expression, get the next run time
-                t = croniter.croniter(self.when, now).get_next()
+                t = croniter.croniter(
+                    self.when,
+                    datetime.datetime.fromtimestamp(now).replace(tzinfo=gettz()),
+                ).get_next()
             except (AttributeError, croniter.CroniterBadCronError):
                 try:
                     # If when is an ISO-8601 timestamp, parse it
@@ -268,7 +272,7 @@ class Alarm:
         }
 
     @classmethod
-    def from_db(cls, alarm: AlarmTable, **kwargs) -> 'Alarm':
+    def from_db(cls, alarm: AlarmDb, **kwargs) -> 'Alarm':
         return cls(
             when=str(alarm.when),
             name=str(alarm.name),
@@ -282,8 +286,8 @@ class Alarm:
             **kwargs,
         )
 
-    def to_db(self) -> AlarmTable:
-        return AlarmTable(
+    def to_db(self) -> AlarmDb:
+        return AlarmDb(
             id=self.name,
             name=self.name,
             when=self.when,
