@@ -28,6 +28,7 @@ if not is_defined('alarm'):
         snooze_interval = Column(Integer, nullable=True)
         actions = Column(JSON, nullable=True)
         static = Column(Boolean, nullable=False, default=False)
+        condition_type = Column(String, nullable=False)
 
         __table_args__ = {'extend_existing': True}
         __mapper_args__ = {
