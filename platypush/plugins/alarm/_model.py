@@ -44,7 +44,7 @@ class Alarm:
     def __init__(
         self,
         when: Union[str, int, float],
-        actions: Optional[list] = None,
+        actions: Optional[Union[list, Procedure]] = None,
         name: Optional[str] = None,
         media: Optional[str] = None,
         media_plugin: Optional[str] = None,
@@ -67,8 +67,12 @@ class Alarm:
         self.state = AlarmState.UNKNOWN
         self.timer: Optional[threading.Timer] = None
         self.static = static
-        self.actions = Procedure.build(
-            name=name, _async=False, requests=actions or [], id=self.id
+        self.actions = (
+            actions
+            if isinstance(actions, Procedure)
+            else Procedure.build(
+                name=name, _async=False, requests=actions or [], id=self.id
+            )
         )
 
         self._enabled = enabled
@@ -219,6 +223,9 @@ class Alarm:
                     self.play_audio()
 
                 self.actions.execute()
+            elif self.state != AlarmState.WAITING:
+                self.state = AlarmState.WAITING
+                self._on_change()
 
             self.wait_stop(self.poll_interval)
             sleep_time = None
