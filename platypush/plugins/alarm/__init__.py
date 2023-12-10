@@ -12,6 +12,7 @@ from platypush.message.event.entities import EntityDeleteEvent
 from platypush.plugins import RunnablePlugin, action
 from platypush.plugins.db import DbPlugin
 from platypush.plugins.media import MediaPlugin
+from platypush.procedure import Procedure
 from platypush.utils import get_plugin_name_by_class
 from platypush.utils.media import get_default_media_plugin
 
@@ -165,6 +166,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
                         alarm,
                         stop_event=self._should_stop,
                         media_plugin=alarm.media_plugin or self.media_plugin,
+                        on_change=self._on_alarm_update,
                     )
 
         # Stop and remove alarms that are not statically configured no longer
@@ -249,9 +251,10 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
     def _add(
         self,
         when: Union[str, int, float],
-        actions: list,
+        actions: Union[list, Procedure],
         name: Optional[str] = None,
         media: Optional[str] = None,
+        media_plugin: Optional[str] = None,
         audio_file: Optional[str] = None,
         audio_volume: Optional[Union[int, float]] = None,
         enabled: bool = True,
@@ -263,7 +266,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             name=name,
             enabled=enabled,
             media=media or audio_file,
-            media_plugin=self.media_plugin,
+            media_plugin=media_plugin or self.media_plugin,
             audio_volume=audio_volume,
             snooze_interval=snooze_interval or self.snooze_interval,
             stop_event=self._should_stop,
@@ -308,6 +311,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         actions: Optional[list] = None,
         name: Optional[str] = None,
         media: Optional[str] = None,
+        media_plugin: Optional[str] = None,
         audio_file: Optional[str] = None,
         audio_volume: Optional[Union[int, float]] = None,
         enabled: bool = True,
@@ -324,6 +328,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         :param actions: List of actions to be executed.
         :param name: Alarm name.
         :param media: Path of the audio file to be played.
+        :param media_plugin: Override the default media plugin for this alarm.
         :param audio_volume: Volume of the audio.
         :param enabled: Whether the new alarm should be enabled (default: True).
         :param snooze_interval: Snooze seconds before playing the alarm again.
@@ -337,6 +342,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         return self._add(
             when=when,
             media=media,
+            media_plugin=media_plugin,
             audio_file=audio_file,
             actions=actions or [],
             name=name,
@@ -344,6 +350,67 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             audio_volume=audio_volume,
             snooze_interval=snooze_interval,
         ).to_dict()
+
+    @action
+    def edit(
+        self,
+        name: str,
+        new_name: Optional[str] = None,
+        when: Optional[Union[str, int, float]] = None,
+        actions: Optional[list] = None,
+        media: Optional[str] = None,
+        media_plugin: Optional[str] = None,
+        audio_volume: Optional[Union[int, float]] = None,
+        enabled: Optional[bool] = None,
+        snooze_interval: Optional[float] = None,
+    ) -> dict:
+        """
+        Edit an existing alarm.
+
+        Note that you can only edit the alarms that are not statically defined
+        through the configuration.
+
+        :param name: Alarm name.
+        :param new_name: New alarm name.
+        :param when: When the alarm should be executed. It can be either a cron
+            expression (for recurrent alarms), or a datetime string in ISO
+            format (for one-shot alarms/timers), or an integer/float
+            representing the number of seconds before the alarm goes on (e.g.
+            300 for 5 minutes).
+        :param actions: List of actions to be executed.
+        :param media: Path of the audio file to be played.
+        :param media_plugin: Override the default media plugin for this alarm.
+        :param audio_volume: Volume of the audio.
+        :param enabled: Whether the new alarm should be enabled.
+        :param snooze_interval: Snooze seconds before playing the alarm again.
+        :return: The modified alarm.
+        """
+        alarm = self._get_alarm(name)
+        assert not alarm.static, (
+            f'Alarm {name} is statically defined in the configuration, '
+            'cannot overwrite it programmatically'
+        )
+
+        if new_name and new_name != name:
+            assert (
+                new_name not in self.alarms
+            ), f'An alarm with name {new_name} already exists'
+
+        with self._db.get_session() as session:
+            db_alarm = session.query(DbAlarm).filter_by(name=name).first()
+            self._clear_alarm(db_alarm, session)
+            return self._add(
+                when=when or alarm.when,
+                media=media or alarm.media,
+                media_plugin=media_plugin or alarm.media_plugin or self.media_plugin,
+                actions=actions or alarm.actions or [],
+                name=new_name or name,
+                enabled=enabled if enabled is not None else alarm.is_enabled(),
+                audio_volume=audio_volume
+                if audio_volume is not None
+                else alarm.audio_volume,
+                snooze_interval=snooze_interval or alarm.snooze_interval,
+            ).to_dict()
 
     @action
     def enable(self, name: str):
