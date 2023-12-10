@@ -167,6 +167,13 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
                         media_plugin=alarm.media_plugin or self.media_plugin,
                     )
 
+        # Stop and remove alarms that are not statically configured no longer
+        # present in the db
+        for name, alarm in self.alarms.copy().items():
+            if not alarm.static and name not in alarms:
+                del self.alarms[name]
+                alarm.stop()
+
     def _sync_alarms(self):
         with self._get_session() as session:
             db_alarms = {
@@ -184,15 +191,16 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             self._synced = True
 
     def _clear_alarm(self, alarm: DbAlarm, session: Session):
-        self.alarms.pop(str(alarm.name), None)
+        alarm_obj = self.alarms.pop(str(alarm.name), None)
+        if alarm_obj:
+            alarm_obj.stop()
+
         session.delete(alarm)
         self._bus.post(EntityDeleteEvent(entity=alarm))
 
     def _clear_expired_alarms(self, session: Session):
         expired_alarms = [
-            alarm
-            for alarm in self.alarms.values()
-            if alarm.is_expired() and alarm.is_shut_down()
+            alarm for alarm in self.alarms.values() if alarm.should_stop()
         ]
 
         if not expired_alarms:
@@ -220,7 +228,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             iter(
                 alarm
                 for alarm in self.alarms.values()
-                if alarm.state == AlarmState.RUNNING
+                if alarm.state in {AlarmState.RUNNING, AlarmState.SNOOZED}
             ),
             None,
         )
@@ -233,6 +241,9 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
 
     def _on_alarm_update(self, alarm: Alarm):
         with self._db_lock:
+            if alarm.should_stop():
+                return
+
             self.publish_entities([alarm])
 
     def _add(

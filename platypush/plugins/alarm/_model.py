@@ -3,6 +3,7 @@ import enum
 import os
 import time
 import threading
+from random import randint
 from typing import Callable, Optional, Union
 
 import croniter
@@ -40,9 +41,6 @@ class Alarm:
     Alarm model and controller.
     """
 
-    _alarms_count = 0
-    _id_lock = threading.RLock()
-
     def __init__(
         self,
         when: Union[str, int, float],
@@ -59,10 +57,7 @@ class Alarm:
         on_change: Optional[Callable[['Alarm'], None]] = None,
         **_,
     ):
-        with self._id_lock:
-            self._alarms_count += 1
-            self.id = self._alarms_count
-
+        self.id = randint(0, 65535)
         self.when = when
         self.name = name or f'Alarm_{self.id}'
         self.media = self._get_media_resource(media)
@@ -240,10 +235,10 @@ class Alarm:
                             sleep_time = self._runtime_snooze_interval
                         else:
                             self.state = AlarmState.WAITING
-                            self._on_change()
 
                         break
 
+                    self._on_change()
                     self.wait_stop(self.poll_interval)
 
             if self.state == AlarmState.SNOOZED:
@@ -266,7 +261,11 @@ class Alarm:
         self.stop_event.wait(timeout)
 
     def should_stop(self):
-        return self.stop_event.is_set() or (self.is_expired() and self.is_shut_down())
+        return (
+            self.stop_event.is_set()
+            or (self.is_expired() and self.state == AlarmState.DISMISSED)
+            or self.state == AlarmState.SHUTDOWN
+        )
 
     def to_dict(self) -> dict:
         return {
