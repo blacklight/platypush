@@ -99,6 +99,17 @@ class Alarm:
 
         return media
 
+    @property
+    def is_cron(self) -> bool:
+        if not isinstance(self.when, str):
+            return False
+
+        try:
+            croniter.croniter(self.when, time.time()).get_next()
+            return True
+        except (AttributeError, croniter.CroniterBadCronError):
+            return False
+
     def get_next(self) -> Optional[float]:
         now = time.time()
         t = 0
@@ -288,6 +299,7 @@ class Alarm:
             'snooze_interval': self.snooze_interval,
             'actions': self.actions.requests,
             'static': self.static,
+            'is_cron': self.is_cron,
         }
 
     @classmethod
@@ -323,6 +335,7 @@ class Alarm:
             snooze_interval=self.snooze_interval,
             enabled=self.is_enabled(),
             static=self.static,
+            is_cron=self.is_cron,
         )
 
 
