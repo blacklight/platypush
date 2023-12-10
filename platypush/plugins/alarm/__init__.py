@@ -89,9 +89,9 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             :class:`platypush.plugins.media.MediaPlugin`) that will be used to
             play the alarm audio. It needs to be a supported local media
             plugin, e.g. ``media.mplayer``, ``media.vlc``, ``media.mpv``,
-            ``media.gstreamer`` etc. If not specified, the first available
-            configured local media plugin will be used. This only applies to
-            alarms that are configured to play an audio resource.
+            ``media.gstreamer``, ``sound``, etc. If not specified, the first
+            available configured local media plugin will be used. This only
+            applies to alarms that are configured to play an audio resource.
         :param poll_interval: Poll interval in seconds (default: 5).
         :param snooze_interval: Default snooze interval in seconds (default: 300).
         """

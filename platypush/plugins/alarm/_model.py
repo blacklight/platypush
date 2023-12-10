@@ -36,6 +36,16 @@ class AlarmState(enum.IntEnum):
     UNKNOWN = -1
 
 
+class AlarmConditionType(enum.Enum):
+    """
+    Alarm condition types.
+    """
+
+    CRON = 'cron'
+    INTERVAL = 'interval'
+    TIMESTAMP = 'timestamp'
+
+
 class Alarm:
     """
     Alarm model and controller.
@@ -109,6 +119,36 @@ class Alarm:
             return True
         except (AttributeError, croniter.CroniterBadCronError):
             return False
+
+    @property
+    def is_interval(self) -> bool:
+        try:
+            float(self.when)
+            return True
+        except (TypeError, ValueError):
+            return False
+
+    @property
+    def is_timestamp(self) -> bool:
+        if not isinstance(self.when, str):
+            return False
+
+        try:
+            datetime.datetime.fromisoformat(self.when)
+            return True
+        except Exception:
+            return False
+
+    @property
+    def condition_type(self) -> AlarmConditionType:
+        if self.is_cron:
+            return AlarmConditionType.CRON
+        if self.is_interval:
+            return AlarmConditionType.INTERVAL
+        if self.is_timestamp:
+            return AlarmConditionType.TIMESTAMP
+
+        raise ValueError(f'Invalid alarm condition {self.when}')
 
     def get_next(self) -> Optional[float]:
         now = time.time()
@@ -299,7 +339,7 @@ class Alarm:
             'snooze_interval': self.snooze_interval,
             'actions': self.actions.requests,
             'static': self.static,
-            'is_cron': self.is_cron,
+            'condition_type': self.condition_type.value,
         }
 
     @classmethod
@@ -335,7 +375,7 @@ class Alarm:
             snooze_interval=self.snooze_interval,
             enabled=self.is_enabled(),
             static=self.static,
-            is_cron=self.is_cron,
+            condition_type=self.condition_type.value,
         )
 
 
