@@ -77,6 +77,7 @@ export default {
     async refresh() {
       this.$emit('loading', true)
       try {
+        await this.request('alarm.status');
         (await this.request('entities.get', {plugins: [this.pluginName]})).forEach(
           entity => this.addAlarm(entity)
         )
