@@ -5,11 +5,11 @@
         <EntityIcon :entity="value" :loading="loading" :error="error" />
       </div>
 
-      <div class="label col-6">
+      <div class="label col-5">
         <div class="name" v-text="value.name" />
       </div>
 
-      <div class="value-and-toggler col-7" @click.stop="collapsed = !collapsed">
+      <div class="value-and-toggler col-8" @click.stop="collapsed = !collapsed">
         <div class="value" v-if="!value.enabled">Disabled</div>
         <div class="value" v-else-if="isRunning">Running</div>
         <div class="value" v-else-if="isSnoozed">Snoozed</div>
@@ -27,22 +27,22 @@
     <div class="body children" v-if="!collapsed" @click.stop="prevent">
       <div class="child">
         <label :for="enableInputId" class="label">
-          <div class="name col-s-12 col-m-6">Enabled</div>
-          <div class="value col-s-12 col-m-6">
+          <div class="name col-6">Enabled</div>
+          <div class="value col-6">
             <ToggleSwitch :id="enableInputId" :value="value.enabled" @input="setEnabled" />
           </div>
         </label>
       </div>
 
       <div class="child buttons" v-if="isRunning || isSnoozed">
-        <label :for="snoozeInputId" class="label col-s-12 col-m-6" v-if="isRunning">
+        <label :for="snoozeInputId" class="label col-6" v-if="isRunning">
           <div class="value">
             <button class="btn btn-default" @click="snooze">Snooze</button>
           </div>
         </label>
 
-        <label :for="dismissInputId" class="label col-s-12"
-               :class="{'col-m-6': isRunning, 'col-m-12': isSnoozed}">
+        <label :for="dismissInputId" class="label"
+               :class="{'col-6': isRunning, 'col-12': !isRunning}">
           <div class="value">
             <button class="btn btn-default" @click="dismiss">Dismiss</button>
           </div>
@@ -107,7 +107,7 @@ export default {
         await this.request(
           'alarm.set_enabled',
           {
-            name: this.value.name,
+            name: this.value.external_id,
             enabled: !this.value.enabled,
           }
         )
@@ -137,6 +137,31 @@ export default {
     prevent(e) {
       e.stopPropagation()
     },
+  },
+
+  mounted() {
+    this.$watch(
+      () => this.value,
+      (newValue, oldValue) => {
+        if (newValue?.state !== oldValue?.state) {
+          const notif = {image: {icon: 'stopwatch'}}
+          switch (newValue?.state) {
+            case 'RUNNING':
+              notif.text = `Alarm ${newValue.name} is running`
+              break
+            case 'SNOOZED':
+              notif.text = `Alarm ${newValue.name} has been snoozed`
+              break
+            case 'DISMISSED':
+              notif.text = `Alarm ${newValue.name} has been dismissed`
+              break
+          }
+
+          if (notif.text)
+            this.notify(notif)
+        }
+      }
+    )
   },
 }
 </script>
