@@ -610,40 +610,6 @@ export default {
     }
   }
 
-  :deep(.modal) {
-    @include until(#{$tablet - 1}) {
-      width: calc(100% - 1em);
-
-      .table-row {
-        border-bottom: 1px solid $border-color-2;
-      }
-    }
-
-    .table-row {
-      .value {
-        overflow: auto;
-      }
-    }
-
-    .content {
-      @include until($tablet) {
-        width: 100%;
-      }
-
-      @include from($tablet) {
-        min-width: 30em;
-      }
-
-      .body {
-        padding: 0;
-
-        .table-row {
-          padding: 0.5em;
-        }
-      }
-    }
-  }
-
   :deep(.dropdown-container) {
     .dropdown {
       min-width: 10em;
