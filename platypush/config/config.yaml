@@ -356,6 +356,52 @@ backend.http:
 ###
 
 ###
+# # Example configuration for the alarm plugin. It is possible to define alarms
+# # both statically, i.e. through configuration snippets under the `alarm`
+# # section, and dynamically, i.e. with an `alarm.add` request with the
+# # configuration of the desired alarm.
+# alarm:
+#   alarms:
+#     # The media plugin used to play the media. At least a supported media
+#     # plugin (media.vlc, media.mpv, media.mplayer, media.gstreamer etc.) is
+#     # required if you want to play a sound or other media with your alarms.
+#     # Default: looks for the first available media plugin in the configuration.
+#     # media_plugin: media.vlc
+# 
+#     # This alarm will run every morning on weekdays
+#     morning_alarm:
+#         # Notice the crontab-like syntax: every day at 8:00 AM, from Monday
+#         # through Friday.
+#         when: '0 8 * * 1-5'
+# 
+#         # Alternatively, if `when` contains a number, it will be interpreted as
+#         # number of seconds after the alarm is loaded. In this case, this alarm
+#         # will run one-shot one minute after the service starts.
+#         # when: 60
+# 
+#         # Otherwise, ISO-8601 timestamp strings are also supported for one-shot
+#         # alarms.
+#         # when: '2020-01-01T00:00:00'
+# 
+#         # The path or URL of a media file to play when the alarm starts. This is
+#         # optional - the alarm can also be configured to play no sounds at all,
+#         # or perhaps play the media directly within the context of the `actions`
+#         # configuration.
+#         media: ~/media/ringtones/alarm.mp3
+# 
+#         # Overrides the media_plugin configuration.
+#         # media_plugin: media.mpv
+# 
+#         # List of actions to be executed when the alarm starts.
+#         actions:
+#           - action: tts.say
+#             args:
+#               text: "Good morning, it's time to get up"
+# 
+#           - action: light.hue.on
+###
+
+###
 # # Torrent plugin configuration, with the default directory that should be used
 # # to store downloaded files.
 #
