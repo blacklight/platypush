@@ -7,6 +7,7 @@ from random import randint
 from typing import Callable, Optional, Union
 
 import croniter
+from dateutil.parser import isoparse
 from dateutil.tz import gettz
 
 from platypush.context import get_bus, get_plugin
@@ -171,7 +172,7 @@ class Alarm:
             except (AttributeError, croniter.CroniterBadCronError):
                 try:
                     # If when is an ISO-8601 timestamp, parse it
-                    t = datetime.datetime.fromisoformat(self.when).timestamp()
+                    t = isoparse(self.when).timestamp()
                 except Exception as e:
                     raise AssertionError(f'Invalid alarm time {self.when}: {e}') from e
 
