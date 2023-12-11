@@ -13,18 +13,28 @@
       </label>
     </div>
 
-    <div class="cron-description">
+    <div class="cron-description-container">
       <div class="error" v-if="error" v-text="error" />
-      <div v-else>Runs: <span v-text="cronDescription" /></div>
+      <div class="cron-description" v-else>
+        <CopyButton :text="cronString" />
+        <div class="cron-string" v-text="cronString" />
+        <div class="cron-next-run" v-if="!error">
+          Runs: <span class="cron-text" v-text="cronDescription" />
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import cronstrue from 'cronstrue'
+import CopyButton from "@/components/elements/CopyButton"
 
 export default {
   emits: ['input'],
+  components: {
+    CopyButton,
+  },
   props: {
     value: {
       type: String,
@@ -38,6 +48,7 @@ export default {
       cronDescription: null,
       error: null,
       selectedItem: null,
+      cronRegex: new RegExp('^[0-9*/,-]*$'),
       labels: [
         'Minute',
         'Hour',
@@ -59,7 +70,7 @@ export default {
       handler(newValue, oldValue) {
         newValue.forEach((v, i) => {
           v = v.trim()
-          if (!v.match(/^[0-9\*\/\-,]*$/)) {
+          if (!v.match(this.cronRegex)) {
             this.cronExpr[i] = oldValue[i]
           } else {
             this.cronExpr[i] = v
@@ -94,7 +105,7 @@ export default {
         return
       }
 
-      if (key.match(/^[0-9\*\/\-,]$/)) {
+      if (key.match(this.cronRegex)) {
         return
       }
 
@@ -160,17 +171,29 @@ export default {
     }
   }
 
-  .cron-description {
+  .cron-description-container {
     margin-top: 0.5em;
-    padding: 0.25em;
+    padding: 0.5em;
     font-size: 0.9em;
     font-weight: bold;
-    background: $code-light-bg;
-    color: $default-fg-2;
+    background: $code-dark-bg;
+    color: $code-dark-fg;
     border-radius: 1em;
     border: $default-border-3;
 
-    span {
+    .cron-description {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+
+    .cron-string {
+      font-family: monospace;
+      font-size: 1.1em;
+    }
+
+    .cron-text {
       font-weight: normal;
       font-style: italic;
     }
