@@ -209,7 +209,7 @@ export default {
 
 <style lang="scss" scoped>
 @import "src/style/items";
-@import "../Execute/common";
+@import "@/components/Action/common";
 
 $header-height: 3.25em;
 
