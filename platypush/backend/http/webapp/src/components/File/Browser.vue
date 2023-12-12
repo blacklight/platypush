@@ -27,7 +27,7 @@
         </div>
       </div>
 
-      <div class="row item" v-for="(file, i) in filteredFiles" :key="i" @click="path = file.path">
+      <div class="row item" v-for="(file, i) in filteredFiles" :key="i" @click="onItemSelect(file)">
         <div class="col-10">
           <i class="icon fa" :class="{'fa-file': file.type !== 'directory', 'fa-folder': file.type === 'directory'}" />
           <span class="name">
@@ -35,11 +35,11 @@
           </span>
         </div>
 
-        <div class="col-2 actions">
+        <div class="col-2 actions" v-if="fileActions.length">
           <Dropdown>
             <DropdownItem icon-class="fa fa-play" text="Play"
                           @click="$emit('play', {type: 'file', url: `file://${file.path}`})"
-                          v-if="isMedia && mediaExtensions.has(file.name.split('.').pop()?.toLowerCase())" />
+                          v-if="hasPlay && file.type !== 'directory'" />
           </Dropdown>
         </div>
       </div>
@@ -58,7 +58,7 @@ export default {
   name: "Browser",
   components: {DropdownItem, Dropdown, Loading},
   mixins: [Utils, MediaUtils],
-  emits: ['back', 'path-change', 'play'],
+  emits: ['back', 'path-change', 'play', 'input'],
 
   props: {
     hasBack: {
@@ -96,6 +96,23 @@ export default {
       return this.files.filter((file) => (file?.name || '').toLowerCase().indexOf(this.filter.toLowerCase()) >= 0)
     },
 
+    hasPlay() {
+      return this.isMedia && this.files.some((file) => this.mediaExtensions.has(file.name.split('.').pop()?.toLowerCase()))
+    },
+
+    fileActions() {
+      if (!this.hasPlay)
+        return []
+
+      return [
+        {
+          iconClass: 'fa fa-play',
+          text: 'Play',
+          onClick: (file) => this.$emit('play', {type: 'file', url: `file://${file.path}`}),
+        },
+      ]
+    },
+
     pathTokens() {
       if (!this.path?.length)
         return ['/']
@@ -128,10 +145,26 @@ export default {
       else
         this.path = [...this.pathTokens].slice(0, -1).join('/').slice(1)
     },
+
+    onItemSelect(file) {
+      if (file.type === 'directory')
+        this.path = file.path
+      else
+        this.$emit('input', file.path)
+    },
+  },
+
+  watch: {
+    initialPath() {
+      this.path = this.initialPath
+    },
+
+    path() {
+      this.refresh()
+    },
   },
 
   mounted() {
-    this.$watch(() => this.path, () => this.refresh())
     this.refresh()
   },
 }
