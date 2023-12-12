@@ -48,26 +48,47 @@
           </div>
         </label>
       </div>
+
+      <div class="child edit" v-if="hasEdit">
+        <div class="head" :class="{collapsed: editCollapsed}"
+             @click.stop="editCollapsed = !editCollapsed">
+          <div class="label name col-11">
+            <i class="fas fa-pen-to-square" />&nbsp; Edit
+          </div>
+
+          <div class="value col-1 collapse-toggler">
+            <i class="fas" :class="{'fa-chevron-down': editCollapsed, 'fa-chevron-up': !editCollapsed}" />
+          </div>
+        </div>
+
+        <AlarmEditor v-if="!editCollapsed" :value="value" />
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import AlarmEditor from "./Alarm/AlarmEditor"
 import EntityMixin from "./EntityMixin"
 import EntityIcon from "./EntityIcon"
 import ToggleSwitch from "@/components/elements/ToggleSwitch";
 
 export default {
-  components: {EntityIcon, ToggleSwitch},
+  components: {AlarmEditor, EntityIcon, ToggleSwitch},
   mixins: [EntityMixin],
   emits: ['loading'],
   data: function() {
     return {
       collapsed: true,
+      editCollapsed: true,
     }
   },
 
   computed: {
+    hasEdit() {
+      return !this.value.static
+    },
+
     isCollapsed() {
       return this.collapsed
     },
@@ -111,6 +132,8 @@ export default {
             enabled: !this.value.enabled,
           }
         )
+
+        await this.refresh()
       } finally {
         this.$emit('loading', false)
       }
@@ -120,6 +143,7 @@ export default {
       this.$emit('loading', true)
       try {
         await this.request('alarm.snooze')
+        await this.refresh()
       } finally {
         this.$emit('loading', false)
       }
@@ -129,6 +153,16 @@ export default {
       this.$emit('loading', true)
       try {
         await this.request('alarm.dismiss')
+        await this.refresh()
+      } finally {
+        this.$emit('loading', false)
+      }
+    },
+
+    async refresh() {
+      this.$emit('loading', true)
+      try {
+        await this.request('alarm.status')
       } finally {
         this.$emit('loading', false)
       }
@@ -198,8 +232,20 @@ $icon-width: 2em;
   }
 
   .body {
+    padding: 0;
+
     .child {
+      min-height: 3em;
+      display: flex;
+      align-items: center;
+      padding: 0 1em;
+
+      &:hover {
+        background: $hover-bg;
+      }
+
       .label {
+        width: 100%;
         font-weight: bold;
       }
     }
@@ -224,6 +270,28 @@ $icon-width: 2em;
         padding: 0 1em;
         margin: 0.5em;
         height: 3em;
+      }
+    }
+  }
+
+  .edit {
+    &.child {
+      flex-direction: column;
+      padding: 0;
+    }
+
+    .head {
+      width: 100%;
+      padding: 0 1em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      border-top: $default-border-2;
+      box-shadow: $border-shadow-bottom;
+
+      .name {
+        display: flex;
+        align-items: center;
       }
     }
   }
