@@ -3,24 +3,28 @@ export default {
   name: "Url",
   methods: {
     parseUrlFragment() {
-      return window.location.href.replace(/.*#(\w+)[?;]?.*/, '$1')
+      return window.location.hash.replace(/^#/, '').replace(/\?.*/, '')
     },
 
     getUrlArgs() {
-      return window.location.href
-        .replace(/.*#/, '')
-        .replace(/.*\?/, '')
+      const argsString = window.location.hash.split('?').slice(1)
+      if (!argsString.length)
+        return {}
+
+      return argsString[0]
         .split(/[&;]/)
         .reduce((acc, obj) => {
           const tokens = obj.split('=')
-          acc[tokens[0]] = tokens[1]
+          if (tokens[0]?.length)
+            acc[tokens[0]] = tokens[1]
           return acc
         }, {})
     },
 
     setUrlArgs(args) {
+      args = {...this.getUrlArgs(), ...args}
       window.location.href = (
-        `/#${this.parseUrlFragment()}?${this.fragmentFromArgs(args)}`
+        `${window.location.pathname}#${this.parseUrlFragment()}?${this.fragmentFromArgs(args)}`
       )
     },
 
