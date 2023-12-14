@@ -5,11 +5,13 @@
     <!-- Action executor container -->
     <div class="action-editor">
       <!-- cURL snippet modal -->
-      <Modal ref="curlModal" title="curl request" v-if="curlSnippet?.length">
-        <div class="output curl-snippet" @click="copyToClipboard(curlSnippet)" >
-          <pre><code v-html="highlightedCurlSnippet" /></pre>
-        </div>
-      </Modal>
+      <div class="curl-modal-container">
+        <Modal ref="curlModal" title="curl request" v-if="curlSnippet?.length">
+          <div class="output curl-snippet" @click="copyToClipboard(curlSnippet)" >
+            <pre><code v-html="highlightedCurlSnippet" /></pre>
+          </div>
+        </Modal>
+      </div>
 
       <!-- Execute panel views -->
       <Tabs>
@@ -107,7 +109,7 @@ import ActionArgs from "./ActionArgs"
 import ActionDoc from "./ActionDoc"
 import Autocomplete from "@/components/elements/Autocomplete"
 import Loading from "@/components/Loading"
-import Modal from "@/components/Modal";
+import Modal from "@/components/Modal"
 import Response from "./Response"
 import Tab from "@/components/elements/Tab"
 import Tabs from "@/components/elements/Tabs"
@@ -125,6 +127,12 @@ export default {
     Response,
     Tab,
     Tabs,
+  },
+
+  props: {
+    value: {
+      type: Object,
+    },
   },
 
   data() {
@@ -295,8 +303,14 @@ export default {
       }
     },
 
-    async updateAction(actionName) {
-      if (actionName === this.action.name)
+    async updateAction(actionName, params) {
+      let {force, args, extraArgs} = params || {}
+      if (!args)
+        args = {}
+      if (!extraArgs)
+        extraArgs = []
+
+      if (actionName === this.action.name && !force)
         return
 
       this.action.name = actionName
@@ -312,15 +326,15 @@ export default {
       try {
         this.action = {
           ...this.actions[this.action.name],
-          args: Object.entries(this.actions[this.action.name].args).reduce((args, entry) => {
-            args[entry[0]] = {
+          args: Object.entries(this.actions[this.action.name].args).reduce((a, entry) => {
+            a[entry[0]] = {
               ...entry[1],
-              value: entry[1].default,
+              value: args?.[entry[0]] ?? entry[1].default,
             }
 
-            return args
+            return a
           }, {}),
-          extraArgs: [],
+          extraArgs: extraArgs || [],
         }
       } finally {
         this.docLoading = false
@@ -450,10 +464,35 @@ export default {
         window.open(event.target.getAttribute('href', '_blank'))
       }
     },
+
+    onValueChanged(value) {
+      value = value || this.value
+      if (!value)
+        return
+
+      const action = value.name || value.action
+      this.$nextTick(() => {
+        this.updateAction(action, {
+          force: true,
+          args: value.args || {},
+          extraArgs: value.extraArgs || [],
+        })
+      })
+    },
   },
 
-  mounted() {
-    this.refresh()
+  watch: {
+    value: {
+      immediate: true,
+      handler(value) {
+        this.onValueChanged(value)
+      },
+    },
+  },
+
+  async mounted() {
+    await this.refresh()
+    await this.onValueChanged()
   },
 }
 </script>
@@ -503,6 +542,22 @@ export default {
       &:hover {
         background: $background-color;
         box-shadow: none;
+      }
+    }
+  }
+
+  .curl-modal-container {
+    :deep(.modal) {
+      .content {
+        width: 100%;
+      }
+
+      .content .body {
+        height: auto;
+      }
+
+      .output {
+        border-radius: 0;
       }
     }
   }
