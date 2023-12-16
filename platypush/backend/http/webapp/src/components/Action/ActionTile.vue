@@ -102,7 +102,7 @@ export default {
   cursor: pointer;
 
   &:hover {
-    color: $default-hover-fg;
+    background: $action-tile-hover-bg;
   }
 
   .action-delete {
