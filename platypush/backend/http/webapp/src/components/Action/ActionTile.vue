@@ -1,5 +1,10 @@
 <template>
-  <div class="action-tile" @click="$refs.actionEditor.show">
+  <div class="action-tile"
+       :class="{drag: draggable && dragging}"
+       :draggable="draggable"
+       @dragstart="onDragStart"
+       @dragend="onDragEnd"
+       @click="$refs.actionEditor.show">
     <div class="action-delete" title="Remove" v-if="withDelete" @click.stop="$emit('delete')">
       <i class="icon fas fa-xmark" />
     </div>
@@ -9,7 +14,7 @@
     </div>
 
     <div class="new-action" v-else>
-      <i class="icon fas fa-plus" />&nbsp; New Action
+      <i class="icon fas fa-plus" />&nbsp; Add Action
     </div>
 
     <div class="action-args" v-if="Object.keys(value.args || {})?.length">
@@ -38,7 +43,7 @@ import ActionEditor from "@/components/Action/ActionEditor"
 import Modal from "@/components/Modal";
 
 export default {
-  emits: ['input', 'delete'],
+  emits: ['input', 'delete', 'drag', 'drop'],
   components: {
     ActionEditor,
     Modal,
@@ -59,6 +64,17 @@ export default {
       type: Boolean,
       default: false,
     },
+
+    draggable: {
+      type: Boolean,
+      default: false,
+    },
+  },
+
+  data() {
+    return {
+      dragging: false,
+    }
   },
 
   computed: {
@@ -68,6 +84,19 @@ export default {
   },
 
   methods: {
+    onDragStart(event) {
+      this.dragging = true
+      event.dataTransfer.dropEffect = 'move'
+      event.dataTransfer.effectAllowed = 'move'
+      event.dataTransfer.setData('application/json', JSON.stringify(this.value))
+      this.$emit('drag')
+    },
+
+    onDragEnd() {
+      this.dragging = false
+      this.$emit('drop')
+    },
+
     onInput(value) {
       this.$emit('input', {
         ...this.value,
@@ -88,9 +117,8 @@ export default {
 
 .action-tile {
   min-width: 20em;
-  max-height: 7.5em;
-  background: $action-tile-bg;
-  color: $action-tile-fg;
+  background: $tile-bg;
+  color: $tile-fg;
   display: flex;
   flex-direction: column;
   padding: 0.5em 1em;
@@ -102,7 +130,11 @@ export default {
   cursor: pointer;
 
   &:hover {
-    background: $action-tile-hover-bg;
+    background: $tile-hover-bg;
+  }
+
+  &.drag {
+    opacity: 0.5;
   }
 
   .action-delete {
