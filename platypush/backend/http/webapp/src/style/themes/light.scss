@@ -8,6 +8,9 @@ $default-bg-6: #e4eae8 !default;
 $default-bg-7: #e4e4e4 !default;
 $ok-fg: #17ad17 !default;
 $error-fg: #ad1717 !default;
+$tile-bg: linear-gradient(90deg, rgba(9,174,128,1) 0%, rgba(71,226,179,1) 120%);
+$tile-fg: white;
+$tile-hover-bg: linear-gradient(90deg, rgba(41,216,159,1) 0%, rgba(9,188,138,1) 70%);
 
 $default-fg: black !default;
 $default-fg-2: #23513a !default;

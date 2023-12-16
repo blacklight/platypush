@@ -20,7 +20,7 @@
     @close="selectedAlarm = null"
     v-if="modalVisible" />
 
-  <FloatingButton icon-class="fa fa-plus" text="Add Alarm"
+  <FloatingButton icon-class="fa fa-stopwatch" text="Add Alarm"
                   @click="addAlarmModalVisible = true" />
 </template>
 
