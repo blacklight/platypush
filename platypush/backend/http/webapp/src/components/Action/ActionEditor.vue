@@ -269,9 +269,9 @@ export default {
 
     highlightedCurlSnippet() {
       return hljs.highlight(
-        'bash',
         '# Note: Replace the cookie with a JWT token for production cases\n' +
-        this.curlSnippet
+        this.curlSnippet,
+        {language: 'bash'}
       ).value
     },
   },

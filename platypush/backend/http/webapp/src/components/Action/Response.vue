@@ -46,7 +46,7 @@ export default {
 
     jsonResponse() {
       if (this.isJSON) {
-        return hljs.highlight('json', this.response).value
+        return hljs.highlight(this.response, {language: 'json'}).value
       }
 
       return null

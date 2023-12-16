@@ -88,13 +88,13 @@ export default {
       return (
         this.installCmd ?
         hljs.highlight(
-          'bash',
           this.extension.deps.install_cmd
           .map((cmd) => `$ ${cmd}`)
           .join('\n')
           .trim()
         ).value :
-        '# No extra installation steps required'
+        '# No extra installation steps required',
+        {language: 'bash'}
       )
     },
   },
