@@ -1,5 +1,5 @@
 <template>
-  <div class="action-editor-container" @click="onClick">
+  <div class="action-editor-container" :class="{'with-save': withSave}" @click="onClick">
     <Loading v-if="loading" />
 
     <!-- Action executor container -->
@@ -14,17 +14,29 @@
       </div>
 
       <!-- Execute panel views -->
-      <Tabs>
-        <Tab :selected="structuredInput" icon-class="fas fa-list" @input="onInputTypeChange(true)">
-          Structured
-        </Tab>
+      <div class="header-container">
+        <div class="tabs-container">
+          <Tabs>
+            <Tab :selected="structuredInput" icon-class="fas fa-list" @input="onInputTypeChange(true)">
+              Structured
+            </Tab>
 
-        <Tab :selected="!structuredInput" icon-class="fas fa-code" @input="onInputTypeChange(false)">
-          Raw
-        </Tab>
-      </Tabs>
+            <Tab :selected="!structuredInput" icon-class="fas fa-code" @input="onInputTypeChange(false)">
+              Raw
+            </Tab>
+          </Tabs>
+        </div>
 
-      <form ref="actionForm" autocomplete="off" @submit.prevent="executeAction">
+        <div class="buttons" v-if="withSave">
+          <button type="submit" class="save-btn btn-primary"
+            :disabled="running || !isValidAction" title="Save"
+            @click.stop="onSubmit">
+            <i class="fas fa-save" />
+          </button>
+        </div>
+      </div>
+
+      <form ref="actionForm" autocomplete="off" @submit.prevent="onSubmit">
         <!-- Structured request container -->
         <div class="request structured" v-if="structuredInput">
           <!-- Request header -->
@@ -40,10 +52,9 @@
                 autofocus
                 :disabled="running"
                 :value="action.name" />
-            </div>
-            <div class="buttons">
-              <button type="submit" class="run-btn btn-primary"
-                :disabled="running || !action?.name?.length" title="Run">
+
+              <button :type="withSave ? 'button' : 'submit'" class="run-btn btn-primary"
+                :disabled="running || !isValidAction" title="Run" @click.stop="executeAction">
                 <i class="fas fa-play" />
               </button>
             </div>
@@ -88,7 +99,8 @@
             <label>
               <textarea v-model="rawRequest" ref="rawAction" :placeholder="rawRequestPlaceholder" />
             </label>
-            <button type="submit" :disabled="running" class="run-btn btn-primary" title="Run">
+            <button :type="withSave ? 'button' : 'submit'" :disabled="running"
+                    class="raw-run-btn btn-primary" title="Run" @click.stop="executeAction">
               <i class="fas fa-play" />
             </button>
           </div>
@@ -133,6 +145,11 @@ export default {
     value: {
       type: Object,
     },
+
+    withSave: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data() {
@@ -165,6 +182,14 @@ export default {
   computed: {
     currentActionDocURL() {
       return this.action?.doc_url
+    },
+
+    isValidAction() {
+      return (
+        this.action?.name?.length &&
+        this.action.name in this.actions &&
+        Object.values(this.action.args).every((arg) => !arg.required || arg.value?.length)
+      )
     },
 
     autocompleteItems() {
@@ -407,6 +432,9 @@ export default {
           this.actionInput.focus()
         } else {
           this.$refs.rawAction.focus()
+          if (this.isValidAction) {
+            this.rawRequest = JSON.stringify(this.toRequest(this.action), null, 2)
+          }
         }
       })
     },
@@ -456,6 +484,22 @@ export default {
       }
     },
 
+    toRequest(action) {
+      return {
+        type: 'request',
+        action: action.name,
+        args: this.requestArgs,
+      }
+    },
+
+    emitInput(value) {
+      value = value || this.value
+      if (!value)
+        return
+
+      this.$emit("input", this.toRequest(value))
+    },
+
     onClick(event) {
       // Intercept any clicks from RST rendered links and open them in a new tab
       if (event.target.tagName.toLowerCase() === 'a') {
@@ -479,6 +523,17 @@ export default {
         })
       })
     },
+
+    onSubmit() {
+      if (!this.isValidAction)
+        return
+
+      if (this.withSave) {
+        this.emitInput(this.action)
+      } else {
+        this.executeAction()
+      }
+    },
   },
 
   watch: {
@@ -499,6 +554,8 @@ export default {
 
 <style lang="scss" scoped>
 @import "common";
+
+$btn-width: 3.5em;
 
 .action-editor-container {
   width: 100%;
@@ -522,14 +579,19 @@ export default {
   }
 
   .run-btn {
+    width: $btn-width;
+    height: 2.5em;
     background: $background-color;
-    border-radius: .25em;
-    padding: .5em 1.5em;
-    box-shadow: $primary-btn-shadow;
+    border-color: $border-color-3;
+    border-left: none;
+    border-radius: 0 1em 1em 0;
+    padding: .5em 1em;
+    box-shadow: none;
     cursor: pointer;
 
     &:hover {
       background: $hover-bg;
+      border-color: $active-glow-bg-2;
       box-shadow: none;
     }
 
@@ -546,6 +608,11 @@ export default {
     }
   }
 
+  .raw-run-btn {
+    padding: .5em 1.5em;
+    border-radius: 1em;
+  }
+
   .curl-modal-container {
     :deep(.modal) {
       .content {
@@ -558,6 +625,89 @@ export default {
 
       .output {
         border-radius: 0;
+      }
+    }
+  }
+
+  .autocomplete-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    :deep(.autocomplete) {
+      width: calc(100% - $btn-width);
+
+      input[type=text] {
+        height: 2.5em;
+        border-radius: 1em 0 0 1em;
+        box-shadow: none;
+      }
+    }
+  }
+
+  .raw-request {
+    height: 100%;
+    overflow: auto;
+
+    textarea {
+      width: 100%;
+      min-height: 15em;
+      border: $default-border-2;
+      box-shadow: $border-shadow-bottom;
+      padding: 1em;
+      font-family: monospace;
+      font-size: 0.9em;
+    }
+  }
+
+  &.with-save {
+    .header-container {
+      width: 100%;
+      height: $tab-height;
+      display: flex;
+      flex-direction: row;
+      background: $tabs-bg;
+      border-bottom: 1px solid $border-color-3;
+      box-shadow: $border-shadow-bottom;
+
+      .buttons {
+        width: $btn-width;
+        height: calc($tab-height - 1px);
+        background: $tab-bg;
+
+        button {
+          width: $btn-width;
+          height: $tab-height;
+
+          &:disabled {
+            opacity: 0.7;
+            background: $default-bg-6;
+            cursor: initial;
+            box-shadow: none;
+
+            &:hover {
+              background: $tab-bg;
+              box-shadow: none;
+            }
+          }
+        }
+      }
+
+      .tabs-container {
+        width: calc(100% - $btn-width);
+
+        :deep(.tabs) {
+          width: 100%;
+          height: calc($tab-height - 1px);
+          box-shadow: none;
+
+          @include until($tablet) {
+            .tab {
+              width: 50%;
+              flex-grow: 0;
+            }
+          }
+        }
       }
     }
   }
