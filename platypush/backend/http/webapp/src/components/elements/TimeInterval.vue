@@ -104,6 +104,10 @@ export default {
       return value == null ? null : value / this.multiplier
     },
   },
+
+  mounted() {
+    this.duration = this.toUnit(this.value)
+  },
 }
 </script>
 
