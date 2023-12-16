@@ -37,8 +37,8 @@
                         draggable with-delete
                         @drag="dragItem = index"
                         @drop="dragItem = undefined"
-                        @input="newValue.actions[index] = $event"
-                        @delete="newValue.actions.splice(index, 1)" />
+                        @input="editAction($event, index)"
+                        @delete="deleteAction(index)" />
 
             <div class="drop-target-container"
                  :class="{active: dropIndex === index}"
@@ -55,7 +55,7 @@
           </div>
 
           <div class="row item">
-            <ActionTile :value="newAction" @input="newValue.actions.push($event)" />
+            <ActionTile :value="newAction" @input="addAction" />
           </div>
         </div>
 
@@ -126,6 +126,10 @@ export default {
       this.running = false
     },
 
+    emitInput() {
+      this.$emit('input', this.newValue)
+    },
+
     onDrop(index) {
       if (this.dragItem === undefined)
         return
@@ -133,6 +137,8 @@ export default {
       this.newValue.actions.splice(
         index, 0, this.newValue.actions.splice(this.dragItem, 1)[0]
       )
+
+      this.emitInput()
     },
 
     executeAction() {
@@ -141,6 +147,21 @@ export default {
 
       this.running = true
       this.execute(this.value.actions).then(this.onResponse).catch(this.onError).finally(this.onDone)
+    },
+
+    editAction(action, index) {
+      this.newValue.actions[index] = action
+      this.emitInput()
+    },
+
+    addAction(action) {
+      this.newValue.actions.push(action)
+      this.emitInput()
+    },
+
+    deleteAction(index) {
+      this.newValue.actions.splice(index, 1)
+      this.emitInput()
     },
   },
 
