@@ -58,7 +58,7 @@ export default {
 
   methods: {
     initSelectedPanel() {
-      const match = this.$route.hash.match('#?([a-zA-Z0-9.]+)[?]?(.*)')
+      const match = this.$route.hash.match(/^#?([a-zA-Z0-9_.]+)(\?(.+?))?/)
       const plugin = match ? match[1] : 'entities'
       if (plugin?.length)
         this.selectedPanel = plugin
