@@ -403,7 +403,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
                 when=when or alarm.when,
                 media=media or alarm.media,
                 media_plugin=media_plugin or alarm.media_plugin or self.media_plugin,
-                actions=actions or alarm.actions or [],
+                actions=actions if actions is not None else (alarm.actions or []),
                 name=new_name or name,
                 enabled=enabled if enabled is not None else alarm.is_enabled(),
                 audio_volume=audio_volume
