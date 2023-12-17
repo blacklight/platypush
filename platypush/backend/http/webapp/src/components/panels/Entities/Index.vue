@@ -481,7 +481,6 @@ export default {
     margin-left: 2px;
     box-shadow: $border-shadow-bottom;
     position: relative;
-    z-index: 1;
 
     .right {
       position: absolute;
