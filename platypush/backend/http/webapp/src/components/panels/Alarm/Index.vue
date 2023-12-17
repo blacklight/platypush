@@ -20,20 +20,35 @@
     @close="selectedAlarm = null"
     v-if="modalVisible" />
 
+  <Modal title="Add Alarm" :visible="addAlarmModalVisible" @close="addAlarmModalVisible = false">
+    <AlarmEditor :value="newAlarm" new-alarm @input="addAlarm" v-if="addAlarmModalVisible" />
+  </Modal>
+
   <FloatingButton icon-class="fa fa-stopwatch" text="Add Alarm"
                   @click="addAlarmModalVisible = true" />
 </template>
 
 <script>
-import Utils from "@/Utils";
+import AlarmEditor from "@/components/panels/Entities/Alarm/AlarmEditor";
 import Loading from "@/components/Loading";
 import EntityModal from "@/components/panels/Entities/Modal";
 import Entity from "@/components/panels/Entities/Entity";
 import FloatingButton from "@/components/elements/FloatingButton";
+import Modal from "@/components/Modal";
 import NoItems from "@/components/elements/NoItems";
+import Utils from "@/Utils";
 
 export default {
-  components: {Entity, EntityModal, FloatingButton, Loading, NoItems},
+  components: {
+    AlarmEditor,
+    Entity,
+    EntityModal,
+    FloatingButton,
+    Loading,
+    Modal,
+    NoItems,
+  },
+
   mixins: [Utils],
   props: {
     pluginName: {
@@ -52,6 +67,11 @@ export default {
       addAlarmModalVisible: false,
       alarms: {},
       selectedAlarm: null,
+      newAlarm: {
+        condition_type: 'cron',
+        when: '* * * * *',
+        audio_volume: this.$root.config?.alarm?.audio_volume ?? 100
+      },
     }
   },
 
@@ -170,6 +190,12 @@ export default {
         }
       }
     }
+  }
+}
+
+:deep(.modal) {
+  .content .body {
+    padding: 0;
   }
 }
 </style>

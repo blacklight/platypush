@@ -25,7 +25,7 @@
     </div>
 
     <div class="body children" v-if="!collapsed" @click.stop="prevent">
-      <div class="child">
+      <div class="child enable">
         <label :for="enableInputId" class="label">
           <div class="name col-6">Enabled</div>
           <div class="value col-6">
@@ -49,6 +49,14 @@
         </label>
       </div>
 
+      <div class="child remove" @click="$refs.removeDialog.show" v-if="hasEdit">
+        <label class="label">
+          <div class="value">
+            <i class="fas fa-trash" /> &nbsp; Remove
+          </div>
+        </label>
+      </div>
+
       <div class="child edit" v-if="hasEdit">
         <div class="head" :class="{collapsed: editCollapsed}"
              @click.stop="editCollapsed = !editCollapsed">
@@ -64,19 +72,30 @@
         <AlarmEditor v-if="!editCollapsed" :value="value" />
       </div>
     </div>
+
+    <ConfirmDialog ref="removeDialog" @input="remove">
+      Are you sure you want to remove alarm <b>{{ value.name }}</b>?
+    </ConfirmDialog>
   </div>
 </template>
 
 <script>
 import AlarmEditor from "./Alarm/AlarmEditor"
+import ConfirmDialog from "@/components/elements/ConfirmDialog"
 import EntityMixin from "./EntityMixin"
 import EntityIcon from "./EntityIcon"
 import ToggleSwitch from "@/components/elements/ToggleSwitch";
 
 export default {
-  components: {AlarmEditor, EntityIcon, ToggleSwitch},
   mixins: [EntityMixin],
   emits: ['loading'],
+  components: {
+    AlarmEditor,
+    ConfirmDialog,
+    EntityIcon,
+    ToggleSwitch
+  },
+
   data: function() {
     return {
       collapsed: true,
@@ -163,6 +182,20 @@ export default {
       this.$emit('loading', true)
       try {
         await this.request('alarm.status')
+      } finally {
+        this.$emit('loading', false)
+      }
+    },
+
+    async remove() {
+      this.$emit('loading', true)
+      try {
+        await this.request(
+          'alarm.delete',
+          {
+            name: this.value.name,
+          }
+        )
       } finally {
         this.$emit('loading', false)
       }
@@ -271,6 +304,15 @@ $icon-width: 2em;
         margin: 0.5em;
         height: 3em;
       }
+    }
+  }
+
+  .remove {
+    color: $error-fg;
+    cursor: pointer;
+
+    label {
+      cursor: pointer;
     }
   }
 

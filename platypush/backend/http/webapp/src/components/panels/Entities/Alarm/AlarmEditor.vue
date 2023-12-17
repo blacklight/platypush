@@ -201,6 +201,11 @@ export default {
       type: Object,
       required: true,
     },
+
+    newAlarm: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data() {
@@ -285,20 +290,36 @@ export default {
 
     async save() {
       this.loading = true
+      let args = {}
+      let action = null
 
-      const request = {
-        name: this.value.name,
-        ...this.changes,
-      }
+      if (this.newAlarm) {
+        action = 'alarm.add'
+        args = {
+          name: this.editForm.name,
+          when: this.editForm.when,
+          media: this.editForm.media,
+          media_plugin: this.editForm.media_plugin,
+          audio_volume: this.editForm.audio_volume,
+          snooze_interval: this.editForm.snooze_interval,
+          actions: this.editForm.actions,
+        }
+      } else {
+        action = 'alarm.edit'
+        args = {
+          name: this.value.name,
+          ...this.changes,
+        }
 
-      if (this.changes.name != null) {
-        request.name = this.value.name
-        request.new_name = this.changes.name
+        if (this.changes.name != null) {
+          args.name = this.value.name
+          args.new_name = this.changes.name
+        }
       }
 
       try {
-        const newAlarm = await this.request('alarm.edit', request)
-        this.$emit('input', newAlarm)
+        const alarm = await this.request(action, args)
+        this.$emit('input', alarm)
       } finally {
         this.loading = false
       }
@@ -319,7 +340,7 @@ $header-height: 3.5em;
 .alarm-editor-container {
   width: 100%;
   height: 50em;
-  max-height: 70vh;
+  max-height: 65vh;
   background: $default-bg-2;
   cursor: default;
 
