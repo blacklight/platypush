@@ -413,6 +413,24 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             ).to_dict()
 
     @action
+    def delete(self, name: str):
+        """
+        Delete an alarm.
+
+        :param name: Alarm name.
+        """
+        alarm = self._get_alarm(name)
+        assert not alarm.static, (
+            f'Alarm {name} is statically defined in the configuration, '
+            'cannot overwrite it programmatically'
+        )
+
+        with self._db.get_session() as session:
+            db_alarm = session.query(DbAlarm).filter_by(name=name).first()
+            assert db_alarm, f'Alarm {name} does not exist'
+            self._clear_alarm(db_alarm, session)
+
+    @action
     def enable(self, name: str):
         """
         Enable an alarm.
