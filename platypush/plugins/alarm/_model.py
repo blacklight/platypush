@@ -59,6 +59,7 @@ class Alarm:
         name: Optional[str] = None,
         media: Optional[str] = None,
         media_plugin: Optional[str] = None,
+        media_repeat: bool = True,
         audio_volume: Optional[Union[int, float]] = None,
         snooze_interval: float = 300,
         dismiss_interval: float = 300,
@@ -74,6 +75,7 @@ class Alarm:
         self.name = name or f'Alarm_{self.id}'
         self.media = self._get_media_resource(media)
         self.media_plugin = media_plugin
+        self.media_repeat = media_repeat
         self.audio_volume = audio_volume
         self.snooze_interval = snooze_interval
         self.dismiss_interval = dismiss_interval
@@ -291,6 +293,39 @@ class Alarm:
 
         self.actions.execute()
 
+    def _on_running(self):
+        sleep_time = None
+
+        while not self.should_stop():
+            plugin_status = self._get_media_plugin().status().output
+            if not isinstance(plugin_status, dict):
+                self.wait_stop(self.poll_interval)
+                continue
+
+            state = plugin_status.get('state')
+            if state == PlayerState.STOP.value:
+                if self.state == AlarmState.SNOOZED:
+                    sleep_time = self._runtime_snooze_interval
+                else:
+                    if (
+                        self.media_repeat
+                        and self.state != AlarmState.DISMISSED
+                        and not self.should_stop()
+                    ):
+                        self.wait_stop(self.poll_interval)
+                        if not self.should_stop():
+                            self.play_audio()
+                            continue
+
+                    self.state = AlarmState.WAITING
+
+                break
+
+            self._on_change()
+            self.wait_stop(self.poll_interval)
+
+        return sleep_time
+
     def alarm_callback(self):
         while not self.should_stop():
             if self.is_enabled():
@@ -302,23 +337,7 @@ class Alarm:
             self.wait_stop(self.poll_interval)
             sleep_time = None
             if self.state == AlarmState.RUNNING:
-                while not self.should_stop():
-                    plugin_status = self._get_media_plugin().status().output
-                    if not isinstance(plugin_status, dict):
-                        self.wait_stop(self.poll_interval)
-                        continue
-
-                    state = plugin_status.get('state')
-                    if state == PlayerState.STOP.value:
-                        if self.state == AlarmState.SNOOZED:
-                            sleep_time = self._runtime_snooze_interval
-                        else:
-                            self.state = AlarmState.WAITING
-
-                        break
-
-                    self._on_change()
-                    self.wait_stop(self.poll_interval)
+                sleep_time = self._on_running()
 
             if self.state == AlarmState.SNOOZED:
                 sleep_time = self._runtime_snooze_interval
@@ -357,6 +376,7 @@ class Alarm:
             'state': self.state.name,
             'media': self.media,
             'media_plugin': self.media_plugin,
+            'media_repeat': self.media_repeat,
             'audio_volume': self.audio_volume,
             'snooze_interval': self.snooze_interval,
             'dismiss_interval': self.dismiss_interval,
@@ -372,6 +392,7 @@ class Alarm:
             name=str(alarm.name),
             media=alarm.media,  # type: ignore
             media_plugin=kwargs.pop('media_plugin', alarm.media_plugin),  # type: ignore
+            media_repeat=alarm.media_repeat,  # type: ignore
             audio_volume=alarm.audio_volume,  # type: ignore
             actions=alarm.actions,  # type: ignore
             snooze_interval=alarm.snooze_interval,  # type: ignore
@@ -391,6 +412,7 @@ class Alarm:
             next_run=self.get_next(),
             media=self.media,
             media_plugin=self.media_plugin,
+            media_repeat=self.media_repeat,
             audio_volume=self.audio_volume,
             actions=[
                 Request.to_dict(req) if isinstance(req, Request) else req

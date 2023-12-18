@@ -42,7 +42,19 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
                     when: '0 7 * * 1-5'
                     media: ~/path/your_ringtone.mp3
                     audio_volume: 10       # 10%
-                    snooze_interval: 300   # 5 minutes snooze
+
+                    # Repeat the played media resource until the alarm is
+                    # snoozed/dismissed (default: true)
+                    media_repeat: true
+
+                    # Wait 5 minutes between a snooze and another run
+                    snooze_interval: 300
+
+                    # After 10 minutes with no manual snooze/dismiss,
+                    # stop the alarm
+                    dismiss_interval: 600
+
+                    # Actions to be executed when the alarm goes on
                     actions:
                         - action: tts.say
                           args:
@@ -263,6 +275,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         name: Optional[str] = None,
         media: Optional[str] = None,
         media_plugin: Optional[str] = None,
+        media_repeat: bool = True,
         audio_file: Optional[str] = None,
         audio_volume: Optional[Union[int, float]] = None,
         enabled: bool = True,
@@ -276,6 +289,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             enabled=enabled,
             media=media or audio_file,
             media_plugin=media_plugin or self.media_plugin,
+            media_repeat=media_repeat,
             audio_volume=audio_volume,
             snooze_interval=snooze_interval or self.snooze_interval,
             dismiss_interval=dismiss_interval or self.dismiss_interval,
@@ -322,6 +336,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         name: Optional[str] = None,
         media: Optional[str] = None,
         media_plugin: Optional[str] = None,
+        media_repeat: bool = True,
         audio_file: Optional[str] = None,
         audio_volume: Optional[Union[int, float]] = None,
         enabled: bool = True,
@@ -340,6 +355,8 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         :param name: Alarm name.
         :param media: Path of the audio file to be played.
         :param media_plugin: Override the default media plugin for this alarm.
+        :param media_repeat: Repeat the played media resource until the alarm
+            is snoozed/dismissed (default: True).
         :param audio_volume: Volume of the audio.
         :param enabled: Whether the new alarm should be enabled (default: True).
         :param snooze_interval: Snooze seconds before playing the alarm again.
@@ -355,6 +372,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             when=when,
             media=media,
             media_plugin=media_plugin,
+            media_repeat=media_repeat,
             audio_file=audio_file,
             actions=actions or [],
             name=name,
@@ -373,6 +391,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         actions: Optional[list] = None,
         media: Optional[str] = None,
         media_plugin: Optional[str] = None,
+        media_repeat: Optional[bool] = None,
         audio_volume: Optional[Union[int, float]] = None,
         enabled: Optional[bool] = None,
         snooze_interval: Optional[float] = None,
@@ -394,6 +413,8 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         :param actions: List of actions to be executed.
         :param media: Path of the audio file to be played.
         :param media_plugin: Override the default media plugin for this alarm.
+        :param media_repeat: Repeat the played media resource until the alarm
+            is snoozed/dismissed (default: True).
         :param audio_volume: Volume of the audio.
         :param enabled: Whether the new alarm should be enabled.
         :param snooze_interval: Snooze seconds before playing the alarm again.
@@ -418,6 +439,9 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
                 when=when or alarm.when,
                 media=media or alarm.media,
                 media_plugin=media_plugin or alarm.media_plugin or self.media_plugin,
+                media_repeat=media_repeat
+                if media_repeat is not None
+                else alarm.media_repeat,
                 actions=actions if actions is not None else (alarm.actions or []),
                 name=new_name or name,
                 enabled=enabled if enabled is not None else alarm.is_enabled(),
@@ -531,6 +555,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
                         "enabled": true,
                         "media": "/path/to/media.mp3",
                         "media_plugin": "media.vlc",
+                        "media_repeat": true,
                         "audio_volume": 10,
                         "snooze_interval": 300,
                         "dismiss_interval": 300,

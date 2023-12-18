@@ -70,7 +70,8 @@ export default {
       newAlarm: {
         condition_type: 'cron',
         when: '* * * * *',
-        audio_volume: this.$root.config?.alarm?.audio_volume ?? 100
+        audio_volume: this.$root.config?.alarm?.audio_volume ?? 100,
+        media_repeat: true,
       },
     }
   },

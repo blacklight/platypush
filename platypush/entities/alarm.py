@@ -24,6 +24,7 @@ if not is_defined('alarm'):
         state = Column(String, nullable=False, default='UNKNOWN')
         media = Column(String, nullable=True)
         media_plugin = Column(String, nullable=True)
+        media_repeat = Column(Boolean, nullable=False, default=True)
         audio_volume = Column(Integer, nullable=True)
         snooze_interval = Column(Integer, nullable=True)
         dismiss_interval = Column(Integer, nullable=True)

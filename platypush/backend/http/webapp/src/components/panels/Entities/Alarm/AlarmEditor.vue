@@ -110,6 +110,29 @@
         </div>
 
         <div class="row item">
+          <label>
+            <div class="name">
+              <label>
+                <i class="icon fas fa-repeat" />
+                Repeat Media
+              </label>
+              <br />
+              <span class="subtext">
+                <span class="text">
+                  Whether to repeat the media resource when it finishes playing
+                  if the alarm is still running.
+                </span>
+              </span>
+            </div>
+
+            <div class="value">
+              <ToggleSwitch :value="editForm.media_repeat"
+                            @input="editForm.media_repeat = $event.target.checked" />
+            </div>
+          </label>
+        </div>
+
+        <div class="row item">
           <div class="name">
             <label>
               <i class="icon fas fa-volume-high" />
@@ -202,6 +225,7 @@ import Slider from "@/components/elements/Slider"
 import CronEditor from "@/components/elements/CronEditor"
 import FileSelector from "@/components/elements/FileSelector"
 import TimeInterval from "@/components/elements/TimeInterval"
+import ToggleSwitch from "@/components/elements/ToggleSwitch"
 import Utils from "@/Utils"
 
 export default {
@@ -214,6 +238,7 @@ export default {
     ProcedureEditor,
     Slider,
     TimeInterval,
+    ToggleSwitch,
   },
 
   props: {
@@ -265,6 +290,7 @@ export default {
       [
         'media',
         'media_plugin',
+        'media_repeat',
         'name',
         'snooze_interval',
         'dismiss_interval',
