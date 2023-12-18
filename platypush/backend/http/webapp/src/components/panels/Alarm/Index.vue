@@ -83,6 +83,9 @@ export default {
 
   methods: {
     addAlarm(alarm) {
+      if (alarm.external_id == null)
+        return
+
       alarm.name = alarm?.meta?.name_override || alarm.name
       alarm.meta = {
         ...alarm.meta,
@@ -92,6 +95,7 @@ export default {
       }
 
       this.alarms[alarm.external_id] = alarm
+      this.addAlarmModalVisible = false
     },
 
     async refresh() {

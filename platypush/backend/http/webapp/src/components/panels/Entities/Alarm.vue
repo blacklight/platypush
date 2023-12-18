@@ -35,16 +35,22 @@
       </div>
 
       <div class="child buttons" v-if="isRunning || isSnoozed">
-        <label :for="snoozeInputId" class="label col-6" v-if="isRunning">
+        <label class="label col-6" v-if="isRunning">
           <div class="value">
-            <button class="btn btn-default" @click="snooze">Snooze</button>
+            <button class="btn btn-default" @click="snooze">
+              <i class="fas fa-pause" /> &nbsp;
+              Snooze
+            </button>
           </div>
         </label>
 
-        <label :for="dismissInputId" class="label"
+        <label class="label"
                :class="{'col-6': isRunning, 'col-12': !isRunning}">
           <div class="value">
-            <button class="btn btn-default" @click="dismiss">Dismiss</button>
+            <button class="btn btn-default" @click="dismiss">
+              <i class="fas fa-times" /> &nbsp;
+              Dismiss
+            </button>
           </div>
         </label>
       </div>
@@ -73,6 +79,34 @@
       </div>
     </div>
 
+    <Modal title="Alarm Running" ref="runningModal" :visible="isRunning">
+      <div class="alarm-running-modal">
+        <div class="icon blink">
+          <i class="fas fa-stopwatch" />
+        </div>
+
+        <div class="title">
+          <h3><b>{{ value.name }}</b> is running</h3>
+        </div>
+
+        <div class="buttons">
+          <label class="label">
+            <button class="btn btn-default" @click="snooze">
+              <i class="fas fa-pause" /> &nbsp;
+              Snooze
+            </button>
+          </label>
+
+          <label class="label">
+            <button class="btn btn-default" @click="dismiss">
+              <i class="fas fa-times" /> &nbsp;
+              Dismiss
+            </button>
+          </label>
+        </div>
+      </div>
+    </Modal>
+
     <ConfirmDialog ref="removeDialog" @input="remove">
       Are you sure you want to remove alarm <b>{{ value.name }}</b>?
     </ConfirmDialog>
@@ -84,6 +118,7 @@ import AlarmEditor from "./Alarm/AlarmEditor"
 import ConfirmDialog from "@/components/elements/ConfirmDialog"
 import EntityMixin from "./EntityMixin"
 import EntityIcon from "./EntityIcon"
+import Modal from "@/components/Modal";
 import ToggleSwitch from "@/components/elements/ToggleSwitch";
 
 export default {
@@ -93,7 +128,8 @@ export default {
     AlarmEditor,
     ConfirmDialog,
     EntityIcon,
-    ToggleSwitch
+    Modal,
+    ToggleSwitch,
   },
 
   data: function() {
@@ -129,14 +165,6 @@ export default {
 
     enableInputId() {
       return `alarm-input-${this.value.name}`
-    },
-
-    snoozeInputId() {
-      return `alarm-snooze-${this.value.name}`
-    },
-
-    dismissInputId() {
-      return `alarm-dismiss-${this.value.name}`
     },
   },
 
@@ -336,6 +364,76 @@ $icon-width: 2em;
         align-items: center;
       }
     }
+  }
+
+  :deep(.modal-container) {
+    cursor: default;
+
+    .content {
+      width: 50em;
+      max-width: 90%;
+
+      .body {
+        width: 100%;
+      }
+    }
+
+    .alarm-running-modal {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1em;
+
+      .icon {
+        font-size: 3.5em;
+        color: $selected-fg;
+      }
+
+      .title {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1em;
+      }
+
+      .buttons {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        label {
+          width: 50%;
+          text-align: center;
+          cursor: pointer;
+        }
+
+        button {
+          margin: 0.5em;
+        }
+      }
+    }
+  }
+}
+
+.blink {
+  animation: blink-animation 2s infinite;
+}
+
+@keyframes blink-animation {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.1;
+  }
+
+  100% {
+    opacity: 1;
   }
 }
 </style>
