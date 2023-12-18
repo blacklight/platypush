@@ -26,6 +26,7 @@ if not is_defined('alarm'):
         media_plugin = Column(String, nullable=True)
         audio_volume = Column(Integer, nullable=True)
         snooze_interval = Column(Integer, nullable=True)
+        dismiss_interval = Column(Integer, nullable=True)
         actions = Column(JSON, nullable=True)
         static = Column(Boolean, nullable=False, default=False)
         condition_type = Column(String, nullable=False)

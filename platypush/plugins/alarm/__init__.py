@@ -77,14 +77,15 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
 
     def __init__(
         self,
-        alarms: Optional[Union[list, Dict[str, Any]]] = None,
+        alarms: Optional[Union[List[dict], Dict[str, dict]]] = None,
         media_plugin: Optional[str] = None,
-        poll_interval: Optional[float] = 5.0,
+        poll_interval: Optional[float] = 2.0,
         snooze_interval: float = 300.0,
+        dismiss_interval: float = 300.0,
         **kwargs,
     ):
         """
-        :param alarms: List or name->value dict with the configured alarms. Example:
+        :param alarms: List or name->value dict with the configured alarms.
         :param media_plugin: Media plugin (instance of
             :class:`platypush.plugins.media.MediaPlugin`) that will be used to
             play the alarm audio. It needs to be a supported local media
@@ -92,11 +93,18 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             ``media.gstreamer``, ``sound``, etc. If not specified, the first
             available configured local media plugin will be used. This only
             applies to alarms that are configured to play an audio resource.
-        :param poll_interval: Poll interval in seconds (default: 5).
-        :param snooze_interval: Default snooze interval in seconds (default: 300).
+        :param poll_interval: (Internal) poll interval, in seconds (default: 2).
+        :param snooze_interval: Default snooze interval in seconds. This
+            specifies how long to wait between alarm runs when an alarm is
+            dismissed (default: 300).
+        :param dismiss_interval: Default dismiss interval in seconds. This
+            specifies how long an alarm should run without being manually
+            snoozed/dismissed before being automatically dismissed (default:
+            300).
         """
         super().__init__(poll_interval=poll_interval, **kwargs)
         self.snooze_interval = snooze_interval
+        self.dismiss_interval = dismiss_interval
         self._db_lock = RLock()
         alarms = alarms or []
         if isinstance(alarms, dict):
@@ -259,6 +267,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         audio_volume: Optional[Union[int, float]] = None,
         enabled: bool = True,
         snooze_interval: Optional[float] = None,
+        dismiss_interval: Optional[float] = None,
     ) -> Alarm:
         alarm = Alarm(
             when=when,
@@ -269,6 +278,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             media_plugin=media_plugin or self.media_plugin,
             audio_volume=audio_volume,
             snooze_interval=snooze_interval or self.snooze_interval,
+            dismiss_interval=dismiss_interval or self.dismiss_interval,
             stop_event=self._should_stop,
             on_change=self._on_alarm_update,
         )
@@ -316,6 +326,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         audio_volume: Optional[Union[int, float]] = None,
         enabled: bool = True,
         snooze_interval: Optional[float] = None,
+        dismiss_interval: Optional[float] = None,
     ) -> dict:
         """
         Add a new alarm.
@@ -332,6 +343,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         :param audio_volume: Volume of the audio.
         :param enabled: Whether the new alarm should be enabled (default: True).
         :param snooze_interval: Snooze seconds before playing the alarm again.
+        :param dismiss_interval: Dismiss seconds before stopping the alarm.
         :return: The newly created alarm.
         """
         if audio_file:
@@ -349,6 +361,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             enabled=enabled,
             audio_volume=audio_volume,
             snooze_interval=snooze_interval,
+            dismiss_interval=dismiss_interval,
         ).to_dict()
 
     @action
@@ -363,6 +376,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         audio_volume: Optional[Union[int, float]] = None,
         enabled: Optional[bool] = None,
         snooze_interval: Optional[float] = None,
+        dismiss_interval: Optional[float] = None,
     ) -> dict:
         """
         Edit an existing alarm.
@@ -383,6 +397,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         :param audio_volume: Volume of the audio.
         :param enabled: Whether the new alarm should be enabled.
         :param snooze_interval: Snooze seconds before playing the alarm again.
+        :param dismiss_interval: Dismiss seconds before stopping the alarm.
         :return: The modified alarm.
         """
         alarm = self._get_alarm(name)
@@ -410,6 +425,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
                 if audio_volume is not None
                 else alarm.audio_volume,
                 snooze_interval=snooze_interval or alarm.snooze_interval,
+                dismiss_interval=dismiss_interval or alarm.dismiss_interval,
             ).to_dict()
 
     @action
@@ -419,15 +435,25 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
 
         :param name: Alarm name.
         """
-        alarm = self._get_alarm(name)
+        try:
+            alarm = self._get_alarm(name)
+        except AssertionError:
+            self.logger.warning('Alarm %s does not exist', name)
+            return
+
         assert not alarm.static, (
             f'Alarm {name} is statically defined in the configuration, '
             'cannot overwrite it programmatically'
         )
 
+        alarm.stop()
+
         with self._db.get_session() as session:
             db_alarm = session.query(DbAlarm).filter_by(name=name).first()
-            assert db_alarm, f'Alarm {name} does not exist'
+            if not db_alarm:
+                self.logger.warning('Alarm %s does not exist', name)
+                return
+
             self._clear_alarm(db_alarm, session)
 
     @action
@@ -507,6 +533,7 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
                         "media_plugin": "media.vlc",
                         "audio_volume": 10,
                         "snooze_interval": 300,
+                        "dismiss_interval": 300,
                         "actions": [
                             {
                                 "action": "tts.say",

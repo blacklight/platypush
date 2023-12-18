@@ -138,8 +138,8 @@
             <br />
             <span class="subtext">
               <span class="text">
-                How long the interval should be paused after being triggered and
-                snoozed.
+                How long the alarm should be paused after being triggered and
+                manually snoozed.
               </span>
             </span>
           </div>
@@ -147,6 +147,26 @@
           <div class="value">
             <TimeInterval :value="editForm.snooze_interval"
                           @input="editForm.snooze_interval = $event" />
+          </div>
+        </div>
+
+        <div class="row item">
+          <div class="name">
+            <label>
+              <i class="icon fas fa-xmark" />
+              Dismiss timeout
+            </label>
+            <br />
+            <span class="subtext">
+              <span class="text">
+                How long the alarm should run before being automatically dismissed.
+              </span>
+            </span>
+          </div>
+
+          <div class="value">
+            <TimeInterval :value="editForm.dismiss_interval"
+                          @input="editForm.dismiss_interval = $event" />
           </div>
         </div>
 
@@ -247,6 +267,7 @@ export default {
         'media_plugin',
         'name',
         'snooze_interval',
+        'dismiss_interval',
         'when',
       ].forEach(key => {
         if (this.editForm[key] !== this.value[key])
@@ -258,6 +279,17 @@ export default {
   },
 
   methods: {
+    actionsToArgs(actions) {
+      return actions?.map(action => {
+        if (action.name) {
+          action.action = action.name
+          delete action.name
+        }
+
+        return action
+      }) ?? []
+    },
+
     onWhenInput(value, type) {
       if (value == null)
         return
@@ -302,7 +334,8 @@ export default {
           media_plugin: this.editForm.media_plugin,
           audio_volume: this.editForm.audio_volume,
           snooze_interval: this.editForm.snooze_interval,
-          actions: this.editForm.actions,
+          dismiss_interval: this.editForm.dismiss_interval,
+          actions: this.actionsToArgs(this.editForm.actions),
         }
       } else {
         action = 'alarm.edit'
@@ -310,6 +343,9 @@ export default {
           name: this.value.name,
           ...this.changes,
         }
+
+        if (this.changes.actions)
+          args.actions = this.actionsToArgs(this.changes.actions)
 
         if (this.changes.name != null) {
           args.name = this.value.name

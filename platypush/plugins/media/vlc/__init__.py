@@ -238,7 +238,10 @@ class MediaVlcPlugin(MediaPlugin):
     def quit(self, *_, **__):
         """Quit the player (same as `stop`)"""
         with self._stop_lock:
-            assert self._player, 'No vlc instance is running'
+            if not self._player:
+                self.logger.warning('No vlc instance is running')
+                return self.status()
+
             self._player.stop()
             self._on_stop_event.wait(timeout=5)
             self._reset_state()

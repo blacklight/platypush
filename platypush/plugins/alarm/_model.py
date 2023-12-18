@@ -61,7 +61,8 @@ class Alarm:
         media_plugin: Optional[str] = None,
         audio_volume: Optional[Union[int, float]] = None,
         snooze_interval: float = 300,
-        poll_interval: float = 5,
+        dismiss_interval: float = 300,
+        poll_interval: float = 2,
         enabled: bool = True,
         static: bool = False,
         stop_event: Optional[threading.Event] = None,
@@ -75,6 +76,7 @@ class Alarm:
         self.media_plugin = media_plugin
         self.audio_volume = audio_volume
         self.snooze_interval = snooze_interval
+        self.dismiss_interval = dismiss_interval
         self.state = AlarmState.UNKNOWN
         self.timer: Optional[threading.Timer] = None
         self.static = static
@@ -91,6 +93,7 @@ class Alarm:
         self.stop_event = stop_event or threading.Event()
         self.poll_interval = poll_interval
         self.on_change = on_change
+        self._dismiss_timer: Optional[threading.Timer] = None
 
     def _on_change(self):
         if self.on_change:
@@ -209,6 +212,7 @@ class Alarm:
     def dismiss(self):
         self.state = AlarmState.DISMISSED
         self.stop_audio()
+        self._clear_dismiss_timer()
         get_bus().post(AlarmDismissedEvent(name=self.name))
         self._on_change()
 
@@ -216,6 +220,7 @@ class Alarm:
         self._runtime_snooze_interval = interval or self.snooze_interval
         self.state = AlarmState.SNOOZED
         self.stop_audio()
+        self._clear_dismiss_timer()
         get_bus().post(
             AlarmSnoozedEvent(name=self.name, interval=self._runtime_snooze_interval)
         )
@@ -230,18 +235,26 @@ class Alarm:
             return
 
         interval = next_run - time.time()
+        self.state = AlarmState.WAITING
         self.timer = threading.Timer(interval, self.alarm_callback)
         self.timer.start()
-        self.state = AlarmState.WAITING
+        self._clear_dismiss_timer()
         self._on_change()
 
     def stop(self):
         self.state = AlarmState.SHUTDOWN
+        self.stop_audio()
+
         if self.timer:
             self.timer.cancel()
             self.timer = None
 
         self._on_change()
+
+    def _clear_dismiss_timer(self):
+        if self._dismiss_timer:
+            self._dismiss_timer.cancel()
+            self._dismiss_timer = None
 
     def _get_media_plugin(self) -> MediaPlugin:
         plugin = get_plugin(self.media_plugin)
@@ -265,16 +278,23 @@ class Alarm:
     def stop_audio(self):
         self._get_media_plugin().stop()
 
+    def _on_start(self):
+        if self.state != AlarmState.RUNNING:
+            self._dismiss_timer = threading.Timer(self.dismiss_interval, self.dismiss)
+            self._dismiss_timer.start()
+
+        self.state = AlarmState.RUNNING
+        get_bus().post(AlarmStartedEvent(name=self.name))
+        self._on_change()
+        if self.media_plugin and self.media:
+            self.play_audio()
+
+        self.actions.execute()
+
     def alarm_callback(self):
         while not self.should_stop():
             if self.is_enabled():
-                self.state = AlarmState.RUNNING
-                get_bus().post(AlarmStartedEvent(name=self.name))
-                self._on_change()
-                if self.media_plugin and self.media:
-                    self.play_audio()
-
-                self.actions.execute()
+                self._on_start()
             elif self.state != AlarmState.WAITING:
                 self.state = AlarmState.WAITING
                 self._on_change()
@@ -339,6 +359,7 @@ class Alarm:
             'media_plugin': self.media_plugin,
             'audio_volume': self.audio_volume,
             'snooze_interval': self.snooze_interval,
+            'dismiss_interval': self.dismiss_interval,
             'actions': self.actions.requests,
             'static': self.static,
             'condition_type': self.condition_type.value,
@@ -354,6 +375,7 @@ class Alarm:
             audio_volume=alarm.audio_volume,  # type: ignore
             actions=alarm.actions,  # type: ignore
             snooze_interval=alarm.snooze_interval,  # type: ignore
+            dismiss_interval=alarm.dismiss_interval,  # type: ignore
             enabled=bool(alarm.enabled),
             static=bool(alarm.static),
             state=getattr(AlarmState, str(alarm.state)),
@@ -375,6 +397,7 @@ class Alarm:
                 for req in self.actions.requests
             ],
             snooze_interval=self.snooze_interval,
+            dismiss_interval=self.dismiss_interval,
             enabled=self.is_enabled(),
             static=self.static,
             condition_type=self.condition_type.value,
