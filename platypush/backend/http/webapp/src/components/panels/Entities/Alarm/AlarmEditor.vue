@@ -288,12 +288,12 @@ export default {
         changes.actions = this.editForm.actions;
 
       [
+        'dismiss_interval',
         'media',
         'media_plugin',
         'media_repeat',
         'name',
         'snooze_interval',
-        'dismiss_interval',
         'when',
       ].forEach(key => {
         if (this.editForm[key] !== this.value[key])
