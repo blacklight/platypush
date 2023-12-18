@@ -329,6 +329,7 @@ class Alarm:
     def to_dict(self) -> dict:
         return {
             'id': self.name,
+            'type': 'alarm',
             'name': self.name,
             'when': self.when,
             'next_run': self.get_next(),
