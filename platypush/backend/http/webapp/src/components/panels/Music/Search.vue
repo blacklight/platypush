@@ -231,6 +231,7 @@ export default {
     height: 17em;
     background: $default-bg-5;
     display: flex;
+    flex-direction: column;
     padding: 2em;
     border-radius: 1.5em;
 
