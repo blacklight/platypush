@@ -43,15 +43,20 @@
 
     <div class="track-container col-s-9 col-m-9 col-l-3">
       <div class="track-info" v-if="track && status?.state !== 'stop'">
-        <img class="image from desktop" :src="track.image" :alt="track.title" v-if="track.image">
-        <div class="title" v-if="status.state === 'play' || status.state === 'pause'">
-          <a :href="$route.fullPath" v-text="track.title?.length ? track.title : '[No Title]'"
-             @click.prevent="$emit('search', {artist: track.artist, album: track.album})" v-if="track.album"></a>
-          <a :href="track.url" v-text="track.title?.length ? track.title : '[No Title]'" v-else-if="track.url"></a>
-          <span v-text="track.title?.length ? track.title : '[No Title]' " v-else></span>
+        <div class="img-container" v-if="track.image">
+          <img class="image from desktop" :src="track.image" :alt="track.title">
         </div>
-        <div class="artist" v-if="track.artist?.length && (status.state === 'play' || status.state === 'pause')">
-          <a :href="$route.fullPath" v-text="track.artist" @click.prevent="$emit('search', {artist: track.artist})"></a>
+
+        <div class="title-container">
+          <div class="title" v-if="status.state === 'play' || status.state === 'pause'">
+            <a :href="$route.fullPath" v-text="track.title?.length ? track.title : '[No Title]'"
+               @click.prevent="$emit('search', {artist: track.artist, album: track.album})" v-if="track.album"></a>
+            <a :href="track.url" v-text="track.title?.length ? track.title : '[No Title]'" v-else-if="track.url"></a>
+            <span v-text="track.title?.length ? track.title : '[No Title]' " v-else></span>
+          </div>
+          <div class="artist" v-if="track.artist?.length && (status.state === 'play' || status.state === 'pause')">
+            <a :href="$route.fullPath" v-text="track.artist" @click.prevent="$emit('search', {artist: track.artist})"></a>
+          </div>
         </div>
       </div>
     </div>

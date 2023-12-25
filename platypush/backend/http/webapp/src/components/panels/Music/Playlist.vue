@@ -49,10 +49,17 @@
         No tracks are loaded
       </div>
 
-      <div class="row track" @dragstart="onTrackDragStart(i)" @dragend="onTrackDragEnd(i)"
-           @dragover="onTrackDragOver(i)" draggable="true"
-           :class="{selected: selectedTracksSet.has(i), active: status?.playingPos === i, hidden: !displayedTracks.has(i)}"
-           v-for="(track, i) in tracks" :key="i" @click="onTrackClick($event, i)" @dblclick="$emit('play', {pos: i})">
+      <div class="row track"
+           @dragstart="onTrackDragStart(i)"
+           @dragend="onTrackDragEnd(i)"
+           @dragover="onTrackDragOver(i)"
+           draggable="true"
+           v-for="i in displayedTrackIndices"
+           :set="track = tracks[i]"
+           :key="i"
+           :class="trackClass(i)"
+           @click="onTrackClick($event, i)"
+           @dblclick="$emit('play', {pos: i})">
         <div class="col-10">
           <div class="title">
             {{ track.title || '[No Title]' }}
@@ -148,22 +155,20 @@ export default {
       return new Set(this.selectedTracks)
     },
 
-    displayedTracks() {
+    displayedTrackIndices() {
       const positions = [...Array(this.tracks.length).keys()]
       if (!this.filter?.length)
-        return new Set(positions)
+        return positions
 
       const self = this
       const filter = (self.filter || '').toLowerCase()
 
-      return new Set(
-          positions.filter((pos) => {
-            const track = this.tracks[pos]
-            return (track?.artist || '').toLowerCase().indexOf(filter) >= 0
-                || (track?.title || '').toLowerCase().indexOf(filter) >= 0
-                || (track?.album || '').toLowerCase().indexOf(filter) >= 0
-          })
-      )
+      return positions.filter((pos) => {
+          const track = this.tracks[pos]
+          return (track?.artist || '').toLowerCase().indexOf(filter) >= 0
+              || (track?.title || '').toLowerCase().indexOf(filter) >= 0
+              || (track?.album || '').toLowerCase().indexOf(filter) >= 0
+        })
     },
   },
 
@@ -198,6 +203,13 @@ export default {
           else
             this.selectedTracks = [pos]
         }
+      }
+    },
+
+    trackClass(i) {
+      return {
+        selected: this.selectedTracksSet.has(i),
+        active: this.status?.playingPos === i,
       }
     },
 
