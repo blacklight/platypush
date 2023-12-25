@@ -375,6 +375,7 @@ steps:
     - export GIT_VERSION="$VERSION-$(( $(git log --pretty=oneline HEAD...v$VERSION | wc -l) + 1))"
     - export GIT_BUILD_DIR="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all"
     - export GIT_DEB="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all.deb"
+    - export POOL_PATH="$APT_ROOT/pool/$DEB_VERSION/dev"
 
     - echo "--- Building git package"
     - pip install --prefix="$GIT_BUILD_DIR/usr" --no-cache --no-deps .
@@ -397,9 +398,9 @@ steps:
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
 
-    - echo "--- Copying package to the repo"
-    - mkdir -p "$APT_ROOT/pool/$DEB_VERSION/dev"
-    - cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/dev/"
+    - echo "--- Copying $GIT_DEB to $POOL_PATH"
+    - mkdir -p "$POOL_PATH"
+    - cp "$GIT_DEB" "$POOL_PATH"
 
     # If main/all/Packages doesn't exist, then we should create the first main release
     - export PKGURL="https://apt.platypush.tech/dists/$DEB_VERSION/main/all/Packages"
@@ -466,6 +467,7 @@ steps:
     - export GIT_VERSION="$VERSION-$(( $(git log --pretty=oneline HEAD...v$VERSION | wc -l) + 1))"
     - export GIT_BUILD_DIR="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all"
     - export GIT_DEB="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all.deb"
+    - export POOL_PATH="$APT_ROOT/pool/$DEB_VERSION/dev"
 
     - echo "--- Building git package"
     - pip install --prefix="$GIT_BUILD_DIR/usr" --no-cache --no-deps .
@@ -488,9 +490,9 @@ steps:
       EOF
     - dpkg --build "$GIT_BUILD_DIR"
 
-    - echo "--- Copying package to the repo"
-    - mkdir -p "$APT_ROOT/pool/$DEB_VERSION/dev"
-    - cp "$GIT_DEB" "$APT_ROOT/pool/$DEB_VERSION/dev/"
+    - echo "--- Copying $GIT_DEB to $POOL_PATH"
+    - mkdir -p "$POOL_PATH"
+    - cp "$GIT_DEB" "$POOL_PATH"
 
     # If main/all/Packages doesn't exist, then we should create the first main release
     - export PKGURL="https://apt.platypush.tech/dists/$DEB_VERSION/main/all/Packages"
