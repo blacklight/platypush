@@ -572,7 +572,8 @@ steps:
       echo "stable\noldstable" | while read distro; do
         echo "main\ndev" | while read branch; do
           branch_dir="$TMP_APT_ROOT/pool/$distro/$branch"
-          [ -d "$branch_dir" ] || continue
+          echo "Checking pool folder: $branch_dir"
+          [ -d "$branch_dir" ] || mkdir -p "$branch_dir"
           dist_dir="$TMP_APT_ROOT/dists/$distro/$branch/all"
           mkdir -p "$dist_dir"
           pkg_file="$dist_dir/Packages"
