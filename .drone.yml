@@ -582,6 +582,8 @@ steps:
           dpkg-scanpackages --arch all "$branch_dir" > "$pkg_file"
           sed -i "$pkg_file" -re "s|^Filename: $TMP_APT_ROOT/|Filename: |"
           cat "$pkg_file" | gzip -9 > "$pkg_file.gz"
+          echo "Generated Packages file: $pkg_file"
+          cat "$pkg_file"
         done
       done
 
