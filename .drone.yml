@@ -721,12 +721,9 @@ steps:
 
     - echo "-- Updating the apt repo root"
     - export OLD_APT_ROOT="$REPOS_ROOT/oldapt"
-    - |
-      if [ ! -d "$OLD_APT_ROOT" ]; then
-        mv "$APT_ROOT" "$OLD_APT_ROOT"
-        mv "$TMP_APT_ROOT" "$APT_ROOT"
-        rm -rf "$OLD_APT_ROOT"
-      fi
+    - rm -rf "$OLD_APT_ROOT"
+    - mv "$APT_ROOT" "$OLD_APT_ROOT"
+    - mv "$TMP_APT_ROOT" "$APT_ROOT"
 
     - chmod -R a+r "$APT_ROOT"
     - chmod a+x "$APT_ROOT"
