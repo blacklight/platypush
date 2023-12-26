@@ -403,6 +403,9 @@ steps:
     - cp "$GIT_DEB" "$POOL_PATH"
 
     # If main/all/Packages doesn't exist, then we should create the first main release
+    - |
+      [ $(ls "$APT_ROOT/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-"*"_all.deb" 2>/dev/null | wc -l) -eq 0 ] && export UPDATE_STABLE_PKG=1
+
     - export PKGURL="https://apt.platypush.tech/dists/$DEB_VERSION/main/all/Packages"
     - |
       [ -z "$UPDATE_STABLE_PKG" ] &&
@@ -495,6 +498,9 @@ steps:
     - cp "$GIT_DEB" "$POOL_PATH"
 
     # If main/all/Packages doesn't exist, then we should create the first main release
+    - |
+      [ $(ls "$APT_ROOT/pool/$DEB_VERSION/main/$${PKG_NAME}_$${VERSION}-"*"_all.deb" 2>/dev/null | wc -l) -eq 0 ] && export UPDATE_STABLE_PKG=1
+
     - export PKGURL="https://apt.platypush.tech/dists/$DEB_VERSION/main/all/Packages"
     - |
       [ -z "$UPDATE_STABLE_PKG" ] &&
