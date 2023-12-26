@@ -372,7 +372,7 @@ steps:
     - git config --global --add safe.directory $PWD
     - git pull --rebase origin master --tags
     - export VERSION=$(python3 setup.py --version)
-    - export GIT_VERSION="$VERSION-$(( $(git log --pretty=oneline HEAD...v$VERSION | wc -l) + 1))"
+    - export GIT_VERSION="$VERSION-$(git log --pretty=oneline HEAD...v$VERSION | wc -l)"
     - export GIT_BUILD_DIR="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all"
     - export GIT_DEB="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all.deb"
     - export POOL_PATH="$APT_ROOT/pool/$DEB_VERSION/dev"
@@ -464,7 +464,7 @@ steps:
     - git config --global --add safe.directory $PWD
     - git pull --rebase origin master --tags
     - export VERSION=$(python3 setup.py --version)
-    - export GIT_VERSION="$VERSION-$(( $(git log --pretty=oneline HEAD...v$VERSION | wc -l) + 1))"
+    - export GIT_VERSION="$VERSION-$(git log --pretty=oneline HEAD...v$VERSION | wc -l)"
     - export GIT_BUILD_DIR="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all"
     - export GIT_DEB="$WORKDIR/$${PKG_NAME}_$${GIT_VERSION}_all.deb"
     - export POOL_PATH="$APT_ROOT/pool/$DEB_VERSION/dev"
@@ -765,7 +765,7 @@ steps:
     - git config --global --add safe.directory $PWD
     - git pull --rebase origin master --tags
     - export VERSION=$(python3 setup.py --version)
-    - export RELNUM=$(git log --pretty=oneline HEAD...v$VERSION | wc -l)
+    - export RELNUM="$(git log --pretty=oneline HEAD...v$VERSION | wc -l)"
     - export SPECFILE="$WORKDIR/$PKG_NAME.spec"
     - export BUILD_DIR="$WORKDIR/build"
     - export TMP_RPM_ROOT="$WORKDIR/repo"
