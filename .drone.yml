@@ -369,7 +369,7 @@ steps:
     - cd "$SRCDIR"
 
     - echo "--- Parsing metadata"
-    - git config --global --add safe.directory $PWD
+    - git config --global --add safe.directory "$PWD"
     - git pull --rebase origin master --tags
     - export VERSION=$(python3 setup.py --version)
     - export GIT_VERSION="$VERSION-$(git log --pretty=oneline HEAD...v$VERSION | wc -l)"
@@ -400,6 +400,7 @@ steps:
 
     - echo "--- Copying $GIT_DEB to $POOL_PATH"
     - mkdir -p "$POOL_PATH"
+    - rm -f "$POOL_PATH/*.deb"
     - cp "$GIT_DEB" "$POOL_PATH"
 
     # If main/all/Packages doesn't exist, then we should create the first main release
@@ -464,7 +465,7 @@ steps:
     - apt install -y curl dpkg-dev gpg git python3 python3-pip
 
     - echo "--- Parsing metadata"
-    - git config --global --add safe.directory $PWD
+    - git config --global --add safe.directory "$PWD"
     - git pull --rebase origin master --tags
     - export VERSION=$(python3 setup.py --version)
     - export GIT_VERSION="$VERSION-$(git log --pretty=oneline HEAD...v$VERSION | wc -l)"
@@ -495,6 +496,7 @@ steps:
 
     - echo "--- Copying $GIT_DEB to $POOL_PATH"
     - mkdir -p "$POOL_PATH"
+    - rm -f "$POOL_PATH/*.deb"
     - cp "$GIT_DEB" "$POOL_PATH"
 
     # If main/all/Packages doesn't exist, then we should create the first main release
