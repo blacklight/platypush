@@ -396,11 +396,11 @@ steps:
       Homepage: https://platypush.tech
       Description: Universal command executor and automation hub.
       EOF
+    - mkdir -p "$POOL_PATH"
+    - rm -f "$POOL_PATH/*.deb"
     - dpkg --build "$GIT_BUILD_DIR"
 
     - echo "--- Copying $GIT_DEB to $POOL_PATH"
-    - mkdir -p "$POOL_PATH"
-    - rm -f "$POOL_PATH/*.deb"
     - cp "$GIT_DEB" "$POOL_PATH"
 
     # If main/all/Packages doesn't exist, then we should create the first main release
