@@ -86,15 +86,15 @@ export default {
 
     highlightedInstallCmd() {
       return (
-        this.installCmd ?
         hljs.highlight(
+          this.installCmd ?
           this.extension.deps.install_cmd
           .map((cmd) => `$ ${cmd}`)
           .join('\n')
-          .trim()
-        ).value :
-        '# No extra installation steps required',
-        {language: 'bash'}
+          .trim() :
+          '# No extra installation steps required',
+          {language: 'bash'}
+        ).value
       )
     },
   },
