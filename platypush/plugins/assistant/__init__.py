@@ -278,7 +278,7 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         else:
             self._on_unmute()
 
-    def transform_entities(self, entities: Collection['AssistantPlugin']):
+    def transform_entities(self, entities: Collection['AssistantPlugin'], **_):
         return super().transform_entities(
             [
                 Assistant(

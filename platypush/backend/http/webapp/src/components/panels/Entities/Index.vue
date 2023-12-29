@@ -426,14 +426,9 @@ export default {
       'platypush.message.event.entities.EntityDeleteEvent'
     )
 
-    if (!this.loadCachedEntities()) {
-      await this.sync()
-      this.refresh()
-    } else {
-      await this.request('entities.scan')
-      this.sync()
-    }
-
+    const hasCachedEntities = this.loadCachedEntities()
+    await this.sync(!hasCachedEntities)
+    await this.refresh()
     setInterval(() => this.refreshEntitiesCache(), 10000)
   },
 
