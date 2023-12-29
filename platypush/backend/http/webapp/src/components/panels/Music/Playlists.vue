@@ -14,7 +14,7 @@
           </label>
         </div>
 
-        <div class="buttons pull-right">
+        <div class="col-4 buttons pull-right">
           <Dropdown title="Players" icon-class="fa fa-volume-up" v-if="Object.keys(devices || {}).length">
             <DropdownItem v-for="(device, id) in devices" :key="id" v-text="device.name"
                           :item-class="{active: activeDevice === id, selected: selectedDevice === id}"
