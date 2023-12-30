@@ -35,6 +35,7 @@ Plugins
     platypush/plugins/file.rst
     platypush/plugins/file.monitor.rst
     platypush/plugins/foursquare.rst
+    platypush/plugins/github.rst
     platypush/plugins/google.calendar.rst
     platypush/plugins/google.drive.rst
     platypush/plugins/google.fit.rst
