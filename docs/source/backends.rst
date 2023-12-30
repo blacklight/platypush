@@ -11,7 +11,6 @@ Backends
     platypush/backend/camera.pi.rst
     platypush/backend/chat.telegram.rst
     platypush/backend/foursquare.rst
-    platypush/backend/github.rst
     platypush/backend/google.fit.rst
     platypush/backend/google.pubsub.rst
     platypush/backend/gps.rst
