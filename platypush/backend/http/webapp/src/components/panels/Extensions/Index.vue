@@ -250,6 +250,8 @@ $header-height: 3.25em;
   }
 
   .extension-container {
+    max-width: calc(100% - 1em);
+
     .extension {
       display: flex;
       flex-direction: column;
