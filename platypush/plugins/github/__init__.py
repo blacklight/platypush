@@ -61,6 +61,7 @@ class GithubPlugin(RunnablePlugin):
         - ``notifications``
         - ``read:org`` if you want to access repositories on organization level.
 
+    If neither ``repos`` nor ``org`` is specified then the plugin will monitor all new events on user level.
     """
 
     _base_url = 'https://api.github.com'
@@ -76,8 +77,6 @@ class GithubPlugin(RunnablePlugin):
         **kwargs,
     ):
         """
-        If neither ``repos`` nor ``org`` is specified then the plugin will monitor all new events on user level.
-
         :param user: Github username.
         :param user_token: Github personal access token.
         :param repos: List of repos to be monitored - if a list is provided then only these repositories will be
