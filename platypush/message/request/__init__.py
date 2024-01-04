@@ -181,7 +181,7 @@ class Request(Message):
                     context_value = expr
 
                 parsed_value += prefix + (
-                    json.dumps(context_value)
+                    json.dumps(context_value, cls=cls.Encoder)
                     if isinstance(context_value, (list, dict))
                     else str(context_value)
                 )

@@ -58,6 +58,8 @@ class Message:
                 return obj.isoformat()
 
         def default(self, obj):
+            from platypush.procedure import Procedure
+
             value = self.parse_datetime(obj)
             if value is not None:
                 return value
@@ -74,6 +76,9 @@ class Message:
 
             if isinstance(obj, JSONAble):
                 return obj.to_json()
+
+            if isinstance(obj, Procedure):
+                return obj.to_dict()
 
             if isinstance(obj, Enum):
                 return obj.value
