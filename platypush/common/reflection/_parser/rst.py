@@ -59,6 +59,10 @@ class RstExtensionsMixin:
 
         return cls._expand_module(docstr, ex_name, match, obj)
 
+    @staticmethod
+    def _field_default(field):
+        return getattr(field, "dump_default", getattr(field, "default", None))
+
     @classmethod
     def _expand_schema(cls, docstr: str, match: re.Match) -> str:
         from marshmallow import missing
@@ -98,19 +102,25 @@ class RstExtensionsMixin:
                             + (
                                 (
                                     '"'
-                                    + field.metadata.get("example", field.default)
+                                    + field.metadata.get(
+                                        "example", cls._field_default(field)
+                                    )
                                     + '"'
                                     if isinstance(
-                                        field.metadata.get("example", field.default),
+                                        field.metadata.get(
+                                            "example", cls._field_default(field)
+                                        ),
                                         str,
                                     )
                                     else str(
-                                        field.metadata.get("example", field.default)
+                                        field.metadata.get(
+                                            "example", cls._field_default(field)
+                                        )
                                     )
                                 )
                                 if not (
                                     field.metadata.get("example") is None
-                                    and field.default is missing
+                                    and cls._field_default(field) is missing
                                 )
                                 else "..."
                             )
