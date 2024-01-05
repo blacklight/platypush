@@ -30,6 +30,10 @@ export default {
       type: Object,
       default: () => {},
     },
+
+    pluginName: {
+      type: String,
+    },
   },
 
   data() {

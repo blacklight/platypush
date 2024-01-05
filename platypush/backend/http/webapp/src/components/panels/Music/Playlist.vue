@@ -44,7 +44,7 @@
       </MusicHeader>
     </div>
 
-    <div class="body" ref="body">
+    <div class="body" ref="body" @scroll="onScroll">
       <div class="no-content" v-if="!tracks?.length">
         No tracks are loaded
       </div>
@@ -57,6 +57,7 @@
            v-for="i in displayedTrackIndices"
            :set="track = tracks[i]"
            :key="i"
+           :data-index="i"
            :class="trackClass(i)"
            @click="onTrackClick($event, i)"
            @dblclick="$emit('play', {pos: i})">
@@ -137,6 +138,11 @@ export default {
     activeDevice: {
       type: String,
     },
+
+    maxVisibleTracks: {
+      type: Number,
+      default: 100,
+    },
   },
 
   data() {
@@ -147,6 +153,8 @@ export default {
       infoTrack: null,
       sourcePos: null,
       targetPos: null,
+      centerPos: 0,
+      mounted: false,
     }
   },
 
@@ -155,20 +163,45 @@ export default {
       return new Set(this.selectedTracks)
     },
 
+    trackIndicesByToken() {
+      const indices = {}
+      this.tracks.forEach((track, i) => {
+        const token = [track?.artist, track?.album, track?.title]
+          .filter((field) => field?.trim()?.length)
+          .map((field) => field.trim().toLowerCase())
+          .join(' ')
+
+        if (!indices[token])
+          indices[token] = new Set()
+        indices[token].add(i)
+      })
+
+      return indices
+    },
+
     displayedTrackIndices() {
-      const positions = [...Array(this.tracks.length).keys()]
-      if (!this.filter?.length)
-        return positions
+      let positions = [...Array(this.tracks.length).keys()]
 
-      const self = this
-      const filter = (self.filter || '').toLowerCase()
+      if (this.filter?.length) {
+        const filter = this.filter?.trim()?.replace(/\s+/g, ' ').toLowerCase()
+        const matchingPositions = new Set()
+        Object.entries(this.trackIndicesByToken).forEach(([key, positions]) => {
+          if (key.indexOf(filter) < 0)
+            return
 
-      return positions.filter((pos) => {
-          const track = this.tracks[pos]
-          return (track?.artist || '').toLowerCase().indexOf(filter) >= 0
-              || (track?.title || '').toLowerCase().indexOf(filter) >= 0
-              || (track?.album || '').toLowerCase().indexOf(filter) >= 0
+          matchingPositions.add(...positions)
         })
+
+        positions = [...matchingPositions]
+        positions.sort()
+      }
+
+      if (positions.length > this.maxVisibleTracks) {
+        const offset = Math.max(0, this.centerPos - Math.floor(this.maxVisibleTracks / 2))
+        positions = positions.slice(offset, offset + this.maxVisibleTracks)
+      }
+
+      return positions
     },
   },
 
@@ -242,6 +275,17 @@ export default {
       [...tracks][track].classList.add('dragover')
     },
 
+    onScroll() {
+      const offset = this.$refs.body.scrollTop
+      const bodyHeight = parseFloat(getComputedStyle(this.$refs.body).height)
+      const scrollHeight = this.$refs.body.scrollHeight
+
+      if (offset < 5)
+        this.centerPos = Math.max(0, parseInt(this.centerPos - (this.maxVisibleTracks / 1.5)))
+      else if (offset === scrollHeight - bodyHeight)
+        this.centerPos = Math.min(this.tracks.length - 1, parseInt(this.centerPos + (this.maxVisibleTracks / 1.5)))
+    },
+
     playlistSave() {
       const name = prompt('Playlist name')
       if (!name?.length)
@@ -249,17 +293,34 @@ export default {
 
       this.$emit('save', name)
     },
+
+    scrollToTrack(pos) {
+      this.centerPos = pos || this.status?.playingPos || 0
+      this.$nextTick(() => {
+        if (!this.$refs.body) {
+          this.$watch(() => this.$refs.body, () => {
+            if (!this.mounted)
+              this.scrollToTrack(pos)
+          })
+
+          return
+        }
+
+        [...this.$refs.body.querySelectorAll('.track')]
+          .filter((track) => track.classList.contains('active'))
+          .forEach((track) => track.scrollIntoView({block: 'center', behavior: 'smooth'}))
+
+        this.mounted = true
+      })
+    },
   },
 
   mounted() {
-    const self = this
-    this.$watch(() => self.status?.playingPos, (pos) => {
-      if (pos == null)
-        return
-
-      const trackElement = [...self.$refs.body.querySelectorAll('.track')][pos]
-      const offset = trackElement.offsetTop - parseFloat(getComputedStyle(self.$refs.header.$el).height)
-      self.$refs.body.scrollTo(0, offset)
+    this.scrollToTrack()
+    this.$watch(() => this.status, () => this.scrollToTrack())
+    this.$watch(() => this.filter, (filter) => {
+      if (!filter?.length)
+        this.scrollToTrack()
     })
   },
 }
