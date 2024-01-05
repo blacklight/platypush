@@ -442,7 +442,7 @@ class FoursquarePlugin(RunnablePlugin):
 
             last_checkin = checkins[0]
             last_checkin_created_at = last_checkin.get('createdAt', 0)
-            last_created_at = self._last_created_at.get() or 0
+            last_created_at = float(self._last_created_at.get() or 0)
             if last_created_at and last_checkin_created_at <= last_created_at:
                 return
 
