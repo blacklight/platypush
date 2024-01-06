@@ -48,6 +48,7 @@ setup(
             'install/scripts/**/*',
             'install/requirements/*',
             'install/docker/*',
+            'components.json.gz',
         ],
     },
     entry_points={

@@ -33,9 +33,20 @@ class InspectPlugin(Plugin):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._cache_file = os.path.join(Config.get_cachedir(), 'components.json')
         self._cache = Cache()
         self._load_cache()
+
+    @property
+    def cache_file(self) -> str:
+        """
+        :return: The path to the components cache file.
+        """
+        import platypush
+
+        return os.path.join(
+            os.path.dirname(inspect.getfile(platypush)),
+            'components.json.gz',
+        )
 
     def _load_cache(self):
         """
@@ -43,24 +54,24 @@ class InspectPlugin(Plugin):
         """
         with self._cache.lock(), auto_mocks(), override_definitions():
             try:
-                self._cache = Cache.load(self._cache_file)
+                self._cache = Cache.load(self.cache_file)
             except Exception as e:
                 self.logger.warning(
                     'Could not initialize the components cache from %s: %s',
-                    self._cache_file,
+                    self.cache_file,
                     e,
                 )
-                self._cache = Cache()
 
-            self._refresh_cache()
-
-    def _refresh_cache(self):
+    def refresh_cache(self, force: bool = False):
         """
         Refreshes the components cache.
         """
         cache_version_differs = self._cache.version != Cache.cur_version
+        force = force or cache_version_differs
 
-        with ThreadPoolExecutor(self._num_workers) as pool:
+        with self._cache.lock(), auto_mocks(), override_definitions(), ThreadPoolExecutor(
+            self._num_workers
+        ) as pool:
             futures = []
 
             for base_type in [Plugin, Backend]:
@@ -69,7 +80,7 @@ class InspectPlugin(Plugin):
                         self._scan_integrations,
                         base_type,
                         pool=pool,
-                        force_refresh=cache_version_differs,
+                        force_refresh=force,
                         futures=futures,
                     )
                 )
@@ -80,7 +91,7 @@ class InspectPlugin(Plugin):
                         self._scan_modules,
                         base_type,
                         pool=pool,
-                        force_refresh=cache_version_differs,
+                        force_refresh=force,
                         futures=futures,
                     )
                 )
@@ -89,9 +100,11 @@ class InspectPlugin(Plugin):
                 futures.pop().result()
 
         if self._cache.has_changes:
-            self.logger.info('Saving new components cache to %s', self._cache_file)
-            self._cache.dump(self._cache_file)
+            self.logger.info('Saving new components cache to %s', self.cache_file)
+            self._cache.dump(self.cache_file)
             self._cache.loaded_at = self._cache.saved_at
+
+        return self._cache
 
     def _scan_integration(self, manifest: Manifest):
         """
@@ -188,9 +201,11 @@ class InspectPlugin(Plugin):
         """
         :return: True if the given file needs to be refreshed in the cache.
         """
-        return os.lstat(os.path.dirname(filename)).st_mtime > (
-            self._cache.saved_at or 0
-        )
+        dirname = os.path.dirname(filename)
+        if not os.path.isdir(dirname):
+            return True
+
+        return os.lstat(dirname).st_mtime > (self._cache.saved_at or 0)
 
     @staticmethod
     def _module_filename(path: str, modname: str) -> str:

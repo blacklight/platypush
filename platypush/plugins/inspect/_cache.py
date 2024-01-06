@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import gzip
 import json
 import logging
 from collections import defaultdict
@@ -69,7 +70,7 @@ class Cache:
 
     """
 
-    cur_version = 1
+    cur_version = 1.1
     """
     Cache version, used to detect breaking changes in the cache logic that require a cache refresh.
     """
@@ -79,7 +80,7 @@ class Cache:
         items: Optional[Dict[type, Dict[type, dict]]] = None,
         saved_at: Optional[float] = None,
         loaded_at: Optional[float] = None,
-        version: int = cur_version,
+        version: float = cur_version,
     ):
         self.saved_at = saved_at
         self.loaded_at = loaded_at
@@ -99,9 +100,10 @@ class Cache:
 
         :param cache_file: Cache file path.
         """
-        with open(cache_file, 'r') as f:
-            data = json.load(f)
-            return cls.from_dict(data)
+        with gzip.open(cache_file, 'rb') as f:
+            data = f.read()
+
+        return cls.from_dict(json.loads(data.decode()))
 
     def dump(self, cache_file: str):
         """
@@ -112,18 +114,20 @@ class Cache:
         from platypush.message import Message
 
         self.version = self.cur_version
-
-        with open(cache_file, 'w') as f:
-            self.saved_at = time()
-            json.dump(
+        self.saved_at = time()
+        compressed_cache = gzip.compress(
+            json.dumps(
                 {
                     'saved_at': self.saved_at,
                     'version': self.version,
                     'items': self.to_dict(),
                 },
-                f,
                 cls=Message.Encoder,
-            )
+            ).encode()
+        )
+
+        with open(cache_file, 'wb') as f:
+            f.write(compressed_cache)
 
         self.has_changes = False
 

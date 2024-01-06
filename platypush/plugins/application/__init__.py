@@ -1,7 +1,8 @@
 import inspect
 import pathlib
 import subprocess
-from typing import Optional
+from functools import lru_cache
+from typing import List, Optional
 
 from platypush.commands import CommandStream, RestartCommand, StopCommand
 from platypush.common.db import override_definitions
@@ -48,6 +49,29 @@ class ApplicationPlugin(Plugin):
             will be prefixed by ``backend.`` (e.g. ``backend.http`` or
             ``backend.tcp``).
         """
+        install_cmds = self._get_install_cmds(extension)
+        if not install_cmds:
+            self.logger.info('No extra requirements found for extension %s', extension)
+            return
+
+        for cmd in install_cmds:
+            self.logger.info('> %s', cmd)
+            subprocess.check_call(cmd, shell=True, stderr=subprocess.STDOUT)
+
+    @action
+    def get_install_commands(self, extension: str) -> List[str]:
+        """
+        Get the installation commands for an extension.
+
+        :param extension: Extension name. For plugins, it will be the plugin
+            name (e.g. ``light.hue`` or ``music.mpd``); for backend, the name
+            will be prefixed by ``backend.`` (e.g. ``backend.http`` or
+            ``backend.tcp``).
+        """
+        return self._get_install_cmds(extension)
+
+    @lru_cache(maxsize=256)  # noqa
+    def _get_install_cmds(self, extension: str) -> List[str]:
         getter = get_plugin_class_by_name
         if extension.startswith('backend.'):
             extension = extension[len('backend.') :]
@@ -58,14 +82,4 @@ class ApplicationPlugin(Plugin):
 
         assert ext, f'Could not find extension {extension}'
         manifest_file = str(pathlib.Path(inspect.getfile(ext)).parent / 'manifest.yaml')
-        install_cmds = list(
-            Manifest.from_file(manifest_file).install.to_install_commands()
-        )
-
-        if not install_cmds:
-            self.logger.info('No extra requirements found for extension %s', extension)
-            return
-
-        for cmd in install_cmds:
-            self.logger.info('> %s', cmd)
-            subprocess.check_call(cmd, shell=True, stderr=subprocess.STDOUT)
+        return list(Manifest.from_file(manifest_file).install.to_install_commands())
