@@ -62,6 +62,8 @@ class InspectPlugin(Plugin):
                     e,
                 )
 
+                self.logger.exception(e)
+
     def refresh_cache(self, force: bool = False):
         """
         Refreshes the components cache.
