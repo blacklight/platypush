@@ -17,7 +17,7 @@ from platypush.message.event import Event
 from platypush.message.response import Response
 from platypush.utils import get_enabled_backends, get_enabled_plugins
 from platypush.utils.mock import auto_mocks
-from platypush.utils.manifest import Manifest, Manifests
+from platypush.utils.manifest import Manifest, Manifests, PackageManagers
 
 from ._cache import Cache
 from ._serialize import ProcedureEncoder
@@ -284,6 +284,29 @@ class InspectPlugin(Plugin):
         Get the list of enabled backends.
         """
         return list(get_enabled_backends().keys())
+
+    @action
+    def get_pkg_managers(self) -> dict:
+        """
+        Get the list of supported package managers. This is supposed to be an
+        internal-only method, only used by the UI to populate the install
+        commands.
+        """
+        pkg_manager = PackageManagers.scan()
+        return {
+            'items': {
+                pkg.value.executable: {
+                    'executable': pkg.value.executable,
+                    'install': pkg.value.install,
+                    'install_doc': pkg.value.install_doc,
+                    'uninstall': pkg.value.uninstall,
+                    'list': pkg.value.list,
+                    'default_os': pkg.value.default_os,
+                }
+                for pkg in PackageManagers
+            },
+            'current': pkg_manager.value.executable if pkg_manager else None,
+        }
 
 
 # vim:sw=4:ts=4:et:
