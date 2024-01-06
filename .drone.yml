@@ -287,6 +287,7 @@ steps:
       get_plugin('inspect').refresh_cache(force=True)
       EOF
 
+    - apk add --update --no-cache git
     - |
       if [ -z "$(git status "$CACHEFILE" --porcelain)" ]; then
         echo 'No changes to the components file'
@@ -294,7 +295,6 @@ steps:
       fi
 
     # Backup the original git configuration before changing attributes
-    - apk add --update --no-cache git
     - export GIT_CONF=$PWD/.git/config
     - export TMP_GIT_CONF=/tmp/git.config.orig
     - cp $GIT_CONF $TMP_GIT_CONF
