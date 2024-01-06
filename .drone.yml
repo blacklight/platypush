@@ -278,7 +278,17 @@ steps:
     - |
       [ -f "$SKIPCI" ] && exit 0
 
-    - apk add --update --no-cache $(cat platypush/install/requirements/alpine.txt)
+    # Only regenerate the components cache if either the plugins, backends,
+    # events or schemas folders have some changes (excluding the webapp files).
+    - apk add --update --no-cache git
+    - |
+      if [ -z "$(git log --pretty=oneline $DRONE_COMMIT_AFTER...$DRONE_COMMIT_BEFORE -- platypush/backend platypush/plugins platypush/schemas platypush/message/event ':(exclude)platypush/backend/http/webapp')" ]; then
+        echo 'No changes to the components file'
+        exit 0
+      fi
+
+    - echo 'Updating components cache'
+    - apk add --update --no-cache bash gnupg openssh $(cat platypush/install/requirements/alpine.txt)
     - pip install . --break-system-packages
     - |
       python - <<EOF
@@ -286,13 +296,6 @@ steps:
 
       get_plugin('inspect').refresh_cache(force=True)
       EOF
-
-    - apk add --update --no-cache git
-    - |
-      if [ -z "$(git status "$CACHEFILE" --porcelain)" ]; then
-        echo 'No changes to the components file'
-        exit 0
-      fi
 
     # Backup the original git configuration before changing attributes
     - export GIT_CONF=$PWD/.git/config
@@ -304,7 +307,6 @@ steps:
     # (we're going to do another push anyway, so another pipeline will be triggered)
     - touch "$SKIPCI"
 
-    - apk add --update --no-cache bash gnupg openssh
     - mkdir -p ~/.ssh
     - |
       cat <<EOF | gpg --import --armor
