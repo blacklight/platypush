@@ -324,7 +324,7 @@ steps:
     - git config commit.gpgsign true
     - git config user.signingkey $PGP_KEY_ID
     - git add "$CACHEFILE"
-    - git commit dist -S -m "[Automatic] Updated components cache" --no-verify
+    - git commit "$CACHEFILE" -S -m "[Automatic] Updated components cache" --no-verify
     - git remote rm origin
     - git remote add origin git@git.platypush.tech:platypush/platypush.git
     - git push -f origin master
