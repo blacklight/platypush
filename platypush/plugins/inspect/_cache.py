@@ -123,6 +123,7 @@ class Cache:
                     'items': self.to_dict(),
                 },
                 cls=Message.Encoder,
+                sort_keys=True,
             ).encode()
         )
 
