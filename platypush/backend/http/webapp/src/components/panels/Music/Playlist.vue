@@ -4,14 +4,20 @@
   <div class="playlist fade-in" v-else>
     <div class="header-container">
       <MusicHeader ref="header">
-        <div class="col-8 filter">
+        <div class="col-7 filter">
           <label>
             <input type="search" placeholder="Filter" v-model="filter">
           </label>
         </div>
 
-        <div class="col-4 buttons">
+        <div class="col-5 buttons">
+          <button class="mobile" title="Menu" @click="$emit('toggle-nav')" v-if="showNavButton">
+            <i class="fas fa-bars" />
+          </button>
+
           <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
+            <DropdownItem text="Add track" icon-class="fa fa-plus" @click="addTrack" />
+            <DropdownItem text="Refresh status" icon-class="fa fa-sync" @click="$emit('refresh-status')" v-if="devices != null" />
             <DropdownItem text="Save as playlist" icon-class="fa fa-save" :disabled="!tracks?.length"
                           @click="playlistSave" />
             <DropdownItem text="Swap tracks" icon-class="fa fa-retweet" v-if="selectedTracks?.length === 2"
@@ -26,14 +32,6 @@
                           @click="$emit('remove', [...(new Set(selectedTracks))])" />
             <DropdownItem text="Clear playlist" icon-class="fa fa-ban" :disabled="!tracks?.length" @click="$emit('clear')" />
           </Dropdown>
-
-          <button title="Add track" @click="addTrack">
-            <i class="fa fa-plus"></i>
-          </button>
-
-          <button title="Refresh status" @click="$emit('refresh-status')" v-if="devices != null">
-            <i class="fa fa-sync"></i>
-          </button>
 
           <Dropdown title="Players" icon-class="fa fa-volume-up" v-if="Object.keys(devices || {}).length">
             <DropdownItem v-for="(device, id) in devices" :key="id" v-text="device.name"
@@ -109,8 +107,21 @@ export default {
   name: "Playlist",
   mixins: [MediaUtils],
   components: {DropdownItem, Dropdown, MusicHeader, Loading},
-  emits: ['play', 'clear', 'add', 'remove', 'swap', 'search', 'move', 'save', 'info', 'refresh-status',
-    'select-device'],
+  emits: [
+    'add',
+    'clear',
+    'info',
+    'move',
+    'play',
+    'refresh-status',
+    'remove',
+    'save',
+    'search',
+    'select-device',
+    'swap',
+    'toggle-nav',
+  ],
+
   props: {
     tracks: {
       type: Array,
@@ -142,6 +153,11 @@ export default {
     maxVisibleTracks: {
       type: Number,
       default: 100,
+    },
+
+    showNavButton: {
+      type: Boolean,
+      default: false,
     },
   },
 
