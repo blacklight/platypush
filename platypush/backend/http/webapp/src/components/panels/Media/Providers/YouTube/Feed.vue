@@ -68,6 +68,5 @@ export default {
 <style lang="scss" scoped>
 .media-youtube-feed {
   height: 100%;
-  overflow: auto;
 }
 </style>

@@ -90,7 +90,10 @@ export default {
 <style lang="scss" scoped>
 .media-youtube-playlists {
   height: 100%;
-  overflow: auto;
+
+  .playlist-body {
+    height: 100%;
+  }
 
   :deep(.playlist.item) {
     cursor: pointer;
