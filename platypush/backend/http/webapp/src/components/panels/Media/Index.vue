@@ -8,8 +8,10 @@
                  @seek="seek" @search="search" @mute="toggleMute" @unmute="toggleMute">
         <main>
           <div class="nav-container from tablet" :style="navContainerStyle">
-            <Nav :selected-view="selectedView" @input="selectedView = $event"
-              @toggle="forceShowNav = !forceShowNav" />
+            <Nav :selected-view="selectedView"
+                 :torrent-plugin="torrentPlugin"
+                 @input="selectedView = $event"
+                 @toggle="forceShowNav = !forceShowNav" />
           </div>
 
           <div class="view-container">
