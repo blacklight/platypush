@@ -5,6 +5,10 @@
     <div class="header-container">
       <MusicHeader ref="header">
         <div class="col-7 filter">
+          <button class="back-btn" title="Back" @click="$emit('back')" v-if="withBack">
+            <i class="fas fa-arrow-left" />
+          </button>
+
           <label>
             <input type="search" placeholder="Filter" v-model="filter">
           </label>
@@ -19,8 +23,9 @@
             <DropdownItem text="Add track" icon-class="fa fa-plus" @click="addTrack" />
             <DropdownItem text="Refresh status" icon-class="fa fa-sync" @click="$emit('refresh-status')" v-if="devices != null" />
             <DropdownItem text="Save as playlist" icon-class="fa fa-save" :disabled="!tracks?.length"
-                          @click="playlistSave" />
-            <DropdownItem text="Swap tracks" icon-class="fa fa-retweet" v-if="selectedTracks?.length === 2"
+                          @click="playlistSave" v-if="withSave" />
+            <DropdownItem text="Swap tracks" icon-class="fa fa-retweet"
+                          v-if="withSwap && selectedTracks?.length === 2"
                           @click="$emit('swap', selectedTracks)" />
             <DropdownItem :text="selectionMode ? 'End selection' : 'Start selection'" icon-class="far fa-check-square"
                           :disabled="!tracks?.length" @click="selectionMode = !selectionMode" />
@@ -30,7 +35,8 @@
             <DropdownItem :text="'Remove track' + (selectedTracks.length > 1 ? 's' : '')"
                           icon-class="fa fa-trash" v-if="selectedTracks.length > 0"
                           @click="$emit('remove', [...(new Set(selectedTracks))])" />
-            <DropdownItem text="Clear playlist" icon-class="fa fa-ban" :disabled="!tracks?.length" @click="$emit('clear')" />
+            <DropdownItem text="Clear playlist" icon-class="fa fa-ban"
+                          :disabled="!tracks?.length" @click="$emit('clear')" v-if="withClear" />
           </Dropdown>
 
           <Dropdown title="Players" icon-class="fa fa-volume-up" v-if="Object.keys(devices || {}).length">
@@ -84,7 +90,9 @@
 
           <span class="actions">
             <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
-              <DropdownItem text="Play" icon-class="fa fa-play" @click="$emit('play', {pos: i})" />
+              <DropdownItem text="Play" icon-class="fa fa-play" @click="onMenuPlay" />
+              <DropdownItem text="Add to queue" icon-class="fa fa-plus"
+                @click="$emit('add-to-queue', [...(new Set([...selectedTracks, i]))])" v-if="withAddToQueue" />
               <DropdownItem text="Add to playlist" icon-class="fa fa-list-ul" @click="$emit('add-to-playlist', track)" />
               <DropdownItem text="Remove" icon-class="fa fa-trash" @click="$emit('remove', [...(new Set([...selectedTracks, i]))])" />
               <DropdownItem text="Info" icon-class="fa fa-info" @click="$emit('info', tracks[i])" />
@@ -109,6 +117,10 @@ export default {
   components: {DropdownItem, Dropdown, MusicHeader, Loading},
   emits: [
     'add',
+    'add-to-playlist',
+    'add-to-queue',
+    'add-to-queue-and-play',
+    'back',
     'clear',
     'info',
     'move',
@@ -156,6 +168,31 @@ export default {
     },
 
     showNavButton: {
+      type: Boolean,
+      default: false,
+    },
+
+    withAddToQueue: {
+      type: Boolean,
+      default: false,
+    },
+
+    withBack: {
+      type: Boolean,
+      default: false,
+    },
+
+    withClear: {
+      type: Boolean,
+      default: false,
+    },
+
+    withSave: {
+      type: Boolean,
+      default: false,
+    },
+
+    withSwap: {
       type: Boolean,
       default: false,
     },
@@ -259,7 +296,7 @@ export default {
     trackClass(i) {
       return {
         selected: this.selectedTracksSet.has(i),
-        active: this.status?.playingPos === i,
+        active: !this.withAddToQueue && this.status?.playingPos === i,
       }
     },
 
@@ -269,6 +306,13 @@ export default {
         return
 
       this.$emit('add', track)
+    },
+
+    onMenuPlay(i) {
+      if (this.withAddToQueue)
+        this.$emit('add-to-queue-and-play', [...(new Set([...this.selectedTracks, i]))])
+      else
+        this.$emit('play', {pos: i})
     },
 
     onTrackDragStart(track) {
@@ -364,6 +408,7 @@ export default {
 
 .playlist {
   width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
 
@@ -374,8 +419,16 @@ export default {
     }
 
     .filter {
-      input {
-        width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+
+      label {
+        flex-grow: 1;
+
+        input[type="search"] {
+          width: 100%;
+        }
       }
     }
 
@@ -385,6 +438,12 @@ export default {
       .dropdown-container {
         direction: ltr;
       }
+    }
+  }
+
+  :deep(.header) {
+    .back-btn {
+      padding-left: .25em;
     }
   }
 

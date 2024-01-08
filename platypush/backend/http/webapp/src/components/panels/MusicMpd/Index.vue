@@ -210,15 +210,18 @@ export default {
     },
 
     async addToTracklistFromEditedPlaylist(event) {
-      const track = this.editedPlaylistTracks[event.pos]
-      if (!track)
+      const tracks = event?.tracks?.map(
+        (pos) => this.editedPlaylistTracks[pos]
+      )?.filter((track) => track?.file)?.map((track) => track.file)
+
+      if (!tracks?.length)
         return
 
-      await this.request('music.mpd.add', {resource: track.file})
+      await Promise.all(tracks.map((track) => this.request('music.mpd.add', {resource: track})))
       await this.refresh(true)
 
       if (event.play)
-        await this.request('music.mpd.play_pos', {pos: this.tracks.length-1})
+        await this.request('music.mpd.play_pos', {pos: this.tracks.length - tracks.length})
     },
 
     async removeFromPlaylist(positions) {
