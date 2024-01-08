@@ -205,7 +205,7 @@ steps:
         exit 0
       fi
 
-    - rm -rf node_modules
+    - rm -rf dist node_modules
     - npm install
     - npm run build
     - |
