@@ -7,7 +7,7 @@
     <div class="col-s-12 col-m-9 controls">
       <div class="col-10 slider-container">
         <Slider :range="[0, 100]" :value="config.volume.percent"
-                @mouseup="$emit('volume-change', {host: server.name, client: id, volume: $event.target.value})" />
+                @change="$emit('volume-change', {host: server.name, client: id, volume: $event.target.value})" />
       </div>
 
       <div class="col-2 switch pull-right">

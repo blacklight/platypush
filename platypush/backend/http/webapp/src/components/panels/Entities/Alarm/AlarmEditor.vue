@@ -148,7 +148,7 @@
 
           <div class="value">
             <Slider :value="audioVolume" :range="[0, 100]"
-                    @input="onVolumeChange" />
+                    @change="onVolumeChange" />
           </div>
         </div>
 

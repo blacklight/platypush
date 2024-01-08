@@ -41,7 +41,7 @@
         </div>
         <div class="input">
           <Slider :range="[value.brightness_min, value.brightness_max]"
-            :value="value.brightness" @input="setLight({brightness: $event.target.value})" />
+            :value="value.brightness" @change="setLight({brightness: $event.target.value})" />
         </div>
       </div>
 
@@ -51,7 +51,7 @@
         </div>
         <div class="input">
           <Slider :range="[value.saturation_min, value.saturation_max]"
-            :value="value.saturation" @input="setLight({saturation: $event.target.value})" />
+            :value="value.saturation" @change="setLight({saturation: $event.target.value})" />
         </div>
       </div>
 
@@ -61,7 +61,7 @@
         </div>
         <div class="input">
           <Slider :range="[value.temperature_min, value.temperature_max]"
-            :value="value.temperature" @input="setLight({temperature: $event.target.value})"/>
+            :value="value.temperature" @change="setLight({temperature: $event.target.value})"/>
         </div>
       </div>
     </div>

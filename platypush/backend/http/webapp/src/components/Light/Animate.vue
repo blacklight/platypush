@@ -67,7 +67,7 @@
           <div class="col-9">
             <Slider :range="colorConverter.ranges.hue" :disabled="loading"
                     :value="animations.color_transition.hue_step"
-                    @mouseup="animations.color_transition.hue_step = parseFloat($event.target.value)" />
+                    @change="animations.color_transition.hue_step = parseFloat($event.target.value)" />
           </div>
         </div>
 
@@ -78,7 +78,7 @@
           <div class="col-9">
             <Slider :range="colorConverter.ranges.sat" :disabled="loading"
                     :value="animations.color_transition.sat_step"
-                    @mouseup="animations.color_transition.sat_step = parseFloat($event.target.value)" />
+                    @change="animations.color_transition.sat_step = parseFloat($event.target.value)" />
           </div>
         </div>
 
@@ -89,7 +89,7 @@
           <div class="col-9">
             <Slider :range="colorConverter.ranges.bri" :disabled="loading"
                     :value="animations.color_transition.bri_step"
-                    @mouseup="animations.color_transition.bri_step = parseFloat($event.target.value)" />
+                    @change="animations.color_transition.bri_step = parseFloat($event.target.value)" />
           </div>
         </div>
 
