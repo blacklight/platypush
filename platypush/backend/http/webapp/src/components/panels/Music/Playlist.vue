@@ -171,6 +171,7 @@ export default {
       targetPos: null,
       centerPos: 0,
       mounted: false,
+      scrollTimeout: null,
     }
   },
 
@@ -296,10 +297,24 @@ export default {
       const bodyHeight = parseFloat(getComputedStyle(this.$refs.body).height)
       const scrollHeight = this.$refs.body.scrollHeight
 
-      if (offset < 5)
-        this.centerPos = Math.max(0, parseInt(this.centerPos - (this.maxVisibleTracks / 1.5)))
-      else if (offset === scrollHeight - bodyHeight)
-        this.centerPos = Math.min(this.tracks.length - 1, parseInt(this.centerPos + (this.maxVisibleTracks / 1.5)))
+      if (offset < 5) {
+        if (this.scrollTimeout)
+          return
+
+        this.scrollTimeout = setTimeout(() => {
+          this.centerPos = Math.max(0, parseInt(this.centerPos - (this.maxVisibleTracks / 1.5)))
+          this.$refs.body.scrollTop = 6
+          this.scrollTimeout = null
+        }, 250)
+      } else if (offset >= (scrollHeight - bodyHeight - 5)) {
+        if (this.scrollTimeout)
+          return
+
+        this.scrollTimeout = setTimeout(() => {
+          this.centerPos = Math.min(this.tracks.length - 1, parseInt(this.centerPos + (this.maxVisibleTracks / 1.5)))
+          this.scrollTimeout = null
+        }, 250)
+      }
     },
 
     playlistSave() {

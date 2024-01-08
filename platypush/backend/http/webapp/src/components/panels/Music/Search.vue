@@ -1,5 +1,9 @@
 <template>
   <div class="search fade-in" :class="{'form-collapsed': formCollapsed}">
+    <button class="nav-toggler mobile floating" title="Menu" @click="$emit('toggle-nav')" v-if="showNavButton && !formCollapsed">
+      <i class="fas fa-bars" />
+    </button>
+
     <div class="form-container" v-if="!formCollapsed" @submit.prevent="$emit('search', filteredQuery)">
       <form class="search-form">
         <div class="row">
@@ -41,14 +45,17 @@
     </div>
 
     <MusicHeader v-else>
-      <label class="search-box">
+      <label class="col-10 search-box">
+        <button class="back-btn" title="Back" @click="clear">
+          <i class="fas fa-arrow-left" />
+        </button>
+
         <input type="search" placeholder="Filter" v-model="filter">
       </label>
 
-      <span class="buttons">
-        <button @click="clear">
-          <i class="icon fa fa-times" />
-          <span class="btn-title">Clear</span>
+      <span class="col-2 buttons">
+        <button class="mobile" title="Menu" @click="$emit('toggle-nav')" v-if="showNavButton">
+          <i class="fas fa-bars" />
         </button>
       </span>
     </MusicHeader>
@@ -93,7 +100,18 @@ export default {
   name: "Search",
   components: {Dropdown, DropdownItem, FormFooter, MusicHeader},
   mixins: [MediaUtils],
-  emits: ['search', 'clear', 'play', 'load', 'add-to-playlist', 'info', 'refresh-status', 'select-device'],
+  emits: [
+    'add-to-playlist',
+    'clear',
+    'info',
+    'load',
+    'play',
+    'refresh-status',
+    'search',
+    'select-device',
+    'toggle-nav',
+  ],
+
   props: {
     loading: {
       type: Boolean,
@@ -114,6 +132,11 @@ export default {
 
     activeDevice: {
       type: String,
+    },
+
+    showNavButton: {
+      type: Boolean,
+      default: false,
     },
   },
 
@@ -210,6 +233,14 @@ export default {
   height: calc(100% - #{$media-ctrl-panel-height});
   display: flex;
   flex-direction: column;
+  position: relative;
+
+  .nav-toggler.floating {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1;
+  }
 
   &:not(.form-collapsed) {
     justify-content: center;
@@ -276,6 +307,13 @@ export default {
 
     .search-box {
       width: 70%;
+      display: flex;
+      align-items: center;
+
+      .back-btn {
+        margin-left: 0;
+        padding-left: 0;
+      }
 
       input[type=search] {
         width: 100%;

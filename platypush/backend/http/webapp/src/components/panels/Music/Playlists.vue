@@ -21,12 +21,13 @@
                           icon-class="fa fa-volume-up" @click="$emit('select-device', id)" />
           </Dropdown>
 
-          <button title="Refresh status" @click="$emit('refresh-status')" v-if="devices != null">
-            <i class="fa fa-sync"></i>
-          </button>
+          <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
+            <DropdownItem text="Add track" icon-class="fa fa-plus" @click="addTrack" />
+            <DropdownItem text="Refresh status" icon-class="fa fa-sync" @click="$emit('refresh-status')" v-if="devices != null" />
+          </Dropdown>
 
-          <button class="add-btn" title="Add track" @click="addTrack">
-            <i class="fas fa-plus" />
+          <button class="mobile" title="Menu" @click="$emit('toggle-nav')" v-if="showNavButton">
+            <i class="fas fa-bars" />
           </button>
         </div>
       </MusicHeader>
@@ -76,13 +77,13 @@
   <div class="playlists fade-in" v-else>
     <div class="header-container">
       <MusicHeader ref="header">
-        <div class="col-8 filter">
+        <div class="col-7 filter">
           <label>
             <input type="search" placeholder="Filter" v-model="filter">
           </label>
         </div>
 
-        <div class="col-4 buttons">
+        <div class="col-5 buttons">
           <Dropdown title="Players" icon-class="fa fa-volume-up" v-if="Object.keys(devices || {}).length">
             <DropdownItem v-for="(device, id) in devices" :key="id" v-text="device.name"
                           :item-class="{active: activeDevice === id, selected: selectedDevice === id}"
@@ -91,6 +92,10 @@
 
           <button title="Refresh status" @click="$emit('refresh-status')" v-if="devices != null">
             <i class="fa fa-sync"></i>
+          </button>
+
+          <button class="mobile" title="Menu" @click="$emit('toggle-nav')" v-if="showNavButton">
+            <i class="fas fa-bars" />
           </button>
         </div>
       </MusicHeader>
@@ -167,6 +172,11 @@ export default {
 
     activeDevice: {
       type: String,
+    },
+
+    showNavButton: {
+      type: Boolean,
+      default: false,
     },
   },
 
@@ -341,6 +351,7 @@ export default {
 
   .header {
     .buttons {
+      display: flex;
       align-items: flex-end;
       justify-content: flex-end;
     }
@@ -360,10 +371,6 @@ export default {
   :deep(.header) {
     .back-btn {
       padding-left: .25em;
-    }
-
-    .add-btn {
-      float: right;
     }
 
     .search-box {
