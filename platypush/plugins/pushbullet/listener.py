@@ -9,11 +9,14 @@ class Listener(_Listener):
     """
     Extends the Pushbullet Listener object by adding ``on_open`` and ``on_close`` handlers.
     """
-    def __init__(self,
-                 *args,
-                 on_open: Optional[Callable[[], None]] = None,
-                 on_close: Optional[Callable[[], None]] = None,
-                 **kwargs):
+
+    def __init__(
+        self,
+        *args,
+        on_open: Optional[Callable[[], None]] = None,
+        on_close: Optional[Callable[[], None]] = None,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self._on_open_hndl = on_open
         self._on_close_hndl = on_close
@@ -35,7 +38,7 @@ class Listener(_Listener):
                 try:
                     self._on_close_hndl()
                 except Exception as e:
-                    self.logger.warning(f'Pushbullet listener close error: {e}')
+                    self.logger.warning('Pushbullet listener close error: %s', e)
 
         return callback
 

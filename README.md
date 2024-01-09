@@ -419,9 +419,7 @@ backend](https://docs.platypush.tech/en/latest/platypush/backend/http.html), an
 [MQTT
 instance](https://docs.platypush.tech/en/latest/platypush/backend/mqtt.html), a
 [Kafka
-instance](https://docs.platypush.tech/en/latest/platypush/backend/kafka.html),
-[Pushbullet](https://docs.platypush.tech/en/latest/platypush/backend/pushbullet.html)
-etc.).
+instance](https://docs.platypush.tech/en/latest/platypush/backend/kafka.html).
 
 If a backend supports the execution of requests (e.g. HTTP, MQTT, Kafka,
 Websocket and TCP) then you can send requests to these services in JSON format.

@@ -23,7 +23,6 @@ Backends
     platypush/backend/nextcloud.rst
     platypush/backend/nfc.rst
     platypush/backend/nodered.rst
-    platypush/backend/pushbullet.rst
     platypush/backend/redis.rst
     platypush/backend/scard.rst
     platypush/backend/sensor.ir.zeroborg.rst

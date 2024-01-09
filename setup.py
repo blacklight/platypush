@@ -91,7 +91,7 @@ setup(
     extras_require={
         # Support for Kafka backend and plugin
         'kafka': ['kafka-python'],
-        # Support for Pushbullet backend and plugin
+        # Support for Pushbullet
         'pushbullet': [
             'pushbullet.py @ https://github.com/rbrcsk/pushbullet.py/tarball/master'
         ],
