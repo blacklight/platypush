@@ -172,7 +172,7 @@ class MusicMpdPlugin(MusicPlugin):
         return self._exec('next')
 
     @action
-    def previous(self, *_, **__):
+    def previous(self, **__):
         """Play the previous track"""
         return self._exec('previous')
 
@@ -188,7 +188,7 @@ class MusicMpdPlugin(MusicPlugin):
         return self.set_volume(vol)
 
     @action
-    def set_volume(self, volume: int, *_, **__):
+    def set_volume(self, volume: int, **__):
         """
         Set the volume.
 
@@ -197,25 +197,27 @@ class MusicMpdPlugin(MusicPlugin):
         return self._exec('setvol', str(volume))
 
     @action
-    def volup(self, *_, delta: int = 10, **__):
+    def volup(self, step: Optional[float] = None, **kwargs):
         """
         Turn up the volume.
 
-        :param delta: Volume up delta (default: +10%).
+        :param step: Volume up step (default: 5%).
         """
+        step = step or kwargs.get('delta') or 5
         volume = int(self._status()['volume'])
-        new_volume = min(volume + delta, 100)
+        new_volume = min(volume + step, 100)
         return self.setvol(new_volume)
 
     @action
-    def voldown(self, *_, delta: int = 10, **__):
+    def voldown(self, step: Optional[float] = None, **kwargs):
         """
         Turn down the volume.
 
-        :param delta: Volume down delta (default: -10%).
+        :param step: Volume down step (default: 5%).
         """
+        step = step or kwargs.get('delta') or 5
         volume = int(self._status()['volume'])
-        new_volume = max(volume - delta, 0)
+        new_volume = max(volume - step, 0)
         return self.setvol(new_volume)
 
     def _toggle(self, key: str, value: Optional[bool] = None):
@@ -390,7 +392,7 @@ class MusicMpdPlugin(MusicPlugin):
         return ret
 
     @action
-    def clear(self, *_, **__):
+    def clear(self, **__):
         """Clear the current playlist"""
         return self._exec('clear')
 
@@ -405,7 +407,7 @@ class MusicMpdPlugin(MusicPlugin):
         return self.seek(value)
 
     @action
-    def seek(self, position: float, *_, **__):
+    def seek(self, position: float, **__):
         """
         Seek to the specified position
 

@@ -338,13 +338,13 @@ class MediaMplayerPlugin(MediaPlugin):
         return self.status()
 
     @action
-    def voldown(self, *_, step=10.0, **__):
+    def voldown(self, *_, step=5.0, **__):
         """Volume down by (default: 10)%"""
         self._exec('volume', -step * 10)
         return self.status()
 
     @action
-    def volup(self, *_, step=10.0, **__):
+    def volup(self, *_, step=5.0, **__):
         """Volume up by (default: 10)%"""
         self._exec('volume', step * 10)
         return self.status()
