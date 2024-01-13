@@ -17,6 +17,7 @@ class Listener(_Listener):
         on_close: Optional[Callable[[], None]] = None,
         **kwargs,
     ):
+        kwargs['on_error'] = self._err_callback()
         super().__init__(*args, **kwargs)
         self._on_open_hndl = on_open
         self._on_close_hndl = on_close
@@ -39,6 +40,12 @@ class Listener(_Listener):
                     self._on_close_hndl()
                 except Exception as e:
                     self.logger.warning('Pushbullet listener close error: %s', e)
+
+        return callback
+
+    def _err_callback(self):
+        def callback(e):
+            self.logger.error('Pushbullet listener error: %s: %s', type(e).__name__, e)
 
         return callback
 
