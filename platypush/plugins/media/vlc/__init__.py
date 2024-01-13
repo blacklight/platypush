@@ -279,7 +279,7 @@ class MediaVlcPlugin(MediaPlugin):
         return status
 
     @action
-    def seek(self, position: float):
+    def seek(self, position: float, **__):
         """
         Seek backward/forward by the specified number of seconds
 

@@ -470,12 +470,12 @@ class MediaPlugin(Plugin, ABC):
 
     @action
     @abstractmethod
-    def seek(self, **kwargs):
+    def seek(self, position, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def set_position(self, **kwargs):
+    def set_position(self, position, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
