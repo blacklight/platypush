@@ -31,8 +31,6 @@ class MediaMpvPlugin(MediaPlugin):
         self, args: Optional[Dict[str, Any]] = None, fullscreen: bool = False, **kwargs
     ):
         """
-        Create the MPV wrapper.
-
         :param args: Default arguments that will be passed to the mpv executable
             as a key-value dict (names without the `--` prefix). See `man mpv`
             for available options.
