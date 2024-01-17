@@ -138,6 +138,7 @@ class RunnablePlugin(Plugin):
         self,
         poll_interval: Optional[float] = 15,
         stop_timeout: Optional[float] = PLUGIN_STOP_TIMEOUT,
+        disable_monitor: bool = False,
         **kwargs,
     ):
         """
@@ -147,10 +148,15 @@ class RunnablePlugin(Plugin):
             deprecated.
         :param stop_timeout: How long we should wait for any running
             threads/processes to stop before exiting (default: 5 seconds).
+        :param disable_monitor: If set to True then the plugin will not monitor
+            for new events. This is useful if you want to run a plugin in
+            stateless mode and only leverage its actions, without triggering any
+            events. Defaults to False.
         """
         super().__init__(**kwargs)
         self.poll_interval = poll_interval
         self.bus: Optional[Bus] = None
+        self.disable_monitor = disable_monitor
         self._should_stop = threading.Event()
         self._stop_timeout = stop_timeout
         self._thread: Optional[threading.Thread] = None
@@ -178,6 +184,10 @@ class RunnablePlugin(Plugin):
         """
         Wait until a stop event is received.
         """
+        if self.disable_monitor:
+            # Wait indefinitely if the monitor is disabled
+            return self._should_stop.wait(timeout=None)
+
         return self._should_stop.wait(timeout=timeout)
 
     def start(self):
@@ -217,6 +227,9 @@ class RunnablePlugin(Plugin):
         """
         Implementation of the runner thread.
         """
+        if self.disable_monitor:
+            return
+
         self.logger.info('Starting %s', self.__class__.__name__)
 
         while not self.should_stop():
