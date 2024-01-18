@@ -84,7 +84,7 @@ class GoogleFitPlugin(GooglePlugin, RunnablePlugin):
 
     Unless you are interested in monitoring data points from specific devices,
     you may want to look for ``dataStreamId`` fields that match the
-    ``derived:*:merge*`` pattern. Some popular examples include:e.g.
+    ``derived:*:merge*`` pattern. Some popular examples include:
 
         - ``derived:com.google.step_count.delta:merge_step_deltas``, to monitor
           the number of steps taken in a given time interval.
