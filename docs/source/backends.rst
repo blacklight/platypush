@@ -14,7 +14,6 @@ Backends
     platypush/backend/google.pubsub.rst
     platypush/backend/gps.rst
     platypush/backend/http.rst
-    platypush/backend/kafka.rst
     platypush/backend/mail.rst
     platypush/backend/midi.rst
     platypush/backend/music.mopidy.rst
