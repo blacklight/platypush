@@ -42,7 +42,10 @@ class MediaVlcPlugin(MediaPlugin):
 
         super().__init__(**kwargs)
 
-        self._args = args or []
+        self._args = list(args or [])
+        if '--play-and-exit' not in self._args:
+            self._args.append('--play-and-exit')
+
         self._instance = None
         self._player = None
         self._latest_seek = None
