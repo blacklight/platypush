@@ -90,12 +90,9 @@ class GooglePlugin(Plugin):
 
         if self._scopes:
             scopes = " ".join(sorted(self._scopes))
-            try:
-                self.credentials = {
-                    scopes: get_credentials(scopes, secrets_file=self._secrets_path)
-                }
-            except AssertionError as e:
-                self.logger.warning(str(e))
+            self.credentials = {
+                scopes: get_credentials(scopes, secrets_file=self._secrets_path)
+            }
         else:
             self.credentials = {}
 

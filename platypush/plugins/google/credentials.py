@@ -63,25 +63,21 @@ def get_credentials(scope: str, secrets_file: Optional[str] = None):
         not os.path.isfile(credentials_file)
         and secrets_file
         and os.path.isfile(secrets_file)
+        and (os.getenv("DISPLAY") or os.getenv("BROWSER"))
     ):
-        # If DISPLAY or BROWSER are set, then we can open the authentication URL in the browser.
-        # Otherwise, we'll have to use the --noauth_local_webserver flag and copy/paste the URL
-        args = (
-            ["--noauth_local_webserver"]
-            if not (os.getenv("DISPLAY") or os.getenv("BROWSER"))
-            else []
-        )
-
+        args = []
         generate_credentials(secrets_file, scope, *args)
 
     assert os.path.isfile(credentials_file), tw.dedent(
         f"""
         Credentials file {credentials_file} not found. Generate it through:
-            python -m platypush.plugins.google.credentials "{','.join(scopes)}" /path/to/client_secret.json
-                [--auth_host_name AUTH_HOST_NAME]
-                [--noauth_local_webserver]
-                [--auth_host_port [AUTH_HOST_PORT [AUTH_HOST_PORT ...]]]
-                [--logging_level [DEBUG,INFO,WARNING,ERROR,CRITICAL]]
+            python -m platypush.plugins.google.credentials "{','.join(scopes)}" {
+                secrets_file or '/path/to/client_secret.json'
+            }
+              [--auth_host_name AUTH_HOST_NAME]
+              [--noauth_local_webserver]
+              [--auth_host_port [AUTH_HOST_PORT [AUTH_HOST_PORT ...]]]
+              [--logging_level [DEBUG,INFO,WARNING,ERROR,CRITICAL]]
 
         Specify --noauth_local_webserver if you're running this script on a headless machine.
         You will then get an authentication URL on the logs.
@@ -112,6 +108,10 @@ def generate_credentials(client_secret_path: str, scope: str, *args: str):
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args(args)  # type: ignore
     tools.run_flow(flow, store, flags)
     print("Storing credentials to", credentials_file)
+    print(
+        "\nIf this is not the working directory of your Platypush instance, \n"
+        "then move the generated credentials file to WORKDIR/credentials/google"
+    )
 
 
 def main():
