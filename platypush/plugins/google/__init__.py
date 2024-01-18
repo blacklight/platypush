@@ -26,24 +26,24 @@ class GooglePlugin(Plugin):
 
         4. Click on "Credentials", then "Create credentials" -> "OAuth client ID".
 
-        5 Select "Desktop app", enter whichever name you like, and click "Create".
+        5. Select "Desktop app", enter whichever name you like, and click "Create".
 
         6. Click on the "Download JSON" icon next to your newly created client ID.
            Save the JSON file under
            ``<WORKDIR>/credentials/google/client_secret.json``.
 
-        7.1. If you're running the service on a desktop environment, then you
-             can just start the application. A browser window will open and
-             you'll be asked to authorize the application - you may be prompted
-             with a warning because you are running a personal and potentially
-             unverified application. After authorizing the application, the
-             process will save the credentials under
-             ``<WORKDIR>/credentials/google/<list,of,scopes>.json`` and proceed
-             with the plugin initialization.
+        7. If you're running the service on a desktop environment, then you
+           can just start the application. A browser window will open and
+           you'll be asked to authorize the application - you may be prompted
+           with a warning because you are running a personal and potentially
+           unverified application. After authorizing the application, the
+           process will save the credentials under
+           ``<WORKDIR>/credentials/google/<list,of,scopes>.json`` and proceed
+           with the plugin initialization.
 
-        7.2. If you're running the service on a headless environment, or you
-             prefer to manually generate the credentials file before copying to
-             another machine, you can run the following command:
+        8. If you're running the service on a headless environment, or you
+           prefer to manually generate the credentials file before copying to
+           another machine, you can run the following command:
 
                .. code-block:: bash
 
@@ -53,12 +53,12 @@ class GooglePlugin(Plugin):
                       [--noauth_local_webserver] \
                       <WORKDIR>/credentials/google/client_secret.json
 
-             When launched with ``--noauth_local_webserver``, the script will
-             start a local webserver and print a URL that should be opened in
-             your browser. After authorizing the application, you may be
-             prompted with a code that you should copy and paste back to the
-             script. Otherwise, if you're running the script on a desktop, a
-             browser window will be opened automatically.
+           When launched with ``--noauth_local_webserver``, the script will
+           start a local webserver and print a URL that should be opened in
+           your browser. After authorizing the application, you may be
+           prompted with a code that you should copy and paste back to the
+           script. Otherwise, if you're running the script on a desktop, a
+           browser window will be opened automatically.
 
     """
 
