@@ -1,27 +1,28 @@
 from platypush.message.event import Event
 
 
-class ConnectedEvent(Event):
+class AdafruitConnectedEvent(Event):
     """
-    Event triggered when the backend connects to the Adafruit message queue
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-class DisconnectedEvent(Event):
-    """
-    Event triggered when the backend disconnects from the Adafruit message queue
+    Event triggered when the backend connects to the Adafruit message queue.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
-class FeedUpdateEvent(Event):
+class AdafruitDisconnectedEvent(Event):
     """
-    Event triggered upon Adafruit IO feed update
+    Event triggered when the backend disconnects from the Adafruit message
+    queue.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class AdafruitFeedUpdateEvent(Event):
+    """
+    Event triggered when a message is received on a subscribed Adafruit feed.
     """
 
     def __init__(self, feed, data, *args, **kwargs):
