@@ -125,7 +125,7 @@ class PubSubMixin:
                         continue
 
                     yield Message(data=msg.get('data', b''), channel=channel)
-        except (AttributeError, RedisConnectionError):
+        except (AttributeError, ValueError, RedisConnectionError):
             return
 
     def _pubsub_close(self):
