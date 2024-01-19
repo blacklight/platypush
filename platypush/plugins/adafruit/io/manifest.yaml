@@ -1,5 +1,8 @@
 manifest:
-  events: {}
+  events:
+    - platypush.message.event.adafruit.AdafruitConnectedEvent
+    - platypush.message.event.adafruit.AdafruitDisconnectedEvent
+    - platypush.message.event.adafruit.AdafruitFeedUpdateEvent
   install:
     pip:
     - adafruit-io
