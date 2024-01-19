@@ -6,7 +6,6 @@ Backends
     :maxdepth: 1
     :caption: Backends:
 
-    platypush/backend/adafruit.io.rst
     platypush/backend/button.flic.rst
     platypush/backend/camera.pi.rst
     platypush/backend/chat.telegram.rst
