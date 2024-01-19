@@ -50,8 +50,7 @@ class GooglePlugin(Plugin):
                   mkdir -p <WORKDIR>/credentials/google
                   python -m platypush.plugins.google.credentials \
                       'calendar.readonly,gmail.modify' \
-                      [--noauth_local_webserver] \
-                      <WORKDIR>/credentials/google/client_secret.json
+                      <WORKDIR>/credentials/google/client_secret.json [--noauth_local_webserver]
 
            When launched with ``--noauth_local_webserver``, the script will
            start a local webserver and print a URL that should be opened in
