@@ -1,5 +1,6 @@
 manifest:
-  events: {}
+  events:
+    - platypush.message.event.google.pubsub.GooglePubsubMessageEvent
   install:
     apk:
       - py3-google-api-python-client

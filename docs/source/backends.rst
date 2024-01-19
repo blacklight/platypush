@@ -10,7 +10,6 @@ Backends
     platypush/backend/button.flic.rst
     platypush/backend/camera.pi.rst
     platypush/backend/chat.telegram.rst
-    platypush/backend/google.pubsub.rst
     platypush/backend/gps.rst
     platypush/backend/http.rst
     platypush/backend/mail.rst
