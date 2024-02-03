@@ -270,8 +270,8 @@ setup(
         ],
         # Support for LCD display integration
         'lcd': ['RPi.GPIO', 'RPLCD'],
-        # Support for IMAP mail integration
-        'imap': ['imapclient'],
+        # Support for email integration
+        'mail': ['imapclient', 'dnspython'],
         # Support for NextCloud integration
         'nextcloud': ['nextcloud-api-wrapper'],
         # Support for VLC integration

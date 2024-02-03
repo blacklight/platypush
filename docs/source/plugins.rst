@@ -62,8 +62,7 @@ Plugins
     platypush/plugins/log.http.rst
     platypush/plugins/logger.rst
     platypush/plugins/luma.oled.rst
-    platypush/plugins/mail.imap.rst
-    platypush/plugins/mail.smtp.rst
+    platypush/plugins/mail.rst
     platypush/plugins/mailgun.rst
     platypush/plugins/mastodon.rst
     platypush/plugins/matrix.rst
