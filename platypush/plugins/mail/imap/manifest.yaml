@@ -1,7 +1,0 @@
-manifest:
-  events: {}
-  install:
-    pip:
-    - imapclient
-  package: platypush.plugins.mail.imap
-  type: plugin

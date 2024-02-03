@@ -11,7 +11,6 @@ Backends
     platypush/backend/chat.telegram.rst
     platypush/backend/gps.rst
     platypush/backend/http.rst
-    platypush/backend/mail.rst
     platypush/backend/midi.rst
     platypush/backend/music.mopidy.rst
     platypush/backend/music.mpd.rst
