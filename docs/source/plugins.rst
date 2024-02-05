@@ -46,6 +46,7 @@ Plugins
     platypush/plugins/gotify.rst
     platypush/plugins/gpio.rst
     platypush/plugins/gpio.zeroborg.rst
+    platypush/plugins/gps.rst
     platypush/plugins/graphite.rst
     platypush/plugins/hid.rst
     platypush/plugins/http.request.rst
