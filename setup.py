@@ -129,8 +129,7 @@ setup(
         # Support for inotify file monitors
         'inotify': ['inotify'],
         # Support for Google Assistant
-        'google-assistant-legacy': ['google-assistant-library', 'google-auth'],
-        'google-assistant': ['google-assistant-sdk[samples]', 'google-auth'],
+        'google-assistant': ['google-assistant-library', 'google-auth'],
         # Support for the Google APIs
         'google': [
             'oauth2client',

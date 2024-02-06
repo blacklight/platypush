@@ -58,7 +58,6 @@ manifest:
       - python-urllib3
     pip:
       - google-assistant-library
-      - google-assistant-sdk[samples]
       - google-auth
       - sounddevice
     after:
