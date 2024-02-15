@@ -17,12 +17,12 @@ class VideoWriter(ABC):
 
     mimetype: Optional[str] = None
 
-    def __init__(self, camera, plugin, *_, **__):
+    def __init__(self, *_, **kwargs):
         from platypush.plugins.camera import Camera, CameraPlugin
 
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.camera: Camera = camera
-        self.plugin: CameraPlugin = plugin
+        self.camera: Camera = kwargs.pop('camera')
+        self.plugin: CameraPlugin = kwargs.pop('plugin')
         self.closed = False
 
     @abstractmethod
