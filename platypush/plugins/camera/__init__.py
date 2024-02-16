@@ -4,7 +4,6 @@ import pathlib
 import socket
 import threading
 import time
-
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import asdict
@@ -107,8 +106,8 @@ class CameraPlugin(Plugin, ABC):
             video/sequence is captured (default: 0).
         :param capture_timeout: Maximum number of seconds to wait between the programmed termination of a capture
             session and the moment the device is released.
-        :param scale_x: If set, the images will be scaled along the x axis by the specified factor
-        :param scale_y: If set, the images will be scaled along the y axis by the specified factor
+        :param scale_x: If set, the images will be scaled along the x-axis by the specified factor
+        :param scale_y: If set, the images will be scaled along the y-axis by the specified factor
         :param color_transform: Color transformation to apply to the images.
         :param grayscale: Whether the output should be converted to grayscale.
         :param rotate: If set, the images will be rotated by the specified number of degrees
@@ -526,7 +525,7 @@ class CameraPlugin(Plugin, ABC):
         if video_file:
             self.fire_event(CameraVideoRenderedEvent(filename=video_file))
 
-    def start_camera(self, camera: Camera, preview: bool = False, *args, **kwargs):
+    def start_camera(self, camera: Camera, *args, preview: bool = False, **kwargs):
         """
         Start a camera capture session.
 
@@ -548,6 +547,7 @@ class CameraPlugin(Plugin, ABC):
     @action
     def capture_video(
         self,
+        device: Optional[Union[int, str]] = None,
         duration: Optional[float] = None,
         video_file: Optional[str] = None,
         preview: bool = False,
@@ -556,6 +556,7 @@ class CameraPlugin(Plugin, ABC):
         """
         Capture a video.
 
+        :param device: Name/path/ID of the device to capture from (default: None, use the default device).
         :param duration: Record duration in seconds (default: None, record until ``stop_capture``).
         :param video_file: If set, the stream will be recorded to the specified video file (default: None).
         :param camera: Camera parameters override - see constructors parameters.
@@ -563,7 +564,7 @@ class CameraPlugin(Plugin, ABC):
         :return: If duration is specified, the method will wait until the recording is done and return the local path
             to the recorded resource. Otherwise, it will return the status of the camera device after starting it.
         """
-        camera = self.open_device(**camera)
+        camera = self.open_device(device=device, **camera)
         self.start_camera(
             camera,
             duration=duration,
@@ -595,17 +596,24 @@ class CameraPlugin(Plugin, ABC):
             self.close_device(dev)
 
     @action
-    def capture_image(self, image_file: str, preview: bool = False, **camera) -> str:
+    def capture_image(
+        self,
+        image_file: str,
+        device: Optional[Union[int, str]] = None,
+        preview: bool = False,
+        **camera,
+    ) -> str:
         """
         Capture an image.
 
         :param image_file: Path where the output image will be stored.
+        :param device: Name/path/ID of the device to capture from (default: None, use the default device).
         :param camera: Camera parameters override - see constructors parameters.
         :param preview: Show a preview of the camera frames.
         :return: The local path to the saved image.
         """
 
-        with self.open(**camera) as camera:
+        with self.open(device=device, **camera) as camera:
             warmup_frames = (
                 camera.info.warmup_frames if camera.info.warmup_frames else 1
             )
@@ -617,20 +625,23 @@ class CameraPlugin(Plugin, ABC):
         return image_file
 
     @action
-    def take_picture(self, image_file: str, **camera) -> str:
+    def take_picture(
+        self, image_file: str, device: Optional[Union[int, str]] = None, **camera
+    ) -> str:
         """
         Alias for :meth:`.capture_image`.
 
         :param image_file: Path where the output image will be stored.
+        :param device: Name/path/ID of the device to capture from (default: None, use the default device).
         :param camera: Camera parameters override - see constructors parameters.
-        :param preview: Show a preview of the camera frames.
         :return: The local path to the saved image.
         """
-        return str(self.capture_image(image_file, **camera).output)
+        return str(self.capture_image(image_file, device=device, **camera).output)
 
     @action
     def capture_sequence(
         self,
+        device: Optional[Union[int, str]] = None,
         duration: Optional[float] = None,
         n_frames: Optional[int] = None,
         preview: bool = False,
@@ -639,6 +650,7 @@ class CameraPlugin(Plugin, ABC):
         """
         Capture a sequence of frames from a camera and store them to a directory.
 
+        :param device: Name/path/ID of the device to capture from (default: None, use the default device).
         :param duration: Duration of the sequence in seconds (default: until :meth:`.stop_capture` is called).
         :param n_frames: Number of images to be captured (default: until :meth:`.stop_capture` is called).
         :param camera: Camera parameters override - see constructors parameters. ``frames_dir`` and ``fps`` in
@@ -646,7 +658,7 @@ class CameraPlugin(Plugin, ABC):
         :param preview: Show a preview of the camera frames.
         :return: The directory where the image files have been stored.
         """
-        with self.open(**camera) as camera:
+        with self.open(device=device, **camera) as camera:
             self.start_camera(
                 camera, duration=duration, n_frames=n_frames, preview=preview
             )
@@ -655,17 +667,22 @@ class CameraPlugin(Plugin, ABC):
 
     @action
     def capture_preview(
-        self, duration: Optional[float] = None, n_frames: Optional[int] = None, **camera
+        self,
+        device: Optional[Union[int, str]] = None,
+        duration: Optional[float] = None,
+        n_frames: Optional[int] = None,
+        **camera,
     ) -> dict:
         """
         Start a camera preview session.
 
+        :param device: Name/path/ID of the device to capture from (default: None, use the default device).
         :param duration: Preview duration (default: until :meth:`.stop_capture` is called).
         :param n_frames: Number of frames to display before closing (default: until :meth:`.stop_capture` is called).
         :param camera: Camera object properties.
         :return: The status of the device.
         """
-        camera = self.open_device(frames_dir=None, **camera)
+        camera = self.open_device(device=device, frames_dir=None, **camera)
         self.start_camera(camera, duration=duration, n_frames=n_frames, preview=True)
         return self.status(camera.info.device)  # type: ignore
 
@@ -744,17 +761,24 @@ class CameraPlugin(Plugin, ABC):
 
     @action
     def start_streaming(
-        self, duration: Optional[float] = None, stream_format: str = 'mkv', **camera
+        self,
+        device: Optional[Union[int, str]] = None,
+        duration: Optional[float] = None,
+        stream_format: str = 'mkv',
+        **camera,
     ) -> dict:
         """
         Expose the video stream of a camera over a TCP connection.
 
+        :param device: Name/path/ID of the device to capture from (default: None, use the default device).
         :param duration: Streaming thread duration (default: until :meth:`.stop_streaming` is called).
         :param stream_format: Format of the output stream - e.g. ``h264``, ``mjpeg``, ``mkv`` etc. (default: ``mkv``).
         :param camera: Camera object properties - see constructor parameters.
         :return: The status of the device.
         """
-        camera = self.open_device(stream=True, stream_format=stream_format, **camera)
+        camera = self.open_device(
+            device=device, stream=True, stream_format=stream_format, **camera
+        )
         return self._start_streaming(camera, duration, stream_format)  # type: ignore
 
     def _start_streaming(
@@ -900,7 +924,7 @@ class CameraPlugin(Plugin, ABC):
             return frame
 
         size = (int(frame.size[0] * scale_x), int(frame.size[1] * scale_y))
-        return frame.resize(size, Image.ANTIALIAS)
+        return frame.resize(size, Image.BICUBIC)
 
     @staticmethod
     def encode_frame(frame, encoding: str = 'jpeg') -> bytes:

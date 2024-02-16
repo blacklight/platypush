@@ -3,7 +3,6 @@ import logging
 import multiprocessing
 import os
 import time
-
 from abc import ABC, abstractmethod
 from typing import Optional, IO
 
@@ -63,8 +62,12 @@ class FileVideoWriter(VideoWriter, ABC):
     """
 
     def __init__(self, *args, output_file: str, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self.output_file = os.path.abspath(os.path.expanduser(output_file))
+        super().__init__(
+            self,
+            *args,
+            output_file=os.path.abspath(os.path.expanduser(output_file)),
+            **kwargs,
+        )
 
 
 class StreamWriter(VideoWriter, ABC):
