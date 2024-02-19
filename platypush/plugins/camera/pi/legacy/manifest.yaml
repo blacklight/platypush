@@ -18,7 +18,7 @@ manifest:
       - python-numpy
       - python-pillow
     pip:
-      - picamera2
+      - picamera
       - numpy
       - Pillow
   package: platypush.plugins.camera.pi

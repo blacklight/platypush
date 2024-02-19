@@ -34,7 +34,7 @@ class CameraFfmpegPlugin(CameraPlugin):
         super().__init__(device=device, input_format=input_format, **opts)
         self.camera_info.ffmpeg_args = ffmpeg_args or ()  # type: ignore
 
-    def prepare_device(self, device: Camera) -> subprocess.Popen:
+    def prepare_device(self, device: Camera, **_) -> subprocess.Popen:
         assert isinstance(device, FFmpegCamera)
         warmup_seconds = self._get_warmup_seconds(device)
         ffmpeg = [

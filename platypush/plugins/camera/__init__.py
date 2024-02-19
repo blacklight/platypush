@@ -19,7 +19,7 @@ from platypush.message.event.camera import (
     CameraRecordingStoppedEvent,
     CameraVideoRenderedEvent,
 )
-from platypush.plugins import Plugin, action
+from platypush.plugins import RunnablePlugin, action
 from platypush.plugins.camera.model.camera import CameraInfo, Camera
 from platypush.plugins.camera.model.exceptions import (
     CameraException,
@@ -45,7 +45,7 @@ __all__ = [
 ]
 
 
-class CameraPlugin(Plugin, ABC):
+class CameraPlugin(RunnablePlugin, ABC):
     """
     Abstract plugin to control camera devices.
 
@@ -176,9 +176,10 @@ class CameraPlugin(Plugin, ABC):
 
     def open_device(
         self,
-        device: Optional[Union[int, str]],
+        device: Optional[Union[int, str]] = None,
         stream: bool = False,
         redis_queue: Optional[str] = None,
+        ctx: Optional[dict] = None,
         **params,
     ) -> Camera:
         """
@@ -211,7 +212,7 @@ class CameraPlugin(Plugin, ABC):
             camera = self._camera_class(info=info)
 
         camera.info.set(**params)
-        camera.object = self.prepare_device(camera)
+        camera.object = self.prepare_device(camera, **(ctx or {}))
 
         if stream and camera.info.stream_format:
             writer_class = StreamWriter.get_class_by_name(camera.info.stream_format)
@@ -288,7 +289,7 @@ class CameraPlugin(Plugin, ABC):
                 self.close_device(camera)
 
     @abstractmethod
-    def prepare_device(self, device: Camera):
+    def prepare_device(self, device: Camera, **_):
         """
         Prepare a device using the plugin-specific logic - to be implemented by the derived classes.
 
@@ -788,7 +789,7 @@ class CameraPlugin(Plugin, ABC):
         assert (
             not camera.stream_event.is_set() and camera.info.device not in self._streams
         ), f'A streaming session is already running for device {camera.info.device}'
-        assert camera.info.device, 'No device name available'
+        assert camera.info.device is not None, 'No device name available'
 
         self._streams[camera.info.device] = camera
         camera.stream_event.set()
@@ -948,6 +949,9 @@ class CameraPlugin(Plugin, ABC):
         if camera.info.warmup_frames and camera.info.fps:
             return camera.info.warmup_frames / camera.info.fps
         return 0
+
+    def main(self):
+        self.wait_stop()
 
 
 # vim:sw=4:ts=4:et:
