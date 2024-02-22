@@ -17,11 +17,9 @@ class VideoWriter(ABC):
     mimetype: Optional[str] = None
 
     def __init__(self, *_, **kwargs):
-        from platypush.plugins.camera import Camera, CameraPlugin
-
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.camera: Camera = kwargs.pop('camera')
-        self.plugin: CameraPlugin = kwargs.pop('plugin')
+        self.camera = kwargs.get('camera', getattr(self, 'camera', None))
+        self.plugin = kwargs.get('plugin', getattr(self, 'plugin', None))
         self.closed = False
 
     @abstractmethod

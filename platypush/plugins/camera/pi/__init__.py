@@ -1,7 +1,6 @@
 import os
 import time
-
-from typing import Optional, Union
+from typing import IO, Optional, Union
 
 from platypush.plugins import action
 from platypush.plugins.camera import CameraPlugin, Camera
@@ -90,17 +89,60 @@ class CameraPiPlugin(CameraPlugin):
         self.camera_info.exposure_compensation = exposure_compensation  # type: ignore
         self.camera_info.awb_mode = awb_mode  # type: ignore
 
+    def _get_transform(self, device: Camera):
+        from libcamera import Orientation, Transform  # type: ignore
+        from picamera2.utils import orientation_to_transform  # type: ignore
+
+        rot = device.info.rotate
+        if not rot:
+            return Transform(
+                # It may seem counterintuitive, but the picamera2 library's flip
+                # definition is the opposite of ours
+                hflip=device.info.vertical_flip,
+                vflip=device.info.horizontal_flip,
+            )
+
+        if rot == 90:
+            orient = (
+                Orientation.Rotate90Mirror
+                if device.info.vertical_flip
+                else Orientation.Rotate90
+            )
+        elif rot == 180:
+            orient = (
+                Orientation.Rotate180Mirror
+                if device.info.horizontal_flip
+                else Orientation.Rotate180
+            )
+        elif rot == 270:
+            orient = (
+                Orientation.Rotate270Mirror
+                if device.info.vertical_flip
+                else Orientation.Rotate270
+            )
+        else:
+            raise AssertionError(
+                f'Invalid rotation: {rot}. Supported values: 0, 90, 180, 270'
+            )
+
+        return orientation_to_transform(orient)
+
     def prepare_device(
-        self, device: Camera, start: bool = True, video: bool = False, **_
+        self,
+        device: Camera,
+        start: bool = True,
+        video: bool = False,
+        stream: bool = False,
+        **_,
     ):
-        from libcamera import Transform  # type: ignore
         from picamera2 import Picamera2  # type: ignore
 
         assert isinstance(device, PiCamera), f'Invalid device type: {type(device)}'
         camera = Picamera2(camera_num=device.info.device)
+        still = not (video or stream)
         cfg_params = {
             'main': {
-                'format': 'XBGR8888' if video else 'BGR888',
+                'format': 'XBGR8888' if not still else 'BGR888',
                 **(
                     {'size': tuple(map(int, device.info.resolution))}
                     if device.info.resolution
@@ -108,15 +150,8 @@ class CameraPiPlugin(CameraPlugin):
                 ),
             },
             **(
-                {
-                    'transform': Transform(
-                        # It may seem counterintuitive, but the picamera2 library's flip
-                        # definition is the opposite of ours
-                        hflip=device.info.vertical_flip,
-                        vflip=device.info.horizontal_flip,
-                    ),
-                }
-                if video
+                {'transform': self._get_transform(device)}
+                if not still
                 # We don't need to flip the image for individual frames, the base camera
                 # class methods will take care of that
                 else {}
@@ -131,7 +166,7 @@ class CameraPiPlugin(CameraPlugin):
 
         cfg = (
             camera.create_video_configuration
-            if video
+            if not still
             else camera.create_still_configuration
         )(**cfg_params)
 
@@ -150,6 +185,15 @@ class CameraPiPlugin(CameraPlugin):
     def capture_frame(self, device: Camera, *_, **__):
         assert device.object, 'Camera not open'
         return device.object.capture_image('main')
+
+    @property
+    def _video_encoders_by_format(self) -> dict:
+        from picamera2.encoders import H264Encoder, MJPEGEncoder  # type: ignore
+
+        return {
+            'h264': H264Encoder,
+            'mjpeg': MJPEGEncoder,
+        }
 
     @action
     def capture_video(
@@ -211,12 +255,52 @@ class CameraPiPlugin(CameraPlugin):
 
         return self.status(camera.info.device).output
 
+    def _streaming_loop(self, camera: Camera, stream_format: str, sock: IO, *_, **__):
+        from picamera2 import Picamera2  # type: ignore
+        from picamera2.outputs import FileOutput  # type: ignore
+
+        encoder_cls = self._video_encoders_by_format.get(stream_format)
+        assert (
+            encoder_cls
+        ), f'Invalid stream format: {stream_format}. Supported formats: {", ".join(self._video_encoders_by_format)}'
+        assert isinstance(camera, PiCamera), f'Invalid camera type: {type(camera)}'
+        assert camera.object and isinstance(
+            camera.object, Picamera2
+        ), f'Invalid camera object type: {type(camera.object)}'
+
+        cam = camera.object
+        encoder = encoder_cls()
+        cam.encoders = encoder
+        encoder.output = FileOutput(sock)
+        cam.start_encoder(encoder)
+        cam.start()
+
+    def _prepare_stream_writer(self, *_, **__):
+        """
+        Overrides the base method to do nothing - the stream writer is handled
+        by the picamera2 library.
+        """
+
+    def _cleanup_stream(self, camera: Camera, *_, **__):
+        cam = camera.object
+        if not cam:
+            return
+
+        cam.stop()
+        cam.stop_encoder()
+        cam.close()
+
     @action
     def start_streaming(
-        self, duration: Optional[float] = None, stream_format: str = 'h264', **camera
+        self,
+        device: Optional[Union[int, str]] = None,
+        duration: Optional[float] = None,
+        stream_format: str = 'h264',
+        **camera,
     ) -> dict:
-        camera = self.open_device(stream_format=stream_format, **camera)
-        return self._start_streaming(camera, duration, stream_format)  # type: ignore
+        return super().start_streaming(  # type: ignore
+            device=device, duration=duration, stream_format=stream_format, **camera
+        )
 
 
 # vim:sw=4:ts=4:et:

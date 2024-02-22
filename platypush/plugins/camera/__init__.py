@@ -31,7 +31,7 @@ from platypush.plugins.camera.model.writer.preview import (
     PreviewWriter,
     PreviewWriterFactory,
 )
-from platypush.utils import get_plugin_name_by_class
+from platypush.utils import get_plugin_name_by_class, wait_for_either
 
 __all__ = [
     'Camera',
@@ -211,14 +211,13 @@ class CameraPlugin(RunnablePlugin, ABC):
         else:
             camera = self._camera_class(info=info)
 
+        ctx = ctx or {}
+        ctx['stream'] = stream
         camera.info.set(**params)
-        camera.object = self.prepare_device(camera, **(ctx or {}))
+        camera.object = self.prepare_device(camera, **ctx)
 
         if stream and camera.info.stream_format:
-            writer_class = StreamWriter.get_class_by_name(camera.info.stream_format)
-            camera.stream = writer_class(
-                camera=camera, plugin=self, redis_queue=redis_queue
-            )
+            self._prepare_stream_writer(camera, redis_queue=redis_queue)
 
         if camera.info.frames_dir:
             pathlib.Path(
@@ -227,6 +226,13 @@ class CameraPlugin(RunnablePlugin, ABC):
 
         self._devices[device] = camera
         return camera
+
+    def _prepare_stream_writer(self, camera: Camera, redis_queue: Optional[str] = None):
+        assert camera.info.stream_format, 'No stream format specified'
+        writer_class = StreamWriter.get_class_by_name(camera.info.stream_format)
+        camera.stream = writer_class(
+            camera=camera, plugin=self, redis_queue=redis_queue
+        )
 
     def close_device(self, camera: Camera, wait_capture: bool = True) -> None:
         """
@@ -688,18 +694,19 @@ class CameraPlugin(RunnablePlugin, ABC):
         return self.status(camera.info.device)  # type: ignore
 
     @staticmethod
-    def _prepare_server_socket(camera: Camera) -> socket.socket:
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_socket.bind(
-            (  # lgtm [py/bind-socket-all-network-interfaces]
-                camera.info.bind_address or '0.0.0.0',
-                camera.info.listen_port,
+    @contextmanager
+    def _prepare_server_socket(camera: Camera) -> Generator[socket.socket, None, None]:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv_sock:
+            srv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            srv_sock.bind(
+                (  # lgtm [py/bind-socket-all-network-interfaces]
+                    camera.info.bind_address or '0.0.0.0',
+                    camera.info.listen_port,
+                )
             )
-        )
-        server_socket.listen(1)
-        server_socket.settimeout(1)
-        return server_socket
+            srv_sock.listen(1)
+            srv_sock.settimeout(1)
+            yield srv_sock
 
     def _accept_client(self, server_socket: socket.socket) -> Optional[IO]:
         try:
@@ -707,42 +714,62 @@ class CameraPlugin(RunnablePlugin, ABC):
             self.logger.info('Accepted client connection from %s', sock.getpeername())
             return sock.makefile('wb')
         except socket.timeout:
-            return
+            return None
 
     def streaming_thread(
         self, camera: Camera, stream_format: str, duration: Optional[float] = None
     ):
-        streaming_started_time = time.time()
-        server_socket = self._prepare_server_socket(camera)
-        sock = None
-        self.logger.info('Starting streaming on port %s', camera.info.listen_port)
+        with self._prepare_server_socket(camera) as srv_sock:
+            streaming_started_time = time.time()
+            sock = None
+            self.logger.info('Starting streaming on port %s', camera.info.listen_port)
 
-        try:
-            while camera.stream_event.is_set():
-                if duration and time.time() - streaming_started_time >= duration:
-                    break
+            try:
+                while camera.stream_event.is_set():
+                    if duration and time.time() - streaming_started_time >= duration:
+                        break
 
-                sock = self._accept_client(server_socket)
-                if not sock:
-                    continue
+                    sock = self._accept_client(srv_sock)
+                    if not sock:
+                        continue
 
-                if camera.info.device not in self._devices:
-                    info = asdict(camera.info)
-                    info['stream_format'] = stream_format
-                    camera = self.open_device(stream=True, **info)
+                    if duration and time.time() - streaming_started_time >= duration:
+                        break
 
-                assert camera.stream, 'No camera stream available'
-                camera.stream.sock = sock
-                self.start_camera(
-                    camera, duration=duration, frames_dir=None, image_file=None
-                )
-        finally:
-            self._cleanup_stream(camera, server_socket, sock)
-            self.logger.info('Stopped camera stream')
+                    self._streaming_loop(
+                        camera, stream_format, sock=sock, duration=duration
+                    )
+
+                    wait_for_either(
+                        self._should_stop, camera.stop_stream_event, timeout=duration
+                    )
+            finally:
+                self._cleanup_stream(camera, srv_sock, sock)
+
+        self.logger.info('Stopped camera stream')
+
+    def _streaming_loop(
+        self,
+        camera: Camera,
+        stream_format: str,
+        sock: IO,
+        duration: Optional[float] = None,
+    ):
+        if camera.info.device not in self._devices:
+            info = asdict(camera.info)
+            info['stream_format'] = stream_format
+            camera = self.open_device(stream=True, **info)
+
+        assert camera.stream, 'No camera stream available'
+        camera.stream.sock = sock
+        self.start_camera(camera, duration=duration, frames_dir=None, image_file=None)
 
     def _cleanup_stream(
         self, camera: Camera, server_socket: socket.socket, client: Optional[IO]
     ):
+        camera.stream_event.clear()
+        camera.stop_stream_event.set()
+
         if client:
             try:
                 client.close()
@@ -793,6 +820,7 @@ class CameraPlugin(RunnablePlugin, ABC):
 
         self._streams[camera.info.device] = camera
         camera.stream_event.set()
+        camera.stop_stream_event.clear()
 
         camera.stream_thread = threading.Thread(
             target=self.streaming_thread,
@@ -822,6 +850,8 @@ class CameraPlugin(RunnablePlugin, ABC):
 
     def _stop_streaming(self, camera: Camera):
         camera.stream_event.clear()
+        camera.stop_stream_event.set()
+
         if camera.stream_thread and camera.stream_thread.is_alive():
             camera.stream_thread.join(timeout=5.0)
 
