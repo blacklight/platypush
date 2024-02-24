@@ -1035,7 +1035,13 @@ class CameraPlugin(RunnablePlugin, ABC):
 
             camera = cameras[0]
             wait_for_either(self._should_stop, camera.stop_stream_event)
-            self.stop_streaming()
+
+            try:
+                self.stop_streaming()
+            except Exception as e:
+                self.logger.warning('Error while stopping the camera stream: %s', e)
+            finally:
+                self.wait_stop(timeout=2)
 
 
 # vim:sw=4:ts=4:et:
