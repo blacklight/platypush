@@ -1,30 +1,39 @@
 import threading
-import time
 
-from typing import Optional, List, Tuple, Union
+from typing import IO, Optional, List, Tuple, Union
 
 from platypush.plugins import action
 from platypush.plugins.camera import CameraPlugin, Camera
+from platypush.utils import wait_for_either
 
 from .model import PiCameraInfo, PiCamera
 
 
 class CameraPiLegacyPlugin(CameraPlugin):
     """
-    Plugin to control a Pi camera over the legacy ``picamera`` module.
+    Plugin to interact with a `Pi Camera
+    <https://www.raspberrypi.com/documentation/accessories/camera.html>`_.
 
     .. warning::
-        This plugin is **DEPRECATED**, as it relies on the old ``picamera`` module.
-        Recent operating systems should probably use the
-        :class:`platypush.plugins.camera.pi.CameraPiPlugin` plugin instead, or
-        the generic v4l2 driver through
-        :class:`platypush.plugins.camera.ffmpeg.FfmpegCameraPlugin` or
-        :class:`platypush.plugins.camera.gstreamer.GStreamerCameraPlugin`.
+        This plugin is **DEPRECATED**, as it relies on the old ``picamera``
+        module.
 
+
+    The ``picamera`` module used in this plugin is deprecated and no longer
+    maintained. The `picamera2 <https://github.com/raspberrypi/picamera2>`_
+    module is advised instead, which is used by
+    :class:`platypush.plugins.camera.pi.CameraPiPlugin`.
+
+    You may want to use this plugin if you are running an old OS that does not
+    support the new ``picamera2`` module. Even in that case, you may probably
+    consider using :class:`platypush.plugins.camera.ffmpeg.FfmpegCameraPlugin`
+    or :class:`platypush.plugins.camera.gstreamer.GStreamerCameraPlugin`, as
+    ``picamera`` is not maintained anymore and may not work properly.
     """
 
     _camera_class = PiCamera
     _camera_info_class = PiCameraInfo
+    _supported_encoders = ('h264', 'mjpeg')
 
     def __init__(
         self,
@@ -44,7 +53,8 @@ class CameraPiLegacyPlugin(CameraPlugin):
         led_pin: Optional[int] = None,
         color_effects: Optional[Union[str, List[str]]] = None,
         zoom: Tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
-        **camera
+        stream_format: str = 'h264',
+        **camera,
     ):
         """
         :param device: Camera device number (default: 0). Only supported on
@@ -124,11 +134,21 @@ class CameraPiLegacyPlugin(CameraPlugin):
             PIN and you want to control it.
         :param zoom: Camera zoom, in the format ``(x, y, width, height)``
             (default: ``(0.0, 0.0, 1.0, 1.0)``).
+        :param stream_format: Default format for the output when streamed to a
+            network device. Available:
+
+                - ``h264`` (default)
+                - ``mjpeg``
+
         :param camera: Options for the base camera plugin (see
             :class:`platypush.plugins.camera.CameraPlugin`).
         """
         super().__init__(
-            device=device, fps=fps, warmup_seconds=warmup_seconds, **camera
+            device=device,
+            fps=fps,
+            warmup_seconds=warmup_seconds,
+            stream_format=stream_format,
+            **camera,
         )
 
         self.camera_info.sharpness = sharpness  # type: ignore
@@ -145,9 +165,10 @@ class CameraPiLegacyPlugin(CameraPlugin):
         self.camera_info.zoom = zoom  # type: ignore
         self.camera_info.led_pin = led_pin  # type: ignore
 
-    def prepare_device(self, device: PiCamera):
-        import picamera
+    def prepare_device(self, device: Camera, **_):
+        import picamera  # type: ignore
 
+        assert isinstance(device, PiCamera), f'Invalid camera type: {type(device)}'
         camera = picamera.PiCamera(
             camera_num=device.info.device,
             resolution=device.info.resolution,
@@ -173,9 +194,10 @@ class CameraPiLegacyPlugin(CameraPlugin):
 
         return camera
 
-    def release_device(self, device: PiCamera):
-        import picamera
+    def release_device(self, device: Camera):
+        import picamera  # type: ignore
 
+        assert isinstance(device, PiCamera), f'Invalid camera type: {type(device)}'
         if device.object:
             try:
                 device.object.stop_recording()
@@ -188,30 +210,36 @@ class CameraPiLegacyPlugin(CameraPlugin):
             except (ConnectionError, picamera.PiCameraClosed):
                 pass
 
-    def capture_frame(self, camera: Camera, *args, **kwargs):
+    def capture_frame(self, device: Camera, *_, **__):
         import numpy as np
         from PIL import Image
 
+        assert device.info.resolution, 'Invalid resolution'
+        assert device.object, 'Camera not opened'
         shape = (
-            camera.info.resolution[1] + (camera.info.resolution[1] % 16),
-            camera.info.resolution[0] + (camera.info.resolution[0] % 32),
+            device.info.resolution[1] + (device.info.resolution[1] % 16),
+            device.info.resolution[0] + (device.info.resolution[0] % 32),
             3,
         )
 
         frame = np.empty(shape, dtype=np.uint8)
-        camera.object.capture(frame, 'rgb')
+        device.object.capture(frame, 'rgb')
         return Image.fromarray(frame)
 
     def start_preview(self, camera: Camera):
         """
         Start camera preview.
         """
+        assert camera.object, 'Camera not opened'
         camera.object.start_preview()
 
     def stop_preview(self, camera: Camera):
         """
         Stop camera preview.
         """
+        if not camera.object:
+            return
+
         try:
             camera.object.stop_preview()
         except Exception as e:
@@ -219,9 +247,13 @@ class CameraPiLegacyPlugin(CameraPlugin):
 
     @action
     def capture_preview(
-        self, duration: Optional[float] = None, n_frames: Optional[int] = None, **camera
+        self,
+        device: Optional[Union[str, int]] = None,
+        duration: Optional[float] = None,
+        n_frames: Optional[int] = None,
+        **camera,
     ) -> dict:
-        camera = self.open_device(**camera)
+        camera = self.open_device(device=device, **camera)
         self.start_preview(camera)
 
         if n_frames:
@@ -229,56 +261,41 @@ class CameraPiLegacyPlugin(CameraPlugin):
         if duration:
             threading.Timer(duration, lambda: self.stop_preview(camera))
 
-        return self.status()
+        return self.status()  # type: ignore
 
-    def streaming_thread(
-        self, camera: PiCamera, stream_format: str, duration: Optional[float] = None
-    ):
-        server_socket = self._prepare_server_socket(camera)
-        sock = None
-        streaming_started_time = time.time()
-        self.logger.info(
-            'Starting streaming on port {}'.format(camera.info.listen_port)
-        )
+    def _streaming_loop(self, camera: Camera, stream_format: str, sock: IO, *_, **__):
+        from picamera import PiCamera as PiCamera_  # type: ignore
 
+        stream_format = stream_format.lower()
+        assert (
+            stream_format in self._supported_encoders
+        ), f'Invalid stream format: {stream_format}. Supported formats: {", ".join(self._supported_encoders)}'
+        assert isinstance(camera, PiCamera), f'Invalid camera type: {type(camera)}'
+        assert camera.object and isinstance(
+            camera.object, PiCamera_
+        ), f'Invalid camera object type: {type(camera.object)}'
+
+        cam = camera.object
         try:
-            while camera.stream_event.is_set():
-                if duration and time.time() - streaming_started_time >= duration:
-                    break
-
-                sock = self._accept_client(server_socket)
-                if not sock:
-                    continue
-
-                if camera.object is None or camera.object.closed:
-                    camera = self.open_device(**camera.info.to_dict())
-
-                try:
-                    camera.object.start_recording(sock, format=stream_format)
-                    while camera.stream_event.is_set():
-                        camera.object.wait_recording(1)
-                except ConnectionError:
-                    self.logger.info('Client closed connection')
-                finally:
-                    if sock:
-                        try:
-                            sock.close()
-                        except Exception as e:
-                            self.logger.warning(
-                                'Error while closing client socket: {}'.format(str(e))
-                            )
-
-                    self.close_device(camera)
+            cam.start_recording(sock, format=stream_format)
+            while not wait_for_either(
+                camera.stop_stream_event, self._should_stop, timeout=1
+            ):
+                cam.wait_recording(1)
+        except ConnectionError:
+            self.logger.info('Client closed connection')
         finally:
-            self._cleanup_stream(camera, server_socket, sock)
-            self.logger.info('Stopped camera stream')
+            try:
+                cam.stop_recording()
+                self.stop_streaming()
+            except Exception as e:
+                self.logger.warning('Could not stop streaming: %s', e)
 
-    @action
-    def start_streaming(
-        self, duration: Optional[float] = None, stream_format: str = 'h264', **camera
-    ) -> dict:
-        camera = self.open_device(stream_format=stream_format, **camera)
-        return self._start_streaming(camera, duration, stream_format)
+    def _prepare_stream_writer(self, *_, **__):
+        """
+        Overrides the base method to do nothing - the stream writer is handled
+        by the picamera library.
+        """
 
 
 # vim:sw=4:ts=4:et:

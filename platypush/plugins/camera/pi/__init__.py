@@ -47,6 +47,7 @@ class CameraPiPlugin(CameraPlugin):
         iso: int = 0,
         exposure_compensation: float = 0.0,
         awb_mode: str = 'Auto',
+        stream_format: str = 'h264',
         **camera,
     ):
         """
@@ -75,11 +76,21 @@ class CameraPiPlugin(CameraPlugin):
             - ``Indoor``
             - ``Fluorescent``
 
+        :param stream_format: Default format for the output when streamed to a
+            network device. Available:
+
+                - ``h264`` (default)
+                - ``mjpeg``
+
         :param camera: Options for the base camera plugin (see
             :class:`platypush.plugins.camera.CameraPlugin`).
         """
         super().__init__(
-            device=device, fps=fps, warmup_seconds=warmup_seconds, **camera
+            device=device,
+            fps=fps,
+            warmup_seconds=warmup_seconds,
+            stream_format=stream_format,
+            **camera,
         )
 
         self.camera_info.sharpness = sharpness  # type: ignore
@@ -259,7 +270,7 @@ class CameraPiPlugin(CameraPlugin):
         from picamera2 import Picamera2  # type: ignore
         from picamera2.outputs import FileOutput  # type: ignore
 
-        encoder_cls = self._video_encoders_by_format.get(stream_format)
+        encoder_cls = self._video_encoders_by_format.get(stream_format.lower())
         assert (
             encoder_cls
         ), f'Invalid stream format: {stream_format}. Supported formats: {", ".join(self._video_encoders_by_format)}'
@@ -289,18 +300,6 @@ class CameraPiPlugin(CameraPlugin):
         cam.stop()
         cam.stop_encoder()
         cam.close()
-
-    @action
-    def start_streaming(
-        self,
-        device: Optional[Union[int, str]] = None,
-        duration: Optional[float] = None,
-        stream_format: str = 'h264',
-        **camera,
-    ) -> dict:
-        return super().start_streaming(  # type: ignore
-            device=device, duration=duration, stream_format=stream_format, **camera
-        )
 
 
 # vim:sw=4:ts=4:et:

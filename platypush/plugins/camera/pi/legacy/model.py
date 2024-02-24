@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Optional, Union, List, Tuple
 
 from platypush.plugins.camera import CameraInfo, Camera
@@ -35,12 +35,12 @@ class PiCameraInfo(CameraInfo):
             'color_effects': self.color_effects,
             'zoom': self.zoom,
             'led_pin': self.led_pin,
-            **super().to_dict()
+            **asdict(super()),
         }
 
 
 class PiCamera(Camera):
-    info: PiCameraInfo
+    info: PiCameraInfo  # type: ignore
 
 
 # vim:sw=4:ts=4:et:

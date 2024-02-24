@@ -141,11 +141,11 @@ class CameraPlugin(RunnablePlugin, ABC):
         :param stream_format: Default format for the output when streamed to a
             network device. Available:
 
-                - ``MJPEG`` (default)
-                - ``H264`` (over ``ffmpeg``)
-                - ``H265`` (over ``ffmpeg``)
-                - ``MKV`` (over ``ffmpeg``)
-                - ``MP4`` (over ``ffmpeg``)
+                - ``mjpeg`` (default)
+                - ``h264`` (over ``ffmpeg``)
+                - ``h265`` (over ``ffmpeg``)
+                - ``mkv`` (over ``ffmpeg``)
+                - ``mp4`` (over ``ffmpeg``)
 
         """
         super().__init__(**kwargs)
