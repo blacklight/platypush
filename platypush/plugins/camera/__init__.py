@@ -86,6 +86,7 @@ class CameraPlugin(RunnablePlugin, ABC):
         stream_format: str = 'mjpeg',
         listen_port: Optional[int] = 5000,
         bind_address: str = '0.0.0.0',
+        stream_on_start: bool = False,
         ffmpeg_bin: str = 'ffmpeg',
         input_codec: Optional[str] = None,
         output_codec: Optional[str] = None,
@@ -94,41 +95,57 @@ class CameraPlugin(RunnablePlugin, ABC):
         """
         :param device: Identifier of the default capturing device.
         :param resolution: Default resolution, as a tuple of two integers.
-        :param frames_dir: Directory where the camera frames will be stored (default:
-            ``~/.local/share/platypush/<plugin.name>/frames``)
+        :param frames_dir: Directory where the camera frames will be stored
+            (default: ``~/.local/share/platypush/<plugin.name>/frames``)
         :param warmup_frames: Cameras usually take a while to adapt their
             luminosity and focus to the environment when taking a picture.
             This parameter allows you to specify the number of "warmup" frames
             to capture upon picture command before actually capturing a frame
             (default: 5 but you may want to calibrate this parameter for your
             camera)
-        :param warmup_seconds: Number of seconds to wait before a picture is taken or the first frame of a
-            video/sequence is captured (default: 0).
-        :param capture_timeout: Maximum number of seconds to wait between the programmed termination of a capture
-            session and the moment the device is released.
-        :param scale_x: If set, the images will be scaled along the x-axis by the specified factor
-        :param scale_y: If set, the images will be scaled along the y-axis by the specified factor
+        :param warmup_seconds: Number of seconds to wait before a picture is
+            taken or the first frame of a video/sequence is captured (default:
+            0).
+        :param capture_timeout: Maximum number of seconds to wait between the
+            programmed termination of a capture session and the moment the
+            device is released.
+        :param scale_x: If set, the images will be scaled along the x-axis by
+            the specified factor
+        :param scale_y: If set, the images will be scaled along the y-axis by
+            the specified factor
         :param color_transform: Color transformation to apply to the images.
         :param grayscale: Whether the output should be converted to grayscale.
-        :param rotate: If set, the images will be rotated by the specified number of degrees
+        :param rotate: If set, the images will be rotated by the specified
+            number of degrees
         :param fps: Frames per second (default: 25).
-        :param horizontal_flip: If set, the images will be flipped on the horizontal axis.
-        :param vertical_flip: If set, the images will be flipped on the vertical axis.
-        :param listen_port: Default port to be used for streaming over TCP (default: 5000).
-        :param bind_address: Default bind address for TCP streaming (default: 0.0.0.0, accept any connections).
-        :param input_codec: Specify the ffmpeg video codec (``-vcodec``) used for the input.
-        :param output_codec: Specify the ffmpeg video codec (``-vcodec``) to be used for encoding the output. For some
-            ffmpeg output formats (e.g. ``h264`` and ``rtp``) this may default to ``libxvid``.
+        :param horizontal_flip: If set, the images will be flipped on the
+            horizontal axis.
+        :param vertical_flip: If set, the images will be flipped on the vertical
+            axis.
+        :param listen_port: Default port to be used for streaming over TCP
+            (default: 5000).
+        :param bind_address: Default bind address for TCP streaming (default:
+            0.0.0.0, accept connections on any network interface).
+        :param stream_on_start: If set, the camera will start streaming on the
+            specified ``bind_address`` and ``listen_port`` as soon as the plugin
+            is started. Otherwise, the stream will be started only when the
+            :meth:`.start_streaming` method is called. Default: False.
+        :param input_codec: Specify the ffmpeg video codec (``-vcodec``) used
+            for the input.
+        :param output_codec: Specify the ffmpeg video codec (``-vcodec``) to be
+            used for encoding the output. For some ffmpeg output formats (e.g.
+            ``h264`` and ``rtp``) this may default to ``libxvid``.
         :param input_format: Plugin-specific format/type for the input stream.
         :param output_format: Plugin-specific format/type for the output videos.
         :param ffmpeg_bin: Path to the ffmpeg binary (default: ``ffmpeg``).
-        :param stream_format: Default format for the output when streamed to a network device. Available:
+        :param stream_format: Default format for the output when streamed to a
+            network device. Available:
 
-            - ``MJPEG`` (default)
-            - ``H264`` (over ``ffmpeg``)
-            - ``H265`` (over ``ffmpeg``)
-            - ``MKV`` (over ``ffmpeg``)
-            - ``MP4`` (over ``ffmpeg``)
+                - ``MJPEG`` (default)
+                - ``H264`` (over ``ffmpeg``)
+                - ``H265`` (over ``ffmpeg``)
+                - ``MKV`` (over ``ffmpeg``)
+                - ``MP4`` (over ``ffmpeg``)
 
         """
         super().__init__(**kwargs)
@@ -137,6 +154,7 @@ class CameraPlugin(RunnablePlugin, ABC):
         plugin_name = get_plugin_name_by_class(self)
         assert isinstance(workdir, str) and plugin_name
         self.workdir = os.path.join(workdir, plugin_name)
+        self._stream_on_start = stream_on_start
         pathlib.Path(self.workdir).mkdir(mode=0o755, exist_ok=True, parents=True)
 
         self.camera_info = self._camera_info_class(
@@ -322,7 +340,9 @@ class CameraPlugin(RunnablePlugin, ABC):
         raise NotImplementedError()
 
     @staticmethod
-    def store_frame(frame, filepath: str, format: Optional[str] = None):
+    def store_frame(  # pylint: disable=redefined-builtin
+        frame, filepath: str, format: Optional[str] = None
+    ):
         """
         Capture a frame to the filesystem using the ``PIL`` library - it can be overridden by derived classes.
 
@@ -346,9 +366,9 @@ class CameraPlugin(RunnablePlugin, ABC):
     def _store_frame(
         self,
         frame,
+        *args,
         frames_dir: Optional[str] = None,
         image_file: Optional[str] = None,
-        *args,
         **kwargs,
     ) -> str:
         """
@@ -792,21 +812,39 @@ class CameraPlugin(RunnablePlugin, ABC):
         self,
         device: Optional[Union[int, str]] = None,
         duration: Optional[float] = None,
-        stream_format: str = 'mkv',
+        stream_format: Optional[str] = None,
         **camera,
     ) -> dict:
         """
         Expose the video stream of a camera over a TCP connection.
 
-        :param device: Name/path/ID of the device to capture from (default: None, use the default device).
-        :param duration: Streaming thread duration (default: until :meth:`.stop_streaming` is called).
-        :param stream_format: Format of the output stream - e.g. ``h264``, ``mjpeg``, ``mkv`` etc. (default: ``mkv``).
+        When the streaming is started, the plugin will listen on the specified
+        ``bind_address`` and ``listen_port`` and stream camera frames to
+        connected clients. If ``stream_format`` is a video format (H264, H265,
+        MKV, MP4 etc.) then the camera stream can be viewed using a video
+        player - for example, using ``vlc``:
+
+            .. code-block:: bash
+
+                vlc tcp://<host>:<port>
+
+        :param device: Name/path/ID of the device to capture from (default:
+            None, use the default device).
+        :param duration: Streaming thread duration (default: until
+            :meth:`.stop_streaming` is called).
+        :param stream_format: Format of the output stream - e.g. ``h264``,
+            ``mjpeg``, ``mkv`` etc. If not specified, the ``stream_format``
+            configured on the plugin will be used.
         :param camera: Camera object properties - see constructor parameters.
         :return: The status of the device.
         """
         camera = self.open_device(
-            device=device, stream=True, stream_format=stream_format, **camera
+            device=device,
+            stream=True,
+            stream_format=stream_format or self.camera_info.stream_format,
+            **camera,
         )
+
         return self._start_streaming(camera, duration, stream_format)  # type: ignore
 
     def _start_streaming(
@@ -981,7 +1019,23 @@ class CameraPlugin(RunnablePlugin, ABC):
         return 0
 
     def main(self):
-        self.wait_stop()
+        if not self._stream_on_start:
+            self.wait_stop()
+            return
+
+        while not self.should_stop():
+            if self._stream_on_start:
+                self.start_streaming()
+
+            cameras = list(self._streams.values())
+            if not cameras:
+                self.logger.warning('No camera devices could be streamed')
+                self.wait_stop()
+                break
+
+            camera = cameras[0]
+            wait_for_either(self._should_stop, camera.stop_stream_event)
+            self.stop_streaming()
 
 
 # vim:sw=4:ts=4:et:
