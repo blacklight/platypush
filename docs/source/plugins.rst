@@ -21,6 +21,7 @@ Plugins
     platypush/plugins/camera.gstreamer.rst
     platypush/plugins/camera.ir.mlx90640.rst
     platypush/plugins/camera.pi.rst
+    platypush/plugins/camera.pi.legacy.rst
     platypush/plugins/chat.irc.rst
     platypush/plugins/chat.telegram.rst
     platypush/plugins/clipboard.rst

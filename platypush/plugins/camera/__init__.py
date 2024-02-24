@@ -845,7 +845,7 @@ class CameraPlugin(RunnablePlugin, ABC):
             **camera,
         )
 
-        return self._start_streaming(camera, duration, stream_format)  # type: ignore
+        return self._start_streaming(camera, duration, camera.info.stream_format)  # type: ignore
 
     def _start_streaming(
         self, camera: Camera, duration: Optional[float], stream_format: str

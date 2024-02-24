@@ -19,7 +19,7 @@ class CameraPiPlugin(CameraPlugin):
     If you are running a very old OS that only provides the deprecated
     `picamera <https://github.com/waveform80/picamera>`_ module, or you rely on
     features that are currently only supported by the old module, you should
-    use :class:`platypush.plugins.camera.pi_legacy.CameraPiLegacyPlugin`
+    use :class:`platypush.plugins.camera.pi.legacy.CameraPiLegacyPlugin`
     instead.
     """
 
@@ -63,8 +63,6 @@ class CameraPiPlugin(CameraPlugin):
             1.0 is the default value, and higher values are mapped to higher
             contrast levels.
         :param brightness: Brightness level, as a float between -1.0 and 1.0.
-        :param video_stabilization: Enable video stabilization (default: False).
-            Only available on the old picamera module for now.
         :param iso: ISO level (default: 0).
         :param exposure_compensation: Exposure compensation level, as a float
             between -8.0 and 8.0.
