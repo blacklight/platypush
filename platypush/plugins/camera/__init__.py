@@ -728,43 +728,45 @@ class CameraPlugin(RunnablePlugin, ABC):
             srv_sock.settimeout(1)
             yield srv_sock
 
-    def _accept_client(self, server_socket: socket.socket) -> Optional[IO]:
+    def _accept_client(
+        self, server_socket: socket.socket
+    ) -> Tuple[Optional[socket.socket], Optional[IO]]:
         try:
             sock = server_socket.accept()[0]
             self.logger.info('Accepted client connection from %s', sock.getpeername())
-            return sock.makefile('wb')
+            return sock, sock.makefile('wb')
         except socket.timeout:
-            return None
+            return None, None
 
     def streaming_thread(
         self, camera: Camera, stream_format: str, duration: Optional[float] = None
     ):
         with self._prepare_server_socket(camera) as srv_sock:
             streaming_started_time = time.time()
-            sock = None
+            sock, fp = None, None
             self.logger.info('Starting streaming on port %s', camera.info.listen_port)
 
             try:
-                while camera.stream_event.is_set():
+                while (
+                    camera.stream_event.is_set()
+                    and not camera.stop_stream_event.is_set()
+                    and not self.should_stop()
+                ):
                     if duration and time.time() - streaming_started_time >= duration:
                         break
 
-                    sock = self._accept_client(srv_sock)
-                    if not sock:
+                    sock, fp = self._accept_client(srv_sock)
+                    if not (sock and fp):
                         continue
 
                     if duration and time.time() - streaming_started_time >= duration:
                         break
 
                     self._streaming_loop(
-                        camera, stream_format, sock=sock, duration=duration
-                    )
-
-                    wait_for_either(
-                        self._should_stop, camera.stop_stream_event, timeout=duration
+                        camera, stream_format, sock=fp, duration=duration
                     )
             finally:
-                self._cleanup_stream(camera, srv_sock, sock)
+                self._cleanup_stream(camera, srv_sock, fp)
 
         self.logger.info('Stopped camera stream')
 
@@ -1034,9 +1036,9 @@ class CameraPlugin(RunnablePlugin, ABC):
                 break
 
             camera = cameras[0]
-            wait_for_either(self._should_stop, camera.stop_stream_event)
 
             try:
+                wait_for_either(self._should_stop, camera.stop_stream_event)
                 self.stop_streaming()
             except Exception as e:
                 self.logger.warning('Error while stopping the camera stream: %s', e)
