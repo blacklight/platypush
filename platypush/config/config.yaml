@@ -594,6 +594,29 @@ backend.http:
 #   horizontal_flip: false
 #   # Whether to flip the image along the horizontal axis (default: False)
 #   vertical_flip: false
+#
+#   # -- Streaming options
+#   # If `stream_on_start` is set to true, then camera streaming will start as
+#   # soon as the application/plugin is started. Otherwise, only when the
+#   # `camera.<plugin>.start_streaming` action is run. The camera will be
+#   # streamed on the specified `bind_address` and `listen_port` in the
+#   # specified `stream_format`. If `stream_format` is a video format (e.g.
+#   # h264 or mkv) then you can play the raw camera stream through e.g.
+#   # `vlc tcp://<address>:<listen_port>`.
+#   # Alternatively, you can access the camera stream over HTTP at
+#   # `http(s)://<address>:<http-port>/camera/<plugin>/video.<format>`.
+#   # For example, for MJPEG stream (usually the fastest option over HTTP):
+#   # `http://localhost:8008/camera/ffmpeg/video.mjpeg`.
+#   # An HTTP stream is the safest option, as it has to go through the standard
+#   # HTTP authentication process, while direct TCP access may expose your
+#   # camera to unauthenticated access. If you decide to directly stream over
+#   # TCP, make sure to carefully select the `bind_address`, add a firewall
+#   # rule for the streaming port, and/or ensure that the device's port is only
+#   # accessible from a safe network.
+#   # stream_on_start: false
+#   # bind_address: 0.0.0.0
+#   # listen_port: 5000
+#   # stream_format: h264
 ###
 
 ### -----------------
