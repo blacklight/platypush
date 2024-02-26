@@ -88,6 +88,7 @@ Plugins
     platypush/plugins/music.spotify.rst
     platypush/plugins/music.tidal.rst
     platypush/plugins/nextcloud.rst
+    platypush/plugins/nfc.rst
     platypush/plugins/ngrok.rst
     platypush/plugins/nmap.rst
     platypush/plugins/ntfy.rst

@@ -13,7 +13,6 @@ Backends
     platypush/backend/music.mopidy.rst
     platypush/backend/music.mpd.rst
     platypush/backend/music.spotify.rst
-    platypush/backend/nfc.rst
     platypush/backend/nodered.rst
     platypush/backend/redis.rst
     platypush/backend/scard.rst
