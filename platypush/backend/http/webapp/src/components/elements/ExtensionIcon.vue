@@ -1,8 +1,9 @@
 <template>
   <div class="extension-icon" :style="{ width: `${size}`, height: `${size}` }">
-    <a :href="docsUrl" target="_blank">
+    <a :href="docsUrl" target="_blank" v-if="withDocsLink">
       <img :src="iconUrl" :alt="extensionName" :title="extensionName" />
     </a>
+    <img :src="iconUrl" :alt="extensionName" :title="extensionName" v-else />
   </div>
 </template>
 
@@ -17,6 +18,11 @@ export default {
     size: {
       type: String,
       default: '1.75em',
+    },
+
+    withDocsLink: {
+      type: Boolean,
+      default: false,
     },
   },
 

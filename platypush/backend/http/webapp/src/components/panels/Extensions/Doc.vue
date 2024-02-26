@@ -3,7 +3,7 @@
     <header>
       <h2>
         <a class="title" :href="extension.doc_url" target="_blank">
-          <ExtensionIcon :name="extension.name" size="2em" />
+          <ExtensionIcon :name="extension.name" size="2em" with-docs-link />
           <span class="name" v-text="extension.name" />
         </a>
       </h2>
