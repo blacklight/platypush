@@ -228,7 +228,7 @@ export default {
   align-items: center;
   justify-content: center;
   background-color: black;
-  margin: -0.75em 0.75em 0.75em -0.75em !important;
+  margin: 0;
 
   .background {
     position: absolute;
