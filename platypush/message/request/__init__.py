@@ -141,19 +141,8 @@ class Request(Message):
         for k, v in context.items():
             if isinstance(v, Message):
                 v = json.loads(str(v))
-            try:
-                exec('{}={}'.format(k, v))  # pylint: disable=exec-used
-            except Exception:
-                if isinstance(v, str):
-                    try:
-                        exec(  # pylint: disable=exec-used
-                            '{}="{}"'.format(k, re.sub(r'(^|[^\\])"', '\1\\"', v))
-                        )
-                    except Exception as e2:
-                        logger.debug(
-                            'Could not set context variable %s=%s: %s', k, v, e2
-                        )
-                        logger.debug('Context: %s', context)
+
+            locals()[k] = v
 
         parsed_value = ''
         if not isinstance(_value, str):

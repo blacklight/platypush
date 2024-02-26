@@ -1,7 +1,6 @@
 import logging
-import re
-from threading import Thread
 import time
+from threading import Thread
 
 import requests
 from frozendict import frozendict
@@ -91,7 +90,7 @@ class HttpRequest:
 
         Thread(target=_thread_func, name='HttpPoll').start()
 
-    def get_new_items(self, response):
+    def get_new_items(self, *_, **__):
         """Gets new items out of a response"""
         raise NotImplementedError(
             "get_new_items must be implemented in a derived class"
@@ -103,34 +102,6 @@ class HttpRequest:
         """
         for key, value in self.request_args.items():
             yield key, value
-
-
-class JsonHttpRequest(HttpRequest):
-    """
-    Specialization of the HttpRequest class for JSON requests.
-    """
-
-    def __init__(self, *args, path=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.path = path
-        self.seen_entries = set()
-
-    def get_new_items(self, response):
-        response = response.json()
-        new_entries = []
-
-        if self.path:
-            m = re.match(r'\${\s*(.*)\s*}', self.path)
-            if m:
-                response = eval(m.group(1))  # pylint: disable=eval-used
-
-        for entry in response:
-            flattened_entry = deep_freeze(entry)
-            if flattened_entry not in self.seen_entries:
-                new_entries.append(entry)
-            self.seen_entries.add(flattened_entry)
-
-        return new_entries
 
 
 def deep_freeze(x):

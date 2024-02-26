@@ -422,10 +422,7 @@ class WhileProcedure(LoopProcedure):
         response = Response()
         context = self._get_context(**context)
         for k, v in context.items():
-            try:
-                exec(f'{k}={v}')  # pylint: disable=exec-used
-            except Exception as e:
-                logger.debug('Evaluation error: %s=%s: %s', k, v, e)
+            locals()[k] = v
 
         while True:
             condition_true = eval(self.condition)  # pylint: disable=eval-used
@@ -451,10 +448,7 @@ class WhileProcedure(LoopProcedure):
             if response.output and isinstance(response.output, dict):
                 new_context = self._get_context(**response.output)
                 for k, v in new_context.items():
-                    try:
-                        exec(f'{k}={v}')  # pylint: disable=exec-used
-                    except Exception as e:
-                        logger.debug('Evaluation error: %s=%s: %s', k, v, e)
+                    locals()[k] = v
 
         return response
 
@@ -550,19 +544,7 @@ class IfProcedure(Procedure):
 
     def execute(self, *_, **context):
         for k, v in context.items():
-            try:
-                exec(f'{k}={v}')  # pylint: disable=exec-used
-            except Exception:
-                if isinstance(v, str):
-                    try:
-                        exec(  # pylint: disable=exec-used
-                            f'{k}="' + re.sub(r'(^|[^\\])"', '\1\\"', v) + '"'
-                        )
-                    except Exception as e:
-                        logger.debug(
-                            'Could not set context variable %s=%s: %s', k, v, e
-                        )
-                        logger.debug('Context: %s', context)
+            locals()[k] = v
 
         condition_true = eval(self.condition)  # pylint: disable=eval-used
         response = Response()
