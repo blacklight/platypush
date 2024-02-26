@@ -770,6 +770,12 @@ class CameraPlugin(RunnablePlugin, ABC):
 
         self.logger.info('Stopped camera stream')
 
+    def _wait_stream_stop(self, camera: Camera):
+        try:
+            wait_for_either(self._should_stop, camera.stop_stream_event)
+        except Exception as e:
+            self.logger.debug('Error on streaming poll: %s', e)
+
     def _streaming_loop(
         self,
         camera: Camera,
@@ -785,6 +791,7 @@ class CameraPlugin(RunnablePlugin, ABC):
         assert camera.stream, 'No camera stream available'
         camera.stream.sock = sock
         self.start_camera(camera, duration=duration, frames_dir=None, image_file=None)
+        self._wait_stream_stop(camera)
 
     def _cleanup_stream(
         self, camera: Camera, server_socket: socket.socket, client: Optional[IO]
