@@ -230,7 +230,9 @@ class RunnablePlugin(Plugin):
         if self.disable_monitor:
             return
 
-        self.logger.info('Starting %s', self.__class__.__name__)
+        self.logger.info(
+            'Starting plugin [%s]', get_plugin_name_by_class(self.__class__)
+        )
 
         while not self.should_stop():
             try:
