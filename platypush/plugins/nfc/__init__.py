@@ -1,20 +1,21 @@
 import base64
 import json
 
-from platypush.backend import Backend
 from platypush.message.event.nfc import (
     NFCTagDetectedEvent,
     NFCTagRemovedEvent,
     NFCDeviceConnectedEvent,
     NFCDeviceDisconnectedEvent,
 )
+from platypush.plugins import RunnablePlugin
 
 
-class NfcBackend(Backend):
+class NfcPlugin(RunnablePlugin):
     """
-    Backend to detect NFC card events from a compatible reader.
+    Plugin to detect events from NFC devices.
 
-    Run the following to check if your device is compatible with nfcpy and the right permissions are set::
+    Run the following command to check if your device is compatible with nfcpy
+    and the right permissions are set::
 
         python -m nfc
 
@@ -40,23 +41,23 @@ class NfcBackend(Backend):
         if not self._clf:
             self._clf = nfc.ContactlessFrontend()
             self._clf.open(self.device_id)
-            self.bus.post(NFCDeviceConnectedEvent(reader=self._get_device_str()))
+            assert self._clf and self._clf.device, 'NFC reader not initialized'
+            self._bus.post(NFCDeviceConnectedEvent(reader=self._get_device_str()))
             self.logger.info(
-                'Initialized NFC reader backend on device {}'.format(
-                    self._get_device_str()
-                )
+                'Initialized NFC reader on device %s', self._get_device_str()
             )
 
         return self._clf
 
     def _get_device_str(self):
+        assert self._clf, 'NFC reader not initialized'
         return str(self._clf.device)
 
     def close(self):
         if self._clf:
             self._clf.close()
             self._clf = None
-            self.bus.post(NFCDeviceDisconnectedEvent(reader=self._get_device_str()))
+            self._bus.post(NFCDeviceDisconnectedEvent(reader=self._get_device_str()))
 
     @staticmethod
     def _parse_records(tag):
@@ -212,7 +213,7 @@ class NfcBackend(Backend):
 
             tag_id = self._parse_id(tag)
             records = self._parse_records(tag)
-            self.bus.post(
+            self._bus.post(
                 NFCTagDetectedEvent(
                     reader=self._get_device_str(), tag_id=tag_id, records=records
                 )
@@ -224,14 +225,15 @@ class NfcBackend(Backend):
     def _on_release(self):
         def callback(tag):
             tag_id = self._parse_id(tag)
-            self.bus.post(
+            self._bus.post(
                 NFCTagRemovedEvent(reader=self._get_device_str(), tag_id=tag_id)
             )
 
         return callback
 
-    def run(self):
-        super().run()
+    def main(self):
+        fail_wait = 5
+        max_fail_wait = 60
 
         while not self.should_stop():
             try:
@@ -242,6 +244,13 @@ class NfcBackend(Backend):
                         'on-release': self._on_release(),
                     }
                 )
+                fail_wait = 5
+            except Exception as e:
+                self.logger.warning(
+                    'NFC error, retrying in %d seconds: %s', e, fail_wait, exc_info=True
+                )
+                self.wait_stop(fail_wait)
+                fail_wait = min(fail_wait * 2, max_fail_wait)
             finally:
                 self.close()
 
