@@ -25,13 +25,11 @@ class NfcPlugin(RunnablePlugin):
         """
         :param device: Address or ID of the device to be opened. Examples:
 
-            * `'usb:003:009'` opens device 9 on bus 3
-            * `'usb:003'` opens the first available device on bus 3
-            * `'usb'` opens the first available USB device (default)
+            * ``usb:003:009`` opens device 9 on bus 3
+            * ``usb:003`` opens the first available device on bus 3
+            * ``usb`` opens the first available USB device (default)
         """
-
         super().__init__(*args, **kwargs)
-
         self.device_id = device
         self._clf = None
 
