@@ -1,12 +1,10 @@
-import time
-
 from threading import Timer
 from multiprocessing import Process
+from typing import Iterable, Optional
 
 import Leap
 
-from platypush.backend import Backend
-from platypush.context import get_backend
+from platypush.context import get_bus
 from platypush.message.event.sensor.leap import (
     LeapFrameEvent,
     LeapFrameStartEvent,
@@ -14,12 +12,14 @@ from platypush.message.event.sensor.leap import (
     LeapConnectEvent,
     LeapDisconnectEvent,
 )
+from platypush.plugins import RunnablePlugin
 
 
-class SensorLeapBackend(Backend):
+class LeapPlugin(RunnablePlugin):
     """
-    Backend for events generated using a Leap Motion device to track hands and
-    gestures, https://www.leapmotion.com/
+    Integration to handle events from a `Leap Motion
+    <https://www.leapmotion.com/>`_ device to track hands and
+    gestures.
 
     Note that the default SDK is not compatible with Python 3. Follow the
     instructions on https://github.com/BlackLight/leap-sdk-python3 to build the
@@ -41,10 +41,9 @@ class SensorLeapBackend(Backend):
 
     def __init__(
         self,
-        position_ranges=None,
-        position_tolerance=0.0,  # Position variation tolerance in %
-        frames_throttle_secs=None,
-        *args,
+        position_ranges: Optional[Iterable[Iterable[float]]] = None,
+        position_tolerance: float = 0.0,
+        poll_interval: Optional[float] = 0.1,
         **kwargs
     ):
         """
@@ -58,22 +57,15 @@ class SensorLeapBackend(Backend):
                     [25.0, 600.0],    # y axis
                     [-300.0, 300.0],  # z axis
                 ]
-
-        :type position_ranges: list[list[float]]
-
         :param position_tolerance: % of change between a frame and the next to
             really consider the next frame as a new one (default: 0).
-        :type position_tolerance: float
-
-        :param frames_throttle_secs: If set, the frame events will be throttled
-            and pushed to the main queue at the specified rate. Good to set if
-            you want to connect Leap Motion events to actions that have a lower
-            throughput (the Leap Motion can send a lot of frames per second).
-            Default: None (no throttling)
-        :type frames_throttle_secs: float
+        :param poll_interval: How often the plugin should generate and push
+            events (default: at most one event each 0.1 seconds). Note that a
+            Leap Motion generates events with a very high throughput, so you
+            may want to set a higher value if you want to throttle the events
+            and avoid flooding the bus.
         """
-
-        super().__init__(*args, **kwargs)
+        super().__init__(poll_interval=poll_interval, **kwargs)
 
         if position_ranges is None:
             position_ranges = [
@@ -84,16 +76,13 @@ class SensorLeapBackend(Backend):
 
         self.position_ranges = position_ranges
         self.position_tolerance = position_tolerance
-        self.frames_throttle_secs = frames_throttle_secs
 
-    def run(self):
-        super().run()
-
+    def main(self):
         def _listener_process():
             listener = LeapListener(
                 position_ranges=self.position_ranges,
                 position_tolerance=self.position_tolerance,
-                frames_throttle_secs=self.frames_throttle_secs,
+                frames_throttle_secs=self.poll_interval,
                 logger=self.logger,
             )
 
@@ -106,27 +95,30 @@ class SensorLeapBackend(Backend):
                 )
 
             controller.add_listener(listener)
-            self.logger.info('Leap Motion backend initialized')
+            self.logger.info('Leap Motion device initialized')
 
-            while not self.should_stop():
-                time.sleep(0.1)
+            try:
+                self.wait_stop()
+            except KeyboardInterrupt:
+                self.logger.info('Terminating Leap Motion listener')
 
-        time.sleep(1)
-        self._listener_proc = Process(target=_listener_process)
-        self._listener_proc.start()
-        self._listener_proc.join()
+        while not self.should_stop():
+            self.wait_stop(1)
+            self._listener_proc = Process(target=_listener_process)
+            self._listener_proc.start()
+            self._listener_proc.join()
+            self._listener_proc = None
 
 
 class LeapFuture(Timer):
     def __init__(self, seconds, listener, event):
         self.listener = listener
         self.event = event
-
         super().__init__(seconds, self._callback_wrapper())
 
     def _callback_wrapper(self):
         def _callback():
-            self.listener._send_event(self.event)
+            self.listener._send_event(self.event)  # pylint: disable=protected-access
 
         return _callback
 
@@ -145,16 +137,7 @@ class LeapListener(Leap.Listener):
         self.running_future = None
 
     def _send_event(self, event):
-        backend = get_backend('redis')
-        if not backend:
-            self.logger.warning(
-                'Redis backend not configured, I cannot propagate the following event: {}'.format(
-                    event
-                )
-            )
-            return
-
-        backend.send_message(event)
+        get_bus().post(event)
 
     def send_event(self, event):
         if self.frames_throttle_secs:
@@ -166,21 +149,21 @@ class LeapListener(Leap.Listener):
         else:
             self._send_event(event)
 
-    def on_init(self, controller):
+    def on_init(self, *_, **__):
         self.prev_frame = None
         self.logger.info('Leap controller listener initialized')
 
-    def on_connect(self, controller):
+    def on_connect(self, *_, **__):
         self.logger.info('Leap controller connected')
         self.prev_frame = None
         self.send_event(LeapConnectEvent())
 
-    def on_disconnect(self, controller):
+    def on_disconnect(self, *_, **__):
         self.logger.info('Leap controller disconnected')
         self.prev_frame = None
         self.send_event(LeapDisconnectEvent())
 
-    def on_exit(self, controller):
+    def on_exit(self, *_, **__):
         self.logger.info('Leap listener terminated')
 
     def on_frame(self, controller):

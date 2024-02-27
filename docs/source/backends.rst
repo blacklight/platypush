@@ -16,7 +16,6 @@ Backends
     platypush/backend/nodered.rst
     platypush/backend/redis.rst
     platypush/backend/sensor.ir.zeroborg.rst
-    platypush/backend/sensor.leap.rst
     platypush/backend/stt.deepspeech.rst
     platypush/backend/stt.picovoice.hotword.rst
     platypush/backend/stt.picovoice.speech.rst
