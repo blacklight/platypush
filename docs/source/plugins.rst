@@ -59,6 +59,7 @@ Plugins
     platypush/plugins/lastfm.rst
     platypush/plugins/lcd.gpio.rst
     platypush/plugins/lcd.i2c.rst
+    platypush/plugins/leap.rst
     platypush/plugins/light.hue.rst
     platypush/plugins/linode.rst
     platypush/plugins/log.http.rst
