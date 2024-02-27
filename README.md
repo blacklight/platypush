@@ -705,8 +705,6 @@ groups together the controls for most of the plugins - e.g. sensors, switches,
 music controls and search, media library and torrent management, lights,
 Zigbee/Z-Wave devices and so on. The UI is responsive and mobile-friendly.
 
-Some screenshots:
-
 #### The main web panel
 
 This is the default panel available at `http://<host>:<port>` after
