@@ -15,7 +15,6 @@ Backends
     platypush/backend/music.spotify.rst
     platypush/backend/nodered.rst
     platypush/backend/redis.rst
-    platypush/backend/scard.rst
     platypush/backend/sensor.ir.zeroborg.rst
     platypush/backend/sensor.leap.rst
     platypush/backend/stt.deepspeech.rst

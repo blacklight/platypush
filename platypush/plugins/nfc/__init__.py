@@ -7,7 +7,7 @@ from platypush.message.event.nfc import (
     NFCDeviceConnectedEvent,
     NFCDeviceDisconnectedEvent,
 )
-from platypush.plugins import RunnablePlugin
+from platypush.plugins import RunnablePlugin, action
 
 
 class NfcPlugin(RunnablePlugin):
@@ -21,7 +21,7 @@ class NfcPlugin(RunnablePlugin):
 
     """
 
-    def __init__(self, device='usb', *args, **kwargs):
+    def __init__(self, device='usb', **kwargs):
         """
         :param device: Address or ID of the device to be opened. Examples:
 
@@ -29,7 +29,7 @@ class NfcPlugin(RunnablePlugin):
             * ``usb:003`` opens the first available device on bus 3
             * ``usb`` opens the first available USB device (default)
         """
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         self.device_id = device
         self._clf = None
 
@@ -228,6 +228,31 @@ class NfcPlugin(RunnablePlugin):
             )
 
         return callback
+
+    @action
+    def status(self):
+        """
+        Get information about the NFC reader status.
+
+        Example output:
+
+          .. code-block:: json
+
+            {
+                "display_name": "ACS ACR122U PN532v1.6 at usb:001:017",
+                "path": "usb:001:017",
+                "product_name": "ACR122U",
+                "vendor_name": "ACS"
+            }
+
+        """
+        assert self._clf and self._clf.device, 'NFC reader not initialized'
+        return {
+            'display_name': str(self._clf.device),
+            'path': self._clf.device.path,
+            'product_name': self._clf.device.product_name,
+            'vendor_name': self._clf.device.vendor_name,
+        }
 
     def main(self):
         fail_wait = 5
