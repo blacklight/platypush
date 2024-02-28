@@ -2,5 +2,5 @@ manifest:
   events: {}
   install:
     pip: []
-  package: platypush.plugins.http.request
+  package: platypush.plugins.http
   type: plugin

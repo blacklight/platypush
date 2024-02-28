@@ -50,7 +50,7 @@ Plugins
     platypush/plugins/gps.rst
     platypush/plugins/graphite.rst
     platypush/plugins/hid.rst
-    platypush/plugins/http.request.rst
+    platypush/plugins/http.rst
     platypush/plugins/http.webpage.rst
     platypush/plugins/ifttt.rst
     platypush/plugins/inspect.rst
