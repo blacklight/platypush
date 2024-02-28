@@ -145,7 +145,6 @@ Plugins
     platypush/plugins/weather.buienradar.rst
     platypush/plugins/weather.openweathermap.rst
     platypush/plugins/websocket.rst
-    platypush/plugins/wiimote.rst
     platypush/plugins/xmpp.rst
     platypush/plugins/youtube.rst
     platypush/plugins/zeroconf.rst
