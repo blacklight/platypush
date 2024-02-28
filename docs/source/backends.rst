@@ -20,4 +20,3 @@ Backends
     platypush/backend/stt.picovoice.hotword.rst
     platypush/backend/stt.picovoice.speech.rst
     platypush/backend/tcp.rst
-    platypush/backend/wiimote.rst
