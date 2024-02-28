@@ -8,7 +8,7 @@ from platypush.plugins import Plugin, action
 logger = logging.getLogger(__name__)
 
 
-class HttpRequestPlugin(Plugin):
+class HttpPlugin(Plugin):
     """
     Plugin for executing custom HTTP requests.
 
