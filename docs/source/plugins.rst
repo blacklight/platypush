@@ -35,6 +35,7 @@ Plugins
     platypush/plugins/ffmpeg.rst
     platypush/plugins/file.rst
     platypush/plugins/file.monitor.rst
+    platypush/plugins/flic.rst
     platypush/plugins/foursquare.rst
     platypush/plugins/github.rst
     platypush/plugins/google.calendar.rst

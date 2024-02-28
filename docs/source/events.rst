@@ -11,7 +11,6 @@ Events
     platypush/events/application.rst
     platypush/events/assistant.rst
     platypush/events/bluetooth.rst
-    platypush/events/button.flic.rst
     platypush/events/camera.rst
     platypush/events/chat.slack.rst
     platypush/events/chat.telegram.rst
@@ -21,6 +20,7 @@ Events
     platypush/events/distance.rst
     platypush/events/entities.rst
     platypush/events/file.rst
+    platypush/events/flic.rst
     platypush/events/foursquare.rst
     platypush/events/geo.rst
     platypush/events/github.rst

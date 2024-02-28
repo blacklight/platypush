@@ -6,7 +6,6 @@ Backends
     :maxdepth: 1
     :caption: Backends:
 
-    platypush/backend/button.flic.rst
     platypush/backend/chat.telegram.rst
     platypush/backend/http.rst
     platypush/backend/midi.rst
