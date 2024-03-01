@@ -18,7 +18,7 @@ manifest:
     platypush.message.event.irc.IRCDCCFileRecvCancelledEvent: when a DCC file download is cancelled
     platypush.message.event.irc.IRCDCCFileSendCompletedEvent: when a DCC file upload is completed
     platypush.message.event.irc.IRCDCCFileSendCancelledEvent: when a DCC file upload is cancelled
-  package: platypush.plugins.chat.irc
+  package: platypush.plugins.irc
   type: plugin
   install:
     apt:

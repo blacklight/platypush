@@ -22,7 +22,6 @@ Plugins
     platypush/plugins/camera.ir.mlx90640.rst
     platypush/plugins/camera.pi.rst
     platypush/plugins/camera.pi.legacy.rst
-    platypush/plugins/chat.irc.rst
     platypush/plugins/chat.telegram.rst
     platypush/plugins/clipboard.rst
     platypush/plugins/config.rst
@@ -55,6 +54,7 @@ Plugins
     platypush/plugins/http.webpage.rst
     platypush/plugins/ifttt.rst
     platypush/plugins/inspect.rst
+    platypush/plugins/irc.rst
     platypush/plugins/joystick.rst
     platypush/plugins/kafka.rst
     platypush/plugins/lastfm.rst

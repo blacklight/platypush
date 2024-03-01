@@ -2,6 +2,7 @@ import os
 from typing import Sequence, Dict, Tuple, Union, Optional
 
 from platypush.plugins import RunnablePlugin, action
+from platypush.plugins.chat import ChatPlugin
 from platypush.schemas.irc import (
     IRCServerSchema,
     IRCServerStatusSchema,
@@ -9,10 +10,9 @@ from platypush.schemas.irc import (
 )
 
 from ._bot import IRCBot
-from .. import ChatPlugin
 
 
-class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
+class IrcPlugin(RunnablePlugin, ChatPlugin):
     """
     IRC integration.
 
@@ -48,7 +48,7 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
         try:
             self._bots: Dict[Tuple[str, int], IRCBot] = {
                 (server_conf['server'], server_conf['port']): IRCBot(**server_conf)
-                for server_conf in IRCServerSchema().load(servers, many=True)
+                for server_conf in IRCServerSchema().load(servers, many=True)  # type: ignore
             }
         except Exception as e:
             self.logger.warning(f'Could not load IRC server configuration: {e}')
@@ -57,15 +57,15 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
 
     @property
     def _bots_by_server(self) -> Dict[str, IRCBot]:
-        return {bot.server: bot for srv, bot in self._bots.items()}
+        return {bot.server: bot for bot in self._bots.values()}
 
     @property
     def _bots_by_server_and_port(self) -> Dict[Tuple[str, int], IRCBot]:
-        return {(bot.server, bot.port): bot for srv, bot in self._bots.items()}
+        return {(bot.server, bot.port): bot for bot in self._bots.values()}
 
     @property
     def _bots_by_alias(self) -> Dict[str, IRCBot]:
-        return {bot.alias: bot for srv, bot in self._bots.items() if bot.alias}
+        return {bot.alias: bot for bot in self._bots.values() if bot.alias}
 
     def main(self):
         self._connect()
@@ -88,7 +88,7 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
 
     def _get_bot(self, server: Union[str, Tuple[str, int]]) -> IRCBot:
         if isinstance(server, (tuple, list, set)):
-            bot = self._bots_by_server_and_port[tuple(server)]
+            bot = self._bots_by_server_and_port[tuple(server)]  # type: ignore
         else:
             bot = self._bots_by_alias.get(server, self._bots_by_server.get(server))
 
@@ -184,21 +184,23 @@ class ChatIrcPlugin(RunnablePlugin, ChatPlugin):
         """
         bot = self._get_bot(server)
         channel_name = channel
-        channel = bot.channels.get(channel)
-        assert channel, f'Not connected to channel {channel}'
-        return IRCChannelSchema().dump(
-            {
-                'is_invite_only': channel.is_invite_only(),
-                'is_moderated': channel.is_moderated(),
-                'is_protected': channel.is_protected(),
-                'is_secret': channel.is_secret(),
-                'name': channel_name,
-                'modes': channel.modes,
-                'opers': list(channel.opers()),
-                'owners': channel.owners(),
-                'users': list(channel.users()),
-                'voiced': list(channel.voiced()),
-            }
+        ch = bot.channels.get(channel)
+        assert ch, f'Not connected to channel {channel}'
+        return dict(
+            IRCChannelSchema().dump(
+                {
+                    'is_invite_only': ch.is_invite_only(),
+                    'is_moderated': ch.is_moderated(),
+                    'is_protected': ch.is_protected(),
+                    'is_secret': ch.is_secret(),
+                    'name': channel_name,
+                    'modes': ch.modes,
+                    'opers': list(ch.opers()),
+                    'owners': ch.owners(),
+                    'users': list(ch.users()),
+                    'voiced': list(ch.voiced()),
+                }
+            )
         )
 
     @action
